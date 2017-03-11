@@ -1,0 +1,18 @@
+Which library do I link?
+------------------------
+
+If you want to use fmodex.dll: 
+
+Visual Studio users             - fmodex_vc.lib.
+Metrowerks Codewarrior users    - fmodex_vc.lib.
+Borland users                   - fmodex_bc.lib.
+LCC-Win32 users                 - fmodex_lcc.lib.
+Dev-C++, MinGW and CygWin users - libfmodex.a.
+
+If you want to use fmodexL.dll: (same as fmodex.dll but with debug logging enabled)
+
+Visual Studio users             - fmodexL_vc.lib.
+Metrowerks Codewarrior users    - fmodexL_vc.lib.
+Borland users                   - fmodexL_bc.lib.
+LCC-Win32 users                 - fmodexL_lcc.lib.
+Dev-C++, MinGW and CygWin users - libfmodexL.a.
