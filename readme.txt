@@ -1,11 +1,11 @@
 This is my game engine framework I have been using to develop and prototype ideas:
 
+This work is still in progress, I am currently tidying up the projects and will be adding an OSX port, with opengl renderer.
+
 Here is a quick break down of how it works and how it is laid out:
 
-THis work is still in progress, I am currently tidying up the projects and will be adding an OSX port, with opengl renderer.
-
 PEN
-this project constains platform specific code, it provides abstraction for input, window creation, rendering, audio and a few other things.
+This project constains platform specific code, it provides abstraction for input, window creation, rendering, audio and a few other things.
 
 The renderer can work in direct mode or deferred mode, direct mode simply wraps up directx (and soon opengl too) into a generic API for platform agnostic use.
 
@@ -14,7 +14,7 @@ The renderer can also work in deferred mode where all user sumbited graphics API
 Audio also will have a command buffered deferred API which is currently work in progress.
 
 PUT
-this project contains code that will be re-used across different projects but contains no platform specific code, it contains currently:
+This project contains code that will be re-used across different projects but contains no platform specific code, it contains currently:
 - Texture and model loaders.
 - Skeletal animation loader.
 - Shader loading.
@@ -24,7 +24,7 @@ this project contains code that will be re-used across different projects but co
 - ImGui integration (WIP)
 
 Examples
-this project has some examples of how to use the API's and set up projects.
+This project has some examples of how to use the API's and set up projects.
 
 An application just needs to definine the pen::game_entry function and some externals for window creation, this means starting a new fresh project is simple.
 
