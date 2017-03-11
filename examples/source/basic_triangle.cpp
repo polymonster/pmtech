@@ -1,8 +1,12 @@
 #include "pen.h"
 
-u32 pen_window_width = 1280;
-u32 pen_window_height = 720;
-u32 pen_sample_count = 4;
+pen::window_creation_params pen_window
+{
+	1280,					//width
+	720,					//height
+	4,						//MSAA samples
+	"basic_triangle"		//window title / process name
+};
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
@@ -28,7 +32,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	pen::viewport vp =
 	{
 		0.0f, 0.0f,
-		( f32 ) pen_window_width, ( f32 ) pen_window_height,
+		//( f32 ) pen_window.width, ( f32 ) pen_window.height,
+		( f32 ) 1280, ( f32 ) 720,
 		0.0f, 1.0f
 	};
 

@@ -3,9 +3,9 @@
 #include "structs.h"
 #include "window.h"
 #include "input.h"
+#include "pen.h"
 
-extern u32 pen_window_width;
-extern u32 pen_window_height;
+extern pen::window_creation_params pen_window;
 
 namespace pen
 {
@@ -49,7 +49,7 @@ namespace pen
 		wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 		wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 		wcex.lpszMenuName = nullptr;
-		wcex.lpszClassName = "PEN";
+		wcex.lpszClassName = pen_window.window_title;
 		wcex.hIconSm = NULL;
 
 		if (!RegisterClassEx(&wcex))
@@ -59,11 +59,11 @@ namespace pen
 		g_hinstance = wp->hinstance;
 
 		//pass in as params
-		RECT rc = { 0, 0, pen_window_width, pen_window_height };
+		RECT rc = { 0, 0, pen_window.width, pen_window.height };
 		AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
 		g_hwnd = CreateWindow(
-			"PEN", "PEN RENDERER",
+			pen_window.window_title, pen_window.window_title,
 			WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT, 
 			CW_USEDEFAULT, 

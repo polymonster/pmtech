@@ -21,18 +21,18 @@ project "basic_triangle"
 	
 	libdirs
 	{ 
-		os.getenv("PEN_DIR") .. "\\lib\\win32", 
-		os.getenv("PEN_DIR") .. "\\third_party\\fmod\\lib",
-		os.getenv("PEN_DIR") .. "\\third_party\\bullet\\lib",
-		os.getenv("PEN_DIR") .. "\\..\\PUT\\lib\\win32"
+		"..\\PEN\\lib\\win32", 
+		"..\\PEN\\third_party\\fmod\\lib",
+		"..\\PEN\\third_party\\bullet\\lib",
+		"..\\PEN\\..\\PUT\\lib\\win32"
 	}
 	
 	includedirs
 	{ 
-		os.getenv("PEN_DIR") .. "\\include", 
-		os.getenv("PEN_DIR") .. "\\include\\win32",
-		os.getenv("PEN_DIR") .. "\\..\\PUT\\include\\win32",
-		os.getenv("PEN_DIR") .. "\\..\\PUT\\include\\",
+		"..\\PEN\\include", 
+		"..\\PEN\\include\\win32",
+		"..\\PEN\\..\\PUT\\include\\win32",
+		"..\\PEN\\..\\PUT\\include\\",
 		"include\\"
 	}
 	

@@ -9,6 +9,7 @@
 #include "pen_string.h"
 #include "threads.h"
 #include "timer.h"
+#include "pen.h"
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -24,10 +25,7 @@ ID3D11RenderTargetView* g_backbuffer_rtv = nullptr;
 ID3D11DeviceContext*    g_immediate_context = nullptr;
 ID3D11DeviceContext1*   g_immediate_context_1 = nullptr;
 
-UINT g_width;
-UINT g_height;
-
-extern u32 pen_sample_count;
+extern pen::window_creation_params pen_window;
 
 namespace pen
 {
@@ -1932,9 +1930,6 @@ namespace pen
 		UINT width = rc.right - rc.left;
 		UINT height = rc.bottom - rc.top;
 
-		g_width = width;
-		g_height = height;
-
 		UINT createDeviceFlags = 0;
 
 #ifdef _DEBUG
@@ -2016,7 +2011,7 @@ namespace pen
 			sd.Width = width;
 			sd.Height = height;
 			sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			sd.SampleDesc.Count = pen_sample_count;
+			sd.SampleDesc.Count = pen_window.sample_count;
 			sd.SampleDesc.Quality = 0;
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			sd.BufferCount = 1;
@@ -2042,7 +2037,7 @@ namespace pen
 			sd.BufferDesc.RefreshRate.Denominator = 1;
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			sd.OutputWindow = rp->hwnd;
-			sd.SampleDesc.Count = pen_sample_count;
+			sd.SampleDesc.Count = pen_window.sample_count;
 			sd.SampleDesc.Quality = 0;
 			sd.Windowed = TRUE;
 
@@ -2085,7 +2080,7 @@ namespace pen
 		descDepth.MipLevels = 1;
 		descDepth.ArraySize = 1;
 		descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		descDepth.SampleDesc.Count = pen_sample_count;
+		descDepth.SampleDesc.Count = pen_window.sample_count;
 		descDepth.SampleDesc.Quality = 0;
 		descDepth.Usage = D3D11_USAGE_DEFAULT;
 		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
@@ -2099,7 +2094,7 @@ namespace pen
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
 		ZeroMemory( &descDSV, sizeof(descDSV) );
 		descDSV.Format = descDepth.Format;
-		descDSV.ViewDimension = pen_sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+		descDSV.ViewDimension = pen_window.sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
 		descDSV.Texture2D.MipSlice = 0;
 		hr = g_device->CreateDepthStencilView(resource_pool[depth_tex_id].texture_2d->texture, &descDSV, &resource_pool[depth_tex_id].depth_target->ds[0]);
 		if (FAILED( hr ))

@@ -7,6 +7,14 @@
 
 namespace pen
 {
+	struct window_creation_params
+	{
+		u32 width;
+		u32 height;
+		u32 sample_count;
+		const c8* window_title;
+	};
+
 	extern PEN_THREAD_RETURN game_entry( void* params );
 }
 

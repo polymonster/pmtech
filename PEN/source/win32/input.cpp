@@ -12,7 +12,7 @@ namespace pen
 
 	mouse_state mouse_state_ = { 0 };
 
-	a_u8 show_cursor;
+	a_u8 show_cursor = 1;
 
 	void input_internal_update( )
 	{
