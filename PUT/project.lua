@@ -1,20 +1,20 @@
 -- Project	
 project "put"
-	location "build\\win32"
+	location ("build\\" .. platform_dir)
 	kind "StaticLib"
 	language "C++"
 	
 	libdirs
 	{ 
-		os.getenv("PEN_DIR") .. "lib\\win32",
-		os.getenv("PEN_DIR") .. "\\third_party\\bullet\\lib",
+		"..\\PEN\\lib\\" .. platform_dir,
+		"..\\PEN\\third_party\\bullet\\lib",
 	}
 	
 	includedirs
 	{ 
-		os.getenv("PEN_DIR") .. "include", 
-		os.getenv("PEN_DIR") .. "include\\win32",  
-		os.getenv("PEN_DIR") .. "\\third_party\\bullet\\include"
+		"..\\PEN\\include", 
+		"..\\PEN\\include\\" .. platform_dir,  
+		"..\\PEN\\third_party\\bullet\\include"
 	}
 		
 	files { "include\\**.h", "source\\**.cpp" }
@@ -23,13 +23,13 @@ project "put"
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain", "Symbols" }
-		targetdir "lib\\win32"
+		targetdir ("lib\\" .. platform_dir)
 		targetname "put_d"
 		links { "bullet_monolithic_do.lib" }
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "Optimize" }
-		targetdir "lib\\win32"
+		targetdir ("lib\\" .. platform_dir)
 		targetname "put"
 		links { "bullet_monolithic.lib" }

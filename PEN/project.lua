@@ -1,19 +1,30 @@
 -- Project	
 project "pen"
-	location "build\\win32"
+	location ("build\\" .. platform_dir)
 	kind "StaticLib"
 	language "C++"
-	files { "include\\*.h", "include\\win32\\**.h", "source\\win32\\**.cpp" }
-	includedirs { "include", "include\\win32", "third_party\\fmod\\inc" }
+	files 
+	{ 
+		"include\\*.h", 
+		"include\\" .. platform_dir .. "\\**.h", 
+		"source\\" .. platform_dir .. "\\**.cpp" 
+	}
+	
+	includedirs 
+	{ 
+		"include", 
+		"include\\" .. platform_dir, 
+		"third_party\\fmod\\inc" 
+	}
 		
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain", "Symbols" }
-		targetdir "lib\\win32"
+		targetdir ("lib\\" .. platform_dir)
 		targetname "pen_d"
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "Optimize" }
-		targetdir "lib\\win32"
+		targetdir ("lib\\" .. platform_dir)
 		targetname "pen"

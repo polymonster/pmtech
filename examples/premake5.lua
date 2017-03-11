@@ -1,4 +1,5 @@
--- win32
+platform_dir = "win32"
+if _ACTION == "xcode4" then platform_dir = "osx" end
 
 -- Solution
 solution "Examples"
@@ -21,17 +22,17 @@ project "basic_triangle"
 	
 	libdirs
 	{ 
-		"..\\PEN\\lib\\win32", 
+		"..\\PEN\\lib\\" .. platform_dir, 
 		"..\\PEN\\third_party\\fmod\\lib",
 		"..\\PEN\\third_party\\bullet\\lib",
-		"..\\PEN\\..\\PUT\\lib\\win32"
+		"..\\PEN\\..\\PUT\\lib\\" .. platform_dir
 	}
 	
 	includedirs
 	{ 
 		"..\\PEN\\include", 
-		"..\\PEN\\include\\win32",
-		"..\\PEN\\..\\PUT\\include\\win32",
+		"..\\PEN\\include\\" .. platform_dir,
+		"..\\PEN\\..\\PUT\\include\\" .. platform_dir,
 		"..\\PEN\\..\\PUT\\include\\",
 		"include\\"
 	}
@@ -41,13 +42,13 @@ project "basic_triangle"
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain", "Symbols" }
-		targetdir "bin\\win32"
-		debugdir "bin\\win32"
+		targetdir ("bin\\" .. platform_dir)
+		debugdir ("bin\\" .. platform_dir)
 		targetname "app_d"
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "Optimize" }
-		targetdir "bin\\win32"
-		debugdir "bin\\win32"
+		targetdir ("bin\\" .. platform_dir)
+		debugdir ("bin\\" .. platform_dir)
 		targetname "app"
