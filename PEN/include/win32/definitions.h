@@ -1,9 +1,20 @@
 #ifndef _definitions_h
 #define _definitions_h
 
+//platform specific
+#ifdef _WIN32
+#include <windows.h>
+#define PEN_THREAD_ROUTINE		LPTHREAD_START_ROUTINE
+#define PEN_THREAD_RETURN		DWORD WINAPI
+#else
+#define PEN_THREAD_RETURN		unsigned long
+#define PEN_THREAD_ROUTINE		void (p_function*)()
+#endif
+
+
+//c++
 #include <stdio.h>
 #include <assert.h> 
-#include <windows.h>
 #include <float.h>
 #include <stdint.h>
 #include <atomic>
@@ -44,9 +55,5 @@ typedef std::atomic_uint64_t a_u64;
 #define PEN_PRINTF				pen::string_output_debug
 #define PEN_ASSERT				assert
 #define PEN_ERR					assert( 0 ) 
-#define PEN_THREAD_ROUTINE		LPTHREAD_START_ROUTINE
-#define PEN_THREAD_RETURN		DWORD WINAPI
-
-
 
 #endif
