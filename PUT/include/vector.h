@@ -90,10 +90,10 @@ public:
 	inline void clamp( f32 min, f32 max )
 	{
 		x = PEN_FMAX( x, min );
-		x = fmin( x, max );
+		x = PEN_FMIN( x, max );
 
 		y = PEN_FMAX( y, min );
-		y = min( y, max );
+		y = PEN_FMIN( y, max );
 	}
 
 	f32		x, y;

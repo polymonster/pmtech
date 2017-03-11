@@ -38,9 +38,13 @@ typedef double f64;
 
 typedef unsigned long ulong;
 
-typedef std::atomic_uint8_t a_u8;
-typedef std::atomic_uint32_t a_u32;
-typedef std::atomic_uint64_t a_u64;
+//typedef std::atomic_uint8_t a_u8;
+//typedef std::atomic_uint32_t a_u32;
+//typedef std::atomic_uint64_t a_u64;
+
+typedef std::atomic<uint8_t> a_u8;
+typedef std::atomic<uint32_t> a_u32;
+typedef std::atomic<uint64_t> a_u64;
 
 #define PEN_F32_MAX FLT_MAX
 

@@ -1,11 +1,20 @@
 platform_dir = "win32"
-if _ACTION == "xcode4" then platform_dir = "osx" end
+build_cmd = ""
+link_cmd = ""
+if _ACTION == "xcode4" 
+then 
+platform_dir = "osx" 
+build_cmd = "-std=c++11 -stdlib=libc++"
+link_cmd = "-stdlib=libc++"
+end
 
 -- Solution
 solution "Examples"
 	location "build"
 	configurations { "Debug", "Release" }
 	startproject "basic_triangle"
+	buildoptions { build_cmd }
+	linkoptions { link_cmd }
 	
 -- Engine Project	
 dofile "..//PEN//project.lua"
