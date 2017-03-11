@@ -35,11 +35,11 @@ An application just needs to definine the pen::game_entry function and some exte
 
 Getting started
 Navigate to the examples folder in a command prompt or terminal
-type ../bin/premake5 <target_name> to build projects
+use: ../bin/premake5 <target_name> to build projects
 
 target_names:
 vs2013
 vs2015
-xcode
+xcode4
 
  
