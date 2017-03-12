@@ -11,7 +11,6 @@
 #define PEN_THREAD_ROUTINE		void (p_function*)()
 #endif
 
-
 //c++
 #include <stdio.h>
 #include <assert.h> 
@@ -22,25 +21,22 @@
 //--------------------------------------------------------------------------------------
 // Types
 //--------------------------------------------------------------------------------------
-typedef int s32;
-typedef unsigned int u32;
-typedef short s16;
-typedef unsigned short u16;
-typedef char s8;
-typedef unsigned char u8;
-typedef int64_t u64;
+typedef int32_t         s32;
+typedef uint32_t        u32;
+typedef int16_t         s16;
+typedef uint16_t        u16;
+typedef int64_t         u64;
 
-typedef wchar_t c16;
-typedef char	c8;
+typedef char            s8;
+typedef unsigned char   u8;
 
-typedef float f32;
-typedef double f64;
+typedef wchar_t         c16;
+typedef char	        c8;
+
+typedef float           f32;
+typedef double          f64;
 
 typedef unsigned long ulong;
-
-//typedef std::atomic_uint8_t a_u8;
-//typedef std::atomic_uint32_t a_u32;
-//typedef std::atomic_uint64_t a_u64;
 
 typedef std::atomic<uint8_t> a_u8;
 typedef std::atomic<uint32_t> a_u32;
@@ -50,7 +46,6 @@ typedef std::atomic<uint64_t> a_u64;
 
 #define PEN_FMAX fmax
 #define PEN_FMIN fmin
-
 
 //--------------------------------------------------------------------------------------
 // Print / Assert 
