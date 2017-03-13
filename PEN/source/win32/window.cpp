@@ -1,9 +1,9 @@
-#include <windows.h>
-
+#include "definitions.h"
 #include "structs.h"
 #include "window.h"
 #include "input.h"
 #include "pen.h"
+#include "pen_string.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -35,6 +35,7 @@ namespace pen
 	u32 window_init(void* params)
 	{
 		window_params* wp = (window_params*)params;
+
 
 		// Register class
 		WNDCLASSEX wcex;

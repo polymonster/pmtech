@@ -3,6 +3,7 @@
 
 //platform specific
 #ifdef _WIN32
+#undef UNICODE
 #include <windows.h>
 #define PEN_THREAD_ROUTINE		LPTHREAD_START_ROUTINE
 #define PEN_THREAD_RETURN		DWORD WINAPI

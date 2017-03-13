@@ -21,7 +21,7 @@ project ( project_name )
 	
 	location ( root_directory .. "/build" )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
-	debugdir ( root_directory .. "/bin" .. platform_dir)
+	debugdir ( root_directory .. "/bin/" .. platform_dir)
 	
 	if platform_dir == "win32" then 
 		links 
