@@ -23,13 +23,28 @@ project ( project_name )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
 	debugdir ( root_directory .. "/bin" .. platform_dir)
 	
-	links { "d3d11.lib", "dxguid.lib", "winmm.lib", "comctl32.lib", "fmodex_vc.lib", "pen", "put" }
-	
+	if platform_dir == "win32" then 
+		links 
+		{ 
+			"d3d11.lib", 
+			"dxguid.lib", 
+			"winmm.lib", 
+			"comctl32.lib", 
+			"fmodex_vc.lib", 
+			"pen"
+		}
+	elseif platform_dir == "osx" then
+		links 
+		{ 
+			"pen"
+		}
+	end
+
 	files 
 	{ 
-		(root_directory .. project_name .. "**.cpp"),
-		(root_directory .. project_name .. "**.c"),
-		(root_directory .. project_name .. "**.h"),
+		(root_directory .. "/" .. project_name .. "/*.cpp"),
+		(root_directory .. "/" .. project_name .. "/*.c"),
+		(root_directory .. "/" .. project_name .. "/*.h"),
 	}
  
 	configuration "Debug"
