@@ -38,9 +38,9 @@ namespace pen
 
 
 		// Register class
-		WNDCLASSEX wcex;
-		ZeroMemory(&wcex, sizeof(WNDCLASSEX));
-		wcex.cbSize = sizeof(WNDCLASSEX);
+		WNDCLASSEXA wcex;
+		ZeroMemory(&wcex, sizeof(WNDCLASSEXA));
+		wcex.cbSize = sizeof(WNDCLASSEXA);
 		wcex.style = CS_HREDRAW | CS_VREDRAW;
 		wcex.lpfnWndProc = WndProc;
 		wcex.cbClsExtra = 0;
@@ -53,7 +53,7 @@ namespace pen
 		wcex.lpszClassName = pen_window.window_title;
 		wcex.hIconSm = NULL;
 
-		if (!RegisterClassEx(&wcex))
+		if (!RegisterClassExA(&wcex))
 			return E_FAIL;
 
 		// Create window
@@ -63,7 +63,7 @@ namespace pen
 		RECT rc = { 0, 0, pen_window.width, pen_window.height };
 		AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-		g_hwnd = CreateWindow(
+		g_hwnd = CreateWindowA(
 			pen_window.window_title, pen_window.window_title,
 			WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT, 

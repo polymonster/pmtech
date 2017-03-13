@@ -13,7 +13,7 @@ namespace pen
 
 	u32 filesystem_read_file_to_buffer( const c8* filename, void** p_buffer, u32 &buffer_size );
 
-	u32 filesystem_enum_directory( const c8* directory, filesystem_enumeration &results );
+	u32 filesystem_enum_directory( const c16* directory, filesystem_enumeration &results );
 }
 
 #endif

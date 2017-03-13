@@ -51,10 +51,10 @@ project ( project_name )
 		defines { "DEBUG" }
 		flags { "WinMain" }
 		symbols "On"
-		targetname "app_d"
+		targetname (project_name .. "d")
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
-		targetname "app"
+		targetname (project_name)
 end

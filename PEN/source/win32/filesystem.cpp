@@ -33,12 +33,12 @@ namespace pen
 		return 1;
 	}
 
-	u32 filesystem_enum_directory( const c8* directory, filesystem_enumeration &results )
+	u32 filesystem_enum_directory( const c16* directory, filesystem_enumeration &results )
 	{
 		WIN32_FIND_DATA ffd;
 		HANDLE hFind = INVALID_HANDLE_VALUE;
 
-		hFind = FindFirstFileA( directory, &ffd );
+		hFind = FindFirstFileW( directory, &ffd );
 
 		do
 		{

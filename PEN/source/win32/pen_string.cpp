@@ -87,6 +87,6 @@ namespace pen
 
 		va_end( va );
 
-		OutputDebugString( buf );
+		OutputDebugStringA( buf );
 	}
 }
