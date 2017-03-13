@@ -15,7 +15,7 @@ namespace pen
 	void	memory_zero( void* dest, u32 size_bytes );
 }
 
-void*	operator new(u32 n);
+void*	operator new(size_t n);
 void	operator delete(void *p);
 
 

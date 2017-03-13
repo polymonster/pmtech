@@ -1,8 +1,7 @@
 #ifndef _renderer_definitions_h
 #define _renderer_definitions_h
 
-#include <d3d11_1.h>
-
+/*
 //raster state
 enum raster_state : s32
 {
@@ -317,5 +316,6 @@ enum misc_flags : s32
     PEN_RESOURCE_MISC_TILE_POOL = 0x20000L,
     PEN_RESOURCE_MISC_TILED = 0x40000L
 };
+*/
 
 #endif

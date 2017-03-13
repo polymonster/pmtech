@@ -13,7 +13,8 @@ project "put"
 	includedirs
 	{ 
 		"..\\PEN\\include", 
-		"..\\PEN\\include\\" .. platform_dir,  
+		"..\\PEN\\include\\" .. platform_dir,
+		"..\\PEN\\include\\" .. renderer_dir,  
 		"..\\PEN\\third_party\\bullet\\include"
 	}
 		
@@ -22,14 +23,15 @@ project "put"
 		
 	configuration "Debug"
 		defines { "DEBUG" }
-		flags { "WinMain", "Symbols" }
+		flags { "WinMain" }
+		symbols "On"
 		targetdir ("lib\\" .. platform_dir)
 		targetname "put_d"
 		links { "bullet_monolithic_do.lib" }
  
 	configuration "Release"
 		defines { "NDEBUG" }
-		flags { "WinMain", "Optimize" }
+		flags { "WinMain", "OptimizeSpeed" }
 		targetdir ("lib\\" .. platform_dir)
 		targetname "put"
 		links { "bullet_monolithic.lib" }
