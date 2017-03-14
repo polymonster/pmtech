@@ -36,7 +36,8 @@ project ( project_name )
 	elseif platform_dir == "osx" then
 		links 
 		{ 
-			"pen"
+			"pen",
+			"Cocoa.framework"
 		}
 	end
 
@@ -45,6 +46,7 @@ project ( project_name )
 		(root_directory .. "/" .. project_name .. "/*.cpp"),
 		(root_directory .. "/" .. project_name .. "/*.c"),
 		(root_directory .. "/" .. project_name .. "/*.h"),
+		(root_directory .. "/" .. project_name .. "/*.m")
 	}
  
 	configuration "Debug"

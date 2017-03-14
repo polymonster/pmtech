@@ -6,10 +6,13 @@ project "pen"
 	
 	files 
 	{ 
-		"include\\*.h", 
+		"include\\*.h",
+		 
 		"include\\" .. platform_dir .. "\\**.h", 
-		"include\\" .. renderer_dir .. "\\**.h", 
-		"source\\" .. platform_dir .. "\\**.cpp" 
+		"include\\" .. renderer_dir .. "\\**.h",
+		
+		"source\\" .. platform_dir .. "\\**.cpp",
+		"source\\" .. platform_dir .. "\\**.mm" 
 	}
 	
 	includedirs 
