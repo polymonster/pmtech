@@ -1,17 +1,5 @@
-/*=========================================================*\
-|	polyspoon_math.h - main maths class
-|-----------------------------------------------------------|
-|				Project :	PolySpoon Math
-|				Coder	:	ADixon
-|				Date	:	26/04/09
-|-----------------------------------------------------------|
-|	Copyright (c) PolySpoon 2009. All rights reserved.		|
-\*=========================================================*/
-
 #ifndef _POLYSPOON_MATH_H
 #define _POLYSPOON_MATH_H
-
-/*======================== INCLUDES =======================*/
 
 #include <math.h>
 #include <float.h>
@@ -19,17 +7,14 @@
 #include "matrix.h"
 #include "bounding_volumes.h"
 
-/*======================== CONSTANTS ======================*/
-
 #define	PI				3.1415926535897932f
 #define	PI_2			3.1415926535897932f * 2.0f
-
 #define	_PI_OVER_180	0.0174532925199433f
 #define _180_OVER_PI	57.295779513082322f
 
 typedef enum
 {
-	s32ERSECTS = 0,
+	INTERSECTS = 0,
 	BEHIND = 1,
 	INFRONT = 2,
 
@@ -41,7 +26,6 @@ typedef enum
 	RIGHT_HAND = 1,
 
 }e_handedness;
-
 
 const vec3f unit_cube_vertices[8] =
 {
@@ -117,7 +101,6 @@ public:
 		return out_quat;
 	}
 
-
 	inline void euler_angles( f32 z_theta, f32 y_theta, f32 x_theta )
 	{
 		f32 cos_z_2 = cosf( 0.5f * z_theta );
@@ -184,33 +167,6 @@ public:
 		out_quat.normalise( );
 
 		return out_quat;
-
-// 		Quaternion out_quat;
-// 		f32 dp = Quaternion::dot( l, r );
-// 
-// 		/*  dot = cos(theta)
-// 			if (dot < 0), q1 and q2 are more than 90 degrees apart,
-// 			so we can invert one to reduce spinning	*/
-// 		if (dp < 0.0f)
-// 		{
-// 			dp = -dp;
-// 			out_quat = -r;
-// 		}
-// 		else 
-// 		{
-// 			out_quat = r;
-// 		}
-// 		
-// 		if (dp < 0.95f)
-// 		{
-// 			float angle = acosf(dp);
-// 
-// 			return ( l * sinf( angle * ( 1.0f - t ) ) + out_quat * sinf( angle * t ) ) / sinf( angle );
-// 		} 
-// 		else // if the angle is small, use linear interpolation
-// 		{
-// 			return lerp(l,out_quat,t);
-// 		}
 	}
 
 	inline void axis_angle( vec3f axis, f32 w )
@@ -241,12 +197,6 @@ public:
 
 		lmatrix.create_identity();
 
-		/*
-		1 - 2*qy2 - 2*qz2	2*qx*qy - 2*qz*qw	2*qx*qz + 2*qy*qw
-		2*qx*qy + 2*qz*qw	1 - 2*qx2 - 2*qz2	2*qy*qz - 2*qx*qw
-		2*qx*qz - 2*qy*qw	2*qy*qz + 2*qx*qw	1 - 2*qx2 - 2*qy2
-		*/
-
 		lmatrix.m[ 0 ] = 1.0f - 2.0f * y * y - 2.0f * z * z;
 		lmatrix.m[ 1 ] = 2.0f * x * y - 2.0f * z * w;
 		lmatrix.m[ 2 ] = 2.0f * x * z + 2.0f * y * w;
@@ -258,10 +208,6 @@ public:
 		lmatrix.m[ 8 ] = 2.0f * x * z - 2.0f * y * w;
 		lmatrix.m[ 9 ] = 2.0f * y * z + 2.0f * x * w;
 		lmatrix.m[ 10 ] = 1.0f - 2.0f * x * x - 2.0f * y * y;
-
-		//lmatrix.m[ 0  ] = w * w + x * x - y * y - z * z; lmatrix.m[ 1  ] = 2 * x * y - 2 * w * z; lmatrix.m[ 2  ] = 2 * x * z + 2 * w * y; 
-		//lmatrix.m[ 4  ] = 2 * x * y + 2 * w * z; lmatrix.m[ 5  ] = w * w - x * x + y * y - z * z; lmatrix.m[ 6  ] = 2 * y * z + 2 * w * x;
-		//lmatrix.m[ 8  ] = 2 * x * z - 2 * w * y; lmatrix.m[ 9  ] = 2 * y * z - 2 * w * x; lmatrix.m[ 10 ] = w * w - x * x - y * y + z * z;
 	}
 
 	//non commutative multiply
@@ -282,7 +228,6 @@ public:
 
 typedef Quaternion quat;
 
-/*========================= NAMESPACE =======================*/
 namespace psmath
 {
 	//generic
@@ -317,7 +262,7 @@ namespace psmath
 		f32 distance = 0.0f;
 
 		//Use the plane equation to find the distance D
-		//negative dot product between normal vector and pos32 (p)
+		//negative dot product between normal vector and point (p)
 		distance = dot( normal, pos ) * -1.0f;
 
 		return distance;
@@ -334,9 +279,9 @@ namespace psmath
 		f32 d = plane_distance( n, pplane );
 		f32 t = -(dot( p, n ) + d) / dot( v, n );
 
-		vec3f pos32_on_plane = p + (v * t);
+		vec3f point_on_plane = p + (v * t);
 
-		return pos32_on_plane;
+		return point_on_plane;
 	}
 
 	inline f32 distance( const vec2f p1, const vec2f p2)
@@ -367,28 +312,24 @@ namespace psmath
 
 
 #if 0
+    //todo - move the primitves over and port these functions from old engine.
 	void get_axes_from_OBB(OBB3D b1, vec3f *axes);
-		
-	//billboards
-	void billboard_spherical_begin();
-	void billboard_cylindrical_begin();
-	void billboard_end();
 
 	//polygons / triangles
 	vec3f get_normal(TRIANGLE t1);
 	vec3f get_normal(vec3f v1, vec3f v2, vec3f v3);
 
-	bool pos32_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
+	bool point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
 
 	void compute_tangents(vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2, vec2f t3, vec3f *tangent,  vec3f *bitangent, bool normalise);
 
 	//planes
 	s32 classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance);
 	s32 classify_sphere(SPHERE s1, PLANE p1);
-	f32 plane_distance(vec3f normal, vec3f pos32);
+	f32 plane_distance(vec3f normal, vec3f point);
 	vec3f RAY_vs_PLANE(RAY_3D ray, PLANE plane);
 
-	//closest pos32
+	//closest point
 	vec3f closest_point_on_AABB3D(AABB3D b1, vec3f p);
 	void find_extents(vec3f axis, vec3f *vertices, u32 vertex_count, f32 *min, f32 *max);
 	void find_extents(vec3f axis, Vector3fArray vertices, f32 *min, f32 *max);
@@ -407,11 +348,11 @@ namespace psmath
 
 	bool CONVEX_HULL_vs_CONVEX_HULL(CONVEX_HULL *h1, CONVEX_HULL *h2);
 
-	//pos32 tests
-	bool POs32_inside_TRIANGLE(TRIANGLE t1, vec3f p);
-	bool POs32_inside_AA_ELLIPSOID(AA_ELLIPSOID e1, vec3f p);
-	bool POs32_inside_SPHERE(SPHERE s1, vec3f p);
-	bool POs32_inside_AABB3D(AABB3D b1, vec3f p);
+	//point tests
+	bool POINT_inside_TRIANGLE(TRIANGLE t1, vec3f p);
+	bool POINT_inside_AA_ELLIPSOID(AA_ELLIPSOID e1, vec3f p);
+	bool POINT_inside_SPHERE(SPHERE s1, vec3f p);
+	bool POINT_inside_AABB3D(AABB3D b1, vec3f p);
 
 	//ray / line tests tests
 	bool SPHERE_vs_LINE();
@@ -422,8 +363,4 @@ namespace psmath
 #endif
 };
 
-
-/*================== EXTERNAL VARIABLES ===================*/
-
-
-#endif //_POLYSPOON_MATH_H
+#endif

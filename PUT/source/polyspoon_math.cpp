@@ -1,24 +1,15 @@
 #include "polyspoon_math.h"
 
-/*=========================================================*\
-|	deg_to_rad - converts degree angles s32o radians
-\*=========================================================*/
 f32 psmath::deg_to_rad(f32 degree_angle)
 {
 	return( degree_angle * _PI_OVER_180 );
 }
 
-/*=========================================================*\
-|	rad_to_deg - converts radian angles s32o dagrees
-\*=========================================================*/
 f32 psmath::rad_to_deg(f32 radian_angle)
 {
 	return( radian_angle * _180_OVER_PI );
 }
 
-/*=========================================================*\
-|	absolute - retruns always a positive f32
-\*=========================================================*/
 f32 psmath::absolute(f32 value)
 {
 	if(value < 0.0f) value *= - 1;
@@ -26,18 +17,12 @@ f32 psmath::absolute(f32 value)
 	return value;
 }
 
-/*=========================================================*\
-|	absolute_smallest_of - finds the smallest value of 2 params
-\*=========================================================*/
 f32 psmath::absolute_smallest_of(f32 value_1,f32 value_2)
 {
 	if(absolute(value_1) < absolute(value_2)) return value_1;
 	else return value_2;
 }
 
-/*=========================================================*\
-|	cross - retruns a Vector3f cross product result
-\*=========================================================*/
 vec3f psmath::cross(vec3f v1, vec3f v2)
 {
 	vec3f result;
@@ -51,27 +36,16 @@ vec3f psmath::cross(vec3f v1, vec3f v2)
 	return result;
 }
 
-/*=========================================================*\
-|	cross - retruns a vector cross prod result
-\*=========================================================*/
 f32 psmath::cross( vec2f v1, vec2f v2 )
 {
 	return v1.x * v2.y - v1.y * v2.x;
 }
 
-/*=========================================================*\
-|	dot - retruns a f32 dot product result
-\*=========================================================*/
 f32 psmath::dot(vec3f v1,vec3f v2)
 {
 	return ((v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z));
 }
 
-/*=========================================================*\
-|	perp - essentially 2d cross product to get the normal
-|		 - of a 2d line well not the normal, but thats what
-|		 - it looks like.
-\*==========================================================*/
 vec2f psmath::perp(vec2f v1, s32 hand)
 {
 	switch(hand)
@@ -93,9 +67,6 @@ vec2f psmath::perp(vec2f v1, s32 hand)
 	return vec2f(v1.y,-v1.x); 
 }
 
-/*=========================================================*\
-|	magnitude - retruns a f32 the length of a vector
-\*=========================================================*/
 f32 psmath::magnitude(vec3f v)
 {
 	return (f32) sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
@@ -106,9 +77,6 @@ f32 psmath::magnitude(vec2f v)
 	return (f32) sqrt((v.x * v.x) + (v.y * v.y));
 }
 
-/*=========================================================*\
-|	distance - retruns a f32 the distance between 2 pos32s
-\*=========================================================*/
 f32 psmath::distance(vec3f p1, vec3f p2)
 {
 	double d = sqrt( (p2.x - p1.x) * (p2.x - p1.x) + 
@@ -124,9 +92,6 @@ f32 psmath::distanceSq(vec2f p1, vec2f p2)
 	return  d;
 }
 
-/*=========================================================*\
-|	normalise - scale a vector to unit length
-\*=========================================================*/
 vec3f psmath::normalise(vec3f v){
 
 	f32 r_mag = 1.0f / magnitude(v);
@@ -199,95 +164,6 @@ vec3f psmath::unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i vie
 	return world_space_coordinates;
 }
 
-#if 0
-
-/*=========================================================*\
-|	billboard_cylindrical_begin
-|			- modifies x,z axis to always face the camera
-\*=========================================================*/
-void psmath::billboard_cylindrical_begin()
-{
-#if 0
-	f32 modelview[16];
-	s32 i,j;
-
-	// save the current modelview matrix
-	glPushMatrix();
-
-	// get the current modelview matrix
-	glGetf32v(GL_MODELVIEW_MATRIX , modelview);
-
-	//undo all rotations
-	for( i=0; i<3; i+=2 ) 
-	{
-	    for( j=0; j<3; j++ ) 
-		{
-			if ( i==j )
-				 modelview[i*4+j] = 1.0;
-			else
-				modelview[i*4+j] = 0.0;
-	    }
-	}
-
-	// set the modelview matrix
-	glLoadMatrixf(modelview);
-#endif
-
-	PEN_ERR;
-}
-
-/*=========================================================*\
-|	billboard_spherical_begin
-|		- modifies x,y and z axis to always face the camera
-\*=========================================================*/
-void psmath::billboard_spherical_begin() 
-{
-	PEN_ERR;
-
-#if 0
-	f32 modelview[16];
-	s32 i,j;
-
-	// save the current modelview matrix
-	glPushMatrix();
-
-	// get the current modelview matrix
-	glGetf32v(GL_MODELVIEW_MATRIX , modelview);
-
-	// undo all rotations
-	for( i=0; i<3; i++ ) 
-	{
-	    for( j=0; j<3; j++ ) 
-		{
-			if ( i==j )
-				modelview[i*4+j] = 1.0;
-			else
-				 modelview[i*4+j] = 0.0;
-	    }
-	}
-
-	// set the modelview with no rotations
-	glLoadMatrixf(modelview);
-#endif
-}
-
-/*=========================================================*\
-|	billboard_end - pop matrix wrapper for readability
-\*=========================================================*/
-void psmath::billboard_end()
-{ 
-#if 0
-	glPopMatrix(); 
-#endif
-
-	PEN_ERR;
-}
-
-/*=========================================================*\
-|	get normal - gets the normal vector of a polygon
-|	NB * the normal is inverted in here, was coming out wrong
-|		 in collision tests, keep an eye on this
-\*=========================================================*/
 vec3f psmath::get_normal(TRIANGLE t1)
 {
 	vec3f v1 = t1.m_vertices[2] - t1.m_vertices[0];
@@ -295,7 +171,8 @@ vec3f psmath::get_normal(TRIANGLE t1)
 
 	vec3f normal = cross(v1, v2);
 
-	normal = normalise(normal) *= -1;
+    //todo - normal might be inverted
+	normal = normalise(normal) * -1;
 
 	return normal;		
 }
@@ -308,25 +185,21 @@ vec3f psmath::get_normal(vec3f v1, vec3f v2, vec3f v3)
 	vec3f normal = cross(vA, vB);
 
 	//negate for opengl handedness
-	normal = normalise(normal) *= -1;
+	normal = normalise(normal) * -1;
 
 	return normal;		
 }
 
-/*=========================================================*\
-|	classify_sphere - classify a sphere to a plane
-|					- based on simple distance calculation
-\*=========================================================*/
 s32 psmath::classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance)
 {
 	f32 d = plane_distance(normal, p);
 
 	*distance = (normal.x * s1.m_position.x + normal.y * s1.m_position.y + normal.z * s1.m_position.z + d);
 
-	//if the distance is less than the radius and s32ersection occurs
+	//if the distance is less than the radius and intersection occurs
 	if(absolute(*distance) < s1.m_radius)
 	{	
-		return s32ERSECTS;
+		return INTERSECTS;
 	}
 	else if(*distance >= s1.m_radius)
 	{	
@@ -340,14 +213,14 @@ s32 psmath::classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance)
 
 s32 psmath::classify_sphere( SPHERE s1, PLANE p1 )
 {
-	f32 plane_d = plane_distance(p1.m_normal, p1.m_pos32_on_plane);
+	f32 plane_d = plane_distance(p1.m_normal, p1.m_point_on_plane);
 
 	f32 d = (dot(p1.m_normal, s1.m_position) + plane_d);
 
-	//if the distance is less than the radius and s32ersection occurs
+	//if the distance is less than the radius and intersection occurs
 	if(absolute(d) < s1.m_radius)
 	{	
-		return s32ERSECTS;
+		return INTERSECTS;
 	}
 	else if(d >= s1.m_radius)
 	{	
@@ -357,24 +230,18 @@ s32 psmath::classify_sphere( SPHERE s1, PLANE p1 )
 	//else the sphere is behind the plane
 	return BEHIND;
 }
-/*=========================================================*\
-|	plane_distance - find the distance from plane to a pos32
-\*=========================================================*/
-f32 psmath::plane_distance(vec3f normal, vec3f pos32)
+
+f32 psmath::plane_distance(vec3f normal, vec3f point)
 {
 	f32 distance = 0;
 
 	//Use the plane equation to find the distance D
-	//negative dot product between normal vector and pos32 (p)
-	distance = dot(normal,pos32) * -1; 
+	//negative dot product between normal vector and point (p)
+	distance = dot(normal,point) * -1; 
 
 	return distance;	
 }
 
-/*=========================================================*\
-|	angle_between_vectors 
-|			- find the angle (radians) between 2 Vectors
-\*=========================================================*/
 f32 psmath::angle_between_vectors(vec3f v1,vec3f v2)
 {
 	//get the dot product
@@ -396,13 +263,9 @@ f32 psmath::angle_between_vectors(vec3f v1,vec3f v2)
 	return angle;
 }
 
-/*=========================================================*\
-|	closest_pos32_on_line 
-|		- find the closest pos32 on a line to another pos32
-\*=========================================================*/
 vec3f psmath::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
 {
-	//create a vector from line start to the pos32.
+	//create a vector from line start to the point.
 	vec3f v1 = p - l1;
 
 	//get the normalised direction vector of the line
@@ -416,34 +279,34 @@ vec3f psmath::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
 
 	if( clamp )
 	{
-		//if the pos32s at either end of the line
-		//the pos32 is before the line start
+		//if the points at either end of the line
+		//the point is before the line start
 		if (t <= 0) 
 		{
 			return l1;
 		}
 
-		//the pos32 is after the line end
+		//the point is after the line end
 		if (t >= d) 
 		{
 			return l2;
 		}
 	}
 
-	//otherwise the pos32 is on the line
+	//otherwise the point is on the line
 
 	//vector of length t and direction of the line
     vec3f v3 = v2 * t;
 
-	//to get the closest pos32 simply add v3 to the starting pos32 of the line
-    vec3f closest_pos32 = l1 + v3;
+	//to get the closest point simply add v3 to the starting point of the line
+    vec3f closest_point = l1 + v3;
 
-	return closest_pos32;
+	return closest_point;
 }
 
 f32 psmath::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
 {
-	//create a vector from line start to the pos32.
+	//create a vector from line start to the point.
 	vec3f v1 = p - l1;
 
 	//get the normalised direction vector of the line
@@ -459,14 +322,14 @@ f32 psmath::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
 
 	if( clamp )
 	{
-		//if the pos32s at either end of the line
-		//the pos32 is before the line start
+		//if the points at either end of the line
+		//the point is before the line start
 		if (t <= 0 ) 
 		{
 			return 0.0f;
 		}
 
-		//the pos32 is after the line end
+		//the point is after the line end
 		if (t >= 1.0f ) 
 		{
 			return 1.0f;
@@ -476,10 +339,6 @@ f32 psmath::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
 	return t;
 }
 
-/*=========================================================*\
-|	closest_pos32_on_AABB3D 
-|		- find the closest pos32 on an AABB to another pos32
-\*=========================================================*/
 vec3f psmath::closest_point_on_AABB3D(AABB3D b1, vec3f p)
 {
 	//this could be optimised out
@@ -498,10 +357,6 @@ vec3f psmath::closest_point_on_AABB3D(AABB3D b1, vec3f p)
 	return p;
 }
 
-/*=========================================================*\
-|	get_axes_from_OBB
-|		- finds the 3 oriented axes of an OBB 
-\*=========================================================*/
 void psmath::get_axes_from_OBB(OBB3D b1, vec3f *axes)
 {
 	//make some vertices for each axis
@@ -533,13 +388,6 @@ void psmath::get_axes_from_OBB(OBB3D b1, vec3f *axes)
 	axes[2] = normalise(z_axis[1] - z_axis[0]);
 }
 
-/*=========================================================*\
-|	find_extents
-|		- finds the min and max extents of a group of vertices
-|		- on a given axis (return by pos32ers min and max)
-|		- extent is returned as a f32 value from the
-|		- dot product (the distance along an axis)
-\*=========================================================*/
 void psmath::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count, f32 *min, f32 *max)
 {
 	f32 *projections = new f32[vertex_count];
@@ -582,13 +430,6 @@ void psmath::find_extents(vec3f axis, Vector3fArray vertices, f32 *min, f32 *max
 	delete projections;
 }
 
-/*=========================================================*\
-|	find_extents
-|		- finds the min and max extents of a group of vertices
-|		- on a given axis (return by pos32ers min and max)
-|		- extent is returned as a vector3f value of the position
-|		- the extent is on the axis
-\*=========================================================*/
 void psmath::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count, vec3f *min_position, vec3f *max_position)
 {
 	f32 min, max;
@@ -601,19 +442,19 @@ void psmath::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count
 
 vec3f psmath::RAY_vs_PLANE( RAY_3D ray, PLANE plane )
 {
-	//this is wrong i think
+	//todo - this is wrong i think
 	vec3f v = ray.m_direction_vector;
 	v.normalise();
 
-	vec3f p = ray.m_pos32_on_ray;
+	vec3f p = ray.m_point_on_ray;
 	vec3f n = plane.m_normal;
 
-	f32 d = plane_distance(n, plane.m_pos32_on_plane);
+	f32 d = plane_distance(n, plane.m_point_on_plane);
 	f32 t = -(dot(p,n) + d) / dot(v,n);
 
-	vec3f pos32_on_plane = p + (v * t);
+	vec3f point_on_plane = p + (v * t);
 
-	return pos32_on_plane;
+	return point_on_plane;
 }
 
 void psmath::compute_tangents( vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2, vec2f t3, vec3f *tangent, vec3f *bitangent, bool normalise )
@@ -643,7 +484,7 @@ void psmath::compute_tangents( vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2,
 	}
 }
 
-bool psmath::pos32_inside_triangle( vec3f v1, vec3f v2, vec3f v3, vec3f p )
+bool psmath::point_inside_triangle( vec3f v1, vec3f v2, vec3f v3, vec3f p )
 {
 	vec3f cp1, cp2;
 

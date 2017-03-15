@@ -15,8 +15,8 @@ public:
 	~vec2i()					{ }
 
 	const vec2i	operator =	( const vec2i &v )	{ x=v.x, y=v.y; return( *this ); }
-	const bool		operator ==	( const vec2i &v )	{ return( x==v.x && y==v.y ); }
-	const bool		operator !=	( const vec2i &v )	{ return( x!=v.x || y!=v.y ); }
+	const bool	operator ==	( const vec2i &v )	{ return( x==v.x && y==v.y ); }
+	const bool	operator !=	( const vec2i &v )	{ return( x!=v.x || y!=v.y ); }
 	const vec2i	operator +	( const vec2i &v )	{ vec2i result( x+v.x, y+v.y ); return( result ); }
 	const vec2i	operator -	( const vec2i &v )	{ vec2i result( x-v.x, y-v.y ); return( result ); }
 
@@ -115,13 +115,13 @@ public:
 	~vec3f()					{ }
 
 	inline vec3f operator =  (const vec3f &v ) {x = v.x, y = v.y, z = v.z; return (*this ); }
-	inline bool	  operator == (const vec3f &v ) { return( x==v.x && y==v.y && z==v.z); }
-	inline bool	  operator != (const vec3f &v ) { return( x!=v.x || y!=v.y || z!=v.z); }
+	inline bool  operator == (const vec3f &v ) { return( x==v.x && y==v.y && z==v.z); }
+	inline bool	 operator != (const vec3f &v ) { return( x!=v.x || y!=v.y || z!=v.z); }
 	inline vec3f operator +  (const vec3f &v ) { vec3f result(x + v.x, y + v.y, z + v.z); return ( result ); } 
 	inline vec3f operator -  (const vec3f &v ) { vec3f result(x - v.x, y - v.y, z - v.z); return ( result ); }
-	inline vec3f operator *  (const f32 &a    ) { vec3f result(x * a, y * a, z * a); return ( result ); } 
+	inline vec3f operator *  (const f32 &a   ) { vec3f result(x * a, y * a, z * a); return ( result ); }
 	inline vec3f operator *  (const vec3f &v ) { vec3f result(x * v.x, y * v.y, z * v.z); return ( result ); } 
-	inline vec3f operator /  (const f32 &a    ) 
+	inline vec3f operator /  (const f32 &a   )
 	{ 
 		f32 one_over_a = 1.0f / a;
 		vec3f result(x * one_over_a, y * one_over_a, z * one_over_a); 
@@ -255,14 +255,11 @@ public:
 	{
 		f32 mag_sq = x * x + y * y + z * z;
 
-		//if(mag_sq > 0.0f)
-		{
-			f32 one_over_mag = 1.0f / sqrt(mag_sq);
+        f32 one_over_mag = 1.0f / sqrt(mag_sq);
 
-			x *= one_over_mag;
-			y *= one_over_mag;
-			z *= one_over_mag;
-		}
+        x *= one_over_mag;
+        y *= one_over_mag;
+        z *= one_over_mag;
 	}
 
 	f32 x, y, z;

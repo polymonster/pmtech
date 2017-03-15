@@ -1,10 +1,6 @@
 #include "matrix.h"
 #include "polyspoon_math.h"
 
-/*=========================================================*\
-|	Identity Matrix - Sets the current matrix to identity
-\*=========================================================*/
-
 void mat4::create_identity()
 {
 	m[ 0] = 1.0f; m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = 0.0f;
@@ -20,10 +16,7 @@ mat4 mat4::identity()
 	return idm;
 }
 
-/*=========================================================*\
-|	Operator * - Multiply 2 matrices
-\*=========================================================*/
-mat4 mat4::operator *(mat4 &b)
+mat4 mat4::operator *(const mat4 &b)
 {
 	mat4 result;
 
@@ -50,10 +43,7 @@ mat4 mat4::operator *(mat4 &b)
 	return result;
 }
 
-/*=========================================================*\
-|	Operator * - A Vector3 by Matrix
-\*=========================================================*/
-const vec3f mat4::operator *(const vec3f &v)
+vec3f mat4::operator *(const vec3f &v)
 {	
 	vec3f result;
 
@@ -64,9 +54,6 @@ const vec3f mat4::operator *(const vec3f &v)
 	return result;
 }
 
-/*=========================================================*\
-|	Operator * - A Vector3 by Matrix (hack to get w too!)
-\*=========================================================*/
 vec3f mat4::homogeneous_multiply(vec3f v, f32 *w)
 {
 	vec3f result;
@@ -82,9 +69,6 @@ vec3f mat4::homogeneous_multiply(vec3f v, f32 *w)
 	return result;
 }
 
-/*=========================================================*\
-|	create_translation - creates a translation matrix of t
-\*=========================================================*/
 void mat4::create_translation(vec3f t)
 {
 	m[ 0] = 1.0f; m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = t.x;
@@ -93,10 +77,6 @@ void mat4::create_translation(vec3f t)
 	m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f; m[15] = 1.0f;
 }
 
-/*=========================================================*\
-|	create_cardinal_rotation 
-|				- rotate around a global axis by theta
-\*=========================================================*/
 void mat4::create_cardinal_rotation_deg( s32 axis, f32 theta )
 {
 	f32 theta_rad = psmath::deg_to_rad(theta);
@@ -177,10 +157,6 @@ void mat4::create_arbitrary_rotation( vec3f axis, f32 theta )
 
 }
 
-/*=========================================================*\
-|	create_scale 
-|				- creates a scale matrix of vector s
-\*=========================================================*/
 void mat4::create_scale(vec3f s)
 {
 	m[ 0] = s.x ; m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = 0.0f;
@@ -189,10 +165,6 @@ void mat4::create_scale(vec3f s)
 	m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f; m[15] = 1.0f;
 }
 
-/*=========================================================*\
-|	create_bias 
-|				- creates a bias matrix * 0.5 + 0.5;
-\*=========================================================*/
 void mat4::create_bias()
 {
 	m[ 0] = 0.5f; m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = 0.5f;
@@ -201,10 +173,6 @@ void mat4::create_bias()
 	m[12] = 0.0f;	m[13] = 0.0f;	m[14] = 0.0f;	m[15] = 1.0f;
 }
 
-/*=========================================================*\
-|	create_axis_swap 
-|				- creates a matrix to swap global axes
-\*=========================================================*/
 void mat4::create_axis_swap( vec3f x, vec3f y, vec3f z )
 {
 	m[ 0] = x.x;  m[ 1] = y.x;  m[ 2] = z.x;    m[ 3] = 0.0f;
@@ -213,10 +181,6 @@ void mat4::create_axis_swap( vec3f x, vec3f y, vec3f z )
 	m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f;	m[15] = 1.0f;
 }
 
-/*=========================================================*\
-|	create_perspective_projection 
-|				- creates a perspective projection matrix
-\*=========================================================*/
 void mat4::create_perspective_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
 {
 	m[ 0] = (2.0f * znear) / (right - left);	
@@ -249,10 +213,6 @@ void mat4::create_orthographic_projection( f32 left, f32 right, f32 bottom, f32 
 	m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f; m[15] = 1.0f;
 }
 
-/*=========================================================*\
-|	multiply_by_scalar 
-|				- multiply all values in the matrix by a uniform scalar
-\*=========================================================*/
 void mat4::multiply_by_scalar( f32 value )
 {
 	m[ 0] *= value; m[ 1] *= value; m[ 2] *= value; m[ 3] *= value;
@@ -261,11 +221,7 @@ void mat4::multiply_by_scalar( f32 value )
 	m[12] *= value; m[13] *= value; m[14] *= value; m[15] *= value;
 }
 
-/*=========================================================*\
-|	gl_compliant_matrix 
-|				- returns a matrix that is suitable for use
-|				- in OpenGL calls, i.e glMultMatrixf()
-\*=========================================================*/
+
 void mat4::gl_compliant_matrix(f32 *entries)
 {
 	entries[0]  = m[ 0]; entries[4]  = m[ 1]; entries[8]  = m[ 2]; entries[12] = m[ 3];
@@ -281,11 +237,7 @@ void mat4::gl_compliant_matrix( double *entries )
 	entries[2]  = m[ 8]; entries[6]  = m[ 9]; entries[10] = m[10]; entries[14] = m[11];
 	entries[3]  = m[12]; entries[7]  = m[13]; entries[11] = m[14]; entries[15] = m[15];
 }
-/*=========================================================*\
-|	set_matrix_from_gl 
-|				- sets the matrix from one obtained using
-|				- OpenGL i.e glGetf32v(GL_MODELVIEW)
-\*=========================================================*/
+
 void mat4::set_matrix_from_gl(f32 *entries)
 {
 	m[ 0] = entries[0]; m[ 1] = entries[4]; m[ 2] = entries[8];  m[ 3] = entries[12];
@@ -310,19 +262,11 @@ void mat4::set_matrix_from_raw(f32 *entries)
 	m[ 3] = entries[3]; m[ 7] = entries[7]; m[11] = entries[11]; m[15] = entries[15];
 }
 
-/*=========================================================*\
-|	get_translation 
-|		- gets the translation portion of the matrix
-\*=========================================================*/
 vec3f mat4::get_translation()
 {
 	return vec3f(m[ 3],m[ 7],m[11]);
 }
 
-/*=========================================================*\
-|	get_orientation 
-|		- returns a rotation matrix
-\*=========================================================*/
 mat4 mat4::get_orientation()
 {
 	mat4 om = *this;
