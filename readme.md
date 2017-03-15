@@ -4,7 +4,7 @@ This work is still very much a work in progress, I am currently tidying up the p
 
 **PEN** *pmtech engine* 
 
-This project constains platform / operating system specific code, it provides abstractions for:
+This project contains platform / operating system specific code, it provides abstractions for:
 - Renderer
 - Window / Entry
 - Input / OS Message Pump
