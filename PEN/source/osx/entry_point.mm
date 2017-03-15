@@ -1,5 +1,4 @@
 #import <Cocoa/Cocoa.h>
-#import <OpenGL/OpenGL.h>
 #import <OpenGL/gl3.h>
 #include <unistd.h>
 
@@ -67,9 +66,13 @@ int main(int argc, char **argv)
     
     [pool drain];
     
+    
+    
     while( 1 )
     {
         [_gl_context makeCurrentContext];
+        
+        glUseProgram(0);
         
         glClearColor( 0.8f, 0.8f, 1.0f, 1.0f );
         glClear(GL_COLOR_BUFFER_BIT);
