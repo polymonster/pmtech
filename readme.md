@@ -35,7 +35,7 @@ This project contains code that will be re-used across different projects but co
 Tool scripts written in python and using some c++ executables to build data:
 - Collada to binary - Models, skeletons and animations
 - Textures - Compression and conversion using NVTT (Nvidia)
-- Premake5 - All projects are configured using pre-make and are IDE agnostic
+- Premake5 - All projects are configured using premake and are IDE agnostic
 - Shader Compiler - FXC offline shader compilation
 - Generic Shader Language (todo)
 
