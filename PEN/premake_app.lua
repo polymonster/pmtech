@@ -37,7 +37,8 @@ project ( project_name )
 		links 
 		{ 
 			"pen",
-			"Cocoa.framework"
+			"Cocoa.framework",
+			"OpenGL.framework"
 		}
 	end
 
