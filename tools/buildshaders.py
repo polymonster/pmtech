@@ -11,8 +11,8 @@ compiler_dir = "C:\\Program Files (x86)\\Windows Kits\\8.0\\bin\\x86\\"
 
 print(compiler_dir)
 
-shader_dir = os.getcwd() + "\\shaders\\"
-build_dir = os.getcwd() + "\\..\\bin\\win32\\data\\shaders\\"
+shader_dir = os.getcwd() + "\\assets\\shaders\\"
+build_dir = os.getcwd() + "\\bin\\win32\\data\\shaders\\"
 
 #create shaders dir
 if not os.path.exists(build_dir):
