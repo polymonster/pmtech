@@ -4,11 +4,11 @@
 //platform specific
 #ifdef _WIN32
 #include <windows.h>
-#define PEN_THREAD_ROUTINE		LPTHREAD_START_ROUTINE
-#define PEN_THREAD_RETURN		DWORD WINAPI
+#define PEN_THREAD_ROUTINE( FP )        LPTHREAD_START_ROUTINE FP
+#define PEN_THREAD_RETURN               DWORD WINAPI
 #else
-#define PEN_THREAD_RETURN		unsigned long
-#define PEN_THREAD_ROUTINE		void (p_function*)()
+#define PEN_THREAD_RETURN               unsigned long
+#define PEN_THREAD_ROUTINE( FP )		void (*FP)(void* data)
 #endif
 
 //c++

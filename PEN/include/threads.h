@@ -10,7 +10,7 @@ namespace pen
 	struct semaphore;
 
 	//threads
-	pen::thread*	threads_create( PEN_THREAD_ROUTINE thread_func, u32 stack_size, void* thread_params, u32 flags );
+	pen::thread*	threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, u32 flags );
 	void			threads_destroy( pen::thread* p_thread );
 	void			threads_suspend( pen::thread* p_thread );
 
