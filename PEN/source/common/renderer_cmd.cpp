@@ -182,31 +182,30 @@ namespace pen
         
         union
         {
-            u32									command_data_index;
-            
-            shader_load_params					shader_load;
-            set_shader_cmd						set_shader;
-            input_layout_creation_params		create_input_layout;
-            buffer_creation_params				create_buffer;
-            set_vertex_buffer_cmd				set_vertex_buffer;
-            set_index_buffer_cmd				set_index_buffer;
-            draw_cmd							draw;
-            draw_indexed_cmd					draw_indexed;
-            texture_creation_params				create_texture2d;
-            sampler_creation_params				create_sampler;
-            set_texture_cmd						set_texture;
-            rasteriser_state_creation_params	create_raster_state;
-            viewport							set_viewport;
-            blend_creation_params				create_blend_state;
-            set_constant_buffer_cmd				set_constant_buffer;
-            update_buffer_cmd					update_buffer;
-            depth_stencil_creation_params*		p_create_depth_stencil_state;
-            query_params						set_query;
-            query_create_params					create_query;
-            texture_creation_params				create_render_target;
-            set_target_cmd						set_targets;
-            set_target_cube_cmd					set_targets_cube;
-            clear_cube_cmd						clear_cube;
+            u32                                 command_data_index;
+            shader_load_params                  shader_load;
+            set_shader_cmd                      set_shader;
+            input_layout_creation_params        create_input_layout;
+            buffer_creation_params              create_buffer;
+            set_vertex_buffer_cmd               set_vertex_buffer;
+            set_index_buffer_cmd                set_index_buffer;
+            draw_cmd                            draw;
+            draw_indexed_cmd                    draw_indexed;
+            texture_creation_params             create_texture2d;
+            sampler_creation_params             create_sampler;
+            set_texture_cmd                     set_texture;
+            rasteriser_state_creation_params    create_raster_state;
+            viewport                            set_viewport;
+            blend_creation_params               create_blend_state;
+            set_constant_buffer_cmd             set_constant_buffer;
+            update_buffer_cmd                   update_buffer;
+            depth_stencil_creation_params*      p_create_depth_stencil_state;
+            query_params                        set_query;
+            query_create_params                 create_query;
+            texture_creation_params             create_render_target;
+            set_target_cmd                      set_targets;
+            set_target_cube_cmd                 set_targets_cube;
+            clear_cube_cmd                      clear_cube;
         };
         
     } deferred_cmd;
