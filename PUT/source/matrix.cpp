@@ -94,30 +94,30 @@ void mat4::create_cardinal_rotation(s32 axis, f32 theta)
     {
         case X_AXIS:
         {
-            m[ 0] = 1.0f; m[ 1] = 0.0f;		  m[ 2] = 0.0f;		m[ 3] = 0.0f;
+            m[ 0] = 1.0f; m[ 1] = 0.0f;		  m[ 2] = 0.0f;         m[ 3] = 0.0f;
             m[ 4] = 0.0f; m[ 5] = cos_theta;  m[ 6] = -sin_theta;	m[ 7] = 0.0f;
-            m[ 8] = 0.0f; m[ 9] = sin_theta;  m[10] = cos_theta;  m[11] = 0.0f;
-            m[12] = 0.0f; m[13] = 0.0f;		  m[14] = 0.0f;		m[15] = 1.0f;
+            m[ 8] = 0.0f; m[ 9] = sin_theta;  m[10] = cos_theta;    m[11] = 0.0f;
+            m[12] = 0.0f; m[13] = 0.0f;		  m[14] = 0.0f;         m[15] = 1.0f;
             
         }
             break;
             
         case Y_AXIS:
         {
-            m[ 0] = cos_theta; m[ 1] = 0.0f; m[ 2] = sin_theta; m[ 3] = 0.0f;
-            m[ 4] = 0.0f;		 m[ 5] = 1.0f; m[ 6] = 0.0f;	   m[ 7] = 0.0f;
-            m[ 8] = -sin_theta; m[ 9] = 0.0f; m[10] = cos_theta;  m[11] = 0.0f;
-            m[12] = 0.0f;		 m[13] = 0.0f; m[14] = 0.0f;	   m[15] = 1.0f;
+            m[ 0] = cos_theta;  m[ 1] = 0.0f; m[ 2] = sin_theta;    m[ 3] = 0.0f;
+            m[ 4] = 0.0f;		m[ 5] = 1.0f; m[ 6] = 0.0f;         m[ 7] = 0.0f;
+            m[ 8] = -sin_theta; m[ 9] = 0.0f; m[10] = cos_theta;    m[11] = 0.0f;
+            m[12] = 0.0f;		m[13] = 0.0f; m[14] = 0.0f;         m[15] = 1.0f;
             
         }
             break;
             
         case Z_AXIS:
         {
-            m[ 0] = cos_theta;  m[ 1] = -sin_theta;  m[ 2] = 0.0f; m[ 3] = 0.0f;
-            m[ 4] = sin_theta; m[ 5] = cos_theta;  m[ 6] = 0.0f; m[ 7] = 0.0f;
-            m[ 8] = 0.0f;		  m[ 9] = 0.0f;		m[10] = 1.0f; m[11] = 0.0f;
-            m[12] = 0.0f;		  m[13] = 0.0f;		m[14] = 0.0f; m[15] = 1.0f;
+            m[ 0] = cos_theta;    m[ 1] = -sin_theta;   m[ 2] = 0.0f;   m[ 3] = 0.0f;
+            m[ 4] = sin_theta;    m[ 5] = cos_theta;    m[ 6] = 0.0f;   m[ 7] = 0.0f;
+            m[ 8] = 0.0f;		  m[ 9] = 0.0f;         m[10] = 1.0f;   m[11] = 0.0f;
+            m[12] = 0.0f;		  m[13] = 0.0f;         m[14] = 0.0f;   m[15] = 1.0f;
             
         }
             break;
@@ -167,7 +167,7 @@ void mat4::create_scale(vec3f s)
 
 void mat4::create_bias()
 {
-    m[ 0] = 0.5f; m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = 0.5f;
+    m[ 0] = 0.5f;   m[ 1] = 0.0f;   m[ 2] = 0.0f;   m[ 3] = 0.5f;
     m[ 4] = 0.0f;	m[ 5] = 0.5f;	m[ 6] = 0.0f;	m[ 7] = 0.5f;
     m[ 8] = 0.0f;	m[ 9] = 0.0f;	m[10] = 0.5f;	m[11] = 0.5f;
     m[12] = 0.0f;	m[13] = 0.0f;	m[14] = 0.0f;	m[15] = 1.0f;

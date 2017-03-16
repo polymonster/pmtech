@@ -66,8 +66,6 @@ int main(int argc, char **argv)
     
     [pool drain];
     
-    
-    
     while( 1 )
     {
         [_gl_context makeCurrentContext];
