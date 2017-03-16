@@ -905,7 +905,7 @@ namespace pen
 	}
 
 	//--------------------------------------------------------------------------------------
-	// D3D Tutorial
+	// D3D Device Creation
 	//--------------------------------------------------------------------------------------
 	u32 renderer_init_from_window( void* params )
 	{
@@ -981,8 +981,6 @@ namespace pen
 		}
 		if (FAILED(hr))
 			return hr;
-
-
 
 		// Create swap chain
 		IDXGIFactory2* dxgiFactory2 = nullptr;

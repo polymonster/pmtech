@@ -14,7 +14,7 @@ pen::window_creation_params pen_window
 
 typedef struct vertex
 {
-    float x, y, z;
+    float x, y, z, w;
 } vertex;
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -85,9 +85,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //create vertex buffer
     vertex vertices[] =
     {
-        0.0f, 0.5f, 0.5f,
-        0.5f, -0.5f, 0.5f,
-        -0.5f, -0.5f, 0.5f,
+        0.0f, 0.5f, 0.5f, 1.0f,
+        0.5f, -0.5f, 0.5f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 1.0f
     };
 
     pen::buffer_creation_params bcp;

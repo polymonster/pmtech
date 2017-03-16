@@ -1,5 +1,5 @@
-dofile "../PEN/premake_globals.lua"
-dofile "../PEN/premake_app.lua"
+dofile "../tools/premake/globals.lua"
+dofile "../tools/premake/app_template.lua"
 
 -- Solution
 solution "pen_examples"

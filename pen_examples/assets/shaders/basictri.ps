@@ -3,7 +3,6 @@ struct vs_output
 	float4 pos : SV_POSITION0;
 };
 
-/*
 struct ps_output
 {
 	float4 colour : SV_Target;
@@ -16,10 +15,4 @@ ps_output main( vs_output input )
 	output.colour = float4( 1.0f, 1.0f, 0.0f, 1.0f );
 	
     return output;
-}
-*/;
-
-float4 main( vs_output input ) : SV_Target
-{
-    return ( 1.0f, 1.0f, 0.0f, 1.0f );  
 }
