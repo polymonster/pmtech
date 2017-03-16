@@ -12,7 +12,8 @@ project "pen"
 		"include\\" .. renderer_dir .. "\\**.h",
 		
 		"source\\" .. platform_dir .. "\\**.cpp",
-		"source\\" .. platform_dir .. "\\**.mm" 
+		"source\\" .. platform_dir .. "\\**.mm", 
+		"source\\common\\**.cpp",
 	}
 	
 	includedirs 

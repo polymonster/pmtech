@@ -36,7 +36,6 @@ namespace pen
 	{
 		window_params* wp = (window_params*)params;
 
-
 		// Register class
 		WNDCLASSEXA wcex;
 		ZeroMemory(&wcex, sizeof(WNDCLASSEXA));
@@ -142,7 +141,7 @@ namespace pen
 			break;
 
 		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
+			return DefWindowProcA(hWnd, message, wParam, lParam);
 		}
 
 		return 0;

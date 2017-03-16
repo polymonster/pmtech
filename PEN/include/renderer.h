@@ -7,12 +7,26 @@
 //--------------------------------------------------------------------------------------
 //  TOKENS
 //--------------------------------------------------------------------------------------
-#define PEN_CLEAR_COLOUR_BUFFER		0x01
-#define PEN_CLEAR_DEPTH_BUFFER		0x02
-#define PEN_SHADER_TYPE_VS			0x03
-#define PEN_SHADER_TYPE_PS			0x04
-#define PEN_SHADER_TYPE_GS			0x05
-#define PEN_SHADER_NULL				0xffffff
+enum special_values
+{
+    PEN_CLEAR_COLOUR_BUFFER		=   0x01,
+    PEN_CLEAR_DEPTH_BUFFER		=   0x02,
+    PEN_SHADER_NULL             =   0xffffff
+};
+
+enum shader_type
+{
+    PEN_SHADER_TYPE_VS          = 0x03,
+    PEN_SHADER_TYPE_PS          = 0x04,
+    PEN_SHADER_TYPE_GS          = 0x05
+};
+
+enum resource_types
+{
+    DIRECT_RESOURCE             = 0x01,
+    DEFER_RESOURCE              = 0x02,
+    MAX_RESOURCES			    = 10000, 
+};
 
 namespace pen
 {
@@ -179,10 +193,19 @@ namespace pen
 	//  COMMON FUNCTIONS
 	//--------------------------------------------------------------------------------------
 	
-	PEN_THREAD_RETURN	renderer_init( void* params );
+    //runs on its own thread - will wait for jobs flagged by semaphone
+	PEN_THREAD_RETURN	renderer_init_thread( void* params );
+
+    //initialised to run from another thread - call renderer_poll_for_jobs 
+    void                renderer_init( void* params );
 	
+    //using these functions will give the renderer a dedicated thread 
 	void				renderer_thread_init( );
 	void				renderer_wait_init( );
+    void				renderer_wait_for_jobs( );
+
+    //poll can be used to render on the main thread
+    void                renderer_poll_for_jobs();
 
 	u32					renderer_init_from_window( void* window );
 	void				renderer_destroy( );
@@ -190,9 +213,7 @@ namespace pen
 	u32					renderer_create_clear_state( const clear_state &cs );
 
 	f64					renderer_get_last_query(u32 query_index);
-
-	void				renderer_wait_for_jobs( );
-
+    
 	//--------------------------------------------------------------------------------------
 	//  DIRECT API
 	//--------------------------------------------------------------------------------------
@@ -339,8 +360,6 @@ namespace pen
 		//cmd specific
 		void	renderer_consume_cmd_buffer();
 		void	renderer_update_queries();
-
-		void	test_function( );
 	}
 }
 
