@@ -8,9 +8,15 @@ namespace pen
 	struct thread;
 	struct mutex;
 	struct semaphore;
+    
+    enum thread_start_flags : u32
+    {
+        THREAD_START_DETACHED = 1,
+        THREAD_START_JOINABLE = 2
+    };
 
 	//threads
-	pen::thread*	threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, u32 flags );
+	pen::thread*	threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags );
 	void			threads_destroy( pen::thread* p_thread );
 	void			threads_suspend( pen::thread* p_thread );
 
@@ -36,4 +42,3 @@ namespace pen
 
 
 #endif
-

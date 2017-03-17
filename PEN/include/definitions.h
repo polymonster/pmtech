@@ -7,8 +7,8 @@
 #define PEN_THREAD_ROUTINE( FP )        LPTHREAD_START_ROUTINE FP
 #define PEN_THREAD_RETURN               DWORD WINAPI
 #else
-#define PEN_THREAD_RETURN               unsigned long
-#define PEN_THREAD_ROUTINE( FP )		void (*FP)(void* data)
+#define PEN_THREAD_RETURN               void*
+#define PEN_THREAD_ROUTINE( FP )		PEN_THREAD_RETURN (*FP)(void* data)
 #endif
 
 //c++

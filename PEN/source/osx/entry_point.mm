@@ -1,13 +1,16 @@
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/gl3.h>
-#include <unistd.h>
 
 #include "window.h"
 #include "pen.h"
+#include "threads.h"
 
 NSOpenGLView* _gl_view;
-NSWindow * _window;
+IBOutlet NSWindow * _window;
 NSOpenGLContext* _gl_context;
+
+extern pen::window_creation_params pen_window;
+extern PEN_THREAD_RETURN pen::game_entry( void* params );
 
 void create_gl_context()
 {
@@ -42,8 +45,6 @@ void create_gl_context()
     _gl_context = glContext;
 }
 
-extern pen::window_creation_params pen_window;
-
 int main(int argc, char **argv)
 {
     //window creation
@@ -62,10 +63,16 @@ int main(int argc, char **argv)
 
     [_window makeKeyAndOrderFront: _window];
     
+    [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
+    
     create_gl_context();
     
     [pool drain];
     
+    //create game thread
+    pen::threads_create( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
+    
+    //main thread loop
     while( 1 )
     {
         [_gl_context makeCurrentContext];
@@ -86,8 +93,8 @@ int main(int argc, char **argv)
 
         [NSApp sendEvent:peekEvent];
         [NSApp updateWindows];
-        
+    
         //sleep a bit
-        usleep(16000);
+        pen::threads_sleep_ms( 16 );
     }
 }

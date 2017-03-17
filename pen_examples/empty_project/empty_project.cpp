@@ -1,4 +1,5 @@
 #include "pen.h"
+#include "threads.h"
 
 pen::window_creation_params pen_window
 {
@@ -10,5 +11,12 @@ pen::window_creation_params pen_window
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
-	return 0;
+    for( ;; )
+    {
+        pen::string_output_debug("oh hai\n");
+        
+        pen::threads_sleep_us(16000);
+    }
+    
+	return nullptr;
 }

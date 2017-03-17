@@ -23,7 +23,7 @@ namespace pen
 #define MAX_COMMANDS 10000
 #define INC_WRAP( V ) V = (V+1)%MAX_COMMANDS
     
-    typedef enum	commands
+    enum commands : u32
     {
         CMD_NONE = 0,
         CMD_CLEAR,
@@ -242,13 +242,8 @@ namespace pen
             case CMD_CREATE_INPUT_LAYOUT:
                 direct::renderer_create_input_layout( cmd.create_input_layout );
                 pen::memory_free( cmd.create_input_layout.vs_byte_code );
-                
-                //clan up copied mem
                 for( u32 i = 0; i < cmd.create_input_layout.num_elements; ++i )
-                {
                     pen::memory_free( cmd.create_input_layout.input_layout[ i ].semantic_name );
-                }
-                
                 pen::memory_free( cmd.create_input_layout.input_layout );
                 break;
                 
@@ -527,7 +522,7 @@ namespace pen
         
         renderer_wait_for_jobs();
         
-        return 1;
+        return nullptr;
     }
     
     

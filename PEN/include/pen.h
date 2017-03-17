@@ -4,6 +4,7 @@
 #include "definitions.h"
 #include "renderer.h"
 #include "memory.h"
+#include "pen_string.h"
 
 namespace pen
 {
