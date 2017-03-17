@@ -18,5 +18,5 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::threads_sleep_us(16000);
     }
     
-	return nullptr;
+	return PEN_OK;
 }

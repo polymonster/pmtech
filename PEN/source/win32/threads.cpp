@@ -20,7 +20,7 @@ namespace pen
 		HANDLE  handle;
 	} semaphore;
 
-	pen::thread* threads_create( PEN_THREAD_ROUTINE thread_func, u32 stack_size, void* thread_params, u32 flags )
+	pen::thread* threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags )
 	{
 		pen::thread* new_thread = (pen::thread*)pen::memory_alloc( sizeof( pen::thread ) );
 

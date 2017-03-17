@@ -62,12 +62,22 @@ namespace pen
 		RECT rc = { 0, 0, pen_window.width, pen_window.height };
 		AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
+        RECT desktop_rect;
+        GetClientRect( GetDesktopWindow(), &desktop_rect );
+
+        LONG screen_mid_x = (desktop_rect.right - desktop_rect.left) / 2;
+        LONG screen_mid_y = (desktop_rect.bottom - desktop_rect.top) / 2;
+
+        LONG half_window_x = (rc.right - rc.left) / 2;
+        LONG half_window_y = (rc.bottom - rc.top) / 2;
+
 		g_hwnd = CreateWindowA(
 			pen_window.window_title, pen_window.window_title,
 			WS_OVERLAPPEDWINDOW,
-			CW_USEDEFAULT, 
-			CW_USEDEFAULT, 
-			rc.right - rc.left, rc.bottom - rc.top, 
+			screen_mid_x - half_window_x, 
+			screen_mid_y - half_window_y, 
+			rc.right - rc.left, 
+            rc.bottom - rc.top, 
 			nullptr, nullptr, 
 			wp->hinstance,
 			nullptr);

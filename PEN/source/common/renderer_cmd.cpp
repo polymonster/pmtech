@@ -522,7 +522,7 @@ namespace pen
         
         renderer_wait_for_jobs();
         
-        return nullptr;
+        return PEN_OK;
     }
     
     

@@ -40,7 +40,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     if( dedicated_render_thread )
     {
         pen::renderer_thread_init();
-        p_renderer_thread = pen::threads_create( pen::renderer_init_thread, 1024 * 1024, &rp, 0 );
+        p_renderer_thread = pen::threads_create( pen::renderer_init_thread, 1024 * 1024, &rp, pen::THREAD_START_DETACHED );
         pen::renderer_wait_init();
     }
     else
@@ -49,7 +49,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
 
 	//after renderer is initialised kick of the game thread
-	pen::thread* p_game_thread	   = pen::threads_create( pen::game_entry, 1024*1024, nullptr, 0 );
+	pen::thread* p_game_thread	   = pen::threads_create( pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
 
 	// Main message loop
 	MSG msg = { 0 };
