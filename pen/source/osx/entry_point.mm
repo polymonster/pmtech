@@ -4,13 +4,24 @@
 #include "window.h"
 #include "pen.h"
 #include "threads.h"
+#include "renderer.h"
 
 NSOpenGLView* _gl_view;
-IBOutlet NSWindow * _window;
+NSWindow * _window;
 NSOpenGLContext* _gl_context;
 
 extern pen::window_creation_params pen_window;
 extern PEN_THREAD_RETURN pen::game_entry( void* params );
+
+void pen_make_gl_context_current( )
+{
+    [_gl_context makeCurrentContext];
+}
+
+void pen_gl_swap_buffers( )
+{
+    [_gl_context flushBuffer];
+}
 
 void create_gl_context()
 {
@@ -74,17 +85,14 @@ int main(int argc, char **argv)
     //create game thread
     pen::threads_create( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
     
+    //create render thread
+    pen::threads_create( &pen::renderer_init_thread, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
+    
     //main thread loop
     while( 1 )
     {
-        [_gl_context makeCurrentContext];
-        
-        glUseProgram(0);
-        
         glClearColor( 0.8f, 0.8f, 1.0f, 1.0f );
         glClear(GL_COLOR_BUFFER_BIT);
-        
-        [_gl_context flushBuffer];
         
         NSEvent* peekEvent = [NSApp
                     nextEventMatchingMask:NSEventMaskAny

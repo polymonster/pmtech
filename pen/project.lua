@@ -12,6 +12,8 @@ project "pen"
 		"include/" .. platform_dir .. "/**.h", 
 		"include/" .. renderer_dir .. "/**.h",
 		
+		"source/" .. renderer_dir .. "/**.cpp",
+		
 		"source/" .. platform_dir .. "/**.cpp",
 		"source/" .. platform_dir .. "/**.mm",
 	}

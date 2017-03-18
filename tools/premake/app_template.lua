@@ -17,6 +17,7 @@ project ( project_name )
 		"..\\pen\\include\\common", 
 		"..\\pen\\include\\" .. platform_dir,
 		"..\\pen\\include\\" .. renderer_dir,
+		
 		"include\\"
 	}
 	
@@ -24,7 +25,8 @@ project ( project_name )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
 	debugdir ( root_directory .. "/bin/" .. platform_dir)
 	
-	if platform_dir == "win32" then 
+	if platform_dir == "win32" 
+	then 
 		links 
 		{ 
 			"d3d11.lib", 
@@ -33,7 +35,8 @@ project ( project_name )
 			"comctl32.lib", 
 			"fmodex_vc.lib", 
 		}
-	elseif platform_dir == "osx" then
+	elseif platform_dir == "osx" 
+	then
 		links 
 		{ 
 			"pen",
