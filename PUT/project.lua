@@ -12,7 +12,7 @@ project "put"
 	
 	includedirs
 	{ 
-		"..\\PEN\\include", 
+		"..\\PEN\\include\\common", 
 		"..\\PEN\\include\\" .. platform_dir,
 		"..\\PEN\\include\\" .. renderer_dir,  
 		"..\\PEN\\third_party\\bullet\\include"

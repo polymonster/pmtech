@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     [NSApplication sharedApplication];
     NSLog(@"NSApp=%@", NSApp);
 
-    NSRect frame = NSMakeRect(100, 100, pen_window.width, pen_window.height);
+    NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
     
     NSUInteger style_mask = NSWindowStyleMaskTitled;
     
@@ -64,6 +64,8 @@ int main(int argc, char **argv)
     [_window makeKeyAndOrderFront: _window];
     
     [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
+    
+    [_window center];
     
     create_gl_context();
     

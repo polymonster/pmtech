@@ -13,7 +13,7 @@ project ( project_name )
 	
 	includedirs
 	{ 
-		"..\\PEN\\include", 
+		"..\\PEN\\include\\common", 
 		"..\\PEN\\include\\" .. platform_dir,
 		"..\\PEN\\include\\" .. renderer_dir,
 		"include\\"
