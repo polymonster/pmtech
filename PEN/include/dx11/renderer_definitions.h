@@ -31,6 +31,12 @@ enum usage : s32
     PEN_USAGE_STAGING = D3D11_USAGE_STAGING
 };
 
+enum input_classification
+{
+    PEN_INPUT_PER_VERTEX = 0,
+    PEN_INPUT_PER_INSTANCE = 1
+};
+
 enum bind_flags : s32
 {
     PEN_BIND_VERTEX_BUFFER = D3D11_BIND_VERTEX_BUFFER,

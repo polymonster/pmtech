@@ -71,11 +71,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		Sleep( 2 );
 	}
 
-    if(p_renderer_thread)
-	    pen::threads_suspend( p_renderer_thread );
-
-	pen::threads_suspend( p_game_thread );
-
     //todo
 	//pen::renderer_destroy();
 
