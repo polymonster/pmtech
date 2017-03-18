@@ -10,10 +10,10 @@ solution "pen_examples"
 	linkoptions { link_cmd }
 	
 -- Engine Project	
-dofile "../PEN/project.lua"
+dofile "../pen/project.lua"
 
 -- Toolkit Project	
--- dofile "..//PUT//project.lua"
+-- dofile "../put/project.lua"
 
 -- Example projects	
 create_app( "empty_project", script_path() )

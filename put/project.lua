@@ -6,16 +6,18 @@ project "put"
 	
 	libdirs
 	{ 
-		"..\\PEN\\lib\\" .. platform_dir,
-		"..\\PEN\\third_party\\bullet\\lib",
+		"../pen/lib/" .. platform_dir,
+		
+		"../pen/third_party/bullet/lib",
 	}
 	
 	includedirs
 	{ 
-		"..\\PEN\\include\\common", 
-		"..\\PEN\\include\\" .. platform_dir,
-		"..\\PEN\\include\\" .. renderer_dir,  
-		"..\\PEN\\third_party\\bullet\\include"
+		"..\\pen\\include\\common", 
+		"..\\pen\\include\\" .. platform_dir,
+		"..\\pen\\include\\" .. renderer_dir,
+		  
+		"..\\pen\\third_party\\bullet\\include"
 	}
 		
 	files { "include\\**.h", "source\\**.cpp" }
@@ -25,13 +27,13 @@ project "put"
 		defines { "DEBUG" }
 		flags { "WinMain" }
 		symbols "On"
-		targetdir ("lib\\" .. platform_dir)
+		targetdir ("lib/" .. platform_dir)
 		targetname "put_d"
 		links { "bullet_monolithic_do.lib" }
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
-		targetdir ("lib\\" .. platform_dir)
+		targetdir ("lib/" .. platform_dir)
 		targetname "put"
 		links { "bullet_monolithic.lib" }

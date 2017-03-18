@@ -1,5 +1,6 @@
 #include "pen.h"
 #include "threads.h"
+#include "filesystem.h"
 
 pen::window_creation_params pen_window
 {
@@ -11,9 +12,12 @@ pen::window_creation_params pen_window
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
+    filesystem_enumeration results;
+    pen::filesystem_enum_directory(L"/Users/alex.dixon/ö_ppppp", results);
+    
     for( ;; )
     {
-        pen::string_output_debug("oh hai\n");
+        pen::string_output_debug("oh hai ö\n");
         
         pen::threads_sleep_us(16000);
     }

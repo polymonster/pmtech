@@ -5,17 +5,18 @@ project ( project_name )
 	
 	libdirs
 	{ 
-		"..\\PEN\\lib\\" .. platform_dir, 
-		"..\\PEN\\third_party\\fmod\\lib",
-		"..\\PEN\\third_party\\bullet\\lib",
-		"..\\PEN\\..\\PUT\\lib\\" .. platform_dir
+		"../pen/lib/" .. platform_dir, 
+		"../put/lib/" .. platform_dir,
+				
+		"../pen/third_party/fmod/lib",
+		"../pen/third_party/bullet/lib",
 	}
 	
 	includedirs
 	{ 
-		"..\\PEN\\include\\common", 
-		"..\\PEN\\include\\" .. platform_dir,
-		"..\\PEN\\include\\" .. renderer_dir,
+		"..\\pen\\include\\common", 
+		"..\\pen\\include\\" .. platform_dir,
+		"..\\pen\\include\\" .. renderer_dir,
 		"include\\"
 	}
 	
@@ -31,14 +32,14 @@ project ( project_name )
 			"winmm.lib", 
 			"comctl32.lib", 
 			"fmodex_vc.lib", 
-			"pen"
 		}
 	elseif platform_dir == "osx" then
 		links 
 		{ 
 			"pen",
 			"Cocoa.framework",
-			"OpenGL.framework"
+			"OpenGL.framework",
+			"iconv"
 		}
 	end
 
@@ -54,10 +55,12 @@ project ( project_name )
 		defines { "DEBUG" }
 		flags { "WinMain" }
 		symbols "On"
-		targetname (project_name .. "d")
+		targetname (project_name .. "_d")
+		links { "pen_d" }
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetname (project_name)
+		links { "pen" }
 end

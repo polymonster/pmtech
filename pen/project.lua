@@ -6,31 +6,31 @@ project "pen"
 	
 	files 
 	{ 
-		"include\\common\\**.h",
-		"source\\common\\**.cpp",
+		"include/common/**.h",
+		"source/common/**.cpp",
 		 
-		"include\\" .. platform_dir .. "\\**.h", 
-		"include\\" .. renderer_dir .. "\\**.h",
+		"include/" .. platform_dir .. "/**.h", 
+		"include/" .. renderer_dir .. "/**.h",
 		
-		"source\\" .. platform_dir .. "\\**.cpp",
-		"source\\" .. platform_dir .. "\\**.mm",
+		"source/" .. platform_dir .. "/**.cpp",
+		"source/" .. platform_dir .. "/**.mm",
 	}
 	
 	if platform_dir == "osx" then
 	files 
 	{  
-		"source\\posix\\**.cpp"
+		"source/posix/**.cpp"
 	}
 	end 
 	
 	includedirs 
 	{ 
-		"include\\common",
+		"include/common",
 		 
-		"include\\" .. platform_dir, 
-		"include\\" .. renderer_dir,
+		"include/" .. platform_dir, 
+		"include/" .. renderer_dir,
 		
-		"third_party\\fmod\\inc" 
+		"third_party/fmod/inc" 
 	}
 		
 	configuration "Debug"
