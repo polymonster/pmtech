@@ -194,21 +194,17 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	
     //runs on its own thread - will wait for jobs flagged by semaphone
+    void				renderer_thread_init();
+    void				renderer_wait_init();
 	PEN_THREAD_RETURN	renderer_init_thread( void* params );
 
     //initialised to run from another thread - call renderer_poll_for_jobs 
     void                renderer_init( void* params );
 	
-    //using these functions will give the renderer a dedicated thread 
-	void				renderer_thread_init( );
-	void				renderer_wait_init( );
-    void				renderer_wait_for_jobs( );
+    void				renderer_destroy( );
 
     //poll can be used to render on the main thread
     void                renderer_poll_for_jobs();
-
-	u32					renderer_init_from_window( void* window );
-	void				renderer_destroy( );
 
 	u32					renderer_create_clear_state( const clear_state &cs );
 

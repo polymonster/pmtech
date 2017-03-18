@@ -427,7 +427,10 @@ namespace pen
     //--------------------------------------------------------------------------------------
     //  THREAD SYNCRONISATION
     //--------------------------------------------------------------------------------------
-    
+
+    void				renderer_wait_for_jobs();
+    u32					renderer_init_from_window( void* window );
+
     pen::semaphore*			 p_consume_semaphore;
     pen::semaphore*			 p_continue_semaphore;
     
