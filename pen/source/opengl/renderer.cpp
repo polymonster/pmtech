@@ -395,7 +395,7 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	// Clean up the objects we've created
 	//--------------------------------------------------------------------------------------
-    u32 pen::renderer_init_from_window( void* )
+    u32 renderer_init_from_window( void* )
     {
         
     }

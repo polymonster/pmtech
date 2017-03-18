@@ -1,5 +1,9 @@
 #include "timer.h"
 #include "pen_string.h"
+#include <signal.h>
+#include <time.h>
+
+
 
 namespace pen
 {
@@ -7,7 +11,7 @@ namespace pen
 
 	typedef struct timer
 	{
-		LARGE_INTEGER last_start;
+		//LARGE_INTEGER last_start;
 
 		f32 accumulated;
 		f32 longest;
@@ -19,7 +23,7 @@ namespace pen
 
 	} timer;
 
-	LARGE_INTEGER permonace_frequency;
+	//LARGE_INTEGER permonace_frequency;
 	f32			  ticks_to_ms;
 	timer		  timers[ MAX_TIMERS ];
 
@@ -27,9 +31,9 @@ namespace pen
 
 	void timer_system_intialise( )
 	{
-		QueryPerformanceFrequency( &permonace_frequency );
+		//QueryPerformanceFrequency( &permonace_frequency );
 
-		ticks_to_ms = (f32)( 1.0 / ( permonace_frequency.QuadPart / 1000.0 ) );
+		//ticks_to_ms = (f32)( 1.0 / ( permonace_frequency.QuadPart / 1000.0 ) );
 
 		next_free = MAX_TIMERS;
 
@@ -47,15 +51,15 @@ namespace pen
 
 	void timer_start( u32 index )
 	{
-		QueryPerformanceCounter( &timers[ index ].last_start );
+		//QueryPerformanceCounter( &timers[ index ].last_start );
 	}
 
 	void timer_accum( u32 index )
 	{
-		LARGE_INTEGER end_time;
-		QueryPerformanceCounter( &end_time );
+		//LARGE_INTEGER end_time;
+		//QueryPerformanceCounter( &end_time );
 
-		f32 last_duration = (f32)(end_time.QuadPart - timers[ index ].last_start.QuadPart);
+        f32 last_duration = 0; //(f32)(end_time.QuadPart - timers[ index ].last_start.QuadPart);
 
 		timers[ index ].accumulated += last_duration;
 		timers[ index ].hit_count++;
@@ -97,10 +101,12 @@ namespace pen
 
 	f32 timer_get_time( )
 	{
-		LARGE_INTEGER perf;
-		QueryPerformanceCounter( &perf );
+		//LARGE_INTEGER perf;
+		//QueryPerformanceCounter( &perf );
 
-		return (f32)( perf.QuadPart ) * ticks_to_ms;
+		//return (f32)( perf.QuadPart ) * ticks_to_ms;
+        
+        return 0.0f;
 	}
 
 	void timer_print( u32 timer_index )
