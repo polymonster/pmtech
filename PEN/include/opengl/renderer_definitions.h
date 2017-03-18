@@ -1,19 +1,20 @@
 #ifndef _renderer_definitions_h
 #define _renderer_definitions_h
 
-/*
+#import <OpenGL/gl3.h>
+
 //raster state
 enum raster_state : s32
 {
-    PEN_FILL_SOLID = D3D11_FILL_SOLID,
-    PEN_FILL_WIREFRAME = D3D11_FILL_WIREFRAME
+    PEN_FILL_SOLID = GL_FILL,
+    PEN_FILL_WIREFRAME = GL_LINE
 };
 
 enum cull_mode : s32
 {
-    PEN_CULL_NONE = D3D11_CULL_NONE,
-    PEN_CULL_FRONT = D3D11_CULL_FRONT,
-    PEN_CULL_BACK = D3D11_CULL_BACK
+    PEN_CULL_NONE = 0,
+    PEN_CULL_FRONT = GL_FRONT,
+    PEN_CULL_BACK = GL_BACK
 };
 
 enum default_targets : s32
@@ -22,6 +23,7 @@ enum default_targets : s32
     PEN_DEFAULT_DS = 2
 };
 
+/*
 enum usage : s32
 {
     PEN_USAGE_DEFAULT = D3D11_USAGE_DEFAULT,

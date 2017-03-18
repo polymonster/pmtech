@@ -18,7 +18,6 @@ namespace pen
 	//threads
 	pen::thread*	threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags );
 	void			threads_destroy( pen::thread* p_thread );
-	void			threads_suspend( pen::thread* p_thread );
 
 	//mutex
 	pen::mutex*		threads_mutex_create( );

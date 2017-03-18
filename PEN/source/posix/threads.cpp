@@ -13,7 +13,7 @@ namespace pen
 
 	typedef struct mutex
 	{
-        pthread_mutex_t* handle;
+        pthread_mutex_t handle;
 	} mutex;
 
 	typedef struct semaphore
@@ -47,80 +47,78 @@ namespace pen
 		return new_thread;
 	}
 
-	void threads_destroy( pen::thread* p_mutex )
+	void threads_destroy( pen::thread* p_thread )
 	{
-		//CloseHandle( p_mutex->handle );
+        pthread_cancel( p_thread->handle );
 
-		//pen::memory_free( p_mutex );
-	}
-
-	void threads_suspend( pen::thread* p_thread )
-	{
-		//SuspendThread( p_thread->handle );
+		pen::memory_free( p_thread );
 	}
 
 	pen::mutex* threads_mutex_create( )
 	{
-		//pen::mutex* new_mutex = (pen::mutex*)pen::memory_alloc( sizeof( pen::mutex ) );
+		pen::mutex* new_mutex = (pen::mutex*)pen::memory_alloc( sizeof( pen::mutex ) );
+        
+        int                 err;
+        pthread_mutexattr_t mta;
+        
+        err = pthread_mutexattr_init(&mta);
+        
+        err = pthread_mutex_init(&new_mutex->handle, &mta);
 
-		//InitializeCriticalSection( &new_mutex->cs );
-
-		return nullptr;
+		return new_mutex;
 	}
 
 	void threads_mutex_destroy( mutex* p_mutex )
 	{
-		//DeleteCriticalSection( &p_mutex->cs );
+        pthread_mutex_destroy( &p_mutex->handle );
 
-		//pen::memory_free( p_mutex );
+		pen::memory_free( p_mutex );
 	}
 
 	void threads_mutex_lock( mutex* p_mutex )
 	{
-		//EnterCriticalSection( &p_mutex->cs );
+        pthread_mutex_lock( &p_mutex->handle );
 	}
 
 	u32 threads_mutex_try_lock( mutex* p_mutex )
-	{		
-        return 0; //TryEnterCriticalSection( &p_mutex->cs );;
+	{
+        int err = pthread_mutex_trylock( &p_mutex->handle );
+        
+        return err == 0;
 	}
 
 	void threads_mutex_unlock( mutex* p_mutex )
 	{
-		//LeaveCriticalSection( &p_mutex->cs );
+        pthread_mutex_unlock( &p_mutex->handle );
 	}
 
 	pen::semaphore* threads_semaphore_create( u32 initial_count, u32 max_count )
 	{
-		//pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc( sizeof( pen::semaphore ) );
+		pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc( sizeof( pen::semaphore ) );
 
-		//new_semaphore->handle = CreateSemaphore( NULL, initial_count, max_count, NULL );
+        new_semaphore->handle = sem_open( "sem", O_CREAT, 0644, 0);
+        assert(!(new_semaphore->handle == (void*)-1));
 
-		return nullptr;
+		return new_semaphore;
 	}
 
 	void threads_semaphore_destroy( semaphore* p_semaphore )
 	{
-		//CloseHandle( p_semaphore->handle );
+        sem_close( p_semaphore->handle );
 
-		//pen::memory_free( p_semaphore );
+		pen::memory_free( p_semaphore );
 	}
 
 	bool threads_semaphore_wait( semaphore* p_semaphore )
 	{
-		//DWORD res = WaitForSingleObject( p_semaphore->handle, INFINITE );
-
-		//if( !res )
-		//{
-		//	return TRUE;
-		//}
-
-		//return FALSE;
+        sem_wait(p_semaphore->handle);
+        
+		return true;
 	}
 
 	void threads_semaphore_signal( semaphore* p_semaphore, u32 count )
 	{
-		//ReleaseSemaphore( p_semaphore->handle, count, NULL );
+        sem_post(p_semaphore->handle);
 	}
 
 	void threads_sleep_ms( u32 milliseconds )

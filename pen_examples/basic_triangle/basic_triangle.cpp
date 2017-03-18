@@ -137,5 +137,5 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_consume_cmd_buffer();
     }
 
-    return 0x01;
+    return PEN_OK;
 }
