@@ -96,9 +96,9 @@ namespace pen
 	{
 		pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc( sizeof( pen::semaphore ) );
 
-        new_semaphore->handle = sem_open( "sem", O_CREAT, 0644, 0);
+        new_semaphore->handle = sem_open( "sem", O_CREAT, 0644, 1);
         assert(!(new_semaphore->handle == (void*)-1));
-
+        
 		return new_semaphore;
 	}
 
@@ -111,7 +111,12 @@ namespace pen
 
 	bool threads_semaphore_wait( semaphore* p_semaphore )
 	{
-        sem_wait(p_semaphore->handle);
+        while( sem_trywait(p_semaphore->handle) == -1 )
+        {
+            pen::string_output_debug("I am actually waiting\n");
+        }
+        
+        //sem_wait(p_semaphore->handle);
         
 		return true;
 	}

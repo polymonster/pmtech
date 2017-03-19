@@ -86,14 +86,15 @@ int main(int argc, char **argv)
     pen::threads_create( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
     
     //create render thread
+    pen::renderer_thread_init();
+    
     pen::threads_create( &pen::renderer_init_thread, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
+    
+    pen::renderer_wait_init();
     
     //main thread loop
     while( 1 )
     {
-        glClearColor( 0.8f, 0.8f, 1.0f, 1.0f );
-        glClear(GL_COLOR_BUFFER_BIT);
-        
         NSEvent* peekEvent = [NSApp
                     nextEventMatchingMask:NSEventMaskAny
                     untilDate:[NSDate distantPast] // do not wait for event

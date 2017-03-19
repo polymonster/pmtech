@@ -15,6 +15,9 @@
 
 extern pen::window_creation_params pen_window;
 
+extern void pen_make_gl_context_current( );
+extern void pen_gl_swap_buffers( );
+
 namespace pen
 {
 	//--------------------------------------------------------------------------------------
@@ -159,7 +162,16 @@ namespace pen
 
 	void direct::renderer_clear( u32 clear_state_index, u32 colour_face, u32 depth_face )
 	{
-
+        pen_make_gl_context_current();
+        
+        resource_allocation& rc = resource_pool[ clear_state_index ];
+        
+        glClearColor( rc.clear_state->rgba[ 0 ], rc.clear_state->rgba[ 1 ], rc.clear_state->rgba[ 2 ], rc.clear_state->rgba[ 3 ] );
+        glClearDepth( rc.clear_state->depth );
+        
+        glClear( rc.clear_state->flags );
+        
+        pen_gl_swap_buffers();
 	}
 
 	void direct::renderer_present( )
