@@ -1,9 +1,34 @@
+--add extension options
+newoption 
+{
+   trigger     = "renderer",
+   value       = "API",
+   description = "Choose a renderer",
+   allowed = 
+   {
+      { "opengl", "OpenGL" },
+      { "dx11",  "DirectX 11 (Windows only)" },
+   }
+}
+
+newoption 
+{
+   trigger     = "xcode_target",
+   value       = "TARGET",
+   description = "Choose an xcode build target",
+   allowed = 
+   {
+      { "osx", "OSX" },
+      { "ios",  "iOS" },
+   }
+}
+
 dofile "../tools/premake/globals.lua"
 dofile "../tools/premake/app_template.lua"
 
 -- Solution
 solution "pen_examples"
-	location "build"
+	location ("build/" .. platform_dir ) 
 	configurations { "Debug", "Release" }
 	startproject "basic_triangle"
 	buildoptions { build_cmd }

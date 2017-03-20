@@ -1,7 +1,21 @@
 #ifndef _renderer_definitions_h
 #define _renderer_definitions_h
 
-#import <OpenGL/gl3.h>
+#define PEN_GLES3
+
+#ifdef PEN_GLES3
+#include <OpenGLES/ES3/gl.h>
+#include <OpenGLES/ES3/glext.h>
+
+//for portability with regular gl
+#define GL_FILL 0x00                    //gl fill is the only polygon mode on gles3
+#define GL_LINE 0x00                    //gl line (wireframe) usupported
+
+#define glClearDepth glClearDepthf      //gl es has these type suffixes
+
+#else
+#include <OpenGL/gl3.h>
+#endif
 
 enum raster_state : s32
 {

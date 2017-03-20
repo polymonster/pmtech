@@ -1,3 +1,30 @@
+function add_osx_links()
+links 
+{ 
+	"Cocoa.framework",
+	"OpenGL.framework",
+	"iconv"
+}
+end
+
+function add_win32_links()
+links 
+{ 
+	"d3d11.lib", 
+	"dxguid.lib", 
+	"winmm.lib", 
+	"comctl32.lib", 
+	"fmodex_vc.lib", 
+}
+end
+
+function add_ios_links()
+links 
+{ 
+	"OpenGLES.framework"
+}
+end
+
 function create_app( project_name, root_directory )
 project ( project_name )
 	kind "WindowedApp"
@@ -14,36 +41,20 @@ project ( project_name )
 	
 	includedirs
 	{ 
-		"..\\pen\\include\\common", 
-		"..\\pen\\include\\" .. platform_dir,
-		"..\\pen\\include\\" .. renderer_dir,
+		"../pen/include/common", 
+		"../pen/include/" .. platform_dir,
+		"../pen/include/" .. renderer_dir,
 		
-		"include\\"
+		"include/"
 	}
 	
-	location ( root_directory .. "/build" )
+	location ( root_directory .. "/build/" .. platform_dir )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
 	debugdir ( root_directory .. "/bin/" .. platform_dir)
 	
-	if platform_dir == "win32" 
-	then 
-		links 
-		{ 
-			"d3d11.lib", 
-			"dxguid.lib", 
-			"winmm.lib", 
-			"comctl32.lib", 
-			"fmodex_vc.lib", 
-		}
-	elseif platform_dir == "osx" 
-	then
-		links 
-		{ 
-			"pen",
-			"Cocoa.framework",
-			"OpenGL.framework",
-			"iconv"
-		}
+	if platform_dir == "win32" then add_win32_links()
+	elseif platform_dir == "osx" then add_osx_links()
+	elseif platform_dir == "ios" then add_ios_links()
 	end
 
 	files 

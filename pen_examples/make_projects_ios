@@ -1,0 +1,3 @@
+#!/bin/bash
+cd "$(dirname "${BASH_SOURCE[0]}")"
+../tools/premake/premake5 xcode4 --renderer=opengl --xcode_target=ios
