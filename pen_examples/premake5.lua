@@ -38,11 +38,13 @@ solution "pen_examples"
 dofile "../pen/project.lua"
 
 -- Toolkit Project	
--- dofile "../put/project.lua"
+dofile "../put/project.lua"
 
 -- Example projects	
 create_app( "empty_project", script_path() )
 create_app( "basic_triangle", script_path() )
+create_app( "render_target", script_path() )
+create_app( "texturing", script_path() )
 
 	
 	
