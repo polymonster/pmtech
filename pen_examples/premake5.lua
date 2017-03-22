@@ -41,10 +41,11 @@ dofile "../pen/project.lua"
 dofile "../put/project.lua"
 
 -- Example projects	
-create_app( "empty_project", script_path() )
-create_app( "basic_triangle", script_path() )
-create_app( "render_target", script_path() )
-create_app( "texturing", script_path() )
+-- ( project name, current script dir, link "put" )
+create_app( "empty_project", script_path(), false )
+create_app( "basic_triangle", script_path(), false )
+create_app( "render_target", script_path(), true )
+create_app( "texturing", script_path(), true )
 
 	
 	

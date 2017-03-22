@@ -164,6 +164,7 @@ vec3f psmath::unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i vie
     return world_space_coordinates;
 }
 
+#if 0
 vec3f psmath::get_normal(TRIANGLE t1)
 {
     vec3f v1 = t1.m_vertices[2] - t1.m_vertices[0];
