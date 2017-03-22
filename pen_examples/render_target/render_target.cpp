@@ -38,7 +38,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     static pen::clear_state cs_rt =
     {
-        0.0f, 1.0, 0.0f, 1.0f, 0.0f, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        1.0f, 0.0, 0.0f, 1.0f, 1.0f, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
     u32 clear_state_rt = pen::renderer_create_clear_state( cs_rt );
@@ -47,7 +47,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero( &rcp, sizeof( rasteriser_state_creation_params ) );
     rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_BACK;
+    rcp.cull_mode = PEN_CULL_NONE;
     rcp.depth_bias_clamp = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
 
@@ -86,22 +86,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     tcp.flags = 0;
 
     u32 colour_render_target = pen::defer::renderer_create_render_target( tcp );
-
-    tcp.width = ( u32 ) vp_rt.width;
-    tcp.height = ( u32 ) vp_rt.height;
-    tcp.cpu_access_flags = 0;
-    tcp.format = PEN_FORMAT_R24G8_TYPELESS;
-    tcp.num_arrays = 1;
-    tcp.num_mips = 1;
-    tcp.bind_flags = PEN_BIND_DEPTH_STENCIL | PEN_BIND_SHADER_RESOURCE;
-    tcp.pixels_per_block = 1;
-    tcp.sample_count = 1;
-    tcp.sample_quality = 0;
-    tcp.block_size = 32;
-    tcp.usage = PEN_USAGE_DEFAULT;
-    tcp.flags = 0;
-
-    u32 depth_render_target = pen::defer::renderer_create_render_target( tcp );
 
     //load shaders now requiring dependency on put to make loading simpler.
     put::shader_program basic_tri_shader = put::loader_load_shader_program( "data\\shaders\\basictri.vsc", "data\\shaders\\basictri.psc", "data\\shaders\\basictri.vsi" );
@@ -168,7 +152,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.comparison_func = PEN_COMPARISON_NEVER;
+    scp.comparison_func = PEN_COMPARISON_ALWAYS;
     scp.min_lod = 0.0f;
     scp.max_lod = 4.0f;
 
@@ -181,8 +165,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         //bind and clear render target
         pen::defer::renderer_set_viewport( vp_rt );
-        pen::defer::renderer_set_colour_buffer( colour_render_target );
-        pen::defer::renderer_set_depth_buffer( depth_render_target );
+
+        pen::defer::renderer_set_targets( colour_render_target, PEN_NULL_DEPTH_BUFFER );
+
         pen::defer::renderer_clear( clear_state_rt );
 
         //draw tri into the render target
@@ -205,8 +190,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         //bind back buffer and clear
         pen::defer::renderer_set_viewport( vp );
-        pen::defer::renderer_set_colour_buffer( 0 );
-        pen::defer::renderer_set_depth_buffer( 0 );
+
+        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+
         pen::defer::renderer_clear( clear_state );
 
         //draw quad
@@ -225,10 +211,13 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
             pen::defer::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
 
             //bind render target as texture on sampler 0
-            pen::defer::renderer_set_texture( depth_render_target, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS );
+            pen::defer::renderer_set_texture( colour_render_target, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS );
 
             //draw
             pen::defer::renderer_draw_indexed( 6, 0, 0, PEN_PT_TRIANGLELIST );
+
+            //unbind render target from the sampler
+            pen::defer::renderer_set_texture( 0, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS );
         }
 
         //present 

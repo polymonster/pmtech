@@ -19,8 +19,10 @@ enum cull_mode : s32
 
 enum default_targets : s32
 {
+    PEN_NULL_COLOUR_BUFFER = 0,
+    PEN_NULL_DEPTH_BUFFER = 0,
     PEN_DEFAULT_RT = 1,
-    PEN_DEFAULT_DS = 2
+    PEN_DEFAULT_DS = 2,
 };
 
 enum usage : s32
