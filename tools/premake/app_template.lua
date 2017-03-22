@@ -23,7 +23,9 @@ links
 { 
 	"OpenGLES.framework",
 	"Foundation.framework",
-	"UIKit.framework"
+	"UIKit.framework",
+	"GLKit.framework",
+	"QuartzCore.framework"
 }
 end
 
@@ -31,6 +33,11 @@ function add_ios_files( project_name, root_directory )
 files 
 { 
 	root_directory .. "/" .. project_name .. "/ios_files/**.*"
+}
+
+excludes 
+{ 
+	root_directory .. "/" .. project_name .. "**.DS_Store"
 }
 end
 

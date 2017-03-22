@@ -1,9 +1,14 @@
+#import <UIKit/UIKit.h>
+#import <GLKit/GLKit.h>
+#import <QuartzCore/QuartzCore.h>
+
+#include <OpenGLES/ES2/gl.h>
+#include <OpenGLES/ES2/glext.h>
+
 #include "window.h"
 #include "pen.h"
 #include "threads.h"
-#include "renderer.h"
-
-#import <UIKit/UIKit.h>
+//#include "renderer.h"
 
 CAEAGLLayer* _eaglLayer;
 EAGLContext* _gl_context;
@@ -13,8 +18,8 @@ extern PEN_THREAD_RETURN pen::game_entry( void* params );
 
 void create_context( )
 {
-    EAGLRenderingAPI api = kEAGLRenderingAPIOpenGLES2;
-    _gl_context = [[EAGLContext alloc] initWithAPI:api];
+    //EAGLRenderingAPI api = kEAGLRenderingAPIOpenGLES2;
+    //_gl_context = [[EAGLContext alloc] initWithAPI:api];
 }
 
 void pen_make_gl_context_current( )
@@ -27,32 +32,7 @@ void pen_gl_swap_buffers( )
     //[_gl_context flushBuffer];
 }
 
-@interface gl_view_controller : UIViewController
-
-@end
-
-@interface gl_view_controller ()
-
-@end
-
-@implementation gl_view_controller
-
-- (void)viewDidLoad
-{
-    [super viewDidLoad];
-    
-    create_context();
-
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-}
-
-@end
-
-
-@interface gl_app_delegate : UIResponder <UIApplicationDelegate>
+@interface gl_app_delegate : UIResponder <UIApplicationDelegate, GLKViewDelegate, GLKViewControllerDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
 
@@ -66,17 +46,44 @@ void pen_gl_swap_buffers( )
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    self.window.rootViewController = [[gl_view_controller alloc] init];
+    CGRect window_rect = [[UIScreen mainScreen] bounds];
+    
+    self.window = [[UIWindow alloc] initWithFrame:window_rect];
+    
     self.window.backgroundColor = [UIColor whiteColor];
     [self.window makeKeyAndVisible];
     
-    return YES;
+    
+    EAGLContext * context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    GLKView *view = [[GLKView alloc] initWithFrame:window_rect];
+    view.context = context;
+    view.delegate = self;
+    [self.window addSubview:view];
+    
+    view.enableSetNeedsDisplay = NO;
+    CADisplayLink* displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(render:)];
+    [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    
+    GLKViewController * viewController = [[GLKViewController alloc] initWithNibName:nil bundle:nil]; // 1
+    viewController.view = view;
+    viewController.delegate = self;
+    viewController.preferredFramesPerSecond = 60;
+    self.window.rootViewController = viewController;
     
     // Override point for customization after application launch.
     return YES;
 }
 
+- (void)glkView:(GLKView *)view drawInRect:(CGRect)rect {
+    
+    glClearColor(1.0, 0.0, 1.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+
+- (void)render:(CADisplayLink*)displayLink {
+    GLKView * view = [self.window.subviews objectAtIndex:0];
+    [view display];
+}
 
 - (void)applicationWillResignActive:(UIApplication *)application
 {
