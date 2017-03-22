@@ -80,7 +80,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     ilp.input_layout[ 0 ].input_slot_class = PEN_INPUT_PER_VERTEX;
     ilp.input_layout[ 0 ].instance_data_step_rate = 0;
 
-    u32 input_layout = 0; //pen::defer::renderer_create_input_layout( ilp );
+    u32 input_layout = pen::defer::renderer_create_input_layout( ilp );
 
     //create vertex buffer
     vertex vertices[] =
@@ -133,8 +133,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         //present 
         pen::defer::renderer_present();
-
-        printf("consume command buffer\n");
         
         pen::defer::renderer_consume_cmd_buffer();
     }

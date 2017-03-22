@@ -188,7 +188,12 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	//  DIRECT API
 	//--------------------------------------------------------------------------------------
-	void direct::renderer_set_colour_buffer( u32 buffer_index )
+    void direct::renderer_make_context_current( )
+    {
+        //unused on dx11 so far
+    }
+
+   	void direct::renderer_set_colour_buffer( u32 buffer_index )
 	{
 		g_context.active_colour_target = buffer_index;
 
