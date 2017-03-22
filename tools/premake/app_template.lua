@@ -41,7 +41,7 @@ excludes
 }
 end
 
-function create_app( project_name, root_directory )
+function create_app( project_name, root_directory, link_put )
 project ( project_name )
 	kind "WindowedApp"
 	language "C++"
@@ -60,6 +60,7 @@ project ( project_name )
 		"../pen/include/common", 
 		"../pen/include/" .. platform_dir,
 		"../pen/include/" .. renderer_dir,
+		"../put/include/",
 		
 		"include/"
 	}
@@ -89,10 +90,14 @@ project ( project_name )
 		symbols "On"
 		targetname (project_name .. "_d")
 		links { "pen_d" }
- 
+		
+		if link_put then links { "put_d" } end
+  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetname (project_name)
 		links { "pen" }
+		
+		if link_put then links { "put_d" } end
 end
