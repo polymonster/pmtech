@@ -157,24 +157,25 @@ namespace pen
 	{
         
 	}
+    
+    void direct::renderer_make_context_current( )
+    {
+        pen_make_gl_context_current();
+    }
 
 	void direct::renderer_clear( u32 clear_state_index, u32 colour_face, u32 depth_face )
 	{
-        pen_make_gl_context_current();
-        
         resource_allocation& rc = resource_pool[ clear_state_index ];
         
         glClearColor( rc.clear_state->rgba[ 0 ], rc.clear_state->rgba[ 1 ], rc.clear_state->rgba[ 2 ], rc.clear_state->rgba[ 3 ] );
         glClearDepth( rc.clear_state->depth );
         
         glClear( rc.clear_state->flags );
-        
-        pen_gl_swap_buffers();
 	}
 
 	void direct::renderer_present( )
 	{
-
+        pen_gl_swap_buffers();
 	}
 
 	void direct::renderer_create_query( u32 query_type, u32 flags )
@@ -204,7 +205,16 @@ namespace pen
 	u32 direct::renderer_create_buffer( const buffer_creation_params &params )
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
-
+        
+        resource_allocation& res = resource_pool[resource_index];
+        
+        glGenBuffers(1, &res.handle);
+        
+        glBindBuffer(params.bind_flags, res.handle);
+        glBufferData(GL_ARRAY_BUFFER, params.buffer_size, params.data, params.usage_flags );
+        
+        pen::string_output_debug("created vertex buffer\n");
+        
 		return resource_index;
 	}
 
@@ -295,7 +305,8 @@ namespace pen
     
 	void direct::renderer_set_viewport( const viewport &vp )
 	{
-
+        glViewport( vp.x, vp.y, vp.width, vp.height );
+        glDepthRangef( vp.min_depth, vp.max_depth );
 	}
 
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )

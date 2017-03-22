@@ -215,6 +215,9 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	namespace direct
 	{
+        void    renderer_make_context_current();
+
+        
 		//clears
 		void	renderer_clear( u32 clear_state_index, u32 colour_face = 0, u32 depth_face = 0 );
 

@@ -3,8 +3,6 @@
 #include <signal.h>
 #include <time.h>
 
-
-
 namespace pen
 {
 #define MAX_TIMERS 100

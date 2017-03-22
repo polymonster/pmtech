@@ -212,6 +212,8 @@ namespace pen
     
     void exec_cmd( const deferred_cmd &cmd )
     {
+        printf( "exec cmd %i\n", cmd.command_index );
+        
         switch( cmd.command_index )
         {
             case CMD_CLEAR:
@@ -469,6 +471,9 @@ namespace pen
                 u32 end_pos = put_pos;
                 pen::threads_semaphore_signal( p_continue_semaphore, 1 );
                 
+                //some api's need to set the current context on the caller thread.
+                direct::renderer_make_context_current();
+                
                 while( get_pos != end_pos )
                 {
                     exec_cmd( cmd_buffer[ get_pos ] );
@@ -509,6 +514,8 @@ namespace pen
         //create thread sync primitives
         p_consume_semaphore = pen::threads_semaphore_create( 0, 1 );
         p_continue_semaphore = pen::threads_semaphore_create( 0, 1 );
+        
+        printf( "init render thread\n" );
     }
     
     void  renderer_init( void* params )
@@ -517,10 +524,14 @@ namespace pen
         
         //clear command buffer
         pen::memory_set( cmd_buffer, 0x0, sizeof( deferred_cmd ) * MAX_COMMANDS );
+        
+        printf( "render thread finished init\n" );
     }
     
     PEN_THREAD_RETURN renderer_init_thread( void* params )
     {
+        printf( "starting render thread\n" );
+        
         renderer_init( params );
         
         renderer_wait_for_jobs();

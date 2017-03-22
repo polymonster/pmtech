@@ -1,8 +1,6 @@
 #ifndef _renderer_definitions_h
 #define _renderer_definitions_h
 
-#define PEN_GLES3
-
 #ifdef PEN_GLES3
 #include <OpenGLES/ES3/gl.h>
 #include <OpenGLES/ES3/glext.h>
@@ -60,10 +58,10 @@ enum format : s32
 
 enum usage : s32
 {
-    PEN_USAGE_DEFAULT = 0,                                  //gpu read and write
-    PEN_USAGE_IMMUTABLE = 0,                                //gpu read only
+    PEN_USAGE_DEFAULT = GL_STATIC_DRAW,                     //gpu read and write
+    PEN_USAGE_IMMUTABLE = GL_STATIC_DRAW,                   //gpu read only
     PEN_USAGE_DYNAMIC = GL_DYNAMIC_DRAW,                    //dynamic
-    PEN_USAGE_STAGING = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, //cpu access
+    PEN_USAGE_STAGING = GL_DYNAMIC_DRAW,                    //cpu access
 };
 
 enum bind_flags : s32

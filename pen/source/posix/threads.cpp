@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <semaphore.h>
+#include "pen_string.h"
 #include "threads.h"
 #include "memory.h"
 #include <unistd.h>
@@ -20,6 +21,8 @@ namespace pen
 	{
         sem_t* handle;
 	} semaphore;
+    
+    u32 semaphone_index = 0;
 
 	pen::thread* threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags )
 	{
@@ -96,7 +99,13 @@ namespace pen
 	{
 		pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc( sizeof( pen::semaphore ) );
 
-        new_semaphore->handle = sem_open( "sem", O_CREAT, 0644, 1);
+        char name_buf[16];
+        
+        pen::string_format(&name_buf[0], 32, "sem%i", semaphone_index++ );
+        
+        sem_unlink(name_buf);
+        new_semaphore->handle = sem_open( name_buf, O_CREAT, 0, 0 );
+        
         assert(!(new_semaphore->handle == (void*)-1));
         
 		return new_semaphore;
@@ -111,12 +120,7 @@ namespace pen
 
 	bool threads_semaphore_wait( semaphore* p_semaphore )
 	{
-        while( sem_trywait(p_semaphore->handle) == -1 )
-        {
-            pen::string_output_debug("I am actually waiting\n");
-        }
-        
-        //sem_wait(p_semaphore->handle);
+        sem_wait(p_semaphore->handle);
         
 		return true;
 	}

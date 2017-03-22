@@ -82,15 +82,17 @@ int main(int argc, char **argv)
     
     [pool drain];
     
-    //create game thread
-    pen::threads_create( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
-    
     //create render thread
     pen::renderer_thread_init();
     
     pen::threads_create( &pen::renderer_init_thread, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
     
     pen::renderer_wait_init();
+    
+    //create game thread
+    pen::threads_create( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
+    
+    printf("finished waiting for render thread init" );
     
     //main thread loop
     while( 1 )
