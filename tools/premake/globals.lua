@@ -5,7 +5,6 @@ link_cmd = ""
 renderer_dir = "opengl"
 
 if _OPTIONS["renderer"] then
-	print( "rednerer" )
 	renderer_dir = _OPTIONS["renderer"]
 end
 
@@ -14,12 +13,10 @@ if _ACTION == "xcode4" then
 	platform_dir = "osx" 
 	
 	if _OPTIONS["xcode_target"] then
-	print( "xcode_target" .. _OPTIONS["xcode_target"] )
    	platform_dir = _OPTIONS["xcode_target"]
-end
+	end
 
-
-	build_cmd = "-std=c++11 -stdlib=libc++ -sdkroot=iphoneos"
+	build_cmd = "-std=c++11 -stdlib=libc++"
 	link_cmd = "-stdlib=libc++"
 	
 	if not renderer_dir == "opengl" then

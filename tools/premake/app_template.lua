@@ -21,7 +21,16 @@ end
 function add_ios_links()
 links 
 { 
-	"OpenGLES.framework"
+	"OpenGLES.framework",
+	"Foundation.framework",
+	"UIKit.framework"
+}
+end
+
+function add_ios_files( project_name, root_directory )
+files 
+{ 
+	root_directory .. "/" .. project_name .. "/ios_files/**.*"
 }
 end
 
@@ -54,7 +63,9 @@ project ( project_name )
 	
 	if platform_dir == "win32" then add_win32_links()
 	elseif platform_dir == "osx" then add_osx_links()
-	elseif platform_dir == "ios" then add_ios_links()
+	elseif platform_dir == "ios" then 
+		add_ios_links() 
+		add_ios_files( project_name, root_directory )
 	end
 
 	files 
@@ -62,7 +73,7 @@ project ( project_name )
 		(root_directory .. "/" .. project_name .. "/*.cpp"),
 		(root_directory .. "/" .. project_name .. "/*.c"),
 		(root_directory .. "/" .. project_name .. "/*.h"),
-		(root_directory .. "/" .. project_name .. "/*.m")
+		(root_directory .. "/" .. project_name .. "/*.m"),
 	}
  
 	configuration "Debug"
