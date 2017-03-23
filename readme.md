@@ -42,10 +42,10 @@ Tool scripts written in python and using some c++ executables to build data:
 
 This solution / workspace contains multiple examples of how to use the API's and set up projects, I am currently using them to aid porting, starting with a simple windowed application using minimal dependencies, I will add more examples as I need to implement functionality. Currently these examples are available:
 
-- empty_project - first port of call to get a platform compiling, it creates and empty window with no rendering contexy
-- basic_traingle - introduces a graphics context, clear sceen, shader loading / binding vertex buffer and non-indexed rendering
-- textures - introduces texture loading using the "put" library, index buffers, indexed draw calls and texture samplers and texture binding.
-- render_target - introduces render target creation and binding, also shader program loading using the "put" library
+- empty_project - First port of call to get a platform compiling, it creates an empty window with no rendering context.
+- basic_traingle - introduces a rendering context, clear sceen, shader loading / binding, vertex buffer and non-indexed draw calls.
+- textures - Introduces texture loading using the "put" library, index buffers, indexed draw calls, texture samplers and texture binding.
+- render_target - Introduces render target creation / binding, shader program loading using the "put" library to automatically generate input layouts from the shaders input signature.
 
 *Getting started*
 
