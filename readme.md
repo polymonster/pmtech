@@ -38,11 +38,18 @@ Tool scripts written in python and using some c++ executables to build data:
 - Shader Compiler - FXC offline shader compilation
 - Generic Shader Language (todo)
 
-**pen_examples**
+**examples**
 
-This solution / workspace contains multiple examples of how to use the API's and set up projects, I am currently using them to aid porting, starting with a simple windowed application using minimal dependencies, I will add more examples as I need to implement functionality.
+This solution / workspace contains multiple examples of how to use the API's and set up projects, I am currently using them to aid porting, starting with a simple windowed application using minimal dependencies, I will add more examples as I need to implement functionality. Currently these examples are available:
+
+- empty_project - first port of call to get a platform compiling, it creates and empty window with no rendering contexy
+- basic_traingle - introduces a graphics context, clear sceen, shader loading / binding vertex buffer and non-indexed rendering
+- textures - introduces texture loading using the "put" library, index buffers, indexed draw calls and texture samplers and texture binding.
+- render_target - introduces render target creation and binding, also shader program loading using the "put" library
 
 *Getting started*
+
+To start a new project make sure it is located in pmtech/<project_dir>/ this is important because all paths to tools and other libraries are relative to this location. The examples solution is set up illustrating this layout.. all paths are relative to avoid having to deal with setting environment variables to locate various parts of the project.
 
 An application just needs to define and initialise the pen::window_creation_params pen_window struct, and will be given a main loop, which can be defined in a separate project, there are helper functions to easily create in pen/premake_app.lua and the pen_examples/premake5.lua has examples of how to set up and link pen and put. 
 
