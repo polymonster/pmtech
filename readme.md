@@ -16,26 +16,26 @@ This project contains platform / operating system specific code, it provides abs
 - Timers (win32, posix)
 - Job Manager (todo)
 
-The renderer runs on its own thread, with all user submitted commands from the game thread being stored in a command buffer for dispatch laster on a dedicated thread or core, this paralellises all graphics api driver overhead, the audio api and physics api (see put) also run the same way. I still need to work on giving greater control to which cores these tasks get run on.
+The renderer runs on its own thread, with all user submitted commands from the game thread being stored in a command buffer for dispatch later on a dedicated thread or core, this paralellises all graphics api driver overhead, the audio api and physics api (see put) also run the same way. I still need to work on giving greater control to which cores these tasks get run on and I have added provision for users to skip the auto generation of threads so they can replace it with their own job management system.
 
 **put** *pmtech utility toolkit*
 
-This project contains code that will be re-used across different projects but contains no platform specific code, it contains currently:
+This project contains code that will be re-used across different projects but contains no platform specific code, it contains:
 - "Loader" - Contains functions to load textures (DDS), models, skeletons, animations and shaders
-- Bullet physics with a deferred command buffer API like the PEN renderer and audio, so that physics simulate can run independantly on it's own thread.
-- Debug renderer helpers, for drawing lines, boxes and other debug primitives
-- Simple font renderer (stb font), for debug use
+- Bullet Physics - With a deferred command buffer API like the pen renderer and audio system, allowing physics simulate to run independantly on it's own thread.
+- Debug Renderer - Helpers for drawing lines, boxes and other debug primitives.
+- Stb Font - Simple font renderer, for debug use.
 - Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and helper functions
 - ImGui integration (todo)
 
 **tools**
 
 Tool scripts written in python and using some c++ executables to build data:
-- Collada to binary - Models, skeletons and animations
-- Textures - Compression and conversion using NVTT (Nvidia)
-- Premake5 - All projects are configured using premake and are IDE agnostic
-- ios project genetion - Simple script to copy ios files and fixup xcode to support ios projects
-- Shader Compiler - FXC offline shader compilation
+- Collada to Binary - Models, skeletons and animations.
+- Textures - Compression and conversion using NVTT (Nvidia).
+- Premake5 - All projects are configured using premake and are IDE agnostic.
+- ios project genetion - Simple script to copy ios files and fixup xcode to support ios projects.
+- Shader Compiler - FXC offline shader compilation.
 - Generic Shader Language (todo)
 
 **examples**
