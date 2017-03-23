@@ -7,10 +7,10 @@
 
 pen::window_creation_params pen_window
 {
-	1280,					//width
-	720,					//height
-	4,						//MSAA samples
-	"render_target"		    //window title / process name
+    1280,					//width
+    720,					//height
+    4,						//MSAA samples
+    "textures"		        //window title / process name
 };
 
 typedef struct vertex
@@ -31,17 +31,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //create 2 clear states one for the render target and one for the main screen, so we can see the difference
     static pen::clear_state cs =
     {
-        1.0f, 0.0, 1.0f, 1.0f, 1.0f, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        0.0f, 0.0, 1.0f, 1.0f, 1.0f, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
     u32 clear_state = pen::renderer_create_clear_state( cs );
-
-    static pen::clear_state cs_rt =
-    {
-        1.0f, 0.0, 0.0f, 1.0f, 1.0f, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
-    };
-
-    u32 clear_state_rt = pen::renderer_create_clear_state( cs_rt );
 
     //raster state
     pen::rasteriser_state_creation_params rcp;
@@ -61,53 +54,13 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         0.0f, 1.0f
     };
 
-    //viewport for render target
-    pen::viewport vp_rt =
-    {
-        0.0f, 0.0f,
-        1024.0f, 512.0f,
-        0.0f, 1.0f
-    };
-
-    //create render target
-    pen::texture_creation_params tcp;
-    tcp.width = (u32)vp_rt.width;
-    tcp.height = (u32)vp_rt.height;
-    tcp.cpu_access_flags = 0;
-    tcp.format = PEN_FORMAT_R8G8B8A8_UNORM;
-    tcp.num_arrays = 1;
-    tcp.num_mips = 1;
-    tcp.bind_flags = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
-    tcp.pixels_per_block = 1;
-    tcp.sample_count = 1;
-    tcp.sample_quality = 0;
-    tcp.block_size = 32;
-    tcp.usage = PEN_USAGE_DEFAULT;
-    tcp.flags = 0;
-
-    u32 colour_render_target = pen::defer::renderer_create_render_target( tcp );
-
     //load shaders now requiring dependency on put to make loading simpler.
-    put::shader_program basic_tri_shader = put::loader_load_shader_program( "data\\shaders\\basictri.vsc", "data\\shaders\\basictri.psc", "data\\shaders\\basictri.vsi" );
     put::shader_program textured_shader = put::loader_load_shader_program( "data\\shaders\\textured.vsc", "data\\shaders\\textured.psc", "data\\shaders\\textured.vsi" );
 
-    //create vertex buffer for a triangle
-    vertex triangle_vertices[] =
-    {
-       -0.5f, -0.5f, 0.5f, 1.0f,
-        0.0f, 0.5f, 0.5f, 1.0f,
-        0.5f, -0.5f, 0.5f, 1.0f,
-    };
+    pen::texture_creation_params* tex_params = put::loader_load_texture("data\\textures\\test_normal.dds");
+    u32 test_texture = pen::defer::renderer_create_texture2d( *tex_params );
 
-    pen::buffer_creation_params bcp;
-    bcp.usage_flags = PEN_USAGE_DEFAULT;
-    bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
-    bcp.cpu_access_flags = 0;
-
-    bcp.buffer_size = sizeof( vertex ) * 3;
-    bcp.data = ( void* ) &triangle_vertices[ 0 ];
-
-    u32 triangle_vertex_buffer = pen::defer::renderer_create_buffer( bcp );
+    put::loader_free_texture(&tex_params);
 
     //create vertex buffer for a quad
     textured_vertex quad_vertices[] =
@@ -124,6 +77,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         0.5f, -0.5f, 0.5f, 1.0f,        //p4
         1.0f, 0.0f,                     //uv4
     };
+
+    pen::buffer_creation_params bcp;
+    bcp.usage_flags = PEN_USAGE_DEFAULT;
+    bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+    bcp.cpu_access_flags = 0;
 
     bcp.buffer_size = sizeof( textured_vertex ) * 4;
     bcp.data = ( void* ) &quad_vertices[ 0 ];
@@ -160,39 +118,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     while( 1 )
     {
-        //bind render target and draw basic triangle 
         pen::defer::renderer_set_rasterizer_state( raster_state );
-
-        //bind and clear render target
-        pen::defer::renderer_set_viewport( vp_rt );
-
-        pen::defer::renderer_set_targets( colour_render_target, PEN_NULL_DEPTH_BUFFER );
-
-        pen::defer::renderer_clear( clear_state_rt );
-
-        //draw tri into the render target
-        {
-            //bind vertex layout
-            pen::defer::renderer_set_input_layout( basic_tri_shader.input_layout );
-
-            //bind vertex buffer
-            u32 stride = sizeof( vertex );
-            u32 offset = 0;
-            pen::defer::renderer_set_vertex_buffer( triangle_vertex_buffer, 0, 1, &stride, &offset );
-
-            //bind shaders
-            pen::defer::renderer_set_shader( basic_tri_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::defer::renderer_set_shader( basic_tri_shader.pixel_shader, PEN_SHADER_TYPE_PS );
-
-            //draw
-            pen::defer::renderer_draw( 3, 0, PEN_PT_TRIANGLELIST );
-        }
 
         //bind back buffer and clear
         pen::defer::renderer_set_viewport( vp );
-
         pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
-
         pen::defer::renderer_clear( clear_state );
 
         //draw quad
@@ -211,13 +141,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
             pen::defer::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
 
             //bind render target as texture on sampler 0
-            pen::defer::renderer_set_texture( colour_render_target, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS );
+            pen::defer::renderer_set_texture( test_texture, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS );
 
             //draw
             pen::defer::renderer_draw_indexed( 6, 0, 0, PEN_PT_TRIANGLELIST );
-
-            //unbind render target from the sampler
-            pen::defer::renderer_set_texture( 0, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS );
         }
 
         //present 

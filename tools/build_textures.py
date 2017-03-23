@@ -5,9 +5,9 @@ import subprocess
 #win32 / dds / block compression / mips / cubemaps
 print("texture conversion, mip generation and compression" + "\n")
 
-nvtt_dir = os.environ.get("PEN_DIR") + "\\third_party\\NVTT\\bin\\"
-texture_dir = os.getcwd() + "\\textures\\"
-build_dir = os.getcwd() + "\\..\\bin\\win32\\data\\textures\\"
+nvtt_dir = os.getcwd() + "\\..\\tools\\bin\\nvtt\\win32\\"
+texture_dir = os.getcwd() + "\\assets\\textures\\"
+build_dir = os.getcwd() + "\\bin\\win32\\data\\textures\\"
 
 #create textures dir
 if not os.path.exists(build_dir):
@@ -28,6 +28,3 @@ for f in os.listdir(texture_dir):
         #straight copy
     subprocess.check_call(cmdline)
     print("\n")
-
-print("press any key to continue")
-i = input()
