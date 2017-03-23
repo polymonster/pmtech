@@ -36,7 +36,7 @@ Tool scripts written in python and using some c++ executables to build data:
 - Premake5 - All projects are configured using premake and are IDE agnostic.
 - ios project genetion - Simple script to copy ios files and fixup xcode to support ios projects.
 - Shader Compiler - FXC offline shader compilation.
-- Generic Shader Language (todo)
+- Generic Shader Language - hlsl sm4 like shaders can be written, with a single file defining ps and vs main functions, a python script and some macros help porting between glsl and hlsl.
 
 **examples**
 
