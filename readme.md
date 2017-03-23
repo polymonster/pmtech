@@ -2,7 +2,7 @@
 
 This work is still very much a work in progress, The win32 platform with dx11 is mostly complete, I have been using this for a game project. I am currently porting to OSX and iOS, both platforms are up and running and the opengl renderer (gles3 and gl3) is now in progress.. more platforms and renderers like metal, vulkan, linux or android will hopefully be added in future.
 
-**PEN** *pmtech engine* 
+**pen** *pmtech engine* 
 
 This project contains platform / operating system specific code, it provides abstractions for:
 - Renderer (dx11, opengl)
@@ -18,7 +18,7 @@ This project contains platform / operating system specific code, it provides abs
 
 The renderer runs on its own thread, with all user submitted commands from the game thread being stored in a command buffer for dispatch laster on a dedicated thread or core, this paralellises all graphics api driver overhead, the audio api and physics api (see put) also run the same way. I still need to work on giving greater control to which cores these tasks get run on.
 
-**PUT** *pmtech utility toolkit*
+**put** *pmtech utility toolkit*
 
 This project contains code that will be re-used across different projects but contains no platform specific code, it contains currently:
 - "Loader" - Contains functions to load textures (DDS), models, skeletons, animations and shaders
@@ -28,7 +28,7 @@ This project contains code that will be re-used across different projects but co
 - Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and helper functions
 - ImGui integration (todo)
 
-**Tools**
+**tools**
 
 Tool scripts written in python and using some c++ executables to build data:
 - Collada to binary - Models, skeletons and animations
@@ -53,4 +53,6 @@ To start a new project make sure it is located in pmtech/<project_dir>/ this is 
 
 An application just needs to define and initialise the pen::window_creation_params pen_window struct, and will be given a main loop, which can be defined in a separate project, there are helper functions to easily create in pen/premake_app.lua and the pen_examples/premake5.lua has examples of how to set up and link pen and put. 
 
-Use the make projects batch and exec files to generate IDE solutions or workspaces, edit these files to change configuration settings.
+Use the make_projects batch and exec files to generate IDE solutions or workspaces, edit these files to change configuration settings.
+
+supply --help to premake5 for more options.
