@@ -78,12 +78,12 @@ project ( project_name )
 
 	files 
 	{ 
-		(root_directory .. "/" .. project_name .. "/*.cpp"),
-		(root_directory .. "/" .. project_name .. "/*.c"),
-		(root_directory .. "/" .. project_name .. "/*.h"),
-		(root_directory .. "/" .. project_name .. "/*.m"),
+		(root_directory .. "code/" .. project_name .. "/**.cpp"),
+		(root_directory .. "code/" .. project_name .. "/**.c"),
+		(root_directory .. "code/" .. project_name .. "/**.h"),
+		(root_directory .. "code/" .. project_name .. "/**.m"),
 	}
- 
+	 
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain" }

@@ -27,10 +27,10 @@ dofile "../tools/premake/globals.lua"
 dofile "../tools/premake/app_template.lua"
 
 -- Solution
-solution "pen_examples"
+solution "examples"
 	location ("build/" .. platform_dir ) 
 	configurations { "Debug", "Release" }
-	startproject "basic_triangle"
+	startproject "empty_project"
 	buildoptions { build_cmd }
 	linkoptions { link_cmd }
 	
