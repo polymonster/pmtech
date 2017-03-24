@@ -51,8 +51,10 @@ This solution / workspace contains multiple examples of how to use the API's and
 
 To start a new project make sure it is located in pmtech/<project_dir>/ this is important because all paths to tools and other libraries are relative to this location. The examples solution is set up illustrating this layout.. all paths are relative to avoid having to deal with setting environment variables to locate various parts of the project.
 
-An application just needs to define and initialise the pen::window_creation_params pen_window struct, and will be given a main loop, which can be defined in a separate project, there are helper functions to easily create in pen/premake_app.lua and the pen_examples/premake5.lua has examples of how to set up and link pen and put. 
+An application just needs to define and initialise the pen::window_creation_params pen_window struct, and will be given a main loop, which can be defined in a separate project, there are helper functions to easily create new projects in pen/premake_app.lua and the pen_examples/premake5.lua has examples of how to set up projects. 
 
-Use the make_projects batch and exec files to generate IDE solutions or workspaces, edit these files to change configuration settings.
+Use the make_projects batch file on windows or shell script on osx to generate IDE solutions or workspaces, edit these files to change configuration settings or to see how the current ones work.
 
-supply --help to premake5 for more options.
+The make projects scripts also contain command lines to build shaders and textures for the relevant platform.
+
+supply --help to premake5 for more options on project configuration from inside the .lua files.
