@@ -54,8 +54,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::shader_load_params ps_slp;
     ps_slp.type = PEN_SHADER_TYPE_PS;
 
-    pen::filesystem_read_file_to_buffer( "data\\shaders\\basictri.vsc", &vs_slp.byte_code, vs_slp.byte_code_size );
-    pen::filesystem_read_file_to_buffer( "data\\shaders\\basictri.psc", &ps_slp.byte_code, ps_slp.byte_code_size );
+    pen::filesystem_read_file_to_buffer( "data/shaders/glsl/basictri.vsc", &vs_slp.byte_code, vs_slp.byte_code_size );
+    pen::filesystem_read_file_to_buffer( "data/shaders/glsl/basictri.psc", &ps_slp.byte_code, ps_slp.byte_code_size );
 
     u32 vertex_shader = pen::defer::renderer_load_shader( vs_slp );
     u32 pixel_shader = pen::defer::renderer_load_shader( ps_slp );

@@ -92,8 +92,6 @@ int main(int argc, char **argv)
     //create game thread
     pen::threads_create( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
     
-    printf("finished waiting for render thread init" );
-    
     //main thread loop
     while( 1 )
     {

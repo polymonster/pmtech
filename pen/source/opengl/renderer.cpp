@@ -213,8 +213,6 @@ namespace pen
         glBindBuffer(params.bind_flags, res.handle);
         glBufferData(GL_ARRAY_BUFFER, params.buffer_size, params.data, params.usage_flags );
         
-        pen::string_output_debug("created vertex buffer\n");
-        
 		return resource_index;
 	}
 
@@ -227,7 +225,9 @@ namespace pen
 
 	void direct::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
 	{
-
+        resource_allocation& res = resource_pool[buffer_index];
+        
+        glBindBuffer( GL_ARRAY_BUFFER, res.handle );
 	}
 
 	void direct::renderer_set_input_layout( u32 layout_index )
@@ -237,7 +237,9 @@ namespace pen
 
 	void direct::renderer_set_index_buffer( u32 buffer_index, u32 format, u32 offset )
 	{
-
+        resource_allocation& res = resource_pool[buffer_index];
+        
+        glBindBuffer( GL_ARRAY_BUFFER, res.handle );
 	}
 
 	void direct::renderer_draw( u32 vertex_count, u32 start_vertex, u32 primitive_topology )
