@@ -14,13 +14,6 @@ enum special_values
     PEN_SHADER_NULL             =   0xffffff
 };
 
-enum shader_type
-{
-    PEN_SHADER_TYPE_VS          = 0x03,
-    PEN_SHADER_TYPE_PS          = 0x04,
-    PEN_SHADER_TYPE_GS          = 0x05
-};
-
 enum resource_types
 {
     DIRECT_RESOURCE             = 0x01,

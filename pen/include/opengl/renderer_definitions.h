@@ -15,6 +15,13 @@
 #include <OpenGL/gl3.h>
 #endif
 
+enum shader_type
+{
+    PEN_SHADER_TYPE_VS          = GL_VERTEX_SHADER,
+    PEN_SHADER_TYPE_PS          = GL_FRAGMENT_SHADER,
+    PEN_SHADER_TYPE_GS          = GL_GEOMETRY_SHADER
+};
+
 enum raster_state : s32
 {
     PEN_FILL_SOLID = GL_FILL,
@@ -50,6 +57,8 @@ enum primitive_topology : s32
 };
 
 #define PACK_GL_FORMAT( DATA_TYPE, NUM_ELEMENTS ) ((NUM_ELEMENTS) | (DATA_TYPE << 4))
+#define UNPACK_FORMAT( PF ) PF >> 4
+#define UNPACK_NUM_ELEMENTS( PF ) PF & (0x07)
 
 enum format : s32
 {

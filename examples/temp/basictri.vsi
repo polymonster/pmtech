@@ -1,5 +1,0 @@
-struct vs_input
-{
-	float4 position : POSITION;
-};
-

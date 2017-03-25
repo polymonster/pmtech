@@ -35,20 +35,9 @@ if not os.path.exists(shader_build_dir):
 print("fx compiler directory :" + compiler_dir)
 print("compiling directory: " + shader_source_dir + "\n")
 
-class e_shader_format:
-    glsl = 0
-    dx11 = 1
-    gles = 2
-
 def parse_input_layout(vs_input_source, filename, temp_extension):
     f = os.path.basename(filename)
     f = os.path.splitext(f)[0] + temp_extension
-
-    ## temp_file_name = temp_dir + f
-    ## temp_shader_source = open(temp_file_name, "w")
-    ## temp_shader_source.write(vs_input_source)
-    ## temp_shader_source.close()
-    ## text = open(temp_file_name)
 
     outfilename = os.path.join(shader_build_dir, f)
 
@@ -171,7 +160,7 @@ def generate_global_io_struct(io_elements, decl):
     struct_source += "\n{\n"
     for element in io_elements:
         struct_source += "\t" + element + ";\n"
-    struct_source += "}\n"
+    struct_source += "};\n"
     struct_source += "\n"
     return struct_source
 
@@ -192,9 +181,9 @@ def generate_output_assignment(io_elements, local_var):
         assign_source += "\t"
         var_name = element.split()[1]
         if var_name == "position":
-           assign_source += "gl_Position = " + local_var + "." + var_name + "\n"
+           assign_source += "gl_Position = " + local_var + "." + var_name + ";\n"
         else:
-            assign_source += var_name + "_ = " + local_var + "." + var_name + "\n"
+            assign_source += var_name + "_ = " + local_var + "." + var_name + ";\n"
     return assign_source
 
 def compile_glsl(vs_shader_source, ps_shader_source, source_filename, macros):
@@ -207,7 +196,7 @@ def compile_glsl(vs_shader_source, ps_shader_source, source_filename, macros):
     # replace all key words
     for key_index in range(0, len(hlsl_key)):
         glsl_vs_source = glsl_vs_source.replace(hlsl_key[key_index], glsl_key[key_index])
-        glsl_ps_source = ps_shader_source.replace(hlsl_key[key_index], glsl_key[key_index])
+        glsl_ps_source = glsl_ps_source.replace(hlsl_key[key_index], glsl_key[key_index])
 
     # parse input block
     vs_inputs, vs_input_semantics = parse_io_struct(glsl_vs_source, "struct vs_input")
@@ -242,8 +231,8 @@ def compile_glsl(vs_shader_source, ps_shader_source, source_filename, macros):
     skip_function_end = glsl_vs_main.find("return")
     glsl_vs_main = glsl_vs_main[skip_function_start:skip_function_end].strip()
 
-    vs_main_pre_assign = generate_input_assignment(vs_inputs, "vs_input", "input")
-    vs_main_post_assign = generate_output_assignment(vs_outputs, "output")
+    vs_main_pre_assign = generate_input_assignment(vs_inputs, "vs_input", "_input")
+    vs_main_post_assign = generate_output_assignment(vs_outputs, "_output")
 
     final_vs_source += "void main()\n{\n"
     final_vs_source += vs_main_pre_assign
@@ -275,6 +264,7 @@ def compile_glsl(vs_shader_source, ps_shader_source, source_filename, macros):
     final_ps_source += "\n"
 
     final_ps_source += generate_global_io_struct(vs_outputs, "struct vs_output")
+    final_ps_source += generate_global_io_struct(ps_outputs, "struct ps_output")
     final_ps_source += find_texture_samplers(glsl_vs_source)
 
     glsl_ps_main = find_main(glsl_ps_source, "ps_output main")
@@ -282,8 +272,8 @@ def compile_glsl(vs_shader_source, ps_shader_source, source_filename, macros):
     skip_function_end = glsl_ps_main.find("return")
     glsl_ps_main = glsl_ps_main[skip_function_start:skip_function_end].strip()
 
-    ps_main_pre_assign = generate_input_assignment(vs_outputs, "vs_output", "input")
-    ps_main_post_assign = generate_output_assignment(ps_outputs, "output")
+    ps_main_pre_assign = generate_input_assignment(vs_outputs, "vs_output", "_input")
+    ps_main_post_assign = generate_output_assignment(ps_outputs, "_output")
 
     final_ps_source += "void main()\n{\n"
     final_ps_source += ps_main_pre_assign
@@ -294,7 +284,7 @@ def compile_glsl(vs_shader_source, ps_shader_source, source_filename, macros):
 
     ps_fn = os.path.join(shader_build_dir, shader_name + ".psc")
     ps_file = open(ps_fn, "w")
-    ps_file.write(final_vs_source)
+    ps_file.write(final_ps_source)
     ps_file.close()
 
 def create_vsc_psc_vsi(filename):

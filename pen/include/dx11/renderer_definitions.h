@@ -3,7 +3,13 @@
 
 #include <d3d11_1.h>
 
-//raster state
+enum shader_type
+{
+    PEN_SHADER_TYPE_VS          = 0x03,
+    PEN_SHADER_TYPE_PS          = 0x04,
+    PEN_SHADER_TYPE_GS          = 0x05
+};
+
 enum raster_state : s32
 {
     PEN_FILL_SOLID = D3D11_FILL_SOLID,

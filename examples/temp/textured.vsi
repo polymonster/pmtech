@@ -1,6 +1,0 @@
-struct vs_input
-{
-	float4 position : POSITION;
-	float2 tex_coord: TEXCOORD0;
-};
-

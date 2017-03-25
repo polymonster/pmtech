@@ -6,6 +6,7 @@
 #include "threads.h"
 #include "timer.h"
 #include "pen.h"
+#include <vector>
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -28,7 +29,7 @@ namespace pen
 	#define QUERY_DISJOINT			1
 	#define QUERY_ISSUED			(1<<1)
 	#define QUERY_SO_STATS			(1<<2)
-
+    
 	typedef struct context_state
 	{
 		context_state()
@@ -52,6 +53,20 @@ namespace pen
 		f32 depth;
 		u32 flags;
 	} clear_state_internal;
+    
+    typedef struct vertex_attribute
+    {
+        u32     location;
+        u32     type;
+        u32     stride;
+        size_t  offset;
+        u32     num_elements;
+    } vertex_attribute;
+    
+    typedef struct input_layout
+    {
+        std::vector<vertex_attribute> attributes;
+    } input_layout;
 
 	typedef struct resource_allocation
 	{
@@ -60,6 +75,7 @@ namespace pen
 		union 
 		{
 			clear_state_internal*			clear_state;
+            input_layout*                   input_layout;
             GLuint                          handle;
 		};
 	} resource_allocation;
@@ -74,6 +90,28 @@ namespace pen
 
 	resource_allocation		 resource_pool	[MAX_RESOURCES];
 	query_allocation	     query_pool		[MAX_QUERIES];
+    
+    typedef struct shader_program
+    {
+        u32 vs;
+        u32 ps;
+        u32 gs;
+        GLuint program;
+    }shader_program;
+    
+    std::vector<shader_program> shader_programs;
+    
+    typedef struct active_state
+    {
+        u32 vertex_buffer;
+        u32 index_buffer;
+        u32 input_layout;
+        u32 vertex_shader;
+        u32 pixel_shader;
+    }active_state;
+    
+    active_state g_bound_state;
+    active_state g_current_state;
 
 	void clear_resource_table( )
 	{
@@ -180,7 +218,7 @@ namespace pen
 
 	void direct::renderer_create_query( u32 query_type, u32 flags )
 	{
-		u32 resoruce_index = get_next_query_index(DIRECT_RESOURCE);
+		//u32 resoruce_index = get_next_query_index(DIRECT_RESOURCE);
 	}
 
 	void direct::renderer_set_query(u32 query_index, u32 action)
@@ -190,16 +228,40 @@ namespace pen
 
 	u32 direct::renderer_load_shader(const pen::shader_load_params &params)
 	{
-		u32 handle_out = (u32)-1;
-
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+        
+        resource_allocation& res = resource_pool[ resource_index ];
+        
+        res.handle = glCreateShader(params.type);
+        
+        glShaderSource(res.handle, 1, (c8**)&params.byte_code, (s32*)&params.byte_code_size);
+        glCompileShader(res.handle);
+        
+        // Check compilation status
+        GLint result = GL_FALSE;
+        int info_log_length;
+        
+        glGetShaderiv(res.handle, GL_COMPILE_STATUS, &result);
+        glGetShaderiv(res.handle, GL_INFO_LOG_LENGTH, &info_log_length);
+        
+        if ( info_log_length > 0 )
+        {
+            char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
+            
+            glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]);
+            
+            pen::string_output_debug(info_log_buf);
+        }
 
 		return resource_index;
 	}
 
 	void direct::renderer_set_shader( u32 shader_index, u32 shader_type )
 	{
-
+        if( shader_type == GL_VERTEX_SHADER )
+            g_current_state.vertex_shader = shader_index;
+        else if( shader_type == GL_FRAGMENT_SHADER )
+            g_current_state.pixel_shader = shader_index;
 	}
 
 	u32 direct::renderer_create_buffer( const buffer_creation_params &params )
@@ -211,7 +273,8 @@ namespace pen
         glGenBuffers(1, &res.handle);
         
         glBindBuffer(params.bind_flags, res.handle);
-        glBufferData(GL_ARRAY_BUFFER, params.buffer_size, params.data, params.usage_flags );
+        
+        glBufferData(params.bind_flags, params.buffer_size, params.data, params.usage_flags );
         
 		return resource_index;
 	}
@@ -219,32 +282,165 @@ namespace pen
 	u32 direct::renderer_create_input_layout( const input_layout_creation_params &params )
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+        
+        resource_allocation& res = resource_pool[ resource_index ];
+        
+        res.input_layout = new input_layout;
+    
+        auto& attributes = res.input_layout->attributes;
+        
+        attributes.resize(params.num_elements);
+        
+        for( u32 i = 0; i < params.num_elements; ++i )
+        {
+            attributes[ i ].location        = params.input_layout[ i ].semantic_index;
+            attributes[ i ].type            = UNPACK_FORMAT(params.input_layout[ i ].format);
+            attributes[ i ].num_elements    = UNPACK_NUM_ELEMENTS(params.input_layout[ i ].format);
+            attributes[ i ].offset          = params.input_layout[ i ].aligned_byte_offset;
+            attributes[ i ].stride          = 0;
+        }
 
 		return resource_index;
 	}
 
 	void direct::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
 	{
-        resource_allocation& res = resource_pool[buffer_index];
-        
-        glBindBuffer( GL_ARRAY_BUFFER, res.handle );
+        g_current_state.vertex_buffer = buffer_index;
 	}
 
 	void direct::renderer_set_input_layout( u32 layout_index )
 	{
-
+        g_current_state.input_layout = layout_index;
 	}
 
 	void direct::renderer_set_index_buffer( u32 buffer_index, u32 format, u32 offset )
 	{
-        resource_allocation& res = resource_pool[buffer_index];
-        
-        glBindBuffer( GL_ARRAY_BUFFER, res.handle );
+        g_current_state.index_buffer = buffer_index;
 	}
+    
+    bool create_vao = true;
+    
+    void bind_state()
+    {
+        if( create_vao )
+        {
+            GLuint VertexArrayID;
+            glGenVertexArrays(1, &VertexArrayID);
+            glBindVertexArray(VertexArrayID);
+            create_vao = false;
+        }
+        
+        glEnableVertexAttribArray(0);
+        
+        //bind vertex buffer
+        if( g_current_state.vertex_buffer != g_bound_state.vertex_buffer )
+        {
+            g_bound_state.vertex_buffer = g_current_state.vertex_buffer;
+            
+            auto& res = resource_pool[g_bound_state.vertex_buffer].handle;
+            glBindBuffer(GL_ARRAY_BUFFER, res);
+        }
+        
+        //bind index buffer
+        if( g_current_state.index_buffer != g_bound_state.index_buffer )
+        {
+            g_bound_state.index_buffer = g_current_state.index_buffer;
+            
+            auto& res = resource_pool[g_bound_state.index_buffer].handle;
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
+        }
+        
+        //bind input layout
+        if( g_current_state.input_layout != g_bound_state.input_layout )
+        {
+            g_bound_state.input_layout = g_current_state.input_layout;
+            
+            auto& res = resource_pool[g_bound_state.input_layout].input_layout;
+            
+            for( auto& attribute : res->attributes )
+            {
+                glVertexAttribPointer(
+                                      attribute.location,
+                                      attribute.num_elements,
+                                      attribute.type,
+                                      false,
+                                      attribute.stride,
+                                      (void*)attribute.offset);
+            }
+        }
+        
+        //bind shaders
+        if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
+            g_current_state.pixel_shader != g_bound_state.pixel_shader )
+        {
+            g_bound_state.vertex_shader = g_current_state.vertex_shader;
+            g_bound_state.pixel_shader = g_current_state.pixel_shader;
+            
+            shader_program* linked_program = nullptr;
+            
+            for( auto program : shader_programs )
+            {
+                if( program.vs == g_bound_state.vertex_shader && program.vs == g_bound_state.vertex_shader )
+                {
+                    linked_program = &program;
+                    break;
+                }
+            }
+            
+            if( linked_program == nullptr )
+            {
+                auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
+                auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
+                
+                //link the shaders
+                GLuint program_id = glCreateProgram();
+                
+                glAttachShader(program_id, vs_handle);
+                glAttachShader(program_id, ps_handle);
+                glLinkProgram(program_id);
+                
+                // Check the program
+                GLint result = GL_FALSE;
+                int info_log_length;
+                
+                glGetShaderiv(program_id, GL_LINK_STATUS, &result);
+                glGetShaderiv(program_id, GL_INFO_LOG_LENGTH, &info_log_length);
+                
+                if ( info_log_length > 0 )
+                {
+                    char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
+                    
+                    glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]);
+                    
+                    pen::string_output_debug(info_log_buf);
+                }
+                
+                shader_program program;
+                program.vs = g_bound_state.vertex_shader;
+                program.ps = g_bound_state.pixel_shader;
+                program.program = program_id;
+                
+                shader_programs.push_back(program);
+                
+                linked_program = &shader_programs.back();
+            }
+            
+            glUseProgram( linked_program->program );
+        }
+    }
 
 	void direct::renderer_draw( u32 vertex_count, u32 start_vertex, u32 primitive_topology )
 	{
-
+        bind_state();
+        
+        //glDisable( GL_CULL_FACE );
+        //glDepthFunc( GL_ALWAYS );
+        //glDisable( GL_BLEND );
+        
+        glDrawArrays(primitive_topology, start_vertex, vertex_count);
+        
+        glDisableVertexAttribArray(0);
+        
 	}
 
 	void direct::renderer_draw_indexed( u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology )
@@ -308,7 +504,7 @@ namespace pen
 	void direct::renderer_set_viewport( const viewport &vp )
 	{
         glViewport( vp.x, vp.y, vp.width, vp.height );
-        glDepthRangef( vp.min_depth, vp.max_depth );
+        //glDepthRangef( vp.min_depth, vp.max_depth );
 	}
 
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )
@@ -420,7 +616,7 @@ namespace pen
 	//--------------------------------------------------------------------------------------
     u32 renderer_init_from_window( void* )
     {
-        
+        //const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);
     }
     
 	void renderer_destroy()

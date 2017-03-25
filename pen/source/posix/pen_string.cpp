@@ -86,6 +86,6 @@ namespace pen
 
 		va_end( va );
 
-        printf( "%s", buf );
+        printf( "%s\n", buf );
 	}
 }
