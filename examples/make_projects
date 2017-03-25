@@ -2,3 +2,4 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 ../tools/premake/premake5 xcode4 --renderer=opengl
 python ../tools/build_shaders.py glsl osx
+python ../tools/build_textures.py

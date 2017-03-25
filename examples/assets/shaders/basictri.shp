@@ -13,25 +13,27 @@ struct ps_output
 	float4 colour : SV_Target;
 };
 
-vs_output main( vs_input input )
+vs_output main( vs_input _input )
 {
-	vs_output output;
+	vs_output _output;
 	
-	output.position = input.position;
+	_output.position = _input.position;
 	
-	return output;
+	return _output;
 }
 
-ps_output main( vs_output input )
+ps_output main( vs_output _input )
 {
-	ps_output output;
+	ps_output _output;
 	
-	output.colour = float4( 1.0f, 1.0f, 0.0f, 1.0f );
+	_output.colour = float4( 1.0f, 1.0f, 0.0f, 1.0f );
 	
 	{
 		//test scope for the shader parser to
 		//correctly find the body of the main function
 	}
 	
-	return output;
+	gl_FragColor = _output;
+		
+	return _output;
 }
