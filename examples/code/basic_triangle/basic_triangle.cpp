@@ -33,7 +33,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero( &rcp, sizeof( rasteriser_state_creation_params ) );
     rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_BACK;
+    rcp.cull_mode = PEN_CULL_NONE;
     rcp.depth_bias_clamp = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
 
@@ -54,8 +54,13 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::shader_load_params ps_slp;
     ps_slp.type = PEN_SHADER_TYPE_PS;
 
-    pen::filesystem_read_file_to_buffer( "data/shaders/glsl/basictri.vsc", &vs_slp.byte_code, vs_slp.byte_code_size );
-    pen::filesystem_read_file_to_buffer( "data/shaders/glsl/basictri.psc", &ps_slp.byte_code, ps_slp.byte_code_size );
+    c8 shader_file_buf[256];
+
+    pen::string_format(shader_file_buf, 256, "data/shaders/%s/%s", pen::renderer_get_shader_platform(), "basictri.vsc");
+    pen::filesystem_read_file_to_buffer( shader_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
+
+    pen::string_format(shader_file_buf, 256, "data/shaders/%s/%s", pen::renderer_get_shader_platform(), "basictri.psc");
+    pen::filesystem_read_file_to_buffer( shader_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size );
 
     u32 vertex_shader = pen::defer::renderer_load_shader( vs_slp );
     u32 pixel_shader = pen::defer::renderer_load_shader( ps_slp );
@@ -110,10 +115,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_set_viewport( vp );
         pen::defer::renderer_set_rasterizer_state( raster_state );
 
-        pen::defer::renderer_set_colour_buffer( 0 );
-        pen::defer::renderer_set_depth_buffer( 0 );
+        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
 
-        pen::defer::renderer_set_viewport( vp );
         pen::defer::renderer_clear( clear_state );
 
         //bind vertex layout

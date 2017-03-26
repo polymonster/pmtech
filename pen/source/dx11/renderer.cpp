@@ -1117,5 +1117,11 @@ namespace pen
 		if (g_device) g_device->Release();
 		if (g_device_1) g_device_1->Release();		
 	}
+
+    const c8* renderer_get_shader_platform()
+    {
+        return "hlsl";
+    }
+
 }
 

@@ -55,7 +55,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     };
 
     //load shaders now requiring dependency on put to make loading simpler.
-    put::shader_program textured_shader = put::loader_load_shader_program( "data\\shaders\\textured.vsc", "data\\shaders\\textured.psc", "data\\shaders\\textured.vsi" );
+
+    put::shader_program textured_shader = put::loader_load_shader_program( "textured" );
 
     pen::texture_creation_params* tex_params = put::loader_load_texture("data\\textures\\test_normal.dds");
     u32 test_texture = pen::defer::renderer_create_texture2d( *tex_params );

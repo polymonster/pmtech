@@ -7,10 +7,36 @@ namespace pen
 {
     u32 filesystem_read_file_to_buffer( const char* filename, void** p_buffer, u32 &buffer_size )
     {
+        //swap "/" for "\\"
+        const char* p_src_char = filename;
+
+        u32 str_len = pen::string_length( filename );
+        char* windir_filename = (char*)pen::memory_alloc(str_len + 1);
+
+        char* p_dest_char = windir_filename;
+
+        while( p_src_char < filename + str_len )
+        {
+            if( *p_src_char == '/' )
+            {
+                *p_dest_char = '\\';
+            }
+            else
+            {
+                *p_dest_char = *p_src_char;
+            }
+
+            p_dest_char++;
+            p_src_char++;
+        }
+        *p_dest_char = '\0';
+
         *p_buffer = NULL;
 
         FILE* p_file = nullptr;
-        fopen_s( &p_file, filename, "rb" );
+        fopen_s( &p_file, windir_filename, "rb" );
+
+        pen::memory_free(windir_filename);
 
         if( p_file )
         {

@@ -17,7 +17,7 @@ namespace put
 		u32 input_layout;
 	} shader_program;
 
-	shader_program  loader_load_shader_program( const c8* vs_filename, const c8* ps_filename, const c8* input_layout_filename );
+	shader_program  loader_load_shader_program( const c8* shader_name );
 
 	typedef struct animation
 	{

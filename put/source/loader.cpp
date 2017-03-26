@@ -185,8 +185,16 @@ namespace put
 		"COLOR",
 	};
 
-	shader_program loader_load_shader_program( const c8* vs_filename, const c8* ps_filename, const c8* input_layout_filename )
+	shader_program loader_load_shader_program( const c8* shader_name )
 	{
+        c8 vs_file_buf[ 256 ];
+        c8 ps_file_buf[ 256 ];
+        c8 il_file_buf[ 256 ];
+
+        pen::string_format( vs_file_buf, 256, "data/shaders/%s/%s.vsc", pen::renderer_get_shader_platform(), shader_name );
+        pen::string_format( ps_file_buf, 256, "data/shaders/%s/%s.psc", pen::renderer_get_shader_platform(), shader_name );
+        pen::string_format( il_file_buf, 256, "data/shaders/%s/%s.vsi", pen::renderer_get_shader_platform(), shader_name );
+
 		shader_program prog;
 
 		//shaders
@@ -197,16 +205,15 @@ namespace put
 		ps_slp.type = PEN_SHADER_TYPE_PS;
 
 		//textured
-		pen::filesystem_read_file_to_buffer( vs_filename, &vs_slp.byte_code, vs_slp.byte_code_size );
+		pen::filesystem_read_file_to_buffer( vs_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
 
-		if (ps_filename != NULL)
+        u32 err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
+
+		if ( err != PEN_ERR_OK  )
 		{
-			pen::filesystem_read_file_to_buffer(ps_filename, &ps_slp.byte_code, ps_slp.byte_code_size);
-		}
-		else
-		{
-			ps_slp.byte_code = NULL;
-			ps_slp.byte_code_size = 0;
+            //this shader set does not have a pixel shader which is valid, to allow fast z-only writes.
+            ps_slp.byte_code = NULL;
+            ps_slp.byte_code_size = 0;
 		}
 
 		prog.vertex_shader = pen::defer::renderer_load_shader( vs_slp );
@@ -214,7 +221,7 @@ namespace put
 
 		void* il_data;
 		u32 il_data_size;
-		pen::filesystem_read_file_to_buffer( input_layout_filename, &il_data, il_data_size );
+		pen::filesystem_read_file_to_buffer( il_file_buf, &il_data, il_data_size );
 		int* input_parser = (int*)il_data;
 
 		pen::input_layout_creation_params ilp;

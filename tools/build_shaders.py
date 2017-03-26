@@ -93,7 +93,7 @@ def compile_hlsl(source, filename, shader_model, temp_extension):
     temp_shader_source.write(source)
     temp_shader_source.close()
 
-    cmdline = compiler_exe_path + " " + "/T " + shader_model + " " + "/Fo " + output_file_and_path + "c " + temp_file_name
+    cmdline = compiler_exe_path + " " + "/T " + shader_model + " " + "/Fo " + output_file_and_path + " " + temp_file_name
     subprocess.call(cmdline)
     print("\n")
 
@@ -105,6 +105,8 @@ def find_struct(shader_text, decl):
 
 def find_main(shader_text, decl):
     start = shader_text.find(decl)
+    if start == -1:
+        return ""
     body_pos = shader_text.find("{", start)
     bracket_stack = ["{"]
     text_len = len(shader_text)
@@ -186,7 +188,7 @@ def generate_output_assignment(io_elements, local_var):
             assign_source += var_name + "_ = " + local_var + "." + var_name + ";\n"
     return assign_source
 
-def compile_glsl(vs_shader_source, ps_shader_source, source_filename, macros):
+def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, macros):
     shader_name = os.path.basename(source_filename)
     shader_name = os.path.splitext(shader_name)[0]
 
@@ -247,45 +249,46 @@ def compile_glsl(vs_shader_source, ps_shader_source, source_filename, macros):
     vs_file.close()
 
     # start making ps shader code
-    final_ps_source = "#version 330 core\n"
-    final_ps_source += "#define GLSL\n"
-    final_ps_source += macros
-    final_ps_source += "\n\n"
+    if has_ps:
+        final_ps_source = "#version 330 core\n"
+        final_ps_source += "#define GLSL\n"
+        final_ps_source += macros
+        final_ps_source += "\n\n"
 
-    # ps inputs
-    for vs_output in vs_outputs:
-        if vs_output.split()[1] != "position":
-            final_ps_source += "in " + vs_output + "_;\n"
-    final_ps_source += "\n"
+        # ps inputs
+        for vs_output in vs_outputs:
+            if vs_output.split()[1] != "position":
+                final_ps_source += "in " + vs_output + "_;\n"
+        final_ps_source += "\n"
 
-    # ps outputs
-    for ps_output in ps_outputs:
-        final_ps_source += "out " + ps_output + "_;\n"
-    final_ps_source += "\n"
+        # ps outputs
+        for ps_output in ps_outputs:
+            final_ps_source += "out " + ps_output + "_;\n"
+        final_ps_source += "\n"
 
-    final_ps_source += generate_global_io_struct(vs_outputs, "struct vs_output")
-    final_ps_source += generate_global_io_struct(ps_outputs, "struct ps_output")
-    final_ps_source += find_texture_samplers(glsl_vs_source)
+        final_ps_source += generate_global_io_struct(vs_outputs, "struct vs_output")
+        final_ps_source += generate_global_io_struct(ps_outputs, "struct ps_output")
+        final_ps_source += find_texture_samplers(glsl_vs_source)
 
-    glsl_ps_main = find_main(glsl_ps_source, "ps_output main")
-    skip_function_start = glsl_ps_main.find("{") + 1
-    skip_function_end = glsl_ps_main.find("return")
-    glsl_ps_main = glsl_ps_main[skip_function_start:skip_function_end].strip()
+        glsl_ps_main = find_main(glsl_ps_source, "ps_output main")
+        skip_function_start = glsl_ps_main.find("{") + 1
+        skip_function_end = glsl_ps_main.find("return")
+        glsl_ps_main = glsl_ps_main[skip_function_start:skip_function_end].strip()
 
-    ps_main_pre_assign = generate_input_assignment(vs_outputs, "vs_output", "_input")
-    ps_main_post_assign = generate_output_assignment(ps_outputs, "_output")
+        ps_main_pre_assign = generate_input_assignment(vs_outputs, "vs_output", "_input")
+        ps_main_post_assign = generate_output_assignment(ps_outputs, "_output")
 
-    final_ps_source += "void main()\n{\n"
-    final_ps_source += ps_main_pre_assign
-    final_ps_source += "\n\t//main body from " + source_filename + "\n"
-    final_ps_source += "\t" + glsl_ps_main + "\n"
-    final_ps_source += ps_main_post_assign
-    final_ps_source += "}\n"
+        final_ps_source += "void main()\n{\n"
+        final_ps_source += ps_main_pre_assign
+        final_ps_source += "\n\t//main body from " + source_filename + "\n"
+        final_ps_source += "\t" + glsl_ps_main + "\n"
+        final_ps_source += ps_main_post_assign
+        final_ps_source += "}\n"
 
-    ps_fn = os.path.join(shader_build_dir, shader_name + ".psc")
-    ps_file = open(ps_fn, "w")
-    ps_file.write(final_ps_source)
-    ps_file.close()
+        ps_fn = os.path.join(shader_build_dir, shader_name + ".psc")
+        ps_file = open(ps_fn, "w")
+        ps_file.write(final_ps_source)
+        ps_file.close()
 
 def create_vsc_psc_vsi(filename):
     print("converting: " + filename + "\n")
@@ -317,13 +320,20 @@ def create_vsc_psc_vsi(filename):
     ps_source += vs_output_source
     ps_source += find_struct(shader_file_text, "struct ps_output")
     ps_source += texture_samplers_source
-    ps_source += find_main(shader_file_text, "ps_output main")
+    ps_main_code = find_main(shader_file_text, "ps_output main")
+
+    # allow null pixel shaders
+    has_ps = 0
+    if ps_main_code != "":
+        ps_source += ps_main_code
+        has_ps = 1
 
     if shader_platform == "hlsl":
         compile_hlsl(vs_source, filename, "vs_4_0", ".vs")
-        compile_hlsl(ps_source, filename, "ps_4_0", ".ps")
+        if has_ps:
+            compile_hlsl(ps_source, filename, "ps_4_0", ".ps")
     elif shader_platform == "glsl":
-        compile_glsl(vs_source, ps_source, filename, macros_text)
+        compile_glsl(vs_source, ps_source, has_ps, filename, macros_text)
 
     parse_input_layout(vs_input_source, filename, ".vsi")
 

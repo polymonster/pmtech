@@ -32,8 +32,6 @@ ps_output main( vs_output _input )
 		//test scope for the shader parser to
 		//correctly find the body of the main function
 	}
-	
-	gl_FragColor = _output;
-		
+			
 	return _output;
 }

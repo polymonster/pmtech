@@ -50,9 +50,8 @@ namespace dbg
 
 	void create_shaders( )
 	{
-		debug_lines_program = put::loader_load_shader_program( "data\\shaders\\debug_lines.vsc", "data\\shaders\\debug_lines.psc", "data\\shaders\\debug_lines.vsi" );
-
-		debug_font_program = put::loader_load_shader_program("data\\shaders\\debug_font.vsc", "data\\shaders\\debug_font.psc", "data\\shaders\\debug_font.vsi");
+		debug_lines_program = put::loader_load_shader_program( "debug_lines" );
+		debug_font_program = put::loader_load_shader_program( "debug_font" );
 	}
 	void create_buffers( )
 	{

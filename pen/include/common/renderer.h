@@ -202,6 +202,8 @@ namespace pen
 	u32					renderer_create_clear_state( const clear_state &cs );
 
 	f64					renderer_get_last_query(u32 query_index);
+
+    const c8*           renderer_get_shader_platform();
     
 	//--------------------------------------------------------------------------------------
 	//  DIRECT API
