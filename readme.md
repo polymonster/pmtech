@@ -44,6 +44,7 @@ This solution / workspace contains multiple examples of how to use the API's and
 
 - empty_project - First port of call to get a platform compiling, it creates an empty window with no rendering context.
 - basic_traingle - introduces a rendering context, clear sceen, shader loading / binding, vertex buffer and non-indexed draw calls.
+- debug_font - introduces shader loading with the "put" library, vertex buffer updating and debug text rendering.
 - textures - Introduces texture loading using the "put" library, index buffers, indexed draw calls, texture samplers and texture binding.
 - render_target - Introduces render target creation / binding, shader program loading using the "put" library to automatically generate input layouts from the shaders input signature.
 
