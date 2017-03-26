@@ -713,9 +713,18 @@ namespace pen
 		}
 	}
 
-	void direct::renderer_update_buffer( u32 buffer_index, const void* data )
+	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size )
 	{
-		g_immediate_context->UpdateSubresource( resource_pool[ buffer_index ].generic_buffer, 0, nullptr, data, 0, 0 );
+        D3D11_MAPPED_SUBRESOURCE mapped_res = { 0 };
+
+        g_immediate_context->Map( resource_pool[ buffer_index ].generic_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res );
+       
+        memcpy( mapped_res.pData, data, data_size );
+       
+        g_immediate_context->Unmap( resource_pool[ buffer_index ].generic_buffer, 0 );
+
+        // update subresource can only be called on d3d usage default resources.
+		//g_immediate_context->UpdateSubresource( resource_pool[ buffer_index ].generic_buffer, 0, nullptr, data, 0, 0 );
 	}
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )

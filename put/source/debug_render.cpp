@@ -59,7 +59,7 @@ namespace dbg
 		pen::buffer_creation_params bcp;
 		bcp.usage_flags = PEN_USAGE_DYNAMIC;
 		bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
-		bcp.cpu_access_flags = 0;
+		bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
 		bcp.buffer_size = sizeof( vertex_debug_lines ) * MAX_DEBUG_LINES_VERTS;
 		bcp.data = NULL;
 

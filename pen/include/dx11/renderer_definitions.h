@@ -3,6 +3,12 @@
 
 #include <d3d11_1.h>
 
+enum clear_flags : s32
+{
+    PEN_CLEAR_COLOUR_BUFFER    = 0x01,
+    PEN_CLEAR_DEPTH_BUFFER    = 0x02
+};
+
 enum shader_type
 {
     PEN_SHADER_TYPE_VS          = 0x03,

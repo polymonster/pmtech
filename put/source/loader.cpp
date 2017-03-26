@@ -52,7 +52,7 @@ namespace put
 	{
 		if( compressed )
 		{
-			return PEN_FMAX( 1, ( ( width + 3 ) / 4 ) ) * PEN_FMAX( 1, ( ( height + 3 ) / 4 ) ) * block_size;
+			return PEN_UMAX( 1, ( ( width + 3 ) / 4 ) ) * PEN_UMAX( 1, ( ( height + 3 ) / 4 ) ) * block_size;
 		}
 
 		return	width * height * block_size; 		

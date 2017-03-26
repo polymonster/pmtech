@@ -21,6 +21,7 @@
 #include <float.h>
 #include <stdint.h>
 #include <atomic>
+#include <algorithm>
 
 //--------------------------------------------------------------------------------------
 // Types
@@ -50,6 +51,9 @@ typedef std::atomic<uint64_t> a_u64;
 
 #define PEN_FMAX fmax
 #define PEN_FMIN fmin
+
+#define PEN_UMIN std::min<u32>
+#define PEN_UMAX std::min<u32>
 
 //--------------------------------------------------------------------------------------
 // Print / Assert 
