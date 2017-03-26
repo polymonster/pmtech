@@ -25,6 +25,7 @@ namespace pen
 	#define NUM_QUERY_BUFFERS		4
 	#define MAX_QUERIES				64 
 	#define NUM_CUBEMAP_FACES		6
+    #define MAX_VERTEX_ATTRIBUTES   16
  
 	#define QUERY_DISJOINT			1
 	#define QUERY_ISSUED			(1<<1)
@@ -104,10 +105,12 @@ namespace pen
     typedef struct active_state
     {
         u32 vertex_buffer;
+        u32 vertex_buffer_stride;
         u32 index_buffer;
         u32 input_layout;
         u32 vertex_shader;
         u32 pixel_shader;
+        bool enabled_vertex_attributes[MAX_VERTEX_ATTRIBUTES];
     }active_state;
     
     active_state g_bound_state;
@@ -293,7 +296,7 @@ namespace pen
         
         for( u32 i = 0; i < params.num_elements; ++i )
         {
-            attributes[ i ].location        = params.input_layout[ i ].semantic_index;
+            attributes[ i ].location        = i;
             attributes[ i ].type            = UNPACK_FORMAT(params.input_layout[ i ].format);
             attributes[ i ].num_elements    = UNPACK_NUM_ELEMENTS(params.input_layout[ i ].format);
             attributes[ i ].offset          = params.input_layout[ i ].aligned_byte_offset;
@@ -306,6 +309,9 @@ namespace pen
 	void direct::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
 	{
         g_current_state.vertex_buffer = buffer_index;
+        g_current_state.vertex_buffer_stride = strides[ 0 ];
+        
+        //todo support multiple vertex stream.
 	}
 
 	void direct::renderer_set_input_layout( u32 layout_index )
@@ -330,8 +336,6 @@ namespace pen
             create_vao = false;
         }
         
-        glEnableVertexAttribArray(0);
-        
         //bind vertex buffer
         if( g_current_state.vertex_buffer != g_bound_state.vertex_buffer )
         {
@@ -351,11 +355,14 @@ namespace pen
         }
         
         //bind input layout
-        if( g_current_state.input_layout != g_bound_state.input_layout )
+        if( g_current_state.input_layout != g_bound_state.input_layout ||
+            g_current_state.vertex_buffer_stride != g_bound_state.vertex_buffer_stride )
         {
             g_bound_state.input_layout = g_current_state.input_layout;
+            g_bound_state.vertex_buffer_stride = g_current_state.vertex_buffer_stride;
             
             auto& res = resource_pool[g_bound_state.input_layout].input_layout;
+            
             
             for( auto& attribute : res->attributes )
             {
@@ -364,8 +371,22 @@ namespace pen
                                       attribute.num_elements,
                                       attribute.type,
                                       false,
-                                      attribute.stride,
+                                      g_bound_state.vertex_buffer_stride,
                                       (void*)attribute.offset);
+                
+                g_bound_state.enabled_vertex_attributes[attribute.location] = true;
+            }
+            
+            for( u32 i = 0; i < MAX_VERTEX_ATTRIBUTES; ++i )
+            {
+                if( g_bound_state.enabled_vertex_attributes[i] )
+                {
+                    glEnableVertexAttribArray(i);
+                }
+                else
+                {
+                    glDisableVertexAttribArray(i);
+                }
             }
         }
         
@@ -433,19 +454,15 @@ namespace pen
 	{
         bind_state();
         
-        //glDisable( GL_CULL_FACE );
-        //glDepthFunc( GL_ALWAYS );
-        //glDisable( GL_BLEND );
+        glDisable( GL_CULL_FACE );
+        glDepthFunc( GL_ALWAYS );
+        glDisable( GL_BLEND );
         
         glDrawArrays(primitive_topology, start_vertex, vertex_count);
-        
-        glDisableVertexAttribArray(0);
-        
 	}
 
 	void direct::renderer_draw_indexed( u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology )
 	{
-
 	}
 
 	u32 depth_texture_format_to_dsv_format( u32 tex_format )
@@ -504,7 +521,7 @@ namespace pen
 	void direct::renderer_set_viewport( const viewport &vp )
 	{
         glViewport( vp.x, vp.y, vp.width, vp.height );
-        //glDepthRangef( vp.min_depth, vp.max_depth );
+        glDepthRangef( vp.min_depth, vp.max_depth );
 	}
 
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )
@@ -524,9 +541,27 @@ namespace pen
 
 	}
 
-	void direct::renderer_update_buffer( u32 buffer_index, const void* data )
+	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size )
 	{
-
+        resource_allocation& res = resource_pool[ buffer_index ];
+        
+        glBindBuffer( GL_ARRAY_BUFFER, res.handle );
+        
+        void* mapped_data = glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE );
+        
+        const f32* f_map = (f32*)mapped_data;
+        
+        const u32 test_size = 6 * 4 * 4;
+        f32 test_buf[ test_size ];
+        
+        for( u32 i = 0; i < test_size; ++i )
+        {
+            test_buf[ i ] = f_map[ i ];
+        }
+        
+        pen::memory_cpy(mapped_data, data, data_size);
+        
+        glUnmapBuffer(GL_ARRAY_BUFFER);
 	}
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
@@ -623,5 +658,10 @@ namespace pen
 	{
 	
 	}
+    
+    const c8* renderer_get_shader_platform( )
+    {
+        return "glsl";
+    }
 }
 

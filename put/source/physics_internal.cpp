@@ -102,7 +102,7 @@ namespace physics
 
 			btTriangleIndexVertexArray* mesh = new btTriangleIndexVertexArray( num_tris, ( s32* ) params.mesh_data.indices, sizeof( u32 ) * 3, params.mesh_data.num_floats / 3, params.mesh_data.vertices, sizeof( f32 ) * 3 );
 
-			btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape( mesh, TRUE );
+			btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape( mesh, true );
 
 			shape = concave_mesh;
 		}
@@ -110,7 +110,7 @@ namespace physics
 		{
 			u32 num_shapes = p_compound->num_shapes;
 
-			btCompoundShape* compound = new btCompoundShape( TRUE );
+			btCompoundShape* compound = new btCompoundShape( true );
 
 			for (u32 s = 0; s < num_shapes; ++s)
 			{
@@ -146,7 +146,7 @@ namespace physics
 
 		bool canSleep = false;
 
-		btMultiBody *p_multibody = new btMultiBody( params.num_links, params.base.mass, baseInertiaDiag, params.base.mass == 0.0f ? TRUE : FALSE, canSleep, params.multi_dof == 1 );
+		btMultiBody *p_multibody = new btMultiBody( params.num_links, params.base.mass, baseInertiaDiag, params.base.mass == 0.0f ? true : false, canSleep, params.multi_dof == 1 );
 
 		btQuaternion bt_quat;
 		pen::memory_cpy( &bt_quat, &params.base.rotation, sizeof(quat) );
@@ -233,14 +233,14 @@ namespace physics
 
 			if (params.links[i].link_type == REVOLUTE)
 			{
-				p_multibody->setupRevolute( i, params.links[i].rb.mass, linkInertiaDiag, params.links[i].parent, parent_to_this_quat, hinge_axis, parentComToCurrentPivot, currentPivotToCurrentCom, FALSE );
+				p_multibody->setupRevolute( i, params.links[i].rb.mass, linkInertiaDiag, params.links[i].parent, parent_to_this_quat, hinge_axis, parentComToCurrentPivot, currentPivotToCurrentCom, false );
 				parent_pos = link_pos;
 			}
 			else if (params.links[i].link_type == FIXED)
 			{
 				parent_to_this_quat = link_quat.inverse( );
 
-				p_multibody->setupFixed( i, params.links[i].rb.mass, linkInertiaDiag, params.links[i].parent, parent_to_this_quat, parentComToCurrentPivot, currentPivotToCurrentCom, FALSE );
+				p_multibody->setupFixed( i, params.links[i].rb.mass, linkInertiaDiag, params.links[i].parent, parent_to_this_quat, parentComToCurrentPivot, currentPivotToCurrentCom, false );
 			}
 
 #ifdef MULTIBODY_WORLD
@@ -721,7 +721,7 @@ namespace physics
 		rb->setDamping( params.linear_damping, params.angular_damping );
 
 		//create the constraint and lock all axes
-		btGeneric6DofConstraint* dof6 = new btGeneric6DofConstraint( *fixed_body, *rb, frameInA, frameInB, TRUE );
+		btGeneric6DofConstraint* dof6 = new btGeneric6DofConstraint( *fixed_body, *rb, frameInA, frameInB, true );
 
 		dof6->setLinearLowerLimit( btVector3( params.lower_limit_translation.x, params.lower_limit_translation.y, params.lower_limit_translation.z ) );
 		dof6->setLinearUpperLimit( btVector3( params.upper_limit_translation.x, params.upper_limit_translation.y, params.upper_limit_translation.z ) );
@@ -859,13 +859,13 @@ namespace physics
 
 	void set_hinge_motor_internal( const set_v3_params &cmd )
 	{
-		g_bullet_objects.entities[cmd.object_index].hinge_constraint->enableAngularMotor( cmd.data.x == 0.0f ? FALSE : TRUE, cmd.data.y, cmd.data.z );
+		g_bullet_objects.entities[cmd.object_index].hinge_constraint->enableAngularMotor( cmd.data.x == 0.0f ? false : true, cmd.data.y, cmd.data.z );
 	}
 
 	void set_button_motor_internal( const set_v3_params &cmd )
 	{
 		btTranslationalLimitMotor* motor = g_bullet_objects.entities[cmd.object_index].dof6_constraint->getTranslationalLimitMotor( );
-		motor->m_enableMotor[1] = cmd.data.x == 0.0f ? FALSE : TRUE;
+		motor->m_enableMotor[1] = cmd.data.x == 0.0f ? false : true;
 		motor->m_targetVelocity = btVector3( 0.0f, cmd.data.y, 0.0f );
 		motor->m_maxMotorForce = btVector3( 0.0f, cmd.data.z, 0.0f );
 

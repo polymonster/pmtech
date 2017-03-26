@@ -65,10 +65,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
         pen::defer::renderer_clear( clear_state );
 
-        dbg::print_text( 10.0f, 10.0f, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "Debug Text" );
-        dbg::print_text( 10.0f, 20.0f, vec4f( 1.0f, 0.0f, 1.0f, 1.0f ), "Magenta" );
-        dbg::print_text( 10.0f, 30.0f, vec4f( 0.0f, 1.0f, 1.0f, 1.0f ), "Cyan" );
-        dbg::print_text( 10.0f, 40.0f, vec4f( 1.0f, 1.0f, 0.0f, 1.0f ), "Yellow" );
+        dbg::print_text( 10.0f, 10.0f, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Debug Text" );
+        dbg::print_text( 10.0f, 20.0f, vec4f( 1.0f, 0.0f, 1.0f, 1.0f ), "%s", "Magenta" );
+        dbg::print_text( 10.0f, 30.0f, vec4f( 0.0f, 1.0f, 1.0f, 1.0f ), "%s", "Cyan" );
+        dbg::print_text( 10.0f, 40.0f, vec4f( 1.0f, 1.0f, 0.0f, 1.0f ), "%s", "Yellow" );
 
         dbg::render_text();
 

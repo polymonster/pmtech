@@ -79,7 +79,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     ilp.input_layout[ 0 ].semantic_name = ( c8* ) &buf[ 0 ];
     ilp.input_layout[ 0 ].semantic_index = 0;
-    ilp.input_layout[ 0 ].format = PEN_FORMAT_R32G32B32_FLOAT;
+    ilp.input_layout[ 0 ].format = PEN_FORMAT_R32G32B32A32_FLOAT;
     ilp.input_layout[ 0 ].input_slot = 0;
     ilp.input_layout[ 0 ].aligned_byte_offset = 0;
     ilp.input_layout[ 0 ].input_slot_class = PEN_INPUT_PER_VERTEX;

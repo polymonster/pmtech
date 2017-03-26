@@ -157,6 +157,7 @@ namespace pen
     {
         u32		buffer_index;
         void*   data;
+        u32     data_size;
         
     } update_buffer_cmd;
     
@@ -345,7 +346,7 @@ namespace pen
                 break;
                 
             case CMD_UPDATE_BUFFER:
-                direct::renderer_update_buffer( cmd.update_buffer.buffer_index, cmd.update_buffer.data );
+                direct::renderer_update_buffer( cmd.update_buffer.buffer_index, cmd.update_buffer.data, cmd.update_buffer.data_size );
                 pen::memory_free( cmd.update_buffer.data );
                 break;
                 
@@ -920,6 +921,7 @@ namespace pen
         cmd_buffer[ put_pos ].command_index = CMD_UPDATE_BUFFER;
         
         cmd_buffer[ put_pos ].update_buffer.buffer_index = buffer_index;
+        cmd_buffer[ put_pos ].update_buffer.data_size = data_size;
         
         cmd_buffer[ put_pos ].update_buffer.data = pen::memory_alloc( data_size );
         pen::memory_cpy( cmd_buffer[ put_pos ].update_buffer.data, data, data_size );

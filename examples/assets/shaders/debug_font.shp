@@ -19,7 +19,7 @@ vs_output main( vs_input _input )
 {
 	vs_output _output;
 	
-	_output.position = float4(_input.position.x, _input.position.y, 0.0, 1.0);
+	_output.position = float4(_input.position.x, _input.position.y, 0.5, 1.0);
 	_output.colour = _input.colour;
 	
 	return _output;

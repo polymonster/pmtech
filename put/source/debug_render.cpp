@@ -57,7 +57,7 @@ namespace dbg
 	{
 		//debug lines buffer
 		pen::buffer_creation_params bcp;
-		bcp.usage_flags = PEN_USAGE_DEFAULT;
+		bcp.usage_flags = PEN_USAGE_DYNAMIC;
 		bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
 		bcp.cpu_access_flags = 0;
 		bcp.buffer_size = sizeof( vertex_debug_lines ) * MAX_DEBUG_LINES_VERTS;
@@ -138,7 +138,7 @@ namespace dbg
 		//draw
 		pen::defer::renderer_draw(font_vert_count, 0, PEN_PT_TRIANGLELIST);
 
-		pen::defer::renderer_consume_cmd_buffer();
+		//pen::defer::renderer_consume_cmd_buffer();
 
 		//reset
 		font_vert_count = 0;
@@ -150,18 +150,21 @@ namespace dbg
 
 	void print_text(f32 x, f32 y, vec4f colour, c8* text, ... )
 	{
+        //todo osx needs extra offset to offset past the title bar
+        y += 20.0f;
+        
 		va_list va;
 		va_start( va, text );
 
 		c8 expanded_buffer[512];
-
-		vsprintf_s( expanded_buffer, 512, text, va );
+        
+        pen::string_format_va(expanded_buffer, 512, text, va );
 
 		va_end( va );
 
 		static c8 buffer[99999]; // ~500 chars
 		u32 num_quads;
-		num_quads = stb_easy_font_print(x, y, expanded_buffer, NULL, buffer, sizeof(buffer));
+		num_quads = stb_easy_font_print(x, y, expanded_buffer, nullptr, buffer, sizeof(buffer));
 
 		f32* vb = (f32*)&buffer[0];
 

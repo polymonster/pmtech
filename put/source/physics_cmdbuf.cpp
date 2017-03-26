@@ -54,7 +54,7 @@ namespace physics
 			break;
 
 		case CMD_ADD_GHOST_RIGID_BODY:
-			add_rb_internal( cmd.add_rb, TRUE );
+			add_rb_internal( cmd.add_rb, true );
 			break;
 
 		case CMD_ADD_CONSTRAINED_RB:
@@ -411,13 +411,13 @@ namespace physics
 		g_readable_data.b_wait_flag = 0;
 	}
 
-	a_u32 wait_complete( )
+	void wait_complete( a_u32& result )
 	{
 		if ( g_readable_data.b_wait_flag )
 		{
-			return 1;
+            result = 1;
 		}
 
-		return 0;
+        result = 0;
 	}
 }

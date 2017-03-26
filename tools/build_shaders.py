@@ -6,8 +6,8 @@ import shutil
 import re
 import sys
 
-hlsl_key = ["float4",   "float3",   "float2"]
-glsl_key = ["vec4",     "vec3",     "vec2"]
+hlsl_key = ["float4",   "float3",   "float2",   "float4x4", "float3x3"]
+glsl_key = ["vec4",     "vec3",     "vec2",     "mat4",     "mat3"]
 
 tools_dir = os.path.join(os.getcwd(), "..", "tools")
 compiler_dir = os.path.join(os.getcwd(), "..", "tools", "bin", "fxc")
@@ -93,7 +93,7 @@ def compile_hlsl(source, filename, shader_model, temp_extension):
     temp_shader_source.write(source)
     temp_shader_source.close()
 
-    cmdline = compiler_exe_path + " " + "/T " + shader_model + " " + "/Fo " + output_file_and_path + " " + temp_file_name
+    cmdline = compiler_exe_path + " /T " + shader_model + " /Fo " + output_file_and_path + " " + temp_file_name
     subprocess.call(cmdline)
     print("\n")
 
@@ -166,7 +166,7 @@ def generate_global_io_struct(io_elements, decl):
     struct_source += "\n"
     return struct_source
 
-def generate_input_assignment(io_elements, decl, local_var):
+def generate_input_assignment(io_elements, decl, local_var, suffix):
     assign_source = "\t//assign input struct from glsl inputs\n"
     assign_source += "\t" + decl + " " + local_var + ";\n"
     for element in io_elements:
@@ -174,10 +174,10 @@ def generate_input_assignment(io_elements, decl, local_var):
             continue
         assign_source += "\t"
         var_name = element.split()[1]
-        assign_source += local_var + "." + var_name + " = " + var_name + "_;\n"
+        assign_source += local_var + "." + var_name + " = " + var_name + suffix + ";\n"
     return assign_source
 
-def generate_output_assignment(io_elements, local_var):
+def generate_output_assignment(io_elements, local_var, suffix):
     assign_source = "\n\t//assign glsl global outputs from structs\n"
     for element in io_elements:
         assign_source += "\t"
@@ -185,7 +185,7 @@ def generate_output_assignment(io_elements, local_var):
         if var_name == "position":
            assign_source += "gl_Position = " + local_var + "." + var_name + ";\n"
         else:
-            assign_source += var_name + "_ = " + local_var + "." + var_name + ";\n"
+            assign_source += var_name + suffix + " = " + local_var + "." + var_name + ";\n"
     return assign_source
 
 def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, macros):
@@ -203,7 +203,6 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, ma
     # parse input block
     vs_inputs, vs_input_semantics = parse_io_struct(glsl_vs_source, "struct vs_input")
     vs_outputs, vs_output_semantics = parse_io_struct(glsl_vs_source, "struct vs_output")
-    ps_outputs, ps_output_semantics = parse_io_struct(glsl_ps_source, "struct ps_output")
 
     # start making vs shader code
     final_vs_source = "#version 330 core\n"
@@ -214,14 +213,14 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, ma
     # glsl inputs
     index_counter = 0
     for vs_input in vs_inputs:
-        final_vs_source += "layout(location = " + str(index_counter) + ") in " + vs_input + "_;\n"
+        final_vs_source += "layout(location = " + str(index_counter) + ") in " + vs_input + "_vs_input;\n"
         index_counter += 1
     final_vs_source += "\n"
 
     # vs outputs
     for vs_output in vs_outputs:
         if vs_output.split()[1] != "position":
-            final_vs_source += "out " + vs_output + "_;\n"
+            final_vs_source += "out " + vs_output + "_vs_output;\n"
     final_vs_source += "\n"
 
     final_vs_source += generate_global_io_struct(vs_inputs, "struct vs_input")
@@ -233,8 +232,8 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, ma
     skip_function_end = glsl_vs_main.find("return")
     glsl_vs_main = glsl_vs_main[skip_function_start:skip_function_end].strip()
 
-    vs_main_pre_assign = generate_input_assignment(vs_inputs, "vs_input", "_input")
-    vs_main_post_assign = generate_output_assignment(vs_outputs, "_output")
+    vs_main_pre_assign = generate_input_assignment(vs_inputs, "vs_input", "_input", "_vs_input")
+    vs_main_post_assign = generate_output_assignment(vs_outputs, "_output", "_vs_output")
 
     final_vs_source += "void main()\n{\n"
     final_vs_source += vs_main_pre_assign
@@ -250,6 +249,8 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, ma
 
     # start making ps shader code
     if has_ps:
+        ps_outputs, ps_output_semantics = parse_io_struct(glsl_ps_source, "struct ps_output")
+
         final_ps_source = "#version 330 core\n"
         final_ps_source += "#define GLSL\n"
         final_ps_source += macros
@@ -258,12 +259,12 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, ma
         # ps inputs
         for vs_output in vs_outputs:
             if vs_output.split()[1] != "position":
-                final_ps_source += "in " + vs_output + "_;\n"
+                final_ps_source += "in " + vs_output + "_vs_output;\n"
         final_ps_source += "\n"
 
         # ps outputs
         for ps_output in ps_outputs:
-            final_ps_source += "out " + ps_output + "_;\n"
+            final_ps_source += "out " + ps_output + "_ps_output;\n"
         final_ps_source += "\n"
 
         final_ps_source += generate_global_io_struct(vs_outputs, "struct vs_output")
@@ -275,8 +276,8 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, ma
         skip_function_end = glsl_ps_main.find("return")
         glsl_ps_main = glsl_ps_main[skip_function_start:skip_function_end].strip()
 
-        ps_main_pre_assign = generate_input_assignment(vs_outputs, "vs_output", "_input")
-        ps_main_post_assign = generate_output_assignment(ps_outputs, "_output")
+        ps_main_pre_assign = generate_input_assignment(vs_outputs, "vs_output", "_input", "_vs_output")
+        ps_main_post_assign = generate_output_assignment(ps_outputs, "_output", "_ps_output")
 
         final_ps_source += "void main()\n{\n"
         final_ps_source += ps_main_pre_assign

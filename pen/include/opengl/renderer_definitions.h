@@ -41,6 +41,12 @@ enum default_targets : s32
     PEN_DEFAULT_DS = 2
 };
 
+enum clear_bits : s32
+{
+    PEN_CLEAR_COLOUR_BUFFER		=   GL_COLOR_BUFFER_BIT,
+    PEN_CLEAR_DEPTH_BUFFER		=   GL_DEPTH_BUFFER_BIT
+};
+
 enum input_classification : s32
 {
     PEN_INPUT_PER_VERTEX = 0,
@@ -60,9 +66,26 @@ enum primitive_topology : s32
 #define UNPACK_FORMAT( PF ) PF >> 4
 #define UNPACK_NUM_ELEMENTS( PF ) PF & (0x07)
 
-enum format : s32
+#define PACK_GL_TEXTURE_FORMAT( DATA_TYPE, NUM_ELEMENTS ) ((NUM_ELEMENTS) | (DATA_TYPE << 4))
+#define UNPACK_TEXTURE_FORMAT( PF ) PF >> 4
+#define UNPACK_DATA_TYPE( PF ) PF & (0x07)
+
+enum vertex_format : s32
 {
-    PEN_FORMAT_R32G32B32_FLOAT = PACK_GL_FORMAT( GL_FLOAT, 4 )
+    PEN_FORMAT_R32_FLOAT            = PACK_GL_FORMAT( GL_FLOAT, 1 ),
+    PEN_FORMAT_R32G32_FLOAT         = PACK_GL_FORMAT( GL_FLOAT, 2 ),
+    PEN_FORMAT_R32G32B32_FLOAT      = PACK_GL_FORMAT( GL_FLOAT, 3 ),
+    PEN_FORMAT_R32G32B32A32_FLOAT   = PACK_GL_FORMAT( GL_FLOAT, 4 )
+};
+
+enum texture_format : s32
+{
+    PEN_FORMAT_B8G8R8A8_UNORM       = GL_RGB,
+    PEN_FORMAT_BC1_UNORM            = 0,
+    PEN_FORMAT_BC2_UNORM            = 0,
+    PEN_FORMAT_BC3_UNORM            = 0,
+    PEN_FORMAT_BC4_UNORM            = 0,
+    PEN_FORMAT_BC5_UNORM            = 0
 };
 
 enum usage : s32
@@ -75,12 +98,11 @@ enum usage : s32
 
 enum bind_flags : s32
 {
+    PEN_BIND_SHADER_RESOURCE = 0,
+    
     PEN_BIND_VERTEX_BUFFER = GL_ARRAY_BUFFER,
     PEN_BIND_INDEX_BUFFER = GL_ELEMENT_ARRAY_BUFFER,
     PEN_BIND_CONSTANT_BUFFER = GL_UNIFORM_BUFFER,
-    
-    //PEN_BIND_SHADER_RESOURCE = GL_SHADER_STORAGE_BUFFER,
-    
     PEN_BIND_STREAM_OUTPUT = GL_TRANSFORM_FEEDBACK_BUFFER,
     PEN_BIND_RENDER_TARGET = GL_FRAMEBUFFER,
     

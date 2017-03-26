@@ -35,6 +35,11 @@ namespace pen
 	{
 		return wcscmp( string_a, string_b );
 	}
+    
+    void string_format_va( c8* dest, u32 buffer_size, const c8* format, va_list& va )
+    {
+        vsnprintf( dest, buffer_size, format, va );
+    }
 
 	void string_format( c8* dest, u32 buffer_size, const c8* format, ... )
 	{

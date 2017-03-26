@@ -331,7 +331,7 @@ namespace physics
 	trigger_contact_data* get_trigger_contacts( u32 entity_index );
 
 	void	reset_wait_flag();
-	a_u32	wait_complete();
+	void	wait_complete( a_u32& result );
 }
 
 #endif

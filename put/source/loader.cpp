@@ -52,7 +52,7 @@ namespace put
 	{
 		if( compressed )
 		{
-			return max( 1, ( ( width + 3 ) / 4 ) ) * max( 1, ( ( height + 3 ) / 4 ) ) * block_size;
+			return PEN_FMAX( 1, ( ( width + 3 ) / 4 ) ) * PEN_FMAX( 1, ( ( height + 3 ) / 4 ) ) * block_size;
 		}
 
 		return	width * height * block_size; 		
@@ -60,12 +60,12 @@ namespace put
 
 	u32 dds_pixel_format_to_texture_format( const dds_pixel_format &ddspf, bool &compressed, u32 &block_size, bool &dx10_header_present )
 	{
-		dx10_header_present = FALSE;
-		compressed = FALSE;
+		dx10_header_present = false;
+		compressed = false;
 
 		if( ddspf.four_cc )
 		{
-			compressed = TRUE;
+			compressed = true;
 			block_size = 16;
 
 			switch( ddspf.four_cc )
@@ -82,7 +82,7 @@ namespace put
 			case DXT5:
 				return PEN_FORMAT_BC5_UNORM;
 			case DX10:
-				dx10_header_present = TRUE;
+				dx10_header_present = true;
 				return 0;
 			}
 		}
@@ -187,10 +187,14 @@ namespace put
 
 	shader_program loader_load_shader_program( const c8* shader_name )
 	{
-        c8 vs_file_buf[ 256 ];
-        c8 ps_file_buf[ 256 ];
-        c8 il_file_buf[ 256 ];
-
+        //c8 vs_file_buf[ 256 ];
+        //c8 ps_file_buf[ 256 ];
+        //c8 il_file_buf[ 256 ];
+        
+        c8* vs_file_buf = (c8*)pen::memory_alloc(256);
+        c8* ps_file_buf = (c8*)pen::memory_alloc(256);
+        c8* il_file_buf = (c8*)pen::memory_alloc(256);
+        
         pen::string_format( vs_file_buf, 256, "data/shaders/%s/%s.vsc", pen::renderer_get_shader_platform(), shader_name );
         pen::string_format( ps_file_buf, 256, "data/shaders/%s/%s.psc", pen::renderer_get_shader_platform(), shader_name );
         pen::string_format( il_file_buf, 256, "data/shaders/%s/%s.vsi", pen::renderer_get_shader_platform(), shader_name );
@@ -242,7 +246,7 @@ namespace put
 		input_parser++;
 
 		ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc( sizeof(pen::input_layout_desc) * ilp.num_elements );
-	
+        
 		for( u32 i = 0; i < ilp.num_elements; i++ )
 		{
 			u32 size = *input_parser;
@@ -279,7 +283,7 @@ namespace put
 			
 			ilp.input_layout[i].input_slot = 0;
 			ilp.input_layout[i].aligned_byte_offset = offset;
-			ilp.input_layout[i].input_slot_class = D3D11_INPUT_PER_VERTEX_DATA;
+			ilp.input_layout[i].input_slot_class = PEN_INPUT_PER_VERTEX;
 			ilp.input_layout[i].instance_data_step_rate = 0;
 		}
 

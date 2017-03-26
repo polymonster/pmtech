@@ -11,6 +11,7 @@ namespace pen
     u32	 string_compare( const c8* string_a, const c8* string_b );
     u32	 string_compare_wide( const c16* string_a, const c16* string_b );
 
+    void string_format_va( c8* dest, u32 buffer_size, const c8* format, va_list& va );
     void string_format( c8* dest, u32 buffer_size, const c8* format, ... );
     void string_format_wide( c16* dest, u32 buffer_size, const c16* format, ... );
 
