@@ -89,9 +89,9 @@ project ( project_name )
 		flags { "WinMain" }
 		symbols "On"
 		targetname (project_name .. "_d")
-		links { "pen_d" }
+		links { "pen" }
 		
-		if link_put then links { "put_d" } end
+		if link_put then links { "put" } end
   
 	configuration "Release"
 		defines { "NDEBUG" }
@@ -99,5 +99,5 @@ project ( project_name )
 		targetname (project_name)
 		links { "pen" }
 		
-		if link_put then links { "put_d" } end
+		if link_put then links { "put" } end
 end

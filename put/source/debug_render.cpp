@@ -4,12 +4,12 @@
 #include "input.h"
 #include "memory.h"
 #include "stb_easy_font.h"
+#include "pen.h"
 
-extern u32 depth_state_disabled;
-extern u32 depth_state_enabled;
+//extern u32 depth_state_disabled;
+//extern u32 depth_state_enabled;
 
-extern u32 pen_window_width;
-extern u32 pen_window_height;
+extern pen::window_creation_params pen_window;
 
 namespace dbg
 {
@@ -37,13 +37,13 @@ namespace dbg
 	typedef struct vertex_debug_font
 	{
 		float x, y;
-		float pad0, pad1;
+		float r, g, b, a;
 	}vertex_debug_font;
 
 	u32 vb_font;
 	u32 font_vert_count = 0;
 
-	vertex_debug_font  debug_font_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_LINES_VERTS];
+	vertex_debug_font  debug_font_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_FONT_VERTS];
 	vertex_debug_font *debug_font_verts = NULL;
 
 	put::shader_program debug_font_program;
@@ -67,7 +67,7 @@ namespace dbg
 
 		debug_lines_verts = &debug_lines_buffers[ debug_lines_backbuffer_index ][ 0 ];
 
-		bcp.buffer_size = sizeof(vertex_debug_lines) * MAX_DEBUG_LINES_VERTS;
+		bcp.buffer_size = sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS;
 
 		vb_font = pen::defer::renderer_create_buffer(bcp);
 
@@ -99,7 +99,7 @@ namespace dbg
 		//shader constants and textures
 		pen::defer::renderer_set_constant_buffer( cb_3dview, 0, PEN_SHADER_TYPE_VS );
 
-		pen::defer::renderer_set_depth_stencil_state( depth_state_enabled );
+		//pen::defer::renderer_set_depth_stencil_state( depth_state_enabled );
 
 		//draw
 		pen::defer::renderer_draw( line_vert_count, 0, PEN_PT_LINELIST );
@@ -117,6 +117,8 @@ namespace dbg
 
 	void render_text()
 	{
+        int buffer_size = sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS;
+
 		pen::defer::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS);
 
 		//bind vertex layout
@@ -131,7 +133,7 @@ namespace dbg
 		pen::defer::renderer_set_shader(debug_font_program.vertex_shader, PEN_SHADER_TYPE_VS);
 		pen::defer::renderer_set_shader(debug_font_program.pixel_shader, PEN_SHADER_TYPE_PS);
 
-		pen::defer::renderer_set_depth_stencil_state(depth_state_disabled);
+		//pen::defer::renderer_set_depth_stencil_state(depth_state_disabled);
 
 		//draw
 		pen::defer::renderer_draw(font_vert_count, 0, PEN_PT_TRIANGLELIST);
@@ -146,7 +148,7 @@ namespace dbg
 		debug_font_verts = &debug_font_buffers[debug_font_backbuffer_index][0];
 	}
 
-	void print_text(f32 x, f32 y, c8* text, ... )
+	void print_text(f32 x, f32 y, vec4f colour, c8* text, ... )
 	{
 		va_list va;
 		va_start( va, text );
@@ -163,6 +165,14 @@ namespace dbg
 
 		f32* vb = (f32*)&buffer[0];
 
+        u32 start_vertex = font_vert_count;
+
+        if( font_vert_count + num_quads * 6 >= MAX_DEBUG_FONT_VERTS )
+        {
+            //bail out as we have ran out of buffer
+            return;
+        }
+
 		for (u32 i = 0; i < num_quads; ++i)
 		{
 			f32 x[4];
@@ -171,8 +181,8 @@ namespace dbg
 			for (u32 v = 0; v < 4; ++v)
 			{
 				vec2f ndc_pos = vec2f( vb[0], vb[1] );
-				ndc_pos.x /= pen_window_width;
-				ndc_pos.y /= pen_window_height;
+				ndc_pos.x /= pen_window.width;
+				ndc_pos.y /= pen_window.height;
 				ndc_pos = ( ndc_pos * vec2f( 2.0f, 2.0f ) ) - vec2f( 1.0f, 1.0f );
 
 				x[v] = ndc_pos.x;
@@ -207,6 +217,14 @@ namespace dbg
 			debug_font_verts[font_vert_count].y = y[0];
 			font_vert_count++;
 		}
+
+        for( u32 i = start_vertex; i < font_vert_count; ++i )
+        {
+            debug_font_verts[ i ].r = colour.x;
+            debug_font_verts[ i ].g = colour.y;
+            debug_font_verts[ i ].b = colour.z;
+            debug_font_verts[ i ].a = colour.w;
+        }
 	}
 
 	void add_line( vec3f start, vec3f end, vec3f col )
@@ -466,14 +484,14 @@ namespace dbg
 	{
 		//calc pos in NDC space
 		vec2f ndc_pos = pos;
-		ndc_pos.x /= pen_window_width;
-		ndc_pos.y /= pen_window_height;
+		ndc_pos.x /= pen_window.width;
+		ndc_pos.y /= pen_window.height;
 		ndc_pos = (ndc_pos * vec2f(2.0f,2.0f)) - vec2f(1.0f,1.0f);
 
 		//calc size in NDC space
 		vec2f ndc_size = size;
-		ndc_size.x /= pen_window_width;
-		ndc_size.y /= pen_window_height;
+		ndc_size.x /= pen_window.width;
+		ndc_size.y /= pen_window.height;
 		ndc_size = (ndc_size);
 
 		vec2f corners[ 4 ] = 

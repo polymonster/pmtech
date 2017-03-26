@@ -205,9 +205,19 @@ namespace put
 		ps_slp.type = PEN_SHADER_TYPE_PS;
 
 		//textured
-		pen::filesystem_read_file_to_buffer( vs_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
+		u32 err = pen::filesystem_read_file_to_buffer( vs_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
 
-        u32 err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
+		if ( err != PEN_ERR_OK  )
+        {
+            //we must have a vertex shader, if this has failed, so will have the input layout.
+            prog.input_layout = 0;
+            prog.vertex_shader = 0;
+            prog.pixel_shader = 0;
+
+            return prog;
+        }
+
+        err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
 
 		if ( err != PEN_ERR_OK  )
 		{

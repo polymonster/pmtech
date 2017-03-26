@@ -21,7 +21,7 @@ namespace dbg
 	void add_debug_quad( vec2f pos, vec2f size, vec3f colour );
 
 	//text
-	void print_text(f32 x, f32 y, c8* text, ... );
+	void print_text(f32 x, f32 y, vec4f colour, c8* text, ... );
 
 	void render_3d( u32 cb_3dview );
 	void render_text();
