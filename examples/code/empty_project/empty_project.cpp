@@ -22,5 +22,5 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::threads_sleep_us(16000);
     }
     
-	return PEN_OK;
+	return PEN_THREAD_OK;
 }

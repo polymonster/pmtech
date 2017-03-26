@@ -88,8 +88,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     u32 colour_render_target = pen::defer::renderer_create_render_target( tcp );
 
     //load shaders now requiring dependency on put to make loading simpler.
-    put::shader_program basic_tri_shader = put::loader_load_shader_program( "data\\shaders\\basictri.vsc", "data\\shaders\\basictri.psc", "data\\shaders\\basictri.vsi" );
-    put::shader_program textured_shader = put::loader_load_shader_program( "data\\shaders\\textured.vsc", "data\\shaders\\textured.psc", "data\\shaders\\textured.vsi" );
+    put::shader_program basic_tri_shader = put::loader_load_shader_program( "basictri" );
+    put::shader_program textured_shader = put::loader_load_shader_program( "textured" );
 
     //create vertex buffer for a triangle
     vertex triangle_vertices[] =

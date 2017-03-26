@@ -159,5 +159,5 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     }
 
-    return PEN_OK;
+    return PEN_THREAD_OK;
 }
