@@ -5,6 +5,7 @@
 #include "pen.h"
 #include "threads.h"
 #include "renderer.h"
+#include "timer.h"
 
 NSOpenGLView* _gl_view;
 NSWindow * _window;
@@ -41,10 +42,14 @@ void create_gl_context()
     NSOpenGLPixelFormat *pixel_format = [[NSOpenGLPixelFormat alloc] initWithAttributes:pixel_format_attribs];
     
     NSRect glViewRect = [[_window contentView] bounds];
+    
     NSOpenGLView* glView = [[NSOpenGLView alloc] initWithFrame:glViewRect pixelFormat:pixel_format];
     
     [pixel_format release];
-    [_window setContentView:glView];
+    
+    //[_window setContentView:glView];
+    
+    [_window.contentView addSubview:glView];
     
     NSOpenGLContext* glContext = [glView openGLContext];
     
@@ -68,9 +73,9 @@ int main(int argc, char **argv)
     
     NSUInteger style_mask = NSWindowStyleMaskTitled;
     
-    NSRect rect = [NSWindow contentRectForFrameRect:frame styleMask:style_mask];
+    //NSRect rect = [NSWindow contentRectForFrameRect:frame styleMask:style_mask];
     
-    _window = [[NSWindow alloc] initWithContentRect:rect styleMask:style_mask backing: NSBackingStoreBuffered defer:NO];
+    _window = [[NSWindow alloc] initWithContentRect:frame styleMask:style_mask backing: NSBackingStoreBuffered defer:NO];
 
     [_window makeKeyAndOrderFront: _window];
     
@@ -81,6 +86,9 @@ int main(int argc, char **argv)
     create_gl_context();
     
     [pool drain];
+    
+    //init systems
+    pen::timer_system_intialise();
     
     //create render thread
     pen::renderer_thread_init();

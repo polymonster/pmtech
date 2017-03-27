@@ -1,7 +1,8 @@
 #include "timer.h"
 #include "pen_string.h"
-#include <signal.h>
-#include <time.h>
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#include <unistd.h>
 
 namespace pen
 {
@@ -9,7 +10,7 @@ namespace pen
 
 	typedef struct timer
 	{
-		//LARGE_INTEGER last_start;
+        uint64_t last_start;
 
 		f32 accumulated;
 		f32 longest;
@@ -23,15 +24,25 @@ namespace pen
 
 	//LARGE_INTEGER permonace_frequency;
 	f32			  ticks_to_ms;
+    f32			  ticks_to_us;
+    f32			  ticks_to_ns;
+    
 	timer		  timers[ MAX_TIMERS ];
 
 	u32 next_free = 0;
 
 	void timer_system_intialise( )
 	{
-		//QueryPerformanceFrequency( &permonace_frequency );
-
-		//ticks_to_ms = (f32)( 1.0 / ( permonace_frequency.QuadPart / 1000.0 ) );
+        static mach_timebase_info_data_t s_timebase_info;
+        
+        if ( s_timebase_info.denom == 0 )
+        {
+            (void) mach_timebase_info(&s_timebase_info);
+        }
+        
+        ticks_to_ns = (f32)s_timebase_info.numer / (f32)s_timebase_info.denom;
+        ticks_to_us = ticks_to_ns / 1000.0f;
+        ticks_to_ms = ticks_to_us / 1000.0f;
 
 		next_free = MAX_TIMERS;
 
@@ -49,15 +60,16 @@ namespace pen
 
 	void timer_start( u32 index )
 	{
-		//QueryPerformanceCounter( &timers[ index ].last_start );
+        timers[ index ].last_start = mach_absolute_time();
 	}
 
 	void timer_accum( u32 index )
 	{
-		//LARGE_INTEGER end_time;
-		//QueryPerformanceCounter( &end_time );
+        uint64_t end = mach_absolute_time();
+        
+        uint64_t elapsed = end - timers[ index ].last_start;
 
-        f32 last_duration = 0; //(f32)(end_time.QuadPart - timers[ index ].last_start.QuadPart);
+        f32 last_duration = (f32)elapsed;
 
 		timers[ index ].accumulated += last_duration;
 		timers[ index ].hit_count++;
@@ -88,6 +100,16 @@ namespace pen
 	{
 		return timers[ timer_index ].accumulated * ticks_to_ms;
 	}
+    
+    f32 timer_get_us( u32 timer_index )
+    {
+        return timers[ timer_index ].accumulated * ticks_to_us;
+    }
+    
+    f32 timer_get_ns( u32 timer_index )
+    {
+        return timers[ timer_index ].accumulated * ticks_to_ns;
+    }
 
 	void timer_get_data( u32 timer_index, f32 &total_time_ms, u32 &hit_count, f32 &longest_ms, f32 &shortest_ms )
 	{
@@ -99,12 +121,9 @@ namespace pen
 
 	f32 timer_get_time( )
 	{
-		//LARGE_INTEGER perf;
-		//QueryPerformanceCounter( &perf );
-
-		//return (f32)( perf.QuadPart ) * ticks_to_ms;
+        uint64_t t = mach_absolute_time();
         
-        return 0.0f;
+        return (f32)( t ) * ticks_to_ms;
 	}
 
 	void timer_print( u32 timer_index )
