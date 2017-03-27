@@ -22,7 +22,7 @@ enum shader_type
     PEN_SHADER_TYPE_GS          = GL_GEOMETRY_SHADER
 };
 
-enum raster_state : s32
+enum fill_mode : s32
 {
     PEN_FILL_SOLID = GL_FILL,
     PEN_FILL_WIREFRAME = GL_LINE

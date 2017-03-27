@@ -457,8 +457,8 @@ vec3f mat4::get_fwd( )
 mat3::mat3( mat4 extract )
 {
     m[ 0] = extract.m[ 0]; m[ 1] = extract.m[ 1]; m[ 2] = extract.m[ 2];
-    m[ 4] = extract.m[ 4]; m[ 5] = extract.m[ 5]; m[ 6] = extract.m[ 6];
-    m[ 8] = extract.m[ 8]; m[ 9] = extract.m[ 6]; m[10] = extract.m[10]; 
+    m[ 3] = extract.m[ 4]; m[ 4] = extract.m[ 5]; m[ 5] = extract.m[ 6];
+    m[ 6] = extract.m[ 8]; m[ 7] = extract.m[ 6]; m[ 8] = extract.m[10];
 }
 
 void mat3::gl_compliant_matrix( f32 *entries )

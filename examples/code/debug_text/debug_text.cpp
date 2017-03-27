@@ -27,6 +27,8 @@ typedef struct textured_vertex
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
+    u32 timer_test = pen::timer_create("test");
+    
     //initialise the debug render system
     dbg::initialise();
 
@@ -42,9 +44,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero( &rcp, sizeof( rasteriser_state_creation_params ) );
     rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_NONE;
+    rcp.cull_mode = PEN_CULL_BACK;
     rcp.depth_bias_clamp = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
+    rcp.depth_clip_enable = true;
 
     u32 raster_state = pen::defer::renderer_create_rasterizer_state( rcp );
 
@@ -58,6 +61,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     while( 1 )
     {
+        pen::timer_start(timer_test);
+        
         pen::defer::renderer_set_rasterizer_state( raster_state );
 
         //bind back buffer and clear
@@ -65,10 +70,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
         pen::defer::renderer_clear( clear_state );
 
-        dbg::print_text( 10.0f, 10.0f, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Debug Text" );
-        dbg::print_text( 10.0f, 20.0f, vec4f( 1.0f, 0.0f, 1.0f, 1.0f ), "%s", "Magenta" );
-        dbg::print_text( 10.0f, 30.0f, vec4f( 0.0f, 1.0f, 1.0f, 1.0f ), "%s", "Cyan" );
-        dbg::print_text( 10.0f, 40.0f, vec4f( 1.0f, 1.0f, 0.0f, 1.0f ), "%s", "Yellow" );
+        dbg::print_text( 10.0f, 10.0f, vp, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Debug Text" );
+        dbg::print_text( 10.0f, 20.0f, vp, vec4f( 1.0f, 0.0f, 1.0f, 1.0f ), "%s", "Magenta" );
+        dbg::print_text( 10.0f, 30.0f, vp, vec4f( 0.0f, 1.0f, 1.0f, 1.0f ), "%s", "Cyan" );
+        dbg::print_text( 10.0f, 40.0f, vp, vec4f( 1.0f, 1.0f, 0.0f, 1.0f ), "%s", "Yellow" );
 
         dbg::render_text();
 
@@ -76,11 +81,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_present();
 
         pen::defer::renderer_consume_cmd_buffer();
-    }
-
-    while( 1 )
-    {
-
+        
+        pen::timer_accum(timer_test);
+        f32 time_ms = pen::timer_get_ms(timer_test);
+        dbg::print_text( 10.0f, 50.0f, vp, vec4f( 0.0f, 0.0f, 1.0f, 1.0f ), "%s%f", "Timer", time_ms );
+        pen::timer_reset(timer_test);
     }
 
     return PEN_THREAD_OK;

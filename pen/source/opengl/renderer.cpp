@@ -67,8 +67,17 @@ namespace pen
     typedef struct input_layout
     {
         std::vector<vertex_attribute> attributes;
+        GLuint vertex_array_handle = 0;
     } input_layout;
 
+    typedef struct raster_state
+    {
+        GLenum cull_face;
+        GLenum polygon_mode;
+        bool culling_enabled;
+        bool depth_clip_enabled;
+    } raster_state;
+    
 	typedef struct resource_allocation
 	{
 		u8 asigned_flag;
@@ -77,6 +86,7 @@ namespace pen
 		{
 			clear_state_internal*			clear_state;
             input_layout*                   input_layout;
+            raster_state                    raster_state;
             GLuint                          handle;
 		};
 	} resource_allocation;
@@ -110,7 +120,8 @@ namespace pen
         u32 input_layout;
         u32 vertex_shader;
         u32 pixel_shader;
-        bool enabled_vertex_attributes[MAX_VERTEX_ATTRIBUTES];
+        u32 raster_state;
+        bool enabled_vertex_attributes[MAX_VERTEX_ATTRIBUTES]; //todo remove
     }active_state;
     
     active_state g_bound_state;
@@ -311,7 +322,11 @@ namespace pen
         g_current_state.vertex_buffer = buffer_index;
         g_current_state.vertex_buffer_stride = strides[ 0 ];
         
+        // todo instancing GL_ARRAY_OBJECT
+        
         //todo support multiple vertex stream.
+        
+        //todo move stride into input layout
 	}
 
 	void direct::renderer_set_input_layout( u32 layout_index )
@@ -328,14 +343,6 @@ namespace pen
     
     void bind_state()
     {
-        if( create_vao )
-        {
-            GLuint VertexArrayID;
-            glGenVertexArrays(1, &VertexArrayID);
-            glBindVertexArray(VertexArrayID);
-            create_vao = false;
-        }
-        
         //bind vertex buffer
         if( g_current_state.vertex_buffer != g_bound_state.vertex_buffer )
         {
@@ -361,32 +368,41 @@ namespace pen
             g_bound_state.input_layout = g_current_state.input_layout;
             g_bound_state.vertex_buffer_stride = g_current_state.vertex_buffer_stride;
             
-            auto& res = resource_pool[g_bound_state.input_layout].input_layout;
+            auto* res = resource_pool[g_bound_state.input_layout].input_layout;
             
-            
-            for( auto& attribute : res->attributes )
+            if( res->vertex_array_handle == 0 )
             {
-                glVertexAttribPointer(
-                                      attribute.location,
-                                      attribute.num_elements,
-                                      attribute.type,
-                                      false,
-                                      g_bound_state.vertex_buffer_stride,
-                                      (void*)attribute.offset);
+                glGenVertexArrays(1, &res->vertex_array_handle);
+                glBindVertexArray(res->vertex_array_handle);
                 
-                g_bound_state.enabled_vertex_attributes[attribute.location] = true;
+                for( auto& attribute : res->attributes )
+                {
+                    glVertexAttribPointer(
+                                          attribute.location,
+                                          attribute.num_elements,
+                                          attribute.type,
+                                          false,
+                                          g_bound_state.vertex_buffer_stride,
+                                          (void*)attribute.offset);
+                    
+                    g_bound_state.enabled_vertex_attributes[attribute.location] = true;
+                }
+                
+                for( u32 i = 0; i < MAX_VERTEX_ATTRIBUTES; ++i )
+                {
+                    if( g_bound_state.enabled_vertex_attributes[i] )
+                    {
+                        glEnableVertexAttribArray(i);
+                    }
+                    else
+                    {
+                        glDisableVertexAttribArray(i);
+                    }
+                }
             }
-            
-            for( u32 i = 0; i < MAX_VERTEX_ATTRIBUTES; ++i )
+            else
             {
-                if( g_bound_state.enabled_vertex_attributes[i] )
-                {
-                    glEnableVertexAttribArray(i);
-                }
-                else
-                {
-                    glDisableVertexAttribArray(i);
-                }
+                glBindVertexArray(res->vertex_array_handle);
             }
         }
         
@@ -448,13 +464,42 @@ namespace pen
             
             glUseProgram( linked_program->program );
         }
+        
+        if( g_bound_state.raster_state != g_current_state.raster_state )
+        {
+            g_bound_state.raster_state = g_current_state.raster_state;
+            
+            auto& rs = resource_pool[ g_bound_state.raster_state ].raster_state;
+            
+            glFrontFace(GL_CW);
+            
+            if( rs.culling_enabled )
+            {
+                glEnable( GL_CULL_FACE );
+                glCullFace(rs.cull_face);
+            }
+            else
+            {
+                glDisable(GL_CULL_FACE);
+            }
+            
+            if( rs.depth_clip_enabled )
+            {
+                glDisable(GL_DEPTH_CLAMP);
+            }
+            else
+            {
+                glEnable(GL_DEPTH_CLAMP);
+            }
+            
+            glPolygonMode(GL_FRONT_AND_BACK, rs.polygon_mode);
+        }
     }
 
 	void direct::renderer_draw( u32 vertex_count, u32 start_vertex, u32 primitive_topology )
 	{
         bind_state();
         
-        glDisable( GL_CULL_FACE );
         glDepthFunc( GL_ALWAYS );
         glDisable( GL_BLEND );
         
@@ -509,13 +554,28 @@ namespace pen
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+        
+        auto& rs = resource_pool[resource_index].raster_state;
+        
+        rs = { 0 };
+        
+        if( rscp.cull_mode != PEN_CULL_NONE )
+        {
+            rs.culling_enabled = true;
+
+            rs.cull_face = rscp.cull_mode;
+        }
+        
+        rs.depth_clip_enabled = rscp.depth_clip_enable;
+        
+        rs.polygon_mode = rscp.fill_mode;
 
 		return resource_index;
 	}
 
 	void direct::renderer_set_rasterizer_state( u32 rasterizer_state_index )
 	{
-
+        g_current_state.raster_state = rasterizer_state_index;
 	}
     
 	void direct::renderer_set_viewport( const viewport &vp )

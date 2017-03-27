@@ -117,8 +117,6 @@ namespace dbg
 
 	void render_text()
 	{
-        int buffer_size = sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS;
-
 		pen::defer::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS);
 
 		//bind vertex layout
@@ -137,9 +135,7 @@ namespace dbg
 
 		//draw
 		pen::defer::renderer_draw(font_vert_count, 0, PEN_PT_TRIANGLELIST);
-
-		//pen::defer::renderer_consume_cmd_buffer();
-
+        
 		//reset
 		font_vert_count = 0;
 
@@ -148,17 +144,14 @@ namespace dbg
 		debug_font_verts = &debug_font_buffers[debug_font_backbuffer_index][0];
 	}
 
-	void print_text(f32 x, f32 y, vec4f colour, c8* text, ... )
+	void print_text(f32 x, f32 y, const pen::viewport& vp, vec4f colour, const c8* format, ... )
 	{
-        //todo osx needs extra offset to offset past the title bar
-        y += 20.0f;
-        
 		va_list va;
-		va_start( va, text );
+		va_start( va, format );
 
 		c8 expanded_buffer[512];
         
-        pen::string_format_va(expanded_buffer, 512, text, va );
+        pen::string_format_va(expanded_buffer, 512, format, va );
 
 		va_end( va );
 
@@ -175,6 +168,9 @@ namespace dbg
             //bail out as we have ran out of buffer
             return;
         }
+        
+        f32 recipricol_width = 1.0f / (vp.width - vp.x);
+        f32 recipricol_height = 1.0f / (vp.height - vp.y);
 
 		for (u32 i = 0; i < num_quads; ++i)
 		{
@@ -183,9 +179,11 @@ namespace dbg
 
 			for (u32 v = 0; v < 4; ++v)
 			{
-				vec2f ndc_pos = vec2f( vb[0], vb[1] );
-				ndc_pos.x /= pen_window.width;
-				ndc_pos.y /= pen_window.height;
+				vec2f ndc_pos = vec2f( vb[0] + vp.x, vb[1] + vp.y );
+				
+                ndc_pos.x *= recipricol_width;
+				ndc_pos.y *= recipricol_height;
+                
 				ndc_pos = ( ndc_pos * vec2f( 2.0f, 2.0f ) ) - vec2f( 1.0f, 1.0f );
 
 				x[v] = ndc_pos.x;
@@ -339,8 +337,6 @@ namespace dbg
 		vec3f division_size = size / divisions;
 
 		vec3f current = start;
-
-		u32 base_vert = 0;
 
 		f32 grayness = 0.3f;
 

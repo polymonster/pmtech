@@ -12,6 +12,8 @@ namespace pen
 	f32	  timer_get_time( );
 
 	f32	  timer_get_ms( u32 timer_index );
+    f32	  timer_get_us( u32 timer_index );
+    f32	  timer_get_ns( u32 timer_index );
 
 	void  timer_start( u32 index );
 	void  timer_accum( u32 index );
