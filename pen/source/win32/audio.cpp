@@ -2,9 +2,9 @@
 #include "fmod.hpp"
 #include <math.h>
 
+#if 0
 namespace pen
 {
-
 #define MAX_SOUNDS 32
 #define INVALID_SOUND (u32)-1
 #define MAX_CHANNEL_GROUPS 32
@@ -248,3 +248,4 @@ namespace pen
 		return (u32)ip;
 	}
 }
+#endif

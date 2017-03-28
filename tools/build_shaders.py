@@ -188,7 +188,8 @@ def generate_output_assignment(io_elements, local_var, suffix):
             assign_source += var_name + suffix + " = " + local_var + "." + var_name + ";\n"
     return assign_source
 
-def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, macros):
+def compile_glsl(vs_shader_source, ps_shader_source, has_ps,
+                 source_filename, texture_samplers_source, macros):
     shader_name = os.path.basename(source_filename)
     shader_name = os.path.splitext(shader_name)[0]
 
@@ -225,7 +226,7 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, ma
 
     final_vs_source += generate_global_io_struct(vs_inputs, "struct vs_input")
     final_vs_source += generate_global_io_struct(vs_outputs, "struct vs_output")
-    final_vs_source += find_texture_samplers(glsl_vs_source)
+    final_vs_source += texture_samplers_source
 
     glsl_vs_main = find_main(glsl_vs_source, "vs_output main")
     skip_function_start = glsl_vs_main.find("{") + 1
@@ -269,7 +270,7 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps, source_filename, ma
 
         final_ps_source += generate_global_io_struct(vs_outputs, "struct vs_output")
         final_ps_source += generate_global_io_struct(ps_outputs, "struct ps_output")
-        final_ps_source += find_texture_samplers(glsl_vs_source)
+        final_ps_source += texture_samplers_source
 
         glsl_ps_main = find_main(glsl_ps_source, "ps_output main")
         skip_function_start = glsl_ps_main.find("{") + 1
@@ -334,7 +335,7 @@ def create_vsc_psc_vsi(filename):
         if has_ps:
             compile_hlsl(ps_source, filename, "ps_4_0", ".ps")
     elif shader_platform == "glsl":
-        compile_glsl(vs_source, ps_source, has_ps, filename, macros_text)
+        compile_glsl(vs_source, ps_source, has_ps, filename, texture_samplers_source, macros_text)
 
     parse_input_layout(vs_input_source, filename, ".vsi")
 
