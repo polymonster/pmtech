@@ -6,6 +6,7 @@
 #include "threads.h"
 #include "renderer.h"
 #include "timer.h"
+#include "audio.h"
 
 NSOpenGLView* _gl_view;
 NSWindow * _window;
@@ -92,10 +93,13 @@ int main(int argc, char **argv)
     
     //create render thread
     pen::renderer_thread_init();
-    
     pen::threads_create( &pen::renderer_init_thread, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
-    
     pen::renderer_wait_init();
+    
+    //create audi thread
+    pen::audio_init_thread_primitives();
+    pen::threads_create( &pen::audio_thread_function, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
+    pen::audio_wait_for_init();
     
     //create game thread
     pen::threads_create( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );

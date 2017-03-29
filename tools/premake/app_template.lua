@@ -3,7 +3,8 @@ links
 { 
 	"Cocoa.framework",
 	"OpenGL.framework",
-	"iconv"
+	"iconv",
+	"fmod"
 }
 end
 

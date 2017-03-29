@@ -99,6 +99,8 @@ namespace pen
             if( pen::threads_semaphore_wait( p_audio_thread_consume_semaphore ) == 1 )
             {
                 u32 end_pos = audio_put_pos;
+                
+                pen::threads_semaphore_signal( p_audio_thread_continue_semaphore, 1 );
 
                 while( audio_get_pos != end_pos )
                 {

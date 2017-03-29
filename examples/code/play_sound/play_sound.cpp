@@ -54,7 +54,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 {
     renderer_state_init();
 
-    u32 sound_index = pen::audio_create_sound("data/audio/t1.mp3");
+    u32 sound_index = pen::audio_create_sound("data/audio/singing.wav");
     u32 channel_index = pen::audio_create_channel_for_sound( sound_index );
 
     while( 1 )
@@ -74,6 +74,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_present();
 
         pen::defer::renderer_consume_cmd_buffer();
+        
         pen::audio_consume_command_buffer();
     }
 

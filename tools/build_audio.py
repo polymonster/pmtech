@@ -14,11 +14,14 @@ bin_dir = os.path.join(os.getcwd(), "bin", platform_name)
 if not os.path.exists(build_dir):
     os.makedirs(build_dir)
 
-# copy fmod dll
-if platform_name == "win32":
-    print("copying dll to binary dir")
-    src_file = os.path.join(os.getcwd(), "..", "pen", "third_party", "fmod", "lib", "win32", "fmod.dll")
-    shutil.copy(src_file, bin_dir)
+dll = "fmod.dll"
+if platform_name == "osx":
+    dll = "libfmod.dylib"
+
+# copy fmod dll / dylib
+print("copying dynamic library to binary dir")
+src_file = os.path.join(os.getcwd(), "..", "pen", "third_party", "fmod", "lib", platform_name, dll)
+shutil.copy(src_file, bin_dir)
 
 # copy audio files
 print("copying audio to data dir")
