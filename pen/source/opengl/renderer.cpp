@@ -286,6 +286,8 @@ namespace pen
         
         glGenBuffers(1, &res.handle);
         
+        u32 element_array_id = GL_ELEMENT_ARRAY_BUFFER;
+        
         glBindBuffer(params.bind_flags, res.handle);
         
         glBufferData(params.bind_flags, params.buffer_size, params.data, params.usage_flags );
@@ -339,8 +341,6 @@ namespace pen
         g_current_state.index_buffer = buffer_index;
 	}
     
-    bool create_vao = true;
-    
     void bind_state()
     {
         //bind vertex buffer
@@ -353,7 +353,7 @@ namespace pen
         }
         
         //bind index buffer
-        if( g_current_state.index_buffer != g_bound_state.index_buffer )
+        //if( g_current_state.index_buffer != g_bound_state.index_buffer )
         {
             g_bound_state.index_buffer = g_current_state.index_buffer;
             
@@ -494,30 +494,24 @@ namespace pen
             
             glPolygonMode(GL_FRONT_AND_BACK, rs.polygon_mode);
         }
+        
+        //todo state
+        glDepthFunc( GL_ALWAYS );
+        glDisable( GL_BLEND );
     }
 
 	void direct::renderer_draw( u32 vertex_count, u32 start_vertex, u32 primitive_topology )
 	{
         bind_state();
         
-        glDepthFunc( GL_ALWAYS );
-        glDisable( GL_BLEND );
-        
         glDrawArrays(primitive_topology, start_vertex, vertex_count);
 	}
 
 	void direct::renderer_draw_indexed( u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology )
 	{
-	}
-
-	u32 depth_texture_format_to_dsv_format( u32 tex_format )
-	{
-		return 0;
-	}
-
-	u32 depth_texture_format_to_srv_format( u32 tex_format )
-	{
-		return 0;
+        bind_state();
+        
+        glDrawElements(primitive_topology, index_count, GL_UNSIGNED_SHORT, (void*)0);
 	}
 
 	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)

@@ -16,37 +16,38 @@ namespace put
 #define DXT5	 0x35545844	 
 #define DX10	 0x30315844	 
 
-	typedef struct dds_pixel_format
-	{
-		ulong size;
-		ulong flags;
-		ulong four_cc;
-		ulong rgb_bit_count;
-		ulong r_mask;
-		ulong g_mask;
-		ulong b_mask;
-		ulong a_mask;
-
-	} dds_pixel_format;
-
-	typedef struct dds_header
-	{
-		ulong				magic;
-		ulong				size;
-		ulong				flags;
-		ulong				height;
-		ulong				width;
-		ulong				pitch_or_linear_size;
-		ulong				depth;
-		ulong				mip_map_count;
-		ulong				reserved[11];
-		dds_pixel_format	pixel_format;
-		ulong				caps;
-		ulong				caps2;
-		ulong				caps3;
-		ulong				caps4;
-		ulong				reserved2;
-	} dds_header;
+    //dds documentation os MSDN defines all these data types as ulongs
+    typedef struct dds_pixel_format
+    {
+        u32 size;
+        u32 flags;
+        u32 four_cc;
+        u32 rgb_bit_count;
+        u32 r_mask;
+        u32 g_mask;
+        u32 b_mask;
+        u32 a_mask;
+        
+    } dds_pixel_format;
+    
+    typedef struct dds_header
+    {
+        u32             magic;
+        u32				size;
+        u32				flags;
+        u32				height;
+        u32				width;
+        u32				pitch_or_linear_size;
+        u32				depth;
+        u32				mip_map_count;
+        u32				reserved[11];
+        dds_pixel_format	pixel_format;
+        u32				caps;
+        u32				caps2;
+        u32				caps3;
+        u32				caps4;
+        u32				reserved2;
+    } dds_header;
 
 	u32 calc_level_size( u32 width, u32 height, bool compressed, u32 block_size )
 	{
@@ -109,7 +110,8 @@ namespace put
 		//load a texture file from disk.
 		void* file_data = NULL;
 		u32	  file_data_size = 0;
-		pen::filesystem_read_file_to_buffer( filename, &file_data, file_data_size );
+        
+		u32 pen_err = pen::filesystem_read_file_to_buffer( filename, &file_data, file_data_size );
 
 		//parse dds header
 		dds_header* ddsh = (dds_header*)file_data;

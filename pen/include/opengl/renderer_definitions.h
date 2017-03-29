@@ -13,6 +13,7 @@
 
 #else
 #include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
 #endif
 
 enum shader_type
@@ -78,19 +79,25 @@ enum vertex_format : s32
     PEN_FORMAT_R32G32B32A32_FLOAT   = PACK_GL_FORMAT( GL_FLOAT, 4 )
 };
 
+enum index_buffer_format : s32
+{
+    PEN_FORMAT_R16_UINT = GL_UNSIGNED_SHORT,
+    PEN_FORMAT_R32_UINT = GL_UNSIGNED_INT
+};
+
 enum texture_format : s32
 {
-    PEN_FORMAT_B8G8R8A8_UNORM       = GL_RGB,
-    PEN_FORMAT_BC1_UNORM            = 0,
-    PEN_FORMAT_BC2_UNORM            = 0,
-    PEN_FORMAT_BC3_UNORM            = 0,
-    PEN_FORMAT_BC4_UNORM            = 0,
-    PEN_FORMAT_BC5_UNORM            = 0
+    PEN_FORMAT_B8G8R8A8_UNORM       = 0,
+    PEN_FORMAT_BC1_UNORM            = 1,
+    PEN_FORMAT_BC2_UNORM            = 2,
+    PEN_FORMAT_BC3_UNORM            = 3,
+    PEN_FORMAT_BC4_UNORM            = 4,
+    PEN_FORMAT_BC5_UNORM            = 5
 };
 
 enum usage : s32
 {
-    PEN_USAGE_DEFAULT = GL_STATIC_DRAW,                     //gpu read and write
+    PEN_USAGE_DEFAULT = GL_STATIC_DRAW,                     //gpu read and write, d3d can updatesubresource with usage default
     PEN_USAGE_IMMUTABLE = GL_STATIC_DRAW,                   //gpu read only
     PEN_USAGE_DYNAMIC = GL_DYNAMIC_DRAW,                    //dynamic
     PEN_USAGE_STAGING = GL_DYNAMIC_DRAW,                    //cpu access
@@ -117,6 +124,34 @@ enum cpu_access_flags : s32
     PEN_CPU_ACCESS_WRITE = GL_MAP_WRITE_BIT,
     PEN_CPU_ACCESS_READ = GL_MAP_READ_BIT
 };
+
+enum texture_address_mode : s32
+{
+    PEN_TEXTURE_ADDRESS_WRAP = 0,
+    PEN_TEXTURE_ADDRESS_MIRROR = 1,
+    PEN_TEXTURE_ADDRESS_CLAMP = 2,
+    PEN_TEXTURE_ADDRESS_BORDER = 3,
+    PEN_TEXTURE_ADDRESS_MIRROR_ONCE = 4
+};
+
+enum comparison : s32
+{
+    PEN_COMPARISON_NEVER = GL_NEVER,
+    PEN_COMPARISON_LESS = GL_LESS,
+    PEN_COMPARISON_EQUAL = GL_EQUAL,
+    PEN_COMPARISON_LESS_EQUAL = GL_LEQUAL,
+    PEN_COMPARISON_GREATER = GL_GREATER,
+    PEN_COMPARISON_NOT_EQUAL = GL_NOTEQUAL,
+    PEN_COMPARISON_GREATER_EQUAL = GL_GEQUAL,
+    PEN_COMPARISON_ALWAYS = GL_ALWAYS
+};
+
+enum filter_mode : s32
+{
+    PEN_FILTER_MIN_MAG_MIP_LINEAR = 0
+};
+
+
 
 /*
 
@@ -280,28 +315,7 @@ enum sampler_filters : s32
     PEN_FILTER_MAXIMUM_MIN_MAG_MIP_LINEAR = D3D11_FILTER_MAXIMUM_MIN_MAG_MIP_LINEAR,
     PEN_FILTER_MAXIMUM_ANISOTROPIC = D3D11_FILTER_MAXIMUM_ANISOTROPIC
 };                                                              
-                                                                
-enum texture_address_mode : s32
-{
-    PEN_TEXTURE_ADDRESS_WRAP = D3D11_TEXTURE_ADDRESS_WRAP,
-    PEN_TEXTURE_ADDRESS_MIRROR = D3D11_TEXTURE_ADDRESS_MIRROR,
-    PEN_TEXTURE_ADDRESS_CLAMP = D3D11_TEXTURE_ADDRESS_CLAMP,
-    PEN_TEXTURE_ADDRESS_BORDER = D3D11_TEXTURE_ADDRESS_BORDER,
-    PEN_TEXTURE_ADDRESS_MIRROR_ONCE = D3D11_TEXTURE_ADDRESS_MIRROR_ONCE
-};
-
-enum comparison : s32
-{
-    PEN_COMPARISON_NEVER = D3D11_COMPARISON_NEVER,
-    PEN_COMPARISON_LESS = D3D11_COMPARISON_LESS,
-    PEN_COMPARISON_EQUAL = D3D11_COMPARISON_EQUAL,
-    PEN_COMPARISON_LESS_EQUAL = D3D11_COMPARISON_LESS_EQUAL,
-    PEN_COMPARISON_GREATER = D3D11_COMPARISON_GREATER,
-    PEN_COMPARISON_NOT_EQUAL = D3D11_COMPARISON_NOT_EQUAL,
-    PEN_COMPARISON_GREATER_EQUAL = D3D11_COMPARISON_GREATER_EQUAL,
-    PEN_COMPARISON_ALWAYS = D3D11_COMPARISON_ALWAYS
-};
-
+ 
 enum blending_factor : s32
 {
     PEN_BLEND_ZERO = D3D11_BLEND_ZERO,

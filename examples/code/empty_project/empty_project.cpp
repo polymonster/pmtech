@@ -19,6 +19,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     {
         pen::string_output_debug("oh hai ö\n");
         
+        pen::string_output_debug("%i", GL_RGB );
+        
         pen::threads_sleep_us(16000);
     }
     
