@@ -15,7 +15,7 @@ namespace pen
 	void	memory_zero( void* dest, u32 size_bytes );
 }
 
-void*	operator new(size_t n) throw(std::bad_alloc);
-void	operator delete(void *p) throw();
+void*	operator new(size_t n);
+void	operator delete(void *p);
 
 #endif
