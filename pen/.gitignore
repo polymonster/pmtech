@@ -1,4 +1,3 @@
 # project files
 build/
-lib/
-!/thirdparty/**/lib/
+lib/pen*.*
