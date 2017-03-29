@@ -63,4 +63,15 @@ typedef std::atomic<uint64_t> a_u64;
 #define PEN_ASSERT				assert
 #define PEN_ERR					assert( 0 ) 
 
+//--------------------------------------------------------------------------------------
+// Multithreaded Resource allocations 
+//--------------------------------------------------------------------------------------
+enum resource_types
+{
+    DIRECT_RESOURCE = 0x01,
+    DEFER_RESOURCE = 0x02,
+    MAX_RENDERER_RESOURCES = 10000,
+    MAX_AUDIO_RESOURCES = 100
+};
+
 #endif

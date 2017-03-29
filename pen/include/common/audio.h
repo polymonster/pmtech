@@ -4,8 +4,7 @@
 #include "definitions.h"
 
 namespace pen
-{
-    enum audio_play_state : s32
+{    enum audio_play_state : s32
     {
         NOT_PLAYING = 0,
         PLAYING = 2,
@@ -27,18 +26,16 @@ namespace pen
         f32     frequency;
     };
 
-    //system
-    void	audio_system_initialise();
-
-    void	audio_system_update();
-
+    //threading
+    void                audio_init_thread_primitives();
+    PEN_THREAD_RETURN	audio_thread_function( void* params );
+    void                audio_wait_for_init();
+    void                audio_consume_command_buffer();
+         
     //creation
     u32		audio_create_stream( const c8* filename );
-
     u32		audio_create_sound( const c8* filename );
-
-    void	audio_create_sound_channel( const u32 channel_index );
-
+    u32	    audio_create_channel_for_sound( const u32 sound_index );
     u32		audio_create_channel_group( );
 
     //binding
@@ -64,6 +61,19 @@ namespace pen
     u32		audio_group_get_state( const u32 group_index, audio_group_state& state );
 
     void	audio_group_get_spectrum( const u32 &channel_group, float *spectrum_array, u32 sample_size, u32 channel_offset );
+
+    namespace direct
+    {
+        //system
+        void	audio_system_initialise();
+        void	audio_system_update();
+
+        //creation
+        u32		audio_create_stream( const c8* filename );
+        u32		audio_create_sound( const c8* filename );
+        u32     audio_create_channel_for_sound( u32 sound_index );
+        u32     audio_create_channel_group();
+    }
 }
 
 #endif

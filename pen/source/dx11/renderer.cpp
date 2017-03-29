@@ -112,12 +112,12 @@ namespace pen
 		a_u64		 last_result;
 	}query_allocation;
 
-	resource_allocation		 resource_pool	[MAX_RESOURCES];
+	resource_allocation		 resource_pool	[MAX_RENDERER_RESOURCES];
 	query_allocation	     query_pool		[MAX_QUERIES];
 
 	void clear_resource_table( )
 	{
-		pen::memory_zero( &resource_pool[ 0 ], sizeof( resource_allocation ) * MAX_RESOURCES );
+		pen::memory_zero( &resource_pool[ 0 ], sizeof( resource_allocation ) * MAX_RENDERER_RESOURCES );
 		
 		//reserve resource 0 for NULL binding.
 		resource_pool[0].asigned_flag |= 0xff;

@@ -14,7 +14,7 @@ links
 	"dxguid.lib", 
 	"winmm.lib", 
 	"comctl32.lib", 
-	"fmodex_vc.lib", 
+	"fmod_vc.lib", 
 }
 end
 
@@ -41,7 +41,7 @@ excludes
 }
 end
 
-function create_app( project_name, root_directory, link_put )
+function create_app( project_name, root_directory )
 project ( project_name )
 	kind "WindowedApp"
 	language "C++"
@@ -51,7 +51,7 @@ project ( project_name )
 		"../pen/lib/" .. platform_dir, 
 		"../put/lib/" .. platform_dir,
 				
-		"../pen/third_party/fmod/lib",
+		("../pen/third_party/fmod/lib/" .. platform_dir),
 		"../pen/third_party/bullet/lib",
 	}
 	
@@ -89,15 +89,12 @@ project ( project_name )
 		flags { "WinMain" }
 		symbols "On"
 		targetname (project_name .. "_d")
-		links { "pen" }
-		
-		if link_put then links { "put" } end
+		links { "pen", "put" }
   
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetname (project_name)
-		links { "pen" }
+		links { "pen", "put" }
 		
-		if link_put then links { "put" } end
 end

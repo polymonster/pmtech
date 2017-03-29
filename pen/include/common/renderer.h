@@ -12,13 +12,6 @@ enum special_values
     PEN_SHADER_NULL             =   0xffffff
 };
 
-enum resource_types
-{
-    DIRECT_RESOURCE             = 0x01,
-    DEFER_RESOURCE              = 0x02,
-    MAX_RESOURCES			    = 10000, 
-};
-
 namespace pen
 {
 	//--------------------------------------------------------------------------------------

@@ -1,121 +1,114 @@
 #include "audio.h"
+#include "pen.h"
 #include "fmod.hpp"
 #include <math.h>
 
-#if 0
 namespace pen
 {
-#define MAX_SOUNDS 32
+#define MAX_CHANNELS 32
 #define INVALID_SOUND (u32)-1
-#define MAX_CHANNEL_GROUPS 32
+#define MAX_RENDERER_RESOURCES 100
 
-	FMOD::System*			g_sound_system;
+    FMOD::System*			g_sound_system;
 
-	FMOD::Sound*			g_sounds[ MAX_SOUNDS ];
-	FMOD::Channel*			g_channels[ MAX_SOUNDS ];
+    struct audio_resource_allocation
+    {
+        u8 assigned_flag = 0;
+        void* resource;
+    };
 
-	FMOD::ChannelGroup*		g_channel_groups[ MAX_CHANNEL_GROUPS ];
+    audio_resource_allocation   g_audio_resources[ MAX_AUDIO_RESOURCES ];
 
-	u32 get_free_sound( )
-	{
-		for( u32 i = 0; i < MAX_SOUNDS; ++i )
-		{
-			if( g_sounds[ i ] == NULL )
-			{
-				return i;
-			}
-		}
+    u32 get_next_audio_resource( u32 domain )
+    {
+        //find next empty resource
+        u32 i = 0;
+        while( i < MAX_AUDIO_RESOURCES )
+        {
+            if( !(g_audio_resources[ i ].assigned_flag & domain ) )
+            {
+                g_audio_resources[ i ].assigned_flag |= domain;
+                return i;
+            }
 
-		return INVALID_SOUND;
-	}
+            ++i;
+        }
 
-	u32 get_free_channel_group( )
-	{
-		for (u32 i = 0; i < MAX_SOUNDS; ++i)
-		{
-			if (g_channel_groups[i] == NULL)
-			{
-				return i;
-			}
-		}
+        //return null
+        return 0;
+    }
 
-		return INVALID_SOUND;
-	}
+    void direct::audio_system_initialise()
+    {
+        //clear resource array to 0
+        pen::memory_zero(g_audio_resources, sizeof(g_audio_resources));
 
-	void audio_system_initialise( )
-	{
-		FMOD_RESULT result; 
+        //resource index 0 is used as a null resource
+        g_audio_resources->assigned_flag |= DIRECT_RESOURCE | DEFER_RESOURCE;
 
-		FMOD::System_Create(&g_sound_system);
+        //init fmod
+        FMOD_RESULT result;
 
-		result = g_sound_system->init( 32, FMOD_INIT_NORMAL, NULL );
+        FMOD::System_Create(&g_sound_system);
 
-		//initialize the data
-		for( u32 i = 0; i < MAX_SOUNDS; ++i )
-		{
-			g_sounds[ i ] = NULL;
-			g_channels[ i ] = NULL;
-		}
+        result = g_sound_system->init( MAX_CHANNELS, FMOD_INIT_NORMAL, NULL );
 
-		for (u32 i = 0; i < MAX_CHANNEL_GROUPS; ++i)
-		{
-			g_channel_groups[ i ] = NULL;
-		}
+        PEN_ASSERT( result == FMOD_OK );
+    } 
 
-		PEN_ASSERT( result == FMOD_OK );
-	}
+    void direct::audio_system_update()
+    {
+        g_sound_system->update();
+    }
 
-	void audio_system_update( )
-	{
-		g_sound_system->update();
-	}
+    u32 direct::audio_create_sound( const c8* filename )
+    {
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
 
-	u32 audio_create_stream( const c8* filename )
-	{
-		u32 sound_slot = get_free_sound( );
+        FMOD_RESULT result = g_sound_system->createSound( filename, FMOD_DEFAULT, NULL, (FMOD::Sound**)&g_audio_resources[res_index].resource );
 
-		if( sound_slot != INVALID_SOUND )
-		{
-			FMOD_RESULT result;
+        PEN_ASSERT( result == FMOD_OK );
 
-			result = g_sound_system->createStream( filename, FMOD_SOFTWARE, NULL, &g_sounds[sound_slot] );
+        return res_index;
+    }
 
-			PEN_ASSERT( result == FMOD_OK );
+    u32 direct::audio_create_stream( const c8* filename )
+    {
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
 
-			return sound_slot;
-		}
+        FMOD_RESULT result = g_sound_system->createStream( filename, FMOD_LOOP_NORMAL | FMOD_2D, 0, (FMOD::Sound**)&g_audio_resources[res_index].resource );
 
-		return INVALID_SOUND;
-	}
+        PEN_ASSERT( result == FMOD_OK );
 
-	u32 audio_create_sound( const c8* filename )
-	{
-		u32 sound_slot = get_free_sound( );
+        return res_index;
+    }
 
-		if (sound_slot != INVALID_SOUND)
-		{
-			FMOD_RESULT result;
+    u32 direct::audio_create_channel_group()
+    {
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
 
-			result = g_sound_system->createSound( filename, FMOD_SOFTWARE, NULL, &g_sounds[sound_slot] );
+        return 0;
+    }
 
-			PEN_ASSERT( result == FMOD_OK );
+    u32 direct::audio_create_channel_for_sound(u32 sound_index)
+    {
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
 
-			return sound_slot;
-		}
+        FMOD_RESULT result;
 
-		return INVALID_SOUND;
-	}
+        result = g_sound_system->playSound( 
+            (FMOD::Sound*)g_audio_resources[sound_index].resource, 
+            0, 
+            false, 
+            (FMOD::Channel**)&g_audio_resources[res_index].resource );
 
+        PEN_ASSERT( result == FMOD_OK );
 
-	void audio_create_sound_channel( const u32 &snd )
-	{
-		FMOD_RESULT result;
+        return res_index;
+    }
+}
 
-		result = g_sound_system->playSound( FMOD_CHANNEL_FREE, g_sounds[ snd ], FALSE, &g_channels[ snd ] );
-
-		PEN_ASSERT( result == FMOD_OK );
-	}
-
+#if 0
 	u32 audio_create_channel_group( )
 	{
 		u32 group = get_free_channel_group( );

@@ -5,6 +5,7 @@
 #include "window.h"
 #include "threads.h"
 #include "timer.h"
+#include "audio.h"
 
 namespace pen
 {
@@ -47,6 +48,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     {
         pen::renderer_init(&rp);
     }
+
+    pen::thread* p_audio_thread = nullptr;
+    pen::audio_init_thread_primitives();
+    p_audio_thread = pen::threads_create( pen::audio_thread_function, 1024 * 1024, nullptr, pen::THREAD_START_DETACHED );
+    pen::audio_wait_for_init();
 
 	//after renderer is initialised kick of the game thread
 	pen::thread* p_game_thread	   = pen::threads_create( pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );

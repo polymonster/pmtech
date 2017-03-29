@@ -33,5 +33,5 @@ for f in os.listdir(texture_dir):
         print("copying texture to data dir")
         # straight copy
         dest_file = os.path.join(build_dir, f)
-        shutil(f, dest_file)
+        shutil.copy(f, dest_file)
     print("\n")
