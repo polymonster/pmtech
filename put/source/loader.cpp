@@ -105,13 +105,19 @@ namespace put
 
 	pen::texture_creation_params* loader_load_texture( const c8* filename )
 	{
-		pen::texture_creation_params* tcp = (pen::texture_creation_params*)pen::memory_alloc( sizeof( pen::texture_creation_params ) );
-
 		//load a texture file from disk.
 		void* file_data = NULL;
 		u32	  file_data_size = 0;
         
 		u32 pen_err = pen::filesystem_read_file_to_buffer( filename, &file_data, file_data_size );
+        
+        if( pen_err != PEN_ERR_OK )
+        {
+            pen::memory_free( file_data );
+            return nullptr;
+        }
+        
+        pen::texture_creation_params* tcp = (pen::texture_creation_params*)pen::memory_alloc( sizeof( pen::texture_creation_params ) );
 
 		//parse dds header
 		dds_header* ddsh = (dds_header*)file_data;

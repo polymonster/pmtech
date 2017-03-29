@@ -28,7 +28,6 @@ typedef struct mat3
 {
     mat3(mat4 extract);
     mat3(){};
-    void gl_compliant_matrix(f32 *entries);
     
     f32 m[9];
     
@@ -67,13 +66,7 @@ typedef struct mat4
     
     void set_vectors( vec3f right, vec3f up, vec3f at, vec3f pos );
     
-    //opengl native portability
-    void gl_compliant_matrix(f32 *entries);
-    void gl_compliant_matrix(double *entries);
-    void set_matrix_from_gl(f32 *entries);
-    void set_matrix_from_gl(double *entries);
     void set_matrix_from_raw(f32 *entries);
-    void multiply_with_gl_matrix();
     
     //multiplication / transformation
     vec3f homogeneous_multiply(vec3f v, f32 *w);

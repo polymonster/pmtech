@@ -221,39 +221,6 @@ void mat4::multiply_by_scalar( f32 value )
     m[12] *= value; m[13] *= value; m[14] *= value; m[15] *= value;
 }
 
-
-void mat4::gl_compliant_matrix(f32 *entries)
-{
-    entries[0]  = m[ 0]; entries[4]  = m[ 1]; entries[8]  = m[ 2]; entries[12] = m[ 3];
-    entries[1]  = m[ 4]; entries[5]  = m[ 5]; entries[9]  = m[ 6]; entries[13] = m[ 7];
-    entries[2]  = m[ 8]; entries[6]  = m[ 9]; entries[10] = m[10]; entries[14] = m[11];
-    entries[3]  = m[12]; entries[7]  = m[13]; entries[11] = m[14]; entries[15] = m[15];
-}
-
-void mat4::gl_compliant_matrix( double *entries )
-{
-    entries[0]  = m[ 0]; entries[4]  = m[ 1]; entries[8]  = m[ 2]; entries[12] = m[ 3];
-    entries[1]  = m[ 4]; entries[5]  = m[ 5]; entries[9]  = m[ 6]; entries[13] = m[ 7];
-    entries[2]  = m[ 8]; entries[6]  = m[ 9]; entries[10] = m[10]; entries[14] = m[11];
-    entries[3]  = m[12]; entries[7]  = m[13]; entries[11] = m[14]; entries[15] = m[15];
-}
-
-void mat4::set_matrix_from_gl(f32 *entries)
-{
-    m[ 0] = entries[0]; m[ 1] = entries[4]; m[ 2] = entries[8];  m[ 3] = entries[12];
-    m[ 4] = entries[1]; m[ 5] = entries[5]; m[ 6] = entries[9];  m[ 7] = entries[13];
-    m[ 8] = entries[2]; m[ 9] = entries[6]; m[10] = entries[10]; m[11] = entries[14];
-    m[12] = entries[3]; m[13] = entries[7]; m[14] = entries[11]; m[15] = entries[15];
-}
-
-void mat4::set_matrix_from_gl(double *entries)
-{
-    m[ 0] = (f32)entries[0]; m[ 1] = (f32)entries[4]; m[ 2] = (f32)entries[8];  m[ 3] = (f32)entries[12];
-    m[ 4] = (f32)entries[1]; m[ 5] = (f32)entries[5]; m[ 6] = (f32)entries[9];  m[ 7] = (f32)entries[13];
-    m[ 8] = (f32)entries[2]; m[ 9] = (f32)entries[6]; m[10] = (f32)entries[10]; m[11] = (f32)entries[14];
-    m[12] = (f32)entries[3]; m[13] = (f32)entries[7]; m[14] = (f32)entries[11]; m[15] = (f32)entries[15];
-}
-
 void mat4::set_matrix_from_raw(f32 *entries)
 {
     m[ 0] = entries[0]; m[ 4] = entries[4]; m[ 8] = entries[8];  m[12] = entries[12];
@@ -459,11 +426,4 @@ mat3::mat3( mat4 extract )
     m[ 0] = extract.m[ 0]; m[ 1] = extract.m[ 1]; m[ 2] = extract.m[ 2];
     m[ 3] = extract.m[ 4]; m[ 4] = extract.m[ 5]; m[ 5] = extract.m[ 6];
     m[ 6] = extract.m[ 8]; m[ 7] = extract.m[ 6]; m[ 8] = extract.m[10];
-}
-
-void mat3::gl_compliant_matrix( f32 *entries )
-{
-    entries[0] = m[ 0]; entries[3] = m[ 1]; entries[6] = m[ 2];
-    entries[1] = m[ 4]; entries[4] = m[ 5]; entries[7] = m[ 6];
-    entries[2] = m[ 8]; entries[5] = m[ 9]; entries[8] = m[10];
 }

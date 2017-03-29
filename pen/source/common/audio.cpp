@@ -87,7 +87,7 @@ namespace pen
     {
         u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
 
-        return 0;
+        return res_index;
     }
 
     u32 direct::audio_create_channel_for_sound(u32 sound_index)

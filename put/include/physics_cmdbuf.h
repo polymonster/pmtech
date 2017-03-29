@@ -8,7 +8,7 @@ namespace physics
 {
 	PEN_THREAD_RETURN physics_thread_main( void* params );
 
-	typedef enum e_physics_cmd
+    enum e_physics_cmd : s32
 	{
 		CMD_SET_LINEAR_VELOCITY = 1,
 		CMD_SET_ANGULAR_VELOCITY,
@@ -45,7 +45,7 @@ namespace physics
 		CMD_ATTACH_RB_TO_COMPOUND
 	};
 
-	typedef enum e_physics_shape
+    enum e_physics_shape : s32
 	{
 		BOX = 1,
 		CYLINDER,
@@ -56,7 +56,7 @@ namespace physics
 		COMPOUND
 	};
 
-	typedef enum e_physics_constraint
+    enum e_physics_constraint : s32
 	{
 		DOF6 = 1,
 		DOF6_NOCREATE,
@@ -64,13 +64,13 @@ namespace physics
 		HINGE,
 	};
 
-	typedef enum e_multibody_link_type
+    enum e_multibody_link_type : s32
 	{
 		REVOLUTE = 1,
 		FIXED,
 	};
 
-	typedef enum e_up_axis
+    enum e_up_axis : s32
 	{
 		UP_Y = 0,
 		UP_X = 1,

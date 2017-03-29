@@ -44,12 +44,12 @@ namespace pen
 	}
 }
 
-void*	operator new(size_t n)
+void*	operator new(size_t n) throw(std::bad_alloc)
 {
 	return pen::memory_alloc( n );
 }
 
-void	operator delete(void *p)
+void	operator delete(void *p) throw()
 {
 	pen::memory_free( p );
 }

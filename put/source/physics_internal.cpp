@@ -299,7 +299,7 @@ namespace physics
 				continue;
 			}
 
-			const int parent = p_multibody->getParent( i );
+			//const int parent = p_multibody->getParent( i );
 			world_to_local = p_multibody->getParentToLocalRot( i ) * world_to_local;
 
 			btVector3 multi_base_pos = p_multibody->getBasePos( );
@@ -599,7 +599,7 @@ namespace physics
 
 			//update outputs and clear hit flags
 			u32 current_ouput_backbuffer = g_readable_data.current_ouput_backbuffer;
-			u32 current_ouput_frontbuffer = g_readable_data.current_ouput_frontbuffer;
+			//u32 current_ouput_frontbuffer = g_readable_data.current_ouput_frontbuffer;
 
 			for (u32 i = 0; i < g_num_triggers; ++i)
 			{
@@ -629,8 +629,8 @@ namespace physics
 
 			pen::timer_get_data( LOOP_TIME_timer_index, ms, hc, longest, shortest );
 
-			s32 s_ms = ( s32 ) ms;
-			u32 u_ms = s_ms > 0 ? s_ms : 0;
+			//s32 s_ms = ( s32 ) ms;
+			//u32 u_ms = s_ms > 0 ? s_ms : 0;
 
 			g_readable_data.b_wait_flag = 1;
 

@@ -286,8 +286,6 @@ namespace pen
         
         glGenBuffers(1, &res.handle);
         
-        u32 element_array_id = GL_ELEMENT_ARRAY_BUFFER;
-        
         glBindBuffer(params.bind_flags, res.handle);
         
         glBufferData(params.bind_flags, params.buffer_size, params.data, params.usage_flags );
@@ -706,6 +704,8 @@ namespace pen
     u32 renderer_init_from_window( void* )
     {
         //const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);
+        
+        return 0;
     }
     
 	void renderer_destroy()

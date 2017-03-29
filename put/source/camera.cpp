@@ -3,7 +3,7 @@
 
 namespace put
 {
-	void put::camera_create_projection( camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane )
+	void camera_create_projection( camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane )
 	{
 		//calculate the width and height of the near and far planes
 		vec2f near_size;
@@ -26,7 +26,7 @@ namespace put
 		);
 	}
 
-	void put::camera_update_modelling( camera* p_camera, vec2f mouse_drag, f32 zoom, u8 middle_mouse, u8 toggle )
+	void camera_update_modelling( camera* p_camera, vec2f mouse_drag, f32 zoom, u8 middle_mouse, u8 toggle )
 	{
 		if( middle_mouse )
 		{
@@ -64,8 +64,8 @@ namespace put
 
 	void camera_bake_matices( camera* p_camera )
 	{
-		f32 xrotrad = psmath::deg_to_rad( p_camera->rot.x );
-		f32 yrotrad = psmath::deg_to_rad( p_camera->rot.y );
+		//f32 xrotrad = psmath::deg_to_rad( p_camera->rot.x );
+		//f32 yrotrad = psmath::deg_to_rad( p_camera->rot.y );
 
 		mat4 rx, ry, t;
 		rx.create_cardinal_rotation( X_AXIS, p_camera->rot.x );
