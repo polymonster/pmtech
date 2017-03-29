@@ -1,4 +1,4 @@
 # project files
 build/
 lib/
-!thirdparty/**/lib/
+!/thirdparty/**/lib/
