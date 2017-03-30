@@ -11,8 +11,16 @@ namespace pen
 
     FMOD::System*			g_sound_system;
 
+    enum audio_resource_type : s32
+    {
+        AUDIO_RESOURCE_SOUND,
+        AUDIO_RESOURCE_CHANNEL,
+        AUDIO_RESOURCE_GROUP
+    };
+    
     struct audio_resource_allocation
     {
+        audio_resource_type type;
         u8 assigned_flag = 0;
         void* resource;
     };
@@ -64,7 +72,8 @@ namespace pen
     u32 direct::audio_create_sound( const c8* filename )
     {
         u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
-
+        g_audio_resources[res_index].type = AUDIO_RESOURCE_SOUND;
+        
         FMOD_RESULT result = g_sound_system->createSound( filename, FMOD_DEFAULT, NULL, (FMOD::Sound**)&g_audio_resources[res_index].resource );
 
         PEN_ASSERT( result == FMOD_OK );
@@ -75,7 +84,8 @@ namespace pen
     u32 direct::audio_create_stream( const c8* filename )
     {
         u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
-
+        g_audio_resources[res_index].type = AUDIO_RESOURCE_SOUND;
+        
         FMOD_RESULT result = g_sound_system->createStream( filename, FMOD_LOOP_NORMAL | FMOD_2D, 0, (FMOD::Sound**)&g_audio_resources[res_index].resource );
 
         PEN_ASSERT( result == FMOD_OK );
@@ -86,6 +96,13 @@ namespace pen
     u32 direct::audio_create_channel_group()
     {
         u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
+        g_audio_resources[res_index].type = AUDIO_RESOURCE_GROUP;
+        
+        FMOD_RESULT result;
+        
+        result = g_sound_system->createChannelGroup( NULL, (FMOD::ChannelGroup**)&g_audio_resources[res_index].resource );
+        
+        PEN_ASSERT( result == FMOD_OK );
 
         return res_index;
     }
@@ -93,9 +110,10 @@ namespace pen
     u32 direct::audio_create_channel_for_sound(u32 sound_index)
     {
         u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
-
+        g_audio_resources[res_index].type = AUDIO_RESOURCE_SOUND;
+        
         FMOD_RESULT result;
-
+        
         result = g_sound_system->playSound( 
             (FMOD::Sound*)g_audio_resources[sound_index].resource, 
             0, 
@@ -105,6 +123,65 @@ namespace pen
         PEN_ASSERT( result == FMOD_OK );
 
         return res_index;
+    }
+    
+    void direct::audio_channel_set_position( const u32 channel_index, const u32 position_ms )
+    {
+        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
+        
+        p_chan->setPosition( position_ms, FMOD_TIMEUNIT_MS );
+    }
+    
+    void direct::audio_channel_set_frequency( const u32 channel_index, const f32 frequency )
+    {
+        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
+        
+        p_chan->setFrequency(frequency);
+    }
+    
+    void direct::audio_group_set_pause( const u32 group_index, const bool val )
+    {
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
+        
+        p_group->setPaused( val );
+    }
+    
+    void direct::audio_group_set_mute( const u32 group_index, const bool val )
+    {
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
+        
+        p_group->setPaused( val );
+    }
+    
+    void direct::audio_group_set_pitch( const u32 group_index, const f32 pitch )
+    {
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
+        
+        p_group->setPitch( pitch );
+    }
+    
+    void direct::audio_group_set_volume( const u32 group_index, const f32 volume )
+    {
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
+        
+        p_group->setVolume( volume );
+    }
+    
+    u32 direct::audio_release_resource( u32 index )
+    {
+
+    }
+    
+    void direct::audio_add_channel_to_group( const u32 channel_index, const u32 group_index )
+    {
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
+        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
+        
+        FMOD_RESULT result;
+        
+        result = p_chan->setChannelGroup( p_group );
+        
+        PEN_ASSERT( result == FMOD_OK );
     }
 }
 
@@ -125,15 +202,6 @@ namespace pen
 		}
 
 		return INVALID_SOUND;
-	}
-
-	void audio_add_sound_to_channel_group( const u32 &snd, const u32 &channel_group )
-	{
-		FMOD_RESULT result;
-
-		result = g_channels[ snd ]->setChannelGroup( g_channel_groups[ channel_group ] );
-
-		PEN_ASSERT( result == FMOD_OK );
 	}
 
 	void audio_channel_set_pitch( const u32 &channel_group, const f32 &pitch )

@@ -55,7 +55,14 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     renderer_state_init();
 
     u32 sound_index = pen::audio_create_sound("data/audio/singing.wav");
-    pen::audio_create_channel_for_sound( sound_index );
+    u32 channel_index = pen::audio_create_channel_for_sound( sound_index );
+    u32 group_index = pen::audio_create_channel_group();
+    
+    pen::audio_add_channel_to_group( channel_index, group_index );
+
+    pen::audio_group_set_pitch( group_index, 0.5f );
+    
+    pen::audio_group_set_volume( group_index, 1.0f );
 
     while( 1 )
     {

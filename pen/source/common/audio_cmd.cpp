@@ -16,27 +16,43 @@ namespace pen
         CMD_AUDIO_CREATE_SOUND,
         CMD_AUDIO_CREATE_GROUP,
         CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND,
+        CMD_AUDIO_RELEASE_RESOURCE,
 
         CMD_AUDIO_ADD_CHANNEL_TO_GROUP,
 
-        CMD_AUDIO_CHANNEL_SET_PAUSE,
-        CMD_AUDIO_CHANNEL_SET_PITCH,
-        CMD_AUDIO_CHANNEL_SET_VOLUME,
         CMD_AUDIO_CHANNEL_SET_POSITION,
         CMD_AUDIO_CHANNEL_SET_FREQUENCY,
+        
+        CMD_AUDIO_GROUP_SET_PAUSE,
+        CMD_AUDIO_GROUP_SET_MUTE,
+        CMD_AUDIO_GROUP_SET_PITCH,
+        CMD_AUDIO_GROUP_SET_VOLUME,
+    };
+    
+    struct set_valuei
+    {
+        u32 resource_index;
+        s32 value;
+    };
+    
+    struct set_valuef
+    {
+        u32 resource_index;
+        f32 value;
     };
 
-    typedef struct  audio_cmd
+    struct  audio_cmd
     {
         u32		command_index;
 
         union
         {
-            c8* filename;
-            u32 resource_index;
+            c8*         filename;
+            u32         resource_index;
+            set_valuei  set_valuei;
+            set_valuef  set_valuef;
         };
-
-    } audio_cmd;
+    };
 
     audio_cmd audio_cmd_buffer[ MAX_AUDIO_COMMANDS ];
     u32       audio_put_pos = 0;
@@ -50,7 +66,6 @@ namespace pen
             direct::audio_create_stream( cmd.filename );
             pen::memory_free(cmd.filename);
             break;
-
         case CMD_AUDIO_CREATE_SOUND:
             direct::audio_create_sound( cmd.filename );
             pen::memory_free( cmd.filename );
@@ -59,8 +74,29 @@ namespace pen
             direct::audio_create_channel_group( );
             pen::memory_free( cmd.filename );
             break;
+        case CMD_AUDIO_ADD_CHANNEL_TO_GROUP:
+            direct::audio_add_channel_to_group( cmd.set_valuei.resource_index, cmd.set_valuei.value );
+            break;
         case CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND:
             direct::audio_create_channel_for_sound( cmd.resource_index );
+            break;
+        case CMD_AUDIO_CHANNEL_SET_POSITION:
+            direct::audio_channel_set_position( cmd.set_valuei.resource_index, cmd.set_valuei.value );
+            break;
+        case CMD_AUDIO_CHANNEL_SET_FREQUENCY:
+            direct::audio_channel_set_frequency( cmd.set_valuef.resource_index, cmd.set_valuef.value );
+            break;
+        case CMD_AUDIO_GROUP_SET_MUTE:
+            direct::audio_group_set_mute( cmd.set_valuei.resource_index, cmd.set_valuei.value );
+            break;
+        case CMD_AUDIO_GROUP_SET_VOLUME:
+            direct::audio_group_set_volume( cmd.set_valuef.resource_index, cmd.set_valuef.value );
+            break;
+        case CMD_AUDIO_GROUP_SET_PITCH:
+            direct::audio_group_set_pitch( cmd.set_valuef.resource_index, cmd.set_valuef.value );
+            break;
+        case CMD_AUDIO_RELEASE_RESOURCE:
+            direct::audio_release_resource( cmd.resource_index );
             break;
         }
     }
@@ -169,7 +205,75 @@ namespace pen
 
         return res;
     }
-
-
-
+    
+    void	audio_channel_set_position( const u32 channel_index, const u32 position_ms )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_CHANNEL_SET_POSITION;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = channel_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = position_ms;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void	audio_channel_set_frequency( const u32 channel_index, const f32 frequency )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_CHANNEL_SET_FREQUENCY;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = channel_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.value = frequency;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void	audio_group_set_pause( const u32 group_index, const bool val )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_GROUP_SET_PAUSE;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = (s32)val;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void	audio_group_set_mute( const u32 group_index, const bool val )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_GROUP_SET_MUTE;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = (s32)val;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void	audio_group_set_pitch( const u32 group_index, const f32 pitch )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_GROUP_SET_PITCH;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.value = pitch;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void	audio_group_set_volume( const u32 group_index, const f32 volume )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_GROUP_SET_VOLUME;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.value = volume;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void	audio_add_channel_to_group( const u32 channel_index, const u32 group_index )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_ADD_CHANNEL_TO_GROUP;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = channel_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = group_index;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void     audio_release_resource( u32 index )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_RELEASE_RESOURCE;
+        audio_cmd_buffer[ audio_put_pos ].resource_index = index;
+        
+        INC_WRAP( audio_put_pos );
+    }
 }
