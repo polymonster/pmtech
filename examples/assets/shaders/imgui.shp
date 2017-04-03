@@ -44,5 +44,5 @@ ps_output main( vs_output _input )
 	
 	_output.colour = _input.colour * SAMPLE_TEXTURE_2D( tex, _input.tex_coord.xy );
 			
-    return _output;
+	return _output;
 }
