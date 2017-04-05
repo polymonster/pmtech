@@ -2,9 +2,9 @@ import os
 import subprocess
 import struct
 import os.path
-import shutil
 import re
 import sys
+import json
 
 hlsl_key = ["float4",   "float3",   "float2",   "float4x4", "float3x3"]
 glsl_key = ["vec4",     "vec3",     "vec2",     "mat4",     "mat3"]
@@ -35,6 +35,107 @@ if not os.path.exists(shader_build_dir):
 print("fx compiler directory :" + compiler_dir)
 print("compiling directory: " + shader_source_dir + "\n")
 
+
+def parse_and_split_block(code_block):
+    start = code_block.find("{") + 1
+    end = code_block.find("};")
+    block_conditioned = code_block[start:end].replace(";", "")
+    block_conditioned = block_conditioned.replace(":", "")
+    block_conditioned = block_conditioned.replace("(", "")
+    block_conditioned = block_conditioned.replace(")", "")
+    block_conditioned = block_conditioned.replace(",", "")
+    return block_conditioned.split()
+
+def make_input_info(inputs):
+    semantic_info = [
+        ["POSITION", "4"],
+        ["TEXCOORD", "4"],
+        ["NORMAL", "4"],
+        ["TANGENT", "4"],
+        ["BITANGENT", "4"],
+        ["COLOR", "1"],
+        ["BLENDINDICES", "1"]
+    ]
+    type_info = ["int", "uint", "float", "double"]
+    input_desc = []
+    inputs_split = parse_and_split_block(inputs)
+    offset = int(0)
+    for i in range(0, len(inputs_split), 3):
+        num_elements = 1
+        element_size = 1
+        for type in type_info:
+            if inputs_split[i].find(type) != -1:
+                num_elements = int(inputs_split[i].replace(type, ""))
+        for sem in semantic_info:
+            if inputs_split[i+2].find(sem[0]) != -1:
+                semantic_id = semantic_info.index(sem)
+                semantic_name = sem[0]
+                semantic_index = inputs_split[i+2].replace(semantic_name, "")
+                if semantic_index == "":
+                    semantic_index = "0"
+                element_size = sem[1]
+                break
+        size = int(element_size) * int(num_elements)
+        input_attribute = {
+            "name": inputs_split[i+1],
+            "semantic_index": int(semantic_index),
+            "semantic_id": int(semantic_id),
+            "size": int(size),
+            "element_size": int(element_size),
+            "num_elements": int(num_elements),
+            "offset": int(offset),
+        }
+        input_desc.append(input_attribute)
+        offset += size
+    return input_desc
+
+
+def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, texture_samplers, constant_buffers):
+    base_filename = os.path.basename(filename)
+    dir_path = os.path.dirname(filename)
+    info_filename = os.path.splitext(base_filename)[0] + ".json"
+    info_filename = os.path.join(shader_build_dir, info_filename)
+
+    shader_info = dict()
+    shader_info["files"] = []
+
+    included_files.insert(0, base_filename)
+    for file in included_files:
+        full_name = os.path.join(dir_path, file)
+        modified_time = os.path.getmtime(full_name)
+        file_info = {"name": full_name, "timestamp": modified_time}
+        shader_info["files"].append(file_info)
+
+    shader_info["vs_inputs"] = make_input_info(vs_inputs)
+    shader_info["instance_inputs"] = make_input_info(instance_inputs)
+
+    shader_info["texture_samplers"] = []
+    texture_samplers_split = parse_and_split_block(texture_samplers)
+    for i in range(0, len(texture_samplers_split), 3):
+        sampler_desc = {
+            "name": texture_samplers_split[i+1],
+            "type": texture_samplers_split[i+0],
+            "location": texture_samplers_split[i+2]
+        }
+        shader_info["texture_samplers"].append(sampler_desc)
+
+    shader_info["cbuffers"] = []
+    for buffer in constant_buffers:
+        buffer_decl = buffer[0:buffer.find("{")-1]
+        buffer_decl_split = buffer_decl.split(":")
+        buffer_name = buffer_decl_split[0].split()[1]
+        buffer_loc_start = buffer_decl_split[1].find("(") + 1
+        buffer_loc_end = buffer_decl_split[1].find(")", buffer_loc_start)
+        buffer_reg = buffer_decl_split[1][buffer_loc_start:buffer_loc_end]
+        buffer_reg = buffer_reg.strip('b')
+        buffer_desc = {"name": buffer_name, "location": buffer_reg}
+        shader_info["cbuffers"].append(buffer_desc)
+
+    output_info = open(info_filename, 'wb+')
+    output_info.write(bytes(json.dumps(shader_info, indent=4), 'UTF-8'))
+    output_info.close()
+    return shader_info
+
 def parse_input_layout(vs_input_source, filename, temp_extension):
     f = os.path.basename(filename)
     f = os.path.splitext(f)[0] + temp_extension
@@ -57,14 +158,17 @@ def parse_input_layout(vs_input_source, filename, temp_extension):
     count = 0
     offset = 0
     for s in splitted:
+        semantic_lookup_index = 0
+        semantics = ["POSITION", "TEXCOORD", "COLOR"]
+        data_sizes = [4, 4, 1]
+        semantic_index = 0
         loc = s.find("float")
         if loc >= 0 and (count % 3) == 0:
-            cur_size = int(s[loc+5]) * 4
+            num_elems = int(s[loc+5])
+            cur_size = int(s[loc+5]) * data_sizes[semantic_index]
             output.write(struct.pack("i", int(cur_size)))
             output.write(struct.pack("i", int(offset)))
             offset += cur_size
-        semantic_lookup_index = 0
-        semantics = ["POSITION", "TEXCOORD", "COLOR"]
         for semantic_name in semantics:
             loc = s.find(semantic_name)
             if loc >= 0 and (count % 3) == 2:
@@ -101,7 +205,24 @@ def find_struct(shader_text, decl):
     start = shader_text.find(decl)
     end = shader_text.find("};", start)
     end += 2
-    return shader_text[start:end] + "\n\n"
+    if start != -1 and end != -1:
+        return shader_text[start:end] + "\n\n"
+    else:
+        return ""
+
+def find_constant_buffers(shader_text):
+    cbuffer_list = []
+    start = 0
+    while start != -1:
+        start = shader_text.find("cbuffer", start)
+        if start == -1:
+            break
+        end = shader_text.find("};", start)
+        if end != -1:
+            end += 2
+            cbuffer_list.append(shader_text[start:end] + "\n")
+        start = end
+    return cbuffer_list
 
 def find_main(shader_text, decl):
     start = shader_text.find(decl)
@@ -119,6 +240,41 @@ def find_main(shader_text, decl):
             bracket_stack.pop(0)
             body_pos += 1
     return shader_text[start:body_pos] + "\n\n"
+
+def find_generic_functions(shader_text):
+    deliminator_list = [";", "\n"]
+    function_list = []
+    start = 0
+    while 1:
+        start = shader_text.find("(", start)
+        if start == -1:
+            break
+        # make sure the { opens before any other deliminator
+        deliminator_pos = shader_text.find(";", start)
+        body_pos = shader_text.find("{", start)
+        if deliminator_pos < body_pos:
+            start = deliminator_pos
+            continue
+        # find the function name and return type
+        function_name = shader_text.rfind(" ", 0, start)
+        function_return_type = 0
+        for delim in deliminator_list:
+            decl_start = shader_text.rfind(delim, 0, function_name)
+            if decl_start != -1:
+                function_return_type = decl_start
+        bracket_stack = ["{"]
+        text_len = len(shader_text)
+        while len(bracket_stack) > 0 and body_pos < text_len:
+            body_pos += 1
+            character = shader_text[body_pos:body_pos+1]
+            if character == "{":
+                bracket_stack.insert(0, "{")
+            if character == "}" and bracket_stack[0] == "{":
+                bracket_stack.pop(0)
+                body_pos += 1
+        function_list.append(shader_text[function_return_type:body_pos] + "\n\n")
+        start = body_pos
+    return function_list
 
 def find_texture_samplers(shader_text):
     start = shader_text.find("declare_texture_samplers")
@@ -292,22 +448,93 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps,
         ps_file.write(final_ps_source)
         ps_file.close()
 
-def create_vsc_psc_vsi(filename):
+def find_includes(file_text):
+    include_list = []
+    start = 0
+    while 1:
+        start = file_text.find("#include", start)
+        if start == -1:
+            break
+        start = file_text.find("\"", start) + 1
+        end = file_text.find("\"", start)
+        if start == -1 or end == -1:
+            break
+        include_list.append(file_text[start:end])
+    return include_list
+
+def find_used_functions(entry_func, function_list):
+    used_functions = [entry_func]
+    ordered_function_list = [entry_func]
+    for used_func in used_functions:
+        for func in function_list:
+            if func == used_func:
+                continue
+            name = func.split(" ")[1]
+            end = name.find("(")
+            name = name[0:end]
+            if used_func.find(name + "(") != -1:
+                used_functions.append(func)
+                ordered_function_list.insert(0, func)
+    used_function_source = ""
+    for used_func in ordered_function_list:
+        used_function_source += used_func + "\n\n"
+    return used_function_source
+
+def add_files_recursive(filename, root):
+    file_path = os.path.join(root, filename)
+    included_file = open(file_path, "r")
+    shader_source = included_file.read()
+    shader_source = clean_spaces(shader_source)
+    include_list = find_includes(shader_source)
+    for slib in include_list:
+        included_source, sub_includes = add_files_recursive(slib, root)
+        shader_source = included_source + shader_source
+        include_list = include_list + sub_includes
+    return shader_source, include_list
+
+def create_vsc_psc_vsi(filename, root):
     print("converting: " + filename + "\n")
 
     macros_fn = os.path.join(tools_dir, "_shader_macros.h")
     macros_file = open(macros_fn)
     macros_text = macros_file.read()
 
-    shader_file = open(filename, "r")
-    shader_file_text = shader_file.read()
-    shader_file_text = clean_spaces(shader_file_text)
+    shader_file_text, included_files = add_files_recursive(filename, root)
+
+    function_list = find_generic_functions(shader_file_text)
+
+    #_find main ps and vs
+    main_ps = ""
+    main_vs = ""
+    has_ps = False
+    for func in function_list:
+        if func.find("ps_output main") != -1:
+            main_ps = func
+            has_ps = True
+        if func.find("vs_output main") != -1:
+            main_vs = func
+
+    # remove from generic function list
+    function_list.remove(main_vs)
+    if has_ps:
+        function_list.remove(main_ps)
+
+    vs_functions = ""
+    vs_functions += find_used_functions(main_vs, function_list)
+
+    ps_functions = ""
+    if has_ps:
+        ps_functions = find_used_functions(main_ps, function_list)
 
     vs_source = macros_text + "\n\n"
     ps_source = macros_text + "\n\n"
 
+    instance_input_source = find_struct(shader_file_text, "struct instance_input")
     vs_input_source = find_struct(shader_file_text, "struct vs_input")
     vs_output_source = find_struct(shader_file_text, "struct vs_output")
+
+    #constant / uniform buffers
+    constant_buffers = find_constant_buffers(shader_file_text)
 
     # texture samplers
     texture_samplers_source = find_texture_samplers(shader_file_text)
@@ -315,27 +542,41 @@ def create_vsc_psc_vsi(filename):
     # vertex shader
     vs_source += vs_input_source
     vs_source += vs_output_source
+    for cbuf in constant_buffers:
+        vs_source += cbuf
     vs_source += texture_samplers_source
-    vs_source += find_main(shader_file_text, "vs_output main")
+    vs_source += vs_functions
 
     # pixel shader
     ps_source += vs_output_source
+    for cbuf in constant_buffers:
+        ps_source += cbuf
     ps_source += find_struct(shader_file_text, "struct ps_output")
     ps_source += texture_samplers_source
-    ps_main_code = find_main(shader_file_text, "ps_output main")
 
     # allow null pixel shaders
-    has_ps = 0
-    if ps_main_code != "":
-        ps_source += ps_main_code
-        has_ps = 1
+    if has_ps:
+        ps_source += ps_functions
 
     if shader_platform == "hlsl":
         compile_hlsl(vs_source, filename, "vs_4_0", ".vs")
         if has_ps:
             compile_hlsl(ps_source, filename, "ps_4_0", ".ps")
     elif shader_platform == "glsl":
-        compile_glsl(vs_source, ps_source, has_ps, filename, texture_samplers_source, macros_text)
+        compile_glsl(vs_source,
+                     ps_source,
+                     has_ps,
+                     filename,
+                     texture_samplers_source,
+                     macros_text)
+
+    generate_shader_info(
+        filename,
+        included_files,
+        vs_input_source,
+        instance_input_source,
+        texture_samplers_source,
+        constant_buffers)
 
     parse_input_layout(vs_input_source, filename, ".vsi")
 
@@ -350,7 +591,7 @@ for root, dirs, files in os.walk(shader_source_dir):
     for file in files:
         if file.endswith(".shp"):
             file_and_path = os.path.join(root, file)
-            create_vsc_psc_vsi(file_and_path)
+            create_vsc_psc_vsi(file_and_path, root)
 
 
 

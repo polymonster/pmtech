@@ -82,7 +82,7 @@ namespace dbg
 
 	void render_3d( u32 cb_3dview )
 	{
-		pen::defer::renderer_update_buffer( vb_lines, &debug_lines_verts[0], sizeof( vertex_debug_lines ) * MAX_DEBUG_LINES_VERTS );
+		pen::defer::renderer_update_buffer( vb_lines, &debug_lines_verts[0], sizeof( vertex_debug_lines ) * MAX_DEBUG_LINES_VERTS, 0 );
 
 		//bind vertex layout
 		pen::defer::renderer_set_input_layout( debug_lines_program.input_layout );
@@ -117,7 +117,7 @@ namespace dbg
 
 	void render_text()
 	{
-		pen::defer::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS);
+		pen::defer::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS, 0);
 
 		//bind vertex layout
 		pen::defer::renderer_set_input_layout(debug_font_program.input_layout);

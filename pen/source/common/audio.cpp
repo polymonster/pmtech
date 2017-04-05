@@ -169,7 +169,7 @@ namespace pen
     
     u32 direct::audio_release_resource( u32 index )
     {
-
+        return 0;
     }
     
     void direct::audio_add_channel_to_group( const u32 channel_index, const u32 group_index )

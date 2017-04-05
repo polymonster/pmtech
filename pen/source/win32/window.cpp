@@ -59,7 +59,7 @@ namespace pen
 		g_hinstance = wp->hinstance;
 
 		//pass in as params
-		RECT rc = { 0, 0, pen_window.width, pen_window.height };
+		RECT rc = { 0, 0, (LONG)pen_window.width, (LONG)pen_window.height };
 		AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
         RECT desktop_rect;

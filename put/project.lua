@@ -17,10 +17,25 @@ project "put"
 		"..\\pen\\include\\" .. platform_dir,
 		"..\\pen\\include\\" .. renderer_dir,
 		  
-		"..\\pen\\third_party\\bullet\\include"
+		"..\\pen\\third_party\\bullet\\include",
+		"..\\pen\\third_party\\imgui"
 	}
+	
+	if platform_dir == "win32" then
+	includedirs
+	{
+		"$(WindowsSDK_IncludePath)"
+	}
+	systemversion "10.0.14393.0"
+	end
 		
-	files { "include\\**.h", "source\\**.cpp" }
+	files 
+	{ 
+		"include\\**.h", "source\\**.cpp", 
+		
+		"..\\pen\\third_party\\imgui\\**.cpp",
+		"..\\pen\\third_party\\imgui\\**.h",
+	}
 	includedirs { "include" }
 		
 	configuration "Debug"

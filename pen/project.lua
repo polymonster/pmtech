@@ -23,7 +23,14 @@ project "pen"
 	{  
 		"source/posix/**.cpp"
 	}
-	end 
+	end
+
+	if platform_dir == "win32" then
+	includedirs
+	{
+		"$(WindowsSDK_IncludePath)"
+	}
+	end
 	
 	includedirs 
 	{ 
@@ -34,6 +41,8 @@ project "pen"
 		
 		"third_party/fmod/inc" 
 	}
+	
+	systemversion "10.0.14393.0"
 		
 	configuration "Debug"
 		defines { "DEBUG" }

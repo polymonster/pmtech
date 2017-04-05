@@ -2,7 +2,7 @@
 #define _input_h
 
 #include "definitions.h"
-//#include "input_definitions.h"
+#include "input_definitions.h"
 
 namespace pen
 {

@@ -87,7 +87,7 @@ namespace pen
             direct::audio_channel_set_frequency( cmd.set_valuef.resource_index, cmd.set_valuef.value );
             break;
         case CMD_AUDIO_GROUP_SET_MUTE:
-            direct::audio_group_set_mute( cmd.set_valuei.resource_index, cmd.set_valuei.value );
+            direct::audio_group_set_mute( cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value );
             break;
         case CMD_AUDIO_GROUP_SET_VOLUME:
             direct::audio_group_set_volume( cmd.set_valuef.resource_index, cmd.set_valuef.value );

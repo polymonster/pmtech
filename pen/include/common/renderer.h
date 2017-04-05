@@ -17,14 +17,14 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	//  PUBLIC API STRUCTS
 	//--------------------------------------------------------------------------------------
-	typedef struct clear_state
+	struct clear_state
 	{
 		f32 r, g, b, a, depth;
 		u32 flags;
 
-	} clear_state;
+	};
 
-	typedef struct stream_out_decl_entry
+	struct stream_out_decl_entry
 	{
 		u32			stream;
 		const c8*	semantic_name;
@@ -32,18 +32,18 @@ namespace pen
 		u8			start_component;
 		u8			component_count;
 		u8			output_slot;
-	} stream_out_decl_entry;
+	};
 
-	typedef struct shader_load_params
+	struct shader_load_params
 	{
 		void*					byte_code;
 		u32						byte_code_size;
 		u32						type;
 		stream_out_decl_entry*	so_decl_entries;
 		u32						so_num_entries;
-	} shader_load_params;
-
-	typedef struct buffer_creation_params
+	};
+	
+    struct buffer_creation_params
 	{
 		u32	usage_flags;
 		u32 bind_flags;
@@ -52,9 +52,9 @@ namespace pen
 
 		void* data;
 
-	} buffer_creation_params;
+	};
 
-	typedef struct input_layout_desc
+	struct input_layout_desc
 	{
 		c8* semantic_name;
 		u32 semantic_index;
@@ -64,18 +64,18 @@ namespace pen
 		u32 input_slot_class;
 		u32 instance_data_step_rate;
 
-	} 	input_layout_desc;
+	};
 
-	typedef struct input_layout_creation_params
+	struct input_layout_creation_params
 	{
 		input_layout_desc*	input_layout;
 		u32					num_elements;
 		void*				vs_byte_code;
 		u32					vs_byte_code_size;
 
-	}	input_layout_creation_params;
+	};
 
-	typedef struct texture_creation_params
+	struct texture_creation_params
 	{
 		u32		width;
 		u32		height;
@@ -93,9 +93,9 @@ namespace pen
 		u32		block_size;
 		u32		pixels_per_block;
 
-	} texture_creation_params;
+	};
 
-	typedef struct sampler_creation_params
+	struct sampler_creation_params
 	{
 		u32 filter;
 		u32 address_u;
@@ -108,9 +108,9 @@ namespace pen
 		f32 min_lod;
 		f32 max_lod;
 
-	} sampler_creation_params;
+	};
 
-	typedef struct rasteriser_state_creation_params
+	struct rasteriser_state_creation_params
 	{
 		u32		fill_mode;
 		u32		cull_mode;
@@ -123,16 +123,21 @@ namespace pen
 		s32		multisample;
 		s32		aa_lines;
 
-	} rasteriser_state_creation_params;
+	};
 
-	typedef struct viewport
+	struct viewport
 	{
 		f32 x, y, width, height;
 		f32 min_depth, max_depth;
 
-	} viewport;
+	};
 
-	typedef struct render_target_blend
+    struct rect
+    {
+        f32 left, top, right, bottom;
+    };
+
+	struct render_target_blend
 	{
 		s32	blend_enable;
 		u32	src_blend;
@@ -142,17 +147,17 @@ namespace pen
 		u32	dest_blend_alpha;
 		u32	blend_op_alpha;
 		u8	render_target_write_mask;
-	} render_target_blend;
+	};
 
-	typedef struct stencil_op
+	struct stencil_op
 	{
 		u32 stencil_failop;
 		u32 stencil_depth_failop;
 		u32 stencil_passop;
 		u32 stencil_func;
-	} 	stencil_op;
+	};
 
-	typedef struct depth_stencil_creation_params
+	struct depth_stencil_creation_params
 	{
 		u32	                    depth_enable;
 		u32						depth_write_mask;
@@ -162,16 +167,16 @@ namespace pen
 		u8                      stencil_write_mask;
 		stencil_op				front_face;
 		stencil_op				back_face;
-	} depth_stencil_creation_params;
+	};
 
-	typedef struct blend_creation_params
+	struct blend_creation_params
 	{
 		s32						alpha_to_coverage_enable;
 		s32						independent_blend_enable;
 		u32						num_render_targets;
 		render_target_blend*	render_targets;
 	
-	} blend_creation_params;
+	};
 
 	//--------------------------------------------------------------------------------------
 	//  COMMON FUNCTIONS
@@ -219,7 +224,7 @@ namespace pen
 		void	renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets );
 		void	renderer_set_index_buffer( u32 buffer_index, u32 format, u32 offset );
 		void	renderer_set_constant_buffer( u32 buffer_index, u32 resource_slot, u32 shader_type );
-		void	renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size );
+		void	renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset );
 
 		//textures
 		u32		renderer_create_texture2d( const texture_creation_params& tcp );
@@ -230,6 +235,7 @@ namespace pen
 		u32		renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp );
 		void	renderer_set_rasterizer_state( u32 rasterizer_state_index );
 		void	renderer_set_viewport( const viewport &vp );
+        void    renderer_set_scissor_rect( const rect &r );
 
 		//blending
 		u32		renderer_create_blend_state( const blend_creation_params &bcp );
@@ -291,7 +297,7 @@ namespace pen
 		void	renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets );
 		void	renderer_set_index_buffer( u32 buffer_index, u32 format, u32 offset );
 		void	renderer_set_constant_buffer( u32 buffer_index, u32 resource_slot, u32 shader_type );
-		void	renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size );
+		void	renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset );
 
 		//textures
 		u32		renderer_create_texture2d( const texture_creation_params& tcp );
@@ -302,6 +308,7 @@ namespace pen
 		u32		renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp );
 		void	renderer_set_rasterizer_state( u32 rasterizer_state_index );
 		void	renderer_set_viewport( const viewport &vp );
+        void    renderer_set_scissor_rect( const rect &r );
 
 		//blending
 		u32		renderer_create_blend_state( const blend_creation_params &bcp );

@@ -6,7 +6,7 @@ namespace pen
 	//Keyboard and mouse
 	#define KEY_PRESS 0x01
 	#define KEY_HELD  0x02
-	#define KEY_ARRAY_SIZE 128
+	#define KEY_ARRAY_SIZE 512
 
 	u8 keyboard_state[ KEY_ARRAY_SIZE ];
 

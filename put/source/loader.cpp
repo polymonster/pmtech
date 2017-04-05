@@ -3,6 +3,10 @@
 #include "file_system.h"
 #include "renderer.h"
 #include "pen_string.h"
+#include "json.hpp"
+#include <fstream>
+
+using json = nlohmann::json;
 
 namespace put
 {
@@ -186,11 +190,15 @@ namespace put
 		*tcp = NULL;
 	}
 
-	c8 semantic_names[3][16] =
+	c8 semantic_names[7][16] =
 	{
 		"POSITION",
 		"TEXCOORD",
+		"NORMAL",
+		"TANGENT",
+		"BITANGENT",
 		"COLOR",
+		"BLENDINDICES"
 	};
 
 	shader_program loader_load_shader_program( const c8* shader_name )
@@ -202,12 +210,12 @@ namespace put
         c8* vs_file_buf = (c8*)pen::memory_alloc(256);
         c8* ps_file_buf = (c8*)pen::memory_alloc(256);
         c8* il_file_buf = (c8*)pen::memory_alloc(256);
-        
+        c8* info_file_buf = (c8*)pen::memory_alloc(256);
+
         pen::string_format( vs_file_buf, 256, "data/shaders/%s/%s.vsc", pen::renderer_get_shader_platform(), shader_name );
         pen::string_format( ps_file_buf, 256, "data/shaders/%s/%s.psc", pen::renderer_get_shader_platform(), shader_name );
         pen::string_format( il_file_buf, 256, "data/shaders/%s/%s.vsi", pen::renderer_get_shader_platform(), shader_name );
-
-		shader_program prog;
+        pen::string_format( info_file_buf, 256, "data/shaders/%s/%s.json", pen::renderer_get_shader_platform(), shader_name);
 
 		//shaders
 		pen::shader_load_params vs_slp;
@@ -219,6 +227,8 @@ namespace put
 		//textured
 		u32 err = pen::filesystem_read_file_to_buffer( vs_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
 
+        shader_program prog;
+
 		if ( err != PEN_ERR_OK  )
         {
             //we must have a vertex shader, if this has failed, so will have the input layout.
@@ -229,7 +239,56 @@ namespace put
             return prog;
         }
 
-        err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
+		//read shader info json
+		std::ifstream ifs(info_file_buf);
+		json j = json::parse(ifs);
+
+		//create input layout from json
+		pen::input_layout_creation_params ilp;
+		ilp.vs_byte_code = vs_slp.byte_code;
+		ilp.vs_byte_code_size = vs_slp.byte_code_size;
+		ilp.num_elements = j["vs_inputs"].size();
+
+		ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
+
+		for (s32 i = 0; i < ilp.num_elements; ++i)
+		{
+			json vj = j["vs_inputs"][i];
+
+			u32 num_elements = vj["num_elements"];
+			u32 elements_size = vj["element_size"];
+
+			static const s32 float_formats[4] =
+			{
+				PEN_FORMAT_R32_FLOAT,
+				PEN_FORMAT_R32G32_FLOAT,
+				PEN_FORMAT_R32G32B32_FLOAT,
+				PEN_FORMAT_R32G32B32A32_FLOAT
+			};
+
+			static const s32 byte_formats[4] =
+			{
+				PEN_FORMAT_R8_UNORM,
+				PEN_FORMAT_R8G8_UNORM,
+				PEN_FORMAT_R8G8_UNORM,
+				PEN_FORMAT_R8G8B8A8_UNORM
+			};
+
+			const s32* fomats = float_formats;
+
+			if (elements_size == 1)
+				fomats = byte_formats;
+
+			ilp.input_layout[i].semantic_index = vj["semantic_index"];
+			ilp.input_layout[i].format = fomats[num_elements-1];
+			ilp.input_layout[i].semantic_name = &semantic_names[vj["semantic_id"]][0];
+			ilp.input_layout[i].input_slot = 0;
+			ilp.input_layout[i].aligned_byte_offset = vj["offset"];
+			ilp.input_layout[i].input_slot_class = PEN_INPUT_PER_VERTEX;
+			ilp.input_layout[i].instance_data_step_rate = 0;
+		}
+
+		prog.input_layout = pen::defer::renderer_create_input_layout(ilp);
 
 		if ( err != PEN_ERR_OK  )
 		{
@@ -238,69 +297,14 @@ namespace put
             ps_slp.byte_code_size = 0;
 		}
 
+        err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
+
 		prog.vertex_shader = pen::defer::renderer_load_shader( vs_slp );
 		prog.pixel_shader = pen::defer::renderer_load_shader( ps_slp );
-
-		void* il_data;
-		u32 il_data_size;
-		pen::filesystem_read_file_to_buffer( il_file_buf, &il_data, il_data_size );
-		int* input_parser = (int*)il_data;
-
-		pen::input_layout_creation_params ilp;
-		ilp.vs_byte_code = vs_slp.byte_code;
-		ilp.vs_byte_code_size = vs_slp.byte_code_size;
-
-		ilp.num_elements = *input_parser;
-		input_parser++;
-
-		ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc( sizeof(pen::input_layout_desc) * ilp.num_elements );
-        
-		for( u32 i = 0; i < ilp.num_elements; i++ )
-		{
-			u32 size = *input_parser;
-			input_parser++;
-
-			u32 offset = *input_parser;
-			input_parser++;
-
-			u32 semantic_lookup_index = *input_parser;
-			input_parser++;
-
-			u32 semantic_index = *input_parser;
-			input_parser++;
-
-			ilp.input_layout[i].semantic_index = semantic_index;
-
-			switch( size )
-			{
-			case 4:
-				ilp.input_layout[i].format = PEN_FORMAT_R32_FLOAT;
-				break;
-			case 8:
-				ilp.input_layout[i].format = PEN_FORMAT_R32G32_FLOAT;
-				break;
-			case 12:
-				ilp.input_layout[i].format = PEN_FORMAT_R32G32B32_FLOAT;
-				break;
-			case 16:
-				ilp.input_layout[i].format = PEN_FORMAT_R32G32B32A32_FLOAT;
-				break;
-			}
-
-			ilp.input_layout[i].semantic_name = &semantic_names[semantic_lookup_index][0];
-			
-			ilp.input_layout[i].input_slot = 0;
-			ilp.input_layout[i].aligned_byte_offset = offset;
-			ilp.input_layout[i].input_slot_class = PEN_INPUT_PER_VERTEX;
-			ilp.input_layout[i].instance_data_step_rate = 0;
-		}
-
-		prog.input_layout = pen::defer::renderer_create_input_layout( ilp );
 
 		pen::memory_free( vs_slp.byte_code );
 		pen::memory_free( ps_slp.byte_code );
 		pen::memory_free( ilp.input_layout );
-		pen::memory_free( il_data );
 
 		return prog;
 	}

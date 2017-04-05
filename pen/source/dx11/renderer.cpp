@@ -713,13 +713,14 @@ namespace pen
 		}
 	}
 
-	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size )
+	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset )
 	{
         D3D11_MAPPED_SUBRESOURCE mapped_res = { 0 };
 
         g_immediate_context->Map( resource_pool[ buffer_index ].generic_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res );
        
-        memcpy( mapped_res.pData, data, data_size );
+        void* p_data = (void*)((size_t)mapped_res.pData + offset);
+        memcpy( p_data, data, data_size );
        
         g_immediate_context->Unmap( resource_pool[ buffer_index ].generic_buffer, 0 );
 
@@ -859,6 +860,12 @@ namespace pen
 		g_immediate_context->IASetPrimitiveTopology( ( D3D11_PRIMITIVE_TOPOLOGY ) PEN_PT_POINTLIST );
 		g_immediate_context->DrawAuto();
 	}
+
+    void direct::renderer_set_scissor_rect( const rect &r )
+    {
+        const D3D11_RECT rd3d = { ( LONG ) r.left, ( LONG ) r.top, ( LONG ) r.right, ( LONG ) r.bottom };
+        g_immediate_context->RSSetScissorRects( 1, &rd3d );
+    }
 
 	void renderer_update_queries()
 	{
@@ -1131,6 +1138,5 @@ namespace pen
     {
         return "hlsl";
     }
-
 }
 

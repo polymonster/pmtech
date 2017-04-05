@@ -49,6 +49,7 @@ namespace pen
         CMD_CREATE_RASTER_STATE,
         CMD_SET_RASTER_STATE,
         CMD_SET_VIEWPORT,
+        CMD_SET_SCISSOR_RECT,
         CMD_RELEASE_RASTER_STATE,
         CMD_CREATE_BLEND_STATE,
         CMD_SET_BLEND_STATE,
@@ -158,6 +159,7 @@ namespace pen
         u32		buffer_index;
         void*   data;
         u32     data_size;
+        u32     offset;
         
     } update_buffer_cmd;
     
@@ -193,6 +195,7 @@ namespace pen
             set_texture_cmd                     set_texture;
             rasteriser_state_creation_params    create_raster_state;
             viewport                            set_viewport;
+            rect                                set_rect;
             blend_creation_params               create_blend_state;
             set_constant_buffer_cmd             set_constant_buffer;
             update_buffer_cmd                   update_buffer;
@@ -315,6 +318,10 @@ namespace pen
             case CMD_SET_VIEWPORT:
                 direct::renderer_set_viewport( cmd.set_viewport );
                 break;
+
+            case CMD_SET_SCISSOR_RECT:
+                direct::renderer_set_scissor_rect( cmd.set_rect );
+                break;
                 
             case CMD_RELEASE_SHADER:
                 direct::renderer_release_shader( cmd.set_shader.shader_index, cmd.set_shader.shader_type );
@@ -346,7 +353,7 @@ namespace pen
                 break;
                 
             case CMD_UPDATE_BUFFER:
-                direct::renderer_update_buffer( cmd.update_buffer.buffer_index, cmd.update_buffer.data, cmd.update_buffer.data_size );
+                direct::renderer_update_buffer( cmd.update_buffer.buffer_index, cmd.update_buffer.data, cmd.update_buffer.data_size, cmd.update_buffer.offset );
                 pen::memory_free( cmd.update_buffer.data );
                 break;
                 
@@ -783,8 +790,15 @@ namespace pen
         
         cmd_buffer[ put_pos ].create_texture2d.data = pen::memory_alloc( tcp.data_size );
         
-        pen::memory_cpy( cmd_buffer[ put_pos ].create_texture2d.data, tcp.data, tcp.data_size );
-        
+        if( tcp.data )
+        {
+            pen::memory_cpy( cmd_buffer[ put_pos ].create_texture2d.data, tcp.data, tcp.data_size );
+        }
+        else
+        {
+            cmd_buffer[ put_pos ].create_texture2d.data = nullptr;
+        }
+
         INC_WRAP( put_pos );
         
         return get_next_resource_index( DEFER_RESOURCE );
@@ -869,6 +883,15 @@ namespace pen
         
         INC_WRAP( put_pos );
     }
+
+    void defer::renderer_set_scissor_rect( const rect &r )
+    {
+        cmd_buffer[ put_pos ].command_index = CMD_SET_SCISSOR_RECT;
+
+        pen::memory_cpy( &cmd_buffer[ put_pos ].set_rect, ( void* ) &r, sizeof( rect ) );
+
+        INC_WRAP( put_pos );
+    }
     
     void defer::renderer_release_raster_state( u32 raster_state_index )
     {
@@ -916,13 +939,13 @@ namespace pen
         INC_WRAP( put_pos );
     }
     
-    void defer::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size )
+    void defer::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset )
     {
         cmd_buffer[ put_pos ].command_index = CMD_UPDATE_BUFFER;
         
         cmd_buffer[ put_pos ].update_buffer.buffer_index = buffer_index;
         cmd_buffer[ put_pos ].update_buffer.data_size = data_size;
-        
+        cmd_buffer[ put_pos ].update_buffer.offset = offset;
         cmd_buffer[ put_pos ].update_buffer.data = pen::memory_alloc( data_size );
         pen::memory_cpy( cmd_buffer[ put_pos ].update_buffer.data, data, data_size );
         

@@ -62,9 +62,18 @@ project ( project_name )
 		"../pen/include/" .. platform_dir,
 		"../pen/include/" .. renderer_dir,
 		"../put/include/",
+		"../pen/third_party/imgui/",
 		
 		"include/"
 	}
+	
+	if platform_dir == "win32" then
+	includedirs
+	{
+		"$(WindowsSDK_IncludePath)"
+	}
+	systemversion "10.0.14393.0"
+	end
 	
 	location ( root_directory .. "/build/" .. platform_dir )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
