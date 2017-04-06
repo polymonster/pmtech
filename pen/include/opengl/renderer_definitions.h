@@ -16,6 +16,13 @@
 #include <OpenGL/gl3ext.h>
 #endif
 
+enum null_values
+{
+    PEN_NULL_DEPTH_BUFFER = 0,
+    PEN_NULL_PIXEL_SHADER = 0,
+    PEN_NULL_COLOUR_BUFFER = 0
+};
+
 enum shader_type
 {
     PEN_SHADER_TYPE_VS          = GL_VERTEX_SHADER,

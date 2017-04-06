@@ -28,8 +28,6 @@ namespace pen
         CMD_NONE = 0,
         CMD_CLEAR,
         CMD_CLEAR_CUBE,
-        CMD_SET_ACTIVE_CB,
-        CMD_SET_ACTIVE_DB,
         CMD_PRESENT,
         CMD_LOAD_SHADER,
         CMD_SET_SHADER,
@@ -220,14 +218,6 @@ namespace pen
         {
             case CMD_CLEAR:
                 direct::renderer_clear( cmd.command_data_index );
-                break;
-                
-            case CMD_SET_ACTIVE_CB:
-                direct::renderer_set_colour_buffer( cmd.command_data_index );
-                break;
-                
-            case CMD_SET_ACTIVE_DB:
-                direct::renderer_set_depth_buffer( cmd.command_data_index );
                 break;
                 
             case CMD_PRESENT:
@@ -969,22 +959,6 @@ namespace pen
         cmd_buffer[ put_pos ].command_index = CMD_SET_DEPTH_STENCIL_STATE;
         
         cmd_buffer[ put_pos ].command_data_index = depth_stencil_state;
-        
-        INC_WRAP( put_pos );
-    }
-    
-    void defer::renderer_set_colour_buffer( u32 buffer_index )
-    {
-        cmd_buffer[ put_pos ].command_index = CMD_SET_ACTIVE_CB;
-        cmd_buffer[ put_pos ].command_data_index = buffer_index;
-        
-        INC_WRAP( put_pos );
-    }
-    
-    void defer::renderer_set_depth_buffer( u32 buffer_index )
-    {
-        cmd_buffer[ put_pos ].command_index = CMD_SET_ACTIVE_DB;
-        cmd_buffer[ put_pos ].command_data_index = buffer_index;
         
         INC_WRAP( put_pos );
     }

@@ -200,17 +200,7 @@ namespace pen
 
 	//--------------------------------------------------------------------------------------
 	//  DIRECT API
-	//--------------------------------------------------------------------------------------
-	void direct::renderer_set_colour_buffer( u32 buffer_index )
-	{
-
-	}
-
-	void direct::renderer_set_depth_buffer( u32 buffer_index )
-	{
-        
-	}
-    
+	//--------------------------------------------------------------------------------------    
     void direct::renderer_make_context_current( )
     {
         pen_make_gl_context_current();
@@ -534,10 +524,58 @@ namespace pen
 	{
 
 	}
+    
+    u32 calc_mip_level_size( u32 w, u32 h, u32 block_size, u32 pixels_per_block )
+    {
+        u32 num_blocks = (w * h) / pixels_per_block;
+        u32 size = num_blocks * block_size;
+        
+        return size;
+    }
+    
+    void get_texture_format( u32 pen_format, u32& sized_format, u32& format, u32& type )
+    {
+        //PEN_FORMAT_B8G8R8A8_UNORM       = 0,
+        //PEN_FORMAT_BC1_UNORM            = 1,
+        //PEN_FORMAT_BC2_UNORM            = 2,
+        //PEN_FORMAT_BC3_UNORM            = 3,
+        //PEN_FORMAT_BC4_UNORM            = 4,
+        //PEN_FORMAT_BC5_UNORM            = 5
+        
+        switch(pen_format)
+        {
+            case PEN_FORMAT_B8G8R8A8_UNORM:
+                sized_format = GL_RGBA8;
+                format = GL_BGRA;
+                type = GL_UNSIGNED_BYTE;
+                break;
+                
+            default:
+                PEN_ASSERT( 0 );
+                break;
+        }
+    }
 
 	u32 direct::renderer_create_texture2d(const texture_creation_params& tcp)
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+    
+        u32 sized_format, format, type;
+        get_texture_format( tcp.format, sized_format, format, type );
+        
+        u32 mip_w = tcp.width;
+        u32 mip_h = tcp.height;
+        c8* mip_data = (c8*)tcp.data;
+        
+        for( u32 mip = 0; mip < tcp.num_mips; ++mip )
+        {
+            glTexImage2D(GL_TEXTURE_2D, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
+            
+            mip_data += calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
+            
+            mip_w /= 2;
+            mip_h /= 2;
+        }
 
 		return resource_index;
 	}
@@ -551,7 +589,7 @@ namespace pen
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type )
 	{
-
+        u32 a = 0;
 	}
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
