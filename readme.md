@@ -21,12 +21,14 @@ The renderer runs on its own thread, with all user submitted commands from the g
 **put** *pmtech utility toolkit*
 
 This project contains code that will be re-used across different projects but contains no platform specific code, it contains:
-- "Loader" - Contains functions to load textures (DDS), models, skeletons, animations and shaders
+- "Loader" - Contains functions to load (and hot load) textures (DDS), models, skeletons, animations and shaders
 - Bullet Physics - With a deferred command buffer API like the pen renderer and audio system, allowing physics simulate to run independantly on it's own thread.
 - Debug Renderer - Helpers for drawing lines, boxes and other debug primitives.
-- Stb Font - Simple font renderer, for debug use.
-- Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and helper functions
-- ImGui integration (todo)
+- Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and functions
+- - Thirdparty stuff
+- Stb Font - Simple font renderer in a header, for debug use and has minimal dependencies
+- ImGui - super cool and fast ui rendering for development.
+- JSON for modern c++ - great for working with data that has been generated with python.
 
 **tools**
 
@@ -40,13 +42,15 @@ Tool scripts written in python and using some c++ executables to build data:
 
 **examples**
 
-This solution / workspace contains multiple examples of how to use the API's and set up projects, I am currently using them to aid porting, starting with a simple windowed application using minimal dependencies, I will add more examples as I need to implement functionality. Currently these examples are available:
+This solution / workspace contains multiple examples of how to use the API's and set up projects, I have been using them to aid porting, starting with a simple windowed application using minimal dependencies, samples introduce more dependancies as they go along, this would also be an ideal place to add some unit tests and continously test functionality of the engine.
 
 - empty_project - First port of call to get a platform compiling, it creates an empty window with no rendering context.
 - basic_traingle - introduces a rendering context, clear sceen, shader loading / binding, vertex buffer and non-indexed draw calls.
 - debug_font - introduces shader loading with the "put" library, vertex buffer updating and debug text rendering.
 - textures - Introduces texture loading using the "put" library, index buffers, indexed draw calls, texture samplers and texture binding.
 - render_target - Introduces render target creation / binding, shader program loading using the "put" library to automatically generate input layouts from the shaders input signature.
+- play_sound - Introduces linking to fmod 5 and some basic audio functions.
+- Imgui - Displays the Imgui test example, this also introduces a few new rendering festures that are required, blending, depth stencil states and scissor testing.
 
 *Getting started*
 
