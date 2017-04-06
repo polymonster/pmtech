@@ -50,8 +50,8 @@ namespace pen
 		u32 backbuffer_colour;
 		u32 backbuffer_depth;
 
-		u32 active_colour_target;
-		u32 active_depth_target;
+		u32 active_colour_target = 0;
+		u32 active_depth_target = 0;
 
 		u32	active_query_index;
 
@@ -192,26 +192,6 @@ namespace pen
     {
         //unused on dx11 so far
     }
-
-   	void direct::renderer_set_colour_buffer( u32 buffer_index )
-	{
-		g_context.active_colour_target = buffer_index;
-
-		if( g_context.active_colour_target == 0 )
-		{
-			g_context.active_colour_target = g_context.backbuffer_colour;
-		}
-	}
-
-	void direct::renderer_set_depth_buffer( u32 buffer_index )
-	{
-		g_context.active_depth_target = buffer_index;
-
-		if (g_context.active_depth_target == 0)
-		{
-			g_context.active_depth_target = g_context.backbuffer_depth;
-		}
-	}
 
 	void direct::renderer_clear( u32 clear_state_index, u32 colour_face, u32 depth_face )
 	{
@@ -1073,13 +1053,19 @@ namespace pen
 		PEN_ASSERT( resource_index == PEN_DEFAULT_RT );
 		resource_pool[resource_index].render_target = (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
 
+		g_context.active_colour_target = PEN_DEFAULT_RT;
+
 		resource_pool[ resource_index ].render_target->rt[0] = g_backbuffer_rtv;
 		resource_pool[ resource_index ].texture_2d->texture = pBackBuffer;
 		g_context.backbuffer_colour = resource_index;
+
+		
 				
 		u32 depth_tex_id = get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
 		PEN_ASSERT( depth_tex_id == PEN_DEFAULT_DS );
 		resource_pool[depth_tex_id].depth_target = (depth_stencil_target_internal*)pen::memory_alloc(sizeof(depth_stencil_target_internal));
+
+		g_context.active_depth_target = PEN_DEFAULT_DS;
 
 		// Create depth stencil texture
 		D3D11_TEXTURE2D_DESC descDepth;

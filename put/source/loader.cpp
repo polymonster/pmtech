@@ -251,7 +251,7 @@ namespace put
 
 		ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
 
-		for (s32 i = 0; i < ilp.num_elements; ++i)
+		for (u32 i = 0; i < ilp.num_elements; ++i)
 		{
 			json vj = j["vs_inputs"][i];
 

@@ -25,11 +25,8 @@ project "pen"
 	}
 	end
 
-	if platform_dir == "win32" then
-	includedirs
-	{
-		"$(WindowsSDK_IncludePath)"
-	}
+	if _ACTION == "vs2017" then
+	systemversion "10.0.14393.0"
 	end
 	
 	includedirs 
@@ -41,8 +38,6 @@ project "pen"
 		
 		"third_party/fmod/inc" 
 	}
-	
-	systemversion "10.0.14393.0"
 		
 	configuration "Debug"
 		defines { "DEBUG" }

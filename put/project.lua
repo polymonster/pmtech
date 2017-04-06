@@ -21,11 +21,7 @@ project "put"
 		"..\\pen\\third_party\\imgui"
 	}
 	
-	if platform_dir == "win32" then
-	includedirs
-	{
-		"$(WindowsSDK_IncludePath)"
-	}
+	if _ACTION == "vs2017" then
 	systemversion "10.0.14393.0"
 	end
 		

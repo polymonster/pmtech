@@ -96,7 +96,7 @@ namespace pen
 	void input_set_cursor_pos( u32 client_x, u32 client_y )
 	{
 		HWND hw = (HWND)pen::window_get_primary_display_handle( );
-		POINT p = { client_x, client_y };
+		POINT p = { (LONG)client_x, (LONG)client_y };
 
 		ClientToScreen( hw, &p );
 		SetCursorPos( p.x, p.y );

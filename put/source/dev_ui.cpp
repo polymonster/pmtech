@@ -44,6 +44,8 @@ namespace dev_ui
 
     bool init()
     {
+		pen::memory_zero( &g_imgui_rs, sizeof( g_imgui_rs ) );
+
         ImGuiIO& io = ImGui::GetIO();
         io.KeyMap[ ImGuiKey_Tab ] = PENK_TAB;
         io.KeyMap[ ImGuiKey_LeftArrow ] = PENK_LEFT;
@@ -214,6 +216,7 @@ namespace dev_ui
 		pen::defer::renderer_set_blend_state(g_imgui_rs.blend_state);
 		pen::defer::renderer_set_depth_stencil_state(g_imgui_rs.depth_stencil_state);
 
+
         pen::defer::renderer_set_shader( g_imgui_rs.shader.vertex_shader, PEN_SHADER_TYPE_VS );
         pen::defer::renderer_set_shader( g_imgui_rs.shader.pixel_shader, PEN_SHADER_TYPE_PS );
         pen::defer::renderer_set_input_layout( g_imgui_rs.shader.input_layout );
@@ -255,9 +258,7 @@ namespace dev_ui
     }
 
     void create_render_states( )
-    {
-        pen::memory_zero( &g_imgui_rs, sizeof( g_imgui_rs ) );
-        
+    {        
         //raster state
         rasteriser_state_creation_params rcp;
         memory_zero( &rcp, sizeof( rasteriser_state_creation_params ) );
@@ -340,7 +341,7 @@ namespace dev_ui
         io.MousePos.x = (f32)ms->x;
         io.MousePos.y = (f32)ms->y;
 
-		prev_mouse_wheel = ms->wheel;
+		prev_mouse_wheel = (f32)ms->wheel;
 
         // ascii keys
         for( u32 i = 0; i < 256; ++i )
