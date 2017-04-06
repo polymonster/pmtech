@@ -76,6 +76,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         pen::defer::renderer_set_rasterizer_state( raster_state_cull_back );
 
+		static f32 renderer_time = 0.0f;
+
         //bind back buffer and clear
         pen::defer::renderer_set_viewport( vp );
         pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
@@ -99,6 +101,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 			if (ImGui::Button("Test Window")) show_test_window ^= 1;
 			if (ImGui::Button("Another Window")) show_another_window ^= 1;
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+			ImGui::Text("Imgui render implementation time : %f", renderer_time);
 		}
 
 		// 2. Show another simple window, this time using an explicit Begin/End pair
@@ -117,8 +121,13 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 			ImGui::ShowTestWindow(&show_test_window);
 		}
 
+		f32 start_time = pen::timer_get_time();
+		static f32 end_time = start_time;
 
         ImGui::Render();
+
+		end_time = pen::timer_get_time();
+		renderer_time = end_time - start_time;
 
         //present 
         pen::defer::renderer_present();

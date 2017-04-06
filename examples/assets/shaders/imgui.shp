@@ -28,7 +28,7 @@ vs_output main( vs_input _input )
 	
 	_output.position = mul( projection_matrix, float4( _input.position.x, _input.position.y, 0.0f, 1.0f ) );
 	_output.colour = _input.colour;
-	_output.tex_coord = input.tex_coord;
+	_output.tex_coord = _input.tex_coord;
 	
     return _output;
 }

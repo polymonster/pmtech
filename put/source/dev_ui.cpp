@@ -25,6 +25,9 @@ namespace dev_ui
         u32 ib_size;
         u32 constant_buffer;
 
+		void* vb_copy_buffer = nullptr;
+		void* ib_copy_buffer = nullptr;
+
         put::shader_program shader;
     };
 
@@ -129,6 +132,15 @@ namespace dev_ui
             bcp.buffer_size = g_imgui_rs.vb_size * sizeof(ImDrawVert);
             bcp.data = ( void* )nullptr;
 
+			if (g_imgui_rs.vb_copy_buffer == nullptr)
+			{
+				g_imgui_rs.vb_copy_buffer = pen::memory_alloc(g_imgui_rs.vb_size * sizeof(ImDrawVert));
+			}
+			else
+			{
+				pen::memory_realloc(g_imgui_rs.vb_copy_buffer, g_imgui_rs.vb_size * sizeof(ImDrawVert));
+			}
+
             g_imgui_rs.vertex_buffer = pen::defer::renderer_create_buffer(bcp);
         }
 
@@ -145,23 +157,39 @@ namespace dev_ui
             bcp.buffer_size = g_imgui_rs.ib_size * sizeof( ImDrawIdx );
             bcp.data = ( void* )nullptr;
 
+			if (g_imgui_rs.ib_copy_buffer == nullptr)
+			{
+				g_imgui_rs.ib_copy_buffer = pen::memory_alloc(g_imgui_rs.ib_size * sizeof(ImDrawIdx));
+			}
+			else
+			{
+				pen::memory_realloc(g_imgui_rs.ib_copy_buffer, g_imgui_rs.ib_size * sizeof(ImDrawIdx));
+			}
+
             g_imgui_rs.index_buffer = pen::defer::renderer_create_buffer( bcp );
         }
 
         u32 vb_offset = 0;
         u32 ib_offset = 0;
+
         for( int n = 0; n < draw_data->CmdListsCount; n++ )
         {
             ImDrawList* cmd_list = draw_data->CmdLists[ n ];
             u32 vertex_size = cmd_list->VtxBuffer.Size * sizeof( ImDrawVert );
             u32 index_size = cmd_list->IdxBuffer.Size * sizeof( ImDrawIdx );
 
-            pen::defer::renderer_update_buffer( g_imgui_rs.vertex_buffer, cmd_list->VtxBuffer.Data, vertex_size, vb_offset );
-            pen::defer::renderer_update_buffer( g_imgui_rs.index_buffer, cmd_list->IdxBuffer.Data, index_size, ib_offset );
+			c8* vb_mem = (c8*)g_imgui_rs.vb_copy_buffer;
+			c8* ib_mem = (c8*)g_imgui_rs.ib_copy_buffer;
+
+			pen::memory_cpy( &vb_mem[vb_offset], cmd_list->VtxBuffer.Data, vertex_size);
+			pen::memory_cpy( &ib_mem[ib_offset], cmd_list->IdxBuffer.Data, index_size);
 
             vb_offset += vertex_size;
             ib_offset += index_size;
         }
+
+		pen::defer::renderer_update_buffer(g_imgui_rs.vertex_buffer, g_imgui_rs.vb_copy_buffer, vb_offset );
+		pen::defer::renderer_update_buffer(g_imgui_rs.index_buffer, g_imgui_rs.ib_copy_buffer, ib_offset );
 
         float L = 0.0f;
         float R = ImGui::GetIO().DisplaySize.x;
@@ -182,11 +210,13 @@ namespace dev_ui
     {
         update_dynamic_buffers( draw_data );
 
+		pen::defer::renderer_set_rasterizer_state(g_imgui_rs.raster_state);
+		pen::defer::renderer_set_blend_state(g_imgui_rs.blend_state);
+		pen::defer::renderer_set_depth_stencil_state(g_imgui_rs.depth_stencil_state);
+
         pen::defer::renderer_set_shader( g_imgui_rs.shader.vertex_shader, PEN_SHADER_TYPE_VS );
         pen::defer::renderer_set_shader( g_imgui_rs.shader.pixel_shader, PEN_SHADER_TYPE_PS );
         pen::defer::renderer_set_input_layout( g_imgui_rs.shader.input_layout );
-		pen::defer::renderer_set_blend_state(g_imgui_rs.blend_state);
-		pen::defer::renderer_set_depth_stencil_state(g_imgui_rs.depth_stencil_state);
 
         u32 stride = sizeof(ImDrawData);
         u32 offset = 0;
@@ -213,7 +243,8 @@ namespace dev_ui
                     pen::defer::renderer_set_texture( *(u32*)pcmd->TextureId, g_imgui_rs.font_sampler_state, 0, PEN_SHADER_TYPE_PS );
                                         
                     pen::rect r = { pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w };
-                    pen::defer::renderer_set_scissor_rect( r );
+                    
+					pen::defer::renderer_set_scissor_rect( r );
 
                     pen::defer::renderer_draw_indexed( pcmd->ElemCount, idx_offset, vtx_offset, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
                 }
@@ -232,6 +263,8 @@ namespace dev_ui
         rcp.cull_mode = PEN_CULL_NONE;
         rcp.depth_bias_clamp = 0.0f;
         rcp.sloped_scale_depth_bias = 0.0f;
+		rcp.scissor_enable = true;
+		rcp.depth_clip_enable = true;
 
         g_imgui_rs.raster_state = defer::renderer_create_rasterizer_state( rcp );
 
@@ -278,18 +311,12 @@ namespace dev_ui
 		g_imgui_rs.blend_state = pen::defer::renderer_create_blend_state(blend_params);
 
 		//depth stencil state
-		pen::depth_stencil_creation_params depth_stencil_params;
-		pen::memory_zero(&depth_stencil_params, sizeof(depth_stencil_params));
+		pen::depth_stencil_creation_params depth_stencil_params = { 0 };
 
 		// Depth test parameters
 		depth_stencil_params.depth_enable = true;
 		depth_stencil_params.depth_write_mask = D3D10_DEPTH_WRITE_MASK_ALL;
 		depth_stencil_params.depth_func = D3D10_COMPARISON_ALWAYS;
-
-		// Stencil test parameters
-		depth_stencil_params.stencil_enable = false;
-		depth_stencil_params.stencil_read_mask = 0xFF;
-		depth_stencil_params.stencil_write_mask = 0xFF;
 
 		g_imgui_rs.depth_stencil_state = pen::defer::renderer_create_depth_stencil_state(depth_stencil_params);
     }
