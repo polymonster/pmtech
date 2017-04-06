@@ -76,6 +76,7 @@ namespace pen
         GLenum polygon_mode;
         bool culling_enabled;
         bool depth_clip_enabled;
+        bool scissor_enabled;
     } raster_state;
     
 	typedef struct resource_allocation
@@ -491,6 +492,16 @@ namespace pen
             }
             
             glPolygonMode(GL_FRONT_AND_BACK, rs.polygon_mode);
+            
+            if( rs.scissor_enabled )
+            {
+                glEnable(GL_SCISSOR_TEST);
+            }
+            else
+            {
+                glDisable(GL_SCISSOR_TEST);
+            }
+
         }
         
         //todo state
@@ -554,11 +565,11 @@ namespace pen
         if( rscp.cull_mode != PEN_CULL_NONE )
         {
             rs.culling_enabled = true;
-
             rs.cull_face = rscp.cull_mode;
         }
         
         rs.depth_clip_enabled = rscp.depth_clip_enable;
+        rs.scissor_enabled = rscp.scissor_enable;
         
         rs.polygon_mode = rscp.fill_mode;
 
@@ -575,6 +586,11 @@ namespace pen
         glViewport( vp.x, vp.y, vp.width, vp.height );
         glDepthRangef( vp.min_depth, vp.max_depth );
 	}
+    
+    void direct::renderer_set_scissor_rect( const rect &r )
+    {
+        glScissor(r.left, r.top, r.right, r.bottom);
+    }
 
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )
 	{
@@ -593,25 +609,17 @@ namespace pen
 
 	}
 
-	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size )
+	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset )
 	{
         resource_allocation& res = resource_pool[ buffer_index ];
         
         glBindBuffer( GL_ARRAY_BUFFER, res.handle );
         
-        void* mapped_data = glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE );
+        void* mapped_data = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY );
         
-        const f32* f_map = (f32*)mapped_data;
+        c8* mapped_offset = ((c8*)mapped_data) + offset;
         
-        const u32 test_size = 6 * 4 * 4;
-        f32 test_buf[ test_size ];
-        
-        for( u32 i = 0; i < test_size; ++i )
-        {
-            test_buf[ i ] = f_map[ i ];
-        }
-        
-        pen::memory_cpy(mapped_data, data, data_size);
+        pen::memory_cpy(mapped_offset, data, data_size);
         
         glUnmapBuffer(GL_ARRAY_BUFFER);
 	}

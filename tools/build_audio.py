@@ -2,6 +2,8 @@ import os
 import os.path
 import shutil
 
+print("\nbuild_audio")
+
 platform_name = "win32"
 if os.name == "posix":
     platform_name = "osx"

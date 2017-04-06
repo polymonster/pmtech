@@ -3,7 +3,8 @@ import subprocess
 import shutil
 
 # win32 / dds / block compression / mips / cubemaps
-print("texture conversion, mip generation and compression" + "\n")
+print("\nbuild_textures")
+print("texture conversion, mip generation and compression")
 
 platform_name = "win32"
 if os.name == "posix":
@@ -17,7 +18,7 @@ build_dir = os.path.join(os.getcwd(), "bin", platform_name, "data", "textures")
 if not os.path.exists(build_dir):
     os.makedirs(build_dir)
 
-print("processing directory: " + texture_dir + "\n")
+print("processing directory: " + texture_dir)
 
 for f in os.listdir(texture_dir):
     [fnoext, fext] = os.path.splitext(f)

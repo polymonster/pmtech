@@ -33,7 +33,7 @@ ps_output main( vs_output _input )
 {
 	ps_output _output;
 	
-	_output.colour = float4( 1.0f, 1.0f, 0.0f, 1.0f );
+	_output.colour = float4( 1.0f, 1.0f, 1.0f, 1.0f );
 	
 	_output.colour += func();
 	

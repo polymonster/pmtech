@@ -6,8 +6,8 @@ import re
 import sys
 import json
 
-hlsl_key = ["float4",   "float3",   "float2",   "float4x4", "float3x3"]
-glsl_key = ["vec4",     "vec3",     "vec2",     "mat4",     "mat3"]
+hlsl_key = ["float4x4", "float3x3", "float2x2", "float4", "float3", "float2", "lerp", "modf"]
+glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod"]
 
 tools_dir = os.path.join(os.getcwd(), "..", "tools")
 compiler_dir = os.path.join(os.getcwd(), "..", "tools", "bin", "fxc")
@@ -32,8 +32,9 @@ shader_build_dir = os.path.join(os.getcwd(),"bin", os_platform, "data", "shaders
 if not os.path.exists(shader_build_dir):
     os.makedirs(shader_build_dir)
 
+print("\nbuild_shaders")
 print("fx compiler directory :" + compiler_dir)
-print("compiling directory: " + shader_source_dir + "\n")
+print("compiling directory: " + shader_source_dir)
 
 
 def parse_and_split_block(code_block):
@@ -89,12 +90,15 @@ def make_input_info(inputs):
         offset += size
     return input_desc
 
-
-def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, texture_samplers, constant_buffers):
+def get_resource_info_filename(filename, build_dir):
     base_filename = os.path.basename(filename)
     dir_path = os.path.dirname(filename)
     info_filename = os.path.splitext(base_filename)[0] + ".json"
     info_filename = os.path.join(shader_build_dir, info_filename)
+    return info_filename, base_filename, dir_path
+
+def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, texture_samplers, constant_buffers):
+    info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
 
     shader_info = dict()
     shader_info["files"] = []
@@ -136,50 +140,6 @@ def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, t
     output_info.close()
     return shader_info
 
-def parse_input_layout(vs_input_source, filename, temp_extension):
-    f = os.path.basename(filename)
-    f = os.path.splitext(f)[0] + temp_extension
-
-    outfilename = os.path.join(shader_build_dir, f)
-
-    stri = vs_input_source
-    vs_input_loc = stri.find("vs_input")
-    if vs_input_loc < 0:
-        return
-    vs_input_start = stri.find("{", vs_input_loc) + 1
-    vs_input_end = stri.find("}", vs_input_loc)
-    input_str = stri[vs_input_start:vs_input_end]
-    input_str = input_str.replace(";", "")
-    input_str = input_str.replace(":", "")
-    splitted = input_str.split()
-    num_attribs = int(len(splitted)/3)
-    output = open(outfilename, 'wb+')
-    output.write(struct.pack("i", (int(num_attribs))))
-    count = 0
-    offset = 0
-    for s in splitted:
-        semantic_lookup_index = 0
-        semantics = ["POSITION", "TEXCOORD", "COLOR"]
-        data_sizes = [4, 4, 1]
-        semantic_index = 0
-        loc = s.find("float")
-        if loc >= 0 and (count % 3) == 0:
-            num_elems = int(s[loc+5])
-            cur_size = int(s[loc+5]) * data_sizes[semantic_index]
-            output.write(struct.pack("i", int(cur_size)))
-            output.write(struct.pack("i", int(offset)))
-            offset += cur_size
-        for semantic_name in semantics:
-            loc = s.find(semantic_name)
-            if loc >= 0 and (count % 3) == 2:
-                output.write(struct.pack("i",int(semantic_lookup_index)))
-                semantic_index = s.replace(semantic_name,"")
-                if semantic_index == "":
-                    output.write(struct.pack("i", int(0)))
-                else:
-                    output.write(struct.pack("i", int(semantic_index)))
-            semantic_lookup_index += 1
-        count += 1
 
 def compile_hlsl(source, filename, shader_model, temp_extension):
     f = os.path.basename(filename)
@@ -344,22 +304,32 @@ def generate_output_assignment(io_elements, local_var, suffix):
             assign_source += var_name + suffix + " = " + local_var + "." + var_name + ";\n"
     return assign_source
 
-def compile_glsl(vs_shader_source, ps_shader_source, has_ps,
-                 source_filename, texture_samplers_source, macros):
+def compile_glsl(
+        source_filename, macros,
+        vs_main, ps_main,
+        vs_functions, ps_functions,
+        vs_input_source, vs_output_source, ps_output_source,
+        constant_buffers,
+        texture_samplers_source ):
     shader_name = os.path.basename(source_filename)
     shader_name = os.path.splitext(shader_name)[0]
 
-    glsl_vs_source = vs_shader_source
-    glsl_ps_source = ps_shader_source
-
-    # replace all key words
-    for key_index in range(0, len(hlsl_key)):
-        glsl_vs_source = glsl_vs_source.replace(hlsl_key[key_index], glsl_key[key_index])
-        glsl_ps_source = glsl_ps_source.replace(hlsl_key[key_index], glsl_key[key_index])
-
     # parse input block
-    vs_inputs, vs_input_semantics = parse_io_struct(glsl_vs_source, "struct vs_input")
-    vs_outputs, vs_output_semantics = parse_io_struct(glsl_vs_source, "struct vs_output")
+    vs_inputs, vs_input_semantics = parse_io_struct(vs_input_source, "struct vs_input")
+    vs_outputs, vs_output_semantics = parse_io_struct(vs_output_source, "struct vs_output")
+
+    # cbuffers to unifom
+    uniform_buffers = ""
+    for cbuf in constant_buffers:
+        name_start = cbuf.find(" ")
+        name_end = cbuf.find(":")
+        uniform_buf = "uniform "
+        uniform_buf += cbuf[name_start:name_end]
+        body_start = cbuf.find("{")
+        body_end = cbuf.find("};") + 2
+        uniform_buf += "\n"
+        uniform_buf += cbuf[body_start:body_end] + "\n"
+        uniform_buffers += uniform_buf + "\n"
 
     # start making vs shader code
     final_vs_source = "#version 330 core\n"
@@ -383,8 +353,10 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps,
     final_vs_source += generate_global_io_struct(vs_inputs, "struct vs_input")
     final_vs_source += generate_global_io_struct(vs_outputs, "struct vs_output")
     final_vs_source += texture_samplers_source
+    final_vs_source += uniform_buffers
+    final_vs_source += vs_functions
 
-    glsl_vs_main = find_main(glsl_vs_source, "vs_output main")
+    glsl_vs_main = find_main(vs_main, "vs_output main")
     skip_function_start = glsl_vs_main.find("{") + 1
     skip_function_end = glsl_vs_main.find("return")
     glsl_vs_main = glsl_vs_main[skip_function_start:skip_function_end].strip()
@@ -399,14 +371,17 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps,
     final_vs_source += vs_main_post_assign
     final_vs_source += "}\n"
 
+    for key_index in range(0, len(hlsl_key)):
+        final_vs_source = final_vs_source.replace(hlsl_key[key_index], glsl_key[key_index])
+
     vs_fn = os.path.join(shader_build_dir, shader_name + ".vsc")
     vs_file = open(vs_fn, "w")
     vs_file.write(final_vs_source)
     vs_file.close()
 
     # start making ps shader code
-    if has_ps:
-        ps_outputs, ps_output_semantics = parse_io_struct(glsl_ps_source, "struct ps_output")
+    if ps_main != "":
+        ps_outputs, ps_output_semantics = parse_io_struct(ps_output_source, "struct ps_output")
 
         final_ps_source = "#version 330 core\n"
         final_ps_source += "#define GLSL\n"
@@ -427,8 +402,10 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps,
         final_ps_source += generate_global_io_struct(vs_outputs, "struct vs_output")
         final_ps_source += generate_global_io_struct(ps_outputs, "struct ps_output")
         final_ps_source += texture_samplers_source
+        final_ps_source += uniform_buffers
+        final_ps_source += ps_functions
 
-        glsl_ps_main = find_main(glsl_ps_source, "ps_output main")
+        glsl_ps_main = find_main(ps_main, "ps_output main")
         skip_function_start = glsl_ps_main.find("{") + 1
         skip_function_end = glsl_ps_main.find("return")
         glsl_ps_main = glsl_ps_main[skip_function_start:skip_function_end].strip()
@@ -442,6 +419,9 @@ def compile_glsl(vs_shader_source, ps_shader_source, has_ps,
         final_ps_source += "\t" + glsl_ps_main + "\n"
         final_ps_source += ps_main_post_assign
         final_ps_source += "}\n"
+
+        for key_index in range(0, len(hlsl_key)):
+            final_ps_source = final_ps_source.replace(hlsl_key[key_index], glsl_key[key_index])
 
         ps_fn = os.path.join(shader_build_dir, shader_name + ".psc")
         ps_file = open(ps_fn, "w")
@@ -475,6 +455,7 @@ def find_used_functions(entry_func, function_list):
             if used_func.find(name + "(") != -1:
                 used_functions.append(func)
                 ordered_function_list.insert(0, func)
+    ordered_function_list.remove(entry_func)
     used_function_source = ""
     for used_func in ordered_function_list:
         used_function_source += used_func + "\n\n"
@@ -484,6 +465,7 @@ def add_files_recursive(filename, root):
     file_path = os.path.join(root, filename)
     included_file = open(file_path, "r")
     shader_source = included_file.read()
+    included_file.close()
     shader_source = clean_spaces(shader_source)
     include_list = find_includes(shader_source)
     for slib in include_list:
@@ -492,39 +474,61 @@ def add_files_recursive(filename, root):
         include_list = include_list + sub_includes
     return shader_source, include_list
 
+def check_dependencies(root, filename, included_files):
+    # look for .json file
+    file_list = []
+    file_list.append(filename)
+    info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
+    for f in included_files:
+        file_list.append(os.path.join(dir_path,f))
+    if os.path.exists(info_filename):
+        info_file = open(info_filename, "r")
+        info = json.loads(info_file.read())
+        for prev_built_with_file in info["files"]:
+            if prev_built_with_file["name"] in file_list:
+                if prev_built_with_file["timestamp"] < os.path.getmtime(prev_built_with_file["name"]):
+                    info_file.close()
+                    return 0
+        info_file.close()
+    return 1
+
+
 def create_vsc_psc_vsi(filename, root):
-    print("converting: " + filename + "\n")
+    shader_file_text, included_files = add_files_recursive(filename, root)
+    up_to_date = check_dependencies(root, filename, included_files)
+
+    if up_to_date == 1:
+        return
+
+    print("converting: " + filename)
 
     macros_fn = os.path.join(tools_dir, "_shader_macros.h")
     macros_file = open(macros_fn)
     macros_text = macros_file.read()
-
-    shader_file_text, included_files = add_files_recursive(filename, root)
+    macros_file.close()
 
     function_list = find_generic_functions(shader_file_text)
 
     #_find main ps and vs
-    main_ps = ""
-    main_vs = ""
-    has_ps = False
+    ps_main = ""
+    vs_main = ""
     for func in function_list:
         if func.find("ps_output main") != -1:
-            main_ps = func
-            has_ps = True
+            ps_main = func
         if func.find("vs_output main") != -1:
-            main_vs = func
+            vs_main = func
 
     # remove from generic function list
-    function_list.remove(main_vs)
-    if has_ps:
-        function_list.remove(main_ps)
+    function_list.remove(vs_main)
+    if ps_main != "":
+        function_list.remove(ps_main)
 
     vs_functions = ""
-    vs_functions += find_used_functions(main_vs, function_list)
+    vs_functions += find_used_functions(vs_main, function_list)
 
     ps_functions = ""
-    if has_ps:
-        ps_functions = find_used_functions(main_ps, function_list)
+    if ps_main != "":
+        ps_functions = find_used_functions(ps_main, function_list)
 
     vs_source = macros_text + "\n\n"
     ps_source = macros_text + "\n\n"
@@ -532,6 +536,7 @@ def create_vsc_psc_vsi(filename, root):
     instance_input_source = find_struct(shader_file_text, "struct instance_input")
     vs_input_source = find_struct(shader_file_text, "struct vs_input")
     vs_output_source = find_struct(shader_file_text, "struct vs_output")
+    ps_output_source = find_struct(shader_file_text, "struct ps_output")
 
     #constant / uniform buffers
     constant_buffers = find_constant_buffers(shader_file_text)
@@ -546,29 +551,31 @@ def create_vsc_psc_vsi(filename, root):
         vs_source += cbuf
     vs_source += texture_samplers_source
     vs_source += vs_functions
+    vs_source += vs_main
 
     # pixel shader
     ps_source += vs_output_source
     for cbuf in constant_buffers:
         ps_source += cbuf
-    ps_source += find_struct(shader_file_text, "struct ps_output")
+    ps_source += ps_output_source
     ps_source += texture_samplers_source
 
     # allow null pixel shaders
-    if has_ps:
+    if ps_main != "":
         ps_source += ps_functions
+        ps_source += ps_main
 
     if shader_platform == "hlsl":
         compile_hlsl(vs_source, filename, "vs_4_0", ".vs")
-        if has_ps:
+        if ps_main != "":
             compile_hlsl(ps_source, filename, "ps_4_0", ".ps")
     elif shader_platform == "glsl":
-        compile_glsl(vs_source,
-                     ps_source,
-                     has_ps,
-                     filename,
-                     texture_samplers_source,
-                     macros_text)
+        compile_glsl(
+            filename, macros_text,
+            vs_main, ps_main,
+            vs_functions, ps_functions,
+            vs_input_source, vs_output_source, ps_output_source,
+            constant_buffers, texture_samplers_source)
 
     generate_shader_info(
         filename,
@@ -577,8 +584,6 @@ def create_vsc_psc_vsi(filename, root):
         instance_input_source,
         texture_samplers_source,
         constant_buffers)
-
-    parse_input_layout(vs_input_source, filename, ".vsi")
 
     debug_print = 0
     if debug_print > 0:

@@ -31,7 +31,7 @@ namespace dev_ui
         put::shader_program shader;
     };
 
-    render_handles g_imgui_rs = { 0 };
+    render_handles g_imgui_rs;
 
     //internal functions
     void create_texture_atlas();
@@ -128,7 +128,7 @@ namespace dev_ui
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
-            bcp.cpu_access_flags = D3D11_CPU_ACCESS_WRITE;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             bcp.buffer_size = g_imgui_rs.vb_size * sizeof(ImDrawVert);
             bcp.data = ( void* )nullptr;
 
@@ -153,7 +153,7 @@ namespace dev_ui
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
-            bcp.cpu_access_flags = D3D11_CPU_ACCESS_WRITE;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             bcp.buffer_size = g_imgui_rs.ib_size * sizeof( ImDrawIdx );
             bcp.data = ( void* )nullptr;
 
@@ -246,7 +246,7 @@ namespace dev_ui
                     
 					pen::defer::renderer_set_scissor_rect( r );
 
-                    pen::defer::renderer_draw_indexed( pcmd->ElemCount, idx_offset, vtx_offset, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+                    pen::defer::renderer_draw_indexed( pcmd->ElemCount, idx_offset, vtx_offset, PEN_PT_TRIANGLELIST );
                 }
                 idx_offset += pcmd->ElemCount;
             }
@@ -256,6 +256,8 @@ namespace dev_ui
 
     void create_render_states( )
     {
+        pen::memory_zero( &g_imgui_rs, sizeof( g_imgui_rs ) );
+        
         //raster state
         rasteriser_state_creation_params rcp;
         memory_zero( &rcp, sizeof( rasteriser_state_creation_params ) );
@@ -285,7 +287,7 @@ namespace dev_ui
         pen::buffer_creation_params bcp;
         bcp.usage_flags = PEN_USAGE_DYNAMIC;
         bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-        bcp.cpu_access_flags = D3D11_CPU_ACCESS_WRITE;
+        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
         bcp.buffer_size = sizeof( float ) * 16;
         bcp.data = ( void* )nullptr;
 
@@ -315,8 +317,8 @@ namespace dev_ui
 
 		// Depth test parameters
 		depth_stencil_params.depth_enable = true;
-		depth_stencil_params.depth_write_mask = D3D10_DEPTH_WRITE_MASK_ALL;
-		depth_stencil_params.depth_func = D3D10_COMPARISON_ALWAYS;
+		depth_stencil_params.depth_write_mask = 1;
+		depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
 
 		g_imgui_rs.depth_stencil_state = pen::defer::renderer_create_depth_stencil_state(depth_stencil_params);
     }
