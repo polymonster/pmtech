@@ -77,15 +77,15 @@ namespace put
 			{
 			case DXT1:
 				block_size = 8;
-				return PEN_FORMAT_BC1_UNORM;
+				return PEN_TEX_FORMAT_BC1_UNORM;
 			case DXT2:
-				return PEN_FORMAT_BC2_UNORM;
+				return PEN_TEX_FORMAT_BC2_UNORM;
 			case DXT3:
-				return PEN_FORMAT_BC3_UNORM;
+				return PEN_TEX_FORMAT_BC3_UNORM;
 			case DXT4:
-				return PEN_FORMAT_BC4_UNORM;
+				return PEN_TEX_FORMAT_BC4_UNORM;
 			case DXT5:
-				return PEN_FORMAT_BC5_UNORM;
+				return PEN_TEX_FORMAT_BC5_UNORM;
 			case DX10:
 				dx10_header_present = true;
 				return 0;
@@ -97,7 +97,7 @@ namespace put
 			if ( rgba == 0xffffffff)
 			{
 				block_size = 4;
-				return PEN_FORMAT_B8G8R8A8_UNORM;
+				return PEN_TEX_FORMAT_BGRA8_UNORM;
 			}
 		}
 

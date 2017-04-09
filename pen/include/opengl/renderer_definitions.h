@@ -97,12 +97,14 @@ enum index_buffer_format : s32
 
 enum texture_format : s32
 {
-    PEN_FORMAT_B8G8R8A8_UNORM       = 0,
-    PEN_FORMAT_BC1_UNORM            = 1,
-    PEN_FORMAT_BC2_UNORM            = 2,
-    PEN_FORMAT_BC3_UNORM            = 3,
-    PEN_FORMAT_BC4_UNORM            = 4,
-    PEN_FORMAT_BC5_UNORM            = 5
+    PEN_TEX_FORMAT_BGRA8_UNORM,
+    PEN_TEX_FORMAT_RGBA8_UNORM,
+    
+    PEN_TEX_FORMAT_BC1_UNORM,
+    PEN_TEX_FORMAT_BC2_UNORM,
+    PEN_TEX_FORMAT_BC3_UNORM,
+    PEN_TEX_FORMAT_BC4_UNORM,
+    PEN_TEX_FORMAT_BC5_UNORM
 };
 
 enum usage : s32

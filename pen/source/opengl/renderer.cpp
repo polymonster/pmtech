@@ -544,9 +544,15 @@ namespace pen
         
         switch(pen_format)
         {
-            case PEN_FORMAT_B8G8R8A8_UNORM:
+            case PEN_TEX_FORMAT_BGRA8_UNORM:
                 sized_format = GL_RGBA8;
                 format = GL_BGRA;
+                type = GL_UNSIGNED_BYTE;
+                break;
+        
+            case PEN_TEX_FORMAT_RGBA8_UNORM:
+                sized_format = GL_RGBA8;
+                format = GL_RGBA;
                 type = GL_UNSIGNED_BYTE;
                 break;
                 

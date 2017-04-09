@@ -17,13 +17,14 @@ namespace dbg
 	void add_line_transform( vec3f &start, vec3f &end, const vec3f &col, mat4 *matrix );
 
 	//2d
-	void add_debug_line2f( vec2f start, vec2f end, vec3f colour );
-	void add_debug_point_2f( vec2f pos, vec3f colour );
-	void add_debug_quad( vec2f pos, vec2f size, vec3f colour );
+	void add_line2f( vec2f start, vec2f end, vec3f colour );
+	void add_point_2f( vec2f pos, vec3f colour );
+	void add_quad_2f( vec2f pos, vec2f size, vec3f colour );
 
 	//text
     void print_text(f32 x, f32 y, const pen::viewport& vp, vec4f colour, const c8* format, ... );
 
+    void render_2d( );
 	void render_3d( u32 cb_3dview );
 	void render_text();
 }

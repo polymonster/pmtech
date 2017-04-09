@@ -6,6 +6,8 @@
 #define PEN_MOUSE_R			1
 #define PEN_MOUSE_M			2
 
+#define PENK_ARRAY_SIZE     512
+
 #define PENK_LBUTTON		0x01
 #define PENK_RBUTTON		0x02
 #define PENK_CANCEL			0x03
@@ -101,5 +103,6 @@
 #define PENK_F12			0x7B				  
 #define PENK_NUMLOCK		0x90
 #define PENK_SCROLL			0x91
+#define PENK_COMMAND		0x92
 
 #endif

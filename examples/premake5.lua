@@ -41,7 +41,7 @@ dofile "../pen/project.lua"
 dofile "../put/project.lua"
 
 -- Example projects	
--- ( project name, current script dir, link "put" )
+-- ( project name, current script dir, )
 create_app( "empty_project", script_path() )
 create_app( "basic_triangle", script_path() )
 create_app( "textures", script_path() )
@@ -49,5 +49,6 @@ create_app( "render_target", script_path() )
 create_app( "debug_text", script_path() )
 create_app( "play_sound", script_path() )
 create_app( "imgui", script_path() )
+create_app( "input", script_path() )
 	
 	

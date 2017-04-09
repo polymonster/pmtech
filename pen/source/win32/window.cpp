@@ -161,4 +161,18 @@ namespace pen
 	{
 		return g_hwnd;
 	}
+    
+    void os_set_cursor_pos( u32 client_x, u32 client_y )
+    {
+        HWND hw = (HWND)pen::window_get_primary_display_handle( );
+        POINT p = { (LONG)client_x, (LONG)client_y };
+    
+        ClientToScreen( hw, &p );
+        SetCursorPos( p.x, p.y );
+    }
+    
+    void os_show_cursor( bool show )
+    {
+        ShowCursor( show );
+    }
 }

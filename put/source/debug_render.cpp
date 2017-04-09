@@ -114,34 +114,39 @@ namespace dbg
 		debug_lines_verts = &debug_lines_buffers[debug_lines_backbuffer_index][0];
 		
 	}
+    
+    void render_2d()
+    {
+        pen::defer::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS );
+        
+        //bind vertex layout
+        pen::defer::renderer_set_input_layout(debug_font_program.input_layout);
+        
+        //bind vertex buffer
+        u32 stride = sizeof(vertex_debug_font);
+        u32 offset = 0;
+        pen::defer::renderer_set_vertex_buffer(vb_font, 0, 1, &stride, &offset);
+        
+        //bind shaders
+        pen::defer::renderer_set_shader(debug_font_program.vertex_shader, PEN_SHADER_TYPE_VS);
+        pen::defer::renderer_set_shader(debug_font_program.pixel_shader, PEN_SHADER_TYPE_PS);
+        
+        //pen::defer::renderer_set_depth_stencil_state(depth_state_disabled);
+        
+        //draw
+        pen::defer::renderer_draw(font_vert_count, 0, PEN_PT_TRIANGLELIST);
+        
+        //reset
+        font_vert_count = 0;
+        
+        debug_font_backbuffer_index = (debug_font_backbuffer_index + 1) & NUM_VERTEX_BUFFERS;
+        
+        debug_font_verts = &debug_font_buffers[debug_font_backbuffer_index][0];
+    }
 
 	void render_text()
 	{
-		pen::defer::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS );
-
-		//bind vertex layout
-		pen::defer::renderer_set_input_layout(debug_font_program.input_layout);
-
-		//bind vertex buffer
-		u32 stride = sizeof(vertex_debug_font);
-		u32 offset = 0;
-		pen::defer::renderer_set_vertex_buffer(vb_font, 0, 1, &stride, &offset);
-
-		//bind shaders
-		pen::defer::renderer_set_shader(debug_font_program.vertex_shader, PEN_SHADER_TYPE_VS);
-		pen::defer::renderer_set_shader(debug_font_program.pixel_shader, PEN_SHADER_TYPE_PS);
-
-		//pen::defer::renderer_set_depth_stencil_state(depth_state_disabled);
-
-		//draw
-		pen::defer::renderer_draw(font_vert_count, 0, PEN_PT_TRIANGLELIST);
-        
-		//reset
-		font_vert_count = 0;
-
-		debug_font_backbuffer_index = (debug_font_backbuffer_index + 1) & NUM_VERTEX_BUFFERS;
-
-		debug_font_verts = &debug_font_buffers[debug_font_backbuffer_index][0];
+        render_2d();
 	}
 
 	void print_text(f32 x, f32 y, const pen::viewport& vp, vec4f colour, const c8* format, ... )
@@ -393,7 +398,7 @@ namespace dbg
 		}
 	}
 
-	void add_debug_line2f( vec2f start, vec2f end, vec3f colour )
+	void add_line2f( vec2f start, vec2f end, vec3f colour )
 	{
 		debug_lines_verts[line_vert_count].x = start.x;
 		debug_lines_verts[line_vert_count].y = start.y;
@@ -416,7 +421,7 @@ namespace dbg
 		line_vert_count += 2;
 	}
 
-	void add_debug_point_2f( vec2f pos, vec3f colour )
+	void add_point_2f( vec2f pos, vec3f colour )
 	{
 		const f32 size = 2.0f;
 
@@ -479,7 +484,7 @@ namespace dbg
 		}
 	}
 
-	void add_debug_quad( vec2f pos, vec2f size, vec3f colour )
+	void add_quad_2f( vec2f pos, vec2f size, vec3f colour )
 	{
 		//calc pos in NDC space
 		vec2f ndc_pos = pos;

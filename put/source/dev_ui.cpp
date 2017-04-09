@@ -100,7 +100,7 @@ namespace dev_ui
         texture_creation_params tcp;
         tcp.width = width;
         tcp.height = height;
-        tcp.format = PEN_FORMAT_R8G8B8A8_UNORM;
+        tcp.format = PEN_TEX_FORMAT_BGRA8_UNORM;
         tcp.num_mips = 1;
         tcp.num_arrays = 1;
         tcp.sample_count = 1;
@@ -329,19 +329,19 @@ namespace dev_ui
         ImGuiIO& io = ImGui::GetIO();
 
         // mouse wheel state
-        pen::mouse_state* ms = pen::input_get_mouse_state();
+        const pen::mouse_state& ms = pen::input_get_mouse_state();
 
-        io.MouseDown[ 0 ] = ms->buttons[ PEN_MOUSE_L ];
-        io.MouseDown[ 1 ] = ms->buttons[ PEN_MOUSE_R ];
-        io.MouseDown[ 2 ] = ms->buttons[ PEN_MOUSE_M ];
+        io.MouseDown[ 0 ] = ms.buttons[ PEN_MOUSE_L ];
+        io.MouseDown[ 1 ] = ms.buttons[ PEN_MOUSE_R ];
+        io.MouseDown[ 2 ] = ms.buttons[ PEN_MOUSE_M ];
 
-		static f32 prev_mouse_wheel = (f32)ms->wheel;
+		static f32 prev_mouse_wheel = (f32)ms.wheel;
 
-        io.MouseWheel += (f32)ms->wheel - prev_mouse_wheel;
-        io.MousePos.x = (f32)ms->x;
-        io.MousePos.y = (f32)ms->y;
+        io.MouseWheel += (f32)ms.wheel - prev_mouse_wheel;
+        io.MousePos.x = (f32)ms.x;
+        io.MousePos.y = (f32)ms.y;
 
-		prev_mouse_wheel = (f32)ms->wheel;
+		prev_mouse_wheel = (f32)ms.wheel;
 
         // ascii keys
         for( u32 i = 0; i < 256; ++i )
