@@ -27,11 +27,10 @@ pen::viewport vp =
     0.0f, 1.0f
 };
 
+u32 default_depth_stencil_state;
+
 void renderer_state_init( )
 {
-    //initialise the debug render system
-    dbg::initialise();
-
     //create 2 clear states one for the render target and one for the main screen, so we can see the difference
     static pen::clear_state cs =
     {
@@ -50,6 +49,16 @@ void renderer_state_init( )
     rcp.depth_clip_enable = true;
 
     raster_state_cull_back = pen::defer::renderer_create_rasterizer_state( rcp );
+    
+    //depth stencil state
+    pen::depth_stencil_creation_params depth_stencil_params = { 0 };
+    
+    // Depth test parameters
+    depth_stencil_params.depth_enable = true;
+    depth_stencil_params.depth_write_mask = 1;
+    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
+    
+    default_depth_stencil_state = pen::defer::renderer_create_depth_stencil_state(depth_stencil_params);
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -69,13 +78,12 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 		static f32 renderer_time = 0.0f;
 
         //bind back buffer and clear
+        pen::defer::renderer_set_depth_stencil_state(default_depth_stencil_state);
+        
         pen::defer::renderer_set_viewport( vp );
         pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
         pen::defer::renderer_clear( clear_state_grey );
 
-        //dbg::print_text( 10.0f, 10.0f, vp, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Debug Text" );
-
-        dbg::render_text();
 
 		bool show_test_window = true;
 		bool show_another_window = false;

@@ -81,13 +81,15 @@ namespace pen
     
 	typedef struct resource_allocation
 	{
-		u8 asigned_flag;
-
+		u8      asigned_flag;
+        GLuint  type;
+        
 		union 
 		{
 			clear_state_internal*			clear_state;
             input_layout*                   input_layout;
             raster_state                    raster_state;
+            depth_stencil_creation_params*  depth_stencil;
             GLuint                          handle;
 		};
 	} resource_allocation;
@@ -281,6 +283,8 @@ namespace pen
         
         glBufferData(params.bind_flags, params.buffer_size, params.data, params.usage_flags );
         
+        res.type = params.bind_flags;
+        
 		return resource_index;
 	}
 
@@ -313,7 +317,7 @@ namespace pen
         g_current_state.vertex_buffer = buffer_index;
         g_current_state.vertex_buffer_stride = strides[ 0 ];
         
-        // todo instancing GL_ARRAY_OBJECT
+        //todo instancing GL_ARRAY_OBJECT
         
         //todo support multiple vertex stream.
         
@@ -370,7 +374,7 @@ namespace pen
                                           attribute.location,
                                           attribute.num_elements,
                                           attribute.type,
-                                          false,
+                                          attribute.type == GL_UNSIGNED_BYTE ? true : false,
                                           g_bound_state.vertex_buffer_stride,
                                           (void*)attribute.offset);
                     
@@ -510,7 +514,7 @@ namespace pen
 	{
         bind_state();
         
-        glDrawElements(primitive_topology, index_count, GL_UNSIGNED_SHORT, (void*)0);
+        glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, (void*)(size_t)(start_index * 2), base_vertex );
 	}
 
 	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)
@@ -595,7 +599,8 @@ namespace pen
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type )
 	{
-        u32 a = 0;
+        glActiveTexture(GL_TEXTURE0 + sampler_index);
+        glBindTexture( GL_TEXTURE_2D, texture_index );
 	}
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
@@ -650,34 +655,54 @@ namespace pen
 
 	void direct::renderer_set_constant_buffer( u32 buffer_index, u32 resource_slot, u32 shader_type )
 	{
-
+        //glBindBuffer(GL_UNIFORM_BUFFER, buffer_index);
+        
+        glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, buffer_index);
 	}
 
 	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset )
 	{
         resource_allocation& res = resource_pool[ buffer_index ];
         
-        glBindBuffer( GL_ARRAY_BUFFER, res.handle );
+        glBindBuffer( res.type, res.handle );
         
-        void* mapped_data = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY );
+        void* mapped_data = glMapBuffer( res.type, GL_WRITE_ONLY );
         
         c8* mapped_offset = ((c8*)mapped_data) + offset;
         
         pen::memory_cpy(mapped_offset, data, data_size);
         
-        glUnmapBuffer(GL_ARRAY_BUFFER);
+        glUnmapBuffer( res.type );
 	}
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+        
+        resource_allocation& res = resource_pool[ resource_index ];
+        
+        res.depth_stencil = (depth_stencil_creation_params*)pen::memory_alloc(sizeof(dscp));
+        
+        pen::memory_cpy(&res.depth_stencil, &dscp, sizeof(dscp));
 
 		return resource_index;
 	}
 
 	void direct::renderer_set_depth_stencil_state( u32 depth_stencil_state )
 	{
-
+        resource_allocation& res = resource_pool[ depth_stencil_state ];
+        
+        if( res.depth_stencil->depth_enable )
+        {
+            glEnable(GL_DEPTH_TEST);
+        }
+        else
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
+        
+        glDepthFunc(res.depth_stencil->depth_func);
+        glDepthMask(res.depth_stencil->depth_write_mask);
 	}
 
 	void direct::renderer_release_shader( u32 shader_index, u32 shader_type )

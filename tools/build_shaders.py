@@ -20,11 +20,12 @@ shader_source_dir = os.path.join(os.getcwd(), "assets", "shaders")
 
 shader_platform = "hlsl"
 os_platform = "win32"
+if os.name == "posix":
+    shader_platform = "glsl"
+    os_platform = "osx"
+
 if len(sys.argv) > 1:
     shader_platform = sys.argv[1]
-
-if len(sys.argv) > 2:
-    os_platform = sys.argv[2]
 
 shader_build_dir = os.path.join(os.getcwd(),"bin", os_platform, "data", "shaders", shader_platform)
 
@@ -104,6 +105,18 @@ def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, t
     shader_info["files"] = []
 
     included_files.insert(0, base_filename)
+
+    # special files whih affect the validity of compiled shaders
+    converter_file = os.path.join(tools_dir, "build_shaders.py")
+    modified_time = os.path.getmtime(converter_file)
+    file_info = {"name": converter_file, "timestamp": modified_time}
+    shader_info["files"].append(file_info)
+
+    macros_file = os.path.join(tools_dir, "_shader_macros.h")
+    modified_time = os.path.getmtime(macros_file)
+    file_info = {"name": macros_file, "timestamp": modified_time}
+    shader_info["files"].append(file_info)
+
     for file in included_files:
         full_name = os.path.join(dir_path, file)
         modified_time = os.path.getmtime(full_name)
@@ -323,7 +336,10 @@ def compile_glsl(
     for cbuf in constant_buffers:
         name_start = cbuf.find(" ")
         name_end = cbuf.find(":")
-        uniform_buf = "uniform "
+        index_start = cbuf.find("(", name_end) + 1
+        index_end = cbuf.find(")", index_start)
+        index = cbuf[index_start:index_end].replace("b", "")
+        uniform_buf = "layout (std140) uniform"
         uniform_buf += cbuf[name_start:name_end]
         body_start = cbuf.find("{")
         body_end = cbuf.find("};") + 2
@@ -489,7 +505,11 @@ def check_dependencies(root, filename, included_files):
                 if prev_built_with_file["timestamp"] < os.path.getmtime(prev_built_with_file["name"]):
                     info_file.close()
                     return 0
+            else:
+                return 0
         info_file.close()
+    else:
+        return 0
     return 1
 
 
@@ -498,6 +518,7 @@ def create_vsc_psc_vsi(filename, root):
     up_to_date = check_dependencies(root, filename, included_files)
 
     if up_to_date == 1:
+        print(filename + " file up to date")
         return
 
     print("converting: " + filename)

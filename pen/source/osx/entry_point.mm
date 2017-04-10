@@ -68,7 +68,7 @@ void get_mouse_pos( int& x, int& y )
     NSRect adjust_frame = [_window contentRectForFrameRect: original_frame];
     
     x = location.x;
-    y = (int)location.y;
+    y = (int)adjust_frame.size.height - location.y;
     
     // clamp within the range of the window
     

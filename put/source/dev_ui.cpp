@@ -221,7 +221,7 @@ namespace dev_ui
         pen::defer::renderer_set_shader( g_imgui_rs.shader.pixel_shader, PEN_SHADER_TYPE_PS );
         pen::defer::renderer_set_input_layout( g_imgui_rs.shader.input_layout );
 
-        u32 stride = sizeof(ImDrawData);
+        u32 stride = sizeof(ImDrawVert);
         u32 offset = 0;
 
         pen::defer::renderer_set_vertex_buffer( g_imgui_rs.vertex_buffer, 0, 1, &stride, &offset );
@@ -247,7 +247,7 @@ namespace dev_ui
                                         
                     pen::rect r = { pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w };
                     
-					pen::defer::renderer_set_scissor_rect( r );
+					//pen::defer::renderer_set_scissor_rect( r );
 
                     pen::defer::renderer_draw_indexed( pcmd->ElemCount, idx_offset, vtx_offset, PEN_PT_TRIANGLELIST );
                 }

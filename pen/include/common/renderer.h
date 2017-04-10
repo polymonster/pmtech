@@ -159,7 +159,7 @@ namespace pen
 
 	struct depth_stencil_creation_params
 	{
-		u32	                    depth_enable;
+		u32                     depth_enable;
 		u32						depth_write_mask;
 		u32						depth_func;
 		u32                     stencil_enable;
