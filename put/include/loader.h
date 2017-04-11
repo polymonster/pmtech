@@ -15,6 +15,7 @@ namespace put
 		u32 vertex_shader;
 		u32 pixel_shader;
 		u32 input_layout;
+        u32 program_index;
 	} shader_program;
 
 	shader_program  loader_load_shader_program( const c8* shader_name );

@@ -203,18 +203,12 @@ namespace put
 
 	shader_program loader_load_shader_program( const c8* shader_name )
 	{
-        //c8 vs_file_buf[ 256 ];
-        //c8 ps_file_buf[ 256 ];
-        //c8 il_file_buf[ 256 ];
-        
-        c8* vs_file_buf = (c8*)pen::memory_alloc(256);
-        c8* ps_file_buf = (c8*)pen::memory_alloc(256);
-        c8* il_file_buf = (c8*)pen::memory_alloc(256);
-        c8* info_file_buf = (c8*)pen::memory_alloc(256);
+        c8 vs_file_buf[ 256 ];
+        c8 ps_file_buf[ 256 ];
+        c8 info_file_buf[ 256 ];
 
         pen::string_format( vs_file_buf, 256, "data/shaders/%s/%s.vsc", pen::renderer_get_shader_platform(), shader_name );
         pen::string_format( ps_file_buf, 256, "data/shaders/%s/%s.psc", pen::renderer_get_shader_platform(), shader_name );
-        pen::string_format( il_file_buf, 256, "data/shaders/%s/%s.vsi", pen::renderer_get_shader_platform(), shader_name );
         pen::string_format( info_file_buf, 256, "data/shaders/%s/%s.json", pen::renderer_get_shader_platform(), shader_name);
 
 		//shaders
@@ -301,7 +295,80 @@ namespace put
 
 		prog.vertex_shader = pen::defer::renderer_load_shader( vs_slp );
 		prog.pixel_shader = pen::defer::renderer_load_shader( ps_slp );
+        
+        //link the shader to allow opengl to match d3d constant and texture bindings
+        pen::shader_link_params link_params;
+        link_params.input_layout = prog.input_layout;
+        link_params.vertex_shader = prog.vertex_shader;
+        link_params.pixel_shader = prog.pixel_shader;
+        
+        u32 num_constants = j["cbuffers"].size() + j["texture_samplers"].size();
+        
+        link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
+        
+        u32 cc = 0;
+        
+        for( auto& cbuf : j["cbuffers"])
+        {
+            std::string name_str = cbuf["name"];
+            u32 name_len = name_str.length();
+            
+            link_params.constants[cc].name = new c8[name_len+1];
+            
+            pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len );
+            
+            link_params.constants[cc].name[name_len] = '\0';
+            
+            link_params.constants[cc].location = cbuf["location"];
+            
+            link_params.constants[cc].type = pen::CT_CBUFFER;
+            
+            cc++;
+        }
+        
+        for( auto& samplers : j["texture_samplers"])
+        {
+            std::string name_str = samplers["name"];
+            u32 name_len = name_str.length();
+            
+            link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len+1);
+            
+            pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len );
+            
+            link_params.constants[cc].name[name_len] = '\0';
+            
+            link_params.constants[cc].location = samplers["location"];
+            
+            static std::string sampler_type_names[] =
+            {
+                "TEXTURE_2D",
+                "TEXTURE_3D",
+                "TEXTURE_CUBE"
+            };
+            
+            for( u32 i = 0; i < 3; ++i )
+            {
+                if( samplers["type"] == sampler_type_names[i] )
+                {
+                    link_params.constants[cc].type = (pen::constant_type)i;
+                    break;
+                }
+            }
 
+            cc++;
+        }
+        
+        link_params.num_constants = num_constants;
+        
+        pen::defer::renderer_link_shader_program(link_params);
+        
+        //free the temp mem
+        for( u32 c = 0; c < num_constants; ++c )
+        {
+            pen::memory_free(link_params.constants[c].name);
+        }
+        
+        pen::memory_free( link_params.constants );
 		pen::memory_free( vs_slp.byte_code );
 		pen::memory_free( ps_slp.byte_code );
 		pen::memory_free( ilp.input_layout );

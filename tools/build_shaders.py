@@ -132,7 +132,7 @@ def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, t
         sampler_desc = {
             "name": texture_samplers_split[i+1],
             "type": texture_samplers_split[i+0],
-            "location": texture_samplers_split[i+2]
+            "location": int(texture_samplers_split[i+2])
         }
         shader_info["texture_samplers"].append(sampler_desc)
 
@@ -145,7 +145,7 @@ def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, t
         buffer_loc_end = buffer_decl_split[1].find(")", buffer_loc_start)
         buffer_reg = buffer_decl_split[1][buffer_loc_start:buffer_loc_end]
         buffer_reg = buffer_reg.strip('b')
-        buffer_desc = {"name": buffer_name, "location": buffer_reg}
+        buffer_desc = {"name": buffer_name, "location": int(buffer_reg)}
         shader_info["cbuffers"].append(buffer_desc)
 
     output_info = open(info_filename, 'wb+')

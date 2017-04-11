@@ -31,6 +31,8 @@ namespace pen
         CMD_PRESENT,
         CMD_LOAD_SHADER,
         CMD_SET_SHADER,
+        CMD_LINK_SHADER,
+        CMD_SET_SHADER_PROGRAM,
         CMD_CREATE_INPUT_LAYOUT,
         CMD_SET_INPUT_LAYOUT,
         CMD_CREATE_BUFFER,
@@ -204,6 +206,7 @@ namespace pen
             set_target_cmd                      set_targets;
             set_target_cube_cmd                 set_targets_cube;
             clear_cube_cmd                      clear_cube;
+            shader_link_params                  link_params;
         };
         
     } deferred_cmd;
@@ -231,6 +234,13 @@ namespace pen
                 
             case CMD_SET_SHADER:
                 direct::renderer_set_shader( cmd.set_shader.shader_index, cmd.set_shader.shader_type );
+                break;
+                
+            case CMD_LINK_SHADER:
+                direct::renderer_link_shader_program(cmd.link_params);
+                for( u32 i = 0; i < cmd.link_params.num_constants; ++i )
+                    pen::memory_free( cmd.link_params.constants[i].name );
+                pen::memory_free( cmd.link_params.constants );
                 break;
                 
             case CMD_CREATE_INPUT_LAYOUT:
@@ -606,6 +616,44 @@ namespace pen
         INC_WRAP( put_pos );
         
         return shader_index;
+    }
+    
+    u32 defer::renderer_link_shader_program( const shader_link_params &params )
+    {
+        cmd_buffer[ put_pos ].command_index = CMD_LINK_SHADER;
+        
+        cmd_buffer[ put_pos ].link_params.input_layout = params.input_layout;
+        cmd_buffer[ put_pos ].link_params.vertex_shader = params.vertex_shader;
+        cmd_buffer[ put_pos ].link_params.pixel_shader = params.pixel_shader;
+        
+        u32 num = params.num_constants;
+        cmd_buffer[ put_pos ].link_params.num_constants = num;
+        
+        cmd_buffer[ put_pos ].link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num);
+        
+        pen::constant_layout_desc* c = cmd_buffer[ put_pos ].link_params.constants;
+        for( u32 i = 0; i < num; ++i )
+        {
+            c[i].location = params.constants[i].location;
+            c[i].type = params.constants[i].type;
+            
+            u32 len = pen::string_length(params.constants[i].name);
+            c[i].name = (c8*)pen::memory_alloc(len+1);
+            
+            pen::memory_cpy( c[i].name, params.constants[i].name, len);
+            c[i].name[len] = '\0';
+        }
+        
+        u32 program_index = get_next_resource_index( DEFER_RESOURCE );
+        
+        INC_WRAP( put_pos );
+        
+        return program_index;
+    }
+    
+    void defer::renderer_set_shader_program( u32 program_index )
+    {
+        
     }
     
     u32 defer::renderer_create_so_shader( const pen::shader_load_params &params )

@@ -90,7 +90,6 @@ namespace pen
             input_layout*                   input_layout;
             raster_state                    raster_state;
             depth_stencil_creation_params*  depth_stencil;
-            blend_creation_params*          blend_state;
             GLuint                          handle;
 		};
 	} resource_allocation;
@@ -98,8 +97,8 @@ namespace pen
 	typedef struct query_allocation
 	{
 		u8 asigned_flag;
-		GLuint       query			[NUM_QUERY_BUFFERS];
-		u32			 flags			[NUM_QUERY_BUFFERS];
+		GLuint       query                  [NUM_QUERY_BUFFERS];
+		u32			 flags                  [NUM_QUERY_BUFFERS];
 		a_u64		 last_result;
 	}query_allocation;
 
@@ -125,6 +124,7 @@ namespace pen
         u32 vertex_shader;
         u32 pixel_shader;
         u32 raster_state;
+        u32 shader_program;
         bool enabled_vertex_attributes[MAX_VERTEX_ATTRIBUTES]; //todo remove
     }active_state;
     
@@ -200,45 +200,10 @@ namespace pen
 
 		return res;
 	}
-    
-    shader_program* link_program_internal( GLuint vs, GLuint ps )
-    {
-        //link the shaders
-        GLuint program_id = glCreateProgram();
-        
-        glAttachShader(program_id, vs);
-        glAttachShader(program_id, ps);
-        glLinkProgram(program_id);
-        
-        // Check the program
-        GLint result = GL_FALSE;
-        int info_log_length;
-        
-        glGetShaderiv(program_id, GL_LINK_STATUS, &result);
-        glGetShaderiv(program_id, GL_INFO_LOG_LENGTH, &info_log_length);
-        
-        if ( info_log_length > 0 )
-        {
-            char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
-            
-            glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]);
-            
-            pen::string_output_debug(info_log_buf);
-        }
-        
-        shader_program program;
-        program.vs = g_bound_state.vertex_shader;
-        program.ps = g_bound_state.pixel_shader;
-        program.program = program_id;
-        
-        shader_programs.push_back(program);
-        
-        return &shader_programs.back();
-    }
 
 	//--------------------------------------------------------------------------------------
 	//  DIRECT API
-	//--------------------------------------------------------------------------------------    
+	//--------------------------------------------------------------------------------------
     void direct::renderer_make_context_current( )
     {
         pen_make_gl_context_current();
@@ -352,10 +317,13 @@ namespace pen
                 default:
                     break;
             }
+            
+            u32 a = 0;
         }
         
         return resource_index;
     }
+
 
 	u32 direct::renderer_create_input_layout( const input_layout_creation_params &params )
 	{
@@ -488,10 +456,7 @@ namespace pen
             
             if( linked_program == nullptr )
             {
-                auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
-                auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
-                
-                linked_program = link_program_internal(vs_handle, ps_handle);
+                linked_program = link_program_internal( g_bound_state.vertex_shader, g_bound_state.pixel_shader );
             }
             
             glUseProgram( linked_program->program );
@@ -536,6 +501,10 @@ namespace pen
             }
 
         }
+        
+        //todo state
+        glDepthFunc( GL_ALWAYS );
+        glDisable( GL_BLEND );
     }
 
 	void direct::renderer_draw( u32 vertex_count, u32 start_vertex, u32 primitive_topology )
@@ -612,9 +581,6 @@ namespace pen
         u32 mip_h = tcp.height;
         c8* mip_data = (c8*)tcp.data;
         
-        glGenTextures( 1, &resource_pool[ resource_index ].handle );
-        glBindTexture( GL_TEXTURE_2D, resource_pool[ resource_index ].handle );
-        
         for( u32 mip = 0; mip < tcp.num_mips; ++mip )
         {
             glTexImage2D(GL_TEXTURE_2D, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
@@ -624,8 +590,6 @@ namespace pen
             mip_w /= 2;
             mip_h /= 2;
         }
-        
-        glBindTexture(GL_TEXTURE_2D, 0 );
 
 		return resource_index;
 	}
@@ -639,9 +603,8 @@ namespace pen
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type )
 	{
-        glActiveTexture(GL_TEXTURE0 + resource_slot);
-        glBindTexture( GL_TEXTURE_2D, resource_pool[ texture_index ].handle );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+        //glActiveTexture(GL_TEXTURE0 + sampler_index);
+        //glBindTexture( GL_TEXTURE_2D, texture_index );
 	}
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
@@ -679,64 +642,25 @@ namespace pen
     
     void direct::renderer_set_scissor_rect( const rect &r )
     {
-        glScissor(r.left, r.top, r.right, r.bottom);
+        //glScissor(r.left, r.top, r.right, r.bottom);
     }
 
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
-        
-        resource_pool[ resource_index ].blend_state = (blend_creation_params*)pen::memory_alloc( sizeof(blend_creation_params) );
-        
-        blend_creation_params* blend_state = resource_pool[ resource_index ].blend_state;
-        
-        *blend_state = bcp;
-        
-        blend_state->render_targets = (render_target_blend*)pen::memory_alloc( sizeof(render_target_blend) * bcp.num_render_targets );
-        
-        for( s32 i = 0; i < bcp.num_render_targets; ++i )
-        {
-            blend_state->render_targets[i] = bcp.render_targets[i];
-        }
 
 		return resource_index;
 	}
 
 	void direct::renderer_set_blend_state( u32 blend_state_index )
 	{
-        auto* blend_state = resource_pool[ blend_state_index ].blend_state;
         
-        for( s32 i = 0; i < blend_state->num_render_targets; ++i )
-        {
-            auto& rt_blend = blend_state->render_targets[ i ];
-            
-            if( i == 0 )
-            {
-                if( rt_blend.blend_enable )
-                {
-                    glEnable(GL_BLEND);
-                    
-                    if( blend_state->independent_blend_enable )
-                    {
-                        glBlendFuncSeparate(rt_blend.src_blend, rt_blend.dest_blend, rt_blend.src_blend_alpha, rt_blend.dest_blend_alpha);
-                        glBlendEquationSeparate(rt_blend.blend_op, rt_blend.blend_op_alpha);
-                    }
-                    else
-                    {
-                        glBlendFunc(rt_blend.src_blend, rt_blend.dest_blend);
-                        glBlendEquation(rt_blend.blend_op);
-                    }
-                }
-                else
-                {
-                    glDisable(GL_BLEND);
-                }
-            }
-        }
 	}
 
 	void direct::renderer_set_constant_buffer( u32 buffer_index, u32 resource_slot, u32 shader_type )
 	{
+        //glBindBuffer(GL_UNIFORM_BUFFER, buffer_index);
+        
         glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, buffer_index);
 	}
 

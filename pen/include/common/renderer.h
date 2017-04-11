@@ -63,7 +63,6 @@ namespace pen
 		u32 aligned_byte_offset;
 		u32 input_slot_class;
 		u32 instance_data_step_rate;
-
 	};
 
 	struct input_layout_creation_params
@@ -72,8 +71,32 @@ namespace pen
 		u32					num_elements;
 		void*				vs_byte_code;
 		u32					vs_byte_code_size;
-
 	};
+    
+    enum constant_type
+    {
+        CT_SAMPLER_2D = 0,
+        CT_SAMPLER_3D = 1,
+        CT_SAMPLER_CUBE = 2,
+        CT_CBUFFER = 3,
+        CT_CONSTANT = 4
+    };
+    
+    struct constant_layout_desc
+    {
+        c8*           name;
+        u32           location;
+        constant_type type; 
+    };
+    
+    struct shader_link_params
+    {
+        u32 vertex_shader;
+        u32 pixel_shader;
+        u32 input_layout;
+        constant_layout_desc* constants;
+        u32 num_constants;
+    };
 
 	struct texture_creation_params
 	{
@@ -218,6 +241,8 @@ namespace pen
 		void	renderer_set_shader( u32 shader_index, u32 shader_type );
 		u32		renderer_create_input_layout( const input_layout_creation_params &params );
 		void	renderer_set_input_layout( u32 layout_index );
+        u32     renderer_link_shader_program( const shader_link_params &params );
+        void    renderer_set_shader_program( u32 program_index );
 
 		//buffers
 		u32		renderer_create_buffer( const buffer_creation_params &params );
@@ -289,6 +314,8 @@ namespace pen
 		void	renderer_set_shader( u32 shader_index, u32 shader_type );
 		u32		renderer_create_input_layout( const input_layout_creation_params &params );
 		void	renderer_set_input_layout( u32 layout_index );
+        u32     renderer_link_shader_program( const shader_link_params &params );
+        void    renderer_set_shader_program( u32 program_index );
 
 		//buffers
 		u32		renderer_create_buffer( const buffer_creation_params &params );
