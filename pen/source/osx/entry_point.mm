@@ -28,13 +28,25 @@ void pen_gl_swap_buffers( )
 
 void create_gl_context()
 {
+    u32 sample_buffers = pen_window.sample_count ? 1 : 0;
+    
     NSOpenGLPixelFormatAttribute pixel_format_attribs[] =
     {
+        //gl 3.2
         NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+        
+        //msaa
+        NSOpenGLPFAMultisample,
+        NSOpenGLPFASampleBuffers,   sample_buffers,
+        NSOpenGLPFASamples,         pen_window.sample_count,
+        
+        //RGBA D24S8
         NSOpenGLPFAColorSize,     24,
         NSOpenGLPFAAlphaSize,     8,
         NSOpenGLPFADepthSize,     24,
         NSOpenGLPFAStencilSize,   8,
+        
+        //double buffered, HAL
         NSOpenGLPFADoubleBuffer,  true,
         NSOpenGLPFAAccelerated,   true,
         NSOpenGLPFANoRecovery,    true,
@@ -136,6 +148,8 @@ void handle_key_event( NSEvent* event, bool down )
     if( key_char < 256 )
     {
         u32 mapped_key_char = key_char;
+        
+        /*
         if( mapped_key_char >= 97 && mapped_key_char <= 122 )
         {
             mapped_key_char -= 32;
@@ -152,6 +166,7 @@ void handle_key_event( NSEvent* event, bool down )
         {
             mapped_key_char = '_';
         }
+        */
         
         if( down )
         {
@@ -221,7 +236,7 @@ bool handle_event(NSEvent* event)
                 int x, y;
                 get_mouse_pos( x, y );
                 pen::input_set_mouse_pos( x, y );
-                break;
+                return true;
             }
                 
             case NSEventTypeLeftMouseDown: pen::input_set_mouse_down( PEN_MOUSE_L ); break;
@@ -236,32 +251,30 @@ bool handle_event(NSEvent* event)
             {
                 f32 scroll_delta = [event deltaY];
                 pen::input_set_mouse_wheel((s32)scroll_delta);
-                break;
+                return true;
             }
                 
             case NSEventTypeFlagsChanged:
             {
                 handle_modifiers(event);
-                break;
+                return true;
             }
                 
             case NSEventTypeKeyDown:
             {
                 handle_key_event(event, true);
-                break;
+                return true;
             }
                 
             case NSEventTypeKeyUp:
             {
                 handle_key_event(event, false);
-                break;
+                return true;
             }
                 
             default:
-                break;
+                return false;
         }
-        
-        return true;
     }
     
     return false;
@@ -277,13 +290,14 @@ int main(int argc, char **argv)
 
     NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
     
-    NSUInteger style_mask = NSWindowStyleMaskTitled;
+    NSUInteger style_mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
     
     _window = [[NSWindow alloc] initWithContentRect:frame styleMask:style_mask backing: NSBackingStoreBuffered defer:NO];
 
     [_window makeKeyAndOrderFront: _window];
     
     [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
+    [_window setAcceptsMouseMovedEvents:YES];
     
     [_window center];
     
@@ -324,9 +338,11 @@ int main(int argc, char **argv)
                 break;
             }
             
-            handle_event(peek_event);
-
-            [NSApp sendEvent:peek_event];
+            if( !handle_event(peek_event) )
+            {
+                [NSApp sendEvent:peek_event];
+            }
+            
             [NSApp updateWindows];
         }
         

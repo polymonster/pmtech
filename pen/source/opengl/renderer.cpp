@@ -670,16 +670,23 @@ namespace pen
 	{
         g_current_state.raster_state = rasterizer_state_index;
 	}
-    
+
+    viewport g_current_vp;
 	void direct::renderer_set_viewport( const viewport &vp )
 	{
+        g_current_vp = vp;
+        
         glViewport( vp.x, vp.y, vp.width, vp.height );
         glDepthRangef( vp.min_depth, vp.max_depth );
 	}
     
     void direct::renderer_set_scissor_rect( const rect &r )
     {
-        glScissor(r.left, r.top, r.right, r.bottom);
+        // rect = x y z w
+        //glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
+        
+        f32 top = g_current_vp.height - r.bottom;
+        glScissor(r.left, top, r.right - r.left, r.bottom - r.top);
     }
 
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )

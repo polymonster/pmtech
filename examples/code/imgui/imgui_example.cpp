@@ -81,6 +81,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_set_depth_stencil_state(default_depth_stencil_state);
         
         pen::defer::renderer_set_viewport( vp );
+        pen::defer::renderer_set_scissor_rect( rect{ vp.x, vp.y, vp.width, vp.height} );
         pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
         pen::defer::renderer_clear( clear_state_grey );
 

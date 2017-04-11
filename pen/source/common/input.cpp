@@ -16,29 +16,21 @@ namespace pen
 
 	void input_set_key_down( u32 key_index )
 	{
-		//PEN_ASSERT( key_index < PENK_ARRAY_SIZE );
-
 		keyboard_state[ key_index ]++;
 	}
 
 	void input_set_key_up( u32 key_index )
 	{
-		//PEN_ASSERT( key_index < PENK_ARRAY_SIZE );
-
 		keyboard_state[ key_index ] = 0;
 	}
 
 	bool input_is_key_pressed( u32 key_index )
 	{
-		//PEN_ASSERT( key_index < PENK_ARRAY_SIZE );
-
 		return keyboard_state[key_index] == KEY_PRESS;
 	}
 
 	bool input_is_key_held( u32 key_index )
 	{
-		//PEN_ASSERT( key_index < PENK_ARRAY_SIZE );
-
 		return keyboard_state[key_index] >= KEY_HELD;
 	}
 

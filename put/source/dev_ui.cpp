@@ -346,7 +346,12 @@ namespace dev_ui
         // ascii keys
         for( u32 i = 0; i < 256; ++i )
         {
-            io.KeysDown[ i ] = pen::input_is_key_down( i );
+            io.KeysDown[ i ] = INPUT_PKEY( i );
+            
+            if( INPUT_PKEY_PRESS( i ) )
+            {
+               io.AddInputCharacter( i );
+            }
         }
 
         // Read keyboard modifiers inputs
@@ -354,16 +359,6 @@ namespace dev_ui
         io.KeyShift = INPUT_PKEY( PENK_SHIFT );
         io.KeyAlt = INPUT_PKEY( PENK_MENU );
         io.KeySuper = false;
-
-        /*
-        case WM_CHAR:
-            // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-            if( wParam > 0 && wParam < 0x10000 )
-                io.AddInputCharacter( ( unsigned short ) wParam );
-            return true;
-        }
-        return 0;
-        */
     }
 
     void new_frame()
