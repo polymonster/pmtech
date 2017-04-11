@@ -40,7 +40,7 @@ namespace pen
 	#define QUERY_ISSUED			(1<<1)
 	#define QUERY_SO_STATS			(1<<2)
 
-	typedef struct context_state
+	struct context_state
 	{
 		context_state()
 		{
@@ -55,34 +55,41 @@ namespace pen
 
 		u32	active_query_index;
 
-	} context_state;
+	};
 
-	typedef struct clear_state_internal
+	struct clear_state_internal
 	{
 		FLOAT rgba[ 4 ];
 		f32 depth;
 		u32 flags;
-	} clear_state_internal;
+	};
 
-	typedef struct texture2d_internal
+	struct texture2d_internal
 	{
 		ID3D11Texture2D*		  texture;
 		ID3D11ShaderResourceView* srv;
-	} texture2d_internal;
+	};
 
-	typedef struct render_target_internal
+	struct render_target_internal
 	{
 		texture2d_internal			tex;
 		ID3D11RenderTargetView*		rt[NUM_CUBEMAP_FACES];
-	}render_target_internal;
+	};
 
-	typedef struct depth_stencil_target_internal
+	struct depth_stencil_target_internal
 	{
 		texture2d_internal			tex;
 		ID3D11DepthStencilView*		ds[NUM_CUBEMAP_FACES];
-	}depth_stencil_target_internal;
+	};
 
-	typedef struct resource_allocation
+	struct shader_program
+	{
+		u32 vertex_shader;
+		u32 pixel_shader;
+		u32 input_layout;
+	};
+
+	struct resource_allocation
 	{
 		u8 asigned_flag;
 
@@ -101,16 +108,17 @@ namespace pen
 			ID3D11DepthStencilState*		depth_stencil_state;
 			render_target_internal*			render_target;
 			depth_stencil_target_internal*	depth_target;
+			shader_program					shader_program;
 		};
-	} resource_allocation;
+	};
 
-	typedef struct query_allocation
+	struct query_allocation
 	{
 		u8 asigned_flag;
 		ID3D11Query* query			[NUM_QUERY_BUFFERS];
 		u32			 flags			[NUM_QUERY_BUFFERS];
 		a_u64		 last_result;
-	}query_allocation;
+	};
 
 	resource_allocation		 resource_pool	[MAX_RENDERER_RESOURCES];
 	query_allocation	     query_pool		[MAX_QUERIES];
@@ -308,6 +316,21 @@ namespace pen
 		{
 			g_immediate_context->GSSetShader( resource_pool[ shader_index ].geometry_shader, nullptr, 0 );
 		}
+	}
+
+	u32 direct::renderer_link_shader_program(const shader_link_params &params)
+	{
+		u32 resource_index = get_next_resource_index(DIRECT_RESOURCE);
+
+		auto& sp = resource_pool[resource_index].shader_program;
+
+		//for now d3d just keeps handles to vs, ps and il..
+		//the additional requirements of gl and buffer bindings could provide useful reflection info.
+		sp.input_layout = params.input_layout;
+		sp.pixel_shader = params.pixel_shader;
+		sp.vertex_shader = params.vertex_shader;
+
+		return resource_index;
 	}
 
 	u32 direct::renderer_create_buffer( const buffer_creation_params &params )

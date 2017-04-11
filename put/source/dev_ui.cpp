@@ -247,7 +247,7 @@ namespace dev_ui
                                         
                     pen::rect r = { pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w };
                     
-					//pen::defer::renderer_set_scissor_rect( r );
+					pen::defer::renderer_set_scissor_rect( r );
 
                     pen::defer::renderer_draw_indexed( pcmd->ElemCount, idx_offset, vtx_offset, PEN_PT_TRIANGLELIST );
                 }

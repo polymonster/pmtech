@@ -7,11 +7,6 @@
 #include "timer.h"
 #include "audio.h"
 
-namespace pen
-{
-	extern void input_internal_update();
-}
-
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
 // loop. Idle time is used to render the scene.
@@ -71,8 +66,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         {
             pen::renderer_poll_for_jobs();
         }
-
-		pen::input_internal_update();
 
 		Sleep( 2 );
 	}

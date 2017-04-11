@@ -74,7 +74,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     tcp.width = (u32)vp_rt.width;
     tcp.height = (u32)vp_rt.height;
     tcp.cpu_access_flags = 0;
-    tcp.format = PEN_FORMAT_R8G8B8A8_UNORM;
+    tcp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
     tcp.num_arrays = 1;
     tcp.num_mips = 1;
     tcp.bind_flags = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;

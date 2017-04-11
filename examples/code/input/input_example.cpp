@@ -73,14 +73,14 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         const pen::mouse_state& ms = pen::input_get_mouse_state( );
         
         //mouse
-        vec2f mouse_pos = vec2f( ms.x, ms.y );
+        vec2f mouse_pos = vec2f( ms.x, vp.height - ms.y );
         vec2f mouse_quad_size = vec2f( 5.0f, 5.0f );
         dbg::add_quad_2f( mouse_pos, mouse_quad_size, vec3f::cyan() );
         
         dbg::print_text( 10.0f, 20.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ),
                         "mouse down : left %i, middle %i, right %i: mouse_wheel %i",
                         ms.buttons[PEN_MOUSE_L],
-                        ms.buttons[PEN_MOUSE_R],
+                        ms.buttons[PEN_MOUSE_M],
                         ms.buttons[PEN_MOUSE_R],
                         ms.wheel);
         

@@ -9,9 +9,9 @@ namespace pen
 		return malloc(size_bytes);
 	}
 
-	void memory_realloc(void* mem, u32 size_bytes)
+	void* memory_realloc(void* mem, u32 size_bytes)
 	{
-		realloc(mem, size_bytes);
+		return realloc(mem, size_bytes);
 	}
 
 	void memory_free( void* mem )
