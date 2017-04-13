@@ -74,35 +74,35 @@ namespace pen
         CMD_DRAW_AUTO,
     };
     
-    typedef struct set_shader_cmd
+    struct set_shader_cmd
     {
         u32 shader_index;
         u32 shader_type;
         
-    } set_shader_cmd;
+    };
     
-    typedef struct set_target_cmd
+    struct set_target_cmd
     {
         u32 colour;
         u32 depth;
-    }set_target_cmd;
+    };
     
-    typedef struct set_target_cube_cmd
+    struct set_target_cube_cmd
     {
         u32 colour;
         u32 colour_face;
         u32 depth;
         u32 depth_face;
-    }set_target_cube_cmd;
+    };
     
-    typedef struct clear_cube_cmd
+    struct clear_cube_cmd
     {
         u32 clear_state;
         u32 colour_face;
         u32 depth_face;
-    }clear_cube_cmd;
+    };
     
-    typedef struct set_vertex_buffer_cmd
+    struct set_vertex_buffer_cmd
     {
         u32 buffer_index;
         u32 start_slot;
@@ -110,70 +110,70 @@ namespace pen
         u32* strides;
         u32* offsets;
         
-    } set_vertex_buffer_cmd;
+    };
     
-    typedef struct set_index_buffer_cmd
+    struct set_index_buffer_cmd
     {
         u32 buffer_index;
         u32 format;
         u32 offset;
         
-    } set_index_buffer_cmd;
+    };
     
-    typedef struct draw_cmd
+    struct draw_cmd
     {
         u32 vertex_count;
         u32 start_vertex;
         u32 primitive_topology;
         
-    } draw_cmd;
+    };
     
-    typedef struct draw_indexed_cmd
+    struct draw_indexed_cmd
     {
         u32 index_count;
         u32 start_index;
         u32 base_vertex;
         u32 primitive_topology;
         
-    } draw_indexed_cmd;
+    };
     
-    typedef struct set_texture_cmd
+    struct set_texture_cmd
     {
         u32 texture_index;
         u32 sampler_index;
         u32 resource_slot;
         u32 shader_type;
         
-    } set_texture_cmd;
+    };
     
-    typedef struct set_constant_buffer_cmd
+    struct set_constant_buffer_cmd
     {
         u32 buffer_index;
         u32 resource_slot;
         u32 shader_type;
         
-    } set_constant_buffer_cmd;
+    };
     
-    typedef struct update_buffer_cmd
+    struct update_buffer_cmd
     {
         u32		buffer_index;
         void*   data;
         u32     data_size;
         u32     offset;
         
-    } update_buffer_cmd;
+    } ;
     
-    typedef struct query_params
+    struct query_params
     {
         u32 action;
         u32 query_index;
-    }query_params;
+    };
     
-    typedef struct query_create_params
+    struct query_create_params
     {
         u32 query_type;
         u32 query_flags;
-    }query_create_params;
+    };
     
     typedef struct  deferred_cmd
     {

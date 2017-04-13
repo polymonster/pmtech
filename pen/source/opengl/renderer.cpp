@@ -98,7 +98,7 @@ namespace pen
         
 		union 
 		{
-			clear_state_internal*			clear_state;
+			clear_state_internal			clear_state;
             input_layout*                   input_layout;
             raster_state                    raster_state;
             depth_stencil_creation_params*  depth_stencil;
@@ -111,8 +111,8 @@ namespace pen
     struct query_allocation
 	{
 		u8 asigned_flag;
-		GLuint       query			[NUM_QUERY_BUFFERS];
-		u32			 flags			[NUM_QUERY_BUFFERS];
+		GLuint       query                  [NUM_QUERY_BUFFERS];
+		u32			 flags                  [NUM_QUERY_BUFFERS];
 		a_u64		 last_result;
 	};
 
@@ -194,14 +194,12 @@ namespace pen
 	{
 		u32 resoruce_index = get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
 
-		resource_pool[ resoruce_index ].clear_state = (pen::clear_state_internal*)pen::memory_alloc( sizeof( clear_state_internal ) );
-
-		resource_pool[ resoruce_index ].clear_state->rgba[ 0 ] = cs.r;
-		resource_pool[ resoruce_index ].clear_state->rgba[ 1 ] = cs.g;
-		resource_pool[ resoruce_index ].clear_state->rgba[ 2 ] = cs.b;
-		resource_pool[ resoruce_index ].clear_state->rgba[ 3 ] = cs.a;
-		resource_pool[ resoruce_index ].clear_state->depth = cs.depth;
-		resource_pool[ resoruce_index ].clear_state->flags = cs.flags;
+		resource_pool[ resoruce_index ].clear_state.rgba[ 0 ] = cs.r;
+		resource_pool[ resoruce_index ].clear_state.rgba[ 1 ] = cs.g;
+		resource_pool[ resoruce_index ].clear_state.rgba[ 2 ] = cs.b;
+		resource_pool[ resoruce_index ].clear_state.rgba[ 3 ] = cs.a;
+		resource_pool[ resoruce_index ].clear_state.depth = cs.depth;
+		resource_pool[ resoruce_index ].clear_state.flags = cs.flags;
 
 		return  resoruce_index;
 	}
@@ -261,10 +259,9 @@ namespace pen
 	{
         resource_allocation& rc = resource_pool[ clear_state_index ];
         
-        glClearColor( rc.clear_state->rgba[ 0 ], rc.clear_state->rgba[ 1 ], rc.clear_state->rgba[ 2 ], rc.clear_state->rgba[ 3 ] );
-        glClearDepth( rc.clear_state->depth );
-        
-        glClear( rc.clear_state->flags );
+        glClearColor( rc.clear_state.rgba[ 0 ], rc.clear_state.rgba[ 1 ], rc.clear_state.rgba[ 2 ], rc.clear_state.rgba[ 3 ] );
+        glClearDepth( rc.clear_state.depth );
+        glClear( rc.clear_state.flags );
 	}
 
 	void direct::renderer_present( )
@@ -274,7 +271,7 @@ namespace pen
 
 	void direct::renderer_create_query( u32 query_type, u32 flags )
 	{
-		//u32 resoruce_index = get_next_query_index(DIRECT_RESOURCE);
+        //glGenQueries(1,1)
 	}
 
 	void direct::renderer_set_query(u32 query_index, u32 action)
@@ -369,6 +366,21 @@ namespace pen
         
         return resource_index;
     }
+    
+    void direct::renderer_set_so_target( u32 buffer_index )
+    {
+        
+    }
+    
+    void direct::renderer_create_so_shader( const pen::shader_load_params &params )
+    {
+        
+    }
+    
+    void direct::renderer_draw_auto( )
+    {
+        
+    }
 
 	u32 direct::renderer_create_input_layout( const input_layout_creation_params &params )
 	{
@@ -399,11 +411,7 @@ namespace pen
         g_current_state.vertex_buffer = buffer_index;
         g_current_state.vertex_buffer_stride = strides[ 0 ];
         
-        //todo instancing GL_ARRAY_OBJECT
-        
-        //todo support multiple vertex stream.
-        
-        //todo move stride into input layout
+        //todo support multiple vertex stream / instance data
 	}
 
 	void direct::renderer_set_input_layout( u32 layout_index )
@@ -413,7 +421,7 @@ namespace pen
 
 	void direct::renderer_set_index_buffer( u32 buffer_index, u32 format, u32 offset )
 	{
-        g_current_state.index_buffer = buffer_index;
+        g_bound_state.index_buffer = buffer_index;
 	}
     
     void bind_state()
@@ -428,57 +436,9 @@ namespace pen
         }
         
         //bind index buffer
-        //if( g_current_state.index_buffer != g_bound_state.index_buffer )
         {
-            g_bound_state.index_buffer = g_current_state.index_buffer;
-            
             auto& res = resource_pool[g_bound_state.index_buffer].handle;
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
-        }
-        
-        //bind input layout
-        if( g_current_state.input_layout != g_bound_state.input_layout ||
-            g_current_state.vertex_buffer_stride != g_bound_state.vertex_buffer_stride )
-        {
-            g_bound_state.input_layout = g_current_state.input_layout;
-            g_bound_state.vertex_buffer_stride = g_current_state.vertex_buffer_stride;
-            
-            auto* res = resource_pool[g_bound_state.input_layout].input_layout;
-            
-            if( res->vertex_array_handle == 0 )
-            {
-                glGenVertexArrays(1, &res->vertex_array_handle);
-                glBindVertexArray(res->vertex_array_handle);
-                
-                for( auto& attribute : res->attributes )
-                {
-                    glVertexAttribPointer(
-                                          attribute.location,
-                                          attribute.num_elements,
-                                          attribute.type,
-                                          attribute.type == GL_UNSIGNED_BYTE ? true : false,
-                                          g_bound_state.vertex_buffer_stride,
-                                          (void*)attribute.offset);
-                    
-                    g_bound_state.enabled_vertex_attributes[attribute.location] = true;
-                }
-                
-                for( u32 i = 0; i < MAX_VERTEX_ATTRIBUTES; ++i )
-                {
-                    if( g_bound_state.enabled_vertex_attributes[i] )
-                    {
-                        glEnableVertexAttribArray(i);
-                    }
-                    else
-                    {
-                        glDisableVertexAttribArray(i);
-                    }
-                }
-            }
-            else
-            {
-                glBindVertexArray(res->vertex_array_handle);
-            }
         }
         
         //bind shaders
@@ -508,6 +468,51 @@ namespace pen
             }
             
             glUseProgram( linked_program->program );
+        }
+        
+        //bind input layout
+        if( g_current_state.input_layout != g_bound_state.input_layout ||
+           g_current_state.vertex_buffer_stride != g_bound_state.vertex_buffer_stride )
+        {
+            g_bound_state.input_layout = g_current_state.input_layout;
+            g_bound_state.vertex_buffer_stride = g_current_state.vertex_buffer_stride;
+            
+            auto* res = resource_pool[g_bound_state.input_layout].input_layout;
+            
+            if( res->vertex_array_handle == 0 )
+            {
+                glGenVertexArrays(1, &res->vertex_array_handle);
+                glBindVertexArray(res->vertex_array_handle);
+                
+                for( auto& attribute : res->attributes )
+                {
+                    glVertexAttribPointer(
+                                          attribute.location,
+                                          attribute.num_elements,
+                                          attribute.type,
+                                          attribute.type == GL_UNSIGNED_BYTE ? true : false,
+                                          g_bound_state.vertex_buffer_stride,
+                                          (void*)attribute.offset);
+                    
+                    g_bound_state.enabled_vertex_attributes[attribute.location] = true;
+                }
+                        
+                for( u32 i = 0; i < MAX_VERTEX_ATTRIBUTES; ++i )
+                {
+                    if( g_bound_state.enabled_vertex_attributes[i] )
+                    {
+                        glEnableVertexAttribArray(i);
+                    }
+                    else
+                    {
+                        glDisableVertexAttribArray(i);
+                    }
+                }
+            }
+            else
+            {
+                glBindVertexArray(res->vertex_array_handle);
+            }
         }
         
         if( g_bound_state.raster_state != g_current_state.raster_state )
@@ -547,7 +552,6 @@ namespace pen
             {
                 glDisable(GL_SCISSOR_TEST);
             }
-
         }
     }
 
@@ -680,6 +684,8 @@ namespace pen
 	u32 direct::renderer_create_sampler( const sampler_creation_params& scp )
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+        
+        //todo
 
 		return resource_index;
 	}
@@ -820,12 +826,10 @@ namespace pen
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+    
+        resource_pool[ resource_index ].depth_stencil = (depth_stencil_creation_params*)pen::memory_alloc(sizeof(dscp));
         
-        resource_allocation& res = resource_pool[ resource_index ];
-        
-        res.depth_stencil = (depth_stencil_creation_params*)pen::memory_alloc(sizeof(dscp));
-        
-        pen::memory_cpy(&res.depth_stencil, &dscp, sizeof(dscp));
+        pen::memory_cpy( resource_pool[ resource_index ].depth_stencil, &dscp, sizeof(dscp));
 
 		return resource_index;
 	}
@@ -848,38 +852,60 @@ namespace pen
 	}
 
 	void direct::renderer_release_shader( u32 shader_index, u32 shader_type )
-	{
-
+    {
+        resource_allocation& res = resource_pool[ shader_index ];
+        glDeleteShader( res.handle );
+        
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_buffer( u32 buffer_index )
 	{
-
+        resource_allocation& res = resource_pool[ buffer_index ];
+        glDeleteBuffers(1, &res.handle);
+        
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_texture2d( u32 texture_index )
 	{
-
+        resource_allocation& res = resource_pool[ texture_index ];
+        glDeleteTextures(1, &res.handle);
+        
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_raster_state( u32 raster_state_index )
 	{
-
+        resource_allocation& res = resource_pool[ raster_state_index ];
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_blend_state( u32 blend_state )
 	{
-
+        resource_allocation& res = resource_pool[ blend_state ];
+        
+        pen::memory_free(res.blend_state);
+        
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_render_target( u32 render_target )
 	{
-
+        resource_allocation& res = resource_pool[ render_target ];
+        glDeleteTextures( 1, &res.render_target.texture );
+        glDeleteFramebuffers( 1, &res.render_target.texture );
+        
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_input_layout( u32 input_layout )
 	{
-
+        resource_allocation& res = resource_pool[ input_layout ];
+        
+        pen::memory_free(res.input_layout);
+        
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_sampler( u32 sampler )
@@ -889,37 +915,26 @@ namespace pen
 
 	void direct::renderer_release_depth_stencil_state( u32 depth_stencil_state )
 	{
-
+        resource_allocation& res = resource_pool[ depth_stencil_state ];
+        
+        pen::memory_free( res.depth_stencil );
+        
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_query( u32 query )
 	{
 
 	}
-
-	void direct::renderer_set_so_target( u32 buffer_index )
-	{
-
-	}
-
-	void direct::renderer_create_so_shader( const pen::shader_load_params &params )
-	{
-
-	}
-
-	void direct::renderer_draw_auto()
-	{
-
-	}
-
+    
+    //--------------------------------------------------------------------------------------
+    // Static functions
+    //--------------------------------------------------------------------------------------
 	void renderer_update_queries()
 	{
 
 	}
-
-	//--------------------------------------------------------------------------------------
-	// Clean up the objects we've created
-	//--------------------------------------------------------------------------------------
+    
     u32 renderer_init_from_window( void* )
     {
         //const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);

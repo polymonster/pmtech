@@ -158,6 +158,14 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     scp.comparison_func = PEN_COMPARISON_ALWAYS;
     scp.min_lod = 0.0f;
     scp.max_lod = 4.0f;
+    
+    pen::depth_stencil_creation_params depth_stencil_params = { 0 };
+    
+    depth_stencil_params.depth_enable = true;
+    depth_stencil_params.depth_write_mask = 1;
+    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
+    
+    u32 depth_stencil_state = pen::defer::renderer_create_depth_stencil_state(depth_stencil_params);
 
     u32 render_target_texture_sampler = defer::renderer_create_sampler( scp );
 
@@ -172,8 +180,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_set_targets( colour_render_target, PEN_NULL_DEPTH_BUFFER );
 
         pen::defer::renderer_clear( clear_state_rt );
+        
+        pen::defer::renderer_set_depth_stencil_state(depth_stencil_state);
 
         //draw tri into the render target
+        if( 1 )
         {
             //bind vertex layout
             pen::defer::renderer_set_input_layout( basic_tri_shader.input_layout );
@@ -236,6 +247,20 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
+    pen::defer::renderer_release_depth_stencil_state(depth_stencil_state);
+    pen::defer::renderer_release_raster_state(raster_state);
+    pen::defer::renderer_release_buffer(triangle_vertex_buffer);
+    pen::defer::renderer_release_buffer(quad_vertex_buffer);
+    pen::defer::renderer_release_buffer(quad_index_buffer);
+    pen::defer::renderer_release_render_target(colour_render_target);
+    pen::defer::renderer_release_shader( basic_tri_shader.vertex_shader, PEN_SHADER_TYPE_VS );
+    pen::defer::renderer_release_shader( basic_tri_shader.pixel_shader, PEN_SHADER_TYPE_PS );
+    pen::defer::renderer_release_input_layout( basic_tri_shader.input_layout );
+    pen::defer::renderer_release_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
+    pen::defer::renderer_release_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
+    pen::defer::renderer_release_input_layout( textured_shader.input_layout );
+    pen::defer::renderer_consume_cmd_buffer();
+    
     
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);

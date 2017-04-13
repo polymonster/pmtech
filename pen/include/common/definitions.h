@@ -68,8 +68,9 @@ typedef std::atomic<uint64_t> a_u64;
 //--------------------------------------------------------------------------------------
 enum resource_types
 {
-    DIRECT_RESOURCE = 0x01,
-    DEFER_RESOURCE = 0x02,
+    DIRECT_RESOURCE = 1<<0,
+    DEFER_RESOURCE = 1<<1,
+    MARK_DELETE = 1 <<2,
     MAX_RENDERER_RESOURCES = 10000,
     MAX_AUDIO_RESOURCES = 100
 };

@@ -46,14 +46,10 @@ namespace pen
     
     void threads_terminate_jobs()
     {
-        for( u32 i = 0; i < s_num_active_threads; ++i )
+        //remove threads in reverse order
+        for( s32 i = s_num_active_threads - 1; i > 0; --i )
         {
             pen::threads_semaphore_signal( s_jt[i].p_sem_exit, 1 );
-        }
-        
-        //wait for them to be finished
-        for( u32 i = 0; i < s_num_active_threads; ++i )
-        {
             pen::threads_semaphore_wait( s_jt[i].p_sem_terminated );
         }
     }

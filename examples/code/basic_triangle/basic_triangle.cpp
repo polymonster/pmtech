@@ -89,6 +89,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     ilp.input_layout[ 0 ].instance_data_step_rate = 0;
 
     u32 input_layout = pen::defer::renderer_create_input_layout( ilp );
+    
+    //free byte code loaded from file
+    pen::memory_free( vs_slp.byte_code );
+    pen::memory_free( ps_slp.byte_code );
 
     //create vertex buffer
     vertex vertices[] =
@@ -107,10 +111,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     bcp.data = ( void* ) &vertices[ 0 ];
 
     u32 vertex_buffer = pen::defer::renderer_create_buffer( bcp );
-
-    //free byte code loaded from file
-    pen::memory_free( vs_slp.byte_code );
-    pen::memory_free( ps_slp.byte_code );
 
     while( 1 )
     {
@@ -150,6 +150,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
+    pen::defer::renderer_release_buffer( vertex_buffer );
+    pen::defer::renderer_release_shader( vertex_shader, PEN_SHADER_TYPE_VS );
+    pen::defer::renderer_release_shader( pixel_shader, PEN_SHADER_TYPE_PS );
+    pen::defer::renderer_consume_cmd_buffer();
     
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);

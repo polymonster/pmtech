@@ -229,7 +229,6 @@ namespace pen
 	{
         void    renderer_make_context_current();
 
-        
 		//clears
 		void	renderer_clear( u32 clear_state_index, u32 colour_face = 0, u32 depth_face = 0 );
 
@@ -287,12 +286,11 @@ namespace pen
 		void	renderer_release_shader( u32 shader_index, u32 shader_type );
 		void	renderer_release_buffer( u32 buffer_index );
 		void	renderer_release_texture2d( u32 texture_index );
+        void	renderer_release_sampler( u32 sampler );
 		void	renderer_release_raster_state( u32 raster_state_index );
-
 		void	renderer_release_blend_state( u32 blend_state );
 		void	renderer_release_render_target( u32 render_target );
 		void	renderer_release_input_layout( u32 input_layout );
-		void	renderer_release_sampler( u32 sampler );
 		void	renderer_release_depth_stencil_state( u32 depth_stencil_state );
 		void	renderer_release_query( u32 query );
 	}
@@ -362,7 +360,6 @@ namespace pen
 		void	renderer_release_buffer( u32 buffer_index );
 		void	renderer_release_texture2d( u32 texture_index );
 		void	renderer_release_raster_state( u32 raster_state_index );
-
 		void	renderer_release_blend_state( u32 blend_state );
 		void	renderer_release_render_target( u32 render_target );
 		void	renderer_release_input_layout( u32 input_layout );
