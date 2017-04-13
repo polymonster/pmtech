@@ -124,6 +124,16 @@ namespace pen
         
 		return true;
 	}
+    
+    bool threads_semaphore_try_wait( pen::semaphore* p_semaphore )
+    {
+        if( sem_trywait(p_semaphore->handle) == 0 )
+        {
+            return true;
+        }
+        
+        return false;
+    }
 
 	void threads_semaphore_signal( semaphore* p_semaphore, u32 count )
 	{

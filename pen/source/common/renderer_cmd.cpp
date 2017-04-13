@@ -439,8 +439,9 @@ namespace pen
     void				renderer_wait_for_jobs();
     u32					renderer_init_from_window( void* window );
 
-    pen::semaphore*			 p_consume_semaphore;
-    pen::semaphore*			 p_continue_semaphore;
+    pen::job_thread*    p_job_thread_info;
+    pen::semaphore*     p_consume_semaphore;
+    pen::semaphore*		p_continue_semaphore;
     
     bool                     consume_flag = false;
     
@@ -456,10 +457,6 @@ namespace pen
             pen::threads_semaphore_signal( p_consume_semaphore, 1 );
             pen::threads_semaphore_wait( p_continue_semaphore );
         }
-        else
-        {
-            consume_flag = true;
-        }
     }
     
     void renderer_wait_for_jobs()
@@ -471,7 +468,7 @@ namespace pen
         {
             PEN_TIMER_START( CMD_BUFFER );
             
-            if( pen::threads_semaphore_wait( p_consume_semaphore ) == 1 )
+            if( pen::threads_semaphore_try_wait( p_consume_semaphore ) )
             {
                 //put_pos might change on the producer thread.
                 u32 end_pos = put_pos;
@@ -487,10 +484,23 @@ namespace pen
                     INC_WRAP( get_pos );
                 }
             }
+            else
+            {
+                pen::threads_sleep_ms(1);
+            }
             
             PEN_TIMER_END( CMD_BUFFER );
             PEN_TIMER_RESET( CMD_BUFFER );
+            
+            if( pen::threads_semaphore_try_wait( p_job_thread_info->p_sem_exit ) )
+            {
+                //exit
+                break;
+            }
         }
+        
+        pen::threads_semaphore_signal( p_continue_semaphore, 1 );
+        pen::threads_semaphore_signal( p_job_thread_info->p_sem_terminated, 1 );
     }
     
     void renderer_poll_for_jobs()
@@ -515,13 +525,6 @@ namespace pen
         PEN_TIMER_RESET( CMD_BUFFER );
     }
     
-    void renderer_thread_init()
-    {
-        //create thread sync primitives
-        p_consume_semaphore = pen::threads_semaphore_create( 0, 1 );
-        p_continue_semaphore = pen::threads_semaphore_create( 0, 1 );
-    }
-    
     void  renderer_init( void* params )
     {
         renderer_init_from_window( params );
@@ -531,8 +534,15 @@ namespace pen
 
     }
     
-    PEN_THREAD_RETURN renderer_init_thread( void* params )
-    {        
+    PEN_THREAD_RETURN renderer_thread_function( void* params )
+    {
+        job_thread_params* job_params = (job_thread_params*)params;
+        
+        p_job_thread_info = job_params->job_thread_info;
+        
+        p_consume_semaphore = p_job_thread_info->p_sem_consume;
+        p_continue_semaphore = p_job_thread_info->p_sem_continue;
+        
         renderer_init( params );
         
         renderer_wait_for_jobs();
@@ -810,7 +820,6 @@ namespace pen
     
     u32 defer::renderer_create_render_target( const texture_creation_params& tcp )
     {
-        //TODO
         cmd_buffer[ put_pos ].command_index = CMD_CREATE_RENDER_TARGET;
         
         pen::memory_cpy( &cmd_buffer[ put_pos ].create_render_target, ( void* ) &tcp, sizeof( texture_creation_params ) );

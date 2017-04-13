@@ -45,8 +45,8 @@ enum cull_mode : s32
 
 enum default_targets : s32
 {
-    PEN_DEFAULT_RT = 1,
-    PEN_DEFAULT_DS = 2
+    PEN_DEFAULT_RT = 0,
+    PEN_DEFAULT_DS = 0
 };
 
 enum clear_bits : s32

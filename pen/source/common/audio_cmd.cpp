@@ -102,41 +102,31 @@ namespace pen
     }
 
     //thread sync
-    pen::semaphore*			 p_audio_thread_consume_semaphore;
-    pen::semaphore*			 p_audio_thread_continue_semaphore;
-
-    void audio_init_thread_primitives()
-    {
-        //create thread sync primitives
-        p_audio_thread_consume_semaphore = pen::threads_semaphore_create( 0, 1 );
-        p_audio_thread_continue_semaphore = pen::threads_semaphore_create( 0, 1 );
-    }
-
-    void audio_wait_for_init()
-    {
-        pen::threads_semaphore_wait( p_audio_thread_continue_semaphore );
-    }
+    pen::job_thread*         p_audio_job_thread_info;
 
     void audio_consume_command_buffer()
     {
-        pen::threads_semaphore_signal( p_audio_thread_consume_semaphore, 1 );
-        pen::threads_semaphore_wait( p_audio_thread_continue_semaphore );
+        pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_consume, 1 );
+        pen::threads_semaphore_wait( p_audio_job_thread_info->p_sem_continue );
     }
 
     PEN_THREAD_RETURN audio_thread_function( void* params )
     {
+        job_thread_params* job_params = (job_thread_params*)params;
+        p_audio_job_thread_info = job_params->job_thread_info;
+        
         direct::audio_system_initialise();
 
         //allow main thread to continue now we are initialised
-        pen::threads_semaphore_signal( p_audio_thread_continue_semaphore, 1 );
+        pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
 
         while( 1 )
         {
-            if( pen::threads_semaphore_wait( p_audio_thread_consume_semaphore ) == 1 )
+            if( pen::threads_semaphore_try_wait( p_audio_job_thread_info->p_sem_consume ) )
             {
                 u32 end_pos = audio_put_pos;
                 
-                pen::threads_semaphore_signal( p_audio_thread_continue_semaphore, 1 );
+                pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
 
                 while( audio_get_pos != end_pos )
                 {
@@ -147,7 +137,19 @@ namespace pen
 
                 direct::audio_system_update();
             }
+            else
+            {
+                pen::threads_sleep_ms(1);
+            }
+            
+            if( pen::threads_semaphore_try_wait(p_audio_job_thread_info->p_sem_exit) )
+            {
+                break;
+            }
         }
+        
+        pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
+        pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_terminated, 1 );
     }
 
     void    create_file_command( const c8* filename, u32 command )

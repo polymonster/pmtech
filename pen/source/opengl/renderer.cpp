@@ -31,7 +31,7 @@ namespace pen
 	#define QUERY_ISSUED			(1<<1)
 	#define QUERY_SO_STATS			(1<<2)
     
-	typedef struct context_state
+    struct context_state
 	{
 		context_state()
 		{
@@ -46,40 +46,52 @@ namespace pen
 
 		u32	active_query_index;
 
-	} context_state;
+	};
 
-	typedef struct clear_state_internal
+    struct clear_state_internal
 	{
 		f32 rgba[ 4 ];
 		f32 depth;
 		u32 flags;
-	} clear_state_internal;
+	};
     
-    typedef struct vertex_attribute
+    struct vertex_attribute
     {
         u32     location;
         u32     type;
         u32     stride;
         size_t  offset;
         u32     num_elements;
-    } vertex_attribute;
+    };
     
-    typedef struct input_layout
+    struct input_layout
     {
         std::vector<vertex_attribute> attributes;
         GLuint vertex_array_handle = 0;
-    } input_layout;
+    };
 
-    typedef struct raster_state
+    struct raster_state
     {
         GLenum cull_face;
         GLenum polygon_mode;
         bool culling_enabled;
         bool depth_clip_enabled;
         bool scissor_enabled;
-    } raster_state;
+    };
     
-	typedef struct resource_allocation
+    struct render_target
+    {
+        GLuint framebuffer;
+        GLuint texture;
+    };
+    
+    enum resource_type : s32
+    {
+        RES_TEXTURE = 0,
+        RES_RENDER_TARGET
+    };
+    
+	struct resource_allocation
 	{
 		u8      asigned_flag;
         GLuint  type;
@@ -92,31 +104,32 @@ namespace pen
             depth_stencil_creation_params*  depth_stencil;
             blend_creation_params*          blend_state;
             GLuint                          handle;
+            render_target                   render_target;
 		};
-	} resource_allocation;
+	};
 
-	typedef struct query_allocation
+    struct query_allocation
 	{
 		u8 asigned_flag;
 		GLuint       query			[NUM_QUERY_BUFFERS];
 		u32			 flags			[NUM_QUERY_BUFFERS];
 		a_u64		 last_result;
-	}query_allocation;
+	};
 
 	resource_allocation		 resource_pool	[MAX_RENDERER_RESOURCES];
 	query_allocation	     query_pool		[MAX_QUERIES];
     
-    typedef struct shader_program
+    struct shader_program
     {
         u32 vs;
         u32 ps;
         u32 gs;
         GLuint program;
-    }shader_program;
+    };
     
     std::vector<shader_program> shader_programs;
     
-    typedef struct active_state
+    struct active_state
     {
         u32 vertex_buffer;
         u32 vertex_buffer_stride;
@@ -126,7 +139,7 @@ namespace pen
         u32 pixel_shader;
         u32 raster_state;
         bool enabled_vertex_attributes[MAX_VERTEX_ATTRIBUTES]; //todo remove
-    }active_state;
+    };
     
     active_state g_bound_state;
     active_state g_current_state;
@@ -551,18 +564,6 @@ namespace pen
         
         glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, (void*)(size_t)(start_index * 2), base_vertex );
 	}
-
-	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)
-	{
-		u32 resource_index = get_next_resource_index(DIRECT_RESOURCE);
-
-		return resource_index;
-	}
-
-	void direct::renderer_set_targets( u32 colour_target, u32 depth_target, u32 colour_face, u32 depth_face )
-	{
-
-	}
     
     u32 calc_mip_level_size( u32 w, u32 h, u32 block_size, u32 pixels_per_block )
     {
@@ -588,7 +589,7 @@ namespace pen
                 format = GL_BGRA;
                 type = GL_UNSIGNED_BYTE;
                 break;
-        
+                
             case PEN_TEX_FORMAT_RGBA8_UNORM:
                 sized_format = GL_RGBA8;
                 format = GL_RGBA;
@@ -600,11 +601,9 @@ namespace pen
                 break;
         }
     }
-
-	u32 direct::renderer_create_texture2d(const texture_creation_params& tcp)
-	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
     
+    GLuint create_texture2d_internal(const texture_creation_params& tcp)
+    {
         u32 sized_format, format, type;
         get_texture_format( tcp.format, sized_format, format, type );
         
@@ -612,8 +611,9 @@ namespace pen
         u32 mip_h = tcp.height;
         c8* mip_data = (c8*)tcp.data;
         
-        glGenTextures( 1, &resource_pool[ resource_index ].handle );
-        glBindTexture( GL_TEXTURE_2D, resource_pool[ resource_index ].handle );
+        GLuint handle;
+        glGenTextures( 1, &handle);
+        glBindTexture( GL_TEXTURE_2D, handle );
         
         for( u32 mip = 0; mip < tcp.num_mips; ++mip )
         {
@@ -626,6 +626,53 @@ namespace pen
         }
         
         glBindTexture(GL_TEXTURE_2D, 0 );
+        
+        return handle;
+    }
+
+	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)
+	{
+		u32 resource_index = get_next_resource_index(DIRECT_RESOURCE);
+        
+        resource_allocation& res = resource_pool[ resource_index ];
+        
+        res.type = RES_RENDER_TARGET;
+        
+        glGenFramebuffers(1, &res.render_target.framebuffer );
+        glBindFramebuffer(GL_FRAMEBUFFER, res.render_target.framebuffer);
+        
+        res.render_target.texture = create_texture2d_internal(tcp);
+        
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, res.render_target.texture, 0);
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        
+        return resource_index;
+	}
+
+	void direct::renderer_set_targets( u32 colour_target, u32 depth_target, u32 colour_face, u32 depth_face )
+	{
+        if( colour_target == 0 )
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+        else
+        {
+            GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+            glDrawBuffers(1, DrawBuffers);
+        
+            resource_allocation& res = resource_pool[ colour_target ];
+            
+            glBindFramebuffer( GL_FRAMEBUFFER, res.render_target.framebuffer );
+        }
+	}
+
+	u32 direct::renderer_create_texture2d(const texture_creation_params& tcp)
+	{
+		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+    
+        resource_pool[ resource_index ].type = RES_TEXTURE;
+        resource_pool[ resource_index ].handle = create_texture2d_internal( tcp );
 
 		return resource_index;
 	}
@@ -639,8 +686,19 @@ namespace pen
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type )
 	{
+        resource_allocation& res = resource_pool[ texture_index ];
+        
         glActiveTexture(GL_TEXTURE0 + resource_slot);
-        glBindTexture( GL_TEXTURE_2D, resource_pool[ texture_index ].handle );
+        
+        if( res.type == RES_TEXTURE )
+        {
+            glBindTexture( GL_TEXTURE_2D, res.handle );
+        }
+        else
+        {
+            glBindTexture( GL_TEXTURE_2D, res.render_target.texture );
+        }
+        
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 	}
 
@@ -682,9 +740,6 @@ namespace pen
     
     void direct::renderer_set_scissor_rect( const rect &r )
     {
-        // rect = x y z w
-        //glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
-        
         f32 top = g_current_vp.height - r.bottom;
         glScissor(r.left, top, r.right - r.left, r.bottom - r.top);
     }

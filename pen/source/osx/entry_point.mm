@@ -16,6 +16,34 @@ NSOpenGLContext* _gl_context;
 extern pen::window_creation_params pen_window;
 extern PEN_THREAD_RETURN pen::game_entry( void* params );
 
+@interface app_delegate : NSObject<NSApplicationDelegate>
+{
+    bool terminated;
+}
+
++ (app_delegate *)shared_delegate;
+- (id)init;
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
+- (bool)applicationHasTerminated;
+
+@end
+
+@interface i_window : NSObject<NSWindowDelegate>
+{
+    uint32_t window_count;
+}
+
++ (i_window*)shared_delegate;
+- (id)init;
+- (void)windowCreated:(NSWindow*)window;
+- (void)windowWillClose:(NSNotification*)notification;
+- (BOOL)windowShouldClose:(NSWindow*)window;
+- (void)windowDidResize:(NSNotification*)notification;
+- (void)windowDidBecomeKey:(NSNotification *)notification;
+- (void)windowDidResignKey:(NSNotification *)notification;
+
+@end
+
 void pen_make_gl_context_current( )
 {
     [_gl_context makeCurrentContext];
@@ -280,6 +308,8 @@ bool handle_event(NSEvent* event)
     return false;
 }
 
+static bool pen_terminate_app = false;
+
 int main(int argc, char **argv)
 {
     //window creation
@@ -287,6 +317,21 @@ int main(int argc, char **argv)
     NSLog(@"NSApp=%@", NSApp);
     [NSApplication sharedApplication];
     NSLog(@"NSApp=%@", NSApp);
+    
+    id dg = [app_delegate shared_delegate];
+    [NSApp setDelegate:dg];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    [NSApp activateIgnoringOtherApps:YES];
+    [NSApp finishLaunching];
+    
+    [[NSNotificationCenter defaultCenter]
+     postNotificationName:NSApplicationWillFinishLaunchingNotification
+     object:NSApp];
+    
+    [[NSNotificationCenter defaultCenter]
+     postNotificationName:NSApplicationDidFinishLaunchingNotification
+     object:NSApp];
+    
 
     NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
     
@@ -295,6 +340,9 @@ int main(int argc, char **argv)
     _window = [[NSWindow alloc] initWithContentRect:frame styleMask:style_mask backing: NSBackingStoreBuffered defer:NO];
 
     [_window makeKeyAndOrderFront: _window];
+    
+    id wd = [i_window shared_delegate];
+    [_window setDelegate:wd];
     
     [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
     [_window setAcceptsMouseMovedEvents:YES];
@@ -308,21 +356,11 @@ int main(int argc, char **argv)
     //init systems
     pen::timer_system_intialise();
     
-    //create render thread
-    pen::renderer_thread_init();
-    pen::threads_create( &pen::renderer_init_thread, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
-    pen::renderer_wait_init();
-    
-    //create audi thread
-    pen::audio_init_thread_primitives();
-    pen::threads_create( &pen::audio_thread_function, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
-    pen::audio_wait_for_init();
-    
-    //create game thread
-    pen::threads_create( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
+    //audio, renderer, game
+    pen::threads_create_default_jobs();
     
     //main thread loop
-    while( 1 )
+    while( !pen_terminate_app )
     {
         while( 1 )
         {
@@ -353,6 +391,9 @@ int main(int argc, char **argv)
         //sleep a bit
         pen::threads_sleep_ms( 16 );
     }
+    
+    //shutdown
+    pen::threads_terminate_jobs();
 }
 
 namespace pen
@@ -372,3 +413,101 @@ namespace pen
         return (void*)_window;
     }
 }
+
+@implementation app_delegate
+
++ (app_delegate *)shared_delegate
+{
+    static id delegate = [app_delegate new];
+    return delegate;
+}
+
+- (id)init
+{
+    self = [super init];
+    
+    if (nil == self)
+    {
+        return nil;
+    }
+    
+    self->terminated = false;
+    return self;
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+    self->terminated = true;
+    pen_terminate_app = true;
+    return NSTerminateCancel;
+}
+
+- (bool)applicationHasTerminated
+{
+    return self->terminated;
+}
+
+@end
+
+@implementation i_window
+
++ (i_window*)shared_delegate
+{
+    static id window_delegate = [i_window new];
+    return window_delegate;
+}
+
+- (id)init
+{
+    self = [super init];
+    if (nil == self)
+    {
+        return nil;
+    }
+    
+    self->window_count = 0;
+    return self;
+}
+
+- (void)windowCreated:(NSWindow*)window
+{
+    assert(window);
+    
+    [window setDelegate:self];
+    
+    assert(self->window_count < ~0u);
+    self->window_count += 1;
+    
+    [window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]] ;
+}
+
+- (void)windowWillClose:(NSNotification*)notification
+{
+}
+
+- (BOOL)windowShouldClose:(NSWindow*)window
+{
+    [window setDelegate:nil];
+    
+    if (self->window_count == 0)
+    {
+        [NSApp terminate:self];
+        return false;
+    }
+    
+    return true;
+}
+
+- (void)windowDidResize:(NSNotification*)notification
+{
+}
+
+- (void)windowDidBecomeKey:(NSNotification*)notification
+{
+}
+
+- (void)windowDidResignKey:(NSNotification*)notification
+{
+}
+
+@end

@@ -206,9 +206,7 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	
     //runs on its own thread - will wait for jobs flagged by semaphone
-    void				renderer_thread_init();
-    void				renderer_wait_init();
-	PEN_THREAD_RETURN	renderer_init_thread( void* params );
+	PEN_THREAD_RETURN	renderer_thread_function( void* params );
 
     //initialised to run from another thread - call renderer_poll_for_jobs 
     void                renderer_init( void* params );

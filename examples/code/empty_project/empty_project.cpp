@@ -12,15 +12,28 @@ pen::window_creation_params pen_window
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
-    //filesystem_enumeration results;
-    //pen::filesystem_enum_directory(L"/Users/alex.dixon/ö_ppppp", results);
+    //unpack the params passed to the thread and signal to the engine it ok to proceed
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job_thread* p_thread_info = job_params->job_thread_info;
+    pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
     for( ;; )
     {
         pen::string_output_debug("oh hai ö\n");
                 
         pen::threads_sleep_us(16000);
+        
+        //msg from the engine we want to terminate
+        if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
+        {
+            break;
+        }
     }
+    
+    //clean up mem here
+    
+    //signal to the engine the thread has finished
+    pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
     
 	return PEN_THREAD_OK;
 }

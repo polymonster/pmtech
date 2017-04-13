@@ -27,9 +27,7 @@ namespace pen
     };
 
     //threading
-    void                audio_init_thread_primitives();
     PEN_THREAD_RETURN	audio_thread_function( void* params );
-    void                audio_wait_for_init();
     void                audio_consume_command_buffer();
          
     //creation

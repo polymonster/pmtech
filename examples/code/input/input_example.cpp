@@ -29,6 +29,11 @@ typedef struct textured_vertex
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
+    //unpack the params passed to the thread and signal to the engine it ok to proceed
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job_thread* p_thread_info = job_params->job_thread_info;
+    pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+    
     //initialise the debug render system
     dbg::initialise();
 
@@ -104,7 +109,18 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         //present 
         pen::defer::renderer_present();
         pen::defer::renderer_consume_cmd_buffer();
+        
+        //msg from the engine we want to terminate
+        if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
+        {
+            break;
+        }
     }
+    
+    //clean up mem here
+    
+    //signal to the engine the thread has finished
+    pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
 
     return PEN_THREAD_OK;
 }
