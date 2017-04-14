@@ -5,6 +5,7 @@
 #include "pen_string.h"
 #include "json.hpp"
 #include <fstream>
+#include <direct.h>   
 
 using json = nlohmann::json;
 
@@ -206,12 +207,16 @@ namespace put
     
     struct managed_shader
     {
+		c8 shader_name[64];
         json metadata;
         shader_program program;
+		shader_program invalidated_program;
+		u32 info_timestamp;
+		bool invalidated;
     };
     std::vector<managed_shader> s_managed_shaders;
 
-	shader_program& loader_load_shader_program( const c8* shader_name )
+	shader_program& loader_load_shader_program( const c8* shader_name, managed_shader* ms )
 	{
         c8 vs_file_buf[ 256 ];
         c8 ps_file_buf[ 256 ];
@@ -237,25 +242,45 @@ namespace put
             return null_shader;
         }
 
-        //add a new managed shader
-        s_managed_shaders.push_back(managed_shader{});
-        managed_shader& ms = s_managed_shaders.back();
-        
+		if (!ms)
+		{
+			//add a new managed shader
+			s_managed_shaders.push_back(managed_shader{});
+			ms = &s_managed_shaders.back();
+
+			u32 name_len = pen::string_length(shader_name);
+			pen::memory_cpy(ms->shader_name, shader_name, name_len);
+		}
+		else
+		{
+			//otherwise we are hot loading
+			ms->invalidated_program = ms->program;
+
+			//compare timestamps of the .info files to see if we have actually updated
+			u32 current_info_ts = pen::filesystem_getmtime( info_file_buf );
+			if ( (u32)current_info_ts <= ms->info_timestamp)
+			{
+				//return ourselves, so we remain invalid until the newly compiled shader is ready
+				return ms->program;
+			}
+		}
+
 		//read shader info json
 		std::ifstream ifs(info_file_buf);
-		ms.metadata = json::parse(ifs);
+		ms->metadata = json::parse(ifs);
+		ms->info_timestamp = pen::filesystem_getmtime(info_file_buf);
 
 		//create input layout from json
 		pen::input_layout_creation_params ilp;
 		ilp.vs_byte_code = vs_slp.byte_code;
 		ilp.vs_byte_code_size = vs_slp.byte_code_size;
-		ilp.num_elements = ms.metadata ["vs_inputs"].size();
+		ilp.num_elements = ms->metadata ["vs_inputs"].size();
 
 		ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
 
 		for (u32 i = 0; i < ilp.num_elements; ++i)
 		{
-			json vj = ms.metadata["vs_inputs"][i];
+			json vj = ms->metadata["vs_inputs"][i];
 
 			u32 num_elements = vj["num_elements"];
 			u32 elements_size = vj["element_size"];
@@ -290,7 +315,7 @@ namespace put
 			ilp.input_layout[i].instance_data_step_rate = 0;
 		}
 
-		ms.program.input_layout = pen::defer::renderer_create_input_layout(ilp);
+		ms->program.input_layout = pen::defer::renderer_create_input_layout(ilp);
 
 		if ( err != PEN_ERR_OK  )
 		{
@@ -301,22 +326,22 @@ namespace put
 
         err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
 
-		ms.program.vertex_shader = pen::defer::renderer_load_shader( vs_slp );
-		ms.program.pixel_shader = pen::defer::renderer_load_shader( ps_slp );
+		ms->program.vertex_shader = pen::defer::renderer_load_shader( vs_slp );
+		ms->program.pixel_shader = pen::defer::renderer_load_shader( ps_slp );
         
         //link the shader to allow opengl to match d3d constant and texture bindings
         pen::shader_link_params link_params;
-        link_params.input_layout = ms.program.input_layout;
-        link_params.vertex_shader = ms.program.vertex_shader;
-        link_params.pixel_shader = ms.program.pixel_shader;
+        link_params.input_layout = ms->program.input_layout;
+        link_params.vertex_shader = ms->program.vertex_shader;
+        link_params.pixel_shader = ms->program.pixel_shader;
         
-        u32 num_constants = ms.metadata["cbuffers"].size() + ms.metadata["texture_samplers"].size();
+        u32 num_constants = ms->metadata["cbuffers"].size() + ms->metadata["texture_samplers"].size();
         
         link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
         
         u32 cc = 0;
         
-        for( auto& cbuf : ms.metadata["cbuffers"])
+        for( auto& cbuf : ms->metadata["cbuffers"])
         {
             std::string name_str = cbuf["name"];
             u32 name_len = name_str.length();
@@ -334,7 +359,7 @@ namespace put
             cc++;
         }
         
-        for( auto& samplers : ms.metadata["texture_samplers"])
+        for( auto& samplers : ms->metadata["texture_samplers"])
         {
             std::string name_str = samplers["name"];
             u32 name_len = name_str.length();
@@ -368,7 +393,7 @@ namespace put
         
         link_params.num_constants = num_constants;
         
-        ms.program.program_index = pen::defer::renderer_link_shader_program(link_params);
+		ms->program.program_index = pen::defer::renderer_link_shader_program(link_params);
         
         //free the temp mem
         for( u32 c = 0; c < num_constants; ++c )
@@ -381,7 +406,9 @@ namespace put
 		pen::memory_free( ps_slp.byte_code );
 		pen::memory_free( ilp.input_layout );
 
-		return ms.program;
+		ms->invalidated = false;
+
+		return ms->program;
 	}
     
     void loader_release_shader_program( put::shader_program& shader_program )
@@ -583,21 +610,53 @@ namespace put
     
     void loader_poll_for_changes()
     {
-        for( auto& ms : s_managed_shaders )
-        {
-            for( auto& file : ms.metadata["files"] )
-            {
-                std::string fn = file["name"];
-                f32 shader_ts = file["timestamp"];
-                
-                f32 current_ts = pen::filesystem_getmtime(fn.c_str());
-                
-                if( current_ts > shader_ts )
-                {
-                    ms.program.pixel_shader = 0;
-                    ms.program.vertex_shader = 0;
-                }
-            }
-        }
+		static bool s_invalidated = false;
+
+		if (s_invalidated)
+		{
+			bool awaiting_rebuild = false;
+
+			s32 num = s_managed_shaders.size();
+			for (s32 i = 0; i < num; ++i)
+			{
+				//reload the shaders
+				if ( s_managed_shaders[i].invalidated )
+				{
+					awaiting_rebuild = true;
+					put::loader_load_shader_program( s_managed_shaders[i].shader_name, &s_managed_shaders[i] );
+				}
+			}
+
+			if (!awaiting_rebuild)
+			{
+				s_invalidated = false;
+			}
+		}
+		else
+		{
+			for (auto& ms : s_managed_shaders)
+			{
+				for (auto& file : ms.metadata["files"])
+				{
+					std::string fn = file["name"];
+					u32 shader_ts = file["timestamp"];
+					u32 current_ts = pen::filesystem_getmtime(fn.c_str());
+
+					if (current_ts > shader_ts)
+					{
+						//system("..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\");
+						system("..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\");
+						ms.invalidated = true;
+						s_invalidated = true;
+						break;
+					}
+				}
+
+				if (s_invalidated)
+				{
+					break;
+				}
+			}
+		}
     }
 }

@@ -7,15 +7,17 @@
 
 namespace put
 {
-	typedef struct shader_program
+	struct managed_shader;
+
+	struct shader_program
 	{
 		u32 vertex_shader;
 		u32 pixel_shader;
 		u32 input_layout;
         u32 program_index;
-	} shader_program;
+	};
 
-	typedef struct animation
+	struct animation
 	{
 		u32 bone_index;
 		u32 num_times;
@@ -23,9 +25,9 @@ namespace put
 		vec3f* translations;
 		vec3f* euler_angles;
 		Quaternion* rotations;
-	}animation;
+	};
 
-	typedef struct skeleton
+	struct skeleton
 	{
 		u32				num_joints;
 		u32				num_anims;
@@ -36,9 +38,9 @@ namespace put
 		animation*		animations;
 		c8**			names;
 
-	} skeleton;
+	};
 
-    shader_program& loader_load_shader_program( const c8* shader_name );
+    shader_program& loader_load_shader_program( const c8* shader_name, managed_shader* ms = nullptr );
     void            loader_release_shader_program( put::shader_program& program );
     
     u32             loader_load_texture( const c8* filename );

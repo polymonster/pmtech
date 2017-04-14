@@ -15,7 +15,7 @@ namespace pen
 
     u32 filesystem_enum_directory( const c16* directory, filesystem_enumeration &results );
     
-    f32 filesystem_getmtime( const c8* filename );
+    u32 filesystem_getmtime( const c8* filename );
 }
 
 #endif

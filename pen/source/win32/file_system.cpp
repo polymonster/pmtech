@@ -89,7 +89,7 @@ namespace pen
         return 0;
     }
 
-	f32 filesystem_getmtime( const c8* filename )
+	u32 filesystem_getmtime( const c8* filename )
 	{
 		OFSTRUCT of_struct;
 		HFILE f = OpenFile(filename, &of_struct, OF_READ );
@@ -100,6 +100,8 @@ namespace pen
 
 		long long* wt = (long long*)&m;
 
-		return (f32)win32_time_to_unix_seconds(*wt);;
+		u32 unix_ts = win32_time_to_unix_seconds(*wt);
+
+		return unix_ts;
 	}
 }

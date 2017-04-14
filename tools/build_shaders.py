@@ -5,20 +5,7 @@ import re
 import sys
 import json
 
-hlsl_key = ["float4x4", "float3x3", "float2x2", "float4", "float3", "float2", "lerp", "modf"]
-glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod"]
-
-tools_dir = os.path.join(os.getcwd(), "..", "tools")
-compiler_dir = os.path.join(os.getcwd(), "..", "tools", "bin", "fxc")
-temp_dir = os.path.join(os.getcwd(), "temp")
-
-this_file = os.path.join(tools_dir, "build_shaders.py")
-macros_file = os.path.join(tools_dir, "_shader_macros.h")
-
-if not os.path.exists(temp_dir):
-    os.mkdir(temp_dir)
-
-shader_source_dir = os.path.join(os.getcwd(), "assets", "shaders")
+root_dir = os.getcwd()
 
 shader_platform = "hlsl"
 os_platform = "win32"
@@ -26,10 +13,28 @@ if os.name == "posix":
     shader_platform = "glsl"
     os_platform = "osx"
 
-if len(sys.argv) > 1:
-    shader_platform = sys.argv[1]
+for i in range(1, len(sys.argv)):
+    if "-root_dir" in sys.argv[i]:
+        root_dir = os.path.join(root_dir, sys.argv[i+1])
+    if "-platform" in sys.argv[i]:
+        shader_platform = sys.argv[i+1]
 
-shader_build_dir = os.path.join(os.getcwd(),"bin", os_platform, "data", "shaders", shader_platform)
+hlsl_key = ["float4x4", "float3x3", "float2x2", "float4", "float3", "float2", "lerp", "modf"]
+glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod"]
+
+tools_dir = os.path.join(root_dir, "..", "tools")
+compiler_dir = os.path.join(root_dir, "..", "tools", "bin", "fxc")
+temp_dir = os.path.join(root_dir, "temp")
+
+this_file = os.path.join(tools_dir, "build_shaders.py")
+macros_file = os.path.join(tools_dir, "_shader_macros.h")
+
+if not os.path.exists(temp_dir):
+    os.mkdir(temp_dir)
+
+shader_source_dir = os.path.join(root_dir, "assets", "shaders")
+
+shader_build_dir = os.path.join(root_dir,"bin", os_platform, "data", "shaders", shader_platform)
 
 # create shaders dir
 if not os.path.exists(shader_build_dir):
@@ -38,7 +43,6 @@ if not os.path.exists(shader_build_dir):
 print("\nbuild_shaders")
 print("fx compiler directory :" + compiler_dir)
 print("compiling directory: " + shader_source_dir)
-
 
 def parse_and_split_block(code_block):
     start = code_block.find("{") + 1
@@ -113,18 +117,18 @@ def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, t
 
     # special files whih affect the validity of compiled shaders
     modified_time = os.path.getmtime(this_file)
-    file_info = {"name": this_file, "timestamp": modified_time}
+    file_info = {"name": this_file, "timestamp": int(modified_time)}
     shader_info["files"].append(file_info)
 
     macros_file = os.path.join(tools_dir, "_shader_macros.h")
     modified_time = os.path.getmtime(macros_file)
-    file_info = {"name": macros_file, "timestamp": modified_time}
+    file_info = {"name": macros_file, "timestamp": int(modified_time)}
     shader_info["files"].append(file_info)
 
     for file in included_files:
         full_name = os.path.join(dir_path, file)
         modified_time = os.path.getmtime(full_name)
-        file_info = {"name": full_name, "timestamp": modified_time}
+        file_info = {"name": full_name, "timestamp": int(modified_time)}
         shader_info["files"].append(file_info)
 
     shader_info["vs_inputs"] = make_input_info(vs_inputs)
@@ -638,7 +642,6 @@ for root, dirs, files in os.walk(shader_source_dir):
         if file.endswith(".shp"):
             file_and_path = os.path.join(root, file)
             create_vsc_psc_vsi(file_and_path, root)
-
 
 
 
