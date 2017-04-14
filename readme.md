@@ -1,6 +1,6 @@
 # Welcome to pmtech!
 
-This work is still in progress, The win32 platform with dx11 is mostly complete, I have been using this for a game project. I am currently porting to osx and ios, osx almost has parity with win32 with a few missing graphics features such s trasform feedback, also it has been less used than the win32 version.
+This work is still in progress, The win32 platform with dx11 is mostly complete, I have been using this for a game project. I am currently porting to osx and ios, osx almost has parity with win32 with a few missing graphics features such as trasform feedback, also it has been less used than the win32 version.
 
 **pen** *pmtech engine* 
 
