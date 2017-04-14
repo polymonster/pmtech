@@ -164,7 +164,9 @@ namespace pen
 
 	void free_resource_index( u32 index )
 	{
-		pen::memory_zero( &resource_pool[ index ], sizeof( resource_allocation ) );
+		//pen::memory_zero( &resource_pool[ index ], sizeof( resource_allocation ) );
+		
+		query_pool[index].asigned_flag = 0;
 	}
 
 	context_state			 g_context;
@@ -575,10 +577,20 @@ namespace pen
 		g_context.active_colour_target = colour_target;
 		g_context.active_depth_target = depth_target;
 
-		g_immediate_context->OMSetRenderTargets( 
-			colour_target == 0 ? 0 : 1, 
-			colour_target == 0 ? nullptr : &resource_pool[colour_target].render_target->rt[colour_face],
-			depth_target == 0 ? nullptr : resource_pool[depth_target].depth_target->ds[depth_face]);
+		u32 num_views = colour_target == 0 ? 0 : 1;
+		ID3D11RenderTargetView* colour_rtv = nullptr;
+		if (colour_target != 0)
+		{
+			colour_rtv = resource_pool[colour_target].render_target->rt[colour_face];
+		}
+
+		ID3D11DepthStencilView* dsv = nullptr;
+		if (depth_target != 0)
+		{
+			dsv = resource_pool[depth_target].depth_target->ds[depth_face];
+		}
+
+		g_immediate_context->OMSetRenderTargets( num_views, &colour_rtv, dsv );
 	}
 
 	u32 direct::renderer_create_texture2d(const texture_creation_params& tcp)
@@ -760,14 +772,14 @@ namespace pen
 			resource_pool[shader_index].geometry_shader->Release( );
 		}
 
-		//free_resource_index( shader_index );
+		free_resource_index( shader_index );
 	}
 
 	void direct::renderer_release_buffer( u32 buffer_index )
 	{
 		resource_pool[buffer_index].generic_buffer->Release( );
 
-		//free_resource_index( buffer_index );
+		free_resource_index( buffer_index );
 	}
 
 	void direct::renderer_release_texture2d( u32 texture_index )
@@ -775,30 +787,38 @@ namespace pen
 		resource_pool[texture_index].texture_2d->texture->Release( );
 		resource_pool[texture_index].texture_2d->srv->Release( );
 
-		//free_resource_index( texture_index );
+		free_resource_index( texture_index );
 	}
 
 	void direct::renderer_release_raster_state( u32 raster_state_index )
 	{
 		resource_pool[ raster_state_index ].raster_state->Release( );
 
-		//free_resource_index( raster_state_index );
+		free_resource_index( raster_state_index );
 	}
 
 	void direct::renderer_release_blend_state( u32 blend_state )
 	{
 		resource_pool[ blend_state ].blend_state->Release();
+
+		free_resource_index(blend_state);
 	}
 
 	void direct::renderer_release_render_target( u32 render_target )
 	{
+		//todo handle cubemap faces
+
 		//renderer_release_texture2d( render_target );
-		//resource_pool[ render_target ].render_target->rt->Release();
+		//resource_pool[render_target].render_target.rt->Release();
+
+		free_resource_index(render_target);
 	}
 
 	void direct::renderer_release_input_layout( u32 input_layout )
 	{
 		resource_pool[ input_layout ].input_layout->Release();
+
+		free_resource_index(input_layout);
 	}
 
 	void direct::renderer_release_sampler( u32 sampler )
@@ -811,11 +831,23 @@ namespace pen
 		resource_pool[ depth_stencil_state ].depth_stencil_state->Release();
 	}
 
+	void direct::renderer_release_program(u32 program)
+	{
+		//program is for opengl
+	}
+
+	void direct::renderer_release_clear_state(u32 clear_state)
+	{
+		free_resource_index(clear_state);
+	}
+
 	void direct::renderer_release_query( u32 query )
 	{
 		for( u32 i = 0; i < NUM_QUERY_BUFFERS; ++i )
 		{
 			query_pool[ query ].query[ i ]->Release();
+
+			query_pool[query].asigned_flag = 0;
 		}
 	}
 

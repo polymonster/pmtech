@@ -553,7 +553,7 @@ namespace pen
         p_consume_semaphore = p_job_thread_info->p_sem_consume;
         p_continue_semaphore = p_job_thread_info->p_sem_continue;
         
-        renderer_init( params );
+        renderer_init(job_params->user_data);
         
         renderer_wait_for_jobs();
         

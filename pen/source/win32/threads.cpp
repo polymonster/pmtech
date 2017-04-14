@@ -100,6 +100,18 @@ namespace pen
 		return FALSE;
 	}
 
+	bool threads_semaphore_try_wait(semaphore* p_semaphore)
+	{
+		DWORD res = WaitForSingleObject(p_semaphore->handle, 0);
+
+		if (!res)
+		{
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
 	void threads_semaphore_signal( semaphore* p_semaphore, u32 count )
 	{
 		ReleaseSemaphore( p_semaphore->handle, count, NULL );

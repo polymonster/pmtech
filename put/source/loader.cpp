@@ -14,7 +14,6 @@ namespace put
     {
         DDS_RGBA = 0x01,
         DDS_BC = 0x04,
-        DDS_DXT = DDS_BC
     };
     
     enum compression_format

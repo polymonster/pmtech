@@ -5,6 +5,14 @@
 
 namespace pen
 {
+#define WINDOWS_TICK 10000000
+#define SEC_TO_UNIX_EPOCH 11644473600LL
+
+	u32 win32_time_to_unix_seconds(long long ticks)
+	{
+		return (u32)(ticks / WINDOWS_TICK - SEC_TO_UNIX_EPOCH);
+	}
+
     u32 filesystem_read_file_to_buffer( const char* filename, void** p_buffer, u32 &buffer_size )
     {
         //swap "/" for "\\"
@@ -80,4 +88,18 @@ namespace pen
 
         return 0;
     }
+
+	f32 filesystem_getmtime( const c8* filename )
+	{
+		OFSTRUCT of_struct;
+		HFILE f = OpenFile(filename, &of_struct, OF_READ );
+
+		FILETIME c, m, a;
+
+		BOOL res = GetFileTime((HANDLE)f, &c, &a, &m);
+
+		long long* wt = (long long*)&m;
+
+		return (f32)win32_time_to_unix_seconds(*wt);;
+	}
 }

@@ -153,13 +153,13 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         pen::defer::renderer_consume_cmd_buffer();
         
+		put::loader_poll_for_changes();
+
         //msg from the engine we want to terminate
         if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
         {
             break;
         }
-        
-        put::loader_poll_for_changes();
     }
     
     //clean up mem here

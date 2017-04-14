@@ -9,7 +9,6 @@ namespace pen
     static job_thread   s_jt[ MAX_THREADS ];
     static u32          s_num_active_threads = 0;
     
-    
     pen::job_thread* threads_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags )
     {
         if( s_num_active_threads >= MAX_THREADS )
@@ -37,11 +36,19 @@ namespace pen
         return jt;
     }
     
-    void threads_create_default_jobs()
+	void threads_create_default_jobs( const pen::default_thread_info& info )
     {
-        threads_create_job( &pen::renderer_thread_function, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
-        threads_create_job( &pen::audio_thread_function, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
-        threads_create_job( &pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
+		if (info.flags & PEN_CREATE_RENDER_THREAD)
+		{
+			threads_create_job(&pen::renderer_thread_function, 1024 * 1024, info.render_thread_params, pen::THREAD_START_DETACHED);
+		}
+
+		if (info.flags & PEN_CREATE_AUDIO_THREAD)
+		{
+			threads_create_job(&pen::audio_thread_function, 1024 * 1024, info.audio_thread_params, pen::THREAD_START_DETACHED);
+		}
+
+		threads_create_job(&pen::game_entry, 1024 * 1024, info.user_thread_params, pen::THREAD_START_DETACHED);
     }
     
     void threads_terminate_jobs()

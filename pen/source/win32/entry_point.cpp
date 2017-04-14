@@ -24,37 +24,21 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	if ( pen::window_init( ( (void*)&wp ) ) )
 		return 0;
 
-	renderer_params rp;
-	rp.hwnd = ( HWND )pen::window_get_primary_display_handle( );
-
 	//initilaise any generic systems
 	pen::timer_system_intialise( );
 
-	//initialise thread sync primitives, and kick off render thread
-    static bool dedicated_render_thread = true;
-    pen::thread* p_renderer_thread = nullptr;
-    if( dedicated_render_thread )
-    {
-        pen::renderer_thread_init();
-        p_renderer_thread = pen::threads_create( pen::renderer_init_thread, 1024 * 1024, &rp, pen::THREAD_START_DETACHED );
-        pen::renderer_wait_init();
-    }
-    else
-    {
-        pen::renderer_init(&rp);
-    }
+	renderer_params rp;
+	rp.hwnd = (HWND)pen::window_get_primary_display_handle();
 
-    pen::thread* p_audio_thread = nullptr;
-    pen::audio_init_thread_primitives();
-    p_audio_thread = pen::threads_create( pen::audio_thread_function, 1024 * 1024, nullptr, pen::THREAD_START_DETACHED );
-    pen::audio_wait_for_init();
+	pen::default_thread_info thread_info;
+	thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
+	thread_info.render_thread_params = &rp;
 
-	//after renderer is initialised kick of the game thread
-	pen::thread* p_game_thread	   = pen::threads_create( pen::game_entry, 1024*1024, nullptr, pen::THREAD_START_DETACHED );
+	pen::threads_create_default_jobs( thread_info );
 
 	// Main message loop
 	MSG msg = { 0 };
-	while ( WM_QUIT != msg.message )
+	while ( 1 )
 	{
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
@@ -62,16 +46,14 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			DispatchMessage(&msg);
 		}
 
-        if(!dedicated_render_thread)
-        {
-            pen::renderer_poll_for_jobs();
-        }
+		if (WM_QUIT == msg.message)
+		{
+			pen::threads_terminate_jobs();
+			break;
+		}
 
-		Sleep( 2 );
+		Sleep( 16 );
 	}
-
-    //todo
-	//pen::renderer_destroy();
 
 	return (INT)msg.wParam;
 }
