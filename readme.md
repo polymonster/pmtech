@@ -1,6 +1,6 @@
 # Welcome to pmtech!
 
-This work is still very much a work in progress, The win32 platform with dx11 is mostly complete, I have been using this for a game project. I am currently porting to OSX and iOS, both platforms are up and running and the opengl renderer (gles3 and gl3) is now in progress.. more platforms and renderers like metal, vulkan, linux or android will hopefully be added in future.
+This work is still in progress, The win32 platform with dx11 is mostly complete, I have been using this for a game project. I am currently porting to osx and ios, osx almost has parity with win32 with a few missing graphics features such s trasform feedback, also it has been less used than the win32 version.
 
 **pen** *pmtech engine* 
 
@@ -21,11 +21,12 @@ The renderer runs on its own thread, with all user submitted commands from the g
 **put** *pmtech utility toolkit*
 
 This project contains code that will be re-used across different projects but contains no platform specific code, it contains:
-- "Loader" - Contains functions to load (and hot load) textures (DDS), models, skeletons, animations and shaders
-- Bullet Physics - With a deferred command buffer API like the pen renderer and audio system, allowing physics simulate to run independantly on it's own thread.
-- Debug Renderer - Helpers for drawing 3d and 2d lines, boxes, text, and other debug primitives.
+- Loader - Contains functions to load textures (DDS), models, skeletons, animations and shaders, as well as supporting shader hot loads.
+- Bullet Physics - With a deferred command buffer API like the renderer and audio system, allowing physics simulate to run independantly on it's own thread.
+- Debug Renderer - Helpers for drawing 3d and 2d lines, boxes, text, and other primitives.
 - Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and functions
-- Thirdparty stuff
+
+** thirdparty **
 - ImGui - super cool and fast ui rendering for development.
 - JSON for modern c++ - great for working with data that has been generated with python.
 
