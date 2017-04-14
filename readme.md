@@ -16,7 +16,7 @@ This project contains platform / operating system specific code, it provides abs
 - Timers (win32, posix)
 - Job Threads / Syncronisation
 
-The renderer runs on its own thread, with all user submitted commands from the game thread being stored in a command buffer for dispatch later on a dedicated thread or core, this paralellises all graphics api driver overhead, the audio api and physics api (see put) also run the same way. I still need to work on giving greater control to which cores these tasks get run on and I have added provision for users to skip the auto generation of threads so they can replace it with their own job management system.
+The renderer runs on its own thread, with all user submitted commands from the game thread being stored in a command buffer for dispatch later on a dedicated thread or core, this paralellises all graphics api driver overhead, the audio api and physics api can also run the same way. The engine can automatically create audio and render threads or they could be left in the hands of the user to spawn them / replace with a dedicated job management system.
 
 **put** *pmtech utility toolkit*
 
