@@ -1,6 +1,5 @@
 import os
 import subprocess
-import struct
 import os.path
 import re
 import sys
@@ -12,6 +11,9 @@ glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod"]
 tools_dir = os.path.join(os.getcwd(), "..", "tools")
 compiler_dir = os.path.join(os.getcwd(), "..", "tools", "bin", "fxc")
 temp_dir = os.path.join(os.getcwd(), "temp")
+
+this_file = os.path.join(tools_dir, "build_shaders.py")
+macros_file = os.path.join(tools_dir, "_shader_macros.h")
 
 if not os.path.exists(temp_dir):
     os.mkdir(temp_dir)
@@ -47,6 +49,7 @@ def parse_and_split_block(code_block):
     block_conditioned = block_conditioned.replace(")", "")
     block_conditioned = block_conditioned.replace(",", "")
     return block_conditioned.split()
+
 
 def make_input_info(inputs):
     semantic_info = [
@@ -91,12 +94,14 @@ def make_input_info(inputs):
         offset += size
     return input_desc
 
+
 def get_resource_info_filename(filename, build_dir):
     base_filename = os.path.basename(filename)
     dir_path = os.path.dirname(filename)
     info_filename = os.path.splitext(base_filename)[0] + ".json"
     info_filename = os.path.join(shader_build_dir, info_filename)
     return info_filename, base_filename, dir_path
+
 
 def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, texture_samplers, constant_buffers):
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
@@ -107,9 +112,8 @@ def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, t
     included_files.insert(0, base_filename)
 
     # special files whih affect the validity of compiled shaders
-    converter_file = os.path.join(tools_dir, "build_shaders.py")
-    modified_time = os.path.getmtime(converter_file)
-    file_info = {"name": converter_file, "timestamp": modified_time}
+    modified_time = os.path.getmtime(this_file)
+    file_info = {"name": this_file, "timestamp": modified_time}
     shader_info["files"].append(file_info)
 
     macros_file = os.path.join(tools_dir, "_shader_macros.h")
@@ -174,6 +178,7 @@ def compile_hlsl(source, filename, shader_model, temp_extension):
     subprocess.call(cmdline)
     print("\n")
 
+
 def find_struct(shader_text, decl):
     start = shader_text.find(decl)
     end = shader_text.find("};", start)
@@ -182,6 +187,7 @@ def find_struct(shader_text, decl):
         return shader_text[start:end] + "\n\n"
     else:
         return ""
+
 
 def find_constant_buffers(shader_text):
     cbuffer_list = []
@@ -196,6 +202,7 @@ def find_constant_buffers(shader_text):
             cbuffer_list.append(shader_text[start:end] + "\n")
         start = end
     return cbuffer_list
+
 
 def find_main(shader_text, decl):
     start = shader_text.find(decl)
@@ -213,6 +220,7 @@ def find_main(shader_text, decl):
             bracket_stack.pop(0)
             body_pos += 1
     return shader_text[start:body_pos] + "\n\n"
+
 
 def find_generic_functions(shader_text):
     deliminator_list = [";", "\n"]
@@ -259,8 +267,10 @@ def find_texture_samplers(shader_text):
     texture_sampler_text = texture_sampler_text.replace("\t", "")
     return texture_sampler_text
 
+
 def clean_spaces(shader_text):
     return re.sub(' +', ' ', shader_text)
+
 
 def parse_io_struct(source, decl):
     io_source = find_struct(source, decl)
@@ -282,8 +292,8 @@ def parse_io_struct(source, decl):
     #the last input will always be "};" pop it out
     elements.pop(len(elements)-1)
     semantics.pop(len(semantics)-1)
-
     return elements, semantics
+
 
 def generate_global_io_struct(io_elements, decl):
     # global input struct for hlsl compatibility to access like input.value
@@ -294,6 +304,7 @@ def generate_global_io_struct(io_elements, decl):
     struct_source += "};\n"
     struct_source += "\n"
     return struct_source
+
 
 def generate_input_assignment(io_elements, decl, local_var, suffix):
     assign_source = "\t//assign input struct from glsl inputs\n"
@@ -306,6 +317,7 @@ def generate_input_assignment(io_elements, decl, local_var, suffix):
         assign_source += local_var + "." + var_name + " = " + var_name + suffix + ";\n"
     return assign_source
 
+
 def generate_output_assignment(io_elements, local_var, suffix):
     assign_source = "\n\t//assign glsl global outputs from structs\n"
     for element in io_elements:
@@ -316,6 +328,7 @@ def generate_output_assignment(io_elements, local_var, suffix):
         else:
             assign_source += var_name + suffix + " = " + local_var + "." + var_name + ";\n"
     return assign_source
+
 
 def compile_glsl(
         source_filename, macros,
@@ -444,6 +457,7 @@ def compile_glsl(
         ps_file.write(final_ps_source)
         ps_file.close()
 
+
 def find_includes(file_text):
     include_list = []
     start = 0
@@ -457,6 +471,7 @@ def find_includes(file_text):
             break
         include_list.append(file_text[start:end])
     return include_list
+
 
 def find_used_functions(entry_func, function_list):
     used_functions = [entry_func]
@@ -477,6 +492,7 @@ def find_used_functions(entry_func, function_list):
         used_function_source += used_func + "\n\n"
     return used_function_source
 
+
 def add_files_recursive(filename, root):
     file_path = os.path.join(root, filename)
     included_file = open(file_path, "r")
@@ -490,10 +506,13 @@ def add_files_recursive(filename, root):
         include_list = include_list + sub_includes
     return shader_source, include_list
 
+
 def check_dependencies(root, filename, included_files):
     # look for .json file
-    file_list = []
+    file_list = list()
     file_list.append(filename)
+    file_list.append(this_file)
+    file_list.append(macros_file)
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
     for f in included_files:
         file_list.append(os.path.join(dir_path,f))
@@ -504,29 +523,30 @@ def check_dependencies(root, filename, included_files):
             if prev_built_with_file["name"] in file_list:
                 if prev_built_with_file["timestamp"] < os.path.getmtime(prev_built_with_file["name"]):
                     info_file.close()
-                    return 0
+                    print(os.path.basename(prev_built_with_file["name"]) + " is out of date")
+                    return False
             else:
-                return 0
+                print(os.path.basename(prev_built_with_file["name"]) + " is not in list")
+                return False
         info_file.close()
     else:
-        return 0
-    return 1
+        return False
+    return True
 
 
 def create_vsc_psc_vsi(filename, root):
     shader_file_text, included_files = add_files_recursive(filename, root)
     up_to_date = check_dependencies(root, filename, included_files)
 
-    if up_to_date == 1:
+    if up_to_date:
         print(filename + " file up to date")
         return
 
     print("converting: " + filename)
 
-    macros_fn = os.path.join(tools_dir, "_shader_macros.h")
-    macros_file = open(macros_fn)
-    macros_text = macros_file.read()
-    macros_file.close()
+    mf = open(macros_file)
+    macros_text = mf.read()
+    mf.close()
 
     function_list = find_generic_functions(shader_file_text)
 

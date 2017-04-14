@@ -10,18 +10,25 @@ using json = nlohmann::json;
 
 namespace put
 {
-#define DDS_RGBA 0x01
-#define DDS_BC	 0x04
+    enum texture_type
+    {
+        DDS_RGBA = 0x01,
+        DDS_BC = 0x04,
+        DDS_DXT = DDS_BC
+    };
+    
+    enum compression_format
+    {
+        DXT1 = 0x31545844,
+        DXT2 = 0x32545844,
+        DXT3 = 0x33545844,
+        DXT4 = 0x34545844,
+        DXT5 = 0x35545844,
+        DX10 = 0x30315844,
+    };
 
-#define DXT1	 0x31545844	 
-#define DXT2	 0x32545844	 
-#define DXT3	 0x33545844	 
-#define DXT4	 0x34545844	 
-#define DXT5	 0x35545844	 
-#define DX10	 0x30315844	 
-
-    //dds documentation os MSDN defines all these data types as ulongs
-    typedef struct dds_pixel_format
+    //dds documentation os MSDN defines all these data types as ulongs.. but they are only 4 bytes in actual data..
+    struct ddspf
     {
         u32 size;
         u32 flags;
@@ -31,27 +38,26 @@ namespace put
         u32 g_mask;
         u32 b_mask;
         u32 a_mask;
-        
-    } dds_pixel_format;
+    };
     
-    typedef struct dds_header
+    struct dds_header
     {
-        u32             magic;
-        u32				size;
-        u32				flags;
-        u32				height;
-        u32				width;
-        u32				pitch_or_linear_size;
-        u32				depth;
-        u32				mip_map_count;
-        u32				reserved[11];
-        dds_pixel_format	pixel_format;
-        u32				caps;
-        u32				caps2;
-        u32				caps3;
-        u32				caps4;
-        u32				reserved2;
-    } dds_header;
+        u32     magic;
+        u32		size;
+        u32		flags;
+        u32		height;
+        u32		width;
+        u32		pitch_or_linear_size;
+        u32		depth;
+        u32		mip_map_count;
+        u32		reserved[11];
+        ddspf	pixel_format;
+        u32		caps;
+        u32		caps2;
+        u32		caps3;
+        u32		caps4;
+        u32		reserved2;
+    };
 
 	u32 calc_level_size( u32 width, u32 height, bool compressed, u32 block_size )
 	{
@@ -63,17 +69,17 @@ namespace put
 		return	width * height * block_size; 		
 	}
 
-	u32 dds_pixel_format_to_texture_format( const dds_pixel_format &ddspf, bool &compressed, u32 &block_size, bool &dx10_header_present )
+	u32 dds_pixel_format_to_texture_format( const ddspf &pixel_format, bool &compressed, u32 &block_size, bool &dx10_header_present )
 	{
 		dx10_header_present = false;
 		compressed = false;
 
-		if( ddspf.four_cc )
+		if( pixel_format.four_cc )
 		{
 			compressed = true;
 			block_size = 16;
 
-			switch( ddspf.four_cc )
+			switch( pixel_format.four_cc )
 			{
 			case DXT1:
 				block_size = 8;
@@ -93,7 +99,7 @@ namespace put
 		}
 		else
 		{
-			u32 rgba = (ddspf.r_mask | ddspf.g_mask | ddspf.b_mask | ddspf.a_mask);
+			u32 rgba = (pixel_format.r_mask | pixel_format.g_mask | pixel_format.b_mask | pixel_format.a_mask);
 			if ( rgba == 0xffffffff)
 			{
 				block_size = 4;
@@ -107,7 +113,7 @@ namespace put
 		return 0;
 	}
 
-	pen::texture_creation_params* loader_load_texture( const c8* filename )
+	u32 loader_load_texture( const c8* filename )
 	{
 		//load a texture file from disk.
 		void* file_data = NULL;
@@ -118,10 +124,10 @@ namespace put
         if( pen_err != PEN_ERR_OK )
         {
             pen::memory_free( file_data );
-            return nullptr;
+            return 0;
         }
         
-        pen::texture_creation_params* tcp = (pen::texture_creation_params*)pen::memory_alloc( sizeof( pen::texture_creation_params ) );
+        pen::texture_creation_params tcp;
 
 		//parse dds header
 		dds_header* ddsh = (dds_header*)file_data;
@@ -133,32 +139,32 @@ namespace put
 		u32 format = dds_pixel_format_to_texture_format( ddsh->pixel_format, compressed, block_size, dx10_header_present );
 
 		//fill out texture_creation_params
-		tcp->width = ddsh->width;
-		tcp->height = ddsh->height;
-		tcp->format = format;
-		tcp->num_mips = ddsh->mip_map_count;
-		tcp->num_arrays = 1;
-		tcp->sample_count = 1;
-		tcp->sample_quality = 0;
-		tcp->usage = PEN_USAGE_DEFAULT;
-		tcp->bind_flags = PEN_BIND_SHADER_RESOURCE;
-		tcp->cpu_access_flags = 0;
-		tcp->flags = 0;
-		tcp->block_size = block_size;
-		tcp->pixels_per_block =  compressed ? 4 : 1;
+		tcp.width = ddsh->width;
+		tcp.height = ddsh->height;
+		tcp.format = format;
+		tcp.num_mips = ddsh->mip_map_count;
+		tcp.num_arrays = 1;
+		tcp.sample_count = 1;
+		tcp.sample_quality = 0;
+		tcp.usage = PEN_USAGE_DEFAULT;
+		tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
+		tcp.cpu_access_flags = 0;
+		tcp.flags = 0;
+		tcp.block_size = block_size;
+		tcp.pixels_per_block =  compressed ? 4 : 1;
 
 		//allocate and copy texture data
 
 		//top level
-		u32 data_size = calc_level_size( tcp->width, tcp->height, compressed, block_size );
+		u32 data_size = calc_level_size( tcp.width, tcp.height, compressed, block_size );
 		
 		//mips / faces / slices / depths
 		u32 ext_data_size = 0;
 
-		u32 mip_width = tcp->width >> 1;
-		u32 mip_height = tcp->height >> 1;
+		u32 mip_width = tcp.width >> 1;
+		u32 mip_height = tcp.height >> 1;
 
-		for( u32 i = 0; i < tcp->num_mips; ++i )
+		for( u32 i = 0; i < tcp.num_mips; ++i )
 		{
 			ext_data_size += calc_level_size( mip_width, mip_height, compressed, block_size );
 
@@ -166,28 +172,24 @@ namespace put
 			mip_height = mip_height > 1 ? mip_height >> 1 : 1;
 		}
 
-		tcp->data_size = data_size + ext_data_size;
-		tcp->data = pen::memory_alloc( tcp->data_size  );
+		tcp.data_size = data_size + ext_data_size;
+		tcp.data = pen::memory_alloc( tcp.data_size  );
 
 		//copy texture data s32o the tcp storage
 		u8* top_image_start = (u8*)file_data + sizeof( dds_header );
 		u8* ext_image_start = top_image_start + data_size;
 
-		pen::memory_cpy( tcp->data, top_image_start, data_size );
-		pen::memory_cpy( (u8*)tcp->data + data_size, ext_image_start, ext_data_size );
+		pen::memory_cpy( tcp.data, top_image_start, data_size );
+		pen::memory_cpy( (u8*)tcp.data + data_size, ext_image_start, ext_data_size );
 
 		//free the files contents
 		pen::memory_free( file_data );
-
-		return tcp;
-	}
-
-	void loader_free_texture( pen::texture_creation_params** tcp )
-	{
-		pen::memory_free( (*tcp)->data );
-		pen::memory_free( *tcp );
-
-		*tcp = NULL;
+        
+        u32 texture_index = pen::defer::renderer_create_texture2d( tcp );
+        
+        pen::memory_free( tcp.data );
+        
+		return texture_index;
 	}
 
 	c8 semantic_names[7][16] =
@@ -200,8 +202,17 @@ namespace put
 		"COLOR",
 		"BLENDINDICES"
 	};
+    
+    shader_program null_shader = { 0 };
+    
+    struct managed_shader
+    {
+        json metadata;
+        shader_program program;
+    };
+    std::vector<managed_shader> s_managed_shaders;
 
-	shader_program loader_load_shader_program( const c8* shader_name )
+	shader_program& loader_load_shader_program( const c8* shader_name )
 	{
         c8 vs_file_buf[ 256 ];
         c8 ps_file_buf[ 256 ];
@@ -221,33 +232,31 @@ namespace put
 		//textured
 		u32 err = pen::filesystem_read_file_to_buffer( vs_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
 
-        shader_program prog;
-
 		if ( err != PEN_ERR_OK  )
         {
             //we must have a vertex shader, if this has failed, so will have the input layout.
-            prog.input_layout = 0;
-            prog.vertex_shader = 0;
-            prog.pixel_shader = 0;
-
-            return prog;
+            return null_shader;
         }
 
+        //add a new managed shader
+        s_managed_shaders.push_back(managed_shader{});
+        managed_shader& ms = s_managed_shaders.back();
+        
 		//read shader info json
 		std::ifstream ifs(info_file_buf);
-		json j = json::parse(ifs);
+		ms.metadata = json::parse(ifs);
 
 		//create input layout from json
 		pen::input_layout_creation_params ilp;
 		ilp.vs_byte_code = vs_slp.byte_code;
 		ilp.vs_byte_code_size = vs_slp.byte_code_size;
-		ilp.num_elements = j["vs_inputs"].size();
+		ilp.num_elements = ms.metadata ["vs_inputs"].size();
 
 		ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
 
 		for (u32 i = 0; i < ilp.num_elements; ++i)
 		{
-			json vj = j["vs_inputs"][i];
+			json vj = ms.metadata["vs_inputs"][i];
 
 			u32 num_elements = vj["num_elements"];
 			u32 elements_size = vj["element_size"];
@@ -282,7 +291,7 @@ namespace put
 			ilp.input_layout[i].instance_data_step_rate = 0;
 		}
 
-		prog.input_layout = pen::defer::renderer_create_input_layout(ilp);
+		ms.program.input_layout = pen::defer::renderer_create_input_layout(ilp);
 
 		if ( err != PEN_ERR_OK  )
 		{
@@ -293,22 +302,22 @@ namespace put
 
         err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
 
-		prog.vertex_shader = pen::defer::renderer_load_shader( vs_slp );
-		prog.pixel_shader = pen::defer::renderer_load_shader( ps_slp );
+		ms.program.vertex_shader = pen::defer::renderer_load_shader( vs_slp );
+		ms.program.pixel_shader = pen::defer::renderer_load_shader( ps_slp );
         
         //link the shader to allow opengl to match d3d constant and texture bindings
         pen::shader_link_params link_params;
-        link_params.input_layout = prog.input_layout;
-        link_params.vertex_shader = prog.vertex_shader;
-        link_params.pixel_shader = prog.pixel_shader;
+        link_params.input_layout = ms.program.input_layout;
+        link_params.vertex_shader = ms.program.vertex_shader;
+        link_params.pixel_shader = ms.program.pixel_shader;
         
-        u32 num_constants = j["cbuffers"].size() + j["texture_samplers"].size();
+        u32 num_constants = ms.metadata["cbuffers"].size() + ms.metadata["texture_samplers"].size();
         
         link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
         
         u32 cc = 0;
         
-        for( auto& cbuf : j["cbuffers"])
+        for( auto& cbuf : ms.metadata["cbuffers"])
         {
             std::string name_str = cbuf["name"];
             u32 name_len = name_str.length();
@@ -326,7 +335,7 @@ namespace put
             cc++;
         }
         
-        for( auto& samplers : j["texture_samplers"])
+        for( auto& samplers : ms.metadata["texture_samplers"])
         {
             std::string name_str = samplers["name"];
             u32 name_len = name_str.length();
@@ -360,7 +369,7 @@ namespace put
         
         link_params.num_constants = num_constants;
         
-        pen::defer::renderer_link_shader_program(link_params);
+        ms.program.program_index = pen::defer::renderer_link_shader_program(link_params);
         
         //free the temp mem
         for( u32 c = 0; c < num_constants; ++c )
@@ -373,8 +382,16 @@ namespace put
 		pen::memory_free( ps_slp.byte_code );
 		pen::memory_free( ilp.input_layout );
 
-		return prog;
+		return ms.program;
 	}
+    
+    void loader_release_shader_program( put::shader_program& shader_program )
+    {
+        pen::defer::renderer_release_shader( shader_program.vertex_shader, PEN_SHADER_TYPE_VS );
+        pen::defer::renderer_release_shader( shader_program.pixel_shader, PEN_SHADER_TYPE_PS );
+        pen::defer::renderer_release_input_layout( shader_program.input_layout );
+        pen::defer::renderer_release_program( shader_program.program_index );
+    }
 
 	skeleton* loader_load_skeleton( const c8* filename )
 	{
@@ -564,4 +581,24 @@ namespace put
 
 		return p_skeleton;
 	}
+    
+    void loader_poll_for_changes()
+    {
+        for( auto& ms : s_managed_shaders )
+        {
+            for( auto& file : ms.metadata["files"] )
+            {
+                std::string fn = file["name"];
+                f32 shader_ts = file["timestamp"];
+                
+                f32 current_ts = pen::filesystem_getmtime(fn.c_str());
+                
+                if( current_ts > shader_ts )
+                {
+                    ms.program.pixel_shader = 0;
+                    ms.program.vertex_shader = 0;
+                }
+            }
+        }
+    }
 }

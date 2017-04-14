@@ -91,6 +91,16 @@ namespace pen
         RES_RENDER_TARGET
     };
     
+    struct shader_program
+    {
+        u32 vs;
+        u32 ps;
+        u32 gs;
+        GLuint program;
+    };
+    
+    std::vector<shader_program> shader_programs;
+    
 	struct resource_allocation
 	{
 		u8      asigned_flag;
@@ -105,29 +115,20 @@ namespace pen
             blend_creation_params*          blend_state;
             GLuint                          handle;
             render_target                   render_target;
+            sampler_creation_params*        sampler_state;
+            shader_program*                 shader_program;
 		};
 	};
+    resource_allocation		 resource_pool	[MAX_RENDERER_RESOURCES];
 
     struct query_allocation
 	{
-		u8 asigned_flag;
-		GLuint       query                  [NUM_QUERY_BUFFERS];
-		u32			 flags                  [NUM_QUERY_BUFFERS];
-		a_u64		 last_result;
+		u8              asigned_flag;
+		GLuint          query                  [NUM_QUERY_BUFFERS];
+		u32             flags                  [NUM_QUERY_BUFFERS];
+		a_u64           last_result;
 	};
-
-	resource_allocation		 resource_pool	[MAX_RENDERER_RESOURCES];
-	query_allocation	     query_pool		[MAX_QUERIES];
-    
-    struct shader_program
-    {
-        u32 vs;
-        u32 ps;
-        u32 gs;
-        GLuint program;
-    };
-    
-    std::vector<shader_program> shader_programs;
+	query_allocation	query_pool		[MAX_QUERIES];
     
     struct active_state
     {
@@ -363,6 +364,8 @@ namespace pen
                     break;
             }
         }
+        
+        resource_pool[ resource_index ].shader_program = linked_program;
         
         return resource_index;
     }
@@ -685,7 +688,9 @@ namespace pen
 	{
 		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
         
-        //todo
+        resource_pool[ resource_index ].sampler_state = (sampler_creation_params*)pen::memory_alloc(sizeof(scp));
+        
+        pen::memory_cpy(resource_pool[ resource_index ].sampler_state, &scp, sizeof(scp));
 
 		return resource_index;
 	}
@@ -910,7 +915,11 @@ namespace pen
 
 	void direct::renderer_release_sampler( u32 sampler )
 	{
-
+        resource_allocation& res = resource_pool[ sampler ];
+        
+        pen::memory_free(res.sampler_state);
+        
+        res.asigned_flag = 0;
 	}
 
 	void direct::renderer_release_depth_stencil_state( u32 depth_stencil_state )
@@ -921,6 +930,22 @@ namespace pen
         
         res.asigned_flag = 0;
 	}
+    
+    void direct::renderer_release_clear_state( u32 clear_state )
+    {
+        resource_allocation& res = resource_pool[ clear_state ];
+        
+        res.asigned_flag = 0;
+    }
+    
+    void direct::renderer_release_program( u32 program )
+    {
+        resource_allocation& res = resource_pool[ program ];
+        
+        glDeleteProgram(res.shader_program->program);
+        
+        res.asigned_flag = 0;
+    }
 
 	void direct::renderer_release_query( u32 query )
 	{

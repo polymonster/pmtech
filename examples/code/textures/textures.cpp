@@ -59,12 +59,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     //load shaders now requiring dependency on put to make loading simpler.
 
-    put::shader_program textured_shader = put::loader_load_shader_program( "textured" );
+    put::shader_program& textured_shader = put::loader_load_shader_program( "textured" );
 
-    pen::texture_creation_params* tex_params = put::loader_load_texture("data/textures/test_normal.dds");
-    u32 test_texture = pen::defer::renderer_create_texture2d( *tex_params );
-
-    put::loader_free_texture(&tex_params);
+    u32 test_texture = put::loader_load_texture("data/textures/test_normal.dds");
 
     //create vertex buffer for a quad
     textured_vertex quad_vertices[] =
@@ -118,7 +115,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     scp.min_lod = 0.0f;
     scp.max_lod = 4.0f;
 
-    u32 render_target_texture_sampler = defer::renderer_create_sampler( scp );
+    u32 linear_sampler = defer::renderer_create_sampler( scp );
 
     while( 1 )
     {
@@ -145,7 +142,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
             pen::defer::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
 
             //bind render target as texture on sampler 0
-            pen::defer::renderer_set_texture( test_texture, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS );
+            pen::defer::renderer_set_texture( test_texture, linear_sampler, 0, PEN_SHADER_TYPE_PS );
 
             //draw
             pen::defer::renderer_draw_indexed( 6, 0, 0, PEN_PT_TRIANGLELIST );
@@ -161,12 +158,22 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         {
             break;
         }
+        
+        put::loader_poll_for_changes();
     }
     
     //clean up mem here
+    put::loader_release_shader_program( textured_shader );
+    
+    pen::defer::renderer_release_buffer(quad_vertex_buffer);
+    pen::defer::renderer_release_buffer(quad_index_buffer);
+    pen::defer::renderer_release_sampler(linear_sampler);
+    pen::defer::renderer_release_texture2d(test_texture);
+    pen::defer::renderer_consume_cmd_buffer();
     
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
+    
 
     return PEN_THREAD_OK;
 }

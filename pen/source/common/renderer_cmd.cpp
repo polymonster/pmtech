@@ -67,6 +67,8 @@ namespace pen
         CMD_RELEASE_RENDER_TARGET,
         CMD_RELEASE_INPUT_LAYOUT,
         CMD_RELEASE_SAMPLER,
+        CMD_RELEASE_PROGRAM,
+        CMD_RELEASE_CLEAR_STATE,
         CMD_RELEASE_DEPTH_STENCIL_STATE,
         CMD_RELEASE_QUERY,
         CMD_CREATE_SO_SHADER,
@@ -396,6 +398,14 @@ namespace pen
                 
             case CMD_RELEASE_BLEND_STATE:
                 direct::renderer_release_blend_state( cmd.command_data_index );
+                break;
+                
+            case CMD_RELEASE_PROGRAM:
+                direct::renderer_release_program( cmd.command_data_index );
+                break;
+                
+            case CMD_RELEASE_CLEAR_STATE:
+                direct::renderer_release_clear_state( cmd.command_data_index );
                 break;
                 
             case CMD_RELEASE_RENDER_TARGET:
@@ -1054,6 +1064,24 @@ namespace pen
         cmd_buffer[ put_pos ].command_index = CMD_RELEASE_RENDER_TARGET;
         
         cmd_buffer[ put_pos ].command_data_index = render_target;
+        
+        INC_WRAP( put_pos );
+    }
+    
+    void defer::renderer_release_clear_state( u32 clear_state )
+    {
+        cmd_buffer[ put_pos ].command_index = CMD_RELEASE_CLEAR_STATE;
+        
+        cmd_buffer[ put_pos ].command_data_index = clear_state;
+        
+        INC_WRAP( put_pos );
+    }
+    
+    void defer::renderer_release_program( u32 program )
+    {
+        cmd_buffer[ put_pos ].command_index = CMD_RELEASE_PROGRAM;
+        
+        cmd_buffer[ put_pos ].command_data_index = program;
         
         INC_WRAP( put_pos );
     }

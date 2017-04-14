@@ -284,6 +284,8 @@ namespace pen
 
 		//cleanup
 		void	renderer_release_shader( u32 shader_index, u32 shader_type );
+        void	renderer_release_program( u32 program );
+        void	renderer_release_clear_state( u32 clear_state );
 		void	renderer_release_buffer( u32 buffer_index );
 		void	renderer_release_texture2d( u32 texture_index );
         void	renderer_release_sampler( u32 sampler );
@@ -357,6 +359,8 @@ namespace pen
 
 		//cleanup
 		void	renderer_release_shader( u32 shader_index, u32 shader_type );
+        void	renderer_release_program( u32 program );
+        void	renderer_release_clear_state( u32 clear_state );
 		void	renderer_release_buffer( u32 buffer_index );
 		void	renderer_release_texture2d( u32 texture_index );
 		void	renderer_release_raster_state( u32 raster_state_index );

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <iconv.h>
+#include <sys/stat.h>
 
 #include "file_system.h"
 #include "memory.h"
@@ -74,4 +75,16 @@ namespace pen
 
         return 0;
     }
+    
+    f32 filesystem_getmtime( const c8* filename )
+    {
+        struct stat stat_res;
+        
+        stat( filename, &stat_res);
+        
+        timespec t = stat_res.st_mtimespec;
+        
+        return (f32)t.tv_sec;
+    }
+    
 }
