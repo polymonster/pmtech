@@ -2,6 +2,7 @@
 #define _DEV_UI_H
 
 #include "imgui.h"
+#include "imgui_internal.h"
 
 namespace dev_ui
 {

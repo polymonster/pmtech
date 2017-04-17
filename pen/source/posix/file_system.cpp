@@ -2,6 +2,9 @@
 #include <dirent.h>
 #include <iconv.h>
 #include <sys/stat.h>
+#include <sys/param.h>
+#include <sys/ucred.h>
+#include <sys/mount.h>
 
 #include "file_system.h"
 #include "memory.h"
@@ -9,7 +12,7 @@
 
 namespace pen
 {
-    u32 filesystem_read_file_to_buffer( const char* filename, void** p_buffer, u32 &buffer_size )
+    pen_error filesystem_read_file_to_buffer( const char* filename, void** p_buffer, u32 &buffer_size )
     {
         *p_buffer = NULL;
 
@@ -30,13 +33,101 @@ namespace pen
 
             fclose( p_file );
 
-            return 0;
+            return PEN_ERR_OK;
         }
 
-        return 1;
+        return PEN_ERR_FILE_NOT_FOUND;
+    }
+    
+    pen_error filesystem_enum_volumes( fs_tree_node &results )
+    {
+        struct statfs* mounts;
+        int num_mounts = getmntinfo(&mounts, MNT_WAIT);
+        
+        results.children = (fs_tree_node*)pen::memory_alloc( sizeof(fs_tree_node) * num_mounts );
+        results.num_children = num_mounts;
+        results.name = "Volumes";
+        
+        for( int i = 0; i < num_mounts; ++i )
+        {
+            u32 len = pen::string_length( mounts[i].f_mntonname );
+            results.children[i].name = (c8*)pen::memory_alloc( len + 1 );
+            
+            pen::memory_cpy(results.children[i].name, mounts[i].f_mntonname, len);
+            results.children[i].name[len] = '\0';
+            
+            results.children[i].children = nullptr;
+        }
+        
+        return PEN_ERR_OK;
+    }
+    
+    pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results )
+    {
+        DIR *dir;
+        struct dirent *ent;
+        
+        u32 num_items = 0;
+        if ((dir = opendir (directory)) != NULL)
+        {
+            while ((ent = readdir (dir)) != NULL)
+            {
+                num_items++;
+            }
+            
+            closedir (dir);
+        }
+        
+        if( num_items == 0 )
+        {
+            return PEN_ERR_FILE_NOT_FOUND;
+        }
+        
+        if( results.children == nullptr )
+        {
+            //alloc new mem
+            results.children = (fs_tree_node*)pen::memory_alloc( sizeof(fs_tree_node) * num_items );
+            pen::memory_zero(results.children, sizeof(fs_tree_node) * num_items );
+        }
+        else
+        {
+            //grow buffer
+            if( results.num_children < num_items )
+            {
+                results.children = (fs_tree_node*)pen::memory_realloc( results.children, sizeof(fs_tree_node) * num_items );
+            }
+        }
+        
+        results.num_children = num_items;
+        
+        u32 i = 0;
+        if ((dir = opendir (directory)) != NULL)
+        {
+            while ((ent = readdir (dir)) != NULL)
+            {
+                if( results.children[i].name == nullptr )
+                {
+                    //allocate 1024 file buffer
+                    results.children[i].name = (c8*)pen::memory_alloc( 1024 );
+                    pen::memory_zero(results.children[i].name, 1024);
+                }
+                
+                u32 len = pen::string_length( ent->d_name );
+                len = std::min<u32>( len, 1022 );
+                
+                pen::memory_cpy(results.children[i].name, ent->d_name, len);
+                results.children[i].name[len] = '\0';
+                
+                ++i;
+            }
+            
+            closedir (dir);
+        }
+        
+        return PEN_ERR_OK;
     }
 
-    u32 filesystem_enum_directory( const c16* directory, filesystem_enumeration &results )
+    pen_error filesystem_enum_directory( const c16* directory, fs_tree_node &results )
     {
         /*
         iconv_t ic;
@@ -58,25 +149,11 @@ namespace pen
         c8*     dir_c8 = (c8*)pen::memory_alloc(dir_name_len);
         
         pen::string_to_ascii(directory, dir_c8);
-       
         
-        DIR *dir;
-        struct dirent *ent;
-        
-        if ((dir = opendir (dir_c8)) != NULL)
-        {
-            while ((ent = readdir (dir)) != NULL)
-            {
-                printf ("%s\n", ent->d_name);
-            }
-
-            closedir (dir);
-        }
-
-        return 0;
+        return filesystem_enum_directory( dir_c8, results );
     }
     
-    f32 filesystem_getmtime( const c8* filename )
+    pen_error filesystem_getmtime( const c8* filename, u32& mtime_out )
     {
         struct stat stat_res;
         
@@ -84,7 +161,9 @@ namespace pen
         
         timespec t = stat_res.st_mtimespec;
         
-        return (f32)t.tv_sec;
+        mtime_out = t.tv_sec;
+        
+        return PEN_ERR_OK;
     }
     
 }

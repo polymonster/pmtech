@@ -19,6 +19,7 @@ namespace pen
         CMD_AUDIO_RELEASE_RESOURCE,
 
         CMD_AUDIO_ADD_CHANNEL_TO_GROUP,
+        CMD_AUDIO_ADD_DSP_TO_GROUP,
 
         CMD_AUDIO_CHANNEL_SET_POSITION,
         CMD_AUDIO_CHANNEL_SET_FREQUENCY,
@@ -77,6 +78,9 @@ namespace pen
         case CMD_AUDIO_ADD_CHANNEL_TO_GROUP:
             direct::audio_add_channel_to_group( cmd.set_valuei.resource_index, cmd.set_valuei.value );
             break;
+        case CMD_AUDIO_ADD_DSP_TO_GROUP:
+            direct::audio_add_dsp_to_group( cmd.set_valuei.resource_index, (dsp_type)cmd.set_valuei.value );
+            break;
         case CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND:
             direct::audio_create_channel_for_sound( cmd.resource_index );
             break;
@@ -88,6 +92,9 @@ namespace pen
             break;
         case CMD_AUDIO_GROUP_SET_MUTE:
             direct::audio_group_set_mute( cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value );
+            break;
+        case CMD_AUDIO_GROUP_SET_PAUSE:
+            direct::audio_group_set_pause( cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value );
             break;
         case CMD_AUDIO_GROUP_SET_VOLUME:
             direct::audio_group_set_volume( cmd.set_valuef.resource_index, cmd.set_valuef.value );
@@ -200,6 +207,11 @@ namespace pen
 
     u32	    audio_create_channel_for_sound( const u32 sound_index )
     {
+        if( sound_index == 0 )
+        {
+            return 0;
+        }
+        
         u32 res = get_next_audio_resource( DEFER_RESOURCE );
 
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND;
@@ -266,6 +278,11 @@ namespace pen
     
     void	audio_add_channel_to_group( const u32 channel_index, const u32 group_index )
     {
+        if( group_index == 0 || channel_index == 0 )
+        {
+            return;
+        }
+        
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_ADD_CHANNEL_TO_GROUP;
         audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = channel_index;
         audio_cmd_buffer[ audio_put_pos ].set_valuei.value = group_index;
@@ -279,5 +296,18 @@ namespace pen
         audio_cmd_buffer[ audio_put_pos ].resource_index = index;
         
         INC_WRAP( audio_put_pos );
+    }
+    
+    u32     audio_add_dsp_to_group( const u32 group_index, dsp_type type )
+    {
+        u32 res = get_next_audio_resource( DEFER_RESOURCE );
+        
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_ADD_DSP_TO_GROUP;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = type;
+        
+        INC_WRAP( audio_put_pos );
+
+        return res;
     }
 }

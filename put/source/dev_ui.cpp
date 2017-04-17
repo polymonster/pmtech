@@ -125,7 +125,7 @@ namespace dev_ui
         {
             if( g_imgui_rs.vertex_buffer != 0 ) { pen::defer::renderer_release_buffer( g_imgui_rs.vertex_buffer ); };
 
-            g_imgui_rs.vb_size = draw_data->TotalVtxCount + 5000;
+            g_imgui_rs.vb_size = draw_data->TotalVtxCount + 10000;
 
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -140,7 +140,7 @@ namespace dev_ui
 			}
 			else
 			{
-				pen::memory_realloc(g_imgui_rs.vb_copy_buffer, g_imgui_rs.vb_size * sizeof(ImDrawVert));
+				g_imgui_rs.vb_copy_buffer = pen::memory_realloc(g_imgui_rs.vb_copy_buffer, g_imgui_rs.vb_size * sizeof(ImDrawVert));
 			}
 
             g_imgui_rs.vertex_buffer = pen::defer::renderer_create_buffer(bcp);
@@ -150,7 +150,7 @@ namespace dev_ui
         {
             if( g_imgui_rs.index_buffer != 0 ) { pen::defer::renderer_release_buffer( g_imgui_rs.index_buffer ); };
 
-            g_imgui_rs.ib_size = draw_data->TotalIdxCount + 10000;
+            g_imgui_rs.ib_size = draw_data->TotalIdxCount + 5000;
 
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -165,7 +165,7 @@ namespace dev_ui
 			}
 			else
 			{
-				pen::memory_realloc(g_imgui_rs.ib_copy_buffer, g_imgui_rs.ib_size * sizeof(ImDrawIdx));
+				g_imgui_rs.ib_copy_buffer = pen::memory_realloc(g_imgui_rs.ib_copy_buffer, g_imgui_rs.ib_size * sizeof(ImDrawIdx));
 			}
 
             g_imgui_rs.index_buffer = pen::defer::renderer_create_buffer( bcp );

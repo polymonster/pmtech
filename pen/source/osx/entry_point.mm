@@ -14,6 +14,8 @@ NSWindow * _window;
 NSOpenGLContext* _gl_context;
 
 extern pen::window_creation_params pen_window;
+pen::user_info pen_user_info;
+
 extern PEN_THREAD_RETURN pen::game_entry( void* params );
 
 @interface app_delegate : NSObject<NSApplicationDelegate>
@@ -353,11 +355,18 @@ int main(int argc, char **argv)
     
     [pool drain];
     
+    //os stuff
+    NSString* ns_user = NSFullUserName();
+    pen_user_info.user_name =[ns_user UTF8String];
+    
     //init systems
     pen::timer_system_intialise();
     
     //audio, renderer, game
-    pen::threads_create_default_jobs();
+    pen::default_thread_info thread_info;
+    thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
+    
+    pen::threads_create_default_jobs( thread_info );
     
     //main thread loop
     while( !pen_terminate_app )

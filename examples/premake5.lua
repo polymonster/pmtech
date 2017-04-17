@@ -50,5 +50,6 @@ create_app( "debug_text", script_path() )
 create_app( "play_sound", script_path() )
 create_app( "imgui", script_path() )
 create_app( "input", script_path() )
+create_app( "audio_player", script_path() )
 	
 	

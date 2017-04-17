@@ -13,7 +13,13 @@
 #define PEN_THREAD_ROUTINE( FP )		PEN_THREAD_RETURN (*FP)(void* data)
 #endif
 
-#define PEN_ERR_OK                      0
+enum pen_error
+{
+    PEN_ERR_OK = 0,
+    PEN_ERR_FILE_NOT_FOUND = 1,
+    PEN_ERR_NOT_READY = 2,
+    PEN_ERR_FAILED = 3
+};
 
 //c++
 #include <stdio.h>
@@ -70,7 +76,8 @@ enum resource_types
 {
     DIRECT_RESOURCE = 1<<0,
     DEFER_RESOURCE = 1<<1,
-    MARK_DELETE = 1 <<2,
+    MARK_DELETE = 1<<2,
+    RECLAIMED = 1<<3,
     MAX_RENDERER_RESOURCES = 10000,
     MAX_AUDIO_RESOURCES = 100
 };

@@ -68,6 +68,7 @@ namespace pen
     {
         std::vector<vertex_attribute> attributes;
         GLuint vertex_array_handle = 0;
+        GLuint vb_handle = 0;
     };
 
     struct raster_state
@@ -157,6 +158,31 @@ namespace pen
 	{
 		pen::memory_zero(&query_pool[0], sizeof(query_allocation) * MAX_QUERIES);
 	}
+    
+    bool resources_handles_to_reclaim = false;
+    void reclaim_resource_indices( )
+    {
+        if( !resources_handles_to_reclaim )
+        {
+            return;
+        }
+        
+        for( s32 i = 0; i < MAX_RENDERER_RESOURCES; ++i )
+        {
+            if( resource_pool[ i ].asigned_flag & MARK_DELETE )
+            {
+                resource_pool[ i ].asigned_flag = RECLAIMED;
+            }
+        }
+        
+        resources_handles_to_reclaim = false;
+    }
+    
+    void mark_resource_deleted( u32 i )
+    {
+        resource_pool[ i ].asigned_flag |= MARK_DELETE;
+        resources_handles_to_reclaim = true;
+    }
 
 	u32 get_next_resource_index( u32 domain )
 	{
@@ -430,7 +456,7 @@ namespace pen
     void bind_state()
     {
         //bind vertex buffer
-        if( g_current_state.vertex_buffer != g_bound_state.vertex_buffer )
+        //if( g_current_state.vertex_buffer != g_bound_state.vertex_buffer )
         {
             g_bound_state.vertex_buffer = g_current_state.vertex_buffer;
             
@@ -445,8 +471,8 @@ namespace pen
         }
         
         //bind shaders
-        if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
-            g_current_state.pixel_shader != g_bound_state.pixel_shader )
+        //if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
+        //    g_current_state.pixel_shader != g_bound_state.pixel_shader )
         {
             g_bound_state.vertex_shader = g_current_state.vertex_shader;
             g_bound_state.pixel_shader = g_current_state.pixel_shader;
@@ -474,17 +500,27 @@ namespace pen
         }
         
         //bind input layout
-        if( g_current_state.input_layout != g_bound_state.input_layout ||
-           g_current_state.vertex_buffer_stride != g_bound_state.vertex_buffer_stride )
+        auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
+        bool invalidate_input_layout = input_res->vb_handle == 0 || input_res->vb_handle != g_bound_state.vertex_buffer ;
+        invalidate_input_layout |= g_current_state.input_layout != g_bound_state.input_layout;
+        invalidate_input_layout |= g_current_state.vertex_buffer_stride != g_bound_state.vertex_buffer_stride;
+        
+        if( invalidate_input_layout )
         {
             g_bound_state.input_layout = g_current_state.input_layout;
             g_bound_state.vertex_buffer_stride = g_current_state.vertex_buffer_stride;
             
-            auto* res = resource_pool[g_bound_state.input_layout].input_layout;
+            auto* res = input_res;
             
-            if( res->vertex_array_handle == 0 )
+            if( res->vertex_array_handle == 0 || input_res->vb_handle != g_bound_state.vertex_buffer )
             {
-                glGenVertexArrays(1, &res->vertex_array_handle);
+                if( res->vertex_array_handle == 0 )
+                {
+                    glGenVertexArrays(1, &res->vertex_array_handle);
+                }
+                
+                res->vb_handle = g_bound_state.vertex_buffer;
+                
                 glBindVertexArray(res->vertex_array_handle);
                 
                 for( auto& attribute : res->attributes )
@@ -512,10 +548,10 @@ namespace pen
                     }
                 }
             }
-            else
-            {
-                glBindVertexArray(res->vertex_array_handle);
-            }
+        }
+        else
+        {
+            glBindVertexArray(input_res->vertex_array_handle);
         }
         
         if( g_bound_state.raster_state != g_current_state.raster_state )
@@ -810,7 +846,9 @@ namespace pen
 
 	void direct::renderer_set_constant_buffer( u32 buffer_index, u32 resource_slot, u32 shader_type )
 	{
-        glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, buffer_index);
+        resource_allocation& res = resource_pool[ buffer_index ];
+        
+        glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle);
 	}
 
 	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset )
@@ -821,11 +859,15 @@ namespace pen
         
         void* mapped_data = glMapBuffer( res.type, GL_WRITE_ONLY );
         
-        c8* mapped_offset = ((c8*)mapped_data) + offset;
-        
-        pen::memory_cpy(mapped_offset, data, data_size);
+        if( mapped_data )
+        {
+            c8* mapped_offset = ((c8*)mapped_data) + offset;
+            pen::memory_cpy(mapped_offset, data, data_size);
+        }
         
         glUnmapBuffer( res.type );
+        
+        glBindBuffer( res.type, 0 );
 	}
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
@@ -861,7 +903,9 @@ namespace pen
         resource_allocation& res = resource_pool[ shader_index ];
         glDeleteShader( res.handle );
         
-        res.asigned_flag = 0;
+        res.handle = 0;
+        
+        mark_resource_deleted( shader_index );
 	}
 
 	void direct::renderer_release_buffer( u32 buffer_index )
@@ -869,7 +913,9 @@ namespace pen
         resource_allocation& res = resource_pool[ buffer_index ];
         glDeleteBuffers(1, &res.handle);
         
-        res.asigned_flag = 0;
+        res.handle = 0;
+        
+        mark_resource_deleted( buffer_index );
 	}
 
 	void direct::renderer_release_texture2d( u32 texture_index )
@@ -877,13 +923,14 @@ namespace pen
         resource_allocation& res = resource_pool[ texture_index ];
         glDeleteTextures(1, &res.handle);
         
-        res.asigned_flag = 0;
+        res.handle = 0;
+        
+        mark_resource_deleted( texture_index );
 	}
 
 	void direct::renderer_release_raster_state( u32 raster_state_index )
 	{
-        resource_allocation& res = resource_pool[ raster_state_index ];
-        res.asigned_flag = 0;
+        mark_resource_deleted( raster_state_index );
 	}
 
 	void direct::renderer_release_blend_state( u32 blend_state )
@@ -892,7 +939,7 @@ namespace pen
         
         pen::memory_free(res.blend_state);
         
-        res.asigned_flag = 0;
+        mark_resource_deleted( blend_state );
 	}
 
 	void direct::renderer_release_render_target( u32 render_target )
@@ -901,7 +948,7 @@ namespace pen
         glDeleteTextures( 1, &res.render_target.texture );
         glDeleteFramebuffers( 1, &res.render_target.texture );
         
-        res.asigned_flag = 0;
+        mark_resource_deleted( render_target );
 	}
 
 	void direct::renderer_release_input_layout( u32 input_layout )
@@ -910,7 +957,7 @@ namespace pen
         
         pen::memory_free(res.input_layout);
         
-        res.asigned_flag = 0;
+        mark_resource_deleted( input_layout );
 	}
 
 	void direct::renderer_release_sampler( u32 sampler )
@@ -919,7 +966,7 @@ namespace pen
         
         pen::memory_free(res.sampler_state);
         
-        res.asigned_flag = 0;
+        mark_resource_deleted( sampler );
 	}
 
 	void direct::renderer_release_depth_stencil_state( u32 depth_stencil_state )
@@ -928,14 +975,12 @@ namespace pen
         
         pen::memory_free( res.depth_stencil );
         
-        res.asigned_flag = 0;
+        mark_resource_deleted( depth_stencil_state );
 	}
     
     void direct::renderer_release_clear_state( u32 clear_state )
     {
-        resource_allocation& res = resource_pool[ clear_state ];
-        
-        res.asigned_flag = 0;
+        mark_resource_deleted( clear_state );
     }
     
     void direct::renderer_release_program( u32 program )
@@ -944,7 +989,7 @@ namespace pen
         
         glDeleteProgram(res.shader_program->program);
         
-        res.asigned_flag = 0;
+        mark_resource_deleted( program );
     }
 
 	void direct::renderer_release_query( u32 query )

@@ -5,7 +5,10 @@
 #include "pen_string.h"
 #include "json.hpp"
 #include <fstream>
+
+#if 0
 #include <direct.h>   
+#endif
 
 using json = nlohmann::json;
 
@@ -234,7 +237,7 @@ namespace put
 		ps_slp.type = PEN_SHADER_TYPE_PS;
 
 		//textured
-		u32 err = pen::filesystem_read_file_to_buffer( vs_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
+		pen_error err = pen::filesystem_read_file_to_buffer( vs_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
 
 		if ( err != PEN_ERR_OK  )
         {
@@ -257,8 +260,10 @@ namespace put
 			ms->invalidated_program = ms->program;
 
 			//compare timestamps of the .info files to see if we have actually updated
-			u32 current_info_ts = pen::filesystem_getmtime( info_file_buf );
-			if ( (u32)current_info_ts <= ms->info_timestamp)
+            u32 current_info_ts;
+            pen_error err = pen::filesystem_getmtime( info_file_buf, current_info_ts );
+			
+            if ( err == PEN_ERR_OK && (u32)current_info_ts <= ms->info_timestamp)
 			{
 				//return ourselves, so we remain invalid until the newly compiled shader is ready
 				return ms->program;
@@ -268,8 +273,13 @@ namespace put
 		//read shader info json
 		std::ifstream ifs(info_file_buf);
 		ms->metadata = json::parse(ifs);
-		ms->info_timestamp = pen::filesystem_getmtime(info_file_buf);
-
+        u32 ts;
+        err = pen::filesystem_getmtime(info_file_buf, ts);
+        if( err == PEN_ERR_OK )
+        {
+            ms->info_timestamp = ts;
+        }
+        
 		//create input layout from json
 		pen::input_layout_creation_params ilp;
 		ilp.vs_byte_code = vs_slp.byte_code;
@@ -640,9 +650,10 @@ namespace put
 				{
 					std::string fn = file["name"];
 					u32 shader_ts = file["timestamp"];
-					u32 current_ts = pen::filesystem_getmtime(fn.c_str());
+                    u32 current_ts;
+                    pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
 
-					if (current_ts > shader_ts)
+					if ( err == PEN_ERR_OK && current_ts > shader_ts)
 					{
 						//system("..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\");
 						system("..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\");

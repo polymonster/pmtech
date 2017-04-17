@@ -6,28 +6,50 @@
 namespace pen
 {
 #define MAX_CHANNELS 32
+#define NUM_AUDIO_STATE_BUFFERS 2
 #define INVALID_SOUND (u32)-1
-#define MAX_RENDERER_RESOURCES 100
 
     FMOD::System*			g_sound_system;
 
     enum audio_resource_type : s32
     {
+        AUDIO_RESOURCE_VIRTUAL,
         AUDIO_RESOURCE_SOUND,
         AUDIO_RESOURCE_CHANNEL,
-        AUDIO_RESOURCE_GROUP
+        AUDIO_RESOURCE_GROUP,
+        AUDIO_RESOURCE_DSP_FFT,
+        AUDIO_RESOURCE_DSP
     };
     
     struct audio_resource_allocation
     {
-        audio_resource_type type;
-        u8 assigned_flag = 0;
         void* resource;
+        u32 num_dsp = 0;
+        
+        audio_resource_type type;
+        
+        std::atomic<u8> assigned_flag;
+    };
+    
+    struct resource_state
+    {
+        union
+        {
+            audio_channel_state     channel_state;
+            audio_group_state       group_state;
+            audio_fft_spectrum*     fft_spectrum;
+        };
     };
 
+    std::atomic<bool>           g_sound_file_info_ready[ MAX_AUDIO_RESOURCES ];
+    audio_sound_file_info       g_sound_file_info[ MAX_AUDIO_RESOURCES ];
+    resource_state              g_resource_states[ MAX_AUDIO_RESOURCES ][ NUM_AUDIO_STATE_BUFFERS ];
     audio_resource_allocation   g_audio_resources[ MAX_AUDIO_RESOURCES ];
-
-    u32 get_next_audio_resource( u32 domain )
+    
+    std::atomic<u32>            g_current_write_buffer;
+    std::atomic<u32>            g_current_read_buffer;
+    
+    u32 get_next_audio_resource( u32 domain, audio_resource_type type )
     {
         //find next empty resource
         u32 i = 0;
@@ -36,14 +58,18 @@ namespace pen
             if( !(g_audio_resources[ i ].assigned_flag & domain ) )
             {
                 g_audio_resources[ i ].assigned_flag |= domain;
+                g_audio_resources[ i ].type = type;
                 return i;
             }
-
             ++i;
         }
 
-        //return null
         return 0;
+    }
+    
+    u32 get_next_audio_resource( u32 domain )
+    {
+        return get_next_audio_resource(domain, AUDIO_RESOURCE_VIRTUAL);
     }
 
     void direct::audio_system_initialise()
@@ -60,31 +86,169 @@ namespace pen
         FMOD::System_Create(&g_sound_system);
 
         result = g_sound_system->init( MAX_CHANNELS, FMOD_INIT_NORMAL, NULL );
+        
+        //set resources to 0
+        pen::memory_set(g_resource_states, 0, sizeof(g_resource_states));
+        pen::memory_set(g_audio_resources, 0, sizeof(g_audio_resources));
+        pen::memory_set(g_sound_file_info_ready, 0, sizeof(g_sound_file_info_ready));
+        
+        //reserve index 0 to use as null object
+        g_audio_resources[0].assigned_flag = 0xff;
+        
+        //initialise double buffer
+        g_current_write_buffer = 0;
+        g_current_read_buffer = 1;
 
         PEN_ASSERT( result == FMOD_OK );
-    } 
+    }
+    
+    void update_channel_state( u32 resource_index )
+    {
+        audio_resource_allocation& res = g_audio_resources[ resource_index ];
+        
+        audio_channel_state* state = &g_resource_states[ resource_index ][ g_current_write_buffer ].channel_state;
+        
+        FMOD::Channel* channel = (FMOD::Channel*)res.resource;
+        
+        channel->getPosition(&state->position_ms, FMOD_TIMEUNIT_MS);
+        channel->getPitch(&state->pitch);
+        channel->getFrequency(&state->frequency);
+        
+        bool paused = false;
+        channel->getPaused(&paused);
+        
+        bool playing = false;
+        channel->isPlaying(&playing);
+        
+        if( !playing )
+        {
+            state->play_state = NOT_PLAYING;
+        }
+        else
+        {
+            state->play_state = PLAYING;
+            
+            if( paused )
+            {
+                state->play_state = PAUSED;
+            }
+        }
+    }
+    
+    void update_group_state( u32 resource_index )
+    {
+        audio_resource_allocation& res = g_audio_resources[ resource_index ];
+        
+        audio_group_state* state = &g_resource_states[ resource_index ][ g_current_write_buffer ].group_state;
+        
+        FMOD::ChannelGroup* channel = (FMOD::ChannelGroup*)res.resource;
+        
+        channel->getPitch(&state->pitch);
+        
+        channel->getVolume(&state->volume);
+        
+        bool paused = false;
+        channel->getPaused(&paused);
+        
+        bool playing = false;
+        channel->isPlaying(&playing);
+        
+        if( !playing )
+        {
+            state->play_state = NOT_PLAYING;
+        }
+        else
+        {
+            state->play_state = PLAYING;
+            
+            if( paused )
+            {
+                state->play_state = PAUSED;
+            }
+        }
+    }
+    
+    void update_fft( u32 resource_index )
+    {
+        audio_resource_allocation& res = g_audio_resources[ resource_index ];
+        
+        audio_fft_spectrum** fft = &g_resource_states[ resource_index ][ g_current_write_buffer ].fft_spectrum;
+        
+        FMOD::DSP* fft_dsp = (FMOD::DSP*)res.resource;
+        
+        FMOD_RESULT result = fft_dsp->getParameterData(FMOD_DSP_FFT_SPECTRUMDATA, (void**)fft, 0, 0, 0);
+        
+        PEN_ASSERT( result == FMOD_OK );
+    }
 
     void direct::audio_system_update()
     {
         g_sound_system->update();
+        
+        for( s32 i = 0; i < MAX_AUDIO_RESOURCES; ++i )
+        {
+            if( g_audio_resources[ i ].assigned_flag & DIRECT_RESOURCE )
+            {
+                switch (g_audio_resources[ i ].type)
+                {
+                    case AUDIO_RESOURCE_CHANNEL:
+                    {
+                        update_channel_state( i );
+                    }
+                    break;
+                        
+                    case AUDIO_RESOURCE_GROUP:
+                    {
+                        update_group_state( i );
+                    }
+                    break;
+                        
+                    case AUDIO_RESOURCE_DSP_FFT:
+                    {
+                        update_fft( i );
+                    }
+                    break;
+                        
+                    default:
+                        break;
+                }
+            }
+        }
+        
+        //swap buffers
+        u32 prev_read = g_current_read_buffer;
+        s32 prev_write = g_current_write_buffer;
+        
+        g_current_read_buffer = prev_write;
+        g_current_write_buffer = prev_read;
+    }
+    
+    void populate_sound_info( audio_resource_allocation& res )
+    {
+        
     }
 
     u32 direct::audio_create_sound( const c8* filename )
     {
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
-        g_audio_resources[res_index].type = AUDIO_RESOURCE_SOUND;
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, AUDIO_RESOURCE_SOUND );
         
         FMOD_RESULT result = g_sound_system->createSound( filename, FMOD_DEFAULT, NULL, (FMOD::Sound**)&g_audio_resources[res_index].resource );
 
         PEN_ASSERT( result == FMOD_OK );
-
+        
+        //populate sound info
+        FMOD::Sound* new_sound = (FMOD::Sound*)g_audio_resources[res_index].resource;
+        
+        new_sound->getLength( &g_sound_file_info[ res_index ].length_ms, FMOD_TIMEUNIT_MS );
+        
+        g_sound_file_info_ready[ res_index ] = true;
+        
         return res_index;
     }
 
     u32 direct::audio_create_stream( const c8* filename )
     {
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
-        g_audio_resources[res_index].type = AUDIO_RESOURCE_SOUND;
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, AUDIO_RESOURCE_SOUND );
         
         FMOD_RESULT result = g_sound_system->createStream( filename, FMOD_LOOP_NORMAL | FMOD_2D, 0, (FMOD::Sound**)&g_audio_resources[res_index].resource );
 
@@ -95,8 +259,7 @@ namespace pen
 
     u32 direct::audio_create_channel_group()
     {
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
-        g_audio_resources[res_index].type = AUDIO_RESOURCE_GROUP;
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, AUDIO_RESOURCE_GROUP );
         
         FMOD_RESULT result;
         
@@ -109,8 +272,7 @@ namespace pen
 
     u32 direct::audio_create_channel_for_sound(u32 sound_index)
     {
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE );
-        g_audio_resources[res_index].type = AUDIO_RESOURCE_SOUND;
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, AUDIO_RESOURCE_CHANNEL );
         
         FMOD_RESULT result;
         
@@ -183,6 +345,117 @@ namespace pen
         
         PEN_ASSERT( result == FMOD_OK );
     }
+    
+    FMOD_DSP_TYPE pen_dsp_to_fmod_type( dsp_type type, audio_resource_type& resource_type )
+    {
+        resource_type = AUDIO_RESOURCE_DSP;
+        
+        switch( type )
+        {
+            case pen::DSP_FFT:
+                resource_type = AUDIO_RESOURCE_DSP_FFT;
+                return FMOD_DSP_TYPE_FFT;
+            case pen::DSP_THREE_BAND_EQ:
+                return FMOD_DSP_TYPE_THREE_EQ;
+            default:
+                PEN_ERR;
+        }
+        
+        return FMOD_DSP_TYPE_UNKNOWN;
+    }
+    
+    u32 direct::audio_add_dsp_to_group( const u32 group_index, dsp_type type )
+    {
+        audio_resource_type res_type;
+        FMOD_DSP_TYPE fmod_dsp = pen_dsp_to_fmod_type( type, res_type );
+        
+        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, res_type );
+        
+        FMOD_RESULT result;
+        
+        FMOD::DSP** new_dsp = (FMOD::DSP**)&g_audio_resources[res_index].resource;
+        
+        result = g_sound_system->createDSPByType( fmod_dsp, new_dsp );
+        
+        PEN_ASSERT( result == FMOD_OK );
+        
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
+        
+        p_group->addDSP( g_audio_resources[group_index].num_dsp++, *new_dsp);
+        
+        return res_index;
+    }
+    
+    pen_error audio_channel_get_state( const u32 channel_index, audio_channel_state* state )
+    {
+        if( g_audio_resources[ channel_index ].assigned_flag & DIRECT_RESOURCE )
+        {
+            if( g_audio_resources[ channel_index ].type == AUDIO_RESOURCE_CHANNEL )
+            {
+                *state = g_resource_states[ channel_index ][ g_current_read_buffer ].channel_state;
+                
+                return PEN_ERR_OK;
+            }
+            
+            return PEN_ERR_FAILED;
+        }
+        
+        return PEN_ERR_NOT_READY;
+    }
+    
+    pen_error audio_channel_get_sound_file_info( const u32 sound_index, audio_sound_file_info* info )
+    {
+        if( g_audio_resources[ sound_index ].assigned_flag & DIRECT_RESOURCE && g_sound_file_info_ready[ sound_index ] )
+        {
+            if( g_audio_resources[ sound_index ].type == AUDIO_RESOURCE_SOUND )
+            {
+                *info = g_sound_file_info[ sound_index ];
+                
+                return PEN_ERR_OK;
+            }
+            
+            return PEN_ERR_FAILED;
+        }
+        
+        return PEN_ERR_NOT_READY;
+    }
+    
+    pen_error audio_group_get_state( const u32 group_index, audio_group_state* state )
+    {
+        if( g_audio_resources[ group_index ].assigned_flag & DIRECT_RESOURCE )
+        {
+            if( g_audio_resources[ group_index ].type == AUDIO_RESOURCE_GROUP )
+            {
+                *state = g_resource_states[ group_index ][ g_current_read_buffer ].group_state;
+                
+                return PEN_ERR_OK;
+            }
+            
+            return PEN_ERR_FAILED;
+        }
+        
+        return PEN_ERR_NOT_READY;
+    }
+    
+    pen_error audio_dsp_get_spectrum( const u32 spectrum_dsp, audio_fft_spectrum* spectrum )
+    {
+        if( g_audio_resources[ spectrum_dsp ].assigned_flag & DIRECT_RESOURCE )
+        {
+            if( g_audio_resources[ spectrum_dsp ].type == AUDIO_RESOURCE_DSP_FFT )
+            {
+                if( g_resource_states[ spectrum_dsp ][ g_current_read_buffer ].fft_spectrum != nullptr )
+                {
+                    *spectrum = *g_resource_states[ spectrum_dsp ][ g_current_read_buffer ].fft_spectrum;
+                }
+                
+                return PEN_ERR_OK;
+            }
+            
+            return PEN_ERR_FAILED;
+        }
+        
+        return PEN_ERR_NOT_READY;
+    }
 }
 
 #if 0
@@ -227,6 +500,7 @@ namespace pen
 
 		//EQ TEST
 		/*
+         
 		FMOD::DSP* dspeqlow;
 		g_sound_system->createDSPByType( FMOD_DSP_TYPE_PARAMEQ, &dspeqlow );
 

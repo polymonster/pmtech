@@ -1,21 +1,25 @@
-#ifndef _filesystem_h
-#define _filesystem_h
+#ifndef _file_system_h
+#define _file_system_h
 
 #include "definitions.h"
 
 namespace pen
 {
-    typedef struct filesystem_enumeration
+    struct fs_tree_node
     {
-        c8** paths;
-        u32	 num_files;
-    }filesystem_enumeration;
+        c8* name = nullptr;
+        fs_tree_node* children = nullptr;
+        u32 num_children = 0;
+    };
 
-    u32 filesystem_read_file_to_buffer( const c8* filename, void** p_buffer, u32 &buffer_size );
+    pen_error filesystem_read_file_to_buffer( const c8* filename, void** p_buffer, u32 &buffer_size );
 
-    u32 filesystem_enum_directory( const c16* directory, filesystem_enumeration &results );
+    pen_error filesystem_enum_volumes( fs_tree_node &results );
     
-    u32 filesystem_getmtime( const c8* filename );
+    pen_error filesystem_enum_directory( const c16* directory, fs_tree_node &results );
+    pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results );
+    
+    pen_error filesystem_getmtime( const c8* filename, u32& mtime_out );
 }
 
 #endif

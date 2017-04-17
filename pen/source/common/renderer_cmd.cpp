@@ -16,7 +16,8 @@ namespace pen
     extern void                renderer_update_queries();
     extern u32                 get_next_resource_index( u32 domain );
     extern u32                 get_next_query_index( u32 domain );
-    
+    extern void                reclaim_resource_indices();
+
     //--------------------------------------------------------------------------------------
     //  COMMAND BUFFER API
     //--------------------------------------------------------------------------------------
@@ -482,6 +483,10 @@ namespace pen
             {
                 //put_pos might change on the producer thread.
                 u32 end_pos = put_pos;
+                
+                //reclaim deleted resource handles while we can syncronise it.
+                pen::reclaim_resource_indices();
+                
                 pen::threads_semaphore_signal( p_continue_semaphore, 1 );
                 
                 //some api's need to set the current context on the caller thread.

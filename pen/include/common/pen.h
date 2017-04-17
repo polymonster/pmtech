@@ -16,6 +16,11 @@ namespace pen
 		u32 sample_count;
 		const c8* window_title;
 	};
+    
+    struct user_info
+    {
+        const c8* user_name;
+    };
 
 	extern PEN_THREAD_RETURN game_entry( void* params );
 }
