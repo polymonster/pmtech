@@ -207,19 +207,9 @@ namespace pen
 	
     //runs on its own thread - will wait for jobs flagged by semaphone
 	PEN_THREAD_RETURN	renderer_thread_function( void* params );
-
-    //initialised to run from another thread - call renderer_poll_for_jobs 
-    void                renderer_init( void* params );
-	
-    void				renderer_destroy( );
-
-    //poll can be used to render on the main thread
-    void                renderer_poll_for_jobs();
-
+    
 	u32					renderer_create_clear_state( const clear_state &cs );
-
 	f64					renderer_get_last_query(u32 query_index);
-
     const c8*           renderer_get_shader_platform();
     
 	//--------------------------------------------------------------------------------------
@@ -227,6 +217,8 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	namespace direct
 	{
+        void    renderer_initialise( void* params );
+        void	renderer_shutdown( );
         void    renderer_make_context_current();
 
 		//clears

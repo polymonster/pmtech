@@ -91,6 +91,7 @@ namespace pen
     {
         //system
         void	audio_system_initialise();
+        void	audio_system_shutdown();
         void	audio_system_update();
 
         //creation

@@ -53,6 +53,34 @@ namespace pen
     std::atomic<u32>            g_current_write_buffer;
     std::atomic<u32>            g_current_read_buffer;
     
+    bool audio_resource_handles_to_reclaim = false;
+    bool audio_resources_allocated_this_frame = false;
+    
+    void reclaim_audio_resource_indices( )
+    {
+        if( !audio_resource_handles_to_reclaim || audio_resources_allocated_this_frame )
+        {
+            audio_resources_allocated_this_frame = false;
+            return;
+        }
+        
+        for( s32 i = 0; i < MAX_AUDIO_RESOURCES; ++i )
+        {
+            if( g_audio_resources[ i ].assigned_flag & MARK_DELETE )
+            {
+                g_audio_resources[ i ].assigned_flag = RECLAIMED;
+            }
+        }
+        
+        audio_resource_handles_to_reclaim = false;
+    }
+    
+    void mark_audio_resource_deleted( u32 i )
+    {
+        g_audio_resources[ i ].assigned_flag |= MARK_DELETE;
+        audio_resource_handles_to_reclaim = true;
+    }
+    
     u32 get_next_audio_resource( u32 domain, audio_resource_type type )
     {
         //find next empty resource
@@ -104,6 +132,19 @@ namespace pen
         g_current_read_buffer = 1;
 
         PEN_ASSERT( result == FMOD_OK );
+    }
+    
+    void direct::audio_system_shutdown()
+    {
+        for( s32 i = 0; i < MAX_AUDIO_RESOURCES; ++i )
+        {
+            if( g_audio_resources[ i ].assigned_flag & DEFER_RESOURCE && !(g_audio_resources[ i ].assigned_flag & MARK_DELETE) )
+            {
+                direct::audio_release_resource(i);
+            }
+        }
+        
+        g_sound_system->release();
     }
     
     void update_channel_state( u32 resource_index )
@@ -358,6 +399,50 @@ namespace pen
     
     u32 direct::audio_release_resource( u32 index )
     {
+        if( index == 0 )
+        {
+            return 0;
+        }
+        
+        if( g_audio_resources[ index ].assigned_flag & DIRECT_RESOURCE )
+        {
+            void* p_res = g_audio_resources[ index ].resource;
+            
+            switch (g_audio_resources[ index ].type)
+            {
+                case AUDIO_RESOURCE_CHANNEL:
+                {
+                    //channels are not releaseable
+                }
+                break;
+                    
+                case AUDIO_RESOURCE_GROUP:
+                {
+                    ((FMOD::ChannelGroup*)p_res)->release();
+                }
+                break;
+                    
+                case AUDIO_RESOURCE_DSP_FFT:
+                case AUDIO_RESOURCE_DSP_EQ:
+                case AUDIO_RESOURCE_DSP_GAIN:
+                {
+                    ((FMOD::DSP*)p_res)->release();
+                }
+                break;
+                    
+                case AUDIO_RESOURCE_SOUND:
+                {
+                    ((FMOD::Sound*)p_res)->release();
+                }
+                break;
+                    
+                default:
+                    break;
+            }
+        }
+        
+        mark_audio_resource_deleted( index );
+        
         return 0;
     }
     

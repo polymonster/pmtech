@@ -160,10 +160,12 @@ namespace pen
 	}
     
     bool resources_handles_to_reclaim = false;
+    bool resources_allocated_this_frame = false;
     void reclaim_resource_indices( )
     {
-        if( !resources_handles_to_reclaim )
+        if( !resources_handles_to_reclaim || resources_allocated_this_frame )
         {
+            resources_allocated_this_frame = false;
             return;
         }
         
@@ -190,8 +192,15 @@ namespace pen
 		while( resource_pool[ i ].asigned_flag & domain )
 		{
 			++i;
+            
+            if( i >= MAX_RENDERER_RESOURCES )
+            {
+                return 0;
+            }
 		}
 
+        resources_allocated_this_frame = true;
+        
 		resource_pool[ i ].asigned_flag |= domain;
 
 		return i;
@@ -209,11 +218,6 @@ namespace pen
 
 		return i;
 	};
-
-	void free_resource_index( u32 index )
-	{
-		pen::memory_zero( &resource_pool[ index ], sizeof( resource_allocation ) );
-	}
 
 	context_state			 g_context;
 
@@ -997,25 +1001,21 @@ namespace pen
 
 	}
     
-    //--------------------------------------------------------------------------------------
-    // Static functions
-    //--------------------------------------------------------------------------------------
 	void renderer_update_queries()
 	{
 
 	}
     
-    u32 renderer_init_from_window( void* )
+    void direct::renderer_initialise( void* )
     {
+        //todo renderer caps
         //const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);
-        
-        return 0;
     }
     
-	void renderer_destroy()
-	{
-	
-	}
+    void direct::renderer_shutdown( )
+    {
+        //todo device / stray resource shutdown
+    }
     
     const c8* renderer_get_shader_platform( )
     {

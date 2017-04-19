@@ -518,37 +518,6 @@ namespace pen
         pen::threads_semaphore_signal( p_job_thread_info->p_sem_terminated, 1 );
     }
     
-    void renderer_poll_for_jobs()
-    {
-        PEN_TIMER_START( CMD_BUFFER );
-        
-        u32 end_pos = put_pos;
-        
-        if( consume_flag )
-        {
-            consume_flag = false;
-            
-            while( get_pos != end_pos )
-            {
-                exec_cmd( cmd_buffer[ get_pos ] );
-                
-                INC_WRAP( get_pos );
-            }
-        }
-        
-        PEN_TIMER_END( CMD_BUFFER );
-        PEN_TIMER_RESET( CMD_BUFFER );
-    }
-    
-    void  renderer_init( void* params )
-    {
-        renderer_init_from_window( params );
-        
-        //clear command buffer
-        pen::memory_set( cmd_buffer, 0x0, sizeof( deferred_cmd ) * MAX_COMMANDS );
-
-    }
-    
     PEN_THREAD_RETURN renderer_thread_function( void* params )
     {
         job_thread_params* job_params = (job_thread_params*)params;
@@ -558,7 +527,10 @@ namespace pen
         p_consume_semaphore = p_job_thread_info->p_sem_consume;
         p_continue_semaphore = p_job_thread_info->p_sem_continue;
         
-        renderer_init(job_params->user_data);
+        direct::renderer_initialise(job_params->user_data);
+        
+        //clear command buffer
+        pen::memory_set( cmd_buffer, 0x0, sizeof( deferred_cmd ) * MAX_COMMANDS );
         
         renderer_wait_for_jobs();
         
