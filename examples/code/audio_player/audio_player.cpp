@@ -63,11 +63,6 @@ void renderer_state_init( )
 
 void audio_player_update();
 
-namespace
-{
-    pen::fs_tree_node fs_enumeration;
-}
-
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
     //unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -78,8 +73,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     renderer_state_init();
 
     dev_ui::init();
-
-    pen::filesystem_enum_volumes(fs_enumeration);
     
     while( 1 )
     {
@@ -133,7 +126,7 @@ const c8* file_browser( bool& dialog_open )
     };
     s32 default_depth = 5;
     
-    static bool goto_default = true;
+    static bool initialise = true;
     static s32 current_depth = 1;
     static s32 selection_stack[128] = { -1 };
     
@@ -141,8 +134,12 @@ const c8* file_browser( bool& dialog_open )
     std::string search_path;
     static std::string selected_path;
     
-    if( goto_default )
+    static pen::fs_tree_node fs_enumeration;
+    
+    if( initialise )
     {
+        pen::filesystem_enum_volumes(fs_enumeration);
+        
         pen::fs_tree_node* fs_iter = &fs_enumeration;
         
         for( s32 c = 0; c < default_depth; ++c )
@@ -167,7 +164,7 @@ const c8* file_browser( bool& dialog_open )
             }
         }
         
-        goto_default = false;
+        initialise = false;
     }
     
     ImGui::Begin("File Browser");
@@ -187,6 +184,7 @@ const c8* file_browser( bool& dialog_open )
     if( ImGui::ButtonEx("OK", ImVec2(0,0), button_flags ) )
     {
         return_value = selected_path.c_str();
+        dialog_open = false;
     }
     
     ImGui::SameLine();
@@ -250,6 +248,12 @@ const c8* file_browser( bool& dialog_open )
     
     ImGui::End();
     
+    if( !dialog_open )
+    {
+        initialise = true;
+        filesystem_enum_free_mem(fs_enumeration);
+    }
+    
     return return_value;
 }
 
@@ -260,7 +264,45 @@ enum playback_deck_flags : s32
     CHANNEL_STATE_VALID = 1<<1,
     FILE_INFO_INVALID = 1<<3,
     FILE_INFO_VALID = 1<<4,
-    PAUSE_FFT_UPDATE = 1<<5
+    PAUSE_FFT_UPDATE = 1<<5,
+    CUE = 1<<6,
+    CUE_DOWN = 1<<7
+};
+
+f32 pitch_range_options[4] =
+{
+    8.0f,
+    16.0f,
+    50.0f,
+    100.0f
+};
+
+const c8* pitch_range_desriptions[4] =
+{
+    "8%",
+    "16%",
+    "50%",
+    "100%"
+};
+
+static const u32 k_num_fft_diff_buckets = 5;
+u32 k_fft_diff_ranges[k_num_fft_diff_buckets] = { 16, 32, 64, 256, 1024 };
+const c8* diff_range_desriptions[k_num_fft_diff_buckets] =
+{
+    "0-16",
+    "16-32",
+    "32-64",
+    "64-256",
+    "256-1024"
+};
+
+const c8* diff_range_nicknames[k_num_fft_diff_buckets] =
+{
+    "KICK",
+    "LOW ",
+    "MID ",
+    "HAT ",
+    "HIGH"
 };
 
 class playback_deck
@@ -273,7 +315,6 @@ public:
     u32 sound_index;
     u32 channel_index;
     u32 spectrum_dsp;
-    u32 three_band_eq_dsp;
     
     //audio states
     pen::audio_channel_state channel_state;
@@ -285,15 +326,32 @@ public:
     bool open_file = false;
     const c8* file = nullptr;
     
+    u32 cue_pos;
+    s32 pitch_range;
+    
     //debug info
     s32 fft_num_samples = 64;
     f32 fft_max = 1.0f;
-    s32 fft_channel = 0;
     
     //analysis
-    static const s32 num_analysis_buffers = 60;
-    f32 fft_buffers[2][num_analysis_buffers][2048] = { 0 };
+    
+    //general fft storage
+    static const s32 num_analysis_buffers = 256;
+    f32 fft_buffers[num_analysis_buffers][2048] = { 0 };
+    f32 fft_timestamp[num_analysis_buffers] = { 0 };
+    
+    //comparison
+    f32 fft_max_vals[2048];
+    f32 fft_diff[2048];
+    
+    //the magic
+    f32 fft_combined_diff[k_num_fft_diff_buckets];
+    f32 prev_combined_diff[k_num_fft_diff_buckets];
+    f32 fft_combined_history[num_analysis_buffers];
+    
+    //tracking
     s32 current_analysis_buffer_pos = 0;
+    s32 plot_lines_diff_range = 0;
     
     void ui_control()
     {
@@ -318,35 +376,6 @@ public:
         
         ImGui::SameLine();
         ImGui::Text("%s", file);
-        
-        //transport controls
-        if( channel_state.play_state == pen::NOT_PLAYING )
-        {
-            if( ImGui::Button("Play") )
-            {
-                channel_index = pen::audio_create_channel_for_sound( sound_index );
-                pen::audio_add_channel_to_group(channel_index, group_index);
-            }
-        }
-        else if( group_state.play_state == pen::PLAYING )
-        {
-            if( ImGui::Button("Pause") )
-            {
-                pen::audio_group_set_pause( group_index, true );
-            }
-        }
-        else if( group_state.play_state == pen::PAUSED )
-        {
-            if( ImGui::Button("Play") )
-            {
-                pen::audio_group_set_pause( group_index, false );
-            }
-        }
-        
-        ImGui::SameLine();
-        if( ImGui::Button("Stop") )
-        {
-        }
         
         //update states
         pen_error err = pen::audio_channel_get_state(channel_index, &channel_state);
@@ -383,13 +412,58 @@ public:
             }
         }
         
-        //file info valid
-        if( flags & FILE_INFO_VALID )
+        //transport controls
+        if( channel_state.play_state == pen::NOT_PLAYING )
         {
-            if( ImGui::SliderInt("Track Pos", (s32*)&channel_state.position_ms, 0, file_info.length_ms) )
+            if( ImGui::Button("Play") )
             {
-                pen::audio_channel_set_position(channel_index, channel_state.position_ms);
+                channel_index = pen::audio_create_channel_for_sound( sound_index );
+                pen::audio_add_channel_to_group(channel_index, group_index);
+                flags &= ~(PAUSE_FFT_UPDATE|CUE);
             }
+        }
+        else if( group_state.play_state == pen::PLAYING )
+        {
+            if( ImGui::Button("Pause") )
+            {
+                pen::audio_group_set_pause( group_index, true );
+                flags |= PAUSE_FFT_UPDATE;
+            }
+        }
+        else if( group_state.play_state == pen::PAUSED )
+        {
+            if( ImGui::Button("Play") )
+            {
+                pen::audio_group_set_pause( group_index, false );
+                flags &= ~(PAUSE_FFT_UPDATE|CUE);
+            }
+        }
+        
+        ImGui::SameLine();
+        if( ImGui::Button("Cue") )
+        {
+            if( !(flags & CUE) )
+            {
+                cue_pos = channel_state.position_ms;
+                
+                flags &= ~(PAUSE_FFT_UPDATE);
+                pen::audio_group_set_pause( group_index, false );
+                
+                flags |= CUE;
+            }
+            else
+            {
+                flags |= PAUSE_FFT_UPDATE;
+                channel_state.position_ms = cue_pos;
+                pen::audio_channel_set_position(channel_index, channel_state.position_ms);
+                pen::audio_group_set_pause( group_index, true );
+            }
+        }
+    
+        //file info valid
+        if( ImGui::SliderInt("Track Pos", (s32*)&channel_state.position_ms, 0, file_info.length_ms) )
+        {
+            pen::audio_channel_set_position(channel_index, channel_state.position_ms);
         }
         
         switch( group_state.play_state )
@@ -425,65 +499,160 @@ public:
         ImGui::SameLine();
         ImGui::Text("%i", channel_state.position_ms );
         
-        //update fft
-        ImGui::SliderFloat("FFT Max", &fft_max, 0.0f, 1.0f );
-        ImGui::InputInt("Num FFT Samples", &fft_num_samples);
-        ImGui::InputInt("FFT Channel", &fft_channel);
         
-        if( ImGui::Button("Pause FFT") )
-        {
-            if( flags & PAUSE_FFT_UPDATE )
-            {
-                flags &= ~(PAUSE_FFT_UPDATE);
-            }
-            else
-            {
-                flags |= PAUSE_FFT_UPDATE;
-            }
-        }
-
-        ImGui::PlotHistogram("", &fft_buffers[ fft_channel ][ current_analysis_buffer_pos ][0], fft_num_samples, 0, NULL, 0.0f, fft_max, ImVec2(0,100));
+        ImGui::Combo("Pitch Range", &pitch_range, pitch_range_desriptions, 4);
         
-        if( !(flags & PAUSE_FFT_UPDATE) )
-        {
-            err = pen::audio_dsp_get_spectrum(spectrum_dsp, &spectrum );
-            
-            if( err == PEN_ERR_OK )
-            {
-                for( s32 chan = 0; chan < spectrum.num_channels; ++chan )
-                {
-                    pen::memory_cpy( fft_buffers[ chan ][ current_analysis_buffer_pos ], &spectrum.spectrum[chan][0], sizeof(f32)*spectrum.length );
-                }
-                
-                current_analysis_buffer_pos++;
-            }
-        }
-        else
-        {
-            ImGui::InputInt("Analysis Buffer Pos", &current_analysis_buffer_pos);
-        }
-        
-        if( current_analysis_buffer_pos >= num_analysis_buffers )
-        {
-            current_analysis_buffer_pos = 0;
-        }
-        else if( current_analysis_buffer_pos < 0 )
-        {
-            current_analysis_buffer_pos = num_analysis_buffers - 1;
-        }
-        
-        if( fft_channel >= spectrum.num_channels )
-        {
-            fft_channel = 0;
-        }
-        
-        ImGui::SameLine();
-        
-        f32 pitch_range = (1.0f / 100.0f ) * 8.0f;
-        if( ImGui::VSliderFloat("Pitch", ImVec2( 20.0f, 100.0f ), &group_state.pitch, 1.0f - pitch_range, 1.0f + pitch_range, "" ) )
+        f32 pitch_range_f = (1.0f / 100.0f ) * pitch_range_options[ pitch_range ];
+        if( ImGui::VSliderFloat("Pitch", ImVec2( 20.0f, 100.0f ), &group_state.pitch, 1.0f - pitch_range_f, 1.0f + pitch_range_f, "" ) )
         {
             pen::audio_group_set_pitch(group_index, group_state.pitch );
         }
+        
+        //update fft
+        if( ImGui::CollapsingHeader("Spectrum Analysis") )
+        {
+            ImGui::SliderFloat("FFT Max", &fft_max, 0.0f, 1.0f );
+            ImGui::InputInt("Num FFT Samples", &fft_num_samples);
+            
+            s32 prev_analysis_buffer_pos = current_analysis_buffer_pos - 1;
+            
+            if( prev_analysis_buffer_pos < 0 )
+                prev_analysis_buffer_pos = num_analysis_buffers - 1;
+            
+            ImGui::PlotHistogram("", &fft_buffers[ current_analysis_buffer_pos ][0], fft_num_samples, 0, NULL, 0.0f, fft_max, ImVec2(0,100));
+            
+            //statistical analysis of fft
+            f32 total_diff = 0.0f;
+            
+            u32 diff_buffer = 0;
+            
+            pen::memory_set(fft_combined_diff,0,sizeof(fft_combined_diff));
+            
+            for( s32 samp = 0; samp < spectrum.length; ++samp )
+            {
+                //calculate max value over time
+                fft_max_vals[samp] = 0.0f;
+                for( s32 buf = 0; buf < num_analysis_buffers; ++buf)
+                {
+                    fft_max_vals[samp] = PEN_FMAX( fft_max_vals[samp], fft_buffers[ buf ][ samp ] );
+                }
+                
+                //calculate differece from frame to frame
+                fft_diff[samp] = fft_buffers[ current_analysis_buffer_pos ][ samp ] - fft_buffers[ prev_analysis_buffer_pos ][ samp ];
+                
+                //scale diff
+                static const f32 epsilon = 0.000000001f;
+                fft_diff[samp] = (fft_diff[samp] / (fft_max_vals[samp] + epsilon));
+                
+                //work out diff within ranges
+                fft_combined_diff[diff_buffer] += fft_diff[samp];
+                
+                if( samp >= k_fft_diff_ranges[diff_buffer] )
+                {
+                    u32 prev_range = 0;
+                    if( diff_buffer > 0 )
+                    {
+                        prev_range = k_fft_diff_ranges[diff_buffer-1];
+                    }
+                    
+                    fft_combined_diff[diff_buffer] /= (f32)k_fft_diff_ranges[diff_buffer] - prev_range;
+                    diff_buffer++;
+                }
+                
+                f32 diff_cubed = fft_diff[samp] * fft_diff[samp] * fft_diff[samp];
+                total_diff += diff_cubed;
+            }
+            
+            //plot diff buckets
+            if( ImGui::CollapsingHeader("Coarse Frequency Diff") )
+            {
+                ImGui::PlotHistogram("", fft_combined_diff, k_num_fft_diff_buckets, 0, NULL, 0.0f, fft_max, ImVec2(0,100));
+                
+                ImGui::Combo("Graph Diff Range", &plot_lines_diff_range, diff_range_desriptions, k_num_fft_diff_buckets);
+                
+                ImGui::PlotLines("", fft_combined_history, num_analysis_buffers, 0, NULL, -fft_max, fft_max, ImVec2(0,100));
+                
+                ImGui::Text("DISPLAY:");
+                
+                for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
+                {
+                    f32 cur_val = fft_combined_diff[ i ] - prev_combined_diff[ i ];
+                    
+                    if( i == plot_lines_diff_range )
+                    {
+                        fft_combined_history[ current_analysis_buffer_pos ] = fft_combined_diff[ i ];
+                    }
+                    
+                    ImGui::SameLine();
+                    if( fabs( cur_val ) > 0.2f )
+                    {
+                        ImGui::Text("[%s]", diff_range_nicknames[ i ] );
+                    }
+                    else
+                    {
+                        ImGui::Text("[    ]");
+                    }
+                }
+            }
+            
+            if( ImGui::CollapsingHeader("Raw Frequency Diff") )
+            {
+                //plot raw diff
+                ImGui::Text("Diff: %f", total_diff);
+                ImGui::PlotHistogram("", fft_diff, fft_num_samples, 0, NULL, 0.0f, fft_max, ImVec2(0,100));
+            }
+            
+            //update fft
+            if( !(flags & PAUSE_FFT_UPDATE) )
+            {
+                err = pen::audio_dsp_get_spectrum(spectrum_dsp, &spectrum );
+                
+                if( err == PEN_ERR_OK )
+                {
+                    current_analysis_buffer_pos++;
+                    
+                    for( s32 samp = 0; samp < spectrum.length; ++samp )
+                    {
+                        fft_buffers[current_analysis_buffer_pos][samp] = 0.0f;
+                        
+                        for( s32 chan = 0; chan < spectrum.num_channels; ++chan )
+                        {
+                            fft_buffers[current_analysis_buffer_pos][samp] += spectrum.spectrum[chan][samp];
+                        }
+                        
+                        fft_buffers[current_analysis_buffer_pos][samp] /= 2.0f;
+                    }
+                    
+                    fft_timestamp[current_analysis_buffer_pos] = channel_state.position_ms;
+                }
+            }
+
+            if( ImGui::InputInt("Analysis Buffer Pos", &current_analysis_buffer_pos) )
+            {
+                if( current_analysis_buffer_pos >= num_analysis_buffers )
+                {
+                    current_analysis_buffer_pos = 0;
+                }
+                else if( current_analysis_buffer_pos < 0 )
+                {
+                    current_analysis_buffer_pos = num_analysis_buffers - 1;
+                }
+                
+                channel_state.position_ms = fft_timestamp[current_analysis_buffer_pos];
+                
+                pen::audio_channel_set_position(channel_index, fft_timestamp[current_analysis_buffer_pos] );
+            }
+            
+            if( current_analysis_buffer_pos >= num_analysis_buffers )
+            {
+                current_analysis_buffer_pos = 0;
+            }
+            else if( current_analysis_buffer_pos < 0 )
+            {
+                current_analysis_buffer_pos = num_analysis_buffers - 1;
+            }
+        }
+        
         ImGui::PopID();
     }
     
@@ -499,18 +668,48 @@ class mixer_channel
 {
 public:
     u32 group_index;
+    u32 three_band_eq_dsp;
+    u32 gain_dsp;
+    
     pen::audio_group_state group_state;
+    pen::audio_eq_state eq_state;
+    
+    f32 gain;
     
     void control_ui()
     {
         pen::audio_group_get_state(group_index, &group_state);
+        pen::audio_dsp_get_three_band_eq(three_band_eq_dsp, &eq_state);
+        pen::audio_dsp_get_gain( gain_dsp, &gain );
         
-        ImGui::PushID(&group_state.volume);
+        ImGui::PushID(this);
+        if( ImGui::SliderFloat("Gain", &gain, -10.0f, 10.0f ) )
+        {
+            pen::audio_dsp_set_gain( gain_dsp, gain );
+        }
+        
+        if( ImGui::SliderFloat("Hi", &eq_state.high, -100.0f, 100.0f ) )
+        {
+            pen::audio_group_set_volume(group_index, group_state.volume );
+        }
+        
+        if( ImGui::SliderFloat("Med", &eq_state.med, -100.0f, 100.0f ) )
+        {
+            pen::audio_group_set_volume(group_index, group_state.volume );
+        }
+        
+        if( ImGui::SliderFloat("Low", &eq_state.low, -100.0f, 100.0f ) )
+        {
+            pen::audio_group_set_volume(group_index, group_state.volume );
+        }
+        
         if( ImGui::VSliderFloat("Vol", ImVec2( 20.0f, 100.0f ), &group_state.volume, 0.0f, 1.0f, "" ) )
         {
             pen::audio_group_set_volume(group_index, group_state.volume );
         }
         ImGui::PopID();
+        
+        pen::audio_dsp_set_three_band_eq( three_band_eq_dsp, eq_state.low, eq_state.med, eq_state.high );
     }
 };
 
@@ -533,13 +732,15 @@ void audio_player_update()
             
             //create sound spectrum dsp
             decks[i].spectrum_dsp = pen::audio_add_dsp_to_group( decks[i].group_index, pen::DSP_FFT );
-            decks[i].three_band_eq_dsp = pen::audio_add_dsp_to_group( decks[i].group_index, pen::DSP_THREE_BAND_EQ );
+            mixer_channels[i].three_band_eq_dsp = pen::audio_add_dsp_to_group( decks[i].group_index, pen::DSP_THREE_BAND_EQ );
+            mixer_channels[i].gain_dsp = pen::audio_add_dsp_to_group( decks[i].group_index, pen::DSP_GAIN );
         }
         
         initialised = true;
     }
     
-    ImGui::Begin("Player");
+    bool open = true;
+    ImGui::Begin("Player", &open );
     
     ImGui::Columns(num_decks+1, "decks");
     ImGui::Separator();

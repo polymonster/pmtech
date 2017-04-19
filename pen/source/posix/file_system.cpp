@@ -46,17 +46,24 @@ namespace pen
         
         results.children = (fs_tree_node*)pen::memory_alloc( sizeof(fs_tree_node) * num_mounts );
         results.num_children = num_mounts;
-        results.name = "Volumes";
+        
+        static const c8* volumes_name = "Volumes";
+        
+        u32 len = pen::string_length(volumes_name);
+        results.name = (c8*)pen::memory_alloc( len + 1 );
+        pen::memory_cpy(results.name, volumes_name, len);
+        results.name[ len ] = '\0';
         
         for( int i = 0; i < num_mounts; ++i )
         {
-            u32 len = pen::string_length( mounts[i].f_mntonname );
+            len = pen::string_length( mounts[i].f_mntonname );
             results.children[i].name = (c8*)pen::memory_alloc( len + 1 );
             
             pen::memory_cpy(results.children[i].name, mounts[i].f_mntonname, len);
             results.children[i].name[len] = '\0';
             
             results.children[i].children = nullptr;
+            results.children[i].num_children = 0;
         }
         
         return PEN_ERR_OK;
@@ -118,11 +125,26 @@ namespace pen
                 pen::memory_cpy(results.children[i].name, ent->d_name, len);
                 results.children[i].name[len] = '\0';
                 
+                results.children[i].num_children = 0;
+                
                 ++i;
             }
             
             closedir (dir);
         }
+        
+        return PEN_ERR_OK;
+    }
+    
+    pen_error filesystem_enum_free_mem( fs_tree_node &tree )
+    {
+        for( s32 i = 0; i < tree.num_children; ++i )
+        {
+            filesystem_enum_free_mem( tree.children[ i ] );
+        }
+        
+        pen::memory_free( tree.children );
+        pen::memory_free( tree.name );
         
         return PEN_ERR_OK;
     }

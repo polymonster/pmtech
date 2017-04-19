@@ -28,6 +28,9 @@ namespace pen
         CMD_AUDIO_GROUP_SET_MUTE,
         CMD_AUDIO_GROUP_SET_PITCH,
         CMD_AUDIO_GROUP_SET_VOLUME,
+        
+        CMD_AUDIO_DSP_SET_THREE_BAND_EQ,
+        CMD_AUDIO_DSP_SET_GAIN
     };
     
     struct set_valuei
@@ -41,6 +44,12 @@ namespace pen
         u32 resource_index;
         f32 value;
     };
+    
+    struct set_value3f
+    {
+        u32 resource_index;
+        f32 value[3];
+    };
 
     struct  audio_cmd
     {
@@ -52,6 +61,7 @@ namespace pen
             u32         resource_index;
             set_valuei  set_valuei;
             set_valuef  set_valuef;
+            set_value3f set_value3f;
         };
     };
 
@@ -99,12 +109,18 @@ namespace pen
         case CMD_AUDIO_GROUP_SET_VOLUME:
             direct::audio_group_set_volume( cmd.set_valuef.resource_index, cmd.set_valuef.value );
             break;
+        case CMD_AUDIO_DSP_SET_GAIN:
+            direct::audio_dsp_set_gain( cmd.set_valuef.resource_index, cmd.set_valuef.value );
+            break;
         case CMD_AUDIO_GROUP_SET_PITCH:
             direct::audio_group_set_pitch( cmd.set_valuef.resource_index, cmd.set_valuef.value );
             break;
         case CMD_AUDIO_RELEASE_RESOURCE:
             direct::audio_release_resource( cmd.resource_index );
             break;
+            case CMD_AUDIO_DSP_SET_THREE_BAND_EQ:
+            direct::audio_dsp_set_three_band_eq( cmd.set_value3f.resource_index, cmd.set_value3f.value[0], cmd.set_value3f.value[1], cmd.set_value3f.value[2] );
+                break;
         }
     }
 
@@ -309,5 +325,25 @@ namespace pen
         INC_WRAP( audio_put_pos );
 
         return res;
+    }
+    
+    void audio_dsp_set_three_band_eq( const u32 eq_index, const f32 low, const f32 med, const f32 high )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_DSP_SET_THREE_BAND_EQ;
+        audio_cmd_buffer[ audio_put_pos ].set_value3f.resource_index = eq_index;
+        audio_cmd_buffer[ audio_put_pos ].set_value3f.value[0] = low;
+        audio_cmd_buffer[ audio_put_pos ].set_value3f.value[1] = med;
+        audio_cmd_buffer[ audio_put_pos ].set_value3f.value[2] = high;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void audio_dsp_set_gain( const u32 dsp_index, const f32 gain )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_DSP_SET_GAIN;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = dsp_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.value = gain;
+        
+        INC_WRAP( audio_put_pos );
     }
 }

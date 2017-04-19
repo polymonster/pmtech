@@ -19,6 +19,8 @@ namespace pen
     pen_error filesystem_enum_directory( const c16* directory, fs_tree_node &results );
     pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results );
     
+    pen_error filesystem_enum_free_mem( fs_tree_node &results );
+    
     pen_error filesystem_getmtime( const c8* filename, u32& mtime_out );
 }
 

@@ -15,7 +15,13 @@ namespace pen
     enum dsp_type : s32
     {
         DSP_FFT,
-        DSP_THREE_BAND_EQ
+        DSP_THREE_BAND_EQ,
+        DSP_GAIN
+    };
+    
+    struct audio_eq_state
+    {
+        f32 low, med, high;
     };
 
     struct audio_group_state
@@ -69,12 +75,17 @@ namespace pen
     void	audio_group_set_mute( const u32 group_index, const bool val );
     void	audio_group_set_pitch( const u32 group_index, const f32 pitch );
     void	audio_group_set_volume( const u32 group_index, const f32 volume );
-
+    
+    void    audio_dsp_set_three_band_eq( const u32 eq_index, const f32 low, const f32 med, const f32 high );
+    void    audio_dsp_set_gain( const u32 dsp_index, const f32 gain );
+    
     //accessors
     pen_error   audio_channel_get_state( const u32 channel_index, audio_channel_state* state );
     pen_error   audio_channel_get_sound_file_info( const u32 sound_index, audio_sound_file_info* info );
     pen_error   audio_group_get_state( const u32 group_index, audio_group_state* state );
     pen_error   audio_dsp_get_spectrum( const u32 spectrum_dsp, audio_fft_spectrum* spectrum );
+    pen_error   audio_dsp_get_three_band_eq( const u32 eq_dsp, audio_eq_state* eq_state );
+    pen_error   audio_dsp_get_gain( const u32 dsp_index, f32* gain );
 
     namespace direct
     {
@@ -101,6 +112,9 @@ namespace pen
         void	audio_group_set_mute( const u32 group_index, const bool val );
         void	audio_group_set_pitch( const u32 group_index, const f32 pitch );
         void	audio_group_set_volume( const u32 group_index, const f32 volume );
+        
+        void    audio_dsp_set_three_band_eq( const u32 eq_index, const f32 low, const f32 med, const f32 high );
+        void    audio_dsp_set_gain( const u32 dsp_index, const f32 gain );
     }
 }
 
