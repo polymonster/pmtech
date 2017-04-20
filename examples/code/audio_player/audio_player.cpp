@@ -305,6 +305,55 @@ const c8* diff_range_nicknames[k_num_fft_diff_buckets] =
     "HIGH"
 };
 
+class beat_grid
+{
+public:
+    std::vector<u32> beats[k_num_fft_diff_buckets];
+    f32 average_interval[k_num_fft_diff_buckets];
+
+    void show_window( bool& open )
+    {
+        ImGui::Begin("Beat Grid");
+        
+        ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+        
+        for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
+        {
+            average_interval[i] = 0.0f;
+            
+            u32 prev = 0;
+            u32 counter = 0;
+            for( auto& timestamp : beats[ i ] )
+            {
+                if( counter > 0 )
+                {
+                    ImGui::Text("%i", timestamp - prev ); ImGui::SameLine();
+                    
+                    average_interval[ i ] += ( timestamp - prev );
+                }
+                
+                counter++;
+                prev = timestamp;
+            }
+            
+            average_interval[ i ] /= (f32)beats[ i ].size();
+            
+            if( beats[ i ].size() > 64 )
+            {
+                beats[ i ].erase( beats[ i ].begin() );
+            }
+            
+            ImGui::Text("end");
+        }
+        
+        ImGui::Text( "%f", average_interval[ 0 ] );
+        
+        ImGui::EndChild();
+        
+        ImGui::End();
+    }
+};
+
 class playback_deck
 {
 public:
@@ -316,6 +365,8 @@ public:
     u32 channel_index;
     u32 spectrum_dsp;
     
+    beat_grid grid;
+    
     //audio states
     pen::audio_channel_state channel_state;
     pen::audio_fft_spectrum spectrum;
@@ -324,6 +375,7 @@ public:
     
     //filesystem
     bool open_file = false;
+    bool open_beat_grid = false;
     const c8* file = nullptr;
     
     u32 cue_pos;
@@ -336,7 +388,7 @@ public:
     //analysis
     
     //general fft storage
-    static const s32 num_analysis_buffers = 256;
+    static const s32 num_analysis_buffers = 128;
     f32 fft_buffers[num_analysis_buffers][2048] = { 0 };
     f32 fft_timestamp[num_analysis_buffers] = { 0 };
     
@@ -514,6 +566,16 @@ public:
             ImGui::SliderFloat("FFT Max", &fft_max, 0.0f, 1.0f );
             ImGui::InputInt("Num FFT Samples", &fft_num_samples);
             
+            if( ImGui::Button("Open Beat Grid") )
+            {
+                open_beat_grid = true;
+            }
+            
+            if( open_beat_grid )
+            {
+                grid.show_window(open_beat_grid);
+            }
+            
             s32 prev_analysis_buffer_pos = current_analysis_buffer_pos - 1;
             
             if( prev_analysis_buffer_pos < 0 )
@@ -537,7 +599,7 @@ public:
                     fft_max_vals[samp] = PEN_FMAX( fft_max_vals[samp], fft_buffers[ buf ][ samp ] );
                 }
                 
-                //calculate differece from frame to frame
+                //calculate differece from frame to frame and scale by the max
                 fft_diff[samp] = fft_buffers[ current_analysis_buffer_pos ][ samp ] - fft_buffers[ prev_analysis_buffer_pos ][ samp ];
                 
                 //scale diff
@@ -587,6 +649,17 @@ public:
                     if( fabs( cur_val ) > 0.2f )
                     {
                         ImGui::Text("[%s]", diff_range_nicknames[ i ] );
+                        
+                        u32 diff = 129;
+                        
+                        if( grid.beats[ i ].size() > 0 )
+                            diff = channel_state.position_ms - grid.beats[ i ].back();
+                        
+                        if( diff > 128 )
+                        {
+                            //cool down of 33ms
+                            grid.beats[ i ].push_back( channel_state.position_ms );
+                        }
                     }
                     else
                     {
