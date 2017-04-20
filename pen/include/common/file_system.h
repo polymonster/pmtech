@@ -18,7 +18,6 @@ namespace pen
 
 	//filesystem enumeration
     pen_error filesystem_enum_volumes( fs_tree_node &results );
-    pen_error filesystem_enum_directory( const c16* directory, fs_tree_node &results );
     pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results );
     pen_error filesystem_enum_free_mem( fs_tree_node &results );
 }

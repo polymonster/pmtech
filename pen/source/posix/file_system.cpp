@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <dirent.h>
-#include <iconv.h>
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <sys/ucred.h>
 #include <sys/mount.h>
-
 #include "file_system.h"
 #include "memory.h"
 #include "pen_string.h"
@@ -148,32 +146,6 @@ namespace pen
         
         return PEN_ERR_OK;
     }
-
-    pen_error filesystem_enum_directory( const c16* directory, fs_tree_node &results )
-    {
-        /*
-        iconv_t ic;
-        ic = iconv_open("UTF8", "WCHAR_T");
-        
-        u32 sowc = sizeof( wchar_t );
-        
-        size_t dir_name_len = pen::string_length_wide(directory);
-        size_t target_buffer_len = dir_name_len+1;
-        size_t dir_name_size_bytes = target_buffer_len * sowc;
-        
-        signed char* utf8_dir = (signed char*)pen::memory_alloc(target_buffer_len);
-        
-        size_t ret = iconv( ic, (c8**)&directory, &dir_name_size_bytes, (c8**)&utf8_dir, &target_buffer_len );
-        */
-        
-        //todo handle utf-8 file names
-        size_t  dir_name_len = pen::string_length_wide(directory);
-        c8*     dir_c8 = (c8*)pen::memory_alloc(dir_name_len);
-        
-        pen::string_to_ascii(directory, dir_c8);
-        
-        return filesystem_enum_directory( dir_c8, results );
-    }
     
     pen_error filesystem_getmtime( const c8* filename, u32& mtime_out )
     {
@@ -187,5 +159,21 @@ namespace pen
         
         return PEN_ERR_OK;
     }
+	
+	//ICONV ref for utf8 -> wchar conversion
+	 /*
+		iconv_t ic;
+		ic = iconv_open("UTF8", "WCHAR_T");
+		
+		u32 sowc = sizeof( wchar_t );
+		
+		size_t dir_name_len = pen::string_length_wide(directory);
+		size_t target_buffer_len = dir_name_len+1;
+		size_t dir_name_size_bytes = target_buffer_len * sowc;
+		
+		signed char* utf8_dir = (signed char*)pen::memory_alloc(target_buffer_len);
+		
+		size_t ret = iconv( ic, (c8**)&directory, &dir_name_size_bytes, (c8**)&utf8_dir, &target_buffer_len );
+    */
     
 }

@@ -36,31 +36,38 @@ namespace pen
 		return PEN_ERR_FILE_NOT_FOUND;
 	}
 
-	pen_error filesystem_read_file_to_buffer( const char* filename, void** p_buffer, u32 &buffer_size )
+	c8* swap_slashes( const c8* filename )
+	{
+		//swap "/" for "\\"
+		const char* p_src_char = filename;
+
+		u32 str_len = pen::string_length(filename);
+		char* windir_filename = (char*)pen::memory_alloc(str_len + 1);
+
+		char* p_dest_char = windir_filename;
+
+		while (p_src_char < filename + str_len)
+		{
+			if (*p_src_char == '/')
+			{
+				*p_dest_char = '\\';
+			}
+			else
+			{
+				*p_dest_char = *p_src_char;
+			}
+
+			p_dest_char++;
+			p_src_char++;
+		}
+		*p_dest_char = '\0';
+
+		return windir_filename;
+	}
+
+	pen_error filesystem_read_file_to_buffer( const c8* filename, void** p_buffer, u32 &buffer_size )
     {
-        //swap "/" for "\\"
-        const char* p_src_char = filename;
-
-        u32 str_len = pen::string_length( filename );
-        char* windir_filename = (char*)pen::memory_alloc(str_len + 1);
-
-        char* p_dest_char = windir_filename;
-
-        while( p_src_char < filename + str_len )
-        {
-            if( *p_src_char == '/' )
-            {
-                *p_dest_char = '\\';
-            }
-            else
-            {
-                *p_dest_char = *p_src_char;
-            }
-
-            p_dest_char++;
-            p_src_char++;
-        }
-        *p_dest_char = '\0';
+		c8* windir_filename = swap_slashes(filename);
 
         *p_buffer = NULL;
 
@@ -90,7 +97,7 @@ namespace pen
         return PEN_ERR_FILE_NOT_FOUND;
     }
 
-	pen_error filesystem_enum_volumes(fs_tree_node &results)
+	pen_error filesystem_enum_volumes(fs_tree_node &tree)
 	{
 		DWORD drive_bit_mask = GetLogicalDrives();
 
@@ -102,9 +109,9 @@ namespace pen
 		const c8* volumes_str = "Volumes";
 		u32 volume_strlen = pen::string_length(volumes_str);
 
-		results.name = (c8*)pen::memory_alloc(volume_strlen + 1);
-		pen::memory_cpy(results.name, volumes_str, volume_strlen);
-		results.name[volume_strlen] = '\0';
+		tree.name = (c8*)pen::memory_alloc(volume_strlen + 1);
+		pen::memory_cpy(tree.name, volumes_str, volume_strlen);
+		tree.name[volume_strlen] = '\0';
 
 		const c8* drive_letters = { "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
 		
@@ -122,8 +129,8 @@ namespace pen
 			bit <<= 1;
 		}
 
-		results.num_children = num_used_drives;
-		results.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node)*num_used_drives);
+		tree.num_children = num_used_drives;
+		tree.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node)*num_used_drives);
 
 		bit = 1;
 		u32 child = 0;
@@ -131,14 +138,14 @@ namespace pen
 		{
 			if (drive_bit_mask & bit)
 			{
-				results.children[child].name = (c8*)pen::memory_alloc(3);
+				tree.children[child].name = (c8*)pen::memory_alloc(3);
 
-				results.children[child].name[0] = drive_letters[i];
-				results.children[child].name[1] = ':';
-				results.children[child].name[2] = '\0';
+				tree.children[child].name[0] = drive_letters[i];
+				tree.children[child].name[1] = ':';
+				tree.children[child].name[2] = '\0';
 
-				results.children[child].num_children = 0;
-				results.children[child].children = nullptr;
+				tree.children[child].num_children = 0;
+				tree.children[child].children = nullptr;
 
 				++child;
 			}
@@ -149,54 +156,64 @@ namespace pen
 		return PEN_ERR_OK;
 	}
 
-	pen_error filesystem_enum_directory(const c8* directory, fs_tree_node &results)
+	pen_error filesystem_enum_directory(const c8* directory, fs_tree_node &tree)
 	{
-		filesystem_enum_directory(L"C:", results);
-
 		WIN32_FIND_DATAA ffd;
 		HANDLE hFind = INVALID_HANDLE_VALUE;
 
-		hFind = FindFirstFileA(directory, &ffd);
+		//need to make add a wildcard to the dirctory
+		u32 dir_len = pen::string_length(directory);
+		static c8 wildcard_dir[1024];
+		pen::memory_cpy(wildcard_dir, directory, dir_len);
+		wildcard_dir[dir_len] = '\\';
+		wildcard_dir[dir_len + 1] = '*';
+		wildcard_dir[dir_len + 2] = '\0';
 
+		c8* windir_filename = swap_slashes(wildcard_dir);
+
+		u32 total_num = 0;
+		hFind = FindFirstFileA(windir_filename, &ffd );
 		do
 		{
-			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			{
-				PEN_PRINTF("Dir : %s\n", ffd.cFileName);
-			}
-			else
-			{
-				PEN_PRINTF("File : %s\n", ffd.cFileName);
-			}
+			++total_num;
 		} while (FindNextFileA(hFind, &ffd) != 0);
+
+		//allocate children into the fs tree structure
+		tree.num_children = total_num;
+		tree.children = (fs_tree_node*)pen::memory_alloc( sizeof(fs_tree_node) * total_num);
+
+		//reiterate and get the file names
+		u32 child = 0;
+		hFind = FindFirstFileA(windir_filename, &ffd);
+		do
+		{
+			u32 file_name_len = pen::string_length(ffd.cFileName);
+
+			tree.children[child].name = (c8*)pen::memory_alloc(file_name_len+1);
+			pen::memory_cpy(tree.children[child].name, ffd.cFileName, file_name_len);
+			tree.children[child].name[file_name_len] = '\0';
+
+			tree.children[child].num_children = 0;
+			tree.children[child].children = nullptr;
+
+			++child;
+		} while (FindNextFileA(hFind, &ffd) != 0);
+
+		pen::memory_free(windir_filename);
 
 		return PEN_ERR_OK;
 	}
 
-	pen_error filesystem_enum_directory( const c16* directory, fs_tree_node &results )
-    {
-        WIN32_FIND_DATA ffd;
-        HANDLE hFind = INVALID_HANDLE_VALUE;
-
-        hFind = FindFirstFileW( directory, &ffd );
-
-        do
-        {
-            if( ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
-            {
-                PEN_PRINTF( "Dir : %s\n", ffd.cFileName );
-            }
-            else
-            {
-                PEN_PRINTF( "File : %s\n", ffd.cFileName );
-            }
-        } while( FindNextFile( hFind, &ffd ) != 0 );
-
-        return PEN_ERR_OK;
-    }
-
-	pen_error filesystem_enum_free_mem(fs_tree_node &results)
+	pen_error filesystem_enum_free_mem(fs_tree_node &tree)
 	{
+		for (s32 i = 0; i < tree.num_children; ++i)
+		{
+			filesystem_enum_free_mem(tree.children[i]);
+		}
+
+		pen::memory_free(tree.children);
+		pen::memory_free(tree.name);
+
 		return PEN_ERR_OK;
 	}
 }
