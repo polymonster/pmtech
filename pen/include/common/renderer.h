@@ -211,13 +211,18 @@ namespace pen
 	u32					renderer_create_clear_state( const clear_state &cs );
 	f64					renderer_get_last_query(u32 query_index);
     const c8*           renderer_get_shader_platform();
-    
+
+	//resource management
+	void renderer_reclaim_resource_indices();
+	void renderer_mark_resource_deleted(u32 i);
+	u32 renderer_get_next_resource_index(u32 domain);
+
 	//--------------------------------------------------------------------------------------
 	//  DIRECT API
 	//--------------------------------------------------------------------------------------
 	namespace direct
 	{
-        void    renderer_initialise( void* params );
+        u32		renderer_initialise( void* params );
         void	renderer_shutdown( );
         void    renderer_make_context_current();
 

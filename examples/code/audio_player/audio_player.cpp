@@ -144,7 +144,7 @@ const c8* file_browser( bool& dialog_open )
         
         for( s32 c = 0; c < default_depth; ++c )
         {
-            for( s32 entry = 0; entry < fs_iter->num_children; ++entry )
+            for( u32 entry = 0; entry < fs_iter->num_children; ++entry )
             {
                 if( pen::string_compare( fs_iter->children[entry].name, default_dir[c] ) == 0 )
                 {
@@ -213,7 +213,7 @@ const c8* file_browser( bool& dialog_open )
     
     for( s32 c = 0; c < frame_depth; ++c )
     {
-        for( s32 entry = 0; entry < fs_iter->num_children; ++entry )
+        for( u32 entry = 0; entry < fs_iter->num_children; ++entry )
         {
             if( ImGui::Selectable( fs_iter->children[entry].name) )
             {
@@ -235,10 +235,19 @@ const c8* file_browser( bool& dialog_open )
             }
         }
         
-        fs_iter = &fs_iter->children[ selection_stack[c] ];
-        current_path += fs_iter->name;
-        current_path += "/";
-        
+		s32 selected = selection_stack[c];
+
+		if (selected >= 0)
+		{
+			fs_iter = &fs_iter->children[selection_stack[c]];
+			current_path += fs_iter->name;
+			current_path += "/";
+		}
+		else
+		{
+			break;
+		}
+
         ImGui::NextColumn();
     }
     
@@ -390,7 +399,7 @@ public:
     //general fft storage
     static const s32 num_analysis_buffers = 128;
     f32 fft_buffers[num_analysis_buffers][2048] = { 0 };
-    f32 fft_timestamp[num_analysis_buffers] = { 0 };
+    u32 fft_timestamp[num_analysis_buffers] = { 0 };
     
     //comparison
     f32 fft_max_vals[2048];
@@ -609,7 +618,7 @@ public:
                 //work out diff within ranges
                 fft_combined_diff[diff_buffer] += fft_diff[samp];
                 
-                if( samp >= k_fft_diff_ranges[diff_buffer] )
+                if( samp >= (s32)k_fft_diff_ranges[diff_buffer] )
                 {
                     u32 prev_range = 0;
                     if( diff_buffer > 0 )

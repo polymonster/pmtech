@@ -13,7 +13,30 @@ namespace pen
 		return (u32)(ticks / WINDOWS_TICK - SEC_TO_UNIX_EPOCH);
 	}
 
-    u32 filesystem_read_file_to_buffer( const char* filename, void** p_buffer, u32 &buffer_size )
+	pen_error filesystem_getmtime(const c8* filename, u32& mtime_out)
+	{
+		OFSTRUCT of_struct;
+		HFILE f = OpenFile(filename, &of_struct, OF_READ);
+
+		if (f != HFILE_ERROR)
+		{
+			FILETIME c, m, a;
+
+			BOOL res = GetFileTime((HANDLE)f, &c, &a, &m);
+
+			long long* wt = (long long*)&m;
+
+			u32 unix_ts = win32_time_to_unix_seconds(*wt);
+
+			mtime_out = unix_ts;
+
+			return PEN_ERR_OK;
+		}
+
+		return PEN_ERR_FILE_NOT_FOUND;
+	}
+
+	pen_error filesystem_read_file_to_buffer( const char* filename, void** p_buffer, u32 &buffer_size )
     {
         //swap "/" for "\\"
         const char* p_src_char = filename;
@@ -61,13 +84,96 @@ namespace pen
 
             fclose( p_file );
 
-            return 0;
+            return PEN_ERR_OK;
         }
 
-        return 1;
+        return PEN_ERR_FILE_NOT_FOUND;
     }
 
-    u32 filesystem_enum_directory( const c16* directory, filesystem_enumeration &results )
+	pen_error filesystem_enum_volumes(fs_tree_node &results)
+	{
+		DWORD drive_bit_mask = GetLogicalDrives();
+
+		if (drive_bit_mask == 0)
+		{
+			return PEN_ERR_FAILED;
+		}
+
+		const c8* volumes_str = "Volumes";
+		u32 volume_strlen = pen::string_length(volumes_str);
+
+		results.name = (c8*)pen::memory_alloc(volume_strlen + 1);
+		pen::memory_cpy(results.name, volumes_str, volume_strlen);
+		results.name[volume_strlen] = '\0';
+
+		const c8* drive_letters = { "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
+		
+		u32 num_drives = pen::string_length(drive_letters);
+
+		u32 num_used_drives = 0;
+		u32 bit = 1;
+		for ( u32 i = 0; i < num_drives; ++i )
+		{
+			if (drive_bit_mask & bit)
+			{
+				++num_used_drives;
+			}
+
+			bit <<= 1;
+		}
+
+		results.num_children = num_used_drives;
+		results.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node)*num_used_drives);
+
+		bit = 1;
+		u32 child = 0;
+		for (u32 i = 0; i < num_drives; ++i)
+		{
+			if (drive_bit_mask & bit)
+			{
+				results.children[child].name = (c8*)pen::memory_alloc(3);
+
+				results.children[child].name[0] = drive_letters[i];
+				results.children[child].name[1] = ':';
+				results.children[child].name[2] = '\0';
+
+				results.children[child].num_children = 0;
+				results.children[child].children = nullptr;
+
+				++child;
+			}
+
+			bit <<= 1;
+		}
+
+		return PEN_ERR_OK;
+	}
+
+	pen_error filesystem_enum_directory(const c8* directory, fs_tree_node &results)
+	{
+		filesystem_enum_directory(L"C:", results);
+
+		WIN32_FIND_DATAA ffd;
+		HANDLE hFind = INVALID_HANDLE_VALUE;
+
+		hFind = FindFirstFileA(directory, &ffd);
+
+		do
+		{
+			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				PEN_PRINTF("Dir : %s\n", ffd.cFileName);
+			}
+			else
+			{
+				PEN_PRINTF("File : %s\n", ffd.cFileName);
+			}
+		} while (FindNextFileA(hFind, &ffd) != 0);
+
+		return PEN_ERR_OK;
+	}
+
+	pen_error filesystem_enum_directory( const c16* directory, fs_tree_node &results )
     {
         WIN32_FIND_DATA ffd;
         HANDLE hFind = INVALID_HANDLE_VALUE;
@@ -86,22 +192,11 @@ namespace pen
             }
         } while( FindNextFile( hFind, &ffd ) != 0 );
 
-        return 0;
+        return PEN_ERR_OK;
     }
 
-	u32 filesystem_getmtime( const c8* filename )
+	pen_error filesystem_enum_free_mem(fs_tree_node &results)
 	{
-		OFSTRUCT of_struct;
-		HFILE f = OpenFile(filename, &of_struct, OF_READ );
-
-		FILETIME c, m, a;
-
-		BOOL res = GetFileTime((HANDLE)f, &c, &a, &m);
-
-		long long* wt = (long long*)&m;
-
-		u32 unix_ts = win32_time_to_unix_seconds(*wt);
-
-		return unix_ts;
+		return PEN_ERR_OK;
 	}
 }

@@ -159,53 +159,6 @@ namespace pen
 		pen::memory_zero(&query_pool[0], sizeof(query_allocation) * MAX_QUERIES);
 	}
     
-    bool resources_handles_to_reclaim = false;
-    bool resources_allocated_this_frame = false;
-    void reclaim_resource_indices( )
-    {
-        if( !resources_handles_to_reclaim || resources_allocated_this_frame )
-        {
-            resources_allocated_this_frame = false;
-            return;
-        }
-        
-        for( s32 i = 0; i < MAX_RENDERER_RESOURCES; ++i )
-        {
-            if( resource_pool[ i ].asigned_flag & MARK_DELETE )
-            {
-                resource_pool[ i ].asigned_flag = RECLAIMED;
-            }
-        }
-        
-        resources_handles_to_reclaim = false;
-    }
-    
-    void mark_resource_deleted( u32 i )
-    {
-        resource_pool[ i ].asigned_flag |= MARK_DELETE;
-        resources_handles_to_reclaim = true;
-    }
-
-	u32 get_next_resource_index( u32 domain )
-	{
-		u32 i = 0;
-		while( resource_pool[ i ].asigned_flag & domain )
-		{
-			++i;
-            
-            if( i >= MAX_RENDERER_RESOURCES )
-            {
-                return 0;
-            }
-		}
-
-        resources_allocated_this_frame = true;
-        
-		resource_pool[ i ].asigned_flag |= domain;
-
-		return i;
-	};
-
 	u32 get_next_query_index(u32 domain)
 	{
 		u32 i = 0;
@@ -223,7 +176,7 @@ namespace pen
 
 	u32 renderer_create_clear_state( const clear_state &cs )
 	{
-		u32 resoruce_index = get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
+		u32 resoruce_index = renderer_get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
 
 		resource_pool[ resoruce_index ].clear_state.rgba[ 0 ] = cs.r;
 		resource_pool[ resoruce_index ].clear_state.rgba[ 1 ] = cs.g;
@@ -312,7 +265,7 @@ namespace pen
 
 	u32 direct::renderer_load_shader(const pen::shader_load_params &params)
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
         
         resource_allocation& res = resource_pool[ resource_index ];
         
@@ -350,7 +303,7 @@ namespace pen
 
 	u32 direct::renderer_create_buffer( const buffer_creation_params &params )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
         
         resource_allocation& res = resource_pool[resource_index];
         
@@ -367,7 +320,7 @@ namespace pen
     
     u32 direct::renderer_link_shader_program(const pen::shader_link_params &params )
     {
-        u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+        u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
         
         GLuint vs = resource_pool[ params.vertex_shader ].handle;
         GLuint ps = resource_pool[ params.pixel_shader ].handle;
@@ -417,7 +370,7 @@ namespace pen
 
 	u32 direct::renderer_create_input_layout( const input_layout_creation_params &params )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
         
         resource_allocation& res = resource_pool[ resource_index ];
         
@@ -679,7 +632,7 @@ namespace pen
 
 	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)
 	{
-		u32 resource_index = get_next_resource_index(DIRECT_RESOURCE);
+		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE);
         
         resource_allocation& res = resource_pool[ resource_index ];
         
@@ -716,7 +669,7 @@ namespace pen
 
 	u32 direct::renderer_create_texture2d(const texture_creation_params& tcp)
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
     
         resource_pool[ resource_index ].type = RES_TEXTURE;
         resource_pool[ resource_index ].handle = create_texture2d_internal( tcp );
@@ -726,7 +679,7 @@ namespace pen
 
 	u32 direct::renderer_create_sampler( const sampler_creation_params& scp )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
         
         resource_pool[ resource_index ].sampler_state = (sampler_creation_params*)pen::memory_alloc(sizeof(scp));
         
@@ -755,7 +708,7 @@ namespace pen
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
         
         auto& rs = resource_pool[resource_index].raster_state;
         
@@ -797,7 +750,7 @@ namespace pen
 
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
         
         resource_pool[ resource_index ].blend_state = (blend_creation_params*)pen::memory_alloc( sizeof(blend_creation_params) );
         
@@ -876,7 +829,7 @@ namespace pen
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
     
         resource_pool[ resource_index ].depth_stencil = (depth_stencil_creation_params*)pen::memory_alloc(sizeof(dscp));
         

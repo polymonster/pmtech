@@ -14,9 +14,64 @@
 namespace pen
 {
     extern void                renderer_update_queries();
-    extern u32                 get_next_resource_index( u32 domain );
-    extern u32                 get_next_query_index( u32 domain );
-    extern void                reclaim_resource_indices();
+	extern u32                 get_next_query_index(u32 domain);
+
+	//--------------------------------------------------------------------------------------
+	//  MULTITHREADED SYNCRONISED RESOURCE HANDLES
+	//--------------------------------------------------------------------------------------
+	enum renderer_resource_status_flags
+	{
+		RENDERER_RESOURCES_TO_RECLAIM = 1<<0,
+		RENDERER_RESOURCES_ALLOCATED_THIS_FRAME = 1<<1,
+		RENDERER_RESOURCES_FULL = 1<<2
+	};
+
+	u8	renderer_resource_status[MAX_RENDERER_RESOURCES] = { 0 };
+	u8	renderer_resource_flags = 0;
+
+	void renderer_reclaim_resource_indices()
+	{
+		if ( !(renderer_resource_flags & RENDERER_RESOURCES_TO_RECLAIM) || (renderer_resource_flags & RENDERER_RESOURCES_ALLOCATED_THIS_FRAME) )
+		{
+			renderer_resource_flags &= ~(RENDERER_RESOURCES_ALLOCATED_THIS_FRAME);
+			return;
+		}
+
+		for (s32 i = 0; i < MAX_RENDERER_RESOURCES; ++i)
+		{
+			if ( renderer_resource_status[i] & MARK_DELETE)
+			{
+				renderer_resource_status[i] = RECLAIMED;
+			}
+		}
+
+		renderer_resource_flags &= ~(RENDERER_RESOURCES_TO_RECLAIM);
+	}
+
+	void renderer_mark_resource_deleted(u32 i)
+	{
+		renderer_resource_status[i] |= MARK_DELETE;
+	}
+
+	u32 renderer_get_next_resource_index(u32 domain)
+	{
+		u32 i = 0;
+		while (renderer_resource_status[i] & domain)
+		{
+			++i;
+
+			if (i >= MAX_RENDERER_RESOURCES)
+			{
+				renderer_resource_flags |= RENDERER_RESOURCES_FULL;
+				return 0;
+			}
+		}
+
+		renderer_resource_flags |= RENDERER_RESOURCES_ALLOCATED_THIS_FRAME;
+		renderer_resource_status[i] |= domain;
+
+		return i;
+	};
 
     //--------------------------------------------------------------------------------------
     //  COMMAND BUFFER API
@@ -485,7 +540,7 @@ namespace pen
                 u32 end_pos = put_pos;
                 
                 //reclaim deleted resource handles while we can syncronise it.
-                pen::reclaim_resource_indices();
+                pen::renderer_reclaim_resource_indices();
                 
                 pen::threads_semaphore_signal( p_continue_semaphore, 1 );
                 
@@ -527,11 +582,15 @@ namespace pen
         p_consume_semaphore = p_job_thread_info->p_sem_consume;
         p_continue_semaphore = p_job_thread_info->p_sem_continue;
         
+		//clear command buffer
+		pen::memory_set(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
+
+		//reserve resource index 0 to be used as a null handle
+		renderer_resource_status[0] |= (DIRECT_RESOURCE | DEFER_RESOURCE);
+
+		//initialise renderer
         direct::renderer_initialise(job_params->user_data);
-        
-        //clear command buffer
-        pen::memory_set( cmd_buffer, 0x0, sizeof( deferred_cmd ) * MAX_COMMANDS );
-        
+       
         renderer_wait_for_jobs();
         
         return PEN_THREAD_OK;
@@ -608,7 +667,7 @@ namespace pen
             pen::memory_cpy( cmd_buffer[ put_pos ].shader_load.byte_code, params.byte_code, params.byte_code_size );
         }
         
-        u32 shader_index = get_next_resource_index( DEFER_RESOURCE );
+        u32 shader_index = renderer_get_next_resource_index( DEFER_RESOURCE );
         
         INC_WRAP( put_pos );
         
@@ -641,7 +700,7 @@ namespace pen
             c[i].name[len] = '\0';
         }
         
-        u32 program_index = get_next_resource_index( DEFER_RESOURCE );
+        u32 program_index = renderer_get_next_resource_index( DEFER_RESOURCE );
         
         INC_WRAP( put_pos );
         
@@ -676,7 +735,7 @@ namespace pen
             pen::memory_cpy( cmd_buffer[ put_pos ].shader_load.so_decl_entries, params.so_decl_entries, entries_size );
         }
         
-        u32 shader_index = get_next_resource_index( DEFER_RESOURCE );
+        u32 shader_index = renderer_get_next_resource_index( DEFER_RESOURCE );
         
         INC_WRAP( put_pos );
         
@@ -724,7 +783,7 @@ namespace pen
         
         INC_WRAP( put_pos );
         
-        return get_next_resource_index( DEFER_RESOURCE );
+        return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
     void defer::renderer_set_input_layout( u32 layout_index )
@@ -751,7 +810,7 @@ namespace pen
         
         INC_WRAP( put_pos );
         
-        return get_next_resource_index( DEFER_RESOURCE );
+        return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
     void defer::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
@@ -813,7 +872,7 @@ namespace pen
         
         INC_WRAP( put_pos );
         
-        return get_next_resource_index( DEFER_RESOURCE );
+        return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
     u32 defer::renderer_create_texture2d( const texture_creation_params& tcp )
@@ -835,7 +894,7 @@ namespace pen
 
         INC_WRAP( put_pos );
         
-        return get_next_resource_index( DEFER_RESOURCE );
+        return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
     void defer::renderer_release_shader( u32 shader_index, u32 shader_type )
@@ -874,7 +933,7 @@ namespace pen
         
         INC_WRAP( put_pos );
         
-        return get_next_resource_index( DEFER_RESOURCE );
+        return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
     void defer::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type )
@@ -897,7 +956,7 @@ namespace pen
         
         INC_WRAP( put_pos );
         
-        return get_next_resource_index( DEFER_RESOURCE );
+        return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
     void defer::renderer_set_rasterizer_state( u32 rasterizer_state_index )
@@ -950,7 +1009,7 @@ namespace pen
         
         INC_WRAP( put_pos );
         
-        return get_next_resource_index( DEFER_RESOURCE );
+        return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
     void defer::renderer_set_blend_state( u32 blend_state_index )
@@ -995,7 +1054,7 @@ namespace pen
         
         INC_WRAP( put_pos );
         
-        return get_next_resource_index( DEFER_RESOURCE );
+        return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
     void defer::renderer_set_depth_stencil_state( u32 depth_stencil_state )

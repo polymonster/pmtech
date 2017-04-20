@@ -91,8 +91,6 @@ namespace pen
 
 	struct resource_allocation
 	{
-		u8 asigned_flag;
-
 		union 
 		{
 			clear_state_internal*			clear_state;
@@ -126,28 +124,12 @@ namespace pen
 	void clear_resource_table( )
 	{
 		pen::memory_zero( &resource_pool[ 0 ], sizeof( resource_allocation ) * MAX_RENDERER_RESOURCES );
-		
-		//reserve resource 0 for NULL binding.
-		resource_pool[0].asigned_flag |= 0xff;
 	}
 
 	void clear_query_table()
 	{
 		pen::memory_zero(&query_pool[0], sizeof(query_allocation) * MAX_QUERIES);
 	}
-
-	u32 get_next_resource_index( u32 domain )
-	{
-		u32 i = 0;
-		while( resource_pool[ i ].asigned_flag & domain )
-		{
-			++i;
-		}
-
-		resource_pool[ i ].asigned_flag |= domain;
-
-		return i;
-	};
 
 	u32 get_next_query_index(u32 domain)
 	{
@@ -173,7 +155,7 @@ namespace pen
 
 	u32 renderer_create_clear_state( const clear_state &cs )
 	{
-		u32 resoruce_index = get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
+		u32 resoruce_index = renderer_get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
 
 		resource_pool[ resoruce_index ].clear_state = (pen::clear_state_internal*)pen::memory_alloc( sizeof( clear_state_internal ) );
 
@@ -271,7 +253,7 @@ namespace pen
 		HRESULT hr = -1;
 		u32 handle_out = (u32)-1;
 
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
 		if( params.type == PEN_SHADER_TYPE_VS )
 		{
@@ -322,7 +304,7 @@ namespace pen
 
 	u32 direct::renderer_link_shader_program(const shader_link_params &params)
 	{
-		u32 resource_index = get_next_resource_index(DIRECT_RESOURCE);
+		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE);
 
 		auto& sp = resource_pool[resource_index].shader_program;
 
@@ -337,7 +319,7 @@ namespace pen
 
 	u32 direct::renderer_create_buffer( const buffer_creation_params &params )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory( &bd, sizeof(bd) );
@@ -374,7 +356,7 @@ namespace pen
 
 	u32 direct::renderer_create_input_layout( const input_layout_creation_params &params )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
 		// Create the input layout
 		HRESULT hr = g_device->CreateInputLayout( 
@@ -474,7 +456,7 @@ namespace pen
 
 	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)
 	{
-		u32 resource_index = get_next_resource_index(DIRECT_RESOURCE);
+		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE);
 
 		HRESULT hr;
 
@@ -595,7 +577,7 @@ namespace pen
 
 	u32 direct::renderer_create_texture2d(const texture_creation_params& tcp)
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
 		HRESULT hr;
 
@@ -646,7 +628,7 @@ namespace pen
 
 	u32 direct::renderer_create_sampler( const sampler_creation_params& scp )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
 		HRESULT hr;
 		hr = g_device->CreateSamplerState( (D3D11_SAMPLER_DESC*)&scp, &resource_pool[ resource_index ].sampler_state );
@@ -674,7 +656,7 @@ namespace pen
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 		
 		g_device->CreateRasterizerState( (D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[ resource_index ].raster_state );
 
@@ -693,7 +675,7 @@ namespace pen
 
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
 		D3D11_BLEND_DESC bd;
 		pen::memory_zero( &bd, sizeof(D3D11_BLEND_DESC) );
@@ -745,7 +727,7 @@ namespace pen
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
 		g_device->CreateDepthStencilState( (D3D11_DEPTH_STENCIL_DESC*)&dscp, &resource_pool[ resource_index ].depth_stencil_state );
 
@@ -868,7 +850,7 @@ namespace pen
 
 	void direct::renderer_create_so_shader( const pen::shader_load_params &params )
 	{
-		u32 resource_index = get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
 		HRESULT hr = g_device->CreateGeometryShaderWithStreamOutput(
 			params.byte_code, 
@@ -963,7 +945,7 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	// D3D Device Creation
 	//--------------------------------------------------------------------------------------
-	u32 renderer_init_from_window( void* params )
+	u32 direct::renderer_initialise( void* params )
 	{
 		clear_resource_table( );
 		
@@ -1104,7 +1086,7 @@ namespace pen
 		if (FAILED(hr))
 			return hr;
 
-		u32 resource_index = get_next_resource_index(DIRECT_RESOURCE | DEFER_RESOURCE);
+		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE | DEFER_RESOURCE);
 		PEN_ASSERT( resource_index == PEN_DEFAULT_RT );
 		resource_pool[resource_index].render_target = (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
 
@@ -1116,7 +1098,7 @@ namespace pen
 
 		
 				
-		u32 depth_tex_id = get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
+		u32 depth_tex_id = renderer_get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
 		PEN_ASSERT( depth_tex_id == PEN_DEFAULT_DS );
 		resource_pool[depth_tex_id].depth_target = (depth_stencil_target_internal*)pen::memory_alloc(sizeof(depth_stencil_target_internal));
 
