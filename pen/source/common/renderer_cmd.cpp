@@ -267,6 +267,8 @@ namespace pen
             shader_link_params                  link_params;
         };
         
+        deferred_cmd() {};
+        
     } deferred_cmd;
     
     deferred_cmd cmd_buffer[ MAX_COMMANDS ];

@@ -23,6 +23,7 @@ namespace pen
 
         CMD_AUDIO_CHANNEL_SET_POSITION,
         CMD_AUDIO_CHANNEL_SET_FREQUENCY,
+        CMD_AUDIO_CHANNEL_STOP,
         
         CMD_AUDIO_GROUP_SET_PAUSE,
         CMD_AUDIO_GROUP_SET_MUTE,
@@ -99,6 +100,9 @@ namespace pen
             break;
         case CMD_AUDIO_CHANNEL_SET_FREQUENCY:
             direct::audio_channel_set_frequency( cmd.set_valuef.resource_index, cmd.set_valuef.value );
+            break;
+        case CMD_AUDIO_CHANNEL_STOP:
+            direct::audio_channel_stop( cmd.resource_index );
             break;
         case CMD_AUDIO_GROUP_SET_MUTE:
             direct::audio_group_set_mute( cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value );
@@ -345,6 +349,14 @@ namespace pen
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_DSP_SET_GAIN;
         audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = dsp_index;
         audio_cmd_buffer[ audio_put_pos ].set_valuef.value = gain;
+        
+        INC_WRAP( audio_put_pos );
+    }
+    
+    void audio_channel_stop( const u32 channel_index )
+    {
+        audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_CHANNEL_STOP;
+        audio_cmd_buffer[ audio_put_pos ].resource_index = channel_index;
         
         INC_WRAP( audio_put_pos );
     }

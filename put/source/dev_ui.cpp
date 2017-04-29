@@ -1,4 +1,4 @@
-#include "dev_ui.h"
+ #include "dev_ui.h"
 #include "window.h"
 #include "input.h"
 #include "pen.h"
@@ -280,7 +280,7 @@ namespace dev_ui
         scp.address_w = PEN_TEXTURE_ADDRESS_WRAP;
         scp.comparison_func = PEN_COMPARISON_ALWAYS;
         scp.min_lod = 0.0f;
-        scp.max_lod = 4.0f;
+        scp.max_lod = 0.0f;
 
         g_imgui_rs.font_sampler_state = defer::renderer_create_sampler( scp );
 

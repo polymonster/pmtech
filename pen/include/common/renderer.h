@@ -120,32 +120,34 @@ namespace pen
 
 	struct sampler_creation_params
 	{
-		u32 filter;
-		u32 address_u;
-		u32 address_v;
-		u32 address_w;
-		f32 mip_lod_bias;
-		u32	max_anisotropy;
-		u32 comparison_func;
-		f32 border_color[ 4 ];
-		f32 min_lod;
-		f32 max_lod;
+		u32 filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
+		u32 address_u = PEN_TEXTURE_ADDRESS_WRAP;
+		u32 address_v = PEN_TEXTURE_ADDRESS_WRAP;
+		u32 address_w = PEN_TEXTURE_ADDRESS_WRAP;
+		f32 mip_lod_bias = 0.0f;
+        u32	max_anisotropy = 0.0f;
+        u32 comparison_func = PEN_COMPARISON_ALWAYS;
+        f32 border_color[ 4 ] = { 0.0f };
+        f32 min_lod = -1.0f;
+        f32 max_lod = -1.0f;
 
+        sampler_creation_params(){};
 	};
 
 	struct rasteriser_state_creation_params
 	{
-		u32		fill_mode;
-		u32		cull_mode;
-		s32		front_ccw;
-		s32		depth_bias;
-		f32		depth_bias_clamp;
-		f32		sloped_scale_depth_bias;
-		s32		depth_clip_enable;
-		s32		scissor_enable;
-		s32		multisample;
-		s32		aa_lines;
-
+        u32		fill_mode = PEN_FILL_SOLID;
+		u32		cull_mode = PEN_CULL_BACK;
+		s32		front_ccw = 0;
+		s32		depth_bias = 0.0f;
+		f32		depth_bias_clamp = 0.0f;
+		f32		sloped_scale_depth_bias = 0.0f;
+		s32		depth_clip_enable = 1;
+		s32		scissor_enable = 0;
+		s32		multisample = 0;
+        s32		aa_lines = 0;
+        
+        rasteriser_state_creation_params(){};
 	};
 
 	struct viewport
@@ -162,14 +164,16 @@ namespace pen
 
 	struct render_target_blend
 	{
-		s32	blend_enable;
-		u32	src_blend;
-		u32	dest_blend;
-		u32	blend_op;
-		u32	src_blend_alpha;
-		u32	dest_blend_alpha;
-		u32	blend_op_alpha;
-		u8	render_target_write_mask;
+        s32	blend_enable = 0;
+        u32	src_blend = PEN_BLEND_ONE;
+        u32	dest_blend = PEN_BLEND_ZERO;
+        u32	blend_op = PEN_BLEND_OP_ADD;
+        u32	src_blend_alpha = PEN_BLEND_ONE;
+        u32	dest_blend_alpha = PEN_BLEND_ZERO;
+        u32	blend_op_alpha = PEN_BLEND_OP_ADD;
+        u8	render_target_write_mask = 0xff;
+        
+        render_target_blend(){};
 	};
 
 	struct stencil_op

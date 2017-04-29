@@ -169,8 +169,6 @@ const c8* file_browser( bool& dialog_open )
     
     ImGui::Begin("File Browser");
     
-    ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
-    
     ImGui::Text("%s", selected_path.c_str());
     
     const c8* return_value = nullptr;
@@ -192,6 +190,8 @@ const c8* file_browser( bool& dialog_open )
     {
         dialog_open = false;
     }
+    
+    ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
     
     ImGui::Columns(current_depth, "directories");
     ImGui::Separator();
@@ -317,7 +317,7 @@ const c8* diff_range_nicknames[k_num_fft_diff_buckets] =
 class beat_grid
 {
 public:
-    std::vector<u32> beats[k_num_fft_diff_buckets];
+    std::vector<f32> beats[k_num_fft_diff_buckets];
     f32 average_interval[k_num_fft_diff_buckets];
 
     void show_window( bool& open )
@@ -330,13 +330,13 @@ public:
         {
             average_interval[i] = 0.0f;
             
-            u32 prev = 0;
+            f32 prev = 0.0f;
             u32 counter = 0;
             for( auto& timestamp : beats[ i ] )
             {
                 if( counter > 0 )
                 {
-                    ImGui::Text("%i", timestamp - prev ); ImGui::SameLine();
+                    ImGui::Text("%f", timestamp - prev ); ImGui::SameLine();
                     
                     average_interval[ i ] += ( timestamp - prev );
                 }
@@ -363,6 +363,402 @@ public:
     }
 };
 
+struct spectrum_history_stats
+{
+    f32 min, max, average;
+};
+
+struct beat
+{
+    u32 start = 0;
+    u32 end = 0;
+    f32 val = 0.0f;
+};
+
+class spectrum_analyser
+{
+public:
+    pen::audio_fft_spectrum frame_spectrum;
+    u32                     spectrum_dsp;
+    
+    static const u32        max_fft_length = 1024;
+    static const u32        num_analysis_buffers = 256;
+    static const u32        new_anlysis_loc = 0;
+    f32                     spectrum_history[num_analysis_buffers][max_fft_length];
+    spectrum_history_stats  spectrum_stats[max_fft_length];
+    f32                     coarse_spectrum_history[num_analysis_buffers][k_num_fft_diff_buckets];
+    
+    f32                     raw_diff[num_analysis_buffers][max_fft_length];
+    f32                     coarse_diff[k_num_fft_diff_buckets][num_analysis_buffers];
+    f32                     second_order_diff[k_num_fft_diff_buckets][num_analysis_buffers];
+    f32                     timestamp[num_analysis_buffers];
+    
+    f32                     beat_hueristic[1024];
+    u32                     h_pos = 0;
+    u32                     frame_counter = 0;
+    
+    s32                     h_pos_min[ 4 ] = { 0, 256, 512, 768 };
+    s32                     h_pos_max[ 4 ] = { 255, 255, 255, 255 };
+    
+    std::vector<beat>       beats;
+    beat                    new_beat;
+    
+    s32                     current_display_pos = 0;
+    s32                     current_display_samples = 256;
+    bool                    pause_display = false;
+    
+    
+    void update( s32 cur_track_pos )
+    {
+        f32 cur_time = (f32)cur_track_pos;
+        
+        if( pause_display )
+        {
+            return;
+        }
+        
+        //update fft spectrum history
+        pen_error err = pen::audio_dsp_get_spectrum( spectrum_dsp, &frame_spectrum );
+        
+        if( err == PEN_ERR_OK )
+        {
+            //shift the history along.
+            for( s32 i = num_analysis_buffers-1; i > 0 ; --i )
+            {
+                pen::memory_cpy( &spectrum_history[ i ][ 0 ], &spectrum_history[ i - 1 ][ 0 ], sizeof(f32) * max_fft_length);
+                pen::memory_cpy( &raw_diff[ i ][ 0 ], &raw_diff[ i - 1 ][ 0 ], sizeof(f32) * max_fft_length);
+                
+                timestamp[ i ] = timestamp[ i - 1 ];
+            }
+            
+            timestamp[ 0 ] = cur_time;
+            
+            //add current frame spectrum to the history buffer
+            for( s32 bin = 0; bin < frame_spectrum.length; ++bin )
+            {
+                if( bin < max_fft_length )
+                {
+                    //combine stereo channels and avaerge into 1 to simply things
+                    spectrum_history[new_anlysis_loc][bin] = 0.0f;
+                    
+                    for( s32 chan = 0; chan < frame_spectrum.num_channels; ++chan )
+                    {
+                        spectrum_history[new_anlysis_loc][bin] += frame_spectrum.spectrum[chan][bin];
+                    }
+                    
+                    spectrum_history[new_anlysis_loc][bin] /= (f32)(frame_spectrum.num_channels);
+                }
+            }
+            
+            //calculate statistics over time
+            for( s32 i = 0; i < max_fft_length; ++i )
+            {
+                spectrum_stats[i].min = 1.0f;
+                spectrum_stats[i].max = 0.0f;
+                spectrum_stats[i].average = 0.0f;
+                
+                for( s32 j = 0; j < num_analysis_buffers; ++j )
+                {
+                    f32 val = spectrum_history[j][i];
+                    spectrum_stats[i].average += val;
+                    
+                    spectrum_stats[i].max = fmax( spectrum_stats[i].max, val);
+                    spectrum_stats[i].min = fmin( spectrum_stats[i].min, val);
+                }
+                
+                spectrum_stats[i].average /= (f32)num_analysis_buffers;
+            }
+            
+            //shift along coarse diff
+            for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
+            {
+                for( s32 j = num_analysis_buffers - 1; j > 0; --j )
+                {
+                    coarse_diff[ i ][ j ] = coarse_diff[ i ][ j - 1 ];
+                }
+            }
+            
+            //calculate change in frequency from frame to frame
+            u32 coarse_buffer = 0;
+            f32 coarse_average = 0.0f;
+            for( s32 i = 0; i < max_fft_length; ++i )
+            {
+                raw_diff[new_anlysis_loc][ i ] = ( spectrum_history[new_anlysis_loc][i] - spectrum_history[new_anlysis_loc + 1][i] );
+                
+                static const f32 epsilon = 0.000000001f;
+                raw_diff[new_anlysis_loc][ i ] /= (spectrum_stats[i].max + epsilon);
+                
+                coarse_average += raw_diff[new_anlysis_loc][i];
+                
+                //average spectrum into coarser bands
+                if( i >= k_fft_diff_ranges[ coarse_buffer ] || i == max_fft_length-1 )
+                {
+                    coarse_diff[ coarse_buffer ][ new_anlysis_loc ] = coarse_average / (f32)k_fft_diff_ranges[coarse_buffer];
+                    
+                    coarse_buffer++;
+                    coarse_average = 0.0f;
+                }
+            }
+            
+            //isolate peaks
+            for( s32 b = 0; b < k_num_fft_diff_buckets; ++b )
+            {
+                f32 cur_max = -1.0f;
+                f32 cur_min = 1.0f;
+                f32 cur_dir = -1.0f;
+                
+                for( s32 i = num_analysis_buffers - 1; i > 0; --i )
+                {
+                    second_order_diff[ b ][ i ] = 0.0f;
+                    second_order_diff[ b ][ i - 1 ] = 0.0f;
+                    
+                    if( coarse_diff[ b ][ i - 1 ] >= coarse_diff[ b ][ i ] )
+                    {
+                        cur_max = coarse_diff[ b ][ i ];
+                        
+                        if( cur_dir != 1.0f )
+                        {
+                            second_order_diff[ b ][ i ] = (cur_max - cur_min) * 0.5f + 0.5f;
+                        }
+                        
+                        //upward
+                        cur_dir = 1.0f;
+                    }
+                    else
+                    {
+                        cur_min = coarse_diff[ b ][ i ];
+                        
+                        if( cur_dir != -1.0f )
+                        {
+                            second_order_diff[ b ][ i ] = (cur_min - cur_max) * 0.5f + 0.5f;
+                        }
+                        
+                        //downward
+                        cur_dir = -1.0f;
+                    }
+                    
+                    second_order_diff[ b ][ i ] -= 0.5f;
+                    second_order_diff[ b ][ i ] *= 2.0f;
+                    second_order_diff[ b ][ i ] = fmax( second_order_diff[ b ][ i ], 0.0f );
+                }
+            }
+            
+            //quantize peaks into beats
+            f32 cur_score = 0.0f;
+            s32 beat_start = -1;
+            s32 cool_down = 0;
+            
+            for( s32 i = num_analysis_buffers - 1; i > 0 ; i-- )
+            {
+                f32 cur_val = second_order_diff[ 0 ][ i ];
+                
+                if( cur_val > 0.01f && beat_start == -1 )
+                {
+                    cur_score = cur_val;
+                    beat_hueristic[ h_pos + i ] = cur_val;
+                    beat_start = i;
+                    cool_down = 4;
+                }
+                else
+                {
+                    if( cool_down > 0 )
+                    {
+                        beat_hueristic[ h_pos + i ] = cur_score;
+                        
+                        if( cur_val > cur_score )
+                        {
+                            cur_score = cur_val;
+                            
+                            u32 j = i;
+                            while( j <= beat_start )
+                            {
+                                beat_hueristic[ h_pos + j ] = cur_score;
+                                
+                                j++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        beat_hueristic[ h_pos + i ] = 0.0f;
+                        beat_start = -1;
+                        cur_score = 0.0f;
+                    }
+                }
+                
+                cool_down--;
+            }
+            
+            if( second_order_diff[ 0 ][ 4 ] > new_beat.val )
+            {
+                if( new_beat.val == 0.0f )
+                {
+                    new_beat.start = frame_counter;
+                }
+                
+                new_beat.val = second_order_diff[ 0 ][ 4 ];
+            }
+            else if( second_order_diff[ 0 ][ 0 ] < 0.01f )
+            {
+                if( new_beat.val > 0.0f )
+                {
+                    new_beat.end = frame_counter;
+                    beats.insert(beats.begin() + 0, new_beat);
+                }
+                
+                new_beat.val = 0.0f;
+                new_beat.start = 0;
+                new_beat.end = 0;
+            }
+            
+            ++frame_counter;
+        }
+    }
+    
+    void show_window( )
+    {
+        ImGui::Begin("Spectrum Analyser");
+        
+        ImGui::InputInt("Num Display Samples", &current_display_samples);
+        
+        u32 display_analysis_loc = new_anlysis_loc;
+        pause_display |= ImGui::InputInt("Analysis Display Pos", &current_display_pos);
+        ImGui::SameLine();
+        if( pause_display )
+        {
+            if( ImGui::Button("Play") )
+            {
+                pause_display = false;
+            }
+            
+            display_analysis_loc = current_display_pos;
+        }
+        else
+        {
+            if( ImGui::Button("Play") )
+            {
+                pause_display = true;
+            }
+        }
+        
+        if( ImGui::CollapsingHeader("Raw Data") )
+        {
+            ImGui::PlotHistogram("Raw Spectrum", &spectrum_history[ display_analysis_loc ][0], current_display_samples, 0, NULL, 0.0f, 1.0f, ImVec2(530,100));
+            ImGui::PlotLines("Per Sample Differentiation", &raw_diff[ display_analysis_loc ][0], current_display_samples, 0, NULL, -1.0f, 1.0f, ImVec2(530,100));
+            
+            for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
+            {
+                if( i < k_num_fft_diff_buckets - 1 )
+                {
+                    ImGui::PlotLines("", &coarse_diff[i][0], num_analysis_buffers, 0, NULL, -1.0f, 1.0f, ImVec2(100,100));
+                    ImGui::SameLine();
+                }
+                else
+                {
+                    ImGui::PlotLines("Coarse Differentiation", &coarse_diff[i][0], num_analysis_buffers, 0, NULL, -1.0f, 1.0f, ImVec2(100,100));
+                }
+            }
+        }
+        
+        if( ImGui::CollapsingHeader("Differentiation Graphs") )
+        {
+            for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
+            {
+                ImGui::PlotLines(diff_range_nicknames[i], &coarse_diff[i][0], num_analysis_buffers, 0, NULL, -1.0f, 1.0f, ImVec2(530,100));
+            }
+        }
+
+        if( ImGui::CollapsingHeader("Second Order Differentiation Graphs") )
+        {
+            for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
+            {
+                ImGui::PlotLines(diff_range_nicknames[i], &second_order_diff[i][0], num_analysis_buffers, 0, NULL, 0.0f, 1.0f, ImVec2(530,100));
+            }
+        }
+        
+        if( ImGui::CollapsingHeader("Peak Isolation") )
+        {
+            ImGui::PlotHistogram("", &beat_hueristic[ 0 ], num_analysis_buffers, 0, NULL, 0.0f, 1.0f, ImVec2(530,100));
+        }
+        
+        if( ImGui::CollapsingHeader("Beat History") )
+        {
+            std::vector<f32> bv;
+            
+            u32 num_beats = beats.size() > 256 ? 256 : beats.size();
+            
+            u32 base_frame = 0;
+            
+            for( s32 i = 0; i < num_beats; ++i )
+            {
+                if( i == 0 )
+                {
+                    base_frame = beats[ i ].start;
+                }
+                else if( i > 0 )
+                {
+                    s32 beat_interval = beats[ i ].start - beats[ i - 1 ].end;
+                    
+                    for( s32 b = 0; b < beat_interval; ++b )
+                    {
+                        bv.push_back( 0.0f );
+                    }
+                }
+                
+                u32 beat_len = beats[ i ].end - beats[ i ].start;
+                
+                for( s32 b = 0; b < beat_len; ++b )
+                {
+                    bv.push_back( beats[ i ].val );
+                }
+            }
+            
+            ImGui::PlotHistogram("", (f32*)&bv[ 0 ], bv.size(), 0, NULL, 0.0f, 1.0f, ImVec2(530,100));
+        }
+        
+        if( ImGui::CollapsingHeader("Intervals") )
+        {
+            ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+            
+            for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
+            {
+                u32 interval = 0;
+                u32 last_beat = 0;
+                bool first_beat = true;
+                s32 cooldown = 0;
+                
+                for( s32 j = num_analysis_buffers - 1; j > 0; --j )
+                {
+                    if( beat_hueristic[ j ] > 0.1f && cooldown <= 0)
+                    {
+                        interval = (last_beat - j);
+                        
+                        if(!first_beat && interval > 3)
+                        {
+                            ImGui::Text("[%02d]", interval ); ImGui::SameLine();
+                            ImGui::Text("[%.1f]", timestamp[ j ] - timestamp[ last_beat ] );
+                        }
+                        
+                        last_beat = j;
+                        
+                        first_beat = false;
+                        
+                        cooldown = 4;
+                    }
+                    
+                    --cooldown;
+                }
+                
+                ImGui::Text(".");
+            }
+            
+            ImGui::End();
+        }
+        
+        ImGui::End();
+    }
+};
+
 class playback_deck
 {
 public:
@@ -374,7 +770,7 @@ public:
     u32 channel_index;
     u32 spectrum_dsp;
     
-    beat_grid grid;
+    spectrum_analyser sa;
     
     //audio states
     pen::audio_channel_state channel_state;
@@ -385,6 +781,7 @@ public:
     //filesystem
     bool open_file = false;
     bool open_beat_grid = false;
+    bool open_spectrum_analyser = false;
     const c8* file = nullptr;
     
     u32 cue_pos;
@@ -397,7 +794,7 @@ public:
     //analysis
     
     //general fft storage
-    static const s32 num_analysis_buffers = 128;
+    static const s32 num_analysis_buffers = 256;
     f32 fft_buffers[num_analysis_buffers][2048] = { 0 };
     u32 fft_timestamp[num_analysis_buffers] = { 0 };
     
@@ -406,16 +803,25 @@ public:
     f32 fft_diff[2048];
     
     //the magic
-    f32 fft_combined_diff[k_num_fft_diff_buckets];
-    f32 prev_combined_diff[k_num_fft_diff_buckets];
-    f32 fft_combined_history[num_analysis_buffers];
+    f32 fft_combined_diff[k_num_fft_diff_buckets] = { 0.0f };
+    f32 prev_combined_diff[k_num_fft_diff_buckets] = { 0.0f };
+    f32 fft_combined_history[num_analysis_buffers] = { 0.0f };
+    f32 beat_cooldown[ k_num_fft_diff_buckets ] = { 0.0f };
     
     //tracking
     s32 current_analysis_buffer_pos = 0;
     s32 plot_lines_diff_range = 0;
     
+    f32 timestamp = 0.0;
+    f32 fame_time = 0.0f;
+    
     void ui_control()
     {
+        f32 prev_time = timestamp;
+        timestamp = pen::timer_get_time();
+        
+        fame_time = timestamp - prev_time;
+        
         //file info
         ImGui::PushID(this);
         if( ImGui::Button("Open"))
@@ -474,7 +880,7 @@ public:
         }
         
         //transport controls
-        if( channel_state.play_state == pen::NOT_PLAYING )
+        if( channel_state.play_state == pen::NOT_PLAYING  || channel_index == 0 )
         {
             if( ImGui::Button("Play") )
             {
@@ -520,7 +926,33 @@ public:
                 pen::audio_group_set_pause( group_index, true );
             }
         }
-    
+        
+        ImGui::SameLine();
+        if( ImGui::Button("Stop") )
+        {
+            if( sound_index != 0 )
+            {
+                pen::audio_channel_stop(channel_index);
+                channel_index = 0;
+                
+                pen::audio_release_resource(sound_index);
+                sound_index = 0;
+            }
+        }
+        
+        sa.spectrum_dsp = spectrum_dsp;
+        sa.update( channel_state.position_ms );
+        
+        if( ImGui::Button("Spectrum Analyser") )
+        {
+            open_spectrum_analyser = true;
+        }
+        
+        if( open_spectrum_analyser )
+        {
+            sa.show_window();
+        }
+        
         //file info valid
         if( ImGui::SliderInt("Track Pos", (s32*)&channel_state.position_ms, 0, file_info.length_ms) )
         {
@@ -574,17 +1006,7 @@ public:
         {
             ImGui::SliderFloat("FFT Max", &fft_max, 0.0f, 1.0f );
             ImGui::InputInt("Num FFT Samples", &fft_num_samples);
-            
-            if( ImGui::Button("Open Beat Grid") )
-            {
-                open_beat_grid = true;
-            }
-            
-            if( open_beat_grid )
-            {
-                grid.show_window(open_beat_grid);
-            }
-            
+        
             s32 prev_analysis_buffer_pos = current_analysis_buffer_pos - 1;
             
             if( prev_analysis_buffer_pos < 0 )
@@ -648,6 +1070,7 @@ public:
                 for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
                 {
                     f32 cur_val = fft_combined_diff[ i ] - prev_combined_diff[ i ];
+                    prev_combined_diff[ i ] = fft_combined_diff[ i ];
                     
                     if( i == plot_lines_diff_range )
                     {
@@ -655,25 +1078,24 @@ public:
                     }
                     
                     ImGui::SameLine();
-                    if( fabs( cur_val ) > 0.2f )
+                    if( fabs( cur_val ) > 0.4f && beat_cooldown[ i ] <= 0.0f)
+                    {
+                        //grid.beats[ i ].push_back( timestamp );
+                        
+                        beat_cooldown[ i ] = 66.6666f;
+                    }
+                    
+                    
+                    if( beat_cooldown[ i ] > 0.0f )
                     {
                         ImGui::Text("[%s]", diff_range_nicknames[ i ] );
-                        
-                        u32 diff = 129;
-                        
-                        if( grid.beats[ i ].size() > 0 )
-                            diff = channel_state.position_ms - grid.beats[ i ].back();
-                        
-                        if( diff > 128 )
-                        {
-                            //cool down of 33ms
-                            grid.beats[ i ].push_back( channel_state.position_ms );
-                        }
                     }
                     else
                     {
                         ImGui::Text("[    ]");
                     }
+                    
+                    beat_cooldown[ i ] -= fame_time;
                 }
             }
             

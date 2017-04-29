@@ -90,8 +90,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::defer::renderer_clear( clear_state_grey );
 
 
-		bool show_test_window = true;
-		bool show_another_window = false;
+		static bool show_test_window = true;
+		static bool show_another_window = false;
 		ImVec4 clear_col = ImColor(114, 144, 154);
 
 		// 1. Show a simple window

@@ -70,6 +70,7 @@ namespace pen
     //manipulation
     void	audio_channel_set_position( const u32 channel_index, const u32 position_ms );
     void	audio_channel_set_frequency( const u32 channel_index, const f32 frequency );
+    void	audio_channel_stop( const u32 channel_index );
 
     void	audio_group_set_pause( const u32 group_index, const bool val );
     void	audio_group_set_mute( const u32 group_index, const bool val );
@@ -108,6 +109,7 @@ namespace pen
         //manipulation
         void	audio_channel_set_position( const u32 channel_index, const u32 position_ms );
         void	audio_channel_set_frequency( const u32 channel_index, const f32 frequency );
+        void	audio_channel_stop( const u32 channel_index );
         
         void	audio_group_set_pause( const u32 group_index, const bool val );
         void	audio_group_set_mute( const u32 group_index, const bool val );

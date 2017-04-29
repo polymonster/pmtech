@@ -369,6 +369,13 @@ namespace pen
         p_chan->setFrequency(frequency);
     }
     
+    void direct::audio_channel_stop( const u32 channel_index )
+    {
+        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
+        
+        p_chan->stop();
+    }
+    
     void direct::audio_group_set_pause( const u32 group_index, const bool val )
     {
         FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;

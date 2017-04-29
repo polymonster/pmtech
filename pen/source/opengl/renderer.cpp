@@ -80,10 +80,16 @@ namespace pen
         bool scissor_enabled;
     };
     
+    struct texture_info
+    {
+        GLuint handle;
+        u32 max_mip_level;
+    };
+    
     struct render_target
     {
         GLuint framebuffer;
-        GLuint texture;
+        texture_info texture;
     };
     
     enum resource_type : s32
@@ -115,6 +121,7 @@ namespace pen
             depth_stencil_creation_params*  depth_stencil;
             blend_creation_params*          blend_state;
             GLuint                          handle;
+            texture_info                    texture;
             render_target                   render_target;
             sampler_creation_params*        sampler_state;
             shader_program*                 shader_program;
@@ -338,11 +345,20 @@ namespace pen
             switch( constant.type )
             {
                 case pen::CT_CBUFFER:
+                {
                     loc = glGetUniformBlockIndex(prog, constant.name);
-                    break;
+                    if( loc != constant.location )
+                    {
+                        glUniformBlockBinding(prog, loc, constant.location);
+                    }
+                }
+                break;
                 case pen::CT_SAMPLER_2D:
+                {
                     loc = glGetUniformLocation(prog, constant.name);
-                    break;
+                    glUniform1i( loc, constant.location );
+                }
+                break;
                 default:
                     break;
             }
@@ -602,7 +618,7 @@ namespace pen
         }
     }
     
-    GLuint create_texture2d_internal(const texture_creation_params& tcp)
+    texture_info create_texture2d_internal(const texture_creation_params& tcp)
     {
         u32 sized_format, format, type;
         get_texture_format( tcp.format, sized_format, format, type );
@@ -627,7 +643,11 @@ namespace pen
         
         glBindTexture(GL_TEXTURE_2D, 0 );
         
-        return handle;
+        texture_info ti;
+        ti.handle = handle;
+        ti.max_mip_level = tcp.num_mips - 1;
+        
+        return ti;
     }
 
 	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)
@@ -643,7 +663,7 @@ namespace pen
         
         res.render_target.texture = create_texture2d_internal(tcp);
         
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, res.render_target.texture, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, res.render_target.texture.handle, 0);
         
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
@@ -672,7 +692,7 @@ namespace pen
 		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
     
         resource_pool[ resource_index ].type = RES_TEXTURE;
-        resource_pool[ resource_index ].handle = create_texture2d_internal( tcp );
+        resource_pool[ resource_index ].texture = create_texture2d_internal( tcp );
 
 		return resource_index;
 	}
@@ -694,16 +714,62 @@ namespace pen
         
         glActiveTexture(GL_TEXTURE0 + resource_slot);
         
+        u32 max_mip = 0;
+        
         if( res.type == RES_TEXTURE )
         {
-            glBindTexture( GL_TEXTURE_2D, res.handle );
+            glBindTexture( GL_TEXTURE_2D, res.texture.handle );
+            max_mip = res.texture.max_mip_level;
         }
         else
         {
-            glBindTexture( GL_TEXTURE_2D, res.render_target.texture );
+            glBindTexture( GL_TEXTURE_2D, res.render_target.texture.handle );
+            max_mip = res.render_target.texture.max_mip_level;
         }
         
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+        auto* sampler_state = resource_pool[sampler_index].sampler_state;
+        
+        //handle unmipped textures or textures with missisng mips
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_mip);
+        
+        // filter
+        switch( sampler_state->filter )
+        {
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                break;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_POINT);
+                break;
+            case PEN_FILTER_LINEAR:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                break;
+            case PEN_FILTER_POINT:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_POINT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_POINT);
+                break;
+        };
+        
+        //address mode
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, sampler_state->address_u );
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, sampler_state->address_v );
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, sampler_state->address_w );
+        
+        //mip control
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, sampler_state->mip_lod_bias );
+        
+        if( sampler_state->max_lod > -1.0f )
+        {
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, sampler_state->max_lod );
+        }
+        
+        if( sampler_state->min_lod > -1.0f )
+        {
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, sampler_state->min_lod );
+        }
 	}
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
@@ -862,7 +928,7 @@ namespace pen
         
         res.handle = 0;
         
-        mark_resource_deleted( shader_index );
+        renderer_mark_resource_deleted( shader_index );
 	}
 
 	void direct::renderer_release_buffer( u32 buffer_index )
@@ -872,7 +938,7 @@ namespace pen
         
         res.handle = 0;
         
-        mark_resource_deleted( buffer_index );
+        renderer_mark_resource_deleted( buffer_index );
 	}
 
 	void direct::renderer_release_texture2d( u32 texture_index )
@@ -882,12 +948,12 @@ namespace pen
         
         res.handle = 0;
         
-        mark_resource_deleted( texture_index );
+        renderer_mark_resource_deleted( texture_index );
 	}
 
 	void direct::renderer_release_raster_state( u32 raster_state_index )
 	{
-        mark_resource_deleted( raster_state_index );
+        renderer_mark_resource_deleted( raster_state_index );
 	}
 
 	void direct::renderer_release_blend_state( u32 blend_state )
@@ -896,16 +962,16 @@ namespace pen
         
         pen::memory_free(res.blend_state);
         
-        mark_resource_deleted( blend_state );
+        renderer_mark_resource_deleted( blend_state );
 	}
 
 	void direct::renderer_release_render_target( u32 render_target )
 	{
         resource_allocation& res = resource_pool[ render_target ];
-        glDeleteTextures( 1, &res.render_target.texture );
-        glDeleteFramebuffers( 1, &res.render_target.texture );
+        glDeleteTextures( 1, &res.render_target.texture.handle );
+        glDeleteFramebuffers( 1, &res.render_target.texture.handle );
         
-        mark_resource_deleted( render_target );
+        renderer_mark_resource_deleted( render_target );
 	}
 
 	void direct::renderer_release_input_layout( u32 input_layout )
@@ -914,7 +980,7 @@ namespace pen
         
         pen::memory_free(res.input_layout);
         
-        mark_resource_deleted( input_layout );
+        renderer_mark_resource_deleted( input_layout );
 	}
 
 	void direct::renderer_release_sampler( u32 sampler )
@@ -923,7 +989,7 @@ namespace pen
         
         pen::memory_free(res.sampler_state);
         
-        mark_resource_deleted( sampler );
+        renderer_mark_resource_deleted( sampler );
 	}
 
 	void direct::renderer_release_depth_stencil_state( u32 depth_stencil_state )
@@ -932,12 +998,12 @@ namespace pen
         
         pen::memory_free( res.depth_stencil );
         
-        mark_resource_deleted( depth_stencil_state );
+        renderer_mark_resource_deleted( depth_stencil_state );
 	}
     
     void direct::renderer_release_clear_state( u32 clear_state )
     {
-        mark_resource_deleted( clear_state );
+        renderer_mark_resource_deleted( clear_state );
     }
     
     void direct::renderer_release_program( u32 program )
@@ -946,7 +1012,7 @@ namespace pen
         
         glDeleteProgram(res.shader_program->program);
         
-        mark_resource_deleted( program );
+        renderer_mark_resource_deleted( program );
     }
 
 	void direct::renderer_release_query( u32 query )
@@ -959,10 +1025,12 @@ namespace pen
 
 	}
     
-    void direct::renderer_initialise( void* )
+    u32 direct::renderer_initialise( void* )
     {
         //todo renderer caps
         //const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);
+        
+        return PEN_ERR_OK;
     }
     
     void direct::renderer_shutdown( )
