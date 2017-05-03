@@ -213,30 +213,30 @@ void handle_key_event( NSEvent* event, bool down )
         
         switch (key_char)
         {
-            case NSF1FunctionKey:  penk = PENK_F1;
-            case NSF2FunctionKey:  penk = PENK_F2;
-            case NSF3FunctionKey:  penk = PENK_F3;
-            case NSF4FunctionKey:  penk = PENK_F4;
-            case NSF5FunctionKey:  penk = PENK_F5;
-            case NSF6FunctionKey:  penk = PENK_F6;
-            case NSF7FunctionKey:  penk = PENK_F7;
-            case NSF8FunctionKey:  penk = PENK_F8;
-            case NSF9FunctionKey:  penk = PENK_F9;
-            case NSF10FunctionKey: penk = PENK_F10;
-            case NSF11FunctionKey: penk = PENK_F11;
-            case NSF12FunctionKey: penk = PENK_F12;
+            case NSF1FunctionKey:           penk = PENK_F1;
+            case NSF2FunctionKey:           penk = PENK_F2;
+            case NSF3FunctionKey:           penk = PENK_F3;
+            case NSF4FunctionKey:           penk = PENK_F4;
+            case NSF5FunctionKey:           penk = PENK_F5;
+            case NSF6FunctionKey:           penk = PENK_F6;
+            case NSF7FunctionKey:           penk = PENK_F7;
+            case NSF8FunctionKey:           penk = PENK_F8;
+            case NSF9FunctionKey:           penk = PENK_F9;
+            case NSF10FunctionKey:          penk = PENK_F10;
+            case NSF11FunctionKey:          penk = PENK_F11;
+            case NSF12FunctionKey:          penk = PENK_F12;
                 
-            case NSLeftArrowFunctionKey:   penk = PENK_LEFT;
-            case NSRightArrowFunctionKey:  penk = PENK_RIGHT;
-            case NSUpArrowFunctionKey:     penk = PENK_UP;
-            case NSDownArrowFunctionKey:   penk = PENK_DOWN;
+            case NSLeftArrowFunctionKey:    penk = PENK_LEFT;
+            case NSRightArrowFunctionKey:   penk = PENK_RIGHT;
+            case NSUpArrowFunctionKey:      penk = PENK_UP;
+            case NSDownArrowFunctionKey:    penk = PENK_DOWN;
                 
-            case NSPageUpFunctionKey:      penk = PENK_NEXT;
-            case NSPageDownFunctionKey:    penk = PENK_PRIOR;
-            case NSHomeFunctionKey:        penk = PENK_HOME;
-            case NSEndFunctionKey:         penk = PENK_END;
+            case NSPageUpFunctionKey:       penk = PENK_NEXT;
+            case NSPageDownFunctionKey:     penk = PENK_PRIOR;
+            case NSHomeFunctionKey:         penk = PENK_HOME;
+            case NSEndFunctionKey:          penk = PENK_END;
                 
-            case NSPrintScreenFunctionKey: penk = PENK_SNAPSHOT;
+            case NSPrintScreenFunctionKey:  penk = PENK_SNAPSHOT;
         }
         
         if( down )

@@ -7,10 +7,12 @@
 #define PEN_THREAD_OK                   0
 #define PEN_THREAD_ROUTINE( FP )        LPTHREAD_START_ROUTINE FP
 #define PEN_THREAD_RETURN               DWORD WINAPI
+#define PEN_SHADER_COMPILE_CMD          "..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\"
 #else
 #define PEN_THREAD_OK                   nullptr
 #define PEN_THREAD_RETURN               void*
 #define PEN_THREAD_ROUTINE( FP )		PEN_THREAD_RETURN (*FP)(void* data)
+#define PEN_SHADER_COMPILE_CMD          "export PATH=$PATH:../../../tools/bin/python/osx; echo $PATH; python3 ../../../tools/build_shaders.py -root_dir ../../"
 #endif
 
 enum pen_error

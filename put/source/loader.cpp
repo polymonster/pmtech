@@ -1,14 +1,12 @@
+#include <fstream>
+
+#include "definitions.h"
 #include "loader.h"
 #include "memory.h"
 #include "file_system.h"
 #include "renderer.h"
 #include "pen_string.h"
 #include "json.hpp"
-#include <fstream>
-
-#if 0
-#include <direct.h>   
-#endif
 
 using json = nlohmann::json;
 
@@ -655,11 +653,7 @@ namespace put
 
 					if ( err == PEN_ERR_OK && current_ts > shader_ts)
 					{
-						//system("..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\");
-                        
-                        //system("python3 ../../../tools/build_shaders.py -root_dir ../../");
-                        
-                        system("export PATH=$PATH:/Users/alex.dixon/Desktop; echo $PATH; python3 ../../../tools/build_shaders.py -root_dir ../../");
+                        system( PEN_SHADER_COMPILE_CMD );
                         
                         ms.invalidated = true;
 						s_invalidated = true;
