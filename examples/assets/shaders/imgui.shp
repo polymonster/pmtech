@@ -42,7 +42,7 @@ ps_output main( vs_output _input )
 {
 	ps_output _output;
 	
-	_output.colour = _input.colour * SAMPLE_TEXTURE_2D( tex, _input.tex_coord.xy ) * float4( 1.0, 1.0, 1.0, 1.0 );
+	_output.colour = _input.colour * SAMPLE_TEXTURE_2D( tex, _input.tex_coord.xy );
 	
 	return _output;
 }

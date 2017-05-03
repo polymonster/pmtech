@@ -428,24 +428,9 @@ namespace pen
     
     void bind_state()
     {
-        //bind vertex buffer
-        //if( g_current_state.vertex_buffer != g_bound_state.vertex_buffer )
-        {
-            g_bound_state.vertex_buffer = g_current_state.vertex_buffer;
-            
-            auto& res = resource_pool[g_bound_state.vertex_buffer].handle;
-            glBindBuffer(GL_ARRAY_BUFFER, res);
-        }
-        
-        //bind index buffer
-        {
-            auto& res = resource_pool[g_bound_state.index_buffer].handle;
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
-        }
-        
         //bind shaders
-        //if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
-        //    g_current_state.pixel_shader != g_bound_state.pixel_shader )
+        if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
+            g_current_state.pixel_shader != g_bound_state.pixel_shader )
         {
             g_bound_state.vertex_shader = g_current_state.vertex_shader;
             g_bound_state.pixel_shader = g_current_state.pixel_shader;
@@ -472,9 +457,19 @@ namespace pen
             glUseProgram( linked_program->program );
         }
         
+        //bind vertex buffer
+        {
+            g_bound_state.vertex_buffer = g_current_state.vertex_buffer;
+            
+            auto& res = resource_pool[g_bound_state.vertex_buffer].handle;
+            glBindBuffer(GL_ARRAY_BUFFER, res);
+        }
+        
         //bind input layout
         auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
-        bool invalidate_input_layout = input_res->vb_handle == 0 || input_res->vb_handle != g_bound_state.vertex_buffer ;
+
+        //if input layout has changed, vb has changed or the stride of the vb has changed
+        bool invalidate_input_layout = input_res->vb_handle == 0 || input_res->vb_handle != g_bound_state.vertex_buffer;
         invalidate_input_layout |= g_current_state.input_layout != g_bound_state.input_layout;
         invalidate_input_layout |= g_current_state.vertex_buffer_stride != g_bound_state.vertex_buffer_stride;
         
@@ -485,7 +480,8 @@ namespace pen
             
             auto* res = input_res;
             
-            if( res->vertex_array_handle == 0 || input_res->vb_handle != g_bound_state.vertex_buffer )
+            //if we havent already generated one or we have previously been bound to a different vb layout
+            if( res->vertex_array_handle == 0 || res->vb_handle != g_bound_state.vertex_buffer )
             {
                 if( res->vertex_array_handle == 0 )
                 {
@@ -521,12 +517,10 @@ namespace pen
                     }
                 }
             }
+            
+            glBindVertexArray( res->vertex_array_handle );
         }
-        else
-        {
-            glBindVertexArray(input_res->vertex_array_handle);
-        }
-        
+
         if( g_bound_state.raster_state != g_current_state.raster_state )
         {
             g_bound_state.raster_state = g_current_state.raster_state;
@@ -577,6 +571,12 @@ namespace pen
 	void direct::renderer_draw_indexed( u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology )
 	{
         bind_state();
+        
+        //bind index buffer -this must always be re-bound
+        {
+            auto& res = resource_pool[g_bound_state.index_buffer].handle;
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
+        }
         
         glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, (void*)(size_t)(start_index * 2), base_vertex );
 	}

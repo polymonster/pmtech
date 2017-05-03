@@ -1,3 +1,0 @@
-#!/bin/bash
-source ~/.bash_profile
-python3 ../tools/build_shaders.py glsl osx

@@ -334,7 +334,6 @@ int main(int argc, char **argv)
      postNotificationName:NSApplicationDidFinishLaunchingNotification
      object:NSApp];
     
-
     NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
     
     NSUInteger style_mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;

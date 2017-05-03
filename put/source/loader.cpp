@@ -243,6 +243,8 @@ namespace put
             return null_shader;
         }
 
+        bool hl = false;
+        
 		if (!ms)
 		{
 			//add a new managed shader
@@ -254,6 +256,8 @@ namespace put
 		}
 		else
 		{
+            hl = true;
+            
 			//otherwise we are hot loading
 			ms->invalidated_program = ms->program;
 
@@ -415,7 +419,7 @@ namespace put
 		pen::memory_free( ilp.input_layout );
 
 		ms->invalidated = false;
-
+        
 		return ms->program;
 	}
     
