@@ -18,8 +18,14 @@ namespace pen
 
 	//filesystem enumeration
     pen_error filesystem_enum_volumes( fs_tree_node &results );
-    pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results );
+    
+    pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results, s32 num_wildcards = 0, ... );
+    pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results, s32 num_wildcards, va_list args );
+    
     pen_error filesystem_enum_free_mem( fs_tree_node &results );
+    
+    //utilities
+    const c8** filesystem_get_user_directory( s32& directory_depth );
 }
 
 #endif

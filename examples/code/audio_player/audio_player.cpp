@@ -7,7 +7,6 @@
 #include "debug_render.h"
 #include "audio.h"
 #include "dev_ui.h"
-#include <string>
 
 pen::window_creation_params pen_window
 {
@@ -99,6 +98,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         
         pen::audio_consume_command_buffer();
         
+        //shader hot loading
+        put::loader_poll_for_changes();
+        
         //msg from the engine we want to terminate
         if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
         {
@@ -112,158 +114,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
 
     return PEN_THREAD_OK;
-}
-
-const c8* file_browser( bool& dialog_open )
-{
-    const c8* default_dir[] =
-    {
-        "/",
-        "Users",
-        "alex.dixon",
-        "Desktop",
-        "MP3"
-    };
-    s32 default_depth = 5;
-    
-    static bool initialise = true;
-    static s32 current_depth = 1;
-    static s32 selection_stack[128] = { -1 };
-    
-    std::string current_path;
-    std::string search_path;
-    static std::string selected_path;
-    
-    static pen::fs_tree_node fs_enumeration;
-    
-    if( initialise )
-    {
-        pen::filesystem_enum_volumes(fs_enumeration);
-        
-        pen::fs_tree_node* fs_iter = &fs_enumeration;
-        
-        for( s32 c = 0; c < default_depth; ++c )
-        {
-            for( u32 entry = 0; entry < fs_iter->num_children; ++entry )
-            {
-                if( pen::string_compare( fs_iter->children[entry].name, default_dir[c] ) == 0 )
-                {
-                    current_path += fs_iter->children[ entry ].name;
-                    current_path += "/";
-                    
-                    pen::filesystem_enum_directory( current_path.c_str(), fs_iter->children[ entry ] );
-                    
-                    selection_stack[c] = entry;
-                    
-                    fs_iter = &fs_iter->children[ entry ];
-                    
-                    current_depth = c + 2;
-                    
-                    break;
-                }
-            }
-        }
-        
-        initialise = false;
-    }
-    
-    ImGui::Begin("File Browser");
-    
-    ImGui::Text("%s", selected_path.c_str());
-    
-    const c8* return_value = nullptr;
-    
-    ImGuiButtonFlags button_flags = 0;
-    if( selected_path == "" )
-    {
-        button_flags |= ImGuiButtonFlags_Disabled;
-    }
-    
-    if( ImGui::ButtonEx("OK", ImVec2(0,0), button_flags ) )
-    {
-        return_value = selected_path.c_str();
-        dialog_open = false;
-    }
-    
-    ImGui::SameLine();
-    if( ImGui::Button("Cancel") )
-    {
-        dialog_open = false;
-    }
-    
-    ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
-    
-    ImGui::Columns(current_depth, "directories");
-    ImGui::Separator();
-    pen::fs_tree_node* fs_iter = &fs_enumeration;
-    
-    s32 frame_depth = current_depth;
-    for( s32 d = 0; d < frame_depth; ++d )
-    {
-        ImGui::Text("%s", fs_iter->name); ImGui::NextColumn();
-        fs_iter = &fs_iter->children[ selection_stack[ d ] ];
-    }
-    
-    ImGui::Separator();
-    
-    current_path = "";
-    search_path = "";
-    
-    fs_iter = &fs_enumeration;
-    
-    for( s32 c = 0; c < frame_depth; ++c )
-    {
-        for( u32 entry = 0; entry < fs_iter->num_children; ++entry )
-        {
-            if( ImGui::Selectable( fs_iter->children[entry].name) )
-            {
-                search_path = current_path;
-                search_path += fs_iter->children[entry].name;
-                
-                pen::filesystem_enum_directory( search_path.c_str(), fs_iter->children[entry] );
-                
-                if( fs_iter->children[entry].num_children > 0 )
-                {
-                    current_depth = c + 2;
-                    selection_stack[c] = entry;
-                }
-                else
-                {
-                    selected_path = "";
-                    selected_path = search_path;
-                }
-            }
-        }
-        
-		s32 selected = selection_stack[c];
-
-		if (selected >= 0)
-		{
-			fs_iter = &fs_iter->children[selection_stack[c]];
-			current_path += fs_iter->name;
-			current_path += "/";
-		}
-		else
-		{
-			break;
-		}
-
-        ImGui::NextColumn();
-    }
-    
-    ImGui::Separator();
-    ImGui::EndChild();
-    ImGui::Columns(1);
-    
-    ImGui::End();
-    
-    if( !dialog_open )
-    {
-        initialise = true;
-        filesystem_enum_free_mem(fs_enumeration);
-    }
-    
-    return return_value;
 }
 
 enum playback_deck_flags : s32
@@ -831,7 +681,7 @@ public:
         
         if( open_file )
         {
-            const c8* file = file_browser( open_file );
+            const c8* file = put::file_browser( open_file, 2, "**.mp3", "**.wav" );
             
             if( file != nullptr )
             {
@@ -999,162 +849,6 @@ public:
         if( ImGui::VSliderFloat("Pitch", ImVec2( 20.0f, 100.0f ), &group_state.pitch, 1.0f - pitch_range_f, 1.0f + pitch_range_f, "" ) )
         {
             pen::audio_group_set_pitch(group_index, group_state.pitch );
-        }
-        
-        //update fft
-        if( ImGui::CollapsingHeader("Spectrum Analysis") )
-        {
-            ImGui::SliderFloat("FFT Max", &fft_max, 0.0f, 1.0f );
-            ImGui::InputInt("Num FFT Samples", &fft_num_samples);
-        
-            s32 prev_analysis_buffer_pos = current_analysis_buffer_pos - 1;
-            
-            if( prev_analysis_buffer_pos < 0 )
-                prev_analysis_buffer_pos = num_analysis_buffers - 1;
-            
-            ImGui::PlotHistogram("", &fft_buffers[ current_analysis_buffer_pos ][0], fft_num_samples, 0, NULL, 0.0f, fft_max, ImVec2(0,100));
-            
-            //statistical analysis of fft
-            f32 total_diff = 0.0f;
-            
-            u32 diff_buffer = 0;
-            
-            pen::memory_set(fft_combined_diff,0,sizeof(fft_combined_diff));
-            
-            for( s32 samp = 0; samp < spectrum.length; ++samp )
-            {
-                //calculate max value over time
-                fft_max_vals[samp] = 0.0f;
-                for( s32 buf = 0; buf < num_analysis_buffers; ++buf)
-                {
-                    fft_max_vals[samp] = PEN_FMAX( fft_max_vals[samp], fft_buffers[ buf ][ samp ] );
-                }
-                
-                //calculate differece from frame to frame and scale by the max
-                fft_diff[samp] = fft_buffers[ current_analysis_buffer_pos ][ samp ] - fft_buffers[ prev_analysis_buffer_pos ][ samp ];
-                
-                //scale diff
-                static const f32 epsilon = 0.000000001f;
-                fft_diff[samp] = (fft_diff[samp] / (fft_max_vals[samp] + epsilon));
-                
-                //work out diff within ranges
-                fft_combined_diff[diff_buffer] += fft_diff[samp];
-                
-                if( samp >= (s32)k_fft_diff_ranges[diff_buffer] )
-                {
-                    u32 prev_range = 0;
-                    if( diff_buffer > 0 )
-                    {
-                        prev_range = k_fft_diff_ranges[diff_buffer-1];
-                    }
-                    
-                    fft_combined_diff[diff_buffer] /= (f32)k_fft_diff_ranges[diff_buffer] - prev_range;
-                    diff_buffer++;
-                }
-                
-                f32 diff_cubed = fft_diff[samp] * fft_diff[samp] * fft_diff[samp];
-                total_diff += diff_cubed;
-            }
-            
-            //plot diff buckets
-            if( ImGui::CollapsingHeader("Coarse Frequency Diff") )
-            {
-                ImGui::PlotHistogram("", fft_combined_diff, k_num_fft_diff_buckets, 0, NULL, 0.0f, fft_max, ImVec2(0,100));
-                
-                ImGui::Combo("Graph Diff Range", &plot_lines_diff_range, diff_range_desriptions, k_num_fft_diff_buckets);
-                
-                ImGui::PlotLines("", fft_combined_history, num_analysis_buffers, 0, NULL, -fft_max, fft_max, ImVec2(0,100));
-                
-                ImGui::Text("DISPLAY:");
-                
-                for( s32 i = 0; i < k_num_fft_diff_buckets; ++i )
-                {
-                    f32 cur_val = fft_combined_diff[ i ] - prev_combined_diff[ i ];
-                    prev_combined_diff[ i ] = fft_combined_diff[ i ];
-                    
-                    if( i == plot_lines_diff_range )
-                    {
-                        fft_combined_history[ current_analysis_buffer_pos ] = fft_combined_diff[ i ];
-                    }
-                    
-                    ImGui::SameLine();
-                    if( fabs( cur_val ) > 0.4f && beat_cooldown[ i ] <= 0.0f)
-                    {
-                        //grid.beats[ i ].push_back( timestamp );
-                        
-                        beat_cooldown[ i ] = 66.6666f;
-                    }
-                    
-                    
-                    if( beat_cooldown[ i ] > 0.0f )
-                    {
-                        ImGui::Text("[%s]", diff_range_nicknames[ i ] );
-                    }
-                    else
-                    {
-                        ImGui::Text("[    ]");
-                    }
-                    
-                    beat_cooldown[ i ] -= fame_time;
-                }
-            }
-            
-            if( ImGui::CollapsingHeader("Raw Frequency Diff") )
-            {
-                //plot raw diff
-                ImGui::Text("Diff: %f", total_diff);
-                ImGui::PlotHistogram("", fft_diff, fft_num_samples, 0, NULL, 0.0f, fft_max, ImVec2(0,100));
-            }
-            
-            //update fft
-            if( !(flags & PAUSE_FFT_UPDATE) )
-            {
-                err = pen::audio_dsp_get_spectrum(spectrum_dsp, &spectrum );
-                
-                if( err == PEN_ERR_OK )
-                {
-                    current_analysis_buffer_pos++;
-                    
-                    for( s32 samp = 0; samp < spectrum.length; ++samp )
-                    {
-                        fft_buffers[current_analysis_buffer_pos][samp] = 0.0f;
-                        
-                        for( s32 chan = 0; chan < spectrum.num_channels; ++chan )
-                        {
-                            fft_buffers[current_analysis_buffer_pos][samp] += spectrum.spectrum[chan][samp];
-                        }
-                        
-                        fft_buffers[current_analysis_buffer_pos][samp] /= 2.0f;
-                    }
-                    
-                    fft_timestamp[current_analysis_buffer_pos] = channel_state.position_ms;
-                }
-            }
-
-            if( ImGui::InputInt("Analysis Buffer Pos", &current_analysis_buffer_pos) )
-            {
-                if( current_analysis_buffer_pos >= num_analysis_buffers )
-                {
-                    current_analysis_buffer_pos = 0;
-                }
-                else if( current_analysis_buffer_pos < 0 )
-                {
-                    current_analysis_buffer_pos = num_analysis_buffers - 1;
-                }
-                
-                channel_state.position_ms = fft_timestamp[current_analysis_buffer_pos];
-                
-                pen::audio_channel_set_position(channel_index, fft_timestamp[current_analysis_buffer_pos] );
-            }
-            
-            if( current_analysis_buffer_pos >= num_analysis_buffers )
-            {
-                current_analysis_buffer_pos = 0;
-            }
-            else if( current_analysis_buffer_pos < 0 )
-            {
-                current_analysis_buffer_pos = num_analysis_buffers - 1;
-            }
         }
         
         ImGui::PopID();

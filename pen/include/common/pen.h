@@ -20,6 +20,7 @@ namespace pen
     struct user_info
     {
         const c8* user_name;
+        const c8* full_user_name;
     };
 
 	extern PEN_THREAD_RETURN game_entry( void* params );

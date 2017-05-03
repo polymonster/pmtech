@@ -656,8 +656,12 @@ namespace put
 					if ( err == PEN_ERR_OK && current_ts > shader_ts)
 					{
 						//system("..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\");
-						system("..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\");
-						ms.invalidated = true;
+                        
+                        //system("python3 ../../../tools/build_shaders.py -root_dir ../../");
+                        
+                        system("export PATH=$PATH:/Users/alex.dixon/Desktop; echo $PATH; python3 ../../../tools/build_shaders.py -root_dir ../../");
+                        
+                        ms.invalidated = true;
 						s_invalidated = true;
 						break;
 					}

@@ -356,8 +356,11 @@ int main(int argc, char **argv)
     [pool drain];
     
     //os stuff
-    NSString* ns_user = NSFullUserName();
-    pen_user_info.user_name =[ns_user UTF8String];
+    NSString* ns_full_user_name = NSFullUserName();
+    pen_user_info.full_user_name =[ns_full_user_name UTF8String];
+    
+    NSString* ns_user_name = NSUserName();
+    pen_user_info.user_name =[ns_user_name UTF8String];
     
     //init systems
     pen::timer_system_intialise();

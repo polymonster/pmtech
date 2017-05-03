@@ -33,6 +33,7 @@ if not os.path.exists(temp_dir):
     os.mkdir(temp_dir)
 
 shader_source_dir = os.path.join(root_dir, "assets", "shaders")
+shader_source_dir = os.path.join(root_dir, "assets", "shaders")
 
 shader_build_dir = os.path.join(root_dir,"bin", os_platform, "data", "shaders", shader_platform)
 

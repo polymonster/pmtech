@@ -4,9 +4,14 @@
 #include <sys/param.h>
 #include <sys/ucred.h>
 #include <sys/mount.h>
+#include <fnmatch.h>
+
+#include "pen.h"
 #include "file_system.h"
 #include "memory.h"
 #include "pen_string.h"
+
+extern pen::user_info pen_user_info;
 
 namespace pen
 {
@@ -67,7 +72,49 @@ namespace pen
         return PEN_ERR_OK;
     }
     
-    pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results )
+    bool match_file( struct dirent *ent, s32 num_wildcards, va_list wildcards )
+    {
+        if( num_wildcards <= 0 )
+        {
+            return true;
+        }
+        
+        va_list wildcards_consume;
+        va_copy(wildcards_consume, wildcards);
+        
+        if( ent->d_type != DT_DIR )
+        {
+            for( s32 i = 0; i < num_wildcards; ++i )
+            {
+                const char* ft = va_arg(wildcards_consume, const char*);
+                
+                if( fnmatch( ft, ent->d_name, 0) == 0 )
+                {
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results, s32 num_wildcards, ... )
+    {
+        va_list wc;
+        va_start ( wc, num_wildcards );
+        
+        pen_error res = filesystem_enum_directory( directory, results, num_wildcards, wc );
+        
+        va_end( wc );
+        
+        return res;
+    }
+    
+    pen_error filesystem_enum_directory( const c8* directory, fs_tree_node &results, s32 num_wildcards, va_list wildcards )
     {
         DIR *dir;
         struct dirent *ent;
@@ -77,7 +124,10 @@ namespace pen
         {
             while ((ent = readdir (dir)) != NULL)
             {
-                num_items++;
+                if( match_file( ent, num_wildcards, wildcards ) )
+                {
+                    num_items++;
+                }
             }
             
             closedir (dir);
@@ -85,6 +135,7 @@ namespace pen
         
         if( num_items == 0 )
         {
+            
             return PEN_ERR_FILE_NOT_FOUND;
         }
         
@@ -110,22 +161,25 @@ namespace pen
         {
             while ((ent = readdir (dir)) != NULL)
             {
-                if( results.children[i].name == nullptr )
+                if( match_file( ent, num_wildcards, wildcards ) )
                 {
-                    //allocate 1024 file buffer
-                    results.children[i].name = (c8*)pen::memory_alloc( 1024 );
-                    pen::memory_zero(results.children[i].name, 1024);
+                    if( results.children[i].name == nullptr )
+                    {
+                        //allocate 1024 file buffer
+                        results.children[i].name = (c8*)pen::memory_alloc( 1024 );
+                        pen::memory_zero(results.children[i].name, 1024);
+                    }
+                    
+                    u32 len = pen::string_length( ent->d_name );
+                    len = std::min<u32>( len, 1022 );
+                    
+                    pen::memory_cpy(results.children[i].name, ent->d_name, len);
+                    results.children[i].name[len] = '\0';
+                    
+                    results.children[i].num_children = 0;
+                    
+                    ++i;
                 }
-                
-                u32 len = pen::string_length( ent->d_name );
-                len = std::min<u32>( len, 1022 );
-                
-                pen::memory_cpy(results.children[i].name, ent->d_name, len);
-                results.children[i].name[len] = '\0';
-                
-                results.children[i].num_children = 0;
-                
-                ++i;
             }
             
             closedir (dir);
@@ -158,6 +212,28 @@ namespace pen
         mtime_out = t.tv_sec;
         
         return PEN_ERR_OK;
+    }
+    
+    const c8** filesystem_get_user_directory( s32& directory_depth )
+    {
+        static const u32 max_dir_depth = 3;
+        
+        static c8 default_dir[max_dir_depth][1024];
+        
+        static c8* dir_list[max_dir_depth];
+        
+        pen::string_format(default_dir[0], 1024, "/" );
+        pen::string_format(default_dir[1], 1024, "Users" );
+        pen::string_format(default_dir[2], 1024, "%s", pen_user_info.user_name );
+        
+        for( s32 i = 0; i < max_dir_depth; ++i )
+        {
+            dir_list[ i ] = &default_dir[ i ][ 0 ];
+        }
+        
+        directory_depth = max_dir_depth;
+        
+        return (const c8**)&dir_list[0];
     }
 	
 	//ICONV ref for utf8 -> wchar conversion
