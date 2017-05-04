@@ -114,7 +114,7 @@ namespace dev_ui
         tcp.data_size = tcp.block_size * width * height;
         tcp.data = pixels;
 
-        g_imgui_rs.font_texture = pen::defer::renderer_create_texture2d( tcp );
+        g_imgui_rs.font_texture = pen::defer::renderer_create_texture( tcp );
 
         io.Fonts->TexID = (void*)&g_imgui_rs.font_texture;
     }

@@ -1,0 +1,56 @@
+cbuffer per_pass_view : register(b0)
+{
+	float4x4 projection_matrix;
+};
+
+cbuffer per_pass_params : register(b1)
+{
+	float4 	size_time;
+};
+
+struct vs_input
+{
+	float4 position : POSITION;
+	float2 tex_coord: TEXCOORD0;
+};
+
+struct vs_output
+{
+	float4 	position : SV_POSITION;
+	float2 	tex_coord: TEXCOORD0;
+	float	time : TEXCOORD1;
+};
+
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
+vs_output main( vs_input _input )
+{	
+	vs_output _output;
+	
+	_output.position = mul( projection_matrix, float4( _input.position.x * size_time.x, _input.position.y * size_time.y, 0.0f, 1.0f ) );
+	
+	//_output.position =  _input.position;
+	
+	_output.time = size_time.z;
+	
+	_output.tex_coord = _input.tex_coord;
+	
+    return _output;
+}
+
+declare_texture_samplers
+{
+	TEXTURE_2D( tex, 0 );
+};
+
+ps_output main( vs_output _input )
+{
+	ps_output _output;
+	
+	_output.colour = SAMPLE_TEXTURE_2D( tex, _input.tex_coord.xy * float2( 10.0, 10.0 ) ) * float4( sin( _input.time * 0.01 ), 1.0, 1.0, 1.0 );
+	
+    return _output;
+}

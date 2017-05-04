@@ -3,6 +3,7 @@ links
 { 
 	"Cocoa.framework",
 	"OpenGL.framework",
+	"GameController.framework",
 	"iconv",
 	"fmod"
 }
@@ -26,7 +27,7 @@ links
 	"Foundation.framework",
 	"UIKit.framework",
 	"GLKit.framework",
-	"QuartzCore.framework"
+	"QuartzCore.framework",
 }
 end
 

@@ -250,7 +250,7 @@ namespace pen
 		void	renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset );
 
 		//textures
-		u32		renderer_create_texture2d( const texture_creation_params& tcp );
+		u32		renderer_create_texture( const texture_creation_params& tcp );
 		u32		renderer_create_sampler( const sampler_creation_params& scp );
 		void	renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type );
 
@@ -288,7 +288,7 @@ namespace pen
         void	renderer_release_program( u32 program );
         void	renderer_release_clear_state( u32 clear_state );
 		void	renderer_release_buffer( u32 buffer_index );
-		void	renderer_release_texture2d( u32 texture_index );
+		void	renderer_release_texture( u32 texture_index );
         void	renderer_release_sampler( u32 sampler );
 		void	renderer_release_raster_state( u32 raster_state_index );
 		void	renderer_release_blend_state( u32 blend_state );
@@ -327,7 +327,7 @@ namespace pen
 		void	renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset = 0 );
 
 		//textures
-		u32		renderer_create_texture2d( const texture_creation_params& tcp );
+		u32		renderer_create_texture( const texture_creation_params& tcp );
 		u32		renderer_create_sampler( const sampler_creation_params& scp );
 		void	renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type );
 
@@ -366,7 +366,7 @@ namespace pen
         void	renderer_release_program( u32 program );
         void	renderer_release_clear_state( u32 clear_state );
 		void	renderer_release_buffer( u32 buffer_index );
-		void	renderer_release_texture2d( u32 texture_index );
+		void	renderer_release_texture( u32 texture_index );
 		void	renderer_release_raster_state( u32 raster_state_index );
 		void	renderer_release_blend_state( u32 blend_state );
 		void	renderer_release_render_target( u32 render_target );

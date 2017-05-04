@@ -96,7 +96,7 @@ namespace pen
         CMD_SET_INDEX_BUFFER,
         CMD_DRAW,
         CMD_DRAW_INDEXED,
-        CMD_CREATE_TEXTURE_2D,
+        CMD_CREATE_TEXTURE,
         CMD_RELEASE_SHADER,
         CMD_RELEASE_BUFFER,
         CMD_RELEASE_TEXTURE_2D,
@@ -248,7 +248,7 @@ namespace pen
             set_index_buffer_cmd                set_index_buffer;
             draw_cmd                            draw;
             draw_indexed_cmd                    draw_indexed;
-            texture_creation_params             create_texture2d;
+            texture_creation_params             create_texture;
             sampler_creation_params             create_sampler;
             set_texture_cmd                     set_texture;
             rasteriser_state_creation_params    create_raster_state;
@@ -350,9 +350,9 @@ namespace pen
                                               cmd.draw_indexed.primitive_topology );
                 break;
                 
-            case CMD_CREATE_TEXTURE_2D:
-                direct::renderer_create_texture2d( cmd.create_texture2d );
-                pen::memory_free( cmd.create_texture2d.data );
+            case CMD_CREATE_TEXTURE:
+                direct::renderer_create_texture( cmd.create_texture );
+                pen::memory_free( cmd.create_texture.data );
                 break;
                 
             case CMD_CREATE_SAMPLER:
@@ -392,7 +392,7 @@ namespace pen
                 break;
                 
             case CMD_RELEASE_TEXTURE_2D:
-                direct::renderer_release_texture2d( cmd.command_data_index );
+                direct::renderer_release_texture( cmd.command_data_index );
                 break;
                 
             case CMD_RELEASE_RASTER_STATE:
@@ -882,21 +882,21 @@ namespace pen
         return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
-    u32 defer::renderer_create_texture2d( const texture_creation_params& tcp )
+    u32 defer::renderer_create_texture( const texture_creation_params& tcp )
     {
-        cmd_buffer[ put_pos ].command_index = CMD_CREATE_TEXTURE_2D;
+        cmd_buffer[ put_pos ].command_index = CMD_CREATE_TEXTURE;
         
-        pen::memory_cpy( &cmd_buffer[ put_pos ].create_texture2d, ( void* ) &tcp, sizeof( texture_creation_params ) );
+        pen::memory_cpy( &cmd_buffer[ put_pos ].create_texture, ( void* ) &tcp, sizeof( texture_creation_params ) );
         
-        cmd_buffer[ put_pos ].create_texture2d.data = pen::memory_alloc( tcp.data_size );
+        cmd_buffer[ put_pos ].create_texture.data = pen::memory_alloc( tcp.data_size );
         
         if( tcp.data )
         {
-            pen::memory_cpy( cmd_buffer[ put_pos ].create_texture2d.data, tcp.data, tcp.data_size );
+            pen::memory_cpy( cmd_buffer[ put_pos ].create_texture.data, tcp.data, tcp.data_size );
         }
         else
         {
-            cmd_buffer[ put_pos ].create_texture2d.data = nullptr;
+            cmd_buffer[ put_pos ].create_texture.data = nullptr;
         }
 
         INC_WRAP( put_pos );
@@ -923,7 +923,7 @@ namespace pen
         INC_WRAP( put_pos );
     }
     
-    void defer::renderer_release_texture2d( u32 texture_index )
+    void defer::renderer_release_texture( u32 texture_index )
     {
         cmd_buffer[ put_pos ].command_index = CMD_RELEASE_TEXTURE_2D;
         

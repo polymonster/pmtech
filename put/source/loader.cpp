@@ -186,7 +186,7 @@ namespace put
 		//free the files contents
 		pen::memory_free( file_data );
         
-        u32 texture_index = pen::defer::renderer_create_texture2d( tcp );
+        u32 texture_index = pen::defer::renderer_create_texture( tcp );
         
         pen::memory_free( tcp.data );
         

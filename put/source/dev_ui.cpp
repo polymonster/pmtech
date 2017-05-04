@@ -227,6 +227,8 @@ namespace put
         {
             for( u32 entry = 0; entry < fs_iter->num_children; ++entry )
             {
+                ImGui::PushID(fs_iter);
+                   
                 if( ImGui::Selectable( fs_iter->children[entry].name) )
                 {
                     search_path = current_path;
@@ -255,6 +257,8 @@ namespace put
                         selected_path = search_path;
                     }
                 }
+                
+                ImGui::PopID();
             }
             
             s32 selected = selection_stack[c];

@@ -168,7 +168,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::defer::renderer_release_buffer(quad_vertex_buffer);
     pen::defer::renderer_release_buffer(quad_index_buffer);
     pen::defer::renderer_release_sampler(linear_sampler);
-    pen::defer::renderer_release_texture2d(test_texture);
+    pen::defer::renderer_release_texture(test_texture);
     pen::defer::renderer_consume_cmd_buffer();
     
     //signal to the engine the thread has finished

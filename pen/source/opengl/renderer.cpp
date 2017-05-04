@@ -26,6 +26,7 @@ namespace pen
 	#define MAX_QUERIES				64 
 	#define NUM_CUBEMAP_FACES		6
     #define MAX_VERTEX_ATTRIBUTES   16
+    #define MAX_UNIFORM_BUFFERS     16
  
 	#define QUERY_DISJOINT			1
 	#define QUERY_ISSUED			(1<<1)
@@ -98,12 +99,15 @@ namespace pen
         RES_RENDER_TARGET
     };
     
+#define INVALID_LOC 255
     struct shader_program
     {
         u32 vs;
         u32 ps;
         u32 gs;
         GLuint program;
+        u8 uniform_block_location[MAX_UNIFORM_BUFFERS];
+        u8 texture_location[MAX_UNIFORM_BUFFERS];
     };
     
     std::vector<shader_program> shader_programs;
@@ -132,8 +136,8 @@ namespace pen
     struct query_allocation
 	{
 		u8              asigned_flag;
-		GLuint          query                  [NUM_QUERY_BUFFERS];
-		u32             flags                  [NUM_QUERY_BUFFERS];
+		GLuint          query           [NUM_QUERY_BUFFERS];
+		u32             flags           [NUM_QUERY_BUFFERS];
 		a_u64           last_result;
 	};
 	query_allocation	query_pool		[MAX_QUERIES];
@@ -147,7 +151,7 @@ namespace pen
         u32 vertex_shader;
         u32 pixel_shader;
         u32 raster_state;
-        bool enabled_vertex_attributes[MAX_VERTEX_ATTRIBUTES]; //todo remove
+        u8 constant_buffer_bindings[MAX_UNIFORM_BUFFERS] = { 0 };
     };
     
     active_state g_bound_state;
@@ -229,9 +233,15 @@ namespace pen
         }
         
         shader_program program;
-        program.vs = g_bound_state.vertex_shader;
-        program.ps = g_bound_state.pixel_shader;
+        program.vs = vs;
+        program.ps = ps;
         program.program = program_id;
+        
+        for( s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i )
+        {
+            program.texture_location[ i ] = INVALID_LOC;
+            program.uniform_block_location[ i ] = INVALID_LOC;
+        }
         
         shader_programs.push_back(program);
         
@@ -262,7 +272,7 @@ namespace pen
 
 	void direct::renderer_create_query( u32 query_type, u32 flags )
 	{
-        //glGenQueries(1,1)
+        
 	}
 
 	void direct::renderer_set_query(u32 query_index, u32 action)
@@ -335,7 +345,7 @@ namespace pen
         shader_program* linked_program = link_program_internal( vs, ps );
         
         GLuint prog = linked_program->program;
-        
+    
         //build lookup tables for uniform buffers and texture samplers
         for( u32 i = 0; i < params.num_constants; ++i )
         {
@@ -347,15 +357,20 @@ namespace pen
                 case pen::CT_CBUFFER:
                 {
                     loc = glGetUniformBlockIndex(prog, constant.name);
-                    if( loc != constant.location )
-                    {
-                        glUniformBlockBinding(prog, loc, constant.location);
-                    }
+                    
+                    PEN_ASSERT( loc < MAX_UNIFORM_BUFFERS );
+                    
+                    linked_program->uniform_block_location[constant.location] = loc;
+                    
+                    glUniformBlockBinding( prog, loc, constant.location );
                 }
                 break;
                 case pen::CT_SAMPLER_2D:
                 {
                     loc = glGetUniformLocation(prog, constant.name);
+                    
+                    linked_program->texture_location[constant.location] = loc;
+                    
                     glUniform1i( loc, constant.location );
                 }
                 break;
@@ -437,9 +452,12 @@ namespace pen
             
             shader_program* linked_program = nullptr;
             
+            auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
+            auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
+            
             for( auto program : shader_programs )
             {
-                if( program.vs == g_bound_state.vertex_shader && program.vs == g_bound_state.vertex_shader )
+                if( program.vs == vs_handle && program.ps == ps_handle )
                 {
                     linked_program = &program;
                     break;
@@ -448,13 +466,27 @@ namespace pen
             
             if( linked_program == nullptr )
             {
-                auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
-                auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
-                
                 linked_program = link_program_internal(vs_handle, ps_handle);
             }
             
             glUseProgram( linked_program->program );
+            
+            //constant buffers and texture locations
+            for( s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i )
+            {
+                if( g_current_state.constant_buffer_bindings[ i ] != 0 )
+                {
+                    glBindBufferBase(GL_UNIFORM_BUFFER, i, g_current_state.constant_buffer_bindings[ i ] );
+                    //glUniformBlockBinding( linked_program->program, linked_program->uniform_block_location[ i ], i );
+                    
+                    g_current_state.constant_buffer_bindings[ i ] = 0;
+                }
+                
+                if( linked_program->texture_location[ i ] != INVALID_LOC )
+                {
+                    glUniform1i( linked_program->texture_location[ i ], i );
+                }
+            }
         }
         
         //bind vertex buffer
@@ -502,19 +534,7 @@ namespace pen
                                           g_bound_state.vertex_buffer_stride,
                                           (void*)attribute.offset);
                     
-                    g_bound_state.enabled_vertex_attributes[attribute.location] = true;
-                }
-                        
-                for( u32 i = 0; i < MAX_VERTEX_ATTRIBUTES; ++i )
-                {
-                    if( g_bound_state.enabled_vertex_attributes[i] )
-                    {
-                        glEnableVertexAttribArray(i);
-                    }
-                    else
-                    {
-                        glDisableVertexAttribArray(i);
-                    }
+                    glEnableVertexAttribArray(attribute.location);
                 }
             }
             
@@ -618,7 +638,7 @@ namespace pen
         }
     }
     
-    texture_info create_texture2d_internal(const texture_creation_params& tcp)
+    texture_info create_texture_internal(const texture_creation_params& tcp)
     {
         u32 sized_format, format, type;
         get_texture_format( tcp.format, sized_format, format, type );
@@ -661,7 +681,7 @@ namespace pen
         glGenFramebuffers(1, &res.render_target.framebuffer );
         glBindFramebuffer(GL_FRAMEBUFFER, res.render_target.framebuffer);
         
-        res.render_target.texture = create_texture2d_internal(tcp);
+        res.render_target.texture = create_texture_internal(tcp);
         
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, res.render_target.texture.handle, 0);
         
@@ -687,12 +707,12 @@ namespace pen
         }
 	}
 
-	u32 direct::renderer_create_texture2d(const texture_creation_params& tcp)
+	u32 direct::renderer_create_texture(const texture_creation_params& tcp)
 	{
 		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
     
         resource_pool[ resource_index ].type = RES_TEXTURE;
-        resource_pool[ resource_index ].texture = create_texture2d_internal( tcp );
+        resource_pool[ resource_index ].texture = create_texture_internal( tcp );
 
 		return resource_index;
 	}
@@ -871,7 +891,7 @@ namespace pen
 	{
         resource_allocation& res = resource_pool[ buffer_index ];
         
-        glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle);
+        g_current_state.constant_buffer_bindings[ resource_slot ] = res.handle;
 	}
 
 	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset )
@@ -941,7 +961,7 @@ namespace pen
         renderer_mark_resource_deleted( buffer_index );
 	}
 
-	void direct::renderer_release_texture2d( u32 texture_index )
+	void direct::renderer_release_texture( u32 texture_index )
 	{
         resource_allocation& res = resource_pool[ texture_index ];
         glDeleteTextures(1, &res.handle);
