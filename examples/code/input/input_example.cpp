@@ -104,6 +104,20 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         
         dbg::print_text( 10.0f, 30.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", key_msg.c_str() );
         
+        std::string ascii_msg = "character down: ";
+        for( s32 key = 0; key < PENK_ARRAY_SIZE; ++key )
+        {
+            if( pen::input_get_unicode_key(key) )
+            {
+                ascii_msg += "[";
+                ascii_msg += key;
+                ascii_msg += "]";
+            }
+        }
+        ascii_msg += "\n";
+        
+        dbg::print_text( 10.0f, 40.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", ascii_msg.c_str() );
+        
         dbg::render_2d();
 
         //present 

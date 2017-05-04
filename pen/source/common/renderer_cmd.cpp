@@ -815,6 +815,11 @@ namespace pen
         return renderer_get_next_resource_index( DEFER_RESOURCE );
     }
     
+    void defer::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 stride, u32 offset )
+    {
+        pen::defer::renderer_set_vertex_buffer( buffer_index, start_slot, 1, &stride, &offset );
+    }
+    
     void defer::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
     {
         cmd_buffer[ put_pos ].command_index = CMD_SET_VERTEX_BUFFER;

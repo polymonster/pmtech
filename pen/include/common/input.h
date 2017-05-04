@@ -16,6 +16,10 @@ namespace pen
 
 	};
 
+    void				input_set_unicode_key_down( u32 key_index );
+    void				input_set_unicode_key_up( u32 key_index );
+    bool                input_get_unicode_key( u32 key_index );
+    
 	void				input_set_key_down( u32 key_index );
 	void				input_set_key_up( u32 key_index );
 

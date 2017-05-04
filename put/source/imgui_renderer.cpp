@@ -60,12 +60,12 @@ namespace dev_ui
         io.KeyMap[ ImGuiKey_Backspace ] = PENK_BACK;
         io.KeyMap[ ImGuiKey_Enter ] = PENK_RETURN;
         io.KeyMap[ ImGuiKey_Escape ] = PENK_ESCAPE;
-        io.KeyMap[ ImGuiKey_A ] = 'A';
-        io.KeyMap[ ImGuiKey_C ] = 'C';
-        io.KeyMap[ ImGuiKey_V ] = 'V';
-        io.KeyMap[ ImGuiKey_X ] = 'X';
-        io.KeyMap[ ImGuiKey_Y ] = 'Y';
-        io.KeyMap[ ImGuiKey_Z ] = 'Z';
+        io.KeyMap[ ImGuiKey_A ] = PENK_A;
+        io.KeyMap[ ImGuiKey_C ] = PENK_C;
+        io.KeyMap[ ImGuiKey_V ] = PENK_V;
+        io.KeyMap[ ImGuiKey_X ] = PENK_X;
+        io.KeyMap[ ImGuiKey_Y ] = PENK_Y;
+        io.KeyMap[ ImGuiKey_Z ] = PENK_Z;
 
         io.RenderDrawListsFn = render; 
 
@@ -220,10 +220,7 @@ namespace dev_ui
         pen::defer::renderer_set_shader( g_imgui_rs.shader.pixel_shader, PEN_SHADER_TYPE_PS );
         pen::defer::renderer_set_input_layout( g_imgui_rs.shader.input_layout );
         
-        u32 stride = sizeof(ImDrawVert);
-        u32 offset = 0;
-
-        pen::defer::renderer_set_vertex_buffer( g_imgui_rs.vertex_buffer, 0, 1, &stride, &offset );
+        pen::defer::renderer_set_vertex_buffer( g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0 );
         pen::defer::renderer_set_index_buffer( g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0 );
 
         pen::defer::renderer_set_constant_buffer( g_imgui_rs.constant_buffer, 0, PEN_SHADER_TYPE_VS );
@@ -343,13 +340,16 @@ namespace dev_ui
 		prev_mouse_wheel = (f32)ms.wheel;
 
         // ascii keys
-        for( u32 i = 0; i < 256; ++i )
+        for( u32 i = 0; i < 512; ++i )
         {
             io.KeysDown[ i ] = INPUT_PKEY( i );
-            
-            if( INPUT_PKEY_PRESS( i ) )
+        }
+        
+        for( u32 i = 0; i < 512; ++i )
+        {
+            if( pen::input_get_unicode_key(i) )
             {
-               io.AddInputCharacter( i );
+                io.AddInputCharacter(i);
             }
         }
 

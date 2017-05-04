@@ -88,9 +88,7 @@ namespace dbg
 		pen::defer::renderer_set_input_layout( debug_lines_program.input_layout );
 
 		//bind vertex buffer
-		u32 stride = sizeof(vertex_debug_lines);
-		u32 offset = 0;
-		pen::defer::renderer_set_vertex_buffer( vb_lines, 0, 1, &stride, &offset );
+		pen::defer::renderer_set_vertex_buffer( vb_lines, 0, sizeof(vertex_debug_lines), 0 );
 
 		//bind shaders
 		pen::defer::renderer_set_shader( debug_lines_program.vertex_shader, PEN_SHADER_TYPE_VS );
@@ -123,9 +121,7 @@ namespace dbg
         pen::defer::renderer_set_input_layout(debug_font_program.input_layout);
         
         //bind vertex buffer
-        u32 stride = sizeof(vertex_debug_font);
-        u32 offset = 0;
-        pen::defer::renderer_set_vertex_buffer(vb_font, 0, 1, &stride, &offset);
+        pen::defer::renderer_set_vertex_buffer(vb_font, 0, sizeof(vertex_debug_font), 0);
         
         //bind shaders
         pen::defer::renderer_set_shader(debug_font_program.vertex_shader, PEN_SHADER_TYPE_VS);

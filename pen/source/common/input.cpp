@@ -9,12 +9,28 @@ namespace pen
 	#define KEY_HELD  0x02
 
 	u8 keyboard_state[ PENK_ARRAY_SIZE ];
+    u8 ascii_state[ PENK_ARRAY_SIZE ];
 
 	mouse_state mouse_state_ = { 0 };
 
     std::atomic<bool> show_cursor = { true };
 
-	void input_set_key_down( u32 key_index )
+    void input_set_unicode_key_down( u32 key_index )
+    {
+        ascii_state[ key_index ] = 1;
+    }
+    
+    void input_set_unicode_key_up( u32 key_index )
+    {
+        ascii_state[ key_index ] = 0;
+    }
+    
+    bool input_get_unicode_key( u32 key_index )
+    {
+        return ascii_state[ key_index ] == 1;
+    }
+	
+    void input_set_key_down( u32 key_index )
 	{
 		keyboard_state[ key_index ]++;
 	}

@@ -177,6 +177,9 @@ void show_ui()
     bool open = true;
     ImGui::Begin( "Shader Toy", &open );
     
+    char buf[1024];
+    ImGui::InputText("hello", buf, 1024);
+    
     ImGui::End();
 }
 
@@ -217,9 +220,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
             pen::defer::renderer_set_input_layout( textured_shader.input_layout );
 
             //bind vertex buffer
-            u32 stride = sizeof( textured_vertex );
-            u32 offset = 0;
-            pen::defer::renderer_set_vertex_buffer( k_render_handles.vb, 0, 1, &stride, &offset );
+            pen::defer::renderer_set_vertex_buffer( k_render_handles.vb, 0, sizeof( textured_vertex ), 0 );
             pen::defer::renderer_set_index_buffer( k_render_handles.ib, PEN_FORMAT_R16_UINT, 0 );
             
             //bind render target as texture on sampler 0
