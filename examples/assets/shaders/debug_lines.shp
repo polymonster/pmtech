@@ -1,0 +1,42 @@
+cbuffer per_pass_view : register(b0)
+{
+	float4x4 view_projection_matrix;
+	float4x4 view_matrix;
+};
+
+struct vs_input
+{
+	float4 position : POSITION;
+	float4 colour	: TEXCOORD0;
+};
+
+struct vs_output
+{
+	float4 	position : SV_POSITION;
+	float4 	colour	 : TEXCOORD0;
+};
+
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
+vs_output main( vs_input _input )
+{	
+	vs_output _output;
+	
+	_output.position = mul( _input.position, view_projection_matrix );
+			
+	_output.colour = _input.colour;
+	
+    return _output;
+}
+
+ps_output main( vs_output _input )
+{
+	ps_output _output;
+		
+	_output.colour = _input.colour;
+	
+    return _output;
+}

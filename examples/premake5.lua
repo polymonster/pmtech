@@ -52,5 +52,6 @@ create_app( "imgui", script_path() )
 create_app( "input", script_path() )
 create_app( "audio_player", script_path() )
 create_app( "shader_toy", script_path() )
+create_app( "model_viewer", script_path() )
 	
 	
