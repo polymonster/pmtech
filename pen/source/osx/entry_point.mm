@@ -492,6 +492,7 @@ namespace pen
     
     [GCController startWirelessControllerDiscoveryWithCompletionHandler:^{
         // we don't use any code here since when new controllers are found we will get notifications
+        u32 a = 0;
     }];
 }
 
