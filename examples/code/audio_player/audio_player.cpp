@@ -331,7 +331,7 @@ public:
             //calculate change in frequency from frame to frame
             u32 coarse_buffer = 0;
             f32 coarse_average = 0.0f;
-            for( s32 i = 0; i < max_fft_length; ++i )
+            for( u32 i = 0; i < max_fft_length; ++i )
             {
                 raw_diff[new_anlysis_loc][ i ] = ( spectrum_history[new_anlysis_loc][i] - spectrum_history[new_anlysis_loc + 1][i] );
                 
@@ -420,7 +420,7 @@ public:
                             cur_score = cur_val;
                             
                             u32 j = i;
-                            while( j <= beat_start )
+                            while( j <= (s32)beat_start )
                             {
                                 beat_hueristic[ h_pos + j ] = cur_score;
                                 
@@ -539,7 +539,7 @@ public:
             
             u32 base_frame = 0;
             
-            for( s32 i = 0; i < num_beats; ++i )
+            for( u32 i = 0; i < num_beats; ++i )
             {
                 if( i == 0 )
                 {
@@ -557,7 +557,7 @@ public:
                 
                 u32 beat_len = beats[ i ].end - beats[ i ].start;
                 
-                for( s32 b = 0; b < beat_len; ++b )
+                for( u32 b = 0; b < beat_len; ++b )
                 {
                     bv.push_back( beats[ i ].val );
                 }

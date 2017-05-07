@@ -31,9 +31,7 @@ vs_output main( vs_input _input )
 	vs_output _output;
 	
 	_output.position = mul( projection_matrix, float4( _input.position.x * size_time.x, _input.position.y * size_time.y, 0.0f, 1.0f ) );
-	
-	//_output.position =  _input.position;
-	
+		
 	_output.time = size_time.z;
 	
 	_output.tex_coord = _input.tex_coord;
@@ -51,6 +49,10 @@ ps_output main( vs_output _input )
 	ps_output _output;
 	
 	_output.colour = SAMPLE_TEXTURE_2D( tex, _input.tex_coord.xy * float2( 10.0, 10.0 ) ) * float4( sin( _input.time * 0.01 ), 1.0, 1.0, 1.0 );
+	
+	//_output.colour = float4( 1.0, 1.0, 1.0, 1.0 ) * float4( sin( _input.time * 0.01 ), 1.0, 1.0, 1.0 );
+	
+	_output.colour.a = 1.0;
 	
     return _output;
 }
