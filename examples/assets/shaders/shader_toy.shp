@@ -41,14 +41,16 @@ vs_output main( vs_input _input )
 
 declare_texture_samplers
 {
-	TEXTURE_2D( tex, 0 );
+	TEXTURE_2D( tex0, 0 );
+	TEXTURE_2D( tex1, 1 );
+	TEXTURE_2D( tex2, 2 );
 };
 
 ps_output main( vs_output _input )
 {
 	ps_output _output;
 	
-	_output.colour = SAMPLE_TEXTURE_2D( tex, _input.tex_coord.xy * float2( 10.0, 10.0 ) ) * float4( sin( _input.time * 0.01 ), 1.0, 1.0, 1.0 );
+	_output.colour = SAMPLE_TEXTURE_2D( tex0, _input.tex_coord.xy ) * float4( sin( _input.time * 0.01 ), 1.0, 1.0, 1.0 );
 	
 	//_output.colour = float4( 1.0, 1.0, 1.0, 1.0 ) * float4( sin( _input.time * 0.01 ), 1.0, 1.0, 1.0 );
 	
