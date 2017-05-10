@@ -235,6 +235,12 @@ namespace pen
         
         return (const c8**)&dir_list[0];
     }
+
+	s32 filesystem_exclude_slash_depth()
+	{
+		//directory depth 0 can be a slash
+		return 0;
+	}
 	
 	//ICONV ref for utf8 -> wchar conversion
 	 /*

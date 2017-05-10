@@ -12,7 +12,7 @@
 #define PEN_THREAD_OK                   nullptr
 #define PEN_THREAD_RETURN               void*
 #define PEN_THREAD_ROUTINE( FP )		PEN_THREAD_RETURN (*FP)(void* data)
-#define PEN_SHADER_COMPILE_CMD          "export PATH=$PATH:../../../tools/bin/python/osx; echo $PATH; python3 ../../../tools/build_shaders.py -root_dir ../../"
+#define PEN_SHADER_COMPILE_CMD          "export PATH=$PATH:../../../tools/bin/python/osx; python3 ../../../tools/build_shaders.py -root_dir ../../"
 #endif
 
 enum pen_error
@@ -66,7 +66,7 @@ typedef std::atomic<uint64_t> a_u64;
 //--------------------------------------------------------------------------------------
 // Print / Assert 
 //--------------------------------------------------------------------------------------
-#define	PEN_PRINT_CHAR_LIMIT	64
+#define	PEN_PRINT_CHAR_LIMIT	128
 #define PEN_PRINTF				pen::string_output_debug
 #define PEN_ASSERT				assert
 #define PEN_ERR					assert( 0 ) 
@@ -83,5 +83,7 @@ enum resource_types
     MAX_RENDERER_RESOURCES = 10000,
     MAX_AUDIO_RESOURCES = 100
 };
+
+#define PEN_INVALID_HANDLE (u32)-1
 
 #endif

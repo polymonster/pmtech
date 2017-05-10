@@ -16,7 +16,8 @@ links
 	"dxguid.lib", 
 	"winmm.lib", 
 	"comctl32.lib", 
-	"fmod_vc.lib", 
+	"fmod_vc.lib",
+	"Shlwapi.lib"	
 }
 end
 

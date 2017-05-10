@@ -257,7 +257,7 @@ mat4 mat4::inverse3x3()
     mat4 inverse;
     inverse.create_identity();
     
-    //find the adjos32 matrix (transposed) and multiply by 1/det to get the inverse
+    //find the adjoint matrix (transposed) and multiply by 1/det to get the inverse
     inverse.m[ 0] =  (m[ 5] * m[10] - m[ 6] * m[ 9]) * one_over_det;
     inverse.m[ 1] = -(m[ 1] * m[10] - m[ 2] * m[ 9]) * one_over_det;
     inverse.m[ 2] =  (m[ 1] * m[ 6] - m[ 2] * m[ 5]) * one_over_det;
@@ -286,7 +286,7 @@ mat4 mat4::inverse3x4()
     mat4 inverse;
     inverse.create_identity();
     
-    //find the adjos32 matrix (transposed) and multiply by 1/det to get the inverse
+    //find the adjoint matrix (transposed) and multiply by 1/det to get the inverse
     inverse.m[ 0] =  (m[ 5] * m[10] - m[ 6] * m[ 9]) * one_over_det;
     inverse.m[ 1] = -(m[ 1] * m[10] - m[ 2] * m[ 9]) * one_over_det;
     inverse.m[ 2] =  (m[ 1] * m[ 6] - m[ 2] * m[ 5]) * one_over_det;
@@ -299,7 +299,7 @@ mat4 mat4::inverse3x4()
     inverse.m[ 9] = -(m[ 0] * m[ 9] - m[ 1] * m[ 8]) * one_over_det;
     inverse.m[10] =  (m[ 0] * m[ 5] - m[ 1] * m[ 4]) * one_over_det;
     
-    //take s32o account inverse the translation portion (inverse translation portion * inverse rotation)
+    //take into account inverse the translation portion (inverse translation portion * inverse rotation)
     vec3f t(-m[ 3],-m[ 7],-m[11]);
     inverse.m[ 3] = t.x * inverse.m[ 0] + t.y * inverse.m[ 1] + t.z * inverse.m[ 2];
     inverse.m[ 7] = t.x * inverse.m[ 4] + t.y * inverse.m[ 5] + t.z * inverse.m[ 6];

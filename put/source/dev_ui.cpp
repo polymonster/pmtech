@@ -96,8 +96,8 @@ namespace put
                         s32 j = 0;
                         for( s32 i = prev_pos; i < dir_pos; ++i )
                         {
-                            //first dir on osx can be '/'
-                            if( directory_depth > 0 && path[i] == '/' )
+                            //first dir on unix can be '/' otherwise we just want the diretcory names with no slashes
+                            if( path[i] == '/' && directory_depth > pen::filesystem_exclude_slash_depth() )
                             {
                                 //otherwise exclude slashes from the dirname
                                 continue;

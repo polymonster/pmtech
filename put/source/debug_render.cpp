@@ -14,16 +14,18 @@ extern pen::window_creation_params pen_window;
 namespace dbg
 {
 #define NUM_VERTEX_BUFFERS 2
+#define MAX_DEBUG_LINES_VERTS 2048
+#define MAX_DEBUG_FONT_VERTS 4096 * 8
+
 	u32 debug_lines_backbuffer_index = 0;
 	u32 debug_font_backbuffer_index = 0;
 
-#define MAX_DEBUG_LINES_VERTS 2048
-	typedef struct vertex_debug_lines
+	struct vertex_debug_lines
 	{
 		float x, y, z, w;
 		float r, g, b, a;
 
-	} vertex_debug_lines;
+	};
 
 	u32 vb_lines;
 	u32 line_vert_count = 0;
@@ -33,12 +35,11 @@ namespace dbg
 
 	put::shader_program debug_lines_program;
 
-#define MAX_DEBUG_FONT_VERTS 4096 * 8
-	typedef struct vertex_debug_font
+	struct vertex_debug_font
 	{
 		float x, y;
 		float r, g, b, a;
-	}vertex_debug_font;
+	};
 
 	u32 vb_font;
 	u32 font_vert_count = 0;
@@ -53,6 +54,7 @@ namespace dbg
 		debug_lines_program = put::loader_load_shader_program( "debug_lines" );
 		debug_font_program = put::loader_load_shader_program( "debug_font" );
 	}
+
 	void create_buffers( )
 	{
 		//debug lines buffer
@@ -336,6 +338,8 @@ namespace dbg
 	{
 		vec3f start = centre - size * 0.5f;
 		vec3f division_size = size / divisions;
+
+		start.y = centre.y;
 
 		vec3f current = start;
 

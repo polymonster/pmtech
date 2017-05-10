@@ -26,6 +26,7 @@ namespace pen
     
     //utilities
     const c8** filesystem_get_user_directory( s32& directory_depth );
+	s32		   filesystem_exclude_slash_depth();
 }
 
 #endif

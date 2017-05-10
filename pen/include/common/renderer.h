@@ -125,7 +125,7 @@ namespace pen
 		u32 address_v = PEN_TEXTURE_ADDRESS_WRAP;
 		u32 address_w = PEN_TEXTURE_ADDRESS_WRAP;
 		f32 mip_lod_bias = 0.0f;
-        u32	max_anisotropy = 0.0f;
+        u32	max_anisotropy = 0;
         u32 comparison_func = PEN_COMPARISON_ALWAYS;
         f32 border_color[ 4 ] = { 0.0f };
         f32 min_lod = -1.0f;
@@ -139,7 +139,7 @@ namespace pen
         u32		fill_mode = PEN_FILL_SOLID;
 		u32		cull_mode = PEN_CULL_BACK;
 		s32		front_ccw = 0;
-		s32		depth_bias = 0.0f;
+		s32		depth_bias = 0;
 		f32		depth_bias_clamp = 0.0f;
 		f32		sloped_scale_depth_bias = 0.0f;
 		s32		depth_clip_enable = 1;

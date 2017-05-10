@@ -575,7 +575,7 @@ namespace pen
 		g_immediate_context->OMSetRenderTargets( num_views, &colour_rtv, dsv );
 	}
 
-	u32 direct::renderer_create_texture2d(const texture_creation_params& tcp)
+	u32 direct::renderer_create_texture(const texture_creation_params& tcp)
 	{
 		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
@@ -764,7 +764,7 @@ namespace pen
 		free_resource_index( buffer_index );
 	}
 
-	void direct::renderer_release_texture2d( u32 texture_index )
+	void direct::renderer_release_texture( u32 texture_index )
 	{
 		resource_pool[texture_index].texture_2d->texture->Release( );
 		resource_pool[texture_index].texture_2d->srv->Release( );
