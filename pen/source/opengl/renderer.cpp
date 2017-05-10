@@ -1040,7 +1040,7 @@ namespace pen
 
 	}
     
-	void renderer_update_queries()
+    void direct::renderer_update_queries()
 	{
 
 	}
