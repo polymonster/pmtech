@@ -114,7 +114,7 @@ namespace put
 		return 0;
 	}
 
-	u32 loader_load_texture( const c8* filename )
+	u32 load_texture( const c8* filename )
 	{
 		//load a texture file from disk.
 		void* file_data = NULL;
@@ -186,7 +186,7 @@ namespace put
 		//free the files contents
 		pen::memory_free( file_data );
         
-        u32 texture_index = pen::defer::renderer_create_texture( tcp );
+        u32 texture_index = pen::renderer_create_texture( tcp );
         
         pen::memory_free( tcp.data );
         
@@ -217,7 +217,7 @@ namespace put
     };
     std::vector<managed_shader> s_managed_shaders;
 
-	shader_program& loader_load_shader_program( const c8* shader_name, managed_shader* ms )
+	shader_program& load_shader_program( const c8* shader_name, managed_shader* ms )
 	{
         c8 vs_file_buf[ 256 ];
         c8 ps_file_buf[ 256 ];
@@ -327,7 +327,7 @@ namespace put
 			ilp.input_layout[i].instance_data_step_rate = 0;
 		}
 
-		ms->program.input_layout = pen::defer::renderer_create_input_layout(ilp);
+		ms->program.input_layout = pen::renderer_create_input_layout(ilp);
 
 		if ( err != PEN_ERR_OK  )
 		{
@@ -338,8 +338,8 @@ namespace put
 
         err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
 
-		ms->program.vertex_shader = pen::defer::renderer_load_shader( vs_slp );
-		ms->program.pixel_shader = pen::defer::renderer_load_shader( ps_slp );
+		ms->program.vertex_shader = pen::renderer_load_shader( vs_slp );
+		ms->program.pixel_shader = pen::renderer_load_shader( ps_slp );
         
         //link the shader to allow opengl to match d3d constant and texture bindings
         pen::shader_link_params link_params;
@@ -405,7 +405,7 @@ namespace put
         
         link_params.num_constants = num_constants;
         
-		ms->program.program_index = pen::defer::renderer_link_shader_program(link_params);
+		ms->program.program_index = pen::renderer_link_shader_program(link_params);
         
         //free the temp mem
         for( u32 c = 0; c < num_constants; ++c )
@@ -425,13 +425,13 @@ namespace put
     
     void loader_release_shader_program( put::shader_program& shader_program )
     {
-        pen::defer::renderer_release_shader( shader_program.vertex_shader, PEN_SHADER_TYPE_VS );
-        pen::defer::renderer_release_shader( shader_program.pixel_shader, PEN_SHADER_TYPE_PS );
-        pen::defer::renderer_release_input_layout( shader_program.input_layout );
-        pen::defer::renderer_release_program( shader_program.program_index );
+        pen::renderer_release_shader( shader_program.vertex_shader, PEN_SHADER_TYPE_VS );
+        pen::renderer_release_shader( shader_program.pixel_shader, PEN_SHADER_TYPE_PS );
+        pen::renderer_release_input_layout( shader_program.input_layout );
+        pen::renderer_release_program( shader_program.program_index );
     }
 
-	skeleton* loader_load_skeleton( const c8* filename )
+	skeleton* load_skeleton( const c8* filename )
 	{
 		void*  skeleton_data;
 		u32	   file_size;
@@ -635,7 +635,7 @@ namespace put
 				if ( s_managed_shaders[i].invalidated )
 				{
 					awaiting_rebuild = true;
-					put::loader_load_shader_program( s_managed_shaders[i].shader_name, &s_managed_shaders[i] );
+					put::load_shader_program( s_managed_shaders[i].shader_name, &s_managed_shaders[i] );
 				}
 			}
 

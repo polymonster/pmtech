@@ -115,11 +115,13 @@ namespace pen
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 			pen::input_set_key_down( (u32)wParam );
+			pen::input_set_unicode_key_down(MapVirtualKey(wParam, MAPVK_VK_TO_CHAR));
 			break;
 
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
 			pen::input_set_key_up( (u32)wParam );
+			pen::input_set_unicode_key_up(MapVirtualKey(wParam, MAPVK_VK_TO_CHAR));
 			break;
 
 		case WM_LBUTTONDOWN:

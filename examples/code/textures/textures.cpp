@@ -47,7 +47,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     rcp.depth_bias_clamp = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
 
-    u32 raster_state = pen::defer::renderer_create_rasterizer_state( rcp );
+    u32 raster_state = pen::renderer_create_rasterizer_state( rcp );
 
     //viewport
     pen::viewport vp =
@@ -59,9 +59,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     //load shaders now requiring dependency on put to make loading simpler.
 
-    put::shader_program& textured_shader = put::loader_load_shader_program( "textured" );
+    put::shader_program& textured_shader = put::load_shader_program( "textured" );
 
-    u32 test_texture = put::loader_load_texture("data/textures/test_normal.dds");
+    u32 test_texture = put::load_texture("data/textures/test_normal.dds");
 
     //create vertex buffer for a quad
     textured_vertex quad_vertices[] =
@@ -87,7 +87,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     bcp.buffer_size = sizeof( textured_vertex ) * 4;
     bcp.data = ( void* ) &quad_vertices[ 0 ];
 
-    u32 quad_vertex_buffer = pen::defer::renderer_create_buffer( bcp );
+    u32 quad_vertex_buffer = pen::renderer_create_buffer( bcp );
 
     //create index buffer
     u16 indices[] =
@@ -102,7 +102,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     bcp.buffer_size = sizeof( u16 ) * 6;
     bcp.data = ( void* ) &indices[ 0 ];
 
-    u32 quad_index_buffer = pen::defer::renderer_create_buffer( bcp );
+    u32 quad_index_buffer = pen::renderer_create_buffer( bcp );
 
     //create a sampler object so we can sample a texture
     pen::sampler_creation_params scp;
@@ -115,43 +115,43 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     scp.min_lod = 0.0f;
     scp.max_lod = 4.0f;
 
-    u32 linear_sampler = defer::renderer_create_sampler( scp );
+    u32 linear_sampler = pen::renderer_create_sampler( scp );
 
     while( 1 )
     {
-        pen::defer::renderer_set_rasterizer_state( raster_state );
+        pen::renderer_set_rasterizer_state( raster_state );
 
         //bind back buffer and clear
-        pen::defer::renderer_set_viewport( vp );
-        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
-        pen::defer::renderer_clear( clear_state );
+        pen::renderer_set_viewport( vp );
+        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_clear( clear_state );
 
         //draw quad
         {
             //bind vertex layout
-            pen::defer::renderer_set_input_layout( textured_shader.input_layout );
+            pen::renderer_set_input_layout( textured_shader.input_layout );
 
             //bind vertex buffer
             u32 stride = sizeof( textured_vertex );
             u32 offset = 0;
-            pen::defer::renderer_set_vertex_buffer( quad_vertex_buffer, 0, 1, &stride, &offset );
-            pen::defer::renderer_set_index_buffer( quad_index_buffer, PEN_FORMAT_R16_UINT, 0 );
+            pen::renderer_set_vertex_buffer( quad_vertex_buffer, 0, 1, &stride, &offset );
+            pen::renderer_set_index_buffer( quad_index_buffer, PEN_FORMAT_R16_UINT, 0 );
 
             //bind shaders
-            pen::defer::renderer_set_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::defer::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
+            pen::renderer_set_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
+            pen::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
 
             //bind render target as texture on sampler 0
-            pen::defer::renderer_set_texture( test_texture, linear_sampler, 0, PEN_SHADER_TYPE_PS );
+            pen::renderer_set_texture( test_texture, linear_sampler, 0, PEN_SHADER_TYPE_PS );
 
             //draw
-            pen::defer::renderer_draw_indexed( 6, 0, 0, PEN_PT_TRIANGLELIST );
+            pen::renderer_draw_indexed( 6, 0, 0, PEN_PT_TRIANGLELIST );
         }
 
         //present 
-        pen::defer::renderer_present();
+        pen::renderer_present();
 
-        pen::defer::renderer_consume_cmd_buffer();
+        pen::renderer_consume_cmd_buffer();
         
 		put::loader_poll_for_changes();
 
@@ -165,11 +165,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //clean up mem here
     put::loader_release_shader_program( textured_shader );
     
-    pen::defer::renderer_release_buffer(quad_vertex_buffer);
-    pen::defer::renderer_release_buffer(quad_index_buffer);
-    pen::defer::renderer_release_sampler(linear_sampler);
-    pen::defer::renderer_release_texture(test_texture);
-    pen::defer::renderer_consume_cmd_buffer();
+    pen::renderer_release_buffer(quad_vertex_buffer);
+    pen::renderer_release_buffer(quad_index_buffer);
+    pen::renderer_release_sampler(linear_sampler);
+    pen::renderer_release_texture(test_texture);
+    pen::renderer_consume_cmd_buffer();
     
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);

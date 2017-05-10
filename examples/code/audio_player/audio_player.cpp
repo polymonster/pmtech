@@ -47,7 +47,7 @@ void renderer_state_init( )
     rcp.sloped_scale_depth_bias = 0.0f;
     rcp.depth_clip_enable = true;
 
-    raster_state_cull_back = pen::defer::renderer_create_rasterizer_state( rcp );
+    raster_state_cull_back = pen::renderer_create_rasterizer_state( rcp );
     
     //depth stencil state
     pen::depth_stencil_creation_params depth_stencil_params = { 0 };
@@ -57,7 +57,7 @@ void renderer_state_init( )
     depth_stencil_params.depth_write_mask = 1;
     depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
     
-    default_depth_stencil_state = pen::defer::renderer_create_depth_stencil_state(depth_stencil_params);
+    default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 }
 
 void audio_player_update();
@@ -71,30 +71,30 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     renderer_state_init();
 
-    dev_ui::init();
+	put::dev_ui::init();
     
     while( 1 )
     {
-        dev_ui::new_frame();
+		put::dev_ui::new_frame();
         
-        pen::defer::renderer_set_rasterizer_state( raster_state_cull_back );
+        pen::renderer_set_rasterizer_state( raster_state_cull_back );
         
         //bind back buffer and clear
-        pen::defer::renderer_set_depth_stencil_state(default_depth_stencil_state);
+        pen::renderer_set_depth_stencil_state(default_depth_stencil_state);
         
-        pen::defer::renderer_set_viewport( vp );
-        pen::defer::renderer_set_scissor_rect( rect{ vp.x, vp.y, vp.width, vp.height} );
-        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
-        pen::defer::renderer_clear( clear_state_grey );
+        pen::renderer_set_viewport( vp );
+        pen::renderer_set_scissor_rect( rect{ vp.x, vp.y, vp.width, vp.height} );
+        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_clear( clear_state_grey );
         
         audio_player_update();
 
         //present
-        ImGui::Render();
+		put::dev_ui::render();
         
-        pen::defer::renderer_present();
+        pen::renderer_present();
 
-        pen::defer::renderer_consume_cmd_buffer();
+        pen::renderer_consume_cmd_buffer();
         
         pen::audio_consume_command_buffer();
         
@@ -420,7 +420,7 @@ public:
                             cur_score = cur_val;
                             
                             u32 j = i;
-                            while( j <= (s32)beat_start )
+                            while( (s32)j <= beat_start )
                             {
                                 beat_hueristic[ h_pos + j ] = cur_score;
                                 
@@ -681,7 +681,7 @@ public:
         
         if( open_file )
         {
-            const c8* file = put::file_browser( open_file, 2, "**.mp3", "**.wav" );
+            const c8* file = put::dev_ui::file_browser( open_file, 2, "**.mp3", "**.wav" );
             
             if( file != nullptr )
             {

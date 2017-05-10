@@ -35,7 +35,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
     //initialise the debug render system
-    dbg::initialise();
+    put::dbg::init();
 
     //create 2 clear states one for the render target and one for the main screen, so we can see the difference
     static pen::clear_state cs =
@@ -54,7 +54,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     rcp.sloped_scale_depth_bias = 0.0f;
     rcp.depth_clip_enable = true;
 
-    u32 raster_state = pen::defer::renderer_create_rasterizer_state( rcp );
+    u32 raster_state = pen::renderer_create_rasterizer_state( rcp );
 
     //viewport
     pen::viewport vp =
@@ -66,23 +66,23 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     while( 1 )
     {
-        pen::defer::renderer_set_rasterizer_state( raster_state );
+        pen::renderer_set_rasterizer_state( raster_state );
 
         //bind back buffer and clear
-        pen::defer::renderer_set_viewport( vp );
-        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
-        pen::defer::renderer_clear( clear_state );
+        pen::renderer_set_viewport( vp );
+        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_clear( clear_state );
 
-        dbg::print_text( 10.0f, 10.0f, vp, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Input Test" );
+        put::dbg::add_text_2f( 10.0f, 10.0f, vp, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Input Test" );
         
         const pen::mouse_state& ms = pen::input_get_mouse_state( );
         
         //mouse
         vec2f mouse_pos = vec2f( (f32)ms.x, vp.height - (f32)ms.y );
         vec2f mouse_quad_size = vec2f( 5.0f, 5.0f );
-        dbg::add_quad_2f( mouse_pos, mouse_quad_size, vec3f::cyan() );
+		put::dbg::add_quad_2f( mouse_pos, mouse_quad_size, vec3f::cyan() );
         
-        dbg::print_text( 10.0f, 20.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ),
+		put::dbg::add_text_2f( 10.0f, 20.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ),
                         "mouse down : left %i, middle %i, right %i: mouse_wheel %i",
                         ms.buttons[PEN_MOUSE_L],
                         ms.buttons[PEN_MOUSE_M],
@@ -102,7 +102,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         }
         key_msg += "\n";
         
-        dbg::print_text( 10.0f, 30.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", key_msg.c_str() );
+		put::dbg::add_text_2f( 10.0f, 30.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", key_msg.c_str() );
         
         std::string ascii_msg = "character down: ";
         for( s32 key = 0; key < PENK_ARRAY_SIZE; ++key )
@@ -116,13 +116,13 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         }
         ascii_msg += "\n";
         
-        dbg::print_text( 10.0f, 40.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", ascii_msg.c_str() );
+		put::dbg::add_text_2f( 10.0f, 40.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", ascii_msg.c_str() );
         
-        dbg::render_2d();
+		put::dbg::render_2d();
 
         //present 
-        pen::defer::renderer_present();
-        pen::defer::renderer_consume_cmd_buffer();
+        pen::renderer_present();
+        pen::renderer_consume_cmd_buffer();
         
         //msg from the engine we want to terminate
         if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )

@@ -67,16 +67,16 @@ struct render_handles
     
     void release()
     {
-        pen::defer::renderer_release_clear_state(clear_state);
-        pen::defer::renderer_release_raster_state(raster_state);
+        pen::renderer_release_clear_state(clear_state);
+        pen::renderer_release_raster_state(raster_state);
         
-        pen::defer::renderer_release_buffer(vb);
-        pen::defer::renderer_release_buffer(ib);
+        pen::renderer_release_buffer(vb);
+        pen::renderer_release_buffer(ib);
         
-        pen::defer::renderer_release_sampler(sampler_linear_clamp);
-        pen::defer::renderer_release_sampler(sampler_linear_wrap);
-        pen::defer::renderer_release_sampler(sampler_point_clamp);
-        pen::defer::renderer_release_sampler(sampler_point_wrap);
+        pen::renderer_release_sampler(sampler_linear_clamp);
+        pen::renderer_release_sampler(sampler_linear_wrap);
+        pen::renderer_release_sampler(sampler_point_clamp);
+        pen::renderer_release_sampler(sampler_point_wrap);
     }
 };
 
@@ -100,7 +100,7 @@ void init_renderer( )
     rcp.depth_bias_clamp = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
     
-    k_render_handles.raster_state = pen::defer::renderer_create_rasterizer_state( rcp );
+    k_render_handles.raster_state = pen::renderer_create_rasterizer_state( rcp );
     
     //viewport
     k_render_handles.vp =
@@ -137,7 +137,7 @@ void init_renderer( )
     bcp.buffer_size = sizeof( textured_vertex ) * 4;
     bcp.data = ( void* ) &quad_vertices[ 0 ];
     
-    k_render_handles.vb = pen::defer::renderer_create_buffer( bcp );
+    k_render_handles.vb = pen::renderer_create_buffer( bcp );
     
     //create index buffer
     u16 indices[] =
@@ -152,7 +152,7 @@ void init_renderer( )
     bcp.buffer_size = sizeof( u16 ) * 6;
     bcp.data = ( void* ) &indices[ 0 ];
     
-    k_render_handles.ib = pen::defer::renderer_create_buffer( bcp );
+    k_render_handles.ib = pen::renderer_create_buffer( bcp );
     
     //sampler states
     //create a sampler object so we can sample a texture
@@ -166,18 +166,18 @@ void init_renderer( )
     scp.min_lod = 0.0f;
     scp.max_lod = 4.0f;
     
-    k_render_handles.sampler_linear_clamp = pen::defer::renderer_create_sampler( scp );
+    k_render_handles.sampler_linear_clamp = pen::renderer_create_sampler( scp );
     
     scp.filter = PEN_FILTER_MIN_MAG_MIP_POINT;
-    k_render_handles.sampler_point_clamp = pen::defer::renderer_create_sampler( scp );
+    k_render_handles.sampler_point_clamp = pen::renderer_create_sampler( scp );
     
     scp.address_u = PEN_TEXTURE_ADDRESS_WRAP;
     scp.address_v = PEN_TEXTURE_ADDRESS_WRAP;
     scp.address_w = PEN_TEXTURE_ADDRESS_WRAP;
-    k_render_handles.sampler_point_wrap = pen::defer::renderer_create_sampler( scp );
+    k_render_handles.sampler_point_wrap = pen::renderer_create_sampler( scp );
     
     scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-    k_render_handles.sampler_linear_wrap = pen::defer::renderer_create_sampler( scp );
+    k_render_handles.sampler_linear_wrap = pen::renderer_create_sampler( scp );
     
     //depth stencil state
     pen::depth_stencil_creation_params depth_stencil_params = { 0 };
@@ -187,7 +187,7 @@ void init_renderer( )
     depth_stencil_params.depth_write_mask = 1;
     depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
     
-    k_render_handles.ds_state = pen::defer::renderer_create_depth_stencil_state(depth_stencil_params);
+    k_render_handles.ds_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
     
     //constant buffer
     bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -196,10 +196,10 @@ void init_renderer( )
     bcp.buffer_size = sizeof( float ) * 16;
     bcp.data = ( void* )nullptr;
     
-    k_render_handles.view_cbuffer = pen::defer::renderer_create_buffer( bcp );
+    k_render_handles.view_cbuffer = pen::renderer_create_buffer( bcp );
     
     bcp.buffer_size = sizeof( tweakable_cb );
-    k_render_handles.tweakable_cbuffer = pen::defer::renderer_create_buffer( bcp );
+    k_render_handles.tweakable_cbuffer = pen::renderer_create_buffer( bcp );
 }
 
 struct texture_sampler_mapping
@@ -227,7 +227,7 @@ void show_ui()
     sampler_states[2] = k_render_handles.sampler_point_clamp;
     sampler_states[3] = k_render_handles.sampler_point_wrap;
     
-    dev_ui::new_frame();
+    put::dev_ui::new_frame();
     
     bool open = true;
     ImGui::Begin( "Shader Toy", &open );
@@ -255,11 +255,11 @@ void show_ui()
     
     if( browser_open )
     {
-        const char* fn = put::file_browser(browser_open);
+        const char* fn = put::dev_ui::file_browser(browser_open);
         
         if( fn && browser_slot >= 0 )
         {
-            k_tex_samplers[browser_slot].texture = put::loader_load_texture(fn);
+            k_tex_samplers[browser_slot].texture = put::load_texture(fn);
             browser_slot = -1;
         }
     }
@@ -276,18 +276,18 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     init_renderer();
     
-    dev_ui::init();
+    put::dev_ui::init();
     
     //load shaders now requiring dependency on put to make loading simpler.
-    put::shader_program& textured_shader = put::loader_load_shader_program( "shader_toy" );
+    put::shader_program& textured_shader = put::load_shader_program( "shader_toy" );
 
-    u32 test_texture = put::loader_load_texture("data/textures/test_normal.dds");
+    u32 test_texture = put::load_texture("data/textures/test_normal.dds");
 
     while( 1 )
     {
         show_ui();
         
-        pen::defer::renderer_set_rasterizer_state( k_render_handles.raster_state );
+        pen::renderer_set_rasterizer_state( k_render_handles.raster_state );
         
         //update cbuffers
         //view
@@ -304,53 +304,53 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
             { ( R + L ) / ( L - R ), ( T + B ) / ( B - T ), 0.5f, 1.0f },
         };
         
-        pen::defer::renderer_update_buffer( k_render_handles.view_cbuffer, &mvp, sizeof(mvp), 0 );
+        pen::renderer_update_buffer( k_render_handles.view_cbuffer, &mvp, sizeof(mvp), 0 );
         
         //tweakbles
         k_tweakables.size_x = 1280.0f;
         k_tweakables.size_y = 720.0f;
         k_tweakables.time = pen::timer_get_time();
         
-        pen::defer::renderer_update_buffer( k_render_handles.tweakable_cbuffer, &k_tweakables, sizeof(tweakable_cb), 0 );
+        pen::renderer_update_buffer( k_render_handles.tweakable_cbuffer, &k_tweakables, sizeof(tweakable_cb), 0 );
         
         //bind back buffer and clear
-        pen::defer::renderer_set_viewport( k_render_handles.vp );
-        pen::defer::renderer_set_scissor_rect( rect{ k_render_handles.vp.x, k_render_handles.vp.y, k_render_handles.vp.width, k_render_handles.vp.height} );
-        pen::defer::renderer_set_depth_stencil_state(k_render_handles.ds_state);
-        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
-        pen::defer::renderer_clear( k_render_handles.clear_state );
+        pen::renderer_set_viewport( k_render_handles.vp );
+        pen::renderer_set_scissor_rect( rect{ k_render_handles.vp.x, k_render_handles.vp.y, k_render_handles.vp.width, k_render_handles.vp.height} );
+        pen::renderer_set_depth_stencil_state(k_render_handles.ds_state);
+        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_clear( k_render_handles.clear_state );
 
         //draw quad
         {
             //bind shaders
-            pen::defer::renderer_set_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::defer::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
-            pen::defer::renderer_set_input_layout( textured_shader.input_layout );
+            pen::renderer_set_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
+            pen::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
+            pen::renderer_set_input_layout( textured_shader.input_layout );
 
             //bind vertex buffer
-            pen::defer::renderer_set_vertex_buffer( k_render_handles.vb, 0, sizeof( textured_vertex ), 0 );
-            pen::defer::renderer_set_index_buffer( k_render_handles.ib, PEN_FORMAT_R16_UINT, 0 );
+            pen::renderer_set_vertex_buffer( k_render_handles.vb, 0, sizeof( textured_vertex ), 0 );
+            pen::renderer_set_index_buffer( k_render_handles.ib, PEN_FORMAT_R16_UINT, 0 );
             
             //bind textures and samplers
             for( s32 i = 0; i < 4; ++i )
             {
-                pen::defer::renderer_set_texture( k_tex_samplers[i].texture, k_tex_samplers[i].sampler, i, PEN_SHADER_TYPE_PS );
+                pen::renderer_set_texture( k_tex_samplers[i].texture, k_tex_samplers[i].sampler, i, PEN_SHADER_TYPE_PS );
             }
             
             //bind cbuffers
-            pen::defer::renderer_set_constant_buffer(k_render_handles.view_cbuffer, 0, PEN_SHADER_TYPE_VS );
-            pen::defer::renderer_set_constant_buffer(k_render_handles.tweakable_cbuffer, 1, PEN_SHADER_TYPE_VS );
+            pen::renderer_set_constant_buffer(k_render_handles.view_cbuffer, 0, PEN_SHADER_TYPE_VS );
+            pen::renderer_set_constant_buffer(k_render_handles.tweakable_cbuffer, 1, PEN_SHADER_TYPE_VS );
 
             //draw
-            pen::defer::renderer_draw_indexed( 6, 0, 0, PEN_PT_TRIANGLELIST );
+            pen::renderer_draw_indexed( 6, 0, 0, PEN_PT_TRIANGLELIST );
         }
 
         //present
-        ImGui::Render();
+		put::dev_ui::render();
         
-        pen::defer::renderer_present();
+        pen::renderer_present();
 
-        pen::defer::renderer_consume_cmd_buffer();
+        pen::renderer_consume_cmd_buffer();
         
 		put::loader_poll_for_changes();
 
@@ -363,11 +363,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     //clean up mem here
     put::loader_release_shader_program( textured_shader );
-    pen::defer::renderer_release_texture(test_texture);
+    pen::renderer_release_texture(test_texture);
     
     k_render_handles.release();
     
-    pen::defer::renderer_consume_cmd_buffer();
+    pen::renderer_consume_cmd_buffer();
     
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);

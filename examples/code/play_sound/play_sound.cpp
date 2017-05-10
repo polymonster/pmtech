@@ -28,7 +28,7 @@ pen::viewport vp =
 void renderer_state_init( )
 {
     //initialise the debug render system
-    dbg::initialise();
+    put::dbg::init();
 
     //create 2 clear states one for the render target and one for the main screen, so we can see the difference
     static pen::clear_state cs =
@@ -47,7 +47,7 @@ void renderer_state_init( )
     rcp.sloped_scale_depth_bias = 0.0f;
     rcp.depth_clip_enable = true;
 
-    raster_state_cull_back = pen::defer::renderer_create_rasterizer_state( rcp );
+    raster_state_cull_back = pen::renderer_create_rasterizer_state( rcp );
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -71,21 +71,21 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     while( 1 )
     {
-        pen::defer::renderer_set_rasterizer_state( raster_state_cull_back );
+        pen::renderer_set_rasterizer_state( raster_state_cull_back );
 
         //bind back buffer and clear
-        pen::defer::renderer_set_viewport( vp );
-        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
-        pen::defer::renderer_clear( clear_state_grey );
+        pen::renderer_set_viewport( vp );
+        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_clear( clear_state_grey );
 
-        dbg::print_text( 10.0f, 10.0f, vp, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Debug Text" );
+        put::dbg::add_text_2f( 10.0f, 10.0f, vp, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Debug Text" );
 
-        dbg::render_text();
+        put::dbg::render_2d();
 
         //present 
-        pen::defer::renderer_present();
+        pen::renderer_present();
 
-        pen::defer::renderer_consume_cmd_buffer();
+        pen::renderer_consume_cmd_buffer();
         
         pen::audio_consume_command_buffer();
         

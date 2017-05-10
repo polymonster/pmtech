@@ -320,7 +320,7 @@ namespace pen
 
 			directory_depth = cur_depth;
 
-			for (u32 i = 0; i < directory_depth; ++i)
+			for (s32 i = 0; i < directory_depth; ++i)
 			{
 				dir_list[i] = &dirs[i][0];
 			}

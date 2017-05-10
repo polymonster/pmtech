@@ -47,7 +47,7 @@ void renderer_state_init( )
     rcp.sloped_scale_depth_bias = 0.0f;
     rcp.depth_clip_enable = true;
 
-    raster_state_cull_back = pen::defer::renderer_create_rasterizer_state( rcp );
+    raster_state_cull_back = pen::renderer_create_rasterizer_state( rcp );
     
     //depth stencil state
     pen::depth_stencil_creation_params depth_stencil_params = { 0 };
@@ -57,7 +57,7 @@ void renderer_state_init( )
     depth_stencil_params.depth_write_mask = 1;
     depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
     
-    default_depth_stencil_state = pen::defer::renderer_create_depth_stencil_state(depth_stencil_params);
+    default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -67,27 +67,27 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::job_thread* p_thread_info = job_params->job_thread_info;
     pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
+	//init systems
     renderer_state_init();
-
-    dev_ui::init();
+    put::dev_ui::init();
 
     while( 1 )
     {
-        dev_ui::new_frame();
+        put::dev_ui::new_frame();
 
         ImGui::Text("Hello World");
 
-        pen::defer::renderer_set_rasterizer_state( raster_state_cull_back );
+        pen::renderer_set_rasterizer_state( raster_state_cull_back );
 
 		static f32 renderer_time = 0.0f;
 
         //bind back buffer and clear
-        pen::defer::renderer_set_depth_stencil_state(default_depth_stencil_state);
+        pen::renderer_set_depth_stencil_state(default_depth_stencil_state);
         
-        pen::defer::renderer_set_viewport( vp );
-        pen::defer::renderer_set_scissor_rect( rect{ vp.x, vp.y, vp.width, vp.height} );
-        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
-        pen::defer::renderer_clear( clear_state_grey );
+        pen::renderer_set_viewport( vp );
+        pen::renderer_set_scissor_rect( rect{ vp.x, vp.y, vp.width, vp.height} );
+        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_clear( clear_state_grey );
 
 
 		static bool show_test_window = true;
@@ -127,15 +127,15 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 		f32 start_time = pen::timer_get_time();
 		static f32 end_time = start_time;
 
-        ImGui::Render();
+		put::dev_ui::render();
 
 		end_time = pen::timer_get_time();
 		renderer_time = end_time - start_time;
 
         //present 
-        pen::defer::renderer_present();
+        pen::renderer_present();
 
-        pen::defer::renderer_consume_cmd_buffer();
+        pen::renderer_consume_cmd_buffer();
         
         pen::audio_consume_command_buffer();
         

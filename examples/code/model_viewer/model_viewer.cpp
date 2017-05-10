@@ -53,16 +53,16 @@ struct render_handles
     
     void release()
     {
-        pen::defer::renderer_release_clear_state(clear_state);
-        pen::defer::renderer_release_raster_state(raster_state);
+        pen::renderer_release_clear_state(clear_state);
+        pen::renderer_release_raster_state(raster_state);
         
-        pen::defer::renderer_release_buffer(vb);
-        pen::defer::renderer_release_buffer(ib);
+        pen::renderer_release_buffer(vb);
+        pen::renderer_release_buffer(ib);
         
-        pen::defer::renderer_release_sampler(sampler_linear_clamp);
-        pen::defer::renderer_release_sampler(sampler_linear_wrap);
-        pen::defer::renderer_release_sampler(sampler_point_clamp);
-        pen::defer::renderer_release_sampler(sampler_point_wrap);
+        pen::renderer_release_sampler(sampler_linear_clamp);
+        pen::renderer_release_sampler(sampler_linear_wrap);
+        pen::renderer_release_sampler(sampler_point_clamp);
+        pen::renderer_release_sampler(sampler_point_wrap);
     }
 };
 
@@ -86,7 +86,7 @@ void init_renderer( )
     rcp.depth_bias_clamp = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
     
-    k_render_handles.raster_state = pen::defer::renderer_create_rasterizer_state( rcp );
+    k_render_handles.raster_state = pen::renderer_create_rasterizer_state( rcp );
     
     //viewport
     k_render_handles.vp =
@@ -123,7 +123,7 @@ void init_renderer( )
     bcp.buffer_size = sizeof( textured_vertex ) * 4;
     bcp.data = ( void* ) &quad_vertices[ 0 ];
     
-    k_render_handles.vb = pen::defer::renderer_create_buffer( bcp );
+    k_render_handles.vb = pen::renderer_create_buffer( bcp );
     
     //create index buffer
     u16 indices[] =
@@ -138,7 +138,7 @@ void init_renderer( )
     bcp.buffer_size = sizeof( u16 ) * 6;
     bcp.data = ( void* ) &indices[ 0 ];
     
-    k_render_handles.ib = pen::defer::renderer_create_buffer( bcp );
+    k_render_handles.ib = pen::renderer_create_buffer( bcp );
     
     //sampler states
     //create a sampler object so we can sample a texture
@@ -152,18 +152,18 @@ void init_renderer( )
     scp.min_lod = 0.0f;
     scp.max_lod = 4.0f;
     
-    k_render_handles.sampler_linear_clamp = pen::defer::renderer_create_sampler( scp );
+    k_render_handles.sampler_linear_clamp = pen::renderer_create_sampler( scp );
     
     scp.filter = PEN_FILTER_MIN_MAG_MIP_POINT;
-    k_render_handles.sampler_point_clamp = pen::defer::renderer_create_sampler( scp );
+    k_render_handles.sampler_point_clamp = pen::renderer_create_sampler( scp );
     
     scp.address_u = PEN_TEXTURE_ADDRESS_WRAP;
     scp.address_v = PEN_TEXTURE_ADDRESS_WRAP;
     scp.address_w = PEN_TEXTURE_ADDRESS_WRAP;
-    k_render_handles.sampler_point_wrap = pen::defer::renderer_create_sampler( scp );
+    k_render_handles.sampler_point_wrap = pen::renderer_create_sampler( scp );
     
     scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-    k_render_handles.sampler_linear_wrap = pen::defer::renderer_create_sampler( scp );
+    k_render_handles.sampler_linear_wrap = pen::renderer_create_sampler( scp );
     
     //depth stencil state
     pen::depth_stencil_creation_params depth_stencil_params = { 0 };
@@ -173,7 +173,7 @@ void init_renderer( )
     depth_stencil_params.depth_write_mask = 1;
     depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
     
-    k_render_handles.ds_state = pen::defer::renderer_create_depth_stencil_state(depth_stencil_params);
+    k_render_handles.ds_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
     
     //constant buffer
     bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -182,72 +182,63 @@ void init_renderer( )
     bcp.buffer_size = sizeof( float ) * 16;
     bcp.data = ( void* )nullptr;
     
-    k_render_handles.view_cbuffer = pen::defer::renderer_create_buffer( bcp );
+    k_render_handles.view_cbuffer = pen::renderer_create_buffer( bcp );
 }
 
-struct texture_sampler_mapping
+enum e_camera_mode : s32
 {
-    u32 texture = 0;
-    s32 sampler_choice = 0;
-    u32 sampler = 0;
-};
-static texture_sampler_mapping k_tex_samplers[4];
-
-static const c8* sampler_types[] =
-{
-    "linear_clamp",
-    "linear_wrap",
-    "point_clamp",
-    "point_wrap"
+	CAMERA_MODELLING = 0,
+	CAMERA_FLY = 1
 };
 
-static u32 sampler_states[4];
+const c8* camera_mode_names[] =
+{
+	"Modelling",
+	"Fly"
+};
+
+struct model_view_controller
+{
+	put::camera		main_camera;
+	e_camera_mode	camera_mode = CAMERA_MODELLING;
+	
+};
+model_view_controller k_model_view_controller;
 
 void show_ui()
-{
-    sampler_states[0] = k_render_handles.sampler_linear_clamp;
-    sampler_states[1] = k_render_handles.sampler_linear_wrap;
-    sampler_states[2] = k_render_handles.sampler_point_clamp;
-    sampler_states[3] = k_render_handles.sampler_point_wrap;
-    
-    dev_ui::new_frame();
+{   
+    put::dev_ui::new_frame();
     
     bool open = true;
-    ImGui::Begin( "Shader Toy", &open );
-    
-    static bool browser_open = false;
-    static s32 browser_slot = -1;
-    for( s32 i = 0; i < 4; ++i )
-    {
-        ImGui::PushID(i);
+    ImGui::Begin( "Model Viewer", &open );
+
+	ImGui::Combo( "Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2 );
         
-        ImGui::Combo("Sampler", &k_tex_samplers[i].sampler_choice, (const c8**)sampler_types, 4);
-        k_tex_samplers[i].sampler = sampler_states[ k_tex_samplers[i].sampler_choice ];
-        
-        if(k_tex_samplers[i].texture != 0)
-            ImGui::Image((void*)&k_tex_samplers[i].texture, ImVec2(128,128));
-        
-        if( ImGui::Button("Load Image") )
-        {
-            browser_slot = i;
-            browser_open = true;
-        }
-        
-        ImGui::PopID();
-    }
-    
-    if( browser_open )
-    {
-        const char* fn = put::file_browser(browser_open);
-        
-        if( fn && browser_slot >= 0 )
-        {
-            k_tex_samplers[browser_slot].texture = put::loader_load_texture(fn);
-            browser_slot = -1;
-        }
-    }
-    
     ImGui::End();
+}
+
+void init_model_view()
+{
+	put::camera_create_projection(&k_model_view_controller.main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f);
+}
+
+void update_model_view()
+{
+	//dev ui
+	show_ui();
+	
+	//update
+	switch (k_model_view_controller.camera_mode)
+	{
+		case CAMERA_MODELLING:
+			put::camera_update_modelling(&k_model_view_controller.main_camera);
+			break;
+		case CAMERA_FLY:
+			put::camera_update_fly(&k_model_view_controller.main_camera);
+			break;
+	}
+
+	put::camera_update_shader_constants(&k_model_view_controller.main_camera);
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -258,39 +249,35 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
 	//init systems
-    init_renderer();
-    dev_ui::init();
-	dbg::initialise();
-    
-	put::camera cam;
-	put::camera_create_projection(&cam, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f);
+	put::dev_ui::init();
+	put::dbg::init();
 
+    init_renderer();
+	init_model_view();
+    
     while( 1 )
     {
-        show_ui();
+		update_model_view();
 
-		//update
-		put::camera_update_modelling(&cam);
-		put::camera_update_shader_constants(&cam);
-
-        pen::defer::renderer_set_rasterizer_state( k_render_handles.raster_state );
+		//render
+        pen::renderer_set_rasterizer_state( k_render_handles.raster_state );
                         
         //bind back buffer and clear
-        pen::defer::renderer_set_viewport( k_render_handles.vp );
-        pen::defer::renderer_set_scissor_rect( rect{ k_render_handles.vp.x, k_render_handles.vp.y, k_render_handles.vp.width, k_render_handles.vp.height} );
-        pen::defer::renderer_set_depth_stencil_state(k_render_handles.ds_state);
-        pen::defer::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
-        pen::defer::renderer_clear( k_render_handles.clear_state );
+        pen::renderer_set_viewport( k_render_handles.vp );
+        pen::renderer_set_scissor_rect( rect{ k_render_handles.vp.x, k_render_handles.vp.y, k_render_handles.vp.width, k_render_handles.vp.height} );
+        pen::renderer_set_depth_stencil_state(k_render_handles.ds_state);
+        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_clear( k_render_handles.clear_state );
 
-		dbg::add_grid( vec3f::zero(), vec3f(100.0f), 100 );
+		put::dbg::add_grid( vec3f::zero(), vec3f(100.0f), 100 );
 
-		dbg::render_3d( cam.cbuffer );
+		put::dbg::render_3d(k_model_view_controller.main_camera.cbuffer );
 
-        ImGui::Render();
+		put::dev_ui::render();
         
-        pen::defer::renderer_present();
+        pen::renderer_present();
 
-        pen::defer::renderer_consume_cmd_buffer();
+        pen::renderer_consume_cmd_buffer();
         
 		put::loader_poll_for_changes();
 
@@ -304,7 +291,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //clean up mem here    
     k_render_handles.release();
     
-    pen::defer::renderer_consume_cmd_buffer();
+    pen::renderer_consume_cmd_buffer();
     
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);

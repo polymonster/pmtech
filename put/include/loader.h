@@ -40,11 +40,11 @@ namespace put
 
 	};
 
-    shader_program& loader_load_shader_program( const c8* shader_name, managed_shader* ms = nullptr );
+    shader_program& load_shader_program( const c8* shader_name, managed_shader* ms = nullptr );
     void            loader_release_shader_program( put::shader_program& program );
     
-    u32             loader_load_texture( const c8* filename );
-	skeleton*       loader_load_skeleton( const c8* filename );
+    u32             load_texture( const c8* filename );
+	skeleton*       load_skeleton( const c8* filename );
     void            loader_poll_for_changes();
 }
 

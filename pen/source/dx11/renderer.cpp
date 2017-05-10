@@ -884,7 +884,7 @@ namespace pen
         g_immediate_context->RSSetScissorRects( 1, &rd3d );
     }
 
-	void renderer_update_queries()
+	void direct::renderer_update_queries()
 	{
 		//update query info
 		g_context.active_query_index = (g_context.active_query_index + 1) % NUM_QUERY_BUFFERS;

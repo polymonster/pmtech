@@ -33,7 +33,7 @@ namespace put
 		p_camera->flags |= CF_INVALIDATED;
 	}
 
-	void camera_update_modelling( camera* p_camera )
+	void camera_update_fly(camera* p_camera)
 	{
 		mouse_state ms = input_get_mouse_state();
 
@@ -46,7 +46,67 @@ namespace put
 		f32 mwheel = (f32)ms.wheel;
 		static f32 prev_mwheel = mwheel;
 		f32 zoom = mwheel - prev_mwheel;
+		prev_mwheel = mwheel;
 
+		if (ms.buttons[PEN_MOUSE_L])
+		{
+			//rotation
+			vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);
+			p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
+		}
+
+		mat4 rx, ry, t;
+		rx.create_cardinal_rotation(X_AXIS, p_camera->rot.x);
+		ry.create_cardinal_rotation(Y_AXIS, p_camera->rot.y);
+
+		//fps
+		t.create_translation(p_camera->pos * -1.0f);
+
+		mat4 view_rotation = rx * ry;
+
+		f32 speed = 0.01f;
+
+		if (INPUT_PKEY(PENK_W))
+		{
+			p_camera->pos -= p_camera->view.get_fwd() * speed;
+		}
+
+		if (INPUT_PKEY(PENK_A))
+		{
+			p_camera->pos -= p_camera->view.get_right() * speed;
+		}
+
+		if (INPUT_PKEY(PENK_S))
+		{
+			p_camera->pos += p_camera->view.get_fwd() * speed;
+		}
+
+		if (INPUT_PKEY(PENK_D))
+		{
+			p_camera->pos += p_camera->view.get_right() * speed;
+		}
+
+		t.create_translation(p_camera->pos * -1.0f);
+		p_camera->view = view_rotation * t;
+
+		dbg::add_line(vec3f::zero(), p_camera->view.get_fwd(), vec3f::unit_z());
+		dbg::add_line(vec3f::zero(), p_camera->view.get_right(), vec3f::unit_x());
+		dbg::add_line(vec3f::zero(), p_camera->view.get_up(), vec3f::unit_y());
+
+		p_camera->flags |= CF_INVALIDATED;
+	}
+
+	void camera_update_modelling( camera* p_camera )
+	{
+		mouse_state ms = input_get_mouse_state();
+
+		//mouse drag
+		static vec2f prev_mpos = vec2f((f32)ms.x, (f32)ms.y);
+		vec2f current_mouse = vec2f((f32)ms.x, (f32)ms.y);
+		vec2f mouse_drag = current_mouse - prev_mpos;
+		prev_mpos = current_mouse;
+
+		//rotate
 		if (ms.buttons[PEN_MOUSE_L])
 		{
 			//rotation
@@ -61,88 +121,31 @@ namespace put
 			p_camera->focus.z += f32((sin(p_camera->rot.y) * mouse_drag.x) + ((sin(p_camera->rot.x) * cos(p_camera->rot.y)) * mouse_drag.y));
 		}
 
+		//zoom
+		f32 mwheel = (f32)ms.wheel;
+		static f32 prev_mwheel = mwheel;
+		f32 zoom = mwheel - prev_mwheel;
+		prev_mwheel = mwheel;
 		p_camera->zoom += zoom;
-
-		//vector to store the calculated camera pos
-		vec3f new_position = p_camera->focus;
-
-		//calculate the unit sphere position
-		vec3f unit_vector = vec3f::zero();
-		unit_vector.x += f32( -cos( p_camera->rot.x ) * sin( p_camera->rot.y ) );
-		unit_vector.y += f32( sin( p_camera->rot.x ) );
-		unit_vector.z += f32( cos( p_camera->rot.x ) * cos( p_camera->rot.y ) );
-
-		unit_vector = psmath::normalise(unit_vector);
-
-		//scale the unit vector by zoom
-		new_position += (unit_vector * f32(p_camera->zoom));
-
-		//p_camera->pos = new_position;
-
-		vec3f fwd = psmath::normalise(unit_vector * -1.0f);
-		vec3f right = psmath::cross(fwd, vec3f::unit_y());
-		vec3f up = psmath::cross(right, fwd);
-
-		p_camera->view.set_vectors( right, up, fwd, new_position );
-
-		f32 dir = 1.0f;
-
-		if (INPUT_PKEY(PENK_SHIFT))
-		{
-			dir = -1.0f;
-		}
-
-		static vec3f fly_pos = vec3f(0.0f, 10.0f, 10.0f);
+		
 
 		mat4 rx, ry, t, t2;
 		rx.create_cardinal_rotation(X_AXIS, p_camera->rot.x);
 		ry.create_cardinal_rotation(Y_AXIS, p_camera->rot.y);
 
-		mat4 fly;
-		fly.set_vectors(vec3f(1.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0), vec3f(0.0, 0.0, 1.0), fly_pos);
-
-		f32 speed = 0.01f;
-
-		if (INPUT_PKEY(PENK_W))
-		{
-			fly_pos -= fly.get_fwd() * speed;
-		}
-
-		if (INPUT_PKEY(PENK_A))
-		{
-			fly_pos -= fly.get_right() * speed;
-		}
-
-		if (INPUT_PKEY(PENK_S))
-		{
-			fly_pos += fly.get_fwd() * speed;
-		}
-
-		if (INPUT_PKEY(PENK_D))
-		{
-			fly_pos += fly.get_right() * speed;
-		}
-
-		//fps
-		t.create_translation(fly_pos * -1.0f);
-		p_camera->view = rx * ry * t;
-
 		//model?
 		t2.create_translation(vec3f(1.0f, 0.0f, 1.0f));
 
-		t.create_translation( vec3f(0.0f, 0.0f, zoom) );
+		p_camera->zoom = fmax(p_camera->zoom, 1.0f);
+		t.create_translation( vec3f(0.0f, 0.0f, p_camera->zoom) );
 
-		p_camera->view = (ry * rx) * t;
+		p_camera->view = t2 * (ry * rx) * t;
 
 		p_camera->view = p_camera->view.inverse3x4();
 
 		dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_fwd(), vec3f::magenta());
 		dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_right(), vec3f::cyan());
 		dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_up(), vec3f::yellow());
-
-		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), fly.get_fwd(), vec3f::unit_x());
-		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), fly.get_right(), vec3f::unit_y());
-		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), fly.get_up(), vec3f::unit_z());
 
 		p_camera->flags |= CF_INVALIDATED;
 	}
@@ -158,31 +161,19 @@ namespace put
 			bcp.buffer_size = sizeof(camera_cbuffer);
 			bcp.data = nullptr;
 
-			p_camera->cbuffer = pen::defer::renderer_create_buffer(bcp);
+			p_camera->cbuffer = pen::renderer_create_buffer(bcp);
 		}
 
 		if (p_camera->flags &= CF_INVALIDATED)
 		{
-			//camera_bake_matices(p_camera);
-
 			camera_cbuffer wvp;
 
 			wvp.view_projection = p_camera->proj * p_camera->view;
 			wvp.view_matrix = p_camera->view;
 
-			pen::defer::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
+			pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
 
 			p_camera->flags &= ~CF_INVALIDATED;
 		}
-	}
-
-	void camera_bake_matices( camera* p_camera )
-	{
-		mat4 rx, ry, t;
-		rx.create_cardinal_rotation( X_AXIS, p_camera->rot.x );
-		ry.create_cardinal_rotation( Y_AXIS, p_camera->rot.y );
-		t.create_translation( p_camera->pos * -1.0f );
-
-		//p_camera->view = (rx * ry) * t;
 	}
 }
