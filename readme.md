@@ -1,6 +1,6 @@
 # Welcome to pmtech!
 
-This work is still in progress, The win32 platform with dx11 is mostly complete, I have been using this for a game project. I am currently porting to osx and ios, osx almost has parity with win32 with a few missing graphics features such as trasform feedback, also it has been less used than the win32 version.
+A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offering cross platform support for osx, win32 and osx, opengl and directx. Core systems such as rendering, audio and physics are handled asyncronously on consumer threads with a user thread which is used to produce command buffers for the dedicated threads to consume at a later time.
 
 **pen** *pmtech engine* 
 
@@ -10,13 +10,10 @@ This project contains platform / operating system specific code, it provides abs
 - Input / OS Message Pump (win32, osx)
 - Audio (fmod)
 - Memory (win32, posix)
-- String (for portability with windows unicode)
 - File System (win32, dirent / stdlib)
 - Threads / Syncronisation Primitives (win32, posix)
 - Timers (win32, posix)
 - Job Threads / Syncronisation
-
-The renderer runs on its own thread, with all user submitted commands from the game thread being stored in a command buffer for dispatch later on a dedicated thread or core, this paralellises all graphics api driver overhead, the audio api and physics api can also run the same way. The engine can automatically create audio and render threads or they could be left in the hands of the user to spawn them / replace with a dedicated job management system.
 
 **put** *pmtech utility toolkit*
 
@@ -51,12 +48,17 @@ This solution / workspace contains multiple examples of how to use the API's and
 - render_target - Introduces render target creation / binding, shader program loading using the "put" library to automatically generate input layouts from the shaders input signature.
 - play_sound - Introduces linking to fmod 5 and some basic audio functions.
 - Imgui - Displays the Imgui test example, this also introduces a few new rendering festures that are required, blending, depth stencil states and scissor testing.
+- Audio Player - Introduces more audio features and supplies a UI to play and control audio files, it also introduces fft and some beat-detection code along with graphs and visualisations of the fft this is r&d work in progress.
+- Shader Toy - Introduces shader hot loading and a test bed for binding textures, samplers and constant/uniform buffers to different shader locations.
+- Model Viewer - Introduces cameras and camera controls, model loading and inspection.
 
 *Getting started*
 
 To start a new project make sure it is located in pmtech/<project_dir>/ this is important because all paths to tools and other libraries are relative to this location. The examples solution is set up illustrating this layout.. all paths are relative to avoid having to deal with setting environment variables to locate various parts of the project.
 
-An application just needs to define and initialise the pen::window_creation_params pen_window struct, and will be given a main loop, which can be defined in a separate project, there are helper functions to easily create new projects in pen/premake_app.lua and the pen_examples/premake5.lua has examples of how to set up projects. 
+An application just needs to define and initialise the pen::window_creation_params struct, and will be given a main loop, which can be defined in a separate project. 
+
+There are helper functions to easily create new projects in tools/premake/app_template.lua and the pen_examples/premake5.lua has examples of how to set up projects. 
 
 Use the make_projects batch file on windows or shell script on osx to generate IDE solutions or workspaces, edit these files to change configuration settings or to see how the current ones work.
 
