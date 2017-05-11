@@ -5,6 +5,7 @@
 
 namespace pen
 {
+	//os, window stuff
 	u32 window_init( void* params );
 	void* window_get_primary_display_handle();
     

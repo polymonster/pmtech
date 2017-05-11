@@ -1,5 +1,5 @@
  #include "dev_ui.h"
-#include "window.h"
+#include "entry_point.h"
 #include "input.h"
 #include "pen.h"
 #include "timer.h"
