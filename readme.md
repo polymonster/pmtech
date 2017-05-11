@@ -25,7 +25,7 @@ This project contains code that will be re-used across different projects but co
 - Physics command buffer api.
 - ImGui file browser and other ui utilities.
 
-** thirdparty **
+**thirdparty integration**
 - ImGui - super cool and fast ui rendering for development.
 - JSON for modern c++ - great for working with data that has been generated with python.
 - Bullet Physics - Wrapped up in a command buffer api for asyncronous update and thread safe interactions.
