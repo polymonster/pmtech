@@ -1,0 +1,58 @@
+struct vs_output
+{
+	float4 position		: SV_POSITION;
+	float4 world_pos 	: TEXCOORD0;
+	float3 normal		: TEXCOORD1;
+	float4 texcoord		: TEXCOORD2;
+};
+
+struct vs_input
+{
+	float4 position	 	: POSITION;
+	float4 normal	 	: TEXCOORD0;
+	float4 texcoord	 	: TEXCOORD1;
+	float4 tangent	 	: TEXCOORD2;
+	float4 bitangent	: TEXCOORD3;
+};
+
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
+cbuffer per_pass_view : register(b0)
+{
+	float4x4 vp_matrix;
+	float4x4 view_matrix;
+};
+
+cbuffer per_draw_call : register(b1)
+{
+	float4x4 world_matrix;
+};
+
+vs_output main( vs_input _input )
+{
+	vs_output _output;
+	
+	float4x4 wvp = mul( world_matrix, vp_matrix );
+
+	_output.position = mul( _input.position, wvp );
+	_output.world_pos = mul( _input.position, world_matrix );
+			
+	_output.normal = mul( _input.normal.xyz, (float3x3)world_matrix );
+	_output.normal = mul( _output.normal.xyz, (float3x3)view_matrix );
+	
+	_output.texcoord = float4( _input.texcoord.x, 1.0f - _input.texcoord.y, _input.texcoord.z, 1.0f - _input.texcoord.w );
+	
+    return _output;
+}
+
+ps_output main( vs_output input ) 
+{	
+	ps_output _output;
+		
+	_output.colour = float4( input.normal, 1.0f );
+	
+    return _output;
+}

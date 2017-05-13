@@ -7,6 +7,7 @@
 #include "dev_ui.h"
 #include "camera.h"
 #include "debug_render.h"
+#include "component_entity.h"
 
 pen::window_creation_params pen_window
 {
@@ -171,7 +172,7 @@ void init_renderer( )
     // Depth test parameters
     depth_stencil_params.depth_enable = true;
     depth_stencil_params.depth_write_mask = 1;
-    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
+    depth_stencil_params.depth_func = PEN_COMPARISON_LESS;
     
     k_render_handles.ds_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
     
@@ -199,6 +200,8 @@ const c8* camera_mode_names[] =
 
 struct model_view_controller
 {
+	put::ces::component_entity_scene* scene;
+
 	put::camera		main_camera;
 	e_camera_mode	camera_mode = CAMERA_MODELLING;
 	
@@ -213,6 +216,8 @@ void show_ui()
     ImGui::Begin( "Model Viewer", &open );
 
 	ImGui::Combo( "Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2 );
+
+	put::ces::enumerate_scene(k_model_view_controller.scene);
         
     ImGui::End();
 }
@@ -220,6 +225,10 @@ void show_ui()
 void init_model_view()
 {
 	put::camera_create_projection(&k_model_view_controller.main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f);
+
+	k_model_view_controller.scene = put::ces::create_scene("main_scene");
+
+	put::ces::import_model_scene("1210_scene", k_model_view_controller.scene);
 }
 
 void update_model_view()
@@ -239,6 +248,8 @@ void update_model_view()
 	}
 
 	put::camera_update_shader_constants(&k_model_view_controller.main_camera);
+
+	put::ces::update_scene_matrices(k_model_view_controller.scene);
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -268,6 +279,18 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::renderer_set_depth_stencil_state(k_render_handles.ds_state);
         pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
         pen::renderer_clear( k_render_handles.clear_state );
+
+		put::ces::scene_view view =
+		{
+			k_model_view_controller.main_camera.cbuffer,
+			PEN_DEFAULT_RT,
+			PEN_DEFAULT_DS,
+			k_render_handles.ds_state
+		};
+
+		put::ces::render_scene_view(k_model_view_controller.scene, view);
+
+		put::ces::render_scene_debug(k_model_view_controller.scene, view);
 
 		put::dbg::add_grid( vec3f::zero(), vec3f(100.0f), 100 );
 
