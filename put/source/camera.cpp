@@ -1,5 +1,5 @@
 #include "camera.h"
-#include "polyspoon_math.h"
+#include "put_math.h"
 #include "input.h"
 #include "renderer.h"
 #include "debug_render.h"
@@ -14,10 +14,10 @@ namespace put
 		vec2f near_size;
 		vec2f far_size;
 
-		near_size.y = 2.0f * tan( psmath::deg_to_rad( fov_degrees ) / 2.0f ) * near_plane;
+		near_size.y = 2.0f * tan( put::maths::deg_to_rad( fov_degrees ) / 2.0f ) * near_plane;
 		near_size.x = near_size.y * aspect_ratio;
 
-		far_size.y = 2.0f * tan( psmath::deg_to_rad( fov_degrees ) / 2.0f ) * far_plane;
+		far_size.y = 2.0f * tan( put::maths::deg_to_rad( fov_degrees ) / 2.0f ) * far_plane;
 		far_size.x = far_size.y * aspect_ratio;
 
 		p_camera->proj.create_perspective_projection
@@ -48,7 +48,7 @@ namespace put
 		f32 zoom = mwheel - prev_mwheel;
 		prev_mwheel = mwheel;
 
-		if (ms.buttons[PEN_MOUSE_L])
+		if (ms.buttons[PEN_MOUSE_M])
 		{
 			//rotation
 			vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);
@@ -89,9 +89,9 @@ namespace put
 		t.create_translation(p_camera->pos * -1.0f);
 		p_camera->view = view_rotation * t;
 
-		dbg::add_line(vec3f::zero(), p_camera->view.get_fwd(), vec3f::unit_z());
-		dbg::add_line(vec3f::zero(), p_camera->view.get_right(), vec3f::unit_x());
-		dbg::add_line(vec3f::zero(), p_camera->view.get_up(), vec3f::unit_y());
+		//dbg::add_line(vec3f::zero(), p_camera->view.get_fwd(), vec3f::unit_z());
+		//dbg::add_line(vec3f::zero(), p_camera->view.get_right(), vec3f::unit_x());
+		//dbg::add_line(vec3f::zero(), p_camera->view.get_up(), vec3f::unit_y());
 
 		p_camera->flags |= CF_INVALIDATED;
 	}
@@ -107,7 +107,7 @@ namespace put
 		prev_mpos = current_mouse;
 
 		//rotate
-		if (ms.buttons[PEN_MOUSE_L])
+		if (ms.buttons[PEN_MOUSE_M])
 		{
 			//rotation
 			vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);
@@ -131,7 +131,7 @@ namespace put
 
 		mat4 rx, ry, t, t2;
 		rx.create_cardinal_rotation(X_AXIS, p_camera->rot.x);
-		ry.create_cardinal_rotation(Y_AXIS, p_camera->rot.y);
+		ry.create_cardinal_rotation(Y_AXIS, -p_camera->rot.y);
 
 		//model?
 		t2.create_translation(vec3f(1.0f, 0.0f, 1.0f));
@@ -143,9 +143,9 @@ namespace put
 
 		p_camera->view = p_camera->view.inverse3x4();
 
-		dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_fwd(), vec3f::magenta());
-		dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_right(), vec3f::cyan());
-		dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_up(), vec3f::yellow());
+		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_fwd(), vec3f::magenta());
+		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_right(), vec3f::cyan());
+		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_up(), vec3f::yellow());
 
 		p_camera->flags |= CF_INVALIDATED;
 	}

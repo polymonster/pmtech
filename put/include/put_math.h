@@ -1,5 +1,5 @@
-#ifndef _POLYSPOON_MATH_H
-#define _POLYSPOON_MATH_H
+#ifndef _put_math_h
+#define _put_math_h
 
 #include <math.h>
 #include <float.h>
@@ -228,139 +228,140 @@ public:
 
 typedef Quaternion quat;
 
-namespace psmath
+namespace put
 {
-	//generic
-	f32 absolute(f32 value);
-	f32 absolute_smallest_of(f32 value_1, f32 value_2);
-
-	//angles
-	f32 deg_to_rad(f32 degree_angle);
-	f32 rad_to_deg(f32 radian_angle);
-	f32 angle_between_vectors(vec3f v1, vec3f v2);
-
-	//vectors
-	vec3f cross(vec3f v1, vec3f v2);
-	vec2f perp(vec2f v1, s32 hand);
-	vec3f normalise(vec3f v);
-	vec2f normalise(vec2f v);
-	vec3f project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normalise_coordinates = false);
-	vec3f unproject( vec3f scrren_space_pos, mat4 view, mat4 proj, vec2i viewport);
-	vec3f unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport);
-		
-	f32 cross( vec2f v1, vec2f v2 );
-		
-	f32 dot( vec3f v1, vec3f v2 );
-	f32 dot2f(vec2f v1, vec2f v2);
-
-	f32 magnitude(vec3f v);
-	f32 magnitude(vec2f v);
-	f32 distance(vec3f p1, vec3f p2);
-
-	inline f32 plane_distance( vec3f normal, vec3f pos )
+	namespace maths
 	{
-		f32 distance = 0.0f;
+		//generic
+		f32 absolute(f32 value);
+		f32 absolute_smallest_of(f32 value_1, f32 value_2);
 
-		//Use the plane equation to find the distance D
-		//negative dot product between normal vector and point (p)
-		distance = dot( normal, pos ) * -1.0f;
+		//angles
+		f32 deg_to_rad(f32 degree_angle);
+		f32 rad_to_deg(f32 radian_angle);
+		f32 angle_between_vectors(vec3f v1, vec3f v2);
 
-		return distance;
-	}
+		//vectors
+		vec3f cross(vec3f v1, vec3f v2);
+		vec2f perp(vec2f v1, s32 hand);
+		vec3f normalise(vec3f v);
+		vec2f normalise(vec2f v);
+		vec3f project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normalise_coordinates = false);
+		vec3f unproject(vec3f scrren_space_pos, mat4 view, mat4 proj, vec2i viewport);
+		vec3f unproject(vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport);
 
-	inline vec3f ray_vs_plane( vec3f vray, vec3f pray, vec3f nplane, vec3f pplane )
-	{
-		vec3f v = vray;
-		v.normalise( );
+		f32 cross(vec2f v1, vec2f v2);
 
-		vec3f p = pray;
-		vec3f n = nplane;
+		f32 dot(vec3f v1, vec3f v2);
+		f32 dot2f(vec2f v1, vec2f v2);
 
-		f32 d = plane_distance( n, pplane );
-		f32 t = -(dot( p, n ) + d) / dot( v, n );
+		f32 magnitude(vec3f v);
+		f32 magnitude(vec2f v);
+		f32 distance(vec3f p1, vec3f p2);
 
-		vec3f point_on_plane = p + (v * t);
+		inline f32 plane_distance(vec3f normal, vec3f pos)
+		{
+			f32 distance = 0.0f;
 
-		return point_on_plane;
-	}
+			distance = dot(normal, pos) * -1.0f;
 
-	inline f32 distance( const vec2f p1, const vec2f p2)
-	{
-		f32 d = sqrt( (p2.x - p1.x) * (p2.x - p1.x) + 
-			(p2.y - p1.y) * (p2.y - p1.y));
+			return distance;
+		}
 
-		return d;
-	}
+		inline vec3f ray_vs_plane(vec3f vray, vec3f pray, vec3f nplane, vec3f pplane)
+		{
+			vec3f v = vray;
+			v.normalise();
 
-	inline f32 distanceFast( const vec2f p1, const vec2f p2)
-	{
-		f32 d = ( (p2.x - p1.x) * (p2.x - p1.x) + 
-					(p2.y - p1.y) * (p2.y - p1.y) ) * 0.5f;
+			vec3f p = pray;
+			vec3f n = nplane;
 
-		return d;
-	}
+			f32 d = plane_distance(n, pplane);
+			f32 t = -(dot(p, n) + d) / dot(v, n);
 
-	inline f32 dot2f( vec2f v1, vec2f v2 )
-	{
-		return v1.x * v2.x + v1.y * v2.y;
-	}
+			vec3f point_on_plane = p + (v * t);
 
-	f32 distanceSq(vec2f p1, vec2f p2);
+			return point_on_plane;
+		}
 
-	f32    distance_on_line( vec3f l1, vec3f l2, vec3f p, bool clamp = true );
-	vec3f closest_point_on_line( vec3f l1, vec3f l2, vec3f p, bool clamp = true );
+		inline f32 distance(const vec2f p1, const vec2f p2)
+		{
+			f32 d = sqrt((p2.x - p1.x) * (p2.x - p1.x) +
+				(p2.y - p1.y) * (p2.y - p1.y));
+
+			return d;
+		}
+
+		inline f32 distanceFast(const vec2f p1, const vec2f p2)
+		{
+			f32 d = ((p2.x - p1.x) * (p2.x - p1.x) +
+				(p2.y - p1.y) * (p2.y - p1.y)) * 0.5f;
+
+			return d;
+		}
+
+		inline f32 dot2f(vec2f v1, vec2f v2)
+		{
+			return v1.x * v2.x + v1.y * v2.y;
+		}
+
+		f32 distanceSq(vec2f p1, vec2f p2);
+
+		f32    distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
+		vec3f closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
 
 
 #if 0
-    //todo - move the primitves over and port these functions from old engine.
-	void get_axes_from_OBB(OBB3D b1, vec3f *axes);
+		//todo - move the primitves over and port these functions from old engine.
+		void get_axes_from_OBB(OBB3D b1, vec3f *axes);
 
-	//polygons / triangles
-	vec3f get_normal(TRIANGLE t1);
-	vec3f get_normal(vec3f v1, vec3f v2, vec3f v3);
+		//polygons / triangles
+		vec3f get_normal(TRIANGLE t1);
+		vec3f get_normal(vec3f v1, vec3f v2, vec3f v3);
 
-	bool point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
+		bool point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
 
-	void compute_tangents(vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2, vec2f t3, vec3f *tangent,  vec3f *bitangent, bool normalise);
+		void compute_tangents(vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2, vec2f t3, vec3f *tangent, vec3f *bitangent, bool normalise);
 
-	//planes
-	s32 classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance);
-	s32 classify_sphere(SPHERE s1, PLANE p1);
-	f32 plane_distance(vec3f normal, vec3f point);
-	vec3f RAY_vs_PLANE(RAY_3D ray, PLANE plane);
+		//planes
+		s32 classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance);
+		s32 classify_sphere(SPHERE s1, PLANE p1);
+		f32 plane_distance(vec3f normal, vec3f point);
+		vec3f RAY_vs_PLANE(RAY_3D ray, PLANE plane);
 
-	//closest point
-	vec3f closest_point_on_AABB3D(AABB3D b1, vec3f p);
-	void find_extents(vec3f axis, vec3f *vertices, u32 vertex_count, f32 *min, f32 *max);
-	void find_extents(vec3f axis, Vector3fArray vertices, f32 *min, f32 *max);
-	void find_extents(vec3f axis, vec3f *vertices, u32 vertex_count, vec3f *min_position, vec3f *max_position);
+		//closest point
+		vec3f closest_point_on_AABB3D(AABB3D b1, vec3f p);
+		void find_extents(vec3f axis, vec3f *vertices, u32 vertex_count, f32 *min, f32 *max);
+		void find_extents(vec3f axis, Vector3fArray vertices, f32 *min, f32 *max);
+		void find_extents(vec3f axis, vec3f *vertices, u32 vertex_count, vec3f *min_position, vec3f *max_position);
 
-	//bounding volume vs bounding volume tests
-	bool SPHERE_vs_SPHERE(SPHERE *s1, SPHERE *s2);
-	bool AA_ELLIPSOID_vs_SPHERE(AA_ELLIPSOID *e1, SPHERE *s1);
-	bool AA_ELLIPSOID_vs_AA_ELLIPSOID(AA_ELLIPSOID *e1, AA_ELLIPSOID *e2);
-	bool SPHERE_vs_TRIANGLE(SPHERE *s1, TRIANGLE *t1);
-	bool AA_ELLIPSOID_vs_TRIANGLE(AA_ELLIPSOID *e1, TRIANGLE *t1);
-	bool AABB3D_vs_AABB3D(AABB3D *b1, AABB3D *b2);
-	bool AABB3D_vs_SPHERE(AABB3D *b1, SPHERE *s1);
-	bool AABB3D_vs_AA_ELLIPSOID(AABB3D *b1, AA_ELLIPSOID *e1);
-	bool OBB3D_vs_OBB3D(OBB3D *b1, OBB3D *b2);
+		//bounding volume vs bounding volume tests
+		bool SPHERE_vs_SPHERE(SPHERE *s1, SPHERE *s2);
+		bool AA_ELLIPSOID_vs_SPHERE(AA_ELLIPSOID *e1, SPHERE *s1);
+		bool AA_ELLIPSOID_vs_AA_ELLIPSOID(AA_ELLIPSOID *e1, AA_ELLIPSOID *e2);
+		bool SPHERE_vs_TRIANGLE(SPHERE *s1, TRIANGLE *t1);
+		bool AA_ELLIPSOID_vs_TRIANGLE(AA_ELLIPSOID *e1, TRIANGLE *t1);
+		bool AABB3D_vs_AABB3D(AABB3D *b1, AABB3D *b2);
+		bool AABB3D_vs_SPHERE(AABB3D *b1, SPHERE *s1);
+		bool AABB3D_vs_AA_ELLIPSOID(AABB3D *b1, AA_ELLIPSOID *e1);
+		bool OBB3D_vs_OBB3D(OBB3D *b1, OBB3D *b2);
 
-	bool CONVEX_HULL_vs_CONVEX_HULL(CONVEX_HULL *h1, CONVEX_HULL *h2);
+		bool CONVEX_HULL_vs_CONVEX_HULL(CONVEX_HULL *h1, CONVEX_HULL *h2);
 
-	//point tests
-	bool POINT_inside_TRIANGLE(TRIANGLE t1, vec3f p);
-	bool POINT_inside_AA_ELLIPSOID(AA_ELLIPSOID e1, vec3f p);
-	bool POINT_inside_SPHERE(SPHERE s1, vec3f p);
-	bool POINT_inside_AABB3D(AABB3D b1, vec3f p);
+		//point tests
+		bool POINT_inside_TRIANGLE(TRIANGLE t1, vec3f p);
+		bool POINT_inside_AA_ELLIPSOID(AA_ELLIPSOID e1, vec3f p);
+		bool POINT_inside_SPHERE(SPHERE s1, vec3f p);
+		bool POINT_inside_AABB3D(AABB3D b1, vec3f p);
 
-	//ray / line tests tests
-	bool SPHERE_vs_LINE();
-	bool SPHERE_vs_RAY();
-	bool AA_ELLIPSOID_vs_LINE();
-	bool AA_ELLIPSOID_vs_RAY();
+		//ray / line tests tests
+		bool SPHERE_vs_LINE();
+		bool SPHERE_vs_RAY();
+		bool AA_ELLIPSOID_vs_LINE();
+		bool AA_ELLIPSOID_vs_RAY();
 
 #endif
+	}
 };
 
 #endif

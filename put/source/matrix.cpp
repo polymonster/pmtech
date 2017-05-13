@@ -1,5 +1,5 @@
 #include "matrix.h"
-#include "polyspoon_math.h"
+#include "put_math.h"
 
 void mat4::create_identity()
 {
@@ -79,7 +79,7 @@ void mat4::create_translation(vec3f t)
 
 void mat4::create_cardinal_rotation_deg( s32 axis, f32 theta )
 {
-    f32 theta_rad = psmath::deg_to_rad(theta);
+    f32 theta_rad = put::maths::deg_to_rad(theta);
     create_cardinal_rotation( axis, theta_rad );
 }
 
@@ -127,7 +127,7 @@ void mat4::create_cardinal_rotation(s32 axis, f32 theta)
 
 void mat4::create_arbitrary_rotation_deg( vec3f axis, f32 theta )
 {
-    f32 theta_rad = psmath::deg_to_rad(theta);
+    f32 theta_rad = put::maths::deg_to_rad(theta);
     create_arbitrary_rotation( axis, theta_rad );
 }
 

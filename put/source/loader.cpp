@@ -498,7 +498,7 @@ namespace put
 					pen::memory_cpy( &rotations[ num_rotations ], p_int, 16 );
 
 					//convert to radians
-					rotations[ num_rotations ].w = psmath::deg_to_rad( rotations[ num_rotations ].w );
+					rotations[ num_rotations ].w = put::maths::deg_to_rad( rotations[ num_rotations ].w );
 
 					static f32 zero_rotation_epsilon = 0.000001f;
 					if( rotations[ num_rotations ].w < zero_rotation_epsilon && rotations[ num_rotations ].w > zero_rotation_epsilon )
@@ -609,7 +609,7 @@ namespace put
 
 					pen::memory_cpy( &p_skeleton->animations[a].euler_angles[t], &euler_angs, 12 );
 					
-					p_skeleton->animations[a].rotations[t].euler_angles( psmath::deg_to_rad( euler_angs.z ), psmath::deg_to_rad( euler_angs.y ), psmath::deg_to_rad( euler_angs.x ) );
+					p_skeleton->animations[a].rotations[t].euler_angles( put::maths::deg_to_rad( euler_angs.z ), put::maths::deg_to_rad( euler_angs.y ), put::maths::deg_to_rad( euler_angs.x ) );
 					p_int += 3;
 				}
 			}

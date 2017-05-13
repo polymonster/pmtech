@@ -426,7 +426,7 @@ m_rotation(rotation)
 			tri_verts.push_back(m_vertices.at(m_indices.at(index[j])));
 		}
 
-		vec3f normal = psmath::get_normal(TRIANGLE(tri_verts));
+		vec3f normal = put::maths::get_normal(TRIANGLE(tri_verts));
 
 		m_axes.push_back(normal);
 	}
@@ -565,7 +565,7 @@ PLANE::PLANE( std::vector<vec3f> pos32s )
 	m_pos32_on_plane /= (f32)pos32_count;
 
 	//find the normal of the plane
-	m_normal = psmath::get_normal(TRIANGLE(pos32s));
+	m_normal = put::maths::get_normal(TRIANGLE(pos32s));
 }
 
 RAY_3D::RAY_3D( vec3f pos32_on_ray, vec3f direction_vector )

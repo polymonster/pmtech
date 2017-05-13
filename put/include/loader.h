@@ -3,7 +3,7 @@
 
 #include "definitions.h"
 #include "renderer.h"
-#include "polyspoon_math.h"
+#include "put_math.h"
 
 namespace put
 {

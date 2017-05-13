@@ -1,13 +1,13 @@
 #if 0
 
-#include "polyspoon_math.h"
+#include "put_math.h"
 
 /*======================== VARIABLES ======================*/
 
 /*=========================================================*\
 |	SPHERE vs SPHERE
 \*=========================================================*/
-bool psmath::SPHERE_vs_SPHERE(SPHERE *s1, SPHERE *s2)
+bool put::maths::SPHERE_vs_SPHERE(SPHERE *s1, SPHERE *s2)
 {
 	//get the distance between the sphere's.
 	f32 d = distance(s1->m_position,s2->m_position);
@@ -30,7 +30,7 @@ bool psmath::SPHERE_vs_SPHERE(SPHERE *s1, SPHERE *s2)
 /*=========================================================*\
 |	AA_ELLIPSOID vs AA_ELLIPSOID
 \*=========================================================*/
-bool psmath::AA_ELLIPSOID_vs_AA_ELLIPSOID(AA_ELLIPSOID *e1, AA_ELLIPSOID *e2)
+bool put::maths::AA_ELLIPSOID_vs_AA_ELLIPSOID(AA_ELLIPSOID *e1, AA_ELLIPSOID *e2)
 {
 	//hard
 	return false;
@@ -39,7 +39,7 @@ bool psmath::AA_ELLIPSOID_vs_AA_ELLIPSOID(AA_ELLIPSOID *e1, AA_ELLIPSOID *e2)
 /*=========================================================*\
 |	AA_ELLIPSOID vs SPHERE
 \*=========================================================*/
-bool psmath::AA_ELLIPSOID_vs_SPHERE(AA_ELLIPSOID *e1, SPHERE *s1)
+bool put::maths::AA_ELLIPSOID_vs_SPHERE(AA_ELLIPSOID *e1, SPHERE *s1)
 {
 	//not precise
 
@@ -54,7 +54,7 @@ bool psmath::AA_ELLIPSOID_vs_SPHERE(AA_ELLIPSOID *e1, SPHERE *s1)
 /*=========================================================*\
 |	SPHERE vs TRIANGLE
 \*=========================================================*/
-bool psmath::SPHERE_vs_TRIANGLE(SPHERE *s1, TRIANGLE *t1)
+bool put::maths::SPHERE_vs_TRIANGLE(SPHERE *s1, TRIANGLE *t1)
 {
 	//get the normal of the triangle
 	vec3f normal = get_normal(*t1);
@@ -117,7 +117,7 @@ bool psmath::SPHERE_vs_TRIANGLE(SPHERE *s1, TRIANGLE *t1)
 /*=========================================================*\
 |	AA_ELLIPSOID vs TRIANGLE
 \*=========================================================*/
-bool psmath::AA_ELLIPSOID_vs_TRIANGLE(AA_ELLIPSOID *e1, TRIANGLE *t1)
+bool put::maths::AA_ELLIPSOID_vs_TRIANGLE(AA_ELLIPSOID *e1, TRIANGLE *t1)
 {
 	//make a bounding sphere around the ellipsoid
 	//find the largets of the radii
@@ -200,7 +200,7 @@ bool psmath::AA_ELLIPSOID_vs_TRIANGLE(AA_ELLIPSOID *e1, TRIANGLE *t1)
 |		- tests if a pos32 lies inside a triangle, using
 |		- bayrecentric space
 \*=========================================================*/
-bool psmath::POs32_inside_TRIANGLE(TRIANGLE t1, vec3f p)
+bool put::maths::POs32_inside_TRIANGLE(TRIANGLE t1, vec3f p)
 {
 	const f32 MATCH_FACTOR = 0.99f;
 
@@ -237,7 +237,7 @@ bool psmath::POs32_inside_TRIANGLE(TRIANGLE t1, vec3f p)
 |		- tests if a pos32 lies inside an ellipsoid, using
 |		- ellipsoid space
 \*=========================================================*/
-bool psmath::POs32_inside_AA_ELLIPSOID(AA_ELLIPSOID e1, vec3f p)
+bool put::maths::POs32_inside_AA_ELLIPSOID(AA_ELLIPSOID e1, vec3f p)
 {
 	f32 d = distance(e1.m_position / e1.m_radii ,p / e1.m_radii);
 
@@ -254,7 +254,7 @@ bool psmath::POs32_inside_AA_ELLIPSOID(AA_ELLIPSOID e1, vec3f p)
 |		- tests if a pos32 lies inside a sphere, using
 |		- simple distance test
 \*=========================================================*/
-bool psmath::POs32_inside_SPHERE(SPHERE s1, vec3f p)
+bool put::maths::POs32_inside_SPHERE(SPHERE s1, vec3f p)
 {
 	f32 d = distance(s1.m_position, p);
 	
@@ -269,7 +269,7 @@ bool psmath::POs32_inside_SPHERE(SPHERE s1, vec3f p)
 /*=========================================================*\
 |	AABB3D vs AABB3D
 \*=========================================================*/
-bool psmath::AABB3D_vs_AABB3D(AABB3D *b1, AABB3D *b2)
+bool put::maths::AABB3D_vs_AABB3D(AABB3D *b1, AABB3D *b2)
 {
 	//this could be optimised out
 	vec3f b1_extent_min = b1->m_position - b1->m_size;
@@ -304,7 +304,7 @@ bool psmath::AABB3D_vs_AABB3D(AABB3D *b1, AABB3D *b2)
 |	POs32 inside AABB3D - returns true if a pos32 is inside
 |						an aabb
 \*=========================================================*/
-bool psmath::POs32_inside_AABB3D(AABB3D b1, vec3f p)
+bool put::maths::POs32_inside_AABB3D(AABB3D b1, vec3f p)
 {
 	//this could be optimised out
 	vec3f b1_extent_min = b1.m_position - b1.m_size;
@@ -325,7 +325,7 @@ bool psmath::POs32_inside_AABB3D(AABB3D b1, vec3f p)
 /*=========================================================*\
 |	AABB3D_vs_SPHERE
 \*=========================================================*/
-bool psmath::AABB3D_vs_SPHERE(AABB3D *b1, SPHERE *s1)
+bool put::maths::AABB3D_vs_SPHERE(AABB3D *b1, SPHERE *s1)
 {
 	vec3f p = closest_point_on_AABB3D(*b1,s1->m_position);
 
@@ -345,7 +345,7 @@ bool psmath::AABB3D_vs_SPHERE(AABB3D *b1, SPHERE *s1)
 /*=========================================================*\
 |	AABB3D_vs_AA_ELLIPSOID
 \*=========================================================*/
-bool psmath::AABB3D_vs_AA_ELLIPSOID(AABB3D *b1, AA_ELLIPSOID *e1)
+bool put::maths::AABB3D_vs_AA_ELLIPSOID(AABB3D *b1, AA_ELLIPSOID *e1)
 {
 	vec3f p = closest_point_on_AABB3D(*b1,e1->m_position);
 
@@ -362,7 +362,7 @@ bool psmath::AABB3D_vs_AA_ELLIPSOID(AABB3D *b1, AA_ELLIPSOID *e1)
 	return false;
 }
 
-bool psmath::OBB3D_vs_OBB3D(OBB3D *b1, OBB3D *b2)
+bool put::maths::OBB3D_vs_OBB3D(OBB3D *b1, OBB3D *b2)
 {
 	//get the first box's axes
 	vec3f b1_axis[3];
@@ -430,7 +430,7 @@ bool psmath::OBB3D_vs_OBB3D(OBB3D *b1, OBB3D *b2)
 	return true;
 }
 
-bool psmath::CONVEX_HULL_vs_CONVEX_HULL(CONVEX_HULL *h1, CONVEX_HULL *h2)
+bool put::maths::CONVEX_HULL_vs_CONVEX_HULL(CONVEX_HULL *h1, CONVEX_HULL *h2)
 {
 	Vector3fArray axis_list;
 

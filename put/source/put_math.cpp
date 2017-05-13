@@ -1,29 +1,29 @@
-#include "polyspoon_math.h"
+#include "put_math.h"
 
-f32 psmath::deg_to_rad(f32 degree_angle)
+f32 put::maths::deg_to_rad(f32 degree_angle)
 {
     return( degree_angle * _PI_OVER_180 );
 }
 
-f32 psmath::rad_to_deg(f32 radian_angle)
+f32 put::maths::rad_to_deg(f32 radian_angle)
 {
     return( radian_angle * _180_OVER_PI );
 }
 
-f32 psmath::absolute(f32 value)
+f32 put::maths::absolute(f32 value)
 {
     if(value < 0.0f) value *= - 1;
     
     return value;
 }
 
-f32 psmath::absolute_smallest_of(f32 value_1,f32 value_2)
+f32 put::maths::absolute_smallest_of(f32 value_1,f32 value_2)
 {
     if(absolute(value_1) < absolute(value_2)) return value_1;
     else return value_2;
 }
 
-vec3f psmath::cross(vec3f v1, vec3f v2)
+vec3f put::maths::cross(vec3f v1, vec3f v2)
 {
     vec3f result;
     
@@ -36,17 +36,17 @@ vec3f psmath::cross(vec3f v1, vec3f v2)
     return result;
 }
 
-f32 psmath::cross( vec2f v1, vec2f v2 )
+f32 put::maths::cross( vec2f v1, vec2f v2 )
 {
     return v1.x * v2.y - v1.y * v2.x;
 }
 
-f32 psmath::dot(vec3f v1,vec3f v2)
+f32 put::maths::dot(vec3f v1,vec3f v2)
 {
     return ((v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z));
 }
 
-vec2f psmath::perp(vec2f v1, s32 hand)
+vec2f put::maths::perp(vec2f v1, s32 hand)
 {
     switch(hand)
     {
@@ -67,17 +67,17 @@ vec2f psmath::perp(vec2f v1, s32 hand)
     return vec2f(v1.y,-v1.x);
 }
 
-f32 psmath::magnitude(vec3f v)
+f32 put::maths::magnitude(vec3f v)
 {
     return (f32) sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
 }
 
-f32 psmath::magnitude(vec2f v)
+f32 put::maths::magnitude(vec2f v)
 {
     return (f32) sqrt((v.x * v.x) + (v.y * v.y));
 }
 
-f32 psmath::distance(vec3f p1, vec3f p2)
+f32 put::maths::distance(vec3f p1, vec3f p2)
 {
     double d = sqrt( (p2.x - p1.x) * (p2.x - p1.x) +
                     (p2.y - p1.y) * (p2.y - p1.y) +
@@ -86,13 +86,13 @@ f32 psmath::distance(vec3f p1, vec3f p2)
     return (f32) d;
 }
 
-f32 psmath::distanceSq(vec2f p1, vec2f p2)
+f32 put::maths::distanceSq(vec2f p1, vec2f p2)
 {
     f32 d =  (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
     return  d;
 }
 
-vec3f psmath::normalise(vec3f v){
+vec3f put::maths::normalise(vec3f v){
     
     f32 r_mag = 1.0f / magnitude(v);
     
@@ -103,7 +103,7 @@ vec3f psmath::normalise(vec3f v){
     return v;
 }
 
-vec2f psmath::normalise(vec2f v){
+vec2f put::maths::normalise(vec2f v){
     
     f32 mag = 1.0f / magnitude(v);
     
@@ -112,7 +112,7 @@ vec2f psmath::normalise(vec2f v){
     return v;
 }
 
-vec3f psmath::project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normalise_coordinates)
+vec3f put::maths::project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normalise_coordinates)
 {
     mat4 res = proj * view;
     
@@ -137,7 +137,7 @@ vec3f psmath::project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normal
     return screen_space_coord;
 }
 
-vec3f psmath::unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport )
+vec3f put::maths::unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport )
 {
     //inverse the view projection matrix
     mat4 view_proj = proj * view;
@@ -165,7 +165,7 @@ vec3f psmath::unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i vie
 }
 
 #if 0
-vec3f psmath::get_normal(TRIANGLE t1)
+vec3f put::maths::get_normal(TRIANGLE t1)
 {
     vec3f v1 = t1.m_vertices[2] - t1.m_vertices[0];
     vec3f v2 = t1.m_vertices[1] - t1.m_vertices[0];
@@ -178,7 +178,7 @@ vec3f psmath::get_normal(TRIANGLE t1)
     return normal;
 }
 
-vec3f psmath::get_normal(vec3f v1, vec3f v2, vec3f v3)
+vec3f put::maths::get_normal(vec3f v1, vec3f v2, vec3f v3)
 {
     vec3f vA = v3 - v1;
     vec3f vB = v2 - v1;
@@ -191,7 +191,7 @@ vec3f psmath::get_normal(vec3f v1, vec3f v2, vec3f v3)
     return normal;
 }
 
-s32 psmath::classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance)
+s32 put::maths::classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance)
 {
     f32 d = plane_distance(normal, p);
     
@@ -212,7 +212,7 @@ s32 psmath::classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance)
     
 }
 
-s32 psmath::classify_sphere( SPHERE s1, PLANE p1 )
+s32 put::maths::classify_sphere( SPHERE s1, PLANE p1 )
 {
     f32 plane_d = plane_distance(p1.m_normal, p1.m_point_on_plane);
     
@@ -232,7 +232,7 @@ s32 psmath::classify_sphere( SPHERE s1, PLANE p1 )
     return BEHIND;
 }
 
-f32 psmath::plane_distance(vec3f normal, vec3f point)
+f32 put::maths::plane_distance(vec3f normal, vec3f point)
 {
     f32 distance = 0;
     
@@ -243,7 +243,7 @@ f32 psmath::plane_distance(vec3f normal, vec3f point)
     return distance;
 }
 
-f32 psmath::angle_between_vectors(vec3f v1,vec3f v2)
+f32 put::maths::angle_between_vectors(vec3f v1,vec3f v2)
 {
     //get the dot product
     f32 dp = dot(v1,v2);
@@ -264,7 +264,7 @@ f32 psmath::angle_between_vectors(vec3f v1,vec3f v2)
     return angle;
 }
 
-vec3f psmath::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
+vec3f put::maths::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
 {
     //create a vector from line start to the point.
     vec3f v1 = p - l1;
@@ -305,7 +305,7 @@ vec3f psmath::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
     return closest_point;
 }
 
-f32 psmath::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
+f32 put::maths::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
 {
     //create a vector from line start to the point.
     vec3f v1 = p - l1;
@@ -340,7 +340,7 @@ f32 psmath::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
     return t;
 }
 
-vec3f psmath::closest_point_on_AABB3D(AABB3D b1, vec3f p)
+vec3f put::maths::closest_point_on_AABB3D(AABB3D b1, vec3f p)
 {
     //this could be optimised out
     vec3f b1_extent_min = b1.m_position - b1.m_size;
@@ -358,7 +358,7 @@ vec3f psmath::closest_point_on_AABB3D(AABB3D b1, vec3f p)
     return p;
 }
 
-void psmath::get_axes_from_OBB(OBB3D b1, vec3f *axes)
+void put::maths::get_axes_from_OBB(OBB3D b1, vec3f *axes)
 {
     //make some vertices for each axis
     vec3f x_axis[2];
@@ -389,7 +389,7 @@ void psmath::get_axes_from_OBB(OBB3D b1, vec3f *axes)
     axes[2] = normalise(z_axis[1] - z_axis[0]);
 }
 
-void psmath::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count, f32 *min, f32 *max)
+void put::maths::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count, f32 *min, f32 *max)
 {
     f32 *projections = new f32[vertex_count];
     
@@ -410,7 +410,7 @@ void psmath::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count
     delete projections;
 }
 
-void psmath::find_extents(vec3f axis, Vector3fArray vertices, f32 *min, f32 *max)
+void put::maths::find_extents(vec3f axis, Vector3fArray vertices, f32 *min, f32 *max)
 {
     f32 *projections = new f32[vertices.size()];
     
@@ -431,7 +431,7 @@ void psmath::find_extents(vec3f axis, Vector3fArray vertices, f32 *min, f32 *max
     delete projections;
 }
 
-void psmath::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count, vec3f *min_position, vec3f *max_position)
+void put::maths::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count, vec3f *min_position, vec3f *max_position)
 {
     f32 min, max;
     
@@ -441,7 +441,7 @@ void psmath::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_count
     *max_position = axis * max;
 }
 
-vec3f psmath::RAY_vs_PLANE( RAY_3D ray, PLANE plane )
+vec3f put::maths::RAY_vs_PLANE( RAY_3D ray, PLANE plane )
 {
     //todo - this is wrong i think
     vec3f v = ray.m_direction_vector;
@@ -458,7 +458,7 @@ vec3f psmath::RAY_vs_PLANE( RAY_3D ray, PLANE plane )
     return point_on_plane;
 }
 
-void psmath::compute_tangents( vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2, vec2f t3, vec3f *tangent, vec3f *bitangent, bool normalise )
+void put::maths::compute_tangents( vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2, vec2f t3, vec3f *tangent, vec3f *bitangent, bool normalise )
 {
     //calculate vectors of the edges of the triangle
     vec3f vA = v2 - v1;
@@ -485,7 +485,7 @@ void psmath::compute_tangents( vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2,
     }
 }
 
-bool psmath::point_inside_triangle( vec3f v1, vec3f v2, vec3f v3, vec3f p )
+bool put::maths::point_inside_triangle( vec3f v1, vec3f v2, vec3f v3, vec3f p )
 {
     vec3f cp1, cp2;
     

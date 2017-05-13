@@ -2,7 +2,7 @@
 #define debug_render_h__
 
 #include "definitions.h"
-#include "polyspoon_math.h"
+#include "put_math.h"
 #include "renderer.h"
 
 namespace put
