@@ -1,31 +1,34 @@
 # Welcome to pmtech!
 
-A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offering cross platform support for osx, win32 and osx, opengl and directx. Core systems such as rendering, audio and physics are handled asyncronously on consumer threads with a user thread which is used to produce command buffers for the dedicated threads to consume at a later time.
+A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios with opengl 3 and directx 11 renderers. 
+
+Core systems such as rendering, audio and physics are handled asyncronously on consumer threads which process command buffers that are created on the user thread, the command buffer api's provide thread safe access to add commands or read data back from a consumer thread.
 
 **pen** *pmtech engine* 
 
 This project contains platform / operating system specific code, it provides abstractions for:
 - Renderer (dx11, opengl)
-- Window / Entry (win32, ox, ios)
-- Input / OS Message Pump (win32, osx)
+- Window / Input / OS Message Pump (win32, osx, ios)
 - Audio (fmod)
 - Memory (win32, posix)
 - File System (win32, dirent / stdlib)
 - Threads / Syncronisation Primitives (win32, posix)
-- Timers (win32, posix)
+- Timers (win32, mach)
 - Job Threads / Syncronisation
 
 **put** *pmtech utility toolkit*
 
 This project contains code that will be re-used across different projects but contains no platform specific code, it contains:
-- Loader - Contains functions to load textures (DDS), models, skeletons, animations and shaders, as well as supporting shader hot loads.
-- Bullet Physics - With a deferred command buffer API like the renderer and audio system, allowing physics simulate to run independantly on it's own thread.
+- Loader - Load textures (DDS), models, skeletons, animations and shaders, as well as supporting hot loading assets.
 - Debug Renderer - Helpers for drawing 3d and 2d lines, boxes, text, and other primitives.
-- Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and functions
+- Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and functions.
+- Physics command buffer api.
+- ImGui file browser and other ui utilities.
 
-** thirdparty **
+**thirdparty integration**
 - ImGui - super cool and fast ui rendering for development.
 - JSON for modern c++ - great for working with data that has been generated with python.
+- Bullet Physics - Wrapped up in a command buffer api for asyncronous update and thread safe interactions.
 
 **tools**
 
