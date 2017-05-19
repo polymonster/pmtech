@@ -45,10 +45,9 @@ namespace put
 
 		f32 mwheel = (f32)ms.wheel;
 		static f32 prev_mwheel = mwheel;
-		f32 zoom = mwheel - prev_mwheel;
 		prev_mwheel = mwheel;
 
-		if (ms.buttons[PEN_MOUSE_M])
+		if (ms.buttons[PEN_MOUSE_L])
 		{
 			//rotation
 			vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);
@@ -88,10 +87,6 @@ namespace put
 
 		t.create_translation(p_camera->pos * -1.0f);
 		p_camera->view = view_rotation * t;
-
-		//dbg::add_line(vec3f::zero(), p_camera->view.get_fwd(), vec3f::unit_z());
-		//dbg::add_line(vec3f::zero(), p_camera->view.get_right(), vec3f::unit_x());
-		//dbg::add_line(vec3f::zero(), p_camera->view.get_up(), vec3f::unit_y());
 
 		p_camera->flags |= CF_INVALIDATED;
 	}
@@ -142,10 +137,6 @@ namespace put
 		p_camera->view = t2 * (ry * rx) * t;
 
 		p_camera->view = p_camera->view.inverse3x4();
-
-		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_fwd(), vec3f::magenta());
-		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_right(), vec3f::cyan());
-		//dbg::add_line(vec3f(0.0f, 0.0f, 0.0f), p_camera->view.get_up(), vec3f::yellow());
 
 		p_camera->flags |= CF_INVALIDATED;
 	}

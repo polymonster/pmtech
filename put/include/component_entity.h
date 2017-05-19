@@ -126,6 +126,7 @@ namespace put
 			u32*					multibody_handles;
 			s32*					multibody_link;
 			scene_node_physics*		physics_data;
+            u32*                    cbuffer;
 
 			u32						num_nodes = 0;
 			u32						nodes_size = 0;

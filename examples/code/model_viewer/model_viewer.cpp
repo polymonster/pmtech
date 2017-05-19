@@ -216,8 +216,16 @@ void show_ui()
     ImGui::Begin( "Model Viewer", &open );
 
 	ImGui::Combo( "Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2 );
+    
+    f32 cur_time = pen::timer_get_time();
+    static f32 prev_time = cur_time;
+    f32 dt = (cur_time - prev_time) / 1000.0f;
+    prev_time = cur_time;
+    
+    ImGui::Text("dt %f", dt);
+    
 
-	put::ces::enumerate_scene(k_model_view_controller.scene);
+	//put::ces::enumerate_scene(k_model_view_controller.scene);
         
     ImGui::End();
 }
@@ -269,7 +277,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     while( 1 )
     {
 		update_model_view();
-
+        
 		//render
         pen::renderer_set_rasterizer_state( k_render_handles.raster_state );
                         
@@ -287,7 +295,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 			PEN_DEFAULT_DS,
 			k_render_handles.ds_state
 		};
-
+        
 		put::ces::render_scene_view(k_model_view_controller.scene, view);
 
 		put::ces::render_scene_debug(k_model_view_controller.scene, view);

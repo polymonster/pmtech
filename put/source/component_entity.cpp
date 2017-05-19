@@ -28,6 +28,11 @@ namespace put
 		};
 
 		std::vector<component_entity_scene_instance> k_scenes;
+        
+        struct per_model_cbuffer
+        {
+            mat4 world_matrix;
+        };
 
 		void resize_scene_buffers(component_entity_scene* scene)
 		{
@@ -51,6 +56,12 @@ namespace put
 			ALLOC_COMPONENT_ARRAY(scene, multibody_handles, u32);
 			ALLOC_COMPONENT_ARRAY(scene, multibody_link, s32);
 			ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
+            ALLOC_COMPONENT_ARRAY(scene, cbuffer, u32);
+            
+            for( s32 i = 0; i < scene->nodes_size; ++i )
+            {
+                scene->cbuffer[i] = PEN_INVALID_HANDLE;
+            }
 
 			//display info - could be disabled in shipable builds
 			ALLOC_COMPONENT_ARRAY(scene, names, c8*);
@@ -95,7 +106,7 @@ namespace put
 			component_entity_scene_instance new_instance;
 			new_instance.name = name;
 			new_instance.scene = new component_entity_scene();
-			*new_instance.scene = { 0 }; //null pointers
+			//*new_instance.scene = { 0 }; //null pointers
 
 			k_scenes.push_back(new_instance);
 
@@ -116,11 +127,6 @@ namespace put
 				if (c < MAX_SCENE_NODE_CHARS)
 				{
 					_buf[c] = (c8)*data_start;
-				}
-
-				if (c >= MAX_SCENE_NODE_CHARS)
-				{
-					int i = 0;
 				}
 
 				PEN_ASSERT(c < MAX_SCENE_NODE_CHARS);
@@ -218,11 +224,6 @@ namespace put
 
 				u32 index_size = num_indices < 65535 ? 2 : 4;
 
-				if (index_size == 4)
-				{
-					int i = 0;
-				}
-
 				u32 vertex_size = sizeof(vertex_model);
 
 				if (skinned)
@@ -262,11 +263,9 @@ namespace put
 
 				p_geometries[submesh].num_vertices = num_verts;
 
-				u32 num_tris = num_verts / 3;
-
 				pen::buffer_creation_params bcp;
 				bcp.usage_flags = PEN_USAGE_DEFAULT;
-				bcp.bind_flags = PEN_BIND_VERTEX_BUFFER | PEN_BIND_STREAM_OUTPUT;
+				bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
 				bcp.cpu_access_flags = 0;
 				bcp.buffer_size = sizeof(vertex_position) * num_verts;
 				bcp.data = (void*)p_reader;
@@ -441,18 +440,19 @@ namespace put
 
 		void import_model_scene(const c8* model_scene_name, component_entity_scene* scene)
 		{
-			u32 ggg = sizeof(scene_node_geometry);
-			u32 mmm = sizeof(scene_node_material);
-			u32 ppp = sizeof(scene_node_physics);
-
 			void* scene_file;
 			u32   scene_file_size;
 
 			c8 scene_filename[128];
-			pen::string_format(&scene_filename[0], 128, "data\\models\\%s.pms", model_scene_name);
+			pen::string_format(&scene_filename[0], 128, "data/models/%s.pms", model_scene_name);
 
-			pen::filesystem_read_file_to_buffer(scene_filename, &scene_file, scene_file_size);
+			pen_error err = pen::filesystem_read_file_to_buffer(scene_filename, &scene_file, scene_file_size);
 
+            if( err != PEN_ERR_OK )
+            {
+                
+            }
+            
 			u32* p_u32reader = (u32*)scene_file;
 			u32 version = *p_u32reader++;
 			u32 num_import_nodes = *p_u32reader++;
@@ -498,7 +498,7 @@ namespace put
 					for (u32 mat = 0; mat < num_meshes; ++mat)
 					{
 						c8 material_filename[128];
-						pen::string_format(&material_filename[0], 128, "data\\models\\materials\\%s.pmm", p_material_names[mat]);
+						pen::string_format(&material_filename[0], 128, "data/models/materials/%s.pmm", p_material_names[mat]);
 
 						load_material(material_filename, &p_materials[mat]);
 					}
@@ -512,11 +512,6 @@ namespace put
 				vec3f translation;
 				vec4f rotations[3];
 				u32	  num_rotations = 0;
-
-				if (pen::string_compare(scene->names[current_node], "index_0") == 0)
-				{
-					u32 i = 0;
-				}
 
 				for (u32 t = 0; t < transforms; ++t)
 				{
@@ -563,8 +558,6 @@ namespace put
 				{
 					//axis angle
 					final_rotation.axis_angle(rotations[0]);
-
-					vec4f corrected_axis_angle = vec4f(rotations[0].x, rotations[0].z, -rotations[0].y, rotations[0].w);
 				}
 				else if (num_rotations == 3)
 				{
@@ -608,7 +601,7 @@ namespace put
 					{
 						//load geom file
 						c8 filename[128];
-						pen::string_format(&filename[0], 128, "data\\models\\%s_%s.pmg", model_scene_name, scene->geometry_names[current_node]);
+						pen::string_format(&filename[0], 128, "data/models/%s_%s.pmg", model_scene_name, scene->geometry_names[current_node]);
 
 						load_mesh(filename, p_geometries, p_physics, scene, current_node, (const c8**)p_material_symbols);
 					}
@@ -788,51 +781,52 @@ namespace put
 			ImGui::EndChild();
 
 			ImGui::End();
-		}
-
-		struct per_model_cbuffer
-		{
-			mat4 world_matrix;
-		};
+		}   
 
 		void render_scene_view(component_entity_scene* scene, const scene_view& view)
 		{
 			static shader_program shp = load_shader_program("model_lit");
-			static u32 cbuf_per_model = PEN_INVALID_HANDLE;
-			
-			if (cbuf_per_model == PEN_INVALID_HANDLE)
-			{
-				pen::buffer_creation_params bcp;
-				bcp.usage_flags = PEN_USAGE_DYNAMIC;
-				bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-				bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-				bcp.buffer_size = sizeof(per_model_cbuffer);
-				bcp.data = nullptr;
-
-				cbuf_per_model = pen::renderer_create_buffer(bcp);
-			}
-
-			//set shader
-			pen::renderer_set_shader(shp.vertex_shader, PEN_SHADER_TYPE_VS);
-			pen::renderer_set_shader(shp.pixel_shader, PEN_SHADER_TYPE_PS);
-			pen::renderer_set_input_layout(shp.input_layout);
-
-			pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
-
+            
+            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
+            
+            static bool first = true;
+            
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
-				if (scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL)
+				if (scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL && (!(scene->entities[n] & CMP_PHYSICS)) )
 				{
 					scene_node_geometry* p_geom = &scene->geometries[n];
 
-					per_model_cbuffer cb = 
-					{
-						scene->world_matrices[n]
-					};
-
-					//per object world matrix
-					pen::renderer_update_buffer(cbuf_per_model, &cb, sizeof(per_model_cbuffer));
-					pen::renderer_set_constant_buffer(cbuf_per_model, 1, PEN_SHADER_TYPE_VS);
+                    //move this to update / bake static
+                    if( first )
+                    {
+                        per_model_cbuffer cb =
+                        {
+                            scene->world_matrices[n]
+                        };
+                        
+                        if (scene->cbuffer[n] == PEN_INVALID_HANDLE)
+                        {
+                            pen::buffer_creation_params bcp;
+                            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                            bcp.buffer_size = sizeof(per_model_cbuffer);
+                            bcp.data = nullptr;
+                            
+                            scene->cbuffer[n] = pen::renderer_create_buffer(bcp);
+                        }
+                        
+                        //per object world matrix
+                        pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
+                    }
+                    
+                    //set shader
+                    pen::renderer_set_shader(shp.vertex_shader, PEN_SHADER_TYPE_VS);
+                    pen::renderer_set_shader(shp.pixel_shader, PEN_SHADER_TYPE_PS);
+                    pen::renderer_set_input_layout(shp.input_layout);
+                    
+					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
 					//set ib / vb
 					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, sizeof(vertex_model), 0 );
@@ -840,10 +834,13 @@ namespace put
 
 					//draw
 					pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                    
 				}
 			}
 
-			pen::renderer_consume_cmd_buffer();
+            first = false;
+            
+			//pen::renderer_consume_cmd_buffer();
 
 			/*
 			u32 num_modes = get_num_nodes();

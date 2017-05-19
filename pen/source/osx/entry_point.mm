@@ -2,7 +2,6 @@
 #import <OpenGL/gl3.h>
 #import <GameController/GameController.h>
 
-#include "window.h"
 #include "pen.h"
 #include "threads.h"
 #include "renderer.h"
@@ -406,25 +405,6 @@ int main(int argc, char **argv)
             [NSApp updateWindows];
         }
         
-        for (GCController* object in [GCController controllers])
-        {
-            if( object.playerIndex != GCControllerPlayerIndex1 )
-            {
-                object.playerIndex = GCControllerPlayerIndex1;
-                
-                GCExtendedGamepad *profile = object.extendedGamepad;
-                
-                pen::string_output_debug( "%f %f",
-                                         profile.rightTrigger.value,
-                                         profile.leftTrigger.value );
-                
-                profile.valueChangedHandler = ^(GCExtendedGamepad *gamepad, GCControllerElement *element)
-                {
-                    pen::string_output_debug("cuntttt\n");
-                };
-            }
-        }
-        
         int x, y;
         get_mouse_pos( x, y );
         pen::input_set_mouse_pos( x, y );
@@ -463,39 +443,6 @@ namespace pen
     return delegate;
 }
 
-- (void)setupControllers:(NSNotification *)notification
-{
-    // Get Controllers
-    if ([[GCController controllers] count] > 0)
-    {
-        // Found controllers
-        int a = 0;
-    }
-    else
-    {
-        // No controllers
-    }
-}
-
-- (void) controllers
-{
-    NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-    
-    // Set up connect notification
-    /*
-    [ center addObserver:self selector:@selector(setupControllers:)
-                    name:GCControllerDidConnectNotification object:nil];
-    // Set up disconnect notification
-    [ center addObserver:self selector:@selector(setupControllers:)
-                    name:GCControllerDidDisconnectNotification object:nil];
-    */
-    
-    [GCController startWirelessControllerDiscoveryWithCompletionHandler:^{
-        // we don't use any code here since when new controllers are found we will get notifications
-        u32 a = 0;
-    }];
-}
-
 - (id)init
 {
     self = [super init];
@@ -504,8 +451,6 @@ namespace pen
     {
         return nil;
     }
-    
-    [self controllers];
     
     self->terminated = false;
     return self;

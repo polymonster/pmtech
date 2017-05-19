@@ -108,8 +108,6 @@ namespace put
 			//draw
 			pen::renderer_draw(line_vert_count, 0, PEN_PT_LINELIST);
 
-			pen::renderer_consume_cmd_buffer();
-
 			//reset 
 			line_vert_count = 0;
 

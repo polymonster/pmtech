@@ -17,6 +17,38 @@ extern pen::window_creation_params pen_window;
 extern void pen_make_gl_context_current( );
 extern void pen_gl_swap_buffers( );
 
+void gl_error_break( GLenum err )
+{
+    u32 a = 0;
+    
+    switch (err)
+    {
+        case GL_INVALID_ENUM:
+                //PEN_ASSERT(0);
+            break;
+        case GL_INVALID_VALUE:
+                //PEN_ASSERT(0);
+            break;
+        case GL_INVALID_OPERATION:
+                //PEN_ASSERT(0);
+            break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+                //PEN_ASSERT(0);
+            break;
+        case GL_OUT_OF_MEMORY:
+                //PEN_ASSERT(0);
+            break;
+        default:
+            break;
+    }
+}
+
+#ifdef GL_DEBUG
+#define CHECK_GL_ERROR { GLenum err = glGetError( ); if( err != GL_NO_ERROR ) gl_error_break( err ); }
+#else
+#define CHECK_GL_ERROR
+#endif
+
 namespace pen
 {
 	//--------------------------------------------------------------------------------------
@@ -245,6 +277,8 @@ namespace pen
         
         shader_programs.push_back(program);
         
+        CHECK_GL_ERROR;
+        
         return &shader_programs.back();
     }
 
@@ -307,6 +341,8 @@ namespace pen
             pen::string_output_debug(info_log_buf);
         }
 
+        CHECK_GL_ERROR;
+        
 		return resource_index;
 	}
 
@@ -324,11 +360,15 @@ namespace pen
         
         resource_allocation& res = resource_pool[resource_index];
         
+        CHECK_GL_ERROR;
+        
         glGenBuffers(1, &res.handle);
         
         glBindBuffer(params.bind_flags, res.handle);
         
         glBufferData(params.bind_flags, params.buffer_size, params.data, params.usage_flags );
+        
+        CHECK_GL_ERROR;
         
         res.type = params.bind_flags;
         
@@ -474,19 +514,13 @@ namespace pen
             //constant buffers and texture locations
             for( s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i )
             {
-                if( g_current_state.constant_buffer_bindings[ i ] != 0 )
-                {
-                    glBindBufferBase(GL_UNIFORM_BUFFER, i, g_current_state.constant_buffer_bindings[ i ] );
-                    //glUniformBlockBinding( linked_program->program, linked_program->uniform_block_location[ i ], i );
-                    
-                    g_current_state.constant_buffer_bindings[ i ] = 0;
-                }
-                
                 if( linked_program->texture_location[ i ] != INVALID_LOC )
                 {
                     glUniform1i( linked_program->texture_location[ i ], i );
                 }
             }
+            
+            CHECK_GL_ERROR;
         }
         
         //bind vertex buffer
@@ -495,6 +529,8 @@ namespace pen
             
             auto& res = resource_pool[g_bound_state.vertex_buffer].handle;
             glBindBuffer(GL_ARRAY_BUFFER, res);
+            
+            CHECK_GL_ERROR;
         }
         
         //bind input layout
@@ -539,6 +575,8 @@ namespace pen
             }
             
             glBindVertexArray( res->vertex_array_handle );
+            
+            CHECK_GL_ERROR;
         }
 
         if( g_bound_state.raster_state != g_current_state.raster_state )
@@ -578,6 +616,8 @@ namespace pen
             {
                 glDisable(GL_SCISSOR_TEST);
             }
+            
+            CHECK_GL_ERROR;
         }
     }
 
@@ -596,9 +636,13 @@ namespace pen
         {
             auto& res = resource_pool[g_bound_state.index_buffer].handle;
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
+            
+            CHECK_GL_ERROR;
         }
         
-        glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, (void*)(size_t)(start_index * 2), base_vertex );
+        void* offset = (void*)(size_t)(start_index * 2);
+        
+        glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, base_vertex );
 	}
     
     u32 calc_mip_level_size( u32 w, u32 h, u32 block_size, u32 pixels_per_block )
@@ -790,6 +834,8 @@ namespace pen
         {
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, sampler_state->min_lod );
         }
+        
+        CHECK_GL_ERROR;
 	}
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
@@ -891,7 +937,9 @@ namespace pen
 	{
         resource_allocation& res = resource_pool[ buffer_index ];
         
-        g_current_state.constant_buffer_bindings[ resource_slot ] = res.handle;
+        glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle );
+        
+        //g_current_state.constant_buffer_bindings[ resource_slot ] = res.handle;
 	}
 
 	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset )
