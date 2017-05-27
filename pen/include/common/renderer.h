@@ -154,7 +154,6 @@ namespace pen
 	{
 		f32 x, y, width, height;
 		f32 min_depth, max_depth;
-
 	};
 
     struct rect

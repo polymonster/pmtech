@@ -8,7 +8,7 @@ using namespace pen;
 
 namespace put
 {
-	void camera_create_projection( camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane )
+	void camera_create_perspective( camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane )
 	{
 		//calculate the width and height of the near and far planes
 		vec2f near_size;
@@ -28,6 +28,21 @@ namespace put
 			 near_size.y * 0.5f,
 			 near_plane,
 			 far_plane
+		);
+
+		p_camera->flags |= CF_INVALIDATED;
+	}
+
+	void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
+	{
+		p_camera->proj.create_orthographic_projection
+		(
+			left,
+			right,
+			bottom,
+			top,
+			znear,
+			zfar
 		);
 
 		p_camera->flags |= CF_INVALIDATED;

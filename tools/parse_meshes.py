@@ -414,7 +414,7 @@ def write_geometry_file(geom_instance):
         return
 
     [fnoext, fext] = os.path.splitext(helpers.current_filename)
-    out_file = helpers.build_dir + fnoext + "_" + geom_instance.name + ".pmg"
+    out_file = os.path.join(helpers.build_dir, fnoext, geom_instance.name + ".pmg")
     out_file = out_file.lower()
 
     print("writing geometry file: " + out_file)

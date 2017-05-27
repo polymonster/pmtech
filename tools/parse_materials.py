@@ -52,8 +52,13 @@ def parse_library_images(library_node):
         lib_img = library_image()
         lib_img.id = img_node.get("id")
         for file_node in img_node.iter(schema+'init_from'):
+
             corrected = file_node.text.replace('\\', '/')
             corrected = corrected.replace("/models/images/", "/textures/")
+            corrected = corrected.replace("file://", "assets/textures/")
+
+            print("texture file node " + corrected)
+
             split_dirs = corrected.split('/')
             filename_split = len(split_dirs)-1
 
@@ -166,8 +171,15 @@ def write_material_file(mat):
     #write out materials
 
     [fnoext, fext] = os.path.splitext(helpers.current_filename)
-    out_file = helpers.build_dir + "materials\\" + mat.id + ".pmm"
+
+    materials_dir = os.path.join(helpers.build_dir, fnoext, "materials")
+
+    out_file = os.path.join(materials_dir, mat.id + ".pmm")
     out_file = out_file.lower()
+
+    #create materials dir
+    if not os.path.exists(materials_dir):
+        os.makedirs(materials_dir)
 
     print("writing material file: " + out_file)
     output = open(out_file, 'wb+')

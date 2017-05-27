@@ -5,6 +5,7 @@
 #include "file_system.h"
 #include "dev_ui.h"
 #include "debug_render.h"
+#include "render_controller.h"
 
 namespace put
 {
@@ -19,6 +20,10 @@ namespace put
 		pen::memory_zero( SCENE->COMPONENT, sizeof(TYPE)*SCENE->nodes_size)
 
 #define FREE_COMPONENT_ARRAY( SCENE, COMPONENT ) pen::memory_free( SCENE->COMPONENT ); SCENE->COMPONENT = nullptr
+
+#define SCENE_DIR_MACRO "data/models/%s/scene.pms"
+#define GEOM_DIR_MACRO "data/models/%s/%s.pmg"
+#define MATERIAL_DIR_MACRO "data/models/%s/materials/%s.pmm"
 
 		struct component_entity_scene_instance
 		{
@@ -58,7 +63,7 @@ namespace put
 			ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
             ALLOC_COMPONENT_ARRAY(scene, cbuffer, u32);
             
-            for( s32 i = 0; i < scene->nodes_size; ++i )
+            for( u32 i = 0; i < scene->nodes_size; ++i )
             {
                 scene->cbuffer[i] = PEN_INVALID_HANDLE;
             }
@@ -414,7 +419,7 @@ namespace put
 			p_reader++;
 
 			u32 u32s_read = 0;
-			for (u32 map = 0; map < MAX_MAPS; ++map)
+			for (u32 map = 0; map < put::ces::SN_NUM_TEXTURES; ++map)
 			{
 				c8* map_buffer;
 				u32s_read = read_parsable_char(&map_buffer, p_reader);
@@ -444,13 +449,14 @@ namespace put
 			u32   scene_file_size;
 
 			c8 scene_filename[128];
-			pen::string_format(&scene_filename[0], 128, "data/models/%s.pms", model_scene_name);
+			pen::string_format(&scene_filename[0], 128, SCENE_DIR_MACRO, model_scene_name);
 
 			pen_error err = pen::filesystem_read_file_to_buffer(scene_filename, &scene_file, scene_file_size);
 
             if( err != PEN_ERR_OK )
             {
-                
+				//failed load file
+				PEN_ASSERT(0);
             }
             
 			u32* p_u32reader = (u32*)scene_file;
@@ -498,7 +504,7 @@ namespace put
 					for (u32 mat = 0; mat < num_meshes; ++mat)
 					{
 						c8 material_filename[128];
-						pen::string_format(&material_filename[0], 128, "data/models/materials/%s.pmm", p_material_names[mat]);
+						pen::string_format(&material_filename[0], 128, MATERIAL_DIR_MACRO, model_scene_name, p_material_names[mat]);
 
 						load_material(material_filename, &p_materials[mat]);
 					}
@@ -601,7 +607,7 @@ namespace put
 					{
 						//load geom file
 						c8 filename[128];
-						pen::string_format(&filename[0], 128, "data/models/%s_%s.pmg", model_scene_name, scene->geometry_names[current_node]);
+						pen::string_format(&filename[0], 128, GEOM_DIR_MACRO, model_scene_name, scene->geometry_names[current_node]);
 
 						load_mesh(filename, p_geometries, p_physics, scene, current_node, (const c8**)p_material_symbols);
 					}
@@ -723,9 +729,9 @@ namespace put
 			p_sn->local_matrices[dst].set_vectors(right, up, fwd, translation + offset);
 		}
 
-		void enumerate_scene(component_entity_scene* scene)
+		void enumerate_scene_ui(component_entity_scene* scene, bool* open )
 		{
-			ImGui::Begin("Scene");
+			ImGui::Begin("Scene Browser", open );
 
 			ImGui::BeginChild("Entities", ImVec2(400, 400), true );
 
@@ -762,7 +768,7 @@ namespace put
 
 				if (scene->material_names[selected_index])
 				{
-					for (u32 t = 0; t < scene_node_material::num_texture_slots; ++t)
+					for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
 					{
 						if (scene->materials[selected_index].texture_id[t] > 0)
 						{
@@ -783,9 +789,11 @@ namespace put
 			ImGui::End();
 		}   
 
-		void render_scene_view(component_entity_scene* scene, const scene_view& view)
+		void render_scene_view( const scene_view& view )
 		{
-			static shader_program shp = load_shader_program("model_lit");
+			component_entity_scene* scene = view.scene;
+
+			static shader_program& shp = load_shader_program("model_debug");
             
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             
@@ -796,6 +804,7 @@ namespace put
 				if (scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL && (!(scene->entities[n] & CMP_PHYSICS)) )
 				{
 					scene_node_geometry* p_geom = &scene->geometries[n];
+					scene_node_material* p_mat = &scene->materials[n];
 
                     //move this to update / bake static
                     if( first )
@@ -831,6 +840,18 @@ namespace put
 					//set ib / vb
 					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, sizeof(vertex_model), 0 );
 					pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
+
+					//set textures
+					if (p_mat)
+					{
+						for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
+						{
+							if (p_mat->texture_id[t])
+							{
+								pen::renderer_set_texture(p_mat->texture_id[t], put::render_controller_built_in_handles().sampler_linear_wrap, t, PEN_SHADER_TYPE_PS );
+							}
+						}
+					}
 
 					//draw
 					pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);

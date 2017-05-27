@@ -34,7 +34,8 @@ namespace put
 		u8 flags = 0;
 	};
 
-	void camera_create_projection( camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane );
+	void camera_create_perspective( camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane );
+	void camera_create_orthographic( camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar );
 
 	void camera_update_modelling( camera* p_camera );
 	void camera_update_fly( camera* p_camera );

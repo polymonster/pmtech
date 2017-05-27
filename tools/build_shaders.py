@@ -4,6 +4,7 @@ import os.path
 import re
 import sys
 import json
+import dependencies
 
 root_dir = os.getcwd()
 
@@ -116,21 +117,13 @@ def generate_shader_info(filename, included_files, vs_inputs, instance_inputs, t
 
     included_files.insert(0, base_filename)
 
-    # special files whih affect the validity of compiled shaders
-    modified_time = os.path.getmtime(this_file)
-    file_info = {"name": this_file, "timestamp": int(modified_time)}
-    shader_info["files"].append(file_info)
+    # special files which affect the validity of compiled shaders
+    shader_info["files"].append(dependencies.create_info(this_file))
+    shader_info["files"].append(dependencies.create_info(macros_file))
 
-    macros_file = os.path.join(tools_dir, "_shader_macros.h")
-    modified_time = os.path.getmtime(macros_file)
-    file_info = {"name": macros_file, "timestamp": int(modified_time)}
-    shader_info["files"].append(file_info)
-
-    for file in included_files:
-        full_name = os.path.join(dir_path, file)
-        modified_time = os.path.getmtime(full_name)
-        file_info = {"name": full_name, "timestamp": int(modified_time)}
-        shader_info["files"].append(file_info)
+    for ifile in included_files:
+        full_name = os.path.join(dir_path, ifile)
+        shader_info["files"].append(dependencies.create_info(full_name))
 
     shader_info["vs_inputs"] = make_input_info(vs_inputs)
     shader_info["instance_inputs"] = make_input_info(instance_inputs)
@@ -512,7 +505,7 @@ def add_files_recursive(filename, root):
     return shader_source, include_list
 
 
-def check_dependencies(root, filename, included_files):
+def check_dependencies(filename, included_files):
     # look for .json file
     file_list = list()
     file_list.append(filename)
@@ -520,7 +513,7 @@ def check_dependencies(root, filename, included_files):
     file_list.append(macros_file)
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
     for f in included_files:
-        file_list.append(os.path.join(dir_path,f))
+        file_list.append(os.path.join(dir_path, f))
     if os.path.exists(info_filename):
         info_file = open(info_filename, "r")
         info = json.loads(info_file.read())
@@ -541,7 +534,7 @@ def check_dependencies(root, filename, included_files):
 
 def create_vsc_psc_vsi(filename, root):
     shader_file_text, included_files = add_files_recursive(filename, root)
-    up_to_date = check_dependencies(root, filename, included_files)
+    up_to_date = check_dependencies(filename, included_files)
 
     if up_to_date:
         print(filename + " file up to date")
@@ -643,6 +636,33 @@ for root, dirs, files in os.walk(shader_source_dir):
         if file.endswith(".shp"):
             file_and_path = os.path.join(root, file)
             create_vsc_psc_vsi(file_and_path, root)
+# create shader debug info
+# read macros file
+f = open(macros_file)
+macros_text = f.read()
+f.close()
+
+# parse macros file to find DEBUG_ settings
+debug_settings_start_pos = macros_text.find("#define DEBUG_SETTINGS_START")
+debug_settings_start_pos = macros_text.find("\n", debug_settings_start_pos) + 1
+debug_settings_end_pos = macros_text.find("#define DEBUG_SETTINGS_END")
+debug_settings = macros_text[debug_settings_start_pos:debug_settings_end_pos].split("\n")
+
+# create dictionary
+debug_settings_dictionary = dict()
+debug_settings_dictionary["debug_settings"] = []
+for setting in debug_settings:
+    split_setting = setting.split()
+    if len(split_setting) == 5:
+        debug_settings_dictionary["debug_settings"].append(
+            {"name": split_setting[1].replace("DEBUG_", ""), "index": int(split_setting[2])})
+
+shader_debug_settings_file = os.path.join(shader_build_dir, "debug_settings.json")
+print(shader_debug_settings_file)
+output_settings = open(shader_debug_settings_file, 'wb+')
+output_settings.write(bytes(json.dumps(debug_settings_dictionary, indent=4), 'UTF-8'))
+output_settings.close()
+
 
 
 

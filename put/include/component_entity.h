@@ -11,11 +11,6 @@
 #define MAX_SCENE_NODE_CHARS	1024
 #define MAX_SUBS_COMPOUND		32
 
-#define DIFFUSE_MAP				0
-#define SPECULAR_MAP			1
-#define NORMAL_MAP				2
-#define MAX_MAPS				NORMAL_MAP
-
 #define BUTTON_LOCK_DOWN		(1)
 #define BUTTON_LOCK_UP			(1<<1)
 
@@ -68,10 +63,18 @@ namespace put
 			scene_node_skin*	p_skin;
 		};
 
+		enum scene_node_textures
+		{
+			SN_DIFFUSE,
+			SN_NORMAL_MAP,
+			SN_SPECULAR_MAP,
+
+			SN_NUM_TEXTURES
+		};
+
 		struct scene_node_material
 		{
-			static const u32 num_texture_slots = 8;
-			s32		texture_id[8] = { 0 };
+			s32		texture_id[SN_NUM_TEXTURES] = { 0 };
 			vec4f	diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
 			vec4f	specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
 		};
@@ -166,9 +169,10 @@ namespace put
 		struct scene_view
 		{
 			u32 cb_view;
-			u32 colour_target;
-			u32 depth_target;
-			u32 depth_stencil_state;
+			u32 scene_node_flags = 0;
+			u32 debug_flags = 0;
+
+			component_entity_scene* scene = nullptr;
 		};
 
 		component_entity_scene*	create_scene(c8* name);
@@ -177,9 +181,9 @@ namespace put
 
 		void					clone_node( component_entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
 
-		void					enumerate_scene(component_entity_scene* scene);
+		void					enumerate_scene_ui(component_entity_scene* scene, bool* open );
 
-		void					render_scene_view(component_entity_scene* scene, const scene_view& view);
+		void					render_scene_view(const scene_view& view);
 
 		void					render_scene_debug(component_entity_scene* scene, const scene_view& view);
 

@@ -10,7 +10,9 @@ import helpers
 #win32 / collada
 print("model and animation conversion" + "\n")
 
-model_dir = os.getcwd() + "\\models\\"
+root_dir = os.getcwd()
+model_dir = os.path.join(root_dir, "assets", "mesh")
+
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 transform_types = ["translate", "rotate"]
 
@@ -19,11 +21,6 @@ print("processing directory: " + model_dir + "\n")
 #create models dir
 if not os.path.exists(helpers.build_dir):
     os.makedirs(helpers.build_dir)
-
-#create materials dir
-materials_dir = helpers.build_dir + "materials\\"
-if not os.path.exists(materials_dir):
-    os.makedirs(materials_dir)
 
 geom_attach_data_list = []
 material_attach_data_list = []
@@ -139,7 +136,8 @@ def parse_node(node, parent_node):
 
 #Base
 def parse_dae():
-    tree = ET.parse(model_dir + f)
+    file_path = os.path.join(model_dir, f)
+    tree = ET.parse(file_path)
     root = tree.getroot()
 
     for author_node in root.iter(schema+'authoring_tool'):
@@ -181,7 +179,8 @@ def write_scene_file():
         return
 
     [fnoext, fext] = os.path.splitext(current_filename)
-    out_file = helpers.build_dir+fnoext+".pms"
+
+    out_file = os.path.join(helpers.build_dir, fnoext, "scene.pms")
     out_file = out_file.lower()
 
     print("writing scene file: " + out_file)
@@ -190,8 +189,9 @@ def write_scene_file():
 
     output.write(struct.pack("i", (int(numjoints))))
     for j in range(numjoints):
+        if joint_list[j] is None:
+            joint_list[j] = "no_name"
         output.write(struct.pack("i", (int(type_list[j]))))
-        print(joint_list[j])
         helpers.write_parsable_string(output, joint_list[j])
         helpers.write_parsable_string(output, geom_attach_data_list[j])
         output.write(struct.pack("i", (int(len(material_attach_data_list[j])))))
@@ -222,7 +222,8 @@ def write_joint_file(filename):
         return
 
     [fnoext, fext] = os.path.splitext(filename)
-    out_file = helpers.build_dir+fnoext+".pmj"
+
+    out_file = os.path.join(helpers.build_dir, fnoext, "joints.pms")
     out_file = out_file.lower()
 
     print("writing joint file: " + out_file)

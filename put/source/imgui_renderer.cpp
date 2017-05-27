@@ -380,11 +380,7 @@ namespace put
 			if (io.MouseDrawCursor)
 				pen::input_show_cursor(false);
 
-            f32 start_time = pen::timer_get_time();
-			ImGui::NewFrame();
-            f32 end_time = pen::timer_get_time();
-            
-            ImGui::Text("t = %f", end_time - start_time);
+			ImGui::NewFrame();            
 		}
 
 		void render()

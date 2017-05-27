@@ -10,3 +10,14 @@
 #define SAMPLE_TEXTURE_2D( name, uv ) name.Sample( sampler_##name, uv )
 
 #endif
+
+#define OPTION_OUTPUT 0
+#define DEBUG_SETTINGS_START
+#define DEBUG_DIFFUSE_MAP 0 == debug_render_options[OPTION_OUTPUT] 			
+#define DEBUG_SPECULAR_MAP 1 == debug_render_options[OPTION_OUTPUT]			
+#define DEBUG_NORMAL_MAP 2 == debug_render_options[OPTION_OUTPUT]			
+#define DEBUG_VERTEX_NORMALS 3 == debug_render_options[OPTION_OUTPUT]		
+#define DEBUG_VERTEX_TANGENTS 4 == debug_render_options[OPTION_OUTPUT]		
+#define DEBUG_VERTEX_BITANGENTS 5 == debug_render_options[OPTION_OUTPUT]	
+#define DEBUG_PER_PIXEL_NORMALS 6 == debug_render_options[OPTION_OUTPUT]	
+#define DEBUG_SETTINGS_END

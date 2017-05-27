@@ -4,7 +4,12 @@ import os
 version_number = 1
 current_filename = ""
 author = ""
-build_dir = os.getcwd() + "\\..\\bin\\win32\\data\\models\\"
+
+platform = "win32"
+if os.name == "posix":
+    platform = "osx"
+
+build_dir = os.path.join(os.getcwd(), "bin", platform, "data", "models")
 
 #helpers
 def write_parsable_string(output, str):
