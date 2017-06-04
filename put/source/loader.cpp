@@ -217,8 +217,13 @@ namespace put
     };
     std::vector<managed_shader> s_managed_shaders;
 
-	shader_program& load_shader_program( const c8* shader_name, managed_shader* ms )
+	shader_program* load_shader_program( const c8* shader_name, managed_shader* ms )
 	{
+        if( s_managed_shaders.size() == 0 )
+        {
+            s_managed_shaders.reserve(1024);
+        }
+        
         c8 vs_file_buf[ 256 ];
         c8 ps_file_buf[ 256 ];
         c8 info_file_buf[ 256 ];
@@ -240,7 +245,7 @@ namespace put
 		if ( err != PEN_ERR_OK  )
         {
             //we must have a vertex shader, if this has failed, so will have the input layout.
-            return null_shader;
+            return nullptr;
         }
 
         bool hl = false;
@@ -248,8 +253,9 @@ namespace put
 		if (!ms)
 		{
 			//add a new managed shader
+            u32 ms_index = s_managed_shaders.size();
 			s_managed_shaders.push_back(managed_shader{});
-			ms = &s_managed_shaders.back();
+            ms = &s_managed_shaders[ms_index];
 
 			u32 name_len = pen::string_length(shader_name);
 			pen::memory_cpy(ms->shader_name, shader_name, name_len);
@@ -268,7 +274,7 @@ namespace put
             if ( err == PEN_ERR_OK && (u32)current_info_ts <= ms->info_timestamp)
 			{
 				//return ourselves, so we remain invalid until the newly compiled shader is ready
-				return ms->program;
+				return &ms->program;
 			}
 		}
 
@@ -420,7 +426,7 @@ namespace put
 
 		ms->invalidated = false;
         
-		return ms->program;
+		return &ms->program;
 	}
     
     void loader_release_shader_program( put::shader_program& shader_program )

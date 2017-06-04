@@ -1,5 +1,5 @@
-#ifndef _renderer_controller_h
-#define _renderer_controller_h
+#ifndef _layer_controller_h
+#define _layer_controller_h
 
 #include "pen.h"
 #include "renderer.h"
@@ -65,14 +65,14 @@ namespace put
 		pen::rect		back_buffer_scissor_rect;
 	};
 
-	void render_controller_init();
-	void render_controller_shutdown();
-	void render_controller_render();
-	void render_controller_update();
+	void layer_controller_init();
+	void layer_controller_shutdown();
+	void layer_controller_render();
+	void layer_controller_update();
 
-	void render_controller_add_layer( const layer& layer );
+	void layer_controller_add_layer( const layer& layer );
 
-	const built_in_handles& render_controller_built_in_handles();
+	const built_in_handles& layer_controller_built_in_handles();
 }
 
 #endif

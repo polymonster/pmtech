@@ -51,7 +51,9 @@ float2 cook_torrence_point_light( float4 light_pos_radius, float4 view_pos, floa
 	v_light				= normalize( v_light );
 	
 	float 	n_dot_l		= dot( v_normal, v_light );
-	float 	atten		= light_pos_radius.w / (d);
+	float 	atten		= max( ( light_pos_radius.w - d ) / light_pos_radius.w, 0.0 );
+	
+	//float 	atten		= light_pos_radius.w / (d);
 	
 	float specular = 0.0f;
 	if( n_dot_l > 0.0f )

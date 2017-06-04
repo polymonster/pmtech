@@ -1,4 +1,4 @@
-#include "render_controller.h"
+#include "layer_controller.h"
 #include "entry_point.h"
 #include "component_entity.h"
 #include "dev_ui.h"
@@ -95,7 +95,7 @@ namespace put
 		k_built_in_handles.blend_src_alpha_inv_src_alpha = pen::renderer_create_blend_state(blend_params);
 	}
 
-	void render_controller_init()
+	void layer_controller_init()
 	{
 		//clear state
 		static pen::clear_state cs =
@@ -224,7 +224,7 @@ namespace put
 		create_debug_shader_settings();
 	}
 
-	void render_controller_shutdown()
+	void layer_controller_shutdown()
 	{
 		//release states
 		pen::renderer_release_clear_state(k_built_in_handles.default_clear_state);
@@ -243,7 +243,7 @@ namespace put
 		pen::renderer_release_sampler(k_built_in_handles.sampler_point_wrap);
 	}
 
-	void render_controller_add_layer(const layer& layer)
+	void layer_controller_add_layer(const layer& layer)
 	{
 		k_layers.push_back(layer);
 	}
@@ -258,7 +258,8 @@ namespace put
 		{
 			k_shader_debug_selected = k_shader_debug_indices[debug_shader_combo_index];
 
-			debug_shader_settings set = { (f32)k_shader_debug_selected };
+            debug_shader_settings set;
+            set.debug_index = (f32)k_shader_debug_selected;
 			pen::renderer_update_buffer(k_built_in_handles.debug_shader_cbuffer, &set, sizeof(debug_shader_settings), 0);
 		};
 
@@ -271,7 +272,7 @@ namespace put
 		ImGui::End();
 	}
 
-	void render_controller_update()
+	void layer_controller_update()
 	{
 		show_ui();
 
@@ -302,7 +303,7 @@ namespace put
 
 			pen::renderer_clear(k_layers[i].clear_state);
 
-			put::ces::render_scene_view( k_layers[i].view );
+            put::ces::render_scene_view( k_layers[i].view, k_shader_debug_selected == -1 ? ces::SN_RENDER_LIT : ces::SN_RENDER_DEBUG );
 
 			//put::ces::render_scene_debug(k_layers[i].scene, view);
 		}
@@ -311,7 +312,7 @@ namespace put
 		//put::dbg::render_3d(k_model_view_controller.main_camera.cbuffer);
 	}
 
-	void render_controller_render()
+	void layer_controller_render()
 	{
 		/*
 		ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
@@ -355,7 +356,7 @@ namespace put
 		*/
 	}
 
-	const built_in_handles& render_controller_built_in_handles()
+	const built_in_handles& layer_controller_built_in_handles()
 	{
 		return k_built_in_handles;
 	}

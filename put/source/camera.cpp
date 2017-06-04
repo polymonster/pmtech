@@ -117,7 +117,7 @@ namespace put
 		prev_mpos = current_mouse;
 
 		//rotate
-		if (ms.buttons[PEN_MOUSE_M])
+		if (ms.buttons[PEN_MOUSE_L])
 		{
 			//rotation
 			vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);

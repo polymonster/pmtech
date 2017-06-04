@@ -8,7 +8,7 @@
 #include "camera.h"
 #include "debug_render.h"
 #include "component_entity.h"
-#include "render_controller.h"
+#include "layer_controller.h"
 
 pen::window_creation_params pen_window
 {
@@ -82,7 +82,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
 	//init systems
-	put::render_controller_init();
+	put::layer_controller_init();
 	put::dev_ui::init();
 	put::dbg::init();
 
@@ -94,7 +94,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	put::camera main_camera;
 	put::camera_create_perspective( &main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f );
 
-	put::built_in_handles handles = put::render_controller_built_in_handles();
+	put::built_in_handles handles = put::layer_controller_built_in_handles();
 
 	//create model viewer layer
 	put::layer main_layer;
@@ -115,13 +115,13 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	main_layer.blend_state = handles.blend_disabled;
 
 	//add main layer to the viewer
-	put::render_controller_add_layer(main_layer);
+	put::layer_controller_add_layer(main_layer);
     
     while( 1 )
     {
 		put::dev_ui::new_frame();
 
-		put::render_controller_update();
+		put::layer_controller_update();
 
 		put::dev_ui::render();
         
@@ -139,7 +139,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here 
-	put::render_controller_shutdown();
+	put::layer_controller_shutdown();
 	put::dbg::shutdown();
 	put::dev_ui::shutdown();
 

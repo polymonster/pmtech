@@ -15,7 +15,7 @@ struct ps_output
 	float4 colour : SV_Target;
 };
 
-vs_output main( vs_input _input )
+vs_output vs_main( vs_input _input )
 {
 	vs_output _output;
 	
@@ -25,7 +25,7 @@ vs_output main( vs_input _input )
 	return _output;
 }
 
-ps_output main( vs_output _input )
+ps_output ps_main( vs_output _input )
 {
 	ps_output _output;
 	

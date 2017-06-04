@@ -32,7 +32,7 @@ namespace put
 		vertex_debug_lines  debug_lines_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_LINES_VERTS];
 		vertex_debug_lines *debug_lines_verts = NULL;
 
-		put::shader_program debug_lines_program;
+		put::shader_program* debug_lines_program;
 
 		struct vertex_debug_font
 		{
@@ -46,7 +46,7 @@ namespace put
 		vertex_debug_font  debug_font_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_FONT_VERTS];
 		vertex_debug_font *debug_font_verts = NULL;
 
-		put::shader_program debug_font_program;
+		put::shader_program* debug_font_program;
 
 		void create_shaders()
 		{
@@ -91,14 +91,14 @@ namespace put
 			pen::renderer_update_buffer(vb_lines, &debug_lines_verts[0], sizeof(vertex_debug_lines) * MAX_DEBUG_LINES_VERTS);
 
 			//bind vertex layout
-			pen::renderer_set_input_layout(debug_lines_program.input_layout);
+			pen::renderer_set_input_layout(debug_lines_program->input_layout);
 
 			//bind vertex buffer
 			pen::renderer_set_vertex_buffer(vb_lines, 0, sizeof(vertex_debug_lines), 0);
 
 			//bind shaders
-			pen::renderer_set_shader(debug_lines_program.vertex_shader, PEN_SHADER_TYPE_VS);
-			pen::renderer_set_shader(debug_lines_program.pixel_shader, PEN_SHADER_TYPE_PS);
+			pen::renderer_set_shader(debug_lines_program->vertex_shader, PEN_SHADER_TYPE_VS);
+			pen::renderer_set_shader(debug_lines_program->pixel_shader, PEN_SHADER_TYPE_PS);
 
 			//shader constants and textures
 			pen::renderer_set_constant_buffer(cb_3dview, 0, PEN_SHADER_TYPE_VS);
@@ -122,14 +122,14 @@ namespace put
 			pen::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS);
 
 			//bind vertex layout
-			pen::renderer_set_input_layout(debug_font_program.input_layout);
+			pen::renderer_set_input_layout(debug_font_program->input_layout);
 
 			//bind vertex buffer
 			pen::renderer_set_vertex_buffer(vb_font, 0, sizeof(vertex_debug_font), 0);
 
 			//bind shaders
-			pen::renderer_set_shader(debug_font_program.vertex_shader, PEN_SHADER_TYPE_VS);
-			pen::renderer_set_shader(debug_font_program.pixel_shader, PEN_SHADER_TYPE_PS);
+			pen::renderer_set_shader(debug_font_program->vertex_shader, PEN_SHADER_TYPE_VS);
+			pen::renderer_set_shader(debug_font_program->pixel_shader, PEN_SHADER_TYPE_PS);
 
 			//pen::renderer_set_depth_stencil_state(depth_state_disabled);
 

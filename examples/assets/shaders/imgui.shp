@@ -22,7 +22,7 @@ struct ps_output
 	float4 colour : SV_Target;
 };
 
-vs_output main( vs_input _input )
+vs_output vs_main( vs_input _input )
 {
 	vs_output _output;
 	
@@ -38,7 +38,7 @@ declare_texture_samplers
 	TEXTURE_2D( tex, 0 );
 };
 
-ps_output main( vs_output _input )
+ps_output ps_main( vs_output _input )
 {
 	ps_output _output;
 	

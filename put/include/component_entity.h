@@ -31,7 +31,8 @@ namespace put
 			CMP_MATERIAL		= (1 << 4),
 			CMP_HAND			= (1 << 5),
 			CMP_SKINNED			= (1 << 6),
-			CMP_BONE			= (1 << 7)
+			CMP_BONE			= (1 << 7),
+            CMP_DYNAMIC			= (1 << 8)
 		};
 
 		enum e_node_types : u32
@@ -71,6 +72,13 @@ namespace put
 
 			SN_NUM_TEXTURES
 		};
+        
+        enum scene_render_type
+        {
+            SN_RENDER_LIT,
+            SN_RENDER_DEPTH,
+            SN_RENDER_DEBUG
+        };
 
 		struct scene_node_material
 		{
@@ -183,7 +191,7 @@ namespace put
 
 		void					enumerate_scene_ui(component_entity_scene* scene, bool* open );
 
-		void					render_scene_view(const scene_view& view);
+		void					render_scene_view(const scene_view& view, scene_render_type render_type_flags );
 
 		void					render_scene_debug(component_entity_scene* scene, const scene_view& view);
 

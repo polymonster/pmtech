@@ -5,7 +5,7 @@
 #include "file_system.h"
 #include "dev_ui.h"
 #include "debug_render.h"
-#include "render_controller.h"
+#include "layer_controller.h"
 
 namespace put
 {
@@ -787,13 +787,14 @@ namespace put
 			ImGui::EndChild();
 
 			ImGui::End();
-		}   
-
-		void render_scene_view( const scene_view& view )
-		{
+		}
+        
+		void render_scene_view( const scene_view& view, scene_render_type render_type )
+		{            
 			component_entity_scene* scene = view.scene;
-
-			static shader_program& shp = load_shader_program("model_debug");
+            
+            static shader_program* shp_debug = load_shader_program("model_debug");
+            static shader_program* shp_lit = load_shader_program("model_lit");
             
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             
@@ -831,9 +832,9 @@ namespace put
                     }
                     
                     //set shader
-                    pen::renderer_set_shader(shp.vertex_shader, PEN_SHADER_TYPE_VS);
-                    pen::renderer_set_shader(shp.pixel_shader, PEN_SHADER_TYPE_PS);
-                    pen::renderer_set_input_layout(shp.input_layout);
+                    pen::renderer_set_shader(shp_debug->vertex_shader, PEN_SHADER_TYPE_VS);
+                    pen::renderer_set_shader(shp_debug->pixel_shader, PEN_SHADER_TYPE_PS);
+                    pen::renderer_set_input_layout(shp_debug->input_layout);
                     
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
@@ -848,7 +849,7 @@ namespace put
 						{
 							if (p_mat->texture_id[t])
 							{
-								pen::renderer_set_texture(p_mat->texture_id[t], put::render_controller_built_in_handles().sampler_linear_wrap, t, PEN_SHADER_TYPE_PS );
+								pen::renderer_set_texture(p_mat->texture_id[t], put::layer_controller_built_in_handles().sampler_linear_wrap, t, PEN_SHADER_TYPE_PS );
 							}
 						}
 					}

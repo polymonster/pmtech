@@ -4,3 +4,4 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 python3 ../tools/build_shaders.py glsl osx
 python3 ../tools/build_textures.py
 python3 ../tools/build_audio.py
+python3 ../tools/build_models.py

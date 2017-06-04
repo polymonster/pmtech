@@ -19,8 +19,6 @@ extern void pen_gl_swap_buffers( );
 
 void gl_error_break( GLenum err )
 {
-    u32 a = 0;
-    
     switch (err)
     {
         case GL_INVALID_ENUM:
@@ -710,6 +708,11 @@ namespace pen
         texture_info ti;
         ti.handle = handle;
         ti.max_mip_level = tcp.num_mips - 1;
+        
+        if( tcp.width != tcp.height && ti.max_mip_level > 0 )
+        {
+            ti.max_mip_level = tcp.num_mips - 2;
+        }
         
         return ti;
     }

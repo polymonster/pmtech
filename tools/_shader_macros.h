@@ -3,6 +3,7 @@
 #define TEXTURE_2D( sampler_name, sampler_index ) uniform sampler2D sampler_name
 #define SAMPLE_TEXTURE_2D( sampler_name, uv ) texture( sampler_name, uv.xy )
 #define mul( A, B ) A * B
+#define saturate( A ) clamp( A, 0.0, 1.0 );
 
 #else
 	
@@ -20,4 +21,5 @@
 #define DEBUG_VERTEX_TANGENTS 4 == debug_render_options[OPTION_OUTPUT]		
 #define DEBUG_VERTEX_BITANGENTS 5 == debug_render_options[OPTION_OUTPUT]	
 #define DEBUG_PER_PIXEL_NORMALS 6 == debug_render_options[OPTION_OUTPUT]	
+#define DEBUG_COOK_TORRENCE 7 == debug_render_options[OPTION_OUTPUT]	
 #define DEBUG_SETTINGS_END

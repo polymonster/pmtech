@@ -30,7 +30,7 @@ namespace put
 			void* vb_copy_buffer = nullptr;
 			void* ib_copy_buffer = nullptr;
 
-			put::shader_program shader;
+			put::shader_program* shader;
 		};
 
 		render_handles g_imgui_rs;
@@ -218,9 +218,9 @@ namespace put
 			pen::renderer_set_blend_state(g_imgui_rs.blend_state);
 			pen::renderer_set_depth_stencil_state(g_imgui_rs.depth_stencil_state);
 
-			pen::renderer_set_shader(g_imgui_rs.shader.vertex_shader, PEN_SHADER_TYPE_VS);
-			pen::renderer_set_shader(g_imgui_rs.shader.pixel_shader, PEN_SHADER_TYPE_PS);
-			pen::renderer_set_input_layout(g_imgui_rs.shader.input_layout);
+			pen::renderer_set_shader(g_imgui_rs.shader->vertex_shader, PEN_SHADER_TYPE_VS);
+			pen::renderer_set_shader(g_imgui_rs.shader->pixel_shader, PEN_SHADER_TYPE_PS);
+			pen::renderer_set_input_layout(g_imgui_rs.shader->input_layout);
 
 			pen::renderer_set_vertex_buffer(g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
 			pen::renderer_set_index_buffer(g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);
@@ -380,7 +380,7 @@ namespace put
 			if (io.MouseDrawCursor)
 				pen::input_show_cursor(false);
 
-			ImGui::NewFrame();            
+			ImGui::NewFrame();
 		}
 
 		void render()
