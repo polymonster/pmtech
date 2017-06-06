@@ -183,7 +183,7 @@ namespace put
 			component_entity_scene* scene = nullptr;
 		};
 
-		component_entity_scene*	create_scene(c8* name);
+		component_entity_scene*	create_scene( const c8* name );
 
 		void					import_model_scene( const c8* model_scene_name, component_entity_scene* scene );
 

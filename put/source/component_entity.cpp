@@ -28,7 +28,7 @@ namespace put
 		struct component_entity_scene_instance
 		{
 			u32 id_name;
-			c8* name;
+			const c8* name;
 			component_entity_scene* scene;
 		};
 
@@ -106,12 +106,11 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, material_names);
 		}
 
-		component_entity_scene*	create_scene( c8* name )
+		component_entity_scene*	create_scene( const c8* name )
 		{
 			component_entity_scene_instance new_instance;
 			new_instance.name = name;
 			new_instance.scene = new component_entity_scene();
-			//*new_instance.scene = { 0 }; //null pointers
 
 			k_scenes.push_back(new_instance);
 
@@ -165,9 +164,6 @@ namespace put
 			u32* p_reader = (u32*)mesh_file;
 			u32 version = *p_reader++;
 			u32 num_meshes = *p_reader++;
-
-			scene_node_geometry* p_parent_geom = &scene->geometries[node_index];
-			scene_node_geometry* p_geom = p_parent_geom;
 
 			u32 collision_mesh = 1;
 
@@ -427,7 +423,6 @@ namespace put
 
 				if (u32s_read > 1)
 				{
-					PEN_PRINTF("%s\n", map_buffer);
 					p_mat->texture_id[map] = put::load_texture(map_buffer);
 				}
 				else
@@ -794,7 +789,6 @@ namespace put
 			component_entity_scene* scene = view.scene;
             
             static shader_program* shp_debug = load_shader_program("model_debug");
-            static shader_program* shp_lit = load_shader_program("model_lit");
             
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             

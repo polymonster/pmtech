@@ -40,6 +40,8 @@ struct model_view_controller
 };
 model_view_controller k_model_view_controller;
 
+using namespace put;
+
 void update_model_view(put::layer* layer)
 {
 	//dev ui
@@ -53,24 +55,31 @@ void update_model_view(put::layer* layer)
 
 	if (open_scene_browser)
 	{
-		put::ces::enumerate_scene_ui(layer->view.scene, &open_scene_browser);
+		ces::enumerate_scene_ui(layer->view.scene, &open_scene_browser);
 	}
 	
-	//update
-	switch (k_model_view_controller.camera_mode)
-	{
-		case CAMERA_MODELLING:
-			put::camera_update_modelling(&layer->camera);
-			break;
-		case CAMERA_FLY:
-			put::camera_update_fly(&layer->camera);
-			break;
-	}
+	//update camera
+    if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
+    {
+        switch (k_model_view_controller.camera_mode)
+        {
+            case CAMERA_MODELLING:
+                put::camera_update_modelling(&layer->camera);
+                break;
+            case CAMERA_FLY:
+                put::camera_update_fly(&layer->camera);
+                break;
+        }
+    }
 
 	put::camera_update_shader_constants(&layer->camera);
 	layer->view.cb_view = layer->camera.cbuffer;
 
+    //update render data
 	put::ces::update_scene_matrices(layer->view.scene);
+    
+    //debug render
+    put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
 
 }
 
@@ -148,6 +157,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
     
-
+    
     return PEN_THREAD_OK;
 }

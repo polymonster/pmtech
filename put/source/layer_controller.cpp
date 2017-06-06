@@ -3,6 +3,7 @@
 #include "component_entity.h"
 #include "dev_ui.h"
 #include "json.hpp"
+#include "debug_render.h"
 #include <string>
 #include <fstream>
 
@@ -296,7 +297,7 @@ namespace put
 			pen::renderer_set_depth_stencil_state(k_layers[i].depth_stencil_state);
 			pen::renderer_set_blend_state(k_layers[i].blend_state);
 
-			if ( k_layers[i].num_colour_targets = 1 )
+			if ( k_layers[i].num_colour_targets == 1 )
 			{
 				pen::renderer_set_targets( k_layers[i].colour_targets[0], k_layers[i].depth_target );
 			}
@@ -305,11 +306,8 @@ namespace put
 
             put::ces::render_scene_view( k_layers[i].view, k_shader_debug_selected == -1 ? ces::SN_RENDER_LIT : ces::SN_RENDER_DEBUG );
 
-			//put::ces::render_scene_debug(k_layers[i].scene, view);
+            put::dbg::render_3d( k_layers[i].view.cb_view );
 		}
-
-		//put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
-		//put::dbg::render_3d(k_model_view_controller.main_camera.cbuffer);
 	}
 
 	void layer_controller_render()

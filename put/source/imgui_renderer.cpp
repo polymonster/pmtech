@@ -380,8 +380,26 @@ namespace put
 			if (io.MouseDrawCursor)
 				pen::input_show_cursor(false);
 
-			ImGui::NewFrame();
+			ImGui::NewFrame();  
 		}
+        
+        u32 want_capture( )
+        {
+            ImGuiIO& io = ImGui::GetIO();
+            
+            u32 flags = 0;
+            
+            if( io.WantCaptureMouse )
+                flags |= dev_ui::MOUSE;
+            
+            if( io.WantCaptureMouse )
+                flags |= dev_ui::MOUSE;
+            
+            if( io.WantCaptureMouse )
+                flags |= dev_ui::MOUSE;
+            
+            return flags;
+        }
 
 		void render()
 		{
