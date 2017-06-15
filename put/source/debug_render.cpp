@@ -1,5 +1,5 @@
 #include "debug_render.h"
-#include "loader.h"
+#include "pmfx.h"
 #include "camera.h"
 #include "input.h"
 #include "memory.h"
@@ -7,6 +7,9 @@
 #include "pen.h"
 
 extern pen::window_creation_params pen_window;
+
+using namespace put;
+using namespace pmfx;
 
 namespace put
 {
@@ -32,7 +35,7 @@ namespace put
 		vertex_debug_lines  debug_lines_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_LINES_VERTS];
 		vertex_debug_lines *debug_lines_verts = NULL;
 
-		put::shader_program* debug_lines_program;
+		shader_program* debug_lines_program;
 
 		struct vertex_debug_font
 		{
@@ -46,12 +49,12 @@ namespace put
 		vertex_debug_font  debug_font_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_FONT_VERTS];
 		vertex_debug_font *debug_font_verts = NULL;
 
-		put::shader_program* debug_font_program;
+		shader_program* debug_font_program;
 
 		void create_shaders()
 		{
-			debug_lines_program = put::load_shader_program("debug_lines");
-			debug_font_program = put::load_shader_program("debug_font");
+			debug_lines_program = load_shader_program("debug_lines");
+			debug_font_program = load_shader_program("debug_font");
 		}
 
 		void create_buffers()

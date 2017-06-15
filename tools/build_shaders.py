@@ -683,10 +683,10 @@ def shader_compile_v1():
 def parse_pmfx(filename, root):
     file_and_path = os.path.join(root, filename)
     needs_building, shader_file_text, included_files = create_shader_set(file_and_path, root)
-    pmfx_loc = shader_file_text.find("pmfx:")
-    json_loc = shader_file_text.find("{", pmfx_loc)
-    techniques = []
     if needs_building:
+        pmfx_loc = shader_file_text.find("pmfx:")
+        json_loc = shader_file_text.find("{", pmfx_loc)
+        techniques = []
         constant_buffers = find_constant_buffers(shader_file_text)
         texture_samplers_source = find_texture_samplers(shader_file_text)
         if pmfx_loc != -1:
@@ -699,16 +699,17 @@ def parse_pmfx(filename, root):
                     pmfx_block[technique]["vs"],
                     pmfx_block[technique]["ps"],
                     technique)
+                del pmfx_block[technique]["vs"]
+                del pmfx_block[technique]["ps"]
+                pmfx_block[technique]["vs_file"] = technique + ".vsc"
+                pmfx_block[technique]["ps_file"] = technique + ".psc"
                 techniques.append(pmfx_block[technique])
         else:
             default_technique = dict()
-            default_technique["vs"] = "vs_main"
-            default_technique["ps"] = "ps_main"
+            default_technique["name"] = "default"
             default_technique["vs_inputs"], default_technique["instance_inputs"] =\
                 create_vsc_psc(file_and_path, shader_file_text, "vs_main", "ps_main", "default")
-            technique_container = dict()
-            technique_container["default"] = default_technique
-            techniques.append(technique_container)
+            techniques.append(default_technique)
 
         generate_shader_info(
             file_and_path,

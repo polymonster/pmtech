@@ -5,8 +5,11 @@
 #include "timer.h"
 #include "renderer.h"
 #include "loader.h"
+#include "pmfx.h"
 
 using namespace pen;
+using namespace put;
+using namespace pmfx;
 
 extern window_creation_params pen_window;
 
@@ -30,7 +33,7 @@ namespace put
 			void* vb_copy_buffer = nullptr;
 			void* ib_copy_buffer = nullptr;
 
-			put::shader_program* shader;
+			shader_program* shader;
 		};
 
 		render_handles g_imgui_rs;
@@ -74,7 +77,7 @@ namespace put
 			io.ImeWindowHandle = pen::window_get_primary_display_handle();
 
 			//load shaders
-			g_imgui_rs.shader = put::load_shader_program("imgui");
+			g_imgui_rs.shader = load_shader_program("imgui");
 
 			create_texture_atlas();
 

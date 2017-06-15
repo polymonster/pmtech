@@ -9,6 +9,7 @@
 #include "debug_render.h"
 #include "component_entity.h"
 #include "layer_controller.h"
+#include "pmfx.h"
 
 pen::window_creation_params pen_window
 {
@@ -94,6 +95,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	put::layer_controller_init();
 	put::dev_ui::init();
 	put::dbg::init();
+    
+    pmfx::load("fx_test");
 
 	//create the main scene and import a model
 	put::ces::component_entity_scene* main_scene = put::ces::create_scene("main_scene");
@@ -138,7 +141,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         pen::renderer_consume_cmd_buffer();
         
-		put::loader_poll_for_changes();
+		pmfx::poll_for_changes();
 
         //msg from the engine we want to terminate
         if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )

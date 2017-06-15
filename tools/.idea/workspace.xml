@@ -59,13 +59,7 @@
             <state vertical-scroll-proportion="0.0">
               <caret line="195" column="43" selection-start-line="195" selection-start-column="43" selection-end-line="195" selection-end-column="43" />
               <folding>
-                <marker date="1495886373000" expanded="true" signature="0:38" placeholder="import ..." />
-                <marker date="1495886373000" expanded="true" signature="146:239" placeholder="..." />
-                <marker date="1495886373000" expanded="true" signature="201:239" placeholder="..." />
-                <marker date="1495886373000" expanded="true" signature="259:411" placeholder="..." />
-                <marker date="1495886373000" expanded="true" signature="334:411" placeholder="..." />
-                <marker date="1495886373000" expanded="true" signature="428:882" placeholder="..." />
-                <marker date="1495886373000" expanded="true" signature="624:882" placeholder="..." />
+                <element signature="e#0#14#0" expanded="true" />
                 <marker date="1495886373000" expanded="true" signature="934:1151" placeholder="..." />
               </folding>
             </state>
@@ -109,8 +103,8 @@
       <file leaf-file-name="build_shaders.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/build_shaders.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.3006993">
-              <caret line="692" column="68" selection-start-line="692" selection-start-column="68" selection-end-line="692" selection-end-column="68" />
+            <state vertical-scroll-proportion="0.5095829">
+              <caret line="704" column="51" selection-start-line="704" selection-start-column="51" selection-end-line="704" selection-end-column="51" />
               <folding />
             </state>
           </provider>
@@ -162,7 +156,7 @@
   <component name="ProjectFrameBounds">
     <option name="y" value="23" />
     <option name="width" value="1680" />
-    <option name="height" value="982" />
+    <option name="height" value="984" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -189,7 +183,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -210,6 +203,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
       <pane id="Scratches" />
     </panes>
   </component>
@@ -379,10 +373,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1680" height="982" extended-state="0" />
+    <frame x="0" y="23" width="1680" height="984" extended-state="6" />
     <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19940476" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19940476" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.19386637" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -469,13 +463,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <marker date="1495886373000" expanded="true" signature="0:38" placeholder="import ..." />
-            <marker date="1495886373000" expanded="true" signature="146:239" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="201:239" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="259:411" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="334:411" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="428:882" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="624:882" placeholder="..." />
+            <element signature="e#0#14#0" expanded="true" />
             <marker date="1495886373000" expanded="true" signature="934:1151" placeholder="..." />
           </folding>
         </state>
@@ -819,38 +807,14 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/build_textures.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/parse_materials.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="195" column="43" selection-start-line="195" selection-start-column="43" selection-end-line="195" selection-end-column="43" />
           <folding>
-            <marker date="1495886373000" expanded="true" signature="0:38" placeholder="import ..." />
-            <marker date="1495886373000" expanded="true" signature="146:239" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="201:239" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="259:411" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="334:411" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="428:882" placeholder="..." />
-            <marker date="1495886373000" expanded="true" signature="624:882" placeholder="..." />
+            <element signature="e#0#14#0" expanded="true" />
             <marker date="1495886373000" expanded="true" signature="934:1151" placeholder="..." />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dependencies.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="5" column="0" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -886,9 +850,27 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/build_shaders.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.3006993">
-          <caret line="692" column="68" selection-start-line="692" selection-start-column="68" selection-end-line="692" selection-end-column="68" />
+        <state vertical-scroll-proportion="0.5095829">
+          <caret line="704" column="51" selection-start-line="704" selection-start-column="51" selection-end-line="704" selection-end-column="51" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dependencies.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="5" column="0" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build_textures.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

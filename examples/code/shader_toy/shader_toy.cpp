@@ -5,6 +5,9 @@
 #include "pen_string.h"
 #include "loader.h"
 #include "dev_ui.h"
+#include "pmfx.h"
+
+using namespace put;
 
 pen::window_creation_params pen_window
 {
@@ -279,7 +282,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     put::dev_ui::init();
     
     //load shaders now requiring dependency on put to make loading simpler.
-    put::shader_program& textured_shader = put::load_shader_program( "shader_toy" );
+    pmfx::shader_program* textured_shader = pmfx::load_shader_program( "shader_toy" );
 
     u32 test_texture = put::load_texture("data/textures/test_normal.dds");
 
@@ -323,9 +326,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         //draw quad
         {
             //bind shaders
-            pen::renderer_set_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
-            pen::renderer_set_input_layout( textured_shader.input_layout );
+            pen::renderer_set_shader( textured_shader->vertex_shader, PEN_SHADER_TYPE_VS );
+            pen::renderer_set_shader( textured_shader->pixel_shader, PEN_SHADER_TYPE_PS );
+            pen::renderer_set_input_layout( textured_shader->input_layout );
 
             //bind vertex buffer
             pen::renderer_set_vertex_buffer( k_render_handles.vb, 0, sizeof( textured_vertex ), 0 );
@@ -352,7 +355,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         pen::renderer_consume_cmd_buffer();
         
-		put::loader_poll_for_changes();
+        pmfx::poll_for_changes();
 
         //msg from the engine we want to terminate
         if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
@@ -362,7 +365,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
-    put::loader_release_shader_program( textured_shader );
+    pmfx::release_shader_program( textured_shader );
     pen::renderer_release_texture(test_texture);
     
     k_render_handles.release();

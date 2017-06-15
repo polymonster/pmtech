@@ -6,6 +6,9 @@
 #include "dev_ui.h"
 #include "debug_render.h"
 #include "layer_controller.h"
+#include "pmfx.h"
+
+using namespace put;
 
 namespace put
 {
@@ -788,7 +791,7 @@ namespace put
 		{            
 			component_entity_scene* scene = view.scene;
             
-            static shader_program* shp_debug = load_shader_program("model_debug");
+            static pmfx::shader_program* shp_debug = pmfx::load_shader_program("model_debug");
             
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             

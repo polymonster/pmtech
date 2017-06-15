@@ -7,16 +7,6 @@
 
 namespace put
 {
-	struct managed_shader;
-
-	struct shader_program
-	{
-		u32 vertex_shader;
-		u32 pixel_shader;
-		u32 input_layout;
-        u32 program_index;
-	};
-
 	struct animation
 	{
 		u32 bone_index;
@@ -39,13 +29,9 @@ namespace put
 		c8**			names;
 
 	};
-
-    shader_program* load_shader_program( const c8* shader_name, managed_shader* ms = nullptr );
-    void            loader_release_shader_program( put::shader_program& program );
     
     u32             load_texture( const c8* filename );
 	skeleton*       load_skeleton( const c8* filename );
-    void            loader_poll_for_changes();
 }
 
 #endif
