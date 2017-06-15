@@ -19,7 +19,8 @@ This project contains platform / operating system specific code, it provides abs
 **put** *pmtech utility toolkit*
 
 This project contains code that will be re-used across different projects but contains no platform specific code, it contains:
-- Loader - Load textures (DDS), models, skeletons, animations and shaders, as well as supporting hot loading assets.
+- Asset Loading - Load textures (DDS), models, skeletons, animations and shaders.
+- pmfx - shader and fx style framework base on shader model 4 with fx syntax in JSON, wit support for specifying multiple techniques and defining GPU state within the a shader file.
 - Debug Renderer - Helpers for drawing 3d and 2d lines, boxes, text, and other primitives.
 - Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and functions.
 - Physics command buffer api.
@@ -38,7 +39,7 @@ Tool scripts written in python and using some c++ executables to build data:
 - Premake5 - All projects are configured using premake and are IDE agnostic.
 - ios project genetion - Simple script to copy ios files and fixup xcode to support ios projects.
 - Shader Compiler - FXC offline shader compilation.
-- Generic Shader Language - hlsl sm4 like shaders can be written, with a single file defining ps and vs main functions, a python script and some macros help porting between glsl and hlsl. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
+- Shader Builder - A python script and some macros help porting from hlsl to glsl, JSON can be used to specify addition information such as depth stencil state or blend modes. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
 
 **examples**
 
