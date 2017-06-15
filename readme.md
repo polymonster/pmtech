@@ -20,7 +20,7 @@ This project contains platform / operating system specific code, it provides abs
 
 This project contains code that will be re-used across different projects but contains no platform specific code, it contains:
 - Asset Loading - Load textures (DDS), models, skeletons, animations and shaders.
-- pmfx - shader and fx style framework base on shader model 4 with fx syntax in JSON, wit support for specifying multiple techniques and defining GPU state within the a shader file.
+- pmfx - shader and fx style framework base on shader model 4 with fx syntax in JSON, supports multiple techniques and different GPU state specification from inside a single file.
 - Debug Renderer - Helpers for drawing 3d and 2d lines, boxes, text, and other primitives.
 - Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and functions.
 - Physics command buffer api.
