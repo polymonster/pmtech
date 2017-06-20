@@ -788,10 +788,8 @@ namespace put
 		}
         
 		void render_scene_view( const scene_view& view, scene_render_type render_type )
-		{            
-			component_entity_scene* scene = view.scene;
-            
-            static pmfx::shader_program* shp_debug = pmfx::load_shader_program("model_debug");
+		{
+            component_entity_scene* scene = view.scene;
             
             static pmfx::pmfx_handle model_pmfx = pmfx::load("fx_test");
             
@@ -829,11 +827,6 @@ namespace put
                         //per object world matrix
                         pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
                     }
-                    
-                    //set shader
-                    //pen::renderer_set_shader(shp_debug->vertex_shader, PEN_SHADER_TYPE_VS);
-                    //pen::renderer_set_shader(shp_debug->pixel_shader, PEN_SHADER_TYPE_PS);
-                    //pen::renderer_set_input_layout(shp_debug->input_layout);
                     
                     pmfx::set_technique( model_pmfx, 1 );
                     

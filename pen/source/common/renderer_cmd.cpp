@@ -399,8 +399,8 @@ namespace pen
 			break;
 
 		case CMD_CREATE_BLEND_STATE:
-			direct::renderer_create_blend_state(cmd.create_blend_state);
-			pen::memory_free(cmd_buffer[put_pos].create_blend_state.render_targets);
+            direct::renderer_create_blend_state(cmd.create_blend_state);
+            pen::memory_free(cmd.create_blend_state.render_targets);
 			break;
 
 		case CMD_SET_BLEND_STATE:
@@ -1009,7 +1009,8 @@ namespace pen
 
 		//alloc and copy the render targets blend modes. to save space in the cmd buffer
 		u32 render_target_modes_size = sizeof(render_target_blend) * bcp.num_render_targets;
-		cmd_buffer[put_pos].create_blend_state.render_targets = (render_target_blend*)pen::memory_alloc(render_target_modes_size);
+        void* mem = pen::memory_alloc(render_target_modes_size);
+		cmd_buffer[put_pos].create_blend_state.render_targets = (render_target_blend*)mem;
 
 		pen::memory_cpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
 

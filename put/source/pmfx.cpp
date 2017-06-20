@@ -41,10 +41,12 @@ namespace put
         const u32 max_techniques_per_fx = 8;
         struct pmfx
         {
+            const c8*       filename = nullptr;
+            bool            invalidated = false;
             json            info;
-            u32             info_timestamp;
-            u32             num_techniques;
-            shader_program  techniques[max_techniques_per_fx];
+            u32             info_timestamp = 0;
+            u32             num_techniques = 0;
+            shader_program  techniques[max_techniques_per_fx] = { 0 };
         };
         std::vector<pmfx> s_pmfx_list;
         
@@ -225,16 +227,36 @@ namespace put
             pen::renderer_set_shader( ps, PEN_SHADER_TYPE_PS );
             pen::renderer_set_input_layout( il );
         }
-
-        pmfx_handle load( const c8* filename )
+        
+        void get_pmfx_info_filename( c8* file_buf, const c8* pmfx_filename )
+        {
+            pen::string_format( file_buf, 256, "data/proto_shaders/%s/%s/info.json", pen::renderer_get_shader_platform(), pmfx_filename );
+        }
+        
+        void release( pmfx_handle handle )
+        {
+            s_pmfx_list[handle].filename = nullptr;
+            
+            for( auto& t : s_pmfx_list[handle].techniques )
+            {
+                pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
+                pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
+                pen::renderer_release_input_layout(t.input_layout );
+            }
+        }
+        
+        pmfx load_internal( const c8* filename )
         {
             //load info file for description
             c8 info_file_buf[ 256 ];
-            pen::string_format( info_file_buf, 256, "data/proto_shaders/%s/%s/info.json", pen::renderer_get_shader_platform(), filename );
+            get_pmfx_info_filename( info_file_buf, filename );
             
             //read shader info json
             pmfx new_pmfx;
-
+            new_pmfx.num_techniques = 0;
+            
+            new_pmfx.filename = filename;
+            
             std::ifstream ifs(info_file_buf);
             new_pmfx.info = json::parse(ifs);
             
@@ -255,10 +277,26 @@ namespace put
                 new_pmfx.techniques[new_pmfx.num_techniques++] = load_shader_technique( filename, t, new_pmfx.info );
             }
             
-            pmfx_handle ph = (pmfx_handle)s_pmfx_list.size();
-            s_pmfx_list.push_back(new_pmfx);
+            return new_pmfx;
+        }
+
+        pmfx_handle load( const c8* filename )
+        {
+            pmfx new_pmfx = load_internal(filename);
             
-            ifs.close();
+            pmfx_handle ph = 0;
+            for( auto& p : s_pmfx_list )
+            {
+                if( p.filename == nullptr )
+                {
+                    p = new_pmfx;
+                    return ph;
+                }
+                
+                ++ph;
+            }
+            
+            s_pmfx_list.push_back(new_pmfx);
             
             return ph;
         }
@@ -482,9 +520,65 @@ namespace put
             pen::renderer_release_input_layout( shader_program->input_layout );
             pen::renderer_release_program( shader_program->program_index );
         }
+        
+        void poll_for_changes_pmfx( )
+        {
+            pmfx_handle current_counter = 0;
+            
+            for( auto& pmfx_set : s_pmfx_list )
+            {
+                if( pmfx_set.invalidated )
+                {
+                    c8 info_file_buf[ 256 ];
+                    get_pmfx_info_filename( info_file_buf, pmfx_set.filename );
+                    
+                    u32 current_ts;
+                    pen_error err = pen::filesystem_getmtime(info_file_buf, current_ts);
+                    
+                    //wait until info is newer than the current info file,
+                    //to know compilation is completed.
+                    if( err == PEN_ERR_OK && current_ts > pmfx_set.info_timestamp )
+                    {
+                        //load new one
+                        pmfx pmfx_new = load_internal( pmfx_set.filename );
+                        
+                        //release existing
+                        release(current_counter);
+                        
+                        //set exisiting to the new one
+                        pmfx_set = pmfx_new;
+                        
+                        //no longer invalidated
+                        pmfx_set.invalidated = false;
+                    }
+                }
+                else
+                {
+                    for (auto& file : pmfx_set.info["files"])
+                    {
+                        std::string fn = file["name"];
+                        u32 shader_ts = file["timestamp"];
+                        u32 current_ts;
+                        pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
+                        
+                        //trigger re-compile if files on disk are newer
+                        if ( err == PEN_ERR_OK && current_ts > shader_ts)
+                        {
+                            system( PEN_SHADER_COMPILE_CMD );
+                            pmfx_set.invalidated = true;
+                        }
+                    }
+                }
+                
+                current_counter++;
+            }
+        }
 
         void poll_for_changes()
         {
+            poll_for_changes_pmfx();
+            
+            /*
             static bool s_invalidated = false;
 
             if (s_invalidated)
@@ -534,6 +628,7 @@ namespace put
                     }
                 }
             }
+             */
         }
     }
 }
