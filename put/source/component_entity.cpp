@@ -793,6 +793,8 @@ namespace put
             
             static pmfx::shader_program* shp_debug = pmfx::load_shader_program("model_debug");
             
+            static pmfx::pmfx_handle model_pmfx = pmfx::load("fx_test");
+            
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             
             static bool first = true;
@@ -829,9 +831,11 @@ namespace put
                     }
                     
                     //set shader
-                    pen::renderer_set_shader(shp_debug->vertex_shader, PEN_SHADER_TYPE_VS);
-                    pen::renderer_set_shader(shp_debug->pixel_shader, PEN_SHADER_TYPE_PS);
-                    pen::renderer_set_input_layout(shp_debug->input_layout);
+                    //pen::renderer_set_shader(shp_debug->vertex_shader, PEN_SHADER_TYPE_VS);
+                    //pen::renderer_set_shader(shp_debug->pixel_shader, PEN_SHADER_TYPE_PS);
+                    //pen::renderer_set_input_layout(shp_debug->input_layout);
+                    
+                    pmfx::set_technique( model_pmfx, 1 );
                     
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 

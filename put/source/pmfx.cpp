@@ -214,8 +214,19 @@ namespace put
             
             return program;
         }
+        
+        void set_technique( pmfx_handle handle, u32 technique_index )
+        {
+            u32 ps = s_pmfx_list[ handle ].techniques[ technique_index ].pixel_shader;
+            u32 vs = s_pmfx_list[ handle ].techniques[ technique_index ].vertex_shader;
+            u32 il = s_pmfx_list[ handle ].techniques[ technique_index ].input_layout;
+            
+            pen::renderer_set_shader( vs, PEN_SHADER_TYPE_VS );
+            pen::renderer_set_shader( ps, PEN_SHADER_TYPE_PS );
+            pen::renderer_set_input_layout( il );
+        }
 
-        void load( const c8* filename )
+        pmfx_handle load( const c8* filename )
         {
             //load info file for description
             c8 info_file_buf[ 256 ];
@@ -243,6 +254,13 @@ namespace put
                 
                 new_pmfx.techniques[new_pmfx.num_techniques++] = load_shader_technique( filename, t, new_pmfx.info );
             }
+            
+            pmfx_handle ph = (pmfx_handle)s_pmfx_list.size();
+            s_pmfx_list.push_back(new_pmfx);
+            
+            ifs.close();
+            
+            return ph;
         }
         
         shader_program* load_shader_program( const c8* shader_name, managed_shader* ms )
