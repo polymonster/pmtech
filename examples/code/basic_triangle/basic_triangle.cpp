@@ -59,12 +59,22 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     c8 shader_file_buf[256];
 
-    pen::string_format(shader_file_buf, 256, "data/shaders/%s/%s", pen::renderer_get_shader_platform(), "basictri.vsc");
-    pen::filesystem_read_file_to_buffer( shader_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
+    pen::string_format(shader_file_buf, 256, "data/pmfx/%s/%s/%s", pen::renderer_get_shader_platform(), "basictri", "default.vsc" );
+    pen_error err = pen::filesystem_read_file_to_buffer( shader_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size );
+    
+    if( err )
+    {
+        PEN_ASSERT(0);
+    }
 
-    pen::string_format(shader_file_buf, 256, "data/shaders/%s/%s", pen::renderer_get_shader_platform(), "basictri.psc");
-    pen::filesystem_read_file_to_buffer( shader_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size );
+    pen::string_format(shader_file_buf, 256, "data/pmfx/%s/%s/%s", pen::renderer_get_shader_platform(), "basictri", "default.psc" );
+    err = pen::filesystem_read_file_to_buffer( shader_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size );
 
+    if( err )
+    {
+        PEN_ASSERT(0);
+    }
+    
     u32 vertex_shader = pen::renderer_load_shader( vs_slp );
     u32 pixel_shader = pen::renderer_load_shader( ps_slp );
 

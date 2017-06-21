@@ -282,7 +282,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     put::dev_ui::init();
     
     //load shaders now requiring dependency on put to make loading simpler.
-    pmfx::shader_program* textured_shader = pmfx::load_shader_program( "shader_toy" );
+    pmfx::pmfx_handle shader_toy_pmfx = pmfx::load("shader_toy");
 
     u32 test_texture = put::load_texture("data/textures/test_normal.dds");
 
@@ -326,9 +326,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         //draw quad
         {
             //bind shaders
-            pen::renderer_set_shader( textured_shader->vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::renderer_set_shader( textured_shader->pixel_shader, PEN_SHADER_TYPE_PS );
-            pen::renderer_set_input_layout( textured_shader->input_layout );
+            pmfx::set_technique( shader_toy_pmfx, 0 );
 
             //bind vertex buffer
             pen::renderer_set_vertex_buffer( k_render_handles.vb, 0, sizeof( textured_vertex ), 0 );
@@ -365,7 +363,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
-    pmfx::release_shader_program( textured_shader );
+    pmfx::release( shader_toy_pmfx );
     pen::renderer_release_texture(test_texture);
     
     k_render_handles.release();

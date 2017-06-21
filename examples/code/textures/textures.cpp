@@ -4,6 +4,9 @@
 #include "file_system.h"
 #include "pen_string.h"
 #include "loader.h"
+#include "pmfx.h"
+
+using namespace put;
 
 pen::window_creation_params pen_window
 {
@@ -57,10 +60,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         0.0f, 1.0f
     };
 
-    //load shaders now requiring dependency on put to make loading simpler.
-
-    put::shader_program& textured_shader = put::load_shader_program( "textured" );
-
+    //load shaders now requiring dependency on pmfx to make loading simpler.
+    pmfx::pmfx_handle textured_shader = pmfx::load("textured");
+    
     u32 test_texture = put::load_texture("data/textures/test_normal.dds");
 
     //create vertex buffer for a quad
@@ -128,18 +130,14 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         //draw quad
         {
-            //bind vertex layout
-            pen::renderer_set_input_layout( textured_shader.input_layout );
+            //bind vertex layout and shaders
+            pmfx::set_technique(textured_shader, 0);
 
             //bind vertex buffer
             u32 stride = sizeof( textured_vertex );
             u32 offset = 0;
             pen::renderer_set_vertex_buffer( quad_vertex_buffer, 0, 1, &stride, &offset );
             pen::renderer_set_index_buffer( quad_index_buffer, PEN_FORMAT_R16_UINT, 0 );
-
-            //bind shaders
-            pen::renderer_set_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
 
             //bind render target as texture on sampler 0
             pen::renderer_set_texture( test_texture, linear_sampler, 0, PEN_SHADER_TYPE_PS );
@@ -152,8 +150,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::renderer_present();
 
         pen::renderer_consume_cmd_buffer();
-        
-		put::loader_poll_for_changes();
 
         //msg from the engine we want to terminate
         if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
@@ -163,7 +159,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
-    put::loader_release_shader_program( textured_shader );
+    pmfx::release( textured_shader );
     
     pen::renderer_release_buffer(quad_vertex_buffer);
     pen::renderer_release_buffer(quad_index_buffer);

@@ -49,12 +49,13 @@ namespace put
 		vertex_debug_font  debug_font_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_FONT_VERTS];
 		vertex_debug_font *debug_font_verts = NULL;
 
-		shader_program* debug_font_program;
+        pmfx_handle debug_lines_shader;
+        pmfx_handle debug_font_shader;
 
 		void create_shaders()
 		{
-			debug_lines_program = load_shader_program("debug_lines");
-			debug_font_program = load_shader_program("debug_font");
+            debug_lines_shader = pmfx::load("debug_lines");
+            debug_font_shader = pmfx::load("debug_font");
 		}
 
 		void create_buffers()
@@ -93,20 +94,13 @@ namespace put
 		{
 			pen::renderer_update_buffer(vb_lines, &debug_lines_verts[0], sizeof(vertex_debug_lines) * MAX_DEBUG_LINES_VERTS);
 
-			//bind vertex layout
-			pen::renderer_set_input_layout(debug_lines_program->input_layout);
+            pmfx::set_technique(debug_lines_shader, 0);
 
 			//bind vertex buffer
 			pen::renderer_set_vertex_buffer(vb_lines, 0, sizeof(vertex_debug_lines), 0);
 
-			//bind shaders
-			pen::renderer_set_shader(debug_lines_program->vertex_shader, PEN_SHADER_TYPE_VS);
-			pen::renderer_set_shader(debug_lines_program->pixel_shader, PEN_SHADER_TYPE_PS);
-
 			//shader constants and textures
 			pen::renderer_set_constant_buffer(cb_3dview, 0, PEN_SHADER_TYPE_VS);
-
-			//pen::renderer_set_depth_stencil_state( depth_state_enabled );
 
 			//draw
 			pen::renderer_draw(line_vert_count, 0, PEN_PT_LINELIST);
@@ -125,16 +119,10 @@ namespace put
 			pen::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS);
 
 			//bind vertex layout
-			pen::renderer_set_input_layout(debug_font_program->input_layout);
+            pmfx::set_technique(debug_font_shader, 0);
 
 			//bind vertex buffer
 			pen::renderer_set_vertex_buffer(vb_font, 0, sizeof(vertex_debug_font), 0);
-
-			//bind shaders
-			pen::renderer_set_shader(debug_font_program->vertex_shader, PEN_SHADER_TYPE_VS);
-			pen::renderer_set_shader(debug_font_program->pixel_shader, PEN_SHADER_TYPE_PS);
-
-			//pen::renderer_set_depth_stencil_state(depth_state_disabled);
 
 			//draw
 			pen::renderer_draw(font_vert_count, 0, PEN_PT_TRIANGLELIST);

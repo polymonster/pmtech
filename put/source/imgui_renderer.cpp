@@ -33,7 +33,7 @@ namespace put
 			void* vb_copy_buffer = nullptr;
 			void* ib_copy_buffer = nullptr;
 
-			shader_program* shader;
+            pmfx_handle imgui_shader;
 		};
 
 		render_handles g_imgui_rs;
@@ -77,7 +77,7 @@ namespace put
 			io.ImeWindowHandle = pen::window_get_primary_display_handle();
 
 			//load shaders
-			g_imgui_rs.shader = load_shader_program("imgui");
+            g_imgui_rs.imgui_shader = pmfx::load("imgui");
 
 			create_texture_atlas();
 
@@ -220,10 +220,8 @@ namespace put
 			pen::renderer_set_rasterizer_state(g_imgui_rs.raster_state);
 			pen::renderer_set_blend_state(g_imgui_rs.blend_state);
 			pen::renderer_set_depth_stencil_state(g_imgui_rs.depth_stencil_state);
-
-			pen::renderer_set_shader(g_imgui_rs.shader->vertex_shader, PEN_SHADER_TYPE_VS);
-			pen::renderer_set_shader(g_imgui_rs.shader->pixel_shader, PEN_SHADER_TYPE_PS);
-			pen::renderer_set_input_layout(g_imgui_rs.shader->input_layout);
+            
+            pmfx::set_technique(g_imgui_rs.imgui_shader, 0);
 
 			pen::renderer_set_vertex_buffer(g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
 			pen::renderer_set_index_buffer(g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);

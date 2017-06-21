@@ -1,4 +1,4 @@
-struct vs_input_m
+struct vs_input
 {
 	float4 position : POSITION;
 };
@@ -8,19 +8,19 @@ struct instance_input
 	float4 colour : COLOR0;
 };
 
-struct vs_output_c
+struct vs_output
 {
 	float4 position : SV_POSITION0;
 };
 
-struct ps_output_d
+struct ps_output
 {
 	float4 colour : SV_Target;
 };
 
 vs_output vs_main( vs_input _input )
 {
-	vs_output_c _output;
+	vs_output _output;
 	
 	_output.position = _input.position;
 	
@@ -29,11 +29,9 @@ vs_output vs_main( vs_input _input )
 
 ps_output ps_main( vs_output _input )
 {
-	ps_output_d _output;
+	ps_output _output;
 	
 	_output.colour = float4( 1.0f, 1.0f, 1.0f, 1.0f );
-	
-	_output.colour += func();
 	
 	{
 		//test scope for the shader parser to

@@ -36,7 +36,7 @@ if not os.path.exists(temp_dir):
 shader_source_dir = os.path.join(root_dir, "assets", "shaders")
 shader_source_dir = os.path.join(root_dir, "assets", "shaders")
 
-shader_build_dir = os.path.join(root_dir,"bin", os_platform, "data", "proto_shaders", shader_platform)
+shader_build_dir = os.path.join(root_dir,"bin", os_platform, "data", "pmfx", shader_platform)
 
 # create shaders dir
 if not os.path.exists(shader_build_dir):
@@ -706,7 +706,8 @@ def parse_pmfx(filename, root):
                 techniques.append(pmfx_block[technique])
         else:
             default_technique = dict()
-            default_technique["name"] = "default"
+            default_technique["vs_file"] = "default.vsc"
+            default_technique["ps_file"] = "default.psc"
             default_technique["vs_inputs"], default_technique["instance_inputs"] =\
                 create_vsc_psc(file_and_path, shader_file_text, "vs_main", "ps_main", "default")
             techniques.append(default_technique)

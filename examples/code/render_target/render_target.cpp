@@ -4,6 +4,9 @@
 #include "file_system.h"
 #include "pen_string.h"
 #include "loader.h"
+#include "pmfx.h"
+
+using namespace put;
 
 pen::window_creation_params pen_window
 {
@@ -90,9 +93,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     u32 colour_render_target = pen::renderer_create_render_target( tcp );
 
-    //load shaders now requiring dependency on put to make loading simpler.
-    put::shader_program basic_tri_shader = put::load_shader_program( "basictri" );
-    put::shader_program textured_shader = put::load_shader_program( "textured" );
+    //load shaders now requiring dependency on pmfx to make loading simpler.
+    pmfx::pmfx_handle basic_tri_shader = pmfx::load("basictri");
+    pmfx::pmfx_handle textured_shader = pmfx::load("textured");
 
     //create vertex buffer for a triangle
     vertex triangle_vertices[] =
@@ -186,17 +189,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         //draw tri into the render target
         if( 1 )
         {
-            //bind vertex layout
-            pen::renderer_set_input_layout( basic_tri_shader.input_layout );
+            //bind shader / input layout
+            pmfx::set_technique(basic_tri_shader, 0);
 
             //bind vertex buffer
-            u32 stride = sizeof( vertex );
-            u32 offset = 0;
-            pen::renderer_set_vertex_buffer( triangle_vertex_buffer, 0, 1, &stride, &offset );
-
-            //bind shaders
-            pen::renderer_set_shader( basic_tri_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::renderer_set_shader( basic_tri_shader.pixel_shader, PEN_SHADER_TYPE_PS );
+            pen::renderer_set_vertex_buffer( triangle_vertex_buffer, 0, sizeof( vertex ), 0 );
 
             //draw
             pen::renderer_draw( 3, 0, PEN_PT_TRIANGLELIST );
@@ -211,18 +208,13 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         //draw quad
         {
-            //bind vertex layout
-            pen::renderer_set_input_layout( textured_shader.input_layout );
+            //bind shader / input layout
+            pmfx::set_technique(textured_shader, 0);
 
-            //bind vertex buffer
-            u32 stride = sizeof( textured_vertex );
-            u32 offset = 0;
-            pen::renderer_set_vertex_buffer( quad_vertex_buffer, 0, 1, &stride, &offset );
+            //set vertex buffer
+            pen::renderer_set_vertex_buffer( quad_vertex_buffer, 0, sizeof( textured_vertex ), 0 );
+            
             pen::renderer_set_index_buffer( quad_index_buffer, PEN_FORMAT_R16_UINT, 0 );
-
-            //bind shaders
-            pen::renderer_set_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::renderer_set_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
 
             //bind render target as texture on sampler 0
             pen::renderer_set_texture( colour_render_target, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS );
@@ -253,12 +245,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::renderer_release_buffer(quad_vertex_buffer);
     pen::renderer_release_buffer(quad_index_buffer);
     pen::renderer_release_render_target(colour_render_target);
-    pen::renderer_release_shader( basic_tri_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-    pen::renderer_release_shader( basic_tri_shader.pixel_shader, PEN_SHADER_TYPE_PS );
-    pen::renderer_release_input_layout( basic_tri_shader.input_layout );
-    pen::renderer_release_shader( textured_shader.vertex_shader, PEN_SHADER_TYPE_VS );
-    pen::renderer_release_shader( textured_shader.pixel_shader, PEN_SHADER_TYPE_PS );
-    pen::renderer_release_input_layout( textured_shader.input_layout );
+    
+    pmfx::release(basic_tri_shader);
+    pmfx::release(textured_shader);
+    
     pen::renderer_consume_cmd_buffer();
     
     
