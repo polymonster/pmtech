@@ -733,7 +733,8 @@ namespace put
 
 			ImGui::BeginChild("Entities", ImVec2(400, 400), true );
 
-			static s32 selected_index = -1;
+            s32& selected_index = scene->selected_index;
+            
 			for (u32 i = 0; i < scene->num_nodes; ++i)
 			{
 				bool selected = false;
@@ -749,7 +750,7 @@ namespace put
 
 			ImGui::SameLine();
 
-			ImGui::BeginChild("Selected", ImVec2(400, 400), true );
+			ImGui::BeginChild("Selected", ImVec2(416, 400), true );
 
 			if (selected_index != -1)
 			{
@@ -855,85 +856,6 @@ namespace put
 			}
 
             first = false;
-            
-			//pen::renderer_consume_cmd_buffer();
-
-			/*
-			u32 num_modes = get_num_nodes();
-
-			scene_node_geometry* p_geometries = get_sn_geometry(0);
-			scene_node_material* p_materials = get_sn_material(0);
-			mat4* p_world_matrices = get_sn_worldmat(0);
-			a_u64* p_entities = get_sn_entityflags(0);
-
-			for (u32 i = 0; i < num_modes; ++i)
-			{
-				if (p_entities[i] & CMP_GEOMETRY && p_entities[i] & CMP_MATERIAL)
-				{
-					scene_node_geometry* p_geom = &p_geometries[i];
-					scene_node_material* p_material = &p_materials[i];
-
-					pen::renderer_set_shader(g_djscene_data.sh_point_light.vertex_shader, PEN_SHADER_TYPE_VS);
-					pen::renderer_set_input_layout(g_djscene_data.sh_point_light.input_layout);
-					stride = sizeof(vertex_model);
-
-					//bind shaders and textures
-					if (p_material->texture_id[0] != -1)
-					{
-						pen::renderer_set_shader(g_djscene_data.sh_point_light_textured.pixel_shader, PEN_SHADER_TYPE_PS);
-						pen::renderer_set_texture(p_material->texture_id[0], g_djscene_data.sampler_trilinear_wrapped, 0, PEN_SHADER_TYPE_PS);
-						pen::renderer_set_texture(g_djscene_data.rt2_cube_test_depth, g_djscene_data.sampler_trilinear_clamped, 1, PEN_SHADER_TYPE_PS);
-					}
-					else
-					{
-						//dummy cubemap
-						pen::renderer_set_texture(g_djscene_data.rt2_cube_test_depth, g_djscene_data.sampler_trilinear_comparison, 0, PEN_SHADER_TYPE_PS);
-						pen::renderer_set_shader(g_djscene_data.sh_point_light.pixel_shader, PEN_SHADER_TYPE_PS);
-					}
-
-					c8* name = get_sn_name(i);
-
-					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, 1, &stride, &offset);
-
-					pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
-
-					//shader constants and textures
-					cbuffer_coloured cb;
-					cb.world_matrix = p_world_matrices[i];
-					cb.camera_pos = vec4f(g_djscene_data.cam.pos, 1.0f);
-					cb.diffuse = p_material->diffuse_rgb_shininess;
-
-					if (g_djscene_tweakables.lighting_mode == 0.0f)
-					{
-						cb.light_params = vec4f(
-							g_djscene_tweakables.cook_torrence_roughness * g_djscene_tweakables.cook_torrence_roughness,
-							g_djscene_tweakables.cook_torrence_reflection,
-							1.0f - g_djscene_tweakables.cook_torrence_reflection,
-							0.0f);
-					}
-					else
-					{
-						cb.light_params = vec4f(g_djscene_tweakables.phong_specular_power, g_djscene_tweakables.phong_specular_strength, 0.0f, 0.0f);
-					}
-
-					pen::renderer_update_buffer(g_djscene_data.cb_coloured, &cb, sizeof(cbuffer_coloured));
-
-					pen::renderer_set_constant_buffer(cb_view, 0, PEN_SHADER_TYPE_VS);
-					pen::renderer_set_constant_buffer(g_djscene_data.cb_coloured, 1, PEN_SHADER_TYPE_VS);
-					pen::renderer_set_constant_buffer(g_djscene_data.cb_point_light, 2, PEN_SHADER_TYPE_VS);
-
-					pen::renderer_set_constant_buffer(g_djscene_data.cb_tweaker, 3, PEN_SHADER_TYPE_VS);
-
-					pen::renderer_set_constant_buffer(g_djscene_data.cb_coloured, 0, PEN_SHADER_TYPE_PS);
-					pen::renderer_set_constant_buffer(g_djscene_data.cb_point_light, 1, PEN_SHADER_TYPE_PS);
-
-					//draw
-					pen::renderer_draw_indexed(p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
-				}
-			}
-
-			pen::renderer_consume_cmd_buffer();
-			*/
 		}
 
 		void update_scene_matrices(component_entity_scene* scene)

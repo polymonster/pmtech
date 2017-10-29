@@ -15,6 +15,12 @@ namespace put
 		float x, y, z, w;
 		float u, v;
 	};
+    
+    enum e_debug_dispatch
+    {
+        LAYER_DEBUG_2D = 1,
+        LAYER_DEBUG_3D = 1<<1
+    };
 
 	struct layer
 	{
@@ -30,6 +36,7 @@ namespace put
 		u32				colour_targets[MAX_MRT_TARGETS];
 		u32				num_colour_targets;
 		u32				depth_target;
+        u32             debug_dispatch;
 
 		void(*update_function)(layer*) = nullptr;
 	};

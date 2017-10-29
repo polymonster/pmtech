@@ -146,6 +146,7 @@ namespace put
 			c8**					names;
 			c8**					geometry_names;
 			c8**					material_names;
+            s32                     selected_index;
 		};
 
 

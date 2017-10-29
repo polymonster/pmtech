@@ -17,7 +17,7 @@ if _ACTION == "xcode4" then
 	end
 
 	build_cmd = "-std=c++11 -stdlib=libc++"
-	link_cmd = "-stdlib=libc++"
+	link_cmd = "-stdlib=libc++ -mmacosx-version-min=10.8"
 	
 	if not renderer_dir == "opengl" then
 		print(	"renderer " .. renderer_dir .. " is not supported on platform " .. platform_dir .. " setting to opengl" )

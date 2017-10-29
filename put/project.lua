@@ -18,7 +18,8 @@ project "put"
 		"..\\pen\\include\\" .. renderer_dir,
 		  
 		"..\\pen\\third_party\\bullet\\include",
-		"..\\pen\\third_party\\imgui"
+		"..\\pen\\third_party\\imgui",
+		"..\\pen\\third_party",
 	}
 	
 	if _ACTION == "vs2017" then

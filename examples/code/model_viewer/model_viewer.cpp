@@ -80,8 +80,12 @@ void update_model_view(put::layer* layer)
 	put::ces::update_scene_matrices(layer->view.scene);
     
     //debug render
+    layer->debug_dispatch |= LAYER_DEBUG_3D;
     put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
-
+    
+    ces::scene_node_physics& snp = layer->view.scene->physics_data[layer->view.scene->selected_index];
+    
+    put::dbg::add_line(snp.min_extents, snp.max_extents, vec3f( 1.0, 0.0, 1.0 ) );
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -96,8 +100,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	put::dev_ui::init();
 	put::dbg::init();
     
-    pmfx::load("fx_test");
-
 	//create the main scene and import a model
 	put::ces::component_entity_scene* main_scene = put::ces::create_scene("main_scene");
 	put::ces::import_model_scene("silo", main_scene);

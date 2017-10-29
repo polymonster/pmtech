@@ -264,19 +264,11 @@ namespace put
 			pen::renderer_update_buffer(k_built_in_handles.debug_shader_cbuffer, &set, sizeof(debug_shader_settings), 0);
 		};
 
-		static bool open_scene_browser = false;
-		if (ImGui::Button("Scene Browser"))
-		{
-			open_scene_browser = true;
-		}
-
 		ImGui::End();
 	}
 
 	void layer_controller_update()
 	{
-		show_ui();
-
 		//bind debug cbuffer
 		pen::renderer_set_constant_buffer(k_built_in_handles.debug_shader_cbuffer, 13, PEN_SHADER_TYPE_PS);
 
@@ -306,7 +298,11 @@ namespace put
 
             put::ces::render_scene_view( k_layers[i].view, k_shader_debug_selected == -1 ? ces::SN_RENDER_LIT : ces::SN_RENDER_DEBUG );
 
-            put::dbg::render_3d( k_layers[i].view.cb_view );
+            if( k_layers[i].debug_dispatch & LAYER_DEBUG_3D )
+                put::dbg::render_3d( k_layers[i].view.cb_view );
+            
+            if( k_layers[i].debug_dispatch & LAYER_DEBUG_2D )
+                put::dbg::render_2d( );
 		}
 	}
 

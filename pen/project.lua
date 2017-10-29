@@ -16,6 +16,8 @@ project "pen"
 		
 		"source/" .. platform_dir .. "/**.cpp",
 		"source/" .. platform_dir .. "/**.mm",
+		
+		"third_party/str/*.cpp", 
 	}
 	
 	if platform_dir == "osx" then
@@ -36,7 +38,9 @@ project "pen"
 		"include/" .. platform_dir, 
 		"include/" .. renderer_dir,
 		
-		"third_party/fmod/inc" 
+		"third_party/fmod/inc",
+		
+		"third_party" 
 	}
 		
 	configuration "Debug"

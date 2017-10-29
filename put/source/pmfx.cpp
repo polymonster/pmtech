@@ -7,6 +7,8 @@
 #include "renderer.h"
 #include "pen_string.h"
 #include "json.hpp"
+#include "pen_json.h"
+#include "str/Str.h"
 
 using json = nlohmann::json;
 
@@ -238,6 +240,8 @@ namespace put
             //load info file for description
             c8 info_file_buf[ 256 ];
             get_pmfx_info_filename( info_file_buf, filename );
+            
+            pen::test_json(info_file_buf);
             
             //read shader info json
             pmfx new_pmfx;

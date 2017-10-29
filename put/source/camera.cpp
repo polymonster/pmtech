@@ -61,7 +61,18 @@ namespace put
 		f32 mwheel = (f32)ms.wheel;
 		static f32 prev_mwheel = mwheel;
 		prev_mwheel = mwheel;
-
+        
+        
+        f32 cursor_speed = 0.1f;
+        if( INPUT_PKEY( PENK_UP ) )
+            p_camera->rot.x -= cursor_speed;
+        if( INPUT_PKEY( PENK_DOWN ) )
+            p_camera->rot.x += cursor_speed;
+        if( INPUT_PKEY( PENK_LEFT ) )
+            p_camera->rot.y -= cursor_speed;
+        if( INPUT_PKEY( PENK_RIGHT ) )
+            p_camera->rot.y += cursor_speed;
+        
 		if (ms.buttons[PEN_MOUSE_L])
 		{
 			//rotation
