@@ -241,7 +241,7 @@ namespace put
             c8 info_file_buf[ 256 ];
             get_pmfx_info_filename( info_file_buf, filename );
             
-            pen::test_json(info_file_buf);
+            pen::json jo = pen::json::load_from_file(info_file_buf);
             
             //read shader info json
             pmfx new_pmfx;
@@ -261,6 +261,8 @@ namespace put
             
             //find num techiques
             json techniques = new_pmfx.info["techniques"];
+            
+            pen::json techniques_2 = jo["techniques"];
             
             for( auto& t : techniques )
             {
