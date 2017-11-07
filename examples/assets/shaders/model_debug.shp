@@ -56,7 +56,7 @@ vs_output vs_main( vs_input _input )
 	_output.position = mul( _input.position, wvp );
 	_output.world_pos = mul( _input.position, world_matrix );
 
-	float3x3 rotation_matrix = mul( float3x3(world_matrix), float3x3(view_matrix) );
+	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
 	
 	_output.normal = mul( _input.normal.xyz, rotation_matrix );
 	_output.tangent = mul( _input.tangent.xyz, rotation_matrix );
