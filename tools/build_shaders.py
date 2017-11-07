@@ -157,17 +157,24 @@ def generate_shader_info(
         shader_info["cbuffers"].append(buffer_desc)
 
     output_info = open(info_filename, 'wb+')
-    output_info.write(bytes(json.dumps(shader_info, indent=4), 'UTF-8'))
+    output_info.write(bytes(json.dumps(shader_info, indent=4)))
     output_info.close()
     return shader_info
 
 
-def compile_hlsl(source, filename, shader_model, temp_extension):
+def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, technique_name):
     f = os.path.basename(filename)
-    f = os.path.splitext(f)[0] + temp_extension
+    f = os.path.splitext(f)[0]
     temp_file_name = os.path.join(temp_dir, f)
 
-    output_file_and_path = os.path.join(shader_build_dir, f + "c")
+    if not os.path.exists(temp_file_name):
+        os.mkdir(temp_file_name)
+
+    temp_file_name = os.path.join(temp_file_name, technique_name + temp_extension )
+
+    output_path = os.path.join(shader_build_dir, f)
+    output_file_and_path = os.path.join(output_path, technique_name + temp_extension + "c")
+
     compiler_exe_path = os.path.join(compiler_dir,"fxc")
 
     print(output_file_and_path)
@@ -179,6 +186,7 @@ def compile_hlsl(source, filename, shader_model, temp_extension):
     temp_shader_source.close()
 
     cmdline = compiler_exe_path + " /T " + shader_model + " /Fo " + output_file_and_path + " " + temp_file_name
+    cmdline += " /E " + entry_name
     subprocess.call(cmdline)
     print("\n")
 
@@ -655,9 +663,9 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
         ps_source += ps_main
 
     if shader_platform == "hlsl":
-        compile_hlsl(vs_source, filename, "vs_4_0", ".vs")
+        compile_hlsl(vs_source, filename, "vs_4_0", ".vs", vs_name, technique_name)
         if ps_main != "":
-            compile_hlsl(ps_source, filename, "ps_4_0", ".ps")
+            compile_hlsl(ps_source, filename, "ps_4_0", ".ps", ps_name, technique_name)
     elif shader_platform == "glsl":
         compile_glsl(
             filename, macros_text,

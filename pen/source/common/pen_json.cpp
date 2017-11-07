@@ -318,10 +318,10 @@ namespace pen
     //------------------------------------------------------------------------------
     //C++ API
     //------------------------------------------------------------------------------
-    
+    json new_json;
+
     json json::load_from_file( c8* filename )
     {
-        json new_json;
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
         pen::filesystem_read_file_to_buffer(filename, (void**)&new_json.m_internal_object->data, new_json.m_internal_object->size);
@@ -333,7 +333,6 @@ namespace pen
     
     json json::load( c8* json_str )
     {
-        json new_json;
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
         new_json.m_internal_object->data = json_str;
@@ -355,16 +354,14 @@ namespace pen
     
     json json::operator [] (const c8* name) const
     {
-        json new_json;
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
-        
+
         *new_json.m_internal_object = m_internal_object->get_object_by_name(name);
         return new_json;
     }
     
     json json::operator [] (const u32 index) const
     {
-        json new_json;
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
         *new_json.m_internal_object = m_internal_object->get_object_by_index(index);
