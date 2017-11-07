@@ -1,9 +1,9 @@
+[submodule "pen/third_party/imgui"]
+	path = pen/third_party/imgui
+	url = https://github.com/ocornut/imgui.git
 [submodule "pen/third_party/jsmn"]
 	path = pen/third_party/jsmn
 	url = https://github.com/zserge/jsmn.git
 [submodule "pen/third_party/str"]
 	path = pen/third_party/str
 	url = https://github.com/ocornut/str.git
-[submodule "pen/third_party/imgui"]
-	path = pen/third_party/imgui
-	url = https://github.com/ocornut/imgui.git
