@@ -53,11 +53,27 @@ void update_model_view(put::layer* layer)
 	{
 		open_scene_browser = true;
 	}
+    
+    static bool open_model_import = false;
+    if (ImGui::Button("Import Model"))
+    {
+        open_model_import = true;
+    }
 
 	if (open_scene_browser)
 	{
 		ces::enumerate_scene_ui(layer->view.scene, &open_scene_browser);
 	}
+    
+    if( open_model_import )
+    {
+        const c8* model = put::dev_ui::file_browser(open_model_import, 1, "**.pms" );
+        
+        if( model )
+        {
+            put::ces::import_model_scene_file(model, layer->view.scene );
+        }
+    }
 	
 	//update camera
     if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
@@ -102,8 +118,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
 	//create the main scene and import a model
 	put::ces::component_entity_scene* main_scene = put::ces::create_scene("main_scene");
-	put::ces::import_model_scene("silo", main_scene);
-
+    
 	//create main camera
 	put::camera main_camera;
 	put::camera_create_perspective( &main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f );

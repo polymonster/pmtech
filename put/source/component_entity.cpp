@@ -440,16 +440,49 @@ namespace put
 
 			return;
 		}
-
-		void import_model_scene(const c8* model_scene_name, component_entity_scene* scene)
+        
+        void import_model_scene(const c8* model_scene_name, component_entity_scene* scene)
+        {
+            c8 scene_filename[128];
+            pen::string_format(&scene_filename[0], 128, SCENE_DIR_MACRO, model_scene_name);
+            
+            import_model_scene_file(scene_filename, scene);
+        }
+        
+		void import_model_scene_file(const c8* model_scene_file, component_entity_scene* scene)
 		{
 			void* scene_file;
 			u32   scene_file_size;
+            
+            const c8* model_scene_name = (const c8*)pen::memory_alloc(256);
+            
+            u32 name_length = pen::string_length(model_scene_file);
+            u32 pos = name_length;
+            u32 start_pos = 0;
+            u32 end_pos = 0;
+            
+            c8 buf_char;
+            while( 1 )
+            {
+                buf_char = model_scene_file[--pos];
+                
+                if( buf_char == '/' || buf_char == '\\' )
+                {
+                    if( end_pos == 0 )
+                    {
+                        end_pos = pos;
+                    }
+                    else
+                    {
+                        start_pos = pos;
+                        break;
+                    }
+                }
+            }
 
-			c8 scene_filename[128];
-			pen::string_format(&scene_filename[0], 128, SCENE_DIR_MACRO, model_scene_name);
-
-			pen_error err = pen::filesystem_read_file_to_buffer(scene_filename, &scene_file, scene_file_size);
+            pen::memory_cpy( (void*)model_scene_name, model_scene_file+start_pos+1, end_pos-start_pos-1);
+            
+			pen_error err = pen::filesystem_read_file_to_buffer(model_scene_file, &scene_file, scene_file_size);
 
             if( err != PEN_ERR_OK )
             {
@@ -806,7 +839,6 @@ namespace put
 					scene_node_material* p_mat = &scene->materials[n];
 
                     //move this to update / bake static
-                    if( first )
                     {
                         per_model_cbuffer cb =
                         {

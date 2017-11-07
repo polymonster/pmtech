@@ -187,7 +187,8 @@ namespace put
 		component_entity_scene*	create_scene( const c8* name );
 
 		void					import_model_scene( const c8* model_scene_name, component_entity_scene* scene );
-
+        void                    import_model_scene_file( const c8* model_scene_name, component_entity_scene* scene );
+        
 		void					clone_node( component_entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
 
 		void					enumerate_scene_ui(component_entity_scene* scene, bool* open );
