@@ -30,8 +30,8 @@ project "put"
 	{ 
 		"include\\**.h", "source\\**.cpp", 
 		
-		"..\\pen\\third_party\\imgui\\**.cpp",
-		"..\\pen\\third_party\\imgui\\**.h",
+		"..\\pen\\third_party\\imgui\\*.cpp",
+		"..\\pen\\third_party\\imgui\\*.h",
 	}
 	includedirs { "include" }
 		
