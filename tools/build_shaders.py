@@ -759,7 +759,7 @@ def generate_shader_debug_info():
 
     shader_debug_settings_file = os.path.join(shader_build_dir, "debug_settings.json")
     output_settings = open(shader_debug_settings_file, 'wb+')
-    output_settings.write(bytes(json.dumps(debug_settings_dictionary, indent=4), 'UTF-8'))
+    output_settings.write(bytes(json.dumps(debug_settings_dictionary, indent=4)))
     output_settings.close()
 
 
