@@ -108,21 +108,21 @@ namespace pen
                     break;
                 case JSON_U32:
                 {
-                    c8* tok_str = strndup(js + t->start, t->end - t->start);
+                    c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
                     result.u = atoi( tok_str );
                 }
                     break;
                 case JSON_S32:
                 {
-                    c8* tok_str = strndup(js + t->start, t->end - t->start);
+                    c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
                     result.s = atol( tok_str );
                     free( tok_str );
                 }
                     break;
                 case JSON_F32:
                 {
-                    c8* tok_str = strndup(js + t->start, t->end - t->start);
-                    result.f = atof( tok_str );
+                    c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
+                    result.f = (f32)atof( tok_str );
                     free( tok_str );
                 }
                     break;
@@ -158,40 +158,12 @@ namespace pen
             return 0;
         
         if (t->type == JSMN_PRIMITIVE)
-        {
-            if( ep.get_next )
-            {
-                if( *(js + t->start) == 't' )
-                {
-                    result.b = true;
-                }
-                else if( *(js + t->start) == 'f' )
-                {
-                    result.b = false;
-                }
-                else
-                {
-                    c8* tok_str = strndup(js + t->start, t->end - t->start);
-                    result.f = atof( tok_str );
-                    free( tok_str );
-                }
-
-                ep.get_next = false;
-                ep.return_value = 1;
-            }
-            
+        {            
             return 1;
         }
         else if (t->type == JSMN_STRING)
         {
-            if( ep.get_next )
-            {
-                result.str = strndup(js + t->start, t->end - t->start);
-                
-                ep.get_next = false;
-                ep.return_value = 1;
-            }
-            else if( indent==1  )
+            if( indent==1  )
             {
                 if( search_name == nullptr )
                 {
@@ -215,7 +187,7 @@ namespace pen
                 {
                     jsmntok_t* at = t+1+j;
                     
-                    result.object.data = strndup(js+at->start, at->end - at->start);
+                    result.object.data = pen::sub_string(js+at->start, at->end - at->start);
                     result.object.size = at->end - at->start;
                     
                     create_json_object( result.object );
@@ -232,7 +204,7 @@ namespace pen
         {
             if( ep.get_next)
             {
-                result.object.data = strndup(js+t->start, t->end - t->start);
+                result.object.data = pen::sub_string(js+t->start, t->end - t->start);
                 result.object.size = t->end - t->start;
                 
                 create_json_object( result.object );
@@ -248,7 +220,7 @@ namespace pen
                 {
                     jsmntok_t* at = t+1+j;
                     
-                    result.object.data = strndup(js+at->start, at->end - at->start);
+                    result.object.data = pen::sub_string(js+at->start, at->end - at->start);
                     result.object.size = at->end - at->start;
                     
                     create_json_object( result.object );
