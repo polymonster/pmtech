@@ -59,6 +59,7 @@ def parse_and_split_block(code_block):
     return block_conditioned.split()
 
 
+
 def make_input_info(inputs):
     semantic_info = [
         ["POSITION", "4"],
@@ -157,7 +158,7 @@ def generate_shader_info(
         shader_info["cbuffers"].append(buffer_desc)
 
     output_info = open(info_filename, 'wb+')
-    output_info.write(bytes(json.dumps(shader_info, indent=4)))
+    output_info.write(bytes(json.dumps(shader_info, indent=4),'UTF-8'))
     output_info.close()
     return shader_info
 
@@ -759,7 +760,7 @@ def generate_shader_debug_info():
 
     shader_debug_settings_file = os.path.join(shader_build_dir, "debug_settings.json")
     output_settings = open(shader_debug_settings_file, 'wb+')
-    output_settings.write(bytes(json.dumps(debug_settings_dictionary, indent=4)))
+    output_settings.write(bytes(json.dumps(debug_settings_dictionary, indent=4), 'UTF-8'))
     output_settings.close()
 
 

@@ -295,7 +295,3 @@ for f in os.listdir(model_dir):
         parse_dae()
         write_joint_file(f)
         print("")
-
-
-print("press any key to continue")
-i = input()
