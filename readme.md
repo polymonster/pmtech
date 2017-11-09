@@ -15,6 +15,12 @@ This project contains platform / operating system specific code, it provides abs
 - Threads / Syncronisation Primitives (win32, posix)
 - Timers (win32, mach)
 - Job Threads / Syncronisation
+- pen::json - simple and leightweight json api and parser to access json values as c types, combine json objects, iterate over arrays, find json objects by name and other handy stuff to make data driven configs a breeze.
+
+**thirdparty stuff**
+- ImGui - super cool and fast ui rendering for development.
+- Jsmn - light weight json parser used in pen::json
+- Bullet Physics - Wrapped up in a command buffer api for asyncronous update and thread safe interactions.
 
 **put** *pmtech utility toolkit*
 
@@ -25,11 +31,6 @@ This project contains code that will be re-used across different projects but co
 - Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and functions.
 - Physics command buffer api.
 - ImGui file browser and other ui utilities.
-
-**thirdparty integration**
-- ImGui - super cool and fast ui rendering for development.
-- JSON for modern c++ - great for working with data that has been generated with python.
-- Bullet Physics - Wrapped up in a command buffer api for asyncronous update and thread safe interactions.
 
 **tools**
 
@@ -54,7 +55,8 @@ This solution / workspace contains multiple examples of how to use the API's and
 - Imgui - Displays the Imgui test example, this also introduces a few new rendering festures that are required, blending, depth stencil states and scissor testing.
 - Audio Player - Introduces more audio features and supplies a UI to play and control audio files, it also introduces fft and some beat-detection code along with graphs and visualisations of the fft this is r&d work in progress.
 - Shader Toy - Introduces shader hot loading and a test bed for binding textures, samplers and constant/uniform buffers to different shader locations.
-- Model Viewer - Introduces cameras and camera controls, model loading and inspection.
+- Model Viewer - Introduces cameras and camera controls, model loading and inspection
+- Component entity system - simple c-style component entity system using structure of arrays layout for efficient cache utilisation.. a "scene" design pattern that is not object oriented but can be just as powerful.
 
 *Getting started*
 
