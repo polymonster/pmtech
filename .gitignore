@@ -28,6 +28,8 @@ $RECYCLE.BIN/
 .AppleDouble
 .LSOverride
 
+*ios_files*
+
 # Thumbnails
 ._*
 
