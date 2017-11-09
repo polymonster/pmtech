@@ -28,9 +28,10 @@ namespace pen
     //functions
     inline c8* sub_string( const c8* src, u32 length )
     {
-        c8* new_string = (c8*)malloc( length );
+        c8* new_string = (c8*)malloc( length+1 );
         memcpy( new_string, src, length );
-
+        new_string[length] = '\0';
+        
         return new_string;
     }
 }

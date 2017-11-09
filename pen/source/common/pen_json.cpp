@@ -59,17 +59,12 @@ namespace pen
         s32        num_tokens;
         c8*        data;
         u32        size;
+        c8*        name;
     
         json_object get_object_by_name( const c8* name );
         json_object get_object_by_index( const u32 index );
         
-        u32         get_u32( const c8* name, u32 default_value = 0 );
-        s32         get_s32( c8* name, s32 default_value = 0 );
-        f32         get_f32( c8* name, f32 default_value = 0.0f );
-        bool        get_bool( c8* name, bool default_value = false );
-        c8*         get_string( c8* name, c8* default_value = nullptr );
-        
-        c8*         as_string();
+        Str         get_name();
     };
     
     union json_value
@@ -95,6 +90,7 @@ namespace pen
     {
         bool            get_next;
         int             return_value;
+        jsmntok_t*      name_token;
     };
     
     static bool enumerate_primitve( const char *js, jsmntok_t *t, json_value& result, PRIMITIVE_TYPE  type )
@@ -158,11 +154,15 @@ namespace pen
             return 0;
         
         if (t->type == JSMN_PRIMITIVE)
-        {            
+        {
+            result.object.name = pen::sub_string(js+t->start, t->end - t->start);
+            
             return 1;
         }
         else if (t->type == JSMN_STRING)
         {
+            result.object.name = pen::sub_string(js+t->start, t->end - t->start);
+            
             if( indent==1  )
             {
                 if( search_name == nullptr )
@@ -189,7 +189,7 @@ namespace pen
                     
                     result.object.data = pen::sub_string(js+at->start, at->end - at->start);
                     result.object.size = at->end - at->start;
-                    
+                
                     create_json_object( result.object );
                     
                     ep.return_value = 1;
@@ -252,12 +252,18 @@ namespace pen
         enumerate_params ep =
         {
             false,
-            0
+            0,
+            nullptr
         };
         
         enumerate( jo->data, jo->tokens, jo->num_tokens, 0, name, index, jv, ep );
         
         return jv.object;
+    }
+    
+    Str json_object::get_name()
+    {
+        return Str(this->name);
     }
     
     json_object json_object::get_object_by_name( const c8* name )
@@ -310,7 +316,7 @@ namespace pen
             
             jo.num_tokens = 0;
             
-            free( jo.data );
+            pen::memory_free( jo.data );
             jo.data = nullptr;
         }
     }
@@ -318,29 +324,149 @@ namespace pen
     //------------------------------------------------------------------------------
     //C++ API
     //------------------------------------------------------------------------------
-    json new_json;
+    
 
-    json json::load_from_file( c8* filename )
+    json json::load_from_file( const c8* filename )
     {
+        json new_json;
+        
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
         pen::filesystem_read_file_to_buffer(filename, (void**)&new_json.m_internal_object->data, new_json.m_internal_object->size);
+        new_json.m_internal_object->name = nullptr;
         
         create_json_object( *new_json.m_internal_object );
         
         return new_json;
     }
     
-    json json::load( c8* json_str )
+    json json::load( const c8* json_str )
     {
+        json new_json;
+        
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
-        new_json.m_internal_object->data = json_str;
+        new_json.m_internal_object->data = pen::sub_string(json_str, pen::string_length(json_str));
+        
         new_json.m_internal_object->size = pen::string_length(json_str);
+        new_json.m_internal_object->name = nullptr;
         
         create_json_object( *new_json.m_internal_object );
         
         return new_json;
+    }
+    
+    enum combine_action
+    {
+        json_keep = 0,
+        json_combine = 1,
+        json_discard = 2
+    };
+    
+    json json::combine( const json& j1, const json& j2, s32 indent )
+    {
+        //iterate member wise
+        s32 s1 = j1.size();
+        s32 s2 = j2.size();
+        
+        combine_action* j1_action = new combine_action[s1];
+        combine_action* j2_action = new combine_action[s2];
+        
+        s32* combine_index = new s32[s1];
+        
+        pen::memory_set(j1_action, 0, sizeof(combine_action)*s1);
+        pen::memory_set(j2_action, 0, sizeof(combine_action)*s2);
+        
+        Str json_string = "{\n";
+        Str indent_str = "\t";
+        
+        for( s32 i = 0; i < s1; ++i )
+        {
+            json j3 = j1[i];
+            
+            Str name1 = j3.name();
+            
+            bool action = false;
+            
+            for( s32 j = 0; j < s2; ++j )
+            {
+                json j4 = j2[j];
+                
+                Str name2 = j4.name();
+                
+                if( name2 == name1 )
+                {
+                    if( j3.type() == JSMN_OBJECT && j4.type() == JSMN_OBJECT )
+                    {
+                        j1_action[i] = json_combine;
+                        j2_action[j] = json_combine;
+                        
+                        combine_index[i] = j;
+                    }
+                    else
+                    {
+                        j1_action[i] = json_discard;
+                        j2_action[j] = json_keep;
+                    }
+                    
+                    action = true;
+                }
+            }
+        }
+        
+        for( s32 i = 0; i < s1; ++i )
+        {
+            if( j1_action[i] == json_keep )
+            {
+                json_string.append(indent_str.c_str());
+                json_string.append(j1[i].name().c_str());
+                
+                json_string.append(": ");
+                json_string.append(j1[i].m_internal_object->data);
+                json_string.append(",\n");
+            }
+            
+            if( j1_action[i] == json_combine )
+            {
+                s32 j = combine_index[i];
+                json combined = combine( j1[i], j2[j], indent+1 );
+                
+                json_string.append(indent_str.c_str());
+                json_string.append(j1[i].name().c_str());
+                json_string.append(":\n");
+                
+                json_string.append(combined.dumps().c_str());
+                
+                json_string.append(",\n");
+            }
+        }
+        
+        for( s32 i = 0; i < s2; ++i )
+        {
+            if( j2_action[i] == json_keep )
+            {
+                json_string.append(indent_str.c_str());
+                json_string.append(j2[i].name().c_str());
+                
+                json_string.append(": ");
+                json_string.append(j2[i].m_internal_object->data);
+                json_string.append(",\n");
+            }
+        }
+        
+        json_string.append("}");
+        json_string.append('\0');
+        
+        json test = json::load(json_string.c_str());
+        
+        delete[] j1_action;
+        delete[] j2_action;
+        delete[] combine_index;
+        
+        if( indent == 0)
+            PEN_PRINTF(test.m_internal_object->data);
+        
+        return test;
     }
     
     u32 json::size() const
@@ -354,6 +480,8 @@ namespace pen
     
     json json::operator [] (const c8* name) const
     {
+        json new_json;
+        
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
 
         *new_json.m_internal_object = m_internal_object->get_object_by_name(name);
@@ -362,9 +490,44 @@ namespace pen
     
     json json::operator [] (const u32 index) const
     {
+        json new_json;
+        
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
         *new_json.m_internal_object = m_internal_object->get_object_by_index(index);
+        return new_json;
+    }
+    
+    json::json( )
+    {
+        
+    }
+    
+    json::json( const json& other )
+    {
+        m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
+        
+        //shallow copy defauly copy ctor
+        *m_internal_object = *other.m_internal_object;
+        
+        //deep copy take ownership of mem
+        s32 data_size = string_length(other.m_internal_object->data);
+        m_internal_object->data = (c8*)memory_alloc(data_size);
+        pen::memory_cpy(m_internal_object->data, other.m_internal_object->data, data_size);
+     
+        if( other.m_internal_object->name )
+        {
+            s32 name_size = string_length(other.m_internal_object->name);
+            m_internal_object->name = (c8*)memory_alloc(name_size);
+            pen::memory_cpy(m_internal_object->name, other.m_internal_object->name, name_size);
+        }
+    }
+    
+    json json::operator = (const json& other ) const
+    {
+        json new_json;
+        
+        new_json = json( other );
         return new_json;
     }
     
@@ -413,12 +576,32 @@ namespace pen
         return 0.0f;
     }
     
+    Str json::dumps()
+    {
+        return m_internal_object->data;
+    }
+    
+    Str json::name()
+    {
+        return m_internal_object->get_name();
+    }
+    
+    jsmntype_t json::type()
+    {
+        if(m_internal_object->num_tokens <= 0)
+            return JSMN_UNDEFINED;
+        
+        return m_internal_object->tokens[0].type;
+    }
+    
     json::~json()
     {
         pen::memory_free(m_internal_object->data);
+        pen::memory_free(m_internal_object->name);
         pen::memory_free(m_internal_object);
         
         m_internal_object->data = nullptr;
+        m_internal_object->name = nullptr;
         m_internal_object = nullptr;
     }
 }

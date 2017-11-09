@@ -66,7 +66,7 @@ typedef std::atomic<uint64_t> a_u64;
 //--------------------------------------------------------------------------------------
 // Print / Assert 
 //--------------------------------------------------------------------------------------
-#define	PEN_PRINT_CHAR_LIMIT	128
+#define	PEN_PRINT_CHAR_LIMIT	1024
 #define PEN_PRINTF				pen::string_output_debug
 #define PEN_ASSERT				assert
 #define PEN_ERR					assert( 0 ) 

@@ -164,12 +164,12 @@ def parse_dae():
     for child in root:
         if child.tag.find("library_visual_scenes") != -1:
             parse_visual_scenes(child)
-        if child.tag.find("library_animations") != -1:
-            parse_animations.parse_animations(child, animations, joint_list)
         if child.tag.find("library_geometries") != -1:
             parse_meshes.parse_geometry(child, lib_controllers)
         if child.tag.find("library_materials") != -1:
             parse_materials.parse_materials(root, child)
+        if child.tag.find("library_animations") != -1:
+            parse_animations.parse_animations(child, animations, joint_list)
 
 #File Writers
 def write_scene_file():
@@ -273,25 +273,27 @@ def write_joint_file(filename):
     output.close()
 
 #entry
-for f in os.listdir(model_dir):
-    if f.find(".DAE") != -1:
+for root, dirs, files in os.walk(model_dir):
+    for file in files:
+        if file.endswith(".dae"):
+            joint_list = []
+            transform_list = []
+            parent_list = []
+            geometries = []
+            type_list = []
+            geom_attach_data_list = []
+            material_attach_data_list = []
+            material_symbol_list = []
+            node_name_list = []
+            animations = []
+            image_list = []
 
-        joint_list = []
-        transform_list = []
-        parent_list = []
-        geometries = []
-        type_list = []
-        geom_attach_data_list = []
-        material_attach_data_list = []
-        material_symbol_list = []
-        node_name_list = []
-        animations = []
-        image_list = []
+            f = os.path.join(root, file)
+            current_filename = f
+            helpers.current_filename = f
 
-        current_filename = f
-        helpers.current_filename = current_filename
+            print("converting model " + f)
+            parse_dae()
+            write_joint_file(file)
+            print("")
 
-        print("converting model " + current_filename)
-        parse_dae()
-        write_joint_file(f)
-        print("")

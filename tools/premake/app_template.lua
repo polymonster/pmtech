@@ -64,7 +64,7 @@ project ( project_name )
 		"../pen/include/" .. platform_dir,
 		"../pen/include/" .. renderer_dir,
 		"../put/include/",
-		"../pen/third_party/imgui/",
+		"../pen/third_party/",
 		
 		"include/"
 	}
