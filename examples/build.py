@@ -1,6 +1,7 @@
 import os
 import subprocess
 import os.path
+import sys
 
 #ios todo
 #python ../tools/project_ios/copy_files.py
@@ -9,49 +10,127 @@ import os.path
 
 tools_dir = os.path.join("..", "tools")
 
-print("please enter what you want to build")
-print("1. code projects")
-print("2. shaders")
-print("3. models")
-print("4. textures")
-print("5. audio")
-print("6. all")
-
-all_value = 6
-input_val = int(input())
-
 action_strings = ["code", "shaders", "models", "textures", "audio"]
+action_descriptions = ["generate projects and workspaces",
+                       "generate shaders and compile binaries",
+                       "make binary mesh and animation files",
+                       "compress textures and generate mips",
+                       "compress and convert audio to platorm format"]
 execute_actions = []
 
-add_all = False
+python_exec = ""
+shader_options = ""
+project_options = ""
 
-if input_val == all_value:
-    add_all = True
+platform = ""
+ide = ""
+renderer = ""
 
-for index in range(0,all_value-1):
-    if input_val-1 == index or add_all:
-        execute_actions.append(action_strings[index])
-
-#default win32
 premake_exec = os.path.join(tools_dir, "premake","premake5")
-python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
-project_options = "vs2015 --renderer=dx11"
-shader_options = "hlsl win32"
-
-if os.name == "posix":
-    python_exec = os.path.join(tools_dir, "bin", "python", "osx", "python3")
-    project_options = "xcode4 --renderer=opengl"
-    shader_options = "glsl osx"
-
 shader_script = os.path.join(tools_dir, "build_shaders.py")
 textures_script = os.path.join(tools_dir, "build_textures.py")
-audio_script =  os.path.join(tools_dir, "build_audio.py")
+audio_script = os.path.join(tools_dir, "build_audio.py")
 models_script = os.path.join(tools_dir, "build_models.py")
 
+
+def display_help():
+    print("--------pmtech build--------")
+    print("run with no arguments for prompted input")
+    print("commandline arguments")
+    print("\t-platform <osx, win32, ios>")
+    print("\t-ide <xcode4, vs2015, v2017>")
+    print("\t-renderer <dx11, opengl>")
+    print("\t-actions")
+    for i in range(0, len(action_strings)):
+        print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
+
+
+def parse_args(args):
+    global ide
+    global renderer
+    global platform
+    for index in range(0, len(sys.argv)):
+        if sys.argv[index] == "-help":
+            display_help()
+        if sys.argv[index] == "-platform":
+            platform = sys.argv[index+1]
+            index += 1
+        if sys.argv[index] == "-ide":
+            ide = sys.argv[index+1]
+            index += 1
+        if sys.argv[index] == "-renderer":
+            ide = sys.argv[index+1]
+            index += 1
+        elif sys.argv[index] == "-actions":
+            for j in range(index+1, len(sys.argv)):
+                if "-" not in sys.argv[j]:
+                    execute_actions.append(sys.argv[j])
+                else:
+                    break
+
+
+def get_platform_info():
+    global ide
+    global renderer
+    global platform
+    global python_exec
+    global shader_options
+    global project_options
+
+    if os.name == "posix":
+        if ide == "":
+            ide = "xcode4"
+        if renderer == "":
+            renderer = "opengl"
+        python_exec = os.path.join(tools_dir, "bin", "python", "osx", "python3")
+    else:
+        if ide == "":
+            ide = "vs2017"
+        if renderer == "":
+            renderer = "dx11"
+        python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
+
+    extra_target_info = ""
+    if platform == "ios":
+       extra_target_info = "--xcode_target=ios"
+
+    project_options = ide + " --renderer=" + renderer + " " + extra_target_info
+
+    if renderer == "dx11":
+        shader_options = "hlsl win32"
+    elif renderer == "opengl":
+        shader_options = "glsl osx"
+
+if len(sys.argv) <= 1:
+    print("please enter what you want to build")
+    print("1. code projects")
+    print("2. shaders")
+    print("3. models")
+    print("4. textures")
+    print("5. audio")
+    print("6. all")
+    print("0. show full command line options")
+
+    all_value = 6
+    input_val = int(input())
+
+    if input_val==0:
+        display_help()
+
+    add_all = False
+
+    if input_val == all_value:
+        add_all = True
+
+    for index in range(0,all_value-1):
+        if input_val-1 == index or add_all:
+            execute_actions.append(action_strings[index])
+else:
+    parse_args(sys.argv)
+
+get_platform_info()
+
 build_steps = []
-
-print(execute_actions)
-
 for action in execute_actions:
     if action == "code":
         build_steps.append(premake_exec + " " + project_options)
