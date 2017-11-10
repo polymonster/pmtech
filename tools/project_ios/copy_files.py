@@ -33,9 +33,9 @@ for app in app_list:
     cleaned_app_list.append(new_str)
 
 for app in cleaned_app_list:
-    ios_files_path = (solution_dir + "/" + app + "/ios_files")
+    ios_files_path = os.path.join(solution_dir, "build", "ios", "ios_files")
     if not os.path.exists(ios_files_path):
-        print("copy ios files for " + app )
+        print("copy ios files for " + app)
         shutil.copytree("../tools/project_ios/ios_files", ios_files_path)
 
 

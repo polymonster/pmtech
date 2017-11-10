@@ -11,6 +11,7 @@
 #include "layer_controller.h"
 #include "pmfx.h"
 #include "pen_json.h"
+#include "hash.h"
 
 pen::window_creation_params pen_window
 {
