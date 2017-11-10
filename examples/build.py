@@ -3,11 +3,6 @@ import subprocess
 import os.path
 import sys
 
-#ios todo
-#python ../tools/project_ios/copy_files.py
-#../tools/premake/premake5 xcode4 --renderer=opengl --xcode_target=ios
-#python ../tools/project_ios/set_xcode_target.py
-
 tools_dir = os.path.join("..", "tools")
 
 action_strings = ["code", "shaders", "models", "textures", "audio"]
@@ -17,6 +12,8 @@ action_descriptions = ["generate projects and workspaces",
                        "compress textures and generate mips",
                        "compress and convert audio to platorm format"]
 execute_actions = []
+extra_build_steps = []
+build_steps = []
 
 python_exec = ""
 shader_options = ""
@@ -92,7 +89,9 @@ def get_platform_info():
 
     extra_target_info = ""
     if platform == "ios":
-       extra_target_info = "--xcode_target=ios"
+        extra_target_info = "--xcode_target=ios"
+        extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "copy_files.py"))
+        extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "set_xcode_target.py"))
 
     project_options = ide + " --renderer=" + renderer + " " + extra_target_info
 
@@ -130,7 +129,6 @@ else:
 
 get_platform_info()
 
-build_steps = []
 for action in execute_actions:
     if action == "code":
         build_steps.append(premake_exec + " " + project_options)
@@ -145,6 +143,11 @@ for action in execute_actions:
 
 for step in build_steps:
     subprocess.check_call(step, shell=True)
+
+for step in extra_build_steps:
+    subprocess.check_call(step, shell=True)
+
+
 
 
 

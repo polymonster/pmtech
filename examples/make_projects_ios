@@ -1,5 +1,0 @@
-#!/bin/bash
-cd "$(dirname "${BASH_SOURCE[0]}")"
-python ../tools/project_ios/copy_files.py
-../tools/premake/premake5 xcode4 --renderer=opengl --xcode_target=ios
-python ../tools/project_ios/set_xcode_target.py
