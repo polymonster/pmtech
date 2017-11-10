@@ -1,0 +1,3 @@
+#!/bin/bash
+cd "$(dirname "${BASH_SOURCE[0]}")"
+../tools/bin/python/osx/python3 build.py
