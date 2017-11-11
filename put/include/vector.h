@@ -115,20 +115,20 @@ public:
     ~vec3f()					{ }
     
     inline vec3f operator =  (const vec3f &v ) {x = v.x, y = v.y, z = v.z; return (*this ); }
-    inline bool  operator == (const vec3f &v ) { return( x==v.x && y==v.y && z==v.z); }
-    inline bool	 operator != (const vec3f &v ) { return( x!=v.x || y!=v.y || z!=v.z); }
-    inline vec3f operator +  (const vec3f &v ) { vec3f result(x + v.x, y + v.y, z + v.z); return ( result ); }
-    inline vec3f operator -  (const vec3f &v ) { vec3f result(x - v.x, y - v.y, z - v.z); return ( result ); }
-    inline vec3f operator *  (const f32 &a   ) { vec3f result(x * a, y * a, z * a); return ( result ); }
-    inline vec3f operator *  (const vec3f &v ) { vec3f result(x * v.x, y * v.y, z * v.z); return ( result ); }
-    inline vec3f operator /  (const f32 &a   )
+    inline bool  operator == (const vec3f &v ) const { return( x==v.x && y==v.y && z==v.z); }
+    inline bool	 operator != (const vec3f &v ) const { return( x!=v.x || y!=v.y || z!=v.z); }
+    inline vec3f operator +  (const vec3f &v ) const { vec3f result(x + v.x, y + v.y, z + v.z); return ( result ); }
+    inline vec3f operator -  (const vec3f &v ) const { vec3f result(x - v.x, y - v.y, z - v.z); return ( result ); }
+    inline vec3f operator *  (const f32 &a   ) const { vec3f result(x * a, y * a, z * a); return ( result ); }
+    inline vec3f operator *  (const vec3f &v ) const { vec3f result(x * v.x, y * v.y, z * v.z); return ( result ); }
+    inline vec3f operator /  (const f32 &a   ) const
     {
         f32 one_over_a = 1.0f / a;
         vec3f result(x * one_over_a, y * one_over_a, z * one_over_a);
         return ( result );
     }
     
-    inline vec3f operator / (const vec3f &v )
+    inline vec3f operator / (const vec3f &v ) const
     {
         vec3f result(x / v.x, y / v.y, z / v.z);
         
@@ -293,14 +293,58 @@ public:
     }
     
     inline static vec4f zero() 
-    { 
-        vec4f v(0.0f,0.0f,0.0f,0.0f);
-        return v;
+    {
+        return vec4f(0.0f,0.0f,0.0f,0.0f);
+    }
+    
+    inline static vec4f one()
+    {
+        return vec4f (1.0f, 1.0f, 1.0f, 1.0);;
     }
     
     inline vec3f xyz()
     {
         return vec3f( x, y, z );
+    }
+    
+    inline static vec4f yellow()
+    {
+        return vec4f( 1.0f, 1.0f, 0.0f, 1.0f );
+    }
+    
+    inline static vec4f cyan()
+    {
+        return vec4f( 0.0f, 1.0f, 1.0f, 1.0f );
+    }
+    
+    inline static vec4f magenta()
+    {
+        return vec4f( 1.0f, 0.0f, 1.0f, 1.0f );
+    }
+    
+    inline static vec4f red()
+    {
+        return vec4f( 1.0f, 0.0f, 0.0f, 1.0f );
+    }
+    
+    inline static vec4f green()
+    {
+        return vec4f( 0.0f, 1.0f, 0.0f, 1.0f );
+    }
+    
+    inline static vec4f blue()
+    {
+        return vec4f( 0.0f, 0.0f, 1.0f, 1.0f );
+    }
+    
+    inline static vec4f black()
+    {
+        return vec4f::zero();
+    }
+    
+    inline static vec4f white()
+    {
+        return vec4f::one();
     }
 } vec4f;
 

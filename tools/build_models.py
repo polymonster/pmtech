@@ -19,7 +19,6 @@ transform_types = ["translate", "rotate"]
 print("processing directory: " + model_dir + "\n")
 
 #create models dir
-print(helpers.build_dir)
 if not os.path.exists(helpers.build_dir):
     os.makedirs(helpers.build_dir)
 
@@ -299,8 +298,6 @@ for root, dirs, files in os.walk(model_dir):
 
             sub_dir = root[int(assets_pos):int(len(root))]
 
-            print(helpers.build_dir)
-
             out_dir = os.path.join(helpers.build_dir, sub_dir, fnoext)
 
             if not os.path.exists(out_dir):
@@ -310,9 +307,6 @@ for root, dirs, files in os.walk(model_dir):
             current_filename = file
             helpers.current_filename = file
             helpers.build_dir = out_dir
-
-            print(sub_dir)
-            print(out_dir)
 
             print("converting model " + f)
             parse_dae()

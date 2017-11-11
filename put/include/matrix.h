@@ -58,20 +58,21 @@ typedef struct mat4
     mat4    inverse4x4();
     f32     determinant4x4();
     
-    vec3f   get_translation();
-    mat4    get_orientation();
-    vec3f   get_right( );
-    vec3f   get_up( );
-    vec3f   get_fwd( );
+    vec3f   get_translation() const;
+    mat4    get_orientation() const;
+    vec3f   get_right( ) const;
+    vec3f   get_up( ) const;
+    vec3f   get_fwd( ) const;
     
     void set_vectors( vec3f right, vec3f up, vec3f at, vec3f pos );
     
     void set_matrix_from_raw(f32 *entries);
     
     //multiplication / transformation
-    vec3f homogeneous_multiply(vec3f v, f32 *w);
-    vec3f operator *(const vec3f &p);
-    mat4 operator *(const mat4 &b);
+    vec3f homogeneous_multiply(vec3f v, f32 *w) const;
+    vec3f operator *(const vec3f &p) const;
+    mat4 operator *(const mat4 &b) const;
+    
     void multiply_by_scalar(f32 value);
     
 } mat4;

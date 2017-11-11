@@ -103,7 +103,7 @@ void update_model_view(put::layer* layer)
     
     ces::scene_node_physics& snp = layer->view.scene->physics_data[layer->view.scene->selected_index];
     
-    put::dbg::add_line(snp.min_extents, snp.max_extents, vec3f( 1.0, 0.0, 1.0 ) );
+    put::dbg::add_aabb(snp.min_extents, snp.max_extents, vec4f::white() );
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -144,15 +144,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	main_layer.depth_stencil_state = handles.depth_stencil_state_write_less;
 	main_layer.raster_state = handles.raster_state_fill_cull_back;
 	main_layer.blend_state = handles.blend_disabled;
-    
-    
-    //debug json
-    pen::json j1 = pen::json::load_from_file("data/one.json");
-    pen::json j2 = pen::json::load_from_file("data/two.json");
-    
-    pen::json j3 = pen::json::combine(j1, j2);
-
-    PEN_PRINTF( j3.dumps().c_str() );
     
 	//add main layer to the viewer
 	put::layer_controller_add_layer(main_layer);

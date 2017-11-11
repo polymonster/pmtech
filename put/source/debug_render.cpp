@@ -16,8 +16,6 @@ namespace put
 	namespace dbg
 	{
 #define NUM_VERTEX_BUFFERS 2
-#define MAX_DEBUG_LINES_VERTS 2048
-#define MAX_DEBUG_FONT_VERTS 4096 * 8
 
 		u32 debug_lines_backbuffer_index = 0;
 		u32 debug_font_backbuffer_index = 0;
@@ -32,7 +30,7 @@ namespace put
 		u32 vb_lines;
 		u32 line_vert_count = 0;
 
-		vertex_debug_lines  debug_lines_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_LINES_VERTS];
+        vertex_debug_lines*  debug_lines_buffers[NUM_VERTEX_BUFFERS] = { 0 };
 		vertex_debug_lines *debug_lines_verts = NULL;
 
 		shader_program* debug_lines_program;
@@ -45,8 +43,11 @@ namespace put
 
 		u32 vb_font;
 		u32 font_vert_count = 0;
+        
+        u32 lines_buffer_size_in_verts = 0;
+        u32 font_buffer_size_in_verts = 0;
 
-		vertex_debug_font  debug_font_buffers[NUM_VERTEX_BUFFERS][MAX_DEBUG_FONT_VERTS];
+		vertex_debug_font*  debug_font_buffers[NUM_VERTEX_BUFFERS] = { 0 };
 		vertex_debug_font *debug_font_verts = NULL;
 
         pmfx_handle debug_lines_shader;
@@ -57,26 +58,112 @@ namespace put
             debug_lines_shader = pmfx::load("debug_lines");
             debug_font_shader = pmfx::load("debug_font");
 		}
+        
+        void release_lines_buffer()
+        {
+            pen::renderer_release_buffer(vb_lines);
+            
+            for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                delete[] debug_lines_buffers[i];
+        }
+        
+        void alloc_lines_buffer(u32 num_verts)
+        {
+            if( num_verts < lines_buffer_size_in_verts )
+                return;
+            
+            vertex_debug_lines*  prev_buffers[NUM_VERTEX_BUFFERS];
+            for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                prev_buffers[i] = debug_lines_buffers[i];
+            
+            u32 prev_vb = vb_lines;
+            u32 prev_size = sizeof(vertex_debug_lines) * lines_buffer_size_in_verts;
+            
+            lines_buffer_size_in_verts = num_verts + 2048;
+            
+            //debug lines buffer
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = sizeof(vertex_debug_lines) * lines_buffer_size_in_verts;
+            bcp.data = NULL;
+            
+            vb_lines = pen::renderer_create_buffer(bcp);
+            
+            for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                debug_lines_buffers[i] = new vertex_debug_lines[lines_buffer_size_in_verts];
+            
+            if( prev_buffers[0] )
+            {
+                for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                    pen::memory_cpy(debug_lines_buffers[i], debug_lines_verts, prev_size);
+                
+                for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                    delete[] prev_buffers[i];
+                
+                pen::renderer_release_buffer(prev_vb);
+            }
+            
+            debug_lines_verts = &debug_lines_buffers[debug_lines_backbuffer_index][0];
+        }
+        
+        void release_font_buffer()
+        {
+            pen::renderer_release_buffer(vb_font);
+            
+            for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                delete[] debug_font_buffers[i];
+        }
+        
+        void alloc_font_buffer(u32 num_verts)
+        {
+            if( num_verts < font_buffer_size_in_verts )
+                return;
+            
+            if(debug_font_buffers[0])
+                release_font_buffer();
+            
+            vertex_debug_font*  prev_buffers[NUM_VERTEX_BUFFERS];
+            for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                prev_buffers[i] = debug_font_buffers[i];
+            
+            u32 prev_vb = vb_lines;
+            u32 prev_size = sizeof(vertex_debug_font) * font_buffer_size_in_verts;
+            
+            font_buffer_size_in_verts = num_verts + 2048;
+            
+            //debug lines buffer
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = sizeof(vertex_debug_font) * font_buffer_size_in_verts;
+            bcp.data = NULL;
+            
+            vb_font = pen::renderer_create_buffer(bcp);
+            
+            for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                debug_font_buffers[i] = new vertex_debug_font[num_verts];
+            
+            if( prev_buffers[0] )
+            {
+                for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                    pen::memory_cpy(debug_font_buffers[i], debug_font_verts, prev_size);
+                
+                for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
+                    delete[] prev_buffers[i];
+                
+                pen::renderer_release_buffer(prev_vb);
+            }
+            
+            debug_font_verts = &debug_font_buffers[debug_font_backbuffer_index][0];
+        }
 
 		void create_buffers()
 		{
-			//debug lines buffer
-			pen::buffer_creation_params bcp;
-			bcp.usage_flags = PEN_USAGE_DYNAMIC;
-			bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
-			bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-			bcp.buffer_size = sizeof(vertex_debug_lines) * MAX_DEBUG_LINES_VERTS;
-			bcp.data = NULL;
-
-			vb_lines = pen::renderer_create_buffer(bcp);
-
-			debug_lines_verts = &debug_lines_buffers[debug_lines_backbuffer_index][0];
-
-			bcp.buffer_size = sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS;
-
-			vb_font = pen::renderer_create_buffer(bcp);
-
-			debug_font_verts = &debug_font_buffers[debug_font_backbuffer_index][0];
+            alloc_lines_buffer(10);
+            alloc_font_buffer(10);
 		}
 
 		void init()
@@ -87,12 +174,13 @@ namespace put
 
 		void shutdown()
 		{
-
+            release_font_buffer();
+            release_lines_buffer();
 		}
 
 		void render_3d(u32 cb_3dview)
 		{
-			pen::renderer_update_buffer(vb_lines, &debug_lines_verts[0], sizeof(vertex_debug_lines) * MAX_DEBUG_LINES_VERTS);
+			pen::renderer_update_buffer(vb_lines, &debug_lines_verts[0], sizeof(vertex_debug_lines) * line_vert_count);
 
             pmfx::set_technique(debug_lines_shader, 0);
 
@@ -116,7 +204,7 @@ namespace put
 
 		void render_2d()
 		{
-			pen::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * MAX_DEBUG_FONT_VERTS);
+			pen::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * font_vert_count);
 
 			//bind vertex layout
             pmfx::set_technique(debug_font_shader, 0);
@@ -135,7 +223,7 @@ namespace put
 			debug_font_verts = &debug_font_buffers[debug_font_backbuffer_index][0];
 		}
 
-		void add_text_2f(f32 x, f32 y, const pen::viewport& vp, vec4f colour, const c8* format, ...)
+		void add_text_2f(const f32 x, const f32 y, const pen::viewport& vp, const vec4f& colour, const c8* format, ...)
 		{
 			va_list va;
 			va_start(va, format);
@@ -154,14 +242,10 @@ namespace put
 
 			u32 start_vertex = font_vert_count;
 
-			if (font_vert_count + num_quads * 6 >= MAX_DEBUG_FONT_VERTS)
-			{
-				//bail out as we have ran out of buffer
-				return;
-			}
-
 			f32 recipricol_width = 1.0f / (vp.width - vp.x);
 			f32 recipricol_height = 1.0f / (vp.height - vp.y);
+            
+            alloc_font_buffer(font_vert_count + num_quads*6);
 
 			for (u32 i = 0; i < num_quads; ++i)
 			{
@@ -219,8 +303,10 @@ namespace put
 			}
 		}
 
-		void add_line(vec3f start, vec3f end, vec3f col)
+		void add_line(const vec3f& start, const vec3f& end, const vec4f& col)
 		{
+            alloc_lines_buffer(line_vert_count + 2);
+            
 			debug_lines_verts[line_vert_count].x = start.x;
 			debug_lines_verts[line_vert_count].y = start.y;
 			debug_lines_verts[line_vert_count].z = start.z;
@@ -241,8 +327,114 @@ namespace put
 
 			line_vert_count += 2;
 		}
+        
+        void add_aabb(const vec3f &min, const vec3f& max, const vec4f& col )
+        {
+            alloc_lines_buffer(line_vert_count + 24);
+            
+            //sides
+            //
+            debug_lines_verts[line_vert_count + 0].x = min.x;
+            debug_lines_verts[line_vert_count + 0].y = min.y;
+            debug_lines_verts[line_vert_count + 0].z = min.z;
+            
+            debug_lines_verts[line_vert_count + 1].x = min.x;
+            debug_lines_verts[line_vert_count + 1].y = max.y;
+            debug_lines_verts[line_vert_count + 1].z = min.z;
+            
+            //
+            debug_lines_verts[line_vert_count + 2].x = max.x;
+            debug_lines_verts[line_vert_count + 2].y = min.y;
+            debug_lines_verts[line_vert_count + 2].z = min.z;
+            
+            debug_lines_verts[line_vert_count + 3].x = max.x;
+            debug_lines_verts[line_vert_count + 3].y = max.y;
+            debug_lines_verts[line_vert_count + 3].z = min.z;
+            
+            //
+            debug_lines_verts[line_vert_count + 4].x = max.x;
+            debug_lines_verts[line_vert_count + 4].y = min.y;
+            debug_lines_verts[line_vert_count + 4].z = max.z;
+            
+            debug_lines_verts[line_vert_count + 5].x = max.x;
+            debug_lines_verts[line_vert_count + 5].y = max.y;
+            debug_lines_verts[line_vert_count + 5].z = max.z;
+            
+            //
+            debug_lines_verts[line_vert_count + 6].x = min.x;
+            debug_lines_verts[line_vert_count + 6].y = min.y;
+            debug_lines_verts[line_vert_count + 6].z = max.z;
+            
+            debug_lines_verts[line_vert_count + 7].x = min.x;
+            debug_lines_verts[line_vert_count + 7].y = max.y;
+            debug_lines_verts[line_vert_count + 7].z = max.z;
+            
+            //top and bottom
+            s32 cur_offset = line_vert_count + 8;
+            f32 y[2] = { min.y, max.y };
+            for( s32 i = 0; i < 2; ++i)
+            {
+                //
+                debug_lines_verts[cur_offset].x = min.x;
+                debug_lines_verts[cur_offset].y = y[i];
+                debug_lines_verts[cur_offset].z = min.z;
+                cur_offset++;
+                
+                debug_lines_verts[cur_offset].x = max.x;
+                debug_lines_verts[cur_offset].y = y[i];
+                debug_lines_verts[cur_offset].z = min.z;
+                cur_offset++;
+                
+                //
+                debug_lines_verts[cur_offset].x = min.x;
+                debug_lines_verts[cur_offset].y = y[i];
+                debug_lines_verts[cur_offset].z = min.z;
+                cur_offset++;
+                
+                debug_lines_verts[cur_offset].x = min.x;
+                debug_lines_verts[cur_offset].y = y[i];
+                debug_lines_verts[cur_offset].z = max.z;
+                cur_offset++;
+                
+                //
+                debug_lines_verts[cur_offset].x = max.x;
+                debug_lines_verts[cur_offset].y = y[i];
+                debug_lines_verts[cur_offset].z = max.z;
+                cur_offset++;
+                
+                debug_lines_verts[cur_offset].x = min.x;
+                debug_lines_verts[cur_offset].y = y[i];
+                debug_lines_verts[cur_offset].z = max.z;
+                cur_offset++;
+                
+                //
+                debug_lines_verts[cur_offset].x = max.x;
+                debug_lines_verts[cur_offset].y = y[i];
+                debug_lines_verts[cur_offset].z = max.z;
+                cur_offset++;
+                
+                debug_lines_verts[cur_offset].x = max.x;
+                debug_lines_verts[cur_offset].y = y[i];
+                debug_lines_verts[cur_offset].z = min.z;
+                cur_offset++;
+            }
+            
+            //fill in defaults
+            u32 num_verts = cur_offset = line_vert_count;
+            for( s32 i = 0; i < num_verts; ++i )
+            {
+                debug_lines_verts[line_vert_count + i].w = 1.0;
+                
+                debug_lines_verts[line_vert_count + i].r = col.x;
+                debug_lines_verts[line_vert_count + i].g = col.y;
+                debug_lines_verts[line_vert_count + i].b = col.z;
+                debug_lines_verts[line_vert_count + i].a = col.w;
+            }
+            
+            line_vert_count += num_verts;
+        }
 
-		void add_line_transform(vec3f &start, vec3f &end, const vec3f &col, mat4 *matrix)
+		void add_line_transform(const vec3f &start, const vec3f &end, const mat4 *matrix, const vec4f &col )
 		{
 			f32 w = 1.0f;
 			vec3f transformed_s = matrix->homogeneous_multiply(start, &w);
@@ -251,13 +443,12 @@ namespace put
 			vec3f transformed_e = matrix->homogeneous_multiply(end, &w);
 
 			dbg::add_line(transformed_s, transformed_e, col);
-
-			start = transformed_s;
-			end = transformed_e;
 		}
 
-		void add_coord_space(mat4 mat, f32 size)
+		void add_coord_space(const mat4& mat, const f32 size)
 		{
+            alloc_lines_buffer(line_vert_count + 6);
+            
 			vec3f pos = mat.get_translation();
 
 			for (u32 i = 0; i < 3; ++i)
@@ -284,8 +475,10 @@ namespace put
 			}
 		}
 
-		void add_point(vec3f point, f32 size, vec3f col)
+		void add_point(const vec3f& point, f32 size, vec3f col)
 		{
+            alloc_lines_buffer(line_vert_count + 12);
+            
 			vec3f units[6] =
 			{
 				vec3f(-1.0f, 0.0f, 0.0f),
@@ -322,8 +515,10 @@ namespace put
 			}
 		}
 
-		void add_grid(vec3f centre, vec3f size, vec3f divisions)
+		void add_grid(const vec3f& centre, const vec3f& size, const vec3f& divisions)
 		{
+            alloc_lines_buffer(line_vert_count + divisions.x*2 + divisions.z*2);
+            
 			vec3f start = centre - size * 0.5f;
 			vec3f division_size = size / divisions;
 
@@ -386,8 +581,10 @@ namespace put
 			}
 		}
 
-		void add_line2f(vec2f start, vec2f end, vec3f colour)
+		void add_line_2f(const vec2f& start, const vec2f& end, const vec4f&  colour)
 		{
+            alloc_lines_buffer(line_vert_count + 2);
+            
 			debug_lines_verts[line_vert_count].x = start.x;
 			debug_lines_verts[line_vert_count].y = start.y;
 			debug_lines_verts[line_vert_count].z = 0.0f;
@@ -409,8 +606,10 @@ namespace put
 			line_vert_count += 2;
 		}
 
-		void add_point_2f(vec2f pos, vec3f colour)
+		void add_point_2f(const vec2f& pos, const vec4f& colour)
 		{
+            alloc_lines_buffer(line_vert_count + 8);
+            
 			const f32 size = 2.0f;
 
 			u32 starting_line_vert_count = line_vert_count;
@@ -472,8 +671,10 @@ namespace put
 			}
 		}
 
-		void add_quad_2f(vec2f pos, vec2f size, vec3f colour)
+		void add_quad_2f(const vec2f& pos, const vec2f& size, const vec4f& colour)
 		{
+            alloc_lines_buffer(line_vert_count + 6);
+            
 			//calc pos in NDC space
 			vec2f ndc_pos = pos;
 			ndc_pos.x /= pen_window.width;

@@ -56,6 +56,7 @@ class geometry_mesh:
     controller = None
 
     semantic_ids = ["POSITION", "NORMAL", "TEXCOORD0", "TEXCOORD1", "TEXTANGENT1", "TEXBINORMAL1", "BLENDINDICES", "BLENDWEIGHTS"]
+    required_elements = [True, True, True, True, True, True, False, False]
     vertex_elements = []
 
     def get_element_stream(self,sem_id):
@@ -207,52 +208,56 @@ def generate_vertex_buffer(mesh):
                 write_vertex_data(p + int(v.offsets[s]), v.source_ids[s], v.semantic_ids[s], mesh)
         p += index_stride
 
-    #interleave streams
-    num_verts = len(mesh.vertex_elements[0].float_values)
+    # interleave streams
+    num_floats = len(mesh.vertex_elements[0].float_values)
 
     for stream in mesh.vertex_elements:
         stream_len = len(stream.float_values)
-        if stream_len != num_verts and stream_len > 0:
+        if stream_len != num_floats and stream_len > 0:
             print("error mismatched vertex size : ")
-            print(stream.semantic_id + " is " + str(stream_len) + " should be " + str(num_verts))
+            print(stream.semantic_id + " is " + str(stream_len) + " should be " + str(num_floats))
 
-    for i in range(0, num_verts, 4):
+    # pad out required streams
+    for i in range(0, len(mesh.semantic_ids)):
+        if len(mesh.vertex_elements[i].float_values) == 0 and mesh.required_elements[i]:
+            for j in range(0, num_floats):
+                mesh.vertex_elements[i].float_values.append(0.0)
+
+    for i in range(0, num_floats, 4):
         for f in range(0, 4, 1):
-            #write vertex always
+            # write vertex always
             mesh.vertex_buffer.append(mesh.vertex_elements[0].float_values[i+f])
-        if len(mesh.vertex_elements[1].float_values) == num_verts:
-            #write normal
+        if len(mesh.vertex_elements[1].float_values) == num_floats:
+            # write normal
             for f in range(0, 4, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[1].float_values[i+f])
-        if len(mesh.vertex_elements[2].float_values) == num_verts \
-                and len(mesh.vertex_elements[3].float_values) == num_verts:
-            #texcoord 0 and 1 packed
+        if len(mesh.vertex_elements[2].float_values) == num_floats \
+                and len(mesh.vertex_elements[3].float_values) == num_floats:
+            # texcoord 0 and 1 packed
             for f in range(0, 2, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[2].float_values[i+f])
             for f in range(0, 2, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[3].float_values[i+f])
-        elif len(mesh.vertex_elements[2].float_values) == num_verts:
+        elif len(mesh.vertex_elements[2].float_values) == num_floats:
             for f in range(0, 4, 1):
-                #texcoord 0
+                # texcoord 0
                 mesh.vertex_buffer.append(mesh.vertex_elements[2].float_values[i+f])
-        if len(mesh.vertex_elements[4].float_values) == num_verts:
-            #write textangent
+        if len(mesh.vertex_elements[4].float_values) == num_floats:
+            # write textangent
             for f in range(0, 4, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[4].float_values[i+f])
-        if len(mesh.vertex_elements[5].float_values) == num_verts:
-            #write texbinormal
+        if len(mesh.vertex_elements[5].float_values) == num_floats:
+            # write texbinormal
             for f in range(0, 4, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[5].float_values[i+f])
-        if len(mesh.vertex_elements[6].float_values) == num_verts:
-            #write blendindices
+        if len(mesh.vertex_elements[6].float_values) == num_floats:
+            # write blendindices
             for f in range(0, 4, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[6].float_values[i+f])
-                #print("index " + str(f) + " " + str(mesh.vertex_elements[6].float_values[i+f]))
-        if len(mesh.vertex_elements[7].float_values) == num_verts:
-            #write blendweights
+        if len(mesh.vertex_elements[7].float_values) == num_floats:
+            # write blendweights
             for f in range(0, 4, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[7].float_values[i+f])
-                #print("weight " + str(f) + " " + str(mesh.vertex_elements[7].float_values[i+f]))
 
 def generate_index_buffer(mesh):
     mesh.index_buffer = []
@@ -446,7 +451,6 @@ def write_geometry_file(geom_instance):
         output.write(struct.pack("i", (len(mesh.vertex_elements[0].float_values))))
         output.write(struct.pack("i", (len(mesh.vertex_buffer))))
 
-        print("ib length " + str(len(mesh.index_buffer)) )
         output.write(struct.pack("i", (len(mesh.index_buffer))))
         output.write(struct.pack("i", (len(mesh.collision_vertices))))
 
@@ -460,30 +464,10 @@ def write_geometry_file(geom_instance):
 
         output.write(struct.pack("i", int(skinned)))
 
-        print(len(mesh.collision_vertices))
-
         if skinned:
             helpers.write_corrected_4x4matrix(output,geom_instance.controller.bind_shape_matrix)
             output.write(struct.pack("i",len(geom_instance.controller.joint_bind_matrix)))
             helpers.write_corrected_4x4matrix(output,geom_instance.controller.joint_bind_matrix)
-
-        for i in range(0,4):
-            print(mesh.vertex_elements[0].float_values[i])
-        for i in range(0,4):
-            print(mesh.vertex_buffer[i])
-        for i in range(0,4):
-            print(mesh.index_buffer[i])
-
-        print(index_type)
-
-        print("pos_buffer_len")
-        print(len(mesh.vertex_elements[0].float_values))
-
-        print("vb len")
-        print(len(mesh.vertex_buffer))
-
-        print("colv len")
-        print(len(mesh.collision_vertices))
 
         for vertexfloat in mesh.vertex_elements[0].float_values:
             #position only buffer

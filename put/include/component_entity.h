@@ -244,6 +244,11 @@ namespace put
 		void					hide_node(u32 node_index, u32 remove_physics);
 		void					show_node(u32 node_index, u32 add_physics);
 		*/
+        
+        inline bool is_valid( u32 handle )
+        {
+            return handle != -1;
+        }
 	}
 }
 

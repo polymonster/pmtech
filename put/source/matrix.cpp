@@ -16,7 +16,7 @@ mat4 mat4::identity()
     return idm;
 }
 
-mat4 mat4::operator *(const mat4 &b)
+mat4 mat4::operator *(const mat4 &b) const
 {
     mat4 result;
     
@@ -43,7 +43,7 @@ mat4 mat4::operator *(const mat4 &b)
     return result;
 }
 
-vec3f mat4::operator *(const vec3f &v)
+vec3f mat4::operator *(const vec3f &v) const
 {
     vec3f result;
     
@@ -54,7 +54,7 @@ vec3f mat4::operator *(const vec3f &v)
     return result;
 }
 
-vec3f mat4::homogeneous_multiply(vec3f v, f32 *w)
+vec3f mat4::homogeneous_multiply(vec3f v, f32 *w) const
 {
     vec3f result;
     
@@ -229,12 +229,12 @@ void mat4::set_matrix_from_raw(f32 *entries)
     m[ 3] = entries[3]; m[ 7] = entries[7]; m[11] = entries[11]; m[15] = entries[15];
 }
 
-vec3f mat4::get_translation()
+vec3f mat4::get_translation() const
 {
     return vec3f(m[ 3],m[ 7],m[11]);
 }
 
-mat4 mat4::get_orientation()
+mat4 mat4::get_orientation() const
 {
     mat4 om = *this;
     
@@ -406,17 +406,17 @@ void mat4::set_vectors( vec3f right, vec3f up, vec3f at, vec3f pos )
     m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f;    m[15] = 1.0f;
 }
 
-vec3f mat4::get_right( )
+vec3f mat4::get_right( ) const
 {
     return vec3f( m[ 0 ], m[ 1 ], m[ 2 ] );
 }
 
-vec3f mat4::get_up( )
+vec3f mat4::get_up( ) const
 {
     return vec3f( m[ 4 ], m[ 5 ], m[ 6 ] );
 }
 
-vec3f mat4::get_fwd( )
+vec3f mat4::get_fwd( ) const
 {
     return vec3f( m[ 8 ], m[ 9 ], m[ 10 ] );
 }

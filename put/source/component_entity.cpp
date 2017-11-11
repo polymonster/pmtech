@@ -279,18 +279,7 @@ namespace put
 				bcp.data = (void*)p_reader;
 
 				p_geometries[submesh].position_buffer = pen::renderer_create_buffer(bcp);
-
-                for( int i = 0; i < 1; ++i )
-                {
-                    static c8 vert[64];
-                    
-                    f32* fff = (((f32*)bcp.data) + (i*4));
-                    
-                    pen::string_format(vert, 64, "%f, %f, %f, %f", fff[0], fff[1], fff[2], fff[3] );
-                    
-                    PEN_PRINTF(vert);
-                }
-                               
+        
 				p_reader += bcp.buffer_size / sizeof(f32);
 
 				bcp.buffer_size = vertex_size * num_verts;
@@ -298,19 +287,6 @@ namespace put
 
 				p_geometries[submesh].vertex_buffer = pen::renderer_create_buffer(bcp);
                 
-                for( int i = 0; i < 1; ++i )
-                {
-                    static c8 vert[64];
-                    
-                    if( skinned )
-                    {
-                        vertex_model_skinned* v = (vertex_model_skinned*)(((u8*)bcp.data) + (i*sizeof(vertex_model_skinned)));
-                        
-                        pen::string_format(vert, 64, "%f, %f, %f, %f", v->x, v->y, v->z, v->w );
-                        PEN_PRINTF(vert);
-                    }
-                }
-
 				p_reader += bcp.buffer_size / sizeof(u32);
 
 				if (0 /*skinned*/)
@@ -348,16 +324,6 @@ namespace put
 				p_geometries[submesh].num_indices = num_indices;
 				p_geometries[submesh].index_type = index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
 				p_geometries[submesh].index_buffer = pen::renderer_create_buffer(bcp);
-                
-                for( int i = 0; i < 1; i+=3 )
-                {
-                    static c8 index[64];
-                    
-                    u16* ii = (u16*)(((u8*)bcp.data) + (i*index_size));
-                    
-                    pen::string_format(index, 64, "%i, %i, %i", ii[0], ii[1], ii[2] );
-                    PEN_PRINTF(index);
-                }
 
 				p_reader += bcp.buffer_size / sizeof(u32);
 
@@ -901,7 +867,7 @@ namespace put
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
 					//set ib / vb
-                    s32 stride = scene->entities[n] & CMP_SKINNED ? sizeof(vertex_position) : sizeof(vertex_model);
+                    s32 stride = scene->entities[n] & CMP_SKINNED ? sizeof(vertex_model_skinned) : sizeof(vertex_model);
                     
 					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, stride, 0 );
 					pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
@@ -911,9 +877,9 @@ namespace put
 					{
 						for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
 						{
-							if (p_mat->texture_id[t])
+							if ( is_valid(p_mat->texture_id[t]) )
 							{
-								//pen::renderer_set_texture(p_mat->texture_id[t], put::layer_controller_built_in_handles().sampler_linear_wrap, t, PEN_SHADER_TYPE_PS );
+								pen::renderer_set_texture(p_mat->texture_id[t], put::layer_controller_built_in_handles().sampler_linear_wrap, t, PEN_SHADER_TYPE_PS );
 							}
 						}
 					}
