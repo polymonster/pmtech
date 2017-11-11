@@ -46,8 +46,8 @@ namespace put
 		{
 			u32		num_joints;
 			mat4	bind_shape_matirx;
-			mat4	joint_bind_matrices[25];
-			mat4	joint_matrices[25];
+			mat4	joint_bind_matrices[85];
+			mat4	joint_matrices[85];
 		};
 
 		struct scene_node_geometry
@@ -161,13 +161,13 @@ namespace put
 
 		struct vertex_model_skinned
 		{
-			f32 x, y, z, w;
-			f32 nx, ny, nz, nw;
-			f32 u, v, _u, _v;
-			f32 tx, ty, tz, tw;
-			f32 bx, by, bz, bw;
-			u32 i1, i2, i3, i4;
-			f32 w1, w2, w3, w4;
+			f32 x, y, z, w;         //16
+			f32 nx, ny, nz, nw;     //32
+			f32 u, v, _u, _v;       //48
+			f32 tx, ty, tz, tw;     //64
+			f32 bx, by, bz, bw;     //80
+			u32 i1, i2, i3, i4;     //96
+			f32 w1, w2, w3, w4;     //112
 		};
 
 		struct vertex_position

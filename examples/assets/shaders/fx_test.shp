@@ -19,6 +19,17 @@ struct vs_input
 	float4 bitangent	: TEXCOORD3;
 };
 
+struct vs_input_skinned
+{
+	float4 position	 		: POSITION;
+	float4 normal	 		: TEXCOORD0;
+	float4 texcoord	 		: TEXCOORD1;
+	float4 tangent	 		: TEXCOORD2;
+	float4 bitangent		: TEXCOORD3;
+	float4 blend_indices	: TEXCOORD4;
+	float4 blend_weights	: TEXCOORD5;
+};
+
 struct ps_output
 {
 	float4 colour : SV_Target;
@@ -46,6 +57,26 @@ declare_texture_samplers
 	TEXTURE_2D( specular_texture, 1 );
 	TEXTURE_2D( normal_texture, 2 );
 };
+
+vs_output vs_main_skinned( vs_input_skinned _input )
+{
+	vs_output _output;
+	
+	float4x4 wvp = mul( world_matrix, vp_matrix );
+
+	_output.position = mul( _input.position, wvp );
+	_output.world_pos = mul( _input.position, world_matrix );
+		
+	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+	
+	_output.normal = mul( _input.normal.xyz, rotation_matrix );
+	_output.tangent = mul( _input.tangent.xyz, rotation_matrix );
+	_output.bitangent = mul( _input.bitangent.xyz, rotation_matrix );
+	
+	_output.texcoord = float4( _input.texcoord.x, 1.0f - _input.texcoord.y, _input.texcoord.z, 1.0f - _input.texcoord.w );
+	
+    return _output;
+}
 
 vs_output vs_main( vs_input _input )
 {
@@ -85,6 +116,15 @@ ps_output ps_green( vs_output _input )
     return _output;
 }
 
+ps_output ps_yellow( vs_output _input ) 
+{	
+	ps_output _output;
+	
+	_output.colour = float4( 1.0, 1.0, 0.0, 1.0 );
+		
+    return _output;
+}
+
 pmfx:
 {
 	"magenta":
@@ -98,6 +138,13 @@ pmfx:
 	{
 		"vs": "vs_main",
 		"ps": "ps_green",
+		"blend_src": "src_alpha"
+	},
+	
+	"yellow_skinned":
+	{
+		"vs": "vs_main_skinned",
+		"ps": "ps_yellow",
 		"blend_src": "src_alpha"
 	}
 }

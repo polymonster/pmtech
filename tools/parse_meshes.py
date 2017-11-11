@@ -112,28 +112,25 @@ def write_source_float_channel(p, src, sem_id, mesh):
         #if sem_id == "POSITION" or sem_id == "NORMAL" or sem_id == "TEXTANGENT1" or sem_id == "TEXBINORMAL1":
 
         # correct cordspace
-        val_x = float(src.float_values[base_p + 0])
-        val_y = float(src.float_values[base_p + 1])
-        val_z = float(src.float_values[base_p + 2])
-        val_w = float(1.0)
+        vals = [0.0, 0.0, 0.0, 1.0]
 
-        if src.stride == 4:
-            val_w = float(src.float_values[base_p + 3])
+        for i in range(0, int(src.stride)):
+            vals[i] = float(src.float_values[base_p + i])
 
-        cval_x = val_x
-        cval_y = val_y
-        cval_z = val_z
+        cval_x = vals[0]
+        cval_y = vals[1]
+        cval_z = vals[2]
         if helpers.author == "Max" \
                 and sem_id.find("TEXCOORD") == -1 \
                 and sem_id.find("BLENDINDICES") == -1 \
                 and sem_id.find("BLENDWEIGHTS") == -1:
-            cval_x = val_x
-            cval_y = val_z
-            cval_z = val_y * -1.0
+            cval_x = vals[0]
+            cval_y = vals[2]
+            cval_z = vals[1] * -1.0
         stream.float_values.append(cval_x)
         stream.float_values.append(cval_y)
         stream.float_values.append(cval_z)
-        stream.float_values.append(val_w)
+        stream.float_values.append(vals[3])
 
 def grow_extents(p, src, mesh):
     base_p = int(p) * int(src.stride)
@@ -261,7 +258,6 @@ def generate_index_buffer(mesh):
     mesh.index_buffer = []
     vert_count = int(len(mesh.vertex_buffer)) / (int(4) * int(5))
     for i in range(0, int(vert_count), 3):
-        # mesh.index_buffer.append(i)
         mesh.index_buffer.append(i + 2)
         mesh.index_buffer.append(i + 1)
         mesh.index_buffer.append(i + 0)
@@ -316,17 +312,16 @@ def parse_mesh(node, tris, controller):
 def parse_controller(controller_root,geom_name):
     for contoller in controller_root.iter(schema + 'controller'):
         for skin in contoller.iter(schema + 'skin'):
-            if skin.get("source") == "#geom-" + geom_name:
+            skin_source = skin.get("source")
+            if skin_source == "#geom-" + geom_name or skin_source == "#" + geom_name:
                 sc = skin_controller()
                 for bs_node in contoller.iter(schema + 'bind_shape_matrix'):
                     sc.bind_shape_matrix = bs_node.text.split()
-
                 for src in skin.iter(schema + 'source'):
                     param_name = None
                     for param in src.iter(schema + 'param'):
                         param_name = param.get("name")
                         break
-
                     for names in src.iter(schema + 'Name_array'):
                         sc.joints_sid = names.text.split()
                     for floats in src.iter(schema + 'float_array'):
@@ -334,7 +329,6 @@ def parse_controller(controller_root,geom_name):
                             sc.weights = floats.text.split()
                         elif param_name == "TRANSFORM":
                             sc.joint_bind_matrix = floats.text.split()
-
                 for stream in skin.iter(schema + 'vertex_weights'):
                     for vcount in stream.iter(schema + 'vcount'):
                         sc.bones_per_vertex = vcount.text.split()
@@ -350,14 +344,14 @@ def parse_controller(controller_root,geom_name):
                 sc.vec4_indices.float_values = []
                 sc.vec4_weights.float_values = []
 
-                #print("write index start")
                 vpos = 0
                 for influences in sc.bones_per_vertex:
-                    indices = [0, 0, 0, 0]
-                    weights = [0.0, 0.0, 0.0, 0.0]
+                    indices = [0, 0, 0, 0, 0, 0, 0, 0]
+                    weights = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
                     strongest_index = 0
                     strongest_weight = 0.0
                     for i in range(0,int(influences),1):
+                        #print(str(i) + "/" + str(len(indices)) + " " + str(vpos) + "/" + str(len(sc.joint_weight_indices)))
                         indices[i] = sc.joint_weight_indices[vpos]
                         weight_index = sc.joint_weight_indices[vpos+1]
                         weights[i] = sc.weights[int(weight_index)]
@@ -413,8 +407,7 @@ def write_geometry_file(geom_instance):
     if (num_meshes == 0):
         return
 
-    [fnoext, fext] = os.path.splitext(helpers.current_filename)
-    out_file = os.path.join(helpers.build_dir, fnoext, geom_instance.name + ".pmg")
+    out_file = os.path.join(helpers.build_dir, geom_instance.name + ".pmg")
     out_file = out_file.lower()
 
     print("writing geometry file: " + out_file)
@@ -436,6 +429,7 @@ def write_geometry_file(geom_instance):
             collision_dynamic = 0
 
     for mat in geom_instance.materials:
+        print(mat)
         helpers.write_parsable_string(output, mat)
 
     for mesh in geom_instance.meshes:
@@ -451,6 +445,8 @@ def write_geometry_file(geom_instance):
         # write vb and ib
         output.write(struct.pack("i", (len(mesh.vertex_elements[0].float_values))))
         output.write(struct.pack("i", (len(mesh.vertex_buffer))))
+
+        print("ib length " + str(len(mesh.index_buffer)) )
         output.write(struct.pack("i", (len(mesh.index_buffer))))
         output.write(struct.pack("i", (len(mesh.collision_vertices))))
 
@@ -464,10 +460,30 @@ def write_geometry_file(geom_instance):
 
         output.write(struct.pack("i", int(skinned)))
 
+        print(len(mesh.collision_vertices))
+
         if skinned:
             helpers.write_corrected_4x4matrix(output,geom_instance.controller.bind_shape_matrix)
             output.write(struct.pack("i",len(geom_instance.controller.joint_bind_matrix)))
             helpers.write_corrected_4x4matrix(output,geom_instance.controller.joint_bind_matrix)
+
+        for i in range(0,4):
+            print(mesh.vertex_elements[0].float_values[i])
+        for i in range(0,4):
+            print(mesh.vertex_buffer[i])
+        for i in range(0,4):
+            print(mesh.index_buffer[i])
+
+        print(index_type)
+
+        print("pos_buffer_len")
+        print(len(mesh.vertex_elements[0].float_values))
+
+        print("vb len")
+        print(len(mesh.vertex_buffer))
+
+        print("colv len")
+        print(len(mesh.collision_vertices))
 
         for vertexfloat in mesh.vertex_elements[0].float_values:
             #position only buffer

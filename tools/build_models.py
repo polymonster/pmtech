@@ -19,6 +19,7 @@ transform_types = ["translate", "rotate"]
 print("processing directory: " + model_dir + "\n")
 
 #create models dir
+print(helpers.build_dir)
 if not os.path.exists(helpers.build_dir):
     os.makedirs(helpers.build_dir)
 
@@ -74,6 +75,7 @@ def parse_node(node, parent_node):
         if child.tag.find(schema+'instance_geometry') != -1 or child.tag.find(schema+'instance_controller') != -1:
             geom_attach_data = child.get('url')
             geom_attach_data = geom_attach_data.replace("-skin1", "")
+            geom_attach_data = geom_attach_data.replace("-skin", "")
             geom_attach_data = geom_attach_data.replace("#geom-", "")
             geom_attach_data = geom_attach_data.replace("#", "")
             node_type = 2
@@ -178,9 +180,7 @@ def write_scene_file():
     if(numjoints == 0):
         return
 
-    [fnoext, fext] = os.path.splitext(current_filename)
-
-    out_file = os.path.join(helpers.build_dir, fnoext, "scene.pms")
+    out_file = os.path.join(helpers.build_dir, "scene.pms")
     out_file = out_file.lower()
 
     print("writing scene file: " + out_file)
@@ -215,15 +215,13 @@ def write_scene_file():
 
     output.close()
 
-def write_joint_file(filename):
+def write_joint_file():
     #write out joints
     numjoints = len(joint_list)
     if(numjoints == 0):
         return
 
-    [fnoext, fext] = os.path.splitext(filename)
-
-    out_file = os.path.join(helpers.build_dir, fnoext, "joints.pms")
+    out_file = os.path.join(helpers.build_dir, "joints.pms")
     out_file = out_file.lower()
 
     print("writing joint file: " + out_file)
@@ -288,12 +286,36 @@ for root, dirs, files in os.walk(model_dir):
             animations = []
             image_list = []
 
+            [fnoext, fext] = os.path.splitext(file)
+
+            helpers.build_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "data", "models")
+
+            mesh_dir = "assets/mesh/"
+            assets_pos = root.find(mesh_dir)
+            if assets_pos == -1:
+                assets_pos = root.find("assets\\mesh\\")
+
+            assets_pos += len(mesh_dir)
+
+            sub_dir = root[int(assets_pos):int(len(root))]
+
+            print(helpers.build_dir)
+
+            out_dir = os.path.join(helpers.build_dir, sub_dir, fnoext)
+
+            if not os.path.exists(out_dir):
+                os.makedirs(out_dir)
+
             f = os.path.join(root, file)
-            current_filename = f
-            helpers.current_filename = f
+            current_filename = file
+            helpers.current_filename = file
+            helpers.build_dir = out_dir
+
+            print(sub_dir)
+            print(out_dir)
 
             print("converting model " + f)
             parse_dae()
-            write_joint_file(file)
+            write_joint_file()
             print("")
 

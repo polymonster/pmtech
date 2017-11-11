@@ -4,6 +4,7 @@ import os
 version_number = 1
 current_filename = ""
 author = ""
+log_level = "verbose"
 
 platform = "win32"
 if os.name == "posix":
@@ -12,6 +13,10 @@ if os.name == "posix":
 build_dir = os.path.join(os.getcwd(), "bin", platform, "data", "models")
 
 #helpers
+def log_message(msg):
+    if log_level != "silent":
+        print(msg)
+
 def write_parsable_string(output, str):
     str = str.lower()
     output.write(struct.pack("i", (len(str))))

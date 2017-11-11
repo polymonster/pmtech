@@ -25,8 +25,8 @@ namespace put
 #define FREE_COMPONENT_ARRAY( SCENE, COMPONENT ) pen::memory_free( SCENE->COMPONENT ); SCENE->COMPONENT = nullptr
 
 #define SCENE_DIR_MACRO "data/models/%s/scene.pms"
-#define GEOM_DIR_MACRO "data/models/%s/%s.pmg"
-#define MATERIAL_DIR_MACRO "data/models/%s/materials/%s.pmm"
+#define GEOM_DIR_MACRO "%s/%s.pmg"
+#define MATERIAL_DIR_MACRO "%s/materials/%s.pmm"
 
 		struct component_entity_scene_instance
 		{
@@ -167,6 +167,9 @@ namespace put
 			u32* p_reader = (u32*)mesh_file;
 			u32 version = *p_reader++;
 			u32 num_meshes = *p_reader++;
+            
+            if( version < 1 )
+                return;
 
 			u32 collision_mesh = 1;
 
@@ -264,6 +267,7 @@ namespace put
 
 				//all vertex data is written out as 4 byte ints
 				u32 num_verts = num_floats / (vertex_size / sizeof(u32));
+                u32 num_pos_verts = num_pos_floats / (sizeof(vertex_position) / sizeof(u32));
 
 				p_geometries[submesh].num_vertices = num_verts;
 
@@ -271,21 +275,45 @@ namespace put
 				bcp.usage_flags = PEN_USAGE_DEFAULT;
 				bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
 				bcp.cpu_access_flags = 0;
-				bcp.buffer_size = sizeof(vertex_position) * num_verts;
+				bcp.buffer_size = sizeof(vertex_position) * num_pos_verts;
 				bcp.data = (void*)p_reader;
 
 				p_geometries[submesh].position_buffer = pen::renderer_create_buffer(bcp);
 
+                for( int i = 0; i < 1; ++i )
+                {
+                    static c8 vert[64];
+                    
+                    f32* fff = (((f32*)bcp.data) + (i*4));
+                    
+                    pen::string_format(vert, 64, "%f, %f, %f, %f", fff[0], fff[1], fff[2], fff[3] );
+                    
+                    PEN_PRINTF(vert);
+                }
+                               
 				p_reader += bcp.buffer_size / sizeof(f32);
 
 				bcp.buffer_size = vertex_size * num_verts;
 				bcp.data = (void*)p_reader;
 
 				p_geometries[submesh].vertex_buffer = pen::renderer_create_buffer(bcp);
+                
+                for( int i = 0; i < 1; ++i )
+                {
+                    static c8 vert[64];
+                    
+                    if( skinned )
+                    {
+                        vertex_model_skinned* v = (vertex_model_skinned*)(((u8*)bcp.data) + (i*sizeof(vertex_model_skinned)));
+                        
+                        pen::string_format(vert, 64, "%f, %f, %f, %f", v->x, v->y, v->z, v->w );
+                        PEN_PRINTF(vert);
+                    }
+                }
 
 				p_reader += bcp.buffer_size / sizeof(u32);
 
-				if (skinned)
+				if (0 /*skinned*/)
 				{
 					//create an empty buffer for stream out
 					bcp.buffer_size = sizeof(vertex_model) * num_verts;
@@ -320,6 +348,16 @@ namespace put
 				p_geometries[submesh].num_indices = num_indices;
 				p_geometries[submesh].index_type = index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
 				p_geometries[submesh].index_buffer = pen::renderer_create_buffer(bcp);
+                
+                for( int i = 0; i < 1; i+=3 )
+                {
+                    static c8 index[64];
+                    
+                    u16* ii = (u16*)(((u8*)bcp.data) + (i*index_size));
+                    
+                    pen::string_format(index, 64, "%i, %i, %i", ii[0], ii[1], ii[2] );
+                    PEN_PRINTF(index);
+                }
 
 				p_reader += bcp.buffer_size / sizeof(u32);
 
@@ -401,6 +439,9 @@ namespace put
 
 			u32 version = *p_reader++;
 
+            if( version < 1 )
+                return;
+            
 			//diffuse
 			pen::memory_cpy(&p_mat->diffuse_rgb_shininess, p_reader, sizeof(vec4f));
 			p_reader += 4;
@@ -454,12 +495,10 @@ namespace put
 			void* scene_file;
 			u32   scene_file_size;
             
-            const c8* model_scene_name = (const c8*)pen::memory_alloc(256);
+            c8* model_scene_dir = (c8*)pen::memory_alloc(256);
             
             u32 name_length = pen::string_length(model_scene_file);
             u32 pos = name_length;
-            u32 start_pos = 0;
-            u32 end_pos = 0;
             
             c8 buf_char;
             while( 1 )
@@ -468,19 +507,12 @@ namespace put
                 
                 if( buf_char == '/' || buf_char == '\\' )
                 {
-                    if( end_pos == 0 )
-                    {
-                        end_pos = pos;
-                    }
-                    else
-                    {
-                        start_pos = pos;
-                        break;
-                    }
+                    break;
                 }
             }
 
-            pen::memory_cpy( (void*)model_scene_name, model_scene_file+start_pos+1, end_pos-start_pos-1);
+            pen::memory_cpy( (void*)model_scene_dir, model_scene_file, pos);
+            model_scene_dir[pos] = '\0';
             
 			pen_error err = pen::filesystem_read_file_to_buffer(model_scene_file, &scene_file, scene_file_size);
 
@@ -493,6 +525,9 @@ namespace put
 			u32* p_u32reader = (u32*)scene_file;
 			u32 version = *p_u32reader++;
 			u32 num_import_nodes = *p_u32reader++;
+            
+            if( version < 1 )
+                return;
 
 			u32 node_zero_offset = scene->num_nodes;
 			u32 current_node = node_zero_offset;
@@ -535,7 +570,7 @@ namespace put
 					for (u32 mat = 0; mat < num_meshes; ++mat)
 					{
 						c8 material_filename[128];
-						pen::string_format(&material_filename[0], 128, MATERIAL_DIR_MACRO, model_scene_name, p_material_names[mat]);
+						pen::string_format(&material_filename[0], 128, MATERIAL_DIR_MACRO, model_scene_dir, p_material_names[mat]);
 
 						load_material(material_filename, &p_materials[mat]);
 					}
@@ -638,7 +673,7 @@ namespace put
 					{
 						//load geom file
 						c8 filename[128];
-						pen::string_format(&filename[0], 128, GEOM_DIR_MACRO, model_scene_name, scene->geometry_names[current_node]);
+						pen::string_format(&filename[0], 128, GEOM_DIR_MACRO, model_scene_dir, scene->geometry_names[current_node]);
 
 						load_mesh(filename, p_geometries, p_physics, scene, current_node, (const c8**)p_material_symbols);
 					}
@@ -861,12 +896,14 @@ namespace put
                         pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
                     }
                     
-                    pmfx::set_technique( model_pmfx, 1 );
+                    pmfx::set_technique( model_pmfx, 2 );
                     
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
 					//set ib / vb
-					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, sizeof(vertex_model), 0 );
+                    s32 stride = scene->entities[n] & CMP_SKINNED ? sizeof(vertex_position) : sizeof(vertex_model);
+                    
+					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, stride, 0 );
 					pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
 
 					//set textures
@@ -876,7 +913,7 @@ namespace put
 						{
 							if (p_mat->texture_id[t])
 							{
-								pen::renderer_set_texture(p_mat->texture_id[t], put::layer_controller_built_in_handles().sampler_linear_wrap, t, PEN_SHADER_TYPE_PS );
+								//pen::renderer_set_texture(p_mat->texture_id[t], put::layer_controller_built_in_handles().sampler_linear_wrap, t, PEN_SHADER_TYPE_PS );
 							}
 						}
 					}
@@ -973,6 +1010,9 @@ namespace djscene
 		u32* p_reader = ( u32* ) mesh_file;
 		u32 version = *p_reader++;
 		u32 num_meshes = *p_reader++;
+        
+        if( version < 1 )
+            return;
 
 		scene_node_geometry* p_parent_geom = &g_scene_nodes.geometries[node_index];
 		scene_node_geometry* p_geom = p_parent_geom;
@@ -1217,6 +1257,9 @@ namespace djscene
 		u32* p_reader = ( u32* ) material_file;
 
 		u32 version = *p_reader++;
+        
+        if( version < 1 )
+            return;
 
 		//diffuse
 		pen::memory_cpy( &p_mat->diffuse_rgb_shininess, p_reader, sizeof(vec4f) );

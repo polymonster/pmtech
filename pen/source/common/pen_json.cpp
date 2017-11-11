@@ -599,9 +599,7 @@ namespace pen
         pen::memory_free(m_internal_object->data);
         pen::memory_free(m_internal_object->name);
         pen::memory_free(m_internal_object);
-        
-        m_internal_object->data = nullptr;
-        m_internal_object->name = nullptr;
+
         m_internal_object = nullptr;
     }
 }

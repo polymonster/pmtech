@@ -170,9 +170,7 @@ def parse_materials(dae_root, materials_root):
 def write_material_file(mat):
     #write out materials
 
-    [fnoext, fext] = os.path.splitext(helpers.current_filename)
-
-    materials_dir = os.path.join(helpers.build_dir, fnoext, "materials")
+    materials_dir = os.path.join(helpers.build_dir, "materials")
 
     out_file = os.path.join(materials_dir, mat.id + ".pmm")
     out_file = out_file.lower()

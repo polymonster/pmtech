@@ -19,22 +19,23 @@ extern void pen_gl_swap_buffers( );
 
 void gl_error_break( GLenum err )
 {
+    u32 a = 0;
     switch (err)
     {
         case GL_INVALID_ENUM:
-                //PEN_ASSERT(0);
+            a = 0;
             break;
         case GL_INVALID_VALUE:
-                //PEN_ASSERT(0);
+            a = 0;
             break;
         case GL_INVALID_OPERATION:
-                //PEN_ASSERT(0);
+            a = 0;
             break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:
-                //PEN_ASSERT(0);
+            a = 0;
             break;
         case GL_OUT_OF_MEMORY:
-                //PEN_ASSERT(0);
+            a = 0;
             break;
         default:
             break;
@@ -258,6 +259,7 @@ namespace pen
             char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
             
             glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]);
+            info_log_buf[info_log_length] = '\0';
             
             pen::string_output_debug(info_log_buf);
         }
@@ -493,15 +495,15 @@ namespace pen
             auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
             auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
             
-            for( auto program : shader_programs )
+            for( s32 i = 0; i < shader_programs.size(); ++i )
             {
-                if( program.vs == vs_handle && program.ps == ps_handle )
+                if( shader_programs[i].vs == vs_handle && shader_programs[i].ps == ps_handle )
                 {
-                    linked_program = &program;
+                    linked_program = &shader_programs[i];
                     break;
                 }
             }
-            
+        
             if( linked_program == nullptr )
             {
                 linked_program = link_program_internal(vs_handle, ps_handle);
@@ -631,13 +633,11 @@ namespace pen
         bind_state();
         
         //bind index buffer -this must always be re-bound
-        {
-            auto& res = resource_pool[g_bound_state.index_buffer].handle;
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
+        GLuint res = resource_pool[g_bound_state.index_buffer].handle;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
             
-            CHECK_GL_ERROR;
-        }
-        
+        CHECK_GL_ERROR;
+
         void* offset = (void*)(size_t)(start_index * 2);
         
         glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, base_vertex );
