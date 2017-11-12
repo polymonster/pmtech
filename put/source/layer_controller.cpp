@@ -2,12 +2,11 @@
 #include "entry_point.h"
 #include "component_entity.h"
 #include "dev_ui.h"
-#include "json.hpp"
 #include "debug_render.h"
+#include "pen_json.h"
 #include <string>
 #include <fstream>
 
-using json = nlohmann::json;
 
 extern pen::window_creation_params pen_window;
 
@@ -15,9 +14,9 @@ namespace put
 {
 	built_in_handles		k_built_in_handles;
 	std::vector<layer>		k_layers;
-	json					k_shader_debug_settings;
+    pen::json				k_shader_debug_settings;
 
-	std::vector<c8*>		k_shader_debug_names;
+	std::vector<const c8*>	k_shader_debug_names;
 	std::vector<s32>		k_shader_debug_indices;
 	static s32				k_shader_debug_selected = -1;
 
@@ -29,35 +28,34 @@ namespace put
 
 	void create_debug_shader_settings()
 	{
-		std::string dbg_shader_file = "data/shaders/";
-		dbg_shader_file += pen::renderer_get_shader_platform();
-		dbg_shader_file += "/debug_settings.json";
+		Str dbg_shader_file = "data/pmfx/";
+		dbg_shader_file.append(pen::renderer_get_shader_platform());
+		dbg_shader_file.append("/debug_settings.json");
+        
+        k_shader_debug_settings = pen::json::load_from_file(dbg_shader_file.c_str());
 
-		std::ifstream ifs(dbg_shader_file);
-
-		if (ifs)
-		{
-			k_shader_debug_settings = json::parse(ifs);
-			ifs.close();
-		}
-
-		k_shader_debug_names.push_back("None");
+        static const c8* none_str = "None";
+		k_shader_debug_names.push_back(none_str);
 		k_shader_debug_indices.push_back(-1);
+        
+        pen::json shader_settings = k_shader_debug_settings["debug_settings"];
+        s32 num_settings = shader_settings.size();
 
-		for (auto& setting : k_shader_debug_settings["debug_settings"])
-		{
-			const std::string& setting_name = setting["name"];
-
-			u32 len = setting_name.length();
-			c8* c_name = (c8*)pen::memory_alloc(setting_name.length() + 1);
-			pen::memory_cpy(c_name, setting_name.c_str(), setting_name.length());
-			c_name[len] = '\0';
-
-			k_shader_debug_names.push_back(c_name);
-
-			u32 setting_index = setting["index"];
-			k_shader_debug_indices.push_back(setting_index);
-		}
+        for( s32 i = 0; i < num_settings; ++i )
+        {
+            pen::json setting = shader_settings[i];
+            Str setting_name = setting["name"].as_str();
+            
+            u32 len = setting_name.length();
+            c8* c_name = (c8*)pen::memory_alloc(setting_name.length() + 1);
+            pen::memory_cpy(c_name, setting_name.c_str(), setting_name.length());
+            c_name[len] = '\0';
+            
+            k_shader_debug_names.push_back(c_name);
+            
+            u32 setting_index = setting["index"].as_u32();
+            k_shader_debug_indices.push_back(setting_index);
+        }
 	}
 
 	void create_built_in_blend_states()

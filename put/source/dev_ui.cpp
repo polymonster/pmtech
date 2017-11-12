@@ -1,11 +1,9 @@
 #include "pen.h"
 #include "dev_ui.h"
 #include "file_system.h"
-#include "json.hpp"
+#include "pen_json.h"
 #include <string>
 #include <fstream>
-
-using json = nlohmann::json;
 
 extern pen::window_creation_params pen_window;
 
@@ -13,21 +11,15 @@ namespace put
 {
 	namespace dev_ui
 	{
-		static json k_program_preferences;
-		static std::string k_program_prefs_filename;
+        static pen::json k_program_preferences;
+		static Str k_program_prefs_filename;
 
 		void load_program_preferences()
 		{
 			k_program_prefs_filename = pen_window.window_title;
-			k_program_prefs_filename += "_prefs.json";
+			k_program_prefs_filename.append("_prefs.json");
 
-			std::ifstream ifs(k_program_prefs_filename);
-
-			if (ifs)
-			{
-				k_program_preferences = json::parse(ifs);
-				ifs.close();
-			}
+            k_program_preferences = pen::json::load_from_file(k_program_prefs_filename.c_str());
 		}
 
 		void set_last_ued_directory(std::string& dir)
@@ -47,6 +39,8 @@ namespace put
 				formatted = formatted.substr(0, last_dir);
 			}
 
+            //todo
+            /*
 			k_program_preferences["last_used_directory"] = formatted;
 
 			std::ofstream ofs(k_program_prefs_filename);
@@ -54,6 +48,7 @@ namespace put
 			ofs << k_program_preferences.dump();
 
 			ofs.close();
+            */
 		}
 
 		const c8** get_last_used_directory(s32& directory_depth)
@@ -61,14 +56,14 @@ namespace put
 			static const s32 max_directory_depth = 32;
 			static c8* directories[max_directory_depth];
 
-			if (k_program_preferences.type() != json::value_t::null)
+			if (k_program_preferences.type() != JSMN_UNDEFINED)
 			{
-				json last_dir = k_program_preferences["last_used_directory"];
+                pen::json last_dir = k_program_preferences["last_used_directory"];
 
-				if (last_dir.type() != json::value_t::null)
+				if (last_dir.type() != JSMN_UNDEFINED)
 				{
-					std::string path = last_dir;
-
+					std::string path = last_dir.as_str().c_str();
+                    
 					s32 dir_pos = 0;
 					directory_depth = 0;
 					bool finished = false;

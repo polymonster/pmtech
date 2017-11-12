@@ -6,9 +6,6 @@
 #include "file_system.h"
 #include "renderer.h"
 #include "pen_string.h"
-#include "json.hpp"
-
-using json = nlohmann::json;
 
 namespace put
 {

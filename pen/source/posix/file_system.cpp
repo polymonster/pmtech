@@ -30,9 +30,11 @@ namespace pen
 
             buffer_size = ( u32 ) size;
 
-            *p_buffer = pen::memory_alloc( buffer_size );
+            *p_buffer = pen::memory_alloc( buffer_size+1 );
 
             fread( *p_buffer, 1, buffer_size, p_file );
+            
+            ((u8*)*p_buffer)[buffer_size] = '\0';
 
             fclose( p_file );
 

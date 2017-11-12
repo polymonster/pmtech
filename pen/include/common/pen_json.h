@@ -29,7 +29,7 @@ namespace pen
         
         json operator [] (const c8* name) const;
         json operator [] (const u32 index) const;
-        json operator = (const json& other) const;
+        json& operator = (const json& other);
         
         Str     as_str();
         u32     as_u32();
@@ -39,6 +39,7 @@ namespace pen
                 
     private:
         json_object* m_internal_object;
+        void copy( json* dst, const json& other );
     };
 }
 

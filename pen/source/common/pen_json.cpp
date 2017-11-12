@@ -248,6 +248,7 @@ namespace pen
     json_object get_object( json_object* jo, const c8* name, s32 index )
     {
         json_value jv;
+        jv.object.name = nullptr;
         
         enumerate_params ep =
         {
@@ -324,8 +325,6 @@ namespace pen
     //------------------------------------------------------------------------------
     //C++ API
     //------------------------------------------------------------------------------
-    
-
     json json::load_from_file( const c8* filename )
     {
         json new_json;
@@ -503,18 +502,20 @@ namespace pen
         
     }
     
-    json::json( const json& other )
+    void json::copy( json* dst, const json& other )
     {
-        m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
+        dst->m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
         //shallow copy defauly copy ctor
-        *m_internal_object = *other.m_internal_object;
+        *dst->m_internal_object = *other.m_internal_object;
         
         //deep copy take ownership of mem
         s32 data_size = string_length(other.m_internal_object->data);
-        m_internal_object->data = (c8*)memory_alloc(data_size);
-        pen::memory_cpy(m_internal_object->data, other.m_internal_object->data, data_size);
-     
+        
+        dst->m_internal_object->data = (c8*)memory_alloc(data_size+1);
+        pen::memory_cpy(dst->m_internal_object->data, other.m_internal_object->data, data_size);
+        dst->m_internal_object->data[data_size] = '\0';
+        
         if( other.m_internal_object->name )
         {
             s32 name_size = string_length(other.m_internal_object->name);
@@ -523,12 +524,16 @@ namespace pen
         }
     }
     
-    json json::operator = (const json& other ) const
+    json::json( const json& other )
     {
-        json new_json;
+        copy( this, other );
+    }
+    
+    json& json::operator = (const json& other )
+    {
+        copy( this, other );
         
-        new_json = json( other );
-        return new_json;
+        return *this;
     }
     
     Str json::as_str()

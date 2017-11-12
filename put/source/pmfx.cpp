@@ -6,11 +6,8 @@
 #include "file_system.h"
 #include "renderer.h"
 #include "pen_string.h"
-#include "json.hpp"
 #include "pen_json.h"
 #include "str/Str.h"
-
-using json = nlohmann::json;
 
 namespace put
 {
@@ -33,21 +30,21 @@ namespace put
         {
             const c8*       filename = nullptr;
             bool            invalidated = false;
-            json            info;
+            pen::json       info;
             u32             info_timestamp = 0;
             u32             num_techniques = 0;
             shader_program  techniques[max_techniques_per_fx] = { 0 };
         };
         std::vector<pmfx> s_pmfx_list;
         
-        shader_program load_shader_technique( const c8* fx_filename, json& j_techique, json& j_info )
+        shader_program load_shader_technique( const c8* fx_filename, pen::json& j_techique, pen::json& j_info )
         {
             shader_program program = { 0 };
             const c8* sfp = pen::renderer_get_shader_platform();
             
             //vertex shader
             c8* vs_file_buf = (c8*)pen::memory_alloc(256);
-            std::string vs_filename_str = j_techique["vs_file"];
+            Str vs_filename_str = j_techique["vs_file"].as_str();
             pen::string_format( vs_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, vs_filename_str.c_str() );
             
             pen::shader_load_params vs_slp;
@@ -68,7 +65,7 @@ namespace put
             
             //pixel shader
             c8* ps_file_buf = (c8*)pen::memory_alloc(256);
-            std::string ps_filename_str = j_techique["ps_file"];
+            Str ps_filename_str = j_techique["ps_file"].as_str();
             pen::string_format( ps_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str() );
             
             pen::shader_load_params ps_slp;
@@ -97,10 +94,10 @@ namespace put
             
             for (u32 i = 0; i < ilp.num_elements; ++i)
             {
-                json vj = j_techique["vs_inputs"][i];
+                pen::json vj = j_techique["vs_inputs"][i];
                 
-                u32 num_elements = vj["num_elements"];
-                u32 elements_size = vj["element_size"];
+                u32 num_elements = vj["num_elements"].as_u32();
+                u32 elements_size = vj["element_size"].as_u32();
                 
                 static const s32 float_formats[4] =
                 {
@@ -123,11 +120,11 @@ namespace put
                 if (elements_size == 1)
                     fomats = byte_formats;
                 
-                ilp.input_layout[i].semantic_index = vj["semantic_index"];
+                ilp.input_layout[i].semantic_index = vj["semantic_index"].as_u32();
                 ilp.input_layout[i].format = fomats[num_elements-1];
-                ilp.input_layout[i].semantic_name = &semantic_names[vj["semantic_id"]][0];
+                ilp.input_layout[i].semantic_name = &semantic_names[vj["semantic_id"].as_u32()][0];
                 ilp.input_layout[i].input_slot = 0;
-                ilp.input_layout[i].aligned_byte_offset = vj["offset"];
+                ilp.input_layout[i].aligned_byte_offset = vj["offset"].as_u32();
                 ilp.input_layout[i].input_slot_class = PEN_INPUT_PER_VERTEX;
                 ilp.input_layout[i].instance_data_step_rate = 0;
             }
@@ -147,10 +144,12 @@ namespace put
             link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
             
             u32 cc = 0;
-            
-            for( auto& cbuf : j_info["cbuffers"])
+            pen::json j_cbuffers = j_info["cbuffers"];
+            for( s32 i = 0; i < j_cbuffers.size(); ++i )
             {
-                std::string name_str = cbuf["name"];
+                pen::json cbuf = j_cbuffers[i];
+                Str name_str = cbuf["name"].as_str();
+                
                 u32 name_len = name_str.length();
                 
                 link_params.constants[cc].name = new c8[name_len+1];
@@ -159,16 +158,19 @@ namespace put
                 
                 link_params.constants[cc].name[name_len] = '\0';
                 
-                link_params.constants[cc].location = cbuf["location"];
+                link_params.constants[cc].location = cbuf["location"].as_u32();
                 
                 link_params.constants[cc].type = pen::CT_CBUFFER;
                 
                 cc++;
             }
             
-            for( auto& samplers : j_info["texture_samplers"])
+            pen::json j_samplers = j_info["texture_samplers"];
+            for( s32 i = 0; i < j_samplers.size(); ++i )
             {
-                std::string name_str = samplers["name"];
+                pen::json sampler = j_samplers[i];
+                
+                Str name_str = sampler["name"].as_str();
                 u32 name_len = name_str.length();
                 
                 link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len+1);
@@ -177,9 +179,9 @@ namespace put
                 
                 link_params.constants[cc].name[name_len] = '\0';
                 
-                link_params.constants[cc].location = samplers["location"];
+                link_params.constants[cc].location = sampler["location"].as_u32();
                 
-                static std::string sampler_type_names[] =
+                static Str sampler_type_names[] =
                 {
                     "TEXTURE_2D",
                     "TEXTURE_3D",
@@ -188,7 +190,7 @@ namespace put
                 
                 for( u32 i = 0; i < 3; ++i )
                 {
-                    if( samplers["type"] == sampler_type_names[i] )
+                    if( sampler["type"].as_str() == sampler_type_names[i] )
                     {
                         link_params.constants[cc].type = (pen::constant_type)i;
                         break;
@@ -247,8 +249,7 @@ namespace put
             
             new_pmfx.filename = filename;
             
-            std::ifstream ifs(info_file_buf);
-            new_pmfx.info = json::parse(ifs);
+            new_pmfx.info = pen::json::load_from_file(info_file_buf);
             
             u32 ts;
             pen_error err = pen::filesystem_getmtime(info_file_buf, ts);
@@ -257,13 +258,11 @@ namespace put
                 new_pmfx.info_timestamp = ts;
             }
             
-            //find num techiques
-            json techniques = new_pmfx.info["techniques"];
+            pen::json _techniques = new_pmfx.info["techniques"];
             
-            for( auto& t : techniques )
+            for( s32 i = 0; i < _techniques.size(); ++i )
             {
-                PEN_ASSERT( new_pmfx.num_techniques < max_techniques_per_fx );
-                
+                pen::json t = _techniques[i];
                 new_pmfx.techniques[new_pmfx.num_techniques++] = load_shader_technique( filename, t, new_pmfx.info );
             }
             
@@ -324,10 +323,14 @@ namespace put
                 }
                 else
                 {
-                    for (auto& file : pmfx_set.info["files"])
+                    pen::json files = pmfx_set.info["files"];
+                    
+                    s32 num_files = files.size();
+                    for( s32 i = 0; i < num_files; ++i )
                     {
-                        std::string fn = file["name"];
-                        u32 shader_ts = file["timestamp"];
+                        pen::json file = files[i];
+                        Str fn = file["name"].as_str();
+                        u32 shader_ts = file["timestamp"].as_u32();
                         u32 current_ts;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
                         
