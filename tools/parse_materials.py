@@ -5,7 +5,7 @@ import struct
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 image_list = []
 
-#Materials
+
 class library_image:
     id = ""
     filename = ""
@@ -13,6 +13,7 @@ class library_image:
     def __init__(self):
         id = ""
         filename = ""
+
 
 class texture_map:
     filename = ""
@@ -23,6 +24,7 @@ class texture_map:
         self.filename = ""
         self.wrap_u = ""
         self.wrap_v = ""
+
 
 class material:
     id = ""
@@ -45,7 +47,6 @@ class material:
         self.normal_map = None
 
 
-#Material
 def parse_library_images(library_node):
     print("Image Library")
     for img_node in library_node.iter(schema+'image'):
@@ -85,6 +86,7 @@ def parse_library_images(library_node):
             image_list.append(lib_img)
             break
 
+
 def parse_texture(tex_node):
     tex = texture_map()
     print("finding texture " + tex_node.get("texture") )
@@ -93,6 +95,7 @@ def parse_texture(tex_node):
             tex.filename = lib_img.filename
             break
     return tex
+
 
 def parse_light_component(component_node):
     tex = None
@@ -104,6 +107,7 @@ def parse_light_component(component_node):
         tex = parse_texture(tex_node)
 
     return col, tex
+
 
 def parse_effect(effect):
     output_material = material()
@@ -132,11 +136,9 @@ def parse_effect(effect):
         for tex_node in bump.iter(schema+'texture'):
             output_material.normal_map = parse_texture(tex_node)
 
-    #print(output_material.diffuse_colour)
     if output_material.diffuse_map:
         print(output_material.diffuse_map.filename)
 
-    #print(output_material.specular_colour)
     if output_material.specular_map:
         print(output_material.specular_map.filename)
 
@@ -147,7 +149,7 @@ def parse_effect(effect):
 
 def parse_materials(dae_root, materials_root):
 
-    #find effects library
+    # find effects library
     library_effects = None
     for child in dae_root:
         if child.tag.find("library_effects") != -1:
@@ -167,40 +169,34 @@ def parse_materials(dae_root, materials_root):
                 write_material_file(new_mat)
                 break
 
+
 def write_material_file(mat):
-    #write out materials
+    # write out materials
 
-    materials_dir = os.path.join(helpers.build_dir, "materials")
+    print("packing material: " + mat.id)
 
-    out_file = os.path.join(materials_dir, mat.id + ".pmm")
-    out_file = out_file.lower()
+    material_data = [struct.pack("i", (int(helpers.version_number)))]
 
-    #create materials dir
-    if not os.path.exists(materials_dir):
-        os.makedirs(materials_dir)
+    # float values
+    helpers.pack_split_floats(material_data, mat.diffuse_colour)
+    helpers.pack_split_floats(material_data, mat.specular_colour)
+    helpers.pack_split_floats(material_data, mat.shininess)
+    helpers.pack_split_floats(material_data, mat.reflectivity)
 
-    print("writing material file: " + out_file)
-    output = open(out_file, 'wb+')
-    output.write(struct.pack("i", (int(helpers.version_number))))
+    # texture maps
+    pack_texture(material_data, mat.diffuse_map)
+    pack_texture(material_data, mat.specular_map)
+    pack_texture(material_data, mat.normal_map)
 
-    #float values
-    helpers.write_split_floats(output, mat.diffuse_colour)
-    helpers.write_split_floats(output, mat.specular_colour)
-    helpers.write_split_floats(output, mat.shininess)
-    helpers.write_split_floats(output, mat.reflectivity)
+    helpers.output_file.material_names.append(mat.id)
+    helpers.output_file.materials.append(material_data)
 
-    #texture maps
-    write_texture(output, mat.diffuse_map)
-    write_texture(output, mat.specular_map)
-    write_texture(output, mat.normal_map)
 
-    output.close()
-
-def write_texture(output, tex):
+def pack_texture(output, tex):
     if tex:
         [fnoext, fext] = os.path.splitext(tex.filename)
         tex.filename = fnoext + ".dds"
         print("adding texture: " + tex.filename)
-        helpers.write_parsable_string(output, tex.filename)
+        helpers.pack_parsable_string(output, tex.filename)
     else:
-        output.write(struct.pack("i", (int(0))))
+        output.append(struct.pack("i", (int(0))))

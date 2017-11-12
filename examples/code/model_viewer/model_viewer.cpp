@@ -69,7 +69,7 @@ void update_model_view(put::layer* layer)
     
     if( open_model_import )
     {
-        const c8* model = put::dev_ui::file_browser(open_model_import, 1, "**.pms" );
+        const c8* model = put::dev_ui::file_browser(open_model_import, 1, "**.pmm" );
         
         if( model )
         {

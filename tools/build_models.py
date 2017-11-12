@@ -8,7 +8,8 @@ import parse_animations
 import helpers
 
 #win32 / collada
-print("model and animation conversion" + "\n")
+print("-------pmtech model and animation conversion-------")
+print("---------------------------------------------------" + "\n")
 
 root_dir = os.getcwd()
 model_dir = os.path.join(root_dir, "assets", "mesh")
@@ -16,7 +17,8 @@ model_dir = os.path.join(root_dir, "assets", "mesh")
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 transform_types = ["translate", "rotate"]
 
-print("processing directory: " + model_dir + "\n")
+print("processing directory:")
+print(model_dir)
 
 #create models dir
 if not os.path.exists(helpers.build_dir):
@@ -172,104 +174,94 @@ def parse_dae():
         if child.tag.find("library_animations") != -1:
             parse_animations.parse_animations(child, animations, joint_list)
 
-#File Writers
+
+# File Writers
 def write_scene_file():
-    #write out nodes and transforms
+    # write out nodes and transforms
     numjoints = len(joint_list)
-    if(numjoints == 0):
+    if numjoints == 0:
         return
 
-    out_file = os.path.join(helpers.build_dir, "scene.pms")
-    out_file = out_file.lower()
+    print("packing scene")
+    scene_data = [struct.pack("i", (int(helpers.version_number)))]
+    scene_data.append(struct.pack("i", (int(numjoints))))
 
-    print("writing scene file: " + out_file)
-    output = open(out_file, 'wb+')
-    output.write(struct.pack("i", (int(helpers.version_number))))
-
-    output.write(struct.pack("i", (int(numjoints))))
     for j in range(numjoints):
         if joint_list[j] is None:
             joint_list[j] = "no_name"
-        output.write(struct.pack("i", (int(type_list[j]))))
-        helpers.write_parsable_string(output, joint_list[j])
-        helpers.write_parsable_string(output, geom_attach_data_list[j])
-        output.write(struct.pack("i", (int(len(material_attach_data_list[j])))))
+        scene_data.append(struct.pack("i", (int(type_list[j]))))
+        helpers.pack_parsable_string(scene_data, joint_list[j])
+        helpers.pack_parsable_string(scene_data, geom_attach_data_list[j])
+        scene_data.append(struct.pack("i", (int(len(material_attach_data_list[j])))))
         for mat_name in material_attach_data_list[j]:
-            helpers.write_parsable_string(output,mat_name)
+            helpers.pack_parsable_string(scene_data, mat_name)
         for symbol_name in material_symbol_list[j]:
-            helpers.write_parsable_string(output,symbol_name)
+            helpers.pack_parsable_string(scene_data, symbol_name)
         parentindex = joint_list.index(parent_list[j])
-        output.write(struct.pack("i", (int(parentindex))))
+        scene_data.append(struct.pack("i", (int(parentindex))))
 
-        #print(joint_list[j])
-        #print("writing tansform: " + str(j) + " of " + str(len(transform_list)))
-
-        output.write(struct.pack("i", (int(len(transform_list[j])))))
+        scene_data.append(struct.pack("i", (int(len(transform_list[j])))))
         for t in transform_list[j]:
             splitted = t.split()
             transform_type_index = transform_types.index(splitted[0])
-            output.write(struct.pack("i", (int(transform_type_index))))
+            scene_data.append(struct.pack("i", (int(transform_type_index))))
             for val in range(1, len(splitted)):
-                output.write(struct.pack("f", (float(splitted[val]))))
+                scene_data.append(struct.pack("f", (float(splitted[val]))))
 
-    output.close()
+    helpers.output_file.scene.append(scene_data)
+
 
 def write_joint_file():
-    #write out joints
-    numjoints = len(joint_list)
-    if(numjoints == 0):
+    # write out joints
+    if len(joint_list) == 0:
         return
 
-    out_file = os.path.join(helpers.build_dir, "joints.pms")
-    out_file = out_file.lower()
+    numjoints = len(joint_list)
 
-    print("writing joint file: " + out_file)
-    output = open(out_file, 'wb+')
-    output.write(struct.pack("i", (int(helpers.version_number))))
+    print("packing joints")
+    joint_data = [struct.pack("i", (int(helpers.version_number)))]
+    joint_data.append(struct.pack("i", (int(numjoints))))
 
-    output.write(struct.pack("i", (int(numjoints))))
     for j in range(numjoints):
         namelen = len(joint_list[j])
-        output.write(struct.pack("i", (int(namelen))))
+        joint_data.append(struct.pack("i", (int(namelen))))
         for c in joint_list[j]:
             ascii = int(ord(c))
-            output.write(struct.pack("i", (int(ascii))))
+            joint_data.append(struct.pack("i", (int(ascii))))
         parentindex = joint_list.index(parent_list[j])
-        output.write(struct.pack("i", (int(parentindex))))
-        output.write(struct.pack("i", (int(len(transform_list[j])))))
+        joint_data.append(struct.pack("i", (int(parentindex))))
+        joint_data.append(struct.pack("i", (int(len(transform_list[j])))))
         for t in transform_list[j]:
             splitted = t.split()
             transform_type_index = transform_types.index(splitted[0])
-            output.write(struct.pack("i", (int(transform_type_index))))
+            joint_data.append(struct.pack("i", (int(transform_type_index))))
             for val in range(1, len(splitted)):
-                output.write(struct.pack("f", (float(splitted[val]))))
+                joint_data.append(struct.pack("f", (float(splitted[val]))))
 
-    #write out anims
-    output.write(struct.pack("i", (int(len(animations)))))
-    #print(len(animations))
+    # write out anims
+    joint_data.append(struct.pack("i", (int(len(animations)))))
     for animation_instance in animations:
         num_times = len(animation_instance.inputs)
         bone_index = int(animation_instance.bone_index)
-        #print(joint_list[bone_index])
-        output.write(struct.pack("i", (bone_index)))
-        output.write(struct.pack("i", (int(num_times))))
-        output.write(struct.pack("i", (int(len(animation_instance.translation_x)))))
-        output.write(struct.pack("i", (int(len(animation_instance.rotation_x)))))
+        joint_data.append(struct.pack("i", (bone_index)))
+        joint_data.append(struct.pack("i", (int(num_times))))
+        joint_data.append(struct.pack("i", (int(len(animation_instance.translation_x)))))
+        joint_data.append(struct.pack("i", (int(len(animation_instance.rotation_x)))))
         for t in range(len(animation_instance.inputs)):
-            output.write(struct.pack("f", (float(animation_instance.inputs[t]))))
-            if(len(animation_instance.translation_x) == num_times):
-                output.write(struct.pack("f", (float(animation_instance.translation_x[t]))))
-                output.write(struct.pack("f", (float(animation_instance.translation_y[t]))))
-                output.write(struct.pack("f", (float(animation_instance.translation_z[t]))))
+            joint_data.append(struct.pack("f", (float(animation_instance.inputs[t]))))
+            if len(animation_instance.translation_x) == num_times:
+                joint_data.append(struct.pack("f", (float(animation_instance.translation_x[t]))))
+                joint_data.append(struct.pack("f", (float(animation_instance.translation_y[t]))))
+                joint_data.append(struct.pack("f", (float(animation_instance.translation_z[t]))))
+            if len(animation_instance.rotation_x) == num_times:
+                joint_data.append(struct.pack("f", (float(animation_instance.rotation_x[t]))))
+                joint_data.append(struct.pack("f", (float(animation_instance.rotation_y[t]))))
+                joint_data.append(struct.pack("f", (float(animation_instance.rotation_z[t]))))
 
-            if(len(animation_instance.rotation_x) == num_times):
-                output.write(struct.pack("f", (float(animation_instance.rotation_x[t]))))
-                output.write(struct.pack("f", (float(animation_instance.rotation_y[t]))))
-                output.write(struct.pack("f", (float(animation_instance.rotation_z[t]))))
+    helpers.output_file.joints.append(joint_data)
 
-    output.close()
 
-#entry
+# entry
 for root, dirs, files in os.walk(model_dir):
     for file in files:
         if file.endswith(".dae"):
@@ -308,8 +300,9 @@ for root, dirs, files in os.walk(model_dir):
             helpers.current_filename = file
             helpers.build_dir = out_dir
 
-            print("converting model " + f)
+            print(f)
             parse_dae()
             write_joint_file()
+            helpers.output_file.write(out_dir)
             print("")
 

@@ -1,7 +1,7 @@
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 author = ""
 
-#Geometries
+# Geometries
 class vertex_input:
     id = ""
     source_ids = []
@@ -16,10 +16,12 @@ class vertex_input:
         self.sets = []
         self.id = ""
 
+
 class geometry_source:
     id = ""
     float_values = []
     stride = 0
+
 
 class geometry_mesh:
     sources = []
@@ -44,11 +46,13 @@ class geometry_mesh:
         self.min_extents = []
         self.collision_vertices = []
 
+
 class geometry_container:
     id = ""
     name = ""
     materials = []
     meshes = []
+
 
 def add_vertex_input(input_node, vertex_input_instance):
     vertex_input_instance.semantic_ids.append(input_node.get("semantic"))
@@ -57,6 +61,7 @@ def add_vertex_input(input_node, vertex_input_instance):
     vertex_input_instance.source_ids.append(src_str)
     vertex_input_instance.offsets.append(input_node.get("offset"))
     vertex_input_instance.offsets.append(input_node.get("set"))
+
 
 def write_source_float(p, src, mesh):
     base_p = int(p) * int(src.stride)
@@ -86,6 +91,7 @@ def write_source_float(p, src, mesh):
             else:
                 mesh.vertex_buffer.append("1.0")
 
+
 def grow_extents(p, src, mesh):
     base_p = int(p) * int(src.stride)
 
@@ -112,25 +118,26 @@ def grow_extents(p, src, mesh):
             if( v[i] >= float(mesh.max_extents[i])):
                 mesh.max_extents[i] = v[i]
 
+
 def write_vertex_data(p, src_id, mesh):
 
     source_index = mesh.triangle_indices[int(p)]
 
-    #find source
+    # find source
     for src in mesh.sources:
         if( src.id == src_id ):
             write_source_float(source_index, src, mesh)
-            #grow_extents(source_index, src, mesh)
             return
 
-    #look in vertex list
+    # look in vertex list
     for v in mesh.vertices:
-        if( v.id == src_id ):
+        if(v.id == src_id):
             for v_src in v.source_ids:
                 for src in mesh.sources:
-                    if( v_src == src.id ):
+                    if(v_src == src.id):
                         write_source_float(source_index, src, mesh)
                         grow_extents(source_index, src, mesh)
+
 
 def generate_vertex_buffer(mesh):
     index_stride = 0
@@ -146,19 +153,21 @@ def generate_vertex_buffer(mesh):
                 write_vertex_data(p+int(v.offsets[s]), v.source_ids[s], mesh)
         p += index_stride
 
+
 def generate_index_buffer(mesh):
     mesh.index_buffer = []
     vert_count = int(len(mesh.vertex_buffer)) / ( int(4) * int(5) )
     for i in range(0, int(vert_count), 3):
-        #mesh.index_buffer.append(i)
+        # mesh.index_buffer.append(i)
         mesh.index_buffer.append(i + 2)
         mesh.index_buffer.append(i + 1)
         mesh.index_buffer.append(i + 0)
 
+
 def parse_mesh(node,tris):
     mesh_instance = geometry_mesh()
 
-    #find geometry sources
+    # find geometry sources
     for src in node.iter(schema+'source'):
         geom_src = geometry_source()
         geom_src.float_values = []
@@ -171,7 +180,7 @@ def parse_mesh(node,tris):
                 geom_src.float_values.append(vf)
         mesh_instance.sources.append(geom_src)
 
-    #find vertex struct
+    # find vertex struct
     for v in node.iter(schema+'vertices'):
         vertex_instance = vertex_input()
         vertex_instance.id = v.get("id")
@@ -179,7 +188,7 @@ def parse_mesh(node,tris):
             add_vertex_input(i, vertex_instance)
         mesh_instance.vertices.append(vertex_instance)
 
-    #find triangles (multi stream index buffers)
+    # find triangles (multi stream index buffers)
     mesh_instance.triangle_count = tris.get("count")
     for i in tris.iter(schema+'input'):
         vertex_instance = vertex_input()
@@ -187,21 +196,22 @@ def parse_mesh(node,tris):
         add_vertex_input(i, vertex_instance)
         mesh_instance.triangle_inputs.append(vertex_instance)
 
-    #find indices
+    # find indices
     for indices in tris.iter(schema+'p'):
         splitted = indices.text.split()
         for vi in splitted:
             mesh_instance.triangle_indices.append(vi)
 
-    #roll the multi stream vertex buffer into 1
+    # roll the multi stream vertex buffer into 1
     generate_vertex_buffer(mesh_instance)
 
-    #wind triangles the other way
+    # wind triangles the other way
     generate_index_buffer(mesh_instance)
 
     return mesh_instance
 
-def parse_geometry(node,author_in):
+
+def parse_geometry(node, author_in):
     global author
     author = author_in
     for geom in node.iter(schema+'geometry'):
@@ -221,5 +231,3 @@ def parse_geometry(node,author_in):
                 geom_container.materials.append(tris.get("material"))
                 geom_container.meshes.append(parse_mesh(mesh,tris))
                 submesh = submesh+1
-
-        #write_geometry_file(geom_container)

@@ -406,20 +406,17 @@ def parse_geometry(node, lib_controllers):
 
         write_geometry_file(geom_container)
 
+
 def write_geometry_file(geom_instance):
     # write out geometry
     num_meshes = len(geom_instance.meshes)
-    if (num_meshes == 0):
+    if num_meshes == 0:
         return
 
-    out_file = os.path.join(helpers.build_dir, geom_instance.name + ".pmg")
-    out_file = out_file.lower()
+    print("packing geometry: " + geom_instance.name)
 
-    print("writing geometry file: " + out_file)
-
-    output = open(out_file, 'wb+')
-    output.write(struct.pack("i", (int(helpers.version_number))))
-    output.write(struct.pack("i", (int(num_meshes))))
+    geometry_data = [struct.pack("i", (int(helpers.version_number)))]
+    geometry_data.append(struct.pack("i", (int(num_meshes))))
 
     collision_type = 0
     collision_dynamic = 0
@@ -434,25 +431,24 @@ def write_geometry_file(geom_instance):
             collision_dynamic = 0
 
     for mat in geom_instance.materials:
-        print(mat)
-        helpers.write_parsable_string(output, mat)
+        helpers.pack_parsable_string(geometry_data, mat)
 
     for mesh in geom_instance.meshes:
         # write collision info
-        output.write(struct.pack("i", (int(collision_type))))
-        output.write(struct.pack("i", (int(collision_dynamic))))
+        geometry_data.append(struct.pack("i", (int(collision_type))))
+        geometry_data.append(struct.pack("i", (int(collision_dynamic))))
 
         # write min / max extents
         for i in range(0, 3, 1):
-            output.write(struct.pack("f", (float(mesh.min_extents[i]))))
+            geometry_data.append(struct.pack("f", (float(mesh.min_extents[i]))))
         for i in range(0, 3, 1):
-            output.write(struct.pack("f", (float(mesh.max_extents[i]))))
+            geometry_data.append(struct.pack("f", (float(mesh.max_extents[i]))))
         # write vb and ib
-        output.write(struct.pack("i", (len(mesh.vertex_elements[0].float_values))))
-        output.write(struct.pack("i", (len(mesh.vertex_buffer))))
+        geometry_data.append(struct.pack("i", (len(mesh.vertex_elements[0].float_values))))
+        geometry_data.append(struct.pack("i", (len(mesh.vertex_buffer))))
 
-        output.write(struct.pack("i", (len(mesh.index_buffer))))
-        output.write(struct.pack("i", (len(mesh.collision_vertices))))
+        geometry_data.append(struct.pack("i", (len(mesh.index_buffer))))
+        geometry_data.append(struct.pack("i", (len(mesh.collision_vertices))))
 
         index_type = "i"
         if len(mesh.index_buffer) < 65535:
@@ -462,21 +458,22 @@ def write_geometry_file(geom_instance):
         if geom_instance.controller != None:
             skinned = 1
 
-        output.write(struct.pack("i", int(skinned)))
+        geometry_data.append(struct.pack("i", int(skinned)))
 
         if skinned:
-            helpers.write_corrected_4x4matrix(output,geom_instance.controller.bind_shape_matrix)
-            output.write(struct.pack("i",len(geom_instance.controller.joint_bind_matrix)))
-            helpers.write_corrected_4x4matrix(output,geom_instance.controller.joint_bind_matrix)
+            helpers.pack_corrected_4x4matrix(geometry_data, geom_instance.controller.bind_shape_matrix)
+            geometry_data.append(struct.pack("i", len(geom_instance.controller.joint_bind_matrix)))
+            helpers.pack_corrected_4x4matrix(geometry_data, geom_instance.controller.joint_bind_matrix)
 
         for vertexfloat in mesh.vertex_elements[0].float_values:
-            #position only buffer
-            output.write(struct.pack("f", (float(vertexfloat))))
+            # position only buffer
+            geometry_data.append(struct.pack("f", (float(vertexfloat))))
         for vertexfloat in mesh.vertex_buffer:
-            output.write(struct.pack("f", (float(vertexfloat))))
+            geometry_data.append(struct.pack("f", (float(vertexfloat))))
         for index in mesh.index_buffer:
-            output.write(struct.pack(index_type, (int(index))))
+            geometry_data.append(struct.pack(index_type, (int(index))))
         for vertexfloat in mesh.collision_vertices:
-            output.write(struct.pack("f", (float(vertexfloat))))
+            geometry_data.append(struct.pack("f", (float(vertexfloat))))
 
-    output.close()
+        helpers.output_file.geometry_names.append(geom_instance.name)
+        helpers.output_file.geometry.append(geometry_data)

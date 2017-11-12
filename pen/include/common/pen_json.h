@@ -21,10 +21,8 @@ namespace pen
         static json combine( const json& j1, const json& j2, s32 indent = 0 );
         
         Str         dumps();
-        
         Str         name();
         jsmntype_t  type();
-        
         u32         size() const;
         
         json operator [] (const c8* name) const;
@@ -36,6 +34,13 @@ namespace pen
         s32     as_s32();
         bool    as_bool();
         f32     as_f32();
+        
+        void    set(const c8* name, const Str val);
+        void    set(const c8* name, const u32 val);
+        void    set(const c8* name, const s32 val);
+        void    set(const c8* name, const f32 val);
+        void    set(const c8* name, const bool val);
+        void    set(const c8* name, const json& val);
                 
     private:
         json_object* m_internal_object;

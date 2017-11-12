@@ -462,9 +462,6 @@ namespace pen
         delete[] j2_action;
         delete[] combine_index;
         
-        if( indent == 0)
-            PEN_PRINTF(test.m_internal_object->data);
-        
         return test;
     }
     
@@ -601,10 +598,30 @@ namespace pen
     
     json::~json()
     {
-        pen::memory_free(m_internal_object->data);
-        pen::memory_free(m_internal_object->name);
+        if(m_internal_object)
+        {
+            pen::memory_free(m_internal_object->data);
+            pen::memory_free(m_internal_object->name);
+        }
+        
         pen::memory_free(m_internal_object);
-
         m_internal_object = nullptr;
+    }
+    
+    void json::set(const c8* name, const Str val)
+    {
+        Str new_json_object = "{";
+        new_json_object.append(name);
+        new_json_object.append(":");
+        new_json_object.append(val.c_str());
+        new_json_object.append("}");
+        
+        pen::json json_set = pen::json::load(new_json_object.c_str());
+        
+        pen::json combined = combine(*this, json_set);
+        
+        //free mem and copy combined
+        this->~json();
+        *this = combined;
     }
 }

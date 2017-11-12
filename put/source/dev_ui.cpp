@@ -39,6 +39,8 @@ namespace put
 				formatted = formatted.substr(0, last_dir);
 			}
 
+            k_program_preferences.set("last_used_directory", formatted);
+            
             //todo
             /*
 			k_program_preferences["last_used_directory"] = formatted;
