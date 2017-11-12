@@ -337,7 +337,7 @@ namespace put
                 p_geometries[submesh].index_type = index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
                 p_geometries[submesh].index_buffer = pen::renderer_create_buffer(bcp);
                 
-                p_reader += bcp.buffer_size / sizeof(u32);
+                p_reader = (u32*)((c8*)p_reader + bcp.buffer_size);
                 
                 //collision mesh
                 if (collision_mesh)
@@ -510,7 +510,7 @@ namespace put
                 geometry_names.push_back(name);
             }
             
-            u32* p_data_start = p_u32reader;
+            c8* p_data_start = (c8*)p_u32reader;
             
             p_u32reader = (u32*)p_data_start+scene_offsets[0];
             u32 version = *p_u32reader++;
@@ -565,7 +565,7 @@ namespace put
                         {
                             if( material_names[m] == mat_name )
                             {
-                                u32* p_mat_data = p_data_start + material_offsets[m];
+                                u32* p_mat_data = (u32*)(p_data_start + material_offsets[m]);
                                 load_material(p_mat_data, &p_materials[mat]);
                             }
                         }
@@ -673,7 +673,7 @@ namespace put
                         {
                             if( geom_name == geometry_names[g] )
                             {
-                                u32* p_geom_data = p_data_start + geom_offsets[g];
+                                u32* p_geom_data = (u32*)(p_data_start + geom_offsets[g]);
                                 load_mesh((const c8*)p_geom_data, p_geometries, p_physics, scene, current_node, (const c8**)p_material_symbols);
                             }
                         }

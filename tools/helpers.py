@@ -1,5 +1,6 @@
 import struct
 import os
+import sys
 
 version_number = 1
 current_filename = ""
@@ -16,6 +17,7 @@ build_dir = os.path.join(os.getcwd(), "bin", platform, "data", "models")
 class pmm_file:
     geometry = []
     geometry_names = []
+    geometry_sizes = []
 
     materials = []
     material_names = []
@@ -32,12 +34,7 @@ class pmm_file:
         self.joints = []
 
     def write(self, filename):
-        if not os.path.exists(filename):
-            os.makedirs(filename)
-
-        [fnoext, fext] = os.path.splitext(filename)
-
-        output = open(fnoext + ".pmm", 'wb+')
+        output = open(filename, 'wb+')
 
         num_geom = len(self.geometry)
         num_material = len(self.materials)
@@ -52,21 +49,21 @@ class pmm_file:
         offset = 0
         for s in self.scene:
             output.write(struct.pack("i", offset))
-            offset += len(s)
+            offset += len(s) * 4
 
         for j in self.joints:
             output.write(struct.pack("i", offset))
-            offset += len(j)
+            offset += len(j) * 4
 
         for i in range(0, len(self.material_names)):
             write_parsable_string(output, self.material_names[i])
             output.write(struct.pack("i", offset))
-            offset += len(self.materials[i])
+            offset += len(self.materials[i]) * 4
 
         for i in range(0, len(self.geometry_names)):
             write_parsable_string(output, self.geometry_names[i])
             output.write(struct.pack("i", offset))
-            offset += len(self.geometry[i])
+            offset += self.geometry_sizes[i]
 
         for s in self.scene:
             for b in s:

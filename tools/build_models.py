@@ -281,16 +281,16 @@ for root, dirs, files in os.walk(model_dir):
 
             helpers.build_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "data", "models")
 
-            mesh_dir = "assets/mesh/"
+            mesh_dir = "/assets/mesh"
             assets_pos = root.find(mesh_dir)
             if assets_pos == -1:
-                assets_pos = root.find("assets\\mesh\\")
+                assets_pos = root.find("\\assets\\mesh")
 
-            assets_pos += len(mesh_dir)
+            assets_pos += len(mesh_dir) + 1
 
             sub_dir = root[int(assets_pos):int(len(root))]
 
-            out_dir = os.path.join(helpers.build_dir, sub_dir, fnoext)
+            out_dir = os.path.join(helpers.build_dir, sub_dir)
 
             if not os.path.exists(out_dir):
                 os.makedirs(out_dir)
@@ -300,9 +300,11 @@ for root, dirs, files in os.walk(model_dir):
             helpers.current_filename = file
             helpers.build_dir = out_dir
 
+            helpers.output_file = helpers.pmm_file()
+
             print(f)
             parse_dae()
             write_joint_file()
-            helpers.output_file.write(out_dir)
+            helpers.output_file.write(os.path.join(out_dir, fnoext) + ".pmm")
             print("")
 

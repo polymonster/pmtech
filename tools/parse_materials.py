@@ -48,7 +48,6 @@ class material:
 
 
 def parse_library_images(library_node):
-    print("Image Library")
     for img_node in library_node.iter(schema+'image'):
         lib_img = library_image()
         lib_img.id = img_node.get("id")
@@ -57,8 +56,6 @@ def parse_library_images(library_node):
             corrected = file_node.text.replace('\\', '/')
             corrected = corrected.replace("/models/images/", "/textures/")
             corrected = corrected.replace("file://", "assets/textures/")
-
-            print("texture file node " + corrected)
 
             split_dirs = corrected.split('/')
             filename_split = len(split_dirs)-1
@@ -82,14 +79,12 @@ def parse_library_images(library_node):
                         lib_img.filename += '/'
                     cur_dir = cur_dir + 1
 
-            print(lib_img.id + " - " + lib_img.filename)
             image_list.append(lib_img)
             break
 
 
 def parse_texture(tex_node):
     tex = texture_map()
-    print("finding texture " + tex_node.get("texture") )
     for lib_img in image_list:
         if lib_img.id + "-sampler" == tex_node.get("texture") or lib_img.id + "-image" == tex_node.get("texture") or lib_img.id == tex_node.get("texture"):
             tex.filename = lib_img.filename
@@ -135,15 +130,6 @@ def parse_effect(effect):
     for bump in effect.iter(schema+'bump'):
         for tex_node in bump.iter(schema+'texture'):
             output_material.normal_map = parse_texture(tex_node)
-
-    if output_material.diffuse_map:
-        print(output_material.diffuse_map.filename)
-
-    if output_material.specular_map:
-        print(output_material.specular_map.filename)
-
-    if output_material.normal_map:
-        print(output_material.normal_map.filename)
 
     return output_material
 
@@ -196,7 +182,6 @@ def pack_texture(output, tex):
     if tex:
         [fnoext, fext] = os.path.splitext(tex.filename)
         tex.filename = fnoext + ".dds"
-        print("adding texture: " + tex.filename)
         helpers.pack_parsable_string(output, tex.filename)
     else:
         output.append(struct.pack("i", (int(0))))
