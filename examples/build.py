@@ -2,15 +2,18 @@ import os
 import subprocess
 import os.path
 import sys
+import shutil
 
 tools_dir = os.path.join("..", "tools")
+assets_dir = "assets"
 
-action_strings = ["code", "shaders", "models", "textures", "audio"]
+action_strings = ["code", "shaders", "models", "textures", "audio", "fonts"]
 action_descriptions = ["generate projects and workspaces",
                        "generate shaders and compile binaries",
                        "make binary mesh and animation files",
                        "compress textures and generate mips",
-                       "compress and convert audio to platorm format"]
+                       "compress and convert audio to platorm format",
+                       "copy fonts to data directory"]
 execute_actions = []
 extra_build_steps = []
 build_steps = []
@@ -22,6 +25,7 @@ project_options = ""
 platform = ""
 ide = ""
 renderer = ""
+data_dir = ""
 
 premake_exec = os.path.join(tools_dir, "premake","premake5")
 shader_script = os.path.join(tools_dir, "build_shaders.py")
@@ -73,18 +77,23 @@ def get_platform_info():
     global python_exec
     global shader_options
     global project_options
+    global data_dir
 
     if os.name == "posix":
         if ide == "":
             ide = "xcode4"
         if renderer == "":
             renderer = "opengl"
+        if platform == "":
+            platform = "osx"
         python_exec = os.path.join(tools_dir, "bin", "python", "osx", "python3")
     else:
         if ide == "":
             ide = "vs2017"
         if renderer == "":
             renderer = "dx11"
+        if platform == "":
+            platform = "win32"
         python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
 
     extra_target_info = ""
@@ -99,6 +108,8 @@ def get_platform_info():
         shader_options = "hlsl win32"
     elif renderer == "opengl":
         shader_options = "glsl osx"
+
+    data_dir = os.path.join("bin", platform, "data")
 
 if len(sys.argv) <= 1:
     print("please enter what you want to build")
@@ -129,6 +140,8 @@ else:
 
 get_platform_info()
 
+copy_steps = []
+
 for action in execute_actions:
     if action == "code":
         build_steps.append(premake_exec + " " + project_options)
@@ -140,12 +153,20 @@ for action in execute_actions:
         build_steps.append(python_exec + " " + textures_script)
     elif action == "audio":
         build_steps.append(python_exec + " " + audio_script)
+    elif action == "fonts":
+        copy_steps.append(action)
 
 for step in build_steps:
     subprocess.check_call(step, shell=True)
 
 for step in extra_build_steps:
     subprocess.check_call(step, shell=True)
+
+for step in copy_steps:
+    dest_dir = os.path.join(data_dir, step)
+    if os.path.exists(dest_dir):
+        shutil.rmtree(dest_dir)
+    shutil.copytree(os.path.join(assets_dir, step), dest_dir)
 
 
 

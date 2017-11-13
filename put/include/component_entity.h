@@ -149,7 +149,6 @@ namespace put
             s32                     selected_index;
 		};
 
-
 		struct vertex_model
 		{
 			f32 x, y, z, w;
@@ -161,13 +160,13 @@ namespace put
 
 		struct vertex_model_skinned
 		{
-			f32 x, y, z, w;         //16
-			f32 nx, ny, nz, nw;     //32
-			f32 u, v, _u, _v;       //48
-			f32 tx, ty, tz, tw;     //64
-			f32 bx, by, bz, bw;     //80
-			u32 i1, i2, i3, i4;     //96
-			f32 w1, w2, w3, w4;     //112
+			f32 x, y, z, w;
+			f32 nx, ny, nz, nw;
+			f32 u, v, _u, _v;
+			f32 tx, ty, tz, tw;
+			f32 bx, by, bz, bw;
+			u32 i1, i2, i3, i4;
+			f32 w1, w2, w3, w4;
 		};
 
 		struct vertex_position
@@ -186,8 +185,7 @@ namespace put
 
 		component_entity_scene*	create_scene( const c8* name );
 
-		void					import_model_scene( const c8* model_scene_name, component_entity_scene* scene );
-        void                    import_model_scene_file( const c8* model_scene_name, component_entity_scene* scene );
+        void                    load_pmm( const c8* model_scene_name, component_entity_scene* scene );
         
 		void					clone_node( component_entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
 

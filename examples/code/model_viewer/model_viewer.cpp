@@ -51,13 +51,13 @@ void update_model_view(put::layer* layer)
 	ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
 
 	static bool open_scene_browser = false;
-	if (ImGui::Button("Scene Browser"))
+	if (ImGui::Button(ICON_FA_TRY))
 	{
 		open_scene_browser = true;
 	}
     
     static bool open_model_import = false;
-    if (ImGui::Button("Import Model"))
+    if (ImGui::Button(ICON_FA_AT))
     {
         open_model_import = true;
     }
@@ -69,11 +69,11 @@ void update_model_view(put::layer* layer)
     
     if( open_model_import )
     {
-        const c8* model = put::dev_ui::file_browser(open_model_import, 1, "**.pmm" );
+        const c8* pmm = put::dev_ui::file_browser(open_model_import, 1, "**.pmm" );
         
-        if( model )
+        if( pmm )
         {
-            put::ces::import_model_scene_file(model, layer->view.scene );
+            put::ces::load_pmm(pmm, layer->view.scene );
         }
     }
 	

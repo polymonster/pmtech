@@ -1,5 +1,4 @@
 import os
-import subprocess
 import xml.etree.ElementTree as ET
 import struct
 import parse_meshes
@@ -20,7 +19,7 @@ transform_types = ["translate", "rotate"]
 print("processing directory:")
 print(model_dir)
 
-#create models dir
+# create models dir
 if not os.path.exists(helpers.build_dir):
     os.makedirs(helpers.build_dir)
 
@@ -31,13 +30,11 @@ type_list = []
 joint_list = []
 transform_list = []
 parent_list = []
-
 animations = []
 geometries = []
 materials = []
 
-#Joints
-#Scene Nodes
+
 def parse_visual_scenes(root):
     for scene in root.iter(schema+'visual_scene'):
         for child in scene:
@@ -45,7 +42,8 @@ def parse_visual_scenes(root):
                 parse_node(child, child)
     write_scene_file()
 
-def axis_swap_transfrom(text):
+
+def axis_swap_transform(text):
     splitted = text.split()
     if len(splitted) >= 3:
         val_x = float(splitted[0])
@@ -54,19 +52,17 @@ def axis_swap_transfrom(text):
         cval_x = val_x
         cval_y = val_y
         cval_z = val_z
-        if(helpers.author == "Max"):
+        if helpers.author == "Max":
             cval_x = val_x
             cval_y = val_z
             cval_z = val_y * -1.0
         out_str = str(cval_x) + " " + str(cval_y) + " " + str(cval_z)
         if len(splitted) == 4:
             out_str += " " + splitted[3]
-        #print(text)
-        #print(out_str)
     return out_str
 
-def parse_node(node, parent_node):
 
+def parse_node(node, parent_node):
     node_type = 0
     geom_attach_data = "none"
     material_attach_data = []
@@ -91,9 +87,6 @@ def parse_node(node, parent_node):
         geom_attach_data = "joint"
         node_type = 1
 
-    #if node_type == 0:
-    #    return
-
     type_list.append(node_type)
     parent_list.append(parent_node.get("name"))
     joint_list.append(node.get("name"))
@@ -104,28 +97,20 @@ def parse_node(node, parent_node):
     sub_transform_list = []
     written_transforms = 0
     for child in node:
-        if( len(sub_transform_list) < 4 ):
+        if len(sub_transform_list) < 4:
             if child.tag.find(schema+'translate') != -1:
-                sub_transform_list.append("translate " + axis_swap_transfrom(child.text))
-                #print("translate " + child.text)
+                sub_transform_list.append("translate " + axis_swap_transform(child.text))
             if child.tag.find(schema+'rotate') != -1:
-                sub_transform_list.append("rotate " + axis_swap_transfrom(child.text))
-                #print("rotate " + child.text)
+                sub_transform_list.append("rotate " + axis_swap_transform(child.text))
         if child.tag.find(schema+'node') != -1:
-            #print("recursing")
-            if(len(sub_transform_list) > 0):
+            if len(sub_transform_list) > 0:
                 written_transforms = 1
-                #print("append")
-                #print(sub_transform_list)
                 transform_list.append(sub_transform_list)
                 sub_transform_list = []
-            if child.get('type') == parent_node.get('type'):
+            if child.get('type') == parent_node.get('type') or child.get('type') == "JOINT":
                 parse_node(child, node)
 
-    #print(node.get("name"))
-    #print(sub_transform_list)
-
-    if(len(sub_transform_list) > 0):
+    if len(sub_transform_list) > 0:
         written_transforms = 1
         transform_list.append(sub_transform_list)
 
@@ -134,10 +119,7 @@ def parse_node(node, parent_node):
         sub_transform_list.append("rotate 0 0 0 0")
         transform_list.append(sub_transform_list)
 
-    #print(str(len(transform_list)))
-    #print(str(len(joint_list)))
 
-#Base
 def parse_dae():
     file_path = os.path.join(model_dir, f)
     tree = ET.parse(file_path)
@@ -145,19 +127,19 @@ def parse_dae():
 
     for author_node in root.iter(schema+'authoring_tool'):
         helpers.author = "Max"
-        if(author_node.text.find("Maya") != -1):
+        if author_node.text.find("Maya") != -1:
             helpers.author = "Maya"
 
     for upaxis in root.iter(schema+'up_axis'):
-        if( upaxis.text == "Y_UP"):
+        if upaxis.text == "Y_UP":
             helpers.author = "Maya"
-        elif( upaxis.text == "Z_UP"):
+        elif upaxis.text == "Z_UP":
             helpers.author = "Max"
 
         print("Author = " + helpers.author)
 
     lib_controllers = None
-    #pre requisites
+    # pre requisites
     for child in root:
         if child.tag.find("library_images") != -1:
             parse_materials.parse_library_images(child)
@@ -218,7 +200,7 @@ def write_joint_file():
 
     numjoints = len(joint_list)
 
-    print("packing joints")
+    print("packing " + str(numjoints) + " joints")
     joint_data = [struct.pack("i", (int(helpers.version_number)))]
     joint_data.append(struct.pack("i", (int(numjoints))))
 

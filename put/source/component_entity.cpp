@@ -24,10 +24,6 @@ namespace put
 
 #define FREE_COMPONENT_ARRAY( SCENE, COMPONENT ) pen::memory_free( SCENE->COMPONENT ); SCENE->COMPONENT = nullptr
 
-#define SCENE_DIR_MACRO "data/models/%s/scene.pms"
-#define GEOM_DIR_MACRO "%s/%s.pmg"
-#define MATERIAL_DIR_MACRO "%s/materials/%s.pmm"
-
 		struct component_entity_scene_instance
 		{
 			u32 id_name;
@@ -122,11 +118,11 @@ namespace put
 			return new_instance.scene;
 		}
         
-        Str read_parsable_string(u32** data)
+        Str read_parsable_string(const u32** data)
         {
             Str name;
             
-            u32* p_len = *data;
+            const u32* p_len = *data;
             u32 name_len = *p_len++;
             c8* char_reader = (c8*)p_len;
             for(s32 j = 0; j < name_len; ++j)
@@ -173,8 +169,197 @@ namespace put
 
 			return u32s_read;
 		}
+        
+        void load_animations( const c8* data )
+        {
+#if 0
+            //animations
+            p_skeleton->num_anims = *p_int++;
+            
+            p_skeleton->animations = (animation*)pen::memory_alloc( sizeof(animation)*p_skeleton->num_anims  );
+            
+            vec3f anim_val;
+            for( u32 a = 0; a < p_skeleton->num_anims ; a++ )
+            {
+                p_skeleton->animations[a].bone_index = *p_int++;
+                p_skeleton->animations[a].num_times = *p_int++;
+                
+                p_skeleton->animations[a].rotations = NULL;
+                p_skeleton->animations[a].translations = NULL;
+                
+                u32 num_translations = *p_int++;
+                u32 num_rotations = *p_int++;
+                
+                p_skeleton->animations[a].timeline = (f32*)pen::memory_alloc( sizeof(f32)*p_skeleton->animations[a].num_times );
+                
+                if (num_translations == p_skeleton->animations[a].num_times)
+                {
+                    p_skeleton->animations[a].translations = (vec3f*)pen::memory_alloc( sizeof(vec3f)*num_translations );
+                }
+                
+                if (num_rotations == p_skeleton->animations[a].num_times)
+                {
+                    p_skeleton->animations[a].rotations = (Quaternion*)pen::memory_alloc( sizeof(Quaternion)*num_rotations );
+                    p_skeleton->animations[a].euler_angles = (vec3f*)pen::memory_alloc( sizeof(vec3f)*num_rotations );
+                }
+                
+                for (u32 t = 0; t < p_skeleton->animations[a].num_times; ++t)
+                {
+                    pen::memory_cpy( &p_skeleton->animations[a].timeline[t], p_int, 4 );
+                    p_int++;
+                    
+                    if (p_skeleton->animations[a].translations)
+                    {
+                        pen::memory_cpy( &p_skeleton->animations[a].translations[t], p_int, 12 );
+                        p_int += 3;
+                    }
+                    
+                    if (p_skeleton->animations[a].rotations)
+                    {
+                        vec3f euler_angs;
+                        pen::memory_cpy( &euler_angs, p_int, 12 );
+                        
+                        if( vec3f::almost_equal( euler_angs, vec3f::zero() ) )
+                        {
+                            euler_angs = vec3f::zero();
+                        }
+                        
+                        pen::memory_cpy( &p_skeleton->animations[a].euler_angles[t], &euler_angs, 12 );
+                        
+                        p_skeleton->animations[a].rotations[t].euler_angles( put::maths::deg_to_rad( euler_angs.z ), put::maths::deg_to_rad( euler_angs.y ), put::maths::deg_to_rad( euler_angs.x ) );
+                        p_int += 3;
+                    }
+                }
+            }
+#endif
+        }
+        
+        void load_skeleton( const c8* data )
+        {
+            void*  skeleton_data;
+            
+            const u32* header = (u32*)data;
+            
+            //alloc a new skeleton
+            skeleton* p_skeleton = (skeleton*)pen::memory_alloc(sizeof(skeleton));
+            
+            //with number of joints allocate space for parents and transforms
+            p_skeleton->num_joints = (u32)header[ 1 ];
+            
+            p_skeleton->parents = (u32*)pen::memory_alloc(sizeof(u32)*p_skeleton->num_joints);
+            p_skeleton->offsets = (vec3f*)pen::memory_alloc(sizeof(vec3f)*p_skeleton->num_joints);
+            p_skeleton->rotations = (Quaternion*)pen::memory_alloc(sizeof(Quaternion)*p_skeleton->num_joints);
+            p_skeleton->names = (c8**)pen::memory_alloc(sizeof(c8*)*p_skeleton->num_joints);
+            
+            const u32* p_int = &header[ 2 ];
+            for( u32 i = 0; i < p_skeleton->num_joints; ++i )
+            {
+                //name
+                u32 num_chars = *p_int++;
+                p_skeleton->names[ i ] = (c8*)pen::memory_alloc(sizeof(c8)*(num_chars+1));
+                
+                c8 buf[ 32 ];
+                for( u32 c = 0; c < num_chars; ++c)
+                {
+                    if( c >= 32 )
+                    {
+                        break;
+                    }
+                    
+                    buf[ c ] = (c8)*p_int++;
+                }
+                
+                pen::memory_cpy( &p_skeleton->names[ i ][ 0 ], &buf[ 0 ], num_chars );
+                p_skeleton->names[ i ][ num_chars ] = '\0';
+                
+                //parent
+                p_skeleton->parents[ i ] = *p_int++;
+                
+                //num transforms
+                u32 num_transforms = *p_int++;
+                
+                u32 num_rotations = 0;
+                vec4f rotations[ 3 ];
+                
+                for( u32 t = 0; t < num_transforms; ++t )
+                {
+                    u32 type = *p_int++;
+                    
+                    if( type == 0 )
+                    {
+                        //translate
+                        pen::memory_set( &p_skeleton->offsets[i], 0xff, 12 );
+                        pen::memory_cpy( &p_skeleton->offsets[i], p_int, 12 );
+                        p_int += 3;
+                    }
+                    else if( type == 1 )
+                    {
+                        //rotate
+                        pen::memory_cpy( &rotations[ num_rotations ], p_int, 16 );
+                        
+                        //convert to radians
+                        rotations[ num_rotations ].w = put::maths::deg_to_rad( rotations[ num_rotations ].w );
+                        
+                        static f32 zero_rotation_epsilon = 0.000001f;
+                        if( rotations[ num_rotations ].w < zero_rotation_epsilon && rotations[ num_rotations ].w > zero_rotation_epsilon )
+                        {
+                            rotations[ num_rotations ].w = 0.0f;
+                        }
+                        
+                        num_rotations++;
+                        
+                        p_int += 4;
+                    }
+                    else
+                    {
+                        //unsupported transform type
+                        PEN_ASSERT( 0 );
+                    }
+                }
+                
+                PEN_ASSERT( num_rotations <= 3 );
+                
+                if( num_rotations == 0 )
+                {
+                    //no rotation
+                    p_skeleton->rotations[ i ].euler_angles( 0.0f, 0.0f, 0.0f );
+                }
+                else if( num_rotations == 1 )
+                {
+                    //axis angle
+                    p_skeleton->rotations[ i ].axis_angle( rotations[ 0 ] );
+                }
+                else if( num_rotations == 3 )
+                {
+                    //euler angles
+                    f32 z_theta = 0;
+                    f32 y_theta = 0;
+                    f32 x_theta = 0;
+                    
+                    for( u32 r = 0; r < 3; ++r )
+                    {
+                        if( rotations[r].z == 1.0f )
+                        {
+                            z_theta = rotations[r].w;
+                        }
+                        else if (rotations[r].y == 1.0f)
+                        {
+                            y_theta = rotations[r].w;
+                        }
+                        else if (rotations[r].x == 1.0f)
+                        {
+                            x_theta = rotations[r].w;
+                        }
+                        
+                        p_skeleton->rotations[i].euler_angles( z_theta, y_theta, x_theta );
+                    }
+                }
+            }
+        
+            pen::memory_free( skeleton_data );
+        }
 
-        void load_mesh(const c8* data, scene_node_geometry* p_geometries, scene_node_physics* p_physics, component_entity_scene* scene, u32 node_index, const c8** material_names)
+        void load_geometry(const c8* data, scene_node_geometry* p_geometries, scene_node_physics* p_physics, component_entity_scene* scene, u32 node_index, const c8** material_names)
         {
             u32* p_reader = (u32*)data;
             u32 version = *p_reader++;
@@ -192,17 +377,15 @@ namespace put
             }
             
             //map mesh material id's to material file id's
-            c8* mat_name_buf;
             for (u32 i = 0; i < num_meshes; ++i)
             {
-                u32 u32s_read = read_parsable_char(&mat_name_buf, p_reader);
-                p_reader += u32s_read;
+                Str mesh_material = read_parsable_string((const u32**)&p_reader);
                 
                 p_geometries[i].submesh_material_index = -1;
                 
                 for (u32 j = 0; j < num_meshes; ++j)
                 {
-                    if (pen::string_compare(mat_name_buf, material_names[j]) == 0)
+                    if (pen::string_compare(mesh_material.c_str(), material_names[j]) == 0)
                     {
                         p_geometries[i].submesh_material_index = j;
                         break;
@@ -211,7 +394,6 @@ namespace put
                 
                 PEN_ASSERT(p_geometries[i].submesh_material_index != -1);
             }
-            pen::memory_free(mat_name_buf);
             
             for (u32 submesh = 0; submesh < num_meshes; ++submesh)
             {
@@ -430,37 +612,20 @@ namespace put
             pen::memory_cpy(&p_mat->specular_rgb_reflect.w, p_reader, sizeof(f32));
             p_reader++;
             
-            u32 u32s_read = 0;
             for (u32 map = 0; map < put::ces::SN_NUM_TEXTURES; ++map)
             {
-                c8* map_buffer;
-                u32s_read = read_parsable_char(&map_buffer, p_reader);
-                p_reader += u32s_read;
+                Str texture_name = read_parsable_string(&p_reader);
                 
-                if (u32s_read > 1)
-                {
-                    p_mat->texture_id[map] = put::load_texture(map_buffer);
-                }
-                else
-                {
-                    p_mat->texture_id[map] = -1;
-                }
+                p_mat->texture_id[map] = -1;
                 
-                pen::memory_free(map_buffer);
+                if (!texture_name.empty())
+                    p_mat->texture_id[map] = put::load_texture(texture_name.c_str());
             }
             
             return;
         }
         
-        void import_model_scene(const c8* model_scene_name, component_entity_scene* scene)
-        {
-            c8 scene_filename[128];
-            pen::string_format(&scene_filename[0], 128, SCENE_DIR_MACRO, model_scene_name);
-            
-            import_model_scene_file(scene_filename, scene);
-        }
-        
-        void import_model_scene_file(const c8* filename, component_entity_scene* scene)
+        void load_pmm(const c8* filename, component_entity_scene* scene)
         {
             void* model_file;
             u32   model_file_size;
@@ -474,7 +639,7 @@ namespace put
                 PEN_ASSERT(0);
             }
             
-            u32* p_u32reader = (u32*)model_file;
+            const u32* p_u32reader = (u32*)model_file;
             
             //
             u32 num_scene = *p_u32reader++;
@@ -674,7 +839,7 @@ namespace put
                             if( geom_name == geometry_names[g] )
                             {
                                 u32* p_geom_data = (u32*)(p_data_start + geom_offsets[g]);
-                                load_mesh((const c8*)p_geom_data, p_geometries, p_physics, scene, current_node, (const c8**)p_material_symbols);
+                                load_geometry((const c8*)p_geom_data, p_geometries, p_physics, scene, current_node, (const c8**)p_material_symbols);
                             }
                         }
                     }
@@ -741,6 +906,12 @@ namespace put
                 
                 current_node = dest + 1;
                 scene->num_nodes = current_node;
+            }
+            
+            //import joints
+            if( num_joint_sets == 1 )
+            {
+                //load_skeleton( p_data_start + joint_offsets[0] );
             }
         }
         
@@ -825,7 +996,12 @@ namespace put
 			{
 				//header
 				ImGui::Text("%s", scene->names[selected_index]);
-				ImGui::Separator();
+                
+                s32 parent_index = scene->parents[selected_index];
+                if( parent_index != selected_index)
+                    ImGui::Text("Parent: %s", scene->names[parent_index]);
+                
+                ImGui::Separator();
 
 				//geom
 				ImGui::Text("Geometry: %s", scene->geometry_names[selected_index]);
@@ -847,9 +1023,7 @@ namespace put
 						}
 					}
 				}
-				ImGui::Separator();
-
-				ImGui::Text("Physics: %s", scene->material_names[selected_index]);
+                ImGui::Separator();
 			}
 
 			ImGui::EndChild();
