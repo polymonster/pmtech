@@ -322,7 +322,7 @@ namespace put
 				debug_lines_verts[line_vert_count + j].r = col.x;
 				debug_lines_verts[line_vert_count + j].g = col.y;
 				debug_lines_verts[line_vert_count + j].b = col.z;
-				debug_lines_verts[line_vert_count + j].a = 1.0f;
+				debug_lines_verts[line_vert_count + j].a = col.w;
 			}
 
 			line_vert_count += 2;

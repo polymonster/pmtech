@@ -14,7 +14,7 @@ root_dir = os.getcwd()
 model_dir = os.path.join(root_dir, "assets", "mesh")
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
-transform_types = ["translate", "rotate"]
+transform_types = ["translate", "rotate", "matrix"]
 
 print("processing directory:")
 print(model_dir)
@@ -98,6 +98,8 @@ def parse_node(node, parent_node):
     written_transforms = 0
     for child in node:
         if len(sub_transform_list) < 4:
+            if child.tag.find(schema+'matrix') != -1:
+                sub_transform_list.append("matrix " + helpers.correct_4x4matrix(child.text))
             if child.tag.find(schema+'translate') != -1:
                 sub_transform_list.append("translate " + axis_swap_transform(child.text))
             if child.tag.find(schema+'rotate') != -1:

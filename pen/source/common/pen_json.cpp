@@ -16,6 +16,51 @@ namespace pen
         return -1;
     }
     
+    static int _dump( Str& output, const char *js, jsmntok_t *t, size_t count, int indent )
+    {
+        int i, j, k;
+        if (count == 0) {
+            return 0;
+        }
+        if (t->type == JSMN_PRIMITIVE || t->type == JSMN_STRING)
+        {
+            if( t->type == JSMN_STRING)
+                output.append('\"');
+                
+            for( s32 c = 0; c < t->end - t->start; ++c )
+                output.append(*(js+t->start+c));
+            
+            if( t->type == JSMN_STRING)
+                output.append('\"');
+                
+            return 1;
+        } else if (t->type == JSMN_OBJECT) {
+            output.append("{\n");
+            j = 0;
+            for (i = 0; i < t->size; i++) {
+                for (k = 0; k < indent+1; k++)
+                    output.append("\t");
+                j += _dump(output, js, t+1+j, count-j, indent+1);
+                output.append(": ");
+                j += _dump(output, js, t+1+j, count-j, indent+1);
+                output.append("\n");
+            }
+            output.append("}");
+            return j+1;
+        } else if (t->type == JSMN_ARRAY) {
+            j = 0;
+            output.append("[\n");
+            for (i = 0; i < t->size; i++) {
+                for (k = 0; k < indent-1; k++) output.append("\t");
+                output.append(", ");
+                j += _dump(output, js, t+1+j, count-j, indent+1);
+                output.append("\n");
+            }
+            return j+1;
+        }
+        return 0;
+    }
+    
     static int dump( const char *js, jsmntok_t *t, size_t count, int indent )
     {
         int i, j, k;
@@ -418,7 +463,9 @@ namespace pen
             if( j1_action[i] == json_keep )
             {
                 json_string.append(indent_str.c_str());
+                json_string.append('\"');
                 json_string.append(j1[i].name().c_str());
+                json_string.append('\"');
                 
                 json_string.append(": ");
                 json_string.append(j1[i].m_internal_object->data);
@@ -431,7 +478,9 @@ namespace pen
                 json combined = combine( j1[i], j2[j], indent+1 );
                 
                 json_string.append(indent_str.c_str());
+                json_string.append('\"');
                 json_string.append(j1[i].name().c_str());
+                json_string.append('\"');
                 json_string.append(":\n");
                 
                 json_string.append(combined.dumps().c_str());
@@ -445,7 +494,9 @@ namespace pen
             if( j2_action[i] == json_keep )
             {
                 json_string.append(indent_str.c_str());
+                json_string.append('\"');
                 json_string.append(j2[i].name().c_str());
+                json_string.append('\"');
                 
                 json_string.append(": ");
                 json_string.append(j2[i].m_internal_object->data);
@@ -580,7 +631,9 @@ namespace pen
     
     Str json::dumps()
     {
-        return m_internal_object->data;
+        Str t;
+        _dump( t, m_internal_object->data, m_internal_object->tokens, m_internal_object->num_tokens, 0);
+        return t;
     }
     
     Str json::name()
@@ -611,7 +664,9 @@ namespace pen
     void json::set(const c8* name, const Str val)
     {
         Str new_json_object = "{";
+        new_json_object.append('\"');
         new_json_object.append(name);
+        new_json_object.append('\"');
         new_json_object.append(":");
         new_json_object.append(val.c_str());
         new_json_object.append("}");

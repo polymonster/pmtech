@@ -125,26 +125,21 @@ ps_output ps_yellow( vs_output _input )
     return _output;
 }
 
+ps_output ps_diffuse( vs_output _input ) 
+{	
+	ps_output _output;
+	
+	_output.colour = SAMPLE_TEXTURE_2D( diffuse_texture, _input.texcoord.xy );
+		
+    return _output;
+}
+
 pmfx:
 {
-	"magenta":
+	"diffuse":
 	{
 		"vs": "vs_main",
-		"ps": "ps_magenta",
-		"cull": "back"
-	},
-	
-	"green":
-	{
-		"vs": "vs_main",
-		"ps": "ps_green",
-		"blend_src": "src_alpha"
-	},
-	
-	"yellow_skinned":
-	{
-		"vs": "vs_main_skinned",
-		"ps": "ps_yellow",
+		"ps": "ps_diffuse",
 		"blend_src": "src_alpha"
 	}
 }

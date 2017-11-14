@@ -294,8 +294,10 @@ namespace put
 
 			pen::renderer_clear(k_layers[i].clear_state);
 
-            put::ces::render_scene_view( k_layers[i].view, k_shader_debug_selected == -1 ? ces::SN_RENDER_LIT : ces::SN_RENDER_DEBUG );
+            //put::ces::render_scene_view( k_layers[i].view, k_shader_debug_selected == -1 ? ces::SN_RENDER_LIT : ces::SN_RENDER_DEBUG );
 
+            put::ces::render_scene_debug(k_layers[i].view.scene, k_layers[i].view);
+            
             if( k_layers[i].debug_dispatch & LAYER_DEBUG_3D )
                 put::dbg::render_3d( k_layers[i].view.cb_view );
             

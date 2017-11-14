@@ -40,17 +40,12 @@ namespace put
 			}
 
             k_program_preferences.set("last_used_directory", formatted);
-            
-            //todo
-            /*
-			k_program_preferences["last_used_directory"] = formatted;
 
-			std::ofstream ofs(k_program_prefs_filename);
+			std::ofstream ofs(k_program_prefs_filename.c_str());
 
-			ofs << k_program_preferences.dump();
+			ofs << k_program_preferences.dumps().c_str();
 
 			ofs.close();
-            */
 		}
 
 		const c8** get_last_used_directory(s32& directory_depth)
@@ -65,7 +60,7 @@ namespace put
 				if (last_dir.type() != JSMN_UNDEFINED)
 				{
 					std::string path = last_dir.as_str().c_str();
-                    
+                
 					s32 dir_pos = 0;
 					directory_depth = 0;
 					bool finished = false;

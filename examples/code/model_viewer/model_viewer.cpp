@@ -47,25 +47,38 @@ using namespace put;
 
 void update_model_view(put::layer* layer)
 {
-	//dev ui
-	ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
-
-	static bool open_scene_browser = false;
-	if (ImGui::Button(ICON_FA_TRY))
-	{
-		open_scene_browser = true;
-	}
-    
+    static bool open_scene_browser = false;
     static bool open_model_import = false;
-    if (ImGui::Button(ICON_FA_AT))
+    static bool open_camera_menu = false;
+    
+    ImGui::BeginMainMenuBar();
+    
+    if (ImGui::Button(ICON_FA_FOLDER_OPEN))
     {
         open_model_import = true;
     }
-
-	if (open_scene_browser)
-	{
-		ces::enumerate_scene_ui(layer->view.scene, &open_scene_browser);
-	}
+    
+    if (ImGui::Button(ICON_FA_SEARCH))
+    {
+        open_scene_browser = true;
+    }
+    
+    if (ImGui::Button(ICON_FA_VIDEO_CAMERA))
+    {
+        open_camera_menu = true;
+    }
+    
+    ImGui::EndMainMenuBar();
+    
+    if( open_camera_menu )
+    {
+        if( ImGui::Begin("Camera", &open_camera_menu) )
+        {
+            ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
+            
+            ImGui::End();
+        }
+    }
     
     if( open_model_import )
     {
@@ -75,6 +88,11 @@ void update_model_view(put::layer* layer)
         {
             put::ces::load_pmm(pmm, layer->view.scene );
         }
+    }
+    
+    if (open_scene_browser)
+    {
+        ces::enumerate_scene_ui(layer->view.scene, &open_scene_browser);
     }
 	
 	//update camera
@@ -103,7 +121,7 @@ void update_model_view(put::layer* layer)
     
     ces::scene_node_physics& snp = layer->view.scene->physics_data[layer->view.scene->selected_index];
     
-    put::dbg::add_aabb(snp.min_extents, snp.max_extents, vec4f::white() );
+    //put::dbg::add_aabb(snp.min_extents, snp.max_extents, vec4f::white() );
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )

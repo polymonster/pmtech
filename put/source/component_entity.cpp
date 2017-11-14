@@ -12,6 +12,13 @@ using namespace put;
 
 namespace put
 {
+    enum pmm_transform_types
+    {
+        PMM_TRANSLATE = 0,
+        PMM_ROTATE = 1,
+        PMM_MATRIX
+    };
+    
 	namespace ces
 	{
 
@@ -91,7 +98,8 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, multibody_handles);
 			FREE_COMPONENT_ARRAY(scene, multibody_link);
 			FREE_COMPONENT_ARRAY(scene, physics_data);
-
+            FREE_COMPONENT_ARRAY(scene, cbuffer);
+            
 			//free name memory
 			for (u32 i = 0; i < scene->num_nodes; ++i)
 			{
@@ -232,131 +240,6 @@ namespace put
                 }
             }
 #endif
-        }
-        
-        void load_skeleton( const c8* data )
-        {
-            void*  skeleton_data;
-            
-            const u32* header = (u32*)data;
-            
-            //alloc a new skeleton
-            skeleton* p_skeleton = (skeleton*)pen::memory_alloc(sizeof(skeleton));
-            
-            //with number of joints allocate space for parents and transforms
-            p_skeleton->num_joints = (u32)header[ 1 ];
-            
-            p_skeleton->parents = (u32*)pen::memory_alloc(sizeof(u32)*p_skeleton->num_joints);
-            p_skeleton->offsets = (vec3f*)pen::memory_alloc(sizeof(vec3f)*p_skeleton->num_joints);
-            p_skeleton->rotations = (Quaternion*)pen::memory_alloc(sizeof(Quaternion)*p_skeleton->num_joints);
-            p_skeleton->names = (c8**)pen::memory_alloc(sizeof(c8*)*p_skeleton->num_joints);
-            
-            const u32* p_int = &header[ 2 ];
-            for( u32 i = 0; i < p_skeleton->num_joints; ++i )
-            {
-                //name
-                u32 num_chars = *p_int++;
-                p_skeleton->names[ i ] = (c8*)pen::memory_alloc(sizeof(c8)*(num_chars+1));
-                
-                c8 buf[ 32 ];
-                for( u32 c = 0; c < num_chars; ++c)
-                {
-                    if( c >= 32 )
-                    {
-                        break;
-                    }
-                    
-                    buf[ c ] = (c8)*p_int++;
-                }
-                
-                pen::memory_cpy( &p_skeleton->names[ i ][ 0 ], &buf[ 0 ], num_chars );
-                p_skeleton->names[ i ][ num_chars ] = '\0';
-                
-                //parent
-                p_skeleton->parents[ i ] = *p_int++;
-                
-                //num transforms
-                u32 num_transforms = *p_int++;
-                
-                u32 num_rotations = 0;
-                vec4f rotations[ 3 ];
-                
-                for( u32 t = 0; t < num_transforms; ++t )
-                {
-                    u32 type = *p_int++;
-                    
-                    if( type == 0 )
-                    {
-                        //translate
-                        pen::memory_set( &p_skeleton->offsets[i], 0xff, 12 );
-                        pen::memory_cpy( &p_skeleton->offsets[i], p_int, 12 );
-                        p_int += 3;
-                    }
-                    else if( type == 1 )
-                    {
-                        //rotate
-                        pen::memory_cpy( &rotations[ num_rotations ], p_int, 16 );
-                        
-                        //convert to radians
-                        rotations[ num_rotations ].w = put::maths::deg_to_rad( rotations[ num_rotations ].w );
-                        
-                        static f32 zero_rotation_epsilon = 0.000001f;
-                        if( rotations[ num_rotations ].w < zero_rotation_epsilon && rotations[ num_rotations ].w > zero_rotation_epsilon )
-                        {
-                            rotations[ num_rotations ].w = 0.0f;
-                        }
-                        
-                        num_rotations++;
-                        
-                        p_int += 4;
-                    }
-                    else
-                    {
-                        //unsupported transform type
-                        PEN_ASSERT( 0 );
-                    }
-                }
-                
-                PEN_ASSERT( num_rotations <= 3 );
-                
-                if( num_rotations == 0 )
-                {
-                    //no rotation
-                    p_skeleton->rotations[ i ].euler_angles( 0.0f, 0.0f, 0.0f );
-                }
-                else if( num_rotations == 1 )
-                {
-                    //axis angle
-                    p_skeleton->rotations[ i ].axis_angle( rotations[ 0 ] );
-                }
-                else if( num_rotations == 3 )
-                {
-                    //euler angles
-                    f32 z_theta = 0;
-                    f32 y_theta = 0;
-                    f32 x_theta = 0;
-                    
-                    for( u32 r = 0; r < 3; ++r )
-                    {
-                        if( rotations[r].z == 1.0f )
-                        {
-                            z_theta = rotations[r].w;
-                        }
-                        else if (rotations[r].y == 1.0f)
-                        {
-                            y_theta = rotations[r].w;
-                        }
-                        else if (rotations[r].x == 1.0f)
-                        {
-                            x_theta = rotations[r].w;
-                        }
-                        
-                        p_skeleton->rotations[i].euler_angles( z_theta, y_theta, x_theta );
-                    }
-                }
-            }
-        
-            pen::memory_free( skeleton_data );
         }
 
         void load_geometry(const c8* data, scene_node_geometry* p_geometries, scene_node_physics* p_physics, component_entity_scene* scene, u32 node_index, const c8** material_names)
@@ -744,40 +627,39 @@ namespace put
                 
                 vec3f translation;
                 vec4f rotations[3];
-                u32      num_rotations = 0;
+                mat4  matrix;
+                bool  has_matrix_transform = false;
+                u32   num_rotations = 0;
                 
                 for (u32 t = 0; t < transforms; ++t)
                 {
                     u32 type = *p_u32reader++;
                     
-                    if (type == 0)
+                    switch( type )
                     {
-                        //translate
-                        pen::memory_cpy(&translation, p_u32reader, 12);
-                        p_u32reader += 3;
-                    }
-                    else if (type == 1)
-                    {
-                        //rotate
-                        pen::memory_cpy(&rotations[num_rotations], p_u32reader, 16);
-                        
-                        //convert to radians
-                        rotations[num_rotations].w = put::maths::deg_to_rad(rotations[num_rotations].w);
-                        
-                        static f32 zero_rotation_epsilon = 0.000001f;
-                        if (rotations[num_rotations].w < zero_rotation_epsilon && rotations[num_rotations].w > zero_rotation_epsilon)
-                        {
-                            rotations[num_rotations].w = 0.0f;
-                        }
-                        
-                        num_rotations++;
-                        
-                        p_u32reader += 4;
-                    }
-                    else
-                    {
-                        //unsupported transform type
-                        PEN_ASSERT(0);
+                        case PMM_TRANSLATE:
+                            pen::memory_cpy(&translation, p_u32reader, 12);
+                            p_u32reader += 3;
+                            break;
+                        case PMM_ROTATE:
+                            pen::memory_cpy(&rotations[num_rotations], p_u32reader, 16);
+                            rotations[num_rotations].w = put::maths::deg_to_rad(rotations[num_rotations].w);
+                            static f32 zero_rotation_epsilon = 0.000001f;
+                            if (rotations[num_rotations].w < zero_rotation_epsilon && rotations[num_rotations].w > zero_rotation_epsilon)
+                                rotations[num_rotations].w = 0.0f;
+                            
+                            num_rotations++;
+                            p_u32reader += 4;
+                            break;
+                        case PMM_MATRIX:
+                            has_matrix_transform = true;
+                            pen::memory_cpy(&matrix, p_u32reader, 16 * 4);
+                            p_u32reader += 16;
+                            break;
+                        default:
+                            //unsupported transform type
+                            PEN_ASSERT(0);
+                            break;
                     }
                 }
                 
@@ -852,7 +734,10 @@ namespace put
                 mat4 translation_mat;
                 translation_mat.create_translation(translation);
                 
-                scene->local_matrices[current_node] = (translation_mat * rot_mat);
+                if(!has_matrix_transform)
+                    matrix = translation_mat * rot_mat;
+                
+                scene->local_matrices[current_node] = (matrix);
                 
                 //store intial position for physics to hook into later
                 scene->physics_data[current_node].start_position = translation;
@@ -1071,7 +956,7 @@ namespace put
                         pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
                     }
                     
-                    pmfx::set_technique( model_pmfx, 2 );
+                    pmfx::set_technique( model_pmfx, 0 );
                     
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
@@ -1121,6 +1006,18 @@ namespace put
 			{
 				put::dbg::add_coord_space(scene->world_matrices[n], 0.5f);
 			}
+            
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                u32 p = scene->parents[n];
+                if( p != n )
+                {
+                    vec3f p1 = scene->world_matrices[n].get_translation();
+                    vec3f p2 = scene->world_matrices[p].get_translation();
+                    
+                    put::dbg::add_line(p1, p2, vec4f::magenta() );
+                }
+            }
 
 			put::dbg::render_3d(view.cb_view);
 		}

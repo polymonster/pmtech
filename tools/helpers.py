@@ -179,3 +179,38 @@ def pack_corrected_4x4matrix(output, matrix_array):
     else:
         for f in matrix_array:
             output.append(struct.pack("f", (float(f))))
+
+
+def correct_4x4matrix(matrix_string):
+    corrected = []
+    matrix_array = matrix_string.split()
+    if author == "Maxypad":
+        num_mats = len(matrix_array) / 16
+        for m in range(0, int(num_mats), 1):
+            index = m * 16
+            # x row
+            corrected.append(float(matrix_array[index+0]))
+            corrected.append(float(matrix_array[index+1]))
+            corrected.append(float(matrix_array[index+2]))
+            corrected.append(float(matrix_array[index+3]))
+            # y row
+            corrected.append(float(matrix_array[index+8]))
+            corrected.append(float(matrix_array[index+9]))
+            corrected.append(float(matrix_array[index+10]))
+            corrected.append(float(matrix_array[index+11]))
+            # z row
+            corrected.append(float(matrix_array[index+4]) * -1.0)
+            corrected.append(float(matrix_array[index+5]) * -1.0)
+            corrected.append(float(matrix_array[index+6]) * -1.0)
+            corrected.append(float(matrix_array[index+7]) * -1.0)
+            # w row
+            corrected.append(float(matrix_array[index+12]))
+            corrected.append(float(matrix_array[index+13]))
+            corrected.append(float(matrix_array[index+14]))
+            corrected.append(float(matrix_array[index+15]))
+
+    out_str = ""
+    for m in matrix_array:
+        out_str += m + " "
+
+    return out_str
