@@ -39,6 +39,7 @@ typedef uint32_t        u32;
 typedef int16_t         s16;
 typedef uint16_t        u16;
 typedef int64_t         u64;
+typedef uint32_t        hash_id;
 
 typedef char            s8;
 typedef unsigned char   u8;
@@ -48,6 +49,7 @@ typedef char	        c8;
 
 typedef float           f32;
 typedef double          f64;
+
 
 typedef unsigned long ulong;
 

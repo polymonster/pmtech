@@ -7,6 +7,7 @@
 #include "layer_controller.h"
 #include "pmfx.h"
 #include "str/Str.h"
+#include "hash.h"
 
 using namespace put;
 
@@ -19,9 +20,10 @@ namespace put
         PMM_MATRIX
     };
     
+    const hash_id ID_JOINT = PEN_HASH("joint");
+    
 	namespace ces
 	{
-
 #define ALLOC_COMPONENT_ARRAY( SCENE, COMPONENT, TYPE )											\
 		if( !SCENE->COMPONENT )																	\
 			SCENE->COMPONENT = (TYPE*)pen::memory_alloc(sizeof(TYPE)*SCENE->nodes_size );		\
@@ -68,16 +70,19 @@ namespace put
 			ALLOC_COMPONENT_ARRAY(scene, multibody_link, s32);
 			ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
             ALLOC_COMPONENT_ARRAY(scene, cbuffer, u32);
+            ALLOC_COMPONENT_ARRAY(scene, id_name, hash_id);
+            ALLOC_COMPONENT_ARRAY(scene, id_geometry, hash_id);
+            ALLOC_COMPONENT_ARRAY(scene, id_material, hash_id);
             
             for( u32 i = 0; i < scene->nodes_size; ++i )
-            {
                 scene->cbuffer[i] = PEN_INVALID_HANDLE;
-            }
-
-			//display info - could be disabled in shipable builds
-			ALLOC_COMPONENT_ARRAY(scene, names, c8*);
-			ALLOC_COMPONENT_ARRAY(scene, geometry_names, c8*);
-			ALLOC_COMPONENT_ARRAY(scene, material_names, c8*);
+            
+#ifdef CES_DEBUG
+            //debug components
+			ALLOC_COMPONENT_ARRAY(scene, names, Str);
+			ALLOC_COMPONENT_ARRAY(scene, geometry_names, Str);
+			ALLOC_COMPONENT_ARRAY(scene, material_names, Str);
+#endif
 		}
 
 		void free_scene_buffers( component_entity_scene* scene )
@@ -99,19 +104,69 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, multibody_link);
 			FREE_COMPONENT_ARRAY(scene, physics_data);
             FREE_COMPONENT_ARRAY(scene, cbuffer);
-            
-			//free name memory
-			for (u32 i = 0; i < scene->num_nodes; ++i)
-			{
-				pen::memory_free(scene->names[i]);
-				pen::memory_free(scene->geometry_names[i]);
-				pen::memory_free(scene->material_names[i]);
-			}
+            FREE_COMPONENT_ARRAY(scene, id_name);
+            FREE_COMPONENT_ARRAY(scene, id_geometry);
+            FREE_COMPONENT_ARRAY(scene, id_material);
 
+#ifdef CES_DEBUG
 			FREE_COMPONENT_ARRAY(scene, names);
 			FREE_COMPONENT_ARRAY(scene, geometry_names);
 			FREE_COMPONENT_ARRAY(scene, material_names);
+#endif
 		}
+        
+        void clone_node( component_entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset, const c8* suffix)
+        {
+            component_entity_scene* p_sn = scene;
+            
+            u32 parent_offset = p_sn->parents[src] - src;
+            if (parent == -1)
+            {
+                p_sn->parents[dst] = dst - parent_offset;
+            }
+            else
+            {
+                p_sn->parents[dst] = parent;
+            }
+            
+            pen::memory_cpy(&p_sn->entities[dst], &p_sn->entities[src], sizeof(a_u64));
+            
+            p_sn->geometries[dst] = p_sn->geometries[src];
+            p_sn->materials[dst] = p_sn->materials[src];
+            p_sn->local_matrices[dst] = p_sn->local_matrices[src];
+            p_sn->world_matrices[dst] = p_sn->world_matrices[src];
+            p_sn->offset_matrices[dst] = p_sn->offset_matrices[src];
+            p_sn->physics_matrices[dst] = p_sn->physics_matrices[src];
+            p_sn->physics_handles[dst] = p_sn->physics_handles[src];
+            p_sn->multibody_handles[dst] = p_sn->multibody_handles[src];
+            p_sn->multibody_link[dst] = p_sn->multibody_link[src];
+            p_sn->physics_data[dst] = p_sn->physics_data[src];
+            p_sn->cbuffer[dst] = p_sn->cbuffer[src];
+            p_sn->id_name[dst] = p_sn->id_name[src];
+            p_sn->id_geometry[dst] = p_sn->id_geometry[src];
+            p_sn->id_material[dst] = p_sn->id_material[src];
+            
+            if (dst >= p_sn->num_nodes)
+            {
+                p_sn->num_nodes = dst + 1;
+            }
+            
+            p_sn->physics_data[dst].start_position += offset;
+            
+            vec3f right = p_sn->local_matrices[dst].get_right();
+            vec3f up = p_sn->local_matrices[dst].get_up();
+            vec3f fwd = p_sn->local_matrices[dst].get_fwd();
+            vec3f translation = p_sn->local_matrices[dst].get_translation();
+            
+            p_sn->local_matrices[dst].set_vectors(right, up, fwd, translation + offset);
+            
+#ifdef CES_DEBUG
+            p_sn->names[dst] = p_sn->names[src].c_str();
+            p_sn->names[dst].append(suffix);
+            p_sn->geometry_names[dst] = p_sn->geometry_names[src].c_str();
+            p_sn->material_names[dst] = p_sn->material_names[src].c_str();
+#endif
+        }
 
 		component_entity_scene*	create_scene( const c8* name )
 		{
@@ -143,40 +198,6 @@ namespace put
             
             return name;
         }
-
-		u32 read_parsable_char(char** buf, const u32* data_start)
-		{
-			u32 u32s_read = 0;
-			u32 num_chars = *data_start++;
-			u32s_read++;
-
-			c8 _buf[MAX_SCENE_NODE_CHARS];
-			for (u32 c = 0; c < num_chars; ++c)
-			{
-				if (c < MAX_SCENE_NODE_CHARS)
-				{
-					_buf[c] = (c8)*data_start;
-				}
-
-				PEN_ASSERT(c < MAX_SCENE_NODE_CHARS);
-
-				data_start++;
-				u32s_read++;
-			}
-
-			if (num_chars >= MAX_SCENE_NODE_CHARS)
-			{
-				num_chars = MAX_SCENE_NODE_CHARS - 1;
-			}
-
-			_buf[num_chars] = '\0';
-
-			*buf = (c8*)pen::memory_alloc(num_chars + 1);
-
-			pen::memory_cpy(*buf, &_buf[0], num_chars + 1);
-
-			return u32s_read;
-		}
         
         void load_animations( const c8* data )
         {
@@ -242,7 +263,15 @@ namespace put
 #endif
         }
 
-        void load_geometry(const c8* data, scene_node_geometry* p_geometries, scene_node_physics* p_physics, component_entity_scene* scene, u32 node_index, const c8** material_names)
+        void load_geometry
+        (
+            const c8* data,
+            scene_node_geometry* p_geometries,
+            scene_node_physics* p_physics,
+            component_entity_scene* scene,
+            u32 node_index,
+            std::vector<Str>& material_symbols
+        )
         {
             u32* p_reader = (u32*)data;
             u32 version = *p_reader++;
@@ -255,9 +284,7 @@ namespace put
             
             physics::collision_mesh_data* temp_collision_data;
             if (collision_mesh)
-            {
                 temp_collision_data = (physics::collision_mesh_data*)pen::memory_alloc(sizeof(physics::collision_mesh_data) * num_meshes);
-            }
             
             //map mesh material id's to material file id's
             for (u32 i = 0; i < num_meshes; ++i)
@@ -266,9 +293,10 @@ namespace put
                 
                 p_geometries[i].submesh_material_index = -1;
                 
-                for (u32 j = 0; j < num_meshes; ++j)
+                u32 num_symbols = material_symbols.size();
+                for( u32 j = 0; j < num_symbols; ++j)
                 {
-                    if (pen::string_compare(mesh_material.c_str(), material_names[j]) == 0)
+                    if ( mesh_material == material_symbols[j] )
                     {
                         p_geometries[i].submesh_material_index = j;
                         break;
@@ -366,6 +394,7 @@ namespace put
                 
                 p_reader += bcp.buffer_size / sizeof(u32);
                 
+                //stream out / transform feedback
                 if (0 /*skinned*/)
                 {
                     //create an empty buffer for stream out
@@ -536,7 +565,7 @@ namespace put
             std::vector<u32> material_offsets;
             
             std::vector<Str> material_names;
-            std::vector<Str> geometry_names;
+            std::vector<hash_id> id_geometry;
             
             for(s32 i = 0; i < num_scene; ++i)
                 scene_offsets.push_back(*p_u32reader++);
@@ -555,7 +584,7 @@ namespace put
             {
                 Str name = read_parsable_string(&p_u32reader);
                 geom_offsets.push_back(*p_u32reader++);
-                geometry_names.push_back(name);
+                id_geometry.push_back(PEN_HASH(name.c_str()));
             }
             
             c8* p_data_start = (c8*)p_u32reader;
@@ -575,46 +604,48 @@ namespace put
             {
                 u32 node_type = *p_u32reader++;
                 
-                p_u32reader += read_parsable_char( &scene->names[current_node], p_u32reader);
-                p_u32reader += read_parsable_char( &scene->geometry_names[current_node], p_u32reader);
+                Str node_name = read_parsable_string(&p_u32reader);
+                Str geometry_name = read_parsable_string(&p_u32reader);
+                
+                scene->id_name[current_node] = PEN_HASH( node_name.c_str() );
+                scene->id_geometry[current_node] = PEN_HASH( geometry_name.c_str() );
+                
+#ifdef CES_DEBUG
+                scene->names[current_node] = node_name;
+                scene->geometry_names[current_node] = geometry_name;
+#endif
+                
+                if( scene->id_geometry[current_node] == ID_JOINT )
+                    scene->entities[current_node] |= CMP_BONE;
                 
                 u32 num_meshes = *p_u32reader++;
                 
                 scene_node_material* p_materials = NULL;
-                c8** p_material_names;
-                c8** p_material_symbols;
+                std::vector<Str> mesh_material_names;
+                std::vector<Str> mesh_material_symbols;
                 
                 //material pre load
                 if (num_meshes > 0)
                 {
                     p_materials = (scene_node_material*)pen::memory_alloc(sizeof(scene_node_material) * num_meshes);
                     
-                    p_material_names = (c8**)pen::memory_alloc(sizeof(c8*) * num_meshes);
-                    p_material_symbols = (c8**)pen::memory_alloc(sizeof(c8*) * num_meshes);
-                    
                     //read in material filenames
                     for (u32 mat = 0; mat < num_meshes; ++mat)
-                    {
-                        p_u32reader += read_parsable_char(&p_material_names[mat], p_u32reader);
-                    }
+                        mesh_material_names.push_back(read_parsable_string(&p_u32reader));
                     
-                    //material symbol names
+                    //read material symbol names
                     for (u32 mat = 0; mat < num_meshes; ++mat)
-                    {
-                        p_u32reader += read_parsable_char(&p_material_symbols[mat], p_u32reader);
-                    }
+                        mesh_material_symbols.push_back(read_parsable_string(&p_u32reader));
                     
                     //load materials
-                    for (u32 mat = 0; mat < num_meshes; ++mat)
+                    for (u32 mi = 0; mi < num_meshes; ++mi)
                     {
-                        Str mat_name = p_material_names[mat];
-                        
-                        for( s32 m = 0; m < num_materials; ++m )
+                        for( s32 mati = 0; mati < num_materials; ++mati )
                         {
-                            if( material_names[m] == mat_name )
+                            if( material_names[mati] == mesh_material_names[mi] )
                             {
-                                u32* p_mat_data = (u32*)(p_data_start + material_offsets[m]);
-                                load_material(p_mat_data, &p_materials[mat]);
+                                u32* p_mat_data = (u32*)(p_data_start + material_offsets[mati]);
+                                load_material(p_mat_data, &p_materials[mi]);
                             }
                         }
                     }
@@ -647,7 +678,6 @@ namespace put
                             static f32 zero_rotation_epsilon = 0.000001f;
                             if (rotations[num_rotations].w < zero_rotation_epsilon && rotations[num_rotations].w > zero_rotation_epsilon)
                                 rotations[num_rotations].w = 0.0f;
-                            
                             num_rotations++;
                             p_u32reader += 4;
                             break;
@@ -714,14 +744,14 @@ namespace put
                     
                     if (node_type == NODE_TYPE_GEOM)
                     {
-                        Str geom_name = scene->geometry_names[current_node];
+                        hash_id id = scene->id_geometry[current_node];
                         
                         for (u32 g = 0; g < num_geom; ++g)
                         {
-                            if( geom_name == geometry_names[g] )
+                            if( id == id_geometry[g] )
                             {
                                 u32* p_geom_data = (u32*)(p_data_start + geom_offsets[g]);
-                                load_geometry((const c8*)p_geom_data, p_geometries, p_physics, scene, current_node, (const c8**)p_material_symbols);
+                                load_geometry((const c8*)p_geom_data, p_geometries, p_physics, scene, current_node, mesh_material_symbols);
                             }
                         }
                     }
@@ -768,22 +798,21 @@ namespace put
                         scene->geometries[dest] = p_geometries[submesh];
                         
                         scene->materials[dest] = p_materials[p_geometries[submesh].submesh_material_index];
-                        scene->material_names[dest] = p_material_names[p_geometries[submesh].submesh_material_index];
+                        
+                        u32 mat_index = p_geometries[submesh].submesh_material_index;
+                        scene->id_material[dest] = PEN_HASH(mesh_material_names[mat_index]);
                         
                         p_physics[submesh].start_position = translation;
                         p_physics[submesh].start_rotation = final_rotation;
                         
                         scene->physics_data[dest] = p_physics[submesh];
-                    }
-                    
-                    for (u32 m = 0; m < num_meshes; ++m)
-                    {
-                        pen::memory_free(p_material_symbols[m]);
+                        
+#ifdef CES_DEBUG
+                        scene->material_names[dest] = mesh_material_names[p_geometries[submesh].submesh_material_index];
+#endif
                     }
                     
                     //delete temp data
-                    pen::memory_free(p_material_symbols);
-                    pen::memory_free(p_material_names);
                     pen::memory_free(p_geometries);
                     pen::memory_free(p_materials);
                     pen::memory_free(p_physics);
@@ -792,130 +821,8 @@ namespace put
                 current_node = dest + 1;
                 scene->num_nodes = current_node;
             }
-            
-            //import joints
-            if( num_joint_sets == 1 )
-            {
-                //load_skeleton( p_data_start + joint_offsets[0] );
-            }
         }
-        
-		void clone_node( component_entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset, const c8* suffix)
-		{
-			component_entity_scene* p_sn = scene;
 
-			u32 buffer_size = pen::string_length(p_sn->names[src]) + pen::string_length(suffix) + 1;
-
-			p_sn->names[dst] = (c8*)pen::memory_alloc(buffer_size);
-
-			pen::memory_cpy(&p_sn->names[dst][0], &p_sn->names[src][0], buffer_size);
-			pen::string_concatonate(&p_sn->names[dst][0], suffix, buffer_size);
-
-			p_sn->geometry_names[dst] = p_sn->geometry_names[src];
-			p_sn->material_names[dst] = p_sn->material_names[src];
-
-			u32 parent_offset = p_sn->parents[src] - src;
-			if (parent == -1)
-			{
-				p_sn->parents[dst] = dst - parent_offset;
-			}
-			else
-			{
-				p_sn->parents[dst] = parent;
-			}
-
-			pen::memory_cpy(&p_sn->entities[dst], &p_sn->entities[src], sizeof(a_u64));
-
-			p_sn->geometries[dst] = p_sn->geometries[src];
-			p_sn->materials[dst] = p_sn->materials[src];
-			p_sn->local_matrices[dst] = p_sn->local_matrices[src];
-			p_sn->world_matrices[dst] = p_sn->world_matrices[src];
-			p_sn->offset_matrices[dst] = p_sn->offset_matrices[src];
-			p_sn->physics_matrices[dst] = p_sn->physics_matrices[src];
-			p_sn->physics_handles[dst] = p_sn->physics_handles[src];
-			p_sn->multibody_handles[dst] = p_sn->multibody_handles[src];
-			p_sn->multibody_link[dst] = p_sn->multibody_link[src];
-			p_sn->physics_data[dst] = p_sn->physics_data[src];
-
-			if (dst >= p_sn->num_nodes)
-			{
-				p_sn->num_nodes = dst + 1;
-			}
-
-			p_sn->physics_data[dst].start_position += offset;
-
-			vec3f right = p_sn->local_matrices[dst].get_right();
-			vec3f up = p_sn->local_matrices[dst].get_up();
-			vec3f fwd = p_sn->local_matrices[dst].get_fwd();
-			vec3f translation = p_sn->local_matrices[dst].get_translation();
-
-			p_sn->local_matrices[dst].set_vectors(right, up, fwd, translation + offset);
-		}
-
-		void enumerate_scene_ui(component_entity_scene* scene, bool* open )
-		{
-			ImGui::Begin("Scene Browser", open );
-
-			ImGui::BeginChild("Entities", ImVec2(400, 400), true );
-
-            s32& selected_index = scene->selected_index;
-            
-			for (u32 i = 0; i < scene->num_nodes; ++i)
-			{
-				bool selected = false;
-				ImGui::Selectable(scene->names[i], &selected);
-
-				if (selected)
-				{
-					selected_index = i;
-				}
-			}
-
-			ImGui::EndChild();
-
-			ImGui::SameLine();
-
-			ImGui::BeginChild("Selected", ImVec2(416, 400), true );
-
-			if (selected_index != -1)
-			{
-				//header
-				ImGui::Text("%s", scene->names[selected_index]);
-                
-                s32 parent_index = scene->parents[selected_index];
-                if( parent_index != selected_index)
-                    ImGui::Text("Parent: %s", scene->names[parent_index]);
-                
-                ImGui::Separator();
-
-				//geom
-				ImGui::Text("Geometry: %s", scene->geometry_names[selected_index]);
-				ImGui::Separator();
-
-				//material
-				ImGui::Text("Materal: %s", scene->material_names[selected_index]);
-
-				if (scene->material_names[selected_index])
-				{
-					for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
-					{
-						if (scene->materials[selected_index].texture_id[t] > 0)
-						{
-							if (t > 0)
-								ImGui::SameLine();
-
-							ImGui::Image(&scene->materials[selected_index].texture_id[t], ImVec2(128, 128));
-						}
-					}
-				}
-                ImGui::Separator();
-			}
-
-			ImGui::EndChild();
-
-			ImGui::End();
-		}
-        
 		void render_scene_view( const scene_view& view, scene_render_type render_type )
 		{
             component_entity_scene* scene = view.scene;
@@ -999,27 +906,151 @@ namespace put
 					scene->world_matrices[n] = scene->world_matrices[parent] * scene->local_matrices[n];
 			}
 		}
+        
+        enum e_debug_draw_flags
+        {
+            DD_MATRIX = 1<<0,
+            DD_BONES = 1<<1,
+            DD_AABB = 1<<2,
+            DD_GRID = 1<<3,
+            
+            DD_NUM_FLAGS = 4
+        };
+        
+        const c8* dd_names[]
+        {
+            "Matrices",
+            "Bones",
+            "AABB",
+            "Grid"
+        };
+        static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
+        
+        void enumerate_scene_ui(component_entity_scene* scene, bool* open )
+        {
+#ifdef CES_DEBUG
+            ImGui::Begin("Scene Browser", open );
+            
+            if (ImGui::CollapsingHeader("Debug Draw"))
+            {
+                static bool* dd_bools = new bool[DD_NUM_FLAGS];
+                
+                for( s32 i = 0; i < DD_NUM_FLAGS; ++i )
+                {
+                    ImGui::Checkbox(dd_names[i], &dd_bools[i]);
+                    
+                    u32 mask = 1<<i;
+                    
+                    if(dd_bools[i])
+                        scene->debug_flags |= mask;
+                    else
+                        scene->debug_flags &= ~(mask);
+                    
+                    if( i != DD_NUM_FLAGS-1 )
+                    {
+                        ImGui::SameLine();
+                    }
+                }
+            }
+            
+            ImGui::BeginChild("Entities", ImVec2(400, 400), true );
+            
+            s32& selected_index = scene->selected_index;
+            
+            for (u32 i = 0; i < scene->num_nodes; ++i)
+            {
+                bool selected = false;
+                ImGui::Selectable(scene->names[i].c_str(), &selected);
+                
+                if (selected)
+                {
+                    selected_index = i;
+                }
+            }
+            
+            ImGui::EndChild();
+            
+            ImGui::SameLine();
+            
+            ImGui::BeginChild("Selected", ImVec2(416, 400), true );
+            
+            if (selected_index != -1)
+            {
+                //header
+                ImGui::Text("%s", scene->names[selected_index].c_str());
+                
+                s32 parent_index = scene->parents[selected_index];
+                if( parent_index != selected_index)
+                    ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
+                
+                ImGui::Separator();
+                
+                //geom
+                ImGui::Text("Geometry: %s", scene->geometry_names[selected_index].c_str());
+                ImGui::Separator();
+                
+                //material
+                ImGui::Text("Materal: %s", scene->material_names[selected_index].c_str());
+                
+                if (scene->material_names[selected_index].c_str())
+                {
+                    for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
+                    {
+                        if (scene->materials[selected_index].texture_id[t] > 0)
+                        {
+                            if (t > 0)
+                                ImGui::SameLine();
+                            
+                            ImGui::Image(&scene->materials[selected_index].texture_id[t], ImVec2(128, 128));
+                        }
+                    }
+                }
+                ImGui::Separator();
+            }
+            
+            ImGui::EndChild();
+            
+            ImGui::End();
+#endif
+        }
+        
 
 		void render_scene_debug( component_entity_scene* scene, const scene_view& view )
 		{
-			for (u32 n = 0; n < scene->num_nodes; ++n)
-			{
-				put::dbg::add_coord_space(scene->world_matrices[n], 0.5f);
-			}
-            
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+#ifdef CES_DEBUG
+            if( scene->debug_flags & DD_MATRIX )
             {
-                u32 p = scene->parents[n];
-                if( p != n )
+                for (u32 n = 0; n < scene->num_nodes; ++n)
                 {
-                    vec3f p1 = scene->world_matrices[n].get_translation();
-                    vec3f p2 = scene->world_matrices[p].get_translation();
-                    
-                    put::dbg::add_line(p1, p2, vec4f::magenta() );
+                    put::dbg::add_coord_space(scene->world_matrices[n], 0.5f);
                 }
             }
 
+            if( scene->debug_flags & DD_BONES )
+            {
+                for (u32 n = 0; n < scene->num_nodes; ++n)
+                {
+                    if( !(scene->entities[n] & CMP_BONE)  )
+                        continue;
+                    
+                    u32 p = scene->parents[n];
+                    if( p != n )
+                    {
+                        vec3f p1 = scene->world_matrices[n].get_translation();
+                        vec3f p2 = scene->world_matrices[p].get_translation();
+                        
+                        put::dbg::add_line(p1, p2, vec4f::magenta() );
+                    }
+                }
+            }
+            
+            if( scene->debug_flags & DD_GRID )
+            {
+                put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
+            }
+
 			put::dbg::render_3d(view.cb_view);
+#endif
 		}
 	}
 }

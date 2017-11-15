@@ -52,11 +52,15 @@ namespace pen
 	///
 	template <typename Ty>
 	uint32_t hashMurmur2A(const Ty& _data);
-
-	///
+    
 	uint32_t hashMurmur2A(const char* _data);
-
+    
+    uint32_t hashMurmur2A(char* _data);
+    
+    typedef HashMurmur2A hash_murmur;
 }
+
+#define PEN_HASH( V ) pen::hashMurmur2A(V) 
 
 #include "hash.inl"
 

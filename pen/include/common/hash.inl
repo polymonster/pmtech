@@ -160,16 +160,14 @@ namespace pen
 		return hashMurmur2A(&_data, sizeof(Ty) );
 	}
 
-    /*
-	inline uint32_t hashMurmur2A(const StringView& _data)
-	{
-		return hashMurmur2A(_data.getPtr(), _data.getLength() );
-	}
-
-	inline uint32_t hashMurmur2A(const char* _data)
-	{
-		return hashMurmur2A(StringView(_data) );
-	}
-    */
-
+    inline uint32_t hashMurmur2A(const char* _data)
+    {
+        return hashMurmur2A(_data, strlen(_data));
+    }
+    
+    inline uint32_t hashMurmur2A(char* _data)
+    {
+        return hashMurmur2A(_data, strlen(_data));
+    }
+    
 } // namespace bx

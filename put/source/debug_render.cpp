@@ -144,7 +144,7 @@ namespace put
             vb_font = pen::renderer_create_buffer(bcp);
             
             for( s32 i = 0; i < NUM_VERTEX_BUFFERS; ++i )
-                debug_font_buffers[i] = new vertex_debug_font[num_verts];
+                debug_font_buffers[i] = new vertex_debug_font[font_buffer_size_in_verts];
             
             if( prev_buffers[0] )
             {

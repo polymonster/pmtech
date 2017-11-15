@@ -6,7 +6,7 @@
 #include "loader.h"
 #include "debug_render.h"
 #include "input.h"
-#include <string>
+#include "str/Str.h"
 
 pen::window_creation_params pen_window
 {
@@ -80,7 +80,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         //mouse
         vec2f mouse_pos = vec2f( (f32)ms.x, vp.height - (f32)ms.y );
         vec2f mouse_quad_size = vec2f( 5.0f, 5.0f );
-		put::dbg::add_quad_2f( mouse_pos, mouse_quad_size, vec3f::cyan() );
+		put::dbg::add_quad_2f( mouse_pos, mouse_quad_size, vec4f::cyan() );
         
 		put::dbg::add_text_2f( 10.0f, 20.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ),
                         "mouse down : left %i, middle %i, right %i: mouse_wheel %i",
@@ -90,31 +90,32 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
                         ms.wheel);
         
         //key down
-        std::string key_msg = "key down: ";
+        Str key_msg = "key down: ";
+
         for( s32 key = 0; key < PENK_ARRAY_SIZE; ++key )
         {
             if( INPUT_PKEY(key) )
             {
-                key_msg += "[";
-                key_msg += pen::input_get_key_str(key);
-                key_msg += "]";
+                key_msg.append("[");
+                key_msg.append(pen::input_get_key_str(key));
+                key_msg.append("]");
             }
         }
-        key_msg += "\n";
+        key_msg.append("\n");
         
 		put::dbg::add_text_2f( 10.0f, 30.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", key_msg.c_str() );
         
-        std::string ascii_msg = "character down: ";
+        Str  ascii_msg = "character down: ";
         for( s32 key = 0; key < PENK_ARRAY_SIZE; ++key )
         {
             if( pen::input_get_unicode_key(key) )
             {
-                ascii_msg += "[";
-                ascii_msg += key;
-                ascii_msg += "]";
+                ascii_msg.append("[");
+                ascii_msg.append(key);
+                ascii_msg.append("]");
             }
         }
-        ascii_msg += "\n";
+        ascii_msg.append("\n");
         
 		put::dbg::add_text_2f( 10.0f, 40.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", ascii_msg.c_str() );
         

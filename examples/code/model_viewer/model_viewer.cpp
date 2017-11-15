@@ -117,10 +117,8 @@ void update_model_view(put::layer* layer)
     
     //debug render
     layer->debug_dispatch |= LAYER_DEBUG_3D;
-    put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
     
-    ces::scene_node_physics& snp = layer->view.scene->physics_data[layer->view.scene->selected_index];
-    
+    //ces::scene_node_physics& snp = layer->view.scene->physics_data[layer->view.scene->selected_index];
     //put::dbg::add_aabb(snp.min_extents, snp.max_extents, vec4f::white() );
 }
 
