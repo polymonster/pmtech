@@ -3,6 +3,7 @@ import os
 import sys
 
 version_number = 1
+anim_version_number = 1
 current_filename = ""
 author = ""
 log_level = "verbose"
@@ -34,6 +35,7 @@ class pmm_file:
         self.joints = []
 
     def write(self, filename):
+        print("writing: " + filename)
         output = open(filename, 'wb+')
 
         num_geom = len(self.geometry)
@@ -42,7 +44,6 @@ class pmm_file:
         num_joints = len(self.joints)
 
         output.write(struct.pack("i", num_scene))
-        output.write(struct.pack("i", num_joints))
         output.write(struct.pack("i", num_geom))
         output.write(struct.pack("i", num_material))
 
@@ -50,10 +51,6 @@ class pmm_file:
         for s in self.scene:
             output.write(struct.pack("i", offset))
             offset += len(s) * 4
-
-        for j in self.joints:
-            output.write(struct.pack("i", offset))
-            offset += len(j) * 4
 
         for i in range(0, len(self.material_names)):
             write_parsable_string(output, self.material_names[i])
@@ -67,10 +64,6 @@ class pmm_file:
 
         for s in self.scene:
             for b in s:
-                output.write(b)
-
-        for j in self.joints:
-            for b in j:
                 output.write(b)
 
         for m in self.materials:

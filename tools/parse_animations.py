@@ -1,84 +1,113 @@
+import struct
+import helpers
+
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
-animations = []
-joint_list = []
 
-#Animations
-class animation:
-    bone_name = ""
-    bone_index = -1
-    inputs = []
-    translation_x = []
-    translation_y = []
-    translation_z = []
-    rotation_x = []
-    rotation_y = []
-    rotation_z = []
+animation_channels = []
+animation_source_semantics = ["TIME", "TRANSFORM", "INTERPOLATION"]
+animation_source_types = ["float", "float4x4", "Name"]
 
-    def __init__(self):
-        self.bone_name = ""
-        self.bone_index = -1
-        self.inputs = []
-        self.translation_x = []
-        self.translation_y = []
-        self.translation_z = []
-        self.rotation_x = []
-        self.rotation_y = []
-        self.rotation_z = []
 
-def parse_animations(root,anims_out,joints_in):
-    global animations
-    global joint_list
-    animations = anims_out
-    joint_list = joints_in
-    animations.clear()
-    for node in root.iter(schema+'source'):
-        anim_id = node.get("id")
-        if anim_id.find('input') != -1:
-            add_animation_input(anim_id,node)
-        if anim_id.find('output') != -1:
-            add_animation_output(anim_id,node)
+class animation_source:
+    semantic = ""
+    type = ""
+    data = []
 
-def get_animation(anim_id):
-    for joint_name in joint_list:
-        if( anim_id.find( "-" + joint_name + "_") != -1 ):
-            anim_bone_index = joint_list.index(joint_name)
-            for animation_instance in animations:
-                if(animation_instance.bone_index == anim_bone_index):
-                    return animation_instance
-            outval = animation()
-            outval.bone_index = anim_bone_index
-            outval.bone_name = joint_name
-            animations.append(outval)
-            return outval
-    outval = animation()
-    outval.bone_index = -1
-    return outval
 
-def add_animation_output(anim_id,source_node):
-    anim_instance = get_animation(anim_id)
-    if( anim_instance.bone_index == -1 ):
-        return
-    for data_node in source_node.iter(schema+'float_array'):
-        splitted = data_node.text.split()
-        for f in splitted:
-            if(anim_id.find("_translation.X") != -1):
-                anim_instance.translation_x.append(f)
-            elif(anim_id.find("_translation.Y") != -1):
-                anim_instance.translation_y.append(f)
-            elif(anim_id.find("_translation.Z") != -1):
-                anim_instance.translation_z.append(f)
-            elif(anim_id.find("_rotationX.ANGLE") != -1):
-                anim_instance.rotation_x.append(f)
-            elif(anim_id.find("_rotationY.ANGLE") != -1):
-                anim_instance.rotation_y.append(f)
-            elif(anim_id.find("_rotationZ.ANGLE") != -1):
-                anim_instance.rotation_z.append(f)
-        return
+class animation_sampler:
+    id = ""
+    sources = []
 
-def add_animation_input(anim_id,source_node):
-    anim_instance = get_animation(anim_id)
-    for data_node in source_node.iter(schema+'float_array'):
-         if(len(anim_instance.inputs) == 0):
-            splitted = data_node.text.split()
-            for f in splitted:
-                anim_instance.inputs.append(f)
+
+class animation_channel:
+    target_bone = ""
+    sampler = animation_sampler()
+
+
+def parse_animation_source(root, source_id):
+    new_source = animation_source()
+    new_source.data = []
+    for src in root.iter(schema+'source'):
+        if "#"+src.get("id") == source_id:
+            for a in src.iter(schema+'accessor'):
+                count = a.get("count")
+                stride = a.get("stride")
+                for p in a.iter(schema+'param'):
+                    name = p.get("name")
+                    param_type = p.get('type')
+            new_source.type = param_type
+            new_source.semantic = name
+            for data_node in src.iter(schema+'float_array'):
+                split_floats = data_node.text.split()
+                for f in split_floats:
+                    new_source.data.append(f)
+    return new_source
+
+
+def parse_animations(root, anims_out, joints_in):
+    global animation_channels
+    animation_channels = []
+    for animation in root.iter(schema+'animation'):
+        samplers = []
+        for sampler in animation.iter(schema+'sampler'):
+            a_sampler = animation_sampler()
+            a_sampler.id = sampler.get("id")
+            a_sampler.sources = []
+            for input in sampler.iter(schema+'input'):
+                sampler_source = parse_animation_source(root, input.get("source"))
+                a_sampler.sources.append(sampler_source)
+            samplers.append(a_sampler)
+        for channel in animation.iter(schema+'channel'):
+            a_channel = animation_channel()
+            for s in samplers:
+                if channel.get("source") == "#"+s.id:
+                    a_channel.target_bone = channel.get("target")
+                    a_channel.sampler = s
+                    animation_channels.append(a_channel)
+
+
+def write_animation_file(filename):
+    global animation_channels
+    num_channels = len(animation_channels)
+    if num_channels > 0:
+        print("writing: " + filename)
+        output = open(filename, 'wb+')
+        output.write(struct.pack("i", helpers.anim_version_number))
+        output.write(struct.pack("i", num_channels))
+        for channel in animation_channels:
+            bone = channel.target_bone.split('/')
+            helpers.write_parsable_string(output, bone[0])
+            num_sources = 0
+            for src in channel.sampler.sources:
+                semantic_index = animation_source_semantics.index(src.semantic)
+                if semantic_index < 2:
+                    num_sources += 1
+            output.write(struct.pack("i", num_sources))
+            for src in channel.sampler.sources:
+                semantic_index = animation_source_semantics.index(src.semantic)
+                if semantic_index < 2:
+                    output.write(struct.pack("i", semantic_index))
+                    type_index = animation_source_types.index(src.type)
+                    output.write(struct.pack("i", type_index))
+                    output.write(struct.pack("i", len(src.data)))
+                    if src.type == "float":
+                        for f in range(0, len(src.data)):
+                            output.write(struct.pack("f", f))
+                    elif src.type == "float4x4":
+                        for f in range(0, len(src.data), 16):
+                            helpers.write_corrected_4x4matrix(output, src.data[f:f+16])
+
+
+    # for chan in channels:
+    #     print("target = " + chan.target_bone)
+    #     print("sampler = " + chan.sampler.id)
+    #     for srcs in chan.sampler.sources:
+    #         print(srcs.semantic)
+    #         print(str(len(srcs.data)))
+
+    # for node in root.iter(schema+'source'):
+    #     anim_id = node.get("id")
+    #     if anim_id.find('input') != -1:
+    #         add_animation_input(anim_id, node)
+    #     if anim_id.find('output') != -1:
+    #         add_animation_output(anim_id, node)

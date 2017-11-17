@@ -48,14 +48,14 @@ using namespace put;
 void update_model_view(put::layer* layer)
 {
     static bool open_scene_browser = false;
-    static bool open_model_import = false;
+    static bool open_import = false;
     static bool open_camera_menu = false;
     
     ImGui::BeginMainMenuBar();
     
     if (ImGui::Button(ICON_FA_FOLDER_OPEN))
     {
-        open_model_import = true;
+        open_import = true;
     }
     
     if (ImGui::Button(ICON_FA_SEARCH))
@@ -80,13 +80,22 @@ void update_model_view(put::layer* layer)
         }
     }
     
-    if( open_model_import )
+    if( open_import )
     {
-        const c8* pmm = put::dev_ui::file_browser(open_model_import, 1, "**.pmm" );
+        const c8* import = put::dev_ui::file_browser(open_import, 2, "**.pmm", "**.pma" );
         
-        if( pmm )
+        if( import )
         {
-            put::ces::load_pmm(pmm, layer->view.scene );
+            u32 len = pen::string_length(import);
+            
+            if( import[len-1] == 'm' )
+            {
+                put::ces::load_pmm(import, layer->view.scene );
+            }
+            else if( import[len-1] == 'a' )
+            {
+                put::ces::load_pma(import);
+            }
         }
     }
     

@@ -200,6 +200,7 @@ namespace put
 			ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
 
 			ImGui::Columns(current_depth, "directories");
+            
 			ImGui::Separator();
 			pen::fs_tree_node* fs_iter = &fs_enumeration;
 
@@ -218,7 +219,7 @@ namespace put
 			fs_iter = &fs_enumeration;
 
 			for (s32 c = 0; c < frame_depth; ++c)
-			{
+			{                
 				for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
 				{
 					ImGui::PushID(fs_iter);

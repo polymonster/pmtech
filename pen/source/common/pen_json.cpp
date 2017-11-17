@@ -151,20 +151,21 @@ namespace pen
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
                     result.u = atoi( tok_str );
+                    pen::memory_free(tok_str);
                 }
                     break;
                 case JSON_S32:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
                     result.s = atol( tok_str );
-                    free( tok_str );
+                    pen::memory_free( tok_str );
                 }
                     break;
                 case JSON_F32:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
                     result.f = (f32)atof( tok_str );
-                    free( tok_str );
+                    pen::memory_free( tok_str );
                 }
                     break;
                 case JSON_BOOL:
@@ -200,14 +201,11 @@ namespace pen
         
         if (t->type == JSMN_PRIMITIVE)
         {
-            result.object.name = pen::sub_string(js+t->start, t->end - t->start);
-            
+            //result.object.name = pen::sub_string(js+t->start, t->end - t->start);
             return 1;
         }
         else if (t->type == JSMN_STRING)
         {
-            result.object.name = pen::sub_string(js+t->start, t->end - t->start);
-            
             if( indent==1  )
             {
                 if( search_name == nullptr )
@@ -218,6 +216,9 @@ namespace pen
                 {
                     ep.get_next = true;
                 }
+                
+                if(ep.get_next)
+                    result.object.name = pen::sub_string(js+t->start, t->end - t->start);
             }
             return 1;
         }
@@ -239,6 +240,7 @@ namespace pen
                     
                     ep.return_value = 1;
                     ep.get_next = false;
+                    return 1;
                 }
                 
                 j += enumerate(js, t+1+j, count-j, indent+1, search_name, search_index, result, ep );
@@ -256,6 +258,7 @@ namespace pen
                 
                 ep.return_value = 1;
                 ep.get_next = false;
+                return 1;
             }
             
             j = 0;
@@ -272,6 +275,7 @@ namespace pen
                     
                     ep.return_value = 1;
                     ep.get_next = false;
+                    return 1;
                 }
                 
                 j += enumerate(js, t+1+j, count-j, indent+1, search_name, search_index, result, ep );
@@ -294,6 +298,9 @@ namespace pen
     {
         json_value jv;
         jv.object.name = nullptr;
+        jv.object.tokens = nullptr;
+        jv.object.data = nullptr;
+        jv.object.num_tokens = 0;
         
         enumerate_params ep =
         {
@@ -544,10 +551,11 @@ namespace pen
         *new_json.m_internal_object = m_internal_object->get_object_by_index(index);
         return new_json;
     }
+    static u32 k_num_jsons = 0;
     
     json::json( )
     {
-        
+        k_num_jsons++;
     }
     
     void json::copy( json* dst, const json& other )
@@ -556,6 +564,10 @@ namespace pen
         
         //shallow copy defauly copy ctor
         *dst->m_internal_object = *other.m_internal_object;
+        
+        u32 num_tokens = other.m_internal_object->num_tokens;
+        dst->m_internal_object->tokens = new jsmntok_t[num_tokens];
+        pen::memory_cpy(dst->m_internal_object->tokens, other.m_internal_object->tokens, sizeof(jsmntok_t)*num_tokens);
         
         //deep copy take ownership of mem
         s32 data_size = string_length(other.m_internal_object->data);
@@ -574,6 +586,7 @@ namespace pen
     
     json::json( const json& other )
     {
+        k_num_jsons++;
         copy( this, other );
     }
     
@@ -653,12 +666,16 @@ namespace pen
     {
         if(m_internal_object)
         {
+            delete[] m_internal_object->tokens;
+            
             pen::memory_free(m_internal_object->data);
             pen::memory_free(m_internal_object->name);
         }
         
         pen::memory_free(m_internal_object);
         m_internal_object = nullptr;
+        
+        k_num_jsons--;
     }
     
     void json::set(const c8* name, const Str val)

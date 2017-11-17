@@ -82,6 +82,86 @@ namespace put
 			create_texture_atlas();
 
 			create_render_states();
+            
+            ImGuiStyle& style = ImGui::GetStyle();
+            style.Alpha = 1.0;
+            style.ChildWindowRounding = 3;
+            style.WindowRounding = 3;
+            style.GrabRounding = 1;
+            style.GrabMinSize = 20;
+            style.FrameRounding = 3;
+            
+            //ImVec4 debug = ImVec4(1.0f, 0.0f, 1.0f, 1.00f);
+            
+            ImVec4 zero = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+            
+            ImVec4 text_light = ImVec4(0.8f, 0.8f, 0.8f, 1.00f);
+            ImVec4 text_dark = ImVec4(0.4f, 0.4f, 0.4f, 1.00f);
+            ImVec4 window_bg = ImVec4(0.0f, 0.0f, 0.0f, 0.5f);
+            
+            ImVec4 foreground = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+            ImVec4 foreground_light = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+            ImVec4 foreground_dark = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
+            ImVec4 foreground_dark_highlight = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+            ImVec4 foreground_inactive = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+            
+            style.Colors[ImGuiCol_Text] = text_light;
+            style.Colors[ImGuiCol_TextDisabled] = text_dark;
+            
+            style.Colors[ImGuiCol_FrameBg] = foreground_inactive;
+            style.Colors[ImGuiCol_FrameBgHovered] = foreground_dark_highlight;
+            style.Colors[ImGuiCol_FrameBgActive] = foreground_dark;
+            
+            style.Colors[ImGuiCol_TitleBg] = foreground_inactive;
+            style.Colors[ImGuiCol_TitleBgCollapsed] = foreground_inactive;
+            style.Colors[ImGuiCol_TitleBgActive] = foreground_dark;
+            
+            style.Colors[ImGuiCol_WindowBg] = window_bg;
+            style.Colors[ImGuiCol_ChildWindowBg] = zero;
+            
+            style.Colors[ImGuiCol_Border] = foreground;
+            style.Colors[ImGuiCol_BorderShadow] = zero;
+
+            style.Colors[ImGuiCol_MenuBarBg] = foreground_dark;
+            
+            style.Colors[ImGuiCol_ScrollbarBg] = foreground_dark;
+            style.Colors[ImGuiCol_ScrollbarGrab] = foreground;
+            style.Colors[ImGuiCol_ScrollbarGrabHovered] = foreground_light;
+            style.Colors[ImGuiCol_ScrollbarGrabActive] = foreground_light;
+            
+            style.Colors[ImGuiCol_ResizeGrip] = foreground_dark;
+            style.Colors[ImGuiCol_ResizeGripHovered] = foreground_light;
+            style.Colors[ImGuiCol_ResizeGripActive] = foreground;
+            
+            style.Colors[ImGuiCol_SliderGrab] = foreground_light;
+            style.Colors[ImGuiCol_SliderGrabActive] = foreground;
+            
+            style.Colors[ImGuiCol_ComboBg] = foreground_dark;
+            style.Colors[ImGuiCol_CheckMark] = foreground_light;
+
+            style.Colors[ImGuiCol_Button] = ImVec4(0.00f, 0.65f, 0.65f, 0.46f);
+            style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.01f, 1.00f, 1.00f, 0.43f);
+            style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.00f, 1.00f, 1.00f, 0.62f);
+            
+            style.Colors[ImGuiCol_Header] = foreground_dark;
+            style.Colors[ImGuiCol_HeaderHovered] = foreground_dark_highlight;
+            style.Colors[ImGuiCol_HeaderActive] = foreground;
+            
+            style.Colors[ImGuiCol_Column] = foreground_dark;
+            style.Colors[ImGuiCol_ColumnHovered] = foreground_light;
+            style.Colors[ImGuiCol_ColumnActive] = foreground;
+            
+            style.Colors[ImGuiCol_TextSelectedBg] = foreground_dark_highlight;
+            
+            style.Colors[ImGuiCol_CloseButton] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
+            style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+            style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+            
+            style.Colors[ImGuiCol_PlotLines] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
+            style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
+            style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
+            style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
+            style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
 
 			return true;
 		}

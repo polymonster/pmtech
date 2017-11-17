@@ -383,6 +383,8 @@ int main(int argc, char **argv)
     //main thread loop
     while( !pen_terminate_app )
     {
+        NSAutoreleasePool * _pool = [[NSAutoreleasePool alloc] init];
+        
         while( 1 )
         {
             NSEvent* peek_event = [NSApp
@@ -410,6 +412,7 @@ int main(int argc, char **argv)
         pen::input_set_mouse_pos( x, y );
 
         //sleep a bit
+        [_pool drain];
         pen::threads_sleep_ms( 16 );
     }
     

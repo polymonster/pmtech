@@ -147,10 +147,10 @@ def parse_dae():
             parse_materials.parse_library_images(child)
         if child.tag.find("library_controllers") != -1:
             lib_controllers = child
-
-    for child in root:
         if child.tag.find("library_visual_scenes") != -1:
             parse_visual_scenes(child)
+
+    for child in root:
         if child.tag.find("library_geometries") != -1:
             parse_meshes.parse_geometry(child, lib_controllers)
         if child.tag.find("library_materials") != -1:
@@ -204,23 +204,6 @@ def write_joint_file():
 
     print("packing " + str(numjoints) + " joints")
     joint_data = [struct.pack("i", (int(helpers.version_number)))]
-    joint_data.append(struct.pack("i", (int(numjoints))))
-
-    for j in range(numjoints):
-        namelen = len(joint_list[j])
-        joint_data.append(struct.pack("i", (int(namelen))))
-        for c in joint_list[j]:
-            ascii = int(ord(c))
-            joint_data.append(struct.pack("i", (int(ascii))))
-        parentindex = joint_list.index(parent_list[j])
-        joint_data.append(struct.pack("i", (int(parentindex))))
-        joint_data.append(struct.pack("i", (int(len(transform_list[j])))))
-        for t in transform_list[j]:
-            splitted = t.split()
-            transform_type_index = transform_types.index(splitted[0])
-            joint_data.append(struct.pack("i", (int(transform_type_index))))
-            for val in range(1, len(splitted)):
-                joint_data.append(struct.pack("f", (float(splitted[val]))))
 
     # write out anims
     joint_data.append(struct.pack("i", (int(len(animations)))))
@@ -288,7 +271,8 @@ for root, dirs, files in os.walk(model_dir):
 
             print(f)
             parse_dae()
-            write_joint_file()
-            helpers.output_file.write(os.path.join(out_dir, fnoext) + ".pmm")
+            base_out_file = os.path.join(out_dir, fnoext)
+            helpers.output_file.write(base_out_file + ".pmm")
+            parse_animations.write_animation_file(base_out_file + ".pma")
             print("")
 

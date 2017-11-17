@@ -9,9 +9,12 @@
 #include "str/Str.h"
 
 #define CES_DEBUG
+#define INVALID_HANDLE -1
 
 namespace put
 {
+    typedef s32 anim_handle;
+    
 	namespace ces
 	{
 		enum e_component_flags : u32
@@ -23,7 +26,8 @@ namespace put
 			CMP_HAND			= (1 << 5),
 			CMP_SKINNED			= (1 << 6),
 			CMP_BONE			= (1 << 7),
-            CMP_DYNAMIC			= (1 << 8)
+            CMP_DYNAMIC			= (1 << 8),
+            CMP_ANIM_CONTROLLER = (1 << 9)
 		};
 
 		enum e_node_types : u32
@@ -109,6 +113,47 @@ namespace put
 			u32	  lock_state;
 			u32	  debounce = 0;
 		};
+        
+        enum e_animation_semantics
+        {
+            A_TIME = 0,
+            A_TRANSFORM = 1,
+        };
+        
+        enum e_animation_data_types
+        {
+            A_FLOAT = 0,
+            A_FLOAT4x4 = 1,
+            A_TRANSLATION = 2,
+            A_ROTATION = 3
+        };
+    
+        struct node_animation_channel
+        {
+            u32     num_frames;
+            hash_id target;
+            
+            f32*    times;
+            mat4*   matrices;
+        };
+        
+        struct animation
+        {
+            hash_id id_name;
+            
+            u32 num_channels;
+            node_animation_channel* channels;
+            
+#ifdef CES_DEBUG
+            Str name;
+#endif
+        };
+        
+        struct animation_controller
+        {
+            std::vector<anim_handle> handles;
+            anim_handle current_animation;
+        };
 
 		struct component_entity_scene
 		{
@@ -130,11 +175,11 @@ namespace put
 			s32*					multibody_link;
 			scene_node_physics*		physics_data;
             u32*                    cbuffer;
+            animation_controller*   anim_controller;
 
 			u32						num_nodes = 0;
 			u32						nodes_size = 0;
 
-			//debug / display info
 #ifdef CES_DEBUG
             Str*                    names;
 			Str*					geometry_names;
@@ -182,6 +227,8 @@ namespace put
 		component_entity_scene*	create_scene( const c8* name );
 
         void                    load_pmm( const c8* model_scene_name, component_entity_scene* scene );
+        
+        anim_handle             load_pma( const c8* model_scene_name );
         
 		void					clone_node( component_entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
 

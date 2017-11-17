@@ -52,12 +52,14 @@ namespace put
 			scene->nodes_size += 1024;
 			
 			//ids
-			ALLOC_COMPONENT_ARRAY(scene, id_name, u32);
-			ALLOC_COMPONENT_ARRAY(scene, id_geometry, u32);
-			ALLOC_COMPONENT_ARRAY(scene, id_material, u32);
+			ALLOC_COMPONENT_ARRAY(scene, id_name, hash_id);
+			ALLOC_COMPONENT_ARRAY(scene, id_geometry, hash_id);
+			ALLOC_COMPONENT_ARRAY(scene, id_material, hash_id);
 
+            //flags
+            ALLOC_COMPONENT_ARRAY(scene, entities, a_u64);
+            
 			//components
-			ALLOC_COMPONENT_ARRAY(scene, entities, a_u64);
 			ALLOC_COMPONENT_ARRAY(scene, parents, u32);
 			ALLOC_COMPONENT_ARRAY(scene, geometries, scene_node_geometry);
 			ALLOC_COMPONENT_ARRAY(scene, materials, scene_node_material);
@@ -70,10 +72,8 @@ namespace put
 			ALLOC_COMPONENT_ARRAY(scene, multibody_link, s32);
 			ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
             ALLOC_COMPONENT_ARRAY(scene, cbuffer, u32);
-            ALLOC_COMPONENT_ARRAY(scene, id_name, hash_id);
-            ALLOC_COMPONENT_ARRAY(scene, id_geometry, hash_id);
-            ALLOC_COMPONENT_ARRAY(scene, id_material, hash_id);
-            
+            ALLOC_COMPONENT_ARRAY(scene, anim_controller, animation_controller);
+
             for( u32 i = 0; i < scene->nodes_size; ++i )
                 scene->cbuffer[i] = PEN_INVALID_HANDLE;
             
@@ -92,6 +92,7 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, id_material);
 
 			FREE_COMPONENT_ARRAY(scene, entities);
+            
 			FREE_COMPONENT_ARRAY(scene, parents);
 			FREE_COMPONENT_ARRAY(scene, geometries);
 			FREE_COMPONENT_ARRAY(scene, materials);
@@ -104,9 +105,7 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, multibody_link);
 			FREE_COMPONENT_ARRAY(scene, physics_data);
             FREE_COMPONENT_ARRAY(scene, cbuffer);
-            FREE_COMPONENT_ARRAY(scene, id_name);
-            FREE_COMPONENT_ARRAY(scene, id_geometry);
-            FREE_COMPONENT_ARRAY(scene, id_material);
+            FREE_COMPONENT_ARRAY(scene, anim_controller);
 
 #ifdef CES_DEBUG
 			FREE_COMPONENT_ARRAY(scene, names);
@@ -131,6 +130,10 @@ namespace put
             
             pen::memory_cpy(&p_sn->entities[dst], &p_sn->entities[src], sizeof(a_u64));
             
+            p_sn->id_name[dst] = p_sn->id_name[src];
+            p_sn->id_geometry[dst] = p_sn->id_geometry[src];
+            p_sn->id_material[dst] = p_sn->id_material[src];
+            
             p_sn->geometries[dst] = p_sn->geometries[src];
             p_sn->materials[dst] = p_sn->materials[src];
             p_sn->local_matrices[dst] = p_sn->local_matrices[src];
@@ -142,9 +145,7 @@ namespace put
             p_sn->multibody_link[dst] = p_sn->multibody_link[src];
             p_sn->physics_data[dst] = p_sn->physics_data[src];
             p_sn->cbuffer[dst] = p_sn->cbuffer[src];
-            p_sn->id_name[dst] = p_sn->id_name[src];
-            p_sn->id_geometry[dst] = p_sn->id_geometry[src];
-            p_sn->id_material[dst] = p_sn->id_material[src];
+            p_sn->anim_controller[dst] = p_sn->anim_controller[src];
             
             if (dst >= p_sn->num_nodes)
             {
@@ -537,15 +538,89 @@ namespace put
             return;
         }
         
+        static std::vector<animation> k_animations;
+        
+        anim_handle load_pma(const c8* filename)
+        {
+            void* anim_file;
+            u32   anim_file_size;
+            
+            pen_error err = pen::filesystem_read_file_to_buffer(filename, &anim_file, anim_file_size);
+            
+            if( err != PEN_ERR_OK || anim_file_size == 0 )
+            {
+                //failed load file
+                PEN_ASSERT(0);
+            }
+            
+            const u32* p_u32reader = (u32*)anim_file;
+            
+            u32 version = *p_u32reader++;
+            
+            if( version < 1 )
+            {
+                pen::memory_free(anim_file);
+                return INVALID_HANDLE;
+            }
+            
+            k_animations.push_back(animation());
+            animation& new_animation = k_animations.back();
+            
+            new_animation.name = filename;
+            new_animation.id_name = PEN_HASH(filename);
+ 
+            u32 num_channels = *p_u32reader++;
+            
+            new_animation.num_channels = num_channels;
+            new_animation.channels = new node_animation_channel[num_channels];
+            
+            for( s32 i = 0; i < num_channels; ++i )
+            {
+                Str bone_name = read_parsable_string(&p_u32reader);
+                new_animation.channels[i].target = PEN_HASH(bone_name.c_str());
+                
+                u32 num_sources = *p_u32reader++;
+                
+                for( s32 j = 0; j < num_sources; ++j )
+                {
+                    u32 sematic = *p_u32reader++;
+                    u32 type = *p_u32reader++;
+                    u32 num_floats = *p_u32reader++;
+                    
+                    if( type > 1 )
+                        continue;
+                    
+                    f32* data = new f32[num_floats];
+                    pen::memory_cpy(data, p_u32reader, sizeof(f32)*num_floats);
+                    
+                    p_u32reader += num_floats;
+                    
+                    switch (sematic)
+                    {
+                        case A_TIME:
+                            new_animation.channels[i].times = data;
+                            break;
+                        case A_TRANSFORM:
+                            new_animation.channels[i].matrices = (mat4*)data;
+                            break;
+                        default:
+                            break;
+                    };
+                }
+            }
+            
+            pen::memory_free(anim_file);
+            return (anim_handle)k_animations.size()-1;
+        }
+        
         void load_pmm(const c8* filename, component_entity_scene* scene)
         {
             void* model_file;
             u32   model_file_size;
             
-            u32 file_size;
             pen_error err = pen::filesystem_read_file_to_buffer(filename, &model_file, model_file_size);
             
-            if( err != PEN_ERR_OK || file_size == 0 )
+            if( err != PEN_ERR_OK || model_file_size == 0 )
             {
                 //failed load file
                 PEN_ASSERT(0);
@@ -555,12 +630,10 @@ namespace put
             
             //
             u32 num_scene = *p_u32reader++;
-            u32 num_joint_sets = *p_u32reader++;
             u32 num_geom = *p_u32reader++;
             u32 num_materials = *p_u32reader++;
             
             std::vector<u32> scene_offsets;
-            std::vector<u32> joint_offsets;
             std::vector<u32> geom_offsets;
             std::vector<u32> material_offsets;
             
@@ -569,9 +642,6 @@ namespace put
             
             for(s32 i = 0; i < num_scene; ++i)
                 scene_offsets.push_back(*p_u32reader++);
-            
-            for(s32 i = 0; i < num_joint_sets; ++i)
-                joint_offsets.push_back(*p_u32reader++);
     
             for(s32 i = 0; i < num_materials; ++i)
             {
@@ -594,8 +664,11 @@ namespace put
             u32 num_import_nodes = *p_u32reader++;
             
             if( version < 1 )
+            {
+                pen::memory_free(model_file);
                 return;
-            
+            }
+  
             u32 node_zero_offset = scene->num_nodes;
             u32 current_node = node_zero_offset;
             u32 inserted_nodes = 0;
@@ -788,10 +861,13 @@ namespace put
                     {
                         dest = current_node + submesh;
                         
+                        Str node_suffix;
+                        node_suffix.appendf("_%i", submesh);
+                        
                         if (submesh > 0)
                         {
                             inserted_nodes++;
-                            clone_node( scene, current_node, dest, current_node);
+                            clone_node( scene, current_node, dest, current_node, vec3f::zero(), (const c8*)node_suffix.c_str() );
                             scene->local_matrices[dest].create_identity();
                         }
                         
@@ -821,6 +897,9 @@ namespace put
                 current_node = dest + 1;
                 scene->num_nodes = current_node;
             }
+            
+            pen::memory_free(model_file);
+            return;
         }
 
 		void render_scene_view( const scene_view& view, scene_render_type render_type )
@@ -990,7 +1069,7 @@ namespace put
                 ImGui::Separator();
                 
                 //material
-                ImGui::Text("Materal: %s", scene->material_names[selected_index].c_str());
+                ImGui::Text("Material: %s", scene->material_names[selected_index].c_str());
                 
                 if (scene->material_names[selected_index].c_str())
                 {
@@ -1006,6 +1085,52 @@ namespace put
                     }
                 }
                 ImGui::Separator();
+                
+                static bool open_anim_import = false;
+                
+                if( ImGui::CollapsingHeader("Animations") )
+                {
+                    if( ImGui::Button("Add Animation") )
+                        open_anim_import = true;
+                    
+                    auto& controller = scene->anim_controller[selected_index];
+                    
+                    if( open_anim_import )
+                    {
+                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, 1, "**.pma" );
+                        
+                        if(anim_import)
+                        {
+                            anim_handle ah = load_pma(anim_import);
+                            
+                            if( is_valid(ah) )
+                            {
+                                scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
+                                
+                                bool exists = false;
+                                
+                                for( auto& h : controller.handles )
+                                    if( h == ah )
+                                        exists = true;
+                                
+                                if(!exists)
+                                    scene->anim_controller[selected_index].handles.push_back(ah);
+                            }
+                        }
+                    }
+                    
+                    for( auto& h : controller.handles )
+                    {
+                        auto& anim = k_animations[h];
+                        
+                        bool selected = false;
+                        ImGui::Selectable(anim.name.c_str(), &selected);
+                        
+                        if( selected )
+                            controller.current_animation = h;
+                    }
+                    ImGui::Separator();
+                }
             }
             
             ImGui::EndChild();
