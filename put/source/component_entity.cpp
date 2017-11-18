@@ -13,17 +13,38 @@ using namespace put;
 
 namespace put
 {
-    enum pmm_transform_types
-    {
-        PMM_TRANSLATE = 0,
-        PMM_ROTATE = 1,
-        PMM_MATRIX
-    };
-    
-    const hash_id ID_JOINT = PEN_HASH("joint");
-    
 	namespace ces
 	{
+        enum pmm_transform_types
+        {
+            PMM_TRANSLATE = 0,
+            PMM_ROTATE = 1,
+            PMM_MATRIX
+        };
+        
+        enum e_debug_draw_flags
+        {
+            DD_MATRIX = 1<<0,
+            DD_BONES = 1<<1,
+            DD_AABB = 1<<2,
+            DD_GRID = 1<<3,
+            DD_HIDE = 1<<4,
+            
+            DD_NUM_FLAGS = 5
+        };
+        
+        const c8* dd_names[]
+        {
+            "Matrices",
+            "Bones",
+            "AABB",
+            "Grid",
+            "Hide Main Render"
+        };
+        static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
+        
+        const hash_id ID_JOINT = PEN_HASH("joint");
+        
 #define ALLOC_COMPONENT_ARRAY( SCENE, COMPONENT, TYPE )											\
 		if( !SCENE->COMPONENT )																	\
 			SCENE->COMPONENT = (TYPE*)pen::memory_alloc(sizeof(TYPE)*SCENE->nodes_size );		\
@@ -198,70 +219,6 @@ namespace put
             *data += name_len + 1;
             
             return name;
-        }
-        
-        void load_animations( const c8* data )
-        {
-#if 0
-            //animations
-            p_skeleton->num_anims = *p_int++;
-            
-            p_skeleton->animations = (animation*)pen::memory_alloc( sizeof(animation)*p_skeleton->num_anims  );
-            
-            vec3f anim_val;
-            for( u32 a = 0; a < p_skeleton->num_anims ; a++ )
-            {
-                p_skeleton->animations[a].bone_index = *p_int++;
-                p_skeleton->animations[a].num_times = *p_int++;
-                
-                p_skeleton->animations[a].rotations = NULL;
-                p_skeleton->animations[a].translations = NULL;
-                
-                u32 num_translations = *p_int++;
-                u32 num_rotations = *p_int++;
-                
-                p_skeleton->animations[a].timeline = (f32*)pen::memory_alloc( sizeof(f32)*p_skeleton->animations[a].num_times );
-                
-                if (num_translations == p_skeleton->animations[a].num_times)
-                {
-                    p_skeleton->animations[a].translations = (vec3f*)pen::memory_alloc( sizeof(vec3f)*num_translations );
-                }
-                
-                if (num_rotations == p_skeleton->animations[a].num_times)
-                {
-                    p_skeleton->animations[a].rotations = (Quaternion*)pen::memory_alloc( sizeof(Quaternion)*num_rotations );
-                    p_skeleton->animations[a].euler_angles = (vec3f*)pen::memory_alloc( sizeof(vec3f)*num_rotations );
-                }
-                
-                for (u32 t = 0; t < p_skeleton->animations[a].num_times; ++t)
-                {
-                    pen::memory_cpy( &p_skeleton->animations[a].timeline[t], p_int, 4 );
-                    p_int++;
-                    
-                    if (p_skeleton->animations[a].translations)
-                    {
-                        pen::memory_cpy( &p_skeleton->animations[a].translations[t], p_int, 12 );
-                        p_int += 3;
-                    }
-                    
-                    if (p_skeleton->animations[a].rotations)
-                    {
-                        vec3f euler_angs;
-                        pen::memory_cpy( &euler_angs, p_int, 12 );
-                        
-                        if( vec3f::almost_equal( euler_angs, vec3f::zero() ) )
-                        {
-                            euler_angs = vec3f::zero();
-                        }
-                        
-                        pen::memory_cpy( &p_skeleton->animations[a].euler_angles[t], &euler_angs, 12 );
-                        
-                        p_skeleton->animations[a].rotations[t].euler_angles( put::maths::deg_to_rad( euler_angs.z ), put::maths::deg_to_rad( euler_angs.y ), put::maths::deg_to_rad( euler_angs.x ) );
-                        p_int += 3;
-                    }
-                }
-            }
-#endif
         }
 
         void load_geometry
@@ -598,6 +555,7 @@ namespace put
                     switch (sematic)
                     {
                         case A_TIME:
+                            new_animation.channels[i].num_frames = num_floats;
                             new_animation.channels[i].times = data;
                             break;
                         case A_TRANSFORM:
@@ -906,16 +864,17 @@ namespace put
 		{
             component_entity_scene* scene = view.scene;
             
+            if( scene->debug_flags & DD_HIDE )
+                return;
+            
             static pmfx::pmfx_handle model_pmfx = pmfx::load("fx_test");
             
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             
-            static bool first = true;
-            
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
 				if (scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL && (!(scene->entities[n] & CMP_PHYSICS)) )
-				{
+                {
 					scene_node_geometry* p_geom = &scene->geometries[n];
 					scene_node_material* p_mat = &scene->materials[n];
 
@@ -969,12 +928,44 @@ namespace put
                     
 				}
 			}
-
-            first = false;
 		}
 
 		void update_scene_matrices(component_entity_scene* scene)
 		{
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if( scene->entities[n] & CMP_ANIM_CONTROLLER )
+                {
+                    auto& controller = scene->anim_controller[n];
+                    
+                    if( is_valid( controller.current_animation ) )
+                    {
+                        auto& anim = k_animations[controller.current_animation];
+                        
+                        for( s32 c = 0; c < anim.num_channels; ++c )
+                        {
+                            s32 num_frames = anim.channels[c].num_frames;
+                            
+                            if( num_frames <= 0 )
+                                continue;
+                            
+                            s32 frame_index = controller.current_frame%num_frames;
+                            
+                            mat4& mat = anim.channels[c].matrices[frame_index];
+                            
+                            for( s32 b = 0; b < 100; ++b )
+                            {
+                                if( scene->id_name[n+b] == anim.channels[c].target && scene->entities[n+b] & CMP_BONE )
+                                {
+                                    scene->local_matrices[n+b] = mat;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
 				u32 parent = scene->parents[n];
@@ -984,26 +975,9 @@ namespace put
 				else
 					scene->world_matrices[n] = scene->world_matrices[parent] * scene->local_matrices[n];
 			}
-		}
-        
-        enum e_debug_draw_flags
-        {
-            DD_MATRIX = 1<<0,
-            DD_BONES = 1<<1,
-            DD_AABB = 1<<2,
-            DD_GRID = 1<<3,
             
-            DD_NUM_FLAGS = 4
-        };
-        
-        const c8* dd_names[]
-        {
-            "Matrices",
-            "Bones",
-            "AABB",
-            "Grid"
-        };
-        static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
+            
+		}
         
         void enumerate_scene_ui(component_entity_scene* scene, bool* open )
         {
@@ -1129,6 +1103,12 @@ namespace put
                         if( selected )
                             controller.current_animation = h;
                     }
+                    
+                    if( is_valid(controller.current_animation) )
+                    {
+                        ImGui::InputInt("Frame", &scene->anim_controller[selected_index].current_frame );
+                    }
+                    
                     ImGui::Separator();
                 }
             }

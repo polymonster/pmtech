@@ -140,6 +140,7 @@ namespace put
         struct animation
         {
             hash_id id_name;
+            u32 node;
             
             u32 num_channels;
             node_animation_channel* channels;
@@ -152,7 +153,8 @@ namespace put
         struct animation_controller
         {
             std::vector<anim_handle> handles;
-            anim_handle current_animation;
+            anim_handle              current_animation;
+            s32                      current_frame = 0;
         };
 
 		struct component_entity_scene

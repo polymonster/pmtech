@@ -201,11 +201,15 @@ namespace pen
         
         if (t->type == JSMN_PRIMITIVE)
         {
-            //result.object.name = pen::sub_string(js+t->start, t->end - t->start);
             return 1;
         }
         else if (t->type == JSMN_STRING)
         {
+            if(result.object.name)
+                pen::memory_free(result.object.name);
+            
+            result.object.name = pen::sub_string(js+t->start, t->end - t->start);
+            
             if( indent==1  )
             {
                 if( search_name == nullptr )
@@ -216,9 +220,6 @@ namespace pen
                 {
                     ep.get_next = true;
                 }
-                
-                if(ep.get_next)
-                    result.object.name = pen::sub_string(js+t->start, t->end - t->start);
             }
             return 1;
         }
