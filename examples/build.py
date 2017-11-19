@@ -7,13 +7,14 @@ import shutil
 tools_dir = os.path.join("..", "tools")
 assets_dir = "assets"
 
-action_strings = ["code", "shaders", "models", "textures", "audio", "fonts"]
+action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs"]
 action_descriptions = ["generate projects and workspaces",
                        "generate shaders and compile binaries",
                        "make binary mesh and animation files",
                        "compress textures and generate mips",
                        "compress and convert audio to platorm format",
-                       "copy fonts to data directory"]
+                       "copy fonts to data directory",
+                       "copy json configs to data directory"]
 execute_actions = []
 extra_build_steps = []
 build_steps = []
@@ -118,10 +119,12 @@ if len(sys.argv) <= 1:
     print("3. models")
     print("4. textures")
     print("5. audio")
-    print("6. all")
+    print("6. fonts")
+    print("7. configs")
+    print("8. all")
     print("0. show full command line options")
 
-    all_value = 6
+    all_value = 8
     input_val = int(input())
 
     if input_val==0:
@@ -153,7 +156,7 @@ for action in execute_actions:
         build_steps.append(python_exec + " " + textures_script)
     elif action == "audio":
         build_steps.append(python_exec + " " + audio_script)
-    elif action == "fonts":
+    elif action == "fonts" or action == "configs":
         copy_steps.append(action)
 
 for step in build_steps:
@@ -166,6 +169,7 @@ for step in copy_steps:
     dest_dir = os.path.join(data_dir, step)
     if os.path.exists(dest_dir):
         shutil.rmtree(dest_dir)
+    print("copying: " + step + " to " + dest_dir)
     shutil.copytree(os.path.join(assets_dir, step), dest_dir)
 
 

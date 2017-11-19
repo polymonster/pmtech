@@ -9,6 +9,7 @@
 #include "debug_render.h"
 #include "component_entity.h"
 #include "layer_controller.h"
+#include "render_controller.h"
 #include "pmfx.h"
 #include "pen_json.h"
 #include "hash.h"
@@ -142,6 +143,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	put::layer_controller_init();
 	put::dev_ui::init();
 	put::dbg::init();
+    
+    put::render_controller::init("data/configs/renderer.json");
     
 	//create the main scene and import a model
 	put::ces::component_entity_scene* main_scene = put::ces::create_scene("main_scene");

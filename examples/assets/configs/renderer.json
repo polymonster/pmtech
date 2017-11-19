@@ -1,0 +1,21 @@
+{
+	render_targets:
+	{
+		test:
+		{
+			size:[1024,1024],
+			format: rgba8,
+			mips: false,
+		}
+	},
+	
+	views:
+	{
+		target:[main_colour, main_depth],
+		clear_colour:[1.0, 0.0, 1.0, 1.0],
+		clear_depth: 1.0,
+		technique: lit,
+		scene: main,
+		camera: model_viewer
+	},
+}

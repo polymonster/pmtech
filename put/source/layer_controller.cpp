@@ -4,9 +4,7 @@
 #include "dev_ui.h"
 #include "debug_render.h"
 #include "pen_json.h"
-#include <string>
-#include <fstream>
-
+#include "file_system.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -308,46 +306,7 @@ namespace put
 
 	void layer_controller_render()
 	{
-		/*
-		ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
 
-		static bool open_scene_browser = false;
-		if (ImGui::Button("Scene Browser"))
-		{
-			open_scene_browser = true;
-		}
-
-		if (open_scene_browser)
-		{
-			put::ces::enumerate_scene_ui(k_model_view_controller.scene, &open_scene_browser);
-		}
-
-		//render
-		pen::renderer_set_rasterizer_state(k_built_in_handles.raster_state_fill_cull_back);
-
-		//bind back buffer and clear
-		pen::renderer_set_viewport(k_built_in_handles.back_buffer_vp);
-		pen::renderer_set_scissor_rect(rect{ k_render_handles.vp.x, k_render_handles.vp.y, k_render_handles.vp.width, k_render_handles.vp.height });
-		pen::renderer_set_depth_stencil_state(k_render_handles.ds_state);
-		pen::renderer_set_targets(PEN_DEFAULT_RT, PEN_DEFAULT_DS);
-		pen::renderer_clear(k_render_handles.clear_state);
-
-		put::ces::scene_view view =
-		{
-			k_model_view_controller.main_camera.cbuffer,
-			PEN_DEFAULT_RT,
-			PEN_DEFAULT_DS,
-			k_render_handles.ds_state
-		};
-
-		put::ces::render_scene_view(k_model_view_controller.scene, view);
-
-		put::ces::render_scene_debug(k_model_view_controller.scene, view);
-
-		put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
-
-		put::dbg::render_3d(k_model_view_controller.main_camera.cbuffer);
-		*/
 	}
 
 	const built_in_handles& layer_controller_built_in_handles()

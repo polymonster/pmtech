@@ -6,10 +6,14 @@
 
 namespace pen
 {
+#define STRICT_NAME(V)V.append('\"')
+#define NON_STRICT_NAME(V)
+#define JSON_NAME NON_STRICT_NAME
+    
     void create_json_object( json_object& jo );
     
     static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
-        if (tok->type == JSMN_STRING && (int) strlen(s) == tok->end - tok->start &&
+        if ((int) strlen(s) == tok->end - tok->start &&
             strncmp(json + tok->start, s, tok->end - tok->start) == 0) {
             return 0;
         }
@@ -201,6 +205,22 @@ namespace pen
         
         if (t->type == JSMN_PRIMITIVE)
         {
+            if(result.object.name)
+                pen::memory_free(result.object.name);
+            
+            result.object.name = pen::sub_string(js+t->start, t->end - t->start);
+            
+            if( indent==1  )
+            {
+                if( search_name == nullptr )
+                {
+                    ep.get_next = true;
+                }
+                else if( jsoneq(js, t, search_name) == 0 )
+                {
+                    ep.get_next = true;
+                }
+            }
             return 1;
         }
         else if (t->type == JSMN_STRING)
@@ -471,9 +491,9 @@ namespace pen
             if( j1_action[i] == json_keep )
             {
                 json_string.append(indent_str.c_str());
-                json_string.append('\"');
+                JSON_NAME(json_string);
                 json_string.append(j1[i].name().c_str());
-                json_string.append('\"');
+                JSON_NAME(json_string);
                 
                 json_string.append(": ");
                 json_string.append(j1[i].m_internal_object->data);
@@ -486,9 +506,9 @@ namespace pen
                 json combined = combine( j1[i], j2[j], indent+1 );
                 
                 json_string.append(indent_str.c_str());
-                json_string.append('\"');
+                JSON_NAME(json_string);
                 json_string.append(j1[i].name().c_str());
-                json_string.append('\"');
+                JSON_NAME(json_string);
                 json_string.append(":\n");
                 
                 json_string.append(combined.dumps().c_str());
@@ -502,9 +522,9 @@ namespace pen
             if( j2_action[i] == json_keep )
             {
                 json_string.append(indent_str.c_str());
-                json_string.append('\"');
+                JSON_NAME(json_string);
                 json_string.append(j2[i].name().c_str());
-                json_string.append('\"');
+                JSON_NAME(json_string);
                 
                 json_string.append(": ");
                 json_string.append(j2[i].m_internal_object->data);
@@ -552,11 +572,10 @@ namespace pen
         *new_json.m_internal_object = m_internal_object->get_object_by_index(index);
         return new_json;
     }
-    static u32 k_num_jsons = 0;
-    
+
     json::json( )
     {
-        k_num_jsons++;
+        
     }
     
     void json::copy( json* dst, const json& other )
@@ -675,8 +694,6 @@ namespace pen
         
         pen::memory_free(m_internal_object);
         m_internal_object = nullptr;
-        
-        k_num_jsons--;
     }
     
     void json::set(const c8* name, const Str val)
