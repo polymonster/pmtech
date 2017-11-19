@@ -36,6 +36,8 @@ namespace put
             
             pen::json render_config = pen::json::load((const c8*)config_data);
             
+            PEN_PRINTF( render_config.dumps().c_str() );
+            
             parse_render_targets(render_config);
             
             parse_views(render_config);

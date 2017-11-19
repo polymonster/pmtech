@@ -36,9 +36,11 @@ namespace pen
             
             if( t->type == JSMN_STRING)
                 output.append('\"');
-                
             return 1;
         } else if (t->type == JSMN_OBJECT) {
+            output.append("\n");
+            for (k = 0; k < indent; k++)
+                output.append("\t");
             output.append("{\n");
             j = 0;
             for (i = 0; i < t->size; i++) {
@@ -47,19 +49,21 @@ namespace pen
                 j += _dump(output, js, t+1+j, count-j, indent+1);
                 output.append(": ");
                 j += _dump(output, js, t+1+j, count-j, indent+1);
-                output.append("\n");
+                output.append(",\n");
             }
+            for (k = 0; k < indent; k++)
+                output.append("\t");
             output.append("}");
             return j+1;
         } else if (t->type == JSMN_ARRAY) {
             j = 0;
-            output.append("[\n");
+            output.append("[");
             for (i = 0; i < t->size; i++) {
-                for (k = 0; k < indent-1; k++) output.append("\t");
-                output.append(", ");
                 j += _dump(output, js, t+1+j, count-j, indent+1);
-                output.append("\n");
+                if(i < t->size-1)
+                    output.append(", ");
             }
+            output.append("]");
             return j+1;
         }
         return 0;
@@ -606,7 +610,6 @@ namespace pen
     
     json::json( const json& other )
     {
-        k_num_jsons++;
         copy( this, other );
     }
     
