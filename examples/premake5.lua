@@ -13,6 +13,13 @@ newoption
 
 newoption 
 {
+   trigger     = "sdk_version",
+   value       = "version",
+   description = "Specify operating system SDK",
+}
+
+newoption 
+{
    trigger     = "xcode_target",
    value       = "TARGET",
    description = "Choose an xcode build target",

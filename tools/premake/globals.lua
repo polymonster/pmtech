@@ -3,9 +3,14 @@ platform_dir = "win32"
 build_cmd = ""
 link_cmd = ""
 renderer_dir = "opengl"
+sdk_version = ""
 
 if _OPTIONS["renderer"] then
 	renderer_dir = _OPTIONS["renderer"]
+end
+
+if _OPTIONS["sdk_version"] then
+	sdk_version = _OPTIONS["sdk_version"]
 end
 
 if _ACTION == "xcode4" then 

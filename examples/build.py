@@ -3,6 +3,7 @@ import subprocess
 import os.path
 import sys
 import shutil
+import _winreg as winreg
 
 tools_dir = os.path.join("..", "tools")
 assets_dir = "assets"
@@ -98,6 +99,15 @@ def get_platform_info():
         #python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
 
     extra_target_info = ""
+    if platform == "win32":
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Microsoft\Microsoft SDKs\Windows', 0,
+                           (winreg.KEY_WOW64_64KEY + winreg.KEY_ALL_ACCESS))
+        sdk_ver = winreg.EnumValue(key, 0)
+        if len(sdk_ver) >= 0 :
+            if sdk_ver[0] == "CurrentVersion":
+                extra_target_info += "--sdk_version=" + str(sdk_ver[1])
+
+
     if platform == "ios":
         extra_target_info = "--xcode_target=ios"
         extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "copy_files.py"))

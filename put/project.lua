@@ -22,8 +22,8 @@ project "put"
 		"..\\pen\\third_party",
 	}
 	
-	if _ACTION == "vs2017" then
-	systemversion "10.0.14393.0"
+	if _ACTION == "vs2017" or _ACTION == "vs2015" then
+		systemversion("8.1:10.1")
 	end
 		
 	files 

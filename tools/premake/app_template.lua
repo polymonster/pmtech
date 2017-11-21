@@ -69,10 +69,10 @@ project ( project_name )
 		"include/"
 	}
 	
-	if _ACTION == "vs2017" then
-	systemversion "10.0.14393.0"
+	if _ACTION == "vs2017" or _ACTION == "vs2015" then
+		systemversion("8.1:10.1")
 	end
-	
+		
 	location ( root_directory .. "/build/" .. platform_dir )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
 	debugdir ( root_directory .. "/bin/" .. platform_dir)
