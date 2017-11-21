@@ -1,21 +1,43 @@
 {
 	render_targets:
 	{
-		test:
+		offscreen:
 		{
 			size:[1024,1024],
 			format: rgba8,
+			mips: false,
+		},
+		
+		offscreen_ds:
+		{
+			size:[1024,1024],
+			format: d24s8,
 			mips: false,
 		}
 	},
 	
 	views:
 	{
-		target:[main_colour, main_depth],
-		clear_colour:[1.0, 0.0, 1.0, 1.0],
-		clear_depth: 1.0,
-		technique: lit,
-		scene: main,
-		camera: model_viewer
+		main_view:
+		{
+			target:[main_colour, main_depth],
+			clear_colour:[0.5, 0.0, 0.5, 1.0],
+			clear_depth: 1.0,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			technique: lit,
+			scene: main,
+			camera: model_viewer
+		},
+		
+		offscreen_view:
+		{
+			target:[offscreen, offscreen_ds],
+			clear_colour:[0.0, 1.0, 1.0, 1.0],
+			clear_depth: 1.0,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			technique: lit,
+			scene: main,
+			camera: model_viewer
+		},
 	},
 }

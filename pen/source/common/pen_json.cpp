@@ -69,43 +69,6 @@ namespace pen
         return 0;
     }
     
-    static int dump( const char *js, jsmntok_t *t, size_t count, int indent )
-    {
-        int i, j, k;
-        if (count == 0) {
-            return 0;
-        }
-        if (t->type == JSMN_PRIMITIVE) {
-            printf("%.*s", t->end - t->start, js+t->start);
-            return 1;
-        } else if (t->type == JSMN_STRING) {
-            printf("'%.*s'", t->end - t->start, js+t->start);
-            return 1;
-        } else if (t->type == JSMN_OBJECT) {
-            printf("\n");
-            j = 0;
-            for (i = 0; i < t->size; i++) {
-                for (k = 0; k < indent; k++) printf("  ");
-                j += dump(js, t+1+j, count-j, indent+1);
-                printf(": ");
-                j += dump(js, t+1+j, count-j, indent+1);
-                printf("\n");
-            }
-            return j+1;
-        } else if (t->type == JSMN_ARRAY) {
-            j = 0;
-            printf("\n");
-            for (i = 0; i < t->size; i++) {
-                for (k = 0; k < indent-1; k++) printf("  ");
-                printf("   - ");
-                j += dump(js, t+1+j, count-j, indent+1);
-                printf("\n");
-            }
-            return j+1;
-        }
-        return 0;
-    }
-    
     struct json_object
     {
         jsmntok_t* tokens;
@@ -576,6 +539,11 @@ namespace pen
         *new_json.m_internal_object = m_internal_object->get_object_by_index(index);
         return new_json;
     }
+    
+    json json::operator [] (const s32 index) const
+    {
+        return this->operator[]((u32)index);
+    }
 
     json::json( )
     {
@@ -620,49 +588,49 @@ namespace pen
         return *this;
     }
     
-    Str json::as_str()
+    Str json::as_str( const c8* default_value )
     {
         json_value jv;
         if( as_value(jv, m_internal_object, JSON_STR ) )
             return m_internal_object->data;
         
-        return nullptr;
+        return default_value;
     }
     
-    u32 json::as_u32()
+    u32 json::as_u32( u32 default_value )
     {
         json_value jv;
         if( as_value(jv, m_internal_object, JSON_U32 ) )
             return jv.u;
         
-        return 0;
+        return default_value;
     }
     
-    s32 json::as_s32()
+    s32 json::as_s32( s32 default_value )
     {
         json_value jv;
         if( as_value(jv, m_internal_object, JSON_S32 ) )
             return jv.s;
         
-        return 0;
+        return default_value;
     }
     
-    bool json::as_bool()
+    bool json::as_bool( bool default_value )
     {
         json_value jv;
         if( as_value(jv, m_internal_object, JSON_BOOL ) )
             return jv.b;
         
-        return false;
+        return default_value;
     }
     
-    f32 json::as_f32()
+    f32 json::as_f32( f32 default_value )
     {
         json_value jv;
         if( as_value(jv, m_internal_object, JSON_F32 ) )
             return jv.f;
         
-        return 0.0f;
+        return default_value;
     }
     
     Str json::dumps()
@@ -702,9 +670,9 @@ namespace pen
     void json::set(const c8* name, const Str val)
     {
         Str new_json_object = "{";
-        new_json_object.append('\"');
+        JSON_NAME(new_json_object);
         new_json_object.append(name);
-        new_json_object.append('\"');
+        JSON_NAME(new_json_object);
         new_json_object.append(":");
         new_json_object.append(val.c_str());
         new_json_object.append("}");

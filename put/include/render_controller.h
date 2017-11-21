@@ -11,6 +11,12 @@ namespace put
     namespace render_controller
     {
         void init( const c8* filename );
+
+        void register_scene( ces::scene_view* sv );
+        
+        void render( );
+        
+        void show_dev_ui();
     }
 }
 

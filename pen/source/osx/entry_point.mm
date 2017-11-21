@@ -12,6 +12,7 @@
 NSOpenGLView* _gl_view;
 NSWindow * _window;
 NSOpenGLContext* _gl_context;
+NSOpenGLPixelFormat* _pixel_format;
 
 extern pen::window_creation_params pen_window;
 pen::user_info pen_user_info;
@@ -56,6 +57,20 @@ void pen_gl_swap_buffers( )
     [_gl_context flushBuffer];
 }
 
+void pen_window_resize( )
+{
+    NSRect view_rect = [[_window contentView] bounds];
+    
+    if( _gl_view.frame.size.width == view_rect.size.width &&
+        _gl_view.frame.size.height == view_rect.size.height )
+        return;
+    
+    [_gl_view setFrameSize:view_rect.size];
+    
+    pen_window.width = view_rect.size.width;
+    pen_window.height = view_rect.size.height;
+}
+
 void create_gl_context()
 {
     u32 sample_buffers = pen_window.sample_count ? 1 : 0;
@@ -83,13 +98,15 @@ void create_gl_context()
         0,                        0,
     };
     
-    NSOpenGLPixelFormat *pixel_format = [[NSOpenGLPixelFormat alloc] initWithAttributes:pixel_format_attribs];
+    _pixel_format = [[NSOpenGLPixelFormat alloc] initWithAttributes:pixel_format_attribs];
     
     NSRect glViewRect = [[_window contentView] bounds];
     
-    NSOpenGLView* glView = [[NSOpenGLView alloc] initWithFrame:glViewRect pixelFormat:pixel_format];
+    NSOpenGLView* glView = [[NSOpenGLView alloc] initWithFrame:glViewRect pixelFormat:_pixel_format];
     
-    [pixel_format release];
+    [[glView superview]setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+    
+    [_pixel_format release];
     
     [_window.contentView addSubview:glView];
     
@@ -432,6 +449,15 @@ namespace pen
         
     }
     
+    void window_get_size( s32& width, s32& height )
+    {
+        NSScreen* screen = [_window screen];
+        NSRect rect = [screen frame];
+        
+        width = rect.size.width;
+        height = rect.size.height;
+    }
+    
     void* window_get_primary_display_handle( )
     {
         return (void*)_window;
@@ -524,6 +550,7 @@ namespace pen
 
 - (void)windowDidResize:(NSNotification*)notification
 {
+    pen_window_resize();
 }
 
 - (void)windowDidBecomeKey:(NSNotification*)notification

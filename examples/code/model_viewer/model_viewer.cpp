@@ -83,7 +83,7 @@ void update_model_view(put::layer* layer)
     
     if( open_import )
     {
-        const c8* import = put::dev_ui::file_browser(open_import, 2, "**.pmm", "**.pma" );
+        const c8* import = put::dev_ui::file_browser(open_import, 1, "**.pmm" );
         
         if( import )
         {
@@ -176,12 +176,19 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	//add main layer to the viewer
 	put::layer_controller_add_layer(main_layer);
     
+    
+    put::render_controller::register_scene(&main_layer.view);
+    
     while( 1 )
     {
 		put::dev_ui::new_frame();
-
+        
 		put::layer_controller_update();
-
+        
+        put::render_controller::render();
+        
+        put::render_controller::show_dev_ui();
+        
 		put::dev_ui::render();
         
         pen::renderer_present();

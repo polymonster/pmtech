@@ -5,19 +5,342 @@
 #include "debug_render.h"
 #include "pen_json.h"
 #include "file_system.h"
+#include "hash.h"
+
+extern pen::window_creation_params pen_window;
 
 namespace put
 {
     namespace render_controller
     {
+        struct format_info
+        {
+            Str name;
+            s32 format;
+            u32 block_size;
+            bind_flags flags;
+        };
+        
+        format_info rt_format[] =
+        {
+            //colour formats
+            {"rgba8", PEN_TEX_FORMAT_RGBA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
+            {"bgra8", PEN_TEX_FORMAT_BGRA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
+            {"rgba32f", PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 32*4, PEN_BIND_RENDER_TARGET },
+            
+            //depth stencil formats
+            {"d24s8", PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL },
+        };
+        s32 num_formats = (s32)sizeof(rt_format)/sizeof(format_info);
+        
+        Str rt_ratio[] =
+        {
+            "none"
+            "equal",
+            "half",
+            "quater",
+            "eighth"
+            "sixteenth"
+        };
+        s32 num_ratios = (s32)sizeof(rt_ratio)/sizeof(Str);
+        
+        s32 calc_num_mips( s32 width, s32 height )
+        {
+            s32 num = 0;
+            
+            while( width > 1 && height > 1 )
+            {
+                ++num;
+                
+                width /= 2;
+                height /= 2;
+                
+                width = std::max<s32>(1, width);
+                height = std::max<s32>(1, height);
+            }
+            
+            return num;
+        }
+        
+        struct rt_info
+        {
+            hash_id id_name;
+            Str     name;
+            
+            s32     width, height;
+            s32     ratio;
+            
+            s32     num_mips;
+            s32     format;
+            u32     handle;
+        };
+        
+        hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
+        hash_id ID_MAIN_DEPTH = PEN_HASH("main_depth");
+        
+        struct view_params
+        {
+            //todo MRT
+            u32     render_targets[8] = { 0 };
+            u32     num_render_targets = 0;
+            
+            f32     viewport[4] = { 0 };
+            
+            u32     clear_state = 0;
+            
+            hash_id id_technique = 0;
+            hash_id id_scene = 0;
+            hash_id id_camera = 0;
+            
+            //scene
+            //update
+        };
+        
+        static std::vector<rt_info>     k_render_targets;
+        static std::vector<view_params> k_views;
+        
+        void get_rt_dimensions( const rt_info& rt, f32& w, f32& h )
+        {
+            w = (f32)pen_window.width;
+            h = (f32)pen_window.height;
+            
+            if( rt.ratio != 0 )
+            {
+                w *= (f32)rt.ratio;
+                h *= (f32)rt.ratio;
+            }
+            else
+            {
+                w = (f32)rt.width;
+                h = (f32)rt.height;
+            }
+        }
+        
+        void get_rt_viewport( const rt_info& rt, const f32* vp_in, pen::viewport& vp_out )
+        {
+            f32 w, h;
+            get_rt_dimensions( rt, w, h );
+            
+            vp_out =
+            {
+                vp_in[0] * w, vp_in[1] * h,
+                vp_in[2] * w, vp_in[3] * h,
+                0.0f, 1.0f
+            };
+        }
+        
         void parse_render_targets( pen::json& render_config )
         {
+            //add 2 defaults
+            rt_info main_colour;
+            main_colour.id_name = ID_MAIN_COLOUR;
+            main_colour.ratio = 1;
+            main_colour.format = PEN_TEX_FORMAT_RGBA8_UNORM;
+            main_colour.handle = PEN_DEFAULT_RT;
+            
+            k_render_targets.push_back(main_colour);
+            
+            rt_info main_depth;
+            main_depth.id_name = ID_MAIN_DEPTH;
+            main_depth.ratio = 1;
+            main_depth.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
+            main_depth.handle = PEN_DEFAULT_DS;
+            
+            k_render_targets.push_back(main_depth);
+            
             pen::json j_render_targets = render_config["render_targets"];
+            
+            s32 num = j_render_targets.size();
+            
+            for( s32 i = 0; i < num; ++i )
+            {
+                pen::json r = j_render_targets[i];
+                
+                for( s32 f = 0; f < num_formats; ++f)
+                {
+                    if( rt_format[f].name == r["format"].as_str() )
+                    {
+                        k_render_targets.push_back(rt_info());
+                        rt_info& new_info = k_render_targets.back();
+                        new_info.ratio = 0;
+                        
+                        new_info.name = r.name();
+                        new_info.id_name = PEN_HASH(r.name().c_str());
+                        
+                        pen::json size = r["size"];
+                        if( size.size() == 2 )
+                        {
+                            //explicit size
+                            new_info.width = size[0].as_s32();
+                            new_info.height = size[1].as_s32();
+                        }
+                        else
+                        {
+                            //ratio
+                            Str ratio_str = size.as_str();
+                            
+                            for( s32 rr = 0; rr < num_ratios; ++rr )
+                                if( rt_ratio[rr] == ratio_str )
+                                    new_info.ratio = rr;
+                        }
+                        
+                        new_info.num_mips = calc_num_mips(new_info.width, new_info.height);
+                        new_info.format = rt_format[f].format;
+                        
+                        pen::texture_creation_params tcp;
+                        tcp.data = nullptr;
+                        tcp.width = new_info.width;
+                        tcp.height = new_info.height;
+                        tcp.format = new_info.format;
+                        tcp.pixels_per_block = 1;
+                        tcp.block_size = rt_format[f].block_size;
+                        tcp.usage = PEN_USAGE_DEFAULT;
+                        tcp.flags = 0;
+                        
+                        //todo
+                        
+                        //arays and mips
+                        tcp.num_arrays = 1;
+                        tcp.num_mips = 1; //new_info.num_mips;
+                        
+                        //flags
+                        tcp.cpu_access_flags = 0;
+                        tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
+                        
+                        //msaa
+                        tcp.sample_count = 1;
+                        tcp.sample_quality = 0;
+                        
+                        new_info.handle = pen::renderer_create_render_target( tcp );
+                        
+                        break;
+                    }
+                }
+            }
         }
         
         void parse_views( pen::json& render_config )
         {
             pen::json j_views = render_config["views"];
+            
+            s32 num = j_views.size();
+            
+            for( s32 i = 0; i < num; ++i )
+            {
+                view_params new_view;
+                
+                pen::json view = j_views[i];
+                
+                //clear colour
+                pen::json clear_colour = view["clear_colour"];
+                
+                f32 clear_data[5] = { 0 };
+                
+                u32 clear_flags = 0;
+                
+                if( clear_colour.size() == 4 )
+                {
+                    for( s32 c = 0; c < 4; ++c )
+                    {
+                        clear_data[c] = clear_colour[c].as_f32();
+                    }
+                    
+                    clear_flags |= PEN_CLEAR_COLOUR_BUFFER;
+                }
+                
+                //clear depth
+                pen::json clear_depth = view["clear_depth"];
+                
+                if( clear_depth.type() != JSMN_UNDEFINED )
+                {
+                    clear_data[4] = clear_depth.as_f32();
+                    
+                    clear_flags |= PEN_CLEAR_DEPTH_BUFFER;
+                }
+            
+                //clear state
+                pen::clear_state cs_info =
+                {
+                    clear_data[0], clear_data[1], clear_data[2], clear_data[3], clear_data[4], clear_flags,
+                };
+                
+                new_view.clear_state = pen::renderer_create_clear_state( cs_info );
+                
+                //render targets
+                pen::json targets = view["target"];
+                
+                new_view.num_render_targets = targets.size();
+                
+                s32 cur_rt = 0;
+                for( s32 t = 0; t < new_view.num_render_targets; ++t )
+                {
+                    hash_id target_hash = PEN_HASH(targets[t].as_str().c_str());
+                    
+                    s32 rt_index = 0;
+                    for( auto& r : k_render_targets )
+                    {
+                        if( target_hash == r.id_name )
+                        {
+                            new_view.render_targets[cur_rt++] = rt_index;
+                        }
+                        
+                        ++rt_index;
+                    }
+                }
+                
+                if( cur_rt != new_view.num_render_targets )
+                {
+                    PEN_PRINTF("render controller error: couldn't find all render targets\n");
+                }
+                else if( new_view.num_render_targets > 1 )
+                {
+                    //validate render targets
+                    rt_info& rt1 = k_render_targets[new_view.render_targets[0]];
+                    
+                    bool rts_validated = false;
+                    for( s32 i = 0; i < new_view.num_render_targets; ++i )
+                    {
+                        rt_info& rt2 = k_render_targets[new_view.render_targets[0]];
+                        
+                        if(rt1.ratio != rt2.ratio)
+                            break;
+                        
+                        if(rt1.ratio == 0)
+                        {
+                            if( rt1.width != rt2.width || rt1.height != rt2.height )
+                            {
+                                break;
+                            }
+                        }
+                        
+                        if( i == new_view.num_render_targets -1)
+                            rts_validated = true;
+                    }
+                    
+                    if(!rts_validated)
+                    {
+                        PEN_PRINTF("render controller error: mismatched render target dimensions\n");
+                    }
+                }
+                
+                //viewport
+                pen::json viewport = view["viewport"];
+                
+                if( viewport.size() == 4 )
+                {
+                    for( s32 v = 0; v < 4; ++v )
+                        new_view.viewport[v] = viewport[v].as_f32();
+                }
+                else
+                {
+                    new_view.viewport[0] = 0.0f;
+                    new_view.viewport[1] = 0.0f;
+                    new_view.viewport[2] = 1.0f;
+                    new_view.viewport[3] = 1.0f;
+                }
+                
+                k_views.push_back(new_view);
+            }
         }
         
         void init( const c8* filename )
@@ -36,11 +359,84 @@ namespace put
             
             pen::json render_config = pen::json::load((const c8*)config_data);
             
-            PEN_PRINTF( render_config.dumps().c_str() );
-            
             parse_render_targets(render_config);
             
             parse_views(render_config);
+        }
+        
+        ces::scene_view* test_scene;
+        
+        void register_scene( ces::scene_view* sv )
+        {
+            test_scene = sv;
+        }
+        
+        void render()
+        {
+            for( auto& v : k_views )
+            {
+                //bind render targets
+                u32 depth_target = PEN_NULL_DEPTH_BUFFER;
+                u32 colour_target = PEN_NULL_COLOUR_BUFFER;
+                
+                for( s32 i = 0; i < v.num_render_targets; ++i )
+                {
+                    s32 rt_index = v.render_targets[i];
+                    
+                    if( k_render_targets[rt_index].format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT )
+                        depth_target = k_render_targets[rt_index].handle;
+                    else
+                        colour_target = k_render_targets[rt_index].handle;
+                }
+                
+                //viewport and scissor
+                pen::viewport vp = { 0 };
+                auto& master_rt = k_render_targets[v.render_targets[0]];
+                get_rt_viewport( master_rt, v.viewport, vp );
+                
+                pen::renderer_set_viewport( vp );
+                
+                pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
+                
+                pen::renderer_set_targets(colour_target, depth_target);
+                
+                //clear
+                pen::renderer_clear( v.clear_state );
+                
+                //draw some stuff
+                put::ces::render_scene_view(*test_scene, put::ces::scene_render_type::SN_RENDER_LIT );
+                
+                //break;
+            }
+            
+            //set back to main viewport
+            pen::viewport vp = { 0 };
+            f32 default_vp[4] = {0.0f, 0.0f, 1.0f, 1.0f};
+            get_rt_viewport( k_render_targets[0], default_vp, vp );
+            pen::renderer_set_viewport( vp );
+            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
+            
+            pen::renderer_set_targets(PEN_DEFAULT_RT, PEN_DEFAULT_DS);
+        }
+        
+        void show_dev_ui()
+        {
+            ImGui::Begin("Render Controller");
+            
+            if( ImGui::CollapsingHeader("Render Targets") )
+            {
+                for( auto& rt : k_render_targets )
+                {
+                    f32 w, h;
+                    get_rt_dimensions(rt, w, h);
+                    
+                    ImGui::Image((void*)&rt.handle, ImVec2(w / 4, h / 4));
+                    
+                    ImGui::Text("%i, %i", (s32)h, (s32)w );
+                }
+            }
+        
+            ImGui::End();
         }
     }
 }

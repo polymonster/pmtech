@@ -6,6 +6,7 @@
 #include "threads.h"
 #include "timer.h"
 #include "pen.h"
+#include "hash.h"
 #include <vector>
 
 //--------------------------------------------------------------------------------------
@@ -120,8 +121,13 @@ namespace pen
     
     struct render_target
     {
-        GLuint framebuffer;
         texture_info texture;
+    };
+    
+    struct framebuffer
+    {
+        hash_id hash;
+        GLuint  framebuffer;
     };
     
     enum resource_type : s32
@@ -142,6 +148,7 @@ namespace pen
     };
     
     std::vector<shader_program> shader_programs;
+    std::vector<framebuffer> k_framebuffers;
     
 	struct resource_allocation
 	{
@@ -674,6 +681,18 @@ namespace pen
                 type = GL_UNSIGNED_BYTE;
                 break;
                 
+            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+                sized_format = GL_DEPTH24_STENCIL8;
+                format = GL_DEPTH_STENCIL;
+                type = GL_UNSIGNED_INT_24_8;
+                break;
+                
+            case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
+                sized_format = GL_RGBA32F;
+                format = GL_RGBA;
+                type = GL_FLOAT;
+                break;
+                
             default:
                 PEN_ASSERT( 0 );
                 break;
@@ -725,14 +744,7 @@ namespace pen
         
         res.type = RES_RENDER_TARGET;
         
-        glGenFramebuffers(1, &res.render_target.framebuffer );
-        glBindFramebuffer(GL_FRAMEBUFFER, res.render_target.framebuffer);
-        
         res.render_target.texture = create_texture_internal(tcp);
-        
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, res.render_target.texture.handle, 0);
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
         return resource_index;
 	}
@@ -747,10 +759,50 @@ namespace pen
         {
             GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
             glDrawBuffers(1, DrawBuffers);
-        
-            resource_allocation& res = resource_pool[ colour_target ];
             
-            glBindFramebuffer( GL_FRAMEBUFFER, res.render_target.framebuffer );
+            hash_murmur hh;
+            hh.add(colour_target);
+            hh.add(depth_target);
+            hh.add(colour_face);
+            hh.add(depth_face);
+            
+            hash_id h = hh.end();
+            
+            bool found = false;
+            
+            for( auto& fb : k_framebuffers )
+            {
+                if( fb.hash == h)
+                {
+                    glBindFramebuffer( GL_FRAMEBUFFER, fb.framebuffer );
+                    found = true;
+                }
+            }
+            
+            if(!found)
+            {
+                resource_allocation& colour_res = resource_pool[ colour_target ];
+                
+                GLuint fbh;
+                
+                glGenFramebuffers(1, &fbh);
+                glBindFramebuffer(GL_FRAMEBUFFER, fbh);
+                
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
+                
+                
+                if( depth_target != 0 )
+                {
+                    resource_allocation& depth_res = resource_pool[ depth_target ];
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0);
+                }
+                
+                framebuffer new_fb;
+                new_fb.hash = h;
+                new_fb.framebuffer = fbh;
+                
+                k_framebuffers.push_back(new_fb);
+            }
         }
 	}
 

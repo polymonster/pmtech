@@ -296,6 +296,7 @@ namespace pen
 	void	renderer_release_query( u32 query );
 
 	//cmd specific
+    void    renderer_window_resize( s32 width, s32 height );
 	void	renderer_consume_cmd_buffer();
 	void	renderer_update_queries();
 

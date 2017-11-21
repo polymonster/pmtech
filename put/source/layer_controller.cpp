@@ -118,7 +118,8 @@ namespace put
 			0.0f, 0.0f,
 			(f32)pen_window.width, (f32)pen_window.height,
 			0.0f, 1.0f
-		};
+        };
+        
 		k_built_in_handles.back_buffer_scissor_rect = { 0.0f,  0.0f, (f32)pen_window.width, (f32)pen_window.height };
 
 		//buffers
@@ -266,7 +267,7 @@ namespace put
 	void layer_controller_update()
 	{
 		//bind debug cbuffer
-		pen::renderer_set_constant_buffer(k_built_in_handles.debug_shader_cbuffer, 13, PEN_SHADER_TYPE_PS);
+		//pen::renderer_set_constant_buffer(k_built_in_handles.debug_shader_cbuffer, 13, PEN_SHADER_TYPE_PS);
 
 		//update layers
 		u32 num_layers = k_layers.size();
@@ -280,27 +281,44 @@ namespace put
 
 		for (u32 i = 0; i < num_layers; ++i)
 		{
-			pen::renderer_set_viewport(k_layers[i].viewport);
-			pen::renderer_set_scissor_rect(k_layers[i].scissor_rect);
+            pen::viewport vp =
+            {
+                0.0f, 0.0f,
+                (f32)pen_window.width, (f32)pen_window.height,
+                0.0f, 1.0f
+            };
+            pen::rect sr = { 0.0f,  0.0f, (f32)pen_window.width, (f32)pen_window.height };
+    
+			pen::renderer_set_viewport(vp);
+			pen::renderer_set_scissor_rect(sr);
+            
 			pen::renderer_set_depth_stencil_state(k_layers[i].depth_stencil_state);
 			pen::renderer_set_blend_state(k_layers[i].blend_state);
 
+            /*
 			if ( k_layers[i].num_colour_targets == 1 )
 			{
 				pen::renderer_set_targets( k_layers[i].colour_targets[0], k_layers[i].depth_target );
 			}
+            else
+            {
+                pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+            }
+            */
 
-			pen::renderer_clear(k_layers[i].clear_state);
+			//pen::renderer_clear(k_layers[i].clear_state);
 
             put::ces::render_scene_view( k_layers[i].view, k_shader_debug_selected == -1 ? ces::SN_RENDER_LIT : ces::SN_RENDER_DEBUG );
 
-            put::ces::render_scene_debug(k_layers[i].view.scene, k_layers[i].view);
+            //put::ces::render_scene_debug(k_layers[i].view.scene, k_layers[i].view);
             
+            /*
             if( k_layers[i].debug_dispatch & LAYER_DEBUG_3D )
                 put::dbg::render_3d( k_layers[i].view.cb_view );
             
             if( k_layers[i].debug_dispatch & LAYER_DEBUG_2D )
                 put::dbg::render_2d( );
+            */
 		}
 	}
 
