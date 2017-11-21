@@ -368,14 +368,22 @@ namespace pen
     json json::load_from_file( const c8* filename )
     {
         json new_json;
-        
-        new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
-        
-        pen::filesystem_read_file_to_buffer(filename, (void**)&new_json.m_internal_object->data, new_json.m_internal_object->size);
-        new_json.m_internal_object->name = nullptr;
-        
-        create_json_object( *new_json.m_internal_object );
-        
+                
+        void* data = nullptr;
+        u32 size = 0;
+
+        pen_error err = pen::filesystem_read_file_to_buffer(filename, &data, size); 
+
+        if (err == PEN_ERR_OK)
+        {
+            new_json.m_internal_object = ( json_object* )memory_alloc( sizeof( json_object ) );
+            new_json.m_internal_object->data = (c8*)data;
+            new_json.m_internal_object->size = size;
+            new_json.m_internal_object->name = nullptr;
+
+            create_json_object( *new_json.m_internal_object );
+        }
+
         return new_json;
     }
     
@@ -547,11 +555,16 @@ namespace pen
 
     json::json( )
     {
-        
+        m_internal_object = nullptr;
     }
     
     void json::copy( json* dst, const json& other )
     {
+        dst->m_internal_object = nullptr;
+
+        if (other.m_internal_object == nullptr)
+            return;
+
         dst->m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
         //shallow copy defauly copy ctor
@@ -647,6 +660,9 @@ namespace pen
     
     jsmntype_t json::type()
     {
+        if(!m_internal_object)
+            return JSMN_UNDEFINED;
+
         if(m_internal_object->num_tokens <= 0)
             return JSMN_UNDEFINED;
         
@@ -679,10 +695,17 @@ namespace pen
         
         pen::json json_set = pen::json::load(new_json_object.c_str());
         
-        pen::json combined = combine(*this, json_set);
-        
-        //free mem and copy combined
-        this->~json();
-        *this = combined;
+        if (m_internal_object)
+        {
+            pen::json combined = combine( *this, json_set );
+
+            //free mem and copy combined
+            this->~json();
+            *this = combined;
+        }
+        else
+        {
+            *this = json_set;
+        }
     }
 }

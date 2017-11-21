@@ -693,6 +693,7 @@ namespace put
                 bool  has_matrix_transform = false;
                 u32   num_rotations = 0;
                 
+                static f32 zero_rotation_epsilon = 0.000001f;
                 for (u32 t = 0; t < transforms; ++t)
                 {
                     u32 type = *p_u32reader++;
@@ -706,7 +707,6 @@ namespace put
                         case PMM_ROTATE:
                             pen::memory_cpy(&rotations[num_rotations], p_u32reader, 16);
                             rotations[num_rotations].w = put::maths::deg_to_rad(rotations[num_rotations].w);
-                            static f32 zero_rotation_epsilon = 0.000001f;
                             if (rotations[num_rotations].w < zero_rotation_epsilon && rotations[num_rotations].w > zero_rotation_epsilon)
                                 rotations[num_rotations].w = 0.0f;
                             num_rotations++;

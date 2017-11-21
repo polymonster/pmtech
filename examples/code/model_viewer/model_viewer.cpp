@@ -144,7 +144,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	put::dev_ui::init();
 	put::dbg::init();
     
-    put::render_controller::init("data/configs/renderer.json");
+    //put::render_controller::init("data/configs/renderer.json");
     
 	//create the main scene and import a model
 	put::ces::component_entity_scene* main_scene = put::ces::create_scene("main_scene");
@@ -185,9 +185,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         
 		put::layer_controller_update();
         
-        put::render_controller::render();
+        //put::render_controller::render();
         
-        put::render_controller::show_dev_ui();
+        //put::render_controller::show_dev_ui();
         
 		put::dev_ui::render();
         

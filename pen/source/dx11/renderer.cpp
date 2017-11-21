@@ -276,11 +276,11 @@ namespace pen
 
 		if (FAILED( hr ))
 		{
+            //shader has failed to create
+            PEN_ASSERT( 0 );
+
 			free_resource_index( resource_index );
 			resource_index = (u32)-1;
-
-			//shader has failed to create
-			PEN_ASSERT( 0 );
 		}
 
 		return resource_index;

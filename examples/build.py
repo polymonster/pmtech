@@ -95,7 +95,7 @@ def get_platform_info():
             renderer = "dx11"
         if platform == "":
             platform = "win32"
-        python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
+        #python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
 
     extra_target_info = ""
     if platform == "ios":

@@ -295,7 +295,6 @@ namespace put
 			pen::renderer_set_depth_stencil_state(k_layers[i].depth_stencil_state);
 			pen::renderer_set_blend_state(k_layers[i].blend_state);
 
-            /*
 			if ( k_layers[i].num_colour_targets == 1 )
 			{
 				pen::renderer_set_targets( k_layers[i].colour_targets[0], k_layers[i].depth_target );
@@ -304,21 +303,18 @@ namespace put
             {
                 pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
             }
-            */
 
-			//pen::renderer_clear(k_layers[i].clear_state);
+			pen::renderer_clear(k_layers[i].clear_state);
 
             put::ces::render_scene_view( k_layers[i].view, k_shader_debug_selected == -1 ? ces::SN_RENDER_LIT : ces::SN_RENDER_DEBUG );
 
-            //put::ces::render_scene_debug(k_layers[i].view.scene, k_layers[i].view);
+            put::ces::render_scene_debug(k_layers[i].view.scene, k_layers[i].view);
             
-            /*
             if( k_layers[i].debug_dispatch & LAYER_DEBUG_3D )
                 put::dbg::render_3d( k_layers[i].view.cb_view );
             
             if( k_layers[i].debug_dispatch & LAYER_DEBUG_2D )
                 put::dbg::render_2d( );
-            */
 		}
 	}
 
