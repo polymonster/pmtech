@@ -212,8 +212,6 @@ namespace put
                         tcp.sample_quality = 0;
                         
                         new_info.handle = pen::renderer_create_render_target( tcp );
-                        
-                        break;
                     }
                 }
             }
@@ -274,6 +272,8 @@ namespace put
                 s32 cur_rt = 0;
                 for( s32 t = 0; t < new_view.num_render_targets; ++t )
                 {
+                    Str tttt = targets[t].as_str();
+
                     hash_id target_hash = PEN_HASH(targets[t].as_str().c_str());
                     
                     s32 rt_index = 0;
@@ -404,9 +404,7 @@ namespace put
                 pen::renderer_clear( v.clear_state );
                 
                 //draw some stuff
-                put::ces::render_scene_view(*test_scene, put::ces::scene_render_type::SN_RENDER_LIT );
-                
-                //break;
+                //put::ces::render_scene_view(*test_scene, put::ces::scene_render_type::SN_RENDER_LIT );
             }
             
             //set back to main viewport
@@ -427,6 +425,9 @@ namespace put
             {
                 for( auto& rt : k_render_targets )
                 {
+                    if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
+                        continue;
+
                     f32 w, h;
                     get_rt_dimensions(rt, w, h);
                     

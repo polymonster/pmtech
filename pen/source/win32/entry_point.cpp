@@ -11,6 +11,7 @@
 #include "pen.h"
 #include "pen_string.h"
 
+extern a_u8 g_window_resize;
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
 // loop. Idle time is used to render the scene.
@@ -207,6 +208,15 @@ namespace pen
 			pen::input_set_mouse_wheel(hi_w / WHEEL_DELTA);
 		}
 		break;
+
+        case WM_SIZE:
+        {
+            pen_window.width = LOWORD( lParam );
+            pen_window.height = HIWORD( lParam );
+
+            g_window_resize = 1;
+        }
+        break;
 
 		default:
 			return DefWindowProcA(hWnd, message, wParam, lParam);

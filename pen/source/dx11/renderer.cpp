@@ -27,8 +27,12 @@ ID3D11DeviceContext1*   g_immediate_context_1 = nullptr;
 
 extern pen::window_creation_params pen_window;
 
+a_u8 g_window_resize( 0 );
+
 namespace pen
 {
+    void create_rtvs( u32 crtv, u32 dsv, uint32_t w, uint32_t h );
+
 	//--------------------------------------------------------------------------------------
 	//  COMMON API
 	//--------------------------------------------------------------------------------------
@@ -206,6 +210,26 @@ namespace pen
 	{
 		// Just present
 		g_swap_chain->Present( 0, 0 );
+
+        if (g_window_resize == 1)
+        {
+            g_immediate_context->OMSetRenderTargets( 0, 0, 0 );
+
+            // Release all outstanding references to the swap chain's buffers.
+            resource_pool[g_context.backbuffer_depth].depth_target->ds[0]->Release();
+            resource_pool[g_context.backbuffer_depth].depth_target->tex.texture->Release();
+
+            resource_pool[g_context.backbuffer_colour].render_target->rt[0]->Release();
+
+            uint32_t w = pen_window.width;
+            uint32_t h = pen_window.height;
+
+            g_swap_chain->ResizeBuffers( 0, w, h, DXGI_FORMAT_UNKNOWN, 0 );
+
+            create_rtvs( g_context.backbuffer_colour, g_context.backbuffer_depth, w, h );
+
+            g_window_resize = 0;
+        }
 	}
 
 	void direct::renderer_create_query( u32 query_type, u32 flags )
@@ -945,6 +969,69 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	// D3D Device Creation
 	//--------------------------------------------------------------------------------------
+    void create_rtvs( u32 crtv, u32 dsv, uint32_t w, uint32_t h )
+    {
+        // Create a render target view
+        ID3D11Texture2D* pBackBuffer = nullptr;
+        HRESULT hr = g_swap_chain->GetBuffer( 0, __uuidof(ID3D11Texture2D), reinterpret_cast< void** >(&pBackBuffer) );
+        if (FAILED( hr ))
+            return;
+
+        hr = g_device->CreateRenderTargetView( pBackBuffer, nullptr, &g_backbuffer_rtv );
+
+        pBackBuffer->Release();
+        if (FAILED( hr ))
+            return;
+
+        PEN_ASSERT( crtv == PEN_DEFAULT_RT );
+        resource_pool[crtv].render_target = ( render_target_internal* )pen::memory_alloc( sizeof( render_target_internal ) );
+
+        g_context.active_colour_target = PEN_DEFAULT_RT;
+
+        resource_pool[crtv].render_target->rt[0] = g_backbuffer_rtv;
+        resource_pool[crtv].texture_2d->texture = pBackBuffer;
+
+        g_context.backbuffer_colour = crtv;
+
+
+        PEN_ASSERT( dsv == PEN_DEFAULT_DS );
+        resource_pool[dsv].depth_target = ( depth_stencil_target_internal* )pen::memory_alloc( sizeof( depth_stencil_target_internal ) );
+
+        g_context.active_depth_target = PEN_DEFAULT_DS;
+
+        // Create depth stencil texture
+        D3D11_TEXTURE2D_DESC descDepth;
+        ZeroMemory( &descDepth, sizeof( descDepth ) );
+        descDepth.Width = w;
+        descDepth.Height = h;
+        descDepth.MipLevels = 1;
+        descDepth.ArraySize = 1;
+        descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+        descDepth.SampleDesc.Count = pen_window.sample_count;
+        descDepth.SampleDesc.Quality = 0;
+        descDepth.Usage = D3D11_USAGE_DEFAULT;
+        descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+        descDepth.CPUAccessFlags = 0;
+        descDepth.MiscFlags = 0;
+        hr = g_device->CreateTexture2D( &descDepth, nullptr, &resource_pool[dsv].texture_2d->texture );
+        if (FAILED( hr ))
+            return;
+
+        // Create the depth stencil view
+        D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
+        ZeroMemory( &descDSV, sizeof( descDSV ) );
+        descDSV.Format = descDepth.Format;
+        descDSV.ViewDimension = pen_window.sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+        descDSV.Texture2D.MipSlice = 0;
+        hr = g_device->CreateDepthStencilView( resource_pool[dsv].texture_2d->texture, &descDSV, &resource_pool[dsv].depth_target->ds[0] );
+        if (FAILED( hr ))
+            return;
+
+        g_immediate_context->OMSetRenderTargets(1, &g_backbuffer_rtv, NULL);
+
+        g_context.backbuffer_depth = dsv;
+    }
+
 	u32 direct::renderer_initialise( void* params )
 	{
 		clear_resource_table( );
@@ -1075,66 +1162,10 @@ namespace pen
 		if (FAILED(hr))
 			return hr;
 
-		// Create a render target view
-		ID3D11Texture2D* pBackBuffer = nullptr;
-		hr = g_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
-		if (FAILED(hr))
-			return hr;
+        u32 crtv = renderer_get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
+        u32 dsv = renderer_get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
 
-		hr = g_device->CreateRenderTargetView(pBackBuffer, nullptr, &g_backbuffer_rtv);
-		pBackBuffer->Release();
-		if (FAILED(hr))
-			return hr;
-
-		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE | DEFER_RESOURCE);
-		PEN_ASSERT( resource_index == PEN_DEFAULT_RT );
-		resource_pool[resource_index].render_target = (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
-
-		g_context.active_colour_target = PEN_DEFAULT_RT;
-
-		resource_pool[ resource_index ].render_target->rt[0] = g_backbuffer_rtv;
-		resource_pool[ resource_index ].texture_2d->texture = pBackBuffer;
-		g_context.backbuffer_colour = resource_index;
-
-		
-				
-		u32 depth_tex_id = renderer_get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
-		PEN_ASSERT( depth_tex_id == PEN_DEFAULT_DS );
-		resource_pool[depth_tex_id].depth_target = (depth_stencil_target_internal*)pen::memory_alloc(sizeof(depth_stencil_target_internal));
-
-		g_context.active_depth_target = PEN_DEFAULT_DS;
-
-		// Create depth stencil texture
-		D3D11_TEXTURE2D_DESC descDepth;
-		ZeroMemory( &descDepth, sizeof(descDepth) );
-		descDepth.Width = width;
-		descDepth.Height = height;
-		descDepth.MipLevels = 1;
-		descDepth.ArraySize = 1;
-		descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		descDepth.SampleDesc.Count = pen_window.sample_count;
-		descDepth.SampleDesc.Quality = 0;
-		descDepth.Usage = D3D11_USAGE_DEFAULT;
-		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-		descDepth.CPUAccessFlags = 0;
-		descDepth.MiscFlags = 0;
-		hr = g_device->CreateTexture2D( &descDepth, nullptr, &resource_pool[depth_tex_id].texture_2d->texture );
-		if (FAILED( hr ))
-			return hr;
-
-		// Create the depth stencil view
-		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
-		ZeroMemory( &descDSV, sizeof(descDSV) );
-		descDSV.Format = descDepth.Format;
-		descDSV.ViewDimension = pen_window.sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
-		descDSV.Texture2D.MipSlice = 0;
-		hr = g_device->CreateDepthStencilView(resource_pool[depth_tex_id].texture_2d->texture, &descDSV, &resource_pool[depth_tex_id].depth_target->ds[0]);
-		if (FAILED( hr ))
-			return hr;
-
-		g_immediate_context->OMSetRenderTargets(1, &g_backbuffer_rtv, resource_pool[depth_tex_id].depth_target->ds[0]);
-
-		g_context.backbuffer_depth = depth_tex_id;
+        create_rtvs( crtv, dsv, width, height );
 
 		return S_OK;
 	}

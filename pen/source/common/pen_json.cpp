@@ -584,7 +584,9 @@ namespace pen
         if( other.m_internal_object->name )
         {
             s32 name_size = string_length(other.m_internal_object->name);
-            m_internal_object->name = (c8*)memory_alloc(name_size);
+            m_internal_object->name = (c8*)memory_alloc(name_size+1);
+            m_internal_object->name[name_size] = '\0';
+
             pen::memory_cpy(m_internal_object->name, other.m_internal_object->name, name_size);
         }
     }
