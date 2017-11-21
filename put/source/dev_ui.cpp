@@ -29,6 +29,7 @@ namespace put
 
 			//always use / for consistency
 			std::replace(formatted.begin(), formatted.end(), '\\', '/');
+            std::replace( formatted.begin(), formatted.end(), ':', '@' );
 
 			//strip the file
 			s32 last_dir = formatted.rfind("/");
@@ -39,7 +40,11 @@ namespace put
 				formatted = formatted.substr(0, last_dir);
 			}
 
+            formatted = "\"" + formatted + "\"";
+
             k_program_preferences.set("last_used_directory", formatted);
+
+            PEN_PRINTF( k_program_preferences.dumps().c_str() );
 
 			std::ofstream ofs(k_program_prefs_filename.c_str());
 
@@ -60,7 +65,8 @@ namespace put
 				if (last_dir.type() != JSMN_UNDEFINED)
 				{
 					std::string path = last_dir.as_str().c_str();
-                
+                    std::replace( path.begin(), path.end(), '@', ':' );
+
 					s32 dir_pos = 0;
 					directory_depth = 0;
 					bool finished = false;

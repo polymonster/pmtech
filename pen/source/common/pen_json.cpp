@@ -221,7 +221,7 @@ namespace pen
                 {
                     jsmntok_t* at = t+1+j;
                     
-                    result.object.data = pen::sub_string(js+at->start, at->end - at->start);
+                    result.object.data = pen::sub_string(js+at->start, at->end - at->start );
                     result.object.size = at->end - at->start;
                 
                     create_json_object( result.object );
@@ -500,6 +500,10 @@ namespace pen
                 JSON_NAME(json_string);
                 json_string.append(j2[i].name().c_str());
                 JSON_NAME(json_string);
+
+                pen::json jjjj = j2[i];
+
+                Str ssss = jjjj.as_str();
                 
                 json_string.append(": ");
                 json_string.append(j2[i].m_internal_object->data);

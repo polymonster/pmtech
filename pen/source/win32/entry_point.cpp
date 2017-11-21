@@ -211,10 +211,18 @@ namespace pen
 
         case WM_SIZE:
         {
-            pen_window.width = LOWORD( lParam );
-            pen_window.height = HIWORD( lParam );
+            s16 lo = LOWORD( wParam );
 
-            g_window_resize = 1;
+            if (lo == SIZE_MINIMIZED)
+                break;
+
+            if (g_window_resize == 0)
+            {
+                pen_window.width = LOWORD( lParam );
+                pen_window.height = HIWORD( lParam );
+
+                g_window_resize = 1;
+            }
         }
         break;
 

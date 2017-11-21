@@ -226,7 +226,7 @@ namespace pen
 
             g_swap_chain->ResizeBuffers( 0, w, h, DXGI_FORMAT_UNKNOWN, 0 );
 
-            create_rtvs( g_context.backbuffer_colour, g_context.backbuffer_depth, w, h );
+            create_rtvs( g_context.backbuffer_colour, g_context.backbuffer_depth, w, pen_window.height );
 
             g_window_resize = 0;
         }
