@@ -105,7 +105,7 @@ namespace put
             
             u32     clear_state = 0;
         
-            ces::component_entity_scene* scene;
+            ces::entity_scene* scene;
             put::camera* camera;
         };
         
@@ -453,23 +453,9 @@ namespace put
                 sv.cb_view = v.camera->cbuffer;
                 sv.scene_node_flags = 0;
                 
-                put::ces::render_scene_view(sv, put::ces::scene_render_type::SN_RENDER_LIT);
-                
-                put::ces::render_scene_debug(v.scene, sv);
+                put::ces::render_scene_view(sv);
+                put::ces::render_scene_debug(sv);
             }
-            
-            //set back to main viewport
-            pen::viewport vp =
-            {
-                0.0f, 0.0f,
-                (f32)pen_window.width, (f32)pen_window.height,
-                0.0f, 1.0
-            };
-            
-            pen::renderer_set_viewport( vp );
-            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-            
-            pen::renderer_set_targets(PEN_DEFAULT_RT, PEN_DEFAULT_DS);
         }
         
         void show_dev_ui()

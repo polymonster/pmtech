@@ -130,11 +130,12 @@ void get_mouse_pos( int& x, int& y )
     y = (int)adjust_frame.size.height - location.y;
     
     // clamp within the range of the window
-    
+    /*
     if (x < 0) x = 0;
     if (y < 0) y = 0;
     if (x > (int)adjust_frame.size.width) x = (int)adjust_frame.size.width;
     if (y > (int)adjust_frame.size.height) y = (int)adjust_frame.size.height;
+    */
 }
 
 void handle_modifiers( NSEvent* event )

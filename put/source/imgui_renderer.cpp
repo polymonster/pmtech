@@ -300,6 +300,18 @@ namespace put
 
 		void render(ImDrawData* draw_data)
 		{
+            //set to main viewport
+            pen::viewport vp =
+            {
+                0.0f, 0.0f,
+                (f32)pen_window.width, (f32)pen_window.height,
+                0.0f, 1.0
+            };
+            
+            pen::renderer_set_viewport( vp );
+            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
+            pen::renderer_set_targets(PEN_DEFAULT_RT, PEN_DEFAULT_DS);
+            
 			update_dynamic_buffers(draw_data);
 
 			pen::renderer_set_rasterizer_state(g_imgui_rs.raster_state);

@@ -61,7 +61,7 @@ namespace put
 		{
 			u32 id_name;
 			const c8* name;
-			component_entity_scene* scene;
+			entity_scene* scene;
 		};
 
 		std::vector<component_entity_scene_instance> k_scenes;
@@ -71,7 +71,7 @@ namespace put
             mat4 world_matrix;
         };
 
-		void resize_scene_buffers(component_entity_scene* scene)
+		void resize_scene_buffers(entity_scene* scene)
 		{
 			scene->nodes_size += 1024;
 			
@@ -109,7 +109,7 @@ namespace put
 #endif
 		}
 
-		void free_scene_buffers( component_entity_scene* scene )
+		void free_scene_buffers( entity_scene* scene )
 		{
 			FREE_COMPONENT_ARRAY(scene, id_name);
 			FREE_COMPONENT_ARRAY(scene, id_geometry);
@@ -138,9 +138,9 @@ namespace put
 #endif
 		}
         
-        void clone_node( component_entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset, const c8* suffix)
+        void clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset, const c8* suffix)
         {
-            component_entity_scene* p_sn = scene;
+            entity_scene* p_sn = scene;
             
             u32 parent_offset = p_sn->parents[src] - src;
             if (parent == -1)
@@ -193,11 +193,11 @@ namespace put
 #endif
         }
 
-		component_entity_scene*	create_scene( const c8* name )
+		entity_scene*	create_scene( const c8* name )
 		{
 			component_entity_scene_instance new_instance;
 			new_instance.name = name;
-			new_instance.scene = new component_entity_scene();
+			new_instance.scene = new entity_scene();
 
 			k_scenes.push_back(new_instance);
 
@@ -229,7 +229,7 @@ namespace put
             const c8* data,
             scene_node_geometry* p_geometries,
             scene_node_physics* p_physics,
-            component_entity_scene* scene,
+            entity_scene* scene,
             u32 node_index,
             std::vector<Str>& material_symbols
         )
@@ -589,7 +589,7 @@ namespace put
             return (anim_handle)k_animations.size()-1;
         }
         
-        void load_pmm(const c8* filename, component_entity_scene* scene)
+        void load_pmm(const c8* filename, entity_scene* scene)
         {
             void* model_file;
             u32   model_file_size;
@@ -881,9 +881,9 @@ namespace put
             return;
         }
 
-		void render_scene_view( const scene_view& view, scene_render_type render_type )
+		void render_scene_view( const scene_view& view )
 		{
-            component_entity_scene* scene = view.scene;
+            entity_scene* scene = view.scene;
             
             if( scene->debug_flags & DD_HIDE )
                 return;
@@ -951,7 +951,7 @@ namespace put
 			}
 		}
 
-		void update_scene(component_entity_scene* scene, f32 dt )
+		void update_scene( entity_scene* scene, f32 dt )
 		{
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -1030,11 +1030,72 @@ namespace put
 				else
 					scene->world_matrices[n] = scene->world_matrices[parent] * scene->local_matrices[n];
 			}
-            
-            
 		}
         
-        void enumerate_scene_ui(component_entity_scene* scene, bool* open )
+        struct scene_tree
+        {
+            s32 node_index;
+            const c8* node_name;
+            
+            std::vector<scene_tree> children;
+        };
+        
+        void scene_tree_add_node( scene_tree& tree, scene_tree& node, std::vector<s32>& heirarchy )
+        {
+            if( heirarchy.empty() )
+                return;
+            
+            if( heirarchy[0] == tree.node_index )
+            {
+                heirarchy.erase(heirarchy.begin());
+                
+                if( heirarchy.empty() )
+                {
+                    tree.children.push_back(node);
+                    return;
+                }
+                
+                for( auto& child : tree.children )
+                {
+                    scene_tree_add_node(child, node, heirarchy );
+                }
+            }
+        }
+        
+        void scene_tree_enumerate( const scene_tree& tree )
+        {
+            static s32 selected = -1;
+            for( auto& child : tree.children )
+            {
+                if( child.children.empty() )
+                {
+                    ImGui::Selectable(child.node_name);
+                    if (ImGui::IsItemClicked())
+                        selected = child.node_index;
+                }
+                else
+                {
+                    if(tree.node_index == -1)
+                        ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+                    
+                    ImGuiTreeNodeFlags node_flags = selected == child.node_index ? ImGuiTreeNodeFlags_Selected : 0;
+                    bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)child.node_index, node_flags, child.node_name, child.node_index);
+                    if (ImGui::IsItemClicked())
+                        selected = child.node_index;
+                    
+                    if( node_open )
+                    {
+                        scene_tree_enumerate(child);
+                        ImGui::TreePop();
+                    }
+                    
+                    if(tree.node_index == -1)
+                        ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+                }
+            }
+        }
+        
+        void enumerate_scene_ui( entity_scene* scene, bool* open )
         {
 #ifdef CES_DEBUG
             ImGui::Begin("Scene Browser", open );
@@ -1061,19 +1122,66 @@ namespace put
                 }
             }
             
+            static bool list_view = false;
+            if( ImGui::Button(ICON_FA_LIST) )
+                list_view = true;
+            
+            ImGui::SameLine();
+            if( ImGui::Button(ICON_FA_USB) )
+                list_view = false;
+            
             ImGui::BeginChild("Entities", ImVec2(400, 400), true );
             
             s32& selected_index = scene->selected_index;
             
-            for (u32 i = 0; i < scene->num_nodes; ++i)
+            if( list_view )
             {
-                bool selected = false;
-                ImGui::Selectable(scene->names[i].c_str(), &selected);
-                
-                if (selected)
+                for (u32 i = 0; i < scene->num_nodes; ++i)
                 {
-                    selected_index = i;
+                    bool selected = false;
+                    ImGui::Selectable(scene->names[i].c_str(), &selected);
+                    
+                    if (selected)
+                    {
+                        selected_index = i;
+                    }
                 }
+            }
+            else
+            {
+                //tree view
+                scene_tree tree;
+                tree.node_index = -1;
+                
+                //todo this could be cached
+                for( s32 n = 0; n < scene->num_nodes; ++n )
+                {
+                    scene_tree node;
+                    node.node_name = scene->names[n].c_str();
+                    node.node_index = n;
+                    
+                    if( scene->parents[n] == n )
+                    {
+                        tree.children.push_back(node);
+                    }
+                    else
+                    {
+                        std::vector<s32> heirarchy;
+                        
+                        u32 p = n;
+                        while( scene->parents[p] != p )
+                        {
+                            p = scene->parents[p];
+                            heirarchy.insert(heirarchy.begin(), p);
+                        }
+                        
+                        heirarchy.insert(heirarchy.begin(),-1);
+                        
+                        scene_tree_add_node( tree, node, heirarchy );
+                    }
+                }
+                
+                scene_tree_enumerate(tree);
             }
             
             ImGui::EndChild();
@@ -1189,9 +1297,11 @@ namespace put
         }
         
 
-		void render_scene_debug( component_entity_scene* scene, const scene_view& view )
+		void render_scene_debug( const scene_view& view )
 		{
 #ifdef CES_DEBUG
+            entity_scene* scene = view.scene;
+            
             if( scene->debug_flags & DD_MATRIX )
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)

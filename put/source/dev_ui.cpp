@@ -176,7 +176,7 @@ namespace put
 				initialise = false;
 			}
 
-			ImGui::Begin("File Browser");
+			ImGui::Begin("File Browser", &dialog_open);
 
 			ImGui::Text("%s", selected_path.c_str());
 
@@ -200,18 +200,33 @@ namespace put
 			{
 				dialog_open = false;
 			}
-
+            
 			ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
 
-			ImGui::Columns(current_depth, "directories");
+            static s32 base_frame = current_depth - 4;
+            if (ImGui::Button(ICON_FA_ARROW_LEFT))
+                base_frame--;
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_ARROW_RIGHT))
+                base_frame++;
+            
+            base_frame = std::min<s32>(current_depth-4,base_frame);
+            base_frame = std::max<s32>(0,base_frame);
+            
+            static const s32 max_depth = 4;
+            ImGui::Columns(std::min<s32>(max_depth, current_depth), "directories");
             
 			ImGui::Separator();
 			pen::fs_tree_node* fs_iter = &fs_enumeration;
-
-			s32 frame_depth = current_depth;
-			for (s32 d = 0; d < frame_depth; ++d)
+            
+			for (s32 d = 0; d < current_depth; ++d)
 			{
-				ImGui::Text("%s", fs_iter->name); ImGui::NextColumn();
+                if( d >= base_frame && d < base_frame+max_depth)
+                {
+                    ImGui::Text("%s", fs_iter->name);
+                    ImGui::NextColumn();
+                }
+                
 				fs_iter = &fs_iter->children[selection_stack[d]];
 			}
             
@@ -222,47 +237,53 @@ namespace put
 
 			fs_iter = &fs_enumeration;
 
-			for (s32 c = 0; c < frame_depth; ++c)
+            for (s32 c = 0; c < current_depth; ++c)
 			{
-				for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
-				{
-					ImGui::PushID(fs_iter);
+                if( c >= base_frame && c < base_frame+max_depth )
+                {
+                    for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
+                    {
+                        ImGui::PushID(fs_iter);
+                        
+                        if (ImGui::Selectable(fs_iter->children[entry].name))
+                        {
+                            search_path = current_path;
+                            search_path += fs_iter->children[entry].name;
+                            
+                            va_list wildcards;
+                            va_start(wildcards, num_filetypes);
+                            
+                            pen::filesystem_enum_directory(search_path.c_str(), fs_iter->children[entry], num_filetypes, wildcards);
+                            
+                            va_end(wildcards);
+                            
+                            if (fs_iter->children[entry].num_children > 0)
+                            {
+                                for (s32 i = c; i < current_depth; ++i)
+                                {
+                                    selection_stack[i] = -1;
+                                }
+                                
+                                current_depth = c + 2;
+                                selection_stack[c] = entry;
+                            }
+                            else
+                            {
+                                selected_path = "";
+                                selected_path = search_path;
+                            }
+                            
+                            base_frame++;
+                        }
+                        
+                        ImGui::PopID();
+                    }
+                    
+                    if (selection_stack[c] >= 0)
+                        ImGui::NextColumn();
+                }
 
-					if (ImGui::Selectable(fs_iter->children[entry].name))
-					{
-						search_path = current_path;
-						search_path += fs_iter->children[entry].name;
-
-						va_list wildcards;
-						va_start(wildcards, num_filetypes);
-
-						pen::filesystem_enum_directory(search_path.c_str(), fs_iter->children[entry], num_filetypes, wildcards);
-
-						va_end(wildcards);
-
-						if (fs_iter->children[entry].num_children > 0)
-						{
-							for (s32 i = c; i < current_depth; ++i)
-							{
-								selection_stack[i] = -1;
-							}
-
-							current_depth = c + 2;
-							selection_stack[c] = entry;
-						}
-						else
-						{
-							selected_path = "";
-							selected_path = search_path;
-						}
-					}
-
-					ImGui::PopID();
-				}
-
-				s32 selected = selection_stack[c];
-
-				if (selected >= 0)
+				if (selection_stack[c] >= 0)
 				{
 					fs_iter = &fs_iter->children[selection_stack[c]];
 					current_path += fs_iter->name;
@@ -270,12 +291,10 @@ namespace put
 					if (current_path != "/")
 						current_path += "/";
 				}
-				else
-				{
-					break;
-				}
-
-				ImGui::NextColumn();
+                else
+                {
+                    break;
+                }
 			}
 
 			ImGui::EndChild();

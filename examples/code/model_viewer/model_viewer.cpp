@@ -36,8 +36,6 @@ const c8* camera_mode_names[] =
 
 struct model_view_controller
 {
-	put::ces::component_entity_scene* scene;
-
 	put::camera		main_camera;
 	e_camera_mode	camera_mode = CAMERA_MODELLING;
 	
@@ -169,7 +167,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     cc.id_name = PEN_HASH(cc.name.c_str());
     
     //create the main scene and controller
-    put::ces::component_entity_scene* main_scene = put::ces::create_scene("main_scene");
+    put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     
     put::scene_controller sc;
     sc.scene = main_scene;

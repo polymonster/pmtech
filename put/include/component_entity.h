@@ -163,7 +163,7 @@ namespace put
             u8                       play_flags = 0;
         };
 
-		struct component_entity_scene
+		struct entity_scene
 		{
             a_u64*                  entities;
             
@@ -232,26 +232,28 @@ namespace put
 			u32 cb_view;
 			u32 scene_node_flags = 0;
 			u32 debug_flags = 0;
-
-			component_entity_scene* scene = nullptr;
+            
+            hash_id technique;
+			entity_scene* scene = nullptr;
 		};
 
-		component_entity_scene*	create_scene( const c8* name );
+		entity_scene*   create_scene( const c8* name );
 
-        void                    load_pmm( const c8* model_scene_name, component_entity_scene* scene );
+        void            load_pmm( const c8* model_scene_name, entity_scene* scene );
+        anim_handle     load_pma( const c8* model_scene_name );
+
+		void            clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
         
-        anim_handle             load_pma( const c8* model_scene_name );
+		void            enumerate_scene_ui( entity_scene* scene, bool* open );
         
-		void					clone_node( component_entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
-
-		void					enumerate_scene_ui(component_entity_scene* scene, bool* open );
-
-		void					render_scene_view(const scene_view& view, scene_render_type render_type_flags );
-
-		void					render_scene_debug(component_entity_scene* scene, const scene_view& view);
-
-		void					update_scene( component_entity_scene* scene, f32 dt );
+		void            render_scene_view( const scene_view& view );
+		void            render_scene_debug( const scene_view& view );
         
+		void            update_scene( entity_scene* scene, f32 dt );
+        
+        bool            is_valid( u32 handle );
+        
+        //inlines
         inline bool is_valid( u32 handle )
         {
             return handle != -1;

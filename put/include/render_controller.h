@@ -21,7 +21,7 @@ namespace put
     struct scene_controller
     {
         hash_id id_name;
-        put::ces::component_entity_scene* scene;
+        put::ces::entity_scene* scene;
         
         void(*update_function)(put::scene_controller*) = nullptr;
         
