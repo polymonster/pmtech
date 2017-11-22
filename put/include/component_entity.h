@@ -27,7 +27,8 @@ namespace put
 			CMP_SKINNED			= (1 << 6),
 			CMP_BONE			= (1 << 7),
             CMP_DYNAMIC			= (1 << 8),
-            CMP_ANIM_CONTROLLER = (1 << 9)
+            CMP_ANIM_CONTROLLER = (1 << 9),
+            CMP_ANIM_TRAJECTORY = (1 << 10)
 		};
 
 		enum e_node_types : u32
@@ -145,6 +146,9 @@ namespace put
             u32 num_channels;
             node_animation_channel* channels;
             
+            f32 length;
+            f32 step;
+            
 #ifdef CES_DEBUG
             Str name;
 #endif
@@ -154,12 +158,16 @@ namespace put
         {
             std::vector<anim_handle> handles;
             anim_handle              current_animation;
+            f32                      current_time;
             s32                      current_frame = 0;
+            u8                       play_flags = 0;
         };
 
 		struct component_entity_scene
 		{
             a_u64*                  entities;
+            
+            hash_id                 scene_id_name;
             
 			hash_id*				id_name;
 			hash_id*				id_geometry;
@@ -183,6 +191,8 @@ namespace put
 			u32						nodes_size = 0;
 
 #ifdef CES_DEBUG
+            Str                     scene_name;
+            
             Str*                    names;
 			Str*					geometry_names;
 			Str*					material_names;
@@ -240,7 +250,7 @@ namespace put
 
 		void					render_scene_debug(component_entity_scene* scene, const scene_view& view);
 
-		void					update_scene_matrices(component_entity_scene* scene);
+		void					update_scene( component_entity_scene* scene, f32 dt );
         
         inline bool is_valid( u32 handle )
         {

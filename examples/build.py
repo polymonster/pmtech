@@ -3,7 +3,10 @@ import subprocess
 import os.path
 import sys
 import shutil
-import _winreg as winreg
+
+if os.name == "nt":
+    import _winreg as winreg
+
 
 tools_dir = os.path.join("..", "tools")
 assets_dir = "assets"

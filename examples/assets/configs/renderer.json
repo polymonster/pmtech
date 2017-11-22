@@ -21,12 +21,12 @@
 		main_view:
 		{
 			target:[main_colour, main_depth],
-			clear_colour:[0.5, 0.0, 0.5, 1.0],
+			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			technique: lit,
-			scene: main,
-			camera: model_viewer
+			scene: main_scene,
+			camera: model_viewer_camera
 		},
 		
 		offscreen_view:
@@ -36,8 +36,8 @@
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			technique: lit,
-			scene: main,
-			camera: model_viewer
+			scene: main_scene,
+			camera: model_viewer_camera
 		},
 	},
 }

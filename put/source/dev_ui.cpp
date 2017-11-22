@@ -22,7 +22,7 @@ namespace put
             k_program_preferences = pen::json::load_from_file(k_program_prefs_filename.c_str());
 		}
 
-		void set_last_ued_directory(std::string& dir)
+		void set_last_used_directory(std::string& dir)
 		{
 			//make a copy of the string to format
 			std::string formatted = dir;
@@ -43,8 +43,6 @@ namespace put
             formatted = "\"" + formatted + "\"";
 
             k_program_preferences.set("last_used_directory", formatted);
-
-            PEN_PRINTF( k_program_preferences.dumps().c_str() );
 
 			std::ofstream ofs(k_program_prefs_filename.c_str());
 
@@ -193,7 +191,7 @@ namespace put
 			if (ImGui::ButtonEx("OK", ImVec2(0, 0), button_flags))
 			{
 				return_value = selected_path.c_str();
-				set_last_ued_directory(selected_path);
+				set_last_used_directory(selected_path);
 				dialog_open = false;
 			}
 
@@ -216,7 +214,7 @@ namespace put
 				ImGui::Text("%s", fs_iter->name); ImGui::NextColumn();
 				fs_iter = &fs_iter->children[selection_stack[d]];
 			}
-
+            
 			ImGui::Separator();
 
 			current_path = "";
@@ -225,7 +223,7 @@ namespace put
 			fs_iter = &fs_enumeration;
 
 			for (s32 c = 0; c < frame_depth; ++c)
-			{                
+			{
 				for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
 				{
 					ImGui::PushID(fs_iter);

@@ -466,7 +466,31 @@ namespace put
 			if (io.MouseDrawCursor)
 				pen::input_show_cursor(false);
 
-			ImGui::NewFrame();  
+			ImGui::NewFrame();
+            
+            ImGui::BeginMainMenuBar();
+            
+            static bool dev_ui_default_open = false;
+            
+            if (ImGui::Button(ICON_FA_LEMON_O))
+            {
+                dev_ui_default_open = true;
+            }
+            
+            ImGui::EndMainMenuBar();
+            
+            if( dev_ui_default_open )
+            {
+                if( ImGui::Begin("Dev UI", &dev_ui_default_open) )
+                {
+                    if( ImGui::CollapsingHeader("Icons") )
+                    {
+                        debug_show_icons();
+                    }
+                    
+                    ImGui::End();
+                }
+            }
 		}
         
         u32 want_capture( )

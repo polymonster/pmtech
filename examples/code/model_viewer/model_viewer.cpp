@@ -46,23 +46,11 @@ model_view_controller k_model_view_controller;
 
 using namespace put;
 
-void update_model_view(put::layer* layer)
+void update_model_viewer_camera(put::camera_controller* cc)
 {
-    static bool open_scene_browser = false;
-    static bool open_import = false;
     static bool open_camera_menu = false;
     
     ImGui::BeginMainMenuBar();
-    
-    if (ImGui::Button(ICON_FA_FOLDER_OPEN))
-    {
-        open_import = true;
-    }
-    
-    if (ImGui::Button(ICON_FA_SEARCH))
-    {
-        open_scene_browser = true;
-    }
     
     if (ImGui::Button(ICON_FA_VIDEO_CAMERA))
     {
@@ -81,6 +69,42 @@ void update_model_view(put::layer* layer)
         }
     }
     
+    //update camera
+    if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
+    {
+        switch (k_model_view_controller.camera_mode)
+        {
+            case CAMERA_MODELLING:
+                put::camera_update_modelling(cc->camera);
+                break;
+            case CAMERA_FLY:
+                put::camera_update_fly(cc->camera);
+                break;
+        }
+    }
+    
+    put::camera_update_shader_constants(cc->camera);
+}
+
+void update_model_viewer_scene(put::scene_controller* sc)
+{
+    static bool open_scene_browser = false;
+    static bool open_import = false;
+    
+    ImGui::BeginMainMenuBar();
+    
+    if (ImGui::Button(ICON_FA_FOLDER_OPEN))
+    {
+        open_import = true;
+    }
+    
+    if (ImGui::Button(ICON_FA_SEARCH))
+    {
+        open_scene_browser = true;
+    }
+    
+    ImGui::EndMainMenuBar();
+    
     if( open_import )
     {
         const c8* import = put::dev_ui::file_browser(open_import, 1, "**.pmm" );
@@ -91,7 +115,7 @@ void update_model_view(put::layer* layer)
             
             if( import[len-1] == 'm' )
             {
-                put::ces::load_pmm(import, layer->view.scene );
+                put::ces::load_pmm(import, sc->scene );
             }
             else if( import[len-1] == 'a' )
             {
@@ -102,34 +126,23 @@ void update_model_view(put::layer* layer)
     
     if (open_scene_browser)
     {
-        ces::enumerate_scene_ui(layer->view.scene, &open_scene_browser);
+        ces::enumerate_scene_ui(sc->scene, &open_scene_browser);
     }
-	
-	//update camera
-    if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
-    {
-        switch (k_model_view_controller.camera_mode)
-        {
-            case CAMERA_MODELLING:
-                put::camera_update_modelling(&layer->camera);
-                break;
-            case CAMERA_FLY:
-                put::camera_update_fly(&layer->camera);
-                break;
-        }
-    }
-
-	put::camera_update_shader_constants(&layer->camera);
-	layer->view.cb_view = layer->camera.cbuffer;
-
+    
+    static u32 timer_index = pen::timer_create("scene_update_timer");
+    
+    pen::timer_accum(timer_index);
+    f32 dt_ms = pen::timer_get_ms(timer_index);
+    pen::timer_reset(timer_index);
+    pen::timer_start(timer_index);
+    
     //update render data
-	put::ces::update_scene_matrices(layer->view.scene);
+    put::ces::update_scene(sc->scene, dt_ms);
+}
+
+void update_model_view(put::layer* layer)
+{
     
-    //debug render
-    layer->debug_dispatch |= LAYER_DEBUG_3D;
-    
-    //ces::scene_node_physics& snp = layer->view.scene->physics_data[layer->view.scene->selected_index];
-    //put::dbg::add_aabb(snp.min_extents, snp.max_extents, vec4f::white() );
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -141,19 +154,35 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
 	//init systems
 	put::layer_controller_init();
+    
 	put::dev_ui::init();
 	put::dbg::init();
     
-    put::render_controller::init("data/configs/renderer.json");
-    
-	//create the main scene and import a model
-	put::ces::component_entity_scene* main_scene = put::ces::create_scene("main_scene");
-    
-	//create main camera
+	//create main camera and controller
 	put::camera main_camera;
 	put::camera_create_perspective( &main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f );
+    
+    put::camera_controller cc;
+    cc.camera = &main_camera;
+    cc.update_function = &update_model_viewer_camera;
+    cc.name = "model_viewer_camera";
+    cc.id_name = PEN_HASH(cc.name.c_str());
+    
+    //create the main scene and controller
+    put::ces::component_entity_scene* main_scene = put::ces::create_scene("main_scene");
+    
+    put::scene_controller sc;
+    sc.scene = main_scene;
+    sc.update_function = &update_model_viewer_scene;
+    sc.name = "main_scene";
+    sc.id_name = PEN_HASH(sc.name.c_str());
 
-	put::built_in_handles handles = put::layer_controller_built_in_handles();
+    put::render_controller::register_scene(sc);
+    put::render_controller::register_camera(cc);
+    
+    put::render_controller::init("data/configs/renderer.json");
+    
+    put::built_in_handles handles = put::layer_controller_built_in_handles();
 
 	//create model viewer layer
 	put::layer main_layer;
@@ -176,18 +205,17 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	//add main layer to the viewer
 	put::layer_controller_add_layer(main_layer);
     
-    
-    put::render_controller::register_scene(&main_layer.view);
-    
     while( 1 )
     {
 		put::dev_ui::new_frame();
         
 		put::layer_controller_update();
         
-        //put::render_controller::render();
+        put::render_controller::update();
         
-        //put::render_controller::show_dev_ui();
+        put::render_controller::render();
+        
+        put::render_controller::show_dev_ui();
         
 		put::dev_ui::render();
         

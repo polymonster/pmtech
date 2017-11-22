@@ -10,9 +10,22 @@
 extern pen::window_creation_params pen_window;
 
 namespace put
-{
+{    
     namespace render_controller
     {
+        std::vector<scene_controller> k_scenes;
+        std::vector<camera_controller> k_cameras;
+        
+        void register_scene( const scene_controller& scene )
+        {
+            k_scenes.push_back(scene);
+        }
+        
+        void register_camera( const camera_controller& cam )
+        {
+            k_cameras.push_back(cam);
+        }
+        
         struct format_info
         {
             Str name;
@@ -67,8 +80,9 @@ namespace put
             hash_id id_name;
             Str     name;
             
-            s32     width, height;
-            s32     ratio;
+            s32     width = 0;
+            s32     height = 0;
+            f32     ratio = 0;
             
             s32     num_mips;
             s32     format;
@@ -80,46 +94,45 @@ namespace put
         
         struct view_params
         {
-            //todo MRT
+            s32     rt_width, rt_height;
+            f32     rt_ratio;
+            
             u32     render_targets[8] = { 0 };
+            u32     depth_target = 0;
             u32     num_render_targets = 0;
             
             f32     viewport[4] = { 0 };
             
             u32     clear_state = 0;
-            
-            hash_id id_technique = 0;
-            hash_id id_scene = 0;
-            hash_id id_camera = 0;
-            
-            //scene
-            //update
+        
+            ces::component_entity_scene* scene;
+            put::camera* camera;
         };
         
         static std::vector<rt_info>     k_render_targets;
         static std::vector<view_params> k_views;
         
-        void get_rt_dimensions( const rt_info& rt, f32& w, f32& h )
+        void get_rt_dimensions( s32 rt_w, s32 rt_h, f32 rt_r, f32& w, f32& h )
         {
             w = (f32)pen_window.width;
             h = (f32)pen_window.height;
             
-            if( rt.ratio != 0 )
+            if( rt_r != 0 )
             {
-                w *= (f32)rt.ratio;
-                h *= (f32)rt.ratio;
+                w *= (f32)rt_r;
+                h *= (f32)rt_r;
             }
             else
             {
-                w = (f32)rt.width;
-                h = (f32)rt.height;
+                w = (f32)rt_w;
+                h = (f32)rt_h;
             }
         }
         
-        void get_rt_viewport( const rt_info& rt, const f32* vp_in, pen::viewport& vp_out )
+        void get_rt_viewport( s32 rt_w, s32 rt_h, f32 rt_r, const f32* vp_in, pen::viewport& vp_out )
         {
             f32 w, h;
-            get_rt_dimensions( rt, w, h );
+            get_rt_dimensions( rt_w, rt_h, rt_r, w, h );
             
             vp_out =
             {
@@ -177,11 +190,14 @@ namespace put
                         else
                         {
                             //ratio
+                            new_info.width = 0;
+                            new_info.height = 0;
+                            
                             Str ratio_str = size.as_str();
                             
                             for( s32 rr = 0; rr < num_ratios; ++rr )
                                 if( rt_ratio[rr] == ratio_str )
-                                    new_info.ratio = rr;
+                                    new_info.ratio = 1.0f / (f32)rr;
                         }
                         
                         new_info.num_mips = calc_num_mips(new_info.width, new_info.height);
@@ -225,6 +241,8 @@ namespace put
             
             for( s32 i = 0; i < num; ++i )
             {
+                bool valid = true;
+                
                 view_params new_view;
                 
                 pen::json view = j_views[i];
@@ -268,58 +286,52 @@ namespace put
                 pen::json targets = view["target"];
                 
                 new_view.num_render_targets = targets.size();
-                
+         
                 s32 cur_rt = 0;
                 for( s32 t = 0; t < new_view.num_render_targets; ++t )
                 {
-                    Str tttt = targets[t].as_str();
-
-                    hash_id target_hash = PEN_HASH(targets[t].as_str().c_str());
+                    Str target_str = targets[t].as_str();
+                    hash_id target_hash = PEN_HASH(target_str.c_str());
                     
-                    s32 rt_index = 0;
+                    bool found = false;
                     for( auto& r : k_render_targets )
                     {
                         if( target_hash == r.id_name )
                         {
-                            new_view.render_targets[cur_rt++] = rt_index;
-                        }
-                        
-                        ++rt_index;
-                    }
-                }
-                
-                if( cur_rt != new_view.num_render_targets )
-                {
-                    PEN_PRINTF("render controller error: couldn't find all render targets\n");
-                }
-                else if( new_view.num_render_targets > 1 )
-                {
-                    //validate render targets
-                    rt_info& rt1 = k_render_targets[new_view.render_targets[0]];
-                    
-                    bool rts_validated = false;
-                    for( s32 i = 0; i < new_view.num_render_targets; ++i )
-                    {
-                        rt_info& rt2 = k_render_targets[new_view.render_targets[0]];
-                        
-                        if(rt1.ratio != rt2.ratio)
-                            break;
-                        
-                        if(rt1.ratio == 0)
-                        {
-                            if( rt1.width != rt2.width || rt1.height != rt2.height )
+                            found = true;
+                            
+                            s32 w = r.width;
+                            s32 h = r.height;
+                            s32 rr = r.ratio;
+                            
+                            if( cur_rt == 0 )
                             {
-                                break;
+                                new_view.rt_width = w;
+                                new_view.rt_height = h;
+                                new_view.rt_ratio = rr;
                             }
+                            else
+                            {
+                                if( new_view.rt_width != w || new_view.rt_height != h || new_view.rt_ratio != rr )
+                                {
+                                    PEN_PRINTF("render controller error: render target %s is incorrect dimension\n", target_str.c_str() );
+                                    valid = false;
+                                }
+                            }
+                            
+                            if( r.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT )
+                                new_view.depth_target = r.handle;
+                            else
+                                new_view.render_targets[cur_rt++] = r.handle;
+                            
+                            break;
                         }
-                        
-                        if( i == new_view.num_render_targets -1)
-                            rts_validated = true;
                     }
                     
-                    if(!rts_validated)
+                    if(!found)
                     {
-                        PEN_PRINTF("render controller error: mismatched render target dimensions\n");
+                        PEN_PRINTF("render controller error: missing render target - %s\n", target_str.c_str() );
+                        valid = false;
                     }
                 }
                 
@@ -339,7 +351,49 @@ namespace put
                     new_view.viewport[3] = 1.0f;
                 }
                 
-                k_views.push_back(new_view);
+                //scene and camera
+                Str scene_str = view["scene"].as_str();
+                Str camera_str = view["camera"].as_str();
+                
+                hash_id scene_id = PEN_HASH(scene_str.c_str());
+                hash_id camera_id = PEN_HASH(camera_str.c_str());
+                
+                bool found_scene = false;
+                for( auto& s : k_scenes )
+                {
+                    if(s.id_name == scene_id)
+                    {
+                        new_view.scene = s.scene;
+                        found_scene = true;
+                        break;
+                    }
+                }
+                
+                if(!found_scene)
+                {
+                    PEN_PRINTF("render controller error: missing scene - %s\n", scene_str.c_str() );
+                    valid = false;
+                }
+
+                bool found_camera = false;
+                for( auto& c : k_cameras )
+                {
+                    if(c.id_name == camera_id)
+                    {
+                        new_view.camera = c.camera;
+                        found_camera = true;
+                        break;
+                    }
+                }
+                
+                if(!found_camera)
+                {
+                    PEN_PRINTF("render controller error: missing camera - %s\n", camera_str.c_str() );
+                    valid = false;
+                }
+                
+                if(valid)
+                    k_views.push_back(new_view);
             }
         }
         
@@ -364,53 +418,54 @@ namespace put
             parse_views(render_config);
         }
         
-        ces::scene_view* test_scene;
-        
-        void register_scene( ces::scene_view* sv )
+        void update()
         {
-            test_scene = sv;
+            s32 num_cameras = k_cameras.size();
+            for( s32 i = 0; i < num_cameras; ++i )
+            {
+                k_cameras[i].update_function( &k_cameras[i] );
+            }
+            
+            s32 num_scenes = k_scenes.size();
+            for( s32 i = 0; i < num_scenes; ++i )
+            {
+                k_scenes[i].update_function( &k_scenes[i] );
+            }
         }
-        
+
         void render()
         {
             for( auto& v : k_views )
             {
-                //bind render targets
-                u32 depth_target = PEN_NULL_DEPTH_BUFFER;
-                u32 colour_target = PEN_NULL_COLOUR_BUFFER;
-                
-                for( s32 i = 0; i < v.num_render_targets; ++i )
-                {
-                    s32 rt_index = v.render_targets[i];
-                    
-                    if( k_render_targets[rt_index].format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT )
-                        depth_target = k_render_targets[rt_index].handle;
-                    else
-                        colour_target = k_render_targets[rt_index].handle;
-                }
-                
                 //viewport and scissor
                 pen::viewport vp = { 0 };
-                auto& master_rt = k_render_targets[v.render_targets[0]];
-                get_rt_viewport( master_rt, v.viewport, vp );
-                
+                get_rt_viewport( v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp );
                 pen::renderer_set_viewport( vp );
-                
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
                 
-                pen::renderer_set_targets(colour_target, depth_target);
+                pen::renderer_set_targets(v.render_targets[0], v.depth_target);
                 
                 //clear
                 pen::renderer_clear( v.clear_state );
                 
-                //draw some stuff
-                //put::ces::render_scene_view(*test_scene, put::ces::scene_render_type::SN_RENDER_LIT );
+                ces::scene_view sv;
+                sv.scene = v.scene;
+                sv.cb_view = v.camera->cbuffer;
+                sv.scene_node_flags = 0;
+                
+                put::ces::render_scene_view(sv, put::ces::scene_render_type::SN_RENDER_LIT);
+                
+                put::ces::render_scene_debug(v.scene, sv);
             }
             
             //set back to main viewport
-            pen::viewport vp = { 0 };
-            f32 default_vp[4] = {0.0f, 0.0f, 1.0f, 1.0f};
-            get_rt_viewport( k_render_targets[0], default_vp, vp );
+            pen::viewport vp =
+            {
+                0.0f, 0.0f,
+                (f32)pen_window.width, (f32)pen_window.height,
+                0.0f, 1.0
+            };
+            
             pen::renderer_set_viewport( vp );
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             
@@ -419,25 +474,38 @@ namespace put
         
         void show_dev_ui()
         {
-            ImGui::Begin("Render Controller");
+            ImGui::BeginMainMenuBar();
             
-            if( ImGui::CollapsingHeader("Render Targets") )
+            static bool open_renderer = false;
+            if (ImGui::Button(ICON_FA_PICTURE_O))
             {
-                for( auto& rt : k_render_targets )
-                {
-                    if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
-                        continue;
-
-                    f32 w, h;
-                    get_rt_dimensions(rt, w, h);
-                    
-                    ImGui::Image((void*)&rt.handle, ImVec2(w / 4, h / 4));
-                    
-                    ImGui::Text("%i, %i", (s32)h, (s32)w );
-                }
+                open_renderer = true;
             }
         
-            ImGui::End();
+            ImGui::EndMainMenuBar();
+            
+            if( open_renderer )
+            {
+                ImGui::Begin("Render Controller", &open_renderer );
+                
+                if( ImGui::CollapsingHeader("Render Targets") )
+                {
+                    for( auto& rt : k_render_targets )
+                    {
+                        if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
+                            continue;
+
+                        f32 w, h;
+                        get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
+                        
+                        ImGui::Image((void*)&rt.handle, ImVec2(w / 4, h / 4));
+                        
+                        ImGui::Text("%i, %i", (s32)h, (s32)w );
+                    }
+                }
+            
+                ImGui::End();
+            }
         }
     }
 }

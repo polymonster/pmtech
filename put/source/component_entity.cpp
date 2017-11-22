@@ -29,8 +29,9 @@ namespace put
             DD_AABB = 1<<2,
             DD_GRID = 1<<3,
             DD_HIDE = 1<<4,
+            DD_NODE = 1<<5,
             
-            DD_NUM_FLAGS = 5
+            DD_NUM_FLAGS = 6
         };
         
         const c8* dd_names[]
@@ -39,11 +40,13 @@ namespace put
             "Bones",
             "AABB",
             "Grid",
-            "Hide Main Render"
+            "Hide Main Render",
+            "Selected Node"
         };
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         
         const hash_id ID_JOINT = PEN_HASH("joint");
+        const hash_id ID_TRAJECTORY = PEN_HASH("trajectoryshjnt");
         
 #define ALLOC_COMPONENT_ARRAY( SCENE, COMPONENT, TYPE )											\
 		if( !SCENE->COMPONENT )																	\
@@ -531,6 +534,9 @@ namespace put
             new_animation.num_channels = num_channels;
             new_animation.channels = new node_animation_channel[num_channels];
             
+            new_animation.length = 0.0f;
+            new_animation.step = FLT_MAX;
+            
             for( s32 i = 0; i < num_channels; ++i )
             {
                 Str bone_name = read_parsable_string(&p_u32reader);
@@ -564,6 +570,18 @@ namespace put
                         default:
                             break;
                     };
+                }
+                
+                for( s32 t = 0; t < new_animation.channels[i].num_frames; ++t)
+                {
+                    f32* times = new_animation.channels[i].times;
+                    if( t > 0 )
+                    {
+                        f32 interval = times[t] - times[t-1];
+                        new_animation.step = fmin( new_animation.step, interval );
+                    }
+                    
+                    new_animation.length = fmax( times[t], new_animation.length );
                 }
             }
             
@@ -648,6 +666,9 @@ namespace put
                 
                 if( scene->id_geometry[current_node] == ID_JOINT )
                     scene->entities[current_node] |= CMP_BONE;
+                
+                if( scene->id_name[current_node] == ID_TRAJECTORY )
+                    scene->entities[current_node] |= CMP_ANIM_TRAJECTORY;
                 
                 u32 num_meshes = *p_u32reader++;
                 
@@ -930,7 +951,7 @@ namespace put
 			}
 		}
 
-		void update_scene_matrices(component_entity_scene* scene)
+		void update_scene(component_entity_scene* scene, f32 dt )
 		{
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -938,9 +959,15 @@ namespace put
                 {
                     auto& controller = scene->anim_controller[n];
                     
+                    bool apply_trajectory = false;
+                    mat4 trajectory;
+                    
                     if( is_valid( controller.current_animation ) )
                     {
                         auto& anim = k_animations[controller.current_animation];
+                        
+                        if(controller.play_flags == 1)
+                            controller.current_time += dt*0.1f;
                         
                         for( s32 c = 0; c < anim.num_channels; ++c )
                         {
@@ -949,19 +976,47 @@ namespace put
                             if( num_frames <= 0 )
                                 continue;
                             
-                            s32 frame_index = controller.current_frame%num_frames;
+                            s32 t = 0;
+                            for( t = 0; t < num_frames; ++t )
+                                if( controller.current_time < anim.channels[c].times[t] )
+                                    break;
                             
-                            mat4& mat = anim.channels[c].matrices[frame_index];
+                            if( t >= num_frames )
+                                t = num_frames-1;
+
+                            mat4& mat = anim.channels[c].matrices[t];
                             
-                            for( s32 b = 0; b < 100; ++b )
+                            //todo bake
+                            for( s32 b = 0; b < anim.num_channels; ++b )
                             {
                                 if( scene->id_name[n+b] == anim.channels[c].target && scene->entities[n+b] & CMP_BONE )
                                 {
+                                    if( scene->entities[n+b] & CMP_ANIM_TRAJECTORY )
+                                    {
+                                        trajectory = mat;
+                                    }
+                                    
                                     scene->local_matrices[n+b] = mat;
                                     break;
                                 }
                             }
+                            
+                            if( controller.current_time > anim.length )
+                            {
+                                apply_trajectory = true;
+                                controller.current_time = 0.0f;
+                            }
                         }
+                    }
+                    
+                    if( apply_trajectory )
+                    {
+                        vec3f r = scene->local_matrices[n].get_right();
+                        vec3f u = scene->local_matrices[n].get_up();
+                        vec3f f = scene->local_matrices[n].get_fwd();
+                        vec3f p = scene->local_matrices[n].get_translation();
+                        
+                        scene->local_matrices[n].set_vectors(r, u, f, p + trajectory.get_translation() );
                     }
                 }
             }
@@ -1106,7 +1161,21 @@ namespace put
                     
                     if( is_valid(controller.current_animation) )
                     {
-                        ImGui::InputInt("Frame", &scene->anim_controller[selected_index].current_frame );
+                        if( ImGui::InputInt("Frame", &controller.current_frame ) )
+                            controller.play_flags = 0;
+                        
+                        ImGui::SameLine();
+                        
+                        if( controller.play_flags == 0 )
+                        {
+                            if( ImGui::Button(ICON_FA_PLAY) )
+                                controller.play_flags = 1;
+                        }
+                        else
+                        {
+                            if( ImGui::Button(ICON_FA_STOP) )
+                                controller.play_flags = 0;
+                        }
                     }
                     
                     ImGui::Separator();
@@ -1138,9 +1207,19 @@ namespace put
                     if( !(scene->entities[n] & CMP_BONE)  )
                         continue;
                     
+                    if( scene->entities[n] & CMP_ANIM_TRAJECTORY )
+                    {
+                        vec3f p = scene->world_matrices[n].get_translation();
+                        
+                        put::dbg::add_aabb( p - vec3f(0.1f, 0.1f, 0.1f), p + vec3f(0.1f, 0.1f, 0.1f), vec4f::green() );
+                    }
+                    
                     u32 p = scene->parents[n];
                     if( p != n )
                     {
+                        if( !(scene->entities[p] & CMP_BONE) || (scene->entities[p] & CMP_ANIM_TRAJECTORY) )
+                            continue;
+                        
                         vec3f p1 = scene->world_matrices[n].get_translation();
                         vec3f p2 = scene->world_matrices[p].get_translation();
                         
@@ -1152,6 +1231,13 @@ namespace put
             if( scene->debug_flags & DD_GRID )
             {
                 put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
+            }
+            
+            if( scene->debug_flags & DD_NODE )
+            {
+                vec3f p = scene->world_matrices[scene->selected_index].get_translation();
+                
+                put::dbg::add_aabb( p - vec3f(0.1f, 0.1f, 0.1f), p + vec3f(0.1f, 0.1f, 0.1f));
             }
 
 			put::dbg::render_3d(view.cb_view);

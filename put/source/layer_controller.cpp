@@ -289,12 +289,13 @@ namespace put
             };
             pen::rect sr = { 0.0f,  0.0f, (f32)pen_window.width, (f32)pen_window.height };
     
-			pen::renderer_set_viewport(vp);
-			pen::renderer_set_scissor_rect(sr);
+			//pen::renderer_set_viewport(vp);
+			//pen::renderer_set_scissor_rect(sr);
             
 			pen::renderer_set_depth_stencil_state(k_layers[i].depth_stencil_state);
 			pen::renderer_set_blend_state(k_layers[i].blend_state);
 
+            /*
 			if ( k_layers[i].num_colour_targets == 1 )
 			{
 				pen::renderer_set_targets( k_layers[i].colour_targets[0], k_layers[i].depth_target );
@@ -315,6 +316,7 @@ namespace put
             
             if( k_layers[i].debug_dispatch & LAYER_DEBUG_2D )
                 put::dbg::render_2d( );
+             */
 		}
 	}
 
