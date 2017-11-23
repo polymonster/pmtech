@@ -4,7 +4,9 @@ import os.path
 import sys
 import shutil
 
-if os.name == "nt":
+use_win_reg = 0
+
+if os.name == "nt" and use_win_reg == 1:
     import _winreg as winreg
 
 
@@ -102,7 +104,7 @@ def get_platform_info():
         #python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
 
     extra_target_info = ""
-    if platform == "win32":
+    if platform == "win32" and use_win_reg:
         key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Microsoft\Microsoft SDKs\Windows', 0,
                            (winreg.KEY_WOW64_64KEY + winreg.KEY_ALL_ACCESS))
         sdk_ver = winreg.EnumValue(key, 0)
