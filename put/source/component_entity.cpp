@@ -1181,7 +1181,7 @@ namespace put
                     
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
-					//set ib / vb                    
+					//set ib / vb
 					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0 );
 					pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
 
@@ -1505,7 +1505,12 @@ namespace put
             
             if (ImGui::CollapsingHeader("Debug Draw"))
             {
-                static bool* dd_bools = new bool[DD_NUM_FLAGS];
+                static bool* dd_bools = nullptr;
+                if(!dd_bools)
+                {
+                    dd_bools = new bool[DD_NUM_FLAGS];
+                    pen::memory_set(dd_bools, 0x0, sizeof(bool)*DD_NUM_FLAGS);
+                }
                 
                 for( s32 i = 0; i < DD_NUM_FLAGS; ++i )
                 {
