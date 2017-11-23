@@ -38,6 +38,14 @@ namespace put
 			NODE_TYPE_JOINT = 1,
 			NODE_TYPE_GEOM = 2
 		};
+        
+        enum e_pmm_load_flags : u32
+        {
+            PMM_GEOMETRY = (1<<0),
+            PMM_MATERIAL = (1<<1),
+            PMM_NODES = (1<<2),
+            PMM_ALL = 7
+        };
 
 		struct scene_node_skin
 		{
@@ -272,7 +280,7 @@ namespace put
         void            save_scene( const c8* filename, entity_scene* scene );
         void            load_scene( const c8* filename, entity_scene* scene );
 
-        void            load_pmm( const c8* model_scene_name, entity_scene* scene );
+        void            load_pmm( const c8* model_scene_name, entity_scene* scene = nullptr, u32 load_flags = PMM_ALL );
         anim_handle     load_pma( const c8* model_scene_name );
 
 		void            clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
