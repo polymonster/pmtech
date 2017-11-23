@@ -155,7 +155,7 @@ namespace put
 		ry.create_cardinal_rotation(Y_AXIS, -p_camera->rot.y);
 
 		//model?
-		t2.create_translation(vec3f(1.0f, 0.0f, 1.0f));
+		t2.create_translation(p_camera->focus);
 
 		p_camera->zoom = fmax(p_camera->zoom, 1.0f);
 		t.create_translation( vec3f(0.0f, 0.0f, p_camera->zoom) );
