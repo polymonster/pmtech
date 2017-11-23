@@ -14,6 +14,7 @@
 namespace put
 {
     typedef s32 anim_handle;
+    typedef s32 mat_handle;
     
 	namespace ces
 	{
@@ -45,6 +46,69 @@ namespace put
 			mat4	joint_bind_matrices[85];
 			mat4	joint_matrices[85];
 		};
+        
+        enum scene_node_textures
+        {
+            SN_DIFFUSE,
+            SN_NORMAL_MAP,
+            SN_SPECULAR_MAP,
+            
+            SN_NUM_TEXTURES
+        };
+        
+        struct scene_node_material
+        {
+            s32      texture_id[SN_NUM_TEXTURES] = { 0 };
+            vec4f    diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+            vec4f    specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+        };
+        
+        struct material_resource
+        {
+            Str         filename;
+            Str         material_name;
+            hash_id     hash;
+            
+            s32         texture_id[SN_NUM_TEXTURES] = { 0 };
+            vec4f       diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+            vec4f       specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+        };
+        
+        struct scene_node_physics
+        {
+            vec3f min_extents;
+            vec3f max_extents;
+            vec3f centre;
+            u32   collision_shape;
+            u32   collision_dynamic;
+            vec3f start_position;
+            quat  start_rotation;
+            
+            physics::collision_mesh_data mesh_data;
+        };
+        
+        struct geometry_resource
+        {
+            hash_id                file_hash;
+            hash_id                hash;
+            
+            Str                    filename;
+            Str                    geometry_name;
+            Str                    material_name;
+            u32                    submesh_index;
+            
+            u32                    position_buffer;
+            u32                    vertex_buffer;
+            u32                    index_buffer;
+            u32                    num_indices;
+            u32                    num_vertices;
+            u32                    index_type;
+            u32                    material_index;
+            u32                    vertex_size;
+            
+            scene_node_physics     physics_info;
+            scene_node_skin*       p_skin;
+        };
 
 		struct scene_node_geometry
 		{
@@ -56,44 +120,8 @@ namespace put
 			u32					num_indices;
 			u32					num_vertices;
 			u32					index_type;
-			u32					submesh_material_index;
+            u32                 vertex_size;
 			scene_node_skin*	p_skin;
-		};
-
-		enum scene_node_textures
-		{
-			SN_DIFFUSE,
-			SN_NORMAL_MAP,
-			SN_SPECULAR_MAP,
-
-			SN_NUM_TEXTURES
-		};
-        
-        enum scene_render_type
-        {
-            SN_RENDER_LIT,
-            SN_RENDER_DEPTH,
-            SN_RENDER_DEBUG
-        };
-
-		struct scene_node_material
-		{
-			s32		texture_id[SN_NUM_TEXTURES] = { 0 };
-			vec4f	diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-			vec4f	specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-		};
-
-		struct scene_node_physics
-		{
-			vec3f min_extents;
-			vec3f max_extents;
-			vec3f centre;
-			u32	  collision_shape;
-			u32   collision_dynamic;
-			vec3f start_position;
-			quat  start_rotation;
-
-			physics::collision_mesh_data mesh_data;
 		};
 
 		struct slider
@@ -165,34 +193,36 @@ namespace put
 
 		struct entity_scene
 		{
+            u32                     num_nodes = 0;
+            u32                     nodes_size = 0;
+
+            
             a_u64*                  entities;
-            
-            hash_id                 scene_id_name;
-            
+
 			hash_id*				id_name;
 			hash_id*				id_geometry;
 			hash_id*				id_material;
+            hash_id*                id_resource;
 
 			u32*					parents;
-			scene_node_geometry*	geometries;
-			scene_node_material*	materials;
 			mat4*					local_matrices;
 			mat4*					world_matrices;
 			mat4*					offset_matrices;
 			mat4*					physics_matrices;
-			u32*					physics_handles;
-			u32*					multibody_handles;
-			s32*					multibody_link;
-			scene_node_physics*		physics_data;
-            u32*                    cbuffer;
-            animation_controller*   anim_controller;
-
-			u32						num_nodes = 0;
-			u32						nodes_size = 0;
-
-#ifdef CES_DEBUG
-            Str                     scene_name;
             
+            u32*                    physics_handles;
+            u32*                    multibody_handles;
+            s32*                    multibody_link;
+            
+            scene_node_geometry*    geometries;
+            scene_node_material*    materials;
+            scene_node_physics*     physics_data;
+            
+            animation_controller*   anim_controller;
+            
+            u32*                    cbuffer;
+            
+#ifdef CES_DEBUG
             Str*                    names;
 			Str*					geometry_names;
 			Str*					material_names;
@@ -238,6 +268,9 @@ namespace put
 		};
 
 		entity_scene*   create_scene( const c8* name );
+        
+        void            save_scene( const c8* filename, entity_scene* scene );
+        void            load_scene( const c8* filename, entity_scene* scene );
 
         void            load_pmm( const c8* model_scene_name, entity_scene* scene );
         anim_handle     load_pma( const c8* model_scene_name );
@@ -245,6 +278,7 @@ namespace put
 		void            clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
         
 		void            enumerate_scene_ui( entity_scene* scene, bool* open );
+        void            enumerate_resources( bool* open );
         
 		void            render_scene_view( const scene_view& view );
 		void            render_scene_debug( const scene_view& view );

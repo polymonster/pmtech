@@ -46,27 +46,6 @@ using namespace put;
 
 void update_model_viewer_camera(put::camera_controller* cc)
 {
-    static bool open_camera_menu = false;
-    
-    ImGui::BeginMainMenuBar();
-    
-    if (ImGui::Button(ICON_FA_VIDEO_CAMERA))
-    {
-        open_camera_menu = true;
-    }
-    
-    ImGui::EndMainMenuBar();
-    
-    if( open_camera_menu )
-    {
-        if( ImGui::Begin("Camera", &open_camera_menu) )
-        {
-            ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
-            
-            ImGui::End();
-        }
-    }
-    
     //update camera
     if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
     {
@@ -88,8 +67,17 @@ void update_model_viewer_scene(put::scene_controller* sc)
 {
     static bool open_scene_browser = false;
     static bool open_import = false;
-    
+    static bool open_save = false;
+    static bool open_camera_menu = false;
+    static bool open_resource_menu = false;
+
     ImGui::BeginMainMenuBar();
+    
+    if (ImGui::Button(ICON_FA_FLOPPY_O))
+    {
+        put::ces::save_scene("test_ces_scene.pms", sc->scene);
+        open_save = true;
+    }
     
     if (ImGui::Button(ICON_FA_FOLDER_OPEN))
     {
@@ -101,23 +89,33 @@ void update_model_viewer_scene(put::scene_controller* sc)
         open_scene_browser = true;
     }
     
+    if (ImGui::Button(ICON_FA_VIDEO_CAMERA))
+    {
+        open_camera_menu = true;
+    }
+    
+    if (ImGui::Button(ICON_FA_CUBES))
+    {
+        open_resource_menu = true;
+    }
+    
     ImGui::EndMainMenuBar();
     
     if( open_import )
     {
-        const c8* import = put::dev_ui::file_browser(open_import, 1, "**.pmm" );
+        const c8* import = put::dev_ui::file_browser(open_import, 2, "**.pmm", "**.pms" );
         
         if( import )
         {
-            u32 len = pen::string_length(import);
+            u32 len = pen::string_length( import );
             
             if( import[len-1] == 'm' )
             {
-                put::ces::load_pmm(import, sc->scene );
+                put::ces::load_pmm( import, sc->scene );
             }
-            else if( import[len-1] == 'a' )
+            else if( import[len-1] == 's' )
             {
-                put::ces::load_pma(import);
+                put::ces::load_scene( import, sc->scene );
             }
         }
     }
@@ -125,6 +123,21 @@ void update_model_viewer_scene(put::scene_controller* sc)
     if (open_scene_browser)
     {
         ces::enumerate_scene_ui(sc->scene, &open_scene_browser);
+    }
+    
+    if( open_camera_menu )
+    {
+        if( ImGui::Begin("Camera", &open_camera_menu) )
+        {
+            ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
+            
+            ImGui::End();
+        }
+    }
+    
+    if( open_resource_menu )
+    {
+        put::ces::enumerate_resources( &open_resource_menu );
     }
     
     static u32 timer_index = pen::timer_create("scene_update_timer");
