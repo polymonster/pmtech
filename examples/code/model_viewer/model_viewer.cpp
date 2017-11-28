@@ -70,12 +70,32 @@ void update_model_viewer_scene(put::scene_controller* sc)
     static bool open_save = false;
     static bool open_camera_menu = false;
     static bool open_resource_menu = false;
-
+    static bool dev_open = false;
+    static bool set_project_dir = false;
+    static Str project_dir_str = dev_ui::get_program_preference("project_dir").as_str();
+    
     ImGui::BeginMainMenuBar();
+    
+    if (ImGui::BeginMenu(ICON_FA_LEMON_O))
+    {
+        ImGui::MenuItem("Save");
+        ImGui::MenuItem("Import", NULL, &open_import);
+        
+        if( ImGui::BeginMenu("Project Directory") )
+        {
+            ImGui::MenuItem("Set..", NULL, &set_project_dir);
+            ImGui::Text("Dir: %s", project_dir_str.c_str());
+            
+            ImGui::EndMenu();
+        }
+        
+        ImGui::MenuItem("Dev", NULL, &dev_open);
+        
+        ImGui::EndMenu();
+    }
     
     if (ImGui::Button(ICON_FA_FLOPPY_O))
     {
-        put::ces::save_scene("test_ces_scene.pms", sc->scene);
         open_save = true;
     }
     
@@ -103,7 +123,7 @@ void update_model_viewer_scene(put::scene_controller* sc)
     
     if( open_import )
     {
-        const c8* import = put::dev_ui::file_browser(open_import, 2, "**.pmm", "**.pms" );
+        const c8* import = put::dev_ui::file_browser(open_import, 2, dev_ui::FB_OPEN, "**.pmm", "**.pms" );
         
         if( import )
         {
@@ -138,6 +158,35 @@ void update_model_viewer_scene(put::scene_controller* sc)
     if( open_resource_menu )
     {
         put::ces::enumerate_resources( &open_resource_menu );
+    }
+    
+    if( set_project_dir )
+    {
+        const c8* set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**." );
+        
+        if(set_proj)
+        {
+            project_dir_str = set_proj;
+            dev_ui::set_program_preference("project_dir", project_dir_str);
+        }
+    }
+    
+    if( open_save )
+    {
+        put::ces::save_scene("test_ces_scene.pms", sc->scene);
+    }
+    
+    if( dev_open )
+    {
+        if( ImGui::Begin("Dev", &dev_open) )
+        {
+            if( ImGui::CollapsingHeader("Icons") )
+            {
+                debug_show_icons();
+            }
+            
+            ImGui::End();
+        }
     }
     
     static u32 timer_index = pen::timer_create("scene_update_timer");

@@ -162,6 +162,8 @@ namespace put
             style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
             style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
             style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
+            
+            dev_ui::util_init();
 
 			return true;
 		}
@@ -445,13 +447,29 @@ namespace put
 				io.KeysDown[i] = INPUT_PKEY(i);
 			}
 
+            static f32 input_key_timer = 0.0f;
+            static f32 repeat_ms = 100.0f;
+            
+            static u32 timer_index = pen::timer_create("imgui_input_timer");
+            
+            pen::timer_accum(timer_index);
+            f32 dt_ms = pen::timer_get_ms(timer_index);
+            pen::timer_reset(timer_index);
+            pen::timer_start(timer_index);
+            
 			for (u32 i = 0; i < 512; ++i)
 			{
 				if (pen::input_get_unicode_key(i))
 				{
-					io.AddInputCharacter(i);
+                    if( input_key_timer <= 0.0f )
+                    {
+                        input_key_timer = repeat_ms;
+                        io.AddInputCharacter(i);
+                    }
 				}
 			}
+            
+            input_key_timer -= dt_ms;
 
 			// Read keyboard modifiers inputs
 			io.KeyCtrl = INPUT_PKEY(PENK_CONTROL);
@@ -479,30 +497,6 @@ namespace put
 				pen::input_show_cursor(false);
 
 			ImGui::NewFrame();
-            
-            ImGui::BeginMainMenuBar();
-            
-            static bool dev_ui_default_open = false;
-            
-            if (ImGui::Button(ICON_FA_LEMON_O))
-            {
-                dev_ui_default_open = true;
-            }
-            
-            ImGui::EndMainMenuBar();
-            
-            if( dev_ui_default_open )
-            {
-                if( ImGui::Begin("Dev UI", &dev_ui_default_open) )
-                {
-                    if( ImGui::CollapsingHeader("Icons") )
-                    {
-                        debug_show_icons();
-                    }
-                    
-                    ImGui::End();
-                }
-            }
 		}
         
         u32 want_capture( )

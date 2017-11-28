@@ -1778,7 +1778,7 @@ namespace put
                     
                     if( open_anim_import )
                     {
-                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, 1, "**.pma" );
+                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma" );
                         
                         if(anim_import)
                         {

@@ -21,6 +21,15 @@ namespace put
 
             k_program_preferences = pen::json::load_from_file(k_program_prefs_filename.c_str());
 		}
+        
+        void save_program_preferences( )
+        {
+            std::ofstream ofs(k_program_prefs_filename.c_str());
+            
+            ofs << k_program_preferences.dumps().c_str();
+            
+            ofs.close();
+        }
 
 		void set_last_used_directory(std::string& dir)
 		{
@@ -44,12 +53,24 @@ namespace put
 
             k_program_preferences.set("last_used_directory", formatted);
 
-			std::ofstream ofs(k_program_prefs_filename.c_str());
-
-			ofs << k_program_preferences.dumps().c_str();
-
-			ofs.close();
+            save_program_preferences();
 		}
+        
+        void util_init( )
+        {
+            load_program_preferences();
+        }
+        
+        void set_program_preference( const c8* name, Str val )
+        {
+            k_program_preferences.set(name, val);
+            save_program_preferences();
+        }
+        
+        pen::json get_program_preference( const c8* name )
+        {
+            return k_program_preferences[name];
+        }
 
 		const c8** get_last_used_directory(s32& directory_depth)
 		{
@@ -123,12 +144,13 @@ namespace put
 			return default_dir;
 		}
 
-		const c8* file_browser(bool& dialog_open, s32 num_filetypes, ...)
+		const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes, ...)
 		{
 			static bool initialise = true;
 			static s32 current_depth = 1;
 			static s32 selection_stack[128] = { -1 };
-
+            static c8 user_filename_buf[1024];
+            
 			std::string current_path;
 			std::string search_path;
 			static std::string selected_path;
@@ -137,8 +159,6 @@ namespace put
 
 			if (initialise)
 			{
-				load_program_preferences();
-
 				s32 default_depth = 0;
 				const c8** default_dir = get_last_used_directory(default_depth);
 
@@ -187,9 +207,16 @@ namespace put
 			{
 				button_flags |= ImGuiButtonFlags_Disabled;
 			}
+            
+            if( flags & FB_SAVE )
+            {
+                ImGui::InputText("", user_filename_buf, 1024);
+            }
 
 			if (ImGui::ButtonEx("OK", ImVec2(0, 0), button_flags))
 			{
+                selected_path.append(user_filename_buf);
+                
 				return_value = selected_path.c_str();
 				set_last_used_directory(selected_path);
 				dialog_open = false;
@@ -266,6 +293,8 @@ namespace put
                                 
                                 current_depth = c + 2;
                                 selection_stack[c] = entry;
+                                
+                                selected_path = search_path;
                             }
                             else
                             {
