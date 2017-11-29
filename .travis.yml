@@ -1,1 +1,1 @@
-install: examples/build.py -actions code -ide make
+install: travis.sh
