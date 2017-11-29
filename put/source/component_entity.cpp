@@ -341,6 +341,7 @@ namespace put
                 
                 geometry_resource* p_geometry = new geometry_resource;
                 
+                p_geometry->p_skin = nullptr;
                 p_geometry->file_hash = file_hash;
                 p_geometry->hash = sub_hash;
                 p_geometry->geometry_name = geometry_name;
@@ -1807,7 +1808,7 @@ namespace put
                 if( ImGui::CollapsingHeader("Animations") )
                 {
                     auto& controller = scene->anim_controller[selected_index];
-                    
+                                      
                     ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
                     
                     if( ImGui::Button("Add Animation") )
@@ -1816,6 +1817,38 @@ namespace put
                     if( ImGui::Button("Reset Root Motion") )
                     {
                         scene->local_matrices[selected_index].create_identity();
+                    }
+
+                    s32 num_anims = scene->anim_controller[selected_index].handles.size();
+                    for (s32 ih = 0; ih < num_anims; ++ih)
+                    {
+                        s32 h = scene->anim_controller[selected_index].handles[ih];
+                        auto& anim = k_animations[h];
+
+                        bool selected = false;
+                        ImGui::Selectable( anim.name.c_str(), &selected );
+
+                        if (selected)
+                            controller.current_animation = h;
+                    }
+
+                    if (is_valid( controller.current_animation ))
+                    {
+                        if (ImGui::InputInt( "Frame", &controller.current_frame ))
+                            controller.play_flags = 0;
+
+                        ImGui::SameLine();
+
+                        if (controller.play_flags == 0)
+                        {
+                            if (ImGui::Button( ICON_FA_PLAY ))
+                                controller.play_flags = 1;
+                        }
+                        else
+                        {
+                            if (ImGui::Button( ICON_FA_STOP ))
+                                controller.play_flags = 0;
+                        }
                     }
                     
                     if( open_anim_import )
@@ -1841,37 +1874,7 @@ namespace put
                             }
                         }
                     }
-                    
-                    for( auto& h : controller.handles )
-                    {
-                        auto& anim = k_animations[h];
-                        
-                        bool selected = false;
-                        ImGui::Selectable(anim.name.c_str(), &selected);
-                        
-                        if( selected )
-                            controller.current_animation = h;
-                    }
-                    
-                    if( is_valid(controller.current_animation) )
-                    {
-                        if( ImGui::InputInt("Frame", &controller.current_frame ) )
-                            controller.play_flags = 0;
-                        
-                        ImGui::SameLine();
-                        
-                        if( controller.play_flags == 0 )
-                        {
-                            if( ImGui::Button(ICON_FA_PLAY) )
-                                controller.play_flags = 1;
-                        }
-                        else
-                        {
-                            if( ImGui::Button(ICON_FA_STOP) )
-                                controller.play_flags = 0;
-                        }
-                    }
-                    
+                                        
                     ImGui::Separator();
                 }
             }
