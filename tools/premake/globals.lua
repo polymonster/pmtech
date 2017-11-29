@@ -13,7 +13,16 @@ if _OPTIONS["sdk_version"] then
 	sdk_version = _OPTIONS["sdk_version"]
 end
 
-if _ACTION == "xcode4" then 
+if _OPTIONS["platform_dir"] then
+	platform_dir = _OPTIONS["platform_dir"]
+end
+
+if _ACTION == "gmake" then
+
+	build_cmd = "-std=c++11 -stdlib=libc++"
+	link_cmd = "-stdlib=libc++"
+	
+elseif _ACTION == "xcode4" then 
 	
 	platform_dir = "osx" 
 	

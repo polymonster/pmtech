@@ -20,6 +20,13 @@ newoption
 
 newoption 
 {
+   trigger     = "platform_dir",
+   value       = "dir",
+   description = "specify platform specifc src folder",
+}
+
+newoption 
+{
    trigger     = "xcode_target",
    value       = "TARGET",
    description = "Choose an xcode build target",

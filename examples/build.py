@@ -102,7 +102,6 @@ def get_platform_info():
             platform = "win32"
         #python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
 
-    extra_target_info = ""
     #if platform == "win32" and use_win_reg:
     #    key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Microsoft\Microsoft SDKs\Windows', 0,
     #                       (winreg.KEY_WOW64_64KEY + winreg.KEY_ALL_ACCESS))
@@ -111,6 +110,7 @@ def get_platform_info():
     #        if sdk_ver[0] == "CurrentVersion":
     #            extra_target_info += "--sdk_version=" + str(sdk_ver[1])
 
+    extra_target_info = "--platform_dir=" + platform
 
     if platform == "ios":
         extra_target_info = "--xcode_target=ios"

@@ -678,7 +678,7 @@ public:
         
         if( open_file )
         {
-            const c8* file = put::dev_ui::file_browser( open_file, 2, "**.mp3", "**.wav" );
+            const c8* file = put::dev_ui::file_browser( open_file, put::dev_ui::FB_OPEN, 2, "**.mp3", "**.wav" );
             
             if( file != nullptr )
             {
