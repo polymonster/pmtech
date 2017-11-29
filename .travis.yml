@@ -1,1 +1,1 @@
-install: travis.sh
+install: ./travis.sh
