@@ -13,6 +13,7 @@
 #include "pmfx.h"
 #include "pen_json.h"
 #include "hash.h"
+#include "str_utilities.h"
 
 pen::window_creation_params pen_window
 {

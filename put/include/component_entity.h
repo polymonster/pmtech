@@ -52,7 +52,7 @@ namespace put
 			u32		num_joints;
 			mat4	bind_shape_matirx;
 			mat4	joint_bind_matrices[85];
-			mat4	joint_matrices[85];
+            u32     bone_cbuffer = PEN_INVALID_HANDLE;
 		};
         
         enum scene_node_textures
@@ -197,6 +197,7 @@ namespace put
             f32                      current_time;
             s32                      current_frame = 0;
             u8                       play_flags = 0;
+            bool                     apply_root_motion = true;
         };
 
 		struct entity_scene

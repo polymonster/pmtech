@@ -46,6 +46,11 @@ cbuffer per_draw_call : register(b1)
 	float4x4 world_matrix;
 };
 
+cbuffer skinning_info : register(b2)
+{
+	float4x4 bones[85];
+};
+
 cbuffer debug_options : register(b13)
 {
 	float4 debug_render_options;
@@ -58,13 +63,38 @@ declare_texture_samplers
 	TEXTURE_2D( normal_texture, 2 );
 };
 
+float4 skin_pos( float4 pos, float4 weights, float4 indices )
+{
+	int bone_indices[4];
+	bone_indices[0] = int(indices.x);
+	bone_indices[1] = int(indices.y);
+	bone_indices[2] = int(indices.z);
+	bone_indices[3] = int(indices.w);
+
+	float4 sp = float4( 0.0, 0.0, 0.0, 0.0 );
+	float final_weight = 1.0;
+	for( int i = 0; i < 3; ++i)	
+	{
+		sp += mul( pos, bones[bone_indices[i]] ) * weights[i];
+		final_weight -= weights[i];
+	}
+		
+	sp += mul( pos, bones[bone_indices[3]] ) * final_weight;
+	
+	sp.w = 1.0;
+		
+	return sp;
+}
+
 vs_output vs_main_skinned( vs_input_skinned _input )
 {
 	vs_output _output;
 	
 	float4x4 wvp = mul( world_matrix, vp_matrix );
 
-	_output.position = mul( _input.position, wvp );
+	float4 sp = skin_pos(_input.position, _input.blend_weights, _input.blend_indices);
+	
+	_output.position = mul( sp, wvp );
 	_output.world_pos = mul( _input.position, world_matrix );
 		
 	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
@@ -74,6 +104,8 @@ vs_output vs_main_skinned( vs_input_skinned _input )
 	_output.bitangent = mul( _input.bitangent.xyz, rotation_matrix );
 	
 	_output.texcoord = float4( _input.texcoord.x, 1.0f - _input.texcoord.y, _input.texcoord.z, 1.0f - _input.texcoord.w );
+	
+	_output.texcoord = _input.blend_weights;
 	
     return _output;
 }
@@ -98,29 +130,11 @@ vs_output vs_main( vs_input _input )
     return _output;
 }
 
-ps_output ps_magenta( vs_output _input ) 
+ps_output ps_skin_debug( vs_output _input ) 
 {	
 	ps_output _output;
 	
-	_output.colour = float4( 1.0, 0.0, 1.0, 1.0 );
-		
-    return _output;
-}
-
-ps_output ps_green( vs_output _input ) 
-{	
-	ps_output _output;
-	
-	_output.colour = float4( 0.0, 1.0, 0.0, 1.0 );
-		
-    return _output;
-}
-
-ps_output ps_yellow( vs_output _input ) 
-{	
-	ps_output _output;
-	
-	_output.colour = float4( 0.0, 1.0, 1.0, 1.0 );
+	_output.colour = float4( _input.texcoord.xyz, 1.0 );
 		
     return _output;
 }
@@ -140,6 +154,13 @@ pmfx:
 	{
 		"vs": "vs_main",
 		"ps": "ps_diffuse",
+		"blend_src": "src_alpha"
+	},
+	
+	"skinned":
+	{
+		"vs": "vs_main_skinned",
+		"ps": "ps_skin_debug",
 		"blend_src": "src_alpha"
 	}
 }

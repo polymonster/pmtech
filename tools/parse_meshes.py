@@ -314,6 +314,7 @@ def parse_mesh(node, tris, controller):
 
     return mesh_instance
 
+
 def parse_controller(controller_root,geom_name):
     for contoller in controller_root.iter(schema + 'controller'):
         for skin in contoller.iter(schema + 'skin'):
@@ -356,7 +357,6 @@ def parse_controller(controller_root,geom_name):
                     strongest_index = 0
                     strongest_weight = 0.0
                     for i in range(0,int(influences),1):
-                        #print(str(i) + "/" + str(len(indices)) + " " + str(vpos) + "/" + str(len(sc.joint_weight_indices)))
                         indices[i] = sc.joint_weight_indices[vpos]
                         weight_index = sc.joint_weight_indices[vpos+1]
                         weights[i] = sc.weights[int(weight_index)]
@@ -368,14 +368,9 @@ def parse_controller(controller_root,geom_name):
                         indices[i] = strongest_index
                         weights[i] = 0.0
                     for i in range(0,4,1):
-                        #print( "index = " + str(indices[i]) + " wght = " + str(weights[i]))
+                        print( "index = " + str(indices[i]) + " wght = " + str(weights[i]))
                         sc.vec4_indices.float_values.append(indices[i])
                         sc.vec4_weights.float_values.append(weights[i])
-
-                #print("indices " + str(len(sc.vec4_indices.float_values)))
-                #if len(sc.vec4_indices.float_values) > 0:
-                    #print(sc.vec4_indices.float_values)
-                    #print(sc.vec4_weights.float_values)
 
             return sc
     return None

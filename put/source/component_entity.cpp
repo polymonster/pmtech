@@ -8,6 +8,7 @@
 #include "layer_controller.h"
 #include "pmfx.h"
 #include "str/Str.h"
+#include "str_utilities.h"
 #include "hash.h"
 
 using namespace put;
@@ -381,7 +382,8 @@ namespace put
                     p_reader += 16;
                     
                     mat4 max_swap;
-                    max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 1.0f, 0.0f));
+                    //max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 1.0f, 0.0f));
+                    max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f));
                     mat4 max_swap_inv = max_swap.inverse4x4();
                     
                     mat4 final_bind = max_swap * p_geometry->p_skin->bind_shape_matirx * max_swap_inv;
@@ -397,8 +399,9 @@ namespace put
                     for (u32 joint = 0; joint < p_geometry->p_skin->num_joints; ++joint)
                     {
                         p_geometry->p_skin->joint_bind_matrices[joint] = max_swap * p_geometry->p_skin->joint_bind_matrices[joint] * max_swap_inv;
-                        p_geometry->p_skin->joint_matrices[joint].create_identity();
                     }
+                    
+                    p_geometry->p_skin->bone_cbuffer = PEN_INVALID_HANDLE;
                 }
                 
                 p_geometry->vertex_size = vertex_size;
@@ -546,7 +549,6 @@ namespace put
                     for (u32 joint = 0; joint < p_geometries[submesh].p_skin->num_joints; ++joint)
                     {
                         p_geometries[submesh].p_skin->joint_bind_matrices[joint] = max_swap * p_geometries[submesh].p_skin->joint_bind_matrices[joint] * max_swap_inv;
-                        p_geometries[submesh].p_skin->joint_matrices[joint].create_identity();
                     }
                     
                     scene->entities[node_index] |= CMP_SKINNED;
@@ -770,7 +772,11 @@ namespace put
         
         anim_handle load_pma(const c8* filename)
         {
-            hash_id filename_hash = PEN_HASH( filename );
+            Str pd = put::dev_ui::get_program_preference("project_dir").as_str().c_str();
+            
+            Str stipped_filename = put::str_replace_string( filename, pd.c_str(), "" );
+            
+            hash_id filename_hash = PEN_HASH( stipped_filename.c_str() );
             
             //search for existing
             s32 num_anims = k_animations.size();
@@ -806,8 +812,8 @@ namespace put
             k_animations.push_back(animation());
             animation& new_animation = k_animations.back();
             
-            new_animation.name = filename;
-            new_animation.id_name = PEN_HASH(filename);
+            new_animation.name = stipped_filename;
+            new_animation.id_name = filename_hash;
  
             u32 num_channels = *p_u32reader++;
             
@@ -1200,7 +1206,36 @@ namespace put
                         pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
                     }
                     
-                    pmfx::set_technique( model_pmfx, 0 );
+                    if( p_geom->p_skin )
+                    {
+                        if( p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE )
+                        {
+                            pen::buffer_creation_params bcp;
+                            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                            bcp.buffer_size = sizeof(mat4) * 85;
+                            bcp.data = nullptr;
+                            
+                            p_geom->p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
+                        }
+                        
+                        static mat4 bb[85];
+                        
+                        for( s32 i = 0; i < p_geom->p_skin->num_joints; ++i )
+                        {
+                            bb[i] = scene->world_matrices[n + 3 + i] * p_geom->p_skin->joint_bind_matrices[i];
+                        }
+                        
+                        pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
+                        
+                        pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
+                    }
+                    
+                    if( p_geom->p_skin )
+                        pmfx::set_technique( model_pmfx, 1 );
+                    else
+                        pmfx::set_technique( model_pmfx, 0 );
                     
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
@@ -1771,10 +1806,17 @@ namespace put
                 
                 if( ImGui::CollapsingHeader("Animations") )
                 {
+                    auto& controller = scene->anim_controller[selected_index];
+                    
+                    ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
+                    
                     if( ImGui::Button("Add Animation") )
                         open_anim_import = true;
                     
-                    auto& controller = scene->anim_controller[selected_index];
+                    if( ImGui::Button("Reset Root Motion") )
+                    {
+                        scene->local_matrices[selected_index].create_identity();
+                    }
                     
                     if( open_anim_import )
                     {
