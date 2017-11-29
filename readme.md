@@ -7,13 +7,11 @@ Core systems such as rendering, audio and physics are handled asyncronously on c
 The engine and toolkit are designed with simplicitiy in mind c-style api's and data-oriented programming are the philosophy behind this project, with minimal use of c++ features for convenience.
 
 **pen** *pmtech engine* 
-
 This project contains platform / operating system specific code, it provides abstractions for:
 
 Renderer, Window, Audio, Memory, Timers, File System, Threads.
 
 **put** *pmtech utility toolkit*
-
 This project contains code that will be re-used across different projects but contains no platform specific code:
 - Model, Texture and Shader loading.
 - Dev UI, Maths Library, Async Physics command buffer API.
