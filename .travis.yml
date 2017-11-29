@@ -1,3 +1,4 @@
 os: osx
 language: cpp
 compiler: clang
+install: ./travis.sh
