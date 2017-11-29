@@ -6,14 +6,12 @@ Core systems such as rendering, audio and physics are handled asyncronously on c
 
 The engine and toolkit are designed with simplicitiy in mind c-style api's and data-oriented programming are the philosophy behind this project, with minimal use of c++ features for convenience.
 
-**pen** *pmtech engine*
-
+**pen** *pmtech engine* 
 This project contains platform / operating system specific code, it provides abstractions for:
 
 Renderer, Window, Audio, Memory, Timers, File System, Threads.
 
-**put** *pmtech utility toolkit*
-
+**put** *pmtech utility toolkit* 
 This project contains code that will be re-used across different projects but contains no platform specific code:
 - Model, Texture and Shader loading.
 - Dev UI, Maths Library, Async Physics command buffer API.
@@ -23,14 +21,13 @@ This project contains code that will be re-used across different projects but co
 - Component Entity Scene - Data-Oriented scene written in c+, handling mesh rendering, skeletal animation and scene heirarchies.
 - Editor - Scene editor built on the Component Entity Scene.
 
-**thirdparty stuff**
-
+**thirdparty stuff** 
 - [a ImGui](https://github.com/ocornut/imgui)
 - [a Str](https://github.com/ocornut/str)
 - [a Jsmn](https://github.com/zserge/jsmn)
 - [a Bullet](https://github.com/bulletphysics/bullet3)
 
-**tools**
+**tools** 
 Tool scripts written in python and using some c++ executables to build data:
 - Collada to Binary - Models, skeletons and animations.
 - Textures - Compression and conversion using NVTT (Nvidia).
@@ -39,14 +36,11 @@ Tool scripts written in python and using some c++ executables to build data:
 - Shader Compiler - FXC offline shader compilation.
 - Shader Builder - A python script and some macros help porting from hlsl to glsl, JSON can be used to specify addition information such as depth stencil state or blend modes. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
 
-*Getting started*
-
-Run the build.py script in pmtech/examples to see how to build code projects and data
-
+*Getting started* 
+Run the build.py script in pmtech/examples to see how to build code projects and data 
 on osx you can run ./travis.sh which will genereate GNU make files and compile from the command line.
 
-**examples**
-
+**examples** 
 This solution / workspace contains multiple examples of how to use the API's and set up projects, I have been using them to aid porting, starting with a simple windowed application using minimal dependencies, samples introduce more dependancies as they go along, this would also be an ideal place to add some unit tests and continously test functionality of the engine.
 
 - empty_project - First port of call to get a platform compiling, it creates an empty window with no rendering context.
