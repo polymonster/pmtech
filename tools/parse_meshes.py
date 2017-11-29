@@ -368,7 +368,7 @@ def parse_controller(controller_root,geom_name):
                         indices[i] = strongest_index
                         weights[i] = 0.0
                     for i in range(0,4,1):
-                        print( "index = " + str(indices[i]) + " wght = " + str(weights[i]))
+                        # print( "index = " + str(indices[i]) + " wght = " + str(weights[i]))
                         sc.vec4_indices.float_values.append(indices[i])
                         sc.vec4_weights.float_values.append(weights[i])
 
