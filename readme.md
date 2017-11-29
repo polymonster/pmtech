@@ -1,39 +1,32 @@
 # Welcome to pmtech!
 
-A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios with opengl 3 and directx 11 renderers. 
+A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios with opengl 3 and directx 11 renderers with metal, directx 12 and more in the pipeline.
 
 Core systems such as rendering, audio and physics are handled asyncronously on consumer threads which process command buffers that are created on the user thread, the command buffer api's provide thread safe access to add commands or read data back from a consumer thread.
 
+The engine and toolkit are designed with simplicitiy in mind c-style api's and data-oriented programming are the philosophy behind this project, with minimal use of c++ features for convenience.
+
 **pen** *pmtech engine* 
-
 This project contains platform / operating system specific code, it provides abstractions for:
-- Renderer (dx11, opengl)
-- Window / Input / OS Message Pump (win32, osx, ios)
-- Audio (fmod)
-- Memory (win32, posix)
-- File System (win32, dirent / stdlib)
-- Threads / Syncronisation Primitives (win32, posix)
-- Timers (win32, mach)
-- Job Threads / Syncronisation
-- pen::json - simple and leightweight json api and parser to access json values as c types, combine json objects, iterate over arrays, find json objects by name and other handy stuff to make data driven configs a breeze.
-
-**thirdparty stuff**
-- ImGui - super cool and fast ui rendering for development.
-- Jsmn - light weight json parser used in pen::json
-- Bullet Physics - Wrapped up in a command buffer api for asyncronous update and thread safe interactions.
+Renderer, Window, Audio, Memory, Timers, File System, Threads.
 
 **put** *pmtech utility toolkit*
+This project contains code that will be re-used across different projects but contains no platform specific code:
+Model, Texture and Shader loading.
+Dev UI, Maths Library, Async Physics command buffer API.
+JSON - Simple c json parser greate for config and data files. 
+PMFX - generic shader language with GPU state specification for setting blend, depth, stencil, raster and other GPU state.
+Render Controller - Scriptable renderer to define render passes and GPU state from in a JSON config.
+Component Entity Scene - Data-Oriented scene written in c+, handling mesh rendering, skeletal animation and scene heirarchies.
+Editor - Scene editor built on the Component Entity Scene.
 
-This project contains code that will be re-used across different projects but contains no platform specific code, it contains:
-- Asset Loading - Load textures (DDS), models, skeletons, animations and shaders.
-- pmfx - shader and fx style framework base on shader model 4 with fx syntax in JSON, supports multiple techniques and different GPU state specification from inside a single file.
-- Debug Renderer - Helpers for drawing 3d and 2d lines, boxes, text, and other primitives.
-- Scalar (float) Maths library - Vector, Matrix, Quaternion, Intersection tests and functions.
-- Physics command buffer api.
-- ImGui file browser and other ui utilities.
+**thirdparty stuff**
+[a ImGui](https://github.com/ocornut/imgui)
+[a Str](https://github.com/ocornut/str)
+[a Jsmn](https://github.com/zserge/jsmn)
+[a Bullet](https://github.com/bulletphysics/bullet3)
 
 **tools**
-
 Tool scripts written in python and using some c++ executables to build data:
 - Collada to Binary - Models, skeletons and animations.
 - Textures - Compression and conversion using NVTT (Nvidia).
@@ -41,6 +34,12 @@ Tool scripts written in python and using some c++ executables to build data:
 - ios project genetion - Simple script to copy ios files and fixup xcode to support ios projects.
 - Shader Compiler - FXC offline shader compilation.
 - Shader Builder - A python script and some macros help porting from hlsl to glsl, JSON can be used to specify addition information such as depth stencil state or blend modes. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
+
+*Getting started*
+
+Run the build.py script in pmtech/examples to see how to build code projects and data
+
+on osx you can run ./travis.sh which will genereate GNU make files and compile from the command line.
 
 **examples**
 
@@ -57,17 +56,3 @@ This solution / workspace contains multiple examples of how to use the API's and
 - Shader Toy - Introduces shader hot loading and a test bed for binding textures, samplers and constant/uniform buffers to different shader locations.
 - Model Viewer - Introduces cameras and camera controls, model loading and inspection
 - Component entity system - simple c-style component entity system using structure of arrays layout for efficient cache utilisation.. a "scene" design pattern that is not object oriented but can be just as powerful.
-
-*Getting started*
-
-To start a new project make sure it is located in pmtech/<project_dir>/ this is important because all paths to tools and other libraries are relative to this location. The examples solution is set up illustrating this layout.. all paths are relative to avoid having to deal with setting environment variables to locate various parts of the project.
-
-An application just needs to define and initialise the pen::window_creation_params struct, and will be given a main loop, which can be defined in a separate project. 
-
-There are helper functions to easily create new projects in tools/premake/app_template.lua and the pen_examples/premake5.lua has examples of how to set up projects. 
-
-Use the make_projects batch file on windows or shell script on osx to generate IDE solutions or workspaces, edit these files to change configuration settings or to see how the current ones work.
-
-The make projects scripts also contain command lines to build shaders and textures for the relevant platform.
-
-supply --help to premake5 for more options on project configuration from inside the .lua files.
