@@ -571,7 +571,7 @@ namespace pen
 
         dst->m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
         
-        //shallow copy defauly copy ctor
+        //shallow copy default copy ctor
         *dst->m_internal_object = *other.m_internal_object;
         
         u32 num_tokens = other.m_internal_object->num_tokens;
@@ -579,12 +579,16 @@ namespace pen
         pen::memory_cpy(dst->m_internal_object->tokens, other.m_internal_object->tokens, sizeof(jsmntok_t)*num_tokens);
         
         //deep copy take ownership of mem
-        s32 data_size = string_length(other.m_internal_object->data);
-        
-        dst->m_internal_object->data = (c8*)memory_alloc(data_size+1);
-        pen::memory_cpy(dst->m_internal_object->data, other.m_internal_object->data, data_size);
-        dst->m_internal_object->data[data_size] = '\0';
-        
+        if (other.m_internal_object->data)
+        {
+            s32 data_size = string_length( other.m_internal_object->data );
+
+            dst->m_internal_object->data = ( c8* )memory_alloc( data_size + 1 );
+            pen::memory_cpy( dst->m_internal_object->data, other.m_internal_object->data, data_size );
+            dst->m_internal_object->data[data_size] = '\0';
+        }
+
+        //take ownership of name
         if( other.m_internal_object->name )
         {
             s32 name_size = string_length(other.m_internal_object->name);
