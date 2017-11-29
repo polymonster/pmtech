@@ -22,10 +22,10 @@ This project contains code that will be re-used across different projects but co
 - Editor - Scene editor built on the Component Entity Scene.
 
 **thirdparty stuff**  
-- [a ImGui](https://github.com/ocornut/imgui)
-- [a Str](https://github.com/ocornut/str)
-- [a Jsmn](https://github.com/zserge/jsmn)
-- [a Bullet](https://github.com/bulletphysics/bullet3)
+- [ImGui](https://github.com/ocornut/imgui)
+- [Str](https://github.com/ocornut/str)
+- [Jsmn](https://github.com/zserge/jsmn)
+- [Bullet](https://github.com/bulletphysics/bullet3)
 
 **tools**  
 Tool scripts written in python and using some c++ executables to build data:
