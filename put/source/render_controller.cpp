@@ -224,7 +224,7 @@ namespace put
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
                         
                         //msaa
-                        tcp.sample_count = 1;
+                        tcp.sample_count = 4;
                         tcp.sample_quality = 0;
                         
                         new_info.handle = pen::renderer_create_render_target( tcp );

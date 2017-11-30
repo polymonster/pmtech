@@ -78,12 +78,18 @@ namespace pen
 	{
 		texture2d_internal			tex;
 		ID3D11RenderTargetView*		rt[NUM_CUBEMAP_FACES];
+
+        texture2d_internal			tex_msaa;
+        ID3D11RenderTargetView*		rt_msaa[NUM_CUBEMAP_FACES];
 	};
 
 	struct depth_stencil_target_internal
 	{
 		texture2d_internal			tex;
 		ID3D11DepthStencilView*		ds[NUM_CUBEMAP_FACES];
+
+        texture2d_internal			tex_msaa;
+        ID3D11DepthStencilView*		ds_msaa[NUM_CUBEMAP_FACES];
 	};
 
 	struct shader_program
@@ -193,16 +199,26 @@ namespace pen
 	{
 		if( resource_pool[ clear_state_index ].clear_state->flags | PEN_CLEAR_COLOUR_BUFFER && g_context.active_colour_target )
 		{
+            ID3D11RenderTargetView* colour_rtv = resource_pool[g_context.active_colour_target].render_target->rt[colour_face];
+           
+            if (resource_pool[g_context.active_colour_target].render_target->rt_msaa[colour_face])
+                colour_rtv = resource_pool[g_context.active_colour_target].render_target->rt_msaa[colour_face];
+
 			//clear colour
 			g_immediate_context->ClearRenderTargetView(
-				resource_pool[ g_context.active_colour_target ].render_target->rt[ colour_face ],
+                colour_rtv,
 				&resource_pool[ clear_state_index ].clear_state->rgba[ 0 ] );
 		}
 
 		if ( resource_pool[ clear_state_index ].clear_state->flags | PEN_CLEAR_DEPTH_BUFFER && g_context.active_depth_target )
 		{
+            ID3D11DepthStencilView* dsv = resource_pool[g_context.active_depth_target].depth_target->ds[depth_face];
+            
+            if (resource_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face])
+                dsv = resource_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face];
+
 			//clear depth
-			g_immediate_context->ClearDepthStencilView( resource_pool[ g_context.active_depth_target ].depth_target->ds[ depth_face ], D3D11_CLEAR_DEPTH, resource_pool[ clear_state_index ].clear_state->depth, 0 );
+			g_immediate_context->ClearDepthStencilView( dsv, D3D11_CLEAR_DEPTH, resource_pool[ clear_state_index ].clear_state->depth, 0 );
 		}
 	}
 
@@ -478,102 +494,131 @@ namespace pen
 		return 0;
 	}
 
-	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)
-	{
-		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE);
 
-		HRESULT hr;
+    void renderer_create_render_target_multi( const texture_creation_params& tcp, texture2d_internal* texture_container, ID3D11DepthStencilView** dsv, ID3D11RenderTargetView** rtv )
+    {
+        HRESULT hr;
 
-		//create an empty texture
-		D3D11_TEXTURE2D_DESC texture_desc;
-		pen::memory_cpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+        //create an empty texture
+        D3D11_TEXTURE2D_DESC texture_desc;
+        pen::memory_cpy( &texture_desc, ( void* )&tcp, sizeof( D3D11_TEXTURE2D_DESC ) );
 
-		resource_pool[resource_index].render_target = (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
+        u32 array_size = texture_desc.ArraySize;
+        bool texture2dms = texture_desc.SampleDesc.Count > 1;
 
-		hr = g_device->CreateTexture2D(&texture_desc, NULL, &resource_pool[resource_index].texture_2d->texture );
-		PEN_ASSERT(hr == 0);
+        if (array_size > 1 && texture2dms)
+        {
+            //arrays and cubes don't support msaa yet
+            PEN_ASSERT( 0 );
+        }
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
+        hr = g_device->CreateTexture2D( &texture_desc, NULL, &texture_container->texture );
+        PEN_ASSERT( hr == 0 );
 
-		u32 array_size = texture_desc.ArraySize;
+        D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
 
-		if (texture_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
-		{
-			//depth target
-			D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
-			dsv_desc.Format = (DXGI_FORMAT)depth_texture_format_to_dsv_format( texture_desc.Format );
-			dsv_desc.Flags = 0;
+        D3D_SRV_DIMENSION srv_dimension = texture2dms ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
 
-			// Create the render target view.
-			if( array_size == 1 )
-			{
-				dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-				dsv_desc.Texture2D.MipSlice = 0;
+        if (array_size == 6)
+            srv_dimension = D3D_SRV_DIMENSION_TEXTURECUBE;
 
-				g_device->CreateDepthStencilView(resource_pool[resource_index].texture_2d->texture, &dsv_desc, &resource_pool[resource_index].depth_target->ds[0]);
-				PEN_ASSERT( hr == 0 );
-			}
-			else
-			{
-				for( u32 a = 0; a < array_size; ++a )
-				{
-					dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-					dsv_desc.Texture2DArray.FirstArraySlice = a;
-					dsv_desc.Texture2DArray.MipSlice = 0;
-					dsv_desc.Texture2DArray.ArraySize = 1;
-					g_device->CreateDepthStencilView(resource_pool[resource_index].texture_2d->texture, &dsv_desc, &resource_pool[resource_index].depth_target->ds[a]);
-					PEN_ASSERT( hr == 0 );
-				}
-			}
+        if (texture_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
+        {
+            //depth target
+            D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
+            dsv_desc.Format = ( DXGI_FORMAT )depth_texture_format_to_dsv_format( texture_desc.Format );
+            dsv_desc.Flags = 0;
 
-			//create shader resource view
-			resource_view_desc.Format = (DXGI_FORMAT)depth_texture_format_to_srv_format( texture_desc.Format );
-			resource_view_desc.ViewDimension = array_size == 6 ? D3D_SRV_DIMENSION_TEXTURECUBE : D3D10_SRV_DIMENSION_TEXTURE2D;
-			resource_view_desc.Texture2D.MipLevels = -1;
-			resource_view_desc.Texture2D.MostDetailedMip = 0;
-		}
-		else if (texture_desc.BindFlags & D3D11_BIND_RENDER_TARGET )
-		{
-			//render target
-			D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
-			rtv_desc.Format = texture_desc.Format;
+            // Create the render target view.
+            if (array_size == 1)
+            {
+                dsv_desc.ViewDimension = texture2dms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+                dsv_desc.Texture2D.MipSlice = 0;
 
-			// Create the render target view.
-			if( array_size == 1 )
-			{
-				rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-				rtv_desc.Texture2D.MipSlice = 0;
+                g_device->CreateDepthStencilView( texture_container->texture, &dsv_desc, &dsv[0] );
+                PEN_ASSERT( hr == 0 );
+            }
+            else
+            {
+                for (u32 a = 0; a < array_size; ++a)
+                {
+                    dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+                    dsv_desc.Texture2DArray.FirstArraySlice = a;
+                    dsv_desc.Texture2DArray.MipSlice = 0;
+                    dsv_desc.Texture2DArray.ArraySize = 1;
+                    g_device->CreateDepthStencilView( texture_container->texture, &dsv_desc, &dsv[a] );
+                    PEN_ASSERT( hr == 0 );
+                }
+            }
 
-				hr = g_device->CreateRenderTargetView( resource_pool[ resource_index ].texture_2d->texture, &rtv_desc, &resource_pool[ resource_index ].render_target->rt[ 0 ] );
-				PEN_ASSERT( hr == 0 );
-			}
-			else
-			{
-				for( u32 a = 0; a < array_size; ++a )
-				{
-					rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-					rtv_desc.Texture2DArray.FirstArraySlice = a;
-					rtv_desc.Texture2DArray.MipSlice = 0;
-					rtv_desc.Texture2DArray.ArraySize = 1;
-					hr = g_device->CreateRenderTargetView( resource_pool[ resource_index ].texture_2d->texture, &rtv_desc, &resource_pool[ resource_index ].render_target->rt[ a ] );
-					PEN_ASSERT( hr == 0 );
-				}
-			}
+            //create shader resource view
+            resource_view_desc.Format = ( DXGI_FORMAT )depth_texture_format_to_srv_format( texture_desc.Format );
+            resource_view_desc.ViewDimension = srv_dimension;
+            resource_view_desc.Texture2D.MipLevels = -1;
+            resource_view_desc.Texture2D.MostDetailedMip = 0;
+        }
+        else if (texture_desc.BindFlags & D3D11_BIND_RENDER_TARGET)
+        {
+            //render target
+            D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
+            rtv_desc.Format = texture_desc.Format;
 
-			//create shader resource view
-			resource_view_desc.Format = texture_desc.Format;
-			resource_view_desc.ViewDimension = array_size == 6 ? D3D_SRV_DIMENSION_TEXTURECUBE : D3D10_SRV_DIMENSION_TEXTURE2D;
-			resource_view_desc.Texture2D.MipLevels = -1;
-			resource_view_desc.Texture2D.MostDetailedMip = 0;
-		}
-		else
-		{
-			//m8 this is not a render target
-			PEN_ASSERT(0);
-		}
+            // Create the render target view.
+            if (array_size == 1)
+            {
+                rtv_desc.ViewDimension = texture2dms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
+                rtv_desc.Texture2D.MipSlice = 0;
 
-		hr = g_device->CreateShaderResourceView(resource_pool[resource_index].texture_2d->texture, &resource_view_desc, &resource_pool[resource_index].texture_2d->srv);
-		PEN_ASSERT(hr == 0);
+                hr = g_device->CreateRenderTargetView( texture_container->texture, &rtv_desc, &rtv[0] );
+                PEN_ASSERT( hr == 0 );
+            }
+            else
+            {
+                for (u32 a = 0; a < array_size; ++a)
+                {
+                    rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+                    rtv_desc.Texture2DArray.FirstArraySlice = a;
+                    rtv_desc.Texture2DArray.MipSlice = 0;
+                    rtv_desc.Texture2DArray.ArraySize = 1;
+                    hr = g_device->CreateRenderTargetView( texture_container->texture, &rtv_desc, &rtv[a] );
+                    PEN_ASSERT( hr == 0 );
+                }
+            }
+
+            //create shader resource view
+            resource_view_desc.Format = texture_desc.Format;
+            resource_view_desc.ViewDimension = srv_dimension;
+            resource_view_desc.Texture2D.MipLevels = -1;
+            resource_view_desc.Texture2D.MostDetailedMip = 0;
+        }
+        else
+        {
+            //m8 this is not a render target
+            PEN_ASSERT( 0 );
+        }
+
+        hr = g_device->CreateShaderResourceView( texture_container->texture, &resource_view_desc, &texture_container->srv );
+        PEN_ASSERT( hr == 0 );
+    }
+
+    u32 direct::renderer_create_render_target( const texture_creation_params& tcp )
+    {
+        u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+
+        //alloc rt
+        resource_pool[resource_index].render_target = ( render_target_internal* )pen::memory_alloc( sizeof( render_target_internal ) );
+        pen::memory_zero( resource_pool[resource_index].render_target, sizeof( render_target_internal ) );
+
+        if (tcp.sample_count > 1)
+        {
+            //create msaa 
+            renderer_create_render_target_multi( tcp, &resource_pool[resource_index].render_target->tex_msaa, resource_pool[resource_index].depth_target->ds_msaa, resource_pool[resource_index].render_target->rt_msaa );
+        }
+
+        //always create resolve surface
+        texture_creation_params resolve_tcp = tcp;
+        resolve_tcp.sample_count = 1;
+        renderer_create_render_target_multi( resolve_tcp, &resource_pool[resource_index].render_target->tex, resource_pool[resource_index].depth_target->ds, resource_pool[resource_index].render_target->rt );
 
 		return resource_index;
 	}
@@ -587,13 +632,19 @@ namespace pen
 		ID3D11RenderTargetView* colour_rtv = nullptr;
 		if (colour_target != 0)
 		{
-			colour_rtv = resource_pool[colour_target].render_target->rt[colour_face];
+            if (resource_pool[colour_target].render_target->rt_msaa[colour_face])
+                colour_rtv = resource_pool[colour_target].render_target->rt_msaa[colour_face];
+            else
+			    colour_rtv = resource_pool[colour_target].render_target->rt[colour_face];
 		}
 
 		ID3D11DepthStencilView* dsv = nullptr;
 		if (depth_target != 0)
 		{
-			dsv = resource_pool[depth_target].depth_target->ds[depth_face];
+            if(resource_pool[depth_target].depth_target->ds_msaa[depth_face])
+			    dsv = resource_pool[depth_target].depth_target->ds_msaa[depth_face];
+            else
+                dsv = resource_pool[depth_target].depth_target->ds[depth_face];
 		}
 
 		g_immediate_context->OMSetRenderTargets( num_views, &colour_rtv, dsv );
@@ -985,6 +1036,7 @@ namespace pen
 
         PEN_ASSERT( crtv == PEN_DEFAULT_RT );
         resource_pool[crtv].render_target = ( render_target_internal* )pen::memory_alloc( sizeof( render_target_internal ) );
+        pen::memory_zero( resource_pool[crtv].render_target, sizeof( render_target_internal ) );
 
         g_context.active_colour_target = PEN_DEFAULT_RT;
 
@@ -993,9 +1045,9 @@ namespace pen
 
         g_context.backbuffer_colour = crtv;
 
-
         PEN_ASSERT( dsv == PEN_DEFAULT_DS );
         resource_pool[dsv].depth_target = ( depth_stencil_target_internal* )pen::memory_alloc( sizeof( depth_stencil_target_internal ) );
+        pen::memory_zero( resource_pool[dsv].depth_target, sizeof( render_target_internal ) );
 
         g_context.active_depth_target = PEN_DEFAULT_DS;
 
