@@ -31,10 +31,10 @@ namespace put
             ofs.close();
         }
 
-		void set_last_used_directory(std::string& dir)
+		void set_last_used_directory(Str& dir)
 		{
 			//make a copy of the string to format
-			std::string formatted = dir;
+			std::string formatted = dir.c_str();
 
 			//always use / for consistency
 			std::replace(formatted.begin(), formatted.end(), '\\', '/');
@@ -151,10 +151,11 @@ namespace put
 			static s32 selection_stack[128] = { -1 };
             static c8 user_filename_buf[1024];
             
-			std::string current_path;
-			std::string search_path;
-			static std::string selected_path;
-
+			Str current_path;
+			Str search_path;
+			static Str selected_path;
+            static Str last_result;
+            
 			static pen::fs_tree_node fs_enumeration;
 
 			if (initialise)
@@ -172,8 +173,8 @@ namespace put
 					{
 						if (pen::string_compare(fs_iter->children[entry].name, default_dir[c]) == 0)
 						{
-							current_path += fs_iter->children[entry].name;
-							current_path += "/";
+							current_path.append(fs_iter->children[entry].name);
+							current_path.append("/");
 
 							va_list wildcards;
 							va_start(wildcards, num_filetypes);
@@ -210,15 +211,25 @@ namespace put
             
             if( flags & FB_SAVE )
             {
-                ImGui::InputText("", user_filename_buf, 1024);
+                user_filename_buf[0] = '/';
+                ImGui::InputText("", &user_filename_buf[1], 1023);
+            }
+            else
+            {
+                user_filename_buf[0] = '\0';
             }
 
 			if (ImGui::ButtonEx("OK", ImVec2(0, 0), button_flags))
 			{
                 selected_path.append(user_filename_buf);
                 
-				return_value = selected_path.c_str();
+				last_result = selected_path;
+                return_value = last_result.c_str();
+                
 				set_last_used_directory(selected_path);
+                
+                selected_path.clear();
+                
 				dialog_open = false;
 			}
 
@@ -275,7 +286,7 @@ namespace put
                         if (ImGui::Selectable(fs_iter->children[entry].name))
                         {
                             search_path = current_path;
-                            search_path += fs_iter->children[entry].name;
+                            search_path.append(fs_iter->children[entry].name);
                             
                             va_list wildcards;
                             va_start(wildcards, num_filetypes);
@@ -315,10 +326,10 @@ namespace put
 				if (selection_stack[c] >= 0)
 				{
 					fs_iter = &fs_iter->children[selection_stack[c]];
-					current_path += fs_iter->name;
+                    current_path.append(fs_iter->name);
 
-					if (current_path != "/")
-						current_path += "/";
+					if ( !(current_path.c_str()[0] == '/' && current_path.length() == 1) )
+						current_path.append("/");
 				}
                 else
                 {

@@ -7,6 +7,7 @@
 #include "loader.h"
 #include "physics_cmdbuf.h"
 #include "str/Str.h"
+#include <vector>
 
 #define CES_DEBUG
 #define INVALID_HANDLE -1
@@ -286,6 +287,7 @@ namespace put
         anim_handle     load_pma( const c8* model_scene_name );
 
 		void            clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
+        void            build_joint_list( entity_scene* scene, u32 start_node, std::vector<s32>& joint_list );
         
 		void            scene_browser_ui( entity_scene* scene, bool* open );
         void            enumerate_resources( bool* open );

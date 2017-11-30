@@ -174,7 +174,12 @@ void update_model_viewer_scene(put::scene_controller* sc)
     
     if( open_save )
     {
-        put::ces::save_scene("test_ces_scene.pms", sc->scene);
+        const c8* save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms" );
+        
+        if(save_file)
+        {
+            put::ces::save_scene(save_file, sc->scene);
+        }
     }
     
     if( dev_open )

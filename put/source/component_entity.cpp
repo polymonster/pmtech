@@ -288,8 +288,10 @@ namespace put
             return nullptr;
         }
         
-        void instantiate_geometry( geometry_resource* gr, scene_node_geometry* instance )
+        void instantiate_geometry( geometry_resource* gr, entity_scene* scene, s32 node_index )
         {
+            scene_node_geometry* instance = &scene->geometries[node_index];
+            
             instance->position_buffer = gr->position_buffer;
             instance->vertex_buffer = gr->vertex_buffer;
             instance->index_buffer = gr->index_buffer;
@@ -298,6 +300,37 @@ namespace put
             instance->index_type = gr->index_type;
             instance->vertex_size = gr->vertex_size;
             instance->p_skin = gr->p_skin;
+        }
+        
+        void instantiate_anim_controller( entity_scene* scene, s32 node_index )
+        {
+            scene_node_geometry* geom = &scene->geometries[node_index];
+            
+            if( geom->p_skin )
+            {
+                animation_controller& controller = scene->anim_controller[node_index];
+                
+                std::vector<s32> joint_indices;
+                build_joint_list( scene, node_index, joint_indices );
+                
+                controller.joints_offset = -1; //scene tree has a -1 node to begin
+                for( s32 jj = 0; jj < joint_indices.size(); ++jj )
+                {
+                    s32 jnode = joint_indices[jj];
+                    
+                    if( scene->entities[jnode] & CMP_BONE )
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        controller.joints_offset++;
+                    }
+                }
+                
+                controller.current_animation = INVALID_HANDLE;
+                scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
+            }
         }
         
         void load_geometry_resource( const c8* filename, const c8* geometry_name, const c8* data )
@@ -796,8 +829,8 @@ namespace put
             
             if( err != PEN_ERR_OK || anim_file_size == 0 )
             {
-                //failed load file
-                PEN_ASSERT(0);
+                //TODO error dialog
+                return INVALID_HANDLE;
             }
             
             const u32* p_u32reader = (u32*)anim_file;
@@ -885,8 +918,8 @@ namespace put
             
             if( err != PEN_ERR_OK || model_file_size == 0 )
             {
-                //failed load file
-                PEN_ASSERT(0);
+                //TODO error dialog
+                return;
             }
             
             const u32* p_u32reader = (u32*)model_file;
@@ -1137,7 +1170,7 @@ namespace put
                         
                         if( gr )
                         {
-                            instantiate_geometry(gr, &scene->geometries[dest]);
+                            instantiate_geometry( gr, scene, dest );
                             
                             hm.begin();
                             hm.add(filename, pen::string_length(filename));
@@ -1160,6 +1193,15 @@ namespace put
                 
                 current_node = dest + 1;
                 scene->num_nodes = current_node;
+            }
+            
+            //now we have loaded the whole scene fix up any anim controllers
+            for( s32 i = node_zero_offset; i < num_import_nodes; ++i )
+            {
+                if( (scene->entities[i] & CMP_GEOMETRY) && scene->geometries[i].p_skin )
+                {
+                    instantiate_anim_controller(scene, i);
+                }
             }
             
             pen::memory_free(model_file);
@@ -1379,6 +1421,8 @@ namespace put
                 }
             }
             
+            Str project_dir = dev_ui::get_program_preference("project_dir").as_str();
+            
             //geometry
             for( s32 n = 0; n < scene->num_nodes; ++n )
             {
@@ -1391,7 +1435,10 @@ namespace put
                     ofs.write( (const c8*)&one, sizeof( u32 ) );
                     ofs.write( (const c8*)&gr->submesh_index, sizeof( u32 ) );
                     
-                    write_parsable_string(gr->filename, ofs);
+                    Str stripped_filename = gr->filename;
+                    stripped_filename = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
+                    
+                    write_parsable_string(stripped_filename.c_str(), ofs);
                     write_parsable_string(gr->geometry_name, ofs);
                 }
                 else
@@ -1412,7 +1459,10 @@ namespace put
                     u32 one = 1;
                     ofs.write( (const c8*)&one, sizeof( u32 ) );
                     
-                    write_parsable_string(mr->filename, ofs);
+                    Str stripped_filename = mr->filename;
+                    stripped_filename = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
+                    
+                    write_parsable_string(stripped_filename.c_str(), ofs);
                     write_parsable_string(mr->material_name, ofs);
                 }
                 else
@@ -1479,7 +1529,8 @@ namespace put
                 
                 for( s32 i = 0; i < size; ++i )
                 {
-                    Str anim_name = read_parsable_string(ifs);
+                    Str anim_name = dev_ui::get_program_preference("project_dir").as_str();
+                    anim_name.append( read_parsable_string(ifs).c_str() );
                     
                     anim_handle h = load_pma(anim_name.c_str());
                     
@@ -1497,8 +1548,10 @@ namespace put
                 {
                     u32 submesh;
                     ifs.read((c8*)&submesh, sizeof(u32));
+
+                    Str filename = dev_ui::get_program_preference("project_dir").as_str();
+                    filename.append( read_parsable_string(ifs).c_str() );
                     
-                    Str filename = read_parsable_string(ifs);
                     Str geometry_name = read_parsable_string(ifs);
                     
                     load_pmm(filename.c_str(), nullptr, PMM_GEOMETRY);
@@ -1516,7 +1569,10 @@ namespace put
                     
                     if( gr )
                     {
-                        instantiate_geometry(gr, &scene->geometries[n]);
+                        instantiate_geometry(gr, scene, n );
+                        
+                        if( gr->p_skin)
+                            instantiate_anim_controller( scene, n );
                     }
                 }
             }
@@ -1529,7 +1585,9 @@ namespace put
                 
                 if( scene->entities[n] & CMP_MATERIAL && has )
                 {
-                    Str filename = read_parsable_string(ifs);
+                    Str filename = dev_ui::get_program_preference("project_dir").as_str();
+                    filename.append( read_parsable_string(ifs).c_str() );
+                    
                     Str material_name = read_parsable_string(ifs);
                     
                     load_pmm(filename.c_str(), nullptr, PMM_MATERIAL);
@@ -1703,7 +1761,7 @@ namespace put
             }
         }
         
-        void build_joint_list( entity_scene* scene, u32 start_node, std::vector<s32>& list_out  )
+        void build_joint_list( entity_scene* scene, u32 start_node, std::vector<s32>& list_out )
         {
             scene_tree tree;
             build_scene_tree( scene, start_node, tree );
