@@ -5,7 +5,7 @@ namespace pen
 
 }
 
-void* operator new(u32 n) throw(BAD_ALLOC)
+void* operator new(size_t n) throw(BAD_ALLOC)
 {
     return pen::memory_alloc( n );
 }

@@ -7,10 +7,10 @@
 
 #ifdef _WIN32
 #define BAD_ALLOC
-#define PEN_MEM_ALIGN_ALLOC _aligned_malloc
+#define PEN_MEM_ALIGN_ALLOC( mem, align, size ) mem = _aligned_malloc( align, size )
 #define PEN_MEM_ALIGN_FREE _aligned_free
 #else
-#define PEN_MEM_ALIGN_ALLOC posix_memalign
+#define PEN_MEM_ALIGN_ALLOC( mem, align, size ) posix_memalign( &mem, align, size )
 #define PEN_MEM_ALIGN_FREE free
 #define BAD_ALLOC std::bad_alloc
 #endif
@@ -59,7 +59,10 @@ namespace pen
 
     inline void* memory_alloc_align( u32 size_bytes, u32 alignment )
     {
-        return PEN_MEM_ALIGN_ALLOC( size_bytes, alignment );
+        void* mem;
+        PEN_MEM_ALIGN_ALLOC( mem, size_bytes, alignment );
+        
+        return mem;
     }
 
     inline void memory_free_align( void* mem )
