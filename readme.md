@@ -35,7 +35,7 @@ Tool scripts written in python and some executables are used to build data:
 - Textures - Compression and conversion using NVTT (Nvidia).
 - Premake5 - All projects are configured using premake and are IDE agnostic.
 - Shader Compiler - offline shader compilation.
--- PMFX - A python script and some macros help porting from hlsl to glsl, JSON can be used to specify addition information such as depth stencil state or blend modes. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
+- PMFX - A python script and some macros help porting from hlsl to glsl, JSON can be used to specify addition information such as depth stencil state or blend modes. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
 
 *Getting started* 
 Run the build.py script in pmtech/examples to see how to build code projects and data 
