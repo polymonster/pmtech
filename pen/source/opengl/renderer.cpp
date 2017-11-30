@@ -431,6 +431,12 @@ namespace pen
         return resource_index;
     }
     
+    void direct::renderer_resolve_target( u32 target )
+    {
+        
+    }
+    
+    
     void direct::renderer_set_so_target( u32 buffer_index )
     {
         
