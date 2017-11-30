@@ -7,13 +7,13 @@ Core systems such as rendering, audio and physics are handled asyncronously on c
 
 The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project, with minimal use of c++ features used for convenience.
 
-**pen** *pmtech engine*  
+**pen**
 This project contains platform / operating system specific code, it provides abstractions for:
 
 Renderer, Window, Audio, Memory, Timers, File System, Threads.
 
-**put** *pmtech utility toolkit*  
-This project contains code that will be re-used across different projects but contains no platform specific code:
+**put**
+This project contains toolkit code that will be re-used across different projects but contains no platform specific code:
 - Model, Texture and Shader loading.
 - Dev UI, Maths Library, Async Physics command buffer API.
 - JSON - Simple c json parser greate for config and data files. 
@@ -30,13 +30,12 @@ This project contains code that will be re-used across different projects but co
 - [Premake](https://github.com/premake/premake-core)
 
 **tools**  
-Tool scripts written in python and using some c++ executables to build data:
+Tool scripts written in python and some executables are used to build data:
 - Collada to Binary - Models, skeletons and animations.
 - Textures - Compression and conversion using NVTT (Nvidia).
 - Premake5 - All projects are configured using premake and are IDE agnostic.
-- ios project genetion - Simple script to copy ios files and fixup xcode to support ios projects.
-- Shader Compiler - FXC offline shader compilation.
-- Shader Builder - A python script and some macros help porting from hlsl to glsl, JSON can be used to specify addition information such as depth stencil state or blend modes. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
+- Shader Compiler - offline shader compilation.
+-- PMFX - A python script and some macros help porting from hlsl to glsl, JSON can be used to specify addition information such as depth stencil state or blend modes. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
 
 *Getting started* 
 Run the build.py script in pmtech/examples to see how to build code projects and data 
