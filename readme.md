@@ -27,6 +27,7 @@ This project contains code that will be re-used across different projects but co
 - [Str](https://github.com/ocornut/str)
 - [Jsmn](https://github.com/zserge/jsmn)
 - [Bullet](https://github.com/bulletphysics/bullet3)
+- [Premake](https://github.com/premake/premake-core)
 
 **tools**  
 Tool scripts written in python and using some c++ executables to build data:
