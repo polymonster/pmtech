@@ -193,6 +193,7 @@ namespace put
         struct animation_controller
         {
             std::vector<anim_handle> handles;
+            s32                      joints_offset;
             anim_handle              current_animation;
             f32                      current_time;
             s32                      current_frame = 0;
@@ -286,7 +287,7 @@ namespace put
 
 		void            clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
         
-		void            enumerate_scene_ui( entity_scene* scene, bool* open );
+		void            scene_browser_ui( entity_scene* scene, bool* open );
         void            enumerate_resources( bool* open );
         
 		void            render_scene_view( const scene_view& view );

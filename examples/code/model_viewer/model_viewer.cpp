@@ -143,7 +143,7 @@ void update_model_viewer_scene(put::scene_controller* sc)
     
     if (open_scene_browser)
     {
-        ces::enumerate_scene_ui(sc->scene, &open_scene_browser);
+        ces::scene_browser_ui(sc->scene, &open_scene_browser);
     }
     
     if( open_camera_menu )

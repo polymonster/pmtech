@@ -1223,9 +1223,10 @@ namespace put
                         
                         static mat4 bb[85];
                         
+                        s32 joints_offset = scene->anim_controller[n].joints_offset;
                         for( s32 i = 0; i < p_geom->p_skin->num_joints; ++i )
                         {
-                            bb[i] = scene->world_matrices[n + 3 + i] * p_geom->p_skin->joint_bind_matrices[i];
+                            bb[i] = scene->world_matrices[n + joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
                         }
                         
                         pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
@@ -1281,6 +1282,8 @@ namespace put
                         if(controller.play_flags == 1)
                             controller.current_time += dt*0.1f;
                         
+                        s32 joints_offset = scene->anim_controller[n].joints_offset;
+                        
                         for( s32 c = 0; c < anim.num_channels; ++c )
                         {
                             s32 num_frames = anim.channels[c].num_frames;
@@ -1293,30 +1296,18 @@ namespace put
                                 if( controller.current_time < anim.channels[c].times[t] )
                                     break;
                             
+                            //loop
                             if( t >= num_frames )
-                                t = num_frames-1;
+                                t = 0;
 
                             mat4& mat = anim.channels[c].matrices[t];
                             
-                            //todo bake
-                            for( s32 b = 1; b < anim.num_channels+1; ++b )
-                            {
-                                if( scene->id_name[n+b] == anim.channels[c].target && scene->entities[n+b] & CMP_BONE )
-                                {
-                                    if( scene->entities[n+b] & CMP_ANIM_TRAJECTORY )
-                                    {
-                                        trajectory = mat;
-                                    }
-                                    
-                                    scene->local_matrices[n+b] = mat;
-                                    break;
-                                }
-                            }
+                            scene->local_matrices[n+c+joints_offset] = mat;
                             
                             if( controller.current_time > anim.length )
                             {
                                 apply_trajectory = true;
-                                controller.current_time = 0.0f;
+                                controller.current_time = +0.0f;
                             }
                         }
                     }
@@ -1668,7 +1659,59 @@ namespace put
             ImGui::End();
         }
         
-        void enumerate_scene_ui( entity_scene* scene, bool* open )
+        void build_scene_tree( entity_scene* scene, u32 start_node, scene_tree& tree_out )
+        {
+            //tree view
+            tree_out.node_index = -1;
+            
+            //todo this could be cached
+            for( s32 n = 0; n < scene->num_nodes; ++n )
+            {
+                scene_tree node;
+                node.node_name = scene->names[n].c_str();
+                node.node_index = n;
+                
+                if( scene->parents[n] == n )
+                {
+                    tree_out.children.push_back(node);
+                }
+                else
+                {
+                    std::vector<s32> heirarchy;
+                    
+                    u32 p = n;
+                    while( scene->parents[p] != p )
+                    {
+                        p = scene->parents[p];
+                        heirarchy.insert(heirarchy.begin(), p);
+                    }
+                    
+                    heirarchy.insert(heirarchy.begin(),-1);
+                    
+                    scene_tree_add_node( tree_out, node, heirarchy );
+                }
+            }
+        }
+        
+        void tree_to_node_index_list( const scene_tree& tree, std::vector<s32>& list_out )
+        {
+            list_out.push_back(tree.node_index);
+            
+            for( auto& child : tree.children )
+            {
+                tree_to_node_index_list( child, list_out );
+            }
+        }
+        
+        void build_joint_list( entity_scene* scene, u32 start_node, std::vector<s32>& list_out  )
+        {
+            scene_tree tree;
+            build_scene_tree( scene, start_node, tree );
+            
+            tree_to_node_index_list( tree, list_out );
+        }
+        
+        void scene_browser_ui( entity_scene* scene, bool* open )
         {
 #ifdef CES_DEBUG
             ImGui::Begin("Scene Browser", open );
@@ -1728,43 +1771,14 @@ namespace put
             }
             else
             {
-                //tree view
                 scene_tree tree;
-                tree.node_index = -1;
                 
-                //todo this could be cached
-                for( s32 n = 0; n < scene->num_nodes; ++n )
-                {
-                    scene_tree node;
-                    node.node_name = scene->names[n].c_str();
-                    node.node_index = n;
-                    
-                    if( scene->parents[n] == n )
-                    {
-                        tree.children.push_back(node);
-                    }
-                    else
-                    {
-                        std::vector<s32> heirarchy;
-                        
-                        u32 p = n;
-                        while( scene->parents[p] != p )
-                        {
-                            p = scene->parents[p];
-                            heirarchy.insert(heirarchy.begin(), p);
-                        }
-                        
-                        heirarchy.insert(heirarchy.begin(),-1);
-                        
-                        scene_tree_add_node( tree, node, heirarchy );
-                    }
-                }
+                build_scene_tree( scene, 0, tree );
                 
                 scene_tree_enumerate(tree, selected_index);
             }
             
             ImGui::EndChild();
-            //ImGui::SameLine();
             
             ImGui::NextColumn();
             
@@ -1803,79 +1817,114 @@ namespace put
                 }
                 ImGui::Separator();
                 
-                static bool open_anim_import = false;
-                
-                if( ImGui::CollapsingHeader("Animations") )
+                if( scene->geometries[selected_index].p_skin )
                 {
-                    auto& controller = scene->anim_controller[selected_index];
-                                      
-                    ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
+                    static bool open_anim_import = false;
                     
-                    if( ImGui::Button("Add Animation") )
-                        open_anim_import = true;
-                    
-                    if( ImGui::Button("Reset Root Motion") )
+                    if( ImGui::CollapsingHeader("Animations") )
                     {
-                        scene->local_matrices[selected_index].create_identity();
-                    }
-
-                    s32 num_anims = scene->anim_controller[selected_index].handles.size();
-                    for (s32 ih = 0; ih < num_anims; ++ih)
-                    {
-                        s32 h = scene->anim_controller[selected_index].handles[ih];
-                        auto& anim = k_animations[h];
-
-                        bool selected = false;
-                        ImGui::Selectable( anim.name.c_str(), &selected );
-
-                        if (selected)
-                            controller.current_animation = h;
-                    }
-
-                    if (is_valid( controller.current_animation ))
-                    {
-                        if (ImGui::InputInt( "Frame", &controller.current_frame ))
-                            controller.play_flags = 0;
-
-                        ImGui::SameLine();
-
-                        if (controller.play_flags == 0)
-                        {
-                            if (ImGui::Button( ICON_FA_PLAY ))
-                                controller.play_flags = 1;
-                        }
-                        else
-                        {
-                            if (ImGui::Button( ICON_FA_STOP ))
-                                controller.play_flags = 0;
-                        }
-                    }
-                    
-                    if( open_anim_import )
-                    {
-                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma" );
+                        auto& controller = scene->anim_controller[selected_index];
                         
-                        if(anim_import)
+                        ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
+                        
+                        if( ImGui::Button("Add Animation") )
+                            open_anim_import = true;
+                        
+                        if( ImGui::Button("Reset Root Motion") )
                         {
-                            anim_handle ah = load_pma(anim_import);
-                            
-                            if( is_valid(ah) )
+                            scene->local_matrices[selected_index].create_identity();
+                        }
+
+                        s32 num_anims = scene->anim_controller[selected_index].handles.size();
+                        for (s32 ih = 0; ih < num_anims; ++ih)
+                        {
+                            s32 h = scene->anim_controller[selected_index].handles[ih];
+                            auto& anim = k_animations[h];
+
+                            bool selected = false;
+                            ImGui::Selectable( anim.name.c_str(), &selected );
+
+                            if (selected)
+                                controller.current_animation = h;
+                        }
+
+                        if (is_valid( controller.current_animation ))
+                        {
+                            if (ImGui::InputInt( "Frame", &controller.current_frame ))
+                                controller.play_flags = 0;
+
+                            ImGui::SameLine();
+
+                            if (controller.play_flags == 0)
                             {
-                                scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
-                                
-                                bool exists = false;
-                                
-                                for( auto& h : controller.handles )
-                                    if( h == ah )
-                                        exists = true;
-                                
-                                if(!exists)
-                                    scene->anim_controller[selected_index].handles.push_back(ah);
+                                if (ImGui::Button( ICON_FA_PLAY ))
+                                    controller.play_flags = 1;
+                            }
+                            else
+                            {
+                                if (ImGui::Button( ICON_FA_STOP ))
+                                    controller.play_flags = 0;
                             }
                         }
-                    }
+                        
+                        if( open_anim_import )
+                        {
+                            const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma" );
+                            
+                            if(anim_import)
+                            {
+                                anim_handle ah = load_pma(anim_import);
+                                
+                                if( is_valid(ah) )
+                                {
+                                    //validate that the anim can fit the rig
+                                    std::vector<s32> joint_indices;
+                                    
+                                    build_joint_list( scene, selected_index, joint_indices );
+                                    
+                                    s32 channel_index = 0;
+                                    s32 joints_offset = -1; //scene tree has a -1 node
+                                    bool compatible = true;
+                                    for( s32 jj = 0; jj < joint_indices.size(); ++jj )
+                                    {
+                                        s32 jnode = joint_indices[jj];
                                         
-                    ImGui::Separator();
+                                        if( scene->entities[jnode] & CMP_BONE )
+                                        {
+                                            if( k_animations[ah].channels[channel_index].target != scene->id_name[jnode] )
+                                            {
+                                                compatible = false;
+                                                break;
+                                            }
+                                            
+                                            channel_index++;
+                                        }
+                                        else
+                                        {
+                                            joints_offset++;
+                                        }
+                                    }
+                                    
+                                    if( compatible )
+                                    {
+                                        scene->anim_controller[selected_index].joints_offset = joints_offset;
+                                        scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
+                                        
+                                        bool exists = false;
+                                        
+                                        for( auto& h : controller.handles )
+                                            if( h == ah )
+                                                exists = true;
+                                        
+                                        if(!exists)
+                                            scene->anim_controller[selected_index].handles.push_back(ah);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        ImGui::Separator();
+                    }
                 }
             }
             
