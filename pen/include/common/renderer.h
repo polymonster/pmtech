@@ -275,6 +275,7 @@ namespace pen
 	void	renderer_set_targets(u32 colour_target, u32 depth_target);
 	void	renderer_set_targets_cube(u32 colour_target, u32 colour_face, u32 depth_target, u32 depth_face );
 	void	renderer_set_so_target( u32 buffer_index );
+    void    renderer_resolve_target( u32 target );
 
 	//swap / present / vsync
 	void	renderer_present( );
@@ -356,6 +357,8 @@ namespace pen
 		u32		renderer_create_render_target(const texture_creation_params& tcp);
 		void	renderer_set_targets(u32 colour_target, u32 depth_target, u32 colour_face = 0, u32 depth_face = 0);
 		void	renderer_set_so_target(u32 buffer_index);
+        void    renderer_resolve_target( u32 target );
+
 
 		//swap / present / vsync
 		void	renderer_present();

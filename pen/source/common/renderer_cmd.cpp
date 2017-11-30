@@ -128,6 +128,7 @@ namespace pen
 		CMD_RELEASE_QUERY,
 		CMD_CREATE_SO_SHADER,
 		CMD_SET_SO_TARGET,
+        CMD_RESOLVE_TARGET,
 		CMD_DRAW_AUTO,
 	};
 
@@ -492,6 +493,10 @@ namespace pen
 		case CMD_SET_SO_TARGET:
 			direct::renderer_set_so_target(cmd.command_data_index);
 			break;
+
+        case CMD_RESOLVE_TARGET:
+            direct::renderer_resolve_target( cmd.command_data_index );
+            break;
 
 		case CMD_DRAW_AUTO:
 			direct::renderer_draw_auto();
@@ -1173,6 +1178,15 @@ namespace pen
 
 		INC_WRAP(put_pos);
 	}
+
+    void renderer_resolve_target( u32 target )
+    {
+        cmd_buffer[put_pos].command_index = CMD_RESOLVE_TARGET;
+
+        cmd_buffer[put_pos].command_data_index = target;
+
+        INC_WRAP( put_pos );
+    }
 
 	void renderer_draw_auto()
 	{

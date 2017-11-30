@@ -81,6 +81,8 @@ namespace pen
 
         texture2d_internal			tex_msaa;
         ID3D11RenderTargetView*		rt_msaa[NUM_CUBEMAP_FACES];
+
+        DXGI_FORMAT                 format;
 	};
 
 	struct depth_stencil_target_internal
@@ -90,6 +92,8 @@ namespace pen
 
         texture2d_internal			tex_msaa;
         ID3D11DepthStencilView*		ds_msaa[NUM_CUBEMAP_FACES];
+
+        DXGI_FORMAT                 format;
 	};
 
 	struct shader_program
@@ -205,9 +209,7 @@ namespace pen
                 colour_rtv = resource_pool[g_context.active_colour_target].render_target->rt_msaa[colour_face];
 
 			//clear colour
-			g_immediate_context->ClearRenderTargetView(
-                colour_rtv,
-				&resource_pool[ clear_state_index ].clear_state->rgba[ 0 ] );
+			g_immediate_context->ClearRenderTargetView( colour_rtv, &resource_pool[ clear_state_index ].clear_state->rgba[ 0 ] );
 		}
 
 		if ( resource_pool[ clear_state_index ].clear_state->flags | PEN_CLEAR_DEPTH_BUFFER && g_context.active_depth_target )
@@ -609,6 +611,9 @@ namespace pen
         resource_pool[resource_index].render_target = ( render_target_internal* )pen::memory_alloc( sizeof( render_target_internal ) );
         pen::memory_zero( resource_pool[resource_index].render_target, sizeof( render_target_internal ) );
 
+        //format required for resolve
+        resource_pool[resource_index].render_target->format = (DXGI_FORMAT)tcp.format;
+
         if (tcp.sample_count > 1)
         {
             //create msaa 
@@ -922,6 +927,13 @@ namespace pen
 			g_immediate_context->SOSetTargets( 1, buffers, offsets );
 		}
 	}
+
+    void direct::renderer_resolve_target( u32 target )
+    {
+        render_target_internal* rti = resource_pool[target].render_target;
+
+        g_immediate_context->ResolveSubresource( rti->tex.texture, 0, rti->tex_msaa.texture, 0, rti->format );
+    }
 
 	void direct::renderer_create_so_shader( const pen::shader_load_params &params )
 	{

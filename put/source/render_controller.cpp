@@ -481,6 +481,9 @@ namespace put
                         if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
                             continue;
 
+                        if( rt.format != PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
+                            pen::renderer_resolve_target( rt.handle );
+
                         f32 w, h;
                         get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
                         
