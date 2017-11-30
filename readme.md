@@ -41,7 +41,7 @@ Tool scripts written in python and some executables are used to build data:
 Run the build.py script in pmtech/examples to see how to build code projects and data 
 on osx you can run ./travis.sh which will genereate GNU make files and compile from the command line.
 
-**examples** 
+**examples**   
 This solution / workspace contains multiple examples of how to use the API's and set up projects, I have been using them to aid porting, starting with a simple windowed application using minimal dependencies, samples introduce more dependancies as they go along, this would also be an ideal place to add some unit tests and continously test functionality of the engine.
 
 - empty_project - First port of call to get a platform compiling, it creates an empty window with no rendering context.
