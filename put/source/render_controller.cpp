@@ -224,7 +224,7 @@ namespace put
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
                         
                         //msaa
-                        tcp.sample_count = 4;
+                        tcp.sample_count = 1;
                         tcp.sample_quality = 0;
                         
                         new_info.handle = pen::renderer_create_render_target( tcp );
@@ -474,6 +474,9 @@ namespace put
             {
                 ImGui::Begin("Render Controller", &open_renderer );
                 
+                static s32 display_ratio = 4;
+                ImGui::InputInt("Buffer Ratio", &display_ratio);
+                
                 if( ImGui::CollapsingHeader("Render Targets") )
                 {
                     for( auto& rt : k_render_targets )
@@ -487,7 +490,7 @@ namespace put
                         f32 w, h;
                         get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
                         
-                        ImGui::Image((void*)&rt.handle, ImVec2(w / 4, h / 4));
+                        ImGui::Image((void*)&rt.handle, ImVec2(w / display_ratio, h / display_ratio));
                         
                         ImGui::Text("%i, %i", (s32)h, (s32)w );
                     }

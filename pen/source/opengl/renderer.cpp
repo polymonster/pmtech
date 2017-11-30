@@ -122,6 +122,8 @@ namespace pen
     struct render_target
     {
         texture_info texture;
+        texture_info texture_msaa;
+        GLuint w, h;
     };
     
     struct framebuffer
@@ -133,7 +135,8 @@ namespace pen
     enum resource_type : s32
     {
         RES_TEXTURE = 0,
-        RES_RENDER_TARGET
+        RES_RENDER_TARGET,
+        RES_RENDER_TARGET_MSAA
     };
     
 #define INVALID_LOC 255
@@ -431,12 +434,6 @@ namespace pen
         return resource_index;
     }
     
-    void direct::renderer_resolve_target( u32 target )
-    {
-        
-    }
-    
-    
     void direct::renderer_set_so_target( u32 buffer_index )
     {
         
@@ -714,13 +711,20 @@ namespace pen
         u32 mip_h = tcp.height;
         c8* mip_data = (c8*)tcp.data;
         
+        bool is_msaa = tcp.sample_count > 1;
+        
+        u32 texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+        
         GLuint handle;
         glGenTextures( 1, &handle);
-        glBindTexture( GL_TEXTURE_2D, handle );
+        glBindTexture( texture_target, handle );
         
         for( u32 mip = 0; mip < tcp.num_mips; ++mip )
         {
-            glTexImage2D(GL_TEXTURE_2D, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
+            if( is_msaa )
+                glTexImage2DMultisample( texture_target, tcp.sample_count, sized_format, mip_w, mip_h, GL_TRUE );
+            else
+                glTexImage2D(GL_TEXTURE_2D, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
             
             mip_data += calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
             
@@ -728,7 +732,7 @@ namespace pen
             mip_h /= 2;
         }
         
-        glBindTexture(GL_TEXTURE_2D, 0 );
+        glBindTexture(texture_target, 0 );
         
         texture_info ti;
         ti.handle = handle;
@@ -749,8 +753,21 @@ namespace pen
         resource_allocation& res = resource_pool[ resource_index ];
         
         res.type = RES_RENDER_TARGET;
+        res.render_target.w = tcp.width;
+        res.render_target.h = tcp.height;
         
-        res.render_target.texture = create_texture_internal(tcp);
+        if( tcp.sample_count > 1 )
+        {
+            res.type = RES_RENDER_TARGET_MSAA;
+            
+            res.render_target.texture_msaa = create_texture_internal(tcp);
+        }
+        
+        //non-msaa / resolve surface
+        texture_creation_params tcp_no_msaa = tcp;
+        tcp_no_msaa.sample_count = 1;
+        
+        res.render_target.texture = create_texture_internal(tcp_no_msaa);
         
         return resource_index;
 	}
@@ -766,9 +783,14 @@ namespace pen
             GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
             glDrawBuffers(1, DrawBuffers);
             
+            resource_allocation& colour_res = resource_pool[ colour_target ];
+            resource_allocation& depth_res = resource_pool[ depth_target ];
+            
             hash_murmur hh;
             hh.add(colour_target);
+            hh.add(colour_res.handle);
             hh.add(depth_target);
+            hh.add(depth_res.handle);
             hh.add(colour_face);
             hh.add(depth_face);
             
@@ -785,23 +807,30 @@ namespace pen
                 }
             }
             
+            bool msaa = resource_pool[ colour_target ].type == RES_RENDER_TARGET_MSAA;
+            
             if(!found)
             {
-                resource_allocation& colour_res = resource_pool[ colour_target ];
-                
                 GLuint fbh;
                 
                 glGenFramebuffers(1, &fbh);
                 glBindFramebuffer(GL_FRAMEBUFFER, fbh);
                 
-                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
-                
+                if( msaa )
+                    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 );
+                else
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
                 
                 if( depth_target != 0 )
                 {
-                    resource_allocation& depth_res = resource_pool[ depth_target ];
-                    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0);
+                    if( msaa )
+                        glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_res.render_target.texture_msaa.handle, 0 );
+                    else
+                        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0);
                 }
+                
+                GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+                PEN_ASSERT( status == GL_FRAMEBUFFER_COMPLETE );
                 
                 framebuffer new_fb;
                 new_fb.hash = h;
@@ -811,6 +840,56 @@ namespace pen
             }
         }
 	}
+    
+    void direct::renderer_resolve_target( u32 target )
+    {
+        resource_allocation& colour_res = resource_pool[ target ];
+        
+        hash_id h[2] = { 0, 0 };
+        
+        hash_murmur hh;
+        hh.add(target);
+        hh.add(colour_res.render_target.texture_msaa.handle);
+        hh.add(1);
+        h[0] = hh.end();
+        
+        hh.begin();
+        hh.add(target);
+        hh.add(colour_res.render_target.texture.handle);
+        hh.add(1);
+        h[1] = hh.end();
+        
+        GLuint fbos[2] = { 0, 0 };
+        for( auto& fb : k_framebuffers )
+        {
+            for( s32 i = 0; i < 2; ++i )
+            {
+                if( fb.hash == h[i] )
+                {
+                    fbos[i] = fb.framebuffer;
+                }
+            }
+        }
+        
+        for( s32 i = 0; i < 2; ++i )
+        {
+            if( fbos[i] == 0 )
+            {
+                glGenFramebuffers(1, &fbos[i]);
+                glBindFramebuffer(GL_FRAMEBUFFER, fbos[i]);
+                
+                if( i == 0 ) //src msaa
+                    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 );
+                else
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
+            }
+        }
+        
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[1] );
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos[0] );
+        
+        glBlitFramebuffer(0, 0, colour_res.render_target.w, colour_res.render_target.h, 0, 0, colour_res.render_target.w, colour_res.render_target.h, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+    }
 
 	u32 direct::renderer_create_texture(const texture_creation_params& tcp)
 	{
