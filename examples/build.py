@@ -39,6 +39,7 @@ textures_script = os.path.join(tools_dir, "build_textures.py")
 audio_script = os.path.join(tools_dir, "build_audio.py")
 models_script = os.path.join(tools_dir, "build_models.py")
 
+clean_destinations = False
 
 def display_help():
     print("--------pmtech build--------")
@@ -46,6 +47,7 @@ def display_help():
     print("commandline arguments")
     print("\t-platform <osx, win32, ios>")
     print("\t-ide <xcode4, vs2015, v2017>")
+    print("\t-clean <clean destination directory>")
     print("\t-renderer <dx11, opengl>")
     print("\t-actions")
     for i in range(0, len(action_strings)):
@@ -56,6 +58,7 @@ def parse_args(args):
     global ide
     global renderer
     global platform
+    global clean_destinations
     for index in range(0, len(sys.argv)):
         if sys.argv[index] == "-help":
             display_help()
@@ -74,6 +77,8 @@ def parse_args(args):
                     execute_actions.append(sys.argv[j])
                 else:
                     break
+        elif sys.argv[index] == "-clean":
+            clean_destinations = True
 
 
 def get_platform_info():
@@ -161,6 +166,16 @@ copy_steps = []
 
 for action in execute_actions:
     if action == "code":
+        if clean_destinations:
+            pen_build = os.path.join("..", "pen", "build", platform)
+            put_build = os.path.join("..", "put", "build", platform)
+            proj_build =  os.path.join("build", platform)
+            if os.path.exists(pen_build):
+                shutil.rmtree(pen_build)
+            if os.path.exists(put_build):
+                shutil.rmtree(put_build)
+            if os.path.exists(proj_build):
+                shutil.rmtree(proj_build)
         build_steps.append(premake_exec + " " + project_options)
     elif action == "shaders":
         build_steps.append(python_exec + " " + shader_script + " " + shader_options)
