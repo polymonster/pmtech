@@ -16,7 +16,7 @@ Renderer, Window, Audio, Memory, Timers, File System, Threads.
 This project contains toolkit code that will be re-used across different projects but contains no platform specific code:
 - Model, Texture and Shader loading.
 - Dev UI, Maths Library, Async Physics command buffer API.
-- JSON - Simple c json parser greate for config and data files. 
+- JSON - Simple c json parser great for config and data files. 
 - PMFX - generic shader language with GPU state specification for setting blend, depth, stencil, raster and other GPU state.
 - Render Controller - Scriptable renderer to define render passes and GPU state from in a JSON config.
 - Component Entity Scene - Data-Oriented scene written in c+, handling mesh rendering, skeletal animation and scene heirarchies.
