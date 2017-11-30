@@ -3,6 +3,12 @@
 
 #include "definitions.h"
 
+#ifdef _WIN32
+#define BAD_ALLOC 
+#else
+#define BAD_ALLOC std::bad_alloc
+#endif
+
 namespace pen
 {
 	//c 
@@ -16,7 +22,7 @@ namespace pen
 	void	memory_zero( void* dest, u32 size_bytes );
 }
 
-void*	operator new(size_t n);
-void	operator delete(void *p);
+void*	operator new(size_t n) throw(BAD_ALLOC);
+void	operator delete(void *p) throw();
 
 #endif

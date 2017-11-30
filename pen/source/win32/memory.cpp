@@ -45,12 +45,12 @@ namespace pen
 	}
 }
 
-void*	operator new(u32 n)
+void*	operator new(u32 n) throw()
 {
 	return pen::memory_alloc( n );
 }
 
-void	operator delete(void *p)
+void	operator delete(void *p) throw()
 {
 	pen::memory_free( p );
 }
