@@ -1,4 +1,4 @@
-# Welcome to pmtech! [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/github/polymonster/pmtech?branch=master&svg=true&passingText=win32)](https://ci.appveyor.com/project/polymonster/pmtech)
+# Welcome to pmtech! [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master&passingText=osx&failingText=osx&pendingText=osx)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/github/polymonster/pmtech?branch=master&svg=true&passingText=win32)](https://ci.appveyor.com/project/polymonster/pmtech)
 
 [Follow Project work in progress on Trello](https://trello.com/b/ciujzpUT)  
 
