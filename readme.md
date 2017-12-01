@@ -1,4 +1,9 @@
-# Welcome to pmtech! [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech)  
+# Welcome to pmtech! 
+
+osx [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech)  
+
+win32 [https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true](https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true)
+
 [Follow Project work in progress on Trello](https://trello.com/b/ciujzpUT)  
 
 A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios with opengl 3 and directx 11 renderers with metal, directx 12 and more in the pipeline.
