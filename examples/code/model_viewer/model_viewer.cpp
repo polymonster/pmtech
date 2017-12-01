@@ -14,6 +14,7 @@
 #include "pen_json.h"
 #include "hash.h"
 #include "str_utilities.h"
+#include "input.h"
 
 pen::window_creation_params pen_window
 {
@@ -73,6 +74,7 @@ void update_model_viewer_scene(put::scene_controller* sc)
     static bool open_resource_menu = false;
     static bool dev_open = false;
     static bool set_project_dir = false;
+    static bool picking_mode = false;
     static Str project_dir_str = dev_ui::get_program_preference("project_dir").as_str();
     
     ImGui::BeginMainMenuBar();
@@ -118,6 +120,11 @@ void update_model_viewer_scene(put::scene_controller* sc)
     if (ImGui::Button(ICON_FA_CUBES))
     {
         open_resource_menu = true;
+    }
+    
+    if (ImGui::Button(ICON_FA_MOUSE_POINTER))
+    {
+        picking_mode = true;
     }
     
     ImGui::EndMainMenuBar();
@@ -191,6 +198,49 @@ void update_model_viewer_scene(put::scene_controller* sc)
                 debug_show_icons();
             }
             
+            ImGui::End();
+        }
+    }
+    
+    static bool picking_debug = false;
+    static u8 pick_res[4];
+    
+    if( picking_mode )
+    {
+        static u32 picking_state = 0;
+        
+        if( picking_state == 1 )
+        {
+            if( put::render_controller::get_picking_result(pick_res) )
+            {
+                picking_state = 0;
+                picking_debug = true;
+            }
+        }
+        else
+        {
+            if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
+            {
+                pen::mouse_state ms = pen::input_get_mouse_state();
+                
+                if (ms.buttons[PEN_MOUSE_L])
+                {
+                    put::render_controller::perform_picking(ms.x, ms.y);
+                    picking_state = 1;
+                }
+            }
+        }
+    }
+    
+    if( picking_debug )
+    {
+        if( ImGui::Begin("picking") )
+        {
+            f32 col[4];
+            for( s32 i = 0; i < 4; ++i )
+                col[i] = (f32)pick_res[i] / (255.0f);
+            
+            ImGui::ColorEdit4("pick result", col );
             ImGui::End();
         }
     }
