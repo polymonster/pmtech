@@ -68,8 +68,24 @@ typedef std::atomic<uint64_t> a_u64;
 //--------------------------------------------------------------------------------------
 // Print / Assert 
 //--------------------------------------------------------------------------------------
-#define	PEN_PRINT_CHAR_LIMIT	2048
-#define PEN_PRINTF				pen::string_output_debug
+#define	PEN_PRINT_CHAR_LIMIT 4096
+inline void output_debug( const c8* format, ... )
+{
+#ifdef _WIN32
+
+#else
+    va_list va;
+    va_start( va, format );
+    
+    static c8 buf[ PEN_PRINT_CHAR_LIMIT ];
+    vsnprintf( buf, PEN_PRINT_CHAR_LIMIT, format, va );
+    
+    va_end( va );
+    
+    printf( "%s\n", buf );
+#endif
+}
+#define PEN_PRINTF				output_debug
 #define PEN_ASSERT				assert
 #define PEN_ERR					assert( 0 ) 
 

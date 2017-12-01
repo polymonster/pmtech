@@ -51,6 +51,11 @@ namespace pen
 	{
 		renderer_resource_status[i] |= MARK_DELETE;
 	}
+    
+    void renderer_realloc_resource(u32 i, u32 domain)
+    {
+        renderer_resource_status[i] &= !domain;
+    }
 
 	u32 renderer_get_next_resource_index(u32 domain)
 	{
@@ -130,6 +135,7 @@ namespace pen
 		CMD_SET_SO_TARGET,
         CMD_RESOLVE_TARGET,
 		CMD_DRAW_AUTO,
+        CMD_MAP_RESOURCE,
 	};
 
 	struct set_shader_cmd
@@ -232,7 +238,7 @@ namespace pen
 		u32 query_type;
 		u32 query_flags;
 	};
-
+    
 	typedef struct  deferred_cmd
 	{
 		u32		command_index;
@@ -265,6 +271,7 @@ namespace pen
 			set_target_cube_cmd                 set_targets_cube;
 			clear_cube_cmd                      clear_cube;
 			shader_link_params                  link_params;
+            resource_read_back_params           rrb_params;
 		};
 
 		deferred_cmd() {};
@@ -501,6 +508,10 @@ namespace pen
 		case CMD_DRAW_AUTO:
 			direct::renderer_draw_auto();
 			break;
+                
+        case CMD_MAP_RESOURCE:
+            direct::renderer_read_back_resource( cmd.rrb_params );
+            break;
 		}
 	}
 
@@ -1194,5 +1205,14 @@ namespace pen
 
 		INC_WRAP(put_pos);
 	}
+    
+    void renderer_read_back_resource( const resource_read_back_params& rrbp )
+    {
+        cmd_buffer[put_pos].command_index = CMD_MAP_RESOURCE;
+        
+        cmd_buffer[put_pos].rrb_params = rrbp;
+        
+        INC_WRAP(put_pos);
+    }
 }
 

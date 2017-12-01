@@ -19,7 +19,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     for( ;; )
     {
-        pen::string_output_debug("oh hai ö\n");
+        PEN_PRINTF("oh hai ö\n");
                 
         pen::threads_sleep_us(16000);
         

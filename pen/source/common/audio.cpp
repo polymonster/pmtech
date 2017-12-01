@@ -1,4 +1,5 @@
 #include "audio.h"
+#include "memory.h"
 #include "pen.h"
 #include "fmod.hpp"
 #include <math.h>

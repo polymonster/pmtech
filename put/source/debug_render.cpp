@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "input.h"
 #include "memory.h"
+#include "pen_string.h"
 #include "stb_easy_font.h"
 #include "pen.h"
 

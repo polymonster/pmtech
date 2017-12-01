@@ -1,4 +1,6 @@
 #include "pen.h"
+#include "threads.h"
+#include "memory.h"
 #include "renderer.h"
 #include "timer.h"
 #include "file_system.h"

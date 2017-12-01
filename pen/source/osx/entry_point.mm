@@ -15,6 +15,8 @@ NSOpenGLContext* _gl_context;
 NSOpenGLPixelFormat* _pixel_format;
 
 extern pen::window_creation_params pen_window;
+extern a_u8 g_window_resize;
+
 pen::user_info pen_user_info;
 
 extern PEN_THREAD_RETURN pen::game_entry( void* params );
@@ -551,6 +553,7 @@ namespace pen
 
 - (void)windowDidResize:(NSNotification*)notification
 {
+    g_window_resize = true;
     pen_window_resize();
 }
 

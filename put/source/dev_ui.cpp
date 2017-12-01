@@ -1,4 +1,6 @@
 #include "pen.h"
+#include "pen_string.h"
+#include "memory.h"
 #include "dev_ui.h"
 #include "file_system.h"
 #include "pen_json.h"

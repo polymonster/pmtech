@@ -80,17 +80,4 @@ namespace pen
 	{
 		return wcslen( string );
 	}
-
-	void string_output_debug( const c8* format, ... )
-	{
-		va_list va;
-		va_start( va, format );
-
-		c8 buf[ PEN_PRINT_CHAR_LIMIT ];
-		vsnprintf( buf, PEN_PRINT_CHAR_LIMIT, format, va );
-
-		va_end( va );
-
-        printf( "%s\n", buf );
-	}
 }

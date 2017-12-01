@@ -13,8 +13,8 @@ namespace put
 {    
     namespace render_controller
     {
-        std::vector<scene_controller> k_scenes;
-        std::vector<camera_controller> k_cameras;
+        static std::vector<scene_controller> k_scenes;
+        static std::vector<camera_controller> k_cameras;
         
         void register_scene( const scene_controller& scene )
         {
@@ -48,7 +48,7 @@ namespace put
         
         Str rt_ratio[] =
         {
-            "none"
+            "none",
             "equal",
             "half",
             "quater",
@@ -85,12 +85,14 @@ namespace put
             f32     ratio = 0;
             
             s32     num_mips;
-            s32     format;
+            u32     format;
             u32     handle;
+            bool    msaa = false;
         };
         
-        hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
-        hash_id ID_MAIN_DEPTH = PEN_HASH("main_depth");
+        static hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
+        static hash_id ID_MAIN_DEPTH = PEN_HASH("main_depth");
+        static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
         
         struct view_params
         {
@@ -197,7 +199,13 @@ namespace put
                             
                             for( s32 rr = 0; rr < num_ratios; ++rr )
                                 if( rt_ratio[rr] == ratio_str )
+                                {
+                                    new_info.width = PEN_BACK_BUFFER_RATIO;
+                                    new_info.height = rr;
+                                    
                                     new_info.ratio = 1.0f / (f32)rr;
+                                    break;
+                                }
                         }
                         
                         new_info.num_mips = calc_num_mips(new_info.width, new_info.height);
@@ -213,19 +221,19 @@ namespace put
                         tcp.usage = PEN_USAGE_DEFAULT;
                         tcp.flags = 0;
                         
-                        //todo
-                        
                         //arays and mips
-                        tcp.num_arrays = 1;
-                        tcp.num_mips = 1; //new_info.num_mips;
+                        tcp.num_arrays = r["num_arrays"].as_u32(1);
+                        tcp.num_mips = r["num_mips"].as_u32(1);
                         
                         //flags
                         tcp.cpu_access_flags = 0;
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
                         
                         //msaa
-                        tcp.sample_count = 1;
+                        tcp.sample_count = r["samples"].as_u32(1);
                         tcp.sample_quality = 0;
+                        
+                        new_info.msaa = tcp.sample_count > 1;
                         
                         new_info.handle = pen::renderer_create_render_target( tcp );
                     }
@@ -458,6 +466,70 @@ namespace put
             }
         }
         
+        struct picking_info
+        {
+            c8 result[4];
+            a_u8 ready;
+            u32 offset = 0;
+        };
+        static picking_info k_picking_info;
+        
+        void picking_read_back( void* p_data )
+        {
+            u8* val = ((u8*)p_data) + k_picking_info.offset;
+            
+            for(s32 i = 0; i < 4; ++i)
+                k_picking_info.result[i] = val[i];
+            
+            k_picking_info.ready = 1;
+            
+            delete[] (c8*)p_data;
+        }
+        
+        bool get_picking_result( u8* result )
+        {
+            if( k_picking_info.ready )
+            {
+                for(s32 i = 0; i < 4; ++i)
+                    result[i] = k_picking_info.result[i];
+                
+                return true;
+            }
+            
+            return false;
+        }
+        
+        void perform_picking( u32 x, u32 y )
+        {
+            for( auto& rt : k_render_targets )
+            {
+                if( rt.id_name == ID_PICKING_BUFFER )
+                {
+                    f32 w, h;
+                    
+                    get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
+                    
+                    u32 pitch = (u32)w*4;
+                    u32 data_size = (u32)h*pitch;
+                    c8* p_data = new c8[data_size];
+                    
+                    pen::resource_read_back_params rrbp =
+                    {
+                        rt.handle,
+                        (void*)p_data,
+                        rt.format,
+                        data_size,
+                        &picking_read_back
+                    };
+                    
+                    pen::renderer_read_back_resource( rrbp );
+                    
+                    k_picking_info.ready = 0;
+                    k_picking_info.offset = y * pitch + x * 4;
+                }
+            }
+        }
+        
         void show_dev_ui()
         {
             ImGui::BeginMainMenuBar();
@@ -483,9 +555,11 @@ namespace put
                     {
                         if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
                             continue;
-
-                        if( rt.format != PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
-                            pen::renderer_resolve_target( rt.handle );
+                        
+                        if( rt.msaa )
+                        {
+                            pen::renderer_resolve_target(rt.handle);
+                        }
 
                         f32 w, h;
                         get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);

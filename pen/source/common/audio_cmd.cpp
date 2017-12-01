@@ -1,5 +1,7 @@
 #include "audio.h"
+#include "memory.h"
 #include "threads.h"
+#include "pen_string.h"
 #include "fmod.hpp"
 #include <math.h>
 

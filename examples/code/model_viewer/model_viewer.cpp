@@ -223,7 +223,7 @@ void update_model_viewer_scene(put::scene_controller* sc)
             {
                 pen::mouse_state ms = pen::input_get_mouse_state();
                 
-                if (ms.buttons[PEN_MOUSE_L])
+                if (ms.buttons[PEN_MOUSE_L] && pen::mouse_coords_valid( ms.x, ms.y ) )
                 {
                     put::render_controller::perform_picking(ms.x, ms.y);
                     picking_state = 1;

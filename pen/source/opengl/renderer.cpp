@@ -17,6 +17,9 @@ extern pen::window_creation_params pen_window;
 
 extern void pen_make_gl_context_current( );
 extern void pen_gl_swap_buffers( );
+extern void pen_window_resize( );
+
+a_u8 g_window_resize( 0 );
 
 void gl_error_break( GLenum err )
 {
@@ -124,6 +127,7 @@ namespace pen
         texture_info texture;
         texture_info texture_msaa;
         GLuint w, h;
+        u32 uid;
     };
     
     struct framebuffer
@@ -131,6 +135,7 @@ namespace pen
         hash_id hash;
         GLuint  framebuffer;
     };
+    static std::vector<framebuffer> k_framebuffers;
     
     enum resource_type : s32
     {
@@ -149,9 +154,14 @@ namespace pen
         u8 uniform_block_location[MAX_UNIFORM_BUFFERS];
         u8 texture_location[MAX_UNIFORM_BUFFERS];
     };
+    static std::vector<shader_program> k_shader_programs;
     
-    std::vector<shader_program> shader_programs;
-    std::vector<framebuffer> k_framebuffers;
+    struct managed_render_target
+    {
+        texture_creation_params tcp;
+        u32 render_target_handle;
+    };
+    static std::vector<managed_render_target> k_managed_render_targets;
     
 	struct resource_allocation
 	{
@@ -271,7 +281,7 @@ namespace pen
             glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]);
             info_log_buf[info_log_length] = '\0';
             
-            pen::string_output_debug(info_log_buf);
+            PEN_PRINTF(info_log_buf);
         }
         
         shader_program program;
@@ -285,11 +295,11 @@ namespace pen
             program.uniform_block_location[ i ] = INVALID_LOC;
         }
         
-        shader_programs.push_back(program);
+        k_shader_programs.push_back(program);
         
         CHECK_GL_ERROR;
         
-        return &shader_programs.back();
+        return &k_shader_programs.back();
     }
 
 	//--------------------------------------------------------------------------------------
@@ -312,7 +322,28 @@ namespace pen
 	void direct::renderer_present( )
 	{
         pen_gl_swap_buffers();
+
+        if( g_window_resize )
+        {
+            renderer_resize_managed_targets( );
+            
+            g_window_resize = 0;
+        }
 	}
+    
+    void direct::renderer_resize_managed_targets( )
+    {
+        for( auto& managed_rt : k_managed_render_targets )
+        {
+            resource_allocation& res = resource_pool[ managed_rt.render_target_handle ];
+            glDeleteTextures( 1, &res.render_target.texture.handle );
+            glDeleteFramebuffers( 1, &res.render_target.texture.handle );
+            
+            renderer_realloc_resource(managed_rt.render_target_handle, DIRECT_RESOURCE);
+            
+            direct::renderer_create_render_target(managed_rt.tcp);
+        }
+    }
 
 	void direct::renderer_create_query( u32 query_type, u32 flags )
 	{
@@ -348,7 +379,7 @@ namespace pen
             
             glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]);
             
-            pen::string_output_debug(info_log_buf);
+            PEN_PRINTF(info_log_buf);
         }
 
         CHECK_GL_ERROR;
@@ -505,11 +536,11 @@ namespace pen
             auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
             auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
             
-            for( s32 i = 0; i < shader_programs.size(); ++i )
+            for( s32 i = 0; i < k_shader_programs.size(); ++i )
             {
-                if( shader_programs[i].vs == vs_handle && shader_programs[i].ps == ps_handle )
+                if( k_shader_programs[i].vs == vs_handle && k_shader_programs[i].ps == ps_handle )
                 {
-                    linked_program = &shader_programs[i];
+                    linked_program = &k_shader_programs[i];
                     break;
                 }
             }
@@ -746,25 +777,41 @@ namespace pen
         return ti;
     }
 
-	u32 direct::renderer_create_render_target(const texture_creation_params& tcp)
+	u32 direct::renderer_create_render_target(const texture_creation_params& tcp )
 	{
 		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE);
         
         resource_allocation& res = resource_pool[ resource_index ];
         
         res.type = RES_RENDER_TARGET;
-        res.render_target.w = tcp.width;
-        res.render_target.h = tcp.height;
+        
+        texture_creation_params _tcp = tcp;
+        
+        res.render_target.uid = (u32)timer_get_time();
+        
+        if( tcp.width == PEN_BACK_BUFFER_RATIO )
+        {
+            _tcp.width = pen_window.width / tcp.height;
+            _tcp.height = pen_window.height / tcp.height;
+            
+            bool exists = false;
+            for( auto& managed_rt : k_managed_render_targets )
+                if( managed_rt.render_target_handle == resource_index )
+                    exists = true;
+            
+            if(!exists)
+                k_managed_render_targets.push_back({tcp, resource_index});
+        }
         
         if( tcp.sample_count > 1 )
         {
             res.type = RES_RENDER_TARGET_MSAA;
             
-            res.render_target.texture_msaa = create_texture_internal(tcp);
+            res.render_target.texture_msaa = create_texture_internal(_tcp);
         }
         
         //non-msaa / resolve surface
-        texture_creation_params tcp_no_msaa = tcp;
+        texture_creation_params tcp_no_msaa = _tcp;
         tcp_no_msaa.sample_count = 1;
         
         res.render_target.texture = create_texture_internal(tcp_no_msaa);
@@ -787,13 +834,11 @@ namespace pen
             resource_allocation& depth_res = resource_pool[ depth_target ];
             
             hash_murmur hh;
-            hh.add(colour_target);
-            hh.add(colour_res.handle);
-            hh.add(depth_target);
-            hh.add(depth_res.handle);
+            hh.begin();
+            hh.add(colour_res.render_target.uid);
+            hh.add(depth_res.render_target.uid);
             hh.add(colour_face);
             hh.add(depth_face);
-            
             hash_id h = hh.end();
             
             bool found = false;
@@ -1100,6 +1145,36 @@ namespace pen
         
         glBindBuffer( res.type, 0 );
 	}
+    
+    void direct::renderer_read_back_resource( const resource_read_back_params& rrbp )
+    {
+        resource_allocation& res = resource_pool[ rrbp.resource_index ];
+        
+        GLuint t = res.type;
+        if( t == RES_TEXTURE || t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA )
+        {
+            u32 sized_format, format, type;
+            get_texture_format( rrbp.format, sized_format, format, type );
+            
+            s32 target_handle = res.texture.handle ;
+            if( t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA )
+                target_handle = res.render_target.texture.handle;
+
+            glBindTexture( GL_TEXTURE_2D, res.texture.handle );
+            glGetTexImage( GL_TEXTURE_2D, 0, format, type, rrbp.p_data );
+        }
+        else if( t == GL_ELEMENT_ARRAY_BUFFER || t == GL_UNIFORM_BUFFER || t == GL_ARRAY_BUFFER )
+        {
+            glBindBuffer(t, res.handle );
+            void* map = glMapBuffer(t, GL_READ_ONLY);
+            
+            pen::memory_cpy(rrbp.p_data, map, rrbp.data_size);
+            
+            glUnmapBuffer(t);
+        }
+        
+        rrbp.call_back_function( rrbp.p_data );
+    }
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
 	{

@@ -1,9 +1,11 @@
 #ifndef _input_h
 #define _input_h
 
-#include "definitions.h"
+#include "pen.h"
 
 #define PENK_ARRAY_SIZE     512
+
+extern pen::window_creation_params pen_window;
 
 namespace pen
 {
@@ -40,9 +42,15 @@ namespace pen
 	void				input_set_cursor_pos( u32 client_x, u32 client_y );
 	void				input_show_cursor( bool show );
     
+    bool                mouse_coords_valid( u32 x, u32 y );
+    
     const c8*           input_get_key_str( u32 key_index );
 
-	//Gamepads
+	//inline
+    inline bool         mouse_coords_valid( u32 x, u32 y )
+    {
+        return x < pen_window.width && y < pen_window.height;
+    }
 }
 
 #define INPUT_PKEY_PRESS( key_index ) pen::input_is_key_pressed( key_index )

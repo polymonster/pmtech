@@ -12,6 +12,8 @@ enum special_values
     PEN_SHADER_NULL             =   0xffffff
 };
 
+#define PEN_BACK_BUFFER_RATIO (u32)-1
+
 namespace pen
 {
 	//--------------------------------------------------------------------------------------
@@ -97,7 +99,7 @@ namespace pen
         constant_layout_desc* constants;
         u32 num_constants;
     };
-
+    
 	struct texture_creation_params
 	{
 		u32		width;
@@ -201,8 +203,16 @@ namespace pen
 		s32						independent_blend_enable;
 		u32						num_render_targets;
 		render_target_blend*	render_targets;
-	
 	};
+    
+    struct resource_read_back_params
+    {
+        u32 resource_index;
+        void* p_data;
+        u32 format;
+        u32 data_size;
+        void(*call_back_function)(void*);
+    };
 
 	//--------------------------------------------------------------------------------------
 	//  COMMON FUNCTIONS
@@ -217,7 +227,9 @@ namespace pen
 
 	//resource management
 	void renderer_reclaim_resource_indices();
-	void renderer_mark_resource_deleted(u32 i);
+    void renderer_realloc_resource(u32 i, u32 domain);
+    
+    void renderer_mark_resource_deleted(u32 i);
 	u32 renderer_get_next_resource_index(u32 domain);
 
 	//--------------------------------------------------------------------------------------
@@ -277,6 +289,9 @@ namespace pen
 	void	renderer_set_so_target( u32 buffer_index );
     void    renderer_resolve_target( u32 target );
 
+    //resource
+    void    renderer_read_back_resource( const resource_read_back_params& rrbp );
+    
 	//swap / present / vsync
 	void	renderer_present( );
 	u32		renderer_create_query( u32 query_type, u32 flags );
@@ -328,7 +343,7 @@ namespace pen
 		void	renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
 		void	renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type);
 		void	renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset);
-
+        
 		//textures
 		u32		renderer_create_texture(const texture_creation_params& tcp);
 		u32		renderer_create_sampler(const sampler_creation_params& scp);
@@ -358,7 +373,10 @@ namespace pen
 		void	renderer_set_targets(u32 colour_target, u32 depth_target, u32 colour_face = 0, u32 depth_face = 0);
 		void	renderer_set_so_target(u32 buffer_index);
         void    renderer_resolve_target( u32 target );
-
+        void    renderer_resize_managed_targets( );
+        
+        //resource
+        void    renderer_read_back_resource( const resource_read_back_params& rrbp );
 
 		//swap / present / vsync
 		void	renderer_present();

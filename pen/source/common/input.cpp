@@ -64,7 +64,7 @@ namespace pen
 	{
 		return mouse_state_;
 	}
-
+    
 	bool input_is_mouse_pressed( u32 button_index )
 	{
 		return mouse_state_.buttons[ button_index ] == KEY_PRESS;

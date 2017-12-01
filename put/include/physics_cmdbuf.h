@@ -2,6 +2,7 @@
 #define _phyiscs_cmdbuf_h
 
 #include "threads.h"
+#include "memory.h"
 #include "put_math.h"
 
 namespace physics

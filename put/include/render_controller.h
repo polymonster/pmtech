@@ -35,6 +35,9 @@ namespace put
         void update( );
         void render( );
         
+        void perform_picking( u32 x, u32 y );
+        bool get_picking_result( u8* result );
+        
         void register_scene( const scene_controller& scene );
         void register_camera( const camera_controller& cam );
         
