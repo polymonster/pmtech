@@ -226,12 +226,15 @@ namespace pen
     const c8*           renderer_get_shader_platform();
 
 	//resource management
-	void renderer_reclaim_resource_indices();
-    void renderer_realloc_resource(u32 i, u32 domain);
+	void    renderer_reclaim_resource_indices();
+    void    renderer_realloc_resource(u32 i, u32 domain);
     
-    void renderer_mark_resource_deleted(u32 i);
-	u32 renderer_get_next_resource_index(u32 domain);
+    void    renderer_mark_resource_deleted(u32 i);
+	u32     renderer_get_next_resource_index(u32 domain);
 
+    //utility functions
+    bool    renderer_viewport_vup( );
+    
 	//--------------------------------------------------------------------------------------
 	//  COMMAND BUFFERED API
 	//--------------------------------------------------------------------------------------

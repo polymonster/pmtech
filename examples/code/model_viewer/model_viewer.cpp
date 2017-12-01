@@ -61,8 +61,6 @@ void update_model_viewer_camera(put::camera_controller* cc)
                 break;
         }
     }
-    
-    put::camera_update_shader_constants(cc->camera);
 }
 
 void update_model_viewer_scene(put::scene_controller* sc)

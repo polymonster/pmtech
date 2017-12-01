@@ -103,6 +103,8 @@ namespace put
             u32     depth_target = 0;
             u32     num_render_targets = 0;
             
+            bool    viewport_correction = true;
+            
             f32     viewport[4] = { 0 };
             
             u32     clear_state = 0;
@@ -301,6 +303,9 @@ namespace put
                     Str target_str = targets[t].as_str();
                     hash_id target_hash = PEN_HASH(target_str.c_str());
                     
+                    if( target_hash == ID_MAIN_COLOUR || target_hash == ID_MAIN_DEPTH )
+                        new_view.viewport_correction = false;
+                    
                     bool found = false;
                     for( auto& r : k_render_targets )
                     {
@@ -455,6 +460,9 @@ namespace put
                 
                 //clear
                 pen::renderer_clear( v.clear_state );
+                
+                //generate camera matrices
+                put::camera_update_shader_constants(v.camera, v.viewport_correction);
                 
                 ces::scene_view sv;
                 sv.scene = v.scene;

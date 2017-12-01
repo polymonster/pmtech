@@ -804,6 +804,11 @@ namespace pen
         // update subresource can only be called on d3d usage default resources.
 		//g_immediate_context->UpdateSubresource( resource_pool[ buffer_index ].generic_buffer, 0, nullptr, data, 0, 0 );
 	}
+    
+    void direct::renderer_read_back_resource( const resource_read_back_params& rrbp )
+    {
+        //stubbed
+    }
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
 	{
@@ -1255,6 +1260,11 @@ namespace pen
     const c8* renderer_get_shader_platform()
     {
         return "hlsl";
+    }
+    
+    bool renderer_viewport_vup( )
+    {
+        return true;
     }
 }
 

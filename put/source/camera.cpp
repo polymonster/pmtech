@@ -25,10 +25,20 @@ namespace put
 			-near_size.x * 0.5f,
 			 near_size.x * 0.5f,
 			-near_size.y * 0.5f,
-			 near_size.y * 0.5f,
+             near_size.y * 0.5f,
 			 near_plane,
 			 far_plane
 		);
+        
+        p_camera->proj_corrected.create_perspective_projection
+        (
+            -near_size.x * 0.5f,
+            near_size.x * 0.5f,
+            near_size.y * 0.5f,
+            -near_size.y * 0.5f,
+            near_plane,
+            far_plane
+         );
 
 		p_camera->flags |= CF_INVALIDATED;
 	}
@@ -167,8 +177,20 @@ namespace put
 		p_camera->flags |= CF_INVALIDATED;
 	}
 
-	void camera_update_shader_constants( camera* p_camera )
+	void camera_update_shader_constants( camera* p_camera, bool viewport_correction )
 	{
+        if( viewport_correction && !(p_camera->flags & CF_VP_CORRECTED) )
+        {
+            p_camera->flags |= CF_VP_CORRECTED;
+            p_camera->flags |= CF_INVALIDATED;
+        }
+        
+        if( !viewport_correction && (p_camera->flags & CF_VP_CORRECTED) )
+        {
+            p_camera->flags &= ~CF_VP_CORRECTED;
+            p_camera->flags |= CF_INVALIDATED;
+        }
+        
 		if (p_camera->cbuffer == PEN_INVALID_HANDLE)
 		{
 			pen::buffer_creation_params bcp;
@@ -181,11 +203,15 @@ namespace put
 			p_camera->cbuffer = pen::renderer_create_buffer(bcp);
 		}
 
-		if (p_camera->flags &= CF_INVALIDATED)
+		if ( p_camera->flags & CF_INVALIDATED )
 		{
 			camera_cbuffer wvp;
-
-			wvp.view_projection = p_camera->proj * p_camera->view;
+            
+            if( viewport_correction && pen::renderer_viewport_vup() )
+                wvp.view_projection = p_camera->proj_corrected * p_camera->view;
+            else
+                wvp.view_projection = p_camera->proj * p_camera->view;
+            
 			wvp.view_matrix = p_camera->view;
 
 			pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));

@@ -1325,5 +1325,10 @@ namespace pen
     {
         return "glsl";
     }
+    
+    bool renderer_viewport_vup( )
+    {
+        return true;
+    }
 }
 

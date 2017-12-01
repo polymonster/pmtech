@@ -10,7 +10,8 @@ namespace put
 {
 	enum camera_flags : u32
 	{
-		CF_INVALIDATED = 1<<1
+		CF_INVALIDATED = 1<<1,
+        CF_VP_CORRECTED = 1<<2,
 	};
 
 	struct camera_cbuffer
@@ -29,6 +30,7 @@ namespace put
 
 		mat4  view;
 		mat4  proj;
+        mat4  proj_corrected;
 
 		u32 cbuffer = (u32)-1;
 		u8 flags = 0;
@@ -40,7 +42,7 @@ namespace put
 	void camera_update_modelling( camera* p_camera );
 	void camera_update_fly( camera* p_camera );
 
-	void camera_update_shader_constants( camera* p_camera );
+	void camera_update_shader_constants( camera* p_camera, bool viewport_correction = false );
 }
 
 #endif
