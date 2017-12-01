@@ -1,16 +1,16 @@
 {
 	render_targets:
 	{
-		offscreen:
+		picking:
 		{
-			size:[1024,1024],
+			size: "equal",
 			format: rgba8,
 			mips: false,
 		},
 		
-		offscreen_ds:
+		picking_ds:
 		{
-			size:[1024,1024],
+			size: "equal",
 			format: d24s8,
 			mips: false,
 		}
@@ -29,9 +29,9 @@
 			camera: model_viewer_camera
 		},
 		
-		offscreen_view:
+		picking_view:
 		{
-			target:[offscreen, offscreen_ds],
+			target:[picking, picking_ds],
 			clear_colour:[0.0, 1.0, 1.0, 1.0],
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
