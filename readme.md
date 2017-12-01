@@ -6,7 +6,7 @@ A lightweight code base with powerful features that can be used for games, 3d an
 
 Core systems such as rendering, audio and physics are handled asyncronously on consumer threads which process command buffers that are created on the user thread, the command buffer api's provide thread safe access to add commands or read data back from a consumer thread.
 
-The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project, with minimal use of c++ features used for convenience.
+The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project, with minimal use of c++ features just for convenience.
 
 **pen**  
 This project contains platform / operating system specific code, it provides abstractions for:
