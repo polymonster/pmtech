@@ -65,6 +65,67 @@ void update_model_viewer_camera(put::camera_controller* cc)
     }
 }
 
+static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
+
+struct picking_info
+{
+    c8 result[4];
+    a_u8 ready;
+    u32 offset = 0;
+};
+static picking_info k_picking_info;
+
+void picking_read_back( void* p_data )
+{
+    u8* val = ((u8*)p_data) + k_picking_info.offset;
+    
+    for(s32 i = 0; i < 4; ++i)
+        k_picking_info.result[i] = val[i];
+    
+    k_picking_info.ready = 1;
+    
+    delete[] (c8*)p_data;
+}
+
+bool get_picking_result( u8* result )
+{
+    if( k_picking_info.ready )
+    {
+        for(s32 i = 0; i < 4; ++i)
+            result[i] = k_picking_info.result[i];
+        
+        return true;
+    }
+    
+    return false;
+}
+
+void perform_picking( u32 x, u32 y )
+{
+    const put::render_target* rt = render_controller::get_render_target(ID_PICKING_BUFFER);
+    
+    f32 w, h;
+    render_controller::get_render_target_dimensions(rt, w, h);
+    
+    u32 pitch = (u32)w*4;
+    u32 data_size = (u32)h*pitch;
+    c8* p_data = new c8[data_size];
+    
+    pen::resource_read_back_params rrbp =
+    {
+        rt->handle,
+        (void*)p_data,
+        rt->format,
+        data_size,
+        &picking_read_back
+    };
+    
+    pen::renderer_read_back_resource( rrbp );
+    
+    k_picking_info.ready = 0;
+    k_picking_info.offset = y * pitch + x * 4;
+}
+
 void update_model_viewer_scene(put::scene_controller* sc)
 {
     static bool open_scene_browser = false;
@@ -211,7 +272,7 @@ void update_model_viewer_scene(put::scene_controller* sc)
         
         if( picking_state == 1 )
         {
-            if( put::render_controller::get_picking_result(pick_res) )
+            if( get_picking_result(pick_res) )
             {
                 picking_state = 0;
                 picking_debug = true;
@@ -225,7 +286,7 @@ void update_model_viewer_scene(put::scene_controller* sc)
                 
                 if (ms.buttons[PEN_MOUSE_L] && pen::mouse_coords_valid( ms.x, ms.y ) )
                 {
-                    put::render_controller::perform_picking(ms.x, ms.y);
+                    perform_picking(ms.x, ms.y);
                     picking_state = 1;
                 }
             }
@@ -254,11 +315,6 @@ void update_model_viewer_scene(put::scene_controller* sc)
     
     //update render data
     put::ces::update_scene(sc->scene, dt_ms);
-}
-
-void update_model_view(put::layer* layer)
-{
-    
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -306,7 +362,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 	//layer scene view and update
 	main_layer.view.scene = main_scene;
 	main_layer.camera = main_camera;
-	main_layer.update_function = &update_model_view;
+	main_layer.update_function = nullptr;
 
 	//render targets and states
 	main_layer.clear_state = handles.default_clear_state;

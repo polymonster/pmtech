@@ -74,24 +74,8 @@ namespace put
             return num;
         }
         
-        struct rt_info
-        {
-            hash_id id_name;
-            Str     name;
-            
-            s32     width = 0;
-            s32     height = 0;
-            f32     ratio = 0;
-            
-            s32     num_mips;
-            u32     format;
-            u32     handle;
-            bool    msaa = false;
-        };
-        
         static hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
         static hash_id ID_MAIN_DEPTH = PEN_HASH("main_depth");
-        static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
         
         struct view_params
         {
@@ -112,8 +96,8 @@ namespace put
             put::camera* camera;
         };
         
-        static std::vector<rt_info>     k_render_targets;
-        static std::vector<view_params> k_views;
+        static std::vector<render_target>   k_render_targets;
+        static std::vector<view_params>     k_views;
         
         void get_rt_dimensions( s32 rt_w, s32 rt_h, f32 rt_r, f32& w, f32& h )
         {
@@ -148,7 +132,7 @@ namespace put
         void parse_render_targets( pen::json& render_config )
         {
             //add 2 defaults
-            rt_info main_colour;
+            render_target main_colour;
             main_colour.id_name = ID_MAIN_COLOUR;
             main_colour.ratio = 1;
             main_colour.format = PEN_TEX_FORMAT_RGBA8_UNORM;
@@ -156,7 +140,7 @@ namespace put
             
             k_render_targets.push_back(main_colour);
             
-            rt_info main_depth;
+            render_target main_depth;
             main_depth.id_name = ID_MAIN_DEPTH;
             main_depth.ratio = 1;
             main_depth.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
@@ -176,8 +160,8 @@ namespace put
                 {
                     if( rt_format[f].name == r["format"].as_str() )
                     {
-                        k_render_targets.push_back(rt_info());
-                        rt_info& new_info = k_render_targets.back();
+                        k_render_targets.push_back(render_target());
+                        render_target& new_info = k_render_targets.back();
                         new_info.ratio = 0;
                         
                         new_info.name = r.name();
@@ -240,6 +224,25 @@ namespace put
                     }
                 }
             }
+        }
+        
+        const render_target* get_render_target( hash_id h )
+        {
+            u32 num = k_render_targets.size();
+            for( u32 i = 0; i < num; ++i )
+            {
+                if( k_render_targets[i].id_name == h )
+                {
+                    return &k_render_targets[i];
+                }
+            }
+            
+            return nullptr;
+        }
+        
+        void get_render_target_dimensions( const render_target* rt, f32& w, f32& h)
+        {
+            get_rt_dimensions( rt->width, rt->height, rt->ratio, w, h );
         }
         
         void parse_views( pen::json& render_config )
@@ -470,70 +473,6 @@ namespace put
                 
                 put::ces::render_scene_view(sv);
                 put::ces::render_scene_debug(sv);
-            }
-        }
-        
-        struct picking_info
-        {
-            c8 result[4];
-            a_u8 ready;
-            u32 offset = 0;
-        };
-        static picking_info k_picking_info;
-        
-        void picking_read_back( void* p_data )
-        {
-            u8* val = ((u8*)p_data) + k_picking_info.offset;
-            
-            for(s32 i = 0; i < 4; ++i)
-                k_picking_info.result[i] = val[i];
-            
-            k_picking_info.ready = 1;
-            
-            delete[] (c8*)p_data;
-        }
-        
-        bool get_picking_result( u8* result )
-        {
-            if( k_picking_info.ready )
-            {
-                for(s32 i = 0; i < 4; ++i)
-                    result[i] = k_picking_info.result[i];
-                
-                return true;
-            }
-            
-            return false;
-        }
-        
-        void perform_picking( u32 x, u32 y )
-        {
-            for( auto& rt : k_render_targets )
-            {
-                if( rt.id_name == ID_PICKING_BUFFER )
-                {
-                    f32 w, h;
-                    
-                    get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
-                    
-                    u32 pitch = (u32)w*4;
-                    u32 data_size = (u32)h*pitch;
-                    c8* p_data = new c8[data_size];
-                    
-                    pen::resource_read_back_params rrbp =
-                    {
-                        rt.handle,
-                        (void*)p_data,
-                        rt.format,
-                        data_size,
-                        &picking_read_back
-                    };
-                    
-                    pen::renderer_read_back_resource( rrbp );
-                    
-                    k_picking_info.ready = 0;
-                    k_picking_info.offset = y * pitch + x * 4;
-                }
             }
         }
         

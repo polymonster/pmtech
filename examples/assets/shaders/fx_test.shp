@@ -1,4 +1,5 @@
-#include "lighting_common.slib"
+#include "libs/lighting.slib"
+#include "libs/skinning.slib"
 
 struct vs_output
 {
@@ -44,11 +45,7 @@ cbuffer per_pass_view : register(b0)
 cbuffer per_draw_call : register(b1)
 {
 	float4x4 world_matrix;
-};
-
-cbuffer skinning_info : register(b2)
-{
-	float4x4 bones[85];
+	float4   user_data; //x = id, yzw = unused
 };
 
 cbuffer debug_options : register(b13)
@@ -62,29 +59,6 @@ declare_texture_samplers
 	TEXTURE_2D( specular_texture, 1 );
 	TEXTURE_2D( normal_texture, 2 );
 };
-
-float4 skin_pos( float4 pos, float4 weights, float4 indices )
-{
-	int bone_indices[4];
-	bone_indices[0] = int(indices.x);
-	bone_indices[1] = int(indices.y);
-	bone_indices[2] = int(indices.z);
-	bone_indices[3] = int(indices.w);
-
-	float4 sp = float4( 0.0, 0.0, 0.0, 0.0 );
-	float final_weight = 1.0;
-	for( int i = 0; i < 3; ++i)	
-	{
-		sp += mul( pos, bones[bone_indices[i]] ) * weights[i];
-		final_weight -= weights[i];
-	}
-		
-	sp += mul( pos, bones[bone_indices[3]] ) * final_weight;
-	
-	sp.w = 1.0;
-		
-	return sp;
-}
 
 vs_output vs_main_skinned( vs_input_skinned _input )
 {
@@ -130,7 +104,7 @@ vs_output vs_main( vs_input _input )
     return _output;
 }
 
-ps_output ps_skin_debug( vs_output _input ) 
+ps_output ps_picking( vs_output _input ) 
 {	
 	ps_output _output;
 	
@@ -157,10 +131,10 @@ pmfx:
 		"blend_src": "src_alpha"
 	},
 	
-	"skinned":
+	"diffuse_skinned":
 	{
 		"vs": "vs_main_skinned",
-		"ps": "ps_skin_debug",
+		"ps": "ps_diffuse",
 		"blend_src": "src_alpha"
 	}
 }

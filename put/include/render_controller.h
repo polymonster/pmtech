@@ -28,6 +28,22 @@ namespace put
         Str name;
     };
     
+    struct render_target
+    {
+        hash_id id_name;
+        Str     name;
+        
+        s32     width = 0;
+        s32     height = 0;
+        f32     ratio = 0;
+        
+        s32     num_mips;
+        u32     format;
+        u32     handle;
+        bool    msaa = false;
+    };
+    
+
     namespace render_controller
     {
         void init( const c8* filename );
@@ -35,11 +51,11 @@ namespace put
         void update( );
         void render( );
         
-        void perform_picking( u32 x, u32 y );
-        bool get_picking_result( u8* result );
-        
         void register_scene( const scene_controller& scene );
         void register_camera( const camera_controller& cam );
+        
+        const render_target*  get_render_target( hash_id h );
+        void                  get_render_target_dimensions( const render_target* rt, f32& w, f32& h);
         
         void show_dev_ui();
     }

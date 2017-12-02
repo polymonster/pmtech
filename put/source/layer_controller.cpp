@@ -266,29 +266,8 @@ namespace put
 
 	void layer_controller_update()
 	{
-		//bind debug cbuffer
-		//pen::renderer_set_constant_buffer(k_built_in_handles.debug_shader_cbuffer, 13, PEN_SHADER_TYPE_PS);
-
-		//update layers
-		u32 num_layers = k_layers.size();
-		for (u32 i = 0; i < num_layers; ++i)
+		for (u32 i = 0; i < 1; ++i)
 		{
-			if (k_layers[i].update_function)
-			{
-				k_layers[i].update_function(&k_layers[i]);
-			}
-		}
-
-		for (u32 i = 0; i < num_layers; ++i)
-		{
-            pen::viewport vp =
-            {
-                0.0f, 0.0f,
-                (f32)pen_window.width, (f32)pen_window.height,
-                0.0f, 1.0f
-            };
-            pen::rect sr = { 0.0f,  0.0f, (f32)pen_window.width, (f32)pen_window.height };
-    
 			//pen::renderer_set_viewport(vp);
 			//pen::renderer_set_scissor_rect(sr);
             

@@ -1,4 +1,4 @@
-#include "lighting_common.slib"
+#include "libs/lighting.slib"
 
 struct vs_output
 {
