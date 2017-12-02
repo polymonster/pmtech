@@ -118,7 +118,7 @@ vec3f put::maths::project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool no
     
     f32 depth = 1;
     
-    vec3f screen_space_coord = res.homogeneous_multiply(v,&depth);
+    vec3f screen_space_coord = res.transform_vector(v,&depth);
     screen_space_coord.x /= depth;
     screen_space_coord.y /= depth;
     screen_space_coord.z /= depth;
@@ -152,7 +152,7 @@ vec3f put::maths::unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i
     
     //multiply the normalised device coordinates by the inverse view projection matrix
     f32 w = 1.0f;
-    vec3f post_perspective_coordinates = inverse_view_projection.homogeneous_multiply(normalised_device_coordinates, &w);
+    vec3f post_perspective_coordinates = inverse_view_projection.transform_vector(normalised_device_coordinates, &w);
     w = 1.0f / w;
     
     //perform the inverse of perspective divide

@@ -421,7 +421,7 @@ namespace put
             }
             
             //fill in defaults
-            u32 num_verts = cur_offset = line_vert_count;
+            u32 num_verts = cur_offset - line_vert_count;
             for( s32 i = 0; i < num_verts; ++i )
             {
                 debug_lines_verts[line_vert_count + i].w = 1.0;
@@ -438,10 +438,10 @@ namespace put
 		void add_line_transform(const vec3f &start, const vec3f &end, const mat4 *matrix, const vec4f &col )
 		{
 			f32 w = 1.0f;
-			vec3f transformed_s = matrix->homogeneous_multiply(start, &w);
+			vec3f transformed_s = matrix->transform_vector(start, &w);
 
 			w = 1.0f;
-			vec3f transformed_e = matrix->homogeneous_multiply(end, &w);
+			vec3f transformed_e = matrix->transform_vector(end, &w);
 
 			dbg::add_line(transformed_s, transformed_e, col);
 		}

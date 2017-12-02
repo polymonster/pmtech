@@ -69,7 +69,10 @@ typedef struct mat4
     void set_matrix_from_raw(f32 *entries);
     
     //multiplication / transformation
-    vec3f homogeneous_multiply(vec3f v, f32 *w) const;
+    vec4f transform_vector(vec4f v ) const;
+    vec3f transform_vector(vec3f v, f32 *w) const;
+    vec3f transform_vector(vec3f v ) const;
+    
     vec3f operator *(const vec3f &p) const;
     mat4 operator *(const mat4 &b) const;
     
@@ -77,5 +80,5 @@ typedef struct mat4
     
 } mat4;
 
-#endif // _MATRIX_H 
+#endif // _MATRIX_H
 

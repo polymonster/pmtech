@@ -54,7 +54,31 @@ vec3f mat4::operator *(const vec3f &v) const
     return result;
 }
 
-vec3f mat4::homogeneous_multiply(vec3f v, f32 *w) const
+vec4f mat4::transform_vector(vec4f v) const
+{
+    vec4f result;
+    
+    result.x = v.x * m[ 0] + v.y * m[ 1] + v.z * m[ 2] + v.w * m[ 3];
+    result.y = v.x * m[ 4] + v.y * m[ 5] + v.z * m[ 6] + v.w * m[ 7];
+    result.z = v.x * m[ 8] + v.y * m[ 9] + v.z * m[10] + v.w * m[11];
+    
+    result.w = v.x * m[12] + v.y * m[13] + v.z * m[14] + v.w * m[15];
+    
+    return result;
+}
+
+vec3f mat4::transform_vector(vec3f v ) const
+{
+    vec3f result;
+    
+    result.x = v.x * m[ 0] + v.y * m[ 1] + v.z * m[ 2] + m[ 3];
+    result.y = v.x * m[ 4] + v.y * m[ 5] + v.z * m[ 6] + m[ 7];
+    result.z = v.x * m[ 8] + v.y * m[ 9] + v.z * m[10] + m[11];
+    
+    return result;
+}
+
+vec3f mat4::transform_vector(vec3f v, f32 *w) const
 {
     vec3f result;
     

@@ -449,7 +449,7 @@ def write_geometry_file(geom_instance):
 
         index_type = "i"
         if len(mesh.index_buffer) < 65535:
-            index_type = "h"
+            index_type = "H"
 
         skinned = 0
         if geom_instance.controller != None:

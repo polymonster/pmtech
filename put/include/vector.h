@@ -164,6 +164,18 @@ public:
         z = (f32)floor((double)z);
     }
     
+    inline static vec3f max( vec3f a, vec3f b )
+    {
+        vec3f v( PEN_FMAX(a.x, b.x), PEN_FMAX(a.y, b.y), PEN_FMAX(a.z, b.z) );
+        return v;
+    }
+    
+    inline static vec3f min( vec3f a, vec3f b )
+    {
+        vec3f v( PEN_FMIN(a.x, b.x), PEN_FMIN(a.y, b.y), PEN_FMIN(a.z, b.z) );
+        return v;
+    }
+    
     inline static vec3f flt_max()
     {
         vec3f v( FLT_MAX, FLT_MAX, FLT_MAX );
