@@ -1,22 +1,17 @@
-#ifndef ces_utility_h__
-#define ces_utility_h__
+#ifndef ces_resources_h__
+#define ces_resources_h__
 
-#include "ces/scene.h"
+#include "ces/ces_scene.h"
 
 namespace put
 {
-		void    clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
-        void    build_joint_list( entity_scene* scene, u32 start_node, std::vector<s32>& joint_list );
+    namespace ces
+    {
+        void            save_scene( const c8* filename, entity_scene* scene );
+        void            load_scene( const c8* filename, entity_scene* scene );
         
-        bool    is_valid( u32 handle );
-    
-        //-----------------------------------------------------------------------------------------------------------------------------------
-        //inlines
-        //-----------------------------------------------------------------------------------------------------------------------------------
-        inline bool is_valid( u32 handle )
-        {
-            return handle != -1;
-        }
+        void            load_pmm( const c8* model_scene_name, entity_scene* scene = nullptr, u32 load_flags = PMM_ALL );
+        anim_handle     load_pma( const c8* model_scene_name );
 	}
 }
 #endif

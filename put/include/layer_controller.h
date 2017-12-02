@@ -3,7 +3,7 @@
 
 #include "pen.h"
 #include "renderer.h"
-#include "component_entity.h"
+#include "ces/ces_scene.h"
 #include "camera.h"
 
 #define MAX_MRT_TARGETS 4

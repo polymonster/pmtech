@@ -1,6 +1,5 @@
 #include "render_controller.h"
 #include "entry_point.h"
-#include "component_entity.h"
 #include "dev_ui.h"
 #include "debug_render.h"
 #include "pen_json.h"

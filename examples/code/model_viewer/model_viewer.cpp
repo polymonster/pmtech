@@ -7,7 +7,6 @@
 #include "dev_ui.h"
 #include "camera.h"
 #include "debug_render.h"
-#include "component_entity.h"
 #include "layer_controller.h"
 #include "render_controller.h"
 #include "pmfx.h"
@@ -15,6 +14,9 @@
 #include "hash.h"
 #include "str_utilities.h"
 #include "input.h"
+#include "ces/ces_scene.h"
+#include "ces/ces_resources.h"
+#include "ces/ces_editor.h"
 
 pen::window_creation_params pen_window
 {

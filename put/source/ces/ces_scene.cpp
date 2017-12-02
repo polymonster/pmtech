@@ -1,7 +1,8 @@
 #include <functional>
 #include <fstream>
 
-#include "component_entity.h"
+#include "ces/ces_scene.h"
+#include "ces/ces_utilities.h"
 #include "file_system.h"
 #include "dev_ui.h"
 #include "debug_render.h"
