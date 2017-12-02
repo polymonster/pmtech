@@ -395,8 +395,8 @@ namespace put
                 {
                     vec3f p = scene->world_matrices[n].transform_vector(min + max * corners[c]);
                     
-                    tmax = vec3f::max( tmax, p );
-                    tmin = vec3f::min( tmin, p );
+                    tmax = vec3f::vmax( tmax, p );
+                    tmin = vec3f::vmin( tmin, p );
                 }
             }
 		}
