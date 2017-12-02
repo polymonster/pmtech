@@ -12,6 +12,12 @@
 #define CES_DEBUG
 #define INVALID_HANDLE -1
 
+#ifdef CES_DEBUG
+#define ASSIGN_DEBUG_NAME( D, S ) D = S
+#else
+#define ASSIGN_DEBUG_NAME( D, S )
+#endif
+
 namespace put
 {
     typedef s32 anim_handle;
@@ -186,7 +192,7 @@ namespace put
             mat4*   matrices;
         };
         
-        struct animation
+        struct animation_resource
         {
             hash_id id_name;
             u32 node;

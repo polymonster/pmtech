@@ -4,6 +4,7 @@
 #include "str/Str.h"
 #include "pen.h"
 #include "pen_string.h"
+#include "memory.h"
 
 namespace put
 {
