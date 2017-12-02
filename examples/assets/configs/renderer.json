@@ -24,7 +24,7 @@
 			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
-			technique: lit,
+			technique: diffuse,
 			scene: main_scene,
 			camera: model_viewer_camera
 		},
@@ -32,10 +32,10 @@
 		picking_view:
 		{
 			target:[picking, picking_ds],
-			clear_colour:[0.0, 1.0, 1.0, 1.0],
+			clear_colour:[1.0, 1.0, 1.0, 1.0],
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
-			technique: lit,
+			technique: picking,
 			scene: main_scene,
 			camera: model_viewer_camera
 		},

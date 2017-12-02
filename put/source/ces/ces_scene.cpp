@@ -38,11 +38,6 @@ namespace put
 
 		std::vector<component_entity_scene_instance> k_scenes;
         
-        struct per_model_cbuffer
-        {
-            mat4 world_matrix;
-        };
-
 		void resize_scene_buffers(entity_scene* scene)
 		{
 			scene->nodes_size += 1024;
@@ -212,29 +207,6 @@ namespace put
 					scene_node_geometry* p_geom = &scene->geometries[n];
 					scene_node_material* p_mat = &scene->materials[n];
 
-                    //move this to update / bake static
-                    {
-                        per_model_cbuffer cb =
-                        {
-                            scene->world_matrices[n]
-                        };
-                        
-                        if (scene->cbuffer[n] == PEN_INVALID_HANDLE)
-                        {
-                            pen::buffer_creation_params bcp;
-                            bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                            bcp.buffer_size = sizeof(per_model_cbuffer);
-                            bcp.data = nullptr;
-                            
-                            scene->cbuffer[n] = pen::renderer_create_buffer(bcp);
-                        }
-                        
-                        //per object world matrix
-                        pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
-                    }
-                    
                     if( p_geom->p_skin )
                     {
                         if( p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE )
@@ -262,11 +234,15 @@ namespace put
                         pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
                     }
                     
-                    if( p_geom->p_skin )
-                        pmfx::set_technique( model_pmfx, 1 );
-                    else
-                        pmfx::set_technique( model_pmfx, 0 );
+                    static hash_id ID_SUB_TYPE_SKINNED = PEN_HASH("_skinned");
+                    static hash_id ID_SUB_TYPE_NON_SKINNED = PEN_HASH("");
                     
+                    hash_id mh = p_geom->p_skin ? ID_SUB_TYPE_SKINNED : ID_SUB_TYPE_NON_SKINNED;
+
+                    if( !pmfx::set_technique( model_pmfx, view.technique, mh ) )
+                        continue;
+                    
+                    //set cbs
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
 					//set ib / vb
@@ -398,6 +374,22 @@ namespace put
                     tmax = vec3f::vmax( tmax, p );
                     tmin = vec3f::vmin( tmin, p );
                 }
+            }
+            
+            //update c buffers
+            for( s32 n = 0; n < scene->num_nodes; ++n )
+            {
+                if( scene->cbuffer[n] == INVALID_HANDLE )
+                    continue;
+                
+                per_model_cbuffer cb =
+                {
+                    scene->world_matrices[n],
+                    vec4f((f32)n, 0.0f, 0.0f, 0.0f)
+                };
+                
+                //per object world matrix
+                pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
             }
 		}
         

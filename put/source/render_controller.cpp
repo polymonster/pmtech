@@ -91,6 +91,8 @@ namespace put
             f32     viewport[4] = { 0 };
             
             u32     clear_state = 0;
+            
+            hash_id technique;
         
             ces::entity_scene* scene;
             put::camera* camera;
@@ -407,6 +409,10 @@ namespace put
                     valid = false;
                 }
                 
+                Str technique_str = view["technique"].as_str();
+                
+                new_view.technique = PEN_HASH(technique_str.c_str());
+                
                 if(valid)
                     k_views.push_back(new_view);
             }
@@ -470,6 +476,7 @@ namespace put
                 sv.scene = v.scene;
                 sv.cb_view = v.camera->cbuffer;
                 sv.scene_node_flags = 0;
+                sv.technique = v.technique;
                 
                 put::ces::render_scene_view(sv);
                 put::ces::render_scene_debug(sv);

@@ -14,6 +14,9 @@ namespace put
 
         struct shader_program
         {
+            hash_id id_name;
+            hash_id id_sub_type;
+            
             u32 vertex_shader;
             u32 pixel_shader;
             u32 input_layout;
@@ -23,7 +26,8 @@ namespace put
         pmfx_handle     load( const c8* filename );
         void            release( pmfx_handle handle );
         
-        void            set_technique( pmfx_handle handle, u32 technique_index );
+        void            set_technique( pmfx_handle handle, u32 index );
+        bool            set_technique( pmfx_handle handle, hash_id id_technique, hash_id id_sub_type );
         
         void            poll_for_changes();
     }

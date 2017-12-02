@@ -339,7 +339,7 @@ def generate_input_assignment(io_elements, decl, local_var, suffix):
     assign_source = "\t//assign input struct from glsl inputs\n"
     assign_source += "\t" + decl + " " + local_var + ";\n"
     for element in io_elements:
-        if element.split()[1] == "position" and decl == "vs_output":
+        if element.split()[1] == "position" and "vs_output" in decl:
             continue
         assign_source += "\t"
         var_name = element.split()[1]
@@ -460,7 +460,7 @@ def compile_glsl(
             final_ps_source += "out " + ps_output + "_ps_output;\n"
         final_ps_source += "\n"
 
-        final_ps_source += generate_global_io_struct(vs_outputs, "struct vs_output")
+        final_ps_source += generate_global_io_struct(vs_outputs, "struct " + vs_output_struct_name)
         final_ps_source += generate_global_io_struct(ps_outputs, "struct ps_output")
         final_ps_source += texture_samplers_source
         final_ps_source += uniform_buffers
@@ -593,19 +593,25 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
 
     function_list = find_generic_functions(shader_file_text)
 
+
     #_find main ps and vs
     ps_main = ""
     vs_main = ""
     for func in function_list:
-        if func.find(ps_name) != -1:
-            ps_main = func
-        if func.find(vs_name) != -1:
-            vs_main = func
+        ps_find_pos = func.find(ps_name)
+        if ps_find_pos != -1:
+            if func[ps_find_pos+len(ps_name)] == "(" and func[ps_find_pos-1] == " ":
+                ps_main = func
+        vs_find_pos = func.find(vs_name)
+        if vs_find_pos != -1:
+            if func[vs_find_pos+len(vs_name)] == "(" and func[vs_find_pos-1] == " ":
+                vs_main = func
 
     # remove from generic function list
     function_list.remove(vs_main)
     if ps_main != "":
-        function_list.remove(ps_main)
+        if ps_main in function_list:
+            function_list.remove(ps_main)
 
     vs_functions = ""
     vs_functions += find_used_functions(vs_main, function_list)
@@ -710,11 +716,13 @@ def parse_pmfx(filename, root):
                     technique)
                 del pmfx_block[technique]["vs"]
                 del pmfx_block[technique]["ps"]
+                pmfx_block[technique]["name"] = technique
                 pmfx_block[technique]["vs_file"] = technique + ".vsc"
                 pmfx_block[technique]["ps_file"] = technique + ".psc"
                 techniques.append(pmfx_block[technique])
         else:
             default_technique = dict()
+            default_technique["name"] = "default"
             default_technique["vs_file"] = "default.vsc"
             default_technique["ps_file"] = "default.psc"
             default_technique["vs_inputs"], default_technique["instance_inputs"] =\

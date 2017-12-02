@@ -7,7 +7,9 @@
 #include "renderer.h"
 #include "pen_string.h"
 #include "pen_json.h"
+#include "str_utilities.h"
 #include "str/Str.h"
+#include "hash.h"
 
 namespace put
 {
@@ -40,6 +42,22 @@ namespace put
         shader_program load_shader_technique( const c8* fx_filename, pen::json& j_techique, pen::json& j_info )
         {
             shader_program program = { 0 };
+            
+            Str name = j_techique["name"].as_str();
+            
+            if( put::str_find(name, "_skinned") != -1 )
+            {
+                Str name_base = put::str_replace_string(name, "_skinned", "");
+                
+                program.id_name = PEN_HASH(name_base.c_str());
+                program.id_sub_type = PEN_HASH("_skinned");
+            }
+            else
+            {
+                program.id_name = PEN_HASH(name.c_str());
+                program.id_sub_type = PEN_HASH("");
+            }
+
             const c8* sfp = pen::renderer_get_shader_platform();
             
             //vertex shader
@@ -209,15 +227,33 @@ namespace put
             return program;
         }
         
-        void set_technique( pmfx_handle handle, u32 technique_index )
+        void set_technique( pmfx_handle handle, u32 index )
         {
-            u32 ps = s_pmfx_list[ handle ].techniques[ technique_index ].pixel_shader;
-            u32 vs = s_pmfx_list[ handle ].techniques[ technique_index ].vertex_shader;
-            u32 il = s_pmfx_list[ handle ].techniques[ technique_index ].input_layout;
+            auto& t = s_pmfx_list[ handle ].techniques[ index ];
             
-            pen::renderer_set_shader( vs, PEN_SHADER_TYPE_VS );
-            pen::renderer_set_shader( ps, PEN_SHADER_TYPE_PS );
-            pen::renderer_set_input_layout( il );
+            pen::renderer_set_shader( t.vertex_shader, PEN_SHADER_TYPE_VS );
+            pen::renderer_set_shader( t.pixel_shader, PEN_SHADER_TYPE_PS );
+            pen::renderer_set_input_layout( t.input_layout );
+        }
+        
+        bool set_technique( pmfx_handle handle, hash_id id_technique, hash_id id_sub_type )
+        {
+            for( auto& t : s_pmfx_list[ handle ].techniques )
+            {
+                if( t.id_name != id_technique )
+                    continue;
+                
+                if( t.id_sub_type != id_sub_type )
+                    continue;
+                
+                pen::renderer_set_shader( t.vertex_shader, PEN_SHADER_TYPE_VS );
+                pen::renderer_set_shader( t.pixel_shader, PEN_SHADER_TYPE_PS );
+                pen::renderer_set_input_layout( t.input_layout );
+                
+                return true;
+            }
+            
+            return false;
         }
         
         void get_pmfx_info_filename( c8* file_buf, const c8* pmfx_filename )

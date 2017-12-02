@@ -54,6 +54,18 @@ namespace put
             
             bv->min_extents = gr->physics_info.min_extents;
             bv->max_extents = gr->physics_info.max_extents;
+            
+            if (scene->cbuffer[node_index] == PEN_INVALID_HANDLE)
+            {
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(per_model_cbuffer);
+                bcp.data = nullptr;
+                
+                scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
+            }
         }
         
         void instantiate_anim_controller( entity_scene* scene, s32 node_index )
