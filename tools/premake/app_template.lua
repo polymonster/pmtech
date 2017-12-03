@@ -55,7 +55,7 @@ project ( project_name )
 		"../put/lib/" .. platform_dir,
 				
 		("../pen/third_party/fmod/lib/" .. platform_dir),
-		"../pen/third_party/bullet/lib",
+		("../put/bullet/lib/" .. platform_dir),
 	}
 	
 	includedirs
@@ -97,12 +97,12 @@ project ( project_name )
 		flags { "WinMain" }
 		symbols "On"
 		targetname (project_name .. "_d")
-		links { "pen", "put" }
+		links { "pen", "put", "bullet_monolithic_do" }
   
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetname (project_name)
-		links { "pen", "put" }
+		links { "pen", "put", "bullet_monolithic" }
 		
 end

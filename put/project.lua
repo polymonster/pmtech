@@ -8,7 +8,7 @@ project "put"
 	{ 
 		"../pen/lib/" .. platform_dir,
 		
-		"../pen/third_party/bullet/lib",
+		"../put/bullet/lib/" .. platform_dir,
 	}
 	
 	includedirs
@@ -17,7 +17,7 @@ project "put"
 		"..\\pen\\include\\" .. platform_dir,
 		"..\\pen\\include\\" .. renderer_dir,
 		  
-		"..\\pen\\third_party\\bullet\\include",
+		"..\\put\\bullet\\src\\",
 		"..\\pen\\third_party\\imgui",
 		"..\\pen\\third_party",
 	}
@@ -41,11 +41,11 @@ project "put"
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
 		targetname "put_d"
-		links { "bullet_monolithic_do.lib" }
+		links { "bullet_monolithic_ploop" }
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetdir ("lib/" .. platform_dir)
 		targetname "put"
-		links { "bullet_monolithic.lib" }
+		links { "bullet_monolithic_ploo" }

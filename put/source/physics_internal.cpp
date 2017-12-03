@@ -535,6 +535,10 @@ namespace physics
 
 	PEN_THREAD_RETURN physics_thread_main( void* params )
 	{
+        pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+        pen::job_thread* p_thread_info = job_params->job_thread_info;
+        pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+        
 		initialise( );
 
 		while (1)
@@ -884,8 +888,9 @@ namespace physics
 	{
 		btMultiBody* p_multi = g_bullet_objects.entities[cmd.multi_index].multi_body;
 
-		if (p_multi->isMultiDof( ))
-		{
+		//if (p_multi->isMultiDof( ))
+		if( 1 )
+        {
 			f32 multi_dof_pos = cmd.data.x;
 			p_multi->setJointPosMultiDof( cmd.link_index, &multi_dof_pos );
 		}

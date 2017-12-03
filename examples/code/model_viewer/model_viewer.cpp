@@ -317,6 +317,11 @@ void update_model_viewer_scene(put::scene_controller* sc)
     put::ces::update_scene(sc->scene, dt_ms);
 }
 
+namespace physics
+{
+    extern PEN_THREAD_RETURN physics_thread_main( void* params );
+}
+
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
     //unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -324,6 +329,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::job_thread* p_thread_info = job_params->job_thread_info;
     pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
+    pen::threads_create_job( physics::physics_thread_main, 1024*10, nullptr, pen::THREAD_START_DETACHED );
+        
 	//init systems
 	put::layer_controller_init();
     

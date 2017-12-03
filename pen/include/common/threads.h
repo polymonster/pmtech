@@ -46,7 +46,8 @@ namespace pen
 		void* user_thread_params;
 	};
 
-    //thread jobs
+    //thread job
+    
     void             threads_create_default_jobs( const default_thread_info& info) ;
     void             threads_terminate_jobs();
     pen::job_thread* threads_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags );
