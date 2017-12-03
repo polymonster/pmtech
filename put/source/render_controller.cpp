@@ -5,6 +5,7 @@
 #include "pen_json.h"
 #include "file_system.h"
 #include "hash.h"
+#include "pen_string.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -91,6 +92,7 @@ namespace put
             f32     viewport[4] = { 0 };
             
             u32     clear_state = 0;
+            u32     raster_state = 0;
             
             hash_id technique;
         
@@ -129,6 +131,91 @@ namespace put
                 vp_in[2] * w, vp_in[3] * h,
                 0.0f, 1.0f
             };
+        }
+        
+        struct mode_map
+        {
+            const c8* name;
+            u32 val;
+        };
+        
+        static mode_map k_render_mode_map[] =
+        {
+            "none", PEN_CULL_NONE,
+            "back", PEN_CULL_BACK,
+            "front", PEN_CULL_FRONT,
+            "solid", PEN_FILL_SOLID,
+            "wireframe", PEN_FILL_WIREFRAME
+        };
+        static const u32 num_mode_maps = sizeof(k_render_mode_map) / sizeof(k_render_mode_map[0]);
+        
+        u32 mode_from_string( const c8* str, u32 default_value )
+        {
+            for( s32 i = 0; i < num_mode_maps; ++i )
+                if( pen::string_compare(str, k_render_mode_map[i].name) == 0)
+                    return k_render_mode_map[i].val;
+            
+            return default_value;
+        }
+        
+        struct render_state
+        {
+            hash_id id_name;
+            hash_id hash;
+            u32     handle;
+        };
+        static std::vector<render_state> k_render_states;
+        
+        render_state* get_state_by_name( hash_id id_name )
+        {
+            s32 num = k_render_states.size();
+            for( s32 i = 0; i < num; ++i )
+                if( k_render_states[i].id_name == id_name )
+                    return &k_render_states[i];
+            
+            return nullptr;
+        }
+        
+        render_state* get_state_by_hash( hash_id hash )
+        {
+            s32 num = k_render_states.size();
+            for( s32 i = 0; i < num; ++i )
+                if( k_render_states[i].hash == hash )
+                    return &k_render_states[i];
+            
+            return nullptr;
+        }
+        
+        void parse_raster_state( pen::json& render_config )
+        {
+            pen::rasteriser_state_creation_params rcp;
+            
+            pen::json j_raster_states = render_config["raster_states"];
+            s32 num = j_raster_states.size();
+            for( s32 i = 0; i < num; ++i )
+            {
+                rcp.fill_mode = mode_from_string( j_raster_states[i]["fill_mode"].as_str().c_str(), PEN_FILL_SOLID );
+                rcp.cull_mode = mode_from_string( j_raster_states[i]["cull_mode"].as_str().c_str(), PEN_CULL_BACK );
+                rcp.front_ccw = j_raster_states[i]["front_ccw"].as_bool( false ) ? 0 : 1;
+                rcp.depth_bias = j_raster_states[i]["depth_bias"].as_s32(0);
+                rcp.depth_bias_clamp = j_raster_states[i]["depth_bias_clamp"].as_f32(0.0f);
+                rcp.sloped_scale_depth_bias = j_raster_states[i]["sloped_scale_depth_bias"].as_f32(0.0f);
+                rcp.depth_clip_enable = j_raster_states[i]["depth_clip_enable"].as_bool( true ) ? 0 : 1;
+                rcp.scissor_enable = j_raster_states[i]["scissor_enable"].as_bool( false ) ? 0 : 1;
+                rcp.multisample = j_raster_states[i]["multisample"].as_bool( false ) ? 0 : 1;
+                rcp.aa_lines = j_raster_states[i]["aa_lines"].as_bool( false ) ? 0 : 1;
+                
+                hash_id hh = PEN_HASH(rcp);
+                if( !get_state_by_hash( hh ) )
+                {
+                    render_state rs;
+                    rs.hash = hh;
+                    rs.id_name =  PEN_HASH(j_raster_states[i].name().c_str());
+                    rs.handle = pen::renderer_create_rasterizer_state(rcp);
+                    
+                    k_render_states.push_back(rs);
+                }
+            }
         }
         
         void parse_render_targets( pen::json& render_config )
@@ -368,6 +455,12 @@ namespace put
                     new_view.viewport[3] = 1.0f;
                 }
                 
+                //render state
+                hash_id hh = PEN_HASH(view["raster_state"].as_str("default").c_str());
+                render_state* state = get_state_by_name(hh);
+                if( state )
+                    new_view.raster_state = state->handle;
+                
                 //scene and camera
                 Str scene_str = view["scene"].as_str();
                 Str camera_str = view["camera"].as_str();
@@ -434,6 +527,7 @@ namespace put
             
             pen::json render_config = pen::json::load((const c8*)config_data);
             
+            parse_raster_state(render_config);
             parse_render_targets(render_config);
             
             parse_views(render_config);
@@ -463,11 +557,13 @@ namespace put
                 get_rt_viewport( v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp );
                 pen::renderer_set_viewport( vp );
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-                
                 pen::renderer_set_targets(v.render_targets[0], v.depth_target);
                 
                 //clear
                 pen::renderer_clear( v.clear_state );
+                
+                //set render state
+                pen::renderer_set_rasterizer_state(v.raster_state);
                 
                 //generate camera matrices
                 put::camera_update_shader_constants(v.camera, v.viewport_correction);

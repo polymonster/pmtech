@@ -1,16 +1,36 @@
 {
+	raster_states:
+	{
+		default:
+		{
+			cull_mode: back,
+		},
+		
+		wireframe:
+		{
+			cull_mode: none,
+			fill_mode: wireframe
+		}
+		
+		front_face_cull:
+		{
+			cull_mode: front,
+			fill_mode: solid
+		}
+	},
+	
 	render_targets:
 	{
 		picking:
 		{
-			size: "equal",
+			size: equal,
 			format: rgba8,
 			mips: false,
 		},
 		
 		picking_ds:
 		{
-			size: "equal",
+			size: equal,
 			format: d24s8,
 			mips: false,
 		}
@@ -24,6 +44,7 @@
 			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: default,
 			technique: diffuse,
 			scene: main_scene,
 			camera: model_viewer_camera
@@ -35,6 +56,7 @@
 			clear_colour:[1.0, 1.0, 1.0, 1.0],
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: default,
 			technique: picking,
 			scene: main_scene,
 			camera: model_viewer_camera

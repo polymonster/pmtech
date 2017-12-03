@@ -60,7 +60,7 @@ namespace pen
     typedef HashMurmur2A hash_murmur;
 }
 
-#define PEN_HASH( V ) pen::hashMurmur2A(V) 
+#define PEN_HASH( V ) pen::hashMurmur2A(V)
 
 #include "hash.inl"
 
