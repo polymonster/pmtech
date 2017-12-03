@@ -1,6 +1,6 @@
 platform_dir = "osx"
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
-	platform_dir = "win32"
+	platform_dir = "_ACTION"
 end
 
 solution "bullet_build"
