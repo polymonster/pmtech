@@ -34,6 +34,8 @@ project "bullet_monolithic"
 		"src\\Bullet3Dynamics\\**.*", 
 		"src\\Bullet3Geometry\\**.*", 
 		"src\\Bullet3Serialize\\**.*", 
+		"src\\BulletDynamics\\**.*", 
+		"src\\BulletCollision\\**.*", 
 		"src\\LinearMath\\**.*", 
 	}
 	
