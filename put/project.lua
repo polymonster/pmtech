@@ -1,3 +1,7 @@
+bullet_lib_dir = "osx"
+if _ACTION == "vs2017" or _ACTION == "vs2015" then
+	bullet_lib_dir = _ACTION
+end
 -- Project	
 project "put"
 	location ("build\\" .. platform_dir)
@@ -8,7 +12,7 @@ project "put"
 	{ 
 		"../pen/lib/" .. platform_dir,
 		
-		"../put/bullet/lib/" .. platform_dir,
+		"../put/bullet/lib/" .. bullet_lib_dir,
 	}
 	
 	includedirs
@@ -40,10 +44,12 @@ project "put"
 		flags { "WinMain" }
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
+		links { "bullet_monolithic_d" }
 		targetname "put_d"
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
+		links { "bullet_monolithic" }
 		targetdir ("lib/" .. platform_dir)
 		targetname "put"
