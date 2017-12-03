@@ -97,7 +97,7 @@ project ( project_name )
 		flags { "WinMain" }
 		symbols "On"
 		targetname (project_name .. "_d")
-		links { "pen", "put", "bullet_monolithic_do" }
+		links { "pen", "put", "bullet_monolithic_d" }
   
 	configuration "Release"
 		defines { "NDEBUG" }
