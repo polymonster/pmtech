@@ -41,11 +41,9 @@ project "put"
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
 		targetname "put_d"
-		links { "bullet_monolithic_ploop" }
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetdir ("lib/" .. platform_dir)
 		targetname "put"
-		links { "bullet_monolithic_ploo" }
