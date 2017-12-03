@@ -44,6 +44,11 @@ excludes
 }
 end
 
+bullet_lib_dir = "osx"
+if _ACTION == "vs2017" or _ACTION == "vs2015" then
+	bullet_lib_dir = _ACTION
+end
+
 function create_app( project_name, root_directory )
 project ( project_name )
 	kind "WindowedApp"
@@ -55,7 +60,7 @@ project ( project_name )
 		"../put/lib/" .. platform_dir,
 				
 		("../pen/third_party/fmod/lib/" .. platform_dir),
-		("../put/bullet/lib/" .. platform_dir),
+		("../put/bullet/lib/" .. bullet_lib_dir),
 	}
 	
 	includedirs
