@@ -29,8 +29,14 @@ project "bullet_monolithic"
 		
 	files 
 	{ 
-		"src\\**.*", 
+		"src\\Bullet3Collision\\**.*",
+		"src\\Bullet3Common\\**.*",
+		"src\\Bullet3Dynamics\\**.*", 
+		"src\\Bullet3Geometry\\**.*", 
+		"src\\Bullet3Serialize\\**.*", 
+		"src\\LinearMath\\**.*", 
 	}
+	
 	includedirs { "include" }
 		
 	configuration "Debug"
