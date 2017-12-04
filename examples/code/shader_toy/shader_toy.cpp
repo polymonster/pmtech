@@ -322,7 +322,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::renderer_set_viewport( k_render_handles.vp );
         pen::renderer_set_scissor_rect( rect{ k_render_handles.vp.x, k_render_handles.vp.y, k_render_handles.vp.width, k_render_handles.vp.height} );
         pen::renderer_set_depth_stencil_state(k_render_handles.ds_state);
-        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_set_targets( PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH );
         pen::renderer_clear( k_render_handles.clear_state );
 
         //draw quad

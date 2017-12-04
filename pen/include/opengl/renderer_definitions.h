@@ -45,9 +45,6 @@ enum cull_mode : s32
 
 enum default_targets : s32
 {
-    PEN_DEFAULT_RT = 0,
-    PEN_DEFAULT_DS = 0,
-    
     PEN_BACK_BUFFER_COLOUR = 0,
     PEN_BACK_BUFFER_DEPTH = 0
 };

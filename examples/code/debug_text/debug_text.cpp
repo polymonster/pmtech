@@ -74,7 +74,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         //bind back buffer and clear
         pen::renderer_set_viewport( vp );
-        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_set_targets( PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH );
         pen::renderer_clear( clear_state );
 
 		put::dbg::add_text_2f( 10.0f, 10.0f, vp, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Debug Text" );

@@ -54,7 +54,7 @@ namespace pen
 		u32 backbuffer_colour;
 		u32 backbuffer_depth;
 
-		u32 active_colour_target[8] = 0;
+        u32 active_colour_target[8] = { 0 };
 		u32 active_depth_target = 0;
         u32 num_active_colour_targets = 1;
 

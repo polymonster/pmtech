@@ -127,7 +127,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         //bind back buffer and clear
         pen::renderer_set_viewport( vp );
-        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_set_targets( PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH );
         pen::renderer_clear( clear_state );
 
         //draw quad

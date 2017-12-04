@@ -88,7 +88,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         
         pen::renderer_set_viewport( vp );
         pen::renderer_set_scissor_rect( rect{ vp.x, vp.y, vp.width, vp.height} );
-        pen::renderer_set_targets( PEN_DEFAULT_RT, PEN_DEFAULT_DS );
+        pen::renderer_set_targets( PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH );
         pen::renderer_clear( clear_state_grey );
 
 
