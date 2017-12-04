@@ -85,7 +85,7 @@ namespace put
             
             u32     render_targets[8] = { 0 };
             u32     depth_target = 0;
-            u32     num_render_targets = 0;
+            u32     num_colour_targets = 0;
             
             bool    viewport_correction = true;
             
@@ -571,6 +571,9 @@ namespace put
                     masks.push_back(write_mask.as_u8_hex(0xff));
                 }
             }
+            
+            if( masks.size() == 0 )
+                masks.push_back(0xff);
                 
             bool multi_blend = rtb.size() > 1 || write_mask.size() > 1;
             u32 num_rt = std::max<u32>(rtb.size(), write_mask.size());
@@ -633,7 +636,8 @@ namespace put
             main_colour.id_name = ID_MAIN_COLOUR;
             main_colour.ratio = 1;
             main_colour.format = PEN_TEX_FORMAT_RGBA8_UNORM;
-            main_colour.handle = PEN_DEFAULT_RT;
+            main_colour.handle = PEN_BACK_BUFFER_COLOUR;
+            main_colour.num_mips = 1;
             
             k_render_targets.push_back(main_colour);
             
@@ -641,7 +645,8 @@ namespace put
             main_depth.id_name = ID_MAIN_DEPTH;
             main_depth.ratio = 1;
             main_depth.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
-            main_depth.handle = PEN_DEFAULT_DS;
+            main_depth.handle = PEN_BACK_BUFFER_DEPTH;
+            main_depth.num_mips = 1;
             
             k_render_targets.push_back(main_depth);
             
@@ -809,10 +814,10 @@ namespace put
                 //render targets
                 pen::json targets = view["target"];
                 
-                new_view.num_render_targets = targets.size();
+                new_view.num_colour_targets = targets.size();
          
                 s32 cur_rt = 0;
-                for( s32 t = 0; t < new_view.num_render_targets; ++t )
+                for( s32 t = 0; t < new_view.num_colour_targets; ++t )
                 {
                     Str target_str = targets[t].as_str();
                     hash_id target_hash = PEN_HASH(target_str.c_str());
@@ -1004,7 +1009,8 @@ namespace put
                 get_rt_viewport( v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp );
                 pen::renderer_set_viewport( vp );
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-                pen::renderer_set_targets(v.render_targets[0], v.depth_target);
+                
+                pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
                 
                 //clear
                 pen::renderer_clear( v.clear_state );
@@ -1064,7 +1070,7 @@ namespace put
                         
                         ImGui::Image((void*)&rt.handle, ImVec2(w / display_ratio, h / display_ratio));
                         
-                        ImGui::Text("%i, %i", (s32)h, (s32)w );
+                        ImGui::Text("%i, %i", (s32)w, (s32)h);
                     }
                 }
             

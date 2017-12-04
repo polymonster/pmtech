@@ -54,8 +54,9 @@ namespace pen
 		u32 backbuffer_colour;
 		u32 backbuffer_depth;
 
-		u32 active_colour_target = 0;
+		u32 active_colour_target[8] = 0;
 		u32 active_depth_target = 0;
+        u32 num_active_colour_targets = 1;
 
 		u32	active_query_index;
 
@@ -206,16 +207,21 @@ namespace pen
 	{
         u32 flags = resource_pool[ clear_state_index ].clear_state->flags;
         
-		if( flags & PEN_CLEAR_COLOUR_BUFFER && g_context.active_colour_target )
-		{
-            ID3D11RenderTargetView* colour_rtv = resource_pool[g_context.active_colour_target].render_target->rt[colour_face];
-           
-            if (resource_pool[g_context.active_colour_target].render_target->rt_msaa[colour_face])
-                colour_rtv = resource_pool[g_context.active_colour_target].render_target->rt_msaa[colour_face];
-
-			//clear colour
-			g_immediate_context->ClearRenderTargetView( colour_rtv, &resource_pool[ clear_state_index ].clear_state->rgba[ 0 ] );
-		}
+        //clear colour
+        if( flags & PEN_CLEAR_COLOUR_BUFFER )
+        {
+            for( s32 i = 0; i < num_active_colour_targets; ++i )
+            {
+                s32 ct = g_context.active_colour_target[i];
+                
+                ID3D11RenderTargetView* colour_rtv = resource_pool[ct].render_target->rt[colour_face];
+                
+                if (resource_pool[ct].render_target->rt_msaa[colour_face])
+                    colour_rtv = resource_pool[ct].render_target->rt_msaa[colour_face];
+                
+                g_immediate_context->ClearRenderTargetView( colour_rtv, &resource_pool[ clear_state_index ].clear_state->rgba[ 0 ] );
+            }
+        }
         
         u32 d3d_flags = 0;
         if( flags & PEN_CLEAR_DEPTH_BUFFER )
@@ -641,20 +647,25 @@ namespace pen
 		return resource_index;
 	}
 
-	void direct::renderer_set_targets( u32 colour_target, u32 depth_target, u32 colour_face, u32 depth_face )
+	void direct::renderer_set_targets( const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face )
 	{
-		g_context.active_colour_target = colour_target;
 		g_context.active_depth_target = depth_target;
 
-		u32 num_views = colour_target == 0 ? 0 : 1;
-		ID3D11RenderTargetView* colour_rtv = nullptr;
-		if (colour_target != 0)
-		{
-            if (resource_pool[colour_target].render_target->rt_msaa[colour_face])
-                colour_rtv = resource_pool[colour_target].render_target->rt_msaa[colour_face];
-            else
-			    colour_rtv = resource_pool[colour_target].render_target->rt[colour_face];
-		}
+		u32 num_views = num_colour_targets;
+		ID3D11RenderTargetView* colour_rtv[ 8 ] = nullptr;
+        for( s32 i = 0; i < num_colour_targets; ++i )
+        {
+            u32 colour_target = colour_targets[0];
+            g_context.active_colour_target = colour_target;
+            
+            if (colour_target != 0)
+            {
+                if (resource_pool[colour_target].render_target->rt_msaa[colour_face])
+                    colour_rtv[ i ] = resource_pool[colour_target].render_target->rt_msaa[colour_face];
+                else
+                    colour_rtv[ i ] = resource_pool[colour_target].render_target->rt[colour_face];
+            }
+        }
 
 		ID3D11DepthStencilView* dsv = nullptr;
 		if (depth_target != 0)
@@ -665,7 +676,7 @@ namespace pen
                 dsv = resource_pool[depth_target].depth_target->ds[depth_face];
 		}
 
-		g_immediate_context->OMSetRenderTargets( num_views, &colour_rtv, dsv );
+		g_immediate_context->OMSetRenderTargets( num_views, colour_rtv, dsv );
 	}
 
 	u32 direct::renderer_create_texture(const texture_creation_params& tcp)
@@ -1068,8 +1079,9 @@ namespace pen
         resource_pool[crtv].render_target = ( render_target_internal* )pen::memory_alloc( sizeof( render_target_internal ) );
         pen::memory_zero( resource_pool[crtv].render_target, sizeof( render_target_internal ) );
 
-        g_context.active_colour_target = PEN_DEFAULT_RT;
-
+        g_context.active_colour_target[0] = PEN_DEFAULT_RT;
+        g_context.num_active_colour_targets = 1;
+        
         resource_pool[crtv].render_target->rt[0] = g_backbuffer_rtv;
         resource_pool[crtv].texture_2d->texture = pBackBuffer;
 

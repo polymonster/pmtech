@@ -42,6 +42,12 @@ struct ps_output
 	float4 colour : SV_Target;
 };
 
+struct ps_output_multi
+{
+	float4 albedo : SV_Target0;
+	float4 normal : SV_Target1;
+};
+
 cbuffer per_pass_view : register(b0)
 {
 	float4x4 vp_matrix;
@@ -150,12 +156,22 @@ ps_output ps_diffuse( vs_output _input )
 	ps_output _output;
 	
 	_output.colour = SAMPLE_TEXTURE_2D( diffuse_texture, _input.texcoord.xy );
+	
+    return _output;
+}
+
+ps_output_multi ps_gbuffer( vs_output _input ) 
+{	
+	ps_output_multi _output;
+	
+	_output.albedo = SAMPLE_TEXTURE_2D( diffuse_texture, _input.texcoord.xy );
+	_output.normal = float4( _input.normal, 1.0 );
 		
     return _output;
 }
 
 pmfx:
-{
+{	
 	"diffuse":
 	{
 		"vs": "vs_main",
@@ -178,6 +194,18 @@ pmfx:
 	{
 		"vs": "vs_picking_skinned",
 		"ps": "ps_picking"
+	},
+	
+	"gbuffer":
+	{
+		"vs": "vs_main",
+		"ps": "ps_gbuffer"
+	},
+	
+	"gbuffer_skinned":
+	{
+		"vs": "vs_main_skinned",
+		"ps": "ps_gbuffer"
 	}
 }
 

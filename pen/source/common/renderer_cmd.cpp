@@ -145,9 +145,11 @@ namespace pen
 
 	};
 
+    static const u32 k_max_colour_targets = 8;
 	struct set_target_cmd
 	{
-		u32 colour;
+        u32 num_colour;
+		u32 colour[k_max_colour_targets];
 		u32 depth;
 	};
 
@@ -450,11 +452,11 @@ namespace pen
 			break;
 
 		case CMD_SET_TARGETS:
-			direct::renderer_set_targets(cmd.set_targets.colour, cmd.set_targets.depth);
+			direct::renderer_set_targets(cmd.set_targets.colour, cmd.set_targets.num_colour, cmd.set_targets.depth);
 			break;
 
 		case CMD_SET_TARGETS_CUBE:
-			direct::renderer_set_targets(cmd.set_targets_cube.colour, cmd.set_targets_cube.depth, cmd.set_targets_cube.colour_face, cmd.set_targets_cube.depth_face);
+			direct::renderer_set_targets(&cmd.set_targets_cube.colour, 1, cmd.set_targets_cube.depth, cmd.set_targets_cube.colour_face, cmd.set_targets_cube.depth_face);
 			break;
 
 		case CMD_CLEAR_CUBE:
@@ -1088,11 +1090,22 @@ namespace pen
 
 		INC_WRAP(put_pos);
 	}
+    
+    void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target )
+    {
+        cmd_buffer[put_pos].command_index = CMD_SET_TARGETS;
+        cmd_buffer[put_pos].set_targets.num_colour = num_colour_targets;
+        pen::memory_cpy(&cmd_buffer[put_pos].set_targets.colour, colour_targets, num_colour_targets * sizeof(u32));
+        cmd_buffer[put_pos].set_targets.depth = depth_target;
+        
+        INC_WRAP(put_pos);
+    }
 
 	void renderer_set_targets(u32 colour_target, u32 depth_target)
 	{
 		cmd_buffer[put_pos].command_index = CMD_SET_TARGETS;
-		cmd_buffer[put_pos].set_targets.colour = colour_target;
+        cmd_buffer[put_pos].set_targets.num_colour = 1;
+		cmd_buffer[put_pos].set_targets.colour[0] = colour_target;
 		cmd_buffer[put_pos].set_targets.depth = depth_target;
 
 		INC_WRAP(put_pos);

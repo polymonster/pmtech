@@ -377,6 +377,8 @@ def compile_glsl(
     vs_input_struct_name = vs_input_source.split()[1]
     vs_output_struct_name = vs_output_source.split()[1]
 
+    ps_output_struct_name = ps_output_source.split()[1]
+
     # cbuffers to unifom
     uniform_buffers = ""
     for cbuf in constant_buffers:
@@ -393,7 +395,8 @@ def compile_glsl(
         uniform_buffers += uniform_buf + "\n"
 
     # start making vs shader code
-    final_vs_source = "#version 330 core\n"
+    final_vs_source = "//" + shader_name + " " + technique_name + "\n"
+    final_vs_source += "#version 330 core\n"
     final_vs_source += "#define GLSL\n"
     final_vs_source += macros
     final_vs_source += "\n\n"
@@ -444,7 +447,8 @@ def compile_glsl(
     if ps_main != "":
         ps_outputs, ps_output_semantics = parse_io_struct(ps_output_source)
 
-        final_ps_source = "#version 330 core\n"
+        final_ps_source = "//" + shader_name + " " + technique_name + "\n"
+        final_ps_source += "#version 330 core\n"
         final_ps_source += "#define GLSL\n"
         final_ps_source += macros
         final_ps_source += "\n\n"
@@ -456,12 +460,15 @@ def compile_glsl(
         final_ps_source += "\n"
 
         # ps outputs
-        for ps_output in ps_outputs:
-            final_ps_source += "out " + ps_output + "_ps_output;\n"
+        for p in range(0, len(ps_outputs)):
+            output_index = ps_output_semantics[p].replace("SV_Target", "")
+            if output_index != "":
+                final_ps_source += "layout(location = " + output_index + ") "
+            final_ps_source += "out " + ps_outputs[p] + "_ps_output;\n"
         final_ps_source += "\n"
 
         final_ps_source += generate_global_io_struct(vs_outputs, "struct " + vs_output_struct_name)
-        final_ps_source += generate_global_io_struct(ps_outputs, "struct ps_output")
+        final_ps_source += generate_global_io_struct(ps_outputs, "struct " + ps_output_struct_name)
         final_ps_source += texture_samplers_source
         final_ps_source += uniform_buffers
         final_ps_source += ps_functions
@@ -774,7 +781,7 @@ def generate_shader_debug_info():
 
 # build shaders
 shader_compile_pmfx()
-generate_shader_debug_info()
+# generate_shader_debug_info()
 
 
 

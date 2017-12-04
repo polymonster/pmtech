@@ -1,6 +1,11 @@
 {
 	blend_states:
 	{
+		disabled:
+		{
+			blend_enable: false,	
+		}
+		
 		additive:
 		{
 			blend_enable: true,
@@ -94,7 +99,28 @@
 			size: equal,
 			format: d24s8,
 			mips: false,
-		}
+		},
+		
+		gbuffer_albedo:
+		{
+			size: equal,
+			format: rgba8,
+			mips: false,
+		},
+		
+		gbuffer_normals:
+		{
+			size: equal,
+			format: rgba8,
+			mips: false,
+		},
+		
+		gbuffer_depth:
+		{
+			size: equal,
+			format: d24s8,
+			mips: false,
+		},
 	},
 	
 	views:
@@ -105,7 +131,7 @@
 			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			clear_depth: 1.0,
 			colour_write_mask: 0xff,
-			blend_state: additive,
+			blend_state: disabled,
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			raster_state: default,
 			depth_stencil_state: default,
@@ -120,9 +146,24 @@
 			clear_colour:[1.0, 1.0, 1.0, 1.0],
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
+			blend_state: disabled,
 			raster_state: default,
 			depth_stencil_state: default,
 			technique: picking,
+			scene: main_scene,
+			camera: model_viewer_camera
+		},
+		
+		gbuffer_view:
+		{
+			target:[gbuffer_albedo, gbuffer_normals, gbuffer_depth],
+			clear_colour:[1.0, 1.0, 1.0, 1.0],
+			clear_depth: 1.0,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			blend_state: disabled,
+			raster_state: default,
+			depth_stencil_state: default,
+			technique: gbuffer,
 			scene: main_scene,
 			camera: model_viewer_camera
 		},

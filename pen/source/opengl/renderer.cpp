@@ -379,6 +379,8 @@ namespace pen
         
         if ( info_log_length > 0 )
         {
+            PEN_PRINTF( "%s", params.byte_code );
+            
             char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
             
             glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]);
@@ -822,74 +824,103 @@ namespace pen
         
         return resource_index;
 	}
-
-	void direct::renderer_set_targets( u32 colour_target, u32 depth_target, u32 colour_face, u32 depth_face )
+    
+	void direct::renderer_set_targets( const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face )
 	{
-        if( colour_target == 0 )
+        static GLenum k_draw_buffers[8] =
+        {
+            GL_COLOR_ATTACHMENT0,
+            GL_COLOR_ATTACHMENT1,
+            GL_COLOR_ATTACHMENT2,
+            GL_COLOR_ATTACHMENT3,
+            GL_COLOR_ATTACHMENT4,
+            GL_COLOR_ATTACHMENT5,
+            GL_COLOR_ATTACHMENT6,
+            GL_COLOR_ATTACHMENT7,
+        };
+        
+        bool use_back_buffer = false;
+        
+        if( depth_target == PEN_BACK_BUFFER_DEPTH )
+            use_back_buffer = true;
+        
+        if( num_colour_targets )
+            if( colour_targets[0] == 0 )
+                use_back_buffer = true;
+        
+        if( use_back_buffer )
         {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDrawBuffers(1, k_draw_buffers);
+            
+            return;
         }
-        else
+        
+        resource_allocation& depth_res = resource_pool[ depth_target ];
+        
+        bool msaa = false;
+        
+        hash_murmur hh;
+        hh.begin();
+        hh.add(depth_res.render_target.uid);
+        
+        for( s32 i = 0; i < num_colour_targets; ++i )
         {
-            GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-            glDrawBuffers(1, DrawBuffers);
-            
-            resource_allocation& colour_res = resource_pool[ colour_target ];
-            resource_allocation& depth_res = resource_pool[ depth_target ];
-            
-            hash_murmur hh;
-            hh.begin();
+            resource_allocation& colour_res = resource_pool[ colour_targets[i] ];
             hh.add(colour_res.render_target.uid);
-            hh.add(depth_res.render_target.uid);
-            hh.add(colour_face);
-            hh.add(depth_face);
-            hash_id h = hh.end();
             
-            bool found = false;
-            
-            for( auto& fb : k_framebuffers )
+            if( colour_res.type == RES_RENDER_TARGET_MSAA )
+                msaa = true;
+        }
+        
+        hh.add(colour_face);
+        hh.add(depth_face);
+        hash_id h = hh.end();
+        
+        for( auto& fb : k_framebuffers )
+        {
+            if( fb.hash == h)
             {
-                if( fb.hash == h)
-                {
-                    glBindFramebuffer( GL_FRAMEBUFFER, fb.framebuffer );
-                    found = true;
-                }
-            }
-            
-            bool msaa = resource_pool[ colour_target ].type == RES_RENDER_TARGET_MSAA;
-            
-            if(!found)
-            {
-                GLuint fbh;
+                glBindFramebuffer( GL_FRAMEBUFFER, fb.framebuffer );
+                glDrawBuffers( num_colour_targets, k_draw_buffers );
                 
-                glGenFramebuffers(1, &fbh);
-                glBindFramebuffer(GL_FRAMEBUFFER, fbh);
-                
-                if( msaa )
-                    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 );
-                else
-                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
-                
-                if( depth_target != 0 )
-                {
-                    if( msaa )
-                        glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_res.render_target.texture_msaa.handle, 0 );
-                    else
-                        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0);
-                }
-                
-                GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
-                PEN_ASSERT( status == GL_FRAMEBUFFER_COMPLETE );
-                
-                framebuffer new_fb;
-                new_fb.hash = h;
-                new_fb.framebuffer = fbh;
-                
-                k_framebuffers.push_back(new_fb);
+                return;
             }
         }
+        
+        GLuint fbh;
+        glGenFramebuffers(1, &fbh);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbh);
+        glDrawBuffers( num_colour_targets, k_draw_buffers );
+        
+        if( depth_target != PEN_NULL_DEPTH_BUFFER )
+        {
+            if( msaa )
+                glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_res.render_target.texture_msaa.handle, 0 );
+            else
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0);
+        }
+
+        for( s32 i = 0; i < num_colour_targets; ++i )
+        {
+            resource_allocation& colour_res = resource_pool[ colour_targets[i] ];
+            
+            if( msaa )
+                glFramebufferTexture2D( GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 );
+            else
+                glFramebufferTexture(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0);
+        }
+        
+        GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+        PEN_ASSERT( status == GL_FRAMEBUFFER_COMPLETE );
+        
+        framebuffer new_fb;
+        new_fb.hash = h;
+        new_fb.framebuffer = fbh;
+        
+        k_framebuffers.push_back(new_fb);
 	}
-    
+
     void direct::renderer_resolve_target( u32 target )
     {
         resource_allocation& colour_res = resource_pool[ target ];

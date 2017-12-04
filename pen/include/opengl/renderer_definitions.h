@@ -18,9 +18,9 @@
 
 enum null_values
 {
-    PEN_NULL_DEPTH_BUFFER = 0,
-    PEN_NULL_PIXEL_SHADER = 0,
-    PEN_NULL_COLOUR_BUFFER = 0
+    PEN_NULL_DEPTH_BUFFER = -1,
+    PEN_NULL_COLOUR_BUFFER = -1,
+    PEN_NULL_PIXEL_SHADER = -1,
 };
 
 enum shader_type
@@ -46,7 +46,10 @@ enum cull_mode : s32
 enum default_targets : s32
 {
     PEN_DEFAULT_RT = 0,
-    PEN_DEFAULT_DS = 0
+    PEN_DEFAULT_DS = 0,
+    
+    PEN_BACK_BUFFER_COLOUR = 0,
+    PEN_BACK_BUFFER_DEPTH = 0
 };
 
 enum clear_bits : s32
