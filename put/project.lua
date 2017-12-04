@@ -38,6 +38,7 @@ project "put"
 		"..\\pen\\third_party\\imgui\\*.h",
 	}
 	includedirs { "include" }
+	disablewarnings { "4800", "4305", "4018" }
 		
 	configuration "Debug"
 		defines { "DEBUG" }

@@ -42,6 +42,8 @@ project "pen"
 		
 		"third_party" 
 	}
+	
+	disablewarnings { "4800", "4305", "4018" }
 		
 	configuration "Debug"
 		defines { "DEBUG" }
