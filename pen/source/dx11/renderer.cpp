@@ -227,7 +227,6 @@ namespace pen
 
 		if ( d3d_flags && g_context.active_depth_target )
 		{
-            u32 d3d_flags =
             ID3D11DepthStencilView* dsv = resource_pool[g_context.active_depth_target].depth_target->ds[depth_face];
             
             if (resource_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face])
