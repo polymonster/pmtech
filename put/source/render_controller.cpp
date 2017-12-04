@@ -94,11 +94,15 @@ namespace put
             u32     clear_state = 0;
             u32     raster_state = 0;
             u32     depth_stencil_state = 0;
+            u32     blend_state = 0;
             
             hash_id technique;
         
             ces::entity_scene* scene;
             put::camera* camera;
+            
+            Str     name;
+            hash_id id_name;
         };
         
         static std::vector<render_target>   k_render_targets;
@@ -140,13 +144,23 @@ namespace put
             u32 val;
         };
         
-        static mode_map k_render_mode_map[] =
+        static mode_map k_cull_mode_map[] =
         {
             "none",             PEN_CULL_NONE,
             "back",             PEN_CULL_BACK,
             "front",            PEN_CULL_FRONT,
+            nullptr,            0
+        };
+        
+        static mode_map k_fill_mode_map[] =
+        {
             "solid",            PEN_FILL_SOLID,
             "wireframe",        PEN_FILL_WIREFRAME,
+            nullptr,            0
+        };
+        
+        static mode_map k_comparison_mode_map[] =
+        {
             "never",            PEN_COMPARISON_NEVER,
             "less",             PEN_COMPARISON_LESS,
             "less_equal",       PEN_COMPARISON_LESS_EQUAL,
@@ -154,32 +168,82 @@ namespace put
             "not_equal",        PEN_COMPARISON_NOT_EQUAL,
             "greater_equal",    PEN_COMPARISON_GREATER_EQUAL,
             "always",           PEN_COMPARISON_ALWAYS,
+            nullptr,            0
+        };
+        
+        static mode_map k_stencil_mode_map[] =
+        {
             "keep",             PEN_STENCIL_OP_KEEP,
             "replace",          PEN_STENCIL_OP_REPLACE,
             "incr",             PEN_STENCIL_OP_INCR,
             "incr_sat",         PEN_STENCIL_OP_INCR_SAT,
             "decr",             PEN_STENCIL_OP_DECR,
             "decr_sat",         PEN_STENCIL_OP_DECR_SAT,
-            "stencil_zero",     PEN_STENCIL_OP_ZERO,
+            "zero",             PEN_STENCIL_OP_ZERO,
             "invert",           PEN_STENCIL_OP_INVERT,
+            nullptr,            0
+        };
+        
+        static mode_map k_filter_mode_map[] =
+        {
             "linear",           PEN_FILTER_MIN_MAG_MIP_LINEAR,
             "point",            PEN_FILTER_MIN_MAG_MIP_POINT,
+            nullptr,            0
+        };
+        
+        static mode_map k_address_mode_map[] =
+        {
             "wrap",             PEN_TEXTURE_ADDRESS_WRAP,
             "clamp",            PEN_TEXTURE_ADDRESS_CLAMP,
             "border",           PEN_TEXTURE_ADDRESS_BORDER,
             "mirror",           PEN_TEXTURE_ADDRESS_MIRROR,
-            "mirror_once",      PEN_TEXTURE_ADDRESS_MIRROR_ONCE
+            "mirror_once",      PEN_TEXTURE_ADDRESS_MIRROR_ONCE,
+            nullptr,            0
         };
-        static const u32 num_mode_maps = sizeof(k_render_mode_map) / sizeof(k_render_mode_map[0]);
         
-        u32 mode_from_string( const c8* str, u32 default_value )
+        static mode_map k_blend_mode_map[] =
+        {
+            "zero",             PEN_BLEND_ZERO,
+            "one",              PEN_BLEND_ONE,
+            "src_colour",       PEN_BLEND_SRC_COLOR,
+            "inv_src_colour",   PEN_BLEND_INV_SRC_COLOR,
+            "src_alpha",        PEN_BLEND_SRC_ALPHA,
+            "inv_src_alpha",    PEN_BLEND_INV_SRC_ALPHA,
+            "dest_alpha",       PEN_BLEND_DEST_ALPHA,
+            "inv_dest_alpha",   PEN_BLEND_INV_DEST_ALPHA,
+            "dest_colour",      PEN_BLEND_DEST_COLOR,
+            "inv_dest_colour",  PEN_BLEND_INV_DEST_COLOR,
+            "src_alpha_sat",    PEN_BLEND_SRC_ALPHA_SAT,
+            "blend_factor",     PEN_BLEND_BLEND_FACTOR,
+            "inv_blend_factor", PEN_BLEND_INV_BLEND_FACTOR,
+            "src1_colour",      PEN_BLEND_SRC1_COLOR,
+            "inv_src1_colour",  PEN_BLEND_INV_SRC1_COLOR,
+            "src1_aplha",       PEN_BLEND_SRC1_ALPHA,
+            "inv_src1_alpha",   PEN_BLEND_INV_SRC1_ALPHA,
+            nullptr,            0
+        };
+        
+        static mode_map k_blend_op_mode_map[] =
+        {
+            "belnd_op_add",     PEN_BLEND_OP_ADD,
+            "belnd_op_add",     PEN_BLEND_OP_ADD,
+            "belnd_op_subtract", PEN_BLEND_OP_SUBTRACT,
+            "belnd_op_rev_sbtract", PEN_BLEND_OP_REV_SUBTRACT,
+            "belnd_op_min",     PEN_BLEND_OP_MIN,
+            "belnd_op_max",     PEN_BLEND_OP_MAX,
+            nullptr,            0
+        };
+            
+        u32 mode_from_string( const mode_map* map, const c8* str, u32 default_value )
         {
             if(!str)
                 return default_value;
             
-            for( s32 i = 0; i < num_mode_maps; ++i )
-                if( pen::string_compare(str, k_render_mode_map[i].name) == 0)
-                    return k_render_mode_map[i].val;
+            while( map->name )
+                if( pen::string_compare(str, map->name) == 0)
+                    return map->val;
+                else
+                    map++;
             
             return default_value;
         }
@@ -290,16 +354,16 @@ namespace put
                 
                 pen::json state = j_sampler_states[i];
                 
-                scp.filter = mode_from_string( state["filter"].as_cstr(), PEN_FILTER_MIN_MAG_MIP_LINEAR );
-                scp.address_v = scp.address_w = scp.address_u = mode_from_string( state["address"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
-                scp.address_u = mode_from_string( state["address_u"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
-                scp.address_v = mode_from_string( state["address_v"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
-                scp.address_w = mode_from_string( state["address_w"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
+                scp.filter = mode_from_string( k_filter_mode_map, state["filter"].as_cstr(), PEN_FILTER_MIN_MAG_MIP_LINEAR );
+                scp.address_v = scp.address_w = scp.address_u = mode_from_string( k_address_mode_map, state["address"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
+                scp.address_u = mode_from_string( k_address_mode_map, state["address_u"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
+                scp.address_v = mode_from_string( k_address_mode_map, state["address_v"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
+                scp.address_w = mode_from_string( k_address_mode_map, state["address_w"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
 
                 scp.mip_lod_bias = state["mip_lod_bias"].as_f32( 0.0f );
                 scp.max_anisotropy = state["max_anisotropy"].as_u32( 0 );
                 
-                scp.comparison_func = mode_from_string( state["comparison_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
+                scp.comparison_func = mode_from_string( k_comparison_mode_map, state["comparison_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
                 
                 pen::json border = state["border"];
                 if( border.type() == JSMN_ARRAY )
@@ -313,17 +377,20 @@ namespace put
                 scp.max_lod = state["max_lod"].as_f32( PEN_F32_MAX );
                 
                 hash_id hh = PEN_HASH(scp);
-                if( !get_state_by_hash( hh ) )
-                {
-                    render_state rs;
-                    rs.hash = hh;
-                    Str typed_name = state.name();
-                    typed_name.append("_sampler_state");
-                    rs.id_name =  PEN_HASH(typed_name.c_str());
+                
+                render_state rs;
+                rs.hash = hh;
+                Str typed_name = state.name();
+                typed_name.append("_sampler_state");
+                rs.id_name =  PEN_HASH(typed_name.c_str());
+            
+                render_state* existing_state = get_state_by_hash( hh );
+                if( existing_state )
+                    rs.handle = existing_state->handle;
+                else
                     rs.handle = pen::renderer_create_sampler(scp);
-                    
-                    k_render_states.push_back(rs);
-                }
+                
+                k_render_states.push_back(rs);
             }
         }
         
@@ -337,8 +404,8 @@ namespace put
                 
                 pen::json state = j_raster_states[i];
                 
-                rcp.fill_mode = mode_from_string( state["fill_mode"].as_cstr(), PEN_FILL_SOLID );
-                rcp.cull_mode = mode_from_string( state["cull_mode"].as_cstr(), PEN_CULL_BACK );
+                rcp.fill_mode = mode_from_string( k_fill_mode_map, state["fill_mode"].as_cstr(), PEN_FILL_SOLID );
+                rcp.cull_mode = mode_from_string( k_cull_mode_map, state["cull_mode"].as_cstr(), PEN_CULL_BACK );
                 rcp.front_ccw = state["front_ccw"].as_bool( false ) ? 1 : 0;
                 rcp.depth_bias = state["depth_bias"].as_s32(0);
                 rcp.depth_bias_clamp = state["depth_bias_clamp"].as_f32(0.0f);
@@ -349,49 +416,61 @@ namespace put
                 rcp.aa_lines = state["aa_lines"].as_bool( false ) ? 1 : 0;
                 
                 hash_id hh = PEN_HASH(rcp);
-                if( !get_state_by_hash( hh ) )
-                {
-                    render_state rs;
-                    rs.hash = hh;
-                    Str typed_name = state.name();
-                    typed_name.append("_raster_state");
-                    rs.id_name =  PEN_HASH(typed_name.c_str());
+                
+                render_state rs;
+                rs.hash = hh;
+                Str typed_name = state.name();
+                typed_name.append("_raster_state");
+                rs.id_name =  PEN_HASH(typed_name.c_str());
+                
+                render_state* existing_state = get_state_by_hash( hh );
+                if( existing_state )
+                    rs.handle = existing_state->handle;
+                else
                     rs.handle = pen::renderer_create_rasterizer_state(rcp);
-                    
-                    k_render_states.push_back(rs);
-                }
+                
+                k_render_states.push_back(rs);
             }
         }
         
-        void parse_blend_states( pen::json& render_config )
+        struct partial_blend_state
         {
-            //common blend options
-            /*
+            hash_id id_name;
             pen::render_target_blend rtb;
-            rtb.blend_enable = 1;
-            rtb.blend_op = PEN_BLEND_OP_ADD;
-            rtb.blend_op_alpha = PEN_BLEND_OP_ADD;
-            rtb.render_target_write_mask = 0x0F;
-            
-            pen::blend_creation_params blend_params;
-            blend_params.alpha_to_coverage_enable = 0;
-            blend_params.independent_blend_enable = 0;
-            blend_params.render_targets = &rtb;
-            blend_params.num_render_targets = 1;
-            
-            //disabled
-            rtb.blend_enable = 0;
-            */
+        };
+        static std::vector<partial_blend_state> k_partial_blend_states;
+        
+        void parse_partial_blend_states( pen::json& render_config )
+        {
+            pen::json j_blend_states = render_config["blend_states"];
+            s32 num = j_blend_states.size();
+            for( s32 i = 0; i < num; ++i )
+            {
+                pen::render_target_blend rtb;
+                
+                pen::json state = j_blend_states[i];
+                
+                rtb.blend_enable = state["blend_enable"].as_bool(false);
+                rtb.src_blend = mode_from_string( k_blend_mode_map, state["src_blend"].as_cstr(), PEN_BLEND_ONE );
+                rtb.dest_blend = mode_from_string( k_blend_mode_map, state["dest_blend"].as_cstr(), PEN_BLEND_ZERO );
+                rtb.blend_op = mode_from_string( k_blend_op_mode_map, state["blend_op"].as_cstr(), PEN_BLEND_OP_ADD );
+                
+                rtb.src_blend_alpha = mode_from_string( k_blend_mode_map, state["src_blend_alpha"].as_cstr(), PEN_BLEND_ONE );
+                rtb.dest_blend_alpha = mode_from_string( k_blend_mode_map, state["dest_blend_alpha"].as_cstr(), PEN_BLEND_ZERO );
+                rtb.blend_op_alpha = mode_from_string( k_blend_op_mode_map, state["alpha_blend_op"].as_cstr(), PEN_BLEND_OP_ADD );
+                
+                k_partial_blend_states.push_back({PEN_HASH(state.name().c_str()), rtb});
+            }
         }
         
         void parse_stencil_state( pen::json& depth_stencil_state, pen::stencil_op* front, pen::stencil_op* back )
         {
             pen::stencil_op op;
             
-            op.stencil_failop = mode_from_string( depth_stencil_state["stencil_fail"].as_cstr(), PEN_STENCIL_OP_KEEP );
-            op.stencil_depth_failop = mode_from_string( depth_stencil_state["depth_fail"].as_cstr(), PEN_STENCIL_OP_KEEP );
-            op.stencil_passop = mode_from_string( depth_stencil_state["stencil_pass"].as_cstr(), PEN_STENCIL_OP_REPLACE );
-            op.stencil_func = mode_from_string( depth_stencil_state["stencil_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
+            op.stencil_failop = mode_from_string( k_stencil_mode_map, depth_stencil_state["stencil_fail"].as_cstr(), PEN_STENCIL_OP_KEEP );
+            op.stencil_depth_failop = mode_from_string( k_stencil_mode_map, depth_stencil_state["depth_fail"].as_cstr(), PEN_STENCIL_OP_KEEP );
+            op.stencil_passop = mode_from_string( k_stencil_mode_map, depth_stencil_state["stencil_pass"].as_cstr(), PEN_STENCIL_OP_REPLACE );
+            op.stencil_func = mode_from_string( k_comparison_mode_map, depth_stencil_state["stencil_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
             
             if( front )
                 pen::memory_cpy(front, &op, sizeof(op));
@@ -410,11 +489,11 @@ namespace put
                 
                 pen::json state = j_ds_states[i];
                 
-                dscp.depth_enable = state["depth_enabled"].as_bool( false ) ? 1 : 0;
+                dscp.depth_enable = state["depth_enable"].as_bool( false ) ? 1 : 0;
                 dscp.depth_write_mask = state["depth_write"].as_bool( false ) ? 1 : 0;
-                dscp.depth_func = mode_from_string( state["depth_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
+                dscp.depth_func = mode_from_string( k_comparison_mode_map, state["depth_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
 
-                dscp.stencil_enable = state["stencil_enabled"].as_bool( false ) ? 1 : 0;
+                dscp.stencil_enable = state["stencil_enable"].as_bool( false ) ? 1 : 0;
                 dscp.stencil_read_mask = state["stencil_read_mask"].as_u8_hex( 0 );
                 dscp.stencil_write_mask = state["stencil_write_mask"].as_u8_hex( 0 );
                 
@@ -426,20 +505,125 @@ namespace put
                 
                 pen::json op_back = state["stencil_op_back"];
                 parse_stencil_state( op_back, nullptr, &dscp.back_face );
-            
+                
                 hash_id hh = PEN_HASH(dscp);
-                if( !get_state_by_hash( hh ) )
-                {
-                    render_state rs;
-                    rs.hash = hh;
-                    Str typed_name = state.name();
-                    typed_name.append("_depth_stencil_state");
-                    rs.id_name =  PEN_HASH(typed_name.c_str());
+                
+                render_state rs;
+                rs.hash = hh;
+                Str typed_name = state.name();
+                typed_name.append("_depth_stencil_state");
+                rs.id_name =  PEN_HASH(typed_name.c_str());
+                
+                render_state* existing_state = get_state_by_hash( hh );
+                if( existing_state )
+                    rs.handle = existing_state->handle;
+                else
                     rs.handle = pen::renderer_create_depth_stencil_state(dscp);
+                
+                k_render_states.push_back(rs);
+            }
+        }
+        
+        u32 create_blend_state( const c8* view_name, pen::json& blend_state, pen::json& write_mask, bool alpha_to_coverage )
+        {
+            std::vector<pen::render_target_blend> rtb;
+            
+            if( blend_state.type() != JSMN_UNDEFINED )
+            {
+                if( blend_state.type() == JSMN_ARRAY )
+                {
+                    for( s32 i = 0; i < blend_state.size(); ++i )
+                    {
+                        hash_id hh = PEN_HASH(blend_state[i].as_cstr());
+                        
+                        for( auto& b : k_partial_blend_states )
+                        {
+                            if( hh == b.id_name )
+                                rtb.push_back(b.rtb);
+                                
+                        }
+                    }
+                }
+                else
+                {
+                    hash_id hh = PEN_HASH(blend_state.as_cstr());
                     
-                    k_render_states.push_back(rs);
+                    for( auto& b : k_partial_blend_states )
+                    {
+                        if( hh == b.id_name )
+                            rtb.push_back(b.rtb);
+                    }
                 }
             }
+                
+            std::vector<u8> masks;
+            if( write_mask.type() != JSMN_UNDEFINED )
+            {
+                if( write_mask.type() == JSMN_ARRAY )
+                {
+                    for( s32 i = 0; i < write_mask.size(); ++i )
+                    {
+                        masks.push_back(write_mask[i].as_u32_hex());
+                    }
+                }
+                else
+                {
+                    masks.push_back(write_mask.as_u8_hex(0xff));
+                }
+            }
+                
+            bool multi_blend = rtb.size() > 1 || write_mask.size() > 1;
+            u32 num_rt = std::max<u32>(rtb.size(), write_mask.size());
+            
+            //splat
+            s32 rtb_start = rtb.size();
+            rtb.resize(num_rt);
+            for( s32 i = rtb_start; i < num_rt; ++i )
+                rtb[i] = rtb[i-1];
+                
+                
+            s32 mask_start = masks.size();
+            rtb.resize(num_rt);
+            for( s32 i = mask_start; i < num_rt; ++i )
+                masks[i] = masks[i-1];
+            
+            pen::blend_creation_params bcp;
+            bcp.alpha_to_coverage_enable = alpha_to_coverage;
+            bcp.independent_blend_enable = multi_blend;
+            bcp.num_render_targets = num_rt;
+            bcp.render_targets = new pen::render_target_blend[num_rt];
+            
+            for( s32 i = 0; i < num_rt; ++i )
+            {
+                bcp.render_targets[i] = rtb[i];
+                bcp.render_targets[i].render_target_write_mask = masks[i];
+            }
+            
+            pen::hash_murmur hm;
+            hm.begin();
+            hm.add(&bcp.alpha_to_coverage_enable, sizeof(bcp.alpha_to_coverage_enable));
+            hm.add(&bcp.independent_blend_enable, sizeof(bcp.independent_blend_enable));
+            hm.add(&bcp.num_render_targets, sizeof(bcp.num_render_targets));
+            for( s32 i = 0; i < num_rt; ++i)
+                hm.add(&bcp.render_targets[i], sizeof(bcp.render_targets[i]));
+            
+            hash_id hh = hm.end();
+            
+            render_state rs;
+            rs.hash = hh;
+            Str typed_name = view_name;
+            typed_name.append("_blend_state");
+            rs.id_name =  PEN_HASH(typed_name.c_str());
+            
+            render_state* existing_state = get_state_by_hash( hh );
+            if( existing_state )
+                rs.handle = existing_state->handle;
+            else
+                rs.handle = pen::renderer_create_blend_state(bcp);
+            
+            k_render_states.push_back(rs);
+            
+            return rs.handle;
         }
         
         void parse_render_targets( pen::json& render_config )
@@ -571,6 +755,10 @@ namespace put
                 view_params new_view;
                 
                 pen::json view = j_views[i];
+                
+                new_view.name = j_views[i].name();
+                
+                new_view.id_name = PEN_HASH(j_views[i].name());
                 
                 //clear colour
                 pen::json clear_colour = view["clear_colour"];
@@ -707,7 +895,12 @@ namespace put
                 if( state )
                     new_view.depth_stencil_state = state->handle;
                 
-                //blend - todo
+                //blend
+                bool alpha_to_coverage = view["alpha_to_coverage"].as_bool();
+                pen::json colour_write_mask = view["colour_write_mask"];
+                pen::json blend_state = view["blend_state"];
+                
+                new_view.blend_state = create_blend_state( j_views[i].name().c_str(), blend_state, colour_write_mask, alpha_to_coverage);
                 
                 //scene and camera
                 Str scene_str = view["scene"].as_str();
@@ -780,7 +973,7 @@ namespace put
             parse_sampler_states(render_config);
             parse_raster_states(render_config);
             parse_depth_stencil_states(render_config);
-            parse_blend_states(render_config);
+            parse_partial_blend_states(render_config);
             
             parse_render_targets(render_config);
             
@@ -819,6 +1012,7 @@ namespace put
                 //set render state
                 pen::renderer_set_rasterizer_state(v.raster_state);
                 pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
+                pen::renderer_set_blend_state(v.blend_state);
                 
                 //generate camera matrices
                 put::camera_update_shader_constants(v.camera, v.viewport_correction);

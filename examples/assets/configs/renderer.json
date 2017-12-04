@@ -1,4 +1,21 @@
 {
+	blend_states:
+	{
+		additive:
+		{
+			blend_enable: true,
+			src_blend: one,
+			dest_blend: one
+		}
+		
+		alpha_belnd:
+		{
+			blend_enable: true,
+			src_blend: src_alpha,
+			dest_blend: inv_src_alpha
+		}
+	},
+	
 	sampler_states:
 	{
 		wrap_linear:
@@ -12,24 +29,24 @@
 	{
 		default:
 		{
-			depth_enabled: true,
+			depth_enable: true,
 			depth_write: true,
 			depth_func: "less"
 		},
 		
 		depth_never:
 		{
-			depth_enabled: true,
+			depth_enable: true,
 			depth_write: true,
 			depth_func: "never"
 		},
 		
 		stencil_test:
 		{
-			depth_enabled: true,
+			depth_enable: true,
 			depth_write: true,
 			depth_func: "always",
-			stencil_enabled: true,
+			stencil_enable: true,
 			stencil_write_mask: 0xff,
 			stencil_read_mask: 0xff,
 			
@@ -87,6 +104,8 @@
 			target:[main_colour, main_depth],
 			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			clear_depth: 1.0,
+			colour_write_mask: 0xff,
+			blend_state: additive,
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			raster_state: default,
 			depth_stencil_state: default,

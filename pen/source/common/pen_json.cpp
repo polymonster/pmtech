@@ -99,7 +99,7 @@ namespace pen
         JSON_U32,
         JSON_S32,
         JSON_F32,
-        JSON_U8_HEX,
+        JSON_U32_HEX,
         JSON_BOOL
     };
     
@@ -133,10 +133,10 @@ namespace pen
                     pen::memory_free( tok_str );
                 }
                     break;
-                case JSON_U8_HEX:
+                case JSON_U32_HEX:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                    result.s = strtol( tok_str, NULL, 16 );
+                    result.u = strtol( tok_str, NULL, 16 );
                     pen::memory_free( tok_str );
                 }
                 case JSON_F32:
@@ -675,8 +675,17 @@ namespace pen
     u8 json::as_u8_hex( u8 default_value )
     {
         json_value jv;
-        if( as_value(jv, m_internal_object, JSON_U8_HEX ) )
-            return jv.f;
+        if( as_value(jv, m_internal_object, JSON_U32_HEX ) )
+            return jv.u;
+        
+        return default_value;
+    }
+
+    u32 json::as_u32_hex( u32 default_value )
+    {
+        json_value jv;
+        if( as_value(jv, m_internal_object, JSON_U32_HEX ) )
+            return jv.u;
         
         return default_value;
     }

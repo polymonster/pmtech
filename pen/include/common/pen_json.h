@@ -37,6 +37,7 @@ namespace pen
         bool        as_bool( bool default_value = false );
         f32         as_f32( f32 default_value = 0.0f );
         u8          as_u8_hex( u8 default_value = 0 );
+        u32         as_u32_hex( u32 default_value = 0 );
 
         void    set(const c8* name, const Str val);
         void    set(const c8* name, const u32 val);

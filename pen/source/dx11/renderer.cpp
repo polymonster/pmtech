@@ -65,6 +65,7 @@ namespace pen
 	{
 		FLOAT rgba[ 4 ];
 		f32 depth;
+        u8 stencil;
 		u32 flags;
 	};
 
@@ -178,6 +179,8 @@ namespace pen
 		resource_pool[ resoruce_index ].clear_state->rgba[ 2 ] = cs.b;
 		resource_pool[ resoruce_index ].clear_state->rgba[ 3 ] = cs.a;
 		resource_pool[ resoruce_index ].clear_state->depth = cs.depth;
+        resource_pool[ resoruce_index ].clear_state->stencil = cs.stencil;
+        
 		resource_pool[ resoruce_index ].clear_state->flags = cs.flags;
 
 		return  resoruce_index;
