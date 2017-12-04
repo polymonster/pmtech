@@ -210,7 +210,7 @@ namespace pen
         //clear colour
         if( flags & PEN_CLEAR_COLOUR_BUFFER )
         {
-            for( s32 i = 0; i < num_active_colour_targets; ++i )
+            for( s32 i = 0; i < g_context.num_active_colour_targets; ++i )
             {
                 s32 ct = g_context.active_colour_target[i];
                 
@@ -656,7 +656,7 @@ namespace pen
         for( s32 i = 0; i < num_colour_targets; ++i )
         {
             u32 colour_target = colour_targets[0];
-            g_context.active_colour_target = colour_target;
+            g_context.active_colour_target[i] = colour_target;
             
             if (colour_target != 0)
             {
@@ -1075,11 +1075,11 @@ namespace pen
         if (FAILED( hr ))
             return;
 
-        PEN_ASSERT( crtv == PEN_DEFAULT_RT );
+        PEN_ASSERT( crtv == PEN_BACK_BUFFER_COLOUR );
         resource_pool[crtv].render_target = ( render_target_internal* )pen::memory_alloc( sizeof( render_target_internal ) );
         pen::memory_zero( resource_pool[crtv].render_target, sizeof( render_target_internal ) );
 
-        g_context.active_colour_target[0] = PEN_DEFAULT_RT;
+        g_context.active_colour_target[0] = PEN_BACK_BUFFER_COLOUR;
         g_context.num_active_colour_targets = 1;
         
         resource_pool[crtv].render_target->rt[0] = g_backbuffer_rtv;
@@ -1087,11 +1087,11 @@ namespace pen
 
         g_context.backbuffer_colour = crtv;
 
-        PEN_ASSERT( dsv == PEN_DEFAULT_DS );
+        PEN_ASSERT( dsv == PEN_BACK_BUFFER_DEPTH );
         resource_pool[dsv].depth_target = ( depth_stencil_target_internal* )pen::memory_alloc( sizeof( depth_stencil_target_internal ) );
         pen::memory_zero( resource_pool[dsv].depth_target, sizeof( render_target_internal ) );
 
-        g_context.active_depth_target = PEN_DEFAULT_DS;
+        g_context.active_depth_target = PEN_BACK_BUFFER_DEPTH;
 
         // Create depth stencil texture
         D3D11_TEXTURE2D_DESC descDepth;
