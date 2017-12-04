@@ -652,7 +652,7 @@ namespace pen
 		g_context.active_depth_target = depth_target;
 
 		u32 num_views = num_colour_targets;
-		ID3D11RenderTargetView* colour_rtv[ 8 ] = nullptr;
+        ID3D11RenderTargetView* colour_rtv[ 8 ] = { 0 };
         for( s32 i = 0; i < num_colour_targets; ++i )
         {
             u32 colour_target = colour_targets[0];
