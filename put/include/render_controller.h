@@ -43,7 +43,7 @@ namespace put
         bool    msaa = false;
     };
     
-
+    
     namespace render_controller
     {
         void init( const c8* filename );
@@ -56,6 +56,7 @@ namespace put
         
         const render_target*  get_render_target( hash_id h );
         void                  get_render_target_dimensions( const render_target* rt, f32& w, f32& h);
+        u32                   get_render_state_by_name( hash_id id_name );
         
         void show_dev_ui();
     }

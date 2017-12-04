@@ -29,7 +29,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //create clear state
     static pen::clear_state cs =
     {
-        1.0f, 0.0, 0.0f, 1.0f, 1.0f, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        1.0f, 0.0, 0.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
     u32 clear_state = pen::renderer_create_clear_state( cs );

@@ -4,7 +4,7 @@
 #include "file_system.h"
 #include "dev_ui.h"
 #include "debug_render.h"
-#include "layer_controller.h"
+#include "render_controller.h"
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
@@ -29,14 +29,14 @@ namespace put
 
 #define FREE_COMPONENT_ARRAY( SCENE, COMPONENT ) pen::memory_free( SCENE->COMPONENT ); SCENE->COMPONENT = nullptr
         
-		struct component_entity_scene_instance
+		struct entity_scene_instance
 		{
 			u32 id_name;
 			const c8* name;
 			entity_scene* scene;
 		};
 
-		std::vector<component_entity_scene_instance> k_scenes;
+		std::vector<entity_scene_instance> k_scenes;
         
 		void resize_scene_buffers(entity_scene* scene)
 		{
@@ -176,7 +176,7 @@ namespace put
 
 		entity_scene*	create_scene( const c8* name )
 		{
-			component_entity_scene_instance new_instance;
+			entity_scene_instance new_instance;
 			new_instance.name = name;
 			new_instance.scene = new entity_scene();
 
@@ -252,11 +252,14 @@ namespace put
 					//set textures
 					if (p_mat)
 					{
+                        //todo - set sampler states from material
+                        static u32 ss_wrap = put::render_controller::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
+                        
 						for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
 						{
-							if ( is_valid(p_mat->texture_id[t]) )
+							if ( is_valid(p_mat->texture_id[t]) && ss_wrap )
 							{
-								pen::renderer_set_texture(p_mat->texture_id[t], put::layer_controller_built_in_handles().sampler_linear_wrap, t, PEN_SHADER_TYPE_PS );
+								pen::renderer_set_texture(p_mat->texture_id[t], ss_wrap, t, PEN_SHADER_TYPE_PS );
 							}
 						}
 					}

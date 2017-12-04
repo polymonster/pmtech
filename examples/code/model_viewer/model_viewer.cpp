@@ -7,7 +7,6 @@
 #include "dev_ui.h"
 #include "camera.h"
 #include "debug_render.h"
-#include "layer_controller.h"
 #include "render_controller.h"
 #include "pmfx.h"
 #include "pen_json.h"
@@ -330,9 +329,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
     pen::threads_create_job( physics::physics_thread_main, 1024*10, nullptr, pen::THREAD_START_DETACHED );
-        
-	//init systems
-	put::layer_controller_init();
     
 	put::dev_ui::init();
 	put::dbg::init();
@@ -361,34 +357,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     put::render_controller::init("data/configs/renderer.json");
     
-    put::built_in_handles handles = put::layer_controller_built_in_handles();
-
-	//create model viewer layer
-	put::layer main_layer;
-
-	//layer scene view and update
-	main_layer.view.scene = main_scene;
-	main_layer.camera = main_camera;
-	main_layer.update_function = nullptr;
-
-	//render targets and states
-	main_layer.clear_state = handles.default_clear_state;
-	main_layer.colour_targets[0] = PEN_DEFAULT_RT;
-	main_layer.depth_target = PEN_DEFAULT_DS;
-	main_layer.viewport = handles.back_buffer_vp;
-	main_layer.scissor_rect = handles.back_buffer_scissor_rect;
-	main_layer.depth_stencil_state = handles.depth_stencil_state_write_less;
-	main_layer.raster_state = handles.raster_state_fill_cull_back;
-	main_layer.blend_state = handles.blend_disabled;
-    
-	//add main layer to the viewer
-	put::layer_controller_add_layer(main_layer);
-    
     while( 1 )
     {
 		put::dev_ui::new_frame();
         
-		put::layer_controller_update();
+		//put::layer_controller_update();
         
         put::render_controller::update();
         
@@ -411,8 +384,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         }
     }
     
-    //clean up mem here 
-	put::layer_controller_shutdown();
+    //clean up mem here
 	put::dbg::shutdown();
 	put::dev_ui::shutdown();
 
@@ -420,7 +392,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
-    
     
     return PEN_THREAD_OK;
 }

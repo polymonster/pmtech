@@ -22,6 +22,7 @@ namespace pen
 	struct clear_state
 	{
 		f32 r, g, b, a, depth;
+        u8  stencil;
 		u32 flags;
 
 	};

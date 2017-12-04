@@ -88,6 +88,7 @@ namespace pen
 	{
 		f32 rgba[ 4 ];
 		f32 depth;
+        u8 stencil;
 		u32 flags;
 	};
     
@@ -245,6 +246,7 @@ namespace pen
 		resource_pool[ resoruce_index ].clear_state.rgba[ 2 ] = cs.b;
 		resource_pool[ resoruce_index ].clear_state.rgba[ 3 ] = cs.a;
 		resource_pool[ resoruce_index ].clear_state.depth = cs.depth;
+        resource_pool[ resoruce_index ].clear_state.stencil = cs.stencil;
 		resource_pool[ resoruce_index ].clear_state.flags = cs.flags;
 
 		return  resoruce_index;
@@ -316,6 +318,8 @@ namespace pen
         
         glClearColor( rc.clear_state.rgba[ 0 ], rc.clear_state.rgba[ 1 ], rc.clear_state.rgba[ 2 ], rc.clear_state.rgba[ 3 ] );
         glClearDepth( rc.clear_state.depth );
+        glClearStencil( rc.clear_state.stencil );
+        
         glClear( rc.clear_state.flags );
 	}
 

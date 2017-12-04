@@ -92,7 +92,7 @@ void init_renderer( )
     //clear state
     static pen::clear_state cs =
     {
-        0.5f, 0.5, 0.5f, 1.0f, 1.0f, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        0.5f, 0.5, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
     
     k_render_handles.clear_state = pen::renderer_create_clear_state( cs );

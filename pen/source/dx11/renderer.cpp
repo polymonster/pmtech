@@ -201,7 +201,9 @@ namespace pen
 
 	void direct::renderer_clear( u32 clear_state_index, u32 colour_face, u32 depth_face )
 	{
-		if( resource_pool[ clear_state_index ].clear_state->flags | PEN_CLEAR_COLOUR_BUFFER && g_context.active_colour_target )
+        u32 flags = resource_pool[ clear_state_index ].clear_state->flags;
+        
+		if( flags & PEN_CLEAR_COLOUR_BUFFER && g_context.active_colour_target )
 		{
             ID3D11RenderTargetView* colour_rtv = resource_pool[g_context.active_colour_target].render_target->rt[colour_face];
            
@@ -211,16 +213,25 @@ namespace pen
 			//clear colour
 			g_immediate_context->ClearRenderTargetView( colour_rtv, &resource_pool[ clear_state_index ].clear_state->rgba[ 0 ] );
 		}
+        
+        u32 d3d_flags = 0;
+        if( flags & PEN_CLEAR_DEPTH_BUFFER )
+            d3d_flags |= D3D11_CLEAR_DEPTH;
+        if( flags & PEN_CLEAR_STENCIL_BUFFER )
+            d3d_flags |= D3D11_CLEAR_STENCIL;
+        
+        u8 stencil_val = resource_pool[ clear_state_index ].clear_state->stencil;
 
-		if ( resource_pool[ clear_state_index ].clear_state->flags | PEN_CLEAR_DEPTH_BUFFER && g_context.active_depth_target )
+		if ( d3d_flags && g_context.active_depth_target )
 		{
+            u32 d3d_flags =
             ID3D11DepthStencilView* dsv = resource_pool[g_context.active_depth_target].depth_target->ds[depth_face];
             
             if (resource_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face])
                 dsv = resource_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face];
 
 			//clear depth
-			g_immediate_context->ClearDepthStencilView( dsv, D3D11_CLEAR_DEPTH, resource_pool[ clear_state_index ].clear_state->depth, 0 );
+			g_immediate_context->ClearDepthStencilView( dsv, d3d_flags, resource_pool[ clear_state_index ].clear_state->depth, stencil_val );
 		}
 	}
 

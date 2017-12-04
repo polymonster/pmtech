@@ -30,12 +30,14 @@ namespace pen
         json operator [] (const s32 index) const;
         json& operator = (const json& other);
         
-        Str     as_str( const c8* default_value = nullptr );
-        u32     as_u32( u32 default_value = 0 );
-        s32     as_s32( s32 default_value = 0 );
-        bool    as_bool( bool default_value = false );
-        f32     as_f32( f32 default_value = 0.0f );
-        
+        Str         as_str( const c8* default_value = nullptr );
+        const c8*   as_cstr( const c8* default_value = nullptr );
+        u32         as_u32( u32 default_value = 0 );
+        s32         as_s32( s32 default_value = 0 );
+        bool        as_bool( bool default_value = false );
+        f32         as_f32( f32 default_value = 0.0f );
+        u8          as_u8_hex( u8 default_value = 0 );
+
         void    set(const c8* name, const Str val);
         void    set(const c8* name, const u32 val);
         void    set(const c8* name, const s32 val);
