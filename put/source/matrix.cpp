@@ -1,19 +1,16 @@
 #include "matrix.h"
 #include "put_math.h"
 
-void mat4::create_identity()
+mat4 mat4::create_identity()
 {
-    m[ 0] = 1.0f; m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = 0.0f;
-    m[ 4] = 0.0f; m[ 5] = 1.0f; m[ 6] = 0.0f; m[ 7] = 0.0f;
-    m[ 8] = 0.0f; m[ 9] = 0.0f; m[10] = 1.0f; m[11] = 0.0f;
-    m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f; m[15] = 1.0f;
-}
-
-mat4 mat4::identity()
-{
-    mat4 idm;
-    idm.create_identity();
-    return idm;
+    mat4 m;
+    
+    m.m[ 0] = 1.0f; m.m[ 1] = 0.0f; m.m[ 2] = 0.0f; m.m[ 3] = 0.0f;
+    m.m[ 4] = 0.0f; m.m[ 5] = 1.0f; m.m[ 6] = 0.0f; m.m[ 7] = 0.0f;
+    m.m[ 8] = 0.0f; m.m[ 9] = 0.0f; m.m[10] = 1.0f; m.m[11] = 0.0f;
+    m.m[12] = 0.0f; m.m[13] = 0.0f; m.m[14] = 0.0f; m.m[15] = 1.0f;
+    
+    return m;
 }
 
 mat4 mat4::operator *(const mat4 &b) const
@@ -93,148 +90,172 @@ vec3f mat4::transform_vector(vec3f v, f32 *w) const
     return result;
 }
 
-void mat4::create_translation(vec3f t)
+mat4 mat4::create_translation(vec3f t)
 {
-    m[ 0] = 1.0f; m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = t.x;
-    m[ 4] = 0.0f; m[ 5] = 1.0f; m[ 6] = 0.0f; m[ 7] = t.y;
-    m[ 8] = 0.0f; m[ 9] = 0.0f; m[10] = 1.0f; m[11] = t.z;
-    m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f; m[15] = 1.0f;
+    mat4 m;
+    
+    m.m[ 0] = 1.0f; m.m[ 1] = 0.0f; m.m[ 2] = 0.0f; m.m[ 3] = t.x;
+    m.m[ 4] = 0.0f; m.m[ 5] = 1.0f; m.m[ 6] = 0.0f; m.m[ 7] = t.y;
+    m.m[ 8] = 0.0f; m.m[ 9] = 0.0f; m.m[10] = 1.0f; m.m[11] = t.z;
+    m.m[12] = 0.0f; m.m[13] = 0.0f; m.m[14] = 0.0f; m.m[15] = 1.0f;
+    
+    return m;
 }
 
-void mat4::create_cardinal_rotation_deg( s32 axis, f32 theta )
+mat4 mat4::create_x_rotation(f32 theta)
 {
-    f32 theta_rad = put::maths::deg_to_rad(theta);
-    create_cardinal_rotation( axis, theta_rad );
-}
-
-void mat4::create_cardinal_rotation(s32 axis, f32 theta)
-{
+    mat4 m;
+    
     //get sin / cos theta once
     f32 theta_rad = theta;
     f32 sin_theta = sin(theta_rad);
     f32 cos_theta = cos(theta_rad);
     
-    switch(axis)
-    {
-        case X_AXIS:
-        {
-            m[ 0] = 1.0f; m[ 1] = 0.0f;		  m[ 2] = 0.0f;         m[ 3] = 0.0f;
-            m[ 4] = 0.0f; m[ 5] = cos_theta;  m[ 6] = -sin_theta;	m[ 7] = 0.0f;
-            m[ 8] = 0.0f; m[ 9] = sin_theta;  m[10] = cos_theta;    m[11] = 0.0f;
-            m[12] = 0.0f; m[13] = 0.0f;		  m[14] = 0.0f;         m[15] = 1.0f;
-            
-        }
-            break;
-            
-        case Y_AXIS:
-        {
-            m[ 0] = cos_theta;  m[ 1] = 0.0f; m[ 2] = sin_theta;    m[ 3] = 0.0f;
-            m[ 4] = 0.0f;		m[ 5] = 1.0f; m[ 6] = 0.0f;         m[ 7] = 0.0f;
-            m[ 8] = -sin_theta; m[ 9] = 0.0f; m[10] = cos_theta;    m[11] = 0.0f;
-            m[12] = 0.0f;		m[13] = 0.0f; m[14] = 0.0f;         m[15] = 1.0f;
-            
-        }
-            break;
-            
-        case Z_AXIS:
-        {
-            m[ 0] = cos_theta;    m[ 1] = -sin_theta;   m[ 2] = 0.0f;   m[ 3] = 0.0f;
-            m[ 4] = sin_theta;    m[ 5] = cos_theta;    m[ 6] = 0.0f;   m[ 7] = 0.0f;
-            m[ 8] = 0.0f;		  m[ 9] = 0.0f;         m[10] = 1.0f;   m[11] = 0.0f;
-            m[12] = 0.0f;		  m[13] = 0.0f;         m[14] = 0.0f;   m[15] = 1.0f;
-            
-        }
-            break;
-    }
+    m.m[ 0] = 1.0f;   m.m[ 1] = 0.0f;           m.m[ 2] = 0.0f;           m.m[ 3] = 0.0f;
+    m.m[ 4] = 0.0f;   m.m[ 5] = cos_theta;      m.m[ 6] = -sin_theta;     m.m[ 7] = 0.0f;
+    m.m[ 8] = 0.0f;   m.m[ 9] = sin_theta;      m.m[10] = cos_theta;      m.m[11] = 0.0f;
+    m.m[12] = 0.0f;   m.m[13] = 0.0f;           m.m[14] = 0.0f;           m.m[15] = 1.0f;
+    
+    return m;
 }
 
-
-void mat4::create_arbitrary_rotation_deg( vec3f axis, f32 theta )
+mat4 mat4::create_y_rotation(f32 theta)
 {
-    f32 theta_rad = put::maths::deg_to_rad(theta);
-    create_arbitrary_rotation( axis, theta_rad );
+    mat4 m;
+    
+    //get sin / cos theta once
+    f32 theta_rad = theta;
+    f32 sin_theta = sin(theta_rad);
+    f32 cos_theta = cos(theta_rad);
+    
+    m.m[ 0] = cos_theta;   m.m[ 1] = 0.0f; m.m[ 2] = sin_theta;    m.m[ 3] = 0.0f;
+    m.m[ 4] = 0.0f;        m.m[ 5] = 1.0f; m.m[ 6] = 0.0f;         m.m[ 7] = 0.0f;
+    m.m[ 8] = -sin_theta;  m.m[ 9] = 0.0f; m.m[10] = cos_theta;    m.m[11] = 0.0f;
+    m.m[12] = 0.0f;        m.m[13] = 0.0f; m.m[14] = 0.0f;         m.m[15] = 1.0f;
+    
+    return m;
 }
 
-void mat4::create_arbitrary_rotation( vec3f axis, f32 theta )
+mat4 mat4::create_z_rotation(f32 theta)
 {
+    mat4 m;
+    
+    //get sin / cos theta once
+    f32 theta_rad = theta;
+    f32 sin_theta = sin(theta_rad);
+    f32 cos_theta = cos(theta_rad);
+    
+    m.m[ 0] = cos_theta;    m.m[ 1] = -sin_theta;   m.m[ 2] = 0.0f;   m.m[ 3] = 0.0f;
+    m.m[ 4] = sin_theta;    m.m[ 5] = cos_theta;    m.m[ 6] = 0.0f;   m.m[ 7] = 0.0f;
+    m.m[ 8] = 0.0f;         m.m[ 9] = 0.0f;         m.m[10] = 1.0f;   m.m[11] = 0.0f;
+    m.m[12] = 0.0f;         m.m[13] = 0.0f;         m.m[14] = 0.0f;   m.m[15] = 1.0f;
+    
+    return m;
+}
+
+mat4 mat4::create_arbitrary_rotation( vec3f axis, f32 theta )
+{
+    mat4 m;
+    
     f32 theta_rad = theta;
     f32 sin_theta = sin(theta_rad);
     f32 cos_theta = cos(theta_rad);
     f32 inv_cos_theta = 1.0f - cos(theta_rad);
     
-    m[ 0] = inv_cos_theta * axis.x * axis.x + cos_theta;
-    m[ 1] = inv_cos_theta * axis.x * axis.y - sin_theta * axis.z;
-    m[ 2] = inv_cos_theta * axis.x * axis.z + sin_theta * axis.y;
-    m[ 3] = 0.0f;
+    m.m[ 0] = inv_cos_theta * axis.x * axis.x + cos_theta;
+    m.m[ 1] = inv_cos_theta * axis.x * axis.y - sin_theta * axis.z;
+    m.m[ 2] = inv_cos_theta * axis.x * axis.z + sin_theta * axis.y;
+    m.m[ 3] = 0.0f;
     
-    m[ 4] = inv_cos_theta * axis.x * axis.y + sin_theta * axis.z;
-    m[ 5] = inv_cos_theta * axis.y * axis.y + cos_theta;
-    m[ 6] = inv_cos_theta * axis.y * axis.z - sin_theta * axis.x;
-    m[ 7] = 0.0f;
+    m.m[ 4] = inv_cos_theta * axis.x * axis.y + sin_theta * axis.z;
+    m.m[ 5] = inv_cos_theta * axis.y * axis.y + cos_theta;
+    m.m[ 6] = inv_cos_theta * axis.y * axis.z - sin_theta * axis.x;
+    m.m[ 7] = 0.0f;
     
-    m[ 8] = inv_cos_theta * axis.x * axis.z - sin_theta * axis.y;
-    m[ 9] = inv_cos_theta * axis.y * axis.z + sin_theta * axis.x;
-    m[10] = inv_cos_theta * axis.z * axis.z + cos_theta;
-    m[11] = 0.0f;
+    m.m[ 8] = inv_cos_theta * axis.x * axis.z - sin_theta * axis.y;
+    m.m[ 9] = inv_cos_theta * axis.y * axis.z + sin_theta * axis.x;
+    m.m[10] = inv_cos_theta * axis.z * axis.z + cos_theta;
+    m.m[11] = 0.0f;
     
-    m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f; m[15] = 1.0f;
+    m.m[12] = 0.0f; m.m[13] = 0.0f; m.m[14] = 0.0f; m.m[15] = 1.0f;
     
+    return m;
 }
 
-void mat4::create_scale(vec3f s)
+mat4 mat4::create_scale(vec3f s)
 {
-    m[ 0] = s.x ; m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = 0.0f;
-    m[ 4] = 0.0f; m[ 5] = s.y ; m[ 6] = 0.0f; m[ 7] = 0.0f;
-    m[ 8] = 0.0f; m[ 9] = 0.0f; m[10] = s.z ; m[11] = 0.0f;
-    m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f; m[15] = 1.0f;
+    mat4 m;
+    
+    m.m[ 0] = s.x ; m.m[ 1] = 0.0f; m.m[ 2] = 0.0f; m.m[ 3] = 0.0f;
+    m.m[ 4] = 0.0f; m.m[ 5] = s.y ; m.m[ 6] = 0.0f; m.m[ 7] = 0.0f;
+    m.m[ 8] = 0.0f; m.m[ 9] = 0.0f; m.m[10] = s.z ; m.m[11] = 0.0f;
+    m.m[12] = 0.0f; m.m[13] = 0.0f; m.m[14] = 0.0f; m.m[15] = 1.0f;
+    
+    return m;
 }
 
-void mat4::create_bias()
+mat4 mat4::create_bias()
 {
-    m[ 0] = 0.5f;   m[ 1] = 0.0f;   m[ 2] = 0.0f;   m[ 3] = 0.5f;
-    m[ 4] = 0.0f;	m[ 5] = 0.5f;	m[ 6] = 0.0f;	m[ 7] = 0.5f;
-    m[ 8] = 0.0f;	m[ 9] = 0.0f;	m[10] = 0.5f;	m[11] = 0.5f;
-    m[12] = 0.0f;	m[13] = 0.0f;	m[14] = 0.0f;	m[15] = 1.0f;
+    mat4 m;
+    
+    m.m[ 0] = 0.5f; m.m[ 1] = 0.0f; m.m[ 2] = 0.0f; m.m[ 3] = 0.5f;
+    m.m[ 4] = 0.0f;	m.m[ 5] = 0.5f;	m.m[ 6] = 0.0f;	m.m[ 7] = 0.5f;
+    m.m[ 8] = 0.0f;	m.m[ 9] = 0.0f;	m.m[10] = 0.5f;	m.m[11] = 0.5f;
+    m.m[12] = 0.0f;	m.m[13] = 0.0f;	m.m[14] = 0.0f;	m.m[15] = 1.0f;
+    
+    return m;
 }
 
-void mat4::create_axis_swap( vec3f x, vec3f y, vec3f z )
+mat4 mat4::create_axis_swap( vec3f x, vec3f y, vec3f z )
 {
-    m[ 0] = x.x;  m[ 1] = y.x;  m[ 2] = z.x;    m[ 3] = 0.0f;
-    m[ 4] = x.y;  m[ 5] = y.y;  m[ 6] = z.y;	m[ 7] = 0.0f;
-    m[ 8] = x.z;  m[ 9] = y.z;  m[10] = z.z;	m[11] = 0.0f;
-    m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f;	m[15] = 1.0f;
+    mat4 m;
+    
+    m.m[ 0] = x.x;  m.m[ 1] = y.x;  m.m[ 2] = z.x;  m.m[ 3] = 0.0f;
+    m.m[ 4] = x.y;  m.m[ 5] = y.y;  m.m[ 6] = z.y;	m.m[ 7] = 0.0f;
+    m.m[ 8] = x.z;  m.m[ 9] = y.z;  m.m[10] = z.z;	m.m[11] = 0.0f;
+    m.m[12] = 0.0f; m.m[13] = 0.0f; m.m[14] = 0.0f;	m.m[15] = 1.0f;
+    
+    return m;
 }
 
-void mat4::create_perspective_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
+mat4 mat4::create_perspective_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
 {
-    m[ 0] = (2.0f * znear) / (right - left);
-    m[ 1] = 0.0f;
-    m[ 2] = (right + left) / (right - left);
-    m[ 3] = 0.0f;
-    m[ 4] = 0.0f;
-    m[ 5] = (2.0f * znear) / (top - bottom);
-    m[ 6] = (top + bottom) / (top - bottom);
-    m[ 7] = 0.0f;
-    m[ 8] = 0.0f;
-    m[ 9] = 0.0f;
-    m[10] = (-zfar - znear) / (zfar - znear);
-    m[11] = (-(2.0f * znear) * zfar) / (zfar - znear);
-    m[12] = 0.0f;
-    m[13] = 0.0f;
-    m[14] = -1.0f;
-    m[15] = 0.0f;
+    mat4 m;
+    
+    m.m[ 0] = (2.0f * znear) / (right - left);
+    m.m[ 1] = 0.0f;
+    m.m[ 2] = (right + left) / (right - left);
+    m.m[ 3] = 0.0f;
+    m.m[ 4] = 0.0f;
+    m.m[ 5] = (2.0f * znear) / (top - bottom);
+    m.m[ 6] = (top + bottom) / (top - bottom);
+    m.m[ 7] = 0.0f;
+    m.m[ 8] = 0.0f;
+    m.m[ 9] = 0.0f;
+    m.m[10] = (-zfar - znear) / (zfar - znear);
+    m.m[11] = (-(2.0f * znear) * zfar) / (zfar - znear);
+    m.m[12] = 0.0f;
+    m.m[13] = 0.0f;
+    m.m[14] = -1.0f;
+    m.m[15] = 0.0f;
+    
+    return m;
 }
 
-void mat4::create_orthographic_projection( f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar )
+mat4 mat4::create_orthographic_projection( f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar )
 {
+    mat4 m;
+    
     f32 tx = -((right + left) / (right - left));
     f32 ty = -((top + bottom) / (top - bottom));
     f32 tz = -((zfar + znear) / (zfar - znear));
     
-    m[ 0] = (2.0f / (right - left)); m[ 1] = 0.0f; m[ 2] = 0.0f; m[ 3] = tx;
-    m[ 4] = 0.0f; m[ 5] = (2.0f / (top - bottom)); m[ 6] = 0.0f; m[ 7] = ty;
-    m[ 8] = 0.0f; m[ 9] = 0.0f; m[10] = (-2.0f / (zfar - znear)); m[11] = tz;
-    m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f; m[15] = 1.0f;
+    m.m[ 0] = (2.0f / (right - left)); m.m[ 1] = 0.0f; m.m[ 2] = 0.0f; m.m[ 3] = tx;
+    m.m[ 4] = 0.0f; m.m[ 5] = (2.0f / (top - bottom)); m.m[ 6] = 0.0f; m.m[ 7] = ty;
+    m.m[ 8] = 0.0f; m.m[ 9] = 0.0f; m.m[10] = (-2.0f / (zfar - znear)); m.m[11] = tz;
+    m.m[12] = 0.0f; m.m[13] = 0.0f; m.m[14] = 0.0f; m.m[15] = 1.0f;
+    
+    return m;
 }
 
 void mat4::multiply_by_scalar( f32 value )
@@ -307,8 +328,7 @@ mat4 mat4::inverse3x4()
     
     f32 one_over_det = 1.0f / det;
     
-    mat4 inverse;
-    inverse.create_identity();
+    mat4 inverse = mat4::create_identity();
     
     //find the adjoint matrix (transposed) and multiply by 1/det to get the inverse
     inverse.m[ 0] =  (m[ 5] * m[10] - m[ 6] * m[ 9]) * one_over_det;

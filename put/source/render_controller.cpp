@@ -13,130 +13,8 @@ namespace put
 {    
     namespace render_controller
     {
-        static std::vector<scene_controller> k_scenes;
-        static std::vector<camera_controller> k_cameras;
-        
-        void register_scene( const scene_controller& scene )
-        {
-            k_scenes.push_back(scene);
-        }
-        
-        void register_camera( const camera_controller& cam )
-        {
-            k_cameras.push_back(cam);
-        }
-        
-        struct format_info
-        {
-            Str name;
-            s32 format;
-            u32 block_size;
-            bind_flags flags;
-        };
-        
-        format_info rt_format[] =
-        {
-            //colour formats
-            {"rgba8", PEN_TEX_FORMAT_RGBA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
-            {"bgra8", PEN_TEX_FORMAT_BGRA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
-            {"rgba32f", PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 32*4, PEN_BIND_RENDER_TARGET },
-            
-            //depth stencil formats
-            {"d24s8", PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL },
-        };
-        s32 num_formats = (s32)sizeof(rt_format)/sizeof(format_info);
-        
-        Str rt_ratio[] =
-        {
-            "none",
-            "equal",
-            "half",
-            "quater",
-            "eighth"
-            "sixteenth"
-        };
-        s32 num_ratios = (s32)sizeof(rt_ratio)/sizeof(Str);
-        
-        s32 calc_num_mips( s32 width, s32 height )
-        {
-            s32 num = 0;
-            
-            while( width > 1 && height > 1 )
-            {
-                ++num;
-                
-                width /= 2;
-                height /= 2;
-                
-                width = std::max<s32>(1, width);
-                height = std::max<s32>(1, height);
-            }
-            
-            return num;
-        }
-        
         static hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
         static hash_id ID_MAIN_DEPTH = PEN_HASH("main_depth");
-        
-        struct view_params
-        {
-            s32     rt_width, rt_height;
-            f32     rt_ratio;
-            
-            u32     render_targets[8] = { 0 };
-            u32     depth_target = 0;
-            u32     num_colour_targets = 0;
-            
-            bool    viewport_correction = true;
-            
-            f32     viewport[4] = { 0 };
-            
-            u32     clear_state = 0;
-            u32     raster_state = 0;
-            u32     depth_stencil_state = 0;
-            u32     blend_state = 0;
-            
-            hash_id technique;
-        
-            ces::entity_scene* scene;
-            put::camera* camera;
-            
-            Str     name;
-            hash_id id_name;
-        };
-        
-        static std::vector<render_target>   k_render_targets;
-        static std::vector<view_params>     k_views;
-        
-        void get_rt_dimensions( s32 rt_w, s32 rt_h, f32 rt_r, f32& w, f32& h )
-        {
-            w = (f32)pen_window.width;
-            h = (f32)pen_window.height;
-            
-            if( rt_r != 0 )
-            {
-                w *= (f32)rt_r;
-                h *= (f32)rt_r;
-            }
-            else
-            {
-                w = (f32)rt_w;
-                h = (f32)rt_h;
-            }
-        }
-        
-        void get_rt_viewport( s32 rt_w, s32 rt_h, f32 rt_r, const f32* vp_in, pen::viewport& vp_out )
-        {
-            f32 w, h;
-            get_rt_dimensions( rt_w, rt_h, rt_r, w, h );
-            
-            vp_out =
-            {
-                vp_in[0] * w, vp_in[1] * h,
-                vp_in[2] * w, vp_in[3] * h,
-                0.0f, 1.0f
-            };
-        }
         
         struct mode_map
         {
@@ -233,7 +111,125 @@ namespace put
             "belnd_op_max",     PEN_BLEND_OP_MAX,
             nullptr,            0
         };
+        
+        struct format_info
+        {
+            Str name;
+            s32 format;
+            u32 block_size;
+            bind_flags flags;
+        };
+        
+        format_info rt_format[] =
+        {
+            {"rgba8", PEN_TEX_FORMAT_RGBA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
+            {"bgra8", PEN_TEX_FORMAT_BGRA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
+            {"rgba32f", PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 32*4, PEN_BIND_RENDER_TARGET },
+            {"d24s8", PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL },
+        };
+        s32 num_formats = (s32)sizeof(rt_format)/sizeof(format_info);
+        
+        Str rt_ratio[] =
+        {
+            "none",
+            "equal",
+            "half",
+            "quater",
+            "eighth"
+            "sixteenth"
+        };
+        s32 num_ratios = (s32)sizeof(rt_ratio)/sizeof(Str);
+        
+        struct view_params
+        {
+            s32     rt_width, rt_height;
+            f32     rt_ratio;
             
+            u32     render_targets[8] = { 0 };
+            u32     depth_target = 0;
+            u32     num_colour_targets = 0;
+            
+            bool    viewport_correction = true;
+            
+            f32     viewport[4] = { 0 };
+            
+            u32     clear_state = 0;
+            u32     raster_state = 0;
+            u32     depth_stencil_state = 0;
+            u32     blend_state = 0;
+            
+            hash_id technique;
+            
+            ces::entity_scene* scene;
+            put::camera* camera;
+            
+            Str     name;
+            hash_id id_name;
+        };
+        
+        static std::vector<view_params>         k_views;
+        static std::vector<scene_controller>    k_scenes;
+        static std::vector<camera_controller>   k_cameras;
+        static std::vector<render_target>       k_render_targets;
+        
+        void register_scene( const scene_controller& scene )
+        {
+            k_scenes.push_back(scene);
+        }
+
+        void register_camera( const camera_controller& cam )
+        {
+            k_cameras.push_back(cam);
+        }
+        
+        s32 calc_num_mips( s32 width, s32 height )
+        {
+            s32 num = 0;
+            
+            while( width > 1 && height > 1 )
+            {
+                ++num;
+                
+                width /= 2;
+                height /= 2;
+                
+                width = std::max<s32>(1, width);
+                height = std::max<s32>(1, height);
+            }
+            
+            return num;
+        }
+        
+        void get_rt_dimensions( s32 rt_w, s32 rt_h, f32 rt_r, f32& w, f32& h )
+        {
+            w = (f32)pen_window.width;
+            h = (f32)pen_window.height;
+            
+            if( rt_r != 0 )
+            {
+                w *= (f32)rt_r;
+                h *= (f32)rt_r;
+            }
+            else
+            {
+                w = (f32)rt_w;
+                h = (f32)rt_h;
+            }
+        }
+        
+        void get_rt_viewport( s32 rt_w, s32 rt_h, f32 rt_r, const f32* vp_in, pen::viewport& vp_out )
+        {
+            f32 w, h;
+            get_rt_dimensions( rt_w, rt_h, rt_r, w, h );
+            
+            vp_out =
+            {
+                vp_in[0] * w, vp_in[1] * h,
+                vp_in[2] * w, vp_in[3] * h,
+                0.0f, 1.0f
+            };
+        }
+        
         u32 mode_from_string( const mode_map* map, const c8* str, u32 default_value )
         {
             if(!str)

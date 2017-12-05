@@ -38,19 +38,17 @@ typedef struct mat4
     f32 m[16];
     
     //static identity fucntions
-    static mat4 identity();
-    
-    void create_identity();
-    void create_translation(vec3f t);
-    void create_cardinal_rotation_deg(s32 axis, f32 theta);
-    void create_cardinal_rotation(s32 axis, f32 theta);
-    void create_arbitrary_rotation_deg(vec3f axis, f32 theta);
-    void create_arbitrary_rotation(vec3f axis, f32 theta);
-    void create_scale(vec3f s);
-    void create_axis_swap(vec3f x, vec3f y, vec3f z);
-    void create_perspective_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
-    void create_orthographic_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
-    void create_bias();
+    static mat4 create_identity();
+    static mat4 create_translation(vec3f t);
+    static mat4 create_x_rotation(f32 theta);
+    static mat4 create_y_rotation(f32 theta);
+    static mat4 create_z_rotation(f32 theta);
+    static mat4 create_arbitrary_rotation(vec3f axis, f32 theta);
+    static mat4 create_scale(vec3f s);
+    static mat4 create_axis_swap(vec3f x, vec3f y, vec3f z);
+    static mat4 create_perspective_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
+    static mat4 create_orthographic_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
+    static mat4 create_bias();
     
     mat4    transpose();
     mat4    inverse3x3();

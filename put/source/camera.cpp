@@ -20,7 +20,7 @@ namespace put
 		far_size.y = 2.0f * tan( put::maths::deg_to_rad( fov_degrees ) / 2.0f ) * far_plane;
 		far_size.x = far_size.y * aspect_ratio;
 
-		p_camera->proj.create_perspective_projection
+        p_camera->proj = mat4::create_perspective_projection
 		(
 			-near_size.x * 0.5f,
 			 near_size.x * 0.5f,
@@ -29,23 +29,13 @@ namespace put
 			 near_plane,
 			 far_plane
 		);
-        
-        p_camera->proj_corrected.create_perspective_projection
-        (
-            -near_size.x * 0.5f,
-            near_size.x * 0.5f,
-            near_size.y * 0.5f,
-            -near_size.y * 0.5f,
-            near_plane,
-            far_plane
-         );
 
 		p_camera->flags |= CF_INVALIDATED;
 	}
 
 	void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
 	{
-		p_camera->proj.create_orthographic_projection
+        p_camera->proj = mat4::create_orthographic_projection
 		(
 			left,
 			right,
@@ -90,12 +80,9 @@ namespace put
 			p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
 		}
 
-		mat4 rx, ry, t;
-		rx.create_cardinal_rotation(X_AXIS, p_camera->rot.x);
-		ry.create_cardinal_rotation(Y_AXIS, p_camera->rot.y);
-
-		//fps
-		t.create_translation(p_camera->pos * -1.0f);
+        mat4 rx = mat4::create_x_rotation(p_camera->rot.x);
+		mat4 ry = mat4::create_y_rotation(p_camera->rot.y);
+		mat4 t = mat4::create_translation(p_camera->pos * -1.0f);
 
 		mat4 view_rotation = rx * ry;
 
@@ -158,17 +145,13 @@ namespace put
 		f32 zoom = mwheel - prev_mwheel;
 		prev_mwheel = mwheel;
 		p_camera->zoom += zoom;
-		
-
-		mat4 rx, ry, t, t2;
-		rx.create_cardinal_rotation(X_AXIS, p_camera->rot.x);
-		ry.create_cardinal_rotation(Y_AXIS, -p_camera->rot.y);
-
-		//model?
-		t2.create_translation(p_camera->focus);
-
-		p_camera->zoom = fmax(p_camera->zoom, 1.0f);
-		t.create_translation( vec3f(0.0f, 0.0f, p_camera->zoom) );
+    
+        p_camera->zoom = fmax(p_camera->zoom, 1.0f);
+        
+        mat4 rx = mat4::create_x_rotation(p_camera->rot.x);
+        mat4 ry = mat4::create_y_rotation(-p_camera->rot.y);
+        mat4 t = mat4::create_translation( vec3f(0.0f, 0.0f, p_camera->zoom) );
+        mat4 t2 = mat4::create_translation(p_camera->focus);
 
 		p_camera->view = t2 * (ry * rx) * t;
 
@@ -207,8 +190,10 @@ namespace put
 		{
 			camera_cbuffer wvp;
             
+            static mat4 scale = mat4::create_scale( vec3f( 1.0f, -1.0f, 1.0f ) );
+            
             if( viewport_correction && pen::renderer_viewport_vup() )
-                wvp.view_projection = p_camera->proj_corrected * p_camera->view;
+                wvp.view_projection = scale * (p_camera->proj * p_camera->view);
             else
                 wvp.view_projection = p_camera->proj * p_camera->view;
             

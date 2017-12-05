@@ -112,6 +112,7 @@ namespace pen
     {
         GLenum cull_face;
         GLenum polygon_mode;
+        bool front_ccw;
         bool culling_enabled;
         bool depth_clip_enabled;
         bool scissor_enabled;
@@ -632,7 +633,10 @@ namespace pen
             
             auto& rs = resource_pool[ g_bound_state.raster_state ].raster_state;
             
-            glFrontFace(GL_CW);
+            if( rs.front_ccw )
+                glFrontFace(GL_CCW);
+            else
+                glFrontFace(GL_CW);
             
             if( rs.culling_enabled )
             {
@@ -856,13 +860,16 @@ namespace pen
             return;
         }
         
-        resource_allocation& depth_res = resource_pool[ depth_target ];
-        
         bool msaa = false;
         
         hash_murmur hh;
         hh.begin();
-        hh.add(depth_res.render_target.uid);
+        
+        if( depth_target != PEN_NULL_DEPTH_BUFFER )
+        {
+            resource_allocation& depth_res = resource_pool[ depth_target ];
+            hh.add(depth_res.render_target.uid);
+        }
         
         for( s32 i = 0; i < num_colour_targets; ++i )
         {
@@ -895,6 +902,8 @@ namespace pen
         
         if( depth_target != PEN_NULL_DEPTH_BUFFER )
         {
+            resource_allocation& depth_res = resource_pool[ depth_target ];
+            
             if( msaa )
                 glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_res.render_target.texture_msaa.handle, 0 );
             else
@@ -1071,6 +1080,8 @@ namespace pen
             rs.culling_enabled = true;
             rs.cull_face = rscp.cull_mode;
         }
+        
+        rs.front_ccw = rscp.front_ccw;
         
         rs.depth_clip_enabled = rscp.depth_clip_enable;
         rs.scissor_enabled = rscp.scissor_enable;

@@ -30,7 +30,6 @@ namespace put
 
 		mat4  view;
 		mat4  proj;
-        mat4  proj_corrected;
 
 		u32 cbuffer = (u32)-1;
 		u8 flags = 0;

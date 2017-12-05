@@ -183,7 +183,8 @@ namespace put
                     
                     mat4 max_swap;
                     //max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 1.0f, 0.0f));
-                    max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f));
+                    max_swap = mat4::create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f));
+        
                     mat4 max_swap_inv = max_swap.inverse4x4();
                     
                     mat4 final_bind = max_swap * p_geometry->p_skin->bind_shape_matirx * max_swap_inv;
@@ -655,8 +656,7 @@ namespace put
                 mat4 rot_mat;
                 final_rotation.get_matrix(rot_mat);
                 
-                mat4 translation_mat;
-                translation_mat.create_translation(translation);
+                mat4 translation_mat = mat4::create_translation(translation);
                 
                 if(!has_matrix_transform)
                     matrix = translation_mat * rot_mat;

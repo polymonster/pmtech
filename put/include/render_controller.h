@@ -43,7 +43,6 @@ namespace put
         bool    msaa = false;
     };
     
-    
     namespace render_controller
     {
         void init( const c8* filename );

@@ -195,19 +195,25 @@ public:
 	{
 		normalise( );
 
-		lmatrix.create_identity();
-
 		lmatrix.m[ 0 ] = 1.0f - 2.0f * y * y - 2.0f * z * z;
 		lmatrix.m[ 1 ] = 2.0f * x * y - 2.0f * z * w;
 		lmatrix.m[ 2 ] = 2.0f * x * z + 2.0f * y * w;
+        lmatrix.m[ 3 ] = 0.0f;
 
 		lmatrix.m[ 4 ] = 2.0f * x * y + 2.0f * z * w;
 		lmatrix.m[ 5 ] = 1.0f - 2.0f * x * x - 2.0f * z * z;
 		lmatrix.m[ 6 ] = 2.0f * y * z - 2.0f * x * w;
+        lmatrix.m[ 7 ] = 0.0f;
 
 		lmatrix.m[ 8 ] = 2.0f * x * z - 2.0f * y * w;
 		lmatrix.m[ 9 ] = 2.0f * y * z + 2.0f * x * w;
 		lmatrix.m[ 10 ] = 1.0f - 2.0f * x * x - 2.0f * y * y;
+        lmatrix.m[ 11 ] = 0.0f;
+        
+        lmatrix.m[ 12 ] = 0.0f;
+        lmatrix.m[ 13 ] = 0.0f;
+        lmatrix.m[ 14 ] = 0.0f;
+        lmatrix.m[ 15 ] = 1.0f;
 	}
 
 	//non commutative multiply
