@@ -204,6 +204,7 @@ namespace pen
         u32 vertex_shader;
         u32 pixel_shader;
         u32 raster_state;
+        bool backbuffer_bound;
         u8 constant_buffer_bindings[MAX_UNIFORM_BUFFERS] = { 0 };
     };
     
@@ -627,13 +628,19 @@ namespace pen
             CHECK_GL_ERROR;
         }
 
-        if( g_bound_state.raster_state != g_current_state.raster_state )
+        if( g_bound_state.raster_state != g_current_state.raster_state ||
+            g_bound_state.backbuffer_bound != g_current_state.backbuffer_bound )
         {
             g_bound_state.raster_state = g_current_state.raster_state;
+            g_bound_state.backbuffer_bound = g_current_state.backbuffer_bound;
             
             auto& rs = resource_pool[ g_bound_state.raster_state ].raster_state;
             
-            if( rs.front_ccw )
+            bool ccw = rs.front_ccw;
+            if( !g_current_state.backbuffer_bound )
+                ccw = !ccw;
+            
+            if( ccw )
                 glFrontFace(GL_CCW);
             else
                 glFrontFace(GL_CW);
@@ -854,11 +861,15 @@ namespace pen
         
         if( use_back_buffer )
         {
+            g_current_state.backbuffer_bound = true;
+            
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glDrawBuffers(1, k_draw_buffers);
             
             return;
         }
+        
+        g_current_state.backbuffer_bound = false;
         
         bool msaa = false;
         
