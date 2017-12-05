@@ -1,14 +1,379 @@
-#include "dev_ui.h"
-#include "debug_render.h"
-
+#include "ces/ces_editor.h"
 #include "ces/ces_resources.h"
 #include "ces/ces_utilities.h"
-#include "ces/ces_editor.h"
+
+#include "hash.h"
+#include "pen_string.h"
+#include "dev_ui.h"
+#include "debug_render.h"
+#include "input.h"
+#include "camera.h"
+#include "render_controller.h"
+#include "timer.h"
 
 namespace put
 {
     namespace ces
     {
+        static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
+        
+        enum e_camera_mode : s32
+        {
+            CAMERA_MODELLING = 0,
+            CAMERA_FLY = 1
+        };
+        
+        const c8* camera_mode_names[] =
+        {
+            "Modelling",
+            "Fly"
+        };
+        
+        struct model_view_controller
+        {
+            put::camera     main_camera;
+            e_camera_mode   camera_mode = CAMERA_MODELLING;
+            
+        };
+        model_view_controller k_model_view_controller;
+        
+        enum transform_mode : u32
+        {
+            TRANSFORM_NONE = 0,
+            TRANSFORM_SELECT = 1,
+            TRANSFORM_TRANSLATE = 2,
+            TRANSFORM_ROTATE = 3,
+            TRANSFORM_SCALE = 4
+        };
+        static transform_mode k_transform_mode = TRANSFORM_NONE;
+        
+        void update_model_viewer_camera(put::camera_controller* cc)
+        {
+            //update camera
+            if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
+            {
+                switch (k_model_view_controller.camera_mode)
+                {
+                    case CAMERA_MODELLING:
+                        put::camera_update_modelling(cc->camera);
+                        break;
+                    case CAMERA_FLY:
+                        put::camera_update_fly(cc->camera);
+                        break;
+                }
+            }
+        }
+        
+        struct picking_info
+        {
+            u32 result;
+            a_u8 ready;
+            u32 offset = 0;
+        };
+        static picking_info k_picking_info;
+        
+        std::vector<u32> k_selection_list;
+        
+        void enumerate_selection_ui( const entity_scene* scene, bool* opened )
+        {
+            if( ImGui::Begin("Selection List", opened) )
+            {
+                ImGui::Text("Picking Result: %u", k_picking_info.result );
+                
+                for( s32 i = 0; i < k_selection_list.size(); ++i )
+                {
+                    s32 ii = k_selection_list[ i ];
+                    
+                    ImGui::Text("%s", scene->names[ii].c_str() );
+                }
+                
+                ImGui::End();
+            }
+        }
+        
+        void picking_read_back( void* p_data )
+        {
+            k_picking_info.result = *((u32*)(((u8*)p_data) + k_picking_info.offset));
+            k_picking_info.ready = 1;
+        }
+        
+        enum picking_mode : u32
+        {
+            PICK_NORMAL = 0,
+            PICK_ADD = 1,
+            PICK_REMOVE = 2
+        };
+        
+        void picking_update( const entity_scene* scene )
+        {
+            static u32 picking_state = 0;
+            static u32 picking_result = (-1);
+            u32 picking_mode = PICK_NORMAL;
+            
+            if( INPUT_PKEY(PENK_CONTROL) )
+            {
+                picking_mode = PICK_ADD;
+                ImGui::SetTooltip("%s", "+");
+            }
+            
+            if( INPUT_PKEY(PENK_MENU) )
+            {
+                picking_mode = PICK_REMOVE;
+                ImGui::SetTooltip("%s", "-");
+            }
+
+            if( picking_state == 1 )
+            {
+                if( k_picking_info.ready )
+                {
+                    picking_state = 0;
+                    picking_result = k_picking_info.result;
+                    
+                    bool valid = picking_result < scene->num_nodes;
+                    
+                    if( picking_mode == PICK_NORMAL )
+                    {
+                        k_selection_list.clear();
+                        if( valid )
+                             k_selection_list.push_back(picking_result);
+                    }
+                    else if( valid )
+                    {
+                        s32 existing = -1;
+                        for( s32 i = 0; i < k_selection_list.size(); ++i)
+                            if( k_selection_list[i] == picking_result)
+                                existing = i;
+                        
+                        if( existing != -1 && picking_mode == PICK_REMOVE )
+                            k_selection_list.erase(k_selection_list.begin()+existing);
+                        
+                        if( existing == -1 && picking_mode == PICK_ADD )
+                            k_selection_list.push_back(picking_result);
+                    }
+
+                }
+            }
+            else
+            {
+                if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
+                {
+                    pen::mouse_state ms = pen::input_get_mouse_state();
+                    
+                    if (ms.buttons[PEN_MOUSE_L] && pen::mouse_coords_valid( ms.x, ms.y ) )
+                    {
+                        const put::render_target* rt = render_controller::get_render_target(ID_PICKING_BUFFER);
+                        
+                        f32 w, h;
+                        render_controller::get_render_target_dimensions(rt, w, h);
+                        
+                        u32 pitch = (u32)w*4;
+                        u32 data_size = (u32)h*pitch;
+                        c8* p_data = new c8[data_size];
+                        
+                        pen::resource_read_back_params rrbp =
+                        {
+                            rt->handle,
+                            (void*)p_data,
+                            rt->format,
+                            data_size,
+                            &picking_read_back
+                        };
+                        
+                        pen::renderer_read_back_resource( rrbp );
+                        
+                        k_picking_info.ready = 0;
+                        k_picking_info.offset = ms.y * pitch + ms.x * 4;
+                        
+                        picking_state = 1;
+                    }
+                }
+            }
+        }
+        
+        void update_model_viewer_scene(put::scene_controller* sc)
+        {
+            static bool open_scene_browser = false;
+            static bool open_import = false;
+            static bool open_save = false;
+            static bool open_camera_menu = false;
+            static bool open_resource_menu = false;
+            static bool dev_open = false;
+            static bool set_project_dir = false;
+            static bool picking_mode = false;
+            static bool selection_list = false;
+            static Str project_dir_str = dev_ui::get_program_preference("project_dir").as_str();
+            
+            ImGui::BeginMainMenuBar();
+            
+            if (ImGui::BeginMenu(ICON_FA_LEMON_O))
+            {
+                ImGui::MenuItem("Save");
+                ImGui::MenuItem("Import", NULL, &open_import);
+                
+                if( ImGui::BeginMenu("Project Directory") )
+                {
+                    ImGui::MenuItem("Set..", NULL, &set_project_dir);
+                    ImGui::Text("Dir: %s", project_dir_str.c_str());
+                    
+                    ImGui::EndMenu();
+                }
+                
+                ImGui::MenuItem("Dev", NULL, &dev_open);
+                
+                ImGui::EndMenu();
+            }
+            
+            if (ImGui::Button(ICON_FA_FLOPPY_O))
+            {
+                open_save = true;
+            }
+            
+            if (ImGui::Button(ICON_FA_FOLDER_OPEN))
+            {
+                open_import = true;
+            }
+            
+            if (ImGui::Button(ICON_FA_SEARCH))
+            {
+                open_scene_browser = true;
+            }
+            
+            if (ImGui::Button(ICON_FA_VIDEO_CAMERA))
+            {
+                open_camera_menu = true;
+            }
+            
+            if (ImGui::Button(ICON_FA_CUBES))
+            {
+                open_resource_menu = true;
+            }
+            
+            ImGui::Separator();
+            
+            ImVec4 grey( 0.5, 0.5, 0.5, 1.0 );
+            
+            bool p = picking_mode;
+            if(p)
+                ImGui::PushStyleColor( ImGuiCol_Button, grey);
+            
+            if (ImGui::Button(ICON_FA_MOUSE_POINTER))
+            {
+                k_transform_mode = TRANSFORM_SCALE;
+                
+                picking_mode = !picking_mode;
+            }
+            
+            if(p)
+                ImGui::PopStyleColor();
+            
+            if (ImGui::Button(ICON_FA_LIST))
+            {
+                selection_list = true;
+            }
+            
+            if ( ImGui::Button(ICON_FA_ARROWS) )
+            {
+                k_transform_mode = TRANSFORM_TRANSLATE;
+            }
+            
+            ImGui::Separator();
+            
+            ImGui::EndMainMenuBar();
+            
+            if( open_import )
+            {
+                const c8* import = put::dev_ui::file_browser(open_import, 2, dev_ui::FB_OPEN, "**.pmm", "**.pms" );
+                
+                if( import )
+                {
+                    u32 len = pen::string_length( import );
+                    
+                    if( import[len-1] == 'm' )
+                    {
+                        put::ces::load_pmm( import, sc->scene );
+                    }
+                    else if( import[len-1] == 's' )
+                    {
+                        put::ces::load_scene( import, sc->scene );
+                    }
+                }
+            }
+            
+            if (open_scene_browser)
+            {
+                ces::scene_browser_ui(sc->scene, &open_scene_browser);
+            }
+            
+            if( open_camera_menu )
+            {
+                if( ImGui::Begin("Camera", &open_camera_menu) )
+                {
+                    ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
+                    
+                    ImGui::End();
+                }
+            }
+            
+            if( open_resource_menu )
+            {
+                put::ces::enumerate_resources( &open_resource_menu );
+            }
+            
+            if( set_project_dir )
+            {
+                const c8* set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**." );
+                
+                if(set_proj)
+                {
+                    project_dir_str = set_proj;
+                    dev_ui::set_program_preference("project_dir", project_dir_str);
+                }
+            }
+            
+            if( open_save )
+            {
+                const c8* save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms" );
+                
+                if(save_file)
+                {
+                    put::ces::save_scene(save_file, sc->scene);
+                }
+            }
+            
+            if( dev_open )
+            {
+                if( ImGui::Begin("Dev", &dev_open) )
+                {
+                    if( ImGui::CollapsingHeader("Icons") )
+                    {
+                        debug_show_icons();
+                    }
+                    
+                    ImGui::End();
+                }
+            }
+            
+            if( picking_mode )
+            {
+                picking_update( sc->scene );
+            }
+            
+            if( selection_list )
+            {
+                enumerate_selection_ui( sc->scene, &selection_list );
+            }
+            
+            static u32 timer_index = pen::timer_create("scene_update_timer");
+            
+            pen::timer_accum(timer_index);
+            f32 dt_ms = pen::timer_get_ms(timer_index);
+            pen::timer_reset(timer_index);
+            pen::timer_start(timer_index);
+            
+            //update render data
+            put::ces::update_scene(sc->scene, dt_ms);
+        }
+        
         enum e_debug_draw_flags
         {
             DD_MATRIX = 1<<0,
@@ -258,7 +623,7 @@ namespace put
             ImGui::End();
         }
         
-        void render_scene_debug( const scene_view& view )
+        void render_scene_editor( const scene_view& view )
         {
             entity_scene* scene = view.scene;
             
@@ -276,6 +641,29 @@ namespace put
                 {
                     put::dbg::add_aabb( scene->bounding_volumes[n].transformed_min_extents, scene->bounding_volumes[n].transformed_max_extents );
                 }
+            }
+            
+            if( scene->debug_flags & DD_NODE )
+            {
+                for( auto& s : k_selection_list )
+                {
+                    put::dbg::add_aabb( scene->bounding_volumes[s].transformed_min_extents, scene->bounding_volumes[s].transformed_max_extents );
+                }
+            }
+            
+            if( k_transform_mode == TRANSFORM_TRANSLATE )
+            {
+                vec3f pos = vec3f::zero();
+                
+                for( auto& s : k_selection_list )
+                    pos += scene->world_matrices[s].get_translation();
+                
+                pos /= (f32)k_selection_list.size();
+                
+                mat4 widget;
+                widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
+                
+                put::dbg::add_coord_space(widget, 2.0f);
             }
             
             if( scene->debug_flags & DD_BONES )
@@ -309,13 +697,6 @@ namespace put
             if( scene->debug_flags & DD_GRID )
             {
                 put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
-            }
-            
-            if( scene->debug_flags & DD_NODE )
-            {
-                vec3f p = scene->world_matrices[scene->selected_index].get_translation();
-                
-                put::dbg::add_aabb( p - vec3f(0.1f, 0.1f, 0.1f), p + vec3f(0.1f, 0.1f, 0.1f));
             }
             
             put::dbg::render_3d(view.cb_view);

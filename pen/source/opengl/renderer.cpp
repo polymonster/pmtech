@@ -353,7 +353,6 @@ namespace pen
 
 	void direct::renderer_create_query( u32 query_type, u32 flags )
 	{
-        
 	}
 
 	void direct::renderer_set_query(u32 query_index, u32 action)
@@ -709,8 +708,30 @@ namespace pen
         return size;
     }
     
+    struct tex_format_map
+    {
+        u32 pen_format;
+        u32 sized_format;
+        u32 format;
+        u32 type;
+    };
+    
+    static tex_format_map k_tex_format_map[] =
+    {
+        { PEN_TEX_FORMAT_BGRA8_UNORM, GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE },
+        { PEN_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE },
+        { PEN_TEX_FORMAT_D24_UNORM_S8_UINT, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8 },
+        { PEN_TEX_FORMAT_R32G32B32A32_FLOAT, GL_RGBA32F, GL_RGBA, GL_FLOAT },
+        { PEN_TEX_FORMAT_R16G16B16A16_FLOAT, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT },
+        { PEN_TEX_FORMAT_R32_FLOAT, GL_R32F, GL_RED, GL_FLOAT },
+        { PEN_TEX_FORMAT_R16_FLOAT, GL_R16F, GL_RED, GL_HALF_FLOAT },
+        { PEN_TEX_FORMAT_R32_UINT, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT }
+    };
+    static u32 k_num_tex_maps = sizeof(k_tex_format_map) / sizeof(k_tex_format_map[0]);
+    
     void get_texture_format( u32 pen_format, u32& sized_format, u32& format, u32& type )
     {
+        //todo compressed textures
         //PEN_FORMAT_B8G8R8A8_UNORM       = 0,
         //PEN_FORMAT_BC1_UNORM            = 1,
         //PEN_FORMAT_BC2_UNORM            = 2,
@@ -718,36 +739,19 @@ namespace pen
         //PEN_FORMAT_BC4_UNORM            = 4,
         //PEN_FORMAT_BC5_UNORM            = 5
         
-        switch(pen_format)
+        for( s32 i = 0; i < k_num_tex_maps; ++i )
         {
-            case PEN_TEX_FORMAT_BGRA8_UNORM:
-                sized_format = GL_RGBA8;
-                format = GL_BGRA;
-                type = GL_UNSIGNED_BYTE;
-                break;
-                
-            case PEN_TEX_FORMAT_RGBA8_UNORM:
-                sized_format = GL_RGBA8;
-                format = GL_RGBA;
-                type = GL_UNSIGNED_BYTE;
-                break;
-                
-            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
-                sized_format = GL_DEPTH24_STENCIL8;
-                format = GL_DEPTH_STENCIL;
-                type = GL_UNSIGNED_INT_24_8;
-                break;
-                
-            case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
-                sized_format = GL_RGBA32F;
-                format = GL_RGBA;
-                type = GL_FLOAT;
-                break;
-                
-            default:
-                PEN_ASSERT( 0 );
-                break;
+            if( k_tex_format_map[i].pen_format == pen_format )
+            {
+                sized_format = k_tex_format_map[i].sized_format;
+                format = k_tex_format_map[i].format;
+                type = k_tex_format_map[i].type;
+                return;
+            }
         }
+        
+        PEN_PRINTF("unimplemented texture format");
+        PEN_ASSERT( 0 );
     }
     
     texture_info create_texture_internal(const texture_creation_params& tcp)

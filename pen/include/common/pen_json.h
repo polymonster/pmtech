@@ -4,6 +4,7 @@
 #include "definitions.h"
 #include "jsmn/jsmn.h"
 #include "str/Str.h"
+#include "hash.h"
 
 namespace pen
 {
@@ -32,6 +33,7 @@ namespace pen
         
         Str         as_str( const c8* default_value = nullptr );
         const c8*   as_cstr( const c8* default_value = nullptr );
+        hash_id     as_hash_id( hash_id default_value = 0 );
         u32         as_u32( u32 default_value = 0 );
         s32         as_s32( s32 default_value = 0 );
         bool        as_bool( bool default_value = false );

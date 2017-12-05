@@ -241,10 +241,37 @@ namespace put
 		entity_scene*   create_scene( const c8* name );
         
 		void            render_scene_view( const scene_view& view );
-		void            render_scene_debug( const scene_view& view );
-        
 		void            update_scene( entity_scene* scene, f32 dt );
 	}
+
+    struct camera_controller
+    {
+        hash_id id_name;
+        put::camera* camera;
+        
+        void(*update_function)(put::camera_controller*) = nullptr;
+        
+        Str name;
+    };
+    
+    struct scene_controller
+    {
+        hash_id id_name;
+        put::ces::entity_scene* scene;
+        
+        void(*update_function)(put::scene_controller*) = nullptr;
+        
+        Str name;
+    };
+    
+    struct scene_view_renderer
+    {
+        hash_id id_name;
+        
+        void(*render_function)(const put::ces::scene_view&)  = nullptr;
+        
+        Str name;
+    };
 }
 
 #endif

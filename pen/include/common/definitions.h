@@ -71,9 +71,6 @@ typedef std::atomic<uint64_t> a_u64;
 #define	PEN_PRINT_CHAR_LIMIT 4096
 inline void output_debug( const c8* format, ... )
 {
-#ifdef _WIN32
-
-#else
     va_list va;
     va_start( va, format );
     
@@ -82,6 +79,9 @@ inline void output_debug( const c8* format, ... )
     
     va_end( va );
     
+#ifdef _WIN32
+    OutputDebugStringA( buf );
+#else
     printf( "%s\n", buf );
 #endif
 }

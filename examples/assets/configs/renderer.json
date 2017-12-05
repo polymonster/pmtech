@@ -90,36 +90,31 @@
 		picking:
 		{
 			size: equal,
-			format: rgba8,
-			mips: false,
+			format: r32u,
 		},
 		
 		picking_ds:
 		{
 			size: equal,
 			format: d24s8,
-			mips: false,
 		},
 		
 		gbuffer_albedo:
 		{
 			size: equal,
 			format: rgba8,
-			mips: false,
 		},
 		
 		gbuffer_normals:
 		{
 			size: equal,
 			format: rgba8,
-			mips: false,
 		},
 		
 		gbuffer_depth:
 		{
 			size: equal,
 			format: d24s8,
-			mips: false,
 		},
 	},
 	
@@ -137,13 +132,14 @@
 			depth_stencil_state: default,
 			technique: diffuse,
 			scene: main_scene,
-			camera: model_viewer_camera
+			camera: model_viewer_camera,
+			scene_views:["ces_render_scene", "ces_render_editor"]
 		},
 		
 		picking_view:
 		{
 			target:[picking, picking_ds],
-			clear_colour:[1.0, 1.0, 1.0, 1.0],
+			clear_colour:[1000.0, 1000, 1000, 1000],
 			clear_depth: 1.0,
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			blend_state: disabled,
@@ -151,7 +147,8 @@
 			depth_stencil_state: default,
 			technique: picking,
 			scene: main_scene,
-			camera: model_viewer_camera
+			camera: model_viewer_camera,
+			scene_views:["ces_render_scene", "ces_render_editor"]
 		},
 		
 		gbuffer_view:
@@ -165,7 +162,8 @@
 			depth_stencil_state: default,
 			technique: gbuffer,
 			scene: main_scene,
-			camera: model_viewer_camera
+			camera: model_viewer_camera,
+			scene_views:["ces_render_scene"]
 		},
 	},
 }

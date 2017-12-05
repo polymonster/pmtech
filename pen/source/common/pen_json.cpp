@@ -636,6 +636,11 @@ namespace pen
         return default_value;
     }
     
+    hash_id json::as_hash_id( hash_id default_value )
+    {
+        return PEN_HASH( as_cstr() );
+    }
+    
     u32 json::as_u32( u32 default_value )
     {
         json_value jv;

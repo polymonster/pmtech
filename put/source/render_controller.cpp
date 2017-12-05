@@ -122,10 +122,14 @@ namespace put
         
         format_info rt_format[] =
         {
-            {"rgba8", PEN_TEX_FORMAT_RGBA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
-            {"bgra8", PEN_TEX_FORMAT_BGRA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
-            {"rgba32f", PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 32*4, PEN_BIND_RENDER_TARGET },
-            {"d24s8", PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL },
+            {"rgba8",   PEN_TEX_FORMAT_RGBA8_UNORM,         32,     PEN_BIND_RENDER_TARGET },
+            {"bgra8",   PEN_TEX_FORMAT_BGRA8_UNORM,         32,     PEN_BIND_RENDER_TARGET },
+            {"rgba32f", PEN_TEX_FORMAT_R32G32B32A32_FLOAT,  32*4,   PEN_BIND_RENDER_TARGET },
+            {"rgba16f", PEN_TEX_FORMAT_R16G16B16A16_FLOAT,  16*4,   PEN_BIND_RENDER_TARGET },
+            {"r32f",    PEN_TEX_FORMAT_R32_FLOAT,           32,     PEN_BIND_RENDER_TARGET },
+            {"r16f",    PEN_TEX_FORMAT_R16_FLOAT,           16,     PEN_BIND_RENDER_TARGET },
+            {"r32u",    PEN_TEX_FORMAT_R32_UINT,            16,     PEN_BIND_RENDER_TARGET },
+            {"d24s8",   PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL }
         };
         s32 num_formats = (s32)sizeof(rt_format)/sizeof(format_info);
         
@@ -142,6 +146,9 @@ namespace put
         
         struct view_params
         {
+            Str     name;
+            hash_id id_name;
+            
             s32     rt_width, rt_height;
             f32     rt_ratio;
             
@@ -163,18 +170,23 @@ namespace put
             ces::entity_scene* scene;
             put::camera* camera;
             
-            Str     name;
-            hash_id id_name;
+            std::vector<void(*)(const put::ces::scene_view&)> render_functions;
         };
         
         static std::vector<view_params>         k_views;
         static std::vector<scene_controller>    k_scenes;
+        static std::vector<scene_view_renderer> k_scene_view_renderers;
         static std::vector<camera_controller>   k_cameras;
         static std::vector<render_target>       k_render_targets;
         
         void register_scene( const scene_controller& scene )
         {
             k_scenes.push_back(scene);
+        }
+        
+        void register_scene_view_renderer( const scene_view_renderer& svr )
+        {
+            k_scene_view_renderers.push_back(svr);
         }
 
         void register_camera( const camera_controller& cam )
@@ -691,7 +703,7 @@ namespace put
                                 }
                         }
                         
-                        new_info.num_mips = calc_num_mips(new_info.width, new_info.height);
+                        new_info.num_mips = 1;
                         new_info.format = rt_format[f].format;
                         
                         pen::texture_creation_params tcp;
@@ -703,10 +715,15 @@ namespace put
                         tcp.block_size = rt_format[f].block_size;
                         tcp.usage = PEN_USAGE_DEFAULT;
                         tcp.flags = 0;
+                        tcp.num_mips = 1;
                         
                         //arays and mips
                         tcp.num_arrays = r["num_arrays"].as_u32(1);
-                        tcp.num_mips = r["num_mips"].as_u32(1);
+                        if( r["mips"].as_bool(false) )
+                        {
+                            new_info.num_mips = calc_num_mips(new_info.width, new_info.height);
+                            tcp.num_mips = new_info.num_mips;
+                        }
                         
                         //flags
                         tcp.cpu_access_flags = 0;
@@ -716,7 +733,7 @@ namespace put
                         tcp.sample_count = r["samples"].as_u32(1);
                         tcp.sample_quality = 0;
                         
-                        new_info.msaa = tcp.sample_count > 1;
+                        new_info.samples = tcp.sample_count;
                         
                         new_info.handle = pen::renderer_create_render_target( tcp );
                     }
@@ -948,6 +965,16 @@ namespace put
                 
                 new_view.technique = PEN_HASH(technique_str.c_str());
                 
+                //scene views
+                pen::json scene_views = view["scene_views"];
+                for( s32 ii = 0; ii < scene_views.size(); ++ii )
+                {
+                    hash_id id = scene_views[ii].as_hash_id();
+                    for( auto& sv : k_scene_view_renderers )
+                        if( id == sv.id_name )
+                            new_view.render_functions.push_back(sv.render_function);
+                }
+                
                 if(valid)
                     k_views.push_back(new_view);
             }
@@ -1025,8 +1052,8 @@ namespace put
                 sv.scene_node_flags = 0;
                 sv.technique = v.technique;
                 
-                put::ces::render_scene_view(sv);
-                put::ces::render_scene_debug(sv);
+                for( s32 rf = 0; rf < v.render_functions.size(); ++rf )
+                    v.render_functions[rf](sv);
             }
         }
         
@@ -1056,7 +1083,7 @@ namespace put
                         if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
                             continue;
                         
-                        if( rt.msaa )
+                        if( rt.samples > 1 )
                         {
                             pen::renderer_resolve_target(rt.handle);
                         }
@@ -1066,7 +1093,32 @@ namespace put
                         
                         ImGui::Image((void*)&rt.handle, ImVec2(w / display_ratio, h / display_ratio));
                         
-                        ImGui::Text("%i, %i", (s32)w, (s32)h);
+                        const c8* format_str = nullptr;
+                        s32 byte_size = 0;
+                        for( s32 f = 0; f < num_formats; ++f )
+                        {
+                            if( rt_format[f].format == rt.format )
+                            {
+                                format_str = rt_format[f].name.c_str();
+                                byte_size = rt_format[f].block_size / 8;
+                                break;
+                            }
+                        }
+                        
+                        ImGui::Text("%s", rt.name.c_str() );
+                        ImGui::Text("%ix%i, %s", (s32)w, (s32)h, format_str);
+                    
+                        s32 image_size = byte_size * w * h * rt.samples;
+                        
+                        if( rt.samples > 1 )
+                        {
+                            ImGui::Text("Msaa Samples: %i", rt.samples);
+                            image_size += byte_size * w * h;
+                        }
+                        
+                        ImGui::Text("Size: %f (mb)", (f32)image_size / 1024.0f / 1024.0f );
+                        
+                        ImGui::Separator();
                     }
                 }
             

@@ -14,7 +14,7 @@ struct vs_output
 struct vs_output_picking
 {
 	float4 position		: SV_POSITION;
-	float4 colour		: TEXCOORD0;
+	float4 index		: TEXCOORD0;
 };
 
 struct vs_input
@@ -40,6 +40,11 @@ struct vs_input_skinned
 struct ps_output
 {
 	float4 colour : SV_Target;
+};
+
+struct ps_output_picking
+{
+	uint colour : SV_Target;
 };
 
 struct ps_output_multi
@@ -123,7 +128,7 @@ vs_output_picking vs_picking( vs_input _input )
 	float4x4 wvp = mul( world_matrix, vp_matrix );
 
 	_output.position = mul( _input.position, wvp );
-	_output.colour = float4( user_data.x, 0.0f, 0.0f, 0.0f );
+	_output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
 	
 	return _output;
 }
@@ -137,17 +142,17 @@ vs_output_picking vs_picking_skinned( vs_input_skinned _input )
 	float4 sp = skin_pos(_input.position, _input.blend_weights, _input.blend_indices);
 	
 	_output.position = mul( sp, wvp );
-	_output.colour = float4( user_data.x, 0.0f, 0.0f, 0.0f );
-	
+	_output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
+		
 	return _output;
 }
 
-ps_output ps_picking( vs_output_picking _input ) 
+ps_output_picking ps_picking( vs_output_picking _input ) 
 {	
-	ps_output _output;
+	ps_output_picking _output;
 	
-	_output.colour = float4( _input.colour.rgb, 1.0 );
-		
+	_output.colour = uint(_input.index.x);
+	
     return _output;
 }
 

@@ -21,7 +21,7 @@ namespace physics
 	
 	generic_constraint			p2p_constraints[MAX_P2P_CONSTRAINTS];
 
-	typedef struct collision_responsors
+    struct collision_responsors
 	{
 		collision_responsors( )
 		{
@@ -30,7 +30,7 @@ namespace physics
 
 		collision_response response_data[MAX_ENTITIES];
 		u32 num_responsors;
-	}collision_responsors;
+	};
 
 	collision_responsors g_collision_responsors;
 
@@ -544,7 +544,6 @@ namespace physics
 		while (1)
 		{
 			PEN_TIMER_START( LOOP_TIME );
-
 			PEN_TIMER_START( CONSUME_CMD );
 
 			if ( g_readable_data.b_consume)
@@ -553,7 +552,6 @@ namespace physics
 			}
 
 			PEN_TIMER_END( CONSUME_CMD );
-			//PEN_TIMER_PRINT( CONSUME_CMD );
 			PEN_TIMER_RESET( CONSUME_CMD );
 
 			PEN_TIMER_START( STEP_SIMULATION );
@@ -572,7 +570,6 @@ namespace physics
 			update_output_matrices( );
 
 			PEN_TIMER_END( UPDATE_OUTPUTS );
-			//PEN_TIMER_PRINT( UPDATE_OUTPUTS );
 			PEN_TIMER_RESET( UPDATE_OUTPUTS );
 
 			PEN_TIMER_START( PROCESS_TRIGGERS );
@@ -617,7 +614,6 @@ namespace physics
 			}
 
 			PEN_TIMER_END( PROCESS_TRIGGERS );
-			//PEN_TIMER_PRINT( PROCESS_TRIGGERS );
 			PEN_TIMER_RESET( PROCESS_TRIGGERS );
 
 			//swap the output buffers
@@ -641,7 +637,18 @@ namespace physics
 			pen::threads_sleep_ms( 16 );
 
 			PEN_TIMER_RESET( LOOP_TIME );
+            
+            //msg from the engine we want to terminate
+            if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
+                break;
 		}
+        
+        //todo shutdown
+        
+        //signal to the engine the thread has finished
+        pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
+        
+        return PEN_THREAD_OK;
 	}
 
 	void add_rb_internal( const rigid_body_params &params, u32 ghost )

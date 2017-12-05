@@ -54,18 +54,18 @@ namespace put
             
             bv->min_extents = gr->physics_info.min_extents;
             bv->max_extents = gr->physics_info.max_extents;
+        }
+        
+        void instantiate_model_cbuffer( entity_scene* scene, s32 node_index )
+        {
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = sizeof(per_model_cbuffer);
+            bcp.data = nullptr;
             
-            if (scene->cbuffer[node_index] == PEN_INVALID_HANDLE)
-            {
-                pen::buffer_creation_params bcp;
-                bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size = sizeof(per_model_cbuffer);
-                bcp.data = nullptr;
-                
-                scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
-            }
+            scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
         }
         
         void instantiate_anim_controller( entity_scene* scene, s32 node_index )
@@ -181,9 +181,8 @@ namespace put
                     pen::memory_cpy(&p_geometry->p_skin->bind_shape_matirx, p_reader, sizeof(mat4));
                     p_reader += 16;
                     
-                    mat4 max_swap;
                     //max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 1.0f, 0.0f));
-                    max_swap = mat4::create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f));
+                    mat4 max_swap = mat4::create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f));
         
                     mat4 max_swap_inv = max_swap.inverse4x4();
                     
@@ -689,7 +688,7 @@ namespace put
                         {
                             inserted_nodes++;
                             clone_node( scene, current_node, dest, current_node, vec3f::zero(), (const c8*)node_suffix.c_str() );
-                            scene->local_matrices[dest].create_identity();
+                            scene->local_matrices[dest] = mat4::create_identity();
                         }
                         
                         //generate geometry hash
@@ -707,6 +706,8 @@ namespace put
                         if( gr )
                         {
                             instantiate_geometry( gr, scene, dest );
+                            
+                            instantiate_model_cbuffer( scene, dest );
                             
                             hm.begin();
                             hm.add(filename, pen::string_length(filename));

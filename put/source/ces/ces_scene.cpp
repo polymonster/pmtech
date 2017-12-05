@@ -592,6 +592,8 @@ namespace put
                     {
                         instantiate_geometry(gr, scene, n );
                         
+                        instantiate_model_cbuffer(scene, n);
+                        
                         if( gr->p_skin)
                             instantiate_anim_controller( scene, n );
                     }
