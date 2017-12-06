@@ -245,6 +245,9 @@ namespace put
             u32 blend_state_state = 0;
             u32 raster_state = 0;
             
+            camera* camera;
+            pen::viewport* viewport;
+            
             hash_id technique;
 			entity_scene* scene = nullptr;
 		};

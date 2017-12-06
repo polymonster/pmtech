@@ -1056,6 +1056,8 @@ namespace put
                 sv.raster_state = v.raster_state;
                 sv.depth_stencil_state = v.depth_stencil_state;
                 sv.blend_state_state = v.blend_state;
+                sv.camera = v.camera;
+                sv.viewport = &vp;
                 
                 for( s32 rf = 0; rf < v.render_functions.size(); ++rf )
                     v.render_functions[rf](sv);

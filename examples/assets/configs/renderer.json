@@ -32,6 +32,11 @@
 	
 	depth_stencil_states:
 	{
+		disabled:
+		{
+			depth_enable: false,
+		},
+		
 		default:
 		{
 			depth_enable: true,

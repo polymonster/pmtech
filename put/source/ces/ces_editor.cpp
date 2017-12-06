@@ -691,21 +691,6 @@ namespace put
                 }
             }
             
-            if( k_transform_mode == TRANSFORM_TRANSLATE )
-            {
-                vec3f pos = vec3f::zero();
-                
-                for( auto& s : k_selection_list )
-                    pos += scene->world_matrices[s].get_translation();
-                
-                pos /= (f32)k_selection_list.size();
-                
-                mat4 widget;
-                widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
-                
-                put::dbg::add_coord_space(widget, 2.0f);
-            }
-            
             if( scene->view_flags & DD_BONES )
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
@@ -740,6 +725,76 @@ namespace put
             }
             
             put::dbg::render_3d(view.cb_view);
+            
+            //no depth test
+            static u32 depth_disabled = pmfx::get_render_state_by_name(PEN_HASH("disabled_depth_stencil_state"));
+            
+            pen::renderer_set_depth_stencil_state(depth_disabled);
+            
+            static vec3f widget_points[4];
+            static u32 selected_axis = 0;
+            
+            if( k_transform_mode == TRANSFORM_TRANSLATE )
+            {
+                vec3f pos = vec3f::zero();
+                
+                for( auto& s : k_selection_list )
+                {
+                    vec3f& min = scene->bounding_volumes[s].transformed_min_extents;
+                    vec3f& max = scene->bounding_volumes[s].transformed_max_extents;
+                    
+                    pos += min + (max - min) * 0.5f;
+                }
+                
+                pos /= (f32)k_selection_list.size();
+                
+                f32 d = put::maths::distance(view.camera->pos, pos) * 0.5f;
+                
+                mat4 widget;
+                widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
+                
+                widget_points[0] = pos;
+                widget_points[1] = pos + vec3f::unit_x() * d;
+                widget_points[2] = pos + vec3f::unit_y() * d;
+                widget_points[3] = pos + vec3f::unit_z() * d;
+                
+                put::dbg::add_coord_space(widget, d );
+            }
+            
+            const pen::mouse_state& ms = pen::input_get_mouse_state();
+            
+            if( k_transform_mode == TRANSFORM_TRANSLATE )
+            {
+                vec2i vpi(view.viewport->width, view.viewport->height);
+                
+                vec3f pp[4];
+                vec4f cols[4] =
+                {
+                    vec4f::one(),
+                    vec4f::red(),
+                    vec4f::green(),
+                    vec4f::blue()
+                };
+                
+                for( s32 i = 0; i < 4; ++i)
+                {
+                    pp[i] = put::maths::project( widget_points[i], view.camera->view, view.camera->proj, vpi );
+                    put::dbg::add_quad_2f( vec2f( pp[i].x, pp[i].y), vec2f( 5.0f, 5.0f), cols[i] );
+                    
+                    pp[i].z = 0.0f;
+                }
+                
+                vec3f mousev3 = vec3f(ms.x, ms.y, 0.0f );
+                
+                //put::maths::closest_point_on_line(mousev3, <#vec3f l2#>, <#vec3f p#>)
+            }
+            
+            put::dbg::render_3d(view.cb_view);
+            
+            put::dbg::render_2d();
+            
+            //reset depth state
+            pen::renderer_set_depth_stencil_state(view.depth_stencil_state);
         }
     }
 }

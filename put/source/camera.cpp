@@ -125,18 +125,20 @@ namespace put
 		prev_mpos = current_mouse;
 
 		//rotate
-		if (ms.buttons[PEN_MOUSE_L])
+		if (ms.buttons[PEN_MOUSE_R])
 		{
 			//rotation
 			vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);
 			p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
 		}
-		else if (ms.buttons[PEN_MOUSE_R])
+		else if (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_MENU))
 		{
-			//pan
-			p_camera->focus.x += f32((cos(p_camera->rot.y) * mouse_drag.x) + (-(sin(p_camera->rot.x) * sin(p_camera->rot.y)) * mouse_drag.y));
-			p_camera->focus.y -= f32(cos(p_camera->rot.x) * mouse_drag.y);
-			p_camera->focus.z += f32((sin(p_camera->rot.y) * mouse_drag.x) + ((sin(p_camera->rot.x) * cos(p_camera->rot.y)) * mouse_drag.y));
+            vec3f up = p_camera->view.get_up();
+            vec3f right = p_camera->view.get_right();
+            
+            p_camera->focus -= up * mouse_drag.y * 0.5f;
+            p_camera->focus += right * mouse_drag.x * 0.5f;
+            
 		}
 
 		//zoom

@@ -202,30 +202,19 @@ namespace put
 
 		}
 
-		void render_2d( u32 cb_2dview )
+		void render_2d( )
 		{
             //font
 			pen::renderer_update_buffer(vb_font, &debug_font_verts[0], sizeof(vertex_debug_font) * font_vert_count);
             pmfx::set_technique(debug_font_shader, 0);
 			pen::renderer_set_vertex_buffer(vb_font, 0, sizeof(vertex_debug_font), 0);
 			pen::renderer_draw(font_vert_count, 0, PEN_PT_TRIANGLELIST);
-            
-            //lines
-            //pen::renderer_set_constant_buffer(cb_2dview, 0, PEN_SHADER_TYPE_VS);
-            //pen::renderer_update_buffer(vb_lines, &debug_lines_verts[0], sizeof(vertex_debug_lines) * line_vert_count);
-            //pmfx::set_technique(debug_lines_shader, 0);
-            //pen::renderer_set_vertex_buffer(vb_lines, 0, sizeof(vertex_debug_lines), 0);
-            //pen::renderer_draw(line_vert_count, 0, PEN_PT_LINELIST);
 
 			//reset
 			font_vert_count = 0;
-            //line_vert_count = 0;
 
 			debug_font_backbuffer_index = (debug_font_backbuffer_index + 1) & NUM_VERTEX_BUFFERS;
 			debug_font_verts = &debug_font_buffers[debug_font_backbuffer_index][0];
-            
-            //debug_lines_backbuffer_index = (debug_lines_backbuffer_index + 1) & NUM_VERTEX_BUFFERS;
-            //debug_lines_verts = &debug_lines_buffers[debug_lines_backbuffer_index][0];
 		}
 
 		void add_text_2f(const f32 x, const f32 y, const pen::viewport& vp, const vec4f& colour, const c8* format, ...)
@@ -450,7 +439,7 @@ namespace put
 			dbg::add_line(transformed_s, transformed_e, col);
 		}
 
-		void add_coord_space(const mat4& mat, const f32 size)
+		void add_coord_space(const mat4& mat, const f32 size, u32 selected )
 		{
             alloc_lines_buffer(line_vert_count + 6);
             
@@ -470,9 +459,9 @@ namespace put
 
 				for (u32 j = 0; j < 2; ++j)
 				{
-					debug_lines_verts[line_vert_count + j].r = i == 0 ? 1.0f : 0.0f;
-					debug_lines_verts[line_vert_count + j].g = i == 1 ? 1.0f : 0.0f;
-					debug_lines_verts[line_vert_count + j].b = i == 2 ? 1.0f : 0.0f;
+                    debug_lines_verts[line_vert_count + j].r = i == 0 || (1<<i) & selected ? 1.0f : 0.0f;
+					debug_lines_verts[line_vert_count + j].g = i == 1 || (1<<i) & selected ? 1.0f : 0.0f;
+					debug_lines_verts[line_vert_count + j].b = i == 2 || (1<<i) & selected ? 1.0f : 0.0f;
 					debug_lines_verts[line_vert_count + j].a = 1.0f;
 				}
 
@@ -701,6 +690,7 @@ namespace put
 			};
 
 			//tri 1
+            s32 start_index = font_vert_count;
 			debug_font_verts[font_vert_count].x = corners[0].x;
 			debug_font_verts[font_vert_count].y = corners[0].y;
 			font_vert_count++;
@@ -725,6 +715,14 @@ namespace put
 			debug_font_verts[font_vert_count].x = corners[0].x;
 			debug_font_verts[font_vert_count].y = corners[0].y;
 			font_vert_count++;
+            
+            for( s32 i = start_index; i < start_index + 6; ++i )
+            {
+                debug_font_verts[i].r = colour.x;
+                debug_font_verts[i].g = colour.y;
+                debug_font_verts[i].b = colour.z;
+                debug_font_verts[i].a = colour.w;
+            }
 		}
 	}
 }
