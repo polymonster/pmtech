@@ -827,10 +827,10 @@ namespace put
                 //render targets
                 pen::json targets = view["target"];
                 
-                new_view.num_colour_targets = targets.size();
+                s32 num_targets = targets.size();
          
                 s32 cur_rt = 0;
-                for( s32 t = 0; t < new_view.num_colour_targets; ++t )
+                for( s32 t = 0; t < num_targets; ++t )
                 {
                     Str target_str = targets[t].as_str();
                     hash_id target_hash = PEN_HASH(target_str.c_str());
@@ -868,6 +868,8 @@ namespace put
                                 new_view.depth_target = r.handle;
                             else
                                 new_view.render_targets[cur_rt++] = r.handle;
+                            
+                            new_view.num_colour_targets = cur_rt;
                             
                             break;
                         }
@@ -1033,7 +1035,7 @@ namespace put
                 pen::renderer_set_viewport( vp );
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
                 
-                pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
+                pen::renderer_set_targets( v.render_targets, v.num_colour_targets, v.depth_target);
                 
                 //clear
                 pen::renderer_clear( v.clear_state );
@@ -1058,10 +1060,12 @@ namespace put
                 for( s32 rf = 0; rf < v.render_functions.size(); ++rf )
                     v.render_functions[rf](sv);
             }
+            
+            pen::renderer_set_targets( PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH );
         }
         
         void show_dev_ui()
-        {
+        {            
             ImGui::BeginMainMenuBar();
             
             static bool open_renderer = false;
@@ -1075,58 +1079,59 @@ namespace put
             
             if( open_renderer )
             {
-                ImGui::Begin("Render Controller", &open_renderer );
-                
-                static s32 display_ratio = 4;
-                ImGui::InputInt("Buffer Ratio", &display_ratio);
-                
-                if( ImGui::CollapsingHeader("Render Targets") )
+                if( ImGui::Begin("Render Controller", &open_renderer ) )
                 {
-                    for( auto& rt : k_render_targets )
-                    {
-                        if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
-                            continue;
-                        
-                        if( rt.samples > 1 )
-                        {
-                            pen::renderer_resolve_target(rt.handle);
-                        }
-
-                        f32 w, h;
-                        get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
-                        
-                        ImGui::Image((void*)&rt.handle, ImVec2(w / display_ratio, h / display_ratio));
-                        
-                        const c8* format_str = nullptr;
-                        s32 byte_size = 0;
-                        for( s32 f = 0; f < num_formats; ++f )
-                        {
-                            if( rt_format[f].format == rt.format )
-                            {
-                                format_str = rt_format[f].name.c_str();
-                                byte_size = rt_format[f].block_size / 8;
-                                break;
-                            }
-                        }
-                        
-                        ImGui::Text("%s", rt.name.c_str() );
-                        ImGui::Text("%ix%i, %s", (s32)w, (s32)h, format_str);
+                    static s32 display_ratio = 4;
+                    ImGui::InputInt("Buffer Ratio", &display_ratio);
                     
-                        s32 image_size = byte_size * w * h * rt.samples;
-                        
-                        if( rt.samples > 1 )
+                    if( ImGui::CollapsingHeader("Render Targets") )
+                    {
+                        for( auto& rt : k_render_targets )
                         {
-                            ImGui::Text("Msaa Samples: %i", rt.samples);
-                            image_size += byte_size * w * h;
+                            if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
+                                continue;
+                            
+                            if( rt.samples > 1 )
+                            {
+                                pen::renderer_resolve_target(rt.handle);
+                            }
+                            
+                            f32 w, h;
+                            get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
+                            
+                            ImGui::Image((void*)&rt.handle, ImVec2(w / display_ratio, h / display_ratio));
+                            
+                            const c8* format_str = nullptr;
+                            s32 byte_size = 0;
+                            for( s32 f = 0; f < num_formats; ++f )
+                            {
+                                if( rt_format[f].format == rt.format )
+                                {
+                                    format_str = rt_format[f].name.c_str();
+                                    byte_size = rt_format[f].block_size / 8;
+                                    break;
+                                }
+                            }
+                            
+                            ImGui::Text("%s", rt.name.c_str() );
+                            ImGui::Text("%ix%i, %s", (s32)w, (s32)h, format_str);
+                            
+                            s32 image_size = byte_size * w * h * rt.samples;
+                            
+                            if( rt.samples > 1 )
+                            {
+                                ImGui::Text("Msaa Samples: %i", rt.samples);
+                                image_size += byte_size * w * h;
+                            }
+                            
+                            ImGui::Text("Size: %f (mb)", (f32)image_size / 1024.0f / 1024.0f );
+                            
+                            ImGui::Separator();
                         }
-                        
-                        ImGui::Text("Size: %f (mb)", (f32)image_size / 1024.0f / 1024.0f );
-                        
-                        ImGui::Separator();
                     }
+                    
+                    ImGui::End();
                 }
-            
-                ImGui::End();
             }
         }
     }

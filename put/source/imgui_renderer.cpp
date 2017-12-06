@@ -7,6 +7,7 @@
 #include "renderer.h"
 #include "loader.h"
 #include "pmfx.h"
+#include "debug_render.h"
 
 using namespace pen;
 using namespace put;
@@ -75,7 +76,7 @@ namespace put
 
 			io.RenderDrawListsFn = render;
 
-			io.ImeWindowHandle = pen::window_get_primary_display_handle();
+            io.ImeWindowHandle = pen::window_get_primary_display_handle();
 
 			//load shaders
             g_imgui_rs.imgui_shader = pmfx::load("imgui");
@@ -272,17 +273,17 @@ namespace put
 				ImDrawList* cmd_list = draw_data->CmdLists[n];
 				u32 vertex_size = cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
 				u32 index_size = cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
-
+                
 				c8* vb_mem = (c8*)g_imgui_rs.vb_copy_buffer;
 				c8* ib_mem = (c8*)g_imgui_rs.ib_copy_buffer;
-
+                
 				pen::memory_cpy(&vb_mem[vb_offset], cmd_list->VtxBuffer.Data, vertex_size);
 				pen::memory_cpy(&ib_mem[ib_offset], cmd_list->IdxBuffer.Data, index_size);
 
 				vb_offset += vertex_size;
 				ib_offset += index_size;
 			}
-
+            
 			pen::renderer_update_buffer(g_imgui_rs.vertex_buffer, g_imgui_rs.vb_copy_buffer, vb_offset);
 			pen::renderer_update_buffer(g_imgui_rs.index_buffer, g_imgui_rs.ib_copy_buffer, ib_offset);
 
@@ -307,7 +308,7 @@ namespace put
             pen::viewport vp =
             {
                 0.0f, 0.0f,
-                (f32)pen_window.width, (f32)pen_window.height,
+                (f32)ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y,
                 0.0f, 1.0
             };
             
@@ -331,7 +332,7 @@ namespace put
 			int vtx_offset = 0;
 			int idx_offset = 0;
 			for (int n = 0; n < draw_data->CmdListsCount; n++)
-			{
+			{                
 				const ImDrawList* cmd_list = draw_data->CmdLists[n];
 				for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 				{
@@ -491,7 +492,7 @@ namespace put
 			io.DeltaTime = (cur_time - prev_time) / 1000.0f;
 			prev_time = cur_time;
 
-			io.DisplaySize = ImVec2((f32)pen_window.width, (f32)pen_window.height);
+            io.DisplaySize = ImVec2((f32)pen_window.width, (f32)pen_window.height);
             
 			// Hide OS mouse cursor if ImGui is drawing it
 			if (io.MouseDrawCursor)

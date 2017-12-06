@@ -83,6 +83,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     pmfx::init("data/configs/renderer.json");
     
+    bool enable_dev_ui = true;
+    
     while( 1 )
     {
 		put::dev_ui::new_frame();
@@ -93,7 +95,11 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         
         pmfx::show_dev_ui();
         
-		put::dev_ui::render();
+        if( enable_dev_ui )
+            put::dev_ui::render();
+        
+        if( pen::input_is_key_held(PENK_MENU) && pen::input_is_key_pressed(PENK_D) )
+            enable_dev_ui = !enable_dev_ui;
         
         pen::renderer_present();
 

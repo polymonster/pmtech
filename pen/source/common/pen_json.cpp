@@ -297,6 +297,9 @@ namespace pen
         jv.object.data = nullptr;
         jv.object.num_tokens = 0;
         
+        if( jo == NULL )
+            return jv.object;
+        
         enumerate_params ep =
         {
             false,

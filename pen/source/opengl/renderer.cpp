@@ -343,11 +343,13 @@ namespace pen
         {
             resource_allocation& res = resource_pool[ managed_rt.render_target_handle ];
             glDeleteTextures( 1, &res.render_target.texture.handle );
-            glDeleteFramebuffers( 1, &res.render_target.texture.handle );
             
-            renderer_realloc_resource(managed_rt.render_target_handle, DIRECT_RESOURCE);
+            if( managed_rt.tcp.sample_count > 1 )
+            {
+                glDeleteTextures( 1, &res.render_target.texture_msaa.handle );
+            }
             
-            direct::renderer_create_render_target(managed_rt.tcp);
+            direct::renderer_create_render_target(managed_rt.tcp, managed_rt.render_target_handle );
         }
     }
 
@@ -797,10 +799,12 @@ namespace pen
         
         return ti;
     }
-
-	u32 direct::renderer_create_render_target(const texture_creation_params& tcp )
+    
+	u32 direct::renderer_create_render_target( const texture_creation_params& tcp, s32 replace_resource_index )
 	{
-		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE);
+        u32 resource_index = replace_resource_index;
+        if( replace_resource_index == -1 )
+            resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE);
         
         resource_allocation& res = resource_pool[ resource_index ];
         
@@ -815,12 +819,7 @@ namespace pen
             _tcp.width = pen_window.width / tcp.height;
             _tcp.height = pen_window.height / tcp.height;
             
-            bool exists = false;
-            for( auto& managed_rt : k_managed_render_targets )
-                if( managed_rt.render_target_handle == resource_index )
-                    exists = true;
-            
-            if(!exists)
+            if(replace_resource_index == -1)
                 k_managed_render_targets.push_back({tcp, resource_index});
         }
         
