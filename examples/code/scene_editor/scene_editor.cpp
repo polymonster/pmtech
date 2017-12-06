@@ -24,7 +24,7 @@ pen::window_creation_params pen_window
     1280,					//width
     720,					//height
     4,						//MSAA samples
-    "model_viewer"		    //window title / process name
+    "scene_editor"		    //window title / process name
 };
 
 namespace physics
