@@ -622,9 +622,11 @@ namespace pen
         PEN_ASSERT( hr == 0 );
     }
 
-    u32 direct::renderer_create_render_target( const texture_creation_params& tcp )
+    u32 direct::renderer_create_render_target( const texture_creation_params& tcp, s32 replace_resource_index )
     {
-        u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+        u32 resource_index = replace_resource_index;
+        if(replace_resource_index == -1)
+            resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 
         //alloc rt
         resource_pool[resource_index].render_target = ( render_target_internal* )pen::memory_alloc( sizeof( render_target_internal ) );
