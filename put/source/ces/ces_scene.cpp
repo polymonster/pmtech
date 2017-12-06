@@ -4,7 +4,7 @@
 #include "file_system.h"
 #include "dev_ui.h"
 #include "debug_render.h"
-#include "render_controller.h"
+#include "pmfx_controller.h"
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
@@ -191,10 +191,8 @@ namespace put
 		{
             entity_scene* scene = view.scene;
             
-            /*
-            if( scene->debug_flags & DD_HIDE )
+            if( scene->view_flags & SV_HIDE )
                 return;
-            */
             
             static pmfx::pmfx_handle model_pmfx = pmfx::load("fx_test");
             
@@ -253,7 +251,7 @@ namespace put
 					if (p_mat)
 					{
                         //todo - set sampler states from material
-                        static u32 ss_wrap = put::render_controller::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
+                        static u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
                         
 						for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
 						{
@@ -408,7 +406,7 @@ namespace put
             ofs.write( (const c8*)&scene->num_nodes, sizeof(u32));
             
             //user prefs
-            ofs.write( (const c8*)&scene->debug_flags, sizeof(u32));
+            ofs.write( (const c8*)&scene->view_flags, sizeof(u32));
             ofs.write( (const c8*)&scene->selected_index, sizeof(s32));
             
             //names
@@ -505,7 +503,7 @@ namespace put
             ifs.read((c8*)&scene->num_nodes, sizeof(u32));
             
             //user prefs
-            ifs.read((c8*)&scene->debug_flags, sizeof(u32));
+            ifs.read((c8*)&scene->view_flags, sizeof(u32));
             ifs.read((c8*)&scene->selected_index, sizeof(s32));
             
             /*

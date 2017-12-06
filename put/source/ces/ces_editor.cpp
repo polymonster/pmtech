@@ -8,7 +8,7 @@
 #include "debug_render.h"
 #include "input.h"
 #include "camera.h"
-#include "render_controller.h"
+#include "pmfx_controller.h"
 #include "timer.h"
 
 namespace put
@@ -62,6 +62,73 @@ namespace put
                         break;
                 }
             }
+        }
+        
+        enum e_debug_draw_flags
+        {
+            DD_HIDE     = SV_HIDE,
+            DD_NODE     = 1<<(SV_BITS_END+1),
+            DD_GRID     = 1<<(SV_BITS_END+2),
+            DD_MATRIX   = 1<<(SV_BITS_END+3),
+            DD_BONES    = 1<<(SV_BITS_END+4),
+            DD_AABB     = 1<<(SV_BITS_END+5),
+
+            DD_NUM_FLAGS = 6,
+        };
+        
+        const c8* dd_names[]
+        {
+            "Hide Scene",
+            "Selected Node",
+            "Grid",
+            "Matrices",
+            "Bones",
+            "AABB"
+        };
+        static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
+        static bool* k_dd_bools = nullptr;
+        
+        void update_view_flags( entity_scene* scene )
+        {
+            if(!k_dd_bools)
+            {
+                k_dd_bools = new bool[DD_NUM_FLAGS];
+                pen::memory_set(k_dd_bools, 0x0, sizeof(bool)*DD_NUM_FLAGS);
+                
+                //set defaults
+                for( s32 i = 1; i < 3; ++i )
+                    k_dd_bools[ i ] = true;
+            }
+            
+            for( s32 i = 0; i < DD_NUM_FLAGS; ++i )
+            {
+                u32 mask = 1<<i;
+                
+                if(k_dd_bools[i])
+                    scene->view_flags |= mask;
+                else
+                    scene->view_flags &= ~(mask);
+            }
+        }
+        
+        void view_ui( entity_scene* scene, bool* opened )
+        {
+            if( ImGui::Begin("View", opened, ImGuiWindowFlags_AlwaysAutoResize ) )
+            {
+                for( s32 i = 0; i < DD_NUM_FLAGS; ++i )
+                {
+                    ImGui::Checkbox(dd_names[i], &k_dd_bools[i]);
+                }
+                
+                ImGui::End();
+            }
+            
+            update_view_flags( scene );
+        }
+        
+        void editor_init( entity_scene* scene )
+        {
+            update_view_flags( scene );
         }
         
         struct picking_info
@@ -161,10 +228,10 @@ namespace put
                     
                     if (ms.buttons[PEN_MOUSE_L] && pen::mouse_coords_valid( ms.x, ms.y ) )
                     {
-                        const put::render_target* rt = render_controller::get_render_target(ID_PICKING_BUFFER);
+                        const put::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
                         
                         f32 w, h;
-                        render_controller::get_render_target_dimensions(rt, w, h);
+                        pmfx::get_render_target_dimensions(rt, w, h);
                         
                         u32 pitch = (u32)w*4;
                         u32 data_size = (u32)h*pitch;
@@ -199,8 +266,9 @@ namespace put
             static bool open_resource_menu = false;
             static bool dev_open = false;
             static bool set_project_dir = false;
-            static bool picking_mode = false;
             static bool selection_list = false;
+            static bool view_menu = false;
+            
             static Str project_dir_str = dev_ui::get_program_preference("project_dir").as_str();
             
             ImGui::BeginMainMenuBar();
@@ -225,56 +293,73 @@ namespace put
             
             if (ImGui::Button(ICON_FA_FLOPPY_O))
             {
-                open_save = true;
+                if(!open_import)
+                    open_save = true;
             }
+            dev_ui::set_tooltip("Save");
             
             if (ImGui::Button(ICON_FA_FOLDER_OPEN))
             {
-                open_import = true;
+                if(!open_save)
+                    open_import = true;
             }
+            dev_ui::set_tooltip("Open");
             
             if (ImGui::Button(ICON_FA_SEARCH))
             {
                 open_scene_browser = true;
             }
+            dev_ui::set_tooltip("Scene Browser");
+            
+            if (ImGui::Button(ICON_FA_EYE))
+            {
+                view_menu = true;
+            }
+            dev_ui::set_tooltip("View Settings");
             
             if (ImGui::Button(ICON_FA_VIDEO_CAMERA))
             {
                 open_camera_menu = true;
             }
+            dev_ui::set_tooltip("Camera Settings");
             
             if (ImGui::Button(ICON_FA_CUBES))
             {
                 open_resource_menu = true;
             }
+            dev_ui::set_tooltip("Resource Browser");
             
             ImGui::Separator();
-            
-            ImVec4 grey( 0.5, 0.5, 0.5, 1.0 );
-            
-            bool p = picking_mode;
-            if(p)
-                ImGui::PushStyleColor( ImGuiCol_Button, grey);
-            
-            if (ImGui::Button(ICON_FA_MOUSE_POINTER))
-            {
-                k_transform_mode = TRANSFORM_SCALE;
-                
-                picking_mode = !picking_mode;
-            }
-            
-            if(p)
-                ImGui::PopStyleColor();
             
             if (ImGui::Button(ICON_FA_LIST))
             {
                 selection_list = true;
             }
+            dev_ui::set_tooltip("Selection List");
             
-            if ( ImGui::Button(ICON_FA_ARROWS) )
+            if( put::dev_ui::state_button(ICON_FA_MOUSE_POINTER, k_transform_mode == TRANSFORM_SELECT ) )
+            {
+                k_transform_mode = TRANSFORM_SELECT;
+            }
+            dev_ui::set_tooltip("Select Mode");
+            
+            if( put::dev_ui::state_button(ICON_FA_ARROWS, k_transform_mode == TRANSFORM_TRANSLATE ) )
             {
                 k_transform_mode = TRANSFORM_TRANSLATE;
             }
+            dev_ui::set_tooltip("Translate Mode");
+            
+            if( put::dev_ui::state_button(ICON_FA_REPEAT, k_transform_mode == TRANSFORM_ROTATE ) )
+            {
+                k_transform_mode = TRANSFORM_ROTATE;
+            }
+            dev_ui::set_tooltip("Rotate Mode");
+            
+            if( put::dev_ui::state_button(ICON_FA_EXPAND, k_transform_mode == TRANSFORM_SCALE ) )
+            {
+                k_transform_mode = TRANSFORM_SCALE;
+            }
+            dev_ui::set_tooltip("Scale Mode");
             
             ImGui::Separator();
             
@@ -353,7 +438,7 @@ namespace put
                 }
             }
             
-            if( picking_mode )
+            if( k_transform_mode == TRANSFORM_SELECT )
             {
                 picking_update( sc->scene );
             }
@@ -361,6 +446,11 @@ namespace put
             if( selection_list )
             {
                 enumerate_selection_ui( sc->scene, &selection_list );
+            }
+            
+            if( view_menu )
+            {
+                view_ui( sc->scene, &view_menu );
             }
             
             static u32 timer_index = pen::timer_create("scene_update_timer");
@@ -374,260 +464,210 @@ namespace put
             put::ces::update_scene(sc->scene, dt_ms);
         }
         
-        enum e_debug_draw_flags
-        {
-            DD_MATRIX = 1<<0,
-            DD_BONES = 1<<1,
-            DD_AABB = 1<<2,
-            DD_GRID = 1<<3,
-            DD_HIDE = 1<<4,
-            DD_NODE = 1<<5,
-            
-            DD_NUM_FLAGS = 6
-        };
-        
-        const c8* dd_names[]
-        {
-            "Matrices",
-            "Bones",
-            "AABB",
-            "Grid",
-            "Hide Main Render",
-            "Selected Node"
-        };
-        static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
-        
-        static bool* k_dd_bools = nullptr;
-        
         void scene_browser_ui( entity_scene* scene, bool* open )
         {
-            ImGui::Begin("Scene Browser", open );
-            
-            if (ImGui::CollapsingHeader("Debug Draw"))
+            if( ImGui::Begin("Scene Browser", open ) )
             {
-                if(!k_dd_bools)
-                {
-                    k_dd_bools = new bool[DD_NUM_FLAGS];
-                    pen::memory_set(k_dd_bools, 0x0, sizeof(bool)*DD_NUM_FLAGS);
-                }
+                static bool list_view = false;
+                if( ImGui::Button(ICON_FA_LIST) )
+                    list_view = true;
                 
-                for( s32 i = 0; i < DD_NUM_FLAGS; ++i )
+                ImGui::SameLine();
+                if( ImGui::Button(ICON_FA_USB) )
+                    list_view = false;
+                
+                ImGui::Columns( 2 );
+                
+                ImGui::BeginChild("Entities", ImVec2(0, 0), true );
+                
+                s32& selected_index = scene->selected_index;
+                
+                if( list_view )
                 {
-                    ImGui::Checkbox(dd_names[i], &k_dd_bools[i]);
-                    
-                    u32 mask = 1<<i;
-                    
-                    if(k_dd_bools[i])
-                        scene->debug_flags |= mask;
-                    else
-                        scene->debug_flags &= ~(mask);
-                    
-                    if( i != DD_NUM_FLAGS-1 )
+                    for (u32 i = 0; i < scene->num_nodes; ++i)
                     {
-                        ImGui::SameLine();
-                    }
-                }
-            }
-            
-            static bool list_view = false;
-            if( ImGui::Button(ICON_FA_LIST) )
-                list_view = true;
-            
-            ImGui::SameLine();
-            if( ImGui::Button(ICON_FA_USB) )
-                list_view = false;
-            
-            ImGui::Columns( 2 );
-            
-            ImGui::BeginChild("Entities", ImVec2(0, 0), true );
-            
-            s32& selected_index = scene->selected_index;
-            
-            if( list_view )
-            {
-                for (u32 i = 0; i < scene->num_nodes; ++i)
-                {
-                    bool selected = false;
-                    ImGui::Selectable(scene->names[i].c_str(), &selected);
-                    
-                    if (selected)
-                    {
-                        selected_index = i;
-                    }
-                }
-            }
-            else
-            {
-                scene_tree tree;
-                
-                build_scene_tree( scene, 0, tree );
-                
-                scene_tree_enumerate(tree, selected_index);
-            }
-            
-            ImGui::EndChild();
-            
-            ImGui::NextColumn();
-            
-            ImGui::BeginChild("Selected", ImVec2(0, 0), true );
-            
-            if (selected_index != -1)
-            {
-                //header
-                ImGui::Text("%s", scene->names[selected_index].c_str());
-                
-                s32 parent_index = scene->parents[selected_index];
-                if( parent_index != selected_index)
-                    ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
-                
-                ImGui::Separator();
-                
-                //geom
-                ImGui::Text("Geometry: %s", scene->geometry_names[selected_index].c_str());
-                ImGui::Separator();
-                
-                //material
-                ImGui::Text("Material: %s", scene->material_names[selected_index].c_str());
-                
-                if (scene->material_names[selected_index].c_str())
-                {
-                    for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
-                    {
-                        if (scene->materials[selected_index].texture_id[t] > 0)
+                        bool selected = false;
+                        ImGui::Selectable(scene->names[i].c_str(), &selected);
+                        
+                        if (selected)
                         {
-                            if (t > 0)
-                                ImGui::SameLine();
-                            
-                            ImGui::Image(&scene->materials[selected_index].texture_id[t], ImVec2(128, 128));
+                            selected_index = i;
                         }
                     }
                 }
-                ImGui::Separator();
-                
-                if( scene->geometries[selected_index].p_skin )
+                else
                 {
-                    static bool open_anim_import = false;
+                    scene_tree tree;
                     
-                    if( ImGui::CollapsingHeader("Animations") )
+                    build_scene_tree( scene, 0, tree );
+                    
+                    scene_tree_enumerate(tree, selected_index);
+                }
+                
+                ImGui::EndChild();
+                
+                ImGui::NextColumn();
+                
+                ImGui::BeginChild("Selected", ImVec2(0, 0), true );
+                
+                if (selected_index != -1)
+                {
+                    //header
+                    ImGui::Text("%s", scene->names[selected_index].c_str());
+                    
+                    s32 parent_index = scene->parents[selected_index];
+                    if( parent_index != selected_index)
+                        ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
+                    
+                    ImGui::Separator();
+                    
+                    //geom
+                    ImGui::Text("Geometry: %s", scene->geometry_names[selected_index].c_str());
+                    ImGui::Separator();
+                    
+                    //material
+                    ImGui::Text("Material: %s", scene->material_names[selected_index].c_str());
+                    
+                    if (scene->material_names[selected_index].c_str())
                     {
-                        auto& controller = scene->anim_controller[selected_index];
-                        
-                        ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
-                        
-                        if( ImGui::Button("Add Animation") )
-                            open_anim_import = true;
-                        
-                        if( ImGui::Button("Reset Root Motion") )
+                        for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
                         {
-                            scene->local_matrices[selected_index].create_identity();
-                        }
-                        
-                        s32 num_anims = scene->anim_controller[selected_index].handles.size();
-                        for (s32 ih = 0; ih < num_anims; ++ih)
-                        {
-                            s32 h = scene->anim_controller[selected_index].handles[ih];
-                            auto* anim = get_animation_resource(h);
-                            
-                            bool selected = false;
-                            ImGui::Selectable( anim->name.c_str(), &selected );
-                            
-                            if (selected)
-                                controller.current_animation = h;
-                        }
-                        
-                        if (is_valid( controller.current_animation ))
-                        {
-                            if (ImGui::InputInt( "Frame", &controller.current_frame ))
-                                controller.play_flags = 0;
-                            
-                            ImGui::SameLine();
-                            
-                            if (controller.play_flags == 0)
+                            if (scene->materials[selected_index].texture_id[t] > 0)
                             {
-                                if (ImGui::Button( ICON_FA_PLAY ))
-                                    controller.play_flags = 1;
-                            }
-                            else
-                            {
-                                if (ImGui::Button( ICON_FA_STOP ))
-                                    controller.play_flags = 0;
-                            }
-                        }
-                        
-                        if( open_anim_import )
-                        {
-                            const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma" );
-                            
-                            if(anim_import)
-                            {
-                                anim_handle ah = load_pma(anim_import);
-                                auto* anim = get_animation_resource(ah);
+                                if (t > 0)
+                                    ImGui::SameLine();
                                 
-                                if( is_valid(ah) )
+                                ImGui::Image(&scene->materials[selected_index].texture_id[t], ImVec2(128, 128));
+                            }
+                        }
+                    }
+                    ImGui::Separator();
+                    
+                    if( scene->geometries[selected_index].p_skin )
+                    {
+                        static bool open_anim_import = false;
+                        
+                        if( ImGui::CollapsingHeader("Animations") )
+                        {
+                            auto& controller = scene->anim_controller[selected_index];
+                            
+                            ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
+                            
+                            if( ImGui::Button("Add Animation") )
+                                open_anim_import = true;
+                            
+                            if( ImGui::Button("Reset Root Motion") )
+                            {
+                                scene->local_matrices[selected_index].create_identity();
+                            }
+                            
+                            s32 num_anims = scene->anim_controller[selected_index].handles.size();
+                            for (s32 ih = 0; ih < num_anims; ++ih)
+                            {
+                                s32 h = scene->anim_controller[selected_index].handles[ih];
+                                auto* anim = get_animation_resource(h);
+                                
+                                bool selected = false;
+                                ImGui::Selectable( anim->name.c_str(), &selected );
+                                
+                                if (selected)
+                                    controller.current_animation = h;
+                            }
+                            
+                            if (is_valid( controller.current_animation ))
+                            {
+                                if (ImGui::InputInt( "Frame", &controller.current_frame ))
+                                    controller.play_flags = 0;
+                                
+                                ImGui::SameLine();
+                                
+                                if (controller.play_flags == 0)
                                 {
-                                    //validate that the anim can fit the rig
-                                    std::vector<s32> joint_indices;
+                                    if (ImGui::Button( ICON_FA_PLAY ))
+                                        controller.play_flags = 1;
+                                }
+                                else
+                                {
+                                    if (ImGui::Button( ICON_FA_STOP ))
+                                        controller.play_flags = 0;
+                                }
+                            }
+                            
+                            if( open_anim_import )
+                            {
+                                const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma" );
+                                
+                                if(anim_import)
+                                {
+                                    anim_handle ah = load_pma(anim_import);
+                                    auto* anim = get_animation_resource(ah);
                                     
-                                    build_joint_list( scene, selected_index, joint_indices );
-                                    
-                                    s32 channel_index = 0;
-                                    s32 joints_offset = -1; //scene tree has a -1 node
-                                    bool compatible = true;
-                                    for( s32 jj = 0; jj < joint_indices.size(); ++jj )
+                                    if( is_valid(ah) )
                                     {
-                                        s32 jnode = joint_indices[jj];
+                                        //validate that the anim can fit the rig
+                                        std::vector<s32> joint_indices;
                                         
-                                        if( scene->entities[jnode] & CMP_BONE )
+                                        build_joint_list( scene, selected_index, joint_indices );
+                                        
+                                        s32 channel_index = 0;
+                                        s32 joints_offset = -1; //scene tree has a -1 node
+                                        bool compatible = true;
+                                        for( s32 jj = 0; jj < joint_indices.size(); ++jj )
                                         {
-                                            if( anim->channels[channel_index].target != scene->id_name[jnode] )
-                                            {
-                                                compatible = false;
-                                                break;
-                                            }
+                                            s32 jnode = joint_indices[jj];
                                             
-                                            channel_index++;
+                                            if( scene->entities[jnode] & CMP_BONE )
+                                            {
+                                                if( anim->channels[channel_index].target != scene->id_name[jnode] )
+                                                {
+                                                    compatible = false;
+                                                    break;
+                                                }
+                                                
+                                                channel_index++;
+                                            }
+                                            else
+                                            {
+                                                joints_offset++;
+                                            }
                                         }
-                                        else
+                                        
+                                        if( compatible )
                                         {
-                                            joints_offset++;
+                                            scene->anim_controller[selected_index].joints_offset = joints_offset;
+                                            scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
+                                            
+                                            bool exists = false;
+                                            
+                                            for( auto& h : controller.handles )
+                                                if( h == ah )
+                                                    exists = true;
+                                            
+                                            if(!exists)
+                                                scene->anim_controller[selected_index].handles.push_back(ah);
                                         }
-                                    }
-                                    
-                                    if( compatible )
-                                    {
-                                        scene->anim_controller[selected_index].joints_offset = joints_offset;
-                                        scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
-                                        
-                                        bool exists = false;
-                                        
-                                        for( auto& h : controller.handles )
-                                            if( h == ah )
-                                                exists = true;
-                                        
-                                        if(!exists)
-                                            scene->anim_controller[selected_index].handles.push_back(ah);
                                     }
                                 }
                             }
+                            
+                            ImGui::Separator();
                         }
-                        
-                        ImGui::Separator();
                     }
                 }
+                
+                ImGui::EndChild();
+                
+                ImGui::Columns(1);
+                
+                ImGui::End();
             }
-            
-            ImGui::EndChild();
-            
-            ImGui::Columns(1);
-            
-            ImGui::End();
         }
         
         void render_scene_editor( const scene_view& view )
         {
             entity_scene* scene = view.scene;
             
-            if( scene->debug_flags & DD_MATRIX )
+            if( scene->view_flags & DD_MATRIX )
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
                 {
@@ -635,7 +675,7 @@ namespace put
                 }
             }
             
-            if( scene->debug_flags & DD_AABB )
+            if( scene->view_flags & DD_AABB )
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
                 {
@@ -643,7 +683,7 @@ namespace put
                 }
             }
             
-            if( scene->debug_flags & DD_NODE )
+            if( scene->view_flags & DD_NODE )
             {
                 for( auto& s : k_selection_list )
                 {
@@ -666,7 +706,7 @@ namespace put
                 put::dbg::add_coord_space(widget, 2.0f);
             }
             
-            if( scene->debug_flags & DD_BONES )
+            if( scene->view_flags & DD_BONES )
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
                 {
@@ -694,7 +734,7 @@ namespace put
                 }
             }
             
-            if( scene->debug_flags & DD_GRID )
+            if( scene->view_flags & DD_GRID )
             {
                 put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
             }

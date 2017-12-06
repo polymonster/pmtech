@@ -199,158 +199,215 @@ namespace put
 				initialise = false;
 			}
 
-			ImGui::Begin("File Browser", &dialog_open);
-
-			ImGui::Text("%s", selected_path.c_str());
-
-			const c8* return_value = nullptr;
-
-			ImGuiButtonFlags button_flags = 0;
-			if (selected_path == "")
-			{
-				button_flags |= ImGuiButtonFlags_Disabled;
-			}
-            
-            if( flags & FB_SAVE )
+			if( ImGui::Begin("File Browser", &dialog_open) )
             {
-                user_filename_buf[0] = '/';
-                ImGui::InputText("", &user_filename_buf[1], 1023);
-            }
-            else
-            {
-                user_filename_buf[0] = '\0';
-            }
-
-			if (ImGui::ButtonEx("OK", ImVec2(0, 0), button_flags))
-			{
-                selected_path.append(user_filename_buf);
+                ImGui::Text("%s", selected_path.c_str());
                 
-				last_result = selected_path;
-                return_value = last_result.c_str();
+                const c8* return_value = nullptr;
                 
-				set_last_used_directory(selected_path);
-                
-                selected_path.clear();
-                
-				dialog_open = false;
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel"))
-			{
-				dialog_open = false;
-			}
-            
-			ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
-
-            static s32 base_frame = current_depth - 4;
-            if (ImGui::Button(ICON_FA_ARROW_LEFT))
-                base_frame--;
-            ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_ARROW_RIGHT))
-                base_frame++;
-            
-            base_frame = std::min<s32>(current_depth-4,base_frame);
-            base_frame = std::max<s32>(0,base_frame);
-            
-            static const s32 max_depth = 4;
-            ImGui::Columns(std::min<s32>(max_depth, current_depth), "directories");
-            
-			ImGui::Separator();
-			pen::fs_tree_node* fs_iter = &fs_enumeration;
-            
-			for (s32 d = 0; d < current_depth; ++d)
-			{
-                if( d >= base_frame && d < base_frame+max_depth)
+                ImGuiButtonFlags button_flags = 0;
+                if (selected_path == "")
                 {
-                    ImGui::Text("%s", fs_iter->name);
-                    ImGui::NextColumn();
+                    button_flags |= ImGuiButtonFlags_Disabled;
                 }
                 
-				fs_iter = &fs_iter->children[selection_stack[d]];
-			}
-            
-			ImGui::Separator();
-
-			current_path = "";
-			search_path = "";
-
-			fs_iter = &fs_enumeration;
-
-            for (s32 c = 0; c < current_depth; ++c)
-			{
-                if( c >= base_frame && c < base_frame+max_depth )
+                if( flags & FB_SAVE )
                 {
-                    for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
+                    user_filename_buf[0] = '/';
+                    ImGui::InputText("", &user_filename_buf[1], 1023);
+                }
+                else
+                {
+                    user_filename_buf[0] = '\0';
+                }
+                
+                if (ImGui::ButtonEx("OK", ImVec2(0, 0), button_flags))
+                {
+                    selected_path.append(user_filename_buf);
+                    
+                    last_result = selected_path;
+                    return_value = last_result.c_str();
+                    
+                    set_last_used_directory(selected_path);
+                    
+                    selected_path.clear();
+                    
+                    dialog_open = false;
+                }
+                
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel"))
+                {
+                    dialog_open = false;
+                }
+                
+                ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+                
+                static s32 base_frame = current_depth - 4;
+                if (ImGui::Button(ICON_FA_ARROW_LEFT))
+                    base_frame--;
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_ARROW_RIGHT))
+                    base_frame++;
+                
+                base_frame = std::min<s32>(current_depth-4,base_frame);
+                base_frame = std::max<s32>(0,base_frame);
+                
+                static const s32 max_depth = 4;
+                ImGui::Columns(std::min<s32>(max_depth, current_depth), "directories");
+                
+                ImGui::Separator();
+                pen::fs_tree_node* fs_iter = &fs_enumeration;
+                
+                for (s32 d = 0; d < current_depth; ++d)
+                {
+                    if( d >= base_frame && d < base_frame+max_depth)
                     {
-                        ImGui::PushID(fs_iter);
-                        
-                        if (ImGui::Selectable(fs_iter->children[entry].name))
+                        ImGui::Text("%s", fs_iter->name);
+                        ImGui::NextColumn();
+                    }
+                    
+                    fs_iter = &fs_iter->children[selection_stack[d]];
+                }
+                
+                ImGui::Separator();
+                
+                current_path = "";
+                search_path = "";
+                
+                fs_iter = &fs_enumeration;
+                
+                for (s32 c = 0; c < current_depth; ++c)
+                {
+                    if( c >= base_frame && c < base_frame+max_depth )
+                    {
+                        for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
                         {
-                            search_path = current_path;
-                            search_path.append(fs_iter->children[entry].name);
+                            ImGui::PushID(fs_iter);
                             
-                            va_list wildcards;
-                            va_start(wildcards, num_filetypes);
-                            
-                            pen::filesystem_enum_directory(search_path.c_str(), fs_iter->children[entry], num_filetypes, wildcards);
-                            
-                            va_end(wildcards);
-                            
-                            if (fs_iter->children[entry].num_children > 0)
+                            if (ImGui::Selectable(fs_iter->children[entry].name))
                             {
-                                for (s32 i = c; i < current_depth; ++i)
+                                search_path = current_path;
+                                search_path.append(fs_iter->children[entry].name);
+                                
+                                va_list wildcards;
+                                va_start(wildcards, num_filetypes);
+                                
+                                pen::filesystem_enum_directory(search_path.c_str(), fs_iter->children[entry], num_filetypes, wildcards);
+                                
+                                va_end(wildcards);
+                                
+                                if (fs_iter->children[entry].num_children > 0)
                                 {
-                                    selection_stack[i] = -1;
+                                    for (s32 i = c; i < current_depth; ++i)
+                                    {
+                                        selection_stack[i] = -1;
+                                    }
+                                    
+                                    current_depth = c + 2;
+                                    selection_stack[c] = entry;
+                                    
+                                    selected_path = search_path;
+                                }
+                                else
+                                {
+                                    selected_path = "";
+                                    selected_path = search_path;
                                 }
                                 
-                                current_depth = c + 2;
-                                selection_stack[c] = entry;
-                                
-                                selected_path = search_path;
-                            }
-                            else
-                            {
-                                selected_path = "";
-                                selected_path = search_path;
+                                base_frame++;
                             }
                             
-                            base_frame++;
+                            ImGui::PopID();
                         }
                         
-                        ImGui::PopID();
+                        if (selection_stack[c] >= 0)
+                            ImGui::NextColumn();
                     }
                     
                     if (selection_stack[c] >= 0)
-                        ImGui::NextColumn();
+                    {
+                        fs_iter = &fs_iter->children[selection_stack[c]];
+                        current_path.append(fs_iter->name);
+                        
+                        if ( !(current_path.c_str()[0] == '/' && current_path.length() == 1) )
+                            current_path.append("/");
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-
-				if (selection_stack[c] >= 0)
-				{
-					fs_iter = &fs_iter->children[selection_stack[c]];
-                    current_path.append(fs_iter->name);
-
-					if ( !(current_path.c_str()[0] == '/' && current_path.length() == 1) )
-						current_path.append("/");
-				}
-                else
+                
+                ImGui::EndChild();
+                ImGui::Columns(1);
+                
+                ImGui::End();
+                
+                if (!dialog_open)
                 {
-                    break;
+                    initialise = true;
+                    filesystem_enum_free_mem(fs_enumeration);
                 }
-			}
+                
+                return return_value;
+            }
 
-			ImGui::EndChild();
-			ImGui::Columns(1);
-
-			ImGui::End();
-
-			if (!dialog_open)
-			{
-				initialise = true;
-				filesystem_enum_free_mem(fs_enumeration);
-			}
-
-			return return_value;
+            return nullptr;
 		}
+        
+        bool state_button( const c8* text, bool state_active )
+        {
+            ImVec4 button_col = (&ImGui::GetStyle())->Colors[ImGuiCol_Button];
+            
+            if( state_active )
+            {
+                button_col.x *= 0.5f;
+                button_col.y *= 0.5f;
+                button_col.z *= 0.5f;
+            }
+            
+            ImGui::PushStyleColor( ImGuiCol_Button, button_col );
+            
+            if (ImGui::Button(text))
+            {
+                ImGui::PopStyleColor();
+                return true;
+            }
+
+            ImGui::PopStyleColor();
+        
+            return false;
+        }
+
+        void set_tooltip( const c8* fmt, ... )
+        {
+            static f32 k_tooltip_timer = 0.0f;
+            static const f32 k_delay = 1.0f;
+            static ImGuiID k_current = 0;
+            
+            f32 dt = ImGui::GetIO().DeltaTime;
+            
+            if(!ImGui::IsItemHovered())
+            {
+                return;
+            }
+            
+            ImGuiID now = ImGui::GetID(fmt);
+            if( k_current != now )
+            {
+                k_tooltip_timer = 0.0f;
+                k_current = now;
+            }
+            
+            k_tooltip_timer += dt;
+            if( k_tooltip_timer > k_delay )
+            {
+                va_list args;
+                va_start(args, fmt);
+                ImGui::SetTooltipV(fmt, args);
+                va_end(args);
+            }
+        }
 	}
 }

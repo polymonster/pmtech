@@ -7,7 +7,7 @@
 #include "dev_ui.h"
 #include "camera.h"
 #include "debug_render.h"
-#include "render_controller.h"
+#include "pmfx_controller.h"
 #include "pmfx.h"
 #include "pen_json.h"
 #include "hash.h"
@@ -56,6 +56,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     //create the main scene and controller
     put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
+    put::ces::editor_init( main_scene );
     
     put::scene_controller sc;
     sc.scene = main_scene;
@@ -74,23 +75,23 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
     
-    put::render_controller::register_scene_view_renderer(svr_main);
-    put::render_controller::register_scene_view_renderer(svr_editor);
+    pmfx::register_scene_view_renderer(svr_main);
+    pmfx::register_scene_view_renderer(svr_editor);
 
-    put::render_controller::register_scene(sc);
-    put::render_controller::register_camera(cc);
+    pmfx::register_scene(sc);
+    pmfx::register_camera(cc);
     
-    put::render_controller::init("data/configs/renderer.json");
+    pmfx::init("data/configs/renderer.json");
     
     while( 1 )
     {
 		put::dev_ui::new_frame();
         
-        put::render_controller::update();
+        pmfx::update();
         
-        put::render_controller::render();
+        pmfx::render();
         
-        put::render_controller::show_dev_ui();
+        pmfx::show_dev_ui();
         
 		put::dev_ui::render();
         

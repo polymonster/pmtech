@@ -1,4 +1,4 @@
-#include "render_controller.h"
+#include "pmfx_controller.h"
 #include "entry_point.h"
 #include "dev_ui.h"
 #include "debug_render.h"
@@ -11,7 +11,7 @@ extern pen::window_creation_params pen_window;
 
 namespace put
 {    
-    namespace render_controller
+    namespace pmfx
     {
         static hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
         static hash_id ID_MAIN_DEPTH = PEN_HASH("main_depth");
@@ -1051,6 +1051,9 @@ namespace put
                 sv.cb_view = v.camera->cbuffer;
                 sv.scene_node_flags = 0;
                 sv.technique = v.technique;
+                sv.raster_state = v.raster_state;
+                sv.depth_stencil_state = v.depth_stencil_state;
+                sv.blend_state_state = v.blend_state;
                 
                 for( s32 rf = 0; rf < v.render_functions.size(); ++rf )
                     v.render_functions[rf](sv);
@@ -1066,6 +1069,7 @@ namespace put
             {
                 open_renderer = true;
             }
+            put::dev_ui::set_tooltip("Pmfx");
         
             ImGui::EndMainMenuBar();
             

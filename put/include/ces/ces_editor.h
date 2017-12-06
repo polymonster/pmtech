@@ -6,7 +6,9 @@
 namespace put
 {
     namespace ces
-    {        
+    {
+        void editor_init( entity_scene* scene );
+        
         void scene_browser_ui( entity_scene* scene, bool* open );
         void enumerate_resources( bool* open );
         

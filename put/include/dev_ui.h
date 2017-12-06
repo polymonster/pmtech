@@ -29,8 +29,11 @@ namespace put
 		void shutdown();
 		void new_frame();
 		void render();
-        
         void util_init();
+        
+        bool state_button( const c8* text, bool state_active );
+        void set_tooltip( const c8* fmt, ... );
+        
         void set_program_preference( const c8* name, Str val );
         pen::json get_program_preference( const c8* name );
         

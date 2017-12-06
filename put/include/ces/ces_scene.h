@@ -24,6 +24,14 @@ namespace put
     
 	namespace ces
 	{
+        enum e_scene_view_flags : u32
+        {
+            SV_NONE = 0,
+            SV_HIDE = (1<<0),
+            
+            SV_BITS_END = 0
+        };
+        
 		enum e_component_flags : u32
 		{
 			CMP_GEOMETRY		= (1 << 1),
@@ -199,7 +207,7 @@ namespace put
 			Str*					material_names;
 
             s32                     selected_index = -1;
-            u32                     debug_flags;
+            u32                     view_flags;
 #endif
 		};
 
@@ -232,7 +240,10 @@ namespace put
 		{
 			u32 cb_view;
 			u32 scene_node_flags = 0;
-			u32 debug_flags = 0;
+            
+            u32 depth_stencil_state = 0;
+            u32 blend_state_state = 0;
+            u32 raster_state = 0;
             
             hash_id technique;
 			entity_scene* scene = nullptr;

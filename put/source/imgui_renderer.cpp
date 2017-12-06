@@ -492,7 +492,7 @@ namespace put
 			prev_time = cur_time;
 
 			io.DisplaySize = ImVec2((f32)pen_window.width, (f32)pen_window.height);
-
+            
 			// Hide OS mouse cursor if ImGui is drawing it
 			if (io.MouseDrawCursor)
 				pen::input_show_cursor(false);

@@ -1,5 +1,5 @@
-#ifndef _render_controller_h
-#define _render_controller_h
+#ifndef _pmfx_controller_h
+#define _pmfx_controller_h
 
 #include "pen.h"
 #include "renderer.h"
@@ -25,7 +25,7 @@ namespace put
 #endif
     };
     
-    namespace render_controller
+    namespace pmfx
     {
         void init( const c8* filename );
         
