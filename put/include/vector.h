@@ -304,6 +304,81 @@ public:
         w = aw;
     }
     
+    inline vec4f operator =  (const vec4f &v ) {x = v.x, y = v.y, z = v.z; w = v.w; return (*this ); }
+    
+    inline bool  operator == (const vec4f &v ) const { return( x==v.x && y==v.y && z==v.z && w ==v.w); }
+    inline bool  operator != (const vec4f &v ) const { return( x!=v.x || y!=v.y || z!=v.z || w!=v.w); }
+    inline vec4f operator +  (const vec4f &v ) const { vec4f result(x + v.x, y + v.y, z + v.z, w + v.w); return ( result ); }
+    inline vec4f operator -  (const vec4f &v ) const { vec4f result(x - v.x, y - v.y, z - v.z, w - v.w); return ( result ); }
+    inline vec4f operator *  (const f32 &a ) const { vec4f result(x * a, y * a, z * a, w * a); return ( result ); }
+    inline vec4f operator *  (const vec4f &v ) const { vec4f result(x * v.x, y * v.y, z * v.z, w * v.w); return ( result ); }
+    inline vec4f &operator += (const vec4f &v ) { x += v.x, y += v.y, z += v.z;  return ( *this ); }
+    inline vec4f &operator -= (const vec4f &v ) { x -= v.x, y -= v.y, z -= v.z ; return ( *this ); }
+    inline vec4f &operator *= (const f32 &a    ) { x *= a, y *= a, z *= a;  return ( *this ); }
+    
+    inline vec4f operator /  (const f32 &a   ) const
+    {
+        f32 one_over_a = 1.0f / a;
+        vec4f result(x * one_over_a, y * one_over_a, z * one_over_a, w * one_over_a);
+        return ( result );
+    }
+    
+    inline vec4f operator / (const vec4f &v ) const
+    {
+        vec4f result(x / v.x, y / v.y, z / v.z, w / v.w);
+        return ( result );
+    }
+    
+    inline vec4f &operator /= (const f32 &a    )
+    {
+        f32 one_over_a = 1.0f / a;
+        x *= one_over_a; y *= one_over_a; z *= one_over_a;  return ( *this );
+    }
+    
+    inline vec4f &operator /= (const vec4f &v)
+    {
+        x /= v.x; y /= v.y; z /= v.z; w /= v.w;
+        return *this;
+    }
+    
+    inline vec4f &operator *= (const vec4f &v)
+    {
+        x *= v.x; y *= v.y; z *= v.z; w *= w;
+        return *this;
+    }
+    
+    inline void vfloor()
+    {
+        x = (f32)floor((double)x);
+        y = (f32)floor((double)y);
+        z = (f32)floor((double)z);
+        w = (f32)floor((double)w);
+    }
+    
+    inline static vec4f vmax( vec4f a, vec4f b )
+    {
+        vec4f v( PEN_FMAX(a.x, b.x), PEN_FMAX(a.y, b.y), PEN_FMAX(a.z, b.z), PEN_FMAX(a.z, b.z) );
+        return v;
+    }
+    
+    inline static vec3f vmin( vec3f a, vec3f b )
+    {
+        vec3f v( PEN_FMIN(a.x, b.x), PEN_FMIN(a.y, b.y), PEN_FMIN(a.z, b.z) );
+        return v;
+    }
+    
+    inline static vec3f flt_max()
+    {
+        vec3f v( FLT_MAX, FLT_MAX, FLT_MAX );
+        return v;
+    }
+    
+    inline static vec3f flt_min( )
+    {
+        vec3f v( -FLT_MAX, -FLT_MAX, -FLT_MAX );
+        return v;
+    }
+    
     inline static vec4f zero() 
     {
         return vec4f(0.0f,0.0f,0.0f,0.0f);

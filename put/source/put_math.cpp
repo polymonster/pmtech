@@ -164,6 +164,48 @@ vec3f put::maths::unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i
     return world_space_coordinates;
 }
 
+vec3f put::maths::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
+{
+    //create a vector from line start to the point.
+    vec3f v1 = p - l1;
+    
+    //get the normalised direction vector of the line
+    vec3f v2 = normalise(l2 - l1);
+    
+    //use the distance formula to get the length of the line
+    f32 d = distance(l1, l2);
+    
+    //using dot product project v1 onto v2
+    f32 t = dot(v2, v1);
+    
+    if( clamp )
+    {
+        //if the points at either end of the line
+        //the point is before the line start
+        if (t <= 0)
+        {
+            return l1;
+        }
+        
+        //the point is after the line end
+        if (t >= d)
+        {
+            return l2;
+        }
+    }
+    
+    //otherwise the point is on the line
+    
+    //vector of length t and direction of the line
+    vec3f v3 = v2 * t;
+    
+    //to get the closest point simply add v3 to the starting point of the line
+    vec3f closest_point = l1 + v3;
+    
+    return closest_point;
+}
+
+
 #if 0
 vec3f put::maths::get_normal(TRIANGLE t1)
 {
@@ -262,47 +304,6 @@ f32 put::maths::angle_between_vectors(vec3f v1,vec3f v2)
     
     //return the angle in radians
     return angle;
-}
-
-vec3f put::maths::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
-{
-    //create a vector from line start to the point.
-    vec3f v1 = p - l1;
-    
-    //get the normalised direction vector of the line
-    vec3f v2 = normalise(l2 - l1);
-    
-    //use the distance formula to get the length of the line
-    f32 d = distance(l1, l2);
-    
-    //using dot product project v1 onto v2
-    f32 t = dot(v2, v1);
-    
-    if( clamp )
-    {
-        //if the points at either end of the line
-        //the point is before the line start
-        if (t <= 0)
-        {
-            return l1;
-        }
-        
-        //the point is after the line end
-        if (t >= d)
-        {
-            return l2;
-        }
-    }
-    
-    //otherwise the point is on the line
-    
-    //vector of length t and direction of the line
-    vec3f v3 = v2 * t;
-    
-    //to get the closest point simply add v3 to the starting point of the line
-    vec3f closest_point = l1 + v3;
-    
-    return closest_point;
 }
 
 f32 put::maths::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )

@@ -450,6 +450,13 @@ void mat4::set_vectors( vec3f right, vec3f up, vec3f at, vec3f pos )
     m[12] = 0.0f; m[13] = 0.0f; m[14] = 0.0f;    m[15] = 1.0f;
 }
 
+void mat4::set_translation( vec3f pos )
+{
+    m[ 3] = pos.x;
+    m[ 7] = pos.y;
+    m[11] = pos.z;
+}
+
 vec3f mat4::get_right( ) const
 {
     return vec3f( m[ 0 ], m[ 1 ], m[ 2 ] );

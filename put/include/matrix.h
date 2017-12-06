@@ -63,6 +63,7 @@ typedef struct mat4
     vec3f   get_fwd( ) const;
     
     void set_vectors( vec3f right, vec3f up, vec3f at, vec3f pos );
+    void set_translation( vec3f pos );
     
     void set_matrix_from_raw(f32 *entries);
     

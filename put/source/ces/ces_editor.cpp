@@ -733,6 +733,7 @@ namespace put
             
             static vec3f widget_points[4];
             static u32 selected_axis = 0;
+            static f32 selection_radius = 5.0f;
             
             if( k_transform_mode == TRANSFORM_TRANSLATE )
             {
@@ -758,35 +759,78 @@ namespace put
                 widget_points[2] = pos + vec3f::unit_y() * d;
                 widget_points[3] = pos + vec3f::unit_z() * d;
                 
-                put::dbg::add_coord_space(widget, d );
+                put::dbg::add_coord_space(widget, d, selected_axis );
             }
             
             const pen::mouse_state& ms = pen::input_get_mouse_state();
+            
+            static vec2f prev_mpos = vec2f((f32)ms.x, (f32)ms.y);
+            vec2f current_mouse = vec2f((f32)ms.x, (f32)ms.y);
+            vec2f mouse_drag = current_mouse - prev_mpos;
+            prev_mpos = current_mouse;
             
             if( k_transform_mode == TRANSFORM_TRANSLATE )
             {
                 vec2i vpi(view.viewport->width, view.viewport->height);
                 
                 vec3f pp[4];
-                vec4f cols[4] =
-                {
-                    vec4f::one(),
-                    vec4f::red(),
-                    vec4f::green(),
-                    vec4f::blue()
-                };
-                
+                vec3f cp[4];
+
                 for( s32 i = 0; i < 4; ++i)
                 {
                     pp[i] = put::maths::project( widget_points[i], view.camera->view, view.camera->proj, vpi );
-                    put::dbg::add_quad_2f( vec2f( pp[i].x, pp[i].y), vec2f( 5.0f, 5.0f), cols[i] );
-                    
                     pp[i].z = 0.0f;
                 }
                 
-                vec3f mousev3 = vec3f(ms.x, ms.y, 0.0f );
+                vec3f mousev3 = vec3f(ms.x, view.viewport->height - ms.y, 0.0f );
                 
-                //put::maths::closest_point_on_line(mousev3, <#vec3f l2#>, <#vec3f p#>)
+                if(!ms.buttons[PEN_MOUSE_L])
+                {
+                    selected_axis = 0;
+                    for( s32 i = 0; i < 3; ++i)
+                    {
+                        vec3f cp = put::maths::closest_point_on_line(pp[0], pp[i+1], mousev3);
+                        
+                        if( put::maths::distance(cp, mousev3) < selection_radius)
+                            selected_axis |= (1<<i);
+                    }
+                }
+                
+                if( selected_axis != 0 )
+                {
+                    vec3f move_axis = vec3f::zero();
+                    
+                    static vec3f translation_axis[] =
+                    {
+                        vec3f::unit_x(),
+                        vec3f::unit_y() * -1.0f,
+                        vec3f::unit_z() * -1.0f,
+                    };
+                    
+                    vec3f md3 = vec3f( mouse_drag.x, mouse_drag.y, 0.0 );
+                    vec3f md3v = put::maths::normalise(md3);
+                    f32 drag_mag = put::maths::magnitude(md3);
+                    
+                    
+                    for( s32 i = 0; i < 3; ++i )
+                    {
+                        if( selected_axis & (1<<i) && ms.buttons[PEN_MOUSE_L] )
+                        {
+                            f32 dp = put::maths::dot( md3, put::maths::normalise(pp[i+1] - pp[0]) );
+                            
+                            move_axis += translation_axis[i] * dp * drag_mag * 0.1f;
+                        }
+                    }
+
+                    for( auto& s : k_selection_list )
+                    {
+                        mat4& local = scene->local_matrices[s];
+                        
+                        vec3f cur_pos = local.get_translation();
+
+                        local.set_translation(cur_pos + move_axis);
+                    }
+                }
             }
             
             put::dbg::render_3d(view.cb_view);

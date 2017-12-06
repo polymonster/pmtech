@@ -223,12 +223,12 @@ namespace put
                 
                 if (ImGui::ButtonEx("OK", ImVec2(0, 0), button_flags))
                 {
+                    set_last_used_directory(selected_path);
+                    
                     selected_path.append(user_filename_buf);
                     
                     last_result = selected_path;
                     return_value = last_result.c_str();
-                    
-                    set_last_used_directory(selected_path);
                     
                     selected_path.clear();
                     
