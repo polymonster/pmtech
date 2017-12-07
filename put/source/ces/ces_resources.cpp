@@ -321,14 +321,25 @@ namespace put
             
             u32 num_maps = *p_reader++;
             
+            //clear all maps to invalid
+            static const u32 default_maps[] =
+            {
+                put::load_texture("data/textures/defaults/albedo.dds"),
+                put::load_texture("data/textures/defaults/normal.dds"),
+                put::load_texture("data/textures/defaults/spec.dds"),
+                put::load_texture("data/textures/defaults/black.dds")
+            };
+            
+            for( u32 map = 0; map < SN_NUM_TEXTURES; ++map )
+                p_mat->texture_id[map] = default_maps[map];
+            
             for (u32 map = 0; map < num_maps; ++map)
             {
                 u32 map_type = *p_reader++;
                 Str texture_name = read_parsable_string(&p_reader);
-                
-                if (!texture_name.empty())
-                    p_mat->texture_id[map_type] = put::load_texture(texture_name.c_str());
+                p_mat->texture_id[map_type] = put::load_texture(texture_name.c_str());
             }
+            
             
             k_material_resources.push_back(p_mat);
             
@@ -671,13 +682,6 @@ namespace put
                 //store intial position for physics to hook into later
                 scene->physics_data[current_node].start_position = translation;
                 scene->physics_data[current_node].start_rotation = final_rotation;
-                
-                //clone sub meshes to own scene node
-                if (node_type == NODE_TYPE_GEOM)
-                {
-                    scene->entities[current_node] |= CMP_GEOMETRY;
-                    scene->entities[current_node] |= CMP_MATERIAL;
-                }
 
                 //assign geometry, materials and physics
                 u32 dest = current_node;

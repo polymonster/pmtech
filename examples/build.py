@@ -45,6 +45,7 @@ def display_help():
     print("--------pmtech build--------")
     print("run with no arguments for prompted input")
     print("commandline arguments")
+    print("\t-all <build all>")
     print("\t-platform <osx, win32, ios>")
     print("\t-ide <xcode4, vs2015, v2017>")
     print("\t-clean <clean destination directory>")
@@ -52,7 +53,6 @@ def display_help():
     print("\t-actions")
     for i in range(0, len(action_strings)):
         print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
-
 
 def parse_args(args):
     global ide
@@ -77,6 +77,9 @@ def parse_args(args):
                     execute_actions.append(sys.argv[j])
                 else:
                     break
+        elif sys.argv[index] == "-all":
+            for s in action_strings:
+                execute_actions.append(s)
         elif sys.argv[index] == "-clean":
             clean_destinations = True
 
@@ -105,15 +108,6 @@ def get_platform_info():
             renderer = "dx11"
         if platform == "":
             platform = "win32"
-        #python_exec = os.path.join(tools_dir, "bin", "python", "win32", "python3")
-
-    #if platform == "win32" and use_win_reg:
-    #    key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Microsoft\Microsoft SDKs\Windows', 0,
-    #                       (winreg.KEY_WOW64_64KEY + winreg.KEY_ALL_ACCESS))
-    #    sdk_ver = winreg.EnumValue(key, 0)
-    #    if len(sdk_ver) >= 0 :
-    #        if sdk_ver[0] == "CurrentVersion":
-    #            extra_target_info += "--sdk_version=" + str(sdk_ver[1])
 
     extra_target_info = "--platform_dir=" + platform
 
@@ -142,8 +136,6 @@ if len(sys.argv) <= 1:
     print("7. configs")
     print("8. all")
     print("0. show full command line options")
-
-    all_value = 8
     input_val = int(input())
 
     if input_val==0:

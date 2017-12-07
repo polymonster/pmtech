@@ -47,13 +47,6 @@ namespace put
             CMP_LIGHT           = (1 << 11),
 		};
 
-        enum e_node_types : u32
-		{
-			NODE_TYPE_NONE = 0,
-			NODE_TYPE_JOINT = 1,
-			NODE_TYPE_GEOM = 2
-		};
-        
         enum e_light_types : u32
         {
             LIGHT_TYPE_DIR = 0,

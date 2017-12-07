@@ -1,4 +1,4 @@
-#include <fstream>
+//#include <fstream>
 
 #include "definitions.h"
 #include "loader.h"
@@ -6,6 +6,11 @@
 #include "file_system.h"
 #include "renderer.h"
 #include "pen_string.h"
+#include "str/Str.h"
+#include "hash.h"
+#include "dev_ui.h"
+
+#include <vector>
 
 namespace put
 {
@@ -110,9 +115,23 @@ namespace put
 
 		return 0;
 	}
+    
+    struct texture_reference
+    {
+        hash_id id_name;
+        Str filename;
+        u32 handle;
+    };
+    static std::vector<texture_reference> k_texture_references;
 
 	u32 load_texture( const c8* filename )
 	{
+        //check for existing
+        hash_id hh = PEN_HASH(filename);
+        for( auto& t : k_texture_references )
+            if( t.id_name == hh )
+                return t.handle;
+        
 		//load a texture file from disk.
 		void* file_data = NULL;
 		u32	  file_data_size = 0;
@@ -121,6 +140,7 @@ namespace put
         
         if( pen_err != PEN_ERR_OK )
         {
+            put::dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] texture - unabled to find file: %s", filename );
             pen::memory_free( file_data );
             return 0;
         }
@@ -187,195 +207,9 @@ namespace put
         
         pen::memory_free( tcp.data );
         
+        //add to list to track
+        k_texture_references.push_back({hh, filename, texture_index});
+        
 		return texture_index;
-	}
-
-	skeleton* load_skeleton( const c8* filename )
-	{
-		void*  skeleton_data;
-		u32	   file_size;
-
-		pen::filesystem_read_file_to_buffer( filename, &skeleton_data, file_size );
-
-		u32*	header = (u32*)skeleton_data;
-
-		//alloc a new skeleton
-		skeleton* p_skeleton = (skeleton*)pen::memory_alloc(sizeof(skeleton));
-
-		//with number of joints allocate space for parents and transforms
-		p_skeleton->num_joints = (u32)header[ 1 ];
-
-		p_skeleton->parents = (u32*)pen::memory_alloc(sizeof(u32)*p_skeleton->num_joints);
-		p_skeleton->offsets = (vec3f*)pen::memory_alloc(sizeof(vec3f)*p_skeleton->num_joints);
-		p_skeleton->rotations = (Quaternion*)pen::memory_alloc(sizeof(Quaternion)*p_skeleton->num_joints);
-		p_skeleton->names = (c8**)pen::memory_alloc(sizeof(c8*)*p_skeleton->num_joints);
-
-		u32* p_int = &header[ 2 ];
-		for( u32 i = 0; i < p_skeleton->num_joints; ++i )
-		{
-			//name
-			u32 num_chars = *p_int++;
-			p_skeleton->names[ i ] = (c8*)pen::memory_alloc(sizeof(c8)*(num_chars+1));
-			
-			c8 buf[ 32 ];
-			for( u32 c = 0; c < num_chars; ++c)
-			{
-				if( c >= 32 )
-				{
-					break;
-				}
-
-				buf[ c ] = (c8)*p_int++;
-			}
-
-			pen::memory_cpy( &p_skeleton->names[ i ][ 0 ], &buf[ 0 ], num_chars );
-			p_skeleton->names[ i ][ num_chars ] = '\0';
-
-			//parent
-			p_skeleton->parents[ i ] = *p_int++;
-
-			//num transforms
-			u32 num_transforms = *p_int++;
-
-			u32 num_rotations = 0;
-			vec4f rotations[ 3 ];
-
-			for( u32 t = 0; t < num_transforms; ++t )
-			{
-				u32 type = *p_int++;
-
-				if( type == 0 )
-				{
-					//translate
-					pen::memory_set( &p_skeleton->offsets[i], 0xff, 12 );
-					pen::memory_cpy( &p_skeleton->offsets[i], p_int, 12 );
-					p_int += 3;
-				}
-				else if( type == 1 )
-				{
-					//rotate
-					pen::memory_cpy( &rotations[ num_rotations ], p_int, 16 );
-
-					//convert to radians
-					rotations[ num_rotations ].w = put::maths::deg_to_rad( rotations[ num_rotations ].w );
-
-					static f32 zero_rotation_epsilon = 0.000001f;
-					if( rotations[ num_rotations ].w < zero_rotation_epsilon && rotations[ num_rotations ].w > zero_rotation_epsilon )
-					{
-						rotations[ num_rotations ].w = 0.0f;
-					}
-
-					num_rotations++;
-
-					p_int += 4;
-				}
-				else
-				{
-					//unsupported transform type
-					PEN_ASSERT( 0 );
-				}
-			}
-
-			PEN_ASSERT( num_rotations <= 3 );
-
-			if( num_rotations == 0 )
-			{
-				//no rotation
-				p_skeleton->rotations[ i ].euler_angles( 0.0f, 0.0f, 0.0f );
-			}
-			else if( num_rotations == 1 )
-			{
-				//axis angle
-				p_skeleton->rotations[ i ].axis_angle( rotations[ 0 ] );
-			}
-			else if( num_rotations == 3 )
-			{
-				//euler angles
-				f32 z_theta = 0; 
-				f32 y_theta = 0; 
-				f32 x_theta = 0; 
-
-				for( u32 r = 0; r < 3; ++r )
-				{
-					if( rotations[r].z == 1.0f )
-					{
-						z_theta = rotations[r].w;
-					}
-					else if (rotations[r].y == 1.0f)
-					{
-						y_theta = rotations[r].w;
-					}
-					else if (rotations[r].x == 1.0f)
-					{
-						x_theta = rotations[r].w;
-					}
-
-					p_skeleton->rotations[i].euler_angles( z_theta, y_theta, x_theta );
-				}
-			}
-		}
-
-		//animations
-		p_skeleton->num_anims = *p_int++;
-
-		p_skeleton->animations = (animation*)pen::memory_alloc( sizeof(animation)*p_skeleton->num_anims  );
-
-		vec3f anim_val;
-		for( u32 a = 0; a < p_skeleton->num_anims ; a++ )
-		{
-			p_skeleton->animations[a].bone_index = *p_int++;
-			p_skeleton->animations[a].num_times = *p_int++;
-
-			p_skeleton->animations[a].rotations = NULL;
-			p_skeleton->animations[a].translations = NULL;
-
-			u32 num_translations = *p_int++;
-			u32 num_rotations = *p_int++;
-
-			p_skeleton->animations[a].timeline = (f32*)pen::memory_alloc( sizeof(f32)*p_skeleton->animations[a].num_times );
-
-			if (num_translations == p_skeleton->animations[a].num_times)
-			{
-				p_skeleton->animations[a].translations = (vec3f*)pen::memory_alloc( sizeof(vec3f)*num_translations );
-			}
-
-			if (num_rotations == p_skeleton->animations[a].num_times)
-			{
-				p_skeleton->animations[a].rotations = (Quaternion*)pen::memory_alloc( sizeof(Quaternion)*num_rotations );
-				p_skeleton->animations[a].euler_angles = (vec3f*)pen::memory_alloc( sizeof(vec3f)*num_rotations );
-			}
-
-			for (u32 t = 0; t < p_skeleton->animations[a].num_times; ++t)
-			{
-				pen::memory_cpy( &p_skeleton->animations[a].timeline[t], p_int, 4 );
-				p_int++;
-
-				if (p_skeleton->animations[a].translations)
-				{
-					pen::memory_cpy( &p_skeleton->animations[a].translations[t], p_int, 12 );
-					p_int += 3;
-				}
-
-				if (p_skeleton->animations[a].rotations)
-				{
-					vec3f euler_angs;
-					pen::memory_cpy( &euler_angs, p_int, 12 );
-
-					if( vec3f::almost_equal( euler_angs, vec3f::zero() ) )
-					{
-						euler_angs = vec3f::zero();
-					}
-
-					pen::memory_cpy( &p_skeleton->animations[a].euler_angles[t], &euler_angs, 12 );
-					
-					p_skeleton->animations[a].rotations[t].euler_angles( put::maths::deg_to_rad( euler_angs.z ), put::maths::deg_to_rad( euler_angs.y ), put::maths::deg_to_rad( euler_angs.x ) );
-					p_int += 3;
-				}
-			}
-		}
-
-		pen::memory_free( skeleton_data );
-
-		return p_skeleton;
 	}
 }

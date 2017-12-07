@@ -3,8 +3,10 @@ import subprocess
 import shutil
 
 # win32 / dds / block compression / mips / cubemaps
-print("\nbuild_textures")
-print("texture conversion, mip generation and compression")
+print("\n")
+print("--------------------------------------------------------------------------------------------------------------")
+print("pmtech texture compression and mip map generation ------------------------------------------------------------")
+print("--------------------------------------------------------------------------------------------------------------")
 
 platform_name = "win32"
 if os.name == "posix":
@@ -19,20 +21,33 @@ if not os.path.exists(build_dir):
     os.makedirs(build_dir)
 
 print("processing directory: " + texture_dir)
+print("\n")
 
-for f in os.listdir(texture_dir):
-    [fnoext, fext] = os.path.splitext(f)
-    print(f)
-    dds_filename = fnoext + ".dds"
-    dest_path = os.path.join(build_dir, dds_filename)
-    src_path = os.path.join(texture_dir, f)
-    if f.find(".png") != -1 or f.find(".jpg") or f.find(".tif") != -1:
-        print("converting texture to data dir")
-        cmdline = nvtt_dir + " -rgb " + src_path + " " + dest_path
-        subprocess.check_call(cmdline, shell=True)
-    if f.find(".dds") != -1:
-        print("copying texture to data dir")
-        # straight copy
-        dest_file = os.path.join(build_dir, f)
-        shutil.copy(f, dest_file)
-    print("\n")
+supported_formats = [".png", ".jpg", ".tif", ".bmp", ".tga"]
+
+for root, dirs, files in os.walk(texture_dir):
+    for f in files:
+        f = os.path.join(root, f)
+        [fnoext, fext] = os.path.splitext(f)
+        fnoext = fnoext.replace(texture_dir, build_dir)
+
+        dest_dir = root.replace(texture_dir, build_dir)
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+
+        if f.find(".dds") != -1:
+            print("copying " + f)
+            dest_file = os.path.join(build_dir, f)
+            shutil.copy(f, dest_file)
+        else:
+            for fmt in supported_formats:
+                if fmt in f:
+                    dds_filename = fnoext + ".dds"
+                    dest_path = dds_filename
+                    src_path = os.path.join(texture_dir, f)
+                    print("converting " + f)
+                    cmdline = nvtt_dir + " -rgb -silent " + src_path + " " + dest_path
+                    subprocess.check_call(cmdline, shell=True)
+
+
+

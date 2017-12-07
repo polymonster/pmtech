@@ -7,8 +7,10 @@ import parse_animations
 import helpers
 
 #win32 / collada
-print("-------pmtech model and animation conversion-------")
-print("---------------------------------------------------" + "\n")
+print("\n")
+print("--------------------------------------------------------------------------------------------------------------")
+print("pmtech model and animation conversion ------------------------------------------------------------------------")
+print("--------------------------------------------------------------------------------------------------------------")
 
 root_dir = os.getcwd()
 model_dir = os.path.join(root_dir, "assets", "mesh")
@@ -16,7 +18,7 @@ model_dir = os.path.join(root_dir, "assets", "mesh")
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 transform_types = ["translate", "rotate", "matrix"]
 
-print("processing directory:")
+print("processing directory: " + model_dir)
 print(model_dir)
 
 # create models dir
