@@ -68,6 +68,7 @@ namespace put
             ALLOC_COMPONENT_ARRAY(scene, materials, scene_node_material);
             ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
             ALLOC_COMPONENT_ARRAY(scene, anim_controller, animation_controller);
+            ALLOC_COMPONENT_ARRAY(scene, lights, scene_node_light);
 
             for( u32 i = 0; i < scene->nodes_size; ++i )
                 scene->cbuffer[i] = PEN_INVALID_HANDLE;
@@ -105,6 +106,7 @@ namespace put
             FREE_COMPONENT_ARRAY(scene, materials);
             FREE_COMPONENT_ARRAY(scene, physics_data);
             FREE_COMPONENT_ARRAY(scene, anim_controller);
+            FREE_COMPONENT_ARRAY(scene, lights);
 
 #ifdef CES_DEBUG
 			FREE_COMPONENT_ARRAY(scene, names);
@@ -112,7 +114,7 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, material_names);
 #endif
 		}
-        
+                
         void clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset, const c8* suffix)
         {
             entity_scene* p_sn = scene;
@@ -626,7 +628,7 @@ namespace put
                         ASSIGN_DEBUG_NAME(scene->material_names[n], material_name);
                         scene->id_material[n] = material_hash;
                         
-                        instantiate_material(mr, &scene->materials[n]);
+                        instantiate_material(mr, scene, n);
                     }
                 }
             }

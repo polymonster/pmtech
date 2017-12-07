@@ -57,6 +57,18 @@ namespace put
             }
         }
         
+        u32 get_new_node( entity_scene* scene )
+        {
+            u32 i = 0;
+            while( scene->entities[i++] & CMP_ALLOCATED )
+                continue;
+            
+            if( i > scene->num_nodes )
+                scene->num_nodes = i;
+            
+            return i-1;
+        }
+        
         void scene_tree_add_node( scene_tree& tree, scene_tree& node, std::vector<s32>& heirarchy )
         {
             if( heirarchy.empty() )

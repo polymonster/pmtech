@@ -21,6 +21,14 @@ namespace put
             A_ROTATION = 3
         };
         
+        enum e_pmm_load_flags : u32
+        {
+            PMM_GEOMETRY = (1<<0),
+            PMM_MATERIAL = (1<<1),
+            PMM_NODES = (1<<2),
+            PMM_ALL = 7
+        };
+        
         struct node_animation_channel
         {
             u32     num_frames;
@@ -44,6 +52,17 @@ namespace put
 #ifdef CES_DEBUG
             Str name;
 #endif
+        };
+        
+        struct material_resource
+        {
+            Str         filename;
+            Str         material_name;
+            hash_id     hash;
+            
+            s32         texture_id[SN_NUM_TEXTURES] = { 0 };
+            vec4f       diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+            vec4f       specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
         };
         
         struct geometry_resource
@@ -78,7 +97,7 @@ namespace put
         void            instantiate_geometry( geometry_resource* gr, entity_scene* scene, s32 node_index );
         void            instantiate_model_cbuffer( entity_scene* scene, s32 node_index );
         void            instantiate_anim_controller( entity_scene* scene, s32 node_index );
-        void            instantiate_material( material_resource* mr, scene_node_material* instance );
+        void            instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index );
         
         material_resource*  get_material_resource( hash_id hash );
         animation_resource* get_animation_resource( anim_handle h );

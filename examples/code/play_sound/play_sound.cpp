@@ -20,13 +20,6 @@ pen::window_creation_params pen_window
 u32 clear_state_grey;
 u32 raster_state_cull_back;
 
-pen::viewport vp =
-{
-    0.0f, 0.0f,
-    1280.0f, 720.0f,
-    0.0f, 1.0f
-};
-
 void renderer_state_init( )
 {
     //initialise the debug render system
@@ -70,9 +63,38 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pen::audio_group_set_pitch( group_index, 0.5f );
     
     pen::audio_group_set_volume( group_index, 1.0f );
+    
+    //cb
+    pen::buffer_creation_params bcp;
+    bcp.usage_flags = PEN_USAGE_DYNAMIC;
+    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+    bcp.buffer_size = sizeof(float) * 16;
+    bcp.data = (void*)nullptr;
+    
+    u32 cb_2d_view = pen::renderer_create_buffer(bcp);
 
     while( 1 )
     {
+        pen::viewport vp =
+        {
+            0.0f, 0.0f,
+            1280.0f, 720.0f,
+            0.0f, 1.0f
+        };
+        
+        //create 2d view proj matrix
+        float W = 2.0f / vp.width;
+        float H = 2.0f / vp.height;
+        float mvp[4][4] =
+        {
+            { W, 0.0, 0.0, 0.0 },
+            { 0.0, H, 0.0, 0.0 },
+            { 0.0, 0.0, 1.0, 0.0 },
+            { -1.0, -1.0, 0.0, 1.0 }
+        };
+        pen::renderer_update_buffer(cb_2d_view, mvp, sizeof(mvp), 0);
+        
         pen::renderer_set_rasterizer_state( raster_state_cull_back );
 
         //bind back buffer and clear
@@ -82,7 +104,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         put::dbg::add_text_2f( 10.0f, 10.0f, vp, vec4f( 0.0f, 1.0f, 0.0f, 1.0f ), "%s", "Debug Text" );
 
-        put::dbg::render_2d();
+        put::dbg::render_2d( cb_2d_view );
 
         //present 
         pen::renderer_present();
@@ -99,6 +121,17 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
+    put::dbg::shutdown();
+    
+    pen::renderer_release_buffer(cb_2d_view);
+    pen::renderer_release_raster_state(raster_state_cull_back);
+    pen::renderer_release_clear_state(clear_state_grey);
+    pen::renderer_consume_cmd_buffer();
+    
+    pen::audio_release_resource(sound_index);
+    pen::audio_release_resource(channel_index);
+    pen::audio_release_resource(group_index);
+    pen::audio_consume_command_buffer();
     
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);

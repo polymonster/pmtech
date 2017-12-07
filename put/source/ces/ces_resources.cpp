@@ -54,6 +54,8 @@ namespace put
             
             bv->min_extents = gr->physics_info.min_extents;
             bv->max_extents = gr->physics_info.max_extents;
+            
+            scene->entities[node_index] |= CMP_GEOMETRY;
         }
         
         void instantiate_model_cbuffer( entity_scene* scene, s32 node_index )
@@ -263,12 +265,16 @@ namespace put
             return nullptr;
         }
         
-        void instantiate_material( material_resource* mr, scene_node_material* instance )
+        void instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index )
         {
+            scene_node_material* instance = &scene->materials[node_index];
+            
             instance->diffuse_rgb_shininess = mr->diffuse_rgb_shininess;
             instance->specular_rgb_reflect = mr->specular_rgb_reflect;
             
             pen::memory_cpy(instance->texture_id, mr->texture_id, sizeof(u32)*SN_NUM_TEXTURES);
+            
+            scene->entities[node_index] |= CMP_MATERIAL;
         }
         
         void load_material_resource( const c8* filename, const c8* material_name, const c8* data )
@@ -548,6 +554,8 @@ namespace put
                 ASSIGN_DEBUG_NAME( scene->names[current_node], node_name );
                 ASSIGN_DEBUG_NAME( scene->geometry_names[current_node], geometry_name );
                 
+                scene->entities[current_node] |= CMP_ALLOCATED;
+                
                 if( scene->id_geometry[current_node] == ID_JOINT )
                     scene->entities[current_node] |= CMP_BONE;
                 
@@ -672,7 +680,7 @@ namespace put
                     scene->entities[current_node] |= CMP_GEOMETRY;
                     scene->entities[current_node] |= CMP_MATERIAL;
                 }
-                
+
                 //assign geometry, materials and physics
                 u32 dest = current_node;
                 if (num_meshes > 0)
@@ -720,7 +728,7 @@ namespace put
                             {
                                 ASSIGN_DEBUG_NAME(scene->material_names[dest], gr->material_name);
                                 
-                                instantiate_material(mr, &scene->materials[dest]);
+                                instantiate_material(mr, scene, dest );
                                 
                                 scene->id_material[dest] = material_hash;
                             }

@@ -1,12 +1,15 @@
-#ifndef _VECTOR_H
-#define _VECTOR_H
+#ifndef _vector_h
+#define _vector_h
 
 #include "definitions.h"
 #include <math.h>
 
-#include <vector>
+struct vec2f;
+struct vec2i;
+struct vec3f;
+struct vec4f;
 
-typedef struct vec2i
+struct vec2i
 {
 public:
     vec2i()					: x( 0 ), y( 0 )	{ }
@@ -21,9 +24,9 @@ public:
     const vec2i	operator -	( const vec2i &v )	{ vec2i result( x-v.x, y-v.y ); return( result ); }
     
     s32			x, y;
-} vec2i;
+};
 
-typedef struct vec2f
+struct vec2f
 {
 public:
     vec2f()					: x( 0 ), y( 0 )	{ }
@@ -98,11 +101,10 @@ public:
     
     f32		x, y;
     
-} vec2f;
+};
 
-typedef struct vec3f
+struct vec3f
 {
-    
 public:
     
     vec3f()
@@ -200,7 +202,17 @@ public:
         return v;
     }
     
-    inline static vec3f iRGB( s32 r, s32 g, s32 b )
+    inline vec2f xy() const
+    {
+        return vec2f( x, y );
+    }
+    
+    inline vec2f yx() const
+    {
+        return vec2f( y, x );
+    }
+    
+    inline static vec3f irgb( s32 r, s32 g, s32 b )
     {
         return vec3f( (f32)r / 255.0f, (f32)g / 255.0f, (f32)b / 255.0f );
     }
@@ -275,9 +287,9 @@ public:
     }
     
     f32 x, y, z;
-} vec3f;
+};
 
-typedef struct vec4f
+struct vec4f
 {
 public:
     
@@ -433,15 +445,16 @@ public:
     {
         return vec4f::one();
     }
-} vec4f;
+    
+    inline vec3f xyz() const
+    {
+        return vec3f( x, y, z );
+    }
+    
+    inline vec2f xy() const
+    {
+        return vec2f( x, y );
+    }
+};
 
-typedef std::vector< vec3f > Vector3fArray;
-typedef std::vector< vec4f > Vector4fArray;
-typedef std::vector< vec2f > Vector2fArray;
-typedef std::vector< vec2i > Vector2iArray;
-
-typedef std::vector< vec3f* > Vector3fArray_p;
-typedef std::vector< vec2f* > Vector2fArray_p;
-typedef std::vector< vec2i* > Vector2iArray_p;
-
-#endif //_VECTOR_H
+#endif //_vector_h

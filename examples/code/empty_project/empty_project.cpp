@@ -30,8 +30,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         }
     }
     
-    //clean up mem here
-    
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
     

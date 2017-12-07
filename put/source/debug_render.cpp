@@ -356,6 +356,67 @@ namespace put
 
 			dbg::add_line(transformed_s, transformed_e, col);
 		}
+        
+        void add_axis_transform_widget(const mat4& mat, const f32 size, u32 selected_axis, u32 type, const mat4& view, const mat4& proj, const vec2i& vp )
+        {
+            add_coord_space( mat, size, selected_axis );
+            
+            vec3f p = mat.get_translation();
+            vec3f up = mat.get_up();
+            vec3f right = mat.get_right();
+            vec3f fwd = mat.get_fwd();
+            
+            vec3f axis[4] =
+            {
+                vec3f::zero(),
+                mat.get_right(),
+                mat.get_up(),
+                mat.get_fwd()
+            };
+            
+            vec4f colours[4] =
+            {
+                vec4f::one(),
+                vec4f::red(),
+                vec4f::green(),
+                vec4f::blue()
+            };
+            
+            vec3f pp[4];
+            
+            for( s32 i = 0; i < 4; ++i )
+            {
+                pp[i] = put::maths::project( p + axis[i] * size, view, proj, vp );
+            }
+            
+            for( s32 i = 0; i < 3; ++i )
+            {
+                vec2f p2 = vec2f( pp[i+1].x, pp[i+1].y );
+                vec2f base = vec2f( pp[0].x, pp[0].y );
+                
+                vec2f v1 = put::maths::normalise( p2 - base );
+                
+                vec4f col = colours[i+1] * 0.5f;
+                
+                if( selected_axis & (1<<i) )
+                    col = vec4f::one();
+                
+                if( type == 2 )
+                {
+                    //translate
+                    vec2f perp = put::maths::perp(v1, 0);
+                    
+                    static const f32 s = 5.0f;
+                    
+                    add_tri_2f( p2 - perp * s, p2 + v1 * s, p2 + perp * s, col );
+                }
+                else if( type == 4 )
+                {
+                    //scale
+                    add_quad_2f(p2, vec2f(2.5f, 2.5f), col );
+                }
+            }
+        }
 
 		void add_coord_space(const mat4& mat, const f32 size, u32 selected )
 		{
@@ -590,6 +651,33 @@ namespace put
 		{
             add_quad_2f( pos, vec2f( 2.0f, 2.0f), colour );
 		}
+        
+        void add_tri_2f(const vec2f& p1, const vec2f& p2, const vec2f& p3, const vec4f& colour)
+        {
+            alloc_2d_buffer(tri_vert_2d_count + 6, VB_TRIS);
+            
+            //tri 1
+            s32 start_index = tri_vert_2d_count;
+            debug_2d_tris[tri_vert_2d_count].x = p1.x;
+            debug_2d_tris[tri_vert_2d_count].y = p1.y;
+            tri_vert_2d_count++;
+            
+            debug_2d_tris[tri_vert_2d_count].x = p2.x;
+            debug_2d_tris[tri_vert_2d_count].y = p2.y;
+            tri_vert_2d_count++;
+            
+            debug_2d_tris[tri_vert_2d_count].x = p3.x;
+            debug_2d_tris[tri_vert_2d_count].y = p3.y;
+            tri_vert_2d_count++;
+            
+            for( s32 i = start_index; i < start_index + 3; ++i )
+            {
+                debug_2d_tris[i].r = colour.x;
+                debug_2d_tris[i].g = colour.y;
+                debug_2d_tris[i].b = colour.z;
+                debug_2d_tris[i].a = colour.w;
+            }
+        }
 
 		void add_quad_2f(const vec2f& pos, const vec2f& size, const vec4f& colour)
 		{

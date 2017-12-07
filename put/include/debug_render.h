@@ -24,9 +24,13 @@ namespace put
 		void add_line_2f(const vec2f& start, const vec2f& end, const vec4f& colour = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
 		void add_point_2f(const vec2f& pos, const vec4f& colour = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
 		void add_quad_2f(const vec2f& pos, const vec2f& size, const vec4f& colour = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
-
+        void add_tri_2f(const vec2f& p1, const vec2f& p2, const vec2f& p3, const vec4f& colour = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
+        
 		//text
 		void add_text_2f(const f32 x, const f32 y, const pen::viewport& vp, const vec4f& colour, const c8* format, ... );
+        
+        //combinations
+        void add_axis_transform_widget(const mat4& mat, const f32 size, u32 selected_axis, u32 type, const mat4& view, const mat4& proj, const vec2i& vp );
 
 		void render_2d(u32 cb_2d_view);
 		void render_3d(u32 cb_3d_view);

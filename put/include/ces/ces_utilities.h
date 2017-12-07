@@ -16,6 +16,8 @@ namespace put
             std::vector<scene_tree> children;
         };
         
+        u32     get_new_node( entity_scene* scene );
+        
         void    clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
         
         void    tree_to_node_index_list( const scene_tree& tree, std::vector<s32>& list_out );

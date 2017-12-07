@@ -72,8 +72,9 @@ namespace put
             DD_MATRIX   = 1<<(SV_BITS_END+3),
             DD_BONES    = 1<<(SV_BITS_END+4),
             DD_AABB     = 1<<(SV_BITS_END+5),
+            DD_LIGHTS   = 1<<(SV_BITS_END+6),
 
-            DD_NUM_FLAGS = 6,
+            DD_NUM_FLAGS = 7,
         };
         
         const c8* dd_names[]
@@ -83,7 +84,8 @@ namespace put
             "Grid",
             "Matrices",
             "Bones",
-            "AABB"
+            "AABB",
+            "Lights"
         };
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
@@ -96,7 +98,8 @@ namespace put
                 pen::memory_set(k_dd_bools, 0x0, sizeof(bool)*DD_NUM_FLAGS);
                 
                 //set defaults
-                for( s32 i = 1; i < 3; ++i )
+                static u32 defaults[] = { DD_NODE, DD_GRID, DD_LIGHTS };
+                for( s32 i = 1; i < sizeof(defaults)/sizeof(defaults[0]); ++i )
                     k_dd_bools[ i ] = true;
             }
             
@@ -464,17 +467,148 @@ namespace put
             put::ces::update_scene(sc->scene, dt_ms);
         }
         
+        void scene_anim_ui( entity_scene* scene, s32 selected_index )
+        {
+            if( scene->geometries[selected_index].p_skin )
+            {
+                static bool open_anim_import = false;
+                
+                if( ImGui::CollapsingHeader("Animations") )
+                {
+                    auto& controller = scene->anim_controller[selected_index];
+                    
+                    ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
+                    
+                    if( ImGui::Button("Add Animation") )
+                        open_anim_import = true;
+                    
+                    if( ImGui::Button("Reset Root Motion") )
+                    {
+                        scene->local_matrices[selected_index].create_identity();
+                    }
+                    
+                    s32 num_anims = scene->anim_controller[selected_index].handles.size();
+                    for (s32 ih = 0; ih < num_anims; ++ih)
+                    {
+                        s32 h = scene->anim_controller[selected_index].handles[ih];
+                        auto* anim = get_animation_resource(h);
+                        
+                        bool selected = false;
+                        ImGui::Selectable( anim->name.c_str(), &selected );
+                        
+                        if (selected)
+                            controller.current_animation = h;
+                    }
+                    
+                    if (is_valid( controller.current_animation ))
+                    {
+                        if (ImGui::InputInt( "Frame", &controller.current_frame ))
+                            controller.play_flags = 0;
+                        
+                        ImGui::SameLine();
+                        
+                        if (controller.play_flags == 0)
+                        {
+                            if (ImGui::Button( ICON_FA_PLAY ))
+                                controller.play_flags = 1;
+                        }
+                        else
+                        {
+                            if (ImGui::Button( ICON_FA_STOP ))
+                                controller.play_flags = 0;
+                        }
+                    }
+                    
+                    if( open_anim_import )
+                    {
+                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma" );
+                        
+                        if(anim_import)
+                        {
+                            anim_handle ah = load_pma(anim_import);
+                            auto* anim = get_animation_resource(ah);
+                            
+                            if( is_valid(ah) )
+                            {
+                                //validate that the anim can fit the rig
+                                std::vector<s32> joint_indices;
+                                
+                                build_joint_list( scene, selected_index, joint_indices );
+                                
+                                s32 channel_index = 0;
+                                s32 joints_offset = -1; //scene tree has a -1 node
+                                bool compatible = true;
+                                for( s32 jj = 0; jj < joint_indices.size(); ++jj )
+                                {
+                                    s32 jnode = joint_indices[jj];
+                                    
+                                    if( scene->entities[jnode] & CMP_BONE )
+                                    {
+                                        if( anim->channels[channel_index].target != scene->id_name[jnode] )
+                                        {
+                                            compatible = false;
+                                            break;
+                                        }
+                                        
+                                        channel_index++;
+                                    }
+                                    else
+                                    {
+                                        joints_offset++;
+                                    }
+                                }
+                                
+                                if( compatible )
+                                {
+                                    scene->anim_controller[selected_index].joints_offset = joints_offset;
+                                    scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
+                                    
+                                    bool exists = false;
+                                    
+                                    for( auto& h : controller.handles )
+                                        if( h == ah )
+                                            exists = true;
+                                    
+                                    if(!exists)
+                                        scene->anim_controller[selected_index].handles.push_back(ah);
+                                }
+                            }
+                        }
+                    }
+                    
+                    ImGui::Separator();
+                }
+            }
+        }
+        
         void scene_browser_ui( entity_scene* scene, bool* open )
         {
             if( ImGui::Begin("Scene Browser", open ) )
             {
+                if( ImGui::Button( ICON_FA_PLUS ) )
+                {
+                    u32 nn = ces::get_new_node( scene );
+                    
+                    scene->entities[nn] &= CMP_ALLOCATED;
+                    
+                    scene->names[nn] = "node_";
+                    scene->names[nn].appendf("%u", nn);
+                    
+                    scene->parents[nn] = nn;
+                }
+                put::dev_ui::set_tooltip("Add New Node");
+                
+                ImGui::SameLine();
+                
                 static bool list_view = false;
                 if( ImGui::Button(ICON_FA_LIST) )
                     list_view = true;
+                dev_ui::set_tooltip("List View");
                 
                 ImGui::SameLine();
                 if( ImGui::Button(ICON_FA_USB) )
                     list_view = false;
+                dev_ui::set_tooltip("Tree View");
                 
                 ImGui::Columns( 2 );
                 
@@ -513,7 +647,16 @@ namespace put
                 if (selected_index != -1)
                 {
                     //header
-                    ImGui::Text("%s", scene->names[selected_index].c_str());
+                    static c8 buf[64];
+                    u32 end_pos = std::min<u32>(scene->names[selected_index].length(), 64);
+                    pen::memory_cpy(buf, scene->names[selected_index].c_str(), end_pos);
+                    buf[end_pos] = '\0';
+                    
+                    if( ImGui::InputText("", buf, 64 ))
+                    {
+                        scene->names[selected_index] = buf;
+                        scene->id_name[selected_index] = PEN_HASH(buf);
+                    }
                     
                     s32 parent_index = scene->parents[selected_index];
                     if( parent_index != selected_index)
@@ -543,116 +686,46 @@ namespace put
                     }
                     ImGui::Separator();
                     
-                    if( scene->geometries[selected_index].p_skin )
+                    scene_anim_ui(scene, selected_index );
+                    
+                    ImGui::Separator();
+                    
+                    if( ImGui::CollapsingHeader("Light") )
                     {
-                        static bool open_anim_import = false;
-                        
-                        if( ImGui::CollapsingHeader("Animations") )
+                        if( scene->entities[selected_index] & CMP_LIGHT )
                         {
-                            auto& controller = scene->anim_controller[selected_index];
+                            ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0 Point\0 Spot\0", 3 );
                             
-                            ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
-                            
-                            if( ImGui::Button("Add Animation") )
-                                open_anim_import = true;
-                            
-                            if( ImGui::Button("Reset Root Motion") )
+                            switch(scene->lights[selected_index].type)
                             {
-                                scene->local_matrices[selected_index].create_identity();
-                            }
-                            
-                            s32 num_anims = scene->anim_controller[selected_index].handles.size();
-                            for (s32 ih = 0; ih < num_anims; ++ih)
-                            {
-                                s32 h = scene->anim_controller[selected_index].handles[ih];
-                                auto* anim = get_animation_resource(h);
-                                
-                                bool selected = false;
-                                ImGui::Selectable( anim->name.c_str(), &selected );
-                                
-                                if (selected)
-                                    controller.current_animation = h;
-                            }
-                            
-                            if (is_valid( controller.current_animation ))
-                            {
-                                if (ImGui::InputInt( "Frame", &controller.current_frame ))
-                                    controller.play_flags = 0;
-                                
-                                ImGui::SameLine();
-                                
-                                if (controller.play_flags == 0)
-                                {
-                                    if (ImGui::Button( ICON_FA_PLAY ))
-                                        controller.play_flags = 1;
-                                }
-                                else
-                                {
-                                    if (ImGui::Button( ICON_FA_STOP ))
-                                        controller.play_flags = 0;
-                                }
-                            }
-                            
-                            if( open_anim_import )
-                            {
-                                const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma" );
-                                
-                                if(anim_import)
-                                {
-                                    anim_handle ah = load_pma(anim_import);
-                                    auto* anim = get_animation_resource(ah);
+                                case LIGHT_TYPE_DIR:
+                                    ImGui::SliderAngle("Azimuth", &scene->lights[selected_index].data.x);
+                                    ImGui::SliderAngle("Zenith", &scene->lights[selected_index].data.y);
+                                    break;
                                     
-                                    if( is_valid(ah) )
-                                    {
-                                        //validate that the anim can fit the rig
-                                        std::vector<s32> joint_indices;
-                                        
-                                        build_joint_list( scene, selected_index, joint_indices );
-                                        
-                                        s32 channel_index = 0;
-                                        s32 joints_offset = -1; //scene tree has a -1 node
-                                        bool compatible = true;
-                                        for( s32 jj = 0; jj < joint_indices.size(); ++jj )
-                                        {
-                                            s32 jnode = joint_indices[jj];
-                                            
-                                            if( scene->entities[jnode] & CMP_BONE )
-                                            {
-                                                if( anim->channels[channel_index].target != scene->id_name[jnode] )
-                                                {
-                                                    compatible = false;
-                                                    break;
-                                                }
-                                                
-                                                channel_index++;
-                                            }
-                                            else
-                                            {
-                                                joints_offset++;
-                                            }
-                                        }
-                                        
-                                        if( compatible )
-                                        {
-                                            scene->anim_controller[selected_index].joints_offset = joints_offset;
-                                            scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
-                                            
-                                            bool exists = false;
-                                            
-                                            for( auto& h : controller.handles )
-                                                if( h == ah )
-                                                    exists = true;
-                                            
-                                            if(!exists)
-                                                scene->anim_controller[selected_index].handles.push_back(ah);
-                                        }
-                                    }
-                                }
+                                case LIGHT_TYPE_POINT:
+                                    ImGui::SliderFloat("Radius##slider", &scene->lights[selected_index].data.x, 0.0f, 100.0f );
+                                    ImGui::InputFloat("Radius##input", &scene->lights[selected_index].data.x);
+                                    break;
+                                    
+                                case LIGHT_TYPE_SPOT:
+                                    ImGui::SliderAngle("Azimuth", &scene->lights[selected_index].data.x);
+                                    ImGui::SliderAngle("Zenith", &scene->lights[selected_index].data.y);
+                                    ImGui::SliderAngle("Cos Cutoff", &scene->lights[selected_index].data.z);
+                                    break;
                             }
                             
-                            ImGui::Separator();
+                            ImGui::ColorPicker3("Colour", (f32*)&scene->lights[selected_index].colour);
+                        }
+                        else
+                        {
+                            if( ImGui::Button("Add Light") )
+                            {
+                                scene->entities[selected_index] |= CMP_LIGHT;
+                            }
                         }
                     }
+
                 }
                 
                 ImGui::EndChild();
@@ -665,7 +738,24 @@ namespace put
         
         void render_scene_editor( const scene_view& view )
         {
+                vec2i vpi = vec2i( view.viewport->width, view.viewport->height );
+            
             entity_scene* scene = view.scene;
+            
+            if( scene->view_flags & DD_LIGHTS )
+            {
+                for (u32 n = 0; n < scene->num_nodes; ++n)
+                {
+                    if( scene->entities[n] & CMP_LIGHT)
+                    {
+                        vec3f p = scene->world_matrices[n].get_translation();
+                        
+                        p = put::maths::project(p, view.camera->view,  view.camera->proj, vpi);
+                        
+                        put::dbg::add_quad_2f( p.xy(), vec2f( 3.0f, 3.0f ), vec4f( scene->lights[n].colour, 1.0f ) );
+                    }
+                }
+            }
             
             if( scene->view_flags & DD_MATRIX )
             {
@@ -724,6 +814,11 @@ namespace put
                 put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
             }
             
+            if( scene->view_flags & DD_GRID )
+            {
+                
+            }
+            
             put::dbg::render_3d(view.cb_view);
             
             //no depth test
@@ -751,18 +846,20 @@ namespace put
                 
                 pos /= (f32)k_selection_list.size();
                 
-                widget_d = put::maths::distance(view.camera->view.get_translation(), pos) * 0.1f;
-                f32 d = widget_d;
-                
                 mat4 widget;
                 widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
                 
+                vec3f pp = put::maths::project(pos, view.camera->view, view.camera->proj, vpi );
+                
+                f32 d = pp.z * 10.0;
                 widget_points[0] = pos;
                 widget_points[1] = pos + vec3f::unit_x() * d;
                 widget_points[2] = pos + vec3f::unit_y() * d;
                 widget_points[3] = pos + vec3f::unit_z() * d;
                 
-                put::dbg::add_coord_space(widget, d, selected_axis );
+                widget_d = pp.z;
+                
+                put::dbg::add_axis_transform_widget( widget, d, selected_axis, k_transform_mode, view.camera->view, view.camera->proj, vpi );
             }
             
             const pen::mouse_state& ms = pen::input_get_mouse_state();
@@ -820,7 +917,7 @@ namespace put
                     {
                         if( selected_axis & (1<<i) && ms.buttons[PEN_MOUSE_L] )
                         {
-                            move_axis += translation_axis[i] * (ct[i]-ctd[i]) * widget_d * 0.25;
+                            move_axis += translation_axis[i] * (ct[i]-ctd[i]) * widget_d;
                         }
                     }
 

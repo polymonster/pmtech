@@ -28,12 +28,12 @@ namespace put
         {
             SV_NONE = 0,
             SV_HIDE = (1<<0),
-            
             SV_BITS_END = 0
         };
         
 		enum e_component_flags : u32
 		{
+            CMP_ALLOCATED       = (1 << 0),
 			CMP_GEOMETRY		= (1 << 1),
 			CMP_PHYSICS			= (1 << 2),
 			CMP_PHYSICS_MULTI	= (1 << 3),
@@ -43,22 +43,22 @@ namespace put
 			CMP_BONE			= (1 << 7),
             CMP_DYNAMIC			= (1 << 8),
             CMP_ANIM_CONTROLLER = (1 << 9),
-            CMP_ANIM_TRAJECTORY = (1 << 10)
+            CMP_ANIM_TRAJECTORY = (1 << 10),
+            CMP_LIGHT           = (1 << 11),
 		};
 
-		enum e_node_types : u32
+        enum e_node_types : u32
 		{
 			NODE_TYPE_NONE = 0,
 			NODE_TYPE_JOINT = 1,
 			NODE_TYPE_GEOM = 2
 		};
         
-        enum e_pmm_load_flags : u32
+        enum e_light_types : u32
         {
-            PMM_GEOMETRY = (1<<0),
-            PMM_MATERIAL = (1<<1),
-            PMM_NODES = (1<<2),
-            PMM_ALL = 7
+            LIGHT_TYPE_DIR = 0,
+            LIGHT_TYPE_POINT = 1,
+            LIGHT_TYPE_SPOT = 2
         };
         
         struct per_model_cbuffer
@@ -89,17 +89,6 @@ namespace put
             s32      texture_id[SN_NUM_TEXTURES] = { 0 };
             vec4f    diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
             vec4f    specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-        };
-        
-        struct material_resource
-        {
-            Str         filename;
-            Str         material_name;
-            hash_id     hash;
-            
-            s32         texture_id[SN_NUM_TEXTURES] = { 0 };
-            vec4f       diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-            vec4f       specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
         };
         
         struct scene_node_physics
@@ -140,25 +129,6 @@ namespace put
 			scene_node_skin*	p_skin;
 		};
 
-		struct slider
-		{
-			vec3f limit_min;
-			vec3f limit_max;
-			f32	  direction;
-			u32   entity_index;
-		};
-
-		struct button
-		{
-			vec3f limit_up;
-			vec3f limit_down;
-			vec3f offset;
-			f32	  spring;
-			u32	  entity_index;
-			u32	  lock_state;
-			u32	  debounce = 0;
-		};
-        
         struct animation_controller
         {
             std::vector<anim_handle> handles;
@@ -168,6 +138,13 @@ namespace put
             s32                      current_frame = 0;
             u8                       play_flags = 0;
             bool                     apply_root_motion = true;
+        };
+        
+        struct scene_node_light
+        {
+            u32     type;
+            vec3f   colour;
+            vec4f   data;
         };
 
 		struct entity_scene
@@ -188,6 +165,7 @@ namespace put
 			mat4*					offset_matrices;
 			mat4*					physics_matrices;
             bounding_volume*        bounding_volumes;
+            scene_node_light*       lights;
             
             u32*                    physics_handles;
             u32*                    multibody_handles;
@@ -293,6 +271,25 @@ namespace put
 
 //todo port functions from old code base
 /*
+ struct slider
+ {
+ vec3f limit_min;
+ vec3f limit_max;
+ f32      direction;
+ u32   entity_index;
+ };
+ 
+ struct button
+ {
+ vec3f limit_up;
+ vec3f limit_down;
+ vec3f offset;
+ f32      spring;
+ u32      entity_index;
+ u32      lock_state;
+ u32      debounce = 0;
+ };
+ 
  scene_nodes*            get_scene_nodes();
  u32                        get_num_nodes();
  void                    get_rb_params_from_node(u32 node_index, f32 mass, physics::rigid_body_params &rbp);
