@@ -73,6 +73,7 @@ namespace put
             Str                    filename;
             Str                    geometry_name;
             Str                    material_name;
+            hash_id                material_id_name;
             u32                    submesh_index;
             
             u32                    position_buffer;

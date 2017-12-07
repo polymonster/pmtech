@@ -23,7 +23,6 @@ enum pen_error
     PEN_ERR_FAILED = 3
 };
 
-//c++
 #include <stdio.h>
 #include <assert.h> 
 #include <float.h>

@@ -170,18 +170,29 @@ def write_material_file(mat):
     helpers.pack_split_floats(material_data, mat.reflectivity)
 
     # texture maps
-    pack_texture(material_data, mat.diffuse_map)
-    pack_texture(material_data, mat.specular_map)
-    pack_texture(material_data, mat.normal_map)
+    maps = []
+    types = []
+    if mat.diffuse_map:
+        maps.append(mat.diffuse_map.filename)
+        types.append(0)
+    if mat.normal_map:
+        maps.append(mat.normal_map.filename)
+        types.append(1)
+    if mat.specular_map:
+        maps.append(mat.specular_map.filename)
+        types.append(2)
+
+    num_maps = len(maps)
+    material_data.append(struct.pack("i", num_maps))
+    for i in range(0, num_maps):
+        material_data.append(struct.pack("i", types[i]))
+        pack_texture(material_data, maps[i])
 
     helpers.output_file.material_names.append(mat.id)
     helpers.output_file.materials.append(material_data)
 
 
 def pack_texture(output, tex):
-    if tex:
-        [fnoext, fext] = os.path.splitext(tex.filename)
-        tex.filename = fnoext + ".dds"
-        helpers.pack_parsable_string(output, tex.filename)
-    else:
-        output.append(struct.pack("i", (int(0))))
+    [fnoext, fext] = os.path.splitext(tex)
+    tex = fnoext + ".dds"
+    helpers.pack_parsable_string(output, tex)

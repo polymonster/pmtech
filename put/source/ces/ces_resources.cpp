@@ -148,6 +148,7 @@ namespace put
                 p_geometry->geometry_name = geometry_name;
                 p_geometry->filename = filename;
                 p_geometry->material_name = mat_names[submesh];
+                p_geometry->material_id_name = PEN_HASH(mat_names[submesh].c_str());
                 p_geometry->submesh_index = submesh;
                 
                 //skip physics
@@ -286,12 +287,8 @@ namespace put
             hash_id hash = hm.end();
             
             for( s32 m = 0; m < k_material_resources.size(); ++m )
-            {
                 if( k_material_resources[ m ]->hash == hash )
-                {
                     return;
-                }
-            }
             
             const u32* p_reader = ( u32* ) data;
             
@@ -322,16 +319,15 @@ namespace put
             pen::memory_cpy(&p_mat->specular_rgb_reflect.w, p_reader, sizeof(f32));
             p_reader++;
             
-            //todo variable number of maps
+            u32 num_maps = *p_reader++;
             
-            for (u32 map = 0; map < put::ces::SN_NUM_TEXTURES; ++map)
+            for (u32 map = 0; map < num_maps; ++map)
             {
+                u32 map_type = *p_reader++;
                 Str texture_name = read_parsable_string(&p_reader);
                 
-                p_mat->texture_id[map] = -1;
-                
                 if (!texture_name.empty())
-                    p_mat->texture_id[map] = put::load_texture(texture_name.c_str());
+                    p_mat->texture_id[map_type] = put::load_texture(texture_name.c_str());
             }
             
             k_material_resources.push_back(p_mat);
@@ -451,6 +447,12 @@ namespace put
             return (anim_handle)k_animations.size()-1;
         }
         
+        struct mat_symbol_name
+        {
+            hash_id symbol;
+            Str name;
+        };
+        
         void load_pmm(const c8* filename, entity_scene* scene, u32 load_flags )
         {
             void* model_file;
@@ -564,19 +566,15 @@ namespace put
                 
                 u32 num_meshes = *p_u32reader++;
                 
-                std::vector<Str> mesh_material_names;
-                std::vector<Str> mesh_material_symbols;
+                std::vector<mat_symbol_name> mesh_material_names;
                 
                 //material pre load
-                if (num_meshes > 0)
+                for (u32 mat = 0; mat < num_meshes; ++mat)
                 {
-                    //read in material names
-                    for (u32 mat = 0; mat < num_meshes; ++mat)
-                        mesh_material_names.push_back(read_parsable_string(&p_u32reader));
+                    Str name = read_parsable_string(&p_u32reader);
+                    Str symbol = read_parsable_string(&p_u32reader);
                     
-                    //read material symbol names
-                    for (u32 mat = 0; mat < num_meshes; ++mat)
-                        mesh_material_symbols.push_back(read_parsable_string(&p_u32reader));
+                    mesh_material_names.push_back({PEN_HASH(symbol.c_str()), name});
                 }
                 
                 //transformation load
@@ -717,18 +715,24 @@ namespace put
                             
                             instantiate_model_cbuffer( scene, dest );
                             
+                            //find mat name from symbol
+                            Str mat_name = "";
+                            for( auto& ms : mesh_material_names )
+                                if( ms.symbol == gr->material_id_name)
+                                    mat_name = ms.name;
+                            
                             hm.begin();
                             hm.add(filename, pen::string_length(filename));
-                            hm.add( gr->material_name.c_str(), gr->material_name.length());
+                            hm.add(mat_name.c_str(), mat_name.length());
                             hash_id material_hash = hm.end();
                             
                             material_resource* mr = get_material_resource(material_hash);
                             
                             if( mr )
                             {
-                                ASSIGN_DEBUG_NAME(scene->material_names[dest], gr->material_name);
+                                ASSIGN_DEBUG_NAME(scene->material_names[dest], mat_name);
                                 
-                                instantiate_material(mr, scene, dest );
+                                instantiate_material(mr, scene, dest);
                                 
                                 scene->id_material[dest] = material_hash;
                             }

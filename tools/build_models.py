@@ -177,10 +177,9 @@ def write_scene_file():
         helpers.pack_parsable_string(scene_data, joint_list[j])
         helpers.pack_parsable_string(scene_data, geom_attach_data_list[j])
         scene_data.append(struct.pack("i", (int(len(material_attach_data_list[j])))))
-        for mat_name in material_attach_data_list[j]:
-            helpers.pack_parsable_string(scene_data, mat_name)
-        for symbol_name in material_symbol_list[j]:
-            helpers.pack_parsable_string(scene_data, symbol_name)
+        for i in range(0, len(material_attach_data_list[j])):
+            helpers.pack_parsable_string(scene_data, material_attach_data_list[j][i])
+            helpers.pack_parsable_string(scene_data, material_symbol_list[j][i])
         parentindex = joint_list.index(parent_list[j])
         scene_data.append(struct.pack("i", (int(parentindex))))
 

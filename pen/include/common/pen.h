@@ -3,11 +3,6 @@
 
 #include "definitions.h"
 
-//#include "renderer.h"
-//#include "memory.h"
-//#include "pen_string.h"
-//#include "threads.h"
-
 namespace pen
 {
 	struct window_creation_params
