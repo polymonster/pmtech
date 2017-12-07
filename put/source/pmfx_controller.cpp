@@ -1027,27 +1027,50 @@ namespace put
 
         void render()
         {
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = sizeof(float) * 16;
+            bcp.data = (void*)nullptr;
+            
+            static u32 cb_2d = pen::renderer_create_buffer(bcp);
+            
             for( auto& v : k_views )
             {
                 //viewport and scissor
                 pen::viewport vp = { 0 };
                 get_rt_viewport( v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp );
+                
+                //create 2d view proj matrix
+                float W = 2.0f / vp.width;
+                float H = 2.0f / vp.height;
+                float mvp[4][4] =
+                {
+                    { W, 0.0, 0.0, 0.0 },
+                    { 0.0, H, 0.0, 0.0 },
+                    { 0.0, 0.0, 1.0, 0.0 },
+                    { -1.0, -1.0, 0.0, 1.0 }
+                };
+                pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
+                
+                //generate 3d view proj matrix
+                put::camera_update_shader_constants(v.camera, v.viewport_correction);
+                
+                //target
                 pen::renderer_set_viewport( vp );
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
                 
                 pen::renderer_set_targets( v.render_targets, v.num_colour_targets, v.depth_target);
                 
-                //clear
                 pen::renderer_clear( v.clear_state );
                 
-                //set render state
+                //render state
                 pen::renderer_set_rasterizer_state(v.raster_state);
                 pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
                 pen::renderer_set_blend_state(v.blend_state);
                 
-                //generate camera matrices
-                put::camera_update_shader_constants(v.camera, v.viewport_correction);
-                
+                //build view info
                 ces::scene_view sv;
                 sv.scene = v.scene;
                 sv.cb_view = v.camera->cbuffer;
@@ -1058,7 +1081,9 @@ namespace put
                 sv.blend_state_state = v.blend_state;
                 sv.camera = v.camera;
                 sv.viewport = &vp;
+                sv.cb_2d_view = cb_2d;
                 
+                //render passes
                 for( s32 rf = 0; rf < v.render_functions.size(); ++rf )
                     v.render_functions[rf](sv);
             }

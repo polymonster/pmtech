@@ -30,21 +30,21 @@ public:
     vec2f( f32 ax, f32 ay )	: x( ax ), y( ay )	{ }
     ~vec2f()					{ }
     
-    inline vec2f	operator =	( const vec2f &v )		{ x=v.x, y=v.y; return( *this ); }
-    inline bool		operator ==	( const vec2f &v )		{ return( x==v.x && y==v.y ); }
-    inline bool		operator !=	( const vec2f &v )		{ return( x!=v.x || y!=v.y ); }
-    inline vec2f	operator +	( const vec2f &v )		{ vec2f result( x+v.x, y+v.y ); return( result ); }
-    inline vec2f	operator -	( const vec2f &v )		{ vec2f result( x-v.x, y-v.y ); return( result ); }
-    inline vec2f	operator -	( const f32 &f )		{ vec2f result( x-f, y-f ); return( result ); }
-    inline vec2f	operator *  (const f32 &a    )		{ vec2f result(x * a, y * a ); return ( result ); }
-    inline vec2f	operator *  (const vec2f &a    )	{ vec2f result(x * a.x, y * a.y ); return ( result ); }
-    inline vec2f	operator /  (const f32 &a    )
+    inline vec2f	operator =	( const vec2f &v )		    { x=v.x, y=v.y; return( *this ); }
+    inline bool		operator ==	( const vec2f &v )		    { return( x==v.x && y==v.y ); }
+    inline bool		operator !=	( const vec2f &v )		    { return( x!=v.x || y!=v.y ); }
+    inline vec2f	operator +	( const vec2f &v )	const   { vec2f result( x+v.x, y+v.y ); return( result ); }
+    inline vec2f	operator -	( const vec2f &v )  const   { vec2f result( x-v.x, y-v.y ); return( result ); }
+    inline vec2f	operator -	( const f32 &f )    const   { vec2f result( x-f, y-f ); return( result ); }
+    inline vec2f	operator *  (const f32 &a    )  const   { vec2f result(x * a, y * a ); return ( result ); }
+    inline vec2f	operator *  (const vec2f &a  )  const   { vec2f result(x * a.x, y * a.y ); return ( result ); }
+    inline vec2f	operator /  (const f32 &a    )  const
     {
         vec2f result( x / a, y / a );
         return result;
     }
     
-    inline vec2f  operator /  (const vec2f &v   )
+    inline vec2f  operator /  (const vec2f &v   )   const
     {
         return vec2f( x /v.x, y / v.y );
     }

@@ -92,7 +92,8 @@ f32 put::maths::distanceSq(vec2f p1, vec2f p2)
     return  d;
 }
 
-vec3f put::maths::normalise(vec3f v){
+vec3f put::maths::normalise(vec3f v)
+{
     
     f32 r_mag = 1.0f / magnitude(v);
     
@@ -103,7 +104,8 @@ vec3f put::maths::normalise(vec3f v){
     return v;
 }
 
-vec2f put::maths::normalise(vec2f v){
+vec2f put::maths::normalise(vec2f v)
+{
     
     f32 mag = 1.0f / magnitude(v);
     
@@ -205,6 +207,40 @@ vec3f put::maths::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp 
     return closest_point;
 }
 
+f32 put::maths::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
+{
+    //create a vector from line start to the point.
+    vec3f v1 = p - l1;
+    
+    //get the normalised direction vector of the line
+    vec3f v2 = normalise(l2 - l1);
+    
+    //use the distance formula to get the length of the line
+    f32 d = distance(l1, l2);
+    
+    //using dot product project v1 onto v2
+    f32 t = dot(v2, v1);
+    
+    t /= d;
+    
+    if( clamp )
+    {
+        //if the points at either end of the line
+        //the point is before the line start
+        if (t <= 0 )
+        {
+            return 0.0f;
+        }
+        
+        //the point is after the line end
+        if (t >= 1.0f )
+        {
+            return 1.0f;
+        }
+    }
+    
+    return t;
+}
 
 #if 0
 vec3f put::maths::get_normal(TRIANGLE t1)
@@ -440,23 +476,6 @@ void put::maths::find_extents(vec3f axis, vec3f *vertices, unsigned s32 vertex_c
     
     *min_position = axis * min;
     *max_position = axis * max;
-}
-
-vec3f put::maths::RAY_vs_PLANE( RAY_3D ray, PLANE plane )
-{
-    //todo - this is wrong i think
-    vec3f v = ray.m_direction_vector;
-    v.normalise();
-    
-    vec3f p = ray.m_point_on_ray;
-    vec3f n = plane.m_normal;
-    
-    f32 d = plane_distance(n, plane.m_point_on_plane);
-    f32 t = -(dot(p,n) + d) / dot(v,n);
-    
-    vec3f point_on_plane = p + (v * t);
-    
-    return point_on_plane;
 }
 
 void put::maths::compute_tangents( vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f t2, vec2f t3, vec3f *tangent, vec3f *bitangent, bool normalise )

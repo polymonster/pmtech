@@ -298,7 +298,7 @@ namespace put
 			return d;
 		}
 
-		inline f32 distanceFast(const vec2f p1, const vec2f p2)
+		inline f32 distance_fast(const vec2f p1, const vec2f p2)
 		{
 			f32 d = ((p2.x - p1.x) * (p2.x - p1.x) +
 				(p2.y - p1.y) * (p2.y - p1.y)) * 0.5f;
@@ -313,10 +313,9 @@ namespace put
 
 		f32 distanceSq(vec2f p1, vec2f p2);
 
-		f32    distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
-		vec3f closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
-
-
+		f32     distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
+		vec3f   closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
+        
 #if 0
 		//todo - move the primitves over and port these functions from old engine.
 		void get_axes_from_OBB(OBB3D b1, vec3f *axes);

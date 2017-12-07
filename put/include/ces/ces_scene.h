@@ -239,6 +239,7 @@ namespace put
 		struct scene_view
 		{
 			u32 cb_view;
+            u32 cb_2d_view;
 			u32 scene_node_flags = 0;
             
             u32 depth_stencil_state = 0;

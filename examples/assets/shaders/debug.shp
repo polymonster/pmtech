@@ -1,0 +1,85 @@
+struct vs_input_2d
+{
+	float2 position : POSITION;
+	float4 colour	: TEXCOORD0;
+};
+
+struct vs_input_3d
+{
+	float4 position : POSITION;
+	float4 colour	: TEXCOORD0;
+};
+
+struct vs_output
+{
+	float4 position : SV_POSITION0;
+	float4 colour	: TEXCOORD0;
+};
+
+cbuffer per_pass_view : register(b0)
+{
+	float4x4 view_projection_matrix;
+	float4x4 view_matrix;
+};
+
+cbuffer per_pass_view_2d : register(b1)
+{
+	float4x4 projection_matrix;
+};
+
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
+vs_output vs_main_2d( vs_input_2d input )
+{
+	vs_output output;
+	
+	float4 pos4 = float4( input.position.x, input.position.y, 0.0, 1.0);
+	
+	pos4 = mul( projection_matrix, pos4 );
+	
+	output.position = pos4;
+	
+	output.colour = input.colour;
+	
+	return output;
+}
+
+vs_output vs_main_3d( vs_input_3d input )
+{	
+	vs_output output;
+	
+	output.position = mul( input.position, view_projection_matrix );
+			
+	output.colour = input.colour;
+	
+    return output;
+}
+
+ps_output ps_main( vs_output input )
+{
+	ps_output output;
+	
+	output.colour = input.colour;
+				
+	return output;
+}
+
+pmfx:
+{	
+	"debug_2d":
+	{
+		"vs": "vs_main_2d",
+		"ps": "ps_main"
+	},
+	
+	"debug_3d":
+	{
+		"vs": "vs_main_3d",
+		"ps": "ps_main"
+	}
+}
+
+

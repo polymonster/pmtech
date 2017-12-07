@@ -191,6 +191,45 @@ def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, tec
     subprocess.call(cmdline)
     print("\n")
 
+token_io = ["input", "output"]
+token_io_replace = ["_input", "_output"]
+
+
+def replace_io_tokens(text):
+    split = text.split(' ')
+    split_replace = []
+    for token in split:
+        replaced = False
+        for i in range(0, len(token_io)):
+            if token_io[i] in token:
+                last_char = len(token_io[i])
+                first_char = token.find(token_io[i])
+                t = token[first_char:first_char+last_char+1]
+                l = len(t)
+                if first_char > 0 and token[first_char-1] != ' ' \
+                        and token[first_char-1] != '\t' \
+                        and token[first_char-1] != '\n':
+                    break
+                if l > last_char:
+                    c = t[last_char]
+                    if c == '.' or c == ';' or c == ' ':
+                        split_replace.append(token.replace(token_io[i], token_io_replace[i]))
+                        replaced = True
+                        break
+                elif l == last_char:
+                    split_replace.append(token.replace(token_io[i], token_io_replace[i]))
+                    replaced = True
+                    break
+        if not replaced:
+            split_replace.append(token)
+
+
+    replaced_text = ""
+    for token in split_replace:
+        replaced_text += token + " "
+
+    return replaced_text
+
 
 def find_struct(shader_text, decl):
     start = shader_text.find(decl)
@@ -438,6 +477,8 @@ def compile_glsl(
     for key_index in range(0, len(hlsl_key)):
         final_vs_source = final_vs_source.replace(hlsl_key[key_index], glsl_key[key_index])
 
+    final_vs_source = replace_io_tokens(final_vs_source)
+
     vs_fn = os.path.join(shader_build_dir, shader_name, technique_name + ".vsc")
     vs_file = open(vs_fn, "w")
     vs_file.write(final_vs_source)
@@ -490,6 +531,8 @@ def compile_glsl(
 
         for key_index in range(0, len(hlsl_key)):
             final_ps_source = final_ps_source.replace(hlsl_key[key_index], glsl_key[key_index])
+
+        final_ps_source = replace_io_tokens(final_ps_source)
 
         ps_fn = os.path.join(shader_build_dir, shader_name, technique_name + ".psc")
         ps_file = open(ps_fn, "w")
@@ -639,9 +682,9 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     vs_vertex_input_struct_name = "null"
 
     for i in range(0, len(vs_input_signature)):
-        if vs_input_signature[i] == "_input":
+        if vs_input_signature[i] == "_input" or vs_input_signature[i] == "input":
             vs_vertex_input_struct_name = vs_input_signature[i-1]
-        elif vs_input_signature[i] == "_instance_input":
+        elif vs_input_signature[i] == "_instance_input" or vs_input_signature[i] == "instance_input":
             vs_instance_input_struct_name = vs_input_signature[i-1]
 
     instance_input_source = find_struct(shader_file_text, "struct " + vs_instance_input_struct_name)

@@ -57,17 +57,27 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     rcp.depth_clip_enable = true;
 
     u32 raster_state = pen::renderer_create_rasterizer_state( rcp );
-
-    //viewport
-    pen::viewport vp =
-    {
-        0.0f, 0.0f,
-        1280.0f, 720.0f,
-        0.0f, 1.0f
-    };
+    
+    //cb
+    pen::buffer_creation_params bcp;
+    bcp.usage_flags = PEN_USAGE_DYNAMIC;
+    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+    bcp.buffer_size = sizeof(float) * 16;
+    bcp.data = (void*)nullptr;
+    
+    u32 cb_2d_view = pen::renderer_create_buffer(bcp);
 
     while( 1 )
     {
+        //viewport
+        pen::viewport vp =
+        {
+            0.0f, 0.0f,
+            (f32)pen_window.width, (f32)pen_window.height,
+            0.0f, 1.0f
+        };
+        
         pen::renderer_set_rasterizer_state( raster_state );
 
         //bind back buffer and clear
@@ -121,7 +131,21 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         
 		put::dbg::add_text_2f( 10.0f, 40.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", ascii_msg.c_str() );
         
-		put::dbg::render_2d();
+        //create 2d view proj matrix
+        float W = 2.0f / vp.width;
+        float H = 2.0f / vp.height;
+        float mvp[4][4] =
+        {
+            { W, 0.0, 0.0, 0.0 },
+            { 0.0, H, 0.0, 0.0 },
+            { 0.0, 0.0, 1.0, 0.0 },
+            { -1.0, -1.0, 0.0, 1.0 }
+        };
+        pen::renderer_update_buffer(cb_2d_view, mvp, sizeof(mvp), 0);
+        
+        put::dbg::render_2d(cb_2d_view);
+        
+		put::dbg::render_2d( cb_2d_view );
 
         //present 
         pen::renderer_present();

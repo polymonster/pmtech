@@ -28,8 +28,8 @@ namespace put
 		//text
 		void add_text_2f(const f32 x, const f32 y, const pen::viewport& vp, const vec4f& colour, const c8* format, ... );
 
-		void render_2d();
-		void render_3d(u32 cb_3dview);
+		void render_2d(u32 cb_2d_view);
+		void render_3d(u32 cb_3d_view);
 	}
 }
 
