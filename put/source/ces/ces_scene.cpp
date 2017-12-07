@@ -501,6 +501,8 @@ namespace put
         
         void load_scene( const c8* filename, entity_scene* scene )
         {
+            bool error = false;
+            
             std::ifstream ifs(filename, std::ofstream::binary);
             
             s32 version;
@@ -510,19 +512,6 @@ namespace put
             //user prefs
             ifs.read((c8*)&scene->view_flags, sizeof(u32));
             ifs.read((c8*)&scene->selected_index, sizeof(s32));
-            
-            /*
-            if(!k_dd_bools)
-            {
-                k_dd_bools = new bool[DD_NUM_FLAGS];
-            }
-            
-            for( s32 i = 0; i < DD_NUM_FLAGS; ++i )
-            {
-                if( scene->debug_flags & (1<<i) )
-                    k_dd_bools[i] = true;
-            }
-             */
             
             //names
             for( s32 n = 0; n < scene->num_nodes; ++n )
@@ -559,7 +548,10 @@ namespace put
                     anim_handle h = load_pma(anim_name.c_str());
                     
                     if( !is_valid(h) )
-                        dev_ui::log_level(dev_ui::ERROR, "[error] animation - cannot find pma file: %s", anim_name.c_str() );
+                    {
+                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] animation - cannot find pma file: %s", anim_name.c_str() );
+                        error = true;
+                    }
                     
                     scene->anim_controller[n].handles.push_back( h );
                 }
@@ -605,8 +597,9 @@ namespace put
                     }
                     else
                     {
-                        dev_ui::log_level(dev_ui::ERROR, "[error] geometry - cannot find pmm file: %s", filename.c_str() );
+                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] geometry - cannot find pmm file: %s", filename.c_str() );
                         scene->entities[n] &= ~CMP_GEOMETRY;
+                        error = true;
                     }
                 }
             }
@@ -643,11 +636,14 @@ namespace put
                     }
                     else
                     {
-                        dev_ui::log_level(dev_ui::ERROR, "[error] material - cannot find pmm file: %s", filename.c_str() );
+                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] material - cannot find pmm file: %s", filename.c_str() );
                         scene->entities[n] &= ~CMP_MATERIAL;
+                        error = true;
                     }
                 }
             }
+            
+            update_view_flags( scene, error );
             
             ifs.close();
         }

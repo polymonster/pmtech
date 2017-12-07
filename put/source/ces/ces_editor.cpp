@@ -13,6 +13,11 @@
 
 namespace put
 {
+    namespace dev_ui
+    {
+        extern bool k_console_open;
+    }
+    
     namespace ces
     {
         static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
@@ -90,7 +95,7 @@ namespace put
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
         
-        void update_view_flags( entity_scene* scene )
+        void update_view_flags_ui( entity_scene* scene )
         {
             if(!k_dd_bools)
             {
@@ -114,6 +119,20 @@ namespace put
             }
         }
         
+        void update_view_flags( entity_scene* scene, bool error )
+        {
+            if( error )
+                scene->view_flags |= (DD_MATRIX | DD_BONES);
+            
+            for( s32 i = 0; i < DD_NUM_FLAGS; ++i )
+            {
+                k_dd_bools[i] = false;
+                
+                if( scene->view_flags & (1<<i) )
+                    k_dd_bools[i] = true;
+            }
+        }
+        
         void view_ui( entity_scene* scene, bool* opened )
         {
             if( ImGui::Begin("View", opened, ImGuiWindowFlags_AlwaysAutoResize ) )
@@ -126,12 +145,12 @@ namespace put
                 ImGui::End();
             }
             
-            update_view_flags( scene );
+            update_view_flags_ui( scene );
         }
         
         void editor_init( entity_scene* scene )
         {
-            update_view_flags( scene );
+            update_view_flags_ui( scene );
         }
         
         struct picking_info
@@ -280,6 +299,7 @@ namespace put
             {
                 ImGui::MenuItem("Save");
                 ImGui::MenuItem("Import", NULL, &open_import);
+                ImGui::MenuItem("Console", NULL, &put::dev_ui::k_console_open);
                 
                 if( ImGui::BeginMenu("Project Directory") )
                 {
@@ -804,7 +824,7 @@ namespace put
                         vec3f p1 = scene->world_matrices[n].get_translation();
                         vec3f p2 = scene->world_matrices[p].get_translation();
                         
-                        put::dbg::add_line(p1, p2, vec4f::magenta() );
+                        put::dbg::add_line(p1, p2, vec4f::one() );
                     }
                 }
             }

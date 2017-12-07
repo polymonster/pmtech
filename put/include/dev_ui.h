@@ -26,9 +26,9 @@ namespace put
         
         enum e_console_log_level : u32
         {
-            MESSAGE = 0,
-            WARNING = 1,
-            ERROR = 2
+            CONSOLE_MESSAGE = 0,
+            CONSOLE_WARNING = 1,
+            CONSOLE_ERROR = 2
         };
         
 		//imgui_renderer

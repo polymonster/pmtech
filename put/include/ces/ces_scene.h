@@ -235,6 +235,8 @@ namespace put
         
 		void            render_scene_view( const scene_view& view );
 		void            update_scene( entity_scene* scene, f32 dt );
+        
+        void            update_view_flags( entity_scene* scene, bool error );
 	}
 
     struct camera_controller

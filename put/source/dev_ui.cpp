@@ -691,7 +691,7 @@ namespace put
         };
         
         static app_console k_dev_console;
-        static bool k_console_open = false;
+        bool k_console_open = false;
         
         void console()
         {
@@ -703,7 +703,7 @@ namespace put
         
         void show_console( bool val )
         {
-            k_console_open = true;
+            k_console_open = val;
         }
         
         void log( const c8* fmt, ... )
