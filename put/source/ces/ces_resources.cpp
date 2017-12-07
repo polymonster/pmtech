@@ -247,8 +247,6 @@ namespace put
                 
                 p_reader += num_collision_floats;
                 
-                size_t offset = (size_t)p_reader - (size_t)data;
-                
                 k_geometry_resources.push_back(p_geometry);
             }
         }
@@ -745,6 +743,10 @@ namespace put
                                 instantiate_material(mr, scene, dest);
                                 
                                 scene->id_material[dest] = material_hash;
+                            }
+                            else
+                            {
+                                scene->entities[n] |= CMP_MATERIAL;
                             }
                         }
                     }
