@@ -182,7 +182,7 @@ namespace put
 		u32 mip_width = tcp.width >> 1;
 		u32 mip_height = tcp.height >> 1;
 
-		for( u32 i = 0; i < tcp.num_mips; ++i )
+		for( u32 i = 0; i < tcp.num_mips-1; ++i )
 		{
 			ext_data_size += calc_level_size( mip_width, mip_height, compressed, block_size );
 
@@ -193,7 +193,7 @@ namespace put
 		tcp.data_size = data_size + ext_data_size;
 		tcp.data = pen::memory_alloc( tcp.data_size  );
 
-		//copy texture data s32o the tcp storage
+		//copy texture data into the tcp storage
 		u8* top_image_start = (u8*)file_data + sizeof( dds_header );
 		u8* ext_image_start = top_image_start + data_size;
 

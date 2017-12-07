@@ -690,17 +690,14 @@ namespace put
             }
         };
         
-        static app_console* kp_dev_console;
+        static app_console k_dev_console;
         bool k_console_open = false;
         
         void console()
         {
-            if(!kp_dev_console)
-                kp_dev_console = new app_console;
-            
             if( k_console_open )
             {
-                kp_dev_console->Draw("Console", &k_console_open);
+                k_dev_console.Draw("Console", &k_console_open);
             }
         }
         
@@ -711,23 +708,17 @@ namespace put
         
         void log( const c8* fmt, ... )
         {
-            if(!kp_dev_console)
-                kp_dev_console = new app_console;
-            
             va_list args;
             va_start(args, fmt);
-            kp_dev_console->AddLogV(0, fmt, args);
+            k_dev_console.AddLogV(0, fmt, args);
             va_end(args);
         }
         
         void log_level( u32 level, const c8* fmt, ... )
         {
-            if(!kp_dev_console)
-                kp_dev_console = new app_console;
-            
             va_list args;
             va_start(args, fmt);
-            kp_dev_console->AddLogV(level, fmt, args);
+            k_dev_console.AddLogV(level, fmt, args);
             va_end(args);
             
             if(level > 0)

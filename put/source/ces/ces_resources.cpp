@@ -322,6 +322,7 @@ namespace put
             u32 num_maps = *p_reader++;
             
             //clear all maps to invalid
+            /*
             static const u32 default_maps[] =
             {
                 put::load_texture("data/textures/defaults/albedo.dds"),
@@ -329,9 +330,10 @@ namespace put
                 put::load_texture("data/textures/defaults/spec.dds"),
                 put::load_texture("data/textures/defaults/black.dds")
             };
+            */
             
-            for( u32 map = 0; map < SN_NUM_TEXTURES; ++map )
-                p_mat->texture_id[map] = default_maps[map];
+            //for( u32 map = 0; map < SN_NUM_TEXTURES; ++map )
+                //p_mat->texture_id[map] = default_maps[map];
             
             for (u32 map = 0; map < num_maps; ++map)
             {
