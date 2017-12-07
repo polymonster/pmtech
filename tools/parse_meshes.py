@@ -384,6 +384,10 @@ def parse_geometry(node, lib_controllers):
         geom_container.materials = []
         geom_container.controller = None
 
+        helpers.output_file.geometry_names.clear()
+        helpers.output_file.geometry_sizes.clear()
+        helpers.output_file.geometry.clear()
+
         if lib_controllers != None:
             geom_container.controller = parse_controller(lib_controllers, geom_container.name)
 
@@ -481,7 +485,6 @@ def write_geometry_file(geom_instance):
 
         for m in mesh_data:
             geometry_data.append(m)
-
 
     helpers.output_file.geometry_names.append(geom_instance.name)
     helpers.output_file.geometry.append(geometry_data)

@@ -143,6 +143,7 @@ if len(sys.argv) <= 1:
 
     add_all = False
 
+    all_value = 8
     if input_val == all_value:
         add_all = True
 
