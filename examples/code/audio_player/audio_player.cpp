@@ -9,6 +9,7 @@
 #include "debug_render.h"
 #include "audio.h"
 #include "dev_ui.h"
+#include <vector>
 
 pen::window_creation_params pen_window
 {

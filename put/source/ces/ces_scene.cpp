@@ -287,6 +287,9 @@ namespace put
                     {
                         auto* anim = get_animation_resource( controller.current_animation );
                         
+                        if(!anim)
+                            continue;
+                        
                         if(controller.play_flags == 1)
                             controller.current_time += dt*0.1f;
                         
@@ -555,6 +558,9 @@ namespace put
                     
                     anim_handle h = load_pma(anim_name.c_str());
                     
+                    if( !is_valid(h) )
+                        dev_ui::log_level(dev_ui::ERROR, "[error] animation - cannot find pma file: %s", anim_name.c_str() );
+                    
                     scene->anim_controller[n].handles.push_back( h );
                 }
             }
@@ -597,6 +603,11 @@ namespace put
                         if( gr->p_skin)
                             instantiate_anim_controller( scene, n );
                     }
+                    else
+                    {
+                        dev_ui::log_level(dev_ui::ERROR, "[error] geometry - cannot find pmm file: %s", filename.c_str() );
+                        scene->entities[n] &= ~CMP_GEOMETRY;
+                    }
                 }
             }
             
@@ -629,6 +640,11 @@ namespace put
                         scene->id_material[n] = material_hash;
                         
                         instantiate_material(mr, scene, n);
+                    }
+                    else
+                    {
+                        dev_ui::log_level(dev_ui::ERROR, "[error] material - cannot find pmm file: %s", filename.c_str() );
+                        scene->entities[n] &= ~CMP_MATERIAL;
                     }
                 }
             }

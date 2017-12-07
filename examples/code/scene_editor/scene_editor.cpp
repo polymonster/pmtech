@@ -96,7 +96,10 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pmfx::show_dev_ui();
         
         if( enable_dev_ui )
+        {
+            put::dev_ui::console();
             put::dev_ui::render();
+        }
         
         if( pen::input_is_key_held(PENK_MENU) && pen::input_is_key_pressed(PENK_D) )
             enable_dev_ui = !enable_dev_ui;
