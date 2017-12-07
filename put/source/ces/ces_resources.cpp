@@ -247,6 +247,8 @@ namespace put
                 
                 p_reader += num_collision_floats;
                 
+                size_t offset = (size_t)p_reader - (size_t)data;
+                
                 k_geometry_resources.push_back(p_geometry);
             }
         }
@@ -474,6 +476,7 @@ namespace put
             if( err != PEN_ERR_OK || model_file_size == 0 )
             {
                 //TODO error dialog
+                dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] load pmm - failed to find file: %s", filename );
                 return;
             }
             
@@ -537,6 +540,9 @@ namespace put
             {
                 for (u32 g = 0; g < num_geom; ++g)
                 {
+                    if( g == 1 )
+                        geom_offsets[g] = geom_offsets[0] + 2736;
+                    
                     u32* p_geom_data = (u32*)(p_data_start + geom_offsets[g]);
                     load_geometry_resource( filename, geometry_names[g].c_str(), (const c8*)p_geom_data );
                 }
