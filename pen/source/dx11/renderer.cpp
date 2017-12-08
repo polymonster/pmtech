@@ -649,7 +649,8 @@ namespace pen
             _tcp.width = pen_window.pen_window / _tcp.height;
             _tcp.height = pen_window.height / _tcp.height;
             
-            k_managed_render_targets.push_back({resource_index, tcp});
+            if(replace_resource_index != -1)
+                k_managed_render_targets.push_back({resource_index, tcp});
         }
         
         if (tcp.sample_count > 1)
