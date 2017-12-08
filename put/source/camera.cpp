@@ -10,7 +10,6 @@ namespace put
 {
 	void camera_create_perspective( camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane )
 	{
-		//calculate the width and height of the near and far planes
 		vec2f near_size;
 		vec2f far_size;
 
@@ -19,6 +18,11 @@ namespace put
 
 		far_size.y = 2.0f * tan( put::maths::deg_to_rad( fov_degrees ) / 2.0f ) * far_plane;
 		far_size.x = far_size.y * aspect_ratio;
+        
+        p_camera->fov = fov_degrees;
+        p_camera->aspect = aspect_ratio;
+        p_camera->near = near_plane;
+        p_camera->far = far_plane;
 
         p_camera->proj = mat4::create_perspective_projection
 		(
@@ -117,7 +121,7 @@ namespace put
 	void camera_update_modelling( camera* p_camera )
 	{
 		mouse_state ms = input_get_mouse_state();
-
+        
 		//mouse drag
 		static vec2f prev_mpos = vec2f((f32)ms.x, (f32)ms.y);
 		vec2f current_mouse = vec2f((f32)ms.x, (f32)ms.y);
@@ -164,6 +168,10 @@ namespace put
 
 	void camera_update_shader_constants( camera* p_camera, bool viewport_correction )
 	{
+        f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
+        if( cur_aspect != p_camera->aspect )
+            camera_create_perspective(p_camera, p_camera->fov, cur_aspect, p_camera->near, p_camera->far );
+        
         if( viewport_correction && !(p_camera->flags & CF_VP_CORRECTED) )
         {
             p_camera->flags |= CF_VP_CORRECTED;

@@ -376,6 +376,11 @@ def parse_controller(controller_root,geom_name):
     return None
 
 def parse_geometry(node, lib_controllers):
+
+    helpers.output_file.geometry_names.clear()
+    helpers.output_file.geometry_sizes.clear()
+    helpers.output_file.geometry.clear()
+
     for geom in node.iter(schema + 'geometry'):
         geom_container = geometry_container()
         geom_container.id = geom.get("id")
@@ -383,10 +388,6 @@ def parse_geometry(node, lib_controllers):
         geom_container.meshes = []
         geom_container.materials = []
         geom_container.controller = None
-
-        helpers.output_file.geometry_names.clear()
-        helpers.output_file.geometry_sizes.clear()
-        helpers.output_file.geometry.clear()
 
         if lib_controllers != None:
             geom_container.controller = parse_controller(lib_controllers, geom_container.name)

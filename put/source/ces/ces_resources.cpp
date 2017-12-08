@@ -322,7 +322,6 @@ namespace put
             u32 num_maps = *p_reader++;
             
             //clear all maps to invalid
-            /*
             static const u32 default_maps[] =
             {
                 put::load_texture("data/textures/defaults/albedo.dds"),
@@ -330,10 +329,9 @@ namespace put
                 put::load_texture("data/textures/defaults/spec.dds"),
                 put::load_texture("data/textures/defaults/black.dds")
             };
-            */
             
-            //for( u32 map = 0; map < SN_NUM_TEXTURES; ++map )
-                //p_mat->texture_id[map] = default_maps[map];
+            for( u32 map = 0; map < SN_NUM_TEXTURES; ++map )
+                p_mat->texture_id[map] = default_maps[map];
             
             for (u32 map = 0; map < num_maps; ++map)
             {
@@ -540,9 +538,6 @@ namespace put
             {
                 for (u32 g = 0; g < num_geom; ++g)
                 {
-                    if( g == 1 )
-                        geom_offsets[g] = geom_offsets[0] + 2736;
-                    
                     u32* p_geom_data = (u32*)(p_data_start + geom_offsets[g]);
                     load_geometry_resource( filename, geometry_names[g].c_str(), (const c8*)p_geom_data );
                 }
@@ -562,7 +557,7 @@ namespace put
             //load scene nodes
             for (u32 n = 0; n < num_import_nodes; ++n)
             {
-                u32 node_type = *p_u32reader++;
+                p_u32reader++; //e_node type
                 
                 Str node_name = read_parsable_string(&p_u32reader);
                 Str geometry_name = read_parsable_string(&p_u32reader);
@@ -750,6 +745,10 @@ namespace put
                             {
                                 scene->entities[n] |= CMP_MATERIAL;
                             }
+                        }
+                        else
+                        {
+                            put::dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] geometry - missing file : %s", geometry_name.c_str() );
                         }
                     }
                 }

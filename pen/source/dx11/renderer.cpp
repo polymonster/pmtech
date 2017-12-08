@@ -166,6 +166,13 @@ namespace pen
 		
 		query_pool[index].asigned_flag = 0;
 	}
+    
+    struct managed_rt
+    {
+        u32 resource_index;
+        texture_creation_params tcp;
+    };
+    std::vector<managed_rt> k_managed_render_targets;
 
 	context_state			 g_context;
 
@@ -523,7 +530,7 @@ namespace pen
         //create an empty texture
         D3D11_TEXTURE2D_DESC texture_desc;
         pen::memory_cpy( &texture_desc, ( void* )&tcp, sizeof( D3D11_TEXTURE2D_DESC ) );
-
+        
         u32 array_size = texture_desc.ArraySize;
         bool texture2dms = texture_desc.SampleDesc.Count > 1;
 
@@ -635,17 +642,27 @@ namespace pen
         //format required for resolve
         resource_pool[resource_index].render_target->format = (DXGI_FORMAT)tcp.format;
 
+        texture_creation_params _tcp = tcp;
+        
+        if( _tcp.width == -1 )
+        {
+            _tcp.width = pen_window.pen_window / _tcp.height;
+            _tcp.height = pen_window.height / _tcp.height;
+            
+            k_managed_render_targets.push_back({resource_index, tcp});
+        }
+        
         if (tcp.sample_count > 1)
         {
             //create msaa 
-            renderer_create_render_target_multi( tcp, &resource_pool[resource_index].render_target->tex_msaa, resource_pool[resource_index].depth_target->ds_msaa, resource_pool[resource_index].render_target->rt_msaa );
+            renderer_create_render_target_multi( _tcp, &resource_pool[resource_index].render_target->tex_msaa, resource_pool[resource_index].depth_target->ds_msaa, resource_pool[resource_index].render_target->rt_msaa );
         }
 
         //always create resolve surface
-        texture_creation_params resolve_tcp = tcp;
+        texture_creation_params resolve_tcp = _tcp;
         resolve_tcp.sample_count = 1;
         renderer_create_render_target_multi( resolve_tcp, &resource_pool[resource_index].render_target->tex, resource_pool[resource_index].depth_target->ds, resource_pool[resource_index].render_target->rt );
-
+        
 		return resource_index;
 	}
 

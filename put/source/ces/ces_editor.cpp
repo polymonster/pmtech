@@ -360,29 +360,45 @@ namespace put
             }
             dev_ui::set_tooltip("Selection List");
             
-            if( put::dev_ui::state_button(ICON_FA_MOUSE_POINTER, k_transform_mode == TRANSFORM_SELECT ) )
+            static const c8* transform_icons[] =
             {
-                k_transform_mode = TRANSFORM_SELECT;
-            }
-            dev_ui::set_tooltip("Select Mode");
+                ICON_FA_MOUSE_POINTER,
+                ICON_FA_ARROWS,
+                ICON_FA_REPEAT,
+                ICON_FA_EXPAND
+            };
+            static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
             
-            if( put::dev_ui::state_button(ICON_FA_ARROWS, k_transform_mode == TRANSFORM_TRANSLATE ) )
+            static const c8* transform_tooltip[] =
             {
-                k_transform_mode = TRANSFORM_TRANSLATE;
-            }
-            dev_ui::set_tooltip("Translate Mode");
+                "Select Mode",
+                "Translate Mode",
+                "Rotate Mode",
+                "Scale Mode"
+            };
+            static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
             
-            if( put::dev_ui::state_button(ICON_FA_REPEAT, k_transform_mode == TRANSFORM_ROTATE ) )
+            static u32 short_cut_key[] =
             {
-                k_transform_mode = TRANSFORM_ROTATE;
-            }
-            dev_ui::set_tooltip("Rotate Mode");
+                PENK_Q, PENK_W, PENK_E, PENK_R
+            };
+            static_assert(PEN_ARRAY_SIZE(short_cut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
             
-            if( put::dev_ui::state_button(ICON_FA_EXPAND, k_transform_mode == TRANSFORM_SCALE ) )
+            for( s32 i = 0; i < num_transform_icons; ++i )
             {
-                k_transform_mode = TRANSFORM_SCALE;
+                u32 mode = TRANSFORM_SELECT + i;
+                if( pen::input_is_key_pressed(short_cut_key[i]))
+                    k_transform_mode = (transform_mode)mode;
+                
+                if( put::dev_ui::state_button(transform_icons[i], k_transform_mode == mode ) )
+                {
+                    if( k_transform_mode == mode )
+                        k_transform_mode = TRANSFORM_NONE;
+                    else
+                        k_transform_mode = (transform_mode)mode;
+                }
+                put::dev_ui::set_tooltip(transform_tooltip[i]);
             }
-            dev_ui::set_tooltip("Scale Mode");
             
             ImGui::Separator();
             
@@ -417,6 +433,8 @@ namespace put
                 if( ImGui::Begin("Camera", &open_camera_menu) )
                 {
                     ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
+                    
+                    
                     
                     ImGui::End();
                 }
@@ -693,11 +711,12 @@ namespace put
                     
                     if (scene->material_names[selected_index].c_str())
                     {
+                        u32 count = 0;
                         for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
                         {
                             if (scene->materials[selected_index].texture_id[t] > 0)
                             {
-                                if (t > 0)
+                                if( count++ > 0)
                                     ImGui::SameLine();
                                 
                                 ImGui::Image(&scene->materials[selected_index].texture_id[t], ImVec2(128, 128));
@@ -758,7 +777,7 @@ namespace put
         
         void render_scene_editor( const scene_view& view )
         {
-                vec2i vpi = vec2i( view.viewport->width, view.viewport->height );
+            vec2i vpi = vec2i( view.viewport->width, view.viewport->height );
             
             entity_scene* scene = view.scene;
             

@@ -54,8 +54,20 @@ def parse_library_images(library_node):
         for file_node in img_node.iter(schema+'init_from'):
 
             corrected = file_node.text.replace('\\', '/')
-            corrected = corrected.replace("/models/images/", "/textures/")
-            corrected = corrected.replace("file://", "assets/textures/")
+
+            identifier = "assets/textures/"
+            texture_src = corrected.find(identifier)
+            if texture_src != -1:
+                texture_sub_dir = corrected[texture_src + len(identifier):len(corrected)]
+                texture_bin = os.path.join("data", "textures", texture_sub_dir)
+                lib_img.filename = texture_bin
+                print(texture_bin)
+                image_list.append(lib_img)
+                break
+
+            else:
+                corrected = corrected.replace("/models/images/", "/textures/")
+                corrected = corrected.replace("file://", "assets/textures/")
 
             split_dirs = corrected.split('/')
             filename_split = len(split_dirs)-1
