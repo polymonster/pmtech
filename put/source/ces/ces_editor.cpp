@@ -157,7 +157,7 @@ namespace put
         {
             u32 result;
             a_u8 ready;
-            u32 offset = 0;
+			u32 x, y;
         };
         static picking_info k_picking_info;
         
@@ -180,10 +180,11 @@ namespace put
             }
         }
         
-        void picking_read_back( void* p_data )
+		void picking_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size )
         {
-            k_picking_info.result = *((u32*)(((u8*)p_data) + k_picking_info.offset));
-            k_picking_info.ready = 1;
+            k_picking_info.result = *((u32*)(((u8*)p_data) + k_picking_info.y * row_pitch + k_picking_info.x * block_size));
+            
+			k_picking_info.ready = 1;
         }
         
         enum picking_mode : u32
@@ -257,22 +258,23 @@ namespace put
                         
                         u32 pitch = (u32)w*4;
                         u32 data_size = (u32)h*pitch;
-                        c8* p_data = new c8[data_size];
                         
                         pen::resource_read_back_params rrbp =
                         {
                             rt->handle,
-                            (void*)p_data,
                             rt->format,
-                            data_size,
+							pitch,
+							data_size,
+							4,
                             &picking_read_back
                         };
                         
                         pen::renderer_read_back_resource( rrbp );
                         
                         k_picking_info.ready = 0;
-                        k_picking_info.offset = ms.y * pitch + ms.x * 4;
-                        
+						k_picking_info.x = ms.x;
+						k_picking_info.y = ms.y;
+
                         picking_state = 1;
                     }
                 }

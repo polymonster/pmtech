@@ -209,10 +209,11 @@ namespace pen
     struct resource_read_back_params
     {
         u32 resource_index;
-        void* p_data;
         u32 format;
-        u32 data_size;
-        void(*call_back_function)(void*);
+		u32 row_pitch;
+		u32 depth_pitch;
+		u32 block_size;
+        void(*call_back_function)(void*, u32, u32, u32);
     };
 
 	//--------------------------------------------------------------------------------------

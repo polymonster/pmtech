@@ -128,7 +128,7 @@ namespace put
             {"rgba16f", PEN_TEX_FORMAT_R16G16B16A16_FLOAT,  16*4,   PEN_BIND_RENDER_TARGET },
             {"r32f",    PEN_TEX_FORMAT_R32_FLOAT,           32,     PEN_BIND_RENDER_TARGET },
             {"r16f",    PEN_TEX_FORMAT_R16_FLOAT,           16,     PEN_BIND_RENDER_TARGET },
-            {"r32u",    PEN_TEX_FORMAT_R32_UINT,            16,     PEN_BIND_RENDER_TARGET },
+            {"r32u",    PEN_TEX_FORMAT_R32_UINT,            32,     PEN_BIND_RENDER_TARGET },
             {"d24s8",   PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL }
         };
         s32 num_formats = (s32)sizeof(rt_format)/sizeof(format_info);
@@ -1115,7 +1115,7 @@ namespace put
             
             if( open_renderer )
             {
-                if( ImGui::Begin("Render Controller", &open_renderer ) )
+                if( ImGui::Begin("Render Controller", &open_renderer, ImGuiWindowFlags_AlwaysAutoResize ) )
                 {
                     static s32 display_ratio = 4;
                     ImGui::InputInt("Buffer Ratio", &display_ratio);

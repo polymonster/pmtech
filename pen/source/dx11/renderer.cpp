@@ -915,7 +915,7 @@ namespace pen
 
 			g_immediate_context->Map(rt->tex_read_back.texture, 0, D3D11_MAP_READ, 0, &mapped_res);
 
-			rrbp.call_back_function((void*)mapped_res.pData);
+			rrbp.call_back_function((void*)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size );
 
 			g_immediate_context->Unmap(rt->tex_read_back.texture, 0);
 		}
