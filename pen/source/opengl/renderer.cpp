@@ -338,6 +338,10 @@ namespace pen
             k_resize_counter = 0;
             g_window_resize = 0;
         }
+        else
+        {
+            k_resize_counter++;
+        }
         
         if( k_resize_counter > 5 )
         {

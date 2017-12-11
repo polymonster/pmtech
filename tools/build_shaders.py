@@ -139,12 +139,25 @@ def generate_shader_info(
 
     shader_info["texture_samplers"] = []
     texture_samplers_split = parse_and_split_block(texture_samplers)
-    for i in range(0, len(texture_samplers_split), 3):
+    i = 0
+    while i < len(texture_samplers_split):
+        offset = i
+        tex_type = texture_samplers_split[i+0]
+        if tex_type == "TEXTURE_2DMS":
+            data_type = texture_samplers_split[i+1]
+            fragments = texture_samplers_split[i+2]
+            offset = i+2
+        else:
+            data_type = "float4"
+            fragments = 1
         sampler_desc = {
-            "name": texture_samplers_split[i+1],
-            "type": texture_samplers_split[i+0],
-            "location": int(texture_samplers_split[i+2])
+            "name": texture_samplers_split[offset+1],
+            "data_type": data_type,
+            "fragments": fragments,
+            "type": tex_type,
+            "location": int(texture_samplers_split[offset+2])
         }
+        i = offset+3
         shader_info["texture_samplers"].append(sampler_desc)
 
     shader_info["cbuffers"] = []
