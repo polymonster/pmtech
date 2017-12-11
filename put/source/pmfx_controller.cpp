@@ -642,6 +642,7 @@ namespace put
             //add 2 defaults
             render_target main_colour;
             main_colour.id_name = ID_MAIN_COLOUR;
+			main_colour.name = "Backbuffer Colour";
             main_colour.ratio = 1;
             main_colour.format = PEN_TEX_FORMAT_RGBA8_UNORM;
             main_colour.handle = PEN_BACK_BUFFER_COLOUR;
@@ -651,6 +652,7 @@ namespace put
             
             render_target main_depth;
             main_depth.id_name = ID_MAIN_DEPTH;
+			main_depth.name = "Backbuffer Depth";
             main_depth.ratio = 1;
             main_depth.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
             main_depth.handle = PEN_BACK_BUFFER_DEPTH;
@@ -727,6 +729,13 @@ namespace put
                         
                         //flags
                         tcp.cpu_access_flags = 0;
+
+						if (r["cpu_read"].as_bool(false))
+							tcp.cpu_access_flags |= PEN_CPU_ACCESS_READ;
+
+						if (r["cpu_write"].as_bool(false))
+							tcp.cpu_access_flags |= PEN_CPU_ACCESS_WRITE;
+
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
                         
                         //msaa
@@ -1114,10 +1123,7 @@ namespace put
                     if( ImGui::CollapsingHeader("Render Targets") )
                     {
                         for( auto& rt : k_render_targets )
-                        {
-                            if(rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH )
-                                continue;
-                            
+                        {                            
                             if( rt.samples > 1 )
                             {
                                 pen::renderer_resolve_target(rt.handle);
@@ -1126,7 +1132,8 @@ namespace put
                             f32 w, h;
                             get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
                             
-                            ImGui::Image((void*)&rt.handle, ImVec2(w / display_ratio, h / display_ratio));
+							bool unsupported_display = rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH;
+							unsupported_display |= rt.format == PEN_TEX_FORMAT_R32_UINT;
                             
                             const c8* format_str = nullptr;
                             s32 byte_size = 0;
@@ -1152,6 +1159,9 @@ namespace put
                             }
                             
                             ImGui::Text("Size: %f (mb)", (f32)image_size / 1024.0f / 1024.0f );
+
+							if (!unsupported_display)
+								ImGui::Image((void*)&rt.handle, ImVec2(w / display_ratio, h / display_ratio));
                             
                             ImGui::Separator();
                         }

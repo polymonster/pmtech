@@ -609,7 +609,7 @@ namespace pen
 
 		//initialise renderer
 		direct::renderer_initialise(job_params->user_data);
-
+		
 		renderer_wait_for_jobs();
 
 		return PEN_THREAD_OK;
@@ -1059,6 +1059,11 @@ namespace pen
 
 	void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
 	{
+		if (buffer_index == 44)
+		{
+			u32 a = 0;
+		}
+
 		cmd_buffer[put_pos].command_index = CMD_UPDATE_BUFFER;
 
 		cmd_buffer[put_pos].update_buffer.buffer_index = buffer_index;

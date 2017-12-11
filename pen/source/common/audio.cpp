@@ -107,19 +107,19 @@ namespace pen
 
     void direct::audio_system_initialise()
     {
+		//init fmod
+		FMOD_RESULT result;
+
+		result = FMOD::System_Create(&g_sound_system);
+
+		result = g_sound_system->init(MAX_CHANNELS, FMOD_INIT_NORMAL, NULL);
+	
         //clear resource array to 0
         pen::memory_zero(g_audio_resources, sizeof(g_audio_resources));
 
         //resource index 0 is used as a null resource
-        g_audio_resources->assigned_flag |= DIRECT_RESOURCE | DEFER_RESOURCE;
+        g_audio_resources[0].assigned_flag |= DIRECT_RESOURCE | DEFER_RESOURCE;
 
-        //init fmod
-        FMOD_RESULT result;
-
-        FMOD::System_Create(&g_sound_system);
-
-        result = g_sound_system->init( MAX_CHANNELS, FMOD_INIT_NORMAL, NULL );
-        
         //set resources to 0
         pen::memory_set(g_resource_states, 0, sizeof(g_resource_states));
         pen::memory_set(g_audio_resources, 0, sizeof(g_audio_resources));

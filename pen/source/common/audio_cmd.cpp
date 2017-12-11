@@ -144,10 +144,10 @@ namespace pen
         job_thread_params* job_params = (job_thread_params*)params;
         p_audio_job_thread_info = job_params->job_thread_info;
         
-        direct::audio_system_initialise();
+		direct::audio_system_initialise();
 
-        //allow main thread to continue now we are initialised
-        pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
+		//allow main thread to continue now we are initialised
+		pen::threads_semaphore_signal(p_audio_job_thread_info->p_sem_continue, 1);
 
         while( 1 )
         {
