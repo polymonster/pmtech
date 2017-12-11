@@ -140,8 +140,7 @@ namespace put
             
             vb_2d[buffer_index] = pen::renderer_create_buffer(bcp);
             
-            for( s32 i = 0; i < VB_NUM; ++i )
-                debug_2d_buffers[i] = new vertex_debug_2d[buffer_2d_size_in_verts[buffer_index]];
+            debug_2d_buffers[buffer_index] = new vertex_debug_2d[buffer_2d_size_in_verts[buffer_index]];
             
             if( prev_buffer )
             {

@@ -13,8 +13,12 @@ namespace put
 {
 	namespace dev_ui
 	{
+		class app_console;
+
         static pen::json k_program_preferences;
 		static Str k_program_prefs_filename;
+		static app_console* kp_dev_console;
+		bool k_console_open = false;
 
 		void load_program_preferences()
 		{
@@ -57,12 +61,7 @@ namespace put
 
             save_program_preferences();
 		}
-        
-        void util_init( )
-        {
-            load_program_preferences();
-        }
-        
+                
         void set_program_preference( const c8* name, Str val )
         {
             k_program_preferences.set(name, val);
@@ -689,15 +688,12 @@ namespace put
                 return 0;
             }
         };
-        
-        static app_console k_dev_console;
-        bool k_console_open = false;
-        
+                
         void console()
         {
             if( k_console_open )
             {
-                k_dev_console.Draw("Console", &k_console_open);
+				kp_dev_console->Draw("Console", &k_console_open);
             }
         }
         
@@ -710,7 +706,7 @@ namespace put
         {
             va_list args;
             va_start(args, fmt);
-            k_dev_console.AddLogV(0, fmt, args);
+			kp_dev_console->AddLogV(0, fmt, args);
             va_end(args);
         }
         
@@ -718,11 +714,17 @@ namespace put
         {
             va_list args;
             va_start(args, fmt);
-            k_dev_console.AddLogV(level, fmt, args);
+			kp_dev_console->AddLogV(level, fmt, args);
             va_end(args);
             
             if(level > 0)
                 k_console_open = true;
         }
+
+		void util_init()
+		{
+			load_program_preferences();
+			kp_dev_console = new app_console();
+		}
 	}
 }

@@ -11,6 +11,8 @@
 #include "timer.h"
 #include "pen.h"
 
+#include <vector>
+
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
@@ -646,7 +648,7 @@ namespace pen
         
         if( _tcp.width == -1 )
         {
-            _tcp.width = pen_window.pen_window / _tcp.height;
+            _tcp.width = pen_window.width / _tcp.height;
             _tcp.height = pen_window.height / _tcp.height;
             
             if(replace_resource_index != -1)
@@ -670,12 +672,13 @@ namespace pen
 	void direct::renderer_set_targets( const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face )
 	{
 		g_context.active_depth_target = depth_target;
+		g_context.num_active_colour_targets = num_colour_targets;
 
 		u32 num_views = num_colour_targets;
         ID3D11RenderTargetView* colour_rtv[ 8 ] = { 0 };
         for( s32 i = 0; i < num_colour_targets; ++i )
         {
-            u32 colour_target = colour_targets[0];
+            u32 colour_target = colour_targets[i];
             g_context.active_colour_target[i] = colour_target;
             
             if (colour_target != 0)
@@ -851,7 +854,14 @@ namespace pen
     
     void direct::renderer_read_back_resource( const resource_read_back_params& rrbp )
     {
+		D3D11_MAPPED_SUBRESOURCE mapped_res = { 0 };
+
         //stubbed
+		//g_immediate_context->Map(resource_pool[rrbp.resource_index].,->tex, 0, D3D11_MAP_READ, 0, &mapped_res);
+
+		//rrbp.call_back_function((void*)mapped_res.pData);
+
+		//g_immediate_context->Unmap(resource_pool[rrbp.resource_index].generic_buffer, 0);
     }
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
@@ -1309,7 +1319,7 @@ namespace pen
     
     bool renderer_viewport_vup( )
     {
-        return true;
+        return false;
     }
 }
 

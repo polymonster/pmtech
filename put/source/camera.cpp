@@ -21,8 +21,8 @@ namespace put
         
         p_camera->fov = fov_degrees;
         p_camera->aspect = aspect_ratio;
-        p_camera->near = near_plane;
-        p_camera->far = far_plane;
+        p_camera->near_plane = near_plane;
+        p_camera->far_plane = far_plane;
 
         p_camera->proj = mat4::create_perspective_projection
 		(
@@ -170,7 +170,7 @@ namespace put
 	{
         f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
         if( cur_aspect != p_camera->aspect )
-            camera_create_perspective(p_camera, p_camera->fov, cur_aspect, p_camera->near, p_camera->far );
+            camera_create_perspective(p_camera, p_camera->fov, cur_aspect, p_camera->near_plane, p_camera->far_plane );
         
         if( viewport_correction && !(p_camera->flags & CF_VP_CORRECTED) )
         {

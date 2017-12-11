@@ -138,6 +138,7 @@ namespace pen
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
                     result.u = strtol( tok_str, NULL, 16 );
                     pen::memory_free( tok_str );
+					break;
                 }
                 case JSON_F32:
                 {

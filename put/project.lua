@@ -27,9 +27,9 @@ project "put"
 	}
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
-		systemversion("8.1:10.1")
+		systemversion("10.0:10.1")
 	end
-		
+			
 	files 
 	{ 
 		"include\\**.h", "source\\**.cpp", 

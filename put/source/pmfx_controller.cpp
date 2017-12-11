@@ -571,17 +571,17 @@ namespace put
                 {
                     for( s32 i = 0; i < write_mask.size(); ++i )
                     {
-                        masks.push_back(write_mask[i].as_u32_hex());
+                        masks.push_back(write_mask[i].as_u8_hex());
                     }
                 }
                 else
                 {
-                    masks.push_back(write_mask.as_u8_hex(0xff));
+                    masks.push_back(write_mask.as_u8_hex(0x0F));
                 }
             }
             
             if( masks.size() == 0 )
-                masks.push_back(0xff);
+                masks.push_back(0x0F);
                 
             bool multi_blend = rtb.size() > 1 || write_mask.size() > 1;
             u32 num_rt = std::max<u32>(rtb.size(), write_mask.size());
@@ -608,7 +608,7 @@ namespace put
             {
                 bcp.render_targets[i] = rtb[i];
                 bcp.render_targets[i].render_target_write_mask = masks[i];
-            }
+			}
             
             pen::hash_murmur hm;
             hm.begin();

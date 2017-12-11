@@ -25,10 +25,10 @@ namespace put
 		vec3f pos = vec3f::zero();
 		vec2f rot = vec2f( -0.5f, 0.5f );
         
-        f32 fov;
+		f32 fov = 0.0f;
         f32 aspect;
-        f32 near;
-        f32 far;
+        f32 near_plane;
+        f32 far_plane;
 
 		vec3f focus = vec3f::zero();
 		f32	  zoom = 60.0f;
