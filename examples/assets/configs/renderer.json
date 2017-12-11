@@ -96,6 +96,7 @@
 		{
 			size: equal,
 			format: r32u,
+			cpu_read: true
 		},
 		
 		picking_ds:
