@@ -311,11 +311,11 @@ namespace put
 			return v1.x * v2.x + v1.y * v2.y;
 		}
 
-		f32 distanceSq(vec2f p1, vec2f p2);
+		f32     distance_squared(vec2f p1, vec2f p2);
 
 		f32     distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
 		vec3f   closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
-        
+                
 #if 0
 		//todo - move the primitves over and port these functions from old engine.
 		void get_axes_from_OBB(OBB3D b1, vec3f *axes);

@@ -153,7 +153,7 @@
 			technique: picking,
 			scene: main_scene,
 			camera: model_viewer_camera,
-			scene_views:["ces_render_scene", "ces_render_editor"]
+			scene_views:["ces_render_scene"]
 		},
 		
 		gbuffer_view:

@@ -325,15 +325,25 @@ namespace pen
         glClear( rc.clear_state.flags );
 	}
 
+    static u32 k_resize_counter = 0;
+    static bool k_needs_resize = false;
+    
 	void direct::renderer_present( )
 	{
         pen_gl_swap_buffers();
 
         if( g_window_resize )
         {
-            renderer_resize_managed_targets( );
-            
+            k_needs_resize = true;
+            k_resize_counter = 0;
             g_window_resize = 0;
+        }
+        
+        if( k_resize_counter > 5 )
+        {
+            k_resize_counter = 0;
+            renderer_resize_managed_targets( );
+            k_needs_resize = false;
         }
 	}
     

@@ -86,7 +86,7 @@ f32 put::maths::distance(vec3f p1, vec3f p2)
     return (f32) d;
 }
 
-f32 put::maths::distanceSq(vec2f p1, vec2f p2)
+f32 put::maths::distance_squared(vec2f p1, vec2f p2)
 {
     f32 d =  (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
     return  d;
@@ -340,41 +340,6 @@ f32 put::maths::angle_between_vectors(vec3f v1,vec3f v2)
     
     //return the angle in radians
     return angle;
-}
-
-f32 put::maths::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
-{
-    //create a vector from line start to the point.
-    vec3f v1 = p - l1;
-    
-    //get the normalised direction vector of the line
-    vec3f v2 = normalise(l2 - l1);
-    
-    //use the distance formula to get the length of the line
-    f32 d = distance(l1, l2);
-    
-    //using dot product project v1 onto v2
-    f32 t = dot(v2, v1);
-    
-    t /= d;
-    
-    if( clamp )
-    {
-        //if the points at either end of the line
-        //the point is before the line start
-        if (t <= 0 )
-        {
-            return 0.0f;
-        }
-        
-        //the point is after the line end
-        if (t >= 1.0f )
-        {
-            return 1.0f;
-        }
-    }
-    
-    return t;
 }
 
 vec3f put::maths::closest_point_on_AABB3D(AABB3D b1, vec3f p)
