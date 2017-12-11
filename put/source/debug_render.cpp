@@ -365,7 +365,7 @@ namespace put
             vec3f right = mat.get_right();
             vec3f fwd = mat.get_fwd();
             
-            vec3f axis[4] =
+            static vec3f axis[4] =
             {
                 vec3f::zero(),
                 mat.get_right(),
@@ -373,7 +373,7 @@ namespace put
                 mat.get_fwd()
             };
             
-            vec4f colours[4] =
+            static vec4f colours[4] =
             {
                 vec4f::one(),
                 vec4f::red(),
@@ -395,7 +395,7 @@ namespace put
                 
                 vec2f v1 = put::maths::normalise( p2 - base );
                 
-                vec4f col = colours[i+1] * 0.5f;
+                vec4f col = colours[i+1];
                 
                 if( selected_axis & (1<<i) )
                     col = vec4f::one();

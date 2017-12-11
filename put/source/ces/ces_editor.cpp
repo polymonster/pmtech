@@ -890,7 +890,13 @@ namespace put
                 
                 vec3f pp = put::maths::project(pos, view.camera->view, view.camera->proj, vpi );
                 
-                f32 d = pp.z * 10.0;
+                mat4 res = view.camera->proj * view.camera->view;
+                
+                f32 w = 1.0;
+                vec3f screen_pos = res.transform_vector(pos, &w);
+                
+                f32 d = fabs(screen_pos.z) * 0.1f;
+                
                 widget_points[0] = pos;
                 widget_points[1] = pos + vec3f::unit_x() * d;
                 widget_points[2] = pos + vec3f::unit_y() * d;
@@ -941,22 +947,53 @@ namespace put
                     ct[i] = put::maths::distance_on_line(pp[0], pp[i+1], mousev3, false );
                 }
                 
-                if( selected_axis != 0 )
+                static vec3f translation_axis[] =
+                {
+                    vec3f::unit_x(),
+                    vec3f::unit_y(),
+                    vec3f::unit_z(),
+                };
+                
+                vec3f r0 = put::maths::unproject(vec3f(mousev3.x, mousev3.y, 0.0f), view.camera->view, view.camera->proj, vpi );
+                vec3f r1 = put::maths::unproject(vec3f(mousev3.x, mousev3.y, 1.0f), view.camera->view, view.camera->proj, vpi );
+                vec3f vr = put::maths::normalise(r1 - r0);
+                
+                static vec3f pre_click_axis_pos[3];
+                
+                vec3f axis_pos[3];
+                for( s32 i = 0; i < 3; ++i )
+                {
+                    static vec3f box_size = vec3f( 0.5, 0.5, 0.5 );
+                    
+                    vec3f plane_normal = maths::cross(translation_axis[i], view.camera->view.get_up() );
+                    
+                    axis_pos[i] = put::maths::ray_vs_plane(vr, r0, plane_normal, widget_points[0]);
+                    dbg::add_aabb(axis_pos[i] - box_size, axis_pos[i] + box_size );
+                    
+                    if(!ms.buttons[PEN_MOUSE_L])
+                    {
+                        pre_click_axis_pos[i] = axis_pos[i];
+                    }
+                    
+                    dbg::add_aabb(pre_click_axis_pos[i] - box_size, pre_click_axis_pos[i] + box_size, vec4f::magenta() );
+                    
+                    vec3f line = (axis_pos[i] - pre_click_axis_pos[i]);
+                    
+                    vec3f line_x = line * translation_axis[i];
+                    vec3f line_xx = vec3f(line.x, 0.0, 0.0 );
+                    
+                    dbg::add_line(pre_click_axis_pos[i], pre_click_axis_pos[i] + vec3f(line.x, 0.0, 0.0 ), vec4f::cyan() );
+                }
+                
+                if( selected_axis != 0 && ms.buttons[PEN_MOUSE_L] )
                 {
                     vec3f move_axis = vec3f::zero();
                     
-                    static vec3f translation_axis[] =
-                    {
-                        vec3f::unit_x(),
-                        vec3f::unit_y(),
-                        vec3f::unit_z(),
-                    };
-
                     for( s32 i = 0; i < 3; ++i )
                     {
-                        if( selected_axis & (1<<i) && ms.buttons[PEN_MOUSE_L] )
+                        if( selected_axis & (1<<i) )
                         {
-                            move_axis += translation_axis[i] * (ct[i]-ctd[i]) * widget_d;
+                            move_axis += (axis_pos[i] - pre_click_axis_pos[i]) * translation_axis[i];
                         }
                     }
 
@@ -967,9 +1004,8 @@ namespace put
                         if( k_transform_mode == TRANSFORM_TRANSLATE )
                         {
                             vec3f cur_pos = local.get_translation();
-                            vec3f offset = widget_points[0] - cur_pos;
-
-                            local.set_translation(move_axis + cur_pos);
+   
+                            local.set_translation(move_axis);
                         }
                         else if( k_transform_mode == TRANSFORM_SCALE )
                         {
