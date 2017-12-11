@@ -109,6 +109,7 @@
 		{
 			size: equal,
 			format: rgba8,
+			samples: 4,
 		},
 		
 		gbuffer_normals:
