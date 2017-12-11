@@ -208,7 +208,8 @@ def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, tec
 
 token_io = ["input", "output"]
 token_io_replace = ["_input", "_output"]
-
+token_post_delimiters = ['.', ';', ' ', '(', ')', ',']
+token_pre_delimiters = [' ', '\t', '\n', '(', ')', ',']
 
 def replace_io_tokens(text):
     split = text.split(' ')
@@ -221,22 +222,19 @@ def replace_io_tokens(text):
                 first_char = token.find(token_io[i])
                 t = token[first_char:first_char+last_char+1]
                 l = len(t)
-                if first_char > 0 and token[first_char-1] != ' ' \
-                        and token[first_char-1] != '\t' \
-                        and token[first_char-1] != '\n':
-                    break
+                if first_char > 0 and token[first_char-1] not in token_pre_delimiters:
+                    continue
                 if l > last_char:
                     c = t[last_char]
-                    if c == '.' or c == ';' or c == ' ':
-                        split_replace.append(token.replace(token_io[i], token_io_replace[i]))
+                    if c in token_post_delimiters:
+                        token = token.replace(token_io[i], token_io_replace[i])
                         replaced = True
-                        break
+                        continue
                 elif l == last_char:
-                    split_replace.append(token.replace(token_io[i], token_io_replace[i]))
+                    token = token.replace(token_io[i], token_io_replace[i])
                     replaced = True
-                    break
-        if not replaced:
-            split_replace.append(token)
+                    continue
+        split_replace.append(token)
 
 
     replaced_text = ""

@@ -213,6 +213,7 @@ namespace pen
 		u32 row_pitch;
 		u32 depth_pitch;
 		u32 block_size;
+        u32 data_size;
         void(*call_back_function)(void*, u32, u32, u32);
     };
 

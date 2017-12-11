@@ -266,6 +266,7 @@ namespace put
 							pitch,
 							data_size,
 							4,
+                            data_size,
                             &picking_read_back
                         };
                         

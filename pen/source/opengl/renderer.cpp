@@ -1029,7 +1029,7 @@ namespace pen
 		return resource_index;
 	}
 
-	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type )
+	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags )
 	{
         resource_allocation& res = resource_pool[ texture_index ];
         
@@ -1037,15 +1037,20 @@ namespace pen
         
         u32 max_mip = 0;
         
+        u32 target = GL_TEXTURE_2D;
+        
         if( res.type == RES_TEXTURE )
         {
-            glBindTexture( GL_TEXTURE_2D, res.texture.handle );
+            glBindTexture( target, res.texture.handle );
             max_mip = res.texture.max_mip_level;
         }
         else
         {
-            glBindTexture( GL_TEXTURE_2D, res.render_target.texture.handle );
-            max_mip = res.render_target.texture.max_mip_level;
+            if( flags & TEXTURE_BIND_MSAA )
+                target = GL_TEXTURE_2D_MULTISAMPLE;
+            
+            glBindTexture( target, res.render_target.texture_msaa.handle );
+            max_mip = res.render_target.texture_msaa.max_mip_level;
         }
         
         auto* sampler_state = resource_pool[sampler_index].sampler_state;
@@ -1057,39 +1062,39 @@ namespace pen
         switch( sampler_state->filter )
         {
             case PEN_FILTER_MIN_MAG_MIP_LINEAR:
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 break;
             case PEN_FILTER_MIN_MAG_MIP_POINT:
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_POINT);
+                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_POINT);
                 break;
             case PEN_FILTER_LINEAR:
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 break;
             case PEN_FILTER_POINT:
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_POINT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_POINT);
+                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_POINT);
+                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_POINT);
                 break;
         };
         
         //address mode
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, sampler_state->address_u );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, sampler_state->address_v );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, sampler_state->address_w );
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, sampler_state->address_u );
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, sampler_state->address_v );
+        glTexParameteri(target, GL_TEXTURE_WRAP_R, sampler_state->address_w );
         
         //mip control
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, sampler_state->mip_lod_bias );
+        glTexParameterf(target, GL_TEXTURE_LOD_BIAS, sampler_state->mip_lod_bias );
         
         if( sampler_state->max_lod > -1.0f )
         {
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, sampler_state->max_lod );
+            glTexParameterf(target, GL_TEXTURE_MAX_LOD, sampler_state->max_lod );
         }
         
         if( sampler_state->min_lod > -1.0f )
         {
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, sampler_state->min_lod );
+            glTexParameterf(target, GL_TEXTURE_MIN_LOD, sampler_state->min_lod );
         }
         
         CHECK_GL_ERROR;
@@ -1235,19 +1240,23 @@ namespace pen
                 target_handle = res.render_target.texture.handle;
 
             glBindTexture( GL_TEXTURE_2D, res.texture.handle );
-            glGetTexImage( GL_TEXTURE_2D, 0, format, type, rrbp.p_data );
+            
+            void* data = pen::memory_alloc(rrbp.data_size);
+            glGetTexImage( GL_TEXTURE_2D, 0, format, type, data );
+            
+            rrbp.call_back_function( data, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size );
+            
+            pen::memory_free(data);
         }
         else if( t == GL_ELEMENT_ARRAY_BUFFER || t == GL_UNIFORM_BUFFER || t == GL_ARRAY_BUFFER )
         {
             glBindBuffer(t, res.handle );
             void* map = glMapBuffer(t, GL_READ_ONLY);
             
-            pen::memory_cpy(rrbp.p_data, map, rrbp.data_size);
+            rrbp.call_back_function( map, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size );
             
             glUnmapBuffer(t);
         }
-        
-        rrbp.call_back_function( rrbp.p_data );
     }
 
 	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
