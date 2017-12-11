@@ -28,7 +28,7 @@ project "pen"
 	end
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
-		systemversion("10.0:10.1")
+		systemversion(windows_sdk_version())
 	end
 	
 	includedirs 

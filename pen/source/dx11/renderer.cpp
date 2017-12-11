@@ -818,21 +818,41 @@ namespace pen
 		return resource_index;
 	}
 
-	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type )
+	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags )
 	{
 		ID3D11SamplerState* null_sampler = NULL;
 		ID3D11ShaderResourceView* null_srv = NULL;
 
-		if( shader_type == PEN_SHADER_TYPE_PS )
+		if ( resource_pool[texture_index].type == RES_RENDER_TARGET && flags & TEXTURE_BIND_MSAA )
 		{
-			g_immediate_context->PSSetSamplers( resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[ sampler_index ].sampler_state );
-			g_immediate_context->PSSetShaderResources( resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[ texture_index ].texture_2d->srv );
+			render_target_internal* rt = resource_pool[texture_index].render_target;
+
+			if (shader_type == PEN_SHADER_TYPE_PS)
+			{
+				g_immediate_context->PSSetSamplers(resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
+				g_immediate_context->PSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &rt->tex_msaa.srv);
+			}
+			else if (shader_type == PEN_SHADER_TYPE_VS)
+			{
+				g_immediate_context->VSSetSamplers(resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
+				g_immediate_context->VSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &rt->tex_msaa.srv);
+			}
 		}
-		else if( shader_type == PEN_SHADER_TYPE_VS )
+		else
 		{
-			g_immediate_context->VSSetSamplers( resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[ sampler_index ].sampler_state );
-			g_immediate_context->VSSetShaderResources( resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[ texture_index ].texture_2d->srv );
+			if (shader_type == PEN_SHADER_TYPE_PS)
+			{
+				g_immediate_context->PSSetSamplers(resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
+				g_immediate_context->PSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_2d->srv);
+			}
+			else if (shader_type == PEN_SHADER_TYPE_VS)
+			{
+				g_immediate_context->VSSetSamplers(resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
+				g_immediate_context->VSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_2d->srv);
+			}
 		}
+
+
 	}
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )

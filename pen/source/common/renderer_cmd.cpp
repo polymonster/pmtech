@@ -209,7 +209,7 @@ namespace pen
 		u32 sampler_index;
 		u32 resource_slot;
 		u32 shader_type;
-
+		u32 flags;
 	};
 
 	struct set_constant_buffer_cmd
@@ -373,7 +373,8 @@ namespace pen
 				cmd.set_texture.texture_index,
 				cmd.set_texture.sampler_index,
 				cmd.set_texture.resource_slot,
-				cmd.set_texture.shader_type);
+				cmd.set_texture.shader_type,
+				cmd.set_texture.flags);
 			break;
 
 		case CMD_CREATE_RASTER_STATE:
@@ -960,7 +961,7 @@ namespace pen
 		return renderer_get_next_resource_index(DEFER_RESOURCE);
 	}
 
-	void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type)
+	void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
 	{
 		cmd_buffer[put_pos].command_index = CMD_SET_TEXTURE;
 
@@ -968,6 +969,7 @@ namespace pen
 		cmd_buffer[put_pos].set_texture.sampler_index = sampler_index;
 		cmd_buffer[put_pos].set_texture.resource_slot = resource_slot;
 		cmd_buffer[put_pos].set_texture.shader_type = shader_type;
+		cmd_buffer[put_pos].set_texture.flags = flags;
 
 		INC_WRAP(put_pos);
 	}
@@ -1232,5 +1234,7 @@ namespace pen
         
         INC_WRAP(put_pos);
     }
+
+
 }
 

@@ -75,10 +75,9 @@ project ( project_name )
 	}
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
-		systemversion("10.0:10.1")
+		systemversion(windows_sdk_version())
 	end
-	
-		
+			
 	location ( root_directory .. "/build/" .. platform_dir )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
 	debugdir ( root_directory .. "/bin/" .. platform_dir)
@@ -89,7 +88,7 @@ project ( project_name )
 		add_ios_links() 
 		add_ios_files( project_name, root_directory )
 	end
-
+	
 	files 
 	{ 
 		(root_directory .. "code/" .. project_name .. "/**.cpp"),

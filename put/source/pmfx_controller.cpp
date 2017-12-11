@@ -6,6 +6,7 @@
 #include "file_system.h"
 #include "hash.h"
 #include "pen_string.h"
+#include "pmfx.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -313,16 +314,16 @@ namespace put
             //create vertex buffer for a quad
             textured_vertex quad_vertices[] =
             {
-                0.0f, 0.0f, 0.5f, 1.0f,         //p1
+                -1.0f, -1.0f, 0.5f, 1.0f,         //p1
                 0.0f, 0.0f,                     //uv1
                 
-                0.0f, 1.0f, 0.5f, 1.0f,         //p2
+                -1.0f, 1.0f, 0.5f, 1.0f,         //p2
                 0.0f, 1.0f,                     //uv2
                 
                 1.0f, 1.0f, 0.5f, 1.0f,         //p3
                 1.0f, 1.0f,                     //uv3
                 
-                1.0f, 0.0f, 0.5f, 1.0f,         //p4
+                1.0f, -1.0f, 0.5f, 1.0f,         //p4
                 1.0f, 0.0f,                     //uv4
             };
             
@@ -1098,10 +1099,29 @@ namespace put
             }
             
             pen::renderer_set_targets( PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH );
+
+			//debug
+			static u32 ss_wrap = put::pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
+
+			static pmfx_handle pmfx_debug = pmfx::load("debug");
+
+			pmfx::set_technique(pmfx_debug, PEN_HASH("sceen_quad"), 0);
+
+			pen::renderer_set_vertex_buffer(k_geometry.screen_quad_vb, 0, sizeof(textured_vertex), 0);
+			pen::renderer_set_index_buffer(k_geometry.screen_quad_ib, PEN_FORMAT_R16_UINT, 0);
+
+			for (auto& rt : k_render_targets)
+			{
+				if( rt.id_name == PEN_HASH("gbuffer_normals") )
+					pen::renderer_set_texture(rt.handle, ss_wrap, 0, PEN_SHADER_TYPE_PS, pen::TEXTURE_BIND_MSAA );
+			}
+
+
+			pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
         }
         
         void show_dev_ui()
-        {            
+        {
             ImGui::BeginMainMenuBar();
             
             static bool open_renderer = false;

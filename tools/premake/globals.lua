@@ -45,3 +45,7 @@ function script_path()
    local str = debug.getinfo(2, "S").source:sub(2)
    return str:match("(.*/)")
 end
+
+function windows_sdk_version()
+	return "10.0.14393.0:10.1.0.0"
+end

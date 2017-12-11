@@ -216,6 +216,12 @@ namespace pen
         void(*call_back_function)(void*, u32, u32, u32);
     };
 
+	enum e_texture_bind_flags
+	{
+		TEXTURE_BIND_NO_FLAGS = 0,
+		TEXTURE_BIND_MSAA = 1
+	};
+
 	//--------------------------------------------------------------------------------------
 	//  COMMON FUNCTIONS
 	//--------------------------------------------------------------------------------------
@@ -266,7 +272,7 @@ namespace pen
 	//textures
 	u32		renderer_create_texture( const texture_creation_params& tcp );
 	u32		renderer_create_sampler( const sampler_creation_params& scp );
-	void	renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type );
+	void	renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags = 0 );
 
 	//rasterizer
 	u32		renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp );
@@ -353,7 +359,7 @@ namespace pen
 		//textures
 		u32		renderer_create_texture(const texture_creation_params& tcp);
 		u32		renderer_create_sampler(const sampler_creation_params& scp);
-		void	renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type);
+		void	renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags = 0);
 
 		//rasterizer
 		u32		renderer_create_rasterizer_state(const rasteriser_state_creation_params &rscp);
