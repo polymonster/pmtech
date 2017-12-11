@@ -3,8 +3,8 @@
 #define TEXTURE_2D( sampler_name, sampler_index ) uniform sampler2D sampler_name
 #define SAMPLE_TEXTURE_2D( sampler_name, uv ) texture( sampler_name, uv.xy )
 
-#define TEXTURE_2DMS( type, sampler_name, sampler_index ) uniform sampler2D sampler_name
-#define SAMPLE_TEXTURE_2DMS( sampler_name, uv, fragment ) texture( sampler_name, uv.xy )
+#define TEXTURE_2DMS( type, sampler_name, sampler_index ) uniform sampler2DMS sampler_name
+#define SAMPLE_TEXTURE_2DMS( sampler_name, uv, fragment ) textureFetch( sampler_name, ivec2( uv.x, uv.y ), fragment )
 
 #define mul( A, B ) A * B
 #define saturate( A ) clamp( A, 0.0, 1.0 );
