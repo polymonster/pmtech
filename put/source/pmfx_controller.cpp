@@ -153,7 +153,9 @@ namespace put
             s32     rt_width, rt_height;
             f32     rt_ratio;
             
-            u32     render_targets[8] = { 0 };
+            u32     render_targets[PEN_MAX_MRT] = { 0 };
+            hash_id id_render_target[PEN_MAX_MRT] = { };
+            
             u32     depth_target = 0;
             u32     num_colour_targets = 0;
             
@@ -770,6 +772,11 @@ namespace put
             get_rt_dimensions( rt->width, rt->height, rt->ratio, w, h );
         }
         
+        void parse_clear_colour( pen::json& render_config )
+        {
+            
+        }
+        
         void parse_views( pen::json& render_config )
         {
             pen::json j_views = render_config["views"];
@@ -787,52 +794,6 @@ namespace put
                 new_view.name = j_views[i].name();
                 
                 new_view.id_name = PEN_HASH(j_views[i].name());
-                
-                //clear colour
-                pen::json clear_colour = view["clear_colour"];
-                
-                f32 clear_data[5] = { 0 };
-                u8 clear_stencil_val = 0;
-                
-                u32 clear_flags = 0;
-                
-                if( clear_colour.size() == 4 )
-                {
-                    for( s32 c = 0; c < 4; ++c )
-                    {
-                        clear_data[c] = clear_colour[c].as_f32();
-                    }
-                    
-                    clear_flags |= PEN_CLEAR_COLOUR_BUFFER;
-                }
-                
-                //clear depth
-                pen::json clear_depth = view["clear_depth"];
-                
-                if( clear_depth.type() != JSMN_UNDEFINED )
-                {
-                    clear_data[4] = clear_depth.as_f32();
-                    
-                    clear_flags |= PEN_CLEAR_DEPTH_BUFFER;
-                }
-                
-                //clear stencil
-                pen::json clear_stencil = view["clear_stencil"];
-                
-                if( clear_stencil.type() != JSMN_UNDEFINED )
-                {
-                    clear_stencil_val = clear_stencil.as_u8_hex();
-                    
-                    clear_flags |= PEN_CLEAR_STENCIL_BUFFER;
-                }
-            
-                //clear state
-                pen::clear_state cs_info =
-                {
-                    clear_data[0], clear_data[1], clear_data[2], clear_data[3], clear_data[4], clear_stencil_val, clear_flags,
-                };
-                
-                new_view.clear_state = pen::renderer_create_clear_state( cs_info );
                 
                 //render targets
                 pen::json targets = view["target"];
@@ -858,6 +819,8 @@ namespace put
                             s32 w = r.width;
                             s32 h = r.height;
                             s32 rr = r.ratio;
+                            
+                            new_view.id_render_target[cur_rt] = target_hash;
                             
                             if( cur_rt == 0 )
                             {
@@ -891,6 +854,93 @@ namespace put
                         valid = false;
                     }
                 }
+                
+                //clear colour
+                pen::json clear_colour = view["clear_colour"];
+                
+                f32 clear_colour_f[4] = { 0 };
+                u8 clear_stencil_val = 0;
+                
+                u32 clear_flags = 0;
+                
+                if( clear_colour.size() == 4 )
+                {
+                    for( s32 c = 0; c < 4; ++c )
+                        clear_colour_f[c] = clear_colour[c].as_f32();
+                    
+                    clear_flags |= PEN_CLEAR_COLOUR_BUFFER;
+                }
+                
+                //clear depth
+                pen::json clear_depth = view["clear_depth"];
+                
+                f32 clear_depth_f;
+                
+                if( clear_depth.type() != JSMN_UNDEFINED )
+                {
+                    clear_depth_f = clear_depth.as_f32();
+                    
+                    clear_flags |= PEN_CLEAR_DEPTH_BUFFER;
+                }
+                
+                //clear stencil
+                pen::json clear_stencil = view["clear_stencil"];
+                
+                if( clear_stencil.type() != JSMN_UNDEFINED )
+                {
+                    clear_stencil_val = clear_stencil.as_u8_hex();
+                    
+                    clear_flags |= PEN_CLEAR_STENCIL_BUFFER;
+                }
+                
+                //clear state
+                pen::clear_state cs_info =
+                {
+                    clear_colour_f[0], clear_colour_f[1], clear_colour_f[2], clear_colour_f[3], clear_depth_f, clear_stencil_val, clear_flags,
+                };
+                
+                //clear mrt
+                pen::json clear_mrt = view["clear"];
+                for( s32 m = 0; m < clear_mrt.size(); ++m )
+                {
+                    pen::json jmrt = clear_mrt[m];
+                    
+                    hash_id rt_id = PEN_HASH(jmrt.name().c_str());
+                    
+                    for( s32 t = 0; t < num_targets; ++t )
+                    {
+                        if( new_view.id_render_target[t] == rt_id )
+                        {
+                            cs_info.num_colour_targets++;
+                            
+                            pen::json colour_f = jmrt["clear_colour_f"];
+                            if( colour_f.size() == 4 )
+                            {
+                                for( s32 j = 0; j < 4; ++j )
+                                {
+                                    cs_info.mrt[t].type = pen::CLEAR_F32;
+                                    cs_info.mrt[t].f[j] = colour_f[j].as_f32();
+                                }
+                                
+                                break;
+                            }
+                            
+                            pen::json colour_u = jmrt["clear_colour_u"];
+                            if( colour_u.size() == 4 )
+                            {
+                                for( s32 j = 0; j < 4; ++j )
+                                {
+                                    cs_info.mrt[t].type = pen::CLEAR_U32;
+                                    cs_info.mrt[t].u[j] = colour_u[j].as_u32();
+                                }
+                                
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                new_view.clear_state = pen::renderer_create_clear_state( cs_info );
                 
                 //viewport
                 pen::json viewport = view["viewport"];
@@ -1108,7 +1158,7 @@ namespace put
 
 			static pmfx_handle pmfx_debug = pmfx::load("debug");
 
-			pmfx::set_technique(pmfx_debug, PEN_HASH("sceen_quad_msaa"), 0);
+			pmfx::set_technique(pmfx_debug, PEN_HASH("sceen_quad"), 0);
 
 			pen::renderer_set_vertex_buffer(k_geometry.screen_quad_vb, 0, sizeof(textured_vertex), 0);
 			pen::renderer_set_index_buffer(k_geometry.screen_quad_ib, PEN_FORMAT_R16_UINT, 0);
@@ -1116,7 +1166,7 @@ namespace put
 			for (auto& rt : k_render_targets)
 			{
 				if (rt.id_name == PEN_HASH("gbuffer_normals"))
-					pen::renderer_set_texture(rt.handle, ss_wrap, 1, PEN_SHADER_TYPE_PS, pen::TEXTURE_BIND_MSAA);
+					pen::renderer_set_texture(rt.handle, ss_wrap, 0, PEN_SHADER_TYPE_PS );
 			}
 
 

@@ -90,6 +90,9 @@ namespace pen
 		f32 depth;
         u8 stencil;
 		u32 flags;
+        
+        pen::mrt_clear mrt[PEN_MAX_MRT];
+        u32 num_colour_targets;
 	};
     
     struct vertex_attribute
@@ -250,7 +253,10 @@ namespace pen
 		resource_pool[ resoruce_index ].clear_state.depth = cs.depth;
         resource_pool[ resoruce_index ].clear_state.stencil = cs.stencil;
 		resource_pool[ resoruce_index ].clear_state.flags = cs.flags;
-
+        
+        resource_pool[ resoruce_index ].clear_state.num_colour_targets = cs.num_colour_targets;
+        pen::memory_cpy(&resource_pool[ resoruce_index ].clear_state.mrt, cs.mrt, sizeof(pen::mrt_clear)*PEN_MAX_MRT);
+    
 		return  resoruce_index;
 	}
 
@@ -317,12 +323,36 @@ namespace pen
 	void direct::renderer_clear( u32 clear_state_index, u32 colour_face, u32 depth_face )
 	{
         resource_allocation& rc = resource_pool[ clear_state_index ];
+        clear_state_internal& cs = rc.clear_state;
         
-        glClearColor( rc.clear_state.rgba[ 0 ], rc.clear_state.rgba[ 1 ], rc.clear_state.rgba[ 2 ], rc.clear_state.rgba[ 3 ] );
-        glClearDepth( rc.clear_state.depth );
-        glClearStencil( rc.clear_state.stencil );
+        glClearDepth( cs.depth );
+        glClearStencil( cs.stencil );
         
-        glClear( rc.clear_state.flags );
+        if( cs.num_colour_targets == 0 )
+        {
+            glClearColor( rc.clear_state.rgba[ 0 ], rc.clear_state.rgba[ 1 ], rc.clear_state.rgba[ 2 ], rc.clear_state.rgba[ 3 ] );
+            glClear( rc.clear_state.flags );
+            return;
+        }
+        
+        u32 masked = rc.clear_state.flags &= ~GL_COLOR_BUFFER_BIT;
+        
+        glClear( masked );
+        
+        for( s32 i = 0; i < cs.num_colour_targets; ++i )
+        {
+            if( cs.mrt[i].type == pen::CLEAR_F32 )
+            {
+                glClearBufferfv( GL_COLOR, i, cs.mrt[i].f );
+                continue;
+            }
+            
+            if( cs.mrt[i].type == pen::CLEAR_U32 )
+            {
+                glClearBufferuiv( GL_COLOR,  i, cs.mrt[i].u );
+                continue;
+            }
+        }
 	}
 
     static u32 k_resize_counter = 0;
@@ -855,7 +885,7 @@ namespace pen
     
 	void direct::renderer_set_targets( const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face )
 	{
-        static GLenum k_draw_buffers[8] =
+        static GLenum k_draw_buffers[PEN_MAX_MRT] =
         {
             GL_COLOR_ATTACHMENT0,
             GL_COLOR_ATTACHMENT1,
@@ -933,7 +963,7 @@ namespace pen
             resource_allocation& depth_res = resource_pool[ depth_target ];
             
             if( msaa )
-                glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_res.render_target.texture_msaa.handle, 0 );
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_res.render_target.texture_msaa.handle, 0 );
             else
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0);
         }
@@ -1047,9 +1077,15 @@ namespace pen
         else
         {
             if( flags & TEXTURE_BIND_MSAA )
+            {
                 target = GL_TEXTURE_2D_MULTISAMPLE;
+                glBindTexture( target, res.render_target.texture_msaa.handle );
+            }
+            else
+            {
+                glBindTexture( target, res.render_target.texture.handle );
+            }
             
-            glBindTexture( target, res.render_target.texture_msaa.handle );
             max_mip = res.render_target.texture_msaa.max_mip_level;
         }
         

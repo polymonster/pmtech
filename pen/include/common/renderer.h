@@ -13,9 +13,29 @@ enum special_values
 };
 
 #define PEN_BACK_BUFFER_RATIO (u32)-1
+#define PEN_MAX_MRT 8
 
 namespace pen
 {
+    enum e_clear_types
+    {
+        CLEAR_F32,
+        CLEAR_U32
+    };
+    
+    struct mrt_clear
+    {
+        union
+        {
+            f32 f[4];
+            u32 u[4];
+            f32 rf, gf, bf, af;
+            u32 ri, gi, bi, ai;
+        };
+        
+        e_clear_types type;
+    };
+    
 	//--------------------------------------------------------------------------------------
 	//  PUBLIC API STRUCTS
 	//--------------------------------------------------------------------------------------
@@ -25,6 +45,9 @@ namespace pen
         f32 depth;
         u8  stencil;
 		u32 flags;
+        
+        mrt_clear mrt[PEN_MAX_MRT];
+        u32 num_colour_targets;
 	};
 
 	struct stream_out_decl_entry
