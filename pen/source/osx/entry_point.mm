@@ -16,6 +16,7 @@ NSOpenGLPixelFormat* _pixel_format;
 
 extern pen::window_creation_params pen_window;
 extern a_u8 g_window_resize;
+static bool k_trigger_window_resize = false;
 
 pen::user_info pen_user_info;
 
@@ -430,6 +431,19 @@ int main(int argc, char **argv)
         int x, y;
         get_mouse_pos( x, y );
         pen::input_set_mouse_pos( x, y );
+        
+        static int resize_counter = 0;
+        if(k_trigger_window_resize)
+        {
+            if(resize_counter >= 2)
+            {
+                g_window_resize = true;
+                pen_window_resize();
+                resize_counter = 0;
+            }
+            
+            resize_counter++;
+        }
 
         //sleep a bit
         [_pool drain];
@@ -553,8 +567,7 @@ namespace pen
 
 - (void)windowDidResize:(NSNotification*)notification
 {
-    g_window_resize = true;
-    pen_window_resize();
+    k_trigger_window_resize = true;
 }
 
 - (void)windowDidBecomeKey:(NSNotification*)notification

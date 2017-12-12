@@ -624,6 +624,12 @@ namespace pen
 			1.0f, -1.0f, 0.5f, 1.0f,        //p4
 			1.0f, 1.0f,                     //uv4
 		};
+        
+        if( pen::renderer_viewport_vup() )
+        {
+            std::swap<f32>(quad_vertices[0].v, quad_vertices[1].v);
+            std::swap<f32>(quad_vertices[2].v, quad_vertices[3].v);
+        }
 
 		pen::buffer_creation_params bcp;
 		bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -1130,11 +1136,6 @@ namespace pen
 
 	void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
 	{
-		if (buffer_index == 44)
-		{
-			u32 a = 0;
-		}
-
 		cmd_buffer[put_pos].command_index = CMD_UPDATE_BUFFER;
 
 		cmd_buffer[put_pos].update_buffer.buffer_index = buffer_index;

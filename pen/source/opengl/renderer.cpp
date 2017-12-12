@@ -133,6 +133,8 @@ namespace pen
         texture_info texture_msaa;
         GLuint w, h;
         u32 uid;
+        
+        texture_creation_params* tcp;
     };
     
     struct framebuffer
@@ -358,6 +360,22 @@ namespace pen
     static u32 k_resize_counter = 0;
     static bool k_needs_resize = false;
     
+    void renderer_resize_managed_targets( )
+    {
+        for( auto& managed_rt : k_managed_render_targets )
+        {
+            resource_allocation& res = resource_pool[ managed_rt.render_target_handle ];
+            glDeleteTextures( 1, &res.render_target.texture.handle );
+            
+            if( managed_rt.tcp.sample_count > 1 )
+            {
+                glDeleteTextures( 1, &res.render_target.texture_msaa.handle );
+            }
+            
+            direct::renderer_create_render_target(managed_rt.tcp, managed_rt.render_target_handle );
+        }
+    }
+    
 	void direct::renderer_present( )
 	{
         pen_gl_swap_buffers();
@@ -381,22 +399,6 @@ namespace pen
         }
 	}
     
-    void direct::renderer_resize_managed_targets( )
-    {
-        for( auto& managed_rt : k_managed_render_targets )
-        {
-            resource_allocation& res = resource_pool[ managed_rt.render_target_handle ];
-            glDeleteTextures( 1, &res.render_target.texture.handle );
-            
-            if( managed_rt.tcp.sample_count > 1 )
-            {
-                glDeleteTextures( 1, &res.render_target.texture_msaa.handle );
-            }
-            
-            direct::renderer_create_render_target(managed_rt.tcp, managed_rt.render_target_handle );
-        }
-    }
-
 	void direct::renderer_create_query( u32 query_type, u32 flags )
 	{
 	}
@@ -518,12 +520,12 @@ namespace pen
         return resource_index;
     }
     
-    void direct::renderer_set_so_target( u32 buffer_index )
+    void direct::renderer_set_stream_out_target( u32 buffer_index )
     {
         
     }
     
-    void direct::renderer_create_so_shader( const pen::shader_load_params &params )
+    void direct::renderer_create_stream_out_shader( const pen::shader_load_params &params )
     {
         
     }
@@ -867,18 +869,27 @@ namespace pen
                 k_managed_render_targets.push_back({tcp, resource_index});
         }
         
+        //null handles
+        res.render_target.texture_msaa.handle = 0;
+        res.render_target.texture.handle = 0;
+        
         if( tcp.sample_count > 1 )
         {
             res.type = RES_RENDER_TARGET_MSAA;
             
             res.render_target.texture_msaa = create_texture_internal(_tcp);
+            
+            res.render_target.tcp = new texture_creation_params;
+            *res.render_target.tcp = tcp;
         }
-        
-        //non-msaa / resolve surface
-        texture_creation_params tcp_no_msaa = _tcp;
-        tcp_no_msaa.sample_count = 1;
-        
-        res.render_target.texture = create_texture_internal(tcp_no_msaa);
+        else
+        {
+            //non-msaa
+            texture_creation_params tcp_no_msaa = _tcp;
+            tcp_no_msaa.sample_count = 1;
+            
+            res.render_target.texture = create_texture_internal(tcp_no_msaa);
+        }
         
         return resource_index;
 	}
@@ -987,37 +998,54 @@ namespace pen
         
         k_framebuffers.push_back(new_fb);
 	}
-
-    void direct::renderer_resolve_target( u32 target )
+        
+    extern resolve_resources g_resolve_resources;
+    void direct::renderer_resolve_target( u32 target, e_msaa_resolve_type type )
     {
         resource_allocation& colour_res = resource_pool[ target ];
         
-        hash_id h[2] = { 0, 0 };
+        hash_id hash[2] = { 0, 0 };
+        
+        f32 w = colour_res.render_target.tcp->width;
+        f32 h = colour_res.render_target.tcp->height;
+        
+        if (colour_res.render_target.tcp->width == -1)
+        {
+            w = pen_window.width / h;
+            h = pen_window.height / h;
+        }
+        
+        if( colour_res.render_target.texture.handle == 0 )
+        {
+            texture_creation_params& _tcp = *colour_res.render_target.tcp;
+            _tcp.sample_count = 0;
+            _tcp.width = w;
+            _tcp.height = h;
+            
+            if( _tcp.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT )
+                _tcp.format = PEN_TEX_FORMAT_R32_FLOAT;
+            
+            colour_res.render_target.texture = create_texture_internal(*colour_res.render_target.tcp);
+        }
         
         hash_murmur hh;
         hh.add(target);
         hh.add(colour_res.render_target.texture_msaa.handle);
         hh.add(1);
-        h[0] = hh.end();
+        hash[0] = hh.end();
         
         hh.begin();
         hh.add(target);
         hh.add(colour_res.render_target.texture.handle);
         hh.add(1);
-        h[1] = hh.end();
+        hash[1] = hh.end();
         
         GLuint fbos[2] = { 0, 0 };
         for( auto& fb : k_framebuffers )
-        {
             for( s32 i = 0; i < 2; ++i )
-            {
-                if( fb.hash == h[i] )
-                {
+                if( fb.hash == hash[i] )
                     fbos[i] = fb.framebuffer;
-                }
-            }
-        }
-        
+
         for( s32 i = 0; i < 2; ++i )
         {
             if( fbos[i] == 0 )
@@ -1028,14 +1056,38 @@ namespace pen
                 if( i == 0 ) //src msaa
                     glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 );
                 else
-                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
+                    glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
             }
         }
         
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[1] );
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos[0] );
-        
-        glBlitFramebuffer(0, 0, colour_res.render_target.w, colour_res.render_target.h, 0, 0, colour_res.render_target.w, colour_res.render_target.h, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+        if( type == pen::RESOLVE_CUSTOM )
+        {
+            resolve_cbuffer cbuf = { w, h, 0.0f, 0.0f };
+            
+            glBindFramebuffer(GL_FRAMEBUFFER, fbos[1]);
+            
+            direct::renderer_update_buffer(g_resolve_resources.constant_buffer, &cbuf, sizeof(cbuf), 0);
+            direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, PEN_SHADER_TYPE_PS);
+            
+            pen::viewport vp = { 0.0f, 0.0f, w, h, 0.0f, 1.0f };
+            direct::renderer_set_viewport(vp);
+            
+            u32 stride = 24;
+            u32 offset = 0;
+            direct::renderer_set_vertex_buffer(g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
+            direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
+            
+            direct::renderer_set_texture(target, 0, 0, PEN_SHADER_TYPE_PS, pen::TEXTURE_BIND_MSAA);
+            
+            direct::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
+        }
+        else
+        {
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[1] );
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos[0] );
+            
+            glBlitFramebuffer(0, 0, (u32)w, (u32)h, 0, 0, (u32)w, (u32)h, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+        }
     }
 
 	u32 direct::renderer_create_texture(const texture_creation_params& tcp)
@@ -1093,6 +1145,9 @@ namespace pen
         
         //handle unmipped textures or textures with missisng mips
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_mip);
+        
+        if( !sampler_state )
+            return;
         
         // filter
         switch( sampler_state->filter )
@@ -1370,8 +1425,14 @@ namespace pen
 	void direct::renderer_release_render_target( u32 render_target )
 	{
         resource_allocation& res = resource_pool[ render_target ];
-        glDeleteTextures( 1, &res.render_target.texture.handle );
-        glDeleteFramebuffers( 1, &res.render_target.texture.handle );
+        
+        if( res.render_target.texture.handle > 0)
+            glDeleteTextures( 1, &res.render_target.texture.handle );
+        
+        if( res.render_target.texture_msaa.handle > 0)
+            glDeleteTextures( 1, &res.render_target.texture_msaa.handle );
+
+        delete res.render_target.tcp;
         
         renderer_mark_resource_deleted( render_target );
 	}

@@ -1177,32 +1177,10 @@ namespace put
 			}
         }
 
-		void debug_viewport( )
-		{
-			pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-
-			u32 h2 = 0;
-			for (auto& rt : k_render_targets)
-			{
-				if (rt.id_name == PEN_HASH("gbuffer_albedo"))
-				{
-					h2 = rt.handle;
-					break;
-				}
-			}
-
-			static pmfx_handle pmfx_debug = pmfx::load("msaa_resolve");
-			pmfx::set_technique(pmfx_debug, PEN_HASH("average_4x"), 0);
-
-			pen::renderer_resolve_target(h2, pen::RESOLVE_CUSTOM);
-		}
-
 		void render_target_info_ui( const render_target& rt )
 		{
 			f32 w, h;
 			get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
-
-			bool is_depth = rt.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
 
 			const c8* format_str = nullptr;
 			s32 byte_size = 0;
@@ -1243,13 +1221,8 @@ namespace put
         
             ImGui::EndMainMenuBar();
 
-			static bool k_dbg_vp = false;
-
 			static u32 current_render_target = 0;
 
-			if(k_dbg_vp)
-				debug_viewport();
-            
             if( open_renderer )
             {
                 if( ImGui::Begin("Render Targets", &open_renderer, ImGuiWindowFlags_AlwaysAutoResize ) )
@@ -1269,7 +1242,7 @@ namespace put
 						current_render_target = 0;
 					}
 
-					static s32 display_ratio = 1;
+					static s32 display_ratio = 2;
 					ImGui::InputInt("Buffer Ratio", &display_ratio);
 					display_ratio = std::max<s32>(1, display_ratio);
 
@@ -1284,52 +1257,11 @@ namespace put
 					if (!unsupported_display)
 					{
 						f32 aspect = w / h;
-						ImGui::Image((void*)&rt.handle, ImVec2(256 / display_ratio * aspect, 256 / display_ratio));
+						ImGui::Image((void*)&rt.handle, ImVec2(512 / display_ratio * aspect, 512 / display_ratio));
 					}
 
 					render_target_info_ui(rt);
-
-                    if( ImGui::CollapsingHeader("Render Targets") )
-                    {
-                        for( auto& rt : k_render_targets )
-                        {                                     
-                            f32 w, h;
-                            get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
-
-							bool is_depth = rt.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
-                                                        
-                            const c8* format_str = nullptr;
-                            s32 byte_size = 0;
-                            for( s32 f = 0; f < num_formats; ++f )
-                            {
-                                if( rt_format[f].format == rt.format )
-                                {
-                                    format_str = rt_format[f].name.c_str();
-                                    byte_size = rt_format[f].block_size / 8;
-                                    break;
-                                }
-                            }
-                            
-                            ImGui::Text("%s", rt.name.c_str() );
-                            ImGui::Text("%ix%i, %s", (s32)w, (s32)h, format_str);
-                            
-                            s32 image_size = byte_size * w * h * rt.samples;
-                            
-                            if( rt.samples > 1 )
-                            {
-                                ImGui::Text("Msaa Samples: %i", rt.samples);
-                                image_size += byte_size * w * h;
-                            }
-                            
-                            ImGui::Text("Size: %f (mb)", (f32)image_size / 1024.0f / 1024.0f );
-
-							if (!unsupported_display)
-								ImGui::Image((void*)&rt.handle, ImVec2(w / display_ratio, h / display_ratio));
-                            
-                            ImGui::Separator();
-                        }
-                    }
-
+                    
                     ImGui::End();
                 }
             }
