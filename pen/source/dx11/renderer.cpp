@@ -93,6 +93,7 @@ namespace pen
 		texture2d_internal			tex_read_back;
 
         DXGI_FORMAT                 format;
+		texture_creation_params*	tcp;
 	};
 
 	struct depth_stencil_target_internal
@@ -104,6 +105,7 @@ namespace pen
         ID3D11DepthStencilView*		ds_msaa[NUM_CUBEMAP_FACES];
 
         DXGI_FORMAT                 format;
+		texture_creation_params*	tcp;
 	};
 
 	struct shader_program
@@ -745,14 +747,33 @@ namespace pen
         {
             //create msaa 
             renderer_create_render_target_multi( _tcp, &resource_pool[resource_index].render_target->tex_msaa, resource_pool[resource_index].depth_target->ds_msaa, resource_pool[resource_index].render_target->rt_msaa );
-        }
 
-        //always create resolve surface
-        texture_creation_params resolve_tcp = _tcp;
-        resolve_tcp.sample_count = 1;
-        renderer_create_render_target_multi( resolve_tcp, &resource_pool[resource_index].render_target->tex, resource_pool[resource_index].depth_target->ds, resource_pool[resource_index].render_target->rt );
-        
+			//for resolve later
+			resource_pool[resource_index].render_target->tcp = new texture_creation_params;
+			*resource_pool[resource_index].render_target->tcp = tcp;
+        }
+		else
+		{
+			texture_creation_params resolve_tcp = _tcp;
+			resolve_tcp.sample_count = 1;
+			renderer_create_render_target_multi(resolve_tcp, &resource_pool[resource_index].render_target->tex, resource_pool[resource_index].depth_target->ds, resource_pool[resource_index].render_target->rt);
+		}
+
 		return resource_index;
+	}
+
+	void direct::renderer_set_resolve_targets( u32 colour_target, u32 depth_target )
+	{
+		ID3D11RenderTargetView* colour_rtv[PEN_MAX_MRT] = { 0 };
+
+		if( colour_target > 0 )
+			colour_rtv[0] = resource_pool[colour_target].render_target->rt[0];
+
+		ID3D11DepthStencilView* dsv = nullptr; 
+		if(depth_target > 0)
+			dsv = resource_pool[depth_target].depth_target->ds[0];
+
+		g_immediate_context->OMSetRenderTargets(1, colour_rtv, dsv);
 	}
 
 	void direct::renderer_set_targets( const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face )
@@ -761,7 +782,7 @@ namespace pen
 		g_context.num_active_colour_targets = num_colour_targets;
 
 		u32 num_views = num_colour_targets;
-        ID3D11RenderTargetView* colour_rtv[ 8 ] = { 0 };
+        ID3D11RenderTargetView* colour_rtv[ PEN_MAX_MRT ] = { 0 };
         for( s32 i = 0; i < num_colour_targets; ++i )
         {
             u32 colour_target = colour_targets[i];
@@ -883,8 +904,6 @@ namespace pen
 				g_immediate_context->VSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_2d->srv);
 			}
 		}
-
-
 	}
 
 	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
@@ -1107,7 +1126,7 @@ namespace pen
 		}
 	}
 
-	void direct::renderer_set_so_target( u32 buffer_index )
+	void direct::renderer_set_stream_out_target( u32 buffer_index )
 	{
 		if( buffer_index == 0 )
 		{
@@ -1122,14 +1141,83 @@ namespace pen
 		}
 	}
 
-    void direct::renderer_resolve_target( u32 target )
+	extern resolve_resources g_resolve_resources;
+    void direct::renderer_resolve_target( u32 target, e_msaa_resolve_type type )
     {
         render_target_internal* rti = resource_pool[target].render_target;
 
-        g_immediate_context->ResolveSubresource( rti->tex.texture, 0, rti->tex_msaa.texture, 0, rti->format );
+		//get dimensions for shader
+		f32 w = rti->tcp->width;
+		f32 h = rti->tcp->height;
+
+		if (rti->tcp->width == -1)
+		{
+			w = pen_window.width / h;
+			h = pen_window.height / h;
+		}
+
+		//create resolve surface if required
+		if (!rti->tex.texture)
+		{
+			//create a resolve surface
+			texture_creation_params& resolve_tcp = *rti->tcp;
+			resolve_tcp.sample_count = 1;
+
+			texture_creation_params& _tcp = resolve_tcp;
+			_tcp.width = w;
+			_tcp.height = h;
+
+			//depth gets resolved into colour textures
+			if (rti->format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
+			{
+				resolve_tcp.bind_flags &= ~D3D11_BIND_DEPTH_STENCIL;
+				resolve_tcp.bind_flags |= D3D11_BIND_RENDER_TARGET;
+				resolve_tcp.format = PEN_TEX_FORMAT_R32_FLOAT;
+			}
+
+			renderer_create_render_target_multi(_tcp, &rti->tex, resource_pool[target].depth_target->ds, rti->rt);
+		}
+
+		if (!rti->tex_msaa.texture)
+		{
+			PEN_PRINTF("[error] renderer : render target %i is not an msaa target\n", target);
+			return;
+		}
+
+		if (type == RESOLVE_CUSTOM)
+		{
+			resolve_cbuffer cbuf = { w, h, 0.0f, 0.0f };
+
+			direct::renderer_set_resolve_targets(target, 0);
+
+			direct::renderer_update_buffer(g_resolve_resources.constant_buffer, &cbuf, sizeof(cbuf), 0);
+			direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, PEN_SHADER_TYPE_PS);
+
+			pen::viewport vp = { 0.0f, 0.0f, w, h, 0.0f, 1.0f };
+			direct::renderer_set_viewport(vp);
+
+			u32 stride = 24;
+			u32 offset = 0;
+			direct::renderer_set_vertex_buffer(g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
+			direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
+
+			direct::renderer_set_texture(target, 0, 1, PEN_SHADER_TYPE_PS, pen::TEXTURE_BIND_MSAA);
+
+			direct::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
+		}
+		else
+		{
+			if (rti->format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
+			{
+				PEN_PRINTF("[error] renderer : render target %i cannot be resolved as it is a depth target\n", target);
+				return;
+			}
+
+			g_immediate_context->ResolveSubresource(rti->tex.texture, 0, rti->tex_msaa.texture, 0, rti->format);
+		}
     }
 
-	void direct::renderer_create_so_shader( const pen::shader_load_params &params )
+	void direct::renderer_create_stream_out_shader( const pen::shader_load_params &params )
 	{
 		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
 

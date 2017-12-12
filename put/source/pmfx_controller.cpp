@@ -1147,30 +1147,87 @@ namespace put
                 for( s32 rf = 0; rf < v.render_functions.size(); ++rf )
                     v.render_functions[rf](sv);
             }
+
+			//resolve
+			pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
+
+			for (s32 i = 0; i < 8; ++i)
+			{
+				pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
+				pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+			}
+
+			for (auto& rt : k_render_targets)
+			{
+				if (rt.samples > 1)
+				{
+					static pmfx_handle pmfx_resolve = pmfx::load("msaa_resolve");
+					pmfx::set_technique(pmfx_resolve, PEN_HASH("average_4x"), 0);
+
+					pen::renderer_resolve_target(rt.handle, pen::RESOLVE_CUSTOM);
+				}
+			}
+
+			pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
+
+			for (s32 i = 0; i < 8; ++i)
+			{
+				pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
+				pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+			}
         }
 
 		void debug_viewport( )
 		{
 			pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
-			//debug
-			static u32 ss_wrap = put::pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
-
-			static pmfx_handle pmfx_debug = pmfx::load("debug");
-
-			pmfx::set_technique(pmfx_debug, PEN_HASH("sceen_quad"), 0);
-
-			pen::renderer_set_vertex_buffer(k_geometry.screen_quad_vb, 0, sizeof(textured_vertex), 0);
-			pen::renderer_set_index_buffer(k_geometry.screen_quad_ib, PEN_FORMAT_R16_UINT, 0);
-
+			u32 h2 = 0;
 			for (auto& rt : k_render_targets)
 			{
-				if (rt.id_name == PEN_HASH("gbuffer_normals"))
-					pen::renderer_set_texture(rt.handle, ss_wrap, 0, PEN_SHADER_TYPE_PS );
+				if (rt.id_name == PEN_HASH("gbuffer_albedo"))
+				{
+					h2 = rt.handle;
+					break;
+				}
 			}
 
+			static pmfx_handle pmfx_debug = pmfx::load("msaa_resolve");
+			pmfx::set_technique(pmfx_debug, PEN_HASH("average_4x"), 0);
 
-			pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
+			pen::renderer_resolve_target(h2, pen::RESOLVE_CUSTOM);
+		}
+
+		void render_target_info_ui( const render_target& rt )
+		{
+			f32 w, h;
+			get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
+
+			bool is_depth = rt.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
+
+			const c8* format_str = nullptr;
+			s32 byte_size = 0;
+			for (s32 f = 0; f < num_formats; ++f)
+			{
+				if (rt_format[f].format == rt.format)
+				{
+					format_str = rt_format[f].name.c_str();
+					byte_size = rt_format[f].block_size / 8;
+					break;
+				}
+			}
+
+			ImGui::Text("%s", rt.name.c_str());
+			ImGui::Text("%ix%i, %s", (s32)w, (s32)h, format_str);
+
+			s32 image_size = byte_size * w * h * rt.samples;
+
+			if (rt.samples > 1)
+			{
+				ImGui::Text("Msaa Samples: %i", rt.samples);
+				image_size += byte_size * w * h;
+			}
+
+			ImGui::Text("Size: %f (mb)", (f32)image_size / 1024.0f / 1024.0f);
 		}
         
         void show_dev_ui()
@@ -1188,34 +1245,59 @@ namespace put
 
 			static bool k_dbg_vp = false;
 
+			static u32 current_render_target = 0;
+
 			if(k_dbg_vp)
 				debug_viewport();
             
             if( open_renderer )
             {
-                if( ImGui::Begin("Render Controller", &open_renderer, ImGuiWindowFlags_AlwaysAutoResize ) )
+                if( ImGui::Begin("Render Targets", &open_renderer, ImGuiWindowFlags_AlwaysAutoResize ) )
                 {
-					if (ImGui::Button("Debug Viewport"))
-						k_dbg_vp = !k_dbg_vp;
+					s32 num_rt = k_render_targets.size();
 
-                    static s32 display_ratio = 4;
-                    ImGui::InputInt("Buffer Ratio", &display_ratio);
-                    
+					if (ImGui::Button(ICON_FA_MINUS))
+						current_render_target++;
+					ImGui::SameLine();
+
+					if (ImGui::Button(ICON_FA_PLUS))
+						current_render_target--;
+					ImGui::SameLine();
+
+					if (current_render_target >= num_rt)
+					{
+						current_render_target = 0;
+					}
+
+					static s32 display_ratio = 1;
+					ImGui::InputInt("Buffer Ratio", &display_ratio);
+					display_ratio = std::max<s32>(1, display_ratio);
+
+					render_target& rt = k_render_targets[current_render_target];
+
+					f32 w, h;
+					get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
+
+					bool unsupported_display = rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH;
+					unsupported_display |= rt.format == PEN_TEX_FORMAT_R32_UINT;
+
+					if (!unsupported_display)
+					{
+						f32 aspect = w / h;
+						ImGui::Image((void*)&rt.handle, ImVec2(256 / display_ratio * aspect, 256 / display_ratio));
+					}
+
+					render_target_info_ui(rt);
+
                     if( ImGui::CollapsingHeader("Render Targets") )
                     {
                         for( auto& rt : k_render_targets )
-                        {                            
-                            if( rt.samples > 1 )
-                            {
-                                pen::renderer_resolve_target(rt.handle);
-                            }
-                            
+                        {                                     
                             f32 w, h;
                             get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
-                            
-							bool unsupported_display = rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH;
-							unsupported_display |= rt.format == PEN_TEX_FORMAT_R32_UINT;
-                            
+
+							bool is_depth = rt.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
+                                                        
                             const c8* format_str = nullptr;
                             s32 byte_size = 0;
                             for( s32 f = 0; f < num_formats; ++f )
@@ -1247,7 +1329,7 @@ namespace put
                             ImGui::Separator();
                         }
                     }
-                    
+
                     ImGui::End();
                 }
             }

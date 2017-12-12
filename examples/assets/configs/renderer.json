@@ -109,18 +109,21 @@
 		{
 			size: equal,
 			format: rgba8,
+			samples: 4,
 		},
 		
 		gbuffer_normals:
 		{
 			size: equal,
 			format: rgba8,
+			samples: 4,
 		},
 		
 		gbuffer_depth:
 		{
 			size: equal,
 			format: d24s8,
+			samples: 4,
 		},
 	},
 		

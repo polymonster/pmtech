@@ -141,7 +141,6 @@ namespace pen
 		u32		data_size;
 		u32		block_size;
 		u32		pixels_per_block;
-
 	};
 
 	struct sampler_creation_params
@@ -246,6 +245,27 @@ namespace pen
 		TEXTURE_BIND_MSAA = 1
 	};
 
+	enum e_msaa_resolve_type
+	{
+		RESOLVE_AVERAGE = 0,
+		RESOLVE_MIN = 1,
+		RESOLVE_MAX = 2,
+		RESOLVE_CUSTOM = 3
+	};
+
+	struct resolve_resources
+	{
+		u32 vertex_buffer;
+		u32 index_buffer;
+		u32 constant_buffer;
+	};
+
+	struct resolve_cbuffer
+	{
+		float dimension_x, dimension_y;
+		float padding_0, padding_1;
+	};
+
 	//--------------------------------------------------------------------------------------
 	//  COMMON FUNCTIONS
 	//--------------------------------------------------------------------------------------
@@ -276,7 +296,7 @@ namespace pen
 
 	//shaders
 	u32		renderer_load_shader( const pen::shader_load_params &params );
-	u32		renderer_create_so_shader( const pen::shader_load_params &params );
+	u32		renderer_create_stream_out_shader( const pen::shader_load_params &params );
 	void	renderer_set_shader( u32 shader_index, u32 shader_type );
 	u32		renderer_create_input_layout( const input_layout_creation_params &params );
 	void	renderer_set_input_layout( u32 layout_index );
@@ -322,8 +342,8 @@ namespace pen
 	void	renderer_set_targets(u32 colour_target, u32 depth_target);
     void    renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target);
 	void	renderer_set_targets_cube(u32 colour_target, u32 colour_face, u32 depth_target, u32 depth_face );
-	void	renderer_set_so_target( u32 buffer_index );
-    void    renderer_resolve_target( u32 target );
+	void	renderer_set_stream_out_target( u32 buffer_index );
+    void    renderer_resolve_target( u32 target, e_msaa_resolve_type type );
 
     //resource
     void    renderer_read_back_resource( const resource_read_back_params& rrbp );
@@ -366,7 +386,7 @@ namespace pen
 
 		//shaders
 		u32		renderer_load_shader(const pen::shader_load_params &params);
-		void	renderer_create_so_shader(const pen::shader_load_params &params);
+		void	renderer_create_stream_out_shader(const pen::shader_load_params &params);
 		void	renderer_set_shader(u32 shader_index, u32 shader_type);
 		u32		renderer_create_input_layout(const input_layout_creation_params &params);
 		void	renderer_set_input_layout(u32 layout_index);
@@ -407,9 +427,9 @@ namespace pen
 		//render targets
 		u32		renderer_create_render_target(const texture_creation_params& tcp, s32 replace_resource_index = -1 );
 		void	renderer_set_targets( const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face = 0, u32 depth_face = 0);
-		void	renderer_set_so_target(u32 buffer_index);
-        void    renderer_resolve_target( u32 target );
-        void    renderer_resize_managed_targets( );
+		void	renderer_set_resolve_targets(u32 colour_target, u32 depth_target);
+		void	renderer_set_stream_out_target(u32 buffer_index);
+        void    renderer_resolve_target( u32 target, e_msaa_resolve_type type );
         
         //resource
         void    renderer_read_back_resource( const resource_read_back_params& rrbp );

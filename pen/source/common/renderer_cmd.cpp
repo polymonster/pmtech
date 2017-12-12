@@ -240,6 +240,12 @@ namespace pen
 		u32 query_type;
 		u32 query_flags;
 	};
+
+	struct msaa_resolve_params
+	{
+		u32 render_target;
+		e_msaa_resolve_type resolve_type;
+	};
     
 	typedef struct  deferred_cmd
 	{
@@ -274,6 +280,7 @@ namespace pen
 			clear_cube_cmd                      clear_cube;
 			shader_link_params                  link_params;
             resource_read_back_params           rrb_params;
+			msaa_resolve_params					resolve_params;
 		};
 
 		deferred_cmd() {};
@@ -497,15 +504,15 @@ namespace pen
 			break;
 
 		case CMD_CREATE_SO_SHADER:
-			direct::renderer_create_so_shader(cmd.shader_load);
+			direct::renderer_create_stream_out_shader(cmd.shader_load);
 			break;
 
 		case CMD_SET_SO_TARGET:
-			direct::renderer_set_so_target(cmd.command_data_index);
+			direct::renderer_set_stream_out_target(cmd.command_data_index);
 			break;
 
         case CMD_RESOLVE_TARGET:
-            direct::renderer_resolve_target( cmd.command_data_index );
+            direct::renderer_resolve_target( cmd.resolve_params.render_target, cmd.resolve_params.resolve_type );
             break;
 
 		case CMD_DRAW_AUTO:
@@ -593,6 +600,66 @@ namespace pen
 		pen::threads_semaphore_signal(p_job_thread_info->p_sem_terminated, 1);
 	}
 
+	resolve_resources g_resolve_resources;
+
+	struct textured_vertex
+	{
+		float x, y, z, w;
+		float u, v;
+	};
+
+	void init_resolve_resources()
+	{
+		textured_vertex quad_vertices[] =
+		{
+			-1.0f, -1.0f, 0.5f, 1.0f,       //p1
+			0.0f, 1.0f,                     //uv1
+
+			-1.0f, 1.0f, 0.5f, 1.0f,        //p2
+			0.0f, 0.0f,                     //uv2
+
+			1.0f, 1.0f, 0.5f, 1.0f,         //p3
+			1.0f, 0.0f,                     //uv3
+
+			1.0f, -1.0f, 0.5f, 1.0f,        //p4
+			1.0f, 1.0f,                     //uv4
+		};
+
+		pen::buffer_creation_params bcp;
+		bcp.usage_flags = PEN_USAGE_DEFAULT;
+		bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+		bcp.cpu_access_flags = 0;
+
+		bcp.buffer_size = sizeof(textured_vertex) * 4;
+		bcp.data = (void*)&quad_vertices[0];
+
+		g_resolve_resources.vertex_buffer = pen::renderer_create_buffer(bcp);
+
+		//create index buffer
+		u16 indices[] =
+		{
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		bcp.usage_flags = PEN_USAGE_IMMUTABLE;
+		bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+		bcp.cpu_access_flags = 0;
+		bcp.buffer_size = sizeof(u16) * 6;
+		bcp.data = (void*)&indices[0];
+
+		g_resolve_resources.index_buffer = pen::renderer_create_buffer(bcp);
+
+		//create cbuffer
+		bcp.usage_flags = PEN_USAGE_DYNAMIC;
+		bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+		bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+		bcp.buffer_size = sizeof(resolve_cbuffer);
+		bcp.data = nullptr;
+
+		g_resolve_resources.constant_buffer = pen::renderer_create_buffer(bcp);
+	}
+
 	PEN_THREAD_RETURN renderer_thread_function(void* params)
 	{
 		job_thread_params* job_params = (job_thread_params*)params;
@@ -610,6 +677,8 @@ namespace pen
 
 		//initialise renderer
 		direct::renderer_initialise(job_params->user_data);
+
+		init_resolve_resources();
 		
 		renderer_wait_for_jobs();
 
@@ -732,7 +801,7 @@ namespace pen
 
 	}
 
-	u32 renderer_create_so_shader(const pen::shader_load_params &params)
+	u32 renderer_create_stream_out_shader(const pen::shader_load_params &params)
 	{
 		cmd_buffer[put_pos].command_index = CMD_CREATE_SO_SHADER;
 
@@ -1201,7 +1270,7 @@ namespace pen
 		INC_WRAP(put_pos);
 	}
 
-	void renderer_set_so_target(u32 buffer_index)
+	void renderer_set_stream_out_target(u32 buffer_index)
 	{
 		cmd_buffer[put_pos].command_index = CMD_SET_SO_TARGET;
 
@@ -1210,11 +1279,12 @@ namespace pen
 		INC_WRAP(put_pos);
 	}
 
-    void renderer_resolve_target( u32 target )
+    void renderer_resolve_target( u32 target, e_msaa_resolve_type type )
     {
         cmd_buffer[put_pos].command_index = CMD_RESOLVE_TARGET;
 
-        cmd_buffer[put_pos].command_data_index = target;
+        cmd_buffer[put_pos].resolve_params.render_target = target;
+		cmd_buffer[put_pos].resolve_params.resolve_type = type;
 
         INC_WRAP( put_pos );
     }
