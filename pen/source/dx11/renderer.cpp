@@ -71,6 +71,9 @@ namespace pen
 		f32 depth;
         u8 stencil;
 		u32 flags;
+
+		mrt_clear mrt[PEN_MAX_MRT];
+		u32 num_colour_targets;
 	};
 
 	struct texture2d_internal
@@ -203,8 +206,19 @@ namespace pen
 		resource_pool[ resoruce_index ].clear_state->rgba[ 3 ] = cs.a;
 		resource_pool[ resoruce_index ].clear_state->depth = cs.depth;
         resource_pool[ resoruce_index ].clear_state->stencil = cs.stencil;
-        
 		resource_pool[ resoruce_index ].clear_state->flags = cs.flags;
+
+		resource_pool[resoruce_index].clear_state->num_colour_targets = cs.num_colour_targets;
+
+		pen::memory_cpy(resource_pool[resoruce_index].clear_state->mrt, cs.mrt, sizeof(mrt_clear)*cs.num_colour_targets);
+
+		mrt_clear* mrt = resource_pool[resoruce_index].clear_state->mrt;
+
+		//convert int clears (required on gl) to floats for d3d
+		for (s32 i = 0; i < cs.num_colour_targets; ++i)
+			if (mrt[i].type == CLEAR_U32)
+				for (s32 c = 0; c < 4; ++c)
+					mrt[i].f[c] = (f32)cs.mrt[i].u[c];
 
 		return  resoruce_index;
 	}
@@ -229,21 +243,39 @@ namespace pen
 	{
         u32 flags = resource_pool[ clear_state_index ].clear_state->flags;
         
+		clear_state_internal* cs = resource_pool[clear_state_index].clear_state;
+
         //clear colour
         if( flags & PEN_CLEAR_COLOUR_BUFFER )
         {
-            for( s32 i = 0; i < g_context.num_active_colour_targets; ++i )
-            {
-                s32 ct = g_context.active_colour_target[i];
-                
-                ID3D11RenderTargetView* colour_rtv = resource_pool[ct].render_target->rt[colour_face];
-                
-                if (resource_pool[ct].render_target->rt_msaa[colour_face])
-                    colour_rtv = resource_pool[ct].render_target->rt_msaa[colour_face];
-                
-                g_immediate_context->ClearRenderTargetView( colour_rtv, &resource_pool[ clear_state_index ].clear_state->rgba[ 0 ] );
-            }
+			if (cs->num_colour_targets == 0)
+			{
+				for (s32 i = 0; i < g_context.num_active_colour_targets; ++i)
+				{
+					s32 ct = g_context.active_colour_target[i];
+
+					ID3D11RenderTargetView* colour_rtv = resource_pool[ct].render_target->rt[colour_face];
+
+					if (resource_pool[ct].render_target->rt_msaa[colour_face])
+						colour_rtv = resource_pool[ct].render_target->rt_msaa[colour_face];
+
+					g_immediate_context->ClearRenderTargetView(colour_rtv, &resource_pool[clear_state_index].clear_state->rgba[0]);
+				}
+			}
         }
+
+		//MRT clear colour
+		for (s32 i = 0; i < cs->num_colour_targets; ++i)
+		{
+			s32 ct = g_context.active_colour_target[i];
+
+			ID3D11RenderTargetView* colour_rtv = resource_pool[ct].render_target->rt[colour_face];
+
+			if (resource_pool[ct].render_target->rt_msaa[colour_face])
+				colour_rtv = resource_pool[ct].render_target->rt_msaa[colour_face];
+
+			g_immediate_context->ClearRenderTargetView(colour_rtv, cs->mrt[i].f);
+		}
         
         u32 d3d_flags = 0;
         if( flags & PEN_CLEAR_DEPTH_BUFFER )
