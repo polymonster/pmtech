@@ -305,9 +305,9 @@ namespace put
             return new_pmfx;
         }
 
-        pmfx_handle load( const c8* filename )
+        pmfx_handle load( const c8* pmfx_name )
         {
-            pmfx new_pmfx = load_internal(filename);
+            pmfx new_pmfx = load_internal(pmfx_name);
             
             pmfx_handle ph = 0;
             for( auto& p : s_pmfx_list )

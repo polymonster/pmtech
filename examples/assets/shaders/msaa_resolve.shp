@@ -59,7 +59,7 @@ ps_output ps_resolve_average_4x( vs_output_textured input )
 		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
 	output.colour /= 4.0;
 	
-	return output.colour;
+	return output;
 }
 
 ps_output ps_resolve_average_8x( vs_output_textured input )

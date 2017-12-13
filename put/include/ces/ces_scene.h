@@ -7,6 +7,8 @@
 #include "loader.h"
 #include "physics_cmdbuf.h"
 #include "str/Str.h"
+#include "pmfx.h"
+
 #include <vector>
 
 #define CES_DEBUG
@@ -45,6 +47,7 @@ namespace put
             CMP_ANIM_CONTROLLER = (1 << 9),
             CMP_ANIM_TRAJECTORY = (1 << 10),
             CMP_LIGHT           = (1 << 11),
+			CMP_TRANSFORM		= (1 << 12)
 		};
 
         enum e_light_types : u32
@@ -141,6 +144,13 @@ namespace put
             vec4f   data;
         };
 
+		struct transform
+		{
+			vec3f	translation;
+			quat	rotation;
+			vec3f	scale;
+		};
+
 		struct entity_scene
 		{
             u32                     num_nodes = 0;
@@ -154,6 +164,7 @@ namespace put
             hash_id*                id_resource;
 
 			u32*					parents;
+			transform*				transforms;
 			mat4*					local_matrices;
 			mat4*					world_matrices;
 			mat4*					offset_matrices;
@@ -221,7 +232,9 @@ namespace put
             camera* camera;
             pen::viewport* viewport;
             
+			pmfx::pmfx_handle pmfx_shader;
             hash_id technique;
+
 			entity_scene* scene = nullptr;
 		};
 

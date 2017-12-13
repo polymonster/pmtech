@@ -23,7 +23,7 @@ namespace put
             u32 program_index;
         };
     
-        pmfx_handle     load( const c8* filename );
+        pmfx_handle     load( const c8* pmfx_name );
         void            release( pmfx_handle handle );
         
         void            set_technique( pmfx_handle handle, u32 index );

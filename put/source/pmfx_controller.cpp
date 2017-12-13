@@ -168,7 +168,8 @@ namespace put
             u32     depth_stencil_state = 0;
             u32     blend_state = 0;
             
-            hash_id technique;
+			pmfx_handle pmfx_shader;
+            hash_id		technique;
             
             ces::entity_scene* scene;
             put::camera* camera;
@@ -1023,9 +1024,11 @@ namespace put
                     valid = false;
                 }
                 
+				//shader and technique
                 Str technique_str = view["technique"].as_str();
-                
                 new_view.technique = PEN_HASH(technique_str.c_str());
+
+				new_view.pmfx_shader = pmfx::load(view["pmfx_shader"].as_cstr());
                 
                 //scene views
                 pen::json scene_views = view["scene_views"];
@@ -1142,6 +1145,7 @@ namespace put
                 sv.camera = v.camera;
                 sv.viewport = &vp;
                 sv.cb_2d_view = cb_2d;
+				sv.pmfx_shader = v.pmfx_shader;
                 
                 //render passes
                 for( s32 rf = 0; rf < v.render_functions.size(); ++rf )

@@ -229,6 +229,40 @@ public:
 		return res;
 	}
 
+	inline void from_matrix(mat4 m) 
+	{
+		w = sqrt(1.0 + m.m[0] + m.m[5] + m.m[10]) / 2.0;
+		
+		double w4 = (4.0 * w);
+		x = (m.m[9] - m.m[6]) / w4;
+		y = (m.m[2] - m.m[8]) / w4;
+		z = (m.m[4] - m.m[1]) / w4;
+	}
+
+	inline vec3f Quaternion::to_euler(  )
+	{
+		vec3f euler;
+
+		// roll (x-axis rotation)
+		double sinr = +2.0 * (w * x + y * z);
+		double cosr = +1.0 - 2.0 * (x * x + y * y);
+		euler.x = atan2(sinr, cosr);
+
+		// pitch (y-axis rotation)
+		double sinp = +2.0 * (w * y - z * x );
+		if (fabs(sinp) >= 1)
+			euler.y = copysign(PI / 2, sinp); // use 90 degrees if out of range
+		else
+			euler.y = asin(sinp);
+
+		// yaw (z-axis rotation)
+		double siny = +2.0 * (w * z + x * y);
+		double cosy = +1.0 - 2.0 * (y * y + z * z);
+		euler.z = atan2(siny, cosy);
+
+		return euler;
+	}
+
 	f32 x, y, z, w;
 } Quaternion;
 

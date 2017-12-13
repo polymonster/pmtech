@@ -668,15 +668,35 @@ namespace put
                         vec3f corrected_euler = vec3f(x_theta, y_theta, z_theta);
                     }
                 }
-                
-                //make a transform matrix for geometry
-                mat4 rot_mat;
-                final_rotation.get_matrix(rot_mat);
-                
-                mat4 translation_mat = mat4::create_translation(translation);
-                
-                if(!has_matrix_transform)
-                    matrix = translation_mat * rot_mat;
+
+				if (!has_matrix_transform)
+				{
+					//create matrix from transform
+					scene->transforms[current_node].translation = translation;
+					scene->transforms[current_node].rotation = final_rotation;
+					scene->transforms[current_node].scale = vec3f::one();
+
+					//make a transform matrix for geometry
+					mat4 rot_mat;
+					final_rotation.get_matrix(rot_mat);
+
+					mat4 translation_mat = mat4::create_translation(translation);
+
+					matrix = translation_mat * rot_mat;
+				}
+				else
+				{
+					//decompose matrix into transform
+					scene->transforms[current_node].translation = matrix.get_translation();
+					scene->transforms[current_node].rotation.from_matrix(matrix);
+					
+					f32 sx = put::maths::magnitude(matrix.get_right());
+					f32 sy = put::maths::magnitude(matrix.get_up());
+					f32 sz = put::maths::magnitude(matrix.get_fwd());
+
+					scene->transforms[current_node].scale = vec3f::one();
+				}
+
                 
                 scene->local_matrices[current_node] = (matrix);
                 

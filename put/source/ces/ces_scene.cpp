@@ -53,6 +53,8 @@ namespace put
             
 			//components
 			ALLOC_COMPONENT_ARRAY(scene, parents, u32);
+
+			ALLOC_COMPONENT_ARRAY(scene, transforms, transform);
 			ALLOC_COMPONENT_ARRAY(scene, local_matrices, mat4);
 			ALLOC_COMPONENT_ARRAY(scene, world_matrices, mat4);
 			ALLOC_COMPONENT_ARRAY(scene, offset_matrices, mat4);
@@ -91,6 +93,7 @@ namespace put
             FREE_COMPONENT_ARRAY(scene, id_resource);
             
 			FREE_COMPONENT_ARRAY(scene, parents);
+			FREE_COMPONENT_ARRAY(scene, transforms);
 			FREE_COMPONENT_ARRAY(scene, local_matrices);
 			FREE_COMPONENT_ARRAY(scene, world_matrices);
 			FREE_COMPONENT_ARRAY(scene, offset_matrices);
@@ -138,6 +141,7 @@ namespace put
             p_sn->id_resource[dst] = p_sn->id_resource[src];
             
             //componenets
+			p_sn->transforms[dst] = p_sn->transforms[src];
             p_sn->local_matrices[dst] = p_sn->local_matrices[src];
             p_sn->world_matrices[dst] = p_sn->world_matrices[src];
             p_sn->offset_matrices[dst] = p_sn->offset_matrices[src];
@@ -195,9 +199,7 @@ namespace put
             
             if( scene->view_flags & SV_HIDE )
                 return;
-            
-            static pmfx::pmfx_handle model_pmfx = pmfx::load("fx_test");
-            
+                        
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             
 			for (u32 n = 0; n < scene->num_nodes; ++n)
@@ -239,7 +241,7 @@ namespace put
                     
                     hash_id mh = p_geom->p_skin ? ID_SUB_TYPE_SKINNED : ID_SUB_TYPE_NON_SKINNED;
 
-                    if( !pmfx::set_technique( model_pmfx, view.technique, mh ) )
+                    if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
                         continue;
                     
                     //set cbs
@@ -340,6 +342,24 @@ namespace put
 			{
 				u32 parent = scene->parents[n];
 
+				if (scene->entities[n] & CMP_TRANSFORM)
+				{
+					transform& t = scene->transforms[n];
+
+					//generate matrix from transform
+					mat4 rot_mat;
+					t.rotation.get_matrix(rot_mat);
+
+					mat4 translation_mat = mat4::create_translation(t.translation);
+
+					mat4 scale_mat = mat4::create_scale(t.scale);
+
+					scene->local_matrices[n] = translation_mat * rot_mat * scale_mat;
+
+					//
+					scene->entities[n] &= ~CMP_TRANSFORM;
+				}
+
 				if (parent == n)
 					scene->world_matrices[n] = scene->local_matrices[n];
 				else
@@ -425,6 +445,7 @@ namespace put
             //simple parts of the scene are just homogeonous chucks of data
             ofs.write( (const c8*)scene->entities,          sizeof( a_u64 ) * scene->num_nodes );
             ofs.write( (const c8*)scene->parents,           sizeof( u32 )   * scene->num_nodes );
+			ofs.write( (const c8*)scene->transforms,		sizeof(transform)  * scene->num_nodes);
             ofs.write( (const c8*)scene->local_matrices,    sizeof( mat4 )  * scene->num_nodes );
             ofs.write( (const c8*)scene->world_matrices,    sizeof( mat4 )  * scene->num_nodes );
             ofs.write( (const c8*)scene->offset_matrices,   sizeof( mat4 )  * scene->num_nodes );
@@ -529,6 +550,7 @@ namespace put
             //data
             ifs.read( (c8*)scene->entities, sizeof( a_u64 ) * scene->num_nodes );
             ifs.read( (c8*)scene->parents, sizeof( u32 ) * scene->num_nodes );
+			ifs.read( (c8*)scene->transforms, sizeof(transform) * scene->num_nodes);
             ifs.read( (c8*)scene->local_matrices, sizeof( mat4 ) * scene->num_nodes );
             ifs.read( (c8*)scene->world_matrices, sizeof( mat4 ) * scene->num_nodes );
             ifs.read( (c8*)scene->offset_matrices, sizeof( mat4 ) * scene->num_nodes );
