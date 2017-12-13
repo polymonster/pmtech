@@ -627,12 +627,16 @@ namespace put
                 {
                     u32 nn = ces::get_new_node( scene );
                     
-                    scene->entities[nn] &= CMP_ALLOCATED;
+                    scene->entities[nn] |= CMP_ALLOCATED;
                     
                     scene->names[nn] = "node_";
                     scene->names[nn].appendf("%u", nn);
                     
                     scene->parents[nn] = nn;
+
+					scene->transforms[nn].translation = vec3f::zero();
+					scene->transforms[nn].rotation.euler_angles(0.0f, 0.0f, 0.0f);
+					scene->transforms[nn].scale = vec3f::one();
                 }
                 put::dev_ui::set_tooltip("Add New Node");
                 

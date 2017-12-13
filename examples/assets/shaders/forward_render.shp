@@ -65,9 +65,15 @@ cbuffer per_draw_call : register(b1)
 	float4   user_data; //x = id, yzw = unused
 };
 
-cbuffer debug_options : register(b13)
+struct forward_light
 {
-	float4 debug_render_options;
+	float4 pos_radius;
+	float4 colour;
+};
+
+cbuffer per_pass_lights : register(b3)
+{
+	forward_light lights[8];
 };
 
 declare_texture_samplers
@@ -89,6 +95,9 @@ vs_output vs_main_skinned( vs_input_skinned input )
 	output.world_pos = mul( input.position, world_matrix );
 		
 	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+	float3x3 ws_rotation_matrix = to_3x3(world_matrix);
+	
+	rotation_matrix = ws_rotation_matrix;
 	
 	output.normal = mul( input.normal.xyz, rotation_matrix );
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
@@ -109,7 +118,10 @@ vs_output vs_main( vs_input input )
 	output.world_pos = mul( input.position, world_matrix );
 		
 	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
-	
+	float3x3 ws_rotation_matrix = to_3x3(world_matrix);
+		
+	rotation_matrix = ws_rotation_matrix;
+		
 	output.normal = mul( input.normal.xyz, rotation_matrix );
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
 	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
@@ -119,12 +131,6 @@ vs_output vs_main( vs_input input )
     return output;
 }
 
-cbuffer per_pass_lights : register(b0)
-{
-	float4 light_positions_radius[10];
-	float4 light_colour[10];
-};
-
 ps_output ps_forward_lit( vs_output input ) 
 {	
 	ps_output output;
@@ -133,15 +139,17 @@ ps_output ps_forward_lit( vs_output input )
 	
 	float3 n = input.normal.xyz;
 	
-	float3 l = normalize( float3( 1.0, -1.0, 1.0 ) );
-	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 	
-	lit_colour += dot( n, l ) * albedo.rgb;
-	
+	for( int i = 0; i < 8; ++i )
+	{
+		float3 l = normalize( lights[i].pos_radius.xyz - input.world_pos.xyz );
+		lit_colour	+= 	lights[i].colour.rgb * dot( n, l );
+	}
+		
 	output.colour.rgb = lit_colour;
 	output.colour.a = albedo.a;
-	
+		
     return output;
 }
 

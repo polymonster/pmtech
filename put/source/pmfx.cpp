@@ -30,12 +30,11 @@ namespace put
         const u32 max_techniques_per_fx = 8;
         struct pmfx
         {
-            const c8*       filename = nullptr;
+			Str				filename;
             bool            invalidated = false;
             pen::json       info;
             u32             info_timestamp = 0;
-            u32             num_techniques = 0;
-            shader_program  techniques[max_techniques_per_fx] = { 0 };
+			std::vector<shader_program> techniques;
         };
         std::vector<pmfx> s_pmfx_list;
         
@@ -263,13 +262,13 @@ namespace put
         
         void release( pmfx_handle handle )
         {
-            s_pmfx_list[handle].filename = nullptr;
+           // s_pmfx_list[handle].filename = nullptr;
             
             for( auto& t : s_pmfx_list[handle].techniques )
             {
-                pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
-                pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
-                pen::renderer_release_input_layout(t.input_layout );
+                //pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
+                //pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
+                //pen::renderer_release_input_layout(t.input_layout );
             }
         }
         
@@ -281,7 +280,6 @@ namespace put
             
             //read shader info json
             pmfx new_pmfx;
-            new_pmfx.num_techniques = 0;
             
             new_pmfx.filename = filename;
             
@@ -299,7 +297,9 @@ namespace put
             for( s32 i = 0; i < _techniques.size(); ++i )
             {
                 pen::json t = _techniques[i];
-                new_pmfx.techniques[new_pmfx.num_techniques++] = load_shader_technique( filename, t, new_pmfx.info );
+                shader_program new_technique = load_shader_technique( filename, t, new_pmfx.info );
+
+				new_pmfx.techniques.push_back(new_technique);
             }
             
             return new_pmfx;
@@ -307,20 +307,26 @@ namespace put
 
         pmfx_handle load( const c8* pmfx_name )
         {
-            pmfx new_pmfx = load_internal(pmfx_name);
-            
-            pmfx_handle ph = 0;
-            for( auto& p : s_pmfx_list )
-            {
-                if( p.filename == nullptr )
-                {
-                    p = new_pmfx;
-                    return ph;
-                }
-                
-                ++ph;
-            }
-            
+			//return existing
+			pmfx_handle ph = 0;
+			for (auto& p : s_pmfx_list)
+				if (p.filename == pmfx_name)
+					return ph;
+
+			pmfx new_pmfx = load_internal(pmfx_name);
+
+			ph = 0;
+			for (auto& p : s_pmfx_list)
+			{
+				if (p.filename.length() == 0)
+				{
+					p = new_pmfx;
+					return ph;
+				}
+
+				++ph;
+			}
+                        
             s_pmfx_list.push_back(new_pmfx);
             
             return ph;
@@ -335,8 +341,8 @@ namespace put
                 if( pmfx_set.invalidated )
                 {
                     c8 info_file_buf[ 256 ];
-                    get_pmfx_info_filename( info_file_buf, pmfx_set.filename );
-                    
+                    get_pmfx_info_filename( info_file_buf, pmfx_set.filename.c_str() );
+
                     u32 current_ts;
                     pen_error err = pen::filesystem_getmtime(info_file_buf, current_ts);
                     
@@ -345,7 +351,7 @@ namespace put
                     if( err == PEN_ERR_OK && current_ts > pmfx_set.info_timestamp )
                     {
                         //load new one
-                        pmfx pmfx_new = load_internal( pmfx_set.filename );
+                        pmfx pmfx_new = load_internal( pmfx_set.filename.c_str() );
                         
                         //release existing
                         release(current_counter);

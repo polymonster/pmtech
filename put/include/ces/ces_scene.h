@@ -151,6 +151,12 @@ namespace put
 			vec3f	scale;
 		};
 
+		struct forward_light
+		{
+			vec4f pos_radius;
+			vec4f colour;
+		};
+
 		struct entity_scene
 		{
             u32                     num_nodes = 0;
@@ -183,6 +189,8 @@ namespace put
             animation_controller*   anim_controller;
             
             u32*                    cbuffer;
+
+			u32						forward_light_buffer = PEN_INVALID_HANDLE;
             
 #ifdef CES_DEBUG
             Str*                    names;

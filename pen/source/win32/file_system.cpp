@@ -10,6 +10,8 @@ namespace pen
 #define WINDOWS_TICK 10000000
 #define SEC_TO_UNIX_EPOCH 11644473600LL
 
+	c8* swap_slashes(const c8* filename);
+
 	u32 win32_time_to_unix_seconds(long long ticks)
 	{
 		return (u32)(ticks / WINDOWS_TICK - SEC_TO_UNIX_EPOCH);
@@ -17,8 +19,12 @@ namespace pen
 
 	pen_error filesystem_getmtime(const c8* filename, u32& mtime_out)
 	{
+		c8* corrected_name = swap_slashes(filename);
+
 		OFSTRUCT of_struct;
-		HFILE f = OpenFile(filename, &of_struct, OF_READ);
+		HFILE f = OpenFile(corrected_name, &of_struct, OF_READ);
+
+		pen::memory_free(corrected_name);
 
 		if (f != HFILE_ERROR)
 		{
@@ -51,13 +57,11 @@ namespace pen
 		while (p_src_char < filename + str_len)
 		{
 			if (*p_src_char == '/')
-			{
 				*p_dest_char = '\\';
-			}
+			else if (*p_src_char == '@')
+				*p_dest_char = ':';
 			else
-			{
 				*p_dest_char = *p_src_char;
-			}
 
 			p_dest_char++;
 			p_src_char++;

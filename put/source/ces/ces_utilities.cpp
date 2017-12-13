@@ -64,7 +64,7 @@ namespace put
                 continue;
             
             if( i > scene->num_nodes )
-                scene->num_nodes = i;
+                scene->num_nodes = i+1;
             
             return i-1;
         }

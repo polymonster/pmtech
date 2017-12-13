@@ -190,6 +190,16 @@ namespace put
 
 			resize_scene_buffers(new_instance.scene);
 
+			//create buffers
+			pen::buffer_creation_params bcp;
+			bcp.usage_flags = PEN_USAGE_DYNAMIC;
+			bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+			bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+			bcp.buffer_size = sizeof(forward_light) * 8;
+			bcp.data = nullptr;
+
+			new_instance.scene->forward_light_buffer = pen::renderer_create_buffer(bcp);
+
 			return new_instance.scene;
 		}
         
@@ -244,8 +254,14 @@ namespace put
                     if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
                         continue;
                     
+					pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
+					//pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_VS);
+
                     //set cbs
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
+
+					//lights
+
 
 					//set ib / vb
 					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0 );
@@ -417,6 +433,24 @@ namespace put
                 //per object world matrix
                 pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
             }
+
+			static forward_light light_buffer[8];
+			s32 pos = 0;
+			for (s32 n = 0; n < scene->num_nodes; ++n)
+			{
+				if (!(scene->entities[n] & CMP_LIGHT))
+					continue;
+				
+				transform& t = scene->transforms[n];
+				scene_node_light& l = scene->lights[n];
+
+				light_buffer[pos].pos_radius = vec4f(t.translation, 1.0 );
+				light_buffer[pos].colour = vec4f(l.colour, 1.0);
+
+				++pos;
+			}
+
+			pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer[0], sizeof(light_buffer));
 		}
         
         void save_scene( const c8* filename, entity_scene* scene )

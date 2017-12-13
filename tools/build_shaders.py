@@ -301,6 +301,27 @@ def find_main(shader_text, decl):
             body_pos += 1
     return shader_text[start:body_pos] + "\n\n"
 
+special_structs = ["vs_input", "vs_output", "ps_input", "ps_output"]
+
+def find_struct_declarations(shader_text):
+    struct_list = []
+    start = 0
+    while start != -1:
+        start = shader_text.find("struct", start)
+        if start == -1:
+            break
+        end = shader_text.find("};", start)
+        if end != -1:
+            end += 2
+            found_struct = shader_text[start:end]
+            valid = True
+            for ss in special_structs:
+                if ss in found_struct:
+                    valid = False
+            if valid:
+                struct_list.append(shader_text[start:end] + "\n")
+        start = end
+    return struct_list
 
 def find_generic_functions(shader_text):
     deliminator_list = [";", "\n"]
@@ -711,7 +732,12 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     # texture samplers
     texture_samplers_source = find_texture_samplers(shader_file_text)
 
+    # structs
+    struct_list = find_struct_declarations(shader_file_text)
+
     # vertex shader
+    for s in struct_list:
+        vs_source += s
     vs_source += vs_input_source
     vs_source += vs_output_source
     for cbuf in constant_buffers:
@@ -721,6 +747,8 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     vs_source += vs_main
 
     # pixel shader
+    for s in struct_list:
+        ps_source += s
     ps_source += vs_output_source
     for cbuf in constant_buffers:
         ps_source += cbuf
