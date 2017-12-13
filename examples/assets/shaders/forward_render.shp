@@ -137,7 +137,7 @@ ps_output ps_forward_lit( vs_output input )
 	
 	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
 	
-	float3 n = input.normal.xyz;
+	float3 n = normalize( input.normal.xyz );
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 	
@@ -147,7 +147,7 @@ ps_output ps_forward_lit( vs_output input )
 		lit_colour	+= 	lights[i].colour.rgb * dot( n, l );
 	}
 		
-	output.colour.rgb = lit_colour;
+	output.colour.rgb = lit_colour * albedo.rgb;
 	output.colour.a = albedo.a;
 		
     return output;

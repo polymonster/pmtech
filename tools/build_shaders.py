@@ -765,6 +765,9 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
         if ps_main != "":
             compile_hlsl(ps_source, filename, "ps_4_0", ".ps", ps_name, technique_name)
     elif shader_platform == "glsl":
+        for s in struct_list:
+            macros_text += s
+
         compile_glsl(
             filename, macros_text,
             vs_main, ps_main,
