@@ -391,7 +391,7 @@ namespace pen
             k_resize_counter++;
         }
         
-        if( k_resize_counter > 5 )
+        if( k_resize_counter > 5 && k_needs_resize )
         {
             k_resize_counter = 0;
             renderer_resize_managed_targets( );
@@ -1058,6 +1058,9 @@ namespace pen
                 else
                     glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
             }
+            
+            framebuffer fb = {hash[i], fbos[i]};
+            k_framebuffers.push_back(fb);
         }
         
         if( type == pen::RESOLVE_CUSTOM )

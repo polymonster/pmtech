@@ -199,7 +199,7 @@ namespace put
             
             if( scene->view_flags & SV_HIDE )
                 return;
-                        
+            
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             
 			for (u32 n = 0; n < scene->num_nodes; ++n)

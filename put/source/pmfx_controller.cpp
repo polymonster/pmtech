@@ -1151,7 +1151,7 @@ namespace put
                 for( s32 rf = 0; rf < v.render_functions.size(); ++rf )
                     v.render_functions[rf](sv);
             }
-
+            
 			//resolve
 			pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 

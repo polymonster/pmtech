@@ -239,7 +239,7 @@ public:
 		z = (m.m[4] - m.m[1]) / w4;
 	}
 
-	inline vec3f Quaternion::to_euler(  )
+	inline vec3f to_euler(  )
 	{
 		vec3f euler;
 

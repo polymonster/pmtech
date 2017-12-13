@@ -1017,7 +1017,7 @@ namespace put
 		}
         
         void render_scene_editor( const scene_view& view )
-        {
+        {            
             vec2i vpi = vec2i( view.viewport->width, view.viewport->height );
             
             entity_scene* scene = view.scene;
