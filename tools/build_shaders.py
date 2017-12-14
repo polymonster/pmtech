@@ -135,12 +135,15 @@ def generate_shader_info(
     print(dir_path)
     included_files.insert(0, base_filename)
 
+    _this_file = os.path.join(root_dir, this_file)
+    _macros_file = os.path.join(root_dir, macros_file)
+
     # special files which affect the validity of compiled shaders
-    shader_info["files"].append(dependencies.create_info(this_file))
-    shader_info["files"].append(dependencies.create_info(macros_file))
+    shader_info["files"].append(dependencies.create_info(_this_file))
+    shader_info["files"].append(dependencies.create_info(_macros_file))
 
     for ifile in included_files:
-        full_name = os.path.join(dir_path, ifile)
+        full_name = os.path.join(root_dir, dir_path, ifile)
         shader_info["files"].append(dependencies.create_info(full_name))
 
     shader_info["techniques"] = techniques

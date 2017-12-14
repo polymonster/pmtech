@@ -112,6 +112,7 @@ vs_output vs_main( vs_input input )
 {
 	vs_output output;
 	
+	
 	float4x4 wvp = mul( world_matrix, vp_matrix );
 
 	output.position = mul( input.position, wvp );
@@ -150,7 +151,7 @@ ps_output ps_forward_lit( vs_output input )
 	output.colour.rgb = lit_colour * albedo.rgb;
 	output.colour.a = albedo.a;
 	
-	//output.colour.r = 1.0;
+	output.colour.r = 0.0;
 	
     return output;
 }
