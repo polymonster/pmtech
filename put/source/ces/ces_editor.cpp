@@ -801,9 +801,49 @@ namespace put
                 ImGui::End();
             }
         }
+        
+        void apply_transform_to_selection( entity_scene* scene, const vec3f move_axis )
+        {
+            for (auto& s : k_selection_list)
+            {
+                //only move if parent isnt selected
+                s32 parent = scene->parents[s];
+                if (parent != s)
+                {
+                    bool found = false;
+                    for (auto& pp : k_selection_list)
+                        if (pp == parent)
+                        {
+                            found = true;
+                            break;
+                        }
+                    
+                    if (found)
+                        continue;
+                }
+                
+                transform& t = scene->transforms[s];
+                if (k_transform_mode == TRANSFORM_TRANSLATE)
+                    t.translation += move_axis;
+                if (k_transform_mode == TRANSFORM_SCALE)
+                    t.scale += move_axis * 0.1;
+                if (k_transform_mode == TRANSFORM_ROTATE)
+                {
+                    quat q;
+                    q.euler_angles(move_axis.z, move_axis.y, move_axis.x);
+                    
+                    t.rotation = q * t.rotation;
+                }
+                
+                scene->entities[s] |= CMP_TRANSFORM;
+            }
+        }
 
 		void transform_widget( const scene_view& view )
 		{
+            if( k_selection_list.empty() )
+                return;
+            
 			entity_scene* scene = view.scene;
 			vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
 
@@ -818,30 +858,103 @@ namespace put
 			vec3f r0 = put::maths::unproject(vec3f(mousev3.x, mousev3.y, 0.0f), view.camera->view, view.camera->proj, vpi);
 			vec3f r1 = put::maths::unproject(vec3f(mousev3.x, mousev3.y, 1.0f), view.camera->view, view.camera->proj, vpi);
 			vec3f vr = put::maths::normalise(r1 - r0);
+            
+            vec3f pos = vec3f::zero();
+            
+            for (auto& s : k_selection_list)
+            {
+                vec3f& min = scene->bounding_volumes[s].transformed_min_extents;
+                vec3f& max = scene->bounding_volumes[s].transformed_max_extents;
+                
+                pos += min + (max - min) * 0.5f;
+            }
+            
+            pos /= (f32)k_selection_list.size();
+            
+            mat4 widget;
+            widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
+            
+            if( pen::input_is_key_pressed(PENK_Z) )
+                view.camera->focus = pos;
+
+            //distance for consistent-ish size
+            mat4 res = view.camera->proj * view.camera->view;
+            
+            f32 w = 1.0;
+            vec3f screen_pos = res.transform_vector(pos, &w);
+            f32 d = fabs(screen_pos.z) * 0.1f;
+            
+            if( screen_pos.z < -0.0 )
+                return;
+            
+            if( k_transform_mode == TRANSFORM_ROTATE )
+            {
+                float rd = d * 0.75;
+                
+                vec3f plane_normals[ ] =
+                {
+                    vec3f( 1.0f, 0.0f, 0.0f ),
+                    vec3f( 0.0f, 1.0f, 0.0f ),
+                    vec3f( 0.0f, 0.0f, 1.0f )
+                };
+
+                vec3f _cp = vec3f::zero();
+                static bool selected[3] = { 0 };
+                for( s32 i = 0; i < 3; ++i )
+                {
+                    vec3f cp = maths::ray_vs_plane( vr, r0, plane_normals[i], pos );
+                    
+                    if(!ms.buttons[PEN_MOUSE_L])
+                    {
+                        selected[i] = false;
+                        f32 dd = maths::magnitude(cp - pos);
+                        if( dd < rd + rd * 0.05 &&
+                           dd > rd - rd * 0.05 )
+                            selected[i] = true;
+                    }
+                    
+                    vec3f col = plane_normals[i] * 0.7;
+                    if( selected[i] )
+                    {
+                        _cp = cp;
+                        col = vec3f::one();
+                    }
+                    
+                    dbg::add_circle(plane_normals[i], pos, rd, vec4f( col, 1.0));
+                }
+                
+                static vec3f attach_point = vec3f::zero();
+                for( s32 i = 0; i < 3; ++i )
+                {
+                    if(!ms.buttons[PEN_MOUSE_L])
+                    {
+                        attach_point = _cp;
+                        continue;
+                    }
+                    
+                    if( selected[i] )
+                    {
+                        vec3f prev_line = maths::normalise(attach_point - pos);
+                        vec3f cur_line = maths::normalise(_cp - pos);
+                        
+                        dbg::add_line(pos, attach_point, vec4f::cyan());
+                        dbg::add_line(pos, _cp, vec4f::magenta());
+                        
+                        vec3f x = maths::cross(prev_line, cur_line);
+                        f32 amt = maths::dot( x, plane_normals[i] );
+                        
+                        apply_transform_to_selection( view.scene, plane_normals[i] * amt);
+                        
+                        attach_point = _cp;
+                        break;
+                    }
+                }
+                
+                return;
+            }
 
 			if (k_transform_mode == TRANSFORM_TRANSLATE || k_transform_mode == TRANSFORM_SCALE)
 			{
-				vec3f pos = vec3f::zero();
-
-				for (auto& s : k_selection_list)
-				{
-					vec3f& min = scene->bounding_volumes[s].transformed_min_extents;
-					vec3f& max = scene->bounding_volumes[s].transformed_max_extents;
-
-					pos += min + (max - min) * 0.5f;
-				}
-
-				pos /= (f32)k_selection_list.size();
-
-				mat4 widget;
-				widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
-
-				mat4 res = view.camera->proj * view.camera->view;
-
-				f32 w = 1.0;
-				vec3f screen_pos = res.transform_vector(pos, &w);
-				f32 d = fabs(screen_pos.z) * 0.1f;
-
 				static vec3f unit_axis[] =
 				{
 					vec3f::zero(),
@@ -907,7 +1020,7 @@ namespace put
 				//draw axes
 				for (s32 i = 1; i < 4; ++i)
 				{
-					vec4f col = vec4f(unit_axis[i], 1.0f);
+					vec4f col = vec4f(unit_axis[i] * 0.7f, 1.0f);
 
 					if (selected_axis & (1 << i))
 						col = vec4f::one();
@@ -991,33 +1104,8 @@ namespace put
                     break;
 				}
 
-				for (auto& s : k_selection_list)
-				{
-					//only move if parent isnt selected
-					s32 parent = scene->parents[s];
-					if (parent != s)
-					{
-						bool found = false;
-						for (auto& pp : k_selection_list)
-							if (pp == parent)
-							{
-								found = true;
-								break;
-							}
-
-						if (found)
-							continue;
-					}
-
-					transform& t = scene->transforms[s];
-					if (k_transform_mode == TRANSFORM_TRANSLATE)
-						t.translation += move_axis;
-					if (k_transform_mode == TRANSFORM_SCALE)
-						t.scale += move_axis * 0.1;
-
-					scene->entities[s] |= CMP_TRANSFORM;
-				}
-
+                apply_transform_to_selection( view.scene, move_axis );
+				
 				for (s32 i = 0; i < 3; ++i)
 				{
 					pre_click_axis_pos[i] = axis_pos[i];
