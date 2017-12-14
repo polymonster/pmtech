@@ -3,13 +3,14 @@ import subprocess
 import os.path
 import sys
 import shutil
+import json
+import helpers
 
-#use_win_reg = 0
-#if os.name == "nt" and use_win_reg == 1:
-#    import _winreg as winreg
+config = open("build_config.json")
+build_config = json.loads(config.read())
 
+tools_dir = os.path.join(helpers.correct_path(build_config["pmtech_dir"]), "tools")
 
-tools_dir = os.path.join("..", "tools")
 assets_dir = "assets"
 
 action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs"]
@@ -188,11 +189,14 @@ for step in extra_build_steps:
     subprocess.check_call(step, shell=True)
 
 for step in copy_steps:
+    src_dir = os.path.join(assets_dir, step)
+    if not os.path.exists(src_dir):
+        continue
     dest_dir = os.path.join(data_dir, step)
     if os.path.exists(dest_dir):
         shutil.rmtree(dest_dir)
     print("copying: " + step + " to " + dest_dir)
-    shutil.copytree(os.path.join(assets_dir, step), dest_dir)
+    shutil.copytree(src_dir, dest_dir)
 
 
 
