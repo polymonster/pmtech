@@ -112,6 +112,8 @@ def get_platform_info():
 
     extra_target_info = "--platform_dir=" + platform
 
+    extra_target_info += " --pmtech_dir=" + build_config["pmtech_dir"] + "/"
+
     if platform == "ios":
         extra_target_info = "--xcode_target=ios"
         extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "copy_files.py"))

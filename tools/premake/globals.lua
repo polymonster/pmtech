@@ -17,6 +17,11 @@ if _OPTIONS["platform_dir"] then
 	platform_dir = _OPTIONS["platform_dir"]
 end
 
+pmtech_dir = "../"
+if _OPTIONS["pmtech_dir"] then
+	pmtech_dir = _OPTIONS["pmtech_dir"]
+end
+
 if _ACTION == "gmake" then
 
 	build_cmd = "-std=c++11 -stdlib=libc++"
