@@ -53,27 +53,27 @@ if _ACTION == "vs2017" or _ACTION == "vs2015" then
 	bullet_lib_debug = (bullet_lib_debug .. "_x64")
 end
 
-function create_app( project_name, root_directory )
+function create_app( project_name, source_directory, root_directory )
 project ( project_name )
 	kind "WindowedApp"
 	language "C++"
 	
 	libdirs
 	{ 
-		"../pen/lib/" .. platform_dir, 
-		"../put/lib/" .. platform_dir,
+		pmtech_dir .. "pen/lib/" .. platform_dir, 
+		pmtech_dir .. "put/lib/" .. platform_dir,
 				
-		("../pen/third_party/fmod/lib/" .. platform_dir),
-		("../put/bullet/lib/" .. bullet_lib_dir),
+		(pmtech_dir .. "pen/third_party/fmod/lib/" .. platform_dir),
+		(pmtech_dir .. "put/bullet/lib/" .. bullet_lib_dir),
 	}
 	
 	includedirs
 	{ 
-		"../pen/include/common", 
-		"../pen/include/" .. platform_dir,
-		"../pen/include/" .. renderer_dir,
-		"../put/include/",
-		"../pen/third_party/",
+		pmtech_dir .. "pen/include/common", 
+		pmtech_dir .. "pen/include/" .. platform_dir,
+		pmtech_dir .. "pen/include/" .. renderer_dir,
+		pmtech_dir .. "put/include/",
+		pmtech_dir .. "pen/third_party/",
 		
 		"include/"
 	}
@@ -95,13 +95,13 @@ project ( project_name )
 	
 	files 
 	{ 
-		(root_directory .. "code/" .. project_name .. "/**.cpp"),
-		(root_directory .. "code/" .. project_name .. "/**.c"),
-		(root_directory .. "code/" .. project_name .. "/**.h"),
-		(root_directory .. "code/" .. project_name .. "/**.m"),
+		(root_directory .. "code/" .. source_directory .. "/**.cpp"),
+		(root_directory .. "code/" .. source_directory .. "/**.c"),
+		(root_directory .. "code/" .. source_directory .. "/**.h"),
+		(root_directory .. "code/" .. source_directory .. "/**.m"),
 	}
 	
-	disablewarnings { "4800", "4305", "4018" }
+	disablewarnings { "4800", "4305", "4018", "4244", "4267" }
 	 
 	configuration "Debug"
 		defines { "DEBUG" }
@@ -118,4 +118,8 @@ project ( project_name )
 		links { "pen", "put", bullet_lib }
 		architecture "x64"
 		
+end
+
+function create_app_example( project_name, root_directory )
+	create_app( project_name, project_name, root_directory )
 end

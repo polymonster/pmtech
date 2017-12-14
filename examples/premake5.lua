@@ -1,42 +1,4 @@
---add extension options
-newoption 
-{
-   trigger     = "renderer",
-   value       = "API",
-   description = "Choose a renderer",
-   allowed = 
-   {
-      { "opengl", "OpenGL" },
-      { "dx11",  "DirectX 11 (Windows only)" },
-   }
-}
-
-newoption 
-{
-   trigger     = "sdk_version",
-   value       = "version",
-   description = "Specify operating system SDK",
-}
-
-newoption 
-{
-   trigger     = "platform_dir",
-   value       = "dir",
-   description = "specify platform specifc src folder",
-}
-
-newoption 
-{
-   trigger     = "xcode_target",
-   value       = "TARGET",
-   description = "Choose an xcode build target",
-   allowed = 
-   {
-      { "osx", "OSX" },
-      { "ios",  "iOS" },
-   }
-}
-
+dofile "../tools/premake/options.lua"
 dofile "../tools/premake/globals.lua"
 dofile "../tools/premake/app_template.lua"
 
@@ -56,16 +18,16 @@ dofile "../put/project.lua"
 
 -- Example projects	
 -- ( project name, current script dir, )
-create_app( "empty_project", script_path() )
-create_app( "basic_triangle", script_path() )
-create_app( "textures", script_path() )
-create_app( "render_target", script_path() )
-create_app( "debug_text", script_path() )
-create_app( "play_sound", script_path() )
-create_app( "imgui", script_path() )
-create_app( "input", script_path() )
-create_app( "audio_player", script_path() )
-create_app( "shader_toy", script_path() )
-create_app( "scene_editor", script_path() )
+create_app_example( "empty_project", script_path() )
+create_app_example( "basic_triangle", script_path() )
+create_app_example( "textures", script_path() )
+create_app_example( "render_target", script_path() )
+create_app_example( "debug_text", script_path() )
+create_app_example( "play_sound", script_path() )
+create_app_example( "imgui", script_path() )
+create_app_example( "input", script_path() )
+create_app_example( "audio_player", script_path() )
+create_app_example( "shader_toy", script_path() )
+create_app_example( "scene_editor", script_path() )
 	
 	

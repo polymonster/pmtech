@@ -149,6 +149,8 @@ ps_output ps_forward_lit( vs_output input )
 		
 	output.colour.rgb = lit_colour * albedo.rgb;
 	output.colour.a = albedo.a;
+	
+	output.colour.rgb = float3( 1.0, 1.0, 1.0 );
 		
     return output;
 }

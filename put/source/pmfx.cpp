@@ -261,13 +261,13 @@ namespace put
         
         void release( pmfx_handle handle )
         {
-           // s_pmfx_list[handle].filename = nullptr;
+			s_pmfx_list[handle].filename = nullptr;
             
             for( auto& t : s_pmfx_list[handle].techniques )
             {
-                //pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
-                //pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
-                //pen::renderer_release_input_layout(t.input_layout );
+                pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
+				pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
+				pen::renderer_release_input_layout(t.input_layout );
             }
         }
         

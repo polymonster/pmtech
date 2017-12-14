@@ -14,6 +14,10 @@ if os.name == "posix":
 
 build_dir = os.path.join(os.getcwd(), "bin", platform, "data", "models")
 
+def correct_path(path):
+    if os.name == "nt":
+        return path.replace("/", "\\")
+    return path
 
 class pmm_file:
     geometry = []
