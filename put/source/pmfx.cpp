@@ -27,7 +27,6 @@ namespace put
         };
         shader_program null_shader = { 0 };
         
-        const u32 max_techniques_per_fx = 8;
         struct pmfx
         {
 			Str				filename;

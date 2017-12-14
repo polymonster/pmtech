@@ -17,9 +17,11 @@ if os.name == "posix":
 
 for i in range(1, len(sys.argv)):
     if "-root_dir" in sys.argv[i]:
-        root_dir = os.path.join(root_dir, sys.argv[i+1])
+        os.chdir(sys.argv[i+1])
     if "-platform" in sys.argv[i]:
         shader_platform = sys.argv[i+1]
+
+root_dir = os.getcwd()
 
 hlsl_key = ["float4x4", "float3x3", "float2x2", "float4", "float3", "float2", "lerp", "modf", "depth_ps_output"]
 glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod", "gl_FragDepth"]
