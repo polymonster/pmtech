@@ -191,14 +191,16 @@ for step in extra_build_steps:
     subprocess.check_call(step, shell=True)
 
 for step in copy_steps:
-    src_dir = os.path.join(assets_dir, step)
-    if not os.path.exists(src_dir):
-        continue
-    dest_dir = os.path.join(data_dir, step)
-    if os.path.exists(dest_dir):
-        shutil.rmtree(dest_dir)
-    print("copying: " + step + " to " + dest_dir)
-    shutil.copytree(src_dir, dest_dir)
+    source_dirs = [assets_dir, os.path.join(build_config["pmtech_dir"], "assets")]
+    for source in source_dirs:
+        src_dir = os.path.join(source, step)
+        if not os.path.exists(src_dir):
+            continue
+        dest_dir = os.path.join(data_dir, step)
+        if os.path.exists(dest_dir):
+            shutil.rmtree(dest_dir)
+        print("copying: " + step + " to " + dest_dir)
+        shutil.copytree(src_dir, dest_dir)
 
 
 

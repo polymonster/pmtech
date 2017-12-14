@@ -81,7 +81,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pmfx::register_scene(sc);
     pmfx::register_camera(cc);
     
-    pmfx::init("data/configs/renderer.json");
+    pmfx::init("data/configs/editor_renderer.json");
     
     bool enable_dev_ui = true;
     

@@ -1,0 +1,200 @@
+{
+	blend_states:
+	{
+		disabled:
+		{
+			blend_enable: false,	
+		}
+		
+		additive:
+		{
+			blend_enable: true,
+			src_blend: one,
+			dest_blend: one
+		}
+		
+		alpha_belnd:
+		{
+			blend_enable: true,
+			src_blend: src_alpha,
+			dest_blend: inv_src_alpha
+		}
+	},
+	
+	sampler_states:
+	{
+		wrap_linear:
+		{
+			filter: linear,
+			address: wrap
+		},
+	},
+	
+	depth_stencil_states:
+	{
+		disabled:
+		{
+			depth_enable: false,
+		},
+		
+		default:
+		{
+			depth_enable: true,
+			depth_write: true,
+			depth_func: "less"
+		},
+		
+		depth_never:
+		{
+			depth_enable: true,
+			depth_write: true,
+			depth_func: "never"
+		},
+		
+		stencil_test:
+		{
+			depth_enable: true,
+			depth_write: true,
+			depth_func: "always",
+			stencil_enable: true,
+			stencil_write_mask: 0xff,
+			stencil_read_mask: 0xff,
+			
+			stencil_op:
+			{
+				stencil_fail: "keep",
+				depth_fail: "keep",
+				stencil_pass: "replace",
+				stencil_func: "equal"
+			}
+		},
+	},
+	
+	raster_states:
+	{
+		default:
+		{
+			cull_mode: back,
+		},
+		
+		wireframe:
+		{
+			cull_mode: none,
+			fill_mode: wireframe
+		}
+		
+		front_face_cull:
+		{
+			cull_mode: front,
+			fill_mode: solid
+		}
+	},
+	
+	render_targets:
+	{
+		picking:
+		{
+			size: equal,
+			format: r32u,
+			cpu_read: true
+		},
+		
+		picking_ds:
+		{
+			size: equal,
+			format: d24s8,
+		},
+		
+		gbuffer_albedo:
+		{
+			size: equal,
+			format: rgba8,
+			samples: 4,
+		},
+		
+		gbuffer_normals:
+		{
+			size: equal,
+			format: rgba8,
+			samples: 4,
+		},
+		
+		gbuffer_depth:
+		{
+			size: equal,
+			format: d24s8,
+			samples: 4,
+		},
+	},
+			
+	views:
+	{
+		main_view:
+		{
+			target:[main_colour, main_depth],
+			clear_colour:[0.5, 0.5, 0.5, 1.0],
+			clear_depth: 1.0,
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: default,
+			depth_stencil_state: default,
+			pmfx_shader: forward_render,
+			technique: forward_lit,
+			scene: main_scene,
+			camera: model_viewer_camera,
+			scene_views:["ces_render_scene", "ces_render_editor"],
+			render_flags:["forward_lit"]
+		},
+		
+		picking_view:
+		{
+			target:[picking, picking_ds],
+			clear:
+			{
+				picking:
+				{
+					clear_colour_u:[10000, 10000, 10000, 10000]
+				}
+			},
+			clear_depth: 1.0,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			blend_state: disabled,
+			raster_state: default,
+			depth_stencil_state: default,
+			pmfx_shader: fx_test,
+			technique: picking,
+			scene: main_scene,
+			camera: model_viewer_camera,
+			scene_views:["ces_render_scene"]
+		},
+				
+		gbuffer_view:
+		{
+			target:[gbuffer_albedo, gbuffer_normals, gbuffer_depth],
+			clear_colour:[1.0, 1.0, 1.0, 1.0],			
+			clear_depth: 1.0,
+			clear:
+			{
+				gbuffer_albedo:
+				{
+					clear_colour_f:[0.0, 1.0, 0.0, 1.0]
+				},
+				
+				gbuffer_normals:
+				{
+					clear_colour_f:[1.0, 0.0, 1.0, 1.0]
+				}
+			},
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			blend_state: disabled,
+			raster_state: default,
+			depth_stencil_state: default,
+			pmfx_shader: forward_render,
+			technique: gbuffer,
+			scene: main_scene,
+			camera: model_viewer_camera,
+			scene_views:["ces_render_scene"]
+		},
+	},
+}
