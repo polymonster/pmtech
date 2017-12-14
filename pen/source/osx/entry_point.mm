@@ -346,6 +346,11 @@ void users()
     pen_user_info.user_name =[ns_user_name UTF8String];
 }
 
+void __main_update( )
+{
+    
+}
+
 int main(int argc, char **argv)
 {
     //window creation

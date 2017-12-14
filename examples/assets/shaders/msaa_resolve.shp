@@ -117,6 +117,7 @@ ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
 	return output;
 }
 
+
 pmfx:
 {	
 	"average_2x":

@@ -27,7 +27,7 @@ namespace pen
         
         params.user_data = user_data;
         params.job_thread_info = jt;
-        
+
         jt->p_thread = threads_create( thread_func, stack_size, (void*)&params, flags );
         
         //wait till the thread initialises so any data passed to it is ok.

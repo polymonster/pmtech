@@ -760,7 +760,7 @@ namespace put
                     {
                         if( scene->entities[selected_index] & CMP_LIGHT )
                         {
-                            ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0 Point\0 Spot\0", 3 );
+                            ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0", 3 );
                             
                             switch(scene->lights[selected_index].type)
                             {

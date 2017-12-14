@@ -555,7 +555,7 @@ namespace pen
 	void renderer_wait_for_jobs()
 	{
 		//this is a dedicated thread which stays for the duration of the program
-		pen::threads_semaphore_signal(p_continue_semaphore, 1);
+        pen::threads_semaphore_signal(p_continue_semaphore, 1);
 
 		while (1)
 		{

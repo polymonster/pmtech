@@ -20,8 +20,8 @@ for i in range(1, len(sys.argv)):
     if "-platform" in sys.argv[i]:
         shader_platform = sys.argv[i+1]
 
-hlsl_key = ["float4x4", "float3x3", "float2x2", "float4", "float3", "float2", "lerp", "modf"]
-glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod"]
+hlsl_key = ["float4x4", "float3x3", "float2x2", "float4", "float3", "float2", "lerp", "modf", "depth_ps_output"]
+glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod", "gl_FragDepth"]
 
 tools_dir = os.path.join(root_dir, "..", "tools")
 compiler_dir = os.path.join(root_dir, "..", "tools", "bin", "fxc")
@@ -536,10 +536,13 @@ def compile_glsl(
 
         # ps outputs
         for p in range(0, len(ps_outputs)):
-            output_index = ps_output_semantics[p].replace("SV_Target", "")
-            if output_index != "":
-                final_ps_source += "layout(location = " + output_index + ") "
-            final_ps_source += "out " + ps_outputs[p] + "_ps_output;\n"
+            if "SV_Depth" in ps_output_semantics[p]:
+                continue
+            else:
+                output_index = ps_output_semantics[p].replace("SV_Target", "")
+                if output_index != "":
+                    final_ps_source += "layout(location = " + output_index + ") "
+                final_ps_source += "out " + ps_outputs[p] + "_ps_output;\n"
         final_ps_source += "\n"
 
         final_ps_source += generate_global_io_struct(vs_outputs, "struct " + vs_output_struct_name)

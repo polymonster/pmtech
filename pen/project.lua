@@ -51,9 +51,11 @@ project "pen"
 		symbols "On"
 		targetdir ("lib\\" .. platform_dir)
 		targetname "pen_d"
+		architecture "x64"
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetdir ("lib\\" .. platform_dir)
 		targetname "pen"
+		architecture "x64"

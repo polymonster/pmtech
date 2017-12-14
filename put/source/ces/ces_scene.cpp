@@ -254,14 +254,12 @@ namespace put
                     if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
                         continue;
                     
-					pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
-					//pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_VS);
-
                     //set cbs
 					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 
-					//lights
-
+					//forward lights
+                    if( view.render_flags & RENDER_FORWARD_LIT )
+                        pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
 
 					//set ib / vb
 					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0 );

@@ -29,7 +29,8 @@ namespace pen
     enum thread_start_flags : u32
     {
         THREAD_START_DETACHED = 1,
-        THREAD_START_JOINABLE = 2
+        THREAD_START_JOINABLE = 2,
+        THREAD_CALL_FUNCTION = 3
     };
 
 	enum default_thread_create_flags

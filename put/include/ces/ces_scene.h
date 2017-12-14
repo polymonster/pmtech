@@ -226,12 +226,17 @@ namespace put
 		{
 			f32 x, y, z, w;
 		};
+        
+        enum e_scene_render_flags
+        {
+            RENDER_FORWARD_LIT = 1
+        };
 
 		struct scene_view
 		{
 			u32 cb_view;
             u32 cb_2d_view;
-			u32 scene_node_flags = 0;
+			u32 render_flags = 0;
             
             u32 depth_stencil_state = 0;
             u32 blend_state_state = 0;

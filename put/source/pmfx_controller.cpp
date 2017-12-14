@@ -132,7 +132,7 @@ namespace put
             {"r32u",    PEN_TEX_FORMAT_R32_UINT,            32,     PEN_BIND_RENDER_TARGET },
             {"d24s8",   PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL }
         };
-        s32 num_formats = (s32)sizeof(rt_format)/sizeof(format_info);
+        s32 num_formats = PEN_ARRAY_SIZE(rt_format);
         
         Str rt_ratio[] =
         {
@@ -143,7 +143,13 @@ namespace put
             "eighth"
             "sixteenth"
         };
-        s32 num_ratios = (s32)sizeof(rt_ratio)/sizeof(Str);
+        s32 num_ratios = PEN_ARRAY_SIZE(rt_ratio);
+        
+        mode_map render_flags_map[] =
+        {
+            "forward_lit",  ces::RENDER_FORWARD_LIT,
+            nullptr,            0
+        };
         
         struct view_params
         {
@@ -170,6 +176,7 @@ namespace put
             
 			pmfx_handle pmfx_shader;
             hash_id		technique;
+            u32         render_flags;
             
             ces::entity_scene* scene;
             put::camera* camera;
@@ -182,6 +189,7 @@ namespace put
         static std::vector<scene_view_renderer> k_scene_view_renderers;
         static std::vector<camera_controller>   k_cameras;
         static std::vector<render_target>       k_render_targets;
+        static std::vector<const c8*>           k_render_target_names;
         
         void register_scene( const scene_controller& scene )
         {
@@ -1030,6 +1038,14 @@ namespace put
 
 				new_view.pmfx_shader = pmfx::load(view["pmfx_shader"].as_cstr());
                 
+                //render flags
+                pen::json render_flags = view["render_flags"];
+                new_view.render_flags = 0;
+                for( s32 f = 0; f < render_flags.size(); ++f )
+                {
+                    new_view.render_flags |= mode_from_string(render_flags_map, render_flags[i].as_cstr(), 0);
+                }
+                
                 //scene views
                 pen::json scene_views = view["scene_views"];
                 for( s32 ii = 0; ii < scene_views.size(); ++ii )
@@ -1137,7 +1153,7 @@ namespace put
                 ces::scene_view sv;
                 sv.scene = v.scene;
                 sv.cb_view = v.camera->cbuffer;
-                sv.scene_node_flags = 0;
+                sv.render_flags = v.render_flags;
                 sv.technique = v.technique;
                 sv.raster_state = v.raster_state;
                 sv.depth_stencil_state = v.depth_stencil_state;
@@ -1225,29 +1241,26 @@ namespace put
         
             ImGui::EndMainMenuBar();
 
-			static u32 current_render_target = 0;
+			static s32 current_render_target = 0;
 
             if( open_renderer )
             {
                 if( ImGui::Begin("Render Targets", &open_renderer, ImGuiWindowFlags_AlwaysAutoResize ) )
                 {
-					s32 num_rt = k_render_targets.size();
-
-					if (ImGui::Button(ICON_FA_MINUS))
-						current_render_target++;
-					ImGui::SameLine();
-
-					if (ImGui::Button(ICON_FA_PLUS))
-						current_render_target--;
-					ImGui::SameLine();
-
-					if (current_render_target >= num_rt)
-					{
-						current_render_target = 0;
-					}
-
+                    if( k_render_target_names.size() != k_render_targets.size() )
+                    {
+                        k_render_target_names.clear();
+                        
+                        for( auto& rr : k_render_targets )
+                        {
+                            k_render_target_names.push_back(rr.name.c_str());
+                        }
+                    }
+                    
+                    ImGui::Combo("", &current_render_target, (const c8* const*)&k_render_target_names[0], k_render_target_names.size(), 10 );
+                    
 					static s32 display_ratio = 2;
-					ImGui::InputInt("Buffer Ratio", &display_ratio);
+					ImGui::InputInt("Buffer Size", &display_ratio );
 					display_ratio = std::max<s32>(1, display_ratio);
 
 					render_target& rt = k_render_targets[current_render_target];

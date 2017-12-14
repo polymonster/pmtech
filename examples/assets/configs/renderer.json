@@ -126,7 +126,7 @@
 			samples: 4,
 		},
 	},
-		
+			
 	views:
 	{
 		main_view:
@@ -143,7 +143,8 @@
 			technique: forward_lit,
 			scene: main_scene,
 			camera: model_viewer_camera,
-			scene_views:["ces_render_scene", "ces_render_editor"]
+			scene_views:["ces_render_scene", "ces_render_editor"],
+			render_flags:["forward_lit"]
 		},
 		
 		picking_view:

@@ -312,6 +312,8 @@ namespace put
 			for (auto& p : s_pmfx_list)
 				if (p.filename == pmfx_name)
 					return ph;
+                else
+                    ph++;
 
 			pmfx new_pmfx = load_internal(pmfx_name);
 

@@ -370,10 +370,13 @@ namespace pen
             if( managed_rt.tcp.sample_count > 1 )
             {
                 glDeleteTextures( 1, &res.render_target.texture_msaa.handle );
+                res.render_target.texture_msaa.handle = 0;
             }
             
             direct::renderer_create_render_target(managed_rt.tcp, managed_rt.render_target_handle );
         }
+        
+        k_framebuffers.clear();
     }
     
 	void direct::renderer_present( )
@@ -1032,12 +1035,14 @@ namespace pen
         hh.add(target);
         hh.add(colour_res.render_target.texture_msaa.handle);
         hh.add(1);
+        hh.add(colour_res.render_target.uid);
         hash[0] = hh.end();
         
         hh.begin();
         hh.add(target);
         hh.add(colour_res.render_target.texture.handle);
         hh.add(1);
+        hh.add(colour_res.render_target.uid);
         hash[1] = hh.end();
         
         GLuint fbos[2] = { 0, 0 };

@@ -105,11 +105,13 @@ project ( project_name )
 		symbols "On"
 		targetname (project_name .. "_d")
 		links { "pen", "put", "bullet_monolithic_d" }
+		architecture "x64"
   
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetname (project_name)
 		links { "pen", "put", "bullet_monolithic" }
+		architecture "x64"
 		
 end
