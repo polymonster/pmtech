@@ -146,6 +146,12 @@ namespace pen
 
 		ShowWindow(g_hwnd, wp->cmdshow);
 
+		//console
+		AllocConsole();
+		freopen("CONIN$", "r", stdin);
+		freopen("CONOUT$", "w", stdout);
+		freopen("CONOUT$", "w", stderr);
+
 		return S_OK;
 	}
 
