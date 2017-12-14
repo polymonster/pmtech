@@ -1,0 +1,154 @@
+struct vs_input_2d_textured
+{
+	float4 position 	: POSITION;
+	float2 tex_coord	: TEXCOORD0;
+};
+
+struct vs_output_textured
+{
+	float4 position  : SV_POSITION0;
+	float4 tex_coord : TEXCOORD0;
+};
+
+cbuffer per_pass : register(b0)
+{
+	float4 output_buffer_dimension; //zw are unused
+};
+
+declare_texture_samplers
+{
+	TEXTURE_2DMS( float4, 2, texture_msaa_2, 0 );
+	TEXTURE_2DMS( float4, 4, texture_msaa_4, 1 );
+	TEXTURE_2DMS( float4, 8, texture_msaa_8, 2 );
+	TEXTURE_2DMS( float4, 16, texture_msaa_16, 3 );
+};
+
+vs_output_textured vs_resolve( vs_input_2d_textured input )
+{
+	vs_output_textured output;
+	
+	output.position = input.position;
+	output.tex_coord = float4(input.tex_coord.x, input.tex_coord.y, 0.0, 0.0);
+	
+	return output;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//AVERAGE---------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
+ps_output ps_resolve_average_2x( vs_output_textured input )
+{
+	ps_output output;
+	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+	for( int i = 0; i < 2; ++i )
+		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_2, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+	output.colour /= 2.0;
+	return output;
+}
+
+ps_output ps_resolve_average_4x( vs_output_textured input )
+{
+	ps_output output;
+	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+	for( int i = 0; i < 4; ++i )
+		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+	output.colour /= 4.0;
+	
+	return output;
+}
+
+ps_output ps_resolve_average_8x( vs_output_textured input )
+{
+	ps_output output;
+	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+	for( int i = 0; i < 8; ++i )
+		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_8, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+	output.colour /= 8.0;
+	return output;
+}
+
+ps_output ps_resolve_average_16x( vs_output_textured input )
+{
+	ps_output output;
+	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+	for( int i = 0; i < 16; ++i )
+		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_16, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+	output.colour /= 16.0;
+	return output;
+}
+
+ps_output ps_resolve_average_2x( vs_output_textured input )
+{
+	ps_output output;
+	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+	for( int i = 0; i < 2; ++i )
+		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_2, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+	output.colour /= 2.0;
+	return output;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//DEPTH----------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+struct ps_output_depth
+{
+	float depth : SV_Depth;
+};
+
+ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
+{
+	ps_output_depth output;
+	
+	output.depth = SAMPLE_TEXTURE_2DMS( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, 0 ).r;
+	
+	for( int i = 1; i < 4; ++i )
+	{
+		float depth = SAMPLE_TEXTURE_2DMS( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i ).r;
+		output.depth = max( depth, output.depth );
+	}
+	
+	output.depth = 0.0;
+
+	return output;
+}
+
+
+pmfx:
+{	
+	"average_2x":
+	{
+		"vs": "vs_resolve",
+		"ps": "ps_resolve_average_2x"
+	},
+	
+	"average_4x":
+	{
+		"vs": "vs_resolve",
+		"ps": "ps_resolve_average_4x"
+	},
+
+	"average_8x":
+	{
+		"vs": "vs_resolve",
+		"ps": "ps_resolve_average_8x"
+	},
+
+	"average_16x":
+	{
+		"vs": "vs_resolve",
+		"ps": "ps_resolve_average_16x"
+	},
+	
+	"depth_4x":
+	{
+		"vs": "vs_resolve",
+		"ps": "ps_resolve_depth_4x"
+	}
+}
+
+

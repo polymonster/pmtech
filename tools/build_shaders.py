@@ -5,6 +5,7 @@ import re
 import sys
 import json
 import dependencies
+import helpers
 
 root_dir = os.getcwd()
 
@@ -23,8 +24,12 @@ for i in range(1, len(sys.argv)):
 hlsl_key = ["float4x4", "float3x3", "float2x2", "float4", "float3", "float2", "lerp", "modf", "depth_ps_output"]
 glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod", "gl_FragDepth"]
 
-tools_dir = os.path.join(root_dir, "..", "tools")
-compiler_dir = os.path.join(root_dir, "..", "tools", "bin", "fxc")
+config = open("build_config.json")
+build_config = json.loads(config.read())
+pmtech_dir = helpers.correct_path(build_config["pmtech_dir"])
+
+tools_dir = os.path.join(pmtech_dir, "tools")
+compiler_dir = os.path.join(pmtech_dir, "tools", "bin", "fxc")
 temp_dir = os.path.join(root_dir, "temp")
 
 this_file = os.path.join(tools_dir, "build_shaders.py")
@@ -34,7 +39,8 @@ if not os.path.exists(temp_dir):
     os.mkdir(temp_dir)
 
 shader_source_dir = os.path.join(root_dir, "assets", "shaders")
-shader_source_dir = os.path.join(root_dir, "assets", "shaders")
+
+pmtech_shaders = os.path.join(pmtech_dir, "assets", "shaders")
 
 shader_build_dir = os.path.join(root_dir,"bin", os_platform, "data", "pmfx", shader_platform)
 
@@ -613,7 +619,9 @@ def find_used_functions(entry_func, function_list):
 
 
 def add_files_recursive(filename, root):
-    file_path = os.path.join(root, filename)
+    file_path = filename
+    if not os.path.exists(filename):
+        file_path = os.path.join(root, filename)
     included_file = open(file_path, "r")
     shader_source = included_file.read()
     included_file.close()
@@ -836,11 +844,13 @@ def parse_pmfx(filename, root):
 
 def shader_compile_pmfx():
     print("compile shaders pmfx")
-    for root, dirs, files in os.walk(shader_source_dir):
-        for file in files:
-            if file.endswith(".shp"):
-                file_and_path = os.path.join(root, file)
-                parse_pmfx(file, root)
+    source_list = [pmtech_shaders, shader_source_dir]
+    for source_dir in source_list:
+        for root, dirs, files in os.walk(source_dir):
+            for file in files:
+                if file.endswith(".shp"):
+                    file_and_path = os.path.join(root, file)
+                    parse_pmfx(file, root)
 
 
 def generate_shader_debug_info():
