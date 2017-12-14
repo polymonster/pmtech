@@ -958,13 +958,19 @@ namespace put
 
 				vec3f axis_pos[3];
 				vec3f move_axis = vec3f::zero();
+                
+                vec3f restrict_axis = vec3f::zero();
+                for (s32 i = 0; i < 3; ++i)
+                    if ((selected_axis & 1 << (i + 1)))
+                        restrict_axis += translation_axis[i];
+                                
 				for (s32 i = 0; i < 3; ++i)
 				{
 					if (!(selected_axis & 1 << (i + 1)))
 						continue;
 
 					static vec3f box_size = vec3f(0.5, 0.5, 0.5);
-
+                    
 					vec3f plane_normal = maths::cross(translation_axis[i], view.camera->view.get_up());
 
 					if (i == 1)
@@ -977,13 +983,12 @@ namespace put
 
 					vec3f line = (axis_pos[i] - pre_click_axis_pos[i]);
 
-					vec3f line_x = line * translation_axis[i];
+					vec3f line_x = line * restrict_axis;
 
 					move_axis += line_x;
-
-					//dbg::add_aabb(axis_pos[i] - box_size, axis_pos[i] + box_size);
-					//dbg::add_aabb(pre_click_axis_pos[i] - box_size, pre_click_axis_pos[i] + box_size, vec4f::magenta());
-					//dbg::add_line(pre_click_axis_pos[i], pre_click_axis_pos[i] + line_x, vec4f::cyan());
+                    
+                    //only move in one plane at a time
+                    break;
 				}
 
 				for (auto& s : k_selection_list)
