@@ -45,8 +45,8 @@ project "put"
 		flags { "WinMain" }
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
-		links { "bullet_monolithic_d" }
 		targetname "put_d"
+		architecture "x64"
  
 	configuration "Release"
 		defines { "NDEBUG" }
@@ -54,3 +54,4 @@ project "put"
 		links { "bullet_monolithic" }
 		targetdir ("lib/" .. platform_dir)
 		targetname "put"
+		architecture "x64"

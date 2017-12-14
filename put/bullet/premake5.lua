@@ -40,16 +40,18 @@ project "bullet_monolithic"
 	}
 	
 	includedirs { "include" }
-		
+				
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain" }
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
-		targetname "bullet_monolithic_d"
+		targetname "bullet_monolithic_d_x64"
+		architecture "x64"
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetdir ("lib/" .. platform_dir)
-		targetname "bullet_monolithic"
+		targetname "bullet_monolithic_x64"
+		architecture "x64"

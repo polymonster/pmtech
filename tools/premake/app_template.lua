@@ -16,7 +16,7 @@ links
 	"dxguid.lib", 
 	"winmm.lib", 
 	"comctl32.lib", 
-	"fmod_vc.lib",
+	"fmod64_vc.lib",
 	"Shlwapi.lib"	
 }
 end
@@ -44,9 +44,13 @@ excludes
 }
 end
 
+bullet_lib = "bullet_monolithic"
+bullet_lib_debug = "bullet_monolithic_d"
 bullet_lib_dir = "osx"
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
 	bullet_lib_dir = _ACTION
+	bullet_lib = (bullet_lib .. "_x64")
+	bullet_lib_debug = (bullet_lib_debug .. "_x64")
 end
 
 function create_app( project_name, root_directory )
@@ -104,14 +108,14 @@ project ( project_name )
 		flags { "WinMain" }
 		symbols "On"
 		targetname (project_name .. "_d")
-		links { "pen", "put", "bullet_monolithic_d" }
+		links { "pen", "put", bullet_lib_debug }
 		architecture "x64"
   
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetname (project_name)
-		links { "pen", "put", "bullet_monolithic" }
+		links { "pen", "put", bullet_lib }
 		architecture "x64"
 		
 end

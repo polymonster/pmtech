@@ -19,7 +19,7 @@ bin_dir = os.path.join(os.getcwd(), "bin", platform_name)
 if not os.path.exists(build_dir):
     os.makedirs(build_dir)
 
-dll = "fmod.dll"
+dll = "fmod64.dll"
 if platform_name == "osx":
     dll = "libfmod.dylib"
 
