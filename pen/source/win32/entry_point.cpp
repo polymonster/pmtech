@@ -144,13 +144,15 @@ namespace pen
 		if (!g_hwnd)
 			return E_FAIL;
 
-		ShowWindow(g_hwnd, wp->cmdshow);
-
 		//console
 		AllocConsole();
 		freopen("CONIN$", "r", stdin);
 		freopen("CONOUT$", "w", stdout);
 		freopen("CONOUT$", "w", stderr);
+
+		ShowWindow(g_hwnd, wp->cmdshow);
+
+		SetForegroundWindow(g_hwnd);
 
 		return S_OK;
 	}

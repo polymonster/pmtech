@@ -101,7 +101,7 @@ project ( project_name )
 		(root_directory .. "code/" .. project_name .. "/**.m"),
 	}
 	
-	disablewarnings { "4800", "4305", "4018" }
+	disablewarnings { "4800", "4305", "4018", "4244", "4267" }
 	 
 	configuration "Debug"
 		defines { "DEBUG" }
