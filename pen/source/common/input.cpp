@@ -15,42 +15,14 @@ namespace pen
 
     std::atomic<bool> show_cursor = { true };
 
-	u32 to_unicode( u32 key_index )
-	{
-		wchar_t buff[10];
-
-		BYTE keyState[256] = { 0 };
-
-		int result = ToUnicodeEx(
-			key_index,
-			MapVirtualKey(key_index, MAPVK_VK_TO_VSC),
-			keyState,
-			buff,
-			_countof(buff),
-			0,
-			NULL);
-
-		u32 unicode = buff[0];
-
-		return unicode;
-	}
-
     void input_set_unicode_key_down( u32 key_index )
     {
-		u32 unicode = to_unicode(key_index);
-		if(unicode > 511)
-			return;
-
-        ascii_state[unicode] = 1;
+        ascii_state[key_index] = 1;
     }
     
     void input_set_unicode_key_up( u32 key_index )
     {
-		u32 unicode = to_unicode(key_index);
-		if (unicode > 511)
-			return;
-
-        ascii_state[unicode] = 0;
+        ascii_state[key_index] = 0;
     }
     
     bool input_get_unicode_key( u32 key_index )

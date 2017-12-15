@@ -161,6 +161,32 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	// Called every time the application receives a message
 	//--------------------------------------------------------------------------------------
+	void set_unicode_key(u32 key_index, bool down )
+	{
+		wchar_t buff[10];
+
+		BYTE keyState[256] = { 0 };
+
+		int result = ToUnicodeEx(
+			key_index,
+			MapVirtualKey(key_index, MAPVK_VK_TO_VSC),
+			keyState,
+			buff,
+			_countof(buff),
+			0,
+			NULL);
+
+		u32 unicode = buff[0];
+
+		if (unicode > 511)
+			return;
+
+		if( down )
+			pen::input_set_unicode_key_down(unicode);
+		else
+			pen::input_set_unicode_key_up(unicode);
+	}
+
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
@@ -180,13 +206,13 @@ namespace pen
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 			pen::input_set_key_down((u32)wParam);
-			pen::input_set_unicode_key_down((u32)wParam);
+			set_unicode_key((u32)wParam, true);
 			break;
 
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
 			pen::input_set_key_up((u32)wParam);
-			pen::input_set_unicode_key_up((u32)wParam);
+			set_unicode_key((u32)wParam, false);
 			break;
 
 		case WM_LBUTTONDOWN:
