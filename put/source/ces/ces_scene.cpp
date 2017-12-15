@@ -475,13 +475,15 @@ namespace put
             }
             
             //simple parts of the scene are just homogeonous chucks of data
-            ofs.write( (const c8*)scene->entities,          sizeof( a_u64 ) * scene->num_nodes );
-            ofs.write( (const c8*)scene->parents,           sizeof( u32 )   * scene->num_nodes );
-			ofs.write( (const c8*)scene->transforms,		sizeof(transform)  * scene->num_nodes);
-            ofs.write( (const c8*)scene->local_matrices,    sizeof( mat4 )  * scene->num_nodes );
-            ofs.write( (const c8*)scene->world_matrices,    sizeof( mat4 )  * scene->num_nodes );
-            ofs.write( (const c8*)scene->offset_matrices,   sizeof( mat4 )  * scene->num_nodes );
-            ofs.write( (const c8*)scene->physics_matrices,  sizeof( mat4 )  * scene->num_nodes );
+            ofs.write( (const c8*)scene->entities,          sizeof( a_u64 )				* scene->num_nodes );
+            ofs.write( (const c8*)scene->parents,           sizeof( u32 )				* scene->num_nodes );
+			ofs.write( (const c8*)scene->transforms,		sizeof(transform)			* scene->num_nodes );
+            ofs.write( (const c8*)scene->local_matrices,    sizeof( mat4 )				* scene->num_nodes );
+            ofs.write( (const c8*)scene->world_matrices,    sizeof( mat4 )				* scene->num_nodes );
+            ofs.write( (const c8*)scene->offset_matrices,   sizeof( mat4 )				* scene->num_nodes );
+            ofs.write( (const c8*)scene->physics_matrices,  sizeof( mat4 )				* scene->num_nodes );
+			ofs.write( (const c8*)scene->bounding_volumes,	sizeof( bounding_volume )	* scene->num_nodes );
+			ofs.write( (const c8*)scene->lights,			sizeof( scene_node_light )	* scene->num_nodes );
             
             //animations need reloading from files
             for( s32 n = 0; n < scene->num_nodes; ++n )
@@ -587,7 +589,9 @@ namespace put
             ifs.read( (c8*)scene->world_matrices, sizeof( mat4 ) * scene->num_nodes );
             ifs.read( (c8*)scene->offset_matrices, sizeof( mat4 ) * scene->num_nodes );
             ifs.read( (c8*)scene->physics_matrices, sizeof( mat4 ) * scene->num_nodes );
-            
+			ifs.read((c8*)scene->bounding_volumes, sizeof(bounding_volume) * scene->num_nodes);
+			ifs.read((c8*)scene->lights, sizeof(scene_node_light) * scene->num_nodes);
+
             //animations
             for( s32 n = 0; n < scene->num_nodes; ++n )
             {

@@ -72,13 +72,16 @@ namespace put
     
     inline Str& str_replace_chars( Str& string, const c8 search, const c8 replace )
     {
+		s32 len = string.length();
+
         c8* iter = &string[0];
-        while( iter )
+        while( iter && len > 0)
         {
             if( *iter == search )
                 *iter = replace;
             
             ++iter;
+			--len;
         }
         
         return string;

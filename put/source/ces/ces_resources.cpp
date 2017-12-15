@@ -86,7 +86,7 @@ namespace put
                 {
                     s32 jnode = joint_indices[jj];
                     
-                    if( scene->entities[jnode] & CMP_BONE )
+                    if( jnode > -1 && scene->entities[jnode] & CMP_BONE )
                     {
                         break;
                     }

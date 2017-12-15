@@ -10,6 +10,7 @@
 #include "str_utilities.h"
 #include "str/Str.h"
 #include "hash.h"
+#include "dev_ui.h"
 
 namespace put
 {
@@ -335,6 +336,38 @@ namespace put
         
         void poll_for_changes( )
         {
+			static bool initialised = false;
+
+			static Str shader_compiler_str = "";
+			if (shader_compiler_str == "")
+			{
+				initialised = true;
+
+				pen::json j_build_config = pen::json::load_from_file("../../build_config.json");
+
+				if (j_build_config.type() != JSMN_UNDEFINED)
+				{
+					Str pmtech_dir = "../../";
+					pmtech_dir.append(j_build_config["pmtech_dir"].as_cstr());
+					pmtech_dir.append(PEN_DIR);
+
+					put::str_replace_chars(pmtech_dir, '/', PEN_DIR);
+
+					shader_compiler_str.append(PEN_SHADER_COMPILE_PRE_CMD);
+					shader_compiler_str.append(pmtech_dir.c_str());
+					shader_compiler_str.append(PEN_SHADER_COMPILE_CMD);
+
+					dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "[shader compiler cmd] %s", shader_compiler_str.c_str());
+				}
+				else
+				{
+					dev_console_log_level( dev_ui::CONSOLE_ERROR, "%s", "[error] unable to find pmtech dir" );
+				}
+			}
+
+			if (shader_compiler_str == "")
+				return;
+
             pmfx_handle current_counter = 0;
             
             for( auto& pmfx_set : s_pmfx_list )
@@ -380,7 +413,7 @@ namespace put
                         //trigger re-compile if files on disk are newer
                         if ( err == PEN_ERR_OK && current_ts > shader_ts)
                         {
-                            system( PEN_SHADER_COMPILE_CMD );
+                            system(shader_compiler_str.c_str());
                             pmfx_set.invalidated = true;
                         }
                     }

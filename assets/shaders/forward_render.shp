@@ -129,6 +129,7 @@ vs_output vs_main( vs_input input )
 	
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
 	
+	
     return output;
 }
 
@@ -150,8 +151,6 @@ ps_output ps_forward_lit( vs_output input )
 		
 	output.colour.rgb = lit_colour * albedo.rgb;
 	output.colour.a = albedo.a;
-	
-	output.colour.r = 0.0;
 	
     return output;
 }

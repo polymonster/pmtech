@@ -183,8 +183,7 @@ namespace pen
 	void free_resource_index( u32 index )
 	{
 		//pen::memory_zero( &resource_pool[ index ], sizeof( resource_allocation ) );
-		
-		query_pool[index].asigned_flag = 0;
+		//query_pool[index].asigned_flag = 0;
 	}
     
     struct managed_rt
@@ -1021,14 +1020,14 @@ namespace pen
 			resource_pool[shader_index].geometry_shader->Release( );
 		}
 
-		free_resource_index( shader_index );
+		renderer_mark_resource_deleted( shader_index );
 	}
 
 	void direct::renderer_release_buffer( u32 buffer_index )
 	{
 		resource_pool[buffer_index].generic_buffer->Release( );
 
-		free_resource_index( buffer_index );
+		renderer_mark_resource_deleted(buffer_index);
 	}
 
 	void direct::renderer_release_texture( u32 texture_index )
@@ -1036,21 +1035,21 @@ namespace pen
 		resource_pool[texture_index].texture_2d->texture->Release( );
 		resource_pool[texture_index].texture_2d->srv->Release( );
 
-		free_resource_index( texture_index );
+		renderer_mark_resource_deleted(texture_index);
 	}
 
 	void direct::renderer_release_raster_state( u32 raster_state_index )
 	{
 		resource_pool[ raster_state_index ].raster_state->Release( );
 
-		free_resource_index( raster_state_index );
+		renderer_mark_resource_deleted(raster_state_index);
 	}
 
 	void direct::renderer_release_blend_state( u32 blend_state )
 	{
 		resource_pool[ blend_state ].blend_state->Release();
 
-		free_resource_index(blend_state);
+		renderer_mark_resource_deleted(blend_state);
 	}
 
 	void release_render_target_internal(u32 render_target)
@@ -1080,30 +1079,35 @@ namespace pen
 
 		if (rt->tex_read_back.texture)
 			rt->tex_read_back.texture->Release();
+
 	}
 
 	void direct::renderer_release_render_target( u32 render_target )
 	{
 		release_render_target_internal(render_target);
 
-		free_resource_index(render_target);
+		renderer_mark_resource_deleted(render_target);
 	}
 
 	void direct::renderer_release_input_layout( u32 input_layout )
 	{
 		resource_pool[ input_layout ].input_layout->Release();
 
-		free_resource_index(input_layout);
+		renderer_mark_resource_deleted(input_layout);
 	}
 
 	void direct::renderer_release_sampler( u32 sampler )
 	{
 		resource_pool[ sampler ].sampler_state->Release();
+
+		renderer_mark_resource_deleted(sampler);
 	}
 
 	void direct::renderer_release_depth_stencil_state( u32 depth_stencil_state )
 	{
 		resource_pool[ depth_stencil_state ].depth_stencil_state->Release();
+
+		renderer_mark_resource_deleted(depth_stencil_state);
 	}
 
 	void direct::renderer_release_program(u32 program)
@@ -1113,7 +1117,7 @@ namespace pen
 
 	void direct::renderer_release_clear_state(u32 clear_state)
 	{
-		free_resource_index(clear_state);
+		renderer_mark_resource_deleted(clear_state);
 	}
 
 	void direct::renderer_release_query( u32 query )
