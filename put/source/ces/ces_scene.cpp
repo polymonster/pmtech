@@ -498,6 +498,8 @@ namespace put
                     
                     write_parsable_string( anim->name, ofs);
                 }
+
+				ofs.write((const c8*)&scene->anim_controller[n].joints_offset, sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
             }
             
             Str project_dir = dev_ui::get_program_preference("project_dir").as_str();
@@ -613,6 +615,8 @@ namespace put
                     
                     scene->anim_controller[n].handles.push_back( h );
                 }
+
+				ifs.read((c8*)&scene->anim_controller[n].joints_offset, sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
             }
             
             //geometry
