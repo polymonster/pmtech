@@ -406,7 +406,7 @@ namespace put
             
             if( open_import )
             {
-                const c8* import = put::dev_ui::file_browser(open_import, 2, dev_ui::FB_OPEN, "**.pmm", "**.pms" );
+                const c8* import = put::dev_ui::file_browser(open_import, dev_ui::FB_OPEN, 2, "**.pmm", "**.pms" );
                 
                 if( import )
                 {
