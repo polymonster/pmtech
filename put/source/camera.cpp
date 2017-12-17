@@ -141,7 +141,7 @@ namespace put
             vec3f up = p_camera->view.get_up();
             vec3f right = p_camera->view.get_right();
             
-            p_camera->focus -= up * mouse_drag.y * 0.5f;
+            p_camera->focus += up * mouse_drag.y * 0.5f;
             p_camera->focus += right * mouse_drag.x * 0.5f;  
 		}
 		else if (ms.buttons[PEN_MOUSE_R] && INPUT_PKEY(PENK_MENU))
