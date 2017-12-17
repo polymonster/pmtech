@@ -21,6 +21,6 @@
 #define SAMPLE_TEXTURE_2DMS( name, x, y, fragment ) name.Load( uint2(x, y), fragment )
 
 #define to_3x3( M4 ) (float3x3)M4
-#define mul_tbn( A, B ) A * B
+#define mul_tbn( A, B ) mul(A, B)
 
 #endif

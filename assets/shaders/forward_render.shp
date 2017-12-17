@@ -57,6 +57,8 @@ cbuffer per_pass_view : register(b0)
 {
 	float4x4 vp_matrix;
 	float4x4 view_matrix;
+	float4 camera_view_pos;
+	float4 camera_view_dir;
 };
 
 cbuffer per_draw_call : register(b1)
@@ -131,6 +133,16 @@ vs_output vs_main( vs_input input )
     return output;
 }
 
+float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
+{
+	float3x3 tbn;
+	tbn[0] = float3(t.x, b.x, n.x);
+	tbn[1] = float3(t.y, b.y, n.y);
+	tbn[2] = float3(t.z, b.z, n.z);
+	
+	return normalize( mul_tbn( tbn, ts_normal ) );
+}
+
 ps_output ps_forward_lit( vs_output input ) 
 {	
 	ps_output output;
@@ -138,30 +150,31 @@ ps_output ps_forward_lit( vs_output input )
 	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
 	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb * 2.0 - 1.0;
 	
-	float3x3 tbn;
-	float3 t = input.tangent;
-	float3 b = input.bitangent;
-	float3 nn = input.normal;
-	
-	tbn[0] = float3(t.x, b.x, nn.x);
-	tbn[1] = float3(t.y, b.y, nn.y);
-	tbn[2] = float3(t.z, b.z, nn.z);
-		
-	float3 n = normalize( mul_tbn( tbn, normal_sample ) );
+	float3 n = transform_ts_normal( input.tangent, input.bitangent, input.normal, normal_sample );
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 	
 	for( int i = 0; i < 8; ++i )
 	{
-		float3 l = normalize( lights[i].pos_radius.xyz - input.world_pos.xyz );
-		lit_colour	+= 	lights[i].colour.rgb * dot( n, l );
+		float4 light_pos_radius = float4( lights[i].pos_radius.xyz, 100.0 );
+		float4 view_pos = camera_view_pos;
+		float4 nn = float4( n, 1.0 );
+		//float4 world_pos = float4( input.world_pos, 1.0);
+		
+		float4 spec_pwr_stgth = float4( 1.0, 1.0, 0.0, 0.0 );
+		 
+		//float2 ds = saturate( phong_point_light( light_pos_radius, camera_view_pos, world_pos, nn, spec_pwr_stgth ) * albedo.rgb );
+		
+		lit_colour += albedo.rgb;
+		//lit_colour += ds.y;
+		
+		//float3 l = normalize( lights[i].pos_radius.xyz- input.world_pos.xyz );
+		//lit_colour	+= 	lights[i].colour.rgb * dot( n, l );
 	}
 		
 	output.colour.rgb = lit_colour * albedo.rgb;
 	output.colour.a = albedo.a;
-		
-	output.colour.rgb = n * 0.5 + 0.5; 	
-	
+			
     return output;
 }
 
