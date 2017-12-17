@@ -194,6 +194,6 @@ pmfx:
 	{
 		"vs": "vs_picking_skinned",
 		"ps": "ps_picking"
-	},
+	}
 }
 
