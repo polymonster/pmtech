@@ -573,7 +573,6 @@ namespace put
         void load_scene( const c8* filename, entity_scene* scene )
         {
 			scene->invalidate_flags |= INVALIDATE_SCENE_TREE;
-
             bool error = false;
             
             std::ifstream ifs(filename, std::ofstream::binary);
@@ -634,9 +633,11 @@ namespace put
                     scene->anim_controller[n].handles.push_back( h );
                 }
 
-				scene->anim_controller[n].current_animation = PEN_INVALID_HANDLE;
-
 				ifs.read((c8*)&scene->anim_controller[n].joints_offset, sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
+
+				if (scene->anim_controller[n].current_animation > scene->anim_controller[n].handles.size())
+					scene->anim_controller[n].current_animation = PEN_INVALID_HANDLE;
+
             }
             
             //geometry

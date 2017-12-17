@@ -97,9 +97,6 @@ namespace put
 						if (scene->parents[jnode] == jnode)
 							scene->parents[jnode] = node_index;
                 }
-                
-                controller.current_animation = INVALID_HANDLE;
-                scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
             }
         }
         
