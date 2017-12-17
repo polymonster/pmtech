@@ -73,8 +73,8 @@ cbuffer debug_options : register(b13)
 declare_texture_samplers
 {
 	TEXTURE_2D( diffuse_texture, 0 );
-	TEXTURE_2D( specular_texture, 1 );
-	TEXTURE_2D( normal_texture, 2 );
+	TEXTURE_2D( normal_texture, 1 );
+	TEXTURE_2D( specular_texture, 2 );
 };
 
 vs_output vs_main_skinned( vs_input_skinned _input )
@@ -161,16 +161,6 @@ ps_output ps_diffuse( vs_output _input )
     return _output;
 }
 
-ps_output_multi ps_gbuffer( vs_output _input ) 
-{	
-	ps_output_multi _output;
-	
-	_output.albedo = SAMPLE_TEXTURE_2D( diffuse_texture, _input.texcoord.xy );
-	_output.normal = float4( _input.normal, 1.0 );
-		
-    return _output;
-}
-
 ps_output ps_debug( vs_output_picking _input ) 
 {	
 	ps_output_picking _output;
@@ -179,7 +169,6 @@ ps_output ps_debug( vs_output_picking _input )
 	
     return _output;
 }
-
 
 pmfx:
 {	
@@ -206,17 +195,5 @@ pmfx:
 		"vs": "vs_picking_skinned",
 		"ps": "ps_picking"
 	},
-	
-	"gbuffer":
-	{
-		"vs": "vs_main",
-		"ps": "ps_gbuffer"
-	},
-	
-	"gbuffer_skinned":
-	{
-		"vs": "vs_main_skinned",
-		"ps": "ps_gbuffer"
-	}
 }
 

@@ -79,8 +79,8 @@ cbuffer per_pass_lights : register(b3)
 declare_texture_samplers
 {
 	TEXTURE_2D( diffuse_texture, 0 );
-	TEXTURE_2D( specular_texture, 1 );
-	TEXTURE_2D( normal_texture, 2 );
+	TEXTURE_2D( normal_texture, 1 );
+	TEXTURE_2D( specular_texture, 2 );	
 };
 
 vs_output vs_main_skinned( vs_input_skinned input )
@@ -125,9 +125,8 @@ vs_output vs_main( vs_input input )
 	output.normal = mul( input.normal.xyz, rotation_matrix );
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
 	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
-	
+		
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
-	
 	
     return output;
 }
@@ -137,8 +136,18 @@ ps_output ps_forward_lit( vs_output input )
 	ps_output output;
 	
 	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
+	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb * 2.0 - 1.0;
 	
-	float3 n = normalize( input.normal.xyz );
+	float3x3 tbn;
+	float3 t = input.tangent;
+	float3 b = input.bitangent;
+	float3 nn = input.normal;
+	
+	tbn[0] = float3(t.x, b.x, nn.x);
+	tbn[1] = float3(t.y, b.y, nn.y);
+	tbn[2] = float3(t.z, b.z, nn.z);
+		
+	float3 n = normalize( mul( tbn, normal_sample ) );
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 	
@@ -150,7 +159,7 @@ ps_output ps_forward_lit( vs_output input )
 		
 	output.colour.rgb = lit_colour * albedo.rgb;
 	output.colour.a = albedo.a;
-	
+			
     return output;
 }
 
@@ -158,8 +167,22 @@ ps_output_multi ps_gbuffer( vs_output input )
 {	
 	ps_output_multi output;
 	
-	output.albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
-	output.normal = float4( input.normal, 1.0 );
+	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
+	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb * 2.0 - 1.0;
+	
+	float3x3 tbn;
+	float3 t = input.tangent;
+	float3 b = input.bitangent;
+	float3 nn = input.normal;
+	
+	tbn[0] = float3(t.x, b.x, nn.x);
+	tbn[1] = float3(t.y, b.y, nn.y);
+	tbn[2] = float3(t.z, b.z, nn.z);
+		
+	float3 n = normalize( mul( tbn, normal_sample ) );
+	
+	output.albedo = albedo;
+	output.normal = float4( n, 1.0 );
 		
     return output;
 }
