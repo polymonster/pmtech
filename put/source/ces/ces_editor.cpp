@@ -638,7 +638,7 @@ namespace put
                                     {
                                         if( anim->channels[channel_index].target != scene->id_name[jnode] )
                                         {
-											dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] animation - does not fit rig" );
+											dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s", "[error] animation - does not fit rig" );
                                             compatible = false;
                                             break;
                                         }

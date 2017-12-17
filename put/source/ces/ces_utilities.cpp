@@ -238,7 +238,7 @@ namespace put
 
 					u32 new_child = clone_node(scene, j, -1, dst_parent + parent_offset, vec3f::zero(), "");
 
-					dev_console_log("[clone] node %s to %s, parent %s", scene->names[j], scene->names[new_child], scene->names[dst_parent + parent_offset]);
+					dev_console_log("[clone] node %s to %s, parent %s", scene->names[j].c_str(), scene->names[new_child].c_str(), scene->names[dst_parent + parent_offset].c_str() );
 				}
 			}
 		}
