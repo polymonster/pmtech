@@ -147,7 +147,7 @@ ps_output ps_forward_lit( vs_output input )
 	tbn[1] = float3(t.y, b.y, nn.y);
 	tbn[2] = float3(t.z, b.z, nn.z);
 		
-	float3 n = normalize( mul( tbn, normal_sample ) );
+	float3 n = normalize( mul_tbn( tbn, normal_sample ) );
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 	
@@ -159,7 +159,9 @@ ps_output ps_forward_lit( vs_output input )
 		
 	output.colour.rgb = lit_colour * albedo.rgb;
 	output.colour.a = albedo.a;
-			
+		
+	output.colour.rgb = n * 0.5 + 0.5; 	
+	
     return output;
 }
 
