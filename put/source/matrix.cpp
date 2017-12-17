@@ -51,6 +51,35 @@ vec3f mat4::operator *(const vec3f &v) const
     return result;
 }
 
+mat4& mat4::operator *=(const mat4 &b)
+{
+	mat4 result;
+
+	result.m[0] = m[0] * b.m[0] + m[1] * b.m[4] + m[2] * b.m[8] + m[3] * b.m[12];
+	result.m[1] = m[0] * b.m[1] + m[1] * b.m[5] + m[2] * b.m[9] + m[3] * b.m[13];
+	result.m[2] = m[0] * b.m[2] + m[1] * b.m[6] + m[2] * b.m[10] + m[3] * b.m[14];
+	result.m[3] = m[0] * b.m[3] + m[1] * b.m[7] + m[2] * b.m[11] + m[3] * b.m[15];
+
+	result.m[4] = m[4] * b.m[0] + m[5] * b.m[4] + m[6] * b.m[8] + m[7] * b.m[12];
+	result.m[5] = m[4] * b.m[1] + m[5] * b.m[5] + m[6] * b.m[9] + m[7] * b.m[13];
+	result.m[6] = m[4] * b.m[2] + m[5] * b.m[6] + m[6] * b.m[10] + m[7] * b.m[14];
+	result.m[7] = m[4] * b.m[3] + m[5] * b.m[7] + m[6] * b.m[11] + m[7] * b.m[15];
+
+	result.m[8] = m[8] * b.m[0] + m[9] * b.m[4] + m[10] * b.m[8] + m[11] * b.m[12];
+	result.m[9] = m[8] * b.m[1] + m[9] * b.m[5] + m[10] * b.m[9] + m[11] * b.m[13];
+	result.m[10] = m[8] * b.m[2] + m[9] * b.m[6] + m[10] * b.m[10] + m[11] * b.m[14];
+	result.m[11] = m[8] * b.m[3] + m[9] * b.m[7] + m[10] * b.m[11] + m[11] * b.m[15];
+
+	result.m[12] = m[12] * b.m[0] + m[13] * b.m[4] + m[14] * b.m[8] + m[15] * b.m[12];
+	result.m[13] = m[12] * b.m[1] + m[13] * b.m[5] + m[14] * b.m[9] + m[15] * b.m[13];
+	result.m[14] = m[12] * b.m[2] + m[13] * b.m[6] + m[14] * b.m[10] + m[15] * b.m[14];
+	result.m[15] = m[12] * b.m[3] + m[13] * b.m[7] + m[14] * b.m[11] + m[15] * b.m[15];
+
+	*this = result;
+
+	return *this;
+}
+
 vec4f mat4::transform_vector(vec4f v) const
 {
     vec4f result;

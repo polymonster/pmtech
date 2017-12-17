@@ -54,6 +54,8 @@ namespace put
         //generic program preferences
         void set_program_preference( const c8* name, Str val );
         pen::json get_program_preference( const c8* name );
+		Str get_program_preference_filename(const c8* name);
+		void set_program_preference_filename(const c8* name, Str val);
 	}
 }
 

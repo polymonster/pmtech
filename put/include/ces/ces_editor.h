@@ -14,7 +14,9 @@ namespace put
         
         void update_model_viewer_camera( put::camera_controller* cc );
         void update_model_viewer_scene( put::scene_controller* sc );
-        
+
+		void apply_transform_to_selection(entity_scene* scene, const vec3f move_axis);
+
         void render_scene_editor( const scene_view& view );
     }
 }

@@ -81,11 +81,9 @@ vs_output vs_main_skinned( vs_input_skinned _input )
 {
 	vs_output _output;
 	
-	float4x4 wvp = mul( world_matrix, vp_matrix );
-
 	float4 sp = skin_pos(_input.position, _input.blend_weights, _input.blend_indices);
 	
-	_output.position = mul( sp, wvp );
+	_output.position = mul( sp, vp_matrix );
 	_output.world_pos = mul( _input.position, world_matrix );
 		
 	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
@@ -136,12 +134,10 @@ vs_output_picking vs_picking( vs_input _input )
 vs_output_picking vs_picking_skinned( vs_input_skinned _input )
 {
 	vs_output_picking _output;
-	
-	float4x4 wvp = mul( world_matrix, vp_matrix );
 
 	float4 sp = skin_pos(_input.position, _input.blend_weights, _input.blend_indices);
 	
-	_output.position = mul( sp, wvp );
+	_output.position = mul( sp, vp_matrix );
 	_output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
 		
 	return _output;
@@ -174,6 +170,16 @@ ps_output_multi ps_gbuffer( vs_output _input )
 		
     return _output;
 }
+
+ps_output ps_debug( vs_output_picking _input ) 
+{	
+	ps_output_picking _output;
+	
+	_output.colour = uint(_input.index.x);
+	
+    return _output;
+}
+
 
 pmfx:
 {	

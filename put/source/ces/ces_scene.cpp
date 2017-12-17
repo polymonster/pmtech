@@ -117,68 +117,75 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, material_names);
 #endif
 		}
-                
-        void clone_node( entity_scene* scene, u32 src, u32 dst, s32 parent, vec3f offset, const c8* suffix)
-        {
-            entity_scene* p_sn = scene;
-            
-            u32 parent_offset = p_sn->parents[src] - src;
-            if (parent == -1)
-            {
-                p_sn->parents[dst] = dst - parent_offset;
-            }
-            else
-            {
-                p_sn->parents[dst] = parent;
-            }
-            
-            pen::memory_cpy(&p_sn->entities[dst], &p_sn->entities[src], sizeof(a_u64));
-            
-            //ids
-            p_sn->id_name[dst] = p_sn->id_name[src];
-            p_sn->id_geometry[dst] = p_sn->id_geometry[src];
-            p_sn->id_material[dst] = p_sn->id_material[src];
-            p_sn->id_resource[dst] = p_sn->id_resource[src];
-            
-            //componenets
+
+ 
+		u32 clone_node(entity_scene* scene, u32 src, s32 dst, s32 parent, vec3f offset, const c8* suffix)
+		{
+			if (dst == -1)
+				dst = get_new_node(scene);
+
+			entity_scene* p_sn = scene;
+
+			u32 parent_offset = p_sn->parents[src] - src;
+			if (parent == -1)
+			{
+				p_sn->parents[dst] = dst - parent_offset;
+			}
+			else
+			{
+				p_sn->parents[dst] = parent;
+			}
+
+			pen::memory_cpy(&p_sn->entities[dst], &p_sn->entities[src], sizeof(a_u64));
+
+			//ids
+			p_sn->id_name[dst] = p_sn->id_name[src];
+			p_sn->id_geometry[dst] = p_sn->id_geometry[src];
+			p_sn->id_material[dst] = p_sn->id_material[src];
+			p_sn->id_resource[dst] = p_sn->id_resource[src];
+
+			//componenets
 			p_sn->transforms[dst] = p_sn->transforms[src];
-            p_sn->local_matrices[dst] = p_sn->local_matrices[src];
-            p_sn->world_matrices[dst] = p_sn->world_matrices[src];
-            p_sn->offset_matrices[dst] = p_sn->offset_matrices[src];
-            p_sn->physics_matrices[dst] = p_sn->physics_matrices[src];
-            p_sn->bounding_volumes[dst] = p_sn->bounding_volumes[src];
-            
-            p_sn->physics_handles[dst] = p_sn->physics_handles[src];
-            p_sn->multibody_handles[dst] = p_sn->multibody_handles[src];
-            p_sn->multibody_link[dst] = p_sn->multibody_link[src];
-            p_sn->cbuffer[dst] = p_sn->cbuffer[src];
-            
-            p_sn->physics_data[dst] = p_sn->physics_data[src];
-            p_sn->anim_controller[dst] = p_sn->anim_controller[src];
-            p_sn->geometries[dst] = p_sn->geometries[src];
-            p_sn->materials[dst] = p_sn->materials[src];
-            
-            if (dst >= p_sn->num_nodes)
-            {
-                p_sn->num_nodes = dst + 1;
-            }
-            
-            p_sn->physics_data[dst].start_position += offset;
-            
-            vec3f right = p_sn->local_matrices[dst].get_right();
-            vec3f up = p_sn->local_matrices[dst].get_up();
-            vec3f fwd = p_sn->local_matrices[dst].get_fwd();
-            vec3f translation = p_sn->local_matrices[dst].get_translation();
-            
-            p_sn->local_matrices[dst].set_vectors(right, up, fwd, translation + offset);
-            
+			p_sn->local_matrices[dst] = p_sn->local_matrices[src];
+			p_sn->world_matrices[dst] = p_sn->world_matrices[src];
+			p_sn->offset_matrices[dst] = p_sn->offset_matrices[src];
+			p_sn->physics_matrices[dst] = p_sn->physics_matrices[src];
+			p_sn->bounding_volumes[dst] = p_sn->bounding_volumes[src];
+			p_sn->lights[dst] = p_sn->lights[src];
+			p_sn->physics_data[dst] = p_sn->physics_data[src];
+			p_sn->geometries[dst] = p_sn->geometries[src];
+			p_sn->materials[dst] = p_sn->materials[src];
+
+			p_sn->physics_handles[dst] = p_sn->physics_handles[src];
+			p_sn->multibody_handles[dst] = p_sn->multibody_handles[src];
+			p_sn->multibody_link[dst] = p_sn->multibody_link[src];
+			instantiate_model_cbuffer(scene, dst);
+
+			p_sn->anim_controller[dst] = p_sn->anim_controller[src];
+
+			if (dst >= p_sn->num_nodes)
+			{
+				p_sn->num_nodes = dst + 1;
+			}
+
+			p_sn->physics_data[dst].start_position += offset;
+
+			vec3f right = p_sn->local_matrices[dst].get_right();
+			vec3f up = p_sn->local_matrices[dst].get_up();
+			vec3f fwd = p_sn->local_matrices[dst].get_fwd();
+			vec3f translation = p_sn->local_matrices[dst].get_translation();
+
+			p_sn->local_matrices[dst].set_vectors(right, up, fwd, translation + offset);
+
 #ifdef CES_DEBUG
-            p_sn->names[dst] = p_sn->names[src].c_str();
-            p_sn->names[dst].append(suffix);
-            p_sn->geometry_names[dst] = p_sn->geometry_names[src].c_str();
-            p_sn->material_names[dst] = p_sn->material_names[src].c_str();
+			p_sn->names[dst] = p_sn->names[src].c_str();
+			p_sn->names[dst].append(suffix);
+			p_sn->geometry_names[dst] = p_sn->geometry_names[src].c_str();
+			p_sn->material_names[dst] = p_sn->material_names[src].c_str();
 #endif
-        }
+
+			return dst;
+		}
 
 		entity_scene*	create_scene( const c8* name )
 		{
@@ -328,25 +335,32 @@ namespace put
                                 t = 0;
 
                             mat4& mat = anim->channels[c].matrices[t];
+
+							s32 scene_node_index = n + c + joints_offset;
                             
-                            scene->local_matrices[n+c+joints_offset] = mat;
+                            scene->local_matrices[scene_node_index] = mat;
                             
-                            if( controller.current_time > anim->length )
-                            {
-                                apply_trajectory = true;
-                                controller.current_time = +0.0f;
-                            }
+							if (scene->entities[scene_node_index] & CMP_ANIM_TRAJECTORY)
+							{
+								trajectory = anim->channels[c].matrices[num_frames - 1];
+							}
+
+							if (controller.current_time > anim->length)
+							{
+								apply_trajectory = true;
+								controller.current_time = (controller.current_time) - (anim->length);
+							}
                         }
                     }
                     
-                    if( apply_trajectory )
+                    if( apply_trajectory && controller.apply_root_motion )
                     {
                         vec3f r = scene->local_matrices[n].get_right();
                         vec3f u = scene->local_matrices[n].get_up();
                         vec3f f = scene->local_matrices[n].get_fwd();
                         vec3f p = scene->local_matrices[n].get_translation();
                         
-                        scene->local_matrices[n].set_vectors(r, u, f, p + trajectory.get_translation() );
+						scene->local_matrices[n] *= trajectory;
                     }
                 }
             }
@@ -491,18 +505,18 @@ namespace put
                 s32 size = scene->anim_controller[n].handles.size();
                 
                 ofs.write( (const c8*)&size, sizeof( s32 ) );
-                
-                for( auto& h : scene->anim_controller[n].handles )
-                {
-                    auto* anim = get_animation_resource(h);
-                    
-                    write_parsable_string( anim->name, ofs);
-                }
 
+				for (s32 i = 0; i < size; ++i)
+				{
+					auto* anim = get_animation_resource(scene->anim_controller[n].handles[i]);
+
+					write_parsable_string(anim->name, ofs);
+				}
+                
 				ofs.write((const c8*)&scene->anim_controller[n].joints_offset, sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
             }
             
-            Str project_dir = dev_ui::get_program_preference("project_dir").as_str();
+            Str project_dir = dev_ui::get_program_preference_filename("project_dir");
             
             //geometry
             for( s32 n = 0; n < scene->num_nodes; ++n )
@@ -558,6 +572,8 @@ namespace put
         
         void load_scene( const c8* filename, entity_scene* scene )
         {
+			scene->invalidate_flags |= INVALIDATE_SCENE_TREE;
+
             bool error = false;
             
             std::ifstream ifs(filename, std::ofstream::binary);
@@ -594,6 +610,8 @@ namespace put
 			ifs.read((c8*)scene->bounding_volumes, sizeof(bounding_volume) * scene->num_nodes);
 			ifs.read((c8*)scene->lights, sizeof(scene_node_light) * scene->num_nodes);
 
+			Str project_dir = dev_ui::get_program_preference_filename("project_dir");
+
             //animations
             for( s32 n = 0; n < scene->num_nodes; ++n )
             {
@@ -602,7 +620,7 @@ namespace put
                 
                 for( s32 i = 0; i < size; ++i )
                 {
-                    Str anim_name = dev_ui::get_program_preference("project_dir").as_str();
+					Str anim_name = project_dir;
                     anim_name.append( read_parsable_string(ifs).c_str() );
                     
                     anim_handle h = load_pma(anim_name.c_str());
@@ -615,6 +633,8 @@ namespace put
                     
                     scene->anim_controller[n].handles.push_back( h );
                 }
+
+				scene->anim_controller[n].current_animation = PEN_INVALID_HANDLE;
 
 				ifs.read((c8*)&scene->anim_controller[n].joints_offset, sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
             }
@@ -630,7 +650,7 @@ namespace put
                     u32 submesh;
                     ifs.read((c8*)&submesh, sizeof(u32));
 
-                    Str filename = dev_ui::get_program_preference("project_dir").as_str();
+                    Str filename = project_dir;
                     filename.append( read_parsable_string(ifs).c_str() );
                     
                     Str geometry_name = read_parsable_string(ifs);
@@ -674,7 +694,7 @@ namespace put
                 
                 if( scene->entities[n] & CMP_MATERIAL && has )
                 {
-                    Str filename = dev_ui::get_program_preference("project_dir").as_str();
+                    Str filename = project_dir;
                     filename.append( read_parsable_string(ifs).c_str() );
                     
                     Str material_name = read_parsable_string(ifs);

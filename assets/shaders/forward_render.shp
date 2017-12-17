@@ -91,7 +91,7 @@ vs_output vs_main_skinned( vs_input_skinned input )
 
 	float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
 	
-	output.position = mul( sp, wvp );
+	output.position = mul( sp, vp_matrix );
 	output.world_pos = mul( input.position, world_matrix );
 		
 	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
@@ -111,7 +111,6 @@ vs_output vs_main_skinned( vs_input_skinned input )
 vs_output vs_main( vs_input input )
 {
 	vs_output output;
-	
 	
 	float4x4 wvp = mul( world_matrix, vp_matrix );
 

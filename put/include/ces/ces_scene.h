@@ -32,6 +32,12 @@ namespace put
             SV_HIDE = (1<<0),
             SV_BITS_END = 0
         };
+
+		enum e_scene_invalidate_flags : u32
+		{
+			INVALIDATE_NONE = 0,
+			INVALIDATE_SCENE_TREE
+		};
         
 		enum e_component_flags : u32
 		{
@@ -191,7 +197,8 @@ namespace put
             u32*                    cbuffer;
 
 			u32						forward_light_buffer = PEN_INVALID_HANDLE;
-            
+			u32						invalidate_flags;
+
 #ifdef CES_DEBUG
             Str*                    names;
 			Str*					geometry_names;
@@ -255,6 +262,8 @@ namespace put
         
 		void            render_scene_view( const scene_view& view );
 		void            update_scene( entity_scene* scene, f32 dt );
+
+		void			resize_scene_buffers(entity_scene* scene);
         
         void            update_view_flags( entity_scene* scene, bool error );
 	}

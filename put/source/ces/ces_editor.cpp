@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "pmfx_controller.h"
 #include "timer.h"
+#include "str_utilities.h"
 
 namespace put
 {
@@ -20,6 +21,12 @@ namespace put
     
     namespace ces
     {
+		struct transform_undo
+		{
+			transform state;
+			u32		  node_index;
+		};
+
         static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
         
         enum e_camera_mode : s32
@@ -48,7 +55,8 @@ namespace put
             TRANSFORM_SELECT = 1,
             TRANSFORM_TRANSLATE = 2,
             TRANSFORM_ROTATE = 3,
-            TRANSFORM_SCALE = 4
+            TRANSFORM_SCALE = 4,
+			TRANSFORM_TYPE_IN 
         };
         static transform_mode k_transform_mode = TRANSFORM_NONE;
         
@@ -168,6 +176,13 @@ namespace put
 			PICK_ADD = 1,
 			PICK_REMOVE = 2
 		};
+
+		enum e_select_flags : u32
+		{
+			NONE = 0,
+			WIDGET_SELECTED = 1,
+		};
+		static u32 k_select_flags = 0;
 
 		void add_selection( const entity_scene* scene, u32 index )
 		{
@@ -291,8 +306,19 @@ namespace put
             static bool selection_list = false;
             static bool view_menu = false;
             
-            static Str project_dir_str = dev_ui::get_program_preference("project_dir").as_str();
-            
+			static Str project_dir_str = dev_ui::get_program_preference_filename("project_dir");
+
+			static bool auto_load_last_scene = dev_ui::get_program_preference("auto_load_last_scene").as_bool();
+			if (auto_load_last_scene)
+			{
+				Str last_loaded_scene = dev_ui::get_program_preference_filename("last_loaded_scene");
+
+				if ( last_loaded_scene.length() > 0 )
+					load_scene(last_loaded_scene.c_str(), sc->scene);
+
+				auto_load_last_scene = false;
+			}
+
             ImGui::BeginMainMenuBar();
             
             if (ImGui::BeginMenu(ICON_FA_LEMON_O))
@@ -419,6 +445,9 @@ namespace put
                     else if( import[len-1] == 's' )
                     {
                         put::ces::load_scene( import, sc->scene );
+
+						Str fn = import;
+						dev_ui::set_program_preference_filename("last_loaded_scene", import);
                     }
                 }
             }
@@ -452,7 +481,7 @@ namespace put
                 if(set_proj)
                 {
                     project_dir_str = set_proj;
-                    dev_ui::set_program_preference("project_dir", project_dir_str);
+                    dev_ui::set_program_preference_filename("project_dir", project_dir_str);
                 }
             }
             
@@ -479,11 +508,36 @@ namespace put
                 }
             }
             
-            if( k_transform_mode == TRANSFORM_SELECT )
+            if( !pen_input_key(PENK_MENU) && !(k_select_flags & WIDGET_SELECTED))
             {
                 picking_update( sc->scene );
             }
-            
+
+			//parent selection
+			if (pen_input_key(PENK_P))
+			{
+				if (k_selection_list.size() > 1)
+				{
+					s32 parent = k_selection_list[0];
+
+					for (auto& i : k_selection_list)
+						if (sc->scene->parents[i] == i)
+							set_node_parent(sc->scene, parent, i);
+				}
+			}
+
+			//duplicate
+			static bool debounce_duplicate = false;
+			if (pen_input_key(PENK_CONTROL) && pen_input_key_press(PENK_D))
+			{
+				debounce_duplicate = true;
+			}
+			else if (debounce_duplicate)
+			{
+				clone_selection_hierarchical(sc->scene, k_selection_list, "_cloned");
+				debounce_duplicate = false;
+			}
+
             if( selection_list )
             {
                 enumerate_selection_ui( sc->scene, &selection_list );
@@ -580,10 +634,11 @@ namespace put
                                 {
                                     s32 jnode = joint_indices[jj];
                                     
-                                    if( scene->entities[jnode] & CMP_BONE )
+                                    if( scene->entities[jnode] & CMP_BONE && jnode > -1)
                                     {
                                         if( anim->channels[channel_index].target != scene->id_name[jnode] )
                                         {
+											dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] animation - does not fit rig" );
                                             compatible = false;
                                             break;
                                         }
@@ -603,7 +658,8 @@ namespace put
                                     
                                     bool exists = false;
                                     
-                                    for( auto& h : controller.handles )
+									s32 size = controller.handles.size();
+									for( s32 h = 0; h < size; ++h )
                                         if( h == ah )
                                             exists = true;
                                     
@@ -637,6 +693,8 @@ namespace put
 					scene->transforms[nn].translation = vec3f::zero();
 					scene->transforms[nn].rotation.euler_angles(0.0f, 0.0f, 0.0f);
 					scene->transforms[nn].scale = vec3f::one();
+
+					add_selection(scene, nn);
                 }
                 put::dev_ui::set_tooltip("Add New Node");
                 
@@ -675,10 +733,15 @@ namespace put
                 }
                 else
                 {
-                    scene_tree tree;
-                    
-                    build_scene_tree( scene, 0, tree );
-                    
+                    static scene_tree tree;
+					if (scene->invalidate_flags & INVALIDATE_SCENE_TREE)
+					{
+						tree = scene_tree();
+						build_scene_tree(scene, -1, tree);
+
+						scene->invalidate_flags &= ~INVALIDATE_SCENE_TREE;
+					}
+                                        
 					s32 pre_selected = selected_index;
                     scene_tree_enumerate(tree, selected_index);
 
@@ -713,8 +776,9 @@ namespace put
                     ImGui::Separator();
 
 					//transform
+					bool perform_transform = false;
 					transform& t = scene->transforms[selected_index];
-					ImGui::InputFloat3("Translation", (float*)&t.translation);
+					perform_transform |= ImGui::InputFloat3("Translation", (float*)&t.translation);
 
 					vec3f euler = t.rotation.to_euler();
 					euler = euler * _PI_OVER_180;
@@ -723,9 +787,15 @@ namespace put
 					{
 						euler = euler * _180_OVER_PI;
 						t.rotation.euler_angles(euler.z, euler.y, euler.x);
+						perform_transform = true;
 					}
 
-					ImGui::InputFloat3("Scale", (float*)&t.scale);
+					perform_transform |= ImGui::InputFloat3("Scale", (float*)&t.scale);
+
+					if (perform_transform)
+						k_transform_mode = TRANSFORM_TYPE_IN;
+
+					apply_transform_to_selection(scene, vec3f::zero());
 
 					ImGui::Separator();
                     
@@ -834,6 +904,11 @@ namespace put
                     
                     t.rotation = q * t.rotation;
                 }
+
+				if (!(scene->entities[s] & CMP_TRANSFORM))
+				{
+					//save history
+				}
                 
                 scene->entities[s] |= CMP_TRANSFORM;
             }
@@ -841,6 +916,8 @@ namespace put
 
 		void transform_widget( const scene_view& view )
 		{
+			k_select_flags &= ~(WIDGET_SELECTED);
+
             if( k_selection_list.empty() )
                 return;
             
@@ -860,22 +937,32 @@ namespace put
 			vec3f vr = put::maths::normalise(r1 - r0);
             
             vec3f pos = vec3f::zero();
-            
+			vec3f min = vec3f::flt_max();
+			vec3f max = vec3f::flt_min();
+
             for (auto& s : k_selection_list)
             {
-                vec3f& min = scene->bounding_volumes[s].transformed_min_extents;
-                vec3f& max = scene->bounding_volumes[s].transformed_max_extents;
+                vec3f& _min = scene->bounding_volumes[s].transformed_min_extents;
+                vec3f& _max = scene->bounding_volumes[s].transformed_max_extents;
                 
-                pos += min + (max - min) * 0.5f;
+				min = vec3f::vmin(min, _min);
+				max = vec3f::vmax(max, _max);
+
+                pos += _min + (_max - _min) * 0.5f;
             }
-            
+
+			f32 extents_mag = maths::magnitude(max - min);
+			            
             pos /= (f32)k_selection_list.size();
             
             mat4 widget;
             widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
             
-            if( pen::input_is_key_pressed(PENK_Z) )
-                view.camera->focus = pos;
+			if (pen::input_is_key_pressed(PENK_F))
+			{
+				view.camera->focus = pos;
+				view.camera->zoom = extents_mag;
+			}
 
             //distance for consistent-ish size
             mat4 res = view.camera->proj * view.camera->view;
@@ -934,6 +1021,8 @@ namespace put
                     
                     if( selected[i] )
                     {
+						k_select_flags |= WIDGET_SELECTED;
+
                         vec3f prev_line = maths::normalise(attach_point - pos);
                         vec3f cur_line = maths::normalise(_cp - pos);
                         
@@ -1023,7 +1112,10 @@ namespace put
 					vec4f col = vec4f(unit_axis[i] * 0.7f, 1.0f);
 
 					if (selected_axis & (1 << i))
+					{
+						k_select_flags |= WIDGET_SELECTED;
 						col = vec4f::one();
+					}
 
 					put::dbg::add_line_2f(pp[0].xy(), pp[i].xy(), col);
 

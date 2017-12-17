@@ -67,9 +67,13 @@ namespace pen
 			if (i >= MAX_RENDERER_RESOURCES)
 			{
 				renderer_resource_flags |= RENDERER_RESOURCES_FULL;
-				return 0;
+				i = 0;
+				break;
 			}
 		}
+
+		if (i == 0)
+			return 0;
 
 		renderer_resource_flags |= RENDERER_RESOURCES_ALLOCATED_THIS_FRAME;
 		renderer_resource_status[i] |= domain;

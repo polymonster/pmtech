@@ -74,7 +74,9 @@ typedef struct mat4
     
     vec3f operator *(const vec3f &p) const;
     mat4 operator *(const mat4 &b) const;
-    
+	
+	mat4& operator *=(const mat4 &b);
+
     void multiply_by_scalar(f32 value);
     
 } mat4;

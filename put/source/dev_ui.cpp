@@ -1,11 +1,13 @@
+#include <string>
+#include <fstream>
+
 #include "pen.h"
 #include "pen_string.h"
 #include "memory.h"
 #include "dev_ui.h"
 #include "file_system.h"
 #include "pen_json.h"
-#include <string>
-#include <fstream>
+#include "str_utilities.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -67,11 +69,27 @@ namespace put
             k_program_preferences.set(name, val);
             save_program_preferences();
         }
+
+		void set_program_preference_filename(const c8* name, Str val)
+		{
+			put::str_replace_chars(val, ':', '@');
+			k_program_preferences.set(name, val);
+
+			save_program_preferences();
+		}
         
         pen::json get_program_preference( const c8* name )
         {
             return k_program_preferences[name];
         }
+
+		Str get_program_preference_filename(const c8* name)
+		{
+			Str temp = k_program_preferences[name].as_str();
+			put::str_replace_chars(temp, '@', ':');
+
+			return temp;
+		}
 
 		const c8** get_last_used_directory(s32& directory_depth)
 		{

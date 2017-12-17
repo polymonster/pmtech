@@ -17,6 +17,7 @@ namespace put
     };
     
     //id hashes
+	const hash_id ID_CONTROL_RIG = PEN_HASH("controlrig");
     const hash_id ID_JOINT = PEN_HASH("joint");
     const hash_id ID_TRAJECTORY = PEN_HASH("trajectoryshjnt");
     
@@ -87,13 +88,14 @@ namespace put
                     s32 jnode = joint_indices[jj];
                     
                     if( jnode > -1 && scene->entities[jnode] & CMP_BONE )
-                    {
                         break;
-                    }
                     else
-                    {
                         controller.joints_offset++;
-                    }
+
+					//parent stray nodes to the top level anim / geom node
+					if (jnode > -1)
+						if (scene->parents[jnode] == jnode)
+							scene->parents[jnode] = node_index;
                 }
                 
                 controller.current_animation = INVALID_HANDLE;
@@ -350,12 +352,15 @@ namespace put
         
         animation_resource* get_animation_resource( anim_handle h )
         {
+			if (h > k_animations.size())
+				return nullptr;
+
             return &k_animations[h];
         }
         
         anim_handle load_pma(const c8* filename)
         {
-            Str pd = put::dev_ui::get_program_preference("project_dir").as_str().c_str();
+            Str pd = put::dev_ui::get_program_preference_filename("project_dir");
             
             Str stipped_filename = put::str_replace_string( filename, pd.c_str(), "" );
             
@@ -466,6 +471,9 @@ namespace put
         
         void load_pmm(const c8* filename, entity_scene* scene, u32 load_flags )
         {
+			if(scene)
+				scene->invalidate_flags |= INVALIDATE_SCENE_TREE;
+
             void* model_file;
             u32   model_file_size;
             
@@ -594,6 +602,10 @@ namespace put
                 scene->parents[current_node] = parent;
                 u32 transforms = *p_u32reader++;
                 
+				//parent fix up
+				if (scene->id_name[current_node] == ID_CONTROL_RIG)
+					scene->parents[current_node] = node_zero_offset;
+
                 vec3f translation;
                 vec4f rotations[3];
                 mat4  matrix;
@@ -778,7 +790,7 @@ namespace put
             }
             
             //now we have loaded the whole scene fix up any anim controllers
-            for( s32 i = node_zero_offset; i < num_import_nodes; ++i )
+            for( s32 i = node_zero_offset; i < node_zero_offset + num_import_nodes; ++i )
             {
                 if( (scene->entities[i] & CMP_GEOMETRY) && scene->geometries[i].p_skin )
                 {

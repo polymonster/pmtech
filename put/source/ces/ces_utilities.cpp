@@ -60,9 +60,19 @@ namespace put
         u32 get_new_node( entity_scene* scene )
         {
             u32 i = 0;
-            while( scene->entities[i++] & CMP_ALLOCATED )
-                continue;
-            
+			while ( 1 )
+			{
+				if (i >= scene->nodes_size)
+					resize_scene_buffers(scene);
+
+				if (scene->entities[i++] & CMP_ALLOCATED)
+					continue;
+
+				break;
+			}
+
+			scene->invalidate_flags |= INVALIDATE_SCENE_TREE;
+
             if( i > scene->num_nodes )
                 scene->num_nodes = i+1;
             
@@ -97,6 +107,9 @@ namespace put
             {
                 if( child.children.empty() )
                 {
+					if (!child.node_name)
+						continue;
+
                     ImGui::Selectable(child.node_name);
                     if (ImGui::IsItemClicked())
                         selected = child.node_index;
@@ -123,20 +136,27 @@ namespace put
             }
         }
         
-        void build_scene_tree( entity_scene* scene, u32 start_node, scene_tree& tree_out )
+        void build_scene_tree( entity_scene* scene, s32 start_node, scene_tree& tree_out )
         {
             //tree view
             tree_out.node_index = -1;
-            
+
+			bool enum_all = start_node == -1;
+			if(enum_all)
+				start_node = 0;
+
             //todo this could be cached
             for( s32 n = start_node; n < scene->num_nodes; ++n )
             {
                 scene_tree node;
                 node.node_name = scene->names[n].c_str();
                 node.node_index = n;
-                
+
                 if( scene->parents[n] == n )
                 {
+					if (!enum_all && n != start_node)
+						break;
+
                     tree_out.children.push_back(node);
                 }
                 else
@@ -157,22 +177,71 @@ namespace put
             }
         }
         
-        void tree_to_node_index_list( const scene_tree& tree, std::vector<s32>& list_out )
+        void tree_to_node_index_list( const scene_tree& tree, s32 start_node, std::vector<s32>& list_out )
         {
             list_out.push_back(tree.node_index);
             
             for( auto& child : tree.children )
             {
-                tree_to_node_index_list( child, list_out );
+				tree_to_node_index_list( child, start_node, list_out );
             }
         }
         
-        void build_joint_list( entity_scene* scene, u32 start_node, std::vector<s32>& list_out )
+        void build_joint_list( entity_scene* scene, s32 start_node, std::vector<s32>& list_out )
         {
             scene_tree tree;
             build_scene_tree( scene, start_node, tree );
             
-            tree_to_node_index_list( tree, list_out );
+            tree_to_node_index_list( tree, start_node, list_out );
         }
+
+		void set_node_parent(entity_scene* scene, u32 parent, u32 child)
+		{
+			if (child == parent)
+				return;
+
+			scene->parents[child] = parent;
+
+			mat4 parent_mat = scene->world_matrices[parent];
+
+			scene->local_matrices[child] = scene->local_matrices[child] * parent_mat.inverse4x4();
+		}
+
+		void clone_selection_hierarchical(entity_scene* scene, const std::vector<u32>& selection_list, const c8* suffix )
+		{
+			std::vector<u32> parent_list;
+
+			for (u32 i : selection_list)
+			{
+				if( scene->parents[i] == i || i == 0 )
+					parent_list.push_back(i);
+			}
+
+			for (u32 i : parent_list)
+			{
+				u32 src_parent = i;
+				u32 dst_parent = clone_node(scene, i);
+
+				scene_tree tree;
+				build_scene_tree( scene, i, tree );
+
+				std::vector<s32> node_index_list;
+				tree_to_node_index_list(tree, i, node_index_list);
+
+				for (s32 j : node_index_list)
+				{
+					if (j < 0 || j == src_parent)
+						continue;
+
+					u32 j_parent = scene->parents[j];
+					u32 parent_offset = j_parent - src_parent;
+
+					u32 new_child = clone_node(scene, j, -1, dst_parent + parent_offset, vec3f::zero(), "");
+
+					dev_console_log("[clone] node %s to %s, parent %s", scene->names[j], scene->names[new_child], scene->names[dst_parent + parent_offset]);
+				}
+			}
+		}
+
     }
 }
