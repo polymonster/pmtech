@@ -135,8 +135,9 @@ namespace put
 			vec2f swapxy = vec2f(-mouse_drag.y, mouse_drag.x);
 			p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
 		}
-		else if (ms.buttons[PEN_MOUSE_M] && INPUT_PKEY(PENK_MENU))
+		else if (ms.buttons[PEN_MOUSE_M] && INPUT_PKEY(PENK_MENU) || (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_COMMAND)) )
 		{
+			//pan
             vec3f up = p_camera->view.get_up();
             vec3f right = p_camera->view.get_right();
             
@@ -145,6 +146,7 @@ namespace put
 		}
 		else if (ms.buttons[PEN_MOUSE_R] && INPUT_PKEY(PENK_MENU))
 		{
+			//zoom
 			vec3f up = p_camera->view.get_up();
 			vec3f right = p_camera->view.get_right();
 
