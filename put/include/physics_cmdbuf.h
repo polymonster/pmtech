@@ -78,18 +78,13 @@ namespace physics
 		UP_Z = 2,
 	};
 
-	typedef struct lw_vec3f
-	{
-		f32 x, y, z;
-	}lw_vec3f;
-
 	typedef struct collision_response
 	{
 		s32 hit_tag;
 		u32 collider_flags;
 	}collision_response;
 
-	inline void set_lw_vec3f( lw_vec3f *plwv, vec3f v )
+    inline void set_lw_vec3f( lw_vec3f *plwv, vec3f v )
 	{
 		pen::memory_cpy( plwv, &v, sizeof( vec3f ) );
 	}

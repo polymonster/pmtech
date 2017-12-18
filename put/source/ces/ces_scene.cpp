@@ -221,7 +221,7 @@ namespace put
             
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
-				if (scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL && (!(scene->entities[n] & CMP_PHYSICS)) )
+				if ( scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL )
                 {
 					scene_node_geometry* p_geom = &scene->geometries[n];
 					scene_node_material* p_mat = &scene->materials[n];
@@ -296,6 +296,15 @@ namespace put
 
 		void update_scene( entity_scene* scene, f32 dt )
 		{
+            if( scene->flags & PAUSE_UPDATE )
+            {
+                physics::set_paused(1);
+                return;
+            }
+            
+            physics::set_paused(0);
+            physics::set_consume(1);
+            
             //animations
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -368,8 +377,11 @@ namespace put
             //scene node transform
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
-				u32 parent = scene->parents[n];
+                //physics node transform
+                if( scene->entities[n] & CMP_PHYSICS )
+                    scene->local_matrices[n] = scene->offset_matrices[n] * physics::get_rb_matrix(scene->physics_handles[n]);
 
+                //controlled transform
 				if (scene->entities[n] & CMP_TRANSFORM)
 				{
 					transform& t = scene->transforms[n];
@@ -384,10 +396,12 @@ namespace put
 
 					scene->local_matrices[n] = translation_mat * rot_mat * scale_mat;
 
-					//
+					//local matrix will be baked
 					scene->entities[n] &= ~CMP_TRANSFORM;
 				}
 
+                //heirarchical scene transform
+                u32 parent = scene->parents[n];
 				if (parent == n)
 					scene->world_matrices[n] = scene->local_matrices[n];
 				else
@@ -572,7 +586,7 @@ namespace put
         
         void load_scene( const c8* filename, entity_scene* scene )
         {
-			scene->invalidate_flags |= INVALIDATE_SCENE_TREE;
+			scene->flags |= INVALIDATE_SCENE_TREE;
             bool error = false;
             
             std::ifstream ifs(filename, std::ofstream::binary);

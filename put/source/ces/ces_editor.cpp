@@ -11,6 +11,7 @@
 #include "pmfx_controller.h"
 #include "timer.h"
 #include "str_utilities.h"
+#include "physics_cmdbuf.h"
 
 namespace put
 {
@@ -340,6 +341,17 @@ namespace put
                 ImGui::EndMenu();
             }
             
+            if( sc->scene->flags & PAUSE_UPDATE )
+            {
+                if(ImGui::Button(ICON_FA_PLAY))
+                    sc->scene->flags &= (~sc->scene->flags);
+            }
+            else
+            {
+                if(ImGui::Button(ICON_FA_PAUSE))
+                    sc->scene->flags |= PAUSE_UPDATE;
+            }
+            
             if (ImGui::Button(ICON_FA_FLOPPY_O))
             {
                 if(!open_import)
@@ -559,6 +571,48 @@ namespace put
             put::ces::update_scene(sc->scene, dt_ms);
         }
         
+        void scene_physics_ui( entity_scene* scene, s32 selected_index )
+        {
+            if( ImGui::CollapsingHeader("Physics") )
+            {
+                scene_node_physics& snp = scene->physics_data[selected_index];
+                
+                ImGui::InputFloat("Mass", &snp.mass);
+                ImGui::Combo("Shape", (s32*)&snp.collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
+                
+                static s32 dummy = 0;
+                if( snp.collision_shape == physics::CYLINDER || snp.collision_shape == physics::CAPSULE )
+                    ImGui::Combo("Shape Up-Axis", (s32*)&dummy, "X\0Y\0Z\0", 7 );
+                
+                if( ImGui::Button("Add Physics") )
+                {
+                    vec3f min = scene->bounding_volumes[selected_index].min_extents;
+                    vec3f max = scene->bounding_volumes[selected_index].max_extents;
+                    vec3f centre = min + (max - min);
+
+                    vec3f pos = scene->transforms[selected_index].translation;
+                    vec3f scale = scene->transforms[selected_index].scale;
+                    quat rotation = scene->transforms[selected_index].rotation;
+                    
+                    scene->offset_matrices[selected_index] = mat4::create_identity();
+                    
+                    physics::rigid_body_params rb = { 0 };
+                    rb.dimensions = (max - min) * scale * 0.5f;
+                    rb.mass = snp.mass;
+                    rb.group = 0;
+                    rb.position = pos;
+                    rb.rotation = rotation;
+                    rb.shape = snp.collision_shape + 1;
+                    rb.shape_up_axis = physics::UP_Y;
+                    rb.mask = 0xffffffff;
+                    
+                    scene->physics_handles[selected_index] = physics::add_rb(rb);
+                    
+                    scene->entities[selected_index] |= CMP_PHYSICS;
+                }
+            }
+        }
+        
         void scene_anim_ui( entity_scene* scene, s32 selected_index )
         {
             if( scene->geometries[selected_index].p_skin )
@@ -734,12 +788,12 @@ namespace put
                 else
                 {
                     static scene_tree tree;
-					if (scene->invalidate_flags & INVALIDATE_SCENE_TREE)
+					if (scene->flags & INVALIDATE_SCENE_TREE)
 					{
 						tree = scene_tree();
 						build_scene_tree(scene, -1, tree);
 
-						scene->invalidate_flags &= ~INVALIDATE_SCENE_TREE;
+						scene->flags &= ~INVALIDATE_SCENE_TREE;
 					}
                                         
 					s32 pre_selected = selected_index;
@@ -826,6 +880,10 @@ namespace put
                     
                     ImGui::Separator();
                     
+                    scene_physics_ui(scene, selected_index );
+                    
+                    ImGui::Separator();
+                    
                     if( ImGui::CollapsingHeader("Light") )
                     {
                         if( scene->entities[selected_index] & CMP_LIGHT )
@@ -861,7 +919,6 @@ namespace put
                             }
                         }
                     }
-
                 }
                 
                 ImGui::EndChild();
@@ -874,6 +931,9 @@ namespace put
         
         void apply_transform_to_selection( entity_scene* scene, const vec3f move_axis )
         {
+            if( move_axis == vec3f::zero() )
+                return;
+            
             for (auto& s : k_selection_list)
             {
                 //only move if parent isnt selected

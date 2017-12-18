@@ -165,16 +165,16 @@ ps_output ps_forward_lit( vs_output input )
 		 
 		//float2 ds = saturate( phong_point_light( light_pos_radius, camera_view_pos, world_pos, nn, spec_pwr_stgth ) * albedo.rgb );
 		
-		lit_colour += albedo.rgb;
+		//lit_colour += albedo.rgb;
 		//lit_colour += ds.y;
 		
-		//float3 l = normalize( lights[i].pos_radius.xyz- input.world_pos.xyz );
-		//lit_colour	+= 	lights[i].colour.rgb * dot( n, l );
+		float3 l = normalize( lights[i].pos_radius.xyz- input.world_pos.xyz );
+		lit_colour	+= 	lights[i].colour.rgb * dot( n, l );
 	}
 		
 	output.colour.rgb = lit_colour * albedo.rgb;
 	output.colour.a = albedo.a;
-			
+	
     return output;
 }
 

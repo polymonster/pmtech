@@ -71,7 +71,7 @@ namespace put
 				break;
 			}
 
-			scene->invalidate_flags |= INVALIDATE_SCENE_TREE;
+			scene->flags |= INVALIDATE_SCENE_TREE;
 
             if( i > scene->num_nodes )
                 scene->num_nodes = i+1;

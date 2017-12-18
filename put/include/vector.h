@@ -457,4 +457,17 @@ public:
     }
 };
 
+typedef struct lw_vec3f
+{
+    f32 x, y, z;
+    
+    inline lw_vec3f& operator = (const vec3f &v)
+    {
+        x = v.x; y = v.y; z = v.z;
+        
+        return *this;
+    }
+    
+}lw_vec3f;
+
 #endif //_vector_h

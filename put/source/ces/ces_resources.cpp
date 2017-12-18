@@ -469,7 +469,7 @@ namespace put
         void load_pmm(const c8* filename, entity_scene* scene, u32 load_flags )
         {
 			if(scene)
-				scene->invalidate_flags |= INVALIDATE_SCENE_TREE;
+				scene->flags |= INVALIDATE_SCENE_TREE;
 
             void* model_file;
             u32   model_file_size;

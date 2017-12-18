@@ -33,10 +33,11 @@ namespace put
             SV_BITS_END = 0
         };
 
-		enum e_scene_invalidate_flags : u32
+		enum e_scene_flags : u32
 		{
 			INVALIDATE_NONE = 0,
-			INVALIDATE_SCENE_TREE
+			INVALIDATE_SCENE_TREE = 1<<1,
+            PAUSE_UPDATE = 1<<2
 		};
         
 		enum e_component_flags : u32
@@ -99,11 +100,10 @@ namespace put
             vec3f min_extents;
             vec3f max_extents;
             vec3f centre;
-            u32   collision_shape;
-            u32   collision_dynamic;
+            u32   collision_shape = 0;
             vec3f start_position;
             quat  start_rotation;
-            
+            f32   mass = 0.0f;
             physics::collision_mesh_data mesh_data;
         };
         
@@ -197,7 +197,7 @@ namespace put
             u32*                    cbuffer;
 
 			u32						forward_light_buffer = PEN_INVALID_HANDLE;
-			u32						invalidate_flags;
+			u32						flags;
 
 #ifdef CES_DEBUG
             Str*                    names;

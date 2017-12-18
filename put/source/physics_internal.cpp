@@ -424,7 +424,12 @@ namespace physics
 			{
 				btTransform rb_transform = p_rb->getWorldTransform( );
 
-				rb_transform.getOpenGLMatrix( g_readable_data.output_matrices[current_ouput_backbuffer][i].m );
+                btScalar _mm[16];
+                
+				rb_transform.getOpenGLMatrix( _mm );
+                
+                for( s32 m = 0; m < 16; ++m )
+                    g_readable_data.output_matrices[current_ouput_backbuffer][i].m[m] = _mm[m];
 
 				g_readable_data.output_matrices[current_ouput_backbuffer][i] = g_readable_data.output_matrices[current_ouput_backbuffer][i].transpose( );
 			}

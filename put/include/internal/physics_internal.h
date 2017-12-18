@@ -15,7 +15,6 @@
 namespace physics
 {
 #define MULTIBODY_WORLD
-
 	typedef struct physics_entity
 	{
 		physics_entity( )
