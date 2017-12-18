@@ -222,7 +222,7 @@ namespace put
             wvp.view_direction = vec4f( inv_view.get_fwd(), 0.0 );
             
             //wvp.view_position = vec4f( 1.0, 0.0, 1.0, 0.0 );
-            //wvp.view_direction = vec4f( 1.0, 1.0, 0.0, 0.0 );
+           // wvp.view_direction = vec4f( 1.0, 1.0, 0.0, 0.0 );
 
 			pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
 
