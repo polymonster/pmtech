@@ -162,6 +162,13 @@ namespace put
 			vec4f pos_radius;
 			vec4f colour;
 		};
+        
+#define MAX_FORWARD_LIGHTS 8
+        struct forward_light_buffer
+        {
+            forward_light lights[MAX_FORWARD_LIGHTS];
+            vec4f         info;
+        };
 
 		struct entity_scene
 		{

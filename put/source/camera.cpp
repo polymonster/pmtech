@@ -215,7 +215,14 @@ namespace put
             else
                 wvp.view_projection = p_camera->proj * p_camera->view;
             
+            mat4 inv_view = p_camera->view.inverse3x4();
+            
 			wvp.view_matrix = p_camera->view;
+            wvp.view_position = vec4f( inv_view.get_translation(), 0.0 );
+            wvp.view_direction = vec4f( inv_view.get_fwd(), 0.0 );
+            
+            //wvp.view_position = vec4f( 1.0, 0.0, 1.0, 0.0 );
+            //wvp.view_direction = vec4f( 1.0, 1.0, 0.0, 0.0 );
 
 			pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
 

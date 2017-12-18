@@ -18,6 +18,8 @@ namespace put
 	{
 		mat4 view_projection;
 		mat4 view_matrix;
+        vec4f view_position;
+        vec4f view_direction;
 	};
 
 	struct camera

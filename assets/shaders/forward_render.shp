@@ -76,6 +76,7 @@ struct forward_light
 cbuffer per_pass_lights : register(b3)
 {
 	forward_light lights[8];
+	float4 		  light_info;
 };
 
 declare_texture_samplers
@@ -149,30 +150,66 @@ ps_output ps_forward_lit( vs_output input )
 	
 	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
 	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb * 2.0 - 1.0;
-	
+	float4 specular_sample = SAMPLE_TEXTURE_2D( specular_texture, input.texcoord.xy );
+		
 	float3 n = transform_ts_normal( input.tangent, input.bitangent, input.normal, normal_sample );
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 	
-	for( int i = 0; i < 8; ++i )
+	for( int i = 0; i < light_info.x; ++i )
 	{
-		float4 light_pos_radius = float4( lights[i].pos_radius.xyz, 100.0 );
-		float4 view_pos = camera_view_pos;
-		float4 nn = float4( n, 1.0 );
-		//float4 world_pos = float4( input.world_pos, 1.0);
-		
-		float4 spec_pwr_stgth = float4( 1.0, 1.0, 0.0, 0.0 );
-		 
-		//float2 ds = saturate( phong_point_light( light_pos_radius, camera_view_pos, world_pos, nn, spec_pwr_stgth ) * albedo.rgb );
-		
-		//lit_colour += albedo.rgb;
-		//lit_colour += ds.y;
-		
-		float3 l = normalize( lights[i].pos_radius.xyz- input.world_pos.xyz );
-		lit_colour	+= 	lights[i].colour.rgb * dot( n, l );
+#if 1
+		lit_colour += lambert( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			albedo.rgb
+		);			 
+#endif
+
+#if 0
+		lit_colour += phong( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			camera_view_pos.xyz,
+			albedo.rgb,
+			100.0,
+			0.5
+		);			 
+#endif
+
+#if 0
+		lit_colour += blinn( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			camera_view_pos.xyz,
+			albedo.rgb,
+			100.0,
+			0.5
+		);			 
+#endif
+
+#if 0
+		lit_colour += cook_torrence( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			camera_view_pos.xyz,
+			albedo.rgb,
+			specular_sample.rgb,
+			0.1,
+			0.8
+		);			 
+#endif
 	}
-		
-	output.colour.rgb = lit_colour * albedo.rgb;
+
+	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
 	
     return output;

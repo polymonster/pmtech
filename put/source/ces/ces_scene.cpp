@@ -202,7 +202,7 @@ namespace put
 			bcp.usage_flags = PEN_USAGE_DYNAMIC;
 			bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
 			bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-			bcp.buffer_size = sizeof(forward_light) * 8;
+            bcp.buffer_size = sizeof(forward_light_buffer);
 			bcp.data = nullptr;
 
 			new_instance.scene->forward_light_buffer = pen::renderer_create_buffer(bcp);
@@ -278,7 +278,7 @@ namespace put
                         //todo - set sampler states from material
                         static u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
                         
-						for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
+						for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
 						{
 							if ( is_valid(p_mat->texture_id[t]) && ss_wrap )
 							{
@@ -463,9 +463,10 @@ namespace put
                 //per object world matrix
                 pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
             }
-
-			static forward_light light_buffer[8];
+            
+			static forward_light_buffer light_buffer;
 			s32 pos = 0;
+            s32 num_lights = 0;
 			for (s32 n = 0; n < scene->num_nodes; ++n)
 			{
 				if (!(scene->entities[n] & CMP_LIGHT))
@@ -474,13 +475,18 @@ namespace put
 				transform& t = scene->transforms[n];
 				scene_node_light& l = scene->lights[n];
 
-				light_buffer[pos].pos_radius = vec4f(t.translation, 1.0 );
-				light_buffer[pos].colour = vec4f(l.colour, 1.0);
+				light_buffer.lights[pos].pos_radius = vec4f(t.translation, 1.0 );
+				light_buffer.lights[pos].colour = vec4f(l.colour, 1.0);
 
+                ++num_lights;
 				++pos;
+                
+                if( num_lights >= MAX_FORWARD_LIGHTS )
+                    break;
 			}
+            light_buffer.info.x = (f32)num_lights;
 
-			pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer[0], sizeof(light_buffer));
+			pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
 		}
         
         void save_scene( const c8* filename, entity_scene* scene )
