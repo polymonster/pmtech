@@ -33,6 +33,7 @@ public:
     vec2f( f32 ax, f32 ay )	: x( ax ), y( ay )	{ }
     ~vec2f()					{ }
     
+    inline vec2f    operator -  ( void )                    { return vec2f(-x, -y); };
     inline vec2f	operator =	( const vec2f &v )		    { x=v.x, y=v.y; return( *this ); }
     inline bool		operator ==	( const vec2f &v )		    { return( x==v.x && y==v.y ); }
     inline bool		operator !=	( const vec2f &v )		    { return( x!=v.x || y!=v.y ); }
@@ -115,6 +116,8 @@ public:
     vec3f( f32 ax, f32 ay, f32 az ) : x( ax ), y( ay ), z( az ) { }
     vec3f( f32 f ) : x( f ), y( f ), z( f ) { }
     ~vec3f()					{ }
+    
+    inline vec3f operator - ( void ) { return vec3f(-x, -y, -z); };
     
     inline vec3f operator =  (const vec3f &v ) {x = v.x, y = v.y, z = v.z; return (*this ); }
     inline bool  operator == (const vec3f &v ) const { return( x==v.x && y==v.y && z==v.z); }
@@ -316,8 +319,8 @@ public:
         w = aw;
     }
     
+    inline vec4f operator - ( void ) { return vec4f(-x, -y, -z, -w); };
     inline vec4f operator =  (const vec4f &v ) {x = v.x, y = v.y, z = v.z; w = v.w; return (*this ); }
-    
     inline bool  operator == (const vec4f &v ) const { return( x==v.x && y==v.y && z==v.z && w ==v.w); }
     inline bool  operator != (const vec4f &v ) const { return( x!=v.x || y!=v.y || z!=v.z || w!=v.w); }
     inline vec4f operator +  (const vec4f &v ) const { vec4f result(x + v.x, y + v.y, z + v.z, w + v.w); return ( result ); }

@@ -599,7 +599,7 @@ namespace put
                     physics::rigid_body_params rb = { 0 };
                     rb.dimensions = (max - min) * scale * 0.5f;
                     rb.mass = snp.mass;
-                    rb.group = 0;
+                    rb.group = 1;
                     rb.position = pos;
                     rb.rotation = rotation;
                     rb.shape = snp.collision_shape + 1;

@@ -379,7 +379,11 @@ namespace put
 			{
                 //physics node transform
                 if( scene->entities[n] & CMP_PHYSICS )
+                {
                     scene->local_matrices[n] = scene->offset_matrices[n] * physics::get_rb_matrix(scene->physics_handles[n]);
+                    
+                    scene->local_matrices[n].transpose();
+                }
 
                 //controlled transform
 				if (scene->entities[n] & CMP_TRANSFORM)

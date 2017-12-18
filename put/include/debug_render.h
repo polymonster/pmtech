@@ -18,7 +18,7 @@ namespace put
 		void add_point( const vec3f& point, f32 size, const vec4f& col = vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 		void add_grid( const vec3f& centre, const vec3f& size, const vec3f& divisions);
 		void add_line_transform( const vec3f& start, vec3f& end, const mat4 *matrix, const vec4f& col = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
-        void add_aabb(const vec3f &min, const vec3f& mac, const vec4f& col = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
+        void add_aabb(const vec3f &min, const vec3f& max, const vec4f& col = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
         void add_circle(const vec3f& axis, const vec3f& centre, f32 radius, const vec4f& col = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
 
 		//2d
