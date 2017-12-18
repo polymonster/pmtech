@@ -181,7 +181,7 @@ ps_output ps_forward_lit( vs_output input )
 		);			 
 #endif
 
-#if 0
+#if 1
 		lit_colour += blinn( 
 			lights[i].pos_radius, 
 			lights[i].colour.rgb,
@@ -203,7 +203,7 @@ ps_output ps_forward_lit( vs_output input )
 			camera_view_pos.xyz,
 			albedo.rgb,
 			specular_sample.rgb,
-			0.1,
+			0.01,
 			0.8
 		);			 
 #endif

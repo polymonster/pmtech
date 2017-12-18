@@ -594,10 +594,10 @@ namespace put
                     vec3f scale = scene->transforms[selected_index].scale;
                     quat rotation = scene->transforms[selected_index].rotation;
                     
-                    scene->offset_matrices[selected_index] = mat4::create_identity();
+                    scene->offset_matrices[selected_index] = mat4::create_scale(scale);
                     
                     physics::rigid_body_params rb = { 0 };
-                    rb.dimensions = (max - min) * scale * 0.5f;
+                    rb.dimensions = (max - min) * scale * 0.5;
                     rb.mass = snp.mass;
                     rb.group = 1;
                     rb.position = pos;
