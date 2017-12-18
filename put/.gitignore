@@ -1,2 +1,5 @@
 # project files
 build/
+lib/**/*put*.*
+**.lib
+**.a
