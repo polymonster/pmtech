@@ -249,7 +249,7 @@ namespace put
 			}
 
 			//grid
-			k_model_view_controller.grid_cell_size = dev_ui::get_program_preference("grid_cell_size").as_f32(10.0f);
+			k_model_view_controller.grid_cell_size = dev_ui::get_program_preference("grid_cell_size").as_f32(1.0f);
 			k_model_view_controller.grid_size = dev_ui::get_program_preference("grid_size").as_f32(100.0f);
 
 			//camera
