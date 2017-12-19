@@ -28,6 +28,7 @@ namespace put
     namespace pmfx
     {
         void init( const c8* filename );
+		void shutdown();
         
         void update( );
         void render( );

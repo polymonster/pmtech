@@ -183,6 +183,23 @@ namespace put
             
             std::vector<void(*)(const put::ces::scene_view&)> render_functions;
         };
+
+		enum e_render_state_type : u32
+		{
+			RS_RASTERIZER = 0,
+			RS_SAMPLER,
+			RS_BLEND,
+			RS_DEPTH_STENCIL
+		};
+
+		struct render_state
+		{
+			hash_id id_name;
+			hash_id hash;
+			u32     handle;
+
+			e_render_state_type type;
+		};
         
         static std::vector<view_params>         k_views;
         static std::vector<scene_controller>    k_scenes;
@@ -190,6 +207,7 @@ namespace put
         static std::vector<camera_controller>   k_cameras;
         static std::vector<render_target>       k_render_targets;
         static std::vector<const c8*>           k_render_target_names;
+		static std::vector<render_state>		k_render_states;
         
         void register_scene( const scene_controller& scene )
         {
@@ -267,15 +285,7 @@ namespace put
             
             return default_value;
         }
-        
-        struct render_state
-        {
-            hash_id id_name;
-            hash_id hash;
-            u32     handle;
-        };
-        static std::vector<render_state> k_render_states;
-        
+                
         render_state* get_state_by_name( hash_id id_name )
         {
             s32 num = k_render_states.size();
@@ -403,7 +413,8 @@ namespace put
                 Str typed_name = state.name();
                 typed_name.append("_sampler_state");
                 rs.id_name =  PEN_HASH(typed_name.c_str());
-            
+				rs.type = RS_SAMPLER;
+
                 render_state* existing_state = get_state_by_hash( hh );
                 if( existing_state )
                     rs.handle = existing_state->handle;
@@ -442,7 +453,8 @@ namespace put
                 Str typed_name = state.name();
                 typed_name.append("_raster_state");
                 rs.id_name =  PEN_HASH(typed_name.c_str());
-                
+				rs.type = RS_RASTERIZER;
+
                 render_state* existing_state = get_state_by_hash( hh );
                 if( existing_state )
                     rs.handle = existing_state->handle;
@@ -533,6 +545,7 @@ namespace put
                 Str typed_name = state.name();
                 typed_name.append("_depth_stencil_state");
                 rs.id_name =  PEN_HASH(typed_name.c_str());
+				rs.type = RS_DEPTH_STENCIL;
                 
                 render_state* existing_state = get_state_by_hash( hh );
                 if( existing_state )
@@ -637,7 +650,8 @@ namespace put
             Str typed_name = view_name;
             typed_name.append("_blend_state");
             rs.id_name =  PEN_HASH(typed_name.c_str());
-            
+			rs.type = RS_BLEND;
+
             render_state* existing_state = get_state_by_hash( hh );
             if( existing_state )
                 rs.handle = existing_state->handle;
@@ -781,9 +795,94 @@ namespace put
             get_rt_dimensions( rt->width, rt->height, rt->ratio, w, h );
         }
         
-        void parse_clear_colour( pen::json& render_config )
+        void parse_clear_colour( pen::json& view, view_params& new_view, s32 num_targets )
         {
-            
+			//clear colour
+			pen::json clear_colour = view["clear_colour"];
+
+			f32 clear_colour_f[4] = { 0 };
+			u8 clear_stencil_val = 0;
+
+			u32 clear_flags = 0;
+
+			if (clear_colour.size() == 4)
+			{
+				for (s32 c = 0; c < 4; ++c)
+					clear_colour_f[c] = clear_colour[c].as_f32();
+
+				clear_flags |= PEN_CLEAR_COLOUR_BUFFER;
+			}
+
+			//clear depth
+			pen::json clear_depth = view["clear_depth"];
+
+			f32 clear_depth_f;
+
+			if (clear_depth.type() != JSMN_UNDEFINED)
+			{
+				clear_depth_f = clear_depth.as_f32();
+
+				clear_flags |= PEN_CLEAR_DEPTH_BUFFER;
+			}
+
+			//clear stencil
+			pen::json clear_stencil = view["clear_stencil"];
+
+			if (clear_stencil.type() != JSMN_UNDEFINED)
+			{
+				clear_stencil_val = clear_stencil.as_u8_hex();
+
+				clear_flags |= PEN_CLEAR_STENCIL_BUFFER;
+			}
+
+			//clear state
+			pen::clear_state cs_info =
+			{
+				clear_colour_f[0], clear_colour_f[1], clear_colour_f[2], clear_colour_f[3], clear_depth_f, clear_stencil_val, clear_flags,
+			};
+
+			//clear mrt
+			pen::json clear_mrt = view["clear"];
+			for (s32 m = 0; m < clear_mrt.size(); ++m)
+			{
+				pen::json jmrt = clear_mrt[m];
+
+				hash_id rt_id = PEN_HASH(jmrt.name().c_str());
+
+				for (s32 t = 0; t < num_targets; ++t)
+				{
+					if (new_view.id_render_target[t] == rt_id)
+					{
+						cs_info.num_colour_targets++;
+
+						pen::json colour_f = jmrt["clear_colour_f"];
+						if (colour_f.size() == 4)
+						{
+							for (s32 j = 0; j < 4; ++j)
+							{
+								cs_info.mrt[t].type = pen::CLEAR_F32;
+								cs_info.mrt[t].f[j] = colour_f[j].as_f32();
+							}
+
+							break;
+						}
+
+						pen::json colour_u = jmrt["clear_colour_u"];
+						if (colour_u.size() == 4)
+						{
+							for (s32 j = 0; j < 4; ++j)
+							{
+								cs_info.mrt[t].type = pen::CLEAR_U32;
+								cs_info.mrt[t].u[j] = colour_u[j].as_u32();
+							}
+
+							break;
+						}
+					}
+				}
+			}
+
+			new_view.clear_state = pen::renderer_create_clear_state(cs_info);
         }
         
         void parse_views( pen::json& render_config )
@@ -864,93 +963,8 @@ namespace put
                     }
                 }
                 
-                //clear colour
-                pen::json clear_colour = view["clear_colour"];
-                
-                f32 clear_colour_f[4] = { 0 };
-                u8 clear_stencil_val = 0;
-                
-                u32 clear_flags = 0;
-                
-                if( clear_colour.size() == 4 )
-                {
-                    for( s32 c = 0; c < 4; ++c )
-                        clear_colour_f[c] = clear_colour[c].as_f32();
-                    
-                    clear_flags |= PEN_CLEAR_COLOUR_BUFFER;
-                }
-                
-                //clear depth
-                pen::json clear_depth = view["clear_depth"];
-                
-                f32 clear_depth_f;
-                
-                if( clear_depth.type() != JSMN_UNDEFINED )
-                {
-                    clear_depth_f = clear_depth.as_f32();
-                    
-                    clear_flags |= PEN_CLEAR_DEPTH_BUFFER;
-                }
-                
-                //clear stencil
-                pen::json clear_stencil = view["clear_stencil"];
-                
-                if( clear_stencil.type() != JSMN_UNDEFINED )
-                {
-                    clear_stencil_val = clear_stencil.as_u8_hex();
-                    
-                    clear_flags |= PEN_CLEAR_STENCIL_BUFFER;
-                }
-                
-                //clear state
-                pen::clear_state cs_info =
-                {
-                    clear_colour_f[0], clear_colour_f[1], clear_colour_f[2], clear_colour_f[3], clear_depth_f, clear_stencil_val, clear_flags,
-                };
-                
-                //clear mrt
-                pen::json clear_mrt = view["clear"];
-                for( s32 m = 0; m < clear_mrt.size(); ++m )
-                {
-                    pen::json jmrt = clear_mrt[m];
-                    
-                    hash_id rt_id = PEN_HASH(jmrt.name().c_str());
-                    
-                    for( s32 t = 0; t < num_targets; ++t )
-                    {
-                        if( new_view.id_render_target[t] == rt_id )
-                        {
-                            cs_info.num_colour_targets++;
-                            
-                            pen::json colour_f = jmrt["clear_colour_f"];
-                            if( colour_f.size() == 4 )
-                            {
-                                for( s32 j = 0; j < 4; ++j )
-                                {
-                                    cs_info.mrt[t].type = pen::CLEAR_F32;
-                                    cs_info.mrt[t].f[j] = colour_f[j].as_f32();
-                                }
-                                
-                                break;
-                            }
-                            
-                            pen::json colour_u = jmrt["clear_colour_u"];
-                            if( colour_u.size() == 4 )
-                            {
-                                for( s32 j = 0; j < 4; ++j )
-                                {
-                                    cs_info.mrt[t].type = pen::CLEAR_U32;
-                                    cs_info.mrt[t].u[j] = colour_u[j].as_u32();
-                                }
-                                
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                new_view.clear_state = pen::renderer_create_clear_state( cs_info );
-                
+				parse_clear_colour(view, new_view, num_targets);
+                               
                 //viewport
                 pen::json viewport = view["viewport"];
                 
@@ -1088,6 +1102,50 @@ namespace put
             
             parse_views(render_config);
         }
+
+		void shutdown( )
+		{
+			//release render states
+			for (auto& rs : k_render_states)
+			{
+				switch (rs.type)
+				{
+					case RS_RASTERIZER:
+						pen::renderer_release_raster_state(rs.handle);
+						break;
+					case RS_SAMPLER:
+						pen::renderer_release_sampler(rs.handle);
+						break;
+					case RS_BLEND:
+						pen::renderer_release_blend_state(rs.handle);
+						break;
+					case RS_DEPTH_STENCIL:
+						pen::renderer_release_depth_stencil_state(rs.handle);
+						break;
+				}
+			}
+			k_render_states.clear();
+
+			//release render targets
+			for (auto& rt : k_render_targets)
+			{
+				pen::renderer_release_render_target(rt.handle);
+			}
+			k_render_targets.clear();
+			k_render_target_names.clear();
+
+			//release clear state and clear views
+			for (auto& v : k_views)
+			{
+				pen::renderer_release_clear_state(v.clear_state);
+			}
+			k_views.clear();
+
+			//clear vectors of remaining stuff
+			k_scenes.clear();
+			k_scene_view_renderers.clear();
+			k_cameras.clear();
+		}
         
         void update()
         {

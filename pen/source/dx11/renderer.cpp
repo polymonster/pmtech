@@ -104,6 +104,8 @@ namespace pen
         texture2d_internal			tex_msaa;
         ID3D11DepthStencilView*		ds_msaa[NUM_CUBEMAP_FACES];
 
+		texture2d_internal			tex_read_back;
+
         DXGI_FORMAT                 format;
 		texture_creation_params*	tcp;
 	};
@@ -715,6 +717,7 @@ namespace pen
 
         //format required for resolve
         resource_pool[resource_index].render_target->format = (DXGI_FORMAT)tcp.format;
+		resource_pool[resource_index].render_target->tcp = nullptr;
 
         texture_creation_params _tcp = tcp;
         
@@ -1059,10 +1062,16 @@ namespace pen
 		for (s32 i = 0; i < NUM_CUBEMAP_FACES; ++i)
 		{
 			if (rt->rt[i])
+			{
 				rt->rt[i]->Release();
+				rt->rt[i] = nullptr;
+			}
 
 			if (rt->rt_msaa[i])
+			{
 				rt->rt_msaa[i]->Release();
+				rt->rt_msaa[i] = nullptr;
+			}
 		}
 
 		if (rt->tex.texture)
@@ -1080,6 +1089,12 @@ namespace pen
 		if (rt->tex_read_back.texture)
 			rt->tex_read_back.texture->Release();
 
+		rt->tex_msaa.srv = nullptr;
+		rt->tex_msaa.texture = nullptr;
+		rt->tex.srv = nullptr;
+		rt->tex.texture = nullptr;
+
+		delete rt->tcp;
 	}
 
 	void direct::renderer_release_render_target( u32 render_target )
@@ -1332,7 +1347,6 @@ namespace pen
 			resource_pool[dsv].depth_target = (depth_stencil_target_internal*)pen::memory_alloc(sizeof(depth_stencil_target_internal));
 
 		pen::memory_zero(resource_pool[dsv].depth_target, sizeof(depth_stencil_target_internal));
-
 
         // Create a render target view
         HRESULT hr = g_swap_chain->GetBuffer( 0, __uuidof(ID3D11Texture2D), reinterpret_cast< void** >(&resource_pool[crtv].render_target->tex.texture) );

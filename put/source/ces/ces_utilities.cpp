@@ -145,9 +145,11 @@ namespace put
 			if(enum_all)
 				start_node = 0;
 
-            //todo this could be cached
             for( s32 n = start_node; n < scene->num_nodes; ++n )
             {
+				if (!(scene->entities[n] & CMP_ALLOCATED))
+					continue;
+
                 scene_tree node;
                 node.node_name = scene->names[n].c_str();
                 node.node_index = n;

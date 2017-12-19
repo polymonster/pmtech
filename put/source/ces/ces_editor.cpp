@@ -45,6 +45,8 @@ namespace put
         struct model_view_controller
         {
             put::camera     main_camera;
+			bool			invalidated = false;
+			bool			invert_y = false;
             e_camera_mode   camera_mode = CAMERA_MODELLING;
             
         };
@@ -63,16 +65,25 @@ namespace put
         
         void update_model_viewer_camera(put::camera_controller* cc)
         {
+			if (k_model_view_controller.invalidated)
+			{
+				cc->camera->fov = k_model_view_controller.main_camera.fov;
+				cc->camera->near_plane = k_model_view_controller.main_camera.near_plane;
+				cc->camera->far_plane = k_model_view_controller.main_camera.far_plane;
+				camera_update_projection_matrix(cc->camera);
+				k_model_view_controller.invalidated = false;
+			}
+
             //update camera
             if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
             {
                 switch (k_model_view_controller.camera_mode)
                 {
                     case CAMERA_MODELLING:
-                        put::camera_update_modelling(cc->camera);
+                        put::camera_update_modelling(cc->camera, k_model_view_controller.invert_y);
                         break;
                     case CAMERA_FLY:
-                        put::camera_update_fly(cc->camera);
+                        put::camera_update_fly(cc->camera, k_model_view_controller.invert_y);
                         break;
                 }
             }
@@ -160,6 +171,23 @@ namespace put
         void editor_init( entity_scene* scene )
         {
             update_view_flags_ui( scene );
+
+			bool auto_load_last_scene = dev_ui::get_program_preference("load_last_scene").as_bool();
+			if (auto_load_last_scene)
+			{
+				Str last_loaded_scene = dev_ui::get_program_preference_filename("last_loaded_scene");
+
+				if (last_loaded_scene.length() > 0)
+					load_scene(last_loaded_scene.c_str(), scene);
+
+				auto_load_last_scene = false;
+			}
+
+			k_model_view_controller.main_camera.fov = dev_ui::get_program_preference("camera_fov").as_f32(60.0f);
+			k_model_view_controller.main_camera.near_plane = dev_ui::get_program_preference("camera_near").as_f32(0.1f);
+			k_model_view_controller.main_camera.far_plane = dev_ui::get_program_preference("camera_far").as_f32(1000.0f);
+			k_model_view_controller.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
+			k_model_view_controller.invalidated = true;
         }
         
         struct picking_info
@@ -294,6 +322,45 @@ namespace put
                 }
             }
         }
+
+		void settings_ui(bool* opened)
+		{
+			static bool set_project_dir = false;
+
+			static bool load_last_scene = dev_ui::get_program_preference("load_last_scene").as_bool();
+			static Str project_dir_str = dev_ui::get_program_preference_filename("project_dir");
+
+			if (ImGui::Begin("Settings", opened))
+			{
+				Str setting_str;
+				if (ImGui::Checkbox("Invert Camera Y", &k_model_view_controller.invert_y))
+				{
+					dev_ui::set_program_preference("invert_camera_y", k_model_view_controller.invert_y);
+				}
+
+				if (ImGui::Checkbox("Auto Load Last Scene", &load_last_scene))
+				{
+					dev_ui::set_program_preference("load_last_scene", load_last_scene);
+				}
+
+				set_project_dir = ImGui::Button("Set Project Dir");
+				ImGui::SameLine();
+				ImGui::Text("%s", project_dir_str.c_str());
+
+				ImGui::End();
+			}
+
+			if (set_project_dir)
+			{
+				const c8* set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**.");
+
+				if (set_proj)
+				{
+					project_dir_str = set_proj;
+					dev_ui::set_program_preference_filename("project_dir", project_dir_str);
+				}
+			}
+		}
         
         void update_model_viewer_scene(put::scene_controller* sc)
         {
@@ -303,23 +370,10 @@ namespace put
             static bool open_camera_menu = false;
             static bool open_resource_menu = false;
             static bool dev_open = false;
-            static bool set_project_dir = false;
             static bool selection_list = false;
             static bool view_menu = false;
+			static bool settings_open = false;
             
-			static Str project_dir_str = dev_ui::get_program_preference_filename("project_dir");
-
-			static bool auto_load_last_scene = dev_ui::get_program_preference("auto_load_last_scene").as_bool();
-			if (auto_load_last_scene)
-			{
-				Str last_loaded_scene = dev_ui::get_program_preference_filename("last_loaded_scene");
-
-				if ( last_loaded_scene.length() > 0 )
-					load_scene(last_loaded_scene.c_str(), sc->scene);
-
-				auto_load_last_scene = false;
-			}
-
             ImGui::BeginMainMenuBar();
             
             if (ImGui::BeginMenu(ICON_FA_LEMON_O))
@@ -327,20 +381,13 @@ namespace put
                 ImGui::MenuItem("Save");
                 ImGui::MenuItem("Import", NULL, &open_import);
                 ImGui::MenuItem("Console", NULL, &put::dev_ui::k_console_open);
-                
-                if( ImGui::BeginMenu("Project Directory") )
-                {
-                    ImGui::MenuItem("Set..", NULL, &set_project_dir);
-                    ImGui::Text("Dir: %s", project_dir_str.c_str());
-                    
-                    ImGui::EndMenu();
-                }
-                
+				ImGui::MenuItem("Settings", NULL, &settings_open);
                 ImGui::MenuItem("Dev", NULL, &dev_open);
-                
+
                 ImGui::EndMenu();
             }
             
+			//play pause
             if( sc->scene->flags & PAUSE_UPDATE )
             {
                 if(ImGui::Button(ICON_FA_PLAY))
@@ -351,7 +398,25 @@ namespace put
                 if(ImGui::Button(ICON_FA_PAUSE))
                     sc->scene->flags |= PAUSE_UPDATE;
             }
-            
+
+			static bool debounce_pause = false;
+			if (pen::input_is_key_down(PENK_SPACE))
+			{
+				if (!debounce_pause)
+				{
+					if(!(sc->scene->flags & PAUSE_UPDATE))
+						sc->scene->flags |= PAUSE_UPDATE;
+					else
+						sc->scene->flags &= ~PAUSE_UPDATE;
+
+					debounce_pause = true;
+				}
+			}
+			else
+			{
+				debounce_pause = false;
+			}
+			            
             if (ImGui::Button(ICON_FA_FLOPPY_O))
             {
                 if(!open_import)
@@ -475,8 +540,17 @@ namespace put
                 {
                     ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
                     
-                    
-                    
+					if (ImGui::SliderFloat("FOV", &k_model_view_controller.main_camera.fov, 10, 180))
+						dev_ui::set_program_preference("camera_fov", k_model_view_controller.main_camera.fov);
+
+					if (ImGui::InputFloat("Near", &k_model_view_controller.main_camera.near_plane))
+						dev_ui::set_program_preference("camera_near", k_model_view_controller.main_camera.near_plane);
+
+					if (ImGui::InputFloat("Far", &k_model_view_controller.main_camera.far_plane))
+						dev_ui::set_program_preference("camera_far", k_model_view_controller.main_camera.far_plane);
+
+					k_model_view_controller.invalidated = true;
+
                     ImGui::End();
                 }
             }
@@ -485,18 +559,7 @@ namespace put
             {
                 put::ces::enumerate_resources( &open_resource_menu );
             }
-            
-            if( set_project_dir )
-            {
-                const c8* set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**." );
-                
-                if(set_proj)
-                {
-                    project_dir_str = set_proj;
-                    dev_ui::set_program_preference_filename("project_dir", project_dir_str);
-                }
-            }
-            
+                        
             if( open_save )
             {
                 const c8* save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms" );
@@ -519,7 +582,11 @@ namespace put
                     ImGui::End();
                 }
             }
+
+			if (settings_open)
+				settings_ui(&settings_open);
             
+			//selection / picking
             if( !pen_input_key(PENK_MENU) && !(k_select_flags & WIDGET_SELECTED))
             {
                 picking_update( sc->scene );
@@ -538,6 +605,11 @@ namespace put
 				}
 			}
 
+			if (selection_list)
+			{
+				enumerate_selection_ui(sc->scene, &selection_list);
+			}
+
 			//duplicate
 			static bool debounce_duplicate = false;
 			if (pen_input_key(PENK_CONTROL) && pen_input_key_press(PENK_D))
@@ -550,10 +622,15 @@ namespace put
 				debounce_duplicate = false;
 			}
 
-            if( selection_list )
-            {
-                enumerate_selection_ui( sc->scene, &selection_list );
-            }
+			//delete
+			if (pen::input_is_key_down(PENK_DELETE))
+			{
+				for (auto& s : k_selection_list)
+				{
+					sc->scene->entities[s] = 0;
+				}
+				k_selection_list.clear();
+			}
             
             if( view_menu )
             {
@@ -776,6 +853,9 @@ namespace put
                 {
                     for (u32 i = 0; i < scene->num_nodes; ++i)
                     {
+						if (!(scene->entities[i] & CMP_ALLOCATED))
+							continue;
+
                         bool selected = false;
                         ImGui::Selectable(scene->names[i].c_str(), &selected);
                         

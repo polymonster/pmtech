@@ -52,6 +52,9 @@ namespace put
         const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes = 0, ...);
         
         //generic program preferences
+		void set_program_preference(const c8* name, f32 val);
+		void set_program_preference(const c8* name, s32 val);
+		void set_program_preference(const c8* name, bool val);
         void set_program_preference( const c8* name, Str val );
         pen::json get_program_preference( const c8* name );
 		Str get_program_preference_filename(const c8* name);

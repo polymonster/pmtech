@@ -63,6 +63,29 @@ namespace put
 
             save_program_preferences();
 		}
+
+		void set_program_preference(const c8* name, f32 val)
+		{
+			Str str_val;
+			str_val.appendf("%f", val);
+			set_program_preference(name, str_val);
+		}
+
+		void set_program_preference(const c8* name, s32 val)
+		{
+			Str str_val;
+			str_val.appendf("%i", val);
+			set_program_preference(name, str_val);
+		}
+
+		void set_program_preference(const c8* name, bool val)
+		{
+			Str str_val = "false";
+			if (val)
+				str_val = "true";
+
+			set_program_preference(name, str_val);
+		}
                 
         void set_program_preference( const c8* name, Str val )
         {

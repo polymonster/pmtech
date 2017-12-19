@@ -116,6 +116,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
+	put::pmfx::shutdown();
 	put::dbg::shutdown();
 	put::dev_ui::shutdown();
 

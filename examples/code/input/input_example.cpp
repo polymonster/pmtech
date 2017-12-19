@@ -128,8 +128,22 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
             }
         }
         ascii_msg.append("\n");
-        
-		put::dbg::add_text_2f( 10.0f, 40.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", ascii_msg.c_str() );
+
+		put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", ascii_msg.c_str());
+
+		Str press_msg = "character press: ";
+		for (s32 key = 0; key < PENK_ARRAY_SIZE; ++key)
+		{
+			if (pen::input_is_key_pressed(key))
+			{
+				press_msg.append("[");
+				key_msg.append(pen::input_get_key_str(key));
+				press_msg.append("]");
+			}
+		}
+		press_msg.append("\n");
+		put::dbg::add_text_2f(10.0f, 50.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", press_msg.c_str());
+
         
         //create 2d view proj matrix
         float W = 2.0f / vp.width;

@@ -52,7 +52,7 @@ namespace put
 		p_camera->flags |= CF_INVALIDATED;
 	}
 
-	void camera_update_fly(camera* p_camera)
+	void camera_update_fly(camera* p_camera, bool invert_y )
 	{
 		mouse_state ms = input_get_mouse_state();
 
@@ -118,7 +118,7 @@ namespace put
 		p_camera->flags |= CF_INVALIDATED;
 	}
 
-	void camera_update_modelling( camera* p_camera )
+	void camera_update_modelling( camera* p_camera, bool invert_y )
 	{
 		mouse_state ms = input_get_mouse_state();
         
@@ -128,11 +128,13 @@ namespace put
 		vec2f mouse_drag = current_mouse - prev_mpos;
 		prev_mpos = current_mouse;
 
+		f32 mouse_y_inv = invert_y ? -1.0f : 1.0f;
+
 		//rotate
 		if (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_MENU))
 		{
 			//rotation
-			vec2f swapxy = vec2f(-mouse_drag.y, mouse_drag.x);
+			vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x);
 			p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
 		}
 		else if (ms.buttons[PEN_MOUSE_M] && INPUT_PKEY(PENK_MENU) || (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_COMMAND)) )
@@ -141,7 +143,7 @@ namespace put
             vec3f up = p_camera->view.get_up();
             vec3f right = p_camera->view.get_right();
             
-            p_camera->focus += up * mouse_drag.y * 0.5f;
+            p_camera->focus += up * mouse_drag.y * mouse_y_inv * 0.5f;
             p_camera->focus += right * mouse_drag.x * 0.5f;  
 		}
 		else if (ms.buttons[PEN_MOUSE_R] && INPUT_PKEY(PENK_MENU))
@@ -174,11 +176,19 @@ namespace put
 		p_camera->flags |= CF_INVALIDATED;
 	}
 
+	void camera_update_projection_matrix(camera* p_camera)
+	{
+		camera_create_perspective(p_camera, p_camera->fov, p_camera->aspect, p_camera->near_plane, p_camera->far_plane);
+	}
+
 	void camera_update_shader_constants( camera* p_camera, bool viewport_correction )
 	{
         f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
-        if( cur_aspect != p_camera->aspect )
-            camera_create_perspective(p_camera, p_camera->fov, cur_aspect, p_camera->near_plane, p_camera->far_plane );
+		if (cur_aspect != p_camera->aspect)
+		{
+			cur_aspect = p_camera->aspect;
+			camera_update_projection_matrix(p_camera);
+		}
         
         if( viewport_correction && !(p_camera->flags & CF_VP_CORRECTED) )
         {
