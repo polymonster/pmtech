@@ -265,9 +265,13 @@ namespace put
 		};
 
 		entity_scene*   create_scene( const c8* name );
-        
+		void			destroy_scene(entity_scene* scene);
+
 		void            render_scene_view( const scene_view& view );
 		void            update_scene( entity_scene* scene, f32 dt );
+
+		void			clear_scene(entity_scene* scene);
+		void			default_scene(entity_scene* scene);
 
 		void			resize_scene_buffers( entity_scene* scene, s32 size = 1024 );
 		void			zero_entity_components( entity_scene* scene, u32 node_index );

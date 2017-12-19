@@ -115,6 +115,9 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, geometry_names);
 			FREE_COMPONENT_ARRAY(scene, material_names);
 #endif
+
+			scene->nodes_size = 0;
+			scene->num_nodes = 0;
 		}
 
 		void zero_entity_components(entity_scene* scene, u32 node_index)
@@ -152,8 +155,12 @@ namespace put
 #endif
 		}
 
+		void clear_scene(entity_scene* scene)
+		{
+			free_scene_buffers(scene);
+			resize_scene_buffers(scene);	
+		}
 
- 
 		u32 clone_node(entity_scene* scene, u32 src, s32 dst, s32 parent, vec3f offset, const c8* suffix)
 		{
 			if (dst == -1)
@@ -247,6 +254,15 @@ namespace put
 			new_instance.scene->forward_light_buffer = pen::renderer_create_buffer(bcp);
 
 			return new_instance.scene;
+		}
+
+		void destroy_scene(entity_scene* scene)
+		{
+			free_scene_buffers(scene);
+
+			//todo release resource refs
+			//geom
+			//anim
 		}
         
 		void render_scene_view( const scene_view& view )
@@ -351,6 +367,11 @@ namespace put
                 if( scene->entities[n] & CMP_ANIM_CONTROLLER )
                 {
                     auto& controller = scene->anim_controller[n];
+
+					if (n == 818)
+					{
+						u32 a = 0;
+					}
                     
                     bool apply_trajectory = false;
                     mat4 trajectory;
@@ -639,7 +660,7 @@ namespace put
             ofs.close();
         }
         
-        void load_scene( const c8* filename, entity_scene* scene )
+        void load_scene( const c8* filename, entity_scene* scene, bool merge )
         {
 			scene->flags |= INVALIDATE_SCENE_TREE;
             bool error = false;
@@ -650,18 +671,28 @@ namespace put
             s32 num_nodes = 0;
             ifs.read((c8*)&version, sizeof(s32));
             ifs.read((c8*)&num_nodes, sizeof(u32));
-            
-            if( num_nodes > scene->nodes_size )
+
+			u32 zero_offset = 0;
+			s32 new_num_nodes = num_nodes;
+
+			if (merge)
+			{
+				zero_offset = scene->num_nodes;
+				new_num_nodes = scene->num_nodes + num_nodes;
+			}
+
+            if(new_num_nodes > scene->nodes_size)
                 resize_scene_buffers(scene, num_nodes);
-                
-            scene->num_nodes = num_nodes;
-                
+
+			scene->num_nodes = new_num_nodes;
+
             //user prefs
-            ifs.read((c8*)&scene->view_flags, sizeof(u32));
+			u32 scene_view_flags = 0;
+            ifs.read((c8*)&scene_view_flags, sizeof(u32));
             ifs.read((c8*)&scene->selected_index, sizeof(s32));
             
             //names
-            for( s32 n = 0; n < scene->num_nodes; ++n )
+            for( s32 n = zero_offset; n < zero_offset + num_nodes; ++n )
             {
                 scene->names[n] = read_parsable_string(ifs);
                 scene->geometry_names[n] = read_parsable_string(ifs);
@@ -674,20 +705,24 @@ namespace put
             }
             
             //data
-            ifs.read( (c8*)scene->entities, sizeof( a_u64 ) * scene->num_nodes );
-            ifs.read( (c8*)scene->parents, sizeof( u32 ) * scene->num_nodes );
-			ifs.read( (c8*)scene->transforms, sizeof(transform) * scene->num_nodes);
-            ifs.read( (c8*)scene->local_matrices, sizeof( mat4 ) * scene->num_nodes );
-            ifs.read( (c8*)scene->world_matrices, sizeof( mat4 ) * scene->num_nodes );
-            ifs.read( (c8*)scene->offset_matrices, sizeof( mat4 ) * scene->num_nodes );
-            ifs.read( (c8*)scene->physics_matrices, sizeof( mat4 ) * scene->num_nodes );
-			ifs.read((c8*)scene->bounding_volumes, sizeof(bounding_volume) * scene->num_nodes);
-			ifs.read((c8*)scene->lights, sizeof(scene_node_light) * scene->num_nodes);
+            ifs.read( (c8*)&scene->entities[zero_offset],			sizeof( a_u64 )				* num_nodes);
+            ifs.read( (c8*)&scene->parents[zero_offset],			sizeof( u32 )				* num_nodes);
+			ifs.read( (c8*)&scene->transforms[zero_offset],			sizeof( transform )			* num_nodes);
+            ifs.read( (c8*)&scene->local_matrices[zero_offset],		sizeof( mat4 )				* num_nodes);
+            ifs.read( (c8*)&scene->world_matrices[zero_offset],		sizeof( mat4 )				* num_nodes);
+            ifs.read( (c8*)&scene->offset_matrices[zero_offset],	sizeof( mat4 )				* num_nodes);
+            ifs.read( (c8*)&scene->physics_matrices[zero_offset],	sizeof( mat4 )				* num_nodes);
+			ifs.read( (c8*)&scene->bounding_volumes[zero_offset],	sizeof( bounding_volume )	* num_nodes);
+			ifs.read( (c8*)&scene->lights[zero_offset],				sizeof( scene_node_light )	* num_nodes);
+
+			//fixup parents for scene import / merge
+			for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+				scene->parents[n] += zero_offset;
 
 			Str project_dir = dev_ui::get_program_preference_filename("project_dir");
 
             //animations
-            for( s32 n = 0; n < scene->num_nodes; ++n )
+			for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 s32 size;
                 ifs.read( (c8*)&size, sizeof(s32) );
@@ -716,7 +751,7 @@ namespace put
             }
             
             //geometry
-            for( s32 n = 0; n < scene->num_nodes; ++n )
+			for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 u32 has = 0;
                 ifs.read( (c8*)&has, sizeof( u32 ) );
@@ -763,7 +798,7 @@ namespace put
             }
             
             //materials
-            for( s32 n = 0; n < scene->num_nodes; ++n )
+			for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 u32 has = 0;
                 ifs.read( (c8*)&has, sizeof( u32 ) );
@@ -800,9 +835,13 @@ namespace put
                     }
                 }
             }
-            
-            update_view_flags( scene, error );
-            
+
+			if (!merge)
+			{
+				scene->view_flags = scene_view_flags;
+				update_view_flags(scene, error);
+			}
+
             ifs.close();
         }
 	}

@@ -115,6 +115,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
             break;
     }
+
+	ces::destroy_scene(main_scene);
+	ces::editor_shutdown();
     
     //clean up mem here
 	put::pmfx::shutdown();

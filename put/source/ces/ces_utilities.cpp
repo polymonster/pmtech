@@ -56,6 +56,33 @@ namespace put
                 ofs.write( (const c8*)&zero, sizeof(u32) );
             }
         }
+
+		void get_new_nodes(entity_scene* scene, s32 num, s32& start, s32& end)
+		{
+			if (scene->num_nodes + num >= scene->nodes_size)
+				resize_scene_buffers(scene);
+
+			start = 0;
+			end = 0;
+			s32 pos = 0;
+			while (1)
+			{
+				if (scene->entities[pos++] & CMP_ALLOCATED)
+				{
+					start = pos;
+					end = start;
+					continue;
+				}
+
+				if (pos - start == num)
+					break;
+			}
+
+			if (pos > scene->num_nodes)
+				scene->num_nodes = pos;
+
+			end = pos+1;
+		}
         
         u32 get_new_node( entity_scene* scene )
         {
@@ -76,6 +103,8 @@ namespace put
             if( i > scene->num_nodes )
                 scene->num_nodes = i+1;
             
+			scene->entities[i - 1] = CMP_ALLOCATED;
+
             return i-1;
         }
         
@@ -221,29 +250,42 @@ namespace put
 
 			for (u32 i : parent_list)
 			{
-				u32 src_parent = i;
-				u32 dst_parent = clone_node(scene, i);
-
 				scene_tree tree;
 				build_scene_tree( scene, i, tree );
 
 				std::vector<s32> node_index_list;
 				tree_to_node_index_list(tree, i, node_index_list);
 
+				s32 nodes_start, nodes_end;
+				get_new_nodes( scene, node_index_list.size()-1, nodes_start, nodes_end);
+
+				u32 src_parent = i;
+				u32 dst_parent = nodes_start;
+				
+				//clone_node(scene, src_parent, nodes_start);
+
+				s32 node_counter = 0;
 				for (s32 j : node_index_list)
 				{
-					if (j < 0 || j == src_parent)
+					if (j < 0)
 						continue;
 
 					u32 j_parent = scene->parents[j];
 					u32 parent_offset = j_parent - src_parent;
+					u32 parent = dst_parent + parent_offset;
 
-					u32 new_child = clone_node(scene, j, -1, dst_parent + parent_offset, vec3f::zero(), "");
+					u32 new_child = clone_node(scene, j, nodes_start + node_counter, parent, vec3f::zero(), "");
+					node_counter++;
 
-					dev_console_log("[clone] node %s to %s, parent %s", scene->names[j].c_str(), scene->names[new_child].c_str(), scene->names[dst_parent + parent_offset].c_str() );
+					dev_console_log("[clone] node [%i]%s to [%i]%s, parent [%i]%s", 
+						j,
+						scene->names[j].c_str(),
+						new_child,
+						scene->names[new_child].c_str(), 
+						parent,
+						scene->names[parent].c_str());
 				}
 			}
 		}
-
     }
 }

@@ -8,7 +8,8 @@ namespace put
     namespace ces
     {
         void editor_init( entity_scene* scene );
-        
+		void editor_shutdown();
+
         void scene_browser_ui( entity_scene* scene, bool* open );
         void enumerate_resources( bool* open );
         

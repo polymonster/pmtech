@@ -29,6 +29,29 @@ namespace put
 		};
 
         static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
+
+		struct picking_info
+		{
+			u32 result;
+			a_u8 ready;
+			u32 x, y;
+		};
+		static picking_info k_picking_info;
+
+		std::vector<u32> k_selection_list;
+		enum picking_mode : u32
+		{
+			PICK_NORMAL = 0,
+			PICK_ADD = 1,
+			PICK_REMOVE = 2
+		};
+
+		enum e_select_flags : u32
+		{
+			NONE = 0,
+			WIDGET_SELECTED = 1,
+		};
+		static u32 k_select_flags = 0;
         
         enum e_camera_mode : s32
         {
@@ -50,6 +73,7 @@ namespace put
             e_camera_mode   camera_mode = CAMERA_MODELLING;
 			f32				grid_cell_size;
 			f32				grid_size;
+			Str				current_working_scene = "";
         };
         model_view_controller k_model_view_controller;
         
@@ -115,7 +139,8 @@ namespace put
         };
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
-        
+
+	
         void update_view_flags_ui( entity_scene* scene )
         {
             if(!k_dd_bools)
@@ -177,6 +202,30 @@ namespace put
             
             update_view_flags_ui( scene );
         }
+
+
+		void default_scene(entity_scene* scene)
+		{
+			//add default view flags
+			scene->view_flags = 0;
+			delete[] k_dd_bools;
+			k_dd_bools = nullptr;
+			update_view_flags_ui(scene);
+
+			//add front light
+			u32 light = get_new_node(scene);
+			scene->names[light] = "front_light";
+			scene->id_name[light] = PEN_HASH("front_light");
+			scene->lights[light].colour = vec3f::one();
+			scene->transforms->translation = vec3f(100.0f, 100.0f, 100.0f);
+			scene->transforms->rotation = quat();
+			scene->transforms->scale = vec3f::one();
+
+			scene->entities[light] |= CMP_LIGHT;
+			scene->entities[light] |= CMP_TRANSFORM;
+
+			k_selection_list.clear();
+		}
         
         void editor_init( entity_scene* scene )
         {
@@ -190,7 +239,13 @@ namespace put
 				if (last_loaded_scene.length() > 0)
 					load_scene(last_loaded_scene.c_str(), scene);
 
+				k_model_view_controller.current_working_scene = last_loaded_scene;
+
 				auto_load_last_scene = false;
+			}
+			else
+			{
+				default_scene(scene);
 			}
 
 			//grid
@@ -204,30 +259,12 @@ namespace put
 			k_model_view_controller.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
 			k_model_view_controller.invalidated = true;
         }
-        
-        struct picking_info
-        {
-            u32 result;
-            a_u8 ready;
-			u32 x, y;
-        };
-        static picking_info k_picking_info;
-        
-        std::vector<u32> k_selection_list;
-		enum picking_mode : u32
-		{
-			PICK_NORMAL = 0,
-			PICK_ADD = 1,
-			PICK_REMOVE = 2
-		};
 
-		enum e_select_flags : u32
+		void editor_shutdown()
 		{
-			NONE = 0,
-			WIDGET_SELECTED = 1,
-		};
-		static u32 k_select_flags = 0;
-
+			delete[] k_dd_bools;
+		}
+        
 		void add_selection( const entity_scene* scene, u32 index, u32 picking_mode = PICK_NORMAL )
 		{
 			if (pen::input_is_key_down(PENK_CONTROL))
@@ -501,8 +538,10 @@ namespace put
         void update_model_viewer_scene(put::scene_controller* sc)
         {
             static bool open_scene_browser = false;
-            static bool open_import = false;
+            static bool open_merge = false;
+			static bool open_open = false;
             static bool open_save = false;
+			static bool open_save_as = false;
             static bool open_camera_menu = false;
             static bool open_resource_menu = false;
             static bool dev_open = false;
@@ -514,8 +553,31 @@ namespace put
             
             if (ImGui::BeginMenu(ICON_FA_LEMON_O))
             {
-                ImGui::MenuItem("Save");
-                ImGui::MenuItem("Import", NULL, &open_import);
+				if (ImGui::MenuItem("New"))
+				{
+					clear_scene(sc->scene);
+					default_scene(sc->scene);
+				}
+					
+				if (ImGui::MenuItem("Open", NULL, &open_open))
+				{
+					open_merge = false;
+				}
+				if (ImGui::MenuItem("Import", NULL, &open_open))
+				{
+					open_merge = true;
+				}
+
+				if (ImGui::MenuItem("Save", NULL, &open_save))
+				{
+					open_save_as = false;
+				}
+				
+				if (ImGui::MenuItem("Save As", NULL, &open_save))
+				{
+					open_save_as = true;
+				}
+
                 ImGui::MenuItem("Console", NULL, &put::dev_ui::k_console_open);
 				ImGui::MenuItem("Settings", NULL, &settings_open);
                 ImGui::MenuItem("Dev", NULL, &dev_open);
@@ -555,15 +617,14 @@ namespace put
 			            
             if (ImGui::Button(ICON_FA_FLOPPY_O))
             {
-                if(!open_import)
-                    open_save = true;
+				open_save = true;
+				open_save_as = false;
             }
             dev_ui::set_tooltip("Save");
             
             if (ImGui::Button(ICON_FA_FOLDER_OPEN))
             {
-                if(!open_save)
-                    open_import = true;
+				open_open = true;
             }
             dev_ui::set_tooltip("Open");
             
@@ -643,9 +704,9 @@ namespace put
             
             ImGui::EndMainMenuBar();
             
-            if( open_import )
+            if( open_open )
             {
-                const c8* import = put::dev_ui::file_browser(open_import, dev_ui::FB_OPEN, 2, "**.pmm", "**.pms" );
+                const c8* import = put::dev_ui::file_browser(open_open, dev_ui::FB_OPEN, 2, "**.pmm", "**.pms" );
                 
                 if( import )
                 {
@@ -657,7 +718,10 @@ namespace put
                     }
                     else if( import[len-1] == 's' )
                     {
-                        put::ces::load_scene( import, sc->scene );
+                        put::ces::load_scene( import, sc->scene, open_merge );
+
+						if (!open_merge)
+							k_model_view_controller.current_working_scene = import;
 
 						Str fn = import;
 						dev_ui::set_program_preference_filename("last_loaded_scene", import);
@@ -698,11 +762,20 @@ namespace put
                         
             if( open_save )
             {
-                const c8* save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms" );
-                
+				const c8* save_file = nullptr;
+				if (open_save_as || k_model_view_controller.current_working_scene.length() == 0)
+				{
+					save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms");
+				}
+				else
+				{
+					save_file = k_model_view_controller.current_working_scene.c_str();
+				}
+
                 if(save_file)
                 {
                     put::ces::save_scene(save_file, sc->scene);
+					k_model_view_controller.current_working_scene = save_file;
                 }
             }
             
