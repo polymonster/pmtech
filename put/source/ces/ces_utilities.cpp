@@ -189,7 +189,7 @@ namespace put
             }
         }
         
-        void build_joint_list( entity_scene* scene, s32 start_node, std::vector<s32>& list_out )
+        void build_heirarchy_node_list( entity_scene* scene, s32 start_node, std::vector<s32>& list_out )
         {
             scene_tree tree;
             build_scene_tree( scene, start_node, tree );

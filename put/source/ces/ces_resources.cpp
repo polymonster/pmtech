@@ -55,7 +55,8 @@ namespace put
             
             bv->min_extents = gr->physics_info.min_extents;
             bv->max_extents = gr->physics_info.max_extents;
-            
+			bv->radius = maths::magnitude(bv->max_extents - bv->min_extents) * 0.5f;
+
             scene->entities[node_index] |= CMP_GEOMETRY;
         }
         
@@ -80,7 +81,7 @@ namespace put
                 animation_controller& controller = scene->anim_controller[node_index];
                 
                 std::vector<s32> joint_indices;
-                build_joint_list( scene, node_index, joint_indices );
+				build_heirarchy_node_list( scene, node_index, joint_indices );
                 
                 controller.joints_offset = -1; //scene tree has a -1 node to begin
                 for( s32 jj = 0; jj < joint_indices.size(); ++jj )

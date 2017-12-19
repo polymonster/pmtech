@@ -114,7 +114,6 @@ namespace put
             
             vec3f transformed_min_extents;
             vec3f transformed_max_extents;
-            
             f32   radius;
         };
         
@@ -270,8 +269,9 @@ namespace put
 		void            render_scene_view( const scene_view& view );
 		void            update_scene( entity_scene* scene, f32 dt );
 
-		void			resize_scene_buffers(entity_scene* scene, s32 size = 1024 );
-        
+		void			resize_scene_buffers( entity_scene* scene, s32 size = 1024 );
+		void			zero_entity_components( entity_scene* scene, u32 node_index );
+
         void            update_view_flags( entity_scene* scene, bool error );
 	}
 
@@ -289,6 +289,7 @@ namespace put
     {
         hash_id id_name;
         put::ces::entity_scene* scene;
+		put::camera* camera;
         
         void(*update_function)(put::scene_controller*) = nullptr;
         

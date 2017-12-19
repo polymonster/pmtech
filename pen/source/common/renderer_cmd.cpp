@@ -1129,6 +1129,9 @@ namespace pen
 
 	void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
 	{
+		if (buffer_index == 0)
+			return;
+
 		cmd_buffer[put_pos].command_index = CMD_SET_CONSTANT_BUFFER;
 
 		cmd_buffer[put_pos].set_constant_buffer.buffer_index = buffer_index;
@@ -1140,6 +1143,9 @@ namespace pen
 
 	void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
 	{
+		if (buffer_index == 0)
+			return;
+
 		cmd_buffer[put_pos].command_index = CMD_UPDATE_BUFFER;
 
 		cmd_buffer[put_pos].update_buffer.buffer_index = buffer_index;

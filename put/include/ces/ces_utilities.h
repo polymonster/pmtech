@@ -25,7 +25,7 @@ namespace put
 
         void    tree_to_node_index_list( const scene_tree& tree, s32 start_node, std::vector<s32>& list_out );
         void    build_scene_tree( entity_scene* scene, s32 start_node, scene_tree& tree_out );
-        void    build_joint_list( entity_scene* scene, s32 start_node, std::vector<s32>& joint_list );
+        void    build_heirarchy_node_list( entity_scene* scene, s32 start_node, std::vector<s32>& node_list );
         
         void    scene_tree_enumerate( const scene_tree& tree, s32& selected );
         void    scene_tree_add_node( scene_tree& tree, scene_tree& node, std::vector<s32>& heirarchy );

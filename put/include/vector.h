@@ -99,9 +99,38 @@ public:
         y = PEN_FMAX( y, min );
         y = PEN_FMIN( y, max );
     }
+
+	inline void vfloor()
+	{
+		x = (f32)floor((double)x);
+		y = (f32)floor((double)y);
+	}
+
+	inline static vec2f vmax(vec2f a, vec2f b)
+	{
+		vec2f v(PEN_FMAX(a.x, b.x), PEN_FMAX(a.y, b.y));
+		return v;
+	}
+
+	inline static vec2f vmin(vec2f a, vec2f b)
+	{
+		vec2f v(PEN_FMIN(a.x, b.x), PEN_FMIN(a.y, b.y));
+		return v;
+	}
+
+	inline static vec2f flt_max()
+	{
+		vec2f v(FLT_MAX, FLT_MAX);
+		return v;
+	}
+
+	inline static vec2f flt_min()
+	{
+		vec2f v(-FLT_MAX, -FLT_MAX);
+		return v;
+	}
     
-    f32		x, y;
-    
+    f32		x, y;  
 };
 
 struct vec3f
@@ -113,6 +142,7 @@ public:
         
     }
     
+	vec3f( vec2f v2, f32 az ) : x(v2.x), y(v2.y), z(az) { }
     vec3f( f32 ax, f32 ay, f32 az ) : x( ax ), y( ay ), z( az ) { }
     vec3f( f32 f ) : x( f ), y( f ), z( f ) { }
     ~vec3f()					{ }

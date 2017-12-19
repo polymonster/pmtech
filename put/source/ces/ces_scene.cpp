@@ -34,7 +34,8 @@ namespace put
         }\
 
 #define FREE_COMPONENT_ARRAY( SCENE, COMPONENT ) pen::memory_free( SCENE->COMPONENT ); SCENE->COMPONENT = nullptr
-        
+#define ZERO_COMPONENT_ARRAY( SCENE, COMPONENT, INDEX ) pen::memory_zero( &SCENE->COMPONENT[INDEX], sizeof(SCENE->COMPONENT[INDEX]) )
+
 		struct entity_scene_instance
 		{
 			u32 id_name;
@@ -48,18 +49,14 @@ namespace put
 		{
 			scene->nodes_size += size;
 			
-			//ids
+			ALLOC_COMPONENT_ARRAY(scene, entities, a_u64);
+
 			ALLOC_COMPONENT_ARRAY(scene, id_name, hash_id);
 			ALLOC_COMPONENT_ARRAY(scene, id_geometry, hash_id);
 			ALLOC_COMPONENT_ARRAY(scene, id_material, hash_id);
             ALLOC_COMPONENT_ARRAY(scene, id_resource, hash_id);
 
-            //flags
-            ALLOC_COMPONENT_ARRAY(scene, entities, a_u64);
-            
-			//components
 			ALLOC_COMPONENT_ARRAY(scene, parents, u32);
-
 			ALLOC_COMPONENT_ARRAY(scene, transforms, transform);
 			ALLOC_COMPONENT_ARRAY(scene, local_matrices, mat4);
 			ALLOC_COMPONENT_ARRAY(scene, world_matrices, mat4);
@@ -79,7 +76,6 @@ namespace put
             ALLOC_COMPONENT_ARRAY(scene, lights, scene_node_light);
 
 #ifdef CES_DEBUG
-            //debug components
 			ALLOC_COMPONENT_ARRAY(scene, names, Str);
 			ALLOC_COMPONENT_ARRAY(scene, geometry_names, Str);
 			ALLOC_COMPONENT_ARRAY(scene, material_names, Str);
@@ -120,6 +116,42 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, material_names);
 #endif
 		}
+
+		void zero_entity_components(entity_scene* scene, u32 node_index)
+		{
+			ZERO_COMPONENT_ARRAY(scene, entities, node_index);
+
+			ZERO_COMPONENT_ARRAY(scene, id_name, node_index);
+			ZERO_COMPONENT_ARRAY(scene, id_geometry, node_index);
+			ZERO_COMPONENT_ARRAY(scene, id_material, node_index);
+			ZERO_COMPONENT_ARRAY(scene, id_resource, node_index);
+
+			ZERO_COMPONENT_ARRAY(scene, parents, node_index);
+			ZERO_COMPONENT_ARRAY(scene, transforms, node_index);
+			ZERO_COMPONENT_ARRAY(scene, local_matrices, node_index);
+			ZERO_COMPONENT_ARRAY(scene, world_matrices, node_index);
+			ZERO_COMPONENT_ARRAY(scene, offset_matrices, node_index);
+			ZERO_COMPONENT_ARRAY(scene, physics_matrices, node_index);
+			ZERO_COMPONENT_ARRAY(scene, bounding_volumes, node_index);
+
+			ZERO_COMPONENT_ARRAY(scene, physics_handles, node_index);
+			ZERO_COMPONENT_ARRAY(scene, multibody_handles, node_index);
+			ZERO_COMPONENT_ARRAY(scene, multibody_link, node_index);
+			ZERO_COMPONENT_ARRAY(scene, cbuffer, node_index);
+
+			ZERO_COMPONENT_ARRAY(scene, geometries, node_index);
+			ZERO_COMPONENT_ARRAY(scene, materials, node_index);
+			ZERO_COMPONENT_ARRAY(scene, physics_data, node_index);
+			ZERO_COMPONENT_ARRAY(scene, anim_controller, node_index);
+			ZERO_COMPONENT_ARRAY(scene, lights, node_index);
+
+#ifdef CES_DEBUG
+			ZERO_COMPONENT_ARRAY(scene, names, node_index);
+			ZERO_COMPONENT_ARRAY(scene, geometry_names, node_index);
+			ZERO_COMPONENT_ARRAY(scene, material_names, node_index);
+#endif
+		}
+
 
  
 		u32 clone_node(entity_scene* scene, u32 src, s32 dst, s32 parent, vec3f offset, const c8* suffix)
@@ -456,6 +488,9 @@ namespace put
                     tmax = vec3f::vmax( tmax, p );
                     tmin = vec3f::vmin( tmin, p );
                 }
+
+				f32& trad = scene->bounding_volumes[n].radius;
+				trad = maths::magnitude(tmax-tmin) * 0.5f;
             }
             
             //update c buffers

@@ -287,7 +287,6 @@ s32 put::maths::classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance)
     
     //else the sphere is behind the plane
     return BEHIND;
-    
 }
 
 s32 put::maths::classify_sphere( SPHERE s1, PLANE p1 )

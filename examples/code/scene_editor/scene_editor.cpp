@@ -62,6 +62,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     sc.scene = main_scene;
     sc.update_function = &ces::update_model_viewer_scene;
     sc.name = "main_scene";
+	sc.camera = &main_camera;
     sc.id_name = PEN_HASH(sc.name.c_str());
     
     //create view renderers

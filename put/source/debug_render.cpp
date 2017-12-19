@@ -283,7 +283,30 @@ namespace put
                 add_line(p1, p2, col );
             }
         }
-        
+
+		void add_frustum(const vec3f* near_corners, const vec3f* far_corners, const vec4f& col )
+		{
+			for (s32 i = 0; i < 4; ++i)
+			{
+				put::dbg::add_line(near_corners[i], far_corners[i], col);
+
+				if (i == 0)
+				{
+					put::dbg::add_line(near_corners[i], near_corners[i + 1], col);
+					put::dbg::add_line(near_corners[i], near_corners[i + 2], col);
+					put::dbg::add_line(far_corners[i], far_corners[i + 1], col);
+					put::dbg::add_line(far_corners[i], far_corners[i + 2], col);
+				}
+				else if (i == 3)
+				{
+					put::dbg::add_line(near_corners[i], near_corners[i - 1], col);
+					put::dbg::add_line(near_corners[i], near_corners[i - 2], col);
+					put::dbg::add_line(far_corners[i], far_corners[i - 1], col);
+					put::dbg::add_line(far_corners[i], far_corners[i - 2], col);
+				}
+			}
+		}
+
         void add_aabb(const vec3f &min, const vec3f& max, const vec4f& col )
         {
             alloc_3d_buffer(line_vert_3d_count + 24, VB_LINES);

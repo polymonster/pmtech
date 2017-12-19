@@ -349,6 +349,13 @@ namespace put
 
 		f32     distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
 		vec3f   closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
+
+		inline f32 point_vs_plane( const vec3f& pos, const vec3f& p, const vec3f& normal )
+		{
+			f32 d = plane_distance(normal, p);
+
+			return  (normal.x * pos.x + normal.y * pos.y + normal.z * pos.z + d);
+		}
                 
 #if 0
 		//todo - move the primitves over and port these functions from old engine.

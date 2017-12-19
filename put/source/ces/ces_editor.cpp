@@ -48,7 +48,8 @@ namespace put
 			bool			invalidated = false;
 			bool			invert_y = false;
             e_camera_mode   camera_mode = CAMERA_MODELLING;
-            
+			f32				grid_cell_size;
+			f32				grid_size;
         };
         model_view_controller k_model_view_controller;
         
@@ -161,6 +162,15 @@ namespace put
                 {
                     ImGui::Checkbox(dd_names[i], &k_dd_bools[i]);
                 }
+
+				if (ImGui::CollapsingHeader("Grid Options"))
+				{
+					if(ImGui::InputFloat("Cell Size", &k_model_view_controller.grid_cell_size))
+						dev_ui::set_program_preference("grid_cell_size", k_model_view_controller.grid_cell_size);
+
+					if(ImGui::InputFloat("Grid Size", &k_model_view_controller.grid_size))
+						dev_ui::set_program_preference("grid_size", k_model_view_controller.grid_size);
+				}
                 
                 ImGui::End();
             }
@@ -183,6 +193,11 @@ namespace put
 				auto_load_last_scene = false;
 			}
 
+			//grid
+			k_model_view_controller.grid_cell_size = dev_ui::get_program_preference("grid_cell_size").as_f32(10.0f);
+			k_model_view_controller.grid_size = dev_ui::get_program_preference("grid_size").as_f32(100.0f);
+
+			//camera
 			k_model_view_controller.main_camera.fov = dev_ui::get_program_preference("camera_fov").as_f32(60.0f);
 			k_model_view_controller.main_camera.near_plane = dev_ui::get_program_preference("camera_near").as_f32(0.1f);
 			k_model_view_controller.main_camera.far_plane = dev_ui::get_program_preference("camera_far").as_f32(1000.0f);
@@ -213,10 +228,8 @@ namespace put
 		};
 		static u32 k_select_flags = 0;
 
-		void add_selection( const entity_scene* scene, u32 index )
+		void add_selection( const entity_scene* scene, u32 index, u32 picking_mode = PICK_NORMAL )
 		{
-			u32 picking_mode = PICK_NORMAL;
-
 			if (pen::input_is_key_down(PENK_CONTROL))
 				picking_mode = PICK_ADD;
 			else if (pen::input_is_key_down(PENK_MENU))
@@ -269,7 +282,7 @@ namespace put
 			k_picking_info.ready = 1;
         }
                 
-        void picking_update( const entity_scene* scene )
+        void picking_update( const entity_scene* scene, const camera* cam )
         {
             static u32 picking_state = 0;
             static u32 picking_result = (-1);
@@ -289,35 +302,158 @@ namespace put
                 if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
                 {
                     pen::mouse_state ms = pen::input_get_mouse_state();
-                    
+					f32 corrected_y = pen_window.height - ms.y;
+
+					static s32		drag_timer = 0;
+					static vec2f	drag_start;
+					static vec3f	frustum_points[2][4];
+
+					//frustum select
+					vec3f n[6];
+					vec3f p[6];
+
+					vec3f plane_vectors[] =
+					{
+						frustum_points[0][0], frustum_points[1][0], frustum_points[0][2],	//left
+						frustum_points[0][0], frustum_points[0][1],	frustum_points[1][0],	//top
+
+						frustum_points[0][1], frustum_points[0][3], frustum_points[1][1],	//right
+						frustum_points[0][2], frustum_points[1][2], frustum_points[0][3],	//bottom
+
+						frustum_points[0][0], frustum_points[0][2], frustum_points[0][1],	//near
+						frustum_points[1][0], frustum_points[1][1], frustum_points[1][2]	//far
+					};
+
+					for (s32 i = 0; i < 6; ++i)
+					{
+						s32 offset = i * 3;
+						vec3f v1 = maths::normalise(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
+						vec3f v2 = maths::normalise(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+
+						n[i] = put::maths::cross(v1, v2);
+						p[i] = plane_vectors[offset];
+
+						vec3f pt = p[i] + (plane_vectors[offset + 1] - plane_vectors[offset + 0]) * 0.01f;
+					}
+					
+					if (!ms.buttons[PEN_MOUSE_L])
+					{
+						if (picking_state == 2)
+						{
+							if(!pen::input_is_key_down(PENK_CONTROL) && !pen::input_is_key_down(PENK_MENU))
+								k_selection_list.clear();
+
+							for (s32 node = 0; node < scene->num_nodes; ++node)
+							{
+								if (!(scene->entities[node] & CMP_ALLOCATED))
+									continue;
+
+								if (!(scene->entities[node] & CMP_GEOMETRY))
+									continue;
+
+								bool selected = true;
+								for (s32 i = 0; i < 6; ++i)
+								{
+									vec3f& pos = scene->local_matrices[node].get_translation();
+									f32 radius = scene->bounding_volumes[node].radius;
+
+									f32 d = maths::point_vs_plane(pos, p[i], n[i]);
+									
+									if (d > radius)
+									{
+										selected = false;
+										break;
+									}
+								}
+
+								if (selected)
+								{
+									add_selection(scene, node, PICK_ADD);
+								}
+							}
+
+							picking_state = 0;
+						}
+							
+						drag_timer = 0;
+						drag_start = vec2f(ms.x, corrected_y);
+					}
+
                     if (ms.buttons[PEN_MOUSE_L] && pen::mouse_coords_valid( ms.x, ms.y ) )
                     {
-                        const put::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
-                        
-                        f32 w, h;
-                        pmfx::get_render_target_dimensions(rt, w, h);
-                        
-                        u32 pitch = (u32)w*4;
-                        u32 data_size = (u32)h*pitch;
-                        
-                        pen::resource_read_back_params rrbp =
-                        {
-                            rt->handle,
-                            rt->format,
-							pitch,
-							data_size,
-							4,
-                            data_size,
-                            &picking_read_back
-                        };
-                        
-                        pen::renderer_read_back_resource( rrbp );
-                        
-                        k_picking_info.ready = 0;
-						k_picking_info.x = ms.x;
-						k_picking_info.y = ms.y;
+						vec2f cur_mouse = vec2f(ms.x, corrected_y);
 
-                        picking_state = 1;
+						vec2f c1 = vec2f(cur_mouse.x, drag_start.y);
+						vec2f c2 = vec2f(drag_start.x, cur_mouse.y);
+
+						//frustum selection
+						vec2f source_points[] =
+						{
+							drag_start, c1,
+							c2, cur_mouse
+						};
+
+						//sort source points 
+						vec2f min = vec2f::flt_max();
+						vec2f max = vec2f::flt_min();
+						for (s32 i = 0; i < 4; ++i)
+						{
+							min = vec2f::vmin(source_points[i], min);
+							max = vec2f::vmax(source_points[i], max);
+						}
+
+						source_points[0] = vec2f(min.x, max.y);
+						source_points[1] = vec2f(max.x, max.y);
+						source_points[2] = vec2f(min.x, min.y);
+						source_points[3] = vec2f(max.x, min.y);
+
+						put::dbg::add_line_2f(source_points[0], source_points[1]);
+						put::dbg::add_line_2f(source_points[0], source_points[2]);
+						put::dbg::add_line_2f(source_points[2], source_points[3]);
+						put::dbg::add_line_2f(source_points[3], source_points[1]);
+
+						if (maths::magnitude(max - min) < 4.0)
+						{
+							const put::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
+
+							f32 w, h;
+							pmfx::get_render_target_dimensions(rt, w, h);
+
+							u32 pitch = (u32)w * 4;
+							u32 data_size = (u32)h*pitch;
+
+							pen::resource_read_back_params rrbp =
+							{
+								rt->handle,
+								rt->format,
+								pitch,
+								data_size,
+								4,
+								data_size,
+								&picking_read_back
+							};
+
+							pen::renderer_read_back_resource(rrbp);
+
+							k_picking_info.ready = 0;
+							k_picking_info.x = ms.x;
+							k_picking_info.y = ms.y;
+
+							picking_state = 1;
+						}
+						else
+						{
+							picking_state = 2;
+
+							//todo this should really be passed in, incase we want non window sized viewports
+							vec2i vpi = vec2i(pen_window.width, pen_window.height);
+
+							for (s32 i = 0; i < 4; ++i)
+							{
+								frustum_points[0][i] = maths::unproject(vec3f(source_points[i], 0.0f), cam->view, cam->proj, vpi);
+								frustum_points[1][i] = maths::unproject(vec3f(source_points[i], 1.0f), cam->view, cam->proj, vpi);
+							}
+						}
                     }
                 }
             }
@@ -589,7 +725,7 @@ namespace put
 			//selection / picking
             if( !pen_input_key(PENK_MENU) && !(k_select_flags & WIDGET_SELECTED))
             {
-                picking_update( sc->scene );
+                picking_update( sc->scene, sc->camera );
             }
 
 			//parent selection
@@ -626,10 +762,17 @@ namespace put
 			if (pen::input_is_key_down(PENK_DELETE))
 			{
 				for (auto& s : k_selection_list)
-				{
-					sc->scene->entities[s] = 0;
+				{					
+					std::vector<s32> node_index_list;
+					build_heirarchy_node_list(sc->scene, s, node_index_list);
+
+					for (auto& c : node_index_list)
+						if (c > -1)
+							zero_entity_components(sc->scene, c);
 				}
 				k_selection_list.clear();
+
+				sc->scene->flags |= put::ces::INVALIDATE_SCENE_TREE;
 			}
             
             if( view_menu )
@@ -755,8 +898,7 @@ namespace put
                             {
                                 //validate that the anim can fit the rig
                                 std::vector<s32> joint_indices;
-                                
-                                build_joint_list( scene, selected_index, joint_indices );
+								build_heirarchy_node_list( scene, selected_index, joint_indices );
                                 
                                 s32 channel_index = 0;
                                 s32 joints_offset = -1; //scene tree has a -1 node
@@ -1420,7 +1562,8 @@ namespace put
             
             if( scene->view_flags & DD_GRID )
             {
-                put::dbg::add_grid(vec3f::zero(), vec3f(100.0f), 100);
+				f32 divisions = k_model_view_controller.grid_size / k_model_view_controller.grid_cell_size;
+                put::dbg::add_grid(vec3f::zero(), vec3f(k_model_view_controller.grid_size), divisions);
             }
 
             put::dbg::render_3d(view.cb_view);
