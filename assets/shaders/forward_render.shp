@@ -168,7 +168,7 @@ ps_output ps_forward_lit( vs_output input )
 		);			 
 #endif
 
-#if 0
+#if 1
 		lit_colour += phong( 
 			lights[i].pos_radius, 
 			lights[i].colour.rgb,
@@ -211,7 +211,7 @@ ps_output ps_forward_lit( vs_output input )
 
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
-	
+		
     return output;
 }
 

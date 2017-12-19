@@ -225,7 +225,8 @@ namespace put
                 return;
             
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
-            
+			pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
+
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
 				if ( scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL )
