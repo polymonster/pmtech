@@ -270,7 +270,7 @@ namespace put
 		void            render_scene_view( const scene_view& view );
 		void            update_scene( entity_scene* scene, f32 dt );
 
-		void			resize_scene_buffers(entity_scene* scene);
+		void			resize_scene_buffers(entity_scene* scene, s32 size = 1024 );
         
         void            update_view_flags( entity_scene* scene, bool error );
 	}
