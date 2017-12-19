@@ -391,7 +391,7 @@ namespace put
 								bool selected = true;
 								for (s32 i = 0; i < 6; ++i)
 								{
-									vec3f& pos = scene->local_matrices[node].get_translation();
+									vec3f pos = scene->local_matrices[node].get_translation();
 									f32 radius = scene->bounding_volumes[node].radius;
 
 									f32 d = maths::point_vs_plane(pos, p[i], n[i]);
