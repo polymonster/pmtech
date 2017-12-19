@@ -20,12 +20,18 @@ namespace put
 {
 	namespace ces
 	{        
-#define ALLOC_COMPONENT_ARRAY( SCENE, COMPONENT, TYPE )											\
-		if( !SCENE->COMPONENT )																	\
-			SCENE->COMPONENT = (TYPE*)pen::memory_alloc(sizeof(TYPE)*SCENE->nodes_size );		\
-		else																					\
+#define ALLOC_COMPONENT_ARRAY( SCENE, COMPONENT, TYPE )											            \
+		if( !SCENE->COMPONENT )																	            \
+        {                                                                                                   \
+			SCENE->COMPONENT = (TYPE*)pen::memory_alloc(sizeof(TYPE)*SCENE->nodes_size );		            \
+            pen::memory_zero( SCENE->COMPONENT, sizeof(TYPE)*SCENE->nodes_size);                            \
+        }                                                                                                   \
+		else																					            \
+        {                                                                                                   \
 			SCENE->COMPONENT = (TYPE*)pen::memory_realloc(SCENE->COMPONENT,sizeof(TYPE)*SCENE->nodes_size); \
-		pen::memory_zero( SCENE->COMPONENT, sizeof(TYPE)*SCENE->nodes_size)
+            void* new_offset = (void*)((u8*)SCENE->COMPONENT + sizeof(TYPE) * scene->num_nodes);            \
+            pen::memory_zero( new_offset, sizeof(TYPE)*(SCENE->nodes_size-scene->num_nodes));               \
+        }\
 
 #define FREE_COMPONENT_ARRAY( SCENE, COMPONENT ) pen::memory_free( SCENE->COMPONENT ); SCENE->COMPONENT = nullptr
         
@@ -38,9 +44,9 @@ namespace put
 
 		std::vector<entity_scene_instance> k_scenes;
         
-		void resize_scene_buffers(entity_scene* scene)
+		void resize_scene_buffers(entity_scene* scene, s32 size)
 		{
-			scene->nodes_size += 1024;
+			scene->nodes_size += size;
 			
 			//ids
 			ALLOC_COMPONENT_ARRAY(scene, id_name, hash_id);
@@ -71,9 +77,6 @@ namespace put
             ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
             ALLOC_COMPONENT_ARRAY(scene, anim_controller, animation_controller);
             ALLOC_COMPONENT_ARRAY(scene, lights, scene_node_light);
-
-            for( u32 i = 0; i < scene->nodes_size; ++i )
-                scene->cbuffer[i] = PEN_INVALID_HANDLE;
 
 #ifdef CES_DEBUG
             //debug components
@@ -178,6 +181,10 @@ namespace put
 			p_sn->local_matrices[dst].set_vectors(right, up, fwd, translation + offset);
 
 #ifdef CES_DEBUG
+            p_sn->names[dst] = Str();
+            p_sn->geometry_names[dst] = Str();
+            p_sn->material_names[dst] = Str();
+            
 			p_sn->names[dst] = p_sn->names[src].c_str();
 			p_sn->names[dst].append(suffix);
 			p_sn->geometry_names[dst] = p_sn->geometry_names[src].c_str();
@@ -195,7 +202,7 @@ namespace put
 
 			k_scenes.push_back(new_instance);
 
-			resize_scene_buffers(new_instance.scene);
+			resize_scene_buffers(new_instance.scene, 64);
 
 			//create buffers
 			pen::buffer_creation_params bcp;
@@ -604,9 +611,15 @@ namespace put
             std::ifstream ifs(filename, std::ofstream::binary);
             
             s32 version;
+            s32 num_nodes = 0;
             ifs.read((c8*)&version, sizeof(s32));
-            ifs.read((c8*)&scene->num_nodes, sizeof(u32));
+            ifs.read((c8*)&num_nodes, sizeof(u32));
             
+            if( num_nodes > scene->nodes_size )
+                resize_scene_buffers(scene, num_nodes);
+                
+            scene->num_nodes = num_nodes;
+                
             //user prefs
             ifs.read((c8*)&scene->view_flags, sizeof(u32));
             ifs.read((c8*)&scene->selected_index, sizeof(s32));
