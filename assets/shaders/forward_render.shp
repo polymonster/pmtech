@@ -194,6 +194,7 @@ ps_output ps_forward_lit( vs_output input )
 		);			 
 #endif
 
+		float single_roughness = user_data.y; 
 #if 1
 		lit_colour += cook_torrence( 
 			lights[i].pos_radius, 
@@ -203,8 +204,21 @@ ps_output ps_forward_lit( vs_output input )
 			camera_view_pos.xyz,
 			albedo.rgb,
 			specular_sample.rgb,
-			0.01,
-			0.8
+			single_roughness,
+			1.0 - single_roughness
+		);			 
+#endif
+
+#if 1
+	
+		lit_colour += oren_nayar( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			camera_view_pos.xyz,
+			single_roughness,
+			albedo.rgb
 		);			 
 #endif
 	}

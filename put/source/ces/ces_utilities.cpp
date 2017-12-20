@@ -226,7 +226,7 @@ namespace put
             tree_to_node_index_list( tree, start_node, list_out );
         }
 
-		void set_node_parent(entity_scene* scene, u32 parent, u32 child)
+		void set_node_parent( entity_scene* scene, u32 parent, u32 child)
 		{
 			if (child == parent)
 				return;

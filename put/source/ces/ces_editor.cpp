@@ -278,6 +278,18 @@ namespace put
 			delete[] k_dd_bools;
 		}
         
+		void parent_selection(entity_scene* scene )
+		{
+			if (k_selection_list.size() > 1)
+			{
+				s32 parent = k_selection_list[0];
+
+				for (auto& i : k_selection_list)
+					if (scene->parents[i] == i)
+						set_node_parent(scene, parent, i);
+			}
+		}
+
 		void add_selection( const entity_scene* scene, u32 index, u32 picking_mode = PICK_NORMAL )
 		{
 			if (pen::input_is_key_down(PENK_CONTROL))
@@ -684,11 +696,11 @@ namespace put
             static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
             
             static const c8* transform_tooltip[] =
-            {
-                "Select Mode",
-                "Translate Mode",
-                "Rotate Mode",
-                "Scale Mode"
+            { 
+                "Select (Q)",
+                "Translate (W)",
+                "Rotate (E)",
+                "Scale (R)"
             };
             static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
             
@@ -713,6 +725,12 @@ namespace put
                 }
                 put::dev_ui::set_tooltip(transform_tooltip[i]);
             }
+
+			if (ImGui::Button(ICON_FA_LINK) || shortcut_key(PENK_P) )
+			{
+				parent_selection( sc->scene );
+			}
+			put::dev_ui::set_tooltip("Parent (P)");
             
             ImGui::Separator();
             
@@ -814,19 +832,6 @@ namespace put
             {
                 picking_update( sc->scene, sc->camera );
             }
-
-			//parent selection
-			if (shortcut_key(PENK_P))
-			{
-				if (k_selection_list.size() > 1)
-				{
-					s32 parent = k_selection_list[0];
-
-					for (auto& i : k_selection_list)
-						if (sc->scene->parents[i] == i)
-							set_node_parent(sc->scene, parent, i);
-				}
-			}
 
 			if (selection_list)
 			{
@@ -1156,7 +1161,9 @@ namespace put
 					perform_transform |= ImGui::InputFloat3("Scale", (float*)&t.scale);
 
 					if (perform_transform)
-						k_transform_mode = TRANSFORM_TYPE_IN;
+					{
+						scene->entities[selected_index] |= CMP_TRANSFORM;
+					}
 
 					apply_transform_to_selection(scene, vec3f::zero());
 

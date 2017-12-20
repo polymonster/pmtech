@@ -114,7 +114,7 @@ float3 lambert(
 	float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
 	float3 lit_colour = light_colour * dot( n, l ) * albedo.rgb;
 	
-	return lit_colour;
+	return saturate( lit_colour );
 }
 
 float3 phong( 
@@ -213,13 +213,40 @@ float3 cook_torrence(
         float specular = (fresnel * geom_atten * roughness_atten) / (n_dot_v * n_dot_l * 3.1419);
         
         //diffuse - lambert
-        float3 lit_colour = n_dot_l * light_colour * albedo;
+        //float3 lit_colour = n_dot_l * light_colour * albedo;
         
         //specular
-        lit_colour += metalness * light_colour * n_dot_l * ( k + specular * ( 1.0 - k ) );
+        float3 lit_colour = metalness * light_colour * n_dot_l * ( k + specular * ( 1.0 - k ) );
         
         return lit_colour;	
 	}
 		
 	return float3( 0.0, 0.0, 0.0 );
+}
+
+float3 oren_nayar(
+	float4 light_pos_radius,
+	float3 light_colour,
+	float3 n,
+	float3 world_pos,
+	float3 view_pos,
+	float roughness,
+	float3 albedo) 
+{
+  
+  float3 v = normalize(view_pos-world_pos);
+  float3 l = normalize(light_pos_radius.xyz-world_pos);
+  
+  float l_dot_v = dot(l, v);
+  float n_dot_l = dot(n, l);
+  float n_dot_v = dot(n, v);
+
+  float s = l_dot_v - n_dot_l * n_dot_v;
+  float t = lerp(1.0, max(n_dot_l, n_dot_v), step(0.0, s));
+
+  float sigma2 = roughness * roughness;
+  float A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));
+  float B = 0.45 * sigma2 / (sigma2 + 0.09);
+
+  return saturate( albedo * light_colour * max(0.0, n_dot_l) * (A + B * s / t) / 3.14159265 );
 }

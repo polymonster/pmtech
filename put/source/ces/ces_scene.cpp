@@ -352,6 +352,7 @@ namespace put
                     
                 //set cbs
 				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
+				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
 
 				//forward lights
                 if( view.render_flags & RENDER_FORWARD_LIT )
@@ -590,6 +591,8 @@ namespace put
 			}
             
             //update c buffers
+			f32 roughness_debug = 0.01f;
+
             for( s32 n = 0; n < scene->num_nodes; ++n )
             {
                 if( scene->cbuffer[n] == INVALID_HANDLE )
@@ -598,8 +601,11 @@ namespace put
                 per_model_cbuffer cb =
                 {
                     scene->world_matrices[n],
-                    vec4f((f32)n, 0.0f, 0.0f, 0.0f)
+                    vec4f((f32)n, (f32)roughness_debug, 0.0f, 0.0f)
                 };
+
+				if (scene->entities[n] & CMP_GEOMETRY)
+					roughness_debug += 1.0f / 24.0f;
                 
                 //per object world matrix
                 pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
