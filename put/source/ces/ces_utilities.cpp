@@ -238,7 +238,7 @@ namespace put
 			scene->local_matrices[child] = parent_mat.inverse4x4() * scene->local_matrices[child];
 		}
 
-		void clone_selection_hierarchical(entity_scene* scene, const std::vector<u32>& selection_list, const c8* suffix )
+		void clone_selection_hierarchical(entity_scene* scene, std::vector<u32>& selection_list, const c8* suffix )
 		{
 			std::vector<u32> parent_list;
 
@@ -247,6 +247,8 @@ namespace put
 				if( scene->parents[i] == i || i == 0 )
 					parent_list.push_back(i);
 			}
+            
+            selection_list.clear( );
 
 			for (u32 i : parent_list)
 			{
@@ -261,8 +263,6 @@ namespace put
 
 				u32 src_parent = i;
 				u32 dst_parent = nodes_start;
-				
-				//clone_node(scene, src_parent, nodes_start);
 
 				s32 node_counter = 0;
 				for (s32 j : node_index_list)
@@ -277,6 +277,8 @@ namespace put
 					u32 new_child = clone_node(scene, j, nodes_start + node_counter, parent, vec3f::zero(), "");
 					node_counter++;
 
+                    selection_list.push_back(new_child);
+                    
 					dev_console_log("[clone] node [%i]%s to [%i]%s, parent [%i]%s", 
 						j,
 						scene->names[j].c_str(),
