@@ -98,6 +98,8 @@ namespace put
 						if (scene->parents[jnode] == jnode)
 							scene->parents[jnode] = node_index;
                 }
+
+				controller.current_time = 0.0f;
             }
         }
         

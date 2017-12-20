@@ -469,16 +469,6 @@ namespace put
             //scene node transform
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
-                //physics node transform
-                if( scene->entities[n] & CMP_PHYSICS )
-                {
-                    scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]);
-                    
-                    scene->local_matrices[n].transpose();
-                    
-                    scene->local_matrices[n] *= scene->offset_matrices[n];
-                }
-
                 //controlled transform
 				if (scene->entities[n] & CMP_TRANSFORM)
 				{
@@ -494,8 +484,29 @@ namespace put
 
 					scene->local_matrices[n] = translation_mat * rot_mat * scale_mat;
 
+					if (scene->entities[n] & CMP_PHYSICS)
+					{
+						physics::set_transform(scene->physics_handles[n], t.translation, t.rotation);
+					}
+
 					//local matrix will be baked
 					scene->entities[n] &= ~CMP_TRANSFORM;
+				}
+				else
+				{
+					if (scene->entities[n] & CMP_PHYSICS)
+					{
+						scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]);
+
+						scene->local_matrices[n].transpose();
+
+						scene->local_matrices[n] *= scene->offset_matrices[n];
+
+						transform& t = scene->transforms[n];
+
+						t.translation = scene->local_matrices[n].get_translation();
+						t.rotation.from_matrix(scene->local_matrices[n]);
+					}
 				}
 
                 //heirarchical scene transform
@@ -530,7 +541,13 @@ namespace put
                 
                 vec3f& tmin = scene->bounding_volumes[n].transformed_min_extents;
                 vec3f& tmax = scene->bounding_volumes[n].transformed_max_extents;
-            
+
+				if (scene->entities[n] & CMP_BONE)
+				{
+					tmin = tmax = scene->world_matrices[n].get_translation();
+					continue;
+				}
+
                 tmax = vec3f::flt_min();
                 tmin = vec3f::flt_max();
                 
@@ -553,8 +570,23 @@ namespace put
 				if (p == n)
 					continue;
 
-				scene->bounding_volumes[p].min_extents = vec3f::vmin(scene->bounding_volumes[p].min_extents, scene->bounding_volumes[n].min_extents);
-				scene->bounding_volumes[p].max_extents = vec3f::vmax(scene->bounding_volumes[p].max_extents, scene->bounding_volumes[n].max_extents);
+				vec3f& parent_tmin = scene->bounding_volumes[p].transformed_min_extents;
+				vec3f& parent_tmax = scene->bounding_volumes[p].transformed_max_extents;
+
+				vec3f& tmin = scene->bounding_volumes[n].transformed_min_extents;
+				vec3f& tmax = scene->bounding_volumes[n].transformed_max_extents;
+				
+				if (scene->entities[p] & CMP_ANIM_CONTROLLER)
+				{
+					vec3f pad = (parent_tmax - parent_tmin) * 0.5f;
+					parent_tmin = tmin - pad;
+					parent_tmax = tmax + pad;
+				}
+				else
+				{
+					parent_tmin = vec3f::vmin(parent_tmin, tmin);
+					parent_tmax = vec3f::vmax(parent_tmax, tmax);
+				}
 			}
             
             //update c buffers

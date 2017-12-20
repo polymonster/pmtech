@@ -42,6 +42,7 @@ namespace pen
 	{
 		timers[ next_free ].name = name;
 		PEN_ASSERT( next_free < MAX_TIMERS );
+		timer_start(next_free);
 		return next_free++;
 	}
 
