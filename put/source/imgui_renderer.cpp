@@ -443,14 +443,8 @@ namespace put
 
 			prev_mouse_wheel = (f32)ms.wheel;
 
-			// ascii keys
-			for (u32 i = 0; i < 512; ++i)
-			{
-				io.KeysDown[i] = INPUT_PKEY(i);
-			}
-
-            static f32 input_key_timer = 0.0f;
-            static f32 repeat_ms = 200.0f;
+			static f32 input_key_timer[512] = { 0.0f };
+            static f32 repeat_ms = 150.0f;
             
             static u32 timer_index = pen::timer_create("imgui_input_timer");
             
@@ -458,20 +452,26 @@ namespace put
             f32 dt_ms = pen::timer_get_ms(timer_index);
             pen::timer_reset(timer_index);
             pen::timer_start(timer_index);
-            
+
 			for (u32 i = 0; i < 512; ++i)
 			{
 				if (pen::input_get_unicode_key(i))
 				{
-                    if( input_key_timer <= 0.0f )
+                    if( input_key_timer[i] <= 0.0f )
                     {
-                        input_key_timer = repeat_ms;
+						io.KeysDown[i] = true;
+                        input_key_timer[i] = repeat_ms;
                         io.AddInputCharacter(i);
                     }
+
+					input_key_timer[i] -= dt_ms;
+				}
+				else
+				{
+					io.KeysDown[i] = false;
+					input_key_timer[i] = 0.0f;
 				}
 			}
-            
-            input_key_timer -= dt_ms;
 
 			// Read keyboard modifiers inputs
 			io.KeyCtrl = INPUT_PKEY(PENK_CONTROL);
@@ -510,11 +510,11 @@ namespace put
             if( io.WantCaptureMouse )
                 flags |= dev_ui::MOUSE;
             
-            if( io.WantCaptureMouse )
-                flags |= dev_ui::MOUSE;
+            if( io.WantCaptureKeyboard)
+                flags |= dev_ui::KEYBOARD;
             
-            if( io.WantCaptureMouse )
-                flags |= dev_ui::MOUSE;
+            if( io.WantTextInput)
+                flags |= dev_ui::TEXT;
             
             return flags;
         }

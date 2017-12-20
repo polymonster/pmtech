@@ -265,8 +265,43 @@ namespace put
                 {
                     set_last_used_directory(selected_path);
                     
-                    selected_path.append(user_filename_buf);
-                    
+					if(pen::string_length(user_filename_buf) > 1)
+						selected_path.append(user_filename_buf);
+
+					if (num_filetypes == 1 && flags & FB_SAVE )
+					{
+						//auto add extension
+						va_list wildcards;
+						va_start(wildcards, num_filetypes);
+
+						const c8* ft = va_arg(wildcards, const char*);
+						
+						s32 ext_len = pen::string_length(ft);
+
+						s32 offset = 0;
+						const c8* fti = ft + ext_len - 1;
+						while (*fti-- != '.')
+						{
+							ext_len--;
+							offset++;
+						}
+
+						const c8* fts = ft + offset;
+
+						s32 filename_len = selected_path.length();
+
+						const c8* fn = &selected_path.c_str()[filename_len - ext_len];
+
+						if (pen::string_compare(fts, fn) != 0)
+						{
+							selected_path.append('.');
+							selected_path.append(fts);
+						}
+
+						va_end(wildcards);
+					}
+
+
                     last_result = selected_path;
                     return_value = last_result.c_str();
                     

@@ -87,6 +87,19 @@ namespace put
 			TRANSFORM_TYPE_IN 
         };
         static transform_mode k_transform_mode = TRANSFORM_NONE;
+
+		bool shortcut_key(u32 key)
+		{
+			u32 flags = dev_ui::want_capture();
+			
+			if (flags & dev_ui::KEYBOARD)
+				return false;
+
+			if (flags & dev_ui::TEXT)
+				return false;
+
+			return pen_input_key(key);
+		}
         
         void update_model_viewer_camera(put::camera_controller* cc)
         {
@@ -369,8 +382,6 @@ namespace put
 
 						n[i] = put::maths::cross(v1, v2);
 						p[i] = plane_vectors[offset];
-
-						vec3f pt = p[i] + (plane_vectors[offset + 1] - plane_vectors[offset + 0]) * 0.01f;
 					}
 					
 					if (!ms.buttons[PEN_MOUSE_L])
@@ -391,7 +402,10 @@ namespace put
 								bool selected = true;
 								for (s32 i = 0; i < 6; ++i)
 								{
-									vec3f pos = scene->local_matrices[node].get_translation();
+									vec3f& min = scene->bounding_volumes[node].transformed_min_extents;
+									vec3f& max = scene->bounding_volumes[node].transformed_max_extents;
+
+									vec3f pos = min + (max - min) * 0.5f;
 									f32 radius = scene->bounding_volumes[node].radius;
 
 									f32 d = maths::point_vs_plane(pos, p[i], n[i]);
@@ -598,7 +612,7 @@ namespace put
             }
 
 			static bool debounce_pause = false;
-			if (pen::input_is_key_down(PENK_SPACE))
+			if (shortcut_key(PENK_SPACE))
 			{
 				if (!debounce_pause)
 				{
@@ -678,16 +692,16 @@ namespace put
             };
             static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
             
-            static u32 short_cut_key[] =
+            static u32 widget_shortcut_key[] =
             {
                 PENK_Q, PENK_W, PENK_E, PENK_R
             };
-            static_assert(PEN_ARRAY_SIZE(short_cut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
+            static_assert(PEN_ARRAY_SIZE(widget_shortcut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
             
             for( s32 i = 0; i < num_transform_icons; ++i )
             {
                 u32 mode = TRANSFORM_SELECT + i;
-                if( pen::input_is_key_pressed(short_cut_key[i]))
+                if( shortcut_key(widget_shortcut_key[i]))
                     k_transform_mode = (transform_mode)mode;
                 
                 if( put::dev_ui::state_button(transform_icons[i], k_transform_mode == mode ) )
@@ -802,7 +816,7 @@ namespace put
             }
 
 			//parent selection
-			if (pen_input_key(PENK_P))
+			if (shortcut_key(PENK_P))
 			{
 				if (k_selection_list.size() > 1)
 				{
@@ -821,7 +835,7 @@ namespace put
 
 			//duplicate
 			static bool debounce_duplicate = false;
-			if (pen_input_key(PENK_CONTROL) && pen_input_key_press(PENK_D))
+			if (pen_input_key(PENK_CONTROL) && shortcut_key(PENK_D))
 			{
 				debounce_duplicate = true;
 			}
@@ -832,7 +846,7 @@ namespace put
 			}
 
 			//delete
-			if (pen::input_is_key_down(PENK_DELETE))
+			if (shortcut_key(PENK_DELETE))
 			{
 				for (auto& s : k_selection_list)
 				{					
@@ -1313,7 +1327,7 @@ namespace put
             mat4 widget;
             widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
             
-			if (pen::input_is_key_pressed(PENK_F))
+			if (shortcut_key(PENK_F))
 			{
 				view.camera->focus = pos;
 				view.camera->zoom = extents_mag;
@@ -1565,6 +1579,8 @@ namespace put
             vec2i vpi = vec2i( view.viewport->width, view.viewport->height );
             
             entity_scene* scene = view.scene;
+
+			dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
             
             if( scene->view_flags & DD_LIGHTS )
             {
@@ -1576,7 +1592,8 @@ namespace put
                         
                         p = put::maths::project(p, view.camera->view,  view.camera->proj, vpi);
                         
-                        put::dbg::add_quad_2f( p.xy(), vec2f( 3.0f, 3.0f ), vec4f( scene->lights[n].colour, 1.0f ) );
+						if( p.z > 0.0f )
+							put::dbg::add_quad_2f( p.xy(), vec2f( 3.0f, 3.0f ), vec4f( scene->lights[n].colour, 1.0f ) );
                     }
                 }
             }

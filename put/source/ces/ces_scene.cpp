@@ -275,141 +275,157 @@ namespace put
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
 			pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
 
+			s32 draw_count = 0;
+			s32 cull_count = 0;
+
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
-				if ( scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL )
-                {
-					scene_node_geometry* p_geom = &scene->geometries[n];
-					scene_node_material* p_mat = &scene->materials[n];
+				if ( !(scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL) )
+					continue;
 
-                    if( p_geom->p_skin )
-                    {
-                        if( p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE )
-                        {
-                            pen::buffer_creation_params bcp;
-                            bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                            bcp.buffer_size = sizeof(mat4) * 85;
-                            bcp.data = nullptr;
-                            
-                            p_geom->p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
-                        }
-                        
-                        static mat4 bb[85];
-                        
-                        s32 joints_offset = scene->anim_controller[n].joints_offset;
-                        for( s32 i = 0; i < p_geom->p_skin->num_joints; ++i )
-                        {
-                            bb[i] = scene->world_matrices[n + joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
-                        }
-                        
-                        pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
-                        
-                        pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
-                    }
-                    
-                    static hash_id ID_SUB_TYPE_SKINNED = PEN_HASH("_skinned");
-                    static hash_id ID_SUB_TYPE_NON_SKINNED = PEN_HASH("");
-                    
-                    hash_id mh = p_geom->p_skin ? ID_SUB_TYPE_SKINNED : ID_SUB_TYPE_NON_SKINNED;
+				//frustum cull
+				bool inside = true;
+				for (s32 i = 0; i < 6; ++i)
+				{
+					frustum& camera_frustum = view.camera->camera_frustum;
 
-                    if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
-                        continue;
-                    
-                    //set cbs
-					pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
+					vec3f& min = scene->bounding_volumes[n].transformed_min_extents;
+					vec3f& max = scene->bounding_volumes[n].transformed_max_extents;
 
-					//forward lights
-                    if( view.render_flags & RENDER_FORWARD_LIT )
-                        pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
+					vec3f pos = min + (max - min) * 0.5f;
+					f32 radius = scene->bounding_volumes[n].radius;
 
-					//set ib / vb
-					pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0 );
-					pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
+					f32 d = maths::point_vs_plane(pos, camera_frustum.p[i], camera_frustum.n[i]);
 
-					//set textures
-					if (p_mat)
+					if (d > radius)
 					{
-                        //todo - set sampler states from material
-                        static u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
+						inside = false;
+						break;
+					}
+				}
+
+				if (!inside)
+				{
+					cull_count++;
+					continue;
+				}
+
+				draw_count++;
+
+				scene_node_geometry* p_geom = &scene->geometries[n];
+				scene_node_material* p_mat = &scene->materials[n];
+
+                if( p_geom->p_skin )
+                {
+                    if( p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE )
+                    {
+                        pen::buffer_creation_params bcp;
+                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                        bcp.buffer_size = sizeof(mat4) * 85;
+                        bcp.data = nullptr;
+                            
+                        p_geom->p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
+                    }
                         
-						for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
+                    static mat4 bb[85];
+                        
+                    s32 joints_offset = scene->anim_controller[n].joints_offset;
+                    for( s32 i = 0; i < p_geom->p_skin->num_joints; ++i )
+                    {
+                        bb[i] = scene->world_matrices[n + joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
+                    }
+                        
+                    pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
+                        
+                    pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
+                }
+                    
+                static hash_id ID_SUB_TYPE_SKINNED = PEN_HASH("_skinned");
+                static hash_id ID_SUB_TYPE_NON_SKINNED = PEN_HASH("");
+                    
+                hash_id mh = p_geom->p_skin ? ID_SUB_TYPE_SKINNED : ID_SUB_TYPE_NON_SKINNED;
+
+                if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
+                    continue;
+                    
+                //set cbs
+				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
+
+				//forward lights
+                if( view.render_flags & RENDER_FORWARD_LIT )
+                    pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
+
+				//set ib / vb
+				pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0 );
+				pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
+
+				//set textures
+				if (p_mat)
+				{
+                    //todo - set sampler states from material
+                    static u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
+                        
+					for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
+					{
+						if ( is_valid(p_mat->texture_id[t]) && ss_wrap )
 						{
-							if ( is_valid(p_mat->texture_id[t]) && ss_wrap )
-							{
-								pen::renderer_set_texture(p_mat->texture_id[t], ss_wrap, t, PEN_SHADER_TYPE_PS );
-							}
+							pen::renderer_set_texture(p_mat->texture_id[t], ss_wrap, t, PEN_SHADER_TYPE_PS );
 						}
 					}
-
-					//draw
-					pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
-                    
 				}
+
+				//draw
+				pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 			}
 		}
 
-		void update_scene( entity_scene* scene, f32 dt )
+		void update_animations(entity_scene* scene, f32 dt)
 		{
-            if( scene->flags & PAUSE_UPDATE )
-            {
-                physics::set_paused(1);
-                return;
-            }
-            
-            physics::set_paused(0);
-            physics::set_consume(1);
-            
-            //animations
-            for (u32 n = 0; n < scene->num_nodes; ++n)
-            {
-                if( scene->entities[n] & CMP_ANIM_CONTROLLER )
-                {
-                    auto& controller = scene->anim_controller[n];
+			for (u32 n = 0; n < scene->num_nodes; ++n)
+			{
+				if (scene->entities[n] & CMP_ANIM_CONTROLLER)
+				{
+					auto& controller = scene->anim_controller[n];
 
-					if (n == 818)
+					bool apply_trajectory = false;
+					mat4 trajectory;
+
+					if (is_valid(controller.current_animation))
 					{
-						u32 a = 0;
-					}
-                    
-                    bool apply_trajectory = false;
-                    mat4 trajectory;
-                    
-                    if( is_valid( controller.current_animation ) )
-                    {
-                        auto* anim = get_animation_resource( controller.current_animation );
-                        
-                        if(!anim)
-                            continue;
-                        
-                        if(controller.play_flags == 1)
-                            controller.current_time += dt*0.1f;
-                        
-                        s32 joints_offset = scene->anim_controller[n].joints_offset;
-                        
-                        for( s32 c = 0; c < anim->num_channels; ++c )
-                        {
-                            s32 num_frames = anim->channels[c].num_frames;
-                            
-                            if( num_frames <= 0 )
-                                continue;
-                            
-                            s32 t = 0;
-                            for( t = 0; t < num_frames; ++t )
-                                if( controller.current_time < anim->channels[c].times[t] )
-                                    break;
-                            
-                            //loop
-                            if( t >= num_frames )
-                                t = 0;
+						auto* anim = get_animation_resource(controller.current_animation);
 
-                            mat4& mat = anim->channels[c].matrices[t];
+						if (!anim)
+							continue;
+
+						if (controller.play_flags == 1)
+							controller.current_time += dt*0.1f;
+
+						s32 joints_offset = scene->anim_controller[n].joints_offset;
+
+						for (s32 c = 0; c < anim->num_channels; ++c)
+						{
+							s32 num_frames = anim->channels[c].num_frames;
+
+							if (num_frames <= 0)
+								continue;
+
+							s32 t = 0;
+							for (t = 0; t < num_frames; ++t)
+								if (controller.current_time < anim->channels[c].times[t])
+									break;
+
+							//loop
+							if (t >= num_frames)
+								t = 0;
+
+							mat4& mat = anim->channels[c].matrices[t];
 
 							s32 scene_node_index = n + c + joints_offset;
-                            
-                            scene->local_matrices[scene_node_index] = mat;
-                            
+
+							scene->local_matrices[scene_node_index] = mat;
+
 							if (scene->entities[scene_node_index] & CMP_ANIM_TRAJECTORY)
 							{
 								trajectory = anim->channels[c].matrices[num_frames - 1];
@@ -420,21 +436,36 @@ namespace put
 								apply_trajectory = true;
 								controller.current_time = (controller.current_time) - (anim->length);
 							}
-                        }
-                    }
-                    
-                    if( apply_trajectory && controller.apply_root_motion )
-                    {
-                        vec3f r = scene->local_matrices[n].get_right();
-                        vec3f u = scene->local_matrices[n].get_up();
-                        vec3f f = scene->local_matrices[n].get_fwd();
-                        vec3f p = scene->local_matrices[n].get_translation();
-                        
+						}
+					}
+
+					if (apply_trajectory && controller.apply_root_motion)
+					{
+						vec3f r = scene->local_matrices[n].get_right();
+						vec3f u = scene->local_matrices[n].get_up();
+						vec3f f = scene->local_matrices[n].get_fwd();
+						vec3f p = scene->local_matrices[n].get_translation();
+
 						scene->local_matrices[n] *= trajectory;
-                    }
-                }
+					}
+				}
+			}
+		}
+
+		void update_scene( entity_scene* scene, f32 dt )
+		{
+            if( scene->flags & PAUSE_UPDATE )
+            {
+                physics::set_paused(1);
             }
-            
+			else
+			{
+				physics::set_paused(0);
+				physics::set_consume(1);
+
+				update_animations(scene, dt);
+			}
+                                    
             //scene node transform
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
@@ -491,6 +522,7 @@ namespace put
                 vec3f(0.0f, 1.0f, 1.0f)
             };
             
+			//transform extents by transform
             for( s32 n = 0; n < scene->num_nodes; ++n )
             {
                 vec3f min = scene->bounding_volumes[n].min_extents;
@@ -513,6 +545,17 @@ namespace put
 				f32& trad = scene->bounding_volumes[n].radius;
 				trad = maths::magnitude(tmax-tmin) * 0.5f;
             }
+
+			//reverse iterate over scene and expand parents extents by children
+			for (s32 n = scene->num_nodes; n > 0; --n)
+			{
+				u32 p = scene->parents[n];
+				if (p == n)
+					continue;
+
+				scene->bounding_volumes[p].min_extents = vec3f::vmin(scene->bounding_volumes[p].min_extents, scene->bounding_volumes[n].min_extents);
+				scene->bounding_volumes[p].max_extents = vec3f::vmax(scene->bounding_volumes[p].max_extents, scene->bounding_volumes[n].max_extents);
+			}
             
             //update c buffers
             for( s32 n = 0; n < scene->num_nodes; ++n )

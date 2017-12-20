@@ -118,6 +118,47 @@ namespace put
 		p_camera->flags |= CF_INVALIDATED;
 	}
 
+	void update_frustum(camera* p_camera)
+	{
+		static vec2f ndc_coords[] =
+		{
+			vec2f(0.0f, 1.0f),
+			vec2f(1.0f, 1.0f),
+			vec2f(0.0f, 0.0f),
+			vec2f(1.0f, 0.0f),
+		};
+
+		vec2i vpi = vec2i(1, 1);
+
+		for (s32 i = 0; i < 4; ++i)
+		{
+			p_camera->camera_frustum.corners[0][i] = maths::unproject(vec3f(ndc_coords[i], 0.0f), p_camera->view, p_camera->proj, vpi);
+			p_camera->camera_frustum.corners[1][i] = maths::unproject(vec3f(ndc_coords[i], 1.0f), p_camera->view, p_camera->proj, vpi);
+		}
+
+		vec3f plane_vectors[] =
+		{
+			p_camera->camera_frustum.corners[0][0], p_camera->camera_frustum.corners[1][0], p_camera->camera_frustum.corners[0][2],	//left
+			p_camera->camera_frustum.corners[0][0], p_camera->camera_frustum.corners[0][1],	p_camera->camera_frustum.corners[1][0],	//top
+
+			p_camera->camera_frustum.corners[0][1], p_camera->camera_frustum.corners[0][3], p_camera->camera_frustum.corners[1][1],	//right
+			p_camera->camera_frustum.corners[0][2], p_camera->camera_frustum.corners[1][2], p_camera->camera_frustum.corners[0][3],	//bottom
+
+			p_camera->camera_frustum.corners[0][0], p_camera->camera_frustum.corners[0][2], p_camera->camera_frustum.corners[0][1],	//near
+			p_camera->camera_frustum.corners[1][0], p_camera->camera_frustum.corners[1][1], p_camera->camera_frustum.corners[1][2]	//far
+		};
+
+		for (s32 i = 0; i < 6; ++i)
+		{
+			s32 offset = i * 3;
+			vec3f v1 = maths::normalise(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
+			vec3f v2 = maths::normalise(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+
+			p_camera->camera_frustum.n[i] = put::maths::cross(v1, v2);
+			p_camera->camera_frustum.p[i] = plane_vectors[offset];
+		}
+	}
+
 	void camera_update_modelling( camera* p_camera, bool invert_y )
 	{
 		mouse_state ms = input_get_mouse_state();
@@ -189,6 +230,8 @@ namespace put
 			cur_aspect = p_camera->aspect;
 			camera_update_projection_matrix(p_camera);
 		}
+
+		update_frustum(p_camera);
         
         if( viewport_correction && !(p_camera->flags & CF_VP_CORRECTED) )
         {

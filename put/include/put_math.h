@@ -286,7 +286,7 @@ namespace put
 		vec2f perp(vec2f v1, s32 hand);
 		vec3f normalise(vec3f v);
 		vec2f normalise(vec2f v);
-		vec3f project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normalise_coordinates = false);
+		vec3f project(vec3f v, mat4 view, mat4 proj, vec2i viewport = vec2i( 0, 0 ), bool normalise_coordinates = false);
 		vec3f unproject(vec3f scrren_space_pos, mat4 view, mat4 proj, vec2i viewport);
 		vec3f unproject(vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport);
 

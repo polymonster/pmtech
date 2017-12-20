@@ -22,6 +22,14 @@ namespace put
         vec4f view_direction;
 	};
 
+	struct frustum
+	{
+		vec3f n[6];
+		vec3f p[6];
+
+		vec3f corners[2][4];
+	};
+
 	struct camera
 	{
 		vec3f pos = vec3f::zero();
@@ -40,6 +48,8 @@ namespace put
 
 		u32 cbuffer = (u32)-1;
 		u8 flags = 0;
+
+		frustum camera_frustum;
 	};
 
 	void camera_create_perspective( camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane );
