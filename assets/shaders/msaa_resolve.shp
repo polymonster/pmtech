@@ -18,9 +18,9 @@ cbuffer per_pass : register(b0)
 declare_texture_samplers
 {
 	TEXTURE_2DMS( float4, 2, texture_msaa_2, 0 );
-	TEXTURE_2DMS( float4, 4, texture_msaa_4, 1 );
-	TEXTURE_2DMS( float4, 8, texture_msaa_8, 2 );
-	TEXTURE_2DMS( float4, 16, texture_msaa_16, 3 );
+	TEXTURE_2DMS( float4, 4, texture_msaa_4, 0 );
+	TEXTURE_2DMS( float4, 8, texture_msaa_8, 0 );
+	TEXTURE_2DMS( float4, 16, texture_msaa_16, 0 );
 };
 
 vs_output_textured vs_resolve( vs_input_2d_textured input )
