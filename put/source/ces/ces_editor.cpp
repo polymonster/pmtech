@@ -1075,9 +1075,9 @@ namespace put
                     list_view = false;
                 dev_ui::set_tooltip("Tree View");
                 
-                ImGui::Columns( 2 );
+                //ImGui::Columns( 1 );
                 
-                ImGui::BeginChild("Entities", ImVec2(0, 0), true );
+                ImGui::BeginChild("Entities", ImVec2(0, 300), true );
                 
 				s32 selected_index = -1;
 				if (k_selection_list.size() == 1)
@@ -1119,9 +1119,9 @@ namespace put
                 
                 ImGui::EndChild();
                 
-                ImGui::NextColumn();
+                //ImGui::NextColumn();
                 
-                ImGui::BeginChild("Selected", ImVec2(0, 0), true );
+                //ImGui::BeginChild("Selected", ImVec2(0, 0), true );
                 
                 if (selected_index != -1)
                 {
@@ -1174,22 +1174,25 @@ namespace put
                     ImGui::Separator();
                     
                     //material
-                    ImGui::Text("Material: %s", scene->material_names[selected_index].c_str());
-                    
-                    if (scene->material_names[selected_index].c_str())
-                    {
-                        u32 count = 0;
-                        for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
-                        {
-                            if (scene->materials[selected_index].texture_id[t] > 0)
-                            {
-                                if( count++ > 0)
-                                    ImGui::SameLine();
-                                
-                                ImGui::Image(&scene->materials[selected_index].texture_id[t], ImVec2(128, 128));
-                            }
-                        }
-                    }
+					if (ImGui::CollapsingHeader("Material"))
+					{
+						ImGui::Text("%s", scene->material_names[selected_index].c_str());
+
+						if (scene->material_names[selected_index].c_str())
+						{
+							u32 count = 0;
+							for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
+							{
+								if (scene->materials[selected_index].texture_id[t] > 0)
+								{
+									if (count++ > 0)
+										ImGui::SameLine();
+
+									ImGui::Image(&scene->materials[selected_index].texture_id[t], ImVec2(64, 64));
+								}
+							}
+						}
+					}
                     ImGui::Separator();
                     
                     scene_anim_ui(scene, selected_index );
@@ -1237,9 +1240,9 @@ namespace put
                     }
                 }
                 
-                ImGui::EndChild();
+                //ImGui::EndChild();
                 
-                ImGui::Columns(1);
+                //ImGui::Columns(1);
                 
                 ImGui::End();
             }
