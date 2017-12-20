@@ -1179,7 +1179,7 @@ namespace pen
 		if (!rti->tex.texture)
 		{
 			//create a resolve surface
-			texture_creation_params& resolve_tcp = *rti->tcp;
+			texture_creation_params resolve_tcp = *rti->tcp;
 			resolve_tcp.sample_count = 1;
 
 			texture_creation_params& _tcp = resolve_tcp;
@@ -1220,7 +1220,8 @@ namespace pen
 			direct::renderer_set_vertex_buffer(g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
 			direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
-			direct::renderer_set_texture(target, 0, 1, PEN_SHADER_TYPE_PS, pen::TEXTURE_BIND_MSAA);
+
+			direct::renderer_set_texture(target, 0, 0, PEN_SHADER_TYPE_PS, pen::TEXTURE_BIND_MSAA);
 
 			direct::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
 		}
