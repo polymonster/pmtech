@@ -114,7 +114,7 @@ float3 lambert(
 	float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
 	float3 lit_colour = light_colour * dot( n, l ) * albedo.rgb;
 	
-	return saturate( lit_colour );
+	return ( lit_colour );
 }
 
 float3 phong( 
@@ -244,9 +244,11 @@ float3 oren_nayar(
   float s = l_dot_v - n_dot_l * n_dot_v;
   float t = lerp(1.0, max(n_dot_l, n_dot_v), step(0.0, s));
 
+  float lum = length( albedo );
+  
   float sigma2 = roughness * roughness;
-  float A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));
+  float A = 1.0 + sigma2 * (lum / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));
   float B = 0.45 * sigma2 / (sigma2 + 0.09);
 
-  return saturate( albedo * light_colour * max(0.0, n_dot_l) * (A + B * s / t) / 3.14159265 );
+  return ( albedo * light_colour * max(0.0, n_dot_l) * (A + B * s / t) / 3.14159265 );
 }
