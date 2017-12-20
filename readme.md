@@ -8,38 +8,35 @@ Core systems such as rendering, audio and physics are handled asyncronously on c
 
 The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project, with minimal use of c++ features just for convenience.
 
-**pen**  
-This project contains platform / operating system specific code, it provides abstractions for:
-
-Renderer, Window, Audio, Memory, Timers, File System, Threads.
-
-**put**  
-This project contains toolkit code that will be re-used across different projects but contains no platform specific code:
-- Model, Texture and Shader loading.
-- Dev UI, Maths Library, Async Physics command buffer API.
-- JSON - Simple c json parser great for config and data files. 
-- PMFX - generic shader language with GPU state specification for setting blend, depth, stencil, raster and other GPU state.
-- Render Controller - Scriptable renderer to define render passes and GPU state from in a JSON config.
+**Features**  
+- Cross Platform - Renderer, Window, Audio, Memory, Timers, File System, Threads.
+- Model, Texture, Shader loading.
+- Resource hot loading.
+- Maths Library. 
+- JSON - Fast minimal json parser for data driven config scripts.
+- PMFX - Generic shader language with GPU state specification for setting blend, depth, stencil, raster and other GPU state.
+- PMFX Controller - Scriptable renderer to define render passes and GPU state from in a JSON config.
 - Component Entity Scene - Data-Oriented scene written in c+, handling mesh rendering, skeletal animation and scene heirarchies.
-- Editor - Scene editor built on the Component Entity Scene.
+- Scene Editor - Scene editor built on the Component Entity Scene.
 
-**thirdparty stuff**  
-- [ImGui](https://github.com/ocornut/imgui)
+**Thirdparty Stuff**  
 - [Str](https://github.com/ocornut/str)
 - [Jsmn](https://github.com/zserge/jsmn)
-- [Bullet](https://github.com/bulletphysics/bullet3)
 - [Premake](https://github.com/premake/premake-core)
+- [Bullet](https://github.com/bulletphysics/bullet3)
+- [Jsmn](https://github.com/zserge/jsmn)
+- [ImGui](https://github.com/ocornut/imgui)
 
 **tools**  
 Tool scripts written in python and some executables are used to build data:
 - Collada to Binary - Models, skeletons and animations.
 - Textures - Compression and conversion using NVTT (Nvidia).
 - Premake5 - All projects are configured using premake and are IDE agnostic.
+- PMFX - shader reflection info and agnostic hlsl / glsl shaders
 - Shader Compiler - offline shader compilation.
-- PMFX - A python script and some macros help porting from hlsl to glsl, JSON can be used to specify addition information such as depth stencil state or blend modes. A JSON metadata file is generated along with each shader program to provide reflection information to help generate d3d input layouts, gl vertex arrays and bind gl uniforms, uniform buffers and textures to the correct locations.
 
 **Getting started**  
-Run the build.py script in pmtech/examples to see how to build code projects and data.     
+Run the tools/build.py script from pmtech/examples to see how to build code projects and data.     
 on osx you can run ./travis.sh which will genereate GNU make files and compile from the command line.
 
 **examples**   
