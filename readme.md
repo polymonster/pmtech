@@ -8,7 +8,7 @@ Core systems such as rendering, audio and physics are handled asyncronously on c
 
 The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project, with minimal use of c++ features just for convenience.
 
-https://scontent-lht6-1.xx.fbcdn.net/v/t35.0-12/25625490_10155953118974655_1778472465_o.png?oh=3e6c0e020c14695c543b2089ba8e9d2e&oe=5A3D8BE0
+(https://scontent-lht6-1.xx.fbcdn.net/v/t35.0-12/25625490_10155953118974655_1778472465_o.png?oh=3e6c0e020c14695c543b2089ba8e9d2e&oe=5A3D8BE0)
 
 **Features**  
 - Cross Platform - Renderer, Window, Audio, Memory, Timers, File System, Threads.
