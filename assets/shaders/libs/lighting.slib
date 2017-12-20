@@ -112,9 +112,11 @@ float3 lambert(
 )
 {
 	float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
-	float3 lit_colour = light_colour * dot( n, l ) * albedo.rgb;
+	float n_dot_l = max( dot( n, l ), 0.0 );
 	
-	return ( lit_colour );
+	float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
+	
+	return lit_colour;
 }
 
 float3 phong( 
@@ -130,7 +132,9 @@ float3 phong(
 {	
 	//lambert
 	float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
-	float3 lit_colour = light_colour * dot( n, l ) * albedo.rgb;
+	float n_dot_l = max( dot( n, l ), 0.0 );
+		
+	float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
 	
 	//phong
 	float3  v_view 		= normalize(view_pos.xyz - world_pos.xyz);
@@ -138,7 +142,7 @@ float3 phong(
 	
 	float spec = pow( max( dot(v_reflect, v_view), 0.0), spec_power ) * spec_strength;
 	
-	return lit_colour + spec;
+	return lit_colour + max( spec * light_colour, 0.0 );
 }
 
 float3 blinn( 
@@ -154,7 +158,9 @@ float3 blinn(
 {	
 	//lambert
 	float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
-	float3 lit_colour = light_colour * dot( n, l ) * albedo.rgb;
+	float n_dot_l = max( dot( n, l ), 0.0 );
+	
+	float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
 	
 	//phong
 	float3  v_view = normalize( (view_pos.xyz - world_pos.xyz) );
@@ -162,7 +168,7 @@ float3 blinn(
 	
 	float spec = pow( max( dot( hv, n ), 0.0 ), spec_power * 2.0 ) * spec_strength;
 			
-	return lit_colour + spec;
+	return lit_colour + max( spec * light_colour, 0.0 );
 }
 
 float3 cook_torrence(
@@ -238,7 +244,7 @@ float3 oren_nayar(
   float3 l = normalize(light_pos_radius.xyz-world_pos);
   
   float l_dot_v = dot(l, v);
-  float n_dot_l = dot(n, l);
+  float n_dot_l = max( dot(n, l), 0.0 );
   float n_dot_v = dot(n, v);
 
   float s = l_dot_v - n_dot_l * n_dot_v;

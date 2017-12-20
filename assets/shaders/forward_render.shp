@@ -158,6 +158,7 @@ ps_output ps_forward_lit( vs_output input )
 	
 	for( int i = 0; i < light_info.x; ++i )
 	{
+		float single_roughness = saturate(user_data.y); 
 #if 0
 		lit_colour += lambert( 
 			lights[i].pos_radius, 
@@ -176,8 +177,8 @@ ps_output ps_forward_lit( vs_output input )
 			input.world_pos.xyz,
 			camera_view_pos.xyz,
 			albedo.rgb,
-			100.0,
-			0.5
+			(1.0 - single_roughness) * 100.0,
+			1.0 - single_roughness
 		);			 
 #endif
 
@@ -189,12 +190,11 @@ ps_output ps_forward_lit( vs_output input )
 			input.world_pos.xyz,
 			camera_view_pos.xyz,
 			albedo.rgb,
-			100.0,
-			0.5
+			(1.0 - single_roughness) * 100.0,
+			1.0 - single_roughness
 		);			 
 #endif
 
-		float single_roughness = user_data.y; 
 #if 1
 		lit_colour += cook_torrence( 
 			lights[i].pos_radius, 
@@ -210,7 +210,6 @@ ps_output ps_forward_lit( vs_output input )
 #endif
 
 #if 1
-	
 		lit_colour += oren_nayar( 
 			lights[i].pos_radius, 
 			lights[i].colour.rgb,
