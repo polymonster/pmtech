@@ -828,7 +828,7 @@ namespace put
 				settings_ui(&settings_open);
             
 			//selection / picking
-            if( !pen_input_key(PENK_MENU) && !(k_select_flags & WIDGET_SELECTED))
+            if( !pen_input_key(PENK_MENU) && !pen_input_key(PENK_COMMAND) && !(k_select_flags & WIDGET_SELECTED))
             {
                 picking_update( sc->scene, sc->camera );
             }
@@ -851,7 +851,7 @@ namespace put
 			}
 
 			//delete
-			if (shortcut_key(PENK_DELETE))
+			if (shortcut_key(PENK_DELETE) || shortcut_key(PENK_BACK))
 			{
 				for (auto& s : k_selection_list)
 				{					
