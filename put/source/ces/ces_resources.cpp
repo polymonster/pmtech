@@ -352,7 +352,7 @@ namespace put
         
         animation_resource* get_animation_resource( anim_handle h )
         {
-			if (h > k_animations.size())
+			if (h >= k_animations.size())
 				return nullptr;
 
             return &k_animations[h];

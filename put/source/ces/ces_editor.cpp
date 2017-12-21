@@ -551,7 +551,11 @@ namespace put
 					dev_ui::set_program_preference("load_last_scene", load_last_scene);
 				}
 
-				set_project_dir = ImGui::Button("Set Project Dir");
+				if (ImGui::Button("Set Project Dir"))
+				{
+					set_project_dir = true;
+				}
+
 				ImGui::SameLine();
 				ImGui::Text("%s", project_dir_str.c_str());
 

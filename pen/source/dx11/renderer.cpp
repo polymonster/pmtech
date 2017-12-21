@@ -181,12 +181,6 @@ namespace pen
 
 		return i;
 	};
-
-	void free_resource_index( u32 index )
-	{
-		//pen::memory_zero( &resource_pool[ index ], sizeof( resource_allocation ) );
-		//query_pool[index].asigned_flag = 0;
-	}
     
     struct managed_rt
     {
@@ -421,7 +415,6 @@ namespace pen
             //shader has failed to create
             PEN_ASSERT( 0 );
 
-			free_resource_index( resource_index );
 			resource_index = (u32)-1;
 		}
 
@@ -509,7 +502,6 @@ namespace pen
 		
 		if ( FAILED( hr ) )
 		{
-			free_resource_index( resource_index );
 			resource_index = (u32)-1;
 
 			PEN_ASSERT( 0 );
