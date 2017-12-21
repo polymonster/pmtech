@@ -13,6 +13,7 @@ namespace put
 	{
         enum io_capture : u32
         {
+			NO_INPUT   = 0,
             MOUSE      = 1<<0,
             KEYBOARD   = 1<<1,
             TEXT       = 1<<2

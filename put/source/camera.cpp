@@ -52,7 +52,7 @@ namespace put
 		p_camera->flags |= CF_INVALIDATED;
 	}
 
-	void camera_update_fly(camera* p_camera, bool invert_y )
+	void camera_update_fly(camera* p_camera, bool has_focus, bool invert_y )
 	{
 		mouse_state ms = input_get_mouse_state();
 
@@ -66,53 +66,60 @@ namespace put
 		static f32 prev_mwheel = mwheel;
 		prev_mwheel = mwheel;
         
-        
         f32 cursor_speed = 0.1f;
-        if( INPUT_PKEY( PENK_UP ) )
-            p_camera->rot.x -= cursor_speed;
-        if( INPUT_PKEY( PENK_DOWN ) )
-            p_camera->rot.x += cursor_speed;
-        if( INPUT_PKEY( PENK_LEFT ) )
-            p_camera->rot.y -= cursor_speed;
-        if( INPUT_PKEY( PENK_RIGHT ) )
-            p_camera->rot.y += cursor_speed;
-        
-		if (ms.buttons[PEN_MOUSE_L])
-		{
-			//rotation
-			vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);
-			p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
-		}
+		f32 speed = 1.0f;
 
-        mat4 rx = mat4::create_x_rotation(p_camera->rot.x);
+		if (has_focus)
+		{
+			if (pen_input_key(PENK_SHIFT))
+			{
+				speed = 0.01f;
+				cursor_speed = 0.1f;
+			}
+
+			if (pen_input_key(PENK_UP))
+				p_camera->rot.x -= cursor_speed;
+			if (pen_input_key(PENK_DOWN))
+				p_camera->rot.x += cursor_speed;
+			if (pen_input_key(PENK_LEFT))
+				p_camera->rot.y -= cursor_speed;
+			if (pen_input_key(PENK_RIGHT))
+				p_camera->rot.y += cursor_speed;
+
+			if (ms.buttons[PEN_MOUSE_R])
+			{
+				//rotation
+				vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);
+
+				p_camera->rot += swapxy * 0.0075f;
+			}
+
+			if (pen_input_key(PENK_W))
+			{
+				p_camera->pos -= p_camera->view.get_fwd() * speed;
+			}
+
+			if (pen_input_key(PENK_A))
+			{
+				p_camera->pos -= p_camera->view.get_right() * speed;
+			}
+
+			if (pen_input_key(PENK_S))
+			{
+				p_camera->pos += p_camera->view.get_fwd() * speed;
+			}
+
+			if (pen_input_key(PENK_D))
+			{
+				p_camera->pos += p_camera->view.get_right() * speed;
+			}
+		}
+		
+		mat4 rx = mat4::create_x_rotation(p_camera->rot.x);
 		mat4 ry = mat4::create_y_rotation(p_camera->rot.y);
 		mat4 t = mat4::create_translation(p_camera->pos * -1.0f);
 
 		mat4 view_rotation = rx * ry;
-
-		f32 speed = 0.01f;
-
-		if (INPUT_PKEY(PENK_W))
-		{
-			p_camera->pos -= p_camera->view.get_fwd() * speed;
-		}
-
-		if (INPUT_PKEY(PENK_A))
-		{
-			p_camera->pos -= p_camera->view.get_right() * speed;
-		}
-
-		if (INPUT_PKEY(PENK_S))
-		{
-			p_camera->pos += p_camera->view.get_fwd() * speed;
-		}
-
-		if (INPUT_PKEY(PENK_D))
-		{
-			p_camera->pos += p_camera->view.get_right() * speed;
-		}
-
-		t.create_translation(p_camera->pos * -1.0f);
 		p_camera->view = view_rotation * t;
 
 		p_camera->flags |= CF_INVALIDATED;
@@ -159,7 +166,7 @@ namespace put
 		}
 	}
 
-	void camera_update_modelling( camera* p_camera, bool invert_y )
+	void camera_update_modelling( camera* p_camera, bool has_focus, bool invert_y )
 	{
 		mouse_state ms = input_get_mouse_state();
         
@@ -171,40 +178,42 @@ namespace put
 
 		f32 mouse_y_inv = invert_y ? -1.0f : 1.0f;
 
-		//rotate
-		if (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_MENU))
+		if (has_focus)
 		{
-			//rotation
-			vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x);
-			p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
-		}
-		else if (ms.buttons[PEN_MOUSE_M] && INPUT_PKEY(PENK_MENU) || (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_COMMAND)) )
-		{
-			//pan
-            vec3f up = p_camera->view.get_up();
-            vec3f right = p_camera->view.get_right();
-            
-            p_camera->focus += up * mouse_drag.y * mouse_y_inv * 0.5f;
-            p_camera->focus += right * mouse_drag.x * 0.5f;  
-		}
-		else if (ms.buttons[PEN_MOUSE_R] && INPUT_PKEY(PENK_MENU))
-		{
+			if (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_MENU))
+			{
+				//rotation
+				vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x);
+				p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
+			}
+			else if (ms.buttons[PEN_MOUSE_M] && INPUT_PKEY(PENK_MENU) || (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_COMMAND)))
+			{
+				//pan
+				vec3f up = p_camera->view.get_up();
+				vec3f right = p_camera->view.get_right();
+
+				p_camera->focus += up * mouse_drag.y * mouse_y_inv * 0.5f;
+				p_camera->focus += right * mouse_drag.x * 0.5f;
+			}
+			else if (ms.buttons[PEN_MOUSE_R] && INPUT_PKEY(PENK_MENU))
+			{
+				//zoom
+				vec3f up = p_camera->view.get_up();
+				vec3f right = p_camera->view.get_right();
+
+				p_camera->zoom += -mouse_drag.y + mouse_drag.x;
+			}
+
 			//zoom
-			vec3f up = p_camera->view.get_up();
-			vec3f right = p_camera->view.get_right();
+			f32 mwheel = (f32)ms.wheel;
+			static f32 prev_mwheel = mwheel;
+			f32 zoom = mwheel - prev_mwheel;
+			prev_mwheel = mwheel;
+			p_camera->zoom += zoom;
 
-			p_camera->zoom += -mouse_drag.y + mouse_drag.x;
+			p_camera->zoom = fmax(p_camera->zoom, 1.0f);
 		}
 
-		//zoom
-		f32 mwheel = (f32)ms.wheel;
-		static f32 prev_mwheel = mwheel;
-		f32 zoom = mwheel - prev_mwheel;
-		prev_mwheel = mwheel;
-		p_camera->zoom += zoom;
-    
-        p_camera->zoom = fmax(p_camera->zoom, 1.0f);
-        
         mat4 rx = mat4::create_x_rotation(p_camera->rot.x);
         mat4 ry = mat4::create_y_rotation(-p_camera->rot.y);
         mat4 t = mat4::create_translation( vec3f(0.0f, 0.0f, p_camera->zoom) );
@@ -227,7 +236,7 @@ namespace put
         f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
 		if (cur_aspect != p_camera->aspect)
 		{
-			cur_aspect = p_camera->aspect;
+			p_camera->aspect = cur_aspect;
 			camera_update_projection_matrix(p_camera);
 		}
 

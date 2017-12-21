@@ -57,7 +57,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			break;
 		}
 
-		Sleep( 16 );
+		Sleep( 1 );
 	}
 
 	return (INT)msg.wParam;

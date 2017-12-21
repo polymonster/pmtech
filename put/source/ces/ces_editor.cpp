@@ -39,11 +39,18 @@ namespace put
 		static picking_info k_picking_info;
 
 		std::vector<u32> k_selection_list;
-		enum picking_mode : u32
+		enum e_select_mode : u32
 		{
-			PICK_NORMAL = 0,
-			PICK_ADD = 1,
-			PICK_REMOVE = 2
+			SELECT_NORMAL = 0,
+			SELECT_ADD = 1,
+			SELECT_REMOVE = 2
+		};
+
+		enum e_picking_state : u32
+		{
+			PICKING_READY = 0,
+			PICKING_SINGLE = 1,
+			PICKING_MULTI = 2
 		};
 
 		enum e_select_flags : u32
@@ -112,18 +119,16 @@ namespace put
 				k_model_view_controller.invalidated = false;
 			}
 
-            //update camera
-            if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
+			bool has_focus = dev_ui::want_capture() == dev_ui::NO_INPUT;
+
+            switch (k_model_view_controller.camera_mode)
             {
-                switch (k_model_view_controller.camera_mode)
-                {
-                    case CAMERA_MODELLING:
-                        put::camera_update_modelling(cc->camera, k_model_view_controller.invert_y);
-                        break;
-                    case CAMERA_FLY:
-                        put::camera_update_fly(cc->camera, k_model_view_controller.invert_y);
-                        break;
-                }
+                case CAMERA_MODELLING:
+                    put::camera_update_modelling(cc->camera, has_focus, k_model_view_controller.invert_y);
+                    break;
+                case CAMERA_FLY:
+                    put::camera_update_fly(cc->camera, has_focus, k_model_view_controller.invert_y);
+                    break;
             }
         }
         
@@ -290,16 +295,16 @@ namespace put
 			}
 		}
 
-		void add_selection( const entity_scene* scene, u32 index, u32 picking_mode = PICK_NORMAL )
+		void add_selection( const entity_scene* scene, u32 index, u32 select_mode = SELECT_NORMAL )
 		{
 			if (pen::input_is_key_down(PENK_CONTROL))
-				picking_mode = PICK_ADD;
-			else if (pen::input_is_key_down(PENK_MENU))
-				picking_mode = PICK_REMOVE;
+				select_mode = SELECT_REMOVE;
+			else if (pen::input_is_key_down(PENK_SHIFT))
+				select_mode = SELECT_ADD;
 
 			bool valid = index < scene->num_nodes;
 
-			if (picking_mode == PICK_NORMAL)
+			if (select_mode == SELECT_NORMAL)
 			{
 				k_selection_list.clear();
 				if (valid)
@@ -312,10 +317,10 @@ namespace put
 					if (k_selection_list[i] == index)
 						existing = i;
 
-				if (existing != -1 && picking_mode == PICK_REMOVE)
+				if (existing != -1 && select_mode == SELECT_REMOVE)
 					k_selection_list.erase(k_selection_list.begin() + existing);
 
-				if (existing == -1 && picking_mode == PICK_ADD)
+				if (existing == -1 && select_mode == SELECT_ADD)
 					k_selection_list.push_back(index);
 			}
 		}
@@ -346,14 +351,14 @@ namespace put
                 
         void picking_update( const entity_scene* scene, const camera* cam )
         {
-            static u32 picking_state = 0;
+            static u32 picking_state = PICKING_READY;
             static u32 picking_result = (-1);
 
-            if( picking_state == 1 )
+            if( picking_state == PICKING_SINGLE )
             {
                 if( k_picking_info.ready )
                 {
-                    picking_state = 0;
+                    picking_state = PICKING_READY;
                     picking_result = k_picking_info.result;
                     
 					add_selection(scene, picking_result);
@@ -398,10 +403,14 @@ namespace put
 					
 					if (!ms.buttons[PEN_MOUSE_L])
 					{
-						if (picking_state == 2)
+						if (picking_state == PICKING_MULTI)
 						{
-							if(!pen::input_is_key_down(PENK_CONTROL) && !pen::input_is_key_down(PENK_MENU))
+							u32 pm = SELECT_NORMAL;
+							if (!pen::input_is_key_down(PENK_CONTROL) && !pen::input_is_key_down(PENK_SHIFT))
+							{
 								k_selection_list.clear();
+								pm = SELECT_ADD;
+							}
 
 							for (s32 node = 0; node < scene->num_nodes; ++node)
 							{
@@ -431,11 +440,11 @@ namespace put
 
 								if (selected)
 								{
-									add_selection(scene, node, PICK_ADD);
+									add_selection(scene, node, SELECT_ADD);
 								}
 							}
 
-							picking_state = 0;
+							picking_state = PICKING_READY;
 						}
 							
 						drag_timer = 0;
@@ -826,9 +835,21 @@ namespace put
 
 			if (settings_open)
 				settings_ui(&settings_open);
-            
+
+			//disable selection when we are doing something else
+			static bool disable_picking = false;
+			if (pen_input_key(PENK_MENU) || pen_input_key(PENK_COMMAND) || (k_select_flags & WIDGET_SELECTED))
+			{
+				disable_picking = true;
+			}
+			else
+			{
+				if (!pen_input_mouse(PEN_MOUSE_L))
+					disable_picking = false;
+			}
+         
 			//selection / picking
-            if( !pen_input_key(PENK_MENU) && !pen_input_key(PENK_COMMAND) && !(k_select_flags & WIDGET_SELECTED))
+            if( !disable_picking )
             {
                 picking_update( sc->scene, sc->camera );
             }

@@ -15,7 +15,7 @@ namespace put
 {
 	namespace dev_ui
 	{
-		class app_console;
+		struct app_console;
 
         static pen::json k_program_preferences;
 		static Str k_program_prefs_filename;

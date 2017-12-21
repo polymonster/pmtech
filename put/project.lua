@@ -28,6 +28,7 @@ project "put"
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
 		systemversion(windows_sdk_version())
+		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
 	end
 					
 	files 
@@ -38,8 +39,7 @@ project "put"
 		"..\\pen\\third_party\\imgui\\*.h",
 	}
 	includedirs { "include" }
-	disablewarnings { "4800", "4305", "4018" }
-		
+	
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain" }
