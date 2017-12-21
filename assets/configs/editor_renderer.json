@@ -178,12 +178,12 @@
 			{
 				gbuffer_albedo:
 				{
-					clear_colour_f:[0.0, 0.0, 1.0, 1.0]
+					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
 				},
 				
 				gbuffer_normals:
 				{
-					clear_colour_f:[1.0, 0.0, 1.0, 1.0]
+					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
 				}
 			},
 			viewport: [0.0, 0.0, 1.0, 1.0],

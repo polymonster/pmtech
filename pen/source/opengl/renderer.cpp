@@ -1247,6 +1247,11 @@ namespace pen
 	{
 		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
         
+        if( resource_index == 104 )
+        {
+            u32 a = 0;
+        }
+        
         resource_pool[ resource_index ].blend_state = (blend_creation_params*)pen::memory_alloc( sizeof(blend_creation_params) );
         
         blend_creation_params* blend_state = resource_pool[ resource_index ].blend_state;
@@ -1425,13 +1430,32 @@ namespace pen
 	{
         resource_allocation& res = resource_pool[ blend_state ];
         
-        pen::memory_free(res.blend_state);
-        
-        renderer_mark_resource_deleted( blend_state );
+        if(res.blend_state)
+        {
+            //clear rtb
+            pen::memory_free(res.blend_state->render_targets);
+            res.blend_state->render_targets = nullptr;
+            
+            pen::memory_free(res.blend_state);
+            
+            res.blend_state = nullptr;
+            renderer_mark_resource_deleted( blend_state );
+        }
+
 	}
 
 	void direct::renderer_release_render_target( u32 render_target )
 	{
+        //remove from managed rt
+        for (s32 i = k_managed_render_targets.size() - 1; i >= 0; --i)
+        {
+            if (k_managed_render_targets[i].render_target_handle == render_target)
+            {
+                k_managed_render_targets.erase(k_managed_render_targets.begin() + i);
+                break;
+            }
+        }
+        
         resource_allocation& res = resource_pool[ render_target ];
         
         if( res.render_target.texture.handle > 0)
@@ -1484,6 +1508,29 @@ namespace pen
         glDeleteProgram(res.shader_program->program);
         
         renderer_mark_resource_deleted( program );
+    }
+    
+    void direct::renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
+    {
+        switch (type)
+        {
+            case RESOURCE_TEXTURE:
+                direct::renderer_release_texture(dest);
+                break;
+            case RESOURCE_BUFFER:
+                direct::renderer_release_buffer(dest);
+                break;
+            case RESOURCE_VERTEX_SHADER:
+                direct::renderer_release_shader(dest, PEN_SHADER_TYPE_VS);
+                break;
+            case RESOURCE_PIXEL_SHADER:
+                direct::renderer_release_shader(dest, PEN_SHADER_TYPE_PS);
+                break;
+            default:
+                break;
+        }
+        
+        resource_pool[dest] = resource_pool[src];
     }
 
 	void direct::renderer_release_query( u32 query )

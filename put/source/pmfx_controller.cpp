@@ -1074,7 +1074,7 @@ namespace put
             }
         }
 
-		void load_internal(const c8* filename)
+		void load_script_internal(const c8* filename)
 		{
 			void* config_data;
 			u32   config_data_size;
@@ -1118,12 +1118,12 @@ namespace put
 			release_script_resources();
 
 			for (auto& s : k_script_files)
-				load_internal(s.c_str());
+				load_script_internal(s.c_str());
 		}
 
         void init( const c8* filename )
         {
-			load_internal(filename);
+			load_script_internal(filename);
 
 			k_script_files.push_back(filename);
 

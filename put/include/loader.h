@@ -3,7 +3,7 @@
 
 #include "definitions.h"
 #include <vector>
-#include "str\Str.h"
+#include "str/Str.h"
 
 namespace put
 {
