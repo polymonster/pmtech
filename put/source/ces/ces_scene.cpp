@@ -640,12 +640,12 @@ namespace put
         
         void save_scene( const c8* filename, entity_scene* scene )
         {
-            //fix down
+            //todo fix down
             //-take subsets of scenes and make into a new scene, to save unity style prefabs
             
             std::ofstream ofs(filename, std::ofstream::binary);
 
-            static s32 version = 1;
+            static s32 version = 2;
             ofs.write( (const c8*)&version, sizeof(s32));
             ofs.write( (const c8*)&scene->num_nodes, sizeof(u32));
             
@@ -671,6 +671,9 @@ namespace put
             ofs.write( (const c8*)scene->physics_matrices,  sizeof( mat4 )				* scene->num_nodes );
 			ofs.write( (const c8*)scene->bounding_volumes,	sizeof( bounding_volume )	* scene->num_nodes );
 			ofs.write( (const c8*)scene->lights,			sizeof( scene_node_light )	* scene->num_nodes );
+			
+			if( version > 1 )
+				ofs.write((const c8*)scene->physics_data, sizeof(scene_node_physics)	* scene->num_nodes);
             
             //animations need reloading from files
             for( s32 n = 0; n < scene->num_nodes; ++n )
@@ -747,6 +750,7 @@ namespace put
         {
 			scene->flags |= INVALIDATE_SCENE_TREE;
             bool error = false;
+			Str project_dir = dev_ui::get_program_preference_filename("project_dir");
             
             std::ifstream ifs(filename, std::ofstream::binary);
             
@@ -798,11 +802,20 @@ namespace put
 			ifs.read( (c8*)&scene->bounding_volumes[zero_offset],	sizeof( bounding_volume )	* num_nodes);
 			ifs.read( (c8*)&scene->lights[zero_offset],				sizeof( scene_node_light )	* num_nodes);
 
+			if (version > 1)
+			{
+				//version 2 adds physics
+				ifs.read((c8*)&scene->physics_data[zero_offset], sizeof(scene_node_physics)	* num_nodes);
+
+				for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+					if (scene->entities[n] & CMP_PHYSICS)
+						instantiate_physics(scene, n);
+			}
+				
+
 			//fixup parents for scene import / merge
 			for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
 				scene->parents[n] += zero_offset;
-
-			Str project_dir = dev_ui::get_program_preference_filename("project_dir");
 
             //animations
 			for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
@@ -917,6 +930,7 @@ namespace put
                     }
                 }
             }
+
 
 			if (!merge)
 			{

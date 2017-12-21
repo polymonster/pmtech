@@ -37,6 +37,35 @@ namespace put
             
             return nullptr;
         }
+
+		void instantiate_physics(entity_scene* scene, u32 node_index )
+		{
+			u32 s = node_index;
+			scene_node_physics& snp = scene->physics_data[s];
+
+			vec3f min = scene->bounding_volumes[s].min_extents;
+			vec3f max = scene->bounding_volumes[s].max_extents;
+			vec3f centre = min + (max - min);
+
+			vec3f pos = scene->transforms[s].translation;
+			vec3f scale = scene->transforms[s].scale;
+			quat rotation = scene->transforms[s].rotation;
+
+			scene->offset_matrices[s] = mat4::create_scale(scale);
+
+			physics::rigid_body_params rb = { 0 };
+			rb.dimensions = (max - min) * scale * 0.5;
+			rb.mass = snp.mass;
+			rb.group = 1;
+			rb.position = pos;
+			rb.rotation = rotation;
+			rb.shape = snp.collision_shape;
+			rb.shape_up_axis = physics::UP_Y;
+			rb.mask = 0xffffffff;
+
+			scene->physics_handles[s] = physics::add_rb(rb);
+			scene->entities[s] |= CMP_PHYSICS;
+		}
         
         void instantiate_geometry( geometry_resource* gr, entity_scene* scene, s32 node_index )
         {

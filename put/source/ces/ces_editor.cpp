@@ -653,6 +653,20 @@ namespace put
 			{
 				debounce_pause = false;
 			}
+
+			if (shortcut_key(PENK_R))
+			{
+				//reset physics positions
+				for (s32 i = 0; i < sc->scene->num_nodes; ++i)
+				{
+					if (sc->scene->entities[i] & CMP_PHYSICS)
+					{
+						const vec3f& t = sc->scene->physics_data[i].start_position;
+						const quat& q = sc->scene->physics_data[i].start_rotation;
+						physics::set_transform(sc->scene->physics_handles[i], t, q );
+					}
+				}
+			}
 			            
             if (ImGui::Button(ICON_FA_FLOPPY_O))
             {
@@ -908,44 +922,39 @@ namespace put
             put::ces::update_scene(sc->scene, dt_ms);
         }
         
-        void scene_physics_ui( entity_scene* scene, s32 selected_index )
+        void scene_physics_ui( entity_scene* scene )
         {
             if( ImGui::CollapsingHeader("Physics") )
             {
-                scene_node_physics& snp = scene->physics_data[selected_index];
+				static f32 mass = 0.0f;
+                ImGui::InputFloat("Mass", &mass);
+
+				static u32 collision_shape = 0;
+                ImGui::Combo("Shape", (s32*)&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
                 
-                ImGui::InputFloat("Mass", &snp.mass);
-                ImGui::Combo("Shape", (s32*)&snp.collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
-                
-                static s32 dummy = 0;
-                if( snp.collision_shape == physics::CYLINDER || snp.collision_shape == physics::CAPSULE )
-                    ImGui::Combo("Shape Up-Axis", (s32*)&dummy, "X\0Y\0Z\0", 7 );
+                static s32 up_axis = 0;
+                if(collision_shape == physics::CYLINDER || collision_shape == physics::CAPSULE )
+                    ImGui::Combo("Shape Up-Axis", (s32*)&up_axis, "Y\0X\0Z\0", 7 );
                 
                 if( ImGui::Button("Add Physics") )
                 {
-                    vec3f min = scene->bounding_volumes[selected_index].min_extents;
-                    vec3f max = scene->bounding_volumes[selected_index].max_extents;
-                    vec3f centre = min + (max - min);
+					for (auto& s : k_selection_list)
+					{
+						if (scene->entities[s] & CMP_PHYSICS)
+							continue;
 
-                    vec3f pos = scene->transforms[selected_index].translation;
-                    vec3f scale = scene->transforms[selected_index].scale;
-                    quat rotation = scene->transforms[selected_index].rotation;
-                    
-                    scene->offset_matrices[selected_index] = mat4::create_scale(scale);
-                    
-                    physics::rigid_body_params rb = { 0 };
-                    rb.dimensions = (max - min) * scale * 0.5;
-                    rb.mass = snp.mass;
-                    rb.group = 1;
-                    rb.position = pos;
-                    rb.rotation = rotation;
-                    rb.shape = snp.collision_shape + 1;
-                    rb.shape_up_axis = physics::UP_Y;
-                    rb.mask = 0xffffffff;
-                    
-                    scene->physics_handles[selected_index] = physics::add_rb(rb);
-                    
-                    scene->entities[selected_index] |= CMP_PHYSICS;
+						vec3f pos = scene->transforms[s].translation;
+						vec3f scale = scene->transforms[s].scale;
+						quat rotation = scene->transforms[s].rotation;
+
+						scene_node_physics& snp = scene->physics_data[s];
+						snp.mass = mass;
+						snp.collision_shape = collision_shape + 1;
+						snp.start_position = pos;
+						snp.start_rotation = rotation;
+
+						instantiate_physics(scene, s);
+					}
                 }
             }
         }
@@ -1164,17 +1173,23 @@ namespace put
 					ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
 					ImGui::Text("Selected: %i", k_selection_list.size());
 
-					for (s32 i = 0; i < _countof(dumps); ++i)
+					for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
 						dumps[i].count = 0;
 
 					for (s32 i = 0; i < scene->num_nodes; ++i)
-						for (s32 j = 0; j < _countof(dumps); ++j)
+						for (s32 j = 0; j < PEN_ARRAY_SIZE(dumps); ++j)
 							if (scene->entities[i] & dumps[j].component)
 								dumps[j].count++;
 
-					for (s32 i = 0; i < _countof(dumps); ++i)
+					for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
 						ImGui::Text("%s: %i", dumps[i].display_name, dumps[i].count);
 				}
+
+				ImGui::Separator();
+
+				scene_physics_ui(scene);
+
+				ImGui::Separator();
                 
                 if (selected_index != -1)
                 {
@@ -1251,11 +1266,7 @@ namespace put
                     scene_anim_ui(scene, selected_index );
                     
                     ImGui::Separator();
-                    
-                    scene_physics_ui(scene, selected_index );
-                    
-                    ImGui::Separator();
-                    
+                                        
                     if( ImGui::CollapsingHeader("Light") )
                     {
                         if( scene->entities[selected_index] & CMP_LIGHT )
@@ -1292,10 +1303,6 @@ namespace put
                         }
                     }
                 }
-                
-                //ImGui::EndChild();
-                
-                //ImGui::Columns(1);
                 
                 ImGui::End();
             }
