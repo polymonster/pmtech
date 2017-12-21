@@ -617,9 +617,8 @@ namespace put
             for( s32 i = rtb_start; i < num_rt; ++i )
                 rtb[i] = rtb[i-1];
                 
-                
             s32 mask_start = masks.size();
-            rtb.resize(num_rt);
+			masks.resize(num_rt);
             for( s32 i = mask_start; i < num_rt; ++i )
                 masks[i] = masks[i-1];
             
@@ -1074,54 +1073,82 @@ namespace put
                     k_views.push_back(new_view);
             }
         }
+
+		void load_internal(const c8* filename)
+		{
+			void* config_data;
+			u32   config_data_size;
+
+			pen_error err = pen::filesystem_read_file_to_buffer(filename, &config_data, config_data_size);
+
+			if (err != PEN_ERR_OK || config_data_size == 0)
+			{
+				//failed load file
+				pen::memory_free(config_data);
+				PEN_ASSERT(0);
+			}
+
+			create_geometry_utilities();
+
+			pen::json render_config = pen::json::load((const c8*)config_data);
+
+			parse_sampler_states(render_config);
+			parse_raster_states(render_config);
+			parse_depth_stencil_states(render_config);
+			parse_partial_blend_states(render_config);
+
+			parse_render_targets(render_config);
+
+			parse_views(render_config);
+		}
         
+		std::vector<Str> k_script_files;
+
+		void pmfx_config_build()
+		{
+			Str build_cmd = get_build_cmd();
+
+			build_cmd.append(" -actions configs");
+
+			system(build_cmd.c_str());
+		}
+
+		void pmfx_config_hotload(std::vector<hash_id>& dirty)
+		{
+			release_script_resources();
+
+			for (auto& s : k_script_files)
+				load_internal(s.c_str());
+		}
+
         void init( const c8* filename )
         {
-            void* config_data;
-            u32   config_data_size;
-            
-            pen_error err = pen::filesystem_read_file_to_buffer(filename, &config_data, config_data_size);
-            
-            if( err != PEN_ERR_OK || config_data_size == 0 )
-            {
-                //failed load file
-                pen::memory_free(config_data);
-                PEN_ASSERT(0);
-            }
-            
-            create_geometry_utilities();
-            
-            pen::json render_config = pen::json::load((const c8*)config_data);
-            
-            parse_sampler_states(render_config);
-            parse_raster_states(render_config);
-            parse_depth_stencil_states(render_config);
-            parse_partial_blend_states(render_config);
-            
-            parse_render_targets(render_config);
-            
-            parse_views(render_config);
+			load_internal(filename);
+
+			k_script_files.push_back(filename);
+
+			put::add_file_watcher(filename, pmfx_config_build, pmfx_config_hotload);
         }
 
-		void shutdown( )
+		void release_script_resources()
 		{
 			//release render states
 			for (auto& rs : k_render_states)
 			{
 				switch (rs.type)
 				{
-					case RS_RASTERIZER:
-						pen::renderer_release_raster_state(rs.handle);
-						break;
-					case RS_SAMPLER:
-						pen::renderer_release_sampler(rs.handle);
-						break;
-					case RS_BLEND:
-						pen::renderer_release_blend_state(rs.handle);
-						break;
-					case RS_DEPTH_STENCIL:
-						pen::renderer_release_depth_stencil_state(rs.handle);
-						break;
+				case RS_RASTERIZER:
+					pen::renderer_release_raster_state(rs.handle);
+					break;
+				case RS_SAMPLER:
+					pen::renderer_release_sampler(rs.handle);
+					break;
+				case RS_BLEND:
+					pen::renderer_release_blend_state(rs.handle);
+					break;
+				case RS_DEPTH_STENCIL:
+					pen::renderer_release_depth_stencil_state(rs.handle);
+					break;
 				}
 			}
 			k_render_states.clear();
@@ -1129,6 +1156,12 @@ namespace put
 			//release render targets
 			for (auto& rt : k_render_targets)
 			{
+				if (rt.id_name == ID_MAIN_COLOUR)
+					continue;
+
+				if (rt.id_name == ID_MAIN_DEPTH)
+					continue;
+
 				pen::renderer_release_render_target(rt.handle);
 			}
 			k_render_targets.clear();
@@ -1140,6 +1173,11 @@ namespace put
 				pen::renderer_release_clear_state(v.clear_state);
 			}
 			k_views.clear();
+		}
+
+		void shutdown( )
+		{
+			release_script_resources();
 
 			//clear vectors of remaining stuff
 			k_scenes.clear();

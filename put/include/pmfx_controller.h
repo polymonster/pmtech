@@ -29,6 +29,7 @@ namespace put
     {
         void init( const c8* filename );
 		void shutdown();
+		void release_script_resources();
         
         void update( );
         void render( );

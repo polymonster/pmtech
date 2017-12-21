@@ -201,7 +201,9 @@ namespace put
 			p_sn->physics_handles[dst] = p_sn->physics_handles[src];
 			p_sn->multibody_handles[dst] = p_sn->multibody_handles[src];
 			p_sn->multibody_link[dst] = p_sn->multibody_link[src];
-			instantiate_model_cbuffer(scene, dst);
+
+			if(p_sn->entities[dst] & CMP_GEOMETRY)
+				instantiate_model_cbuffer(scene, dst);
 
 			p_sn->anim_controller[dst] = p_sn->anim_controller[src];
 
@@ -863,7 +865,6 @@ namespace put
                     if( gr )
                     {
                         instantiate_geometry(gr, scene, n );
-                        
                         instantiate_model_cbuffer(scene, n);
                         
                         if( gr->p_skin)

@@ -178,7 +178,7 @@
 			{
 				gbuffer_albedo:
 				{
-					clear_colour_f:[0.0, 1.0, 0.0, 1.0]
+					clear_colour_f:[0.0, 0.0, 1.0, 1.0]
 				},
 				
 				gbuffer_normals:

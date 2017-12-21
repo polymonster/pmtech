@@ -38,6 +38,8 @@ namespace pen
 
 			mtime_out = unix_ts;
 
+			CloseHandle((HANDLE)f);
+
 			return PEN_ERR_OK;
 		}
 

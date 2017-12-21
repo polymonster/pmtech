@@ -34,7 +34,7 @@ a_u8 g_window_resize( 0 );
 namespace pen
 {
     void create_rtvs( u32 crtv, u32 dsv, uint32_t w, uint32_t h );
-	void release_render_target_internal(u32 render_target);
+	void release_render_target_internal(u32 render_target, bool remove_managed = false);
 
 	//--------------------------------------------------------------------------------------
 	//  COMMON API
@@ -1055,8 +1055,21 @@ namespace pen
 		renderer_mark_resource_deleted(blend_state);
 	}
 
-	void release_render_target_internal(u32 render_target)
+	void release_render_target_internal(u32 render_target, bool remove_managed )
 	{
+		if (remove_managed)
+		{
+			//remove from managed rt
+			for (s32 i = k_managed_render_targets.size() - 1; i >= 0; --i)
+			{
+				if (k_managed_render_targets[i].resource_index == render_target)
+				{
+					k_managed_render_targets.erase(k_managed_render_targets.begin() + i);
+					break;
+				}
+			}
+		}
+
 		render_target_internal* rt = resource_pool[render_target].render_target;
 
 		for (s32 i = 0; i < NUM_CUBEMAP_FACES; ++i)
@@ -1099,7 +1112,7 @@ namespace pen
 
 	void direct::renderer_release_render_target( u32 render_target )
 	{
-		release_render_target_internal(render_target);
+		release_render_target_internal(render_target, true);
 
 		renderer_mark_resource_deleted(render_target);
 	}
@@ -1329,6 +1342,29 @@ namespace pen
 
 			current_query++;
 		}
+	}
+
+	void direct::renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
+	{
+		switch (type)
+		{
+		case RESOURCE_TEXTURE:
+			direct::renderer_release_texture(dest);
+			break;
+		case RESOURCE_BUFFER:
+			direct::renderer_release_buffer(dest);
+			break;
+		case RESOURCE_VERTEX_SHADER:
+			direct::renderer_release_shader(dest, PEN_SHADER_TYPE_VS);
+			break;
+		case RESOURCE_PIXEL_SHADER:
+			direct::renderer_release_shader(dest, PEN_SHADER_TYPE_PS);
+			break;
+		default:
+			break;
+		}
+
+		resource_pool[dest] = resource_pool[src];
 	}
 
 	//--------------------------------------------------------------------------------------

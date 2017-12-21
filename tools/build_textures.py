@@ -3,6 +3,7 @@ import subprocess
 import shutil
 import json
 import helpers
+import dependencies
 
 # win32 / dds / block compression / mips / cubemaps
 print("\n")
@@ -22,7 +23,7 @@ nvtt_dir = os.path.join(pmtech_dir, "tools", "bin", "nvtt", platform_name, "nvco
 texture_dir = os.path.join(os.getcwd(), "assets", "textures")
 build_dir = os.path.join(os.getcwd(), "bin", platform_name, "data", "textures")
 
-built_in_texture_dir = os.path.join(pmtech_dir, "assets", "textures")
+built_in_texture_dir = os.path.join(os.getcwd(), pmtech_dir, "assets", "textures")
 
 # create textures dir
 if not os.path.exists(build_dir):
@@ -34,30 +35,47 @@ print("\n")
 supported_formats = [".png", ".jpg", ".tif", ".bmp", ".tga"]
 source_dirs = [texture_dir, built_in_texture_dir]
 
+dependency_info = dict()
+
 for source in source_dirs:
     for root, dirs, files in os.walk(source):
+        dest_dir = root.replace(source, build_dir)
+        dependency_info[dest_dir] = dict()
+        dependency_info[dest_dir]["files"] = []
+        dependency_info[dest_dir]["dir"] = dest_dir
+
+for source in source_dirs:
+    for root, dirs, files in os.walk(source):
+        dest_dir = root.replace(source, build_dir)
         for f in files:
-            print(f)
-            f = os.path.join(root, f)
-            print(f)
+            src_file = os.path.join(root, f)
             [fnoext, fext] = os.path.splitext(f)
             fnoext = fnoext.replace(source, build_dir)
-            dest_dir = root.replace(source, build_dir)
+            dds_filename = fnoext + ".dds"
+            dest_file = os.path.join(dest_dir, dds_filename)
+            relative_data_filename = os.path.join("data", "textures", dds_filename)
+
+            dependency_inputs = [src_file]
+            dependency_outputs = [relative_data_filename]
+            file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
+            dependency_info[dest_dir]["files"].append(file_info)
+
             if not os.path.exists(dest_dir):
                 os.makedirs(dest_dir)
             if f.find(".dds") != -1:
                 print("copying " + f)
-                dest_file = os.path.join(build_dir, f)
-                shutil.copy(f, dest_file)
+                shutil.copy(src_file, dest_file)
             else:
                 for fmt in supported_formats:
                     if fmt in f:
-                        dds_filename = fnoext + ".dds"
-                        dest_path = dds_filename
-                        src_path = f
-                        print("converting " + f)
-                        cmdline = nvtt_dir + " -rgb -silent " + src_path + " " + dest_path
+                        print("converting " + src_file)
+                        cmdline = nvtt_dir + " -rgb -silent " + src_file + " " + dest_file
                         subprocess.check_call(cmdline, shell=True)
 
-
+for dest_depends in dependency_info:
+    dir = dependency_info[dest_depends]["dir"]
+    directory_dependencies = os.path.join(dir, "dependencies.json")
+    output_d = open(directory_dependencies, 'wb+')
+    output_d.write(bytes(json.dumps(dependency_info[dir], indent=4), 'UTF-8'))
+    output_d.close()
 

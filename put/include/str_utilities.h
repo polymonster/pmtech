@@ -16,7 +16,7 @@ namespace put
         s32 i = len-1;
         s32 j = search_len-1;
         s32 find_start = len-1;
-        while( j - search_len <= i-len )
+        while( j <= i )
         {
             if( string[i] == search[j] )
             {
@@ -28,7 +28,7 @@ namespace put
                 j = search_len-1;
             }
             
-            if( j == 0 )
+            if( j < 0 )
             {
                 return find_start-search_len;
             }

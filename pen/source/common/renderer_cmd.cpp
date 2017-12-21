@@ -140,6 +140,7 @@ namespace pen
         CMD_RESOLVE_TARGET,
 		CMD_DRAW_AUTO,
         CMD_MAP_RESOURCE,
+		CMD_REPLACE_RESOURCE
 	};
 
 	struct set_shader_cmd
@@ -250,6 +251,13 @@ namespace pen
 		u32 render_target;
 		e_msaa_resolve_type resolve_type;
 	};
+
+	struct replace_resource
+	{
+		u32 dest_handle;
+		u32 src_handle;
+		e_renderer_resource type;
+	};
     
 	typedef struct  deferred_cmd
 	{
@@ -285,6 +293,7 @@ namespace pen
 			shader_link_params                  link_params;
             resource_read_back_params           rrb_params;
 			msaa_resolve_params					resolve_params;
+			replace_resource					replace_resource_params;
 		};
 
 		deferred_cmd() {};
@@ -526,6 +535,13 @@ namespace pen
         case CMD_MAP_RESOURCE:
             direct::renderer_read_back_resource( cmd.rrb_params );
             break;
+
+		case CMD_REPLACE_RESOURCE:
+			direct::renderer_replace_resource(
+				cmd.replace_resource_params.dest_handle,
+				cmd.replace_resource_params.src_handle, 
+				cmd.replace_resource_params.type);
+			break;
 		}
 	}
 
@@ -1315,6 +1331,15 @@ namespace pen
         
         INC_WRAP(put_pos);
     }
+
+	void	renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type )
+	{
+		cmd_buffer[put_pos].command_index = CMD_REPLACE_RESOURCE;
+
+		cmd_buffer[put_pos].replace_resource_params = { dest, src, type };
+
+		INC_WRAP(put_pos);
+	}
 
 
 }

@@ -5,6 +5,10 @@ import sys
 import shutil
 import json
 import helpers
+import dependencies
+
+if "-root_dir" in sys.argv[1]:
+    os.chdir(sys.argv[2])
 
 config = open("build_config.json")
 build_config = json.loads(config.read())
@@ -83,7 +87,6 @@ def parse_args(args):
                 execute_actions.append(s)
         elif sys.argv[index] == "-clean":
             clean_destinations = True
-
 
 def get_platform_info():
     global ide
@@ -190,17 +193,67 @@ for step in build_steps:
 for step in extra_build_steps:
     subprocess.check_call(step, shell=True)
 
+def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, files):
+    platform_bin = os.path.join("bin", platform, "")
+    for file in files:
+        dest_file = os.path.join(dest_sub_dir, file)
+        src_file = os.path.join(src_dir, file)
+        input_files = [os.path.join(os.getcwd(), src_file)]
+        output_files = [dest_file.replace(platform_bin, "")]
+        file_info = dependencies.create_dependency_info(input_files, output_files)
+        dependency_info[dest_sub_dir]["files"].append(file_info)
+        print("copying: " + file + " to " + dest_sub_dir)
+        shutil.copy(src_file, dest_file)
+
+
 for step in copy_steps:
     source_dirs = [assets_dir, os.path.join(build_config["pmtech_dir"], "assets")]
+    dependency_info = dict()
+
+    # clear dependencies and create directories
     for source in source_dirs:
         src_dir = os.path.join(source, step)
+        dest_dir = os.path.join(data_dir, step)
         if not os.path.exists(src_dir):
             continue
+        base_root = ""
+        for root, dirs, files in os.walk(src_dir):
+            if base_root == "":
+                base_root = root
+            dest_sub = dest_dir + root.replace(base_root, "")
+            dependency_info[dest_sub] = dict()
+            dependency_info[dest_sub]["dir"] = dest_sub
+            dependency_info[dest_sub]["files"] = []
+            if not os.path.exists(dest_sub):
+                os.makedirs(dest_sub)
+
+    # iterate over directorys and generate dependencies
+    for source in source_dirs:
+        src_dir = os.path.join(source, step)
         dest_dir = os.path.join(data_dir, step)
-        if os.path.exists(dest_dir):
-            shutil.rmtree(dest_dir)
-        print("copying: " + step + " to " + dest_dir)
-        shutil.copytree(src_dir, dest_dir)
+        if not os.path.exists(src_dir):
+            continue
+        base_root = ""
+        for root, dirs, files in os.walk(src_dir):
+            if base_root == "":
+                base_root = root
+            dest_sub = dest_dir + root.replace(base_root, "")
+            copy_dir_and_generate_dependencies(dependency_info, dest_sub, root, files)
+
+    # write out dependencies
+    for dest_depends in dependency_info:
+        dir = dependency_info[dest_depends]["dir"]
+        directory_dependencies = os.path.join(dir, "dependencies.json")
+        output_d = open(directory_dependencies, 'wb+')
+        output_d.write(bytes(json.dumps(dependency_info[dir], indent=4), 'UTF-8'))
+        output_d.close()
+
+# old copy script
+# dest_dir = os.path.join(data_dir, step)
+# if os.path.exists(dest_dir):
+# shutil.rmtree(dest_dir)
+# print("copying: " + step + " to " + dest_dir)
+# shutil.copytree(src_dir, dest_dir)
 
 
 

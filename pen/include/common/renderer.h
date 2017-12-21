@@ -22,6 +22,14 @@ namespace pen
         CLEAR_F32,
         CLEAR_U32
     };
+
+	enum e_renderer_resource
+	{
+		RESOURCE_TEXTURE,
+		RESOURCE_VERTEX_SHADER,
+		RESOURCE_PIXEL_SHADER,
+		RESOURCE_BUFFER
+	};
     
     struct mrt_clear
     {
@@ -354,6 +362,7 @@ namespace pen
 	void	renderer_set_query(u32 query_index, u32 action);
 
 	//cleanup
+	void	renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type);
 	void	renderer_release_shader( u32 shader_index, u32 shader_type );
     void	renderer_release_program( u32 program );
     void	renderer_release_clear_state( u32 clear_state );
@@ -440,8 +449,8 @@ namespace pen
 		void	renderer_set_query(u32 query_index, u32 action);
 		void    renderer_update_queries();
 
-
 		//cleanup
+		void	renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type);
 		void	renderer_release_shader(u32 shader_index, u32 shader_type);
 		void	renderer_release_program(u32 program);
 		void	renderer_release_clear_state(u32 clear_state);

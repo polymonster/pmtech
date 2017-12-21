@@ -244,7 +244,7 @@ float3 oren_nayar(
   float3 l = normalize(light_pos_radius.xyz-world_pos);
   
   float l_dot_v = dot(l, v);
-  float n_dot_l = max( dot(n, l), 0.0 );
+  float n_dot_l = dot(n, l);
   float n_dot_v = dot(n, v);
 
   float s = l_dot_v - n_dot_l * n_dot_v;
