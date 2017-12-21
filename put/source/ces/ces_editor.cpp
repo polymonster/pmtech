@@ -1140,9 +1140,37 @@ namespace put
                 
                 ImGui::EndChild();
                 
-                //ImGui::NextColumn();
-                
-                //ImGui::BeginChild("Selected", ImVec2(0, 0), true );
+				struct scene_num_dump
+				{
+					u32 component;
+					const c8* display_name;
+					u32 count;
+				};
+
+				static scene_num_dump dumps[] = 
+				{
+					{ CMP_ALLOCATED, "Allocated", 0 },
+					{ CMP_GEOMETRY, "Geometries", 0 },
+					{ CMP_BONE, "Bones", 0 },
+					{ CMP_ANIM_CONTROLLER, "Anim Controllers", 0 }
+				};
+
+				if (ImGui::CollapsingHeader("Scene Info"))
+				{
+					ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
+					ImGui::Text("Selected: %i", k_selection_list.size());
+
+					for (s32 i = 0; i < _countof(dumps); ++i)
+						dumps[i].count = 0;
+
+					for (s32 i = 0; i < scene->num_nodes; ++i)
+						for (s32 j = 0; j < _countof(dumps); ++j)
+							if (scene->entities[i] & dumps[j].component)
+								dumps[j].count++;
+
+					for (s32 i = 0; i < _countof(dumps); ++i)
+						ImGui::Text("%s: %i", dumps[i].display_name, dumps[i].count);
+				}
                 
                 if (selected_index != -1)
                 {
