@@ -789,7 +789,7 @@ namespace put
                 }
                 
                 current_node = dest + 1;
-                scene->num_nodes = current_node;
+                //scene->num_nodes = current_node;
             }
             
             //now we have loaded the whole scene fix up any anim controllers

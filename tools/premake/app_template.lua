@@ -80,6 +80,7 @@ project ( project_name )
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
 		systemversion(windows_sdk_version())
+		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
 	end
 			
 	location ( root_directory .. "/build/" .. platform_dir )
@@ -100,9 +101,7 @@ project ( project_name )
 		(root_directory .. "code/" .. source_directory .. "/**.h"),
 		(root_directory .. "code/" .. source_directory .. "/**.m"),
 	}
-	
-	disablewarnings { "4800", "4305", "4018", "4244", "4267" }
-	 
+		 
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain" }

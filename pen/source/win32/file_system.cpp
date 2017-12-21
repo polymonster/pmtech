@@ -30,7 +30,7 @@ namespace pen
 		{
 			FILETIME c, m, a;
 
-			BOOL res = GetFileTime((HANDLE)f, &c, &a, &m);
+			BOOL res = GetFileTime((HANDLE)(size_t)f, &c, &a, &m);
 
 			long long* wt = (long long*)&m;
 
@@ -38,7 +38,7 @@ namespace pen
 
 			mtime_out = unix_ts;
 
-			CloseHandle((HANDLE)f);
+			CloseHandle((HANDLE)(size_t)f);
 
 			return PEN_ERR_OK;
 		}

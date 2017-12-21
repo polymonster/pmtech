@@ -29,6 +29,7 @@ project "pen"
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
 		systemversion(windows_sdk_version())
+		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
 	end
 	
 	includedirs 
@@ -42,9 +43,7 @@ project "pen"
 		
 		"third_party" 
 	}
-	
-	disablewarnings { "4800", "4305", "4018" }
-		
+			
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain" }

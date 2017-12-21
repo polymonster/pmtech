@@ -59,6 +59,7 @@ namespace pen
 
 #define	pen_input_key( key_index ) (pen::input_is_key_pressed( key_index ) || pen::input_is_key_held( key_index ))
 #define	pen_input_key_press( key_index ) pen::input_is_key_pressed( key_index )
+#define pen_input_mouse( button_index ) (pen::input_is_mouse_pressed( button_index ) || pen::input_is_mouse_held( button_index ))
 
 enum mouse_button
 {
