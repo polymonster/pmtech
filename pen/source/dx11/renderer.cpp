@@ -310,17 +310,6 @@ namespace pen
 
         if (g_window_resize == 1)
         {
-			k_needs_resize = true;
-			k_resize_counter = 0;
-            g_window_resize = 0;
-        }
-		else
-		{
-			k_resize_counter++;
-		}
-
-		if (k_needs_resize && k_resize_counter > 5)
-		{
 			g_immediate_context->OMSetRenderTargets(0, 0, 0);
 
 			// Release all outstanding references to the swap chain's buffers.
@@ -337,6 +326,17 @@ namespace pen
 
 			create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
 
+			k_needs_resize = true;
+			k_resize_counter = 0;
+            g_window_resize = 0;
+        }
+		else
+		{
+			k_resize_counter++;
+		}
+
+		if (k_needs_resize && k_resize_counter > 5)
+		{
 			//recreate dynamic buffers
 			for (auto& rt : k_managed_render_targets)
 			{

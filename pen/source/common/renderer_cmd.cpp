@@ -84,8 +84,12 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	//  COMMAND BUFFER API
 	//--------------------------------------------------------------------------------------
-#define MAX_COMMANDS 10000
-#define INC_WRAP( V ) V = (V+1)%MAX_COMMANDS
+	u32 put_pos = 0;
+	u32 get_pos = 0;
+	u32 commands_this_frame = 0;
+
+#define MAX_COMMANDS 50000 //3mb
+#define INC_WRAP( V ) V = (V+1)%MAX_COMMANDS; commands_this_frame++
 
 	enum commands : u32
 	{
@@ -301,8 +305,6 @@ namespace pen
 	} deferred_cmd;
 
 	deferred_cmd cmd_buffer[MAX_COMMANDS];
-	u32 put_pos = 0;
-	u32 get_pos = 0;
 
 	void exec_cmd(const deferred_cmd &cmd)
 	{
@@ -586,6 +588,9 @@ namespace pen
 				//put_pos might change on the producer thread.
 				u32 end_pos = put_pos;
 
+				//need more commands
+				PEN_ASSERT(commands_this_frame < MAX_COMMANDS);
+
 				//reclaim deleted resource handles while we can syncronise it.
 				pen::renderer_reclaim_resource_indices();
 
@@ -600,6 +605,8 @@ namespace pen
 
 					INC_WRAP(get_pos);
 				}
+
+				commands_this_frame = 0;
 			}
 			else
 			{

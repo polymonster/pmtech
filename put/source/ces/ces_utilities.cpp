@@ -288,6 +288,9 @@ namespace put
 						parent,
 						scene->names[parent].c_str());
 				}
+
+				//flush cmd buff
+				pen::renderer_consume_cmd_buffer();
 			}
 		}
     }
