@@ -1,3 +1,5 @@
 {
-	"pmtech_dir": ".."
+	"pmtech_dir": "..",
+	"textures_dir": "assets/textures",
+	"models_dir": "assets/mesh"
 }

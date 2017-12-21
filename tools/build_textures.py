@@ -20,7 +20,7 @@ build_config = json.loads(config.read())
 pmtech_dir = helpers.correct_path(build_config["pmtech_dir"])
 
 nvtt_dir = os.path.join(pmtech_dir, "tools", "bin", "nvtt", platform_name, "nvcompress")
-texture_dir = os.path.join(os.getcwd(), "assets", "textures")
+texture_dir = helpers.correct_path(build_config["textures_dir"])
 build_dir = os.path.join(os.getcwd(), "bin", platform_name, "data", "textures")
 
 built_in_texture_dir = os.path.join(os.getcwd(), pmtech_dir, "assets", "textures")

@@ -5,6 +5,7 @@ import parse_meshes
 import parse_materials
 import parse_animations
 import helpers
+import json
 
 #win32 / collada
 print("\n")
@@ -13,13 +14,16 @@ print("pmtech model and animation conversion -----------------------------------
 print("--------------------------------------------------------------------------------------------------------------")
 
 root_dir = os.getcwd()
-model_dir = os.path.join(root_dir, "assets", "mesh")
+
+config = open("build_config.json")
+build_config = json.loads(config.read())
+
+model_dir = helpers.correct_path(build_config["models_dir"])
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 transform_types = ["translate", "rotate", "matrix"]
 
 print("processing directory: " + model_dir)
-print(model_dir)
 
 # create models dir
 if not os.path.exists(helpers.build_dir):
@@ -125,7 +129,7 @@ def parse_node(node, parent_node):
 
 
 def parse_dae():
-    file_path = os.path.join(model_dir, f)
+    file_path = f
     tree = ET.parse(file_path)
     root = tree.getroot()
 
@@ -249,21 +253,16 @@ for root, dirs, files in os.walk(model_dir):
 
             helpers.build_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "data", "models")
 
-            mesh_dir = "/assets/mesh"
-            assets_pos = root.find(mesh_dir)
-            if assets_pos == -1:
-                assets_pos = root.find("\\assets\\mesh")
-
-            assets_pos += len(mesh_dir) + 1
-
+            assets_pos = root.find(model_dir)
+            assets_pos += len(model_dir) + 1
             sub_dir = root[int(assets_pos):int(len(root))]
-
             out_dir = os.path.join(helpers.build_dir, sub_dir)
 
             if not os.path.exists(out_dir):
                 os.makedirs(out_dir)
 
             f = os.path.join(root, file)
+
             current_filename = file
             helpers.current_filename = file
             helpers.build_dir = out_dir
