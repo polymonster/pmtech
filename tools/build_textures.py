@@ -50,10 +50,16 @@ for source in source_dirs:
         for f in files:
             src_file = os.path.join(root, f)
             [fnoext, fext] = os.path.splitext(f)
+            if fext not in supported_formats:
+                continue
             fnoext = fnoext.replace(source, build_dir)
             dds_filename = fnoext + ".dds"
             dest_file = os.path.join(dest_dir, dds_filename)
-            relative_data_filename = os.path.join("data", "textures", dds_filename)
+
+            cur = os.path.join(os.getcwd(), "")
+            relative_data_filename = dest_file.replace(cur, "")
+            data_dir = os.path.join("bin", platform_name, "")
+            relative_data_filename = relative_data_filename.replace(data_dir, "")
 
             dependency_inputs = [src_file]
             dependency_outputs = [relative_data_filename]

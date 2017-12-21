@@ -265,7 +265,7 @@ namespace put
 		{
 			for (auto& tr : k_texture_references)
 			{
-				if (tr.id_name = d)
+				if (tr.id_name == d)
 				{
 					u32 new_handle = load_texture_internal(tr.filename.c_str(), tr.id_name);
 
@@ -340,7 +340,7 @@ namespace put
 						u32 current_ts;
 						pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
 
-						if (current_ts > built_ts)
+						if (current_ts > built_ts && err == PEN_ERR_OK )
 						{
 							invalidated = true;
 
