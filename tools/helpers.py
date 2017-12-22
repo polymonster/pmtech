@@ -57,7 +57,6 @@ class pmm_file:
             offset += len(s) * 4
 
         for i in range(0, len(self.material_names)):
-            print(self.material_names[i])
             write_parsable_string(output, self.material_names[i])
             output.write(struct.pack("i", offset))
             offset += len(self.materials[i]) * 4

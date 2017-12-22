@@ -66,6 +66,11 @@ for source in source_dirs:
             file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
             dependency_info[dest_dir]["files"].append(file_info)
 
+            rd = relative_data_filename
+            if dependencies.check_up_to_date(dependency_info[dest_dir], rd):
+                print(dest_file + " already up to date")
+                continue
+
             if not os.path.exists(dest_dir):
                 os.makedirs(dest_dir)
             if f.find(".dds") != -1:

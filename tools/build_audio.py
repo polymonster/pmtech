@@ -32,6 +32,7 @@ if platform_name == "osx":
 
 # copy fmod dll / dylib
 print("copying dynamic library to binary dir")
+
 src_file = os.path.join(pmtech_dir, "pen", "third_party", "fmod", "lib", platform_name, dll)
 shutil.copy(src_file, bin_dir)
 
@@ -39,7 +40,6 @@ shutil.copy(src_file, bin_dir)
 if os.path.exists(audio_dir):
     print("copying audio to data dir")
     for f in os.listdir(audio_dir):
-        if os.path.exists(build_dir):
-            shutil.rmtree(build_dir)
+        print(src_file)
         src_file = os.path.join(audio_dir,f)
         shutil.copy(src_file, build_dir)

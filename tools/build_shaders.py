@@ -642,12 +642,12 @@ def add_files_recursive(filename, root):
 def check_dependencies(filename, included_files):
     # look for .json file
     file_list = list()
-    file_list.append(filename)
-    file_list.append(this_file)
-    file_list.append(macros_file)
+    file_list.append(os.path.join(root_dir, filename))
+    file_list.append(os.path.join(root_dir, this_file))
+    file_list.append(os.path.join(root_dir, macros_file))
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
     for f in included_files:
-        file_list.append(os.path.join(dir_path, f))
+        file_list.append(os.path.join(root_dir, dir_path, f))
     if os.path.exists(info_filename):
         info_file = open(info_filename, "r")
         info = json.loads(info_file.read())
