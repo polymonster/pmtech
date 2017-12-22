@@ -1171,7 +1171,7 @@ namespace put
 				if (ImGui::CollapsingHeader("Scene Info"))
 				{
 					ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
-					ImGui::Text("Selected: %i", k_selection_list.size());
+					ImGui::Text("Selected: %i", (s32)k_selection_list.size());
 
 					for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
 						dumps[i].count = 0;
@@ -1190,6 +1190,8 @@ namespace put
 				scene_physics_ui(scene);
 
 				ImGui::Separator();
+                
+                
                 
                 if (selected_index != -1)
                 {
@@ -1259,6 +1261,11 @@ namespace put
 									ImGui::Image(&scene->materials[selected_index].texture_id[t], ImVec2(64, 64));
 								}
 							}
+                            
+                            auto& mm = scene->materials[selected_index];
+                            
+                            ImGui::SliderFloat("Roughness", (f32*)&mm.diffuse_rgb_shininess.w, 0.000001, 1.5);
+                            ImGui::SliderFloat("Reflectity", (f32*)&mm.specular_rgb_reflect.w, 0.000001, 1.5);
 						}
 					}
                     ImGui::Separator();

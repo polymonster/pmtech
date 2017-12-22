@@ -438,7 +438,7 @@ int main(int argc, char **argv)
 
         //sleep a bit
         [_pool drain];
-        pen::threads_sleep_ms( 16 );
+        pen::threads_sleep_ms( 1 );
     }
     
     //shutdown

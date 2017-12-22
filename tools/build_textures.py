@@ -61,7 +61,7 @@ for source in source_dirs:
             data_dir = os.path.join("bin", platform_name, "")
             relative_data_filename = relative_data_filename.replace(data_dir, "")
 
-            dependency_inputs = [src_file]
+            dependency_inputs = [os.path.join(os.getcwd(),src_file)]
             dependency_outputs = [relative_data_filename]
             file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
             dependency_info[dest_dir]["files"].append(file_info)

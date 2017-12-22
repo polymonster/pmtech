@@ -593,21 +593,19 @@ namespace put
 			}
             
             //update c buffers
-			f32 roughness_debug = 0.01f;
-
             for( s32 n = 0; n < scene->num_nodes; ++n )
             {
+                if( !(scene->entities[n] & CMP_MATERIAL) )
+                    continue;
+                    
                 if( scene->cbuffer[n] == INVALID_HANDLE )
                     continue;
                 
                 per_model_cbuffer cb =
                 {
                     scene->world_matrices[n],
-                    vec4f((f32)n, (f32)roughness_debug, 0.0f, 0.0f)
+                    vec4f((f32)n, scene->materials[n].diffuse_rgb_shininess.w, scene->materials[n].specular_rgb_reflect.w, 0.0f)
                 };
-
-				if (scene->entities[n] & CMP_GEOMETRY)
-					roughness_debug += 1.0f / 24.0f;
                 
                 //per object world matrix
                 pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));

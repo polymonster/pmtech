@@ -159,6 +159,9 @@ ps_output ps_forward_lit( vs_output input )
 	for( int i = 0; i < light_info.x; ++i )
 	{
 		float single_roughness = saturate(user_data.y); 
+		//float reflectivity = 1.0 - single_roughness;
+		
+		float reflectivity = saturate(user_data.z);
 #if 0
 		lit_colour += lambert( 
 			lights[i].pos_radius, 
@@ -178,7 +181,7 @@ ps_output ps_forward_lit( vs_output input )
 			camera_view_pos.xyz,
 			albedo.rgb,
 			(1.0 - single_roughness) * 100.0,
-			1.0 - single_roughness
+			reflectivity
 		);			 
 #endif
 
@@ -191,7 +194,7 @@ ps_output ps_forward_lit( vs_output input )
 			camera_view_pos.xyz,
 			albedo.rgb,
 			(1.0 - single_roughness) * 100.0,
-			1.0 - single_roughness
+			reflectivity
 		);			 
 #endif
 
@@ -205,7 +208,7 @@ ps_output ps_forward_lit( vs_output input )
 			albedo.rgb,
 			specular_sample.rgb,
 			single_roughness,
-			1.0 - single_roughness
+			reflectivity
 		);			 
 #endif
 

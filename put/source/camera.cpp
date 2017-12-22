@@ -180,13 +180,13 @@ namespace put
 
 		if (has_focus)
 		{
-			if (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_MENU))
+			if (ms.buttons[PEN_MOUSE_L] && pen_input_key(PENK_MENU))
 			{
 				//rotation
 				vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x);
 				p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
 			}
-			else if (ms.buttons[PEN_MOUSE_M] && INPUT_PKEY(PENK_MENU) || (ms.buttons[PEN_MOUSE_L] && INPUT_PKEY(PENK_COMMAND)))
+			else if ( (ms.buttons[PEN_MOUSE_M] && pen_input_key(PENK_MENU)) || ((ms.buttons[PEN_MOUSE_L] && pen_input_key(PENK_COMMAND))) )
 			{
 				//pan
 				vec3f up = p_camera->view.get_up();
@@ -195,7 +195,7 @@ namespace put
 				p_camera->focus += up * mouse_drag.y * mouse_y_inv * 0.5f;
 				p_camera->focus += right * mouse_drag.x * 0.5f;
 			}
-			else if (ms.buttons[PEN_MOUSE_R] && INPUT_PKEY(PENK_MENU))
+			else if (ms.buttons[PEN_MOUSE_R] && pen_input_key(PENK_MENU))
 			{
 				//zoom
 				vec3f up = p_camera->view.get_up();
