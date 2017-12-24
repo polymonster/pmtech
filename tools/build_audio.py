@@ -3,8 +3,9 @@ import os.path
 import shutil
 import json
 import helpers
+import time
+stats_start = time.time()
 
-print("\n")
 print("--------------------------------------------------------------------------------------------------------------")
 print("pmtech audio compression and conversion ----------------------------------------------------------------------")
 print("--------------------------------------------------------------------------------------------------------------")
@@ -43,3 +44,7 @@ if os.path.exists(audio_dir):
         print(src_file)
         src_file = os.path.join(audio_dir,f)
         shutil.copy(src_file, build_dir)
+
+stats_end = time.time()
+millis = int((stats_end - stats_start) * 1000)
+print("Done (" + str(millis) + "ms)")

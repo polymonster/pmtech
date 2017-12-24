@@ -6,9 +6,11 @@ import parse_materials
 import parse_animations
 import helpers
 import json
+import dependencies
+import time
+stats_start = time.time()
 
 #win32 / collada
-print("\n")
 print("--------------------------------------------------------------------------------------------------------------")
 print("pmtech model and animation conversion ------------------------------------------------------------------------")
 print("--------------------------------------------------------------------------------------------------------------")
@@ -235,6 +237,8 @@ def write_joint_file():
 
 # entry
 for root, dirs, files in os.walk(model_dir):
+    dependencies_directory = dict()
+    dependencies_directory["files"] = []
     for file in files:
         if file.endswith(".dae"):
             joint_list = []
@@ -251,6 +255,7 @@ for root, dirs, files in os.walk(model_dir):
 
             [fnoext, fext] = os.path.splitext(file)
 
+            helpers.bin_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "")
             helpers.build_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "data", "models")
 
             assets_pos = root.find(model_dir)
@@ -267,12 +272,38 @@ for root, dirs, files in os.walk(model_dir):
             helpers.current_filename = file
             helpers.build_dir = out_dir
 
+            dependencies_directory["dir"] = out_dir
+
             helpers.output_file = helpers.pmm_file()
 
-            print(f)
-            parse_dae()
             base_out_file = os.path.join(out_dir, fnoext)
+
+            depends_dest = base_out_file.replace(helpers.bin_dir, "")
+
+            dependency_inputs = [os.path.join(os.getcwd(), f)]
+            dependency_outputs = [depends_dest + ".pmm"]
+            dependency_outputs.append(depends_dest + ".pma")
+
+            file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
+
+            dependencies_directory["files"].append(file_info)
+
+            up_to_date = False
+            up_to_date = dependencies.check_up_to_date(dependencies_directory, depends_dest + ".pma")
+
+            if up_to_date:
+                print(f + " already up to date")
+                continue
+
+            print("building " + f)
+            parse_dae()
             helpers.output_file.write(base_out_file + ".pmm")
             parse_animations.write_animation_file(base_out_file + ".pma")
-            print("")
+
+    if(len(dependencies_directory["files"]) > 0):
+        dependencies.write_to_file(dependencies_directory)
+
+stats_end = time.time()
+millis = int((stats_end - stats_start) * 1000)
+print("Done (" + str(millis) + "ms)")
 

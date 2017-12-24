@@ -6,6 +6,8 @@ import shutil
 import json
 import helpers
 import dependencies
+import time
+stats_start = time.time()
 
 if "-root_dir" in sys.argv[1]:
     os.chdir(sys.argv[2])
@@ -193,6 +195,11 @@ for step in build_steps:
 for step in extra_build_steps:
     subprocess.check_call(step, shell=True)
 
+# win32 / dds / block compression / mips / cubemaps
+print("--------------------------------------------------------------------------------------------------------------")
+print("Copy configs and fonts ---------------------------------------------------------------------------------------")
+print("--------------------------------------------------------------------------------------------------------------")
+
 def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, files):
     platform_bin = os.path.join("bin", platform, "")
     for file in files:
@@ -248,12 +255,12 @@ for step in copy_steps:
         output_d.write(bytes(json.dumps(dependency_info[dir], indent=4), 'UTF-8'))
         output_d.close()
 
-# old copy script
-# dest_dir = os.path.join(data_dir, step)
-# if os.path.exists(dest_dir):
-# shutil.rmtree(dest_dir)
-# print("copying: " + step + " to " + dest_dir)
-# shutil.copytree(src_dir, dest_dir)
+
+print("--------------------------------------------------------------------------------------------------------------")
+
+stats_end = time.time()
+millis = int((stats_end - stats_start) * 1000)
+print("All Jobs Done (" + str(millis) + "ms)")
 
 
 

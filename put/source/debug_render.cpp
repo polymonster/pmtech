@@ -567,14 +567,17 @@ namespace put
 			vec3f current = start;
 
 			f32 grayness = 0.3f;
-
+            
 			for (u32 i = 0; i <= (u32)divisions.x; ++i)
 			{
 				grayness = 0.3f;
-				if (i % ((u32)divisions.x / 10) == 0)
-					grayness = 0.2f;
-				if (i % ((u32)divisions.x / 5) == 0)
-					grayness = 0.1f;
+                if(divisions.x >= 10.0f)
+                {
+                    if (i % ((u32)divisions.x / 10) == 0)
+                        grayness = 0.2f;
+                    if (i % ((u32)divisions.x / 5) == 0)
+                        grayness = 0.1f;
+                }
 
 				debug_3d_verts[line_vert_3d_count + 0].x = current.x;
 				debug_3d_verts[line_vert_3d_count + 0].y = current.y;
@@ -604,10 +607,13 @@ namespace put
 			for (u32 i = 0; i <= (u32)divisions.z; ++i)
 			{
 				grayness = 0.3f;
-				if (i % ((u32)divisions.z / 10) == 0)
-					grayness = 0.2f;
-				if (i % ((u32)divisions.z / 5) == 0)
-					grayness = 0.1f;
+                if(divisions.z >= 10.0f)
+                {
+                    if (i % ((u32)divisions.z / 10) == 0)
+                        grayness = 0.2f;
+                    if (i % ((u32)divisions.z / 5) == 0)
+                        grayness = 0.1f;
+                }
 
 				debug_3d_verts[line_vert_3d_count + 0].x = current.x;
 				debug_3d_verts[line_vert_3d_count + 0].y = current.y;

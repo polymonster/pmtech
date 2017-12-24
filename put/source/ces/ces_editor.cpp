@@ -483,9 +483,11 @@ namespace put
 						put::dbg::add_line_2f(source_points[0], source_points[2]);
 						put::dbg::add_line_2f(source_points[2], source_points[3]);
 						put::dbg::add_line_2f(source_points[3], source_points[1]);
-
-						if (maths::magnitude(max - min) < 4.0)
+                        
+						if (maths::magnitude(max - min) < 4.0 )
 						{
+                            picking_state = PICKING_SINGLE;
+                            
 							const put::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
 
 							f32 w, h;
@@ -510,21 +512,25 @@ namespace put
 							k_picking_info.ready = 0;
 							k_picking_info.x = ms.x;
 							k_picking_info.y = ms.y;
-
-							picking_state = 1;
 						}
 						else
 						{
-							picking_state = 2;
-
-							//todo this should really be passed in, incase we want non window sized viewports
-							vec2i vpi = vec2i(pen_window.width, pen_window.height);
-
-							for (s32 i = 0; i < 4; ++i)
-							{
-								frustum_points[0][i] = maths::unproject(vec3f(source_points[i], 0.0f), cam->view, cam->proj, vpi);
-								frustum_points[1][i] = maths::unproject(vec3f(source_points[i], 1.0f), cam->view, cam->proj, vpi);
-							}
+                            //do not perfrom frustum picking if min and max are not square
+                            bool invalid_quad = min.x == max.x || min.y == max.y;
+                            
+                            if(!invalid_quad)
+                            {
+                                picking_state = PICKING_MULTI;
+                                
+                                //todo this should really be passed in, incase we want non window sized viewports
+                                vec2i vpi = vec2i(pen_window.width, pen_window.height);
+                                
+                                for (s32 i = 0; i < 4; ++i)
+                                {
+                                    frustum_points[0][i] = maths::unproject(vec3f(source_points[i], 0.0f), cam->view, cam->proj, vpi);
+                                    frustum_points[1][i] = maths::unproject(vec3f(source_points[i], 1.0f), cam->view, cam->proj, vpi);
+                                }
+                            }
 						}
                     }
                 }

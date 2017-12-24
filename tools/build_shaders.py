@@ -6,6 +6,8 @@ import sys
 import json
 import dependencies
 import helpers
+import time
+stats_start = time.time()
 
 root_dir = os.getcwd()
 
@@ -56,7 +58,6 @@ print("-------------------------------------------------------------------------
 print("compiling directory: " + shader_source_dir)
 if os_platform == "win32":
     print("fx compiler directory :" + compiler_dir)
-print("\n")
 
 def parse_and_split_block(code_block):
     start = code_block.find("{") + 1
@@ -886,7 +887,10 @@ def generate_shader_debug_info():
 
 # build shaders
 shader_compile_pmfx()
-# generate_shader_debug_info()
+
+stats_end = time.time()
+millis = int((stats_end - stats_start) * 1000)
+print("Done (" + str(millis) + "ms)")
 
 
 

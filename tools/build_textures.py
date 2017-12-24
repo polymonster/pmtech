@@ -4,9 +4,10 @@ import shutil
 import json
 import helpers
 import dependencies
+import time
+stats_start = time.time()
 
 # win32 / dds / block compression / mips / cubemaps
-print("\n")
 print("--------------------------------------------------------------------------------------------------------------")
 print("pmtech texture compression and mip map generation ------------------------------------------------------------")
 print("--------------------------------------------------------------------------------------------------------------")
@@ -30,7 +31,6 @@ if not os.path.exists(build_dir):
     os.makedirs(build_dir)
 
 print("processing directory: " + texture_dir)
-print("\n")
 
 supported_formats = [".png", ".jpg", ".tif", ".bmp", ".tga"]
 source_dirs = [texture_dir, built_in_texture_dir]
@@ -90,3 +90,7 @@ for dest_depends in dependency_info:
     output_d.write(bytes(json.dumps(dependency_info[dir], indent=4), 'UTF-8'))
     output_d.close()
 
+
+stats_end = time.time()
+millis = int((stats_end - stats_start) * 1000)
+print("Done (" + str(millis) + "ms)")
