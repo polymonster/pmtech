@@ -57,55 +57,85 @@ namespace put
             }
         }
 
-		void get_new_nodes(entity_scene* scene, s32 num, s32& start, s32& end)
+		void get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start, s32& end)
 		{
-			if (scene->num_nodes + num >= scene->nodes_size)
-				resize_scene_buffers(scene);
-
-			start = 0;
-			end = 0;
-			s32 pos = 0;
-			while (1)
-			{
-				if (scene->entities[pos++] & CMP_ALLOCATED)
-				{
-					start = pos;
-					end = start;
-					continue;
-				}
-
-				if (pos - start == num)
-					break;
-			}
-
-			if (pos > scene->num_nodes)
-				scene->num_nodes = pos;
-
-			end = pos+1;
+            //o(n) - has to find contiguous nodes within the free list
+            
+            if (scene->num_nodes + num >= scene->nodes_size || !scene->free_list_head)
+                resize_scene_buffers(scene);
+            
+            free_node_list* fnl_iter = scene->free_list_head;
+            free_node_list* fnl_start = fnl_iter;
+            
+            s32 count = num;
+            
+            //todo improve the free list
+            
+            //finds contiguous nodes
+            for(;;)
+            {
+                if(!fnl_iter->next)
+                    break;
+                
+                s32 diff = fnl_iter->next->node - fnl_iter->node;
+                
+                fnl_iter = fnl_iter->next;
+                
+                if(diff == 1)
+                {
+                    count--;
+                    
+                    if(count == 0)
+                        break;
+                }
+                else
+                {
+                    fnl_start = fnl_iter;
+                    count = num;
+                }
+            }
+            
+            if(count == 0)
+            {
+                start = fnl_start->node;
+                end = start + num;
+                
+                //iterate over nodes allocating
+                fnl_iter = fnl_start;
+                for( s32 i = 0; i < num+1; ++i )
+                {
+                    scene->entities[fnl_iter->node] |= CMP_ALLOCATED;
+                    fnl_iter = fnl_iter->next;
+                }
+                
+                scene->free_list_head = fnl_iter;
+                
+                if (end > scene->num_nodes)
+                    scene->num_nodes = end;
+            }
 		}
         
         u32 get_new_node( entity_scene* scene )
         {
-            u32 i = 0;
-			while ( 1 )
-			{
-				if (i >= scene->nodes_size)
-					resize_scene_buffers(scene);
-
-				if (scene->entities[i++] & CMP_ALLOCATED)
-					continue;
-
-				break;
-			}
-
+            //o(1) - uses free list
+            
+            if(!scene->free_list_head)
+                resize_scene_buffers(scene);
+            
+            u32 ii = 0;
+            ii = scene->free_list_head->node;
+            scene->free_list_head = scene->free_list_head->next;
+            
+            u32 i = ii;
+            
 			scene->flags |= INVALIDATE_SCENE_TREE;
 
             if( i > scene->num_nodes )
                 scene->num_nodes = i+1;
             
-			scene->entities[i - 1] = CMP_ALLOCATED;
+			scene->entities[i] = CMP_ALLOCATED;
 
-            return i-1;
+            return i;
         }
         
         void scene_tree_add_node( scene_tree& tree, scene_tree& node, std::vector<s32>& heirarchy )
@@ -259,7 +289,7 @@ namespace put
 				tree_to_node_index_list(tree, i, node_index_list);
 
 				s32 nodes_start, nodes_end;
-				get_new_nodes( scene, node_index_list.size()-1, nodes_start, nodes_end);
+				get_new_nodes_contiguous( scene, node_index_list.size()-1, nodes_start, nodes_end);
 
 				u32 src_parent = i;
 				u32 dst_parent = nodes_start;

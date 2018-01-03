@@ -908,6 +908,8 @@ namespace put
 							zero_entity_components(sc->scene, c);
 				}
 				k_selection_list.clear();
+                
+                initialise_free_list( sc->scene );
 
 				sc->scene->flags |= put::ces::INVALIDATE_SCENE_TREE;
 			}
@@ -1189,6 +1191,23 @@ namespace put
 
 					for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
 						ImGui::Text("%s: %i", dumps[i].display_name, dumps[i].count);
+                    
+                    ImGui::BeginChild("Free List", ImVec2(0, 100), true );
+                    
+                    free_node_list* fnl = scene->free_list_head;
+                    for(;;)
+                    {
+                        if(!fnl)
+                            break;
+                        
+                        Str v;
+                        v.appendf("%i", fnl->node);
+                        ImGui::Selectable(v.c_str());
+                        
+                        fnl = fnl->next;
+                    }
+                    
+                    ImGui::EndChild();
 				}
 
 				ImGui::Separator();
@@ -1196,8 +1215,6 @@ namespace put
 				scene_physics_ui(scene);
 
 				ImGui::Separator();
-                
-                
                 
                 if (selected_index != -1)
                 {

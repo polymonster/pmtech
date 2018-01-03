@@ -16,6 +16,7 @@ NSOpenGLPixelFormat* _pixel_format;
 
 extern pen::window_creation_params pen_window;
 extern a_u8 g_window_resize;
+int g_rs = 0;
 
 pen::user_info pen_user_info;
 
@@ -56,11 +57,14 @@ void pen_make_gl_context_current( )
 
 void pen_gl_swap_buffers( )
 {
-    [_gl_context flushBuffer];
+    if(g_rs<=0)
+        [_gl_context flushBuffer];
 }
 
 void pen_window_resize( )
 {
+    g_rs = 10;
+    
     NSRect view_rect = [[_window contentView] bounds];
     
     if( _gl_view.frame.size.width == view_rect.size.width &&
@@ -410,6 +414,8 @@ int main(int argc, char **argv)
     {
         NSAutoreleasePool * _pool = [[NSAutoreleasePool alloc] init];
         
+        [NSApp updateWindows];
+        
         while( 1 )
         {
             NSEvent* peek_event = [NSApp
@@ -429,16 +435,25 @@ int main(int argc, char **argv)
                 [NSApp sendEvent:peek_event];
             }
             
-            [NSApp updateWindows];
+            break;
         }
         
         int x, y;
         get_mouse_pos( x, y );
         pen::input_set_mouse_pos( x, y );
+        
+        if( g_rs > 0 )
+        {
+            pen::input_set_mouse_up( PEN_MOUSE_L );
+            pen::input_set_mouse_up( PEN_MOUSE_R );
+            pen::input_set_mouse_up( PEN_MOUSE_M );
+        }
 
         //sleep a bit
         [_pool drain];
         pen::threads_sleep_ms( 1 );
+        
+        g_rs--;
     }
     
     //shutdown
