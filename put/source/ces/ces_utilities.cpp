@@ -57,11 +57,11 @@ namespace put
             }
         }
 
-		void get_new_nodes(entity_scene* scene, s32 num, s32& start, s32& end)
+		void get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start, s32& end)
 		{
-            //o(n)
+            //o(n) - has to find contiguous nodes within the free list
             
-            if (scene->num_nodes + num >= scene->nodes_size)
+            if (scene->num_nodes + num >= scene->nodes_size || !scene->free_list_head)
                 resize_scene_buffers(scene);
             
             free_node_list* fnl_iter = scene->free_list_head;
@@ -117,7 +117,7 @@ namespace put
         
         u32 get_new_node( entity_scene* scene )
         {
-            //o(1)
+            //o(1) - uses free list
             
             if(!scene->free_list_head)
                 resize_scene_buffers(scene);
@@ -289,7 +289,7 @@ namespace put
 				tree_to_node_index_list(tree, i, node_index_list);
 
 				s32 nodes_start, nodes_end;
-				get_new_nodes( scene, node_index_list.size()-1, nodes_start, nodes_end);
+				get_new_nodes_contiguous( scene, node_index_list.size()-1, nodes_start, nodes_end);
 
 				u32 src_parent = i;
 				u32 dst_parent = nodes_start;

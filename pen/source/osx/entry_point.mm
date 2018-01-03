@@ -414,6 +414,8 @@ int main(int argc, char **argv)
     {
         NSAutoreleasePool * _pool = [[NSAutoreleasePool alloc] init];
         
+        [NSApp updateWindows];
+        
         while( 1 )
         {
             NSEvent* peek_event = [NSApp
@@ -433,14 +435,19 @@ int main(int argc, char **argv)
                 [NSApp sendEvent:peek_event];
             }
             
-            [NSApp updateWindows];
-            
             break;
         }
         
         int x, y;
         get_mouse_pos( x, y );
         pen::input_set_mouse_pos( x, y );
+        
+        if( g_rs > 0 )
+        {
+            pen::input_set_mouse_up( PEN_MOUSE_L );
+            pen::input_set_mouse_up( PEN_MOUSE_R );
+            pen::input_set_mouse_up( PEN_MOUSE_M );
+        }
 
         //sleep a bit
         [_pool drain];
