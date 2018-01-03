@@ -1321,6 +1321,26 @@ namespace put
             }
         }
         
+        //undoable / redoable actions
+        struct editor_action
+        {
+            enum e_action
+            {
+                TRANSFORM = 1,
+            };
+            
+            e_action    action;
+            u32         type;
+            u32*        affected_nodes;
+            
+            vec3f       value;
+        };
+        
+        void add_editor_action( )
+        {
+            
+        }
+        
         void apply_transform_to_selection( entity_scene* scene, const vec3f move_axis )
         {
             if( move_axis == vec3f::zero() )

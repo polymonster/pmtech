@@ -1121,6 +1121,9 @@ namespace pen
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags )
 	{
+        if( texture_index == 0 || sampler_index == 0 )
+            return;
+        
         resource_allocation& res = resource_pool[ texture_index ];
         
         glActiveTexture(GL_TEXTURE0 + resource_slot);
@@ -1246,11 +1249,6 @@ namespace pen
 	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )
 	{
 		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
-        
-        if( resource_index == 104 )
-        {
-            u32 a = 0;
-        }
         
         resource_pool[ resource_index ].blend_state = (blend_creation_params*)pen::memory_alloc( sizeof(blend_creation_params) );
         

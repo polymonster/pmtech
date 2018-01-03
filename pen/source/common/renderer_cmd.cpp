@@ -24,9 +24,42 @@ namespace pen
 		RENDERER_RESOURCES_ALLOCATED_THIS_FRAME = 1 << 1,
 		RENDERER_RESOURCES_FULL = 1 << 2
 	};
+    
+    struct free_node_list
+    {
+        u32 index;
+        free_node_list* next;
+    };
 
 	u8	renderer_resource_status[MAX_RENDERER_RESOURCES] = { 0 };
 	u8	renderer_resource_flags = 0;
+    
+    free_node_list resource_free_list[2][MAX_RENDERER_RESOURCES];
+    free_node_list* resource_free_head[2];
+    
+    void renderer_init_resource_list( )
+    {
+        //reserve resource index 0 to be used as a null handle
+        renderer_resource_status[0] |= (DIRECT_RESOURCE | DEFER_RESOURCE);
+        
+        //create full free list
+        for( s32 d = 0; d < 2; ++d )
+        {
+            resource_free_head[d] = nullptr;
+            
+            for( s32 i = MAX_RENDERER_RESOURCES-1; i >= 0; --i )
+            {
+                resource_free_list[d][i].index = i;
+                
+                if( i < MAX_RENDERER_RESOURCES-1 )
+                    resource_free_list[d][i].next = &resource_free_list[d][i+1];
+                else
+                    resource_free_list[d][i].next = nullptr;
+                
+                resource_free_head[d] = &resource_free_list[d][i];
+            }
+        }
+    }
 
 	void renderer_reclaim_resource_indices()
 	{
@@ -41,6 +74,12 @@ namespace pen
 			if (renderer_resource_status[i] & MARK_DELETE)
 			{
 				renderer_resource_status[i] = RECLAIMED;
+                
+                for( s32 j = 0; j < 2; ++j )
+                {
+                    resource_free_list[j][i].next = resource_free_head[j];
+                    resource_free_head[j] = &resource_free_list[j][i];
+                }
 			}
 		}
 
@@ -59,21 +98,58 @@ namespace pen
 
 	u32 renderer_get_next_resource_index(u32 domain)
 	{
-		u32 i = 0;
-		while (renderer_resource_status[i] & domain)
-		{
-			++i;
+        u32 i = 0;
+        
+        if( 1 )
+        {
+            if( domain & (DIRECT_RESOURCE) && domain & (DEFER_RESOURCE) )
+            {
+                i = resource_free_head[1]->index;
+                resource_free_head[1] = resource_free_head[1]->next;
+                
+                //remove i from direct. slow
+                free_node_list* ll = resource_free_head[0];
+                
+                for(;;)
+                {
+                    if(ll->index == i)
+                    {
+                        *ll = *ll->next;
+                        break;
+                    }
+                    
+                    ll = ll->next;
+                }
+            }
+            else if( domain & DIRECT_RESOURCE )
+            {
+                i = resource_free_head[0]->index;
+                resource_free_head[0] = resource_free_head[0]->next;
+            }
+            else if( domain & DEFER_RESOURCE )
+            {
+                i = resource_free_head[1]->index;
+                resource_free_head[1] = resource_free_head[1]->next;
+            }
+        }
+        else
+        {
+            //greedy algo
+            while (renderer_resource_status[i] & domain)
+            {
+                ++i;
 
-			if (i >= MAX_RENDERER_RESOURCES)
-			{
-				renderer_resource_flags |= RENDERER_RESOURCES_FULL;
-				i = 0;
-				break;
-			}
-		}
+                if (i >= MAX_RENDERER_RESOURCES)
+                {
+                    renderer_resource_flags |= RENDERER_RESOURCES_FULL;
+                    i = 0;
+                    break;
+                }
+            }
 
-		if (i == 0)
-			return 0;
+            if (i == 0)
+                return 0;
+        }
 
 		renderer_resource_flags |= RENDERER_RESOURCES_ALLOCATED_THIS_FRAME;
 		renderer_resource_status[i] |= domain;
@@ -88,8 +164,8 @@ namespace pen
 	u32 get_pos = 0;
 	u32 commands_this_frame = 0;
 
-#define MAX_COMMANDS 50000 //3mb
-#define INC_WRAP( V ) V = (V+1)%MAX_COMMANDS; commands_this_frame++
+#define MAX_COMMANDS (1<<15) //3mb
+#define INC_WRAP( V ) V = (V+1) & (MAX_COMMANDS-1); commands_this_frame++
 
 	enum commands : u32
 	{
@@ -705,9 +781,8 @@ namespace pen
 		//clear command buffer
 		pen::memory_set(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
 
-		//reserve resource index 0 to be used as a null handle
-		renderer_resource_status[0] |= (DIRECT_RESOURCE | DEFER_RESOURCE);
-
+        renderer_init_resource_list( );
+        
 		//initialise renderer
 		direct::renderer_initialise(job_params->user_data);
 
@@ -1060,7 +1135,8 @@ namespace pen
 
 		INC_WRAP(put_pos);
 
-		return renderer_get_next_resource_index(DEFER_RESOURCE);
+        u32 ii = renderer_get_next_resource_index(DEFER_RESOURCE);
+        return ii;
 	}
 
 	void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
@@ -1137,8 +1213,10 @@ namespace pen
 		pen::memory_cpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
 
 		INC_WRAP(put_pos);
+        
+        u32 ii = renderer_get_next_resource_index(DEFER_RESOURCE);
 
-		return renderer_get_next_resource_index(DEFER_RESOURCE);
+        return ii;
 	}
 
 	void renderer_set_blend_state(u32 blend_state_index)
@@ -1189,7 +1267,8 @@ namespace pen
 
 		INC_WRAP(put_pos);
 
-		return renderer_get_next_resource_index(DEFER_RESOURCE);
+        u32 ii = renderer_get_next_resource_index(DEFER_RESOURCE);
+        return ii;
 	}
 
 	void renderer_set_depth_stencil_state(u32 depth_stencil_state)

@@ -9,8 +9,9 @@ import dependencies
 import time
 stats_start = time.time()
 
-if "-root_dir" in sys.argv[1]:
-    os.chdir(sys.argv[2])
+if len(sys.argv) > 1:
+    if "-root_dir" in sys.argv[1]:
+        os.chdir(sys.argv[2])
 
 config = open("build_config.json")
 build_config = json.loads(config.read())
@@ -48,6 +49,7 @@ models_script = os.path.join(tools_dir, "build_models.py")
 
 clean_destinations = False
 
+
 def display_help():
     print("--------pmtech build--------")
     print("run with no arguments for prompted input")
@@ -60,6 +62,7 @@ def display_help():
     print("\t-actions")
     for i in range(0, len(action_strings)):
         print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
+
 
 def parse_args(args):
     global ide
@@ -90,6 +93,7 @@ def parse_args(args):
         elif sys.argv[index] == "-clean":
             clean_destinations = True
 
+
 def get_platform_info():
     global ide
     global renderer
@@ -106,7 +110,8 @@ def get_platform_info():
             renderer = "opengl"
         if platform == "":
             platform = "osx"
-        python_exec = os.path.join(tools_dir, "bin", "python", "osx", "python3")
+        # python_exec = os.path.join(tools_dir, "bin", "python", "osx", "python3")
+        python_exec = "python3"
     else:
         if ide == "":
             ide = "vs2017"
@@ -132,6 +137,7 @@ def get_platform_info():
         shader_options = "glsl osx"
 
     data_dir = os.path.join("bin", platform, "data")
+
 
 if len(sys.argv) <= 1:
     print("please enter what you want to build")
@@ -199,6 +205,7 @@ for step in extra_build_steps:
 print("--------------------------------------------------------------------------------------------------------------")
 print("Copy configs and fonts ---------------------------------------------------------------------------------------")
 print("--------------------------------------------------------------------------------------------------------------")
+
 
 def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, files):
     platform_bin = os.path.join("bin", platform, "")

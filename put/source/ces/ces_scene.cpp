@@ -35,7 +35,7 @@ namespace put
 
 #define FREE_COMPONENT_ARRAY( SCENE, COMPONENT ) pen::memory_free( SCENE->COMPONENT ); SCENE->COMPONENT = nullptr
 #define ZERO_COMPONENT_ARRAY( SCENE, COMPONENT, INDEX ) pen::memory_zero( &SCENE->COMPONENT[INDEX], sizeof(SCENE->COMPONENT[INDEX]) )
-
+        
 		struct entity_scene_instance
 		{
 			u32 id_name;
