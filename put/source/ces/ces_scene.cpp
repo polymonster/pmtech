@@ -42,6 +42,24 @@ namespace put
 			const c8* name;
 			entity_scene* scene;
 		};
+        
+        void initialise_free_list( entity_scene* scene )
+        {
+            scene->free_list_head = nullptr;
+            
+            for( s32 i = scene->nodes_size-1; i >= 0; --i )
+            {
+                scene->free_list[i].node = i;
+                
+                if( !(scene->entities[i] & CMP_ALLOCATED) )
+                {
+                    free_node_list* l = &scene->free_list[i];
+                    l->next = scene->free_list_head;
+                    
+                    scene->free_list_head = l;
+                }
+            }
+        }
 
 		std::vector<entity_scene_instance> k_scenes;
         
@@ -74,6 +92,9 @@ namespace put
             ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
             ALLOC_COMPONENT_ARRAY(scene, anim_controller, animation_controller);
             ALLOC_COMPONENT_ARRAY(scene, lights, scene_node_light);
+            
+            ALLOC_COMPONENT_ARRAY(scene, free_list, free_node_list);
+            initialise_free_list( scene );
 
 #ifdef CES_DEBUG
 			ALLOC_COMPONENT_ARRAY(scene, names, Str);
@@ -109,6 +130,8 @@ namespace put
             FREE_COMPONENT_ARRAY(scene, physics_data);
             FREE_COMPONENT_ARRAY(scene, anim_controller);
             FREE_COMPONENT_ARRAY(scene, lights);
+            
+            FREE_COMPONENT_ARRAY(scene, free_list);
 
 #ifdef CES_DEBUG
 			FREE_COMPONENT_ARRAY(scene, names);
@@ -234,7 +257,7 @@ namespace put
 
 			return dst;
 		}
-
+        
 		entity_scene*	create_scene( const c8* name )
 		{
 			entity_scene_instance new_instance;
@@ -937,6 +960,8 @@ namespace put
 			}
 
             ifs.close();
+            
+            initialise_free_list(scene);
         }
 	}
 }

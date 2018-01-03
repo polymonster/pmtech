@@ -16,6 +16,7 @@ NSOpenGLPixelFormat* _pixel_format;
 
 extern pen::window_creation_params pen_window;
 extern a_u8 g_window_resize;
+int g_rs = 0;
 
 pen::user_info pen_user_info;
 
@@ -56,11 +57,14 @@ void pen_make_gl_context_current( )
 
 void pen_gl_swap_buffers( )
 {
-    [_gl_context flushBuffer];
+    if(g_rs<=0)
+        [_gl_context flushBuffer];
 }
 
 void pen_window_resize( )
 {
+    g_rs = 10;
+    
     NSRect view_rect = [[_window contentView] bounds];
     
     if( _gl_view.frame.size.width == view_rect.size.width &&
@@ -430,6 +434,8 @@ int main(int argc, char **argv)
             }
             
             [NSApp updateWindows];
+            
+            break;
         }
         
         int x, y;
@@ -439,6 +445,8 @@ int main(int argc, char **argv)
         //sleep a bit
         [_pool drain];
         pen::threads_sleep_ms( 1 );
+        
+        g_rs--;
     }
     
     //shutdown

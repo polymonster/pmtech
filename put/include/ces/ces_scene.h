@@ -168,6 +168,12 @@ namespace put
             forward_light lights[MAX_FORWARD_LIGHTS];
             vec4f         info;
         };
+        
+        struct free_node_list
+        {
+            u32 node;
+            free_node_list* next;
+        };
 
 		struct entity_scene
 		{
@@ -201,7 +207,10 @@ namespace put
             animation_controller*   anim_controller;
             
             u32*                    cbuffer;
-
+            
+            free_node_list*         free_list;
+            free_node_list*         free_list_head;
+            
 			u32						forward_light_buffer = PEN_INVALID_HANDLE;
 			u32						flags;
 
@@ -277,6 +286,8 @@ namespace put
 		void			zero_entity_components( entity_scene* scene, u32 node_index );
 
         void            update_view_flags( entity_scene* scene, bool error );
+        
+        void            initialise_free_list( entity_scene* scene );
 	}
 
     struct camera_controller
