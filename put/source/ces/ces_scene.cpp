@@ -490,9 +490,6 @@ namespace put
 				update_animations(scene, dt);
 			}
             
-            //update physics
-            physics::physics_consume_command_buffer();
-                                    
             //scene node transform
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
@@ -658,6 +655,9 @@ namespace put
             light_buffer.info.x = (f32)num_lights;
 
 			pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
+            
+            //update physics
+            physics::physics_consume_command_buffer();
 		}
         
         void save_scene( const c8* filename, entity_scene* scene )

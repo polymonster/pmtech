@@ -170,7 +170,7 @@ namespace physics
     void physics_consume_command_buffer()
     {
         pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_consume, 1 );
-        pen::threads_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
+        //pen::threads_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
     }
     
     PEN_THREAD_RETURN physics_thread_main( void* params )

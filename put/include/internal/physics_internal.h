@@ -150,9 +150,6 @@ namespace physics
 	//--------------------------------------------------------------
 	//--------------------------------------------------------------
 	//FUNCTIONS-----------------------------------------------------
-	s32					get_next_free_entity_index( u32 domain );
-	physics_entity&		get_next_free_entity( u32 domain );
-
     void                physics_update();
     void                physics_initialise( );
     
