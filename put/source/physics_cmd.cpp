@@ -2,7 +2,7 @@
 #include "timer.h"
 
 #include "slot_resource.h"
-#include "physics_cmdbuf.h"
+#include "physics.h"
 #include "internal/physics_internal.h"
 
 //for multi body bullet
@@ -18,9 +18,8 @@
 
 namespace physics
 {
-
-#define MAX_COMMANDS 2048
-#define INC_WRAP( V ) V = (V+1)%MAX_COMMANDS
+#define MAX_COMMANDS (1<<12)
+#define INC_WRAP( V ) V =  (V+1) & (MAX_COMMANDS-1);
 
 	physics_cmd cmd_buffer[MAX_COMMANDS];
 	u32 put_pos = 0;

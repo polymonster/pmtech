@@ -8,10 +8,8 @@
 
 namespace pen
 {
-#define MAX_AUDIO_COMMANDS (1<<10)
+#define MAX_AUDIO_COMMANDS (1<<12)
 #define INC_WRAP( V ) V = (V+1) & (MAX_AUDIO_COMMANDS-1);
-
-    extern u32 get_next_audio_resource( u32 domain );
 
     enum commands : u32
     {

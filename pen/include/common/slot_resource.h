@@ -17,7 +17,7 @@ namespace pen
         free_slot_list* head;
     };
     
-    inline u32 slot_resources_init( slot_resources* resources, u32 num )
+    inline void slot_resources_init( slot_resources* resources, u32 num )
     {
         resources->slots = new free_slot_list[num];
         
