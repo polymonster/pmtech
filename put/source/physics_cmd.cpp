@@ -170,7 +170,7 @@ namespace physics
     void physics_consume_command_buffer()
     {
         pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_consume, 1 );
-        //pen::threads_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
+        pen::threads_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
     }
     
     PEN_THREAD_RETURN physics_thread_main( void* params )
@@ -185,8 +185,18 @@ namespace physics
         
         physics_initialise();
         
+        static u32 physics_timer = pen::timer_create("physics_timer");
+        pen::timer_reset(physics_timer);
+        pen::timer_start(physics_timer);
+        
         for(;;)
         {
+            pen::timer_accum(physics_timer);
+            f32 dt_ms = pen::timer_get_ms(physics_timer);
+            
+            pen::timer_reset(physics_timer);
+            pen::timer_start(physics_timer);
+            
             if( pen::threads_semaphore_try_wait( p_physics_job_thread_info->p_sem_consume ) )
             {
                 u32 end_pos = put_pos;
@@ -201,9 +211,9 @@ namespace physics
                 }
             }
             
-            physics_update();
+            physics_update( dt_ms * 1000.0f );
             
-            pen::threads_sleep_ms(16);
+            pen::threads_sleep_ms( 16 );
             
             if( pen::threads_semaphore_try_wait(p_physics_job_thread_info->p_sem_exit) )
             {

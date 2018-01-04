@@ -538,12 +538,12 @@ namespace physics
 		u32		 trigger_b;
 	};
     
-    void physics_update( )
+    void physics_update( f32 dt )
     {
         //step
         if (!g_readable_data.b_paused)
         {
-            g_bullet_systems.dynamics_world->stepSimulation( 1.0f / 60.0f );
+            g_bullet_systems.dynamics_world->stepSimulation( dt );
         }
         
         //update mats

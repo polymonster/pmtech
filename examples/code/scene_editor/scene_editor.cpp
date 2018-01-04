@@ -86,9 +86,15 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     bool enable_dev_ui = true;
     
+    f32 frame_time = 0.0f;
+    
     while( 1 )
     {
+        f32 start = pen::timer_get_time();
+        
 		put::dev_ui::new_frame();
+        
+        ImGui::Text("%f", frame_time);
         
         pmfx::update();
         
@@ -105,8 +111,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         if( pen::input_is_key_held(PENK_MENU) && pen::input_is_key_pressed(PENK_D) )
             enable_dev_ui = !enable_dev_ui;
         
+        frame_time = pen::timer_get_time() - start;
+        
         pen::renderer_present();
-
         pen::renderer_consume_cmd_buffer();
         
 		pmfx::poll_for_changes();

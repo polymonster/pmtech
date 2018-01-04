@@ -150,7 +150,7 @@ namespace physics
 	//--------------------------------------------------------------
 	//--------------------------------------------------------------
 	//FUNCTIONS-----------------------------------------------------
-    void                physics_update();
+    void                physics_update( f32 dt );
     void                physics_initialise( );
     
 	btMultiBody*		create_multirb_internal( physics_entity& entity, const multi_body_params &params );

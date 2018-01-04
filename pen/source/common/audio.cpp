@@ -247,6 +247,7 @@ namespace pen
     u32 direct::audio_create_sound( const c8* filename, u32 resource_slot )
     {
         g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
+        g_audio_resources[ resource_slot ].type = AUDIO_RESOURCE_SOUND;
         
         FMOD_RESULT result = g_sound_system->createSound( filename, FMOD_DEFAULT, NULL, (FMOD::Sound**)&g_audio_resources[resource_slot].resource );
 
@@ -265,6 +266,7 @@ namespace pen
     u32 direct::audio_create_stream( const c8* filename, u32 resource_slot )
     {
         g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
+        g_audio_resources[ resource_slot ].type = AUDIO_RESOURCE_SOUND;
         
         FMOD_RESULT result = g_sound_system->createStream( filename, FMOD_LOOP_NORMAL | FMOD_2D, 0, (FMOD::Sound**)&g_audio_resources[resource_slot].resource );
 
@@ -276,6 +278,7 @@ namespace pen
     u32 direct::audio_create_channel_group( u32 resource_slot )
     {
         g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
+        g_audio_resources[ resource_slot ].type = AUDIO_RESOURCE_GROUP;
         
         FMOD_RESULT result;
         
@@ -289,6 +292,7 @@ namespace pen
     u32 direct::audio_create_channel_for_sound(u32 sound_index, u32 resource_slot)
     {
         g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
+        g_audio_resources[ resource_slot ].type = AUDIO_RESOURCE_CHANNEL;
         
         FMOD_RESULT result;
         
@@ -359,7 +363,7 @@ namespace pen
             return 0;
         }
         
-        if( g_audio_resources[ index ].assigned_flag & DIRECT_RESOURCE )
+        if( g_audio_resources[ index ].assigned_flag )
         {
             void* p_res = g_audio_resources[ index ].resource;
             
@@ -474,7 +478,7 @@ namespace pen
     
     pen_error audio_channel_get_state( const u32 channel_index, audio_channel_state* state )
     {
-        if( g_audio_resources[ channel_index ].assigned_flag & DIRECT_RESOURCE )
+        if( g_audio_resources[ channel_index ].assigned_flag )
         {
             if( g_audio_resources[ channel_index ].type == AUDIO_RESOURCE_CHANNEL )
             {
@@ -491,7 +495,7 @@ namespace pen
     
     pen_error audio_channel_get_sound_file_info( const u32 sound_index, audio_sound_file_info* info )
     {
-        if( g_audio_resources[ sound_index ].assigned_flag & DIRECT_RESOURCE && g_sound_file_info_ready[ sound_index ] )
+        if( g_audio_resources[ sound_index ].assigned_flag && g_sound_file_info_ready[ sound_index ] )
         {
             if( g_audio_resources[ sound_index ].type == AUDIO_RESOURCE_SOUND )
             {
@@ -508,7 +512,7 @@ namespace pen
     
     pen_error audio_group_get_state( const u32 group_index, audio_group_state* state )
     {
-        if( g_audio_resources[ group_index ].assigned_flag & DIRECT_RESOURCE )
+        if( g_audio_resources[ group_index ].assigned_flag )
         {
             if( g_audio_resources[ group_index ].type == AUDIO_RESOURCE_GROUP )
             {
@@ -525,7 +529,7 @@ namespace pen
     
     pen_error audio_dsp_get_spectrum( const u32 spectrum_dsp, audio_fft_spectrum* spectrum )
     {
-        if( g_audio_resources[ spectrum_dsp ].assigned_flag & DIRECT_RESOURCE )
+        if( g_audio_resources[ spectrum_dsp ].assigned_flag )
         {
             if( g_audio_resources[ spectrum_dsp ].type == AUDIO_RESOURCE_DSP_FFT )
             {
@@ -545,7 +549,7 @@ namespace pen
     
     pen_error audio_dsp_get_three_band_eq( const u32 eq_dsp, audio_eq_state* eq_state )
     {
-        if( g_audio_resources[ eq_dsp ].assigned_flag & DIRECT_RESOURCE )
+        if( g_audio_resources[ eq_dsp ].assigned_flag )
         {
             if( g_audio_resources[ eq_dsp ].type == AUDIO_RESOURCE_DSP_EQ )
             {
@@ -562,7 +566,7 @@ namespace pen
     
     pen_error   audio_dsp_get_gain( const u32 dsp_index, f32* gain )
     {
-        if( g_audio_resources[ dsp_index ].assigned_flag & DIRECT_RESOURCE )
+        if( g_audio_resources[ dsp_index ].assigned_flag )
         {
             if( g_audio_resources[ dsp_index ].type == AUDIO_RESOURCE_DSP_GAIN )
             {
