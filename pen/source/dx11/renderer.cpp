@@ -191,7 +191,7 @@ namespace pen
 
 	context_state			 g_context;
 
-	void renderer_create_clear_state( const clear_state &cs, u32 resource_slot )
+	void direct::renderer_create_clear_state( const clear_state &cs, u32 resource_slot )
 	{
 		resource_pool[ resource_slot ].clear_state = (pen::clear_state_internal*)pen::memory_alloc( sizeof( clear_state_internal ) );
 
