@@ -191,33 +191,29 @@ namespace pen
 
 	context_state			 g_context;
 
-	u32 renderer_create_clear_state( const clear_state &cs )
+	void renderer_create_clear_state( const clear_state &cs, u32 resource_slot )
 	{
-		u32 resoruce_index = renderer_get_next_resource_index( DIRECT_RESOURCE | DEFER_RESOURCE );
+		resource_pool[ resource_slot ].clear_state = (pen::clear_state_internal*)pen::memory_alloc( sizeof( clear_state_internal ) );
 
-		resource_pool[ resoruce_index ].clear_state = (pen::clear_state_internal*)pen::memory_alloc( sizeof( clear_state_internal ) );
+		resource_pool[ resource_slot ].clear_state->rgba[ 0 ] = cs.r;
+		resource_pool[ resource_slot ].clear_state->rgba[ 1 ] = cs.g;
+		resource_pool[ resource_slot ].clear_state->rgba[ 2 ] = cs.b;
+		resource_pool[ resource_slot ].clear_state->rgba[ 3 ] = cs.a;
+		resource_pool[ resource_slot ].clear_state->depth = cs.depth;
+        resource_pool[ resource_slot ].clear_state->stencil = cs.stencil;
+		resource_pool[ resource_slot ].clear_state->flags = cs.flags;
 
-		resource_pool[ resoruce_index ].clear_state->rgba[ 0 ] = cs.r;
-		resource_pool[ resoruce_index ].clear_state->rgba[ 1 ] = cs.g;
-		resource_pool[ resoruce_index ].clear_state->rgba[ 2 ] = cs.b;
-		resource_pool[ resoruce_index ].clear_state->rgba[ 3 ] = cs.a;
-		resource_pool[ resoruce_index ].clear_state->depth = cs.depth;
-        resource_pool[ resoruce_index ].clear_state->stencil = cs.stencil;
-		resource_pool[ resoruce_index ].clear_state->flags = cs.flags;
+		resource_pool[resource_slot].clear_state->num_colour_targets = cs.num_colour_targets;
 
-		resource_pool[resoruce_index].clear_state->num_colour_targets = cs.num_colour_targets;
+		pen::memory_cpy(resource_pool[resource_slot].clear_state->mrt, cs.mrt, sizeof(mrt_clear)*cs.num_colour_targets);
 
-		pen::memory_cpy(resource_pool[resoruce_index].clear_state->mrt, cs.mrt, sizeof(mrt_clear)*cs.num_colour_targets);
-
-		mrt_clear* mrt = resource_pool[resoruce_index].clear_state->mrt;
+		mrt_clear* mrt = resource_pool[resource_slot].clear_state->mrt;
 
 		//convert int clears (required on gl) to floats for d3d
 		for (s32 i = 0; i < cs.num_colour_targets; ++i)
 			if (mrt[i].type == CLEAR_U32)
 				for (s32 c = 0; c < 4; ++c)
 					mrt[i].f[c] = (f32)cs.mrt[i].u[c];
-
-		return  resoruce_index;
 	}
 
 	f64 renderer_get_last_query(u32 query_index)
@@ -336,7 +332,7 @@ namespace pen
 			{
 				release_render_target_internal(rt.resource_index);
 
-				renderer_create_render_target(rt.tcp, rt.resource_index);
+				renderer_create_render_target(rt.tcp, rt.resource_index, false);
 			}
 			
 			k_needs_resize = 0;
@@ -384,12 +380,12 @@ namespace pen
 		}
 	}
 
-	u32 direct::renderer_load_shader(const pen::shader_load_params &params)
+	void direct::renderer_load_shader(const pen::shader_load_params &params, u32 resource_slot )
 	{
 		HRESULT hr = -1;
 		u32 handle_out = (u32)-1;
 
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 
 		if( params.type == PEN_SHADER_TYPE_VS )
 		{
@@ -437,9 +433,9 @@ namespace pen
 		}
 	}
 
-	u32 direct::renderer_link_shader_program(const shader_link_params &params)
+	void direct::renderer_link_shader_program(const shader_link_params &params, u32 resource_slot)
 	{
-		u32 resource_index = renderer_get_next_resource_index(DIRECT_RESOURCE);
+		u32 resource_index = resource_slot
 
 		auto& sp = resource_pool[resource_index].shader_program;
 
@@ -448,13 +444,11 @@ namespace pen
 		sp.input_layout = params.input_layout;
 		sp.pixel_shader = params.pixel_shader;
 		sp.vertex_shader = params.vertex_shader;
-
-		return resource_index;
 	}
 
-	u32 direct::renderer_create_buffer( const buffer_creation_params &params )
+	void direct::renderer_create_buffer( const buffer_creation_params &params, u32 resource_slot )
 	{
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory( &bd, sizeof(bd) );
@@ -483,15 +477,12 @@ namespace pen
 		if ( FAILED( hr ) )
 		{
 			PEN_ASSERT( 0 );
-			return (u32)-1;
 		}
-
-		return resource_index;
 	}
 
-	u32 direct::renderer_create_input_layout( const input_layout_creation_params &params )
+	void direct::renderer_create_input_layout( const input_layout_creation_params &params, u32 resource_slot )
 	{
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 
 		// Create the input layout
 		HRESULT hr = g_device->CreateInputLayout( 
@@ -506,8 +497,6 @@ namespace pen
 
 			PEN_ASSERT( 0 );
 		}
-			
-		return resource_index;
 	}
 
 	void direct::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
@@ -695,11 +684,9 @@ namespace pen
         PEN_ASSERT( hr == 0 );
     }
 
-    u32 direct::renderer_create_render_target( const texture_creation_params& tcp, s32 replace_resource_index )
+    u32 direct::renderer_create_render_target( const texture_creation_params& tcp, u32 resource_slot, bool track )
     {
-        u32 resource_index = replace_resource_index;
-        if(replace_resource_index == -1)
-            resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+        u32 resource_index = resource_slot;
 
 		resource_pool[resource_index].type = RES_RENDER_TARGET;
 
@@ -718,7 +705,7 @@ namespace pen
             _tcp.width = pen_window.width / _tcp.height;
             _tcp.height = pen_window.height / _tcp.height;
             
-            if(replace_resource_index == -1)
+            if(track)
                 k_managed_render_targets.push_back({resource_index, tcp});
         }
 
@@ -803,9 +790,9 @@ namespace pen
 		g_immediate_context->OMSetRenderTargets( num_views, colour_rtv, dsv );
 	}
 
-	u32 direct::renderer_create_texture(const texture_creation_params& tcp)
+	void direct::renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
 	{
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 
 		HRESULT hr;
 
@@ -850,19 +837,15 @@ namespace pen
 
 		hr = g_device->CreateShaderResourceView( resource_pool[ resource_index ].texture_2d->texture, &resource_view_desc, &resource_pool[ resource_index ].texture_2d->srv );
 		PEN_ASSERT( hr == 0 );
-
-		return resource_index;
 	}
 
-	u32 direct::renderer_create_sampler( const sampler_creation_params& scp )
+	void direct::renderer_create_sampler( const sampler_creation_params& scp, u32 resource_slot )
 	{
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 
 		HRESULT hr;
 		hr = g_device->CreateSamplerState( (D3D11_SAMPLER_DESC*)&scp, &resource_pool[ resource_index ].sampler_state );
 		PEN_ASSERT( hr == 0 );
-
-		return resource_index;
 	}
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags )
@@ -900,13 +883,11 @@ namespace pen
 		}
 	}
 
-	u32 direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp )
+	void direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp, u32 resource_slot )
 	{
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 		
 		g_device->CreateRasterizerState( (D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[ resource_index ].raster_state );
-
-		return resource_index;
 	}
 
 	void direct::renderer_set_rasterizer_state( u32 rasterizer_state_index )
@@ -919,9 +900,9 @@ namespace pen
 		g_immediate_context->RSSetViewports( 1, (D3D11_VIEWPORT*)&vp );
 	}
 
-	u32 direct::renderer_create_blend_state( const blend_creation_params &bcp )
+	void direct::renderer_create_blend_state( const blend_creation_params &bcp, u32 resource_slot )
 	{
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 
 		D3D11_BLEND_DESC bd;
 		pen::memory_zero( &bd, sizeof(D3D11_BLEND_DESC) );
@@ -935,8 +916,6 @@ namespace pen
 		}
 
 		g_device->CreateBlendState( &bd, &resource_pool[resource_index].blend_state );
-
-		return resource_index;
 	}
 
 	void direct::renderer_set_blend_state( u32 blend_state_index )
@@ -986,13 +965,11 @@ namespace pen
 		}
     }
 
-	u32 direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp )
+	void direct::renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp, u32 resource_slot )
 	{
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 
 		g_device->CreateDepthStencilState( (D3D11_DEPTH_STENCIL_DESC*)&dscp, &resource_pool[ resource_index ].depth_stencil_state );
-
-		return resource_index;
 	}
 
 	void direct::renderer_set_depth_stencil_state( u32 depth_stencil_state )
@@ -1242,9 +1219,9 @@ namespace pen
 		}
     }
 
-	void direct::renderer_create_stream_out_shader( const pen::shader_load_params &params )
+	void direct::renderer_create_stream_out_shader( const pen::shader_load_params &params, u32 resource_slot )
 	{
-		u32 resource_index = renderer_get_next_resource_index( DIRECT_RESOURCE );
+		u32 resource_index = resource_slot;
 
 		HRESULT hr = g_device->CreateGeometryShaderWithStreamOutput(
 			params.byte_code, 
