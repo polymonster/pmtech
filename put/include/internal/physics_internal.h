@@ -1,5 +1,5 @@
 #include "put_math.h"
-#include "physics_cmdbuf.h"
+#include "physics.h"
 
 //for multi body bullet
 #include "btBulletDynamicsCommon.h"
@@ -82,9 +82,8 @@ namespace physics
 		btMultiBodyPoint2Point*	 p_point_constraint_multi;
 	}generic_constraint;
 
-#define MAX_ENTITIES	2048
-#define DOMAIN_DEFER	1
-#define DOMAIN_INTENAL	2
+#define MAX_PHYSICS_RESOURCES	2048
+
 	typedef struct bullet_objects
 	{
 		bullet_objects( )
@@ -93,8 +92,8 @@ namespace physics
 			pen::memory_zero( &entities[ 0 ],			sizeof(entities) );
 		};
 
-		a_u8											entity_allocated[MAX_ENTITIES];
-		physics_entity									entities		[MAX_ENTITIES];
+		a_u8											entity_allocated[MAX_PHYSICS_RESOURCES];
+		physics_entity									entities		[MAX_PHYSICS_RESOURCES];
 
 		u32												num_entities;
 	}bullet_objects;
@@ -151,18 +150,20 @@ namespace physics
 	//--------------------------------------------------------------
 	//--------------------------------------------------------------
 	//FUNCTIONS-----------------------------------------------------
-	s32					get_next_free_entity_index( u32 domain );
-	physics_entity&		get_next_free_entity( u32 domain );
-
+    void                physics_update( f32 dt );
+    void                physics_initialise( );
+    
 	btMultiBody*		create_multirb_internal( physics_entity& entity, const multi_body_params &params );
 	btRigidBody*		create_rb_internal( physics_entity& entity, const rigid_body_params &params, u32 ghost, btCollisionShape* p_existing_shape = NULL );
-	void				add_rb_internal( const rigid_body_params &params, u32 ghost = 0 );
-	void				add_compound_rb_internal( const compound_rb_params &params );
-	void				add_compound_shape_internal( const compound_rb_params &params );
-	void				add_dof6_internal( const constraint_params &params, btRigidBody* rb, btRigidBody* fixed_body );
-	void				add_multibody_internal( const multi_body_params &params );
-	void				add_hinge_internal( const constraint_params &params );
-	void				add_constrained_rb_internal( const constraint_params &params );
+    
+	void				add_rb_internal( const rigid_body_params &params, u32 resource_slot, bool ghost = false );
+	void				add_compound_rb_internal( const compound_rb_params &params, u32 resource_slot );
+	void				add_compound_shape_internal( const compound_rb_params &params, u32 resource_slot );
+	void				add_dof6_internal( const constraint_params &params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body );
+	void				add_multibody_internal( const multi_body_params &params, u32 resource_slot );
+	void				add_hinge_internal( const constraint_params &params, u32 resource_slot );
+	void				add_constrained_rb_internal( const constraint_params &params, u32 resource_slot );
+    
 	void				set_linear_velocity_internal( const set_v3_params &cmd );
 	void				set_angular_velocity_internal( const set_v3_params &cmd );
 	void				set_linear_factor_internal( const set_v3_params &cmd );

@@ -26,8 +26,7 @@ namespace physics
 		CMD_SET_FRICTION,
 		CMD_SET_HINGE_MOTOR,
 		CMD_SET_BUTTON_MOTOR,
-		CMD_SET_MULTI_JOINT_MOTOR,
-		//uses v.x to represent rotation about the joints axis
+		CMD_SET_MULTI_JOINT_MOTOR,         //uses v.x to represent rotation about the joints axis
 		CMD_SET_MULTI_JOINT_POS,
 		CMD_SET_MULTI_JOINT_LIMITS,
 		CMD_SET_MULTI_BASE_VELOCITY,
@@ -78,33 +77,28 @@ namespace physics
 		UP_Z = 2,
 	};
 
-	typedef struct collision_response
+    struct collision_response
 	{
 		s32 hit_tag;
 		u32 collider_flags;
-	}collision_response;
+	};
 
-    inline void set_lw_vec3f( lw_vec3f *plwv, vec3f v )
-	{
-		pen::memory_cpy( plwv, &v, sizeof( vec3f ) );
-	}
-
-	typedef struct collision_trigger_data
+    struct collision_trigger_data
 	{
 		u32 entity_index;
 		u32 group;
 		u32 mask;
-	}collision_trigger_data;
+	};
 
-	typedef struct collision_mesh_data
+    struct collision_mesh_data
 	{
 		f32* vertices;
 		u32* indices;
 		u32  num_floats;
 		u32  num_indices;
-	}collision_mesh_data;
+	};
 
-	typedef struct rigid_body_params
+    struct rigid_body_params
 	{
 		lw_vec3f position;
 		lw_vec3f dimensions;
@@ -115,16 +109,16 @@ namespace physics
 		u32		 group;
 		u32		 mask;
 		collision_mesh_data mesh_data;
-	}rigid_body_params;
+	};
 
-	typedef struct compound_rb_params
+    struct compound_rb_params
 	{
 		rigid_body_params  base;
 		rigid_body_params* rb;
 		u32				   num_shapes;
-	}compound_rb_params;
+	};
 
-	typedef struct multi_body_link
+    struct multi_body_link
 	{
 		rigid_body_params	rb;
 		lw_vec3f			hinge_axis;
@@ -137,18 +131,18 @@ namespace physics
 		u32					joint_limit_constraint;
 		u32					compound_index;
 		compound_rb_params	compound_shape;
-	} multi_body_link;
+	};
 
-	typedef struct multi_body_params
+    struct multi_body_params
 	{
 		rigid_body_params	base;
 		multi_body_link*	links;
 		u32					multi_dof;
 
 		u32 num_links;
-	}multi_body_params;
+	};
 
-	typedef struct constraint_params
+    struct constraint_params
 	{
 		rigid_body_params rb;
 
@@ -168,9 +162,9 @@ namespace physics
 
 		s32		rb_indices[ 2 ];
 
-	}slider_constraint_params;
+	};
 
-	typedef struct attach_to_compound_params
+    struct attach_to_compound_params
 	{
 		u32		rb;
 		u32		compound;
@@ -179,81 +173,82 @@ namespace physics
 		void	(*function)(  void* user_data, s32 attach_index );
 		void*	p_user_data;
 
-	}attach_to_compound_params;
+	};
 
-	typedef struct  add_p2p_constraint_params
+    struct  add_p2p_constraint_params
 	{
 		lw_vec3f position;
 		u32		 entity_index;
 		s32		 link_index;
 		u32		 p2p_index;
-	}add_p2p_constraint_params;
+	};
 
-	typedef struct add_box_params
+    struct add_box_params
 	{
 		lw_vec3f dimensions;
 		lw_vec3f position;
 		quat	 rotation;
 		f32		 mass;
-	}add_box_params;
+	};
 
-	typedef struct set_v3_params
+    struct set_v3_params
 	{
 		u32 object_index;
 		lw_vec3f data;
-	}set_v3_params;
+	};
 
-	typedef struct set_multi_v3_params
+    struct set_multi_v3_params
 	{
 		u32 multi_index;
 		u32 link_index;
 		lw_vec3f data;
-	}set_multi_v3_params;
+	};
 
-	typedef struct set_float_params
+    struct set_float_params
 	{
 		u32 object_index;
 		f32 data;
-	}set_float_params;
+	};
 
-	typedef struct set_transform_params
+    struct set_transform_params
 	{
 		u32		 object_index;
 		lw_vec3f position;
 		quat	 rotation;
-	}set_transform_params;
+	};
 
-	typedef struct sync_compound_multi_params
+    struct sync_compound_multi_params
 	{
 		u32 compound_index;
 		u32 multi_index;
-	}sync_compound_multi_params;
+	};
 
-	typedef struct set_damping_params
+    struct set_damping_params
 	{
 		u32 object_index;
 		lw_vec3f linear;
 		lw_vec3f angular;
-	}set_damping_params;
+	};
 
-	typedef struct set_group_params
+    struct set_group_params
 	{
 		u32 object_index;
 		u32 group;
 		u32 mask;
-	}set_group_params;
+	};
 
-	typedef struct  sync_rb_params
+    struct  sync_rb_params
 	{
 		u32 master;
 		u32 slave;
 		s32 link_index;
-	}sync_rb_params;
+	};
 
-	typedef struct physics_cmd
+    struct physics_cmd
 	{
 		u32		command_index;
-
+        u32     resource_slot;
+        
 		union
 		{
 			add_box_params					add_box;
@@ -274,21 +269,23 @@ namespace physics
 			attach_to_compound_params		attach_compound;
 			add_p2p_constraint_params		add_p2p;
 		};
-	}physics_cmd;
+	};
 
 #define MAX_TRIGGER_CONTACTS	8	
-	typedef struct trigger_contact_data
+    struct trigger_contact_data
 	{
 		u32		num;
 		u32		flag	[MAX_TRIGGER_CONTACTS];
 		u32		entity	[MAX_TRIGGER_CONTACTS];
 		vec3f	normals	[MAX_TRIGGER_CONTACTS];
 		vec3f	pos		[MAX_TRIGGER_CONTACTS];
-	}trigger_contact_data;
+	};
 
 	//
 	void	set_consume( u32 val );	
-	void	set_paused( u32 val );	
+	void	set_paused( u32 val );
+    
+    void    physics_consume_command_buffer( );
 
 	//add
 	u32		add_rb( const rigid_body_params &rbp );

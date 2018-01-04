@@ -11,7 +11,7 @@
 #include "pmfx_controller.h"
 #include "timer.h"
 #include "str_utilities.h"
-#include "physics_cmdbuf.h"
+#include "physics.h"
 
 namespace put
 {

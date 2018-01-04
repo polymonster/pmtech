@@ -96,15 +96,15 @@ namespace pen
         void	audio_system_update();
 
         //creation
-        u32		audio_create_stream( const c8* filename );
-        u32		audio_create_sound( const c8* filename );
-        u32     audio_create_channel_for_sound( u32 sound_index );
-        u32     audio_create_channel_group();
+        u32		audio_create_stream( const c8* filename, u32 resource_slot );
+        u32		audio_create_sound( const c8* filename, u32 resource_slot );
+        u32     audio_create_channel_for_sound( u32 sound_index, u32 resource_slot );
+        u32     audio_create_channel_group( u32 resource_slot);
         u32     audio_release_resource( u32 index );
         
         //binding
         void    audio_add_channel_to_group( const u32 channel_index, const u32 group_index );
-        u32     audio_add_dsp_to_group( const u32 group_index, dsp_type type );
+        u32     audio_add_dsp_to_group( const u32 group_index, dsp_type type, u32 resource_slot );
         
         //manipulation
         void	audio_channel_set_position( const u32 channel_index, const u32 position_ms );

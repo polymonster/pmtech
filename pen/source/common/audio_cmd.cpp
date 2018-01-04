@@ -3,14 +3,13 @@
 #include "threads.h"
 #include "pen_string.h"
 #include "fmod.hpp"
+#include "slot_resource.h"
 #include <math.h>
 
 namespace pen
 {
-#define MAX_AUDIO_COMMANDS 10000
-#define INC_WRAP( V ) V = (V+1)%MAX_AUDIO_COMMANDS
-
-    extern u32 get_next_audio_resource( u32 domain );
+#define MAX_AUDIO_COMMANDS (1<<12)
+#define INC_WRAP( V ) V = (V+1) & (MAX_AUDIO_COMMANDS-1);
 
     enum commands : u32
     {
@@ -57,7 +56,8 @@ namespace pen
     struct  audio_cmd
     {
         u32		command_index;
-
+        u32     resource_slot;
+        
         union
         {
             c8*         filename;
@@ -77,25 +77,25 @@ namespace pen
         switch( cmd.command_index )
         {
         case CMD_AUDIO_CREATE_STREAM:
-            direct::audio_create_stream( cmd.filename );
+            direct::audio_create_stream( cmd.filename, cmd.resource_slot );
             pen::memory_free(cmd.filename);
             break;
         case CMD_AUDIO_CREATE_SOUND:
-            direct::audio_create_sound( cmd.filename );
+            direct::audio_create_sound( cmd.filename, cmd.resource_slot );
             pen::memory_free( cmd.filename );
             break;
         case CMD_AUDIO_CREATE_GROUP:
-            direct::audio_create_channel_group( );
+            direct::audio_create_channel_group( cmd.resource_slot );
             pen::memory_free( cmd.filename );
             break;
         case CMD_AUDIO_ADD_CHANNEL_TO_GROUP:
             direct::audio_add_channel_to_group( cmd.set_valuei.resource_index, cmd.set_valuei.value );
             break;
         case CMD_AUDIO_ADD_DSP_TO_GROUP:
-            direct::audio_add_dsp_to_group( cmd.set_valuei.resource_index, (dsp_type)cmd.set_valuei.value );
+            direct::audio_add_dsp_to_group( cmd.set_valuei.resource_index, (dsp_type)cmd.set_valuei.value, cmd.resource_slot );
             break;
         case CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND:
-            direct::audio_create_channel_for_sound( cmd.resource_index );
+            direct::audio_create_channel_for_sound( cmd.resource_index, cmd.resource_slot );
             break;
         case CMD_AUDIO_CHANNEL_SET_POSITION:
             direct::audio_channel_set_position( cmd.set_valuei.resource_index, cmd.set_valuei.value );
@@ -132,7 +132,8 @@ namespace pen
 
     //thread sync
     pen::job_thread*         p_audio_job_thread_info;
-
+    pen::slot_resources      k_audio_slot_resources;
+    
     void audio_consume_command_buffer()
     {
         pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_consume, 1 );
@@ -144,12 +145,15 @@ namespace pen
         job_thread_params* job_params = (job_thread_params*)params;
         p_audio_job_thread_info = job_params->job_thread_info;
         
+        //create resource slots
+        pen::slot_resources_init(&k_audio_slot_resources, MAX_AUDIO_RESOURCES);
+        
 		direct::audio_system_initialise();
-
+        
 		//allow main thread to continue now we are initialised
 		pen::threads_semaphore_signal(p_audio_job_thread_info->p_sem_continue, 1);
 
-        while( 1 )
+        for(;;)
         {
             if( pen::threads_semaphore_try_wait( p_audio_job_thread_info->p_sem_consume ) )
             {
@@ -185,13 +189,14 @@ namespace pen
 		return PEN_THREAD_OK;
     }
 
-    void    create_file_command( const c8* filename, u32 command )
+    void    create_file_command( const c8* filename, u32 command, u32 resource_slot )
     {
         //allocate filename and copy the buffer and null terminate it
         u32 filename_length = pen::string_length( filename );
         audio_cmd_buffer[ audio_put_pos ].filename = ( c8* ) pen::memory_alloc( filename_length + 1 );
         audio_cmd_buffer[ audio_put_pos ].filename[filename_length] = 0x00;
-
+        audio_cmd_buffer[ audio_put_pos ].resource_slot = resource_slot;
+        
         pen::memory_cpy( audio_cmd_buffer[ audio_put_pos ].filename, filename, filename_length );
 
         //set command (create stream or sound)
@@ -202,27 +207,28 @@ namespace pen
 
     u32		audio_create_stream( const c8* filename )
     {
-        u32 res = get_next_audio_resource( DEFER_RESOURCE );
+        u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
 
-        create_file_command( filename, CMD_AUDIO_CREATE_STREAM );
+        create_file_command( filename, CMD_AUDIO_CREATE_STREAM, res );
 
         return res;
     }
 
     u32		audio_create_sound( const c8* filename )
     {
-        u32 res = get_next_audio_resource( DEFER_RESOURCE );
+        u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
 
-        create_file_command( filename, CMD_AUDIO_CREATE_SOUND );
+        create_file_command( filename, CMD_AUDIO_CREATE_SOUND, res );
 
         return res;
     }
 
     u32     audio_create_channel_group()
     {
-        u32 res = get_next_audio_resource( DEFER_RESOURCE );
+        u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
 
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_CREATE_GROUP;
+        audio_cmd_buffer[ audio_put_pos ].resource_slot = res;
 
         INC_WRAP( audio_put_pos );
 
@@ -236,10 +242,11 @@ namespace pen
             return 0;
         }
         
-        u32 res = get_next_audio_resource( DEFER_RESOURCE );
+        u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
 
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND;
         audio_cmd_buffer[ audio_put_pos ].resource_index = sound_index;
+        audio_cmd_buffer[ audio_put_pos ].resource_slot = res;
 
         INC_WRAP( audio_put_pos );
 
@@ -319,16 +326,19 @@ namespace pen
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_RELEASE_RESOURCE;
         audio_cmd_buffer[ audio_put_pos ].resource_index = index;
         
+        pen::slot_resources_free(&k_audio_slot_resources, index);
+        
         INC_WRAP( audio_put_pos );
     }
     
     u32     audio_add_dsp_to_group( const u32 group_index, dsp_type type )
     {
-        u32 res = get_next_audio_resource( DEFER_RESOURCE );
+        u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
         
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_ADD_DSP_TO_GROUP;
         audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = group_index;
         audio_cmd_buffer[ audio_put_pos ].set_valuei.value = type;
+        audio_cmd_buffer[ audio_put_pos ].resource_slot = res;
         
         INC_WRAP( audio_put_pos );
 

@@ -1,7 +1,8 @@
 #include "pen_string.h"
 #include "timer.h"
 
-#include "physics_cmdbuf.h"
+#include "slot_resource.h"
+#include "physics.h"
 #include "internal/physics_internal.h"
 
 //for multi body bullet
@@ -17,13 +18,14 @@
 
 namespace physics
 {
-
-#define MAX_COMMANDS 2048
-#define INC_WRAP( V ) V = (V+1)%MAX_COMMANDS
+#define MAX_COMMANDS (1<<12)
+#define INC_WRAP( V ) V =  (V+1) & (MAX_COMMANDS-1);
 
 	physics_cmd cmd_buffer[MAX_COMMANDS];
 	u32 put_pos = 0;
 	u32 get_pos = 0;
+    
+    pen::slot_resources k_physics_slot_resources;
 		
 	void exec_cmd( const physics_cmd &cmd )
 	{
@@ -50,7 +52,7 @@ namespace physics
 			break;
 
 		case CMD_ADD_RIGID_BODY:
-			add_rb_internal( cmd.add_rb );
+			add_rb_internal( cmd.add_rb, cmd.resource_slot );
 			break;
 
 		case CMD_ADD_GHOST_RIGID_BODY:
@@ -58,7 +60,7 @@ namespace physics
 			break;
 
 		case CMD_ADD_CONSTRAINED_RB:
-			add_constrained_rb_internal( cmd.add_constained_rb );
+			add_constrained_rb_internal( cmd.add_constained_rb, cmd.resource_slot );
 			break;
 
 		case CMD_SET_GRAVITY:
@@ -66,7 +68,7 @@ namespace physics
 			break;
 
 		case CMD_ADD_MULTI_BODY:
-			add_multibody_internal( cmd.add_multi );
+			add_multibody_internal( cmd.add_multi, cmd.resource_slot );
 			break;
 
 		case CMD_SET_FRICTION:
@@ -102,7 +104,7 @@ namespace physics
 			break;
 
 		case CMD_ADD_COMPOUND_RB:
-			add_compound_rb_internal( cmd.add_compound_rb );
+			add_compound_rb_internal( cmd.add_compound_rb, cmd.resource_slot );
 			break;
 
 		case CMD_SYNC_COMPOUND_TO_MULTI:
@@ -138,7 +140,7 @@ namespace physics
 			break;
 
 		case CMD_ADD_COMPOUND_SHAPE:
-			add_compound_shape_internal( cmd.add_compound_rb );
+			add_compound_shape_internal( cmd.add_compound_rb, cmd.resource_slot );
 			break;
 
 		case CMD_ADD_COLLISION_TRIGGER:
@@ -161,17 +163,69 @@ namespace physics
 			break;
 		}
 	}
-
-	void consume_cmd_buf( )
-	{
-		u32 end_pos = put_pos;
-		while (get_pos != end_pos)
-		{
-			exec_cmd( cmd_buffer[get_pos] );
-
-			INC_WRAP( get_pos );
-		}
-	}
+    
+    //thread sync
+    pen::job_thread*         p_physics_job_thread_info;
+    
+    void physics_consume_command_buffer()
+    {
+        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_consume, 1 );
+        pen::threads_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
+    }
+    
+    PEN_THREAD_RETURN physics_thread_main( void* params )
+    {
+        pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+        pen::job_thread* p_thread_info = job_params->job_thread_info;
+        pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+        
+        p_physics_job_thread_info = p_thread_info;
+        
+        pen::slot_resources_init( &k_physics_slot_resources, MAX_PHYSICS_RESOURCES );
+        
+        physics_initialise();
+        
+        static u32 physics_timer = pen::timer_create("physics_timer");
+        pen::timer_reset(physics_timer);
+        pen::timer_start(physics_timer);
+        
+        for(;;)
+        {
+            pen::timer_accum(physics_timer);
+            f32 dt_ms = pen::timer_get_ms(physics_timer);
+            
+            pen::timer_reset(physics_timer);
+            pen::timer_start(physics_timer);
+            
+            if( pen::threads_semaphore_try_wait( p_physics_job_thread_info->p_sem_consume ) )
+            {
+                u32 end_pos = put_pos;
+                
+                pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
+                
+                while (get_pos != end_pos)
+                {
+                    exec_cmd( cmd_buffer[get_pos] );
+                    
+                    INC_WRAP( get_pos );
+                }
+            }
+            
+            physics_update( dt_ms * 1000.0f );
+            
+            pen::threads_sleep_ms( 16 );
+            
+            if( pen::threads_semaphore_try_wait(p_physics_job_thread_info->p_sem_exit) )
+            {
+                break;
+            }
+        }
+        
+        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
+        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_terminated, 1 );
+        
+        return PEN_THREAD_OK;
+    }
 
 	void set_v3( const u32 &entity_index, const vec3f &velocity, u32 cmd )
 	{
@@ -228,39 +282,51 @@ namespace physics
 		cmd_buffer[put_pos].command_index = CMD_ADD_RIGID_BODY;
 		cmd_buffer[put_pos].add_rb = rbp;
 
+        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
+        
 		INC_WRAP( put_pos );
 
-		return get_next_free_entity_index( DOMAIN_DEFER );
+        return resource_slot;
 	}
 
 	u32 add_ghost_rb( const rigid_body_params &rbp )
 	{
 		cmd_buffer[put_pos].command_index = CMD_ADD_GHOST_RIGID_BODY;
 		cmd_buffer[put_pos].add_rb = rbp;
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP( put_pos );
 
-		return get_next_free_entity_index( DOMAIN_DEFER );
+		return resource_slot;
 	}
 
 	u32  add_constrained_rb( const constraint_params &crbp )
 	{
 		cmd_buffer[put_pos].command_index = CMD_ADD_CONSTRAINED_RB;
 		cmd_buffer[put_pos].add_constained_rb = crbp;
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP( put_pos );
 
-		return get_next_free_entity_index( DOMAIN_DEFER );
+		return resource_slot;
 	}
 
 	u32 add_multibody( const multi_body_params &mbp )
 	{
 		cmd_buffer[put_pos].command_index = CMD_ADD_MULTI_BODY;
 		cmd_buffer[put_pos].add_multi = mbp;
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP( put_pos );
 
-		return get_next_free_entity_index( DOMAIN_DEFER );
+		return resource_slot;
 	}
 
 	void set_consume( u32 val )
@@ -287,12 +353,14 @@ namespace physics
 	u32 add_compound_rb( const compound_rb_params &crbp )
 	{
 		cmd_buffer[put_pos].command_index = CMD_ADD_COMPOUND_RB;
-
 		cmd_buffer[put_pos].add_compound_rb = crbp;
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP( put_pos );
 
-		return get_next_free_entity_index( DOMAIN_DEFER );
+		return resource_slot;
 	}
 
 	void sync_compound_multi( const u32 &compound_index, const u32 &multi_index )
@@ -353,12 +421,14 @@ namespace physics
 	u32 add_compound_shape( const compound_rb_params &crbp )
 	{
 		cmd_buffer[put_pos].command_index = CMD_ADD_COMPOUND_SHAPE;
-
 		cmd_buffer[put_pos].add_compound_rb = crbp;
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP( put_pos );
 
-		return get_next_free_entity_index( DOMAIN_DEFER );
+		return resource_slot;
 	}
 
 	void add_collision_trigger( const collision_trigger_data &trigger_data )

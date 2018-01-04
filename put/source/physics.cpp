@@ -28,7 +28,7 @@ namespace physics
 			num_responsors = 0;
 		}
 
-		collision_response response_data[MAX_ENTITIES];
+		collision_response response_data[MAX_PHYSICS_RESOURCES];
 		u32 num_responsors;
 	};
 
@@ -385,9 +385,9 @@ namespace physics
 		return body;
 	}
 
-	void initialise( )
+	void physics_initialise( )
 	{
-		pen::memory_zero( &g_bullet_objects.entities, sizeof( physics_entity ) * MAX_ENTITIES );
+        pen::memory_zero( &g_bullet_objects.entities, sizeof( physics_entity ) * MAX_PHYSICS_RESOURCES );
 		g_bullet_objects.num_entities = 0;
 
 		g_bullet_systems.collision_config = new btDefaultCollisionConfiguration( );
@@ -537,128 +537,67 @@ namespace physics
 		u32		 trigger_a;
 		u32		 trigger_b;
 	};
-
-	PEN_THREAD_RETURN physics_thread_main( void* params )
-	{
-        pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-        pen::job_thread* p_thread_info = job_params->job_thread_info;
-        pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+    
+    void physics_update( f32 dt )
+    {
+        //step
+        if (!g_readable_data.b_paused)
+        {
+            g_bullet_systems.dynamics_world->stepSimulation( dt );
+        }
         
-		initialise( );
-
-		while (1)
-		{
-			PEN_TIMER_START( LOOP_TIME );
-			PEN_TIMER_START( CONSUME_CMD );
-
-			if ( g_readable_data.b_consume)
-			{
-				consume_cmd_buf( );
-			}
-
-			PEN_TIMER_END( CONSUME_CMD );
-			PEN_TIMER_RESET( CONSUME_CMD );
-
-			PEN_TIMER_START( STEP_SIMULATION );
-
-			if (!g_readable_data.b_paused)
-			{
-				g_bullet_systems.dynamics_world->stepSimulation( 1.0f / 60.0f );
-			}
-
-			PEN_TIMER_END( STEP_SIMULATION );
-			//PEN_TIMER_PRINT( STEP_SIMULATION );
-			PEN_TIMER_RESET( STEP_SIMULATION );
-
-			PEN_TIMER_START( UPDATE_OUTPUTS );
-
-			update_output_matrices( );
-
-			PEN_TIMER_END( UPDATE_OUTPUTS );
-			PEN_TIMER_RESET( UPDATE_OUTPUTS );
-
-			PEN_TIMER_START( PROCESS_TRIGGERS );
-
-			//process triggers
-			for (u32 i = 0; i < g_num_triggers; ++i)
-			{
-				g_trigger_contacts[i].num = 0;
-
-				for (u32 j = 0; j < g_num_triggers; ++j)
-				{
-					if (i == j)
-					{
-						continue;
-					}
-
-					if (g_triggers[i].mask & g_triggers[j].group)
-					{
-						trigger_callback tc;
-						tc.trigger_a = i;
-						tc.trigger_b = j;
-
-						g_bullet_systems.dynamics_world->getCollisionWorld( )->contactPairTest( g_triggers[i].collision_object, g_triggers[j].collision_object, tc );
-
-					}
-				}
-			}
-
-			//update outputs and clear hit flags
-			u32 current_ouput_backbuffer = g_readable_data.current_ouput_backbuffer;
-			//u32 current_ouput_frontbuffer = g_readable_data.current_ouput_frontbuffer;
-
-			for (u32 i = 0; i < g_num_triggers; ++i)
-			{
-				g_readable_data.output_hit_flags[current_ouput_backbuffer][g_triggers[i].entity_index] = g_triggers[i].hit_flags;
-				g_triggers[i].hit_flags = 0;
-			}
-
-			for (u32 i = 0; i < g_num_triggers; ++i)
-			{
-				g_readable_data.output_contact_data[current_ouput_backbuffer][g_triggers[i].entity_index] = g_trigger_contacts[i];
-			}
-
-			PEN_TIMER_END( PROCESS_TRIGGERS );
-			PEN_TIMER_RESET( PROCESS_TRIGGERS );
-
-			//swap the output buffers
-			SWAP_BUFFERS( g_readable_data.current_ouput_backbuffer );
-			SWAP_BUFFERS( g_readable_data.current_ouput_frontbuffer );
-
-			PEN_TIMER_END( LOOP_TIME );
-
-			f32 ms;
-			u32 hc;
-			f32 longest;
-			f32 shortest;
-
-			pen::timer_get_data( LOOP_TIME_timer_index, ms, hc, longest, shortest );
-
-			//s32 s_ms = ( s32 ) ms;
-			//u32 u_ms = s_ms > 0 ? s_ms : 0;
-
-			g_readable_data.b_wait_flag = 1;
-
-			pen::threads_sleep_ms( 16 );
-
-			PEN_TIMER_RESET( LOOP_TIME );
+        //update mats
+        update_output_matrices( );
+        
+        //process triggers
+        for (u32 i = 0; i < g_num_triggers; ++i)
+        {
+            g_trigger_contacts[i].num = 0;
             
-            //msg from the engine we want to terminate
-            if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
-                break;
-		}
+            for (u32 j = 0; j < g_num_triggers; ++j)
+            {
+                if (i == j)
+                {
+                    continue;
+                }
+                
+                if (g_triggers[i].mask & g_triggers[j].group)
+                {
+                    trigger_callback tc;
+                    tc.trigger_a = i;
+                    tc.trigger_b = j;
+                    
+                    g_bullet_systems.dynamics_world->getCollisionWorld( )->contactPairTest( g_triggers[i].collision_object, g_triggers[j].collision_object, tc );
+                    
+                }
+            }
+        }
         
-        //todo shutdown
+        //update outputs and clear hit flags
+        u32 current_ouput_backbuffer = g_readable_data.current_ouput_backbuffer;
+        //u32 current_ouput_frontbuffer = g_readable_data.current_ouput_frontbuffer;
         
-        //signal to the engine the thread has finished
-        pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
+        for (u32 i = 0; i < g_num_triggers; ++i)
+        {
+            g_readable_data.output_hit_flags[current_ouput_backbuffer][g_triggers[i].entity_index] = g_triggers[i].hit_flags;
+            g_triggers[i].hit_flags = 0;
+        }
         
-        return PEN_THREAD_OK;
-	}
+        for (u32 i = 0; i < g_num_triggers; ++i)
+        {
+            g_readable_data.output_contact_data[current_ouput_backbuffer][g_triggers[i].entity_index] = g_trigger_contacts[i];
+        }
+        
+        //swap the output buffers
+        SWAP_BUFFERS( g_readable_data.current_ouput_backbuffer );
+        SWAP_BUFFERS( g_readable_data.current_ouput_frontbuffer );
 
-	void add_rb_internal( const rigid_body_params &params, u32 ghost )
+    }
+
+	void add_rb_internal( const rigid_body_params &params, u32 resource_slot, bool ghost )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		//add the body to the dynamics world
 		btRigidBody* rb = create_rb_internal( next_entity, params, ghost );
@@ -670,9 +609,10 @@ namespace physics
 		next_entity.mask = params.mask;
 	}
 
-	void add_compound_rb_internal( const compound_rb_params &params )
+	void add_compound_rb_internal( const compound_rb_params &params, u32 resource_slot )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		btCollisionShape* col = create_collision_shape( next_entity, params.base, &params );
 		btCompoundShape* compound = ( btCompoundShape* ) col;
@@ -687,9 +627,10 @@ namespace physics
 		next_entity.mask = params.base.mask;
 	}
 
-	void add_compound_shape_internal( const compound_rb_params &params )
+	void add_compound_shape_internal( const compound_rb_params &params, u32 resource_slot )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		btCollisionShape* col = create_collision_shape( next_entity, params.base, &params );
 		btCompoundShape* compound = ( btCompoundShape* ) col;
@@ -697,9 +638,10 @@ namespace physics
 		next_entity.compound_shape = compound;
 	}
 
-	void add_dof6_internal( const constraint_params &params, btRigidBody* rb, btRigidBody* fixed_body )
+	void add_dof6_internal( const constraint_params &params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		u32 fixed_con = 1;
 
@@ -749,16 +691,17 @@ namespace physics
 		next_entity.dof6_constraint = dof6;
 	}
 
-	void add_multibody_internal( const multi_body_params &params )
+	void add_multibody_internal( const multi_body_params &params, u32 resource_slot )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		next_entity.multi_body = create_multirb_internal( next_entity, params );
 	}
 
-	void add_hinge_internal( const constraint_params &params )
+	void add_hinge_internal( const constraint_params &params, u32 resource_slot )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+        physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		//create the actual rigid body
 		btRigidBody* rb = create_rb_internal( next_entity, params.rb, 0 );
@@ -776,7 +719,7 @@ namespace physics
 		next_entity.hinge_constraint = hinge;
 	}
 
-	void add_constrained_rb_internal( const constraint_params &params )
+	void add_constrained_rb_internal( const constraint_params &params, u32 resource_slot )
 	{
 		switch (params.type)
 		{
@@ -795,16 +738,16 @@ namespace physics
 					p_fixed = g_bullet_objects.entities[params.rb_indices[1]].rigid_body;
 				}
 
-				add_dof6_internal( params, p_rb, p_fixed );
+				add_dof6_internal( params, resource_slot, p_rb, p_fixed );
 			}
 			break;
 
 		case physics::DOF6:
-			add_dof6_internal( params, NULL, NULL );
+			add_dof6_internal( params, resource_slot, NULL, NULL );
 			break;
 
 		case physics::HINGE:
-			add_hinge_internal( params );
+			add_hinge_internal( params, resource_slot );
 			break;
 
 		default:
@@ -1200,30 +1143,5 @@ namespace physics
 	{
 		physics_entity& rb = g_bullet_objects.entities[entity_index];
 		g_bullet_systems.dynamics_world->addRigidBody( rb.rigid_body, rb.group, rb.mask );
-	}
-
-	s32 get_next_free_entity_index( u32 domain )
-	{
-		for( u32 i = 0; i < MAX_ENTITIES; ++i )
-		{
-			if( !(g_bullet_objects.entity_allocated[ i ] & domain) )
-			{
-				g_bullet_objects.entity_allocated[ i ] |= domain;
-				
-				if( g_bullet_objects.entity_allocated[ i ] == 3 )
-				{
-					g_bullet_objects.num_entities++;
-				}
-				
-				return i;
-			}
-		}
-
-		return -1;
-	}
-
-	physics_entity& get_next_free_entity( u32 domain )
-	{
-		return g_bullet_objects.entities[ get_next_free_entity_index( domain ) ];
 	}
 }

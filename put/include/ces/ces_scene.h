@@ -5,7 +5,7 @@
 #include "put_math.h"
 #include "camera.h"
 #include "loader.h"
-#include "physics_cmdbuf.h"
+#include "physics.h"
 #include "str/Str.h"
 #include "pmfx.h"
 
