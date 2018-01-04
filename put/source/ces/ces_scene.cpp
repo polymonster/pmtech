@@ -487,10 +487,11 @@ namespace put
 			else
 			{
 				physics::set_paused(0);
-				physics::set_consume(1);
-
 				update_animations(scene, dt);
 			}
+            
+            //update physics
+            physics::physics_consume_command_buffer();
                                     
             //scene node transform
 			for (u32 n = 0; n < scene->num_nodes; ++n)

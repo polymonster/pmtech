@@ -1,6 +1,7 @@
 #include "pen_string.h"
 #include "timer.h"
 
+#include "slot_resource.h"
 #include "physics_cmdbuf.h"
 #include "internal/physics_internal.h"
 
@@ -161,17 +162,58 @@ namespace physics
 			break;
 		}
 	}
-
-	void consume_cmd_buf( )
-	{
-		u32 end_pos = put_pos;
-		while (get_pos != end_pos)
-		{
-			exec_cmd( cmd_buffer[get_pos] );
-
-			INC_WRAP( get_pos );
-		}
-	}
+    
+    //thread sync
+    pen::job_thread*         p_physics_job_thread_info;
+    pen::slot_resources      k_physics_slot_resources;
+    
+    void physics_consume_command_buffer()
+    {
+        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_consume, 1 );
+        pen::threads_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
+    }
+    
+    PEN_THREAD_RETURN physics_thread_main( void* params )
+    {
+        pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+        pen::job_thread* p_thread_info = job_params->job_thread_info;
+        pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+        
+        p_physics_job_thread_info = p_thread_info;
+        
+        physics_initialise();
+        
+        for(;;)
+        {
+            if( pen::threads_semaphore_try_wait( p_physics_job_thread_info->p_sem_consume ) )
+            {
+                u32 end_pos = put_pos;
+                
+                pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
+                
+                while (get_pos != end_pos)
+                {
+                    exec_cmd( cmd_buffer[get_pos] );
+                    
+                    INC_WRAP( get_pos );
+                }
+            }
+            
+            physics_update();
+            
+            pen::threads_sleep_ms(16);
+            
+            if( pen::threads_semaphore_try_wait(p_physics_job_thread_info->p_sem_exit) )
+            {
+                break;
+            }
+        }
+        
+        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
+        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_terminated, 1 );
+        
+        return PEN_THREAD_OK;
+    }
 
 	void set_v3( const u32 &entity_index, const vec3f &velocity, u32 cmd )
 	{

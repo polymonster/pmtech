@@ -385,7 +385,7 @@ namespace physics
 		return body;
 	}
 
-	void initialise( )
+	void physics_initialise( )
 	{
 		pen::memory_zero( &g_bullet_objects.entities, sizeof( physics_entity ) * MAX_ENTITIES );
 		g_bullet_objects.num_entities = 0;
@@ -537,124 +537,62 @@ namespace physics
 		u32		 trigger_a;
 		u32		 trigger_b;
 	};
-
-	PEN_THREAD_RETURN physics_thread_main( void* params )
-	{
-        pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-        pen::job_thread* p_thread_info = job_params->job_thread_info;
-        pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+    
+    void physics_update( )
+    {
+        //step
+        if (!g_readable_data.b_paused)
+        {
+            g_bullet_systems.dynamics_world->stepSimulation( 1.0f / 60.0f );
+        }
         
-		initialise( );
-
-		while (1)
-		{
-			PEN_TIMER_START( LOOP_TIME );
-			PEN_TIMER_START( CONSUME_CMD );
-
-			if ( g_readable_data.b_consume)
-			{
-				consume_cmd_buf( );
-			}
-
-			PEN_TIMER_END( CONSUME_CMD );
-			PEN_TIMER_RESET( CONSUME_CMD );
-
-			PEN_TIMER_START( STEP_SIMULATION );
-
-			if (!g_readable_data.b_paused)
-			{
-				g_bullet_systems.dynamics_world->stepSimulation( 1.0f / 60.0f );
-			}
-
-			PEN_TIMER_END( STEP_SIMULATION );
-			//PEN_TIMER_PRINT( STEP_SIMULATION );
-			PEN_TIMER_RESET( STEP_SIMULATION );
-
-			PEN_TIMER_START( UPDATE_OUTPUTS );
-
-			update_output_matrices( );
-
-			PEN_TIMER_END( UPDATE_OUTPUTS );
-			PEN_TIMER_RESET( UPDATE_OUTPUTS );
-
-			PEN_TIMER_START( PROCESS_TRIGGERS );
-
-			//process triggers
-			for (u32 i = 0; i < g_num_triggers; ++i)
-			{
-				g_trigger_contacts[i].num = 0;
-
-				for (u32 j = 0; j < g_num_triggers; ++j)
-				{
-					if (i == j)
-					{
-						continue;
-					}
-
-					if (g_triggers[i].mask & g_triggers[j].group)
-					{
-						trigger_callback tc;
-						tc.trigger_a = i;
-						tc.trigger_b = j;
-
-						g_bullet_systems.dynamics_world->getCollisionWorld( )->contactPairTest( g_triggers[i].collision_object, g_triggers[j].collision_object, tc );
-
-					}
-				}
-			}
-
-			//update outputs and clear hit flags
-			u32 current_ouput_backbuffer = g_readable_data.current_ouput_backbuffer;
-			//u32 current_ouput_frontbuffer = g_readable_data.current_ouput_frontbuffer;
-
-			for (u32 i = 0; i < g_num_triggers; ++i)
-			{
-				g_readable_data.output_hit_flags[current_ouput_backbuffer][g_triggers[i].entity_index] = g_triggers[i].hit_flags;
-				g_triggers[i].hit_flags = 0;
-			}
-
-			for (u32 i = 0; i < g_num_triggers; ++i)
-			{
-				g_readable_data.output_contact_data[current_ouput_backbuffer][g_triggers[i].entity_index] = g_trigger_contacts[i];
-			}
-
-			PEN_TIMER_END( PROCESS_TRIGGERS );
-			PEN_TIMER_RESET( PROCESS_TRIGGERS );
-
-			//swap the output buffers
-			SWAP_BUFFERS( g_readable_data.current_ouput_backbuffer );
-			SWAP_BUFFERS( g_readable_data.current_ouput_frontbuffer );
-
-			PEN_TIMER_END( LOOP_TIME );
-
-			f32 ms;
-			u32 hc;
-			f32 longest;
-			f32 shortest;
-
-			pen::timer_get_data( LOOP_TIME_timer_index, ms, hc, longest, shortest );
-
-			//s32 s_ms = ( s32 ) ms;
-			//u32 u_ms = s_ms > 0 ? s_ms : 0;
-
-			g_readable_data.b_wait_flag = 1;
-
-			pen::threads_sleep_ms( 16 );
-
-			PEN_TIMER_RESET( LOOP_TIME );
+        //update mats
+        update_output_matrices( );
+        
+        //process triggers
+        for (u32 i = 0; i < g_num_triggers; ++i)
+        {
+            g_trigger_contacts[i].num = 0;
             
-            //msg from the engine we want to terminate
-            if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
-                break;
-		}
+            for (u32 j = 0; j < g_num_triggers; ++j)
+            {
+                if (i == j)
+                {
+                    continue;
+                }
+                
+                if (g_triggers[i].mask & g_triggers[j].group)
+                {
+                    trigger_callback tc;
+                    tc.trigger_a = i;
+                    tc.trigger_b = j;
+                    
+                    g_bullet_systems.dynamics_world->getCollisionWorld( )->contactPairTest( g_triggers[i].collision_object, g_triggers[j].collision_object, tc );
+                    
+                }
+            }
+        }
         
-        //todo shutdown
+        //update outputs and clear hit flags
+        u32 current_ouput_backbuffer = g_readable_data.current_ouput_backbuffer;
+        //u32 current_ouput_frontbuffer = g_readable_data.current_ouput_frontbuffer;
         
-        //signal to the engine the thread has finished
-        pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
+        for (u32 i = 0; i < g_num_triggers; ++i)
+        {
+            g_readable_data.output_hit_flags[current_ouput_backbuffer][g_triggers[i].entity_index] = g_triggers[i].hit_flags;
+            g_triggers[i].hit_flags = 0;
+        }
         
-        return PEN_THREAD_OK;
-	}
+        for (u32 i = 0; i < g_num_triggers; ++i)
+        {
+            g_readable_data.output_contact_data[current_ouput_backbuffer][g_triggers[i].entity_index] = g_trigger_contacts[i];
+        }
+        
+        //swap the output buffers
+        SWAP_BUFFERS( g_readable_data.current_ouput_backbuffer );
+        SWAP_BUFFERS( g_readable_data.current_ouput_frontbuffer );
+
+    }
 
 	void add_rb_internal( const rigid_body_params &params, u32 ghost )
 	{

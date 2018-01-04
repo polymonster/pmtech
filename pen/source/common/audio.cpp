@@ -2,6 +2,7 @@
 #include "memory.h"
 #include "pen.h"
 #include "fmod.hpp"
+#include "slot_resource.h"
 #include <math.h>
 
 namespace pen
@@ -54,57 +55,6 @@ namespace pen
     std::atomic<u32>            g_current_write_buffer;
     std::atomic<u32>            g_current_read_buffer;
     
-    bool audio_resource_handles_to_reclaim = false;
-    bool audio_resources_allocated_this_frame = false;
-    
-    void reclaim_audio_resource_indices( )
-    {
-        if( !audio_resource_handles_to_reclaim || audio_resources_allocated_this_frame )
-        {
-            audio_resources_allocated_this_frame = false;
-            return;
-        }
-        
-        for( s32 i = 0; i < MAX_AUDIO_RESOURCES; ++i )
-        {
-            if( g_audio_resources[ i ].assigned_flag & MARK_DELETE )
-            {
-                g_audio_resources[ i ].assigned_flag = RECLAIMED;
-            }
-        }
-        
-        audio_resource_handles_to_reclaim = false;
-    }
-    
-    void mark_audio_resource_deleted( u32 i )
-    {
-        g_audio_resources[ i ].assigned_flag |= MARK_DELETE;
-        audio_resource_handles_to_reclaim = true;
-    }
-    
-    u32 get_next_audio_resource( u32 domain, audio_resource_type type )
-    {
-        //find next empty resource
-        u32 i = 0;
-        while( i < MAX_AUDIO_RESOURCES )
-        {
-            if( !(g_audio_resources[ i ].assigned_flag & domain ) )
-            {
-                g_audio_resources[ i ].assigned_flag |= domain;
-                g_audio_resources[ i ].type = type;
-                return i;
-            }
-            ++i;
-        }
-
-        return 0;
-    }
-    
-    u32 get_next_audio_resource( u32 domain )
-    {
-        return get_next_audio_resource(domain, AUDIO_RESOURCE_VIRTUAL);
-    }
-
     void direct::audio_system_initialise()
     {
 		//init fmod
@@ -116,9 +66,6 @@ namespace pen
 	
         //clear resource array to 0
         pen::memory_zero(g_audio_resources, sizeof(g_audio_resources));
-
-        //resource index 0 is used as a null resource
-        g_audio_resources[0].assigned_flag |= DIRECT_RESOURCE | DEFER_RESOURCE;
 
         //set resources to 0
         pen::memory_set(g_resource_states, 0, sizeof(g_resource_states));
@@ -139,7 +86,7 @@ namespace pen
     {
         for( s32 i = 0; i < MAX_AUDIO_RESOURCES; ++i )
         {
-            if( g_audio_resources[ i ].assigned_flag & DEFER_RESOURCE && !(g_audio_resources[ i ].assigned_flag & MARK_DELETE) )
+            if( g_audio_resources[ i ].assigned_flag )
             {
                 direct::audio_release_resource(i);
             }
@@ -297,51 +244,51 @@ namespace pen
         g_current_write_buffer = prev_read;
     }
     
-    u32 direct::audio_create_sound( const c8* filename )
+    u32 direct::audio_create_sound( const c8* filename, u32 resource_slot )
     {
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, AUDIO_RESOURCE_SOUND );
+        g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
         
-        FMOD_RESULT result = g_sound_system->createSound( filename, FMOD_DEFAULT, NULL, (FMOD::Sound**)&g_audio_resources[res_index].resource );
+        FMOD_RESULT result = g_sound_system->createSound( filename, FMOD_DEFAULT, NULL, (FMOD::Sound**)&g_audio_resources[resource_slot].resource );
 
         PEN_ASSERT( result == FMOD_OK );
         
         //populate sound info
-        FMOD::Sound* new_sound = (FMOD::Sound*)g_audio_resources[res_index].resource;
+        FMOD::Sound* new_sound = (FMOD::Sound*)g_audio_resources[resource_slot].resource;
         
-        new_sound->getLength( &g_sound_file_info[ res_index ].length_ms, FMOD_TIMEUNIT_MS );
+        new_sound->getLength( &g_sound_file_info[ resource_slot ].length_ms, FMOD_TIMEUNIT_MS );
         
-        g_sound_file_info_ready[ res_index ] = true;
+        g_sound_file_info_ready[ resource_slot ] = true;
         
-        return res_index;
+        return resource_slot;
     }
 
-    u32 direct::audio_create_stream( const c8* filename )
+    u32 direct::audio_create_stream( const c8* filename, u32 resource_slot )
     {
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, AUDIO_RESOURCE_SOUND );
+        g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
         
-        FMOD_RESULT result = g_sound_system->createStream( filename, FMOD_LOOP_NORMAL | FMOD_2D, 0, (FMOD::Sound**)&g_audio_resources[res_index].resource );
+        FMOD_RESULT result = g_sound_system->createStream( filename, FMOD_LOOP_NORMAL | FMOD_2D, 0, (FMOD::Sound**)&g_audio_resources[resource_slot].resource );
 
         PEN_ASSERT( result == FMOD_OK );
 
-        return res_index;
+        return resource_slot;
     }
 
-    u32 direct::audio_create_channel_group()
+    u32 direct::audio_create_channel_group( u32 resource_slot )
     {
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, AUDIO_RESOURCE_GROUP );
+        g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
         
         FMOD_RESULT result;
         
-        result = g_sound_system->createChannelGroup( NULL, (FMOD::ChannelGroup**)&g_audio_resources[res_index].resource );
+        result = g_sound_system->createChannelGroup( NULL, (FMOD::ChannelGroup**)&g_audio_resources[resource_slot].resource );
         
         PEN_ASSERT( result == FMOD_OK );
 
-        return res_index;
+        return resource_slot;
     }
 
-    u32 direct::audio_create_channel_for_sound(u32 sound_index)
+    u32 direct::audio_create_channel_for_sound(u32 sound_index, u32 resource_slot)
     {
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, AUDIO_RESOURCE_CHANNEL );
+        g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
         
         FMOD_RESULT result;
         
@@ -349,11 +296,11 @@ namespace pen
             (FMOD::Sound*)g_audio_resources[sound_index].resource, 
             0, 
             false, 
-            (FMOD::Channel**)&g_audio_resources[res_index].resource );
+            (FMOD::Channel**)&g_audio_resources[resource_slot].resource );
 
         PEN_ASSERT( result == FMOD_OK );
 
-        return res_index;
+        return resource_slot;
     }
     
     void direct::audio_channel_set_position( const u32 channel_index, const u32 position_ms )
@@ -449,8 +396,6 @@ namespace pen
             }
         }
         
-        mark_audio_resource_deleted( index );
-        
         return 0;
     }
     
@@ -488,16 +433,16 @@ namespace pen
         return FMOD_DSP_TYPE_UNKNOWN;
     }
     
-    u32 direct::audio_add_dsp_to_group( const u32 group_index, dsp_type type )
+    u32 direct::audio_add_dsp_to_group( const u32 group_index, dsp_type type, u32 resource_slot )
     {
+        g_audio_resources[ resource_slot ].assigned_flag |= 0xff;
+        
         audio_resource_type res_type;
         FMOD_DSP_TYPE fmod_dsp = pen_dsp_to_fmod_type( type, res_type );
         
-        u32 res_index = get_next_audio_resource( DIRECT_RESOURCE, res_type );
-        
         FMOD_RESULT result;
         
-        FMOD::DSP** new_dsp = (FMOD::DSP**)&g_audio_resources[res_index].resource;
+        FMOD::DSP** new_dsp = (FMOD::DSP**)&g_audio_resources[resource_slot].resource;
         
         result = g_sound_system->createDSPByType( fmod_dsp, new_dsp );
         
@@ -507,7 +452,7 @@ namespace pen
         
         p_group->addDSP( g_audio_resources[group_index].num_dsp++, *new_dsp);
         
-        return res_index;
+        return resource_slot;
     }
     
     void direct::audio_dsp_set_three_band_eq( const u32 eq_index, const f32 low, const f32 med, const f32 high )
@@ -632,42 +577,3 @@ namespace pen
         return PEN_ERR_NOT_READY;
     }
 }
-
-#if 0
-	void audio_channel_set_pitch( const u32 &channel_group, const f32 &pitch )
-	{
-		f32 abs_pitch = fabs( pitch );
-	
-		s32 num_channels = 0;
-		g_channel_groups[channel_group]->getNumChannels( &num_channels );
-		for (s32 i = 0; i < num_channels; ++i)
-		{
-			FMOD::Channel* chan;
-			g_channel_groups[channel_group]->getChannel( i, &chan );
-
-			f32 freq = 0.0f;
-			chan->getFrequency( &freq );
-
-			f32 abs_freq = fabs( freq );
-
-			chan->setFrequency( pitch < 0.0f ? -abs_freq : abs_freq );
-		}
-
-		g_channel_groups[ channel_group ]->setPitch( abs_pitch );
-
-		//EQ TEST
-		/*
-         
-		FMOD::DSP* dspeqlow;
-		g_sound_system->createDSPByType( FMOD_DSP_TYPE_PARAMEQ, &dspeqlow );
-
-		dspeqlow->setParameter( 0, 30.0f );
-		dspeqlow->setParameter( 1, 0.2f );
-		dspeqlow->setParameter( 2, 2.0f );
-
-		FMOD::DSPConnection* dspcon;
-		g_channel_groups[ channel_group ]->addDSP( dspeqlow, &dspcon );
-		*/
-	}
-}
-#endif

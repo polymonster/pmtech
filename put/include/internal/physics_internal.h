@@ -154,6 +154,9 @@ namespace physics
 	s32					get_next_free_entity_index( u32 domain );
 	physics_entity&		get_next_free_entity( u32 domain );
 
+    void                physics_update();
+    void                physics_initialise( );
+    
 	btMultiBody*		create_multirb_internal( physics_entity& entity, const multi_body_params &params );
 	btRigidBody*		create_rb_internal( physics_entity& entity, const rigid_body_params &params, u32 ghost, btCollisionShape* p_existing_shape = NULL );
 	void				add_rb_internal( const rigid_body_params &params, u32 ghost = 0 );
