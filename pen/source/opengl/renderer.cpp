@@ -1087,7 +1087,7 @@ namespace pen
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags )
 	{
-        if( texture_index == 0 || sampler_index == 0 )
+        if( texture_index == 0)
             return;
         
         resource_allocation& res = resource_pool[ texture_index ];
@@ -1117,6 +1117,9 @@ namespace pen
             
             max_mip = res.render_target.texture_msaa.max_mip_level;
         }
+        
+        if(sampler_index == 0)
+            return;
         
         auto* sampler_state = resource_pool[sampler_index].sampler_state;
         
