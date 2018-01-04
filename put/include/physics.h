@@ -247,7 +247,8 @@ namespace physics
     struct physics_cmd
 	{
 		u32		command_index;
-
+        u32     resource_slot;
+        
 		union
 		{
 			add_box_params					add_box;

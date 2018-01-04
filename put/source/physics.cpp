@@ -28,7 +28,7 @@ namespace physics
 			num_responsors = 0;
 		}
 
-		collision_response response_data[MAX_ENTITIES];
+		collision_response response_data[MAX_PHYSICS_RESOURCES];
 		u32 num_responsors;
 	};
 
@@ -387,7 +387,7 @@ namespace physics
 
 	void physics_initialise( )
 	{
-		pen::memory_zero( &g_bullet_objects.entities, sizeof( physics_entity ) * MAX_ENTITIES );
+        pen::memory_zero( &g_bullet_objects.entities, sizeof( physics_entity ) * MAX_PHYSICS_RESOURCES );
 		g_bullet_objects.num_entities = 0;
 
 		g_bullet_systems.collision_config = new btDefaultCollisionConfiguration( );
@@ -594,9 +594,10 @@ namespace physics
 
     }
 
-	void add_rb_internal( const rigid_body_params &params, u32 ghost )
+	void add_rb_internal( const rigid_body_params &params, u32 resource_slot, bool ghost )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		//add the body to the dynamics world
 		btRigidBody* rb = create_rb_internal( next_entity, params, ghost );
@@ -608,9 +609,10 @@ namespace physics
 		next_entity.mask = params.mask;
 	}
 
-	void add_compound_rb_internal( const compound_rb_params &params )
+	void add_compound_rb_internal( const compound_rb_params &params, u32 resource_slot )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		btCollisionShape* col = create_collision_shape( next_entity, params.base, &params );
 		btCompoundShape* compound = ( btCompoundShape* ) col;
@@ -625,9 +627,10 @@ namespace physics
 		next_entity.mask = params.base.mask;
 	}
 
-	void add_compound_shape_internal( const compound_rb_params &params )
+	void add_compound_shape_internal( const compound_rb_params &params, u32 resource_slot )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		btCollisionShape* col = create_collision_shape( next_entity, params.base, &params );
 		btCompoundShape* compound = ( btCompoundShape* ) col;
@@ -635,9 +638,10 @@ namespace physics
 		next_entity.compound_shape = compound;
 	}
 
-	void add_dof6_internal( const constraint_params &params, btRigidBody* rb, btRigidBody* fixed_body )
+	void add_dof6_internal( const constraint_params &params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		u32 fixed_con = 1;
 
@@ -687,16 +691,17 @@ namespace physics
 		next_entity.dof6_constraint = dof6;
 	}
 
-	void add_multibody_internal( const multi_body_params &params )
+	void add_multibody_internal( const multi_body_params &params, u32 resource_slot )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		next_entity.multi_body = create_multirb_internal( next_entity, params );
 	}
 
-	void add_hinge_internal( const constraint_params &params )
+	void add_hinge_internal( const constraint_params &params, u32 resource_slot )
 	{
-		physics_entity& next_entity = get_next_free_entity( DOMAIN_INTENAL );
+        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
+        physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		//create the actual rigid body
 		btRigidBody* rb = create_rb_internal( next_entity, params.rb, 0 );
@@ -714,7 +719,7 @@ namespace physics
 		next_entity.hinge_constraint = hinge;
 	}
 
-	void add_constrained_rb_internal( const constraint_params &params )
+	void add_constrained_rb_internal( const constraint_params &params, u32 resource_slot )
 	{
 		switch (params.type)
 		{
@@ -733,16 +738,16 @@ namespace physics
 					p_fixed = g_bullet_objects.entities[params.rb_indices[1]].rigid_body;
 				}
 
-				add_dof6_internal( params, p_rb, p_fixed );
+				add_dof6_internal( params, resource_slot, p_rb, p_fixed );
 			}
 			break;
 
 		case physics::DOF6:
-			add_dof6_internal( params, NULL, NULL );
+			add_dof6_internal( params, resource_slot, NULL, NULL );
 			break;
 
 		case physics::HINGE:
-			add_hinge_internal( params );
+			add_hinge_internal( params, resource_slot );
 			break;
 
 		default:
@@ -1138,30 +1143,5 @@ namespace physics
 	{
 		physics_entity& rb = g_bullet_objects.entities[entity_index];
 		g_bullet_systems.dynamics_world->addRigidBody( rb.rigid_body, rb.group, rb.mask );
-	}
-
-	s32 get_next_free_entity_index( u32 domain )
-	{
-		for( u32 i = 0; i < MAX_ENTITIES; ++i )
-		{
-			if( !(g_bullet_objects.entity_allocated[ i ] & domain) )
-			{
-				g_bullet_objects.entity_allocated[ i ] |= domain;
-				
-				if( g_bullet_objects.entity_allocated[ i ] == 3 )
-				{
-					g_bullet_objects.num_entities++;
-				}
-				
-				return i;
-			}
-		}
-
-		return -1;
-	}
-
-	physics_entity& get_next_free_entity( u32 domain )
-	{
-		return g_bullet_objects.entities[ get_next_free_entity_index( domain ) ];
 	}
 }
