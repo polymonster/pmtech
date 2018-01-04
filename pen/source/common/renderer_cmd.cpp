@@ -89,6 +89,7 @@ namespace pen
 	void renderer_mark_resource_deleted(u32 i)
 	{
 		renderer_resource_status[i] |= MARK_DELETE;
+        renderer_resource_flags |= RENDERER_RESOURCES_TO_RECLAIM;
 	}
     
     void renderer_realloc_resource(u32 i, u32 domain)
