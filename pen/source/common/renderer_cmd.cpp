@@ -455,7 +455,7 @@ namespace pen
 			break;
 
 		case CMD_CREATE_SO_SHADER:
-			direct::renderer_create_stream_out_shader(cmd.shader_load);
+			direct::renderer_create_stream_out_shader(cmd.shader_load, cmd.resource_slot);
 			break;
 
 		case CMD_SET_SO_TARGET:
@@ -642,7 +642,10 @@ namespace pen
         pen::slot_resources_init(&k_renderer_slot_resources, MAX_RENDERER_RESOURCES);
         
 		//initialise renderer
-		direct::renderer_initialise(job_params->user_data);
+        u32 bb_res = pen::slot_resources_get_next( &k_renderer_slot_resources );
+        u32 bb_depth_res = pen::slot_resources_get_next( &k_renderer_slot_resources );
+
+		direct::renderer_initialise(job_params->user_data, bb_res, bb_depth_res );
 
 		init_resolve_resources();
 		

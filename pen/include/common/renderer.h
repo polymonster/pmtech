@@ -382,7 +382,7 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	namespace direct
 	{
-		u32		renderer_initialise(void* params);
+		u32		renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res );
 		void	renderer_shutdown();
 		void    renderer_make_context_current();
 
@@ -392,7 +392,7 @@ namespace pen
 
 		//shaders
 		void	renderer_load_shader(const pen::shader_load_params &params, u32 resource_slot );
-		void	renderer_create_stream_out_shader(const pen::shader_load_params &params);
+		void	renderer_create_stream_out_shader(const pen::shader_load_params &params, u32 resource_slot );
 		void	renderer_set_shader(u32 shader_index, u32 shader_type);
 		void	renderer_create_input_layout(const input_layout_creation_params &params, u32 resource_slot);
 		void	renderer_set_input_layout(u32 layout_index);
