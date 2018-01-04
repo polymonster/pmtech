@@ -6,6 +6,7 @@
 #include "threads.h"
 #include "timer.h"
 #include "pen.h"
+#include "slot_resource.h"
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -14,148 +15,6 @@
 namespace pen
 {
 	extern u32                 get_next_query_index(u32 domain);
-
-	//--------------------------------------------------------------------------------------
-	//  MULTITHREADED SYNCRONISED RESOURCE HANDLES
-	//--------------------------------------------------------------------------------------
-	enum renderer_resource_status_flags
-	{
-		RENDERER_RESOURCES_TO_RECLAIM = 1 << 0,
-		RENDERER_RESOURCES_ALLOCATED_THIS_FRAME = 1 << 1,
-		RENDERER_RESOURCES_FULL = 1 << 2
-	};
-    
-    struct free_node_list
-    {
-        u32 index;
-        free_node_list* next;
-    };
-
-	u8	renderer_resource_status[MAX_RENDERER_RESOURCES] = { 0 };
-	u8	renderer_resource_flags = 0;
-    
-    free_node_list resource_free_list[2][MAX_RENDERER_RESOURCES];
-    free_node_list* resource_free_head[2];
-    
-    void renderer_init_resource_list( )
-    {
-        //reserve resource index 0 to be used as a null handle
-        renderer_resource_status[0] |= (DIRECT_RESOURCE | DEFER_RESOURCE);
-        
-        //create full free list
-        for( s32 d = 0; d < 2; ++d )
-        {
-            resource_free_head[d] = nullptr;
-            
-            for( s32 i = MAX_RENDERER_RESOURCES-1; i >= 0; --i )
-            {
-                resource_free_list[d][i].index = i;
-                
-                if( i < MAX_RENDERER_RESOURCES-1 )
-                    resource_free_list[d][i].next = &resource_free_list[d][i+1];
-                else
-                    resource_free_list[d][i].next = nullptr;
-                
-                resource_free_head[d] = &resource_free_list[d][i];
-            }
-        }
-    }
-
-	void renderer_reclaim_resource_indices()
-	{
-		if (!(renderer_resource_flags & RENDERER_RESOURCES_TO_RECLAIM) || (renderer_resource_flags & RENDERER_RESOURCES_ALLOCATED_THIS_FRAME))
-		{
-			renderer_resource_flags &= ~(RENDERER_RESOURCES_ALLOCATED_THIS_FRAME);
-			return;
-		}
-
-		for (s32 i = 0; i < MAX_RENDERER_RESOURCES; ++i)
-		{
-			if (renderer_resource_status[i] & MARK_DELETE)
-			{
-				renderer_resource_status[i] = RECLAIMED;
-                
-                for( s32 j = 0; j < 2; ++j )
-                {
-                    resource_free_list[j][i].next = resource_free_head[j];
-                    resource_free_head[j] = &resource_free_list[j][i];
-                }
-			}
-		}
-
-		renderer_resource_flags &= ~(RENDERER_RESOURCES_TO_RECLAIM);
-	}
-
-	void renderer_mark_resource_deleted(u32 i)
-	{
-		renderer_resource_status[i] |= MARK_DELETE;
-	}
-    
-    void renderer_realloc_resource(u32 i, u32 domain)
-    {
-        renderer_resource_status[i] &= !domain;
-    }
-
-	u32 renderer_get_next_resource_index(u32 domain)
-	{
-        u32 i = 0;
-        
-        if( 1 )
-        {
-            if( domain & (DIRECT_RESOURCE) && domain & (DEFER_RESOURCE) )
-            {
-                i = resource_free_head[1]->index;
-                resource_free_head[1] = resource_free_head[1]->next;
-                
-                //remove i from direct. slow
-                free_node_list* ll = resource_free_head[0];
-                
-                for(;;)
-                {
-                    if(ll->index == i)
-                    {
-                        *ll = *ll->next;
-                        break;
-                    }
-                    
-                    ll = ll->next;
-                }
-            }
-            else if( domain & DIRECT_RESOURCE )
-            {
-                i = resource_free_head[0]->index;
-                resource_free_head[0] = resource_free_head[0]->next;
-            }
-            else if( domain & DEFER_RESOURCE )
-            {
-                i = resource_free_head[1]->index;
-                resource_free_head[1] = resource_free_head[1]->next;
-            }
-        }
-        else
-        {
-            //greedy algo
-            while (renderer_resource_status[i] & domain)
-            {
-                ++i;
-
-                if (i >= MAX_RENDERER_RESOURCES)
-                {
-                    renderer_resource_flags |= RENDERER_RESOURCES_FULL;
-                    i = 0;
-                    break;
-                }
-            }
-
-            if (i == 0)
-                return 0;
-        }
-
-		renderer_resource_flags |= RENDERER_RESOURCES_ALLOCATED_THIS_FRAME;
-		renderer_resource_status[i] |= domain;
-
-		return i;
-	};
 
 	//--------------------------------------------------------------------------------------
 	//  COMMAND BUFFER API
@@ -342,7 +201,8 @@ namespace pen
 	typedef struct  deferred_cmd
 	{
 		u32		command_index;
-
+        u32     resource_slot;
+        
 		union
 		{
 			u32                                 command_data_index;
@@ -395,7 +255,7 @@ namespace pen
 			break;
 
 		case CMD_LOAD_SHADER:
-			direct::renderer_load_shader(cmd.shader_load);
+			direct::renderer_load_shader(cmd.shader_load, cmd.resource_slot);
 			pen::memory_free(cmd.shader_load.byte_code);
 			break;
 
@@ -404,14 +264,14 @@ namespace pen
 			break;
 
 		case CMD_LINK_SHADER:
-			direct::renderer_link_shader_program(cmd.link_params);
+			direct::renderer_link_shader_program(cmd.link_params, cmd.resource_slot);
 			for (u32 i = 0; i < cmd.link_params.num_constants; ++i)
 				pen::memory_free(cmd.link_params.constants[i].name);
 			pen::memory_free(cmd.link_params.constants);
 			break;
 
 		case CMD_CREATE_INPUT_LAYOUT:
-			direct::renderer_create_input_layout(cmd.create_input_layout);
+			direct::renderer_create_input_layout(cmd.create_input_layout, cmd.resource_slot);
 			pen::memory_free(cmd.create_input_layout.vs_byte_code);
 			for (u32 i = 0; i < cmd.create_input_layout.num_elements; ++i)
 				pen::memory_free(cmd.create_input_layout.input_layout[i].semantic_name);
@@ -423,7 +283,7 @@ namespace pen
 			break;
 
 		case CMD_CREATE_BUFFER:
-			direct::renderer_create_buffer(cmd.create_buffer);
+			direct::renderer_create_buffer(cmd.create_buffer, cmd.resource_slot);
 			pen::memory_free(cmd.create_buffer.data);
 			break;
 
@@ -458,12 +318,12 @@ namespace pen
 			break;
 
 		case CMD_CREATE_TEXTURE:
-			direct::renderer_create_texture(cmd.create_texture);
+			direct::renderer_create_texture(cmd.create_texture, cmd.resource_slot);
 			pen::memory_free(cmd.create_texture.data);
 			break;
 
 		case CMD_CREATE_SAMPLER:
-			direct::renderer_create_sampler(cmd.create_sampler);
+			direct::renderer_create_sampler(cmd.create_sampler, cmd.resource_slot);
 			break;
 
 		case CMD_SET_TEXTURE:
@@ -476,7 +336,7 @@ namespace pen
 			break;
 
 		case CMD_CREATE_RASTER_STATE:
-			direct::renderer_create_rasterizer_state(cmd.create_raster_state);
+			direct::renderer_create_rasterizer_state(cmd.create_raster_state, cmd.resource_slot);
 			break;
 
 		case CMD_SET_RASTER_STATE:
@@ -508,7 +368,7 @@ namespace pen
 			break;
 
 		case CMD_CREATE_BLEND_STATE:
-            direct::renderer_create_blend_state(cmd.create_blend_state);
+            direct::renderer_create_blend_state(cmd.create_blend_state, cmd.resource_slot);
             pen::memory_free(cmd.create_blend_state.render_targets);
 			break;
 
@@ -526,7 +386,7 @@ namespace pen
 			break;
 
 		case CMD_CREATE_DEPTH_STENCIL_STATE:
-			direct::renderer_create_depth_stencil_state(*cmd.p_create_depth_stencil_state);
+			direct::renderer_create_depth_stencil_state(*cmd.p_create_depth_stencil_state, cmd.resource_slot);
 			pen::memory_free(cmd.p_create_depth_stencil_state);
 			break;
 
@@ -547,7 +407,7 @@ namespace pen
 			break;
 
 		case CMD_CREATE_RENDER_TARGET:
-			direct::renderer_create_render_target(cmd.create_render_target);
+			direct::renderer_create_render_target(cmd.create_render_target, cmd.resource_slot);
 			break;
 
 		case CMD_SET_TARGETS:
@@ -633,7 +493,8 @@ namespace pen
 	pen::job_thread*    p_job_thread_info;
 	pen::semaphore*     p_consume_semaphore;
 	pen::semaphore*		p_continue_semaphore;
-
+    pen::slot_resources k_renderer_slot_resources;
+    
 	bool                     consume_flag = false;
 
 	void renderer_wait_init()
@@ -654,7 +515,7 @@ namespace pen
 	{
 		//this is a dedicated thread which stays for the duration of the program
         pen::threads_semaphore_signal(p_continue_semaphore, 1);
-
+        
 		while (1)
 		{
 			PEN_TIMER_START(CMD_BUFFER);
@@ -666,9 +527,6 @@ namespace pen
 
 				//need more commands
 				PEN_ASSERT(commands_this_frame < MAX_COMMANDS);
-
-				//reclaim deleted resource handles while we can syncronise it.
-				pen::renderer_reclaim_resource_indices();
 
 				pen::threads_semaphore_signal(p_continue_semaphore, 1);
 
@@ -780,8 +638,8 @@ namespace pen
 
 		//clear command buffer
 		pen::memory_set(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
-
-        renderer_init_resource_list( );
+        
+        pen::slot_resources_init(&k_renderer_slot_resources, MAX_RENDERER_RESOURCES);
         
 		//initialise renderer
 		direct::renderer_initialise(job_params->user_data);
@@ -863,12 +721,13 @@ namespace pen
 			cmd_buffer[put_pos].shader_load.byte_code = pen::memory_alloc(params.byte_code_size);
 			pen::memory_cpy(cmd_buffer[put_pos].shader_load.byte_code, params.byte_code, params.byte_code_size);
 		}
-
-		u32 shader_index = renderer_get_next_resource_index(DEFER_RESOURCE);
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP(put_pos);
 
-		return shader_index;
+		return resource_slot;
 	}
 
 	u32 renderer_link_shader_program(const shader_link_params &params)
@@ -897,11 +756,12 @@ namespace pen
 			c[i].name[len] = '\0';
 		}
 
-		u32 program_index = renderer_get_next_resource_index(DEFER_RESOURCE);
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP(put_pos);
 
-		return program_index;
+		return resource_slot;
 	}
 
 	void renderer_set_shader_program(u32 program_index)
@@ -932,11 +792,12 @@ namespace pen
 			pen::memory_cpy(cmd_buffer[put_pos].shader_load.so_decl_entries, params.so_decl_entries, entries_size);
 		}
 
-		u32 shader_index = renderer_get_next_resource_index(DEFER_RESOURCE);
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP(put_pos);
 
-		return shader_index;
+		return resource_slot;
 	}
 
 	void renderer_set_shader(u32 shader_index, u32 shader_type)
@@ -977,10 +838,13 @@ namespace pen
 			//terminate string
 			cmd_buffer[put_pos].create_input_layout.input_layout[i].semantic_name[semantic_len] = '\0';
 		}
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP(put_pos);
 
-		return renderer_get_next_resource_index(DEFER_RESOURCE);
+        return resource_slot;
 	}
 
 	void renderer_set_input_layout(u32 layout_index)
@@ -1004,10 +868,13 @@ namespace pen
 			cmd_buffer[put_pos].create_buffer.data = pen::memory_alloc(params.buffer_size);
 			pen::memory_cpy(cmd_buffer[put_pos].create_buffer.data, params.data, params.buffer_size);
 		}
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP(put_pos);
 
-		return renderer_get_next_resource_index(DEFER_RESOURCE);
+        return resource_slot;
 	}
 
 	void renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 stride, u32 offset)
@@ -1072,9 +939,12 @@ namespace pen
 
 		pen::memory_cpy(&cmd_buffer[put_pos].create_render_target, (void*)&tcp, sizeof(texture_creation_params));
 
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
+        
 		INC_WRAP(put_pos);
 
-		return renderer_get_next_resource_index(DEFER_RESOURCE);
+        return resource_slot;
 	}
 
 	u32 renderer_create_texture(const texture_creation_params& tcp)
@@ -1093,10 +963,13 @@ namespace pen
 		{
 			cmd_buffer[put_pos].create_texture.data = nullptr;
 		}
+        
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
 		INC_WRAP(put_pos);
 
-		return renderer_get_next_resource_index(DEFER_RESOURCE);
+        return resource_slot;
 	}
 
 	void renderer_release_shader(u32 shader_index, u32 shader_type)
@@ -1105,6 +978,8 @@ namespace pen
 
 		cmd_buffer[put_pos].set_shader.shader_index = shader_index;
 		cmd_buffer[put_pos].set_shader.shader_type = shader_type;
+        
+        slot_resources_free( &k_renderer_slot_resources, shader_index );
 
 		INC_WRAP(put_pos);
 	}
@@ -1115,6 +990,8 @@ namespace pen
 
 		cmd_buffer[put_pos].command_data_index = buffer_index;
 
+        slot_resources_free( &k_renderer_slot_resources, buffer_index );
+        
 		INC_WRAP(put_pos);
 	}
 
@@ -1123,6 +1000,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_TEXTURE_2D;
 
 		cmd_buffer[put_pos].command_data_index = texture_index;
+        
+        slot_resources_free( &k_renderer_slot_resources, texture_index );
 
 		INC_WRAP(put_pos);
 	}
@@ -1133,10 +1012,12 @@ namespace pen
 
 		pen::memory_cpy(&cmd_buffer[put_pos].create_sampler, (void*)&scp, sizeof(sampler_creation_params));
 
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
+        
 		INC_WRAP(put_pos);
 
-        u32 ii = renderer_get_next_resource_index(DEFER_RESOURCE);
-        return ii;
+        return resource_slot;
 	}
 
 	void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
@@ -1158,9 +1039,12 @@ namespace pen
 
 		pen::memory_cpy(&cmd_buffer[put_pos].create_raster_state, (void*)&rscp, sizeof(rasteriser_state_creation_params));
 
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
+        
 		INC_WRAP(put_pos);
 
-		return renderer_get_next_resource_index(DEFER_RESOURCE);
+        return resource_slot;
 	}
 
 	void renderer_set_rasterizer_state(u32 rasterizer_state_index)
@@ -1195,6 +1079,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_RASTER_STATE;
 
 		cmd_buffer[put_pos].command_data_index = raster_state_index;
+        
+        slot_resources_free( &k_renderer_slot_resources, raster_state_index );
 
 		INC_WRAP(put_pos);
 	}
@@ -1212,11 +1098,12 @@ namespace pen
 
 		pen::memory_cpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
 
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
+        
 		INC_WRAP(put_pos);
         
-        u32 ii = renderer_get_next_resource_index(DEFER_RESOURCE);
-
-        return ii;
+        return resource_slot;
 	}
 
 	void renderer_set_blend_state(u32 blend_state_index)
@@ -1265,10 +1152,12 @@ namespace pen
 		cmd_buffer[put_pos].p_create_depth_stencil_state = (depth_stencil_creation_params*)pen::memory_alloc(sizeof(depth_stencil_creation_params));
 		pen::memory_cpy(cmd_buffer[put_pos].p_create_depth_stencil_state, &dscp, sizeof(depth_stencil_creation_params));
 
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        cmd_buffer[put_pos].resource_slot = resource_slot;
+    
 		INC_WRAP(put_pos);
 
-        u32 ii = renderer_get_next_resource_index(DEFER_RESOURCE);
-        return ii;
+        return resource_slot;
 	}
 
 	void renderer_set_depth_stencil_state(u32 depth_stencil_state)
@@ -1316,6 +1205,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_BLEND_STATE;
 
 		cmd_buffer[put_pos].command_data_index = blend_state;
+        
+        slot_resources_free( &k_renderer_slot_resources, blend_state );
 
 		INC_WRAP(put_pos);
 	}
@@ -1325,6 +1216,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_RENDER_TARGET;
 
 		cmd_buffer[put_pos].command_data_index = render_target;
+        
+        slot_resources_free( &k_renderer_slot_resources, render_target );
 
 		INC_WRAP(put_pos);
 	}
@@ -1334,6 +1227,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_CLEAR_STATE;
 
 		cmd_buffer[put_pos].command_data_index = clear_state;
+        
+        slot_resources_free( &k_renderer_slot_resources, clear_state );
 
 		INC_WRAP(put_pos);
 	}
@@ -1343,6 +1238,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_PROGRAM;
 
 		cmd_buffer[put_pos].command_data_index = program;
+        
+        slot_resources_free( &k_renderer_slot_resources, program );
 
 		INC_WRAP(put_pos);
 	}
@@ -1352,6 +1249,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_INPUT_LAYOUT;
 
 		cmd_buffer[put_pos].command_data_index = input_layout;
+        
+        slot_resources_free( &k_renderer_slot_resources, input_layout );
 
 		INC_WRAP(put_pos);
 	}
@@ -1361,6 +1260,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_SAMPLER;
 
 		cmd_buffer[put_pos].command_data_index = sampler;
+        
+        slot_resources_free( &k_renderer_slot_resources, sampler );
 
 		INC_WRAP(put_pos);
 	}
@@ -1370,6 +1271,8 @@ namespace pen
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_DEPTH_STENCIL_STATE;
 
 		cmd_buffer[put_pos].command_data_index = depth_stencil_state;
+        
+        slot_resources_free( &k_renderer_slot_resources, depth_stencil_state );
 
 		INC_WRAP(put_pos);
 	}
@@ -1426,7 +1329,13 @@ namespace pen
 
 		INC_WRAP(put_pos);
 	}
-
-
+    
+    u32     renderer_create_clear_state( const clear_state &cs )
+    {
+        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
+        direct::renderer_create_clear_state(cs, resource_slot);
+        
+        return resource_slot;
+    }
 }
 
