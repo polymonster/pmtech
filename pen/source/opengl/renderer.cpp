@@ -512,7 +512,7 @@ namespace pen
         
     }
     
-    void direct::renderer_create_stream_out_shader( const pen::shader_load_params &params )
+    void direct::renderer_create_stream_out_shader( const pen::shader_load_params &params, u32 resource_slot )
     {
         
     }
@@ -1478,7 +1478,7 @@ namespace pen
 
 	}
     
-    u32 direct::renderer_initialise( void* )
+    u32 direct::renderer_initialise( void*, u32, u32 )
     {
         //todo renderer caps
         //const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);
