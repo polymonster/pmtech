@@ -276,6 +276,8 @@ namespace put
 			k_model_view_controller.main_camera.far_plane = dev_ui::get_program_preference("camera_far").as_f32(1000.0f);
 			k_model_view_controller.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
 			k_model_view_controller.invalidated = true;
+            
+            create_geometry_primitives();
         }
 
 		void editor_shutdown()
@@ -1264,6 +1266,24 @@ namespace put
                     
                     //geom
                     ImGui::Text("Geometry: %s", scene->geometry_names[selected_index].c_str());
+                    
+                    if( ImGui::Button("Add Prim") )
+                    {
+                        geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
+                        
+                        instantiate_geometry(gr, scene, selected_index);
+                        
+                        material_resource* mr = get_material_resource(PEN_HASH("default_material"));
+                        
+                        instantiate_material(mr, scene, selected_index);
+                        
+                        scene->geometry_names[selected_index] = gr->geometry_name;
+                        
+                        instantiate_model_cbuffer(scene, selected_index);
+                        
+                        scene->entities[selected_index] |= CMP_TRANSFORM;
+                    }
+                    
                     ImGui::Separator();
                     
                     //material

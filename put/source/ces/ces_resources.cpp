@@ -24,6 +24,135 @@ namespace put
     namespace ces
     {
         static std::vector<geometry_resource*> k_geometry_resources;
+        static std::vector<material_resource*> k_material_resources;
+        
+        void create_cube_primitive( )
+        {
+            static const u32 num_verts = 24;
+            vertex_model v[num_verts];
+            geometry_resource* p_geometry = new geometry_resource;
+            
+            //3 ------ 2
+            //|        |
+            //|        |
+            //0 ------ 1
+            
+            //7 ------ 6
+            //|        |
+            //|        |
+            //4 ------ 5
+            
+            vec3f corners[] =
+            {
+                vec3f(-1.0f, -1.0f, -1.0f),
+                vec3f( 1.0f, -1.0f, -1.0f),
+                vec3f( 1.0f, -1.0f,  1.0f),
+                vec3f(-1.0f, -1.0f,  1.0f),
+                
+                vec3f(-1.0f,  1.0f, -1.0f),
+                vec3f( 1.0f,  1.0f, -1.0f),
+                vec3f( 1.0f,  1.0f,  1.0f),
+                vec3f(-1.0f,  1.0f,  1.0f)
+            };
+            
+            s32 c[] =
+            {
+                0, 3, 2, 1,
+                0, 1, 5, 4,
+                3, 7, 6, 2,
+                
+                4, 5, 6, 7,
+                3, 0, 4, 7,
+                1, 2, 6, 5
+            };
+            
+            u16 indices[36];
+            
+            for( s32 i = 0; i < 6; ++i )
+            {
+                s32 offset = i*4;
+                s32 index_offset = i*6;
+                
+                for( s32 j = 0; j < 4; ++j )
+                {
+                    s32 cc = c[offset+j];
+                    
+                    v[offset+j].x = corners[cc].x;
+                    v[offset+j].y = corners[cc].y;
+                    v[offset+j].z = corners[cc].z;
+                    v[offset+j].w = 1.0f;
+                }
+                
+                indices[index_offset+0] = offset+0;
+                indices[index_offset+1] = offset+1;
+                indices[index_offset+2] = offset+2;
+                
+                indices[index_offset+3] = offset+2;
+                indices[index_offset+4] = offset+3;
+                indices[index_offset+5] = offset+0;
+            }
+            
+            //VB
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = sizeof(vertex_model) * num_verts;
+            bcp.data = (void*)v;
+            
+            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+
+            //IB
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = 2 * 36;
+            bcp.data = (void*)indices;
+            
+            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            
+            p_geometry->num_indices = 36;
+            p_geometry->num_vertices = 24;
+            p_geometry->vertex_size = sizeof(vertex_model);
+            p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            
+            //hash / ids
+            p_geometry->geometry_name = "cube";
+            p_geometry->hash = PEN_HASH("cube");
+            p_geometry->file_hash = PEN_HASH("primitive");
+            p_geometry->filename = "primitive";
+            p_geometry->p_skin = nullptr;
+            
+            k_geometry_resources.push_back(p_geometry);
+        }
+        
+        void create_geometry_primitives()
+        {
+            //default material
+            material_resource* mr = new material_resource;
+            
+            mr->diffuse_rgb_shininess = vec4f( 0.5f, 0.5f, 0.5f, 0.5f );
+            mr->specular_rgb_reflect = vec4f( 0.5f, 0.5f, 0.5f, 0.5f );
+            mr->filename = "default_material";
+            mr->material_name = "default_material";
+            mr->hash = PEN_HASH("default_material");
+            
+            static const u32 default_maps[] =
+            {
+                put::load_texture("data/textures/defaults/albedo.dds"),
+                put::load_texture("data/textures/defaults/normal.dds"),
+                put::load_texture("data/textures/defaults/spec.dds"),
+                put::load_texture("data/textures/defaults/black.dds")
+            };
+            
+            for( s32 i = 0; i < 4; ++i)
+                mr->texture_id[i] = default_maps[i];
+            
+            k_material_resources.push_back(mr);
+            
+            //geom primitives
+            create_cube_primitive();
+        }
         
         geometry_resource* get_geometry_resource( hash_id hash )
         {
@@ -281,8 +410,6 @@ namespace put
                 k_geometry_resources.push_back(p_geometry);
             }
         }
-        
-        static std::vector<material_resource*> k_material_resources;
         
         material_resource* get_material_resource( hash_id hash )
         {
@@ -738,7 +865,7 @@ namespace put
 					f32 sy = put::maths::magnitude(matrix.get_up());
 					f32 sz = put::maths::magnitude(matrix.get_fwd());
 
-					scene->transforms[current_node].scale = vec3f::one();
+                    scene->transforms[current_node].scale = vec3f( sx, sy, sz );
 				}
 
                 

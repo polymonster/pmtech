@@ -101,6 +101,8 @@ namespace put
         void            instantiate_anim_controller( entity_scene* scene, s32 node_index );
         void            instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index );
         
+        void            create_geometry_primitives( );
+        
         material_resource*  get_material_resource( hash_id hash );
         animation_resource* get_animation_resource( anim_handle h );
         geometry_resource*  get_geometry_resource( hash_id h );
