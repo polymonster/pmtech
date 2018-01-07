@@ -185,6 +185,7 @@ namespace put
             static const s32 segments = 16;
             
             vec3f points[segments];
+            vec3f tangents[segments];
             
             f32 angle = 0.0;
             f32 angle_step = PI_2/segments;
@@ -193,13 +194,18 @@ namespace put
                 f32 x = cos(angle);
                 f32 y = -sin(angle);
                 
-                vec3f v1 = maths::normalise(vec3f(x, y, 0.0 ));
-                
-                v1 = right * x + up * y;
+                vec3f v1 = right * x + up * y;
                 
                 angle += angle_step;
                 
+                x = cos(angle);
+                y = -sin(angle);
+                
+                vec3f v2 = right * x + up * y;
+                
                 points[i] = v1;
+                
+                tangents[i] = v2 - v1;
             }
             
             vec3f bottom_points[segments];
@@ -218,12 +224,22 @@ namespace put
                 v[i].z = bottom_points[i].z;
                 v[i].w = 1.0f;
                 
-                v[i].nx = bottom_points[i].x;
-                v[i].ny = bottom_points[i].y;
-                v[i].nz = bottom_points[i].z;
+                v[i].nx = points[i].x;
+                v[i].ny = points[i].y;
+                v[i].nz = points[i].z;
                 v[i].nw = 1.0f;
                 
-                put::dbg::add_point(bottom_points[i], 0.1f);
+                v[i].tx = tangents[i].x;
+                v[i].ty = tangents[i].y;
+                v[i].tz = tangents[i].z;
+                v[i].tw = 1.0f;
+                
+                vec3f bt = maths::cross(tangents[i], points[i]);
+                
+                v[i].bx = bt.x;
+                v[i].by = bt.y;
+                v[i].bz = bt.z;
+                v[i].bw = 1.0f;
             }
             
             //top ring
@@ -236,12 +252,22 @@ namespace put
                 v[vi].z = top_points[i].z;
                 v[vi].w = 1.0f;
                 
-                v[vi].nx = top_points[i].x;
-                v[vi].ny = top_points[i].y;
-                v[vi].nz = top_points[i].z;
+                v[vi].nx = points[i].x;
+                v[vi].ny = points[i].y;
+                v[vi].nz = points[i].z;
                 v[vi].nw = 1.0f;
                 
-                put::dbg::add_point(top_points[i], 0.1f);
+                v[vi].tx = tangents[i].x;
+                v[vi].ty = tangents[i].y;
+                v[vi].tz = tangents[i].z;
+                v[vi].tw = 1.0f;
+                
+                vec3f bt = maths::cross(tangents[i], points[i]);
+                
+                v[vi].bx = bt.x;
+                v[vi].by = bt.y;
+                v[vi].bz = bt.z;
+                v[vi].bw = 1.0f;
             }
             
             //bottom face
@@ -258,6 +284,16 @@ namespace put
                 v[vi].ny = -1.0f;
                 v[vi].nz = 0.0f;
                 v[vi].nw = 1.0f;
+                
+                v[vi].tx = 1.0f;
+                v[vi].ty = 0.0f;
+                v[vi].tz = 0.0f;
+                v[vi].tw = 1.0f;
+                
+                v[vi].bx = 0.0f;
+                v[vi].by = 0.0f;
+                v[vi].bz = 1.0f;
+                v[vi].bw = 1.0f;
             }
             
             //top face
@@ -274,6 +310,16 @@ namespace put
                 v[vi].ny = 1.0f;
                 v[vi].nz = 0.0f;
                 v[vi].nw = 1.0f;
+                
+                v[vi].tx = 1.0f;
+                v[vi].ty = 0.0f;
+                v[vi].tz = 0.0f;
+                v[vi].tw = 1.0f;
+                
+                v[vi].bx = 0.0f;
+                v[vi].by = 0.0f;
+                v[vi].bz = 1.0f;
+                v[vi].bw = 1.0f;
             }
             
             //centre points

@@ -1722,8 +1722,6 @@ namespace put
 
 			dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
             
-            create_cylinder_primitive();
-            
             if( scene->view_flags & DD_LIGHTS )
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
