@@ -27,6 +27,140 @@ namespace put
         static std::vector<geometry_resource*> k_geometry_resources;
         static std::vector<material_resource*> k_material_resources;
         
+        void create_sphere_primitive( )
+        {
+            static const s32 segments = 16;
+            static const s32 rows = 16;
+            
+            static const u32 num_verts = segments*rows;
+            vertex_model v[num_verts];
+            geometry_resource* p_geometry = new geometry_resource;
+            
+            f32 angle = 0.0;
+            f32 angle_step = PI_2/segments;
+            f32 height_step = 2.0f/(segments-1);
+            
+            s32 v_index = 0;
+            
+            f32 y = -1.0f;
+            for( s32 r = 0; r < rows; ++r )
+            {
+                for( s32 i = 0; i < segments; ++i )
+                {
+                    f32 x = cos(angle);
+                    f32 z = -sin(angle);
+                    
+                    angle += angle_step;
+                    
+                    f32 radius = 1.0f - fabs(y);
+                    
+                    vec3f xz = vec3f(x,0.0f,z) * radius;
+                    vec3f p = vec3f( xz.x, y, xz.z );
+                    
+                    //tangent
+                    x = cos(angle);
+                    z = -sin(angle);
+                    
+                    xz = vec3f(x,0.0f,z) * radius;
+                    
+                    vec3f p_next = vec3f( xz.x, y, xz.z );
+                    
+                    p = maths::normalise(p);
+                    p_next = maths::normalise(p_next);
+                    
+                    v[v_index].x = p.x;
+                    v[v_index].y = p.y;
+                    v[v_index].z = p.z;
+                    v[v_index].w = 1.0f;
+                    
+                    v[v_index].nx = p.x;
+                    v[v_index].ny = p.y;
+                    v[v_index].nz = p.z;
+                    v[v_index].nw = 1.0f;
+                    
+                    vec3f t = p_next - p;
+                    
+                    v[v_index].tx = t.x;
+                    v[v_index].ty = t.y;
+                    v[v_index].tz = t.z;
+                    v[v_index].tw = 1.0f;
+                    
+                    vec3f bt = maths::cross( p, t );
+                    
+                    v[v_index].bx = bt.x;
+                    v[v_index].by = bt.y;
+                    v[v_index].bz = bt.z;
+                    v[v_index].bw = 1.0f;
+                    
+                    v_index++;
+                 }
+                
+                y += height_step;
+            }
+            
+            static const u32 num_indices = 6*(rows-1)*segments;
+            u16 indices[num_indices] = { 0 };
+            s32 index_offset = 0;
+            
+            for( s32 r = 0; r < rows-1; ++r )
+            {
+                for( s32 i = 0; i < segments; ++i )
+                {
+                    s32 i_next = ((i+1)%segments);
+                    
+                    s32 v_index = r * segments;
+                    s32 v_next_index = (r+1) * segments + i;
+                    s32 v_next_next_index = (r+1) * segments + i_next;
+                    
+                    indices[index_offset+0] = v_index + i;
+                    indices[index_offset+1] = v_next_index;
+                    indices[index_offset+2] = v_index + i_next;
+                    
+                    indices[index_offset+3] = v_next_index;
+                    indices[index_offset+4] = v_next_next_index;
+                    indices[index_offset+5] = v_index + i_next;
+                    
+                    index_offset += 6;
+                }
+            }
+            
+            //VB
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = sizeof(vertex_model) * num_verts;
+            bcp.data = (void*)v;
+            
+            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            
+            //IB
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = 2 * num_indices;
+            bcp.data = (void*)indices;
+            
+            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            
+            p_geometry->num_indices = num_indices;
+            p_geometry->num_vertices = num_verts;
+            p_geometry->vertex_size = sizeof(vertex_model);
+            p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            
+            p_geometry->physics_info.min_extents = -vec3f::one();
+            p_geometry->physics_info.max_extents =  vec3f::one();
+            
+            //hash / ids
+            p_geometry->geometry_name = "sphere";
+            p_geometry->hash = PEN_HASH("sphere");
+            p_geometry->file_hash = PEN_HASH("primitive");
+            p_geometry->filename = "primitive";
+            p_geometry->p_skin = nullptr;
+            
+            k_geometry_resources.push_back(p_geometry);
+        }
+        
         void create_cube_primitive( )
         {
             static const u32 num_verts = 24;
@@ -463,6 +597,7 @@ namespace put
             //geom primitives
             create_cube_primitive();
             create_cylinder_primitive();
+            create_sphere_primitive();
         }
         
         geometry_resource* get_geometry_resource( hash_id hash )

@@ -102,7 +102,6 @@ namespace put
         void            instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index );
         
         void            create_geometry_primitives( );
-        void            create_cylinder_primitive( );
         
         material_resource*  get_material_resource( hash_id hash );
         animation_resource* get_animation_resource( anim_handle h );

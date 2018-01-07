@@ -1267,9 +1267,19 @@ namespace put
                     //geom
                     ImGui::Text("Geometry: %s", scene->geometry_names[selected_index].c_str());
                     
-                    if( ImGui::Button("Add Prim") )
+                    static s32 primitive_type = -1;
+                    ImGui::Combo("Shape", (s32*)&primitive_type, "Box\0Sphere\0Cylinder\0", 3 );
+                    
+                    static hash_id primitive_id[] =
                     {
-                        geometry_resource* gr = get_geometry_resource(PEN_HASH("cylinder"));
+                        PEN_HASH("cube"),
+                        PEN_HASH("sphere"),
+                        PEN_HASH("cylinder")
+                    };
+                    
+                    if( ImGui::Button("Add Primitive") && primitive_type > -1)
+                    {
+                        geometry_resource* gr = get_geometry_resource(primitive_id[primitive_type]);
                         
                         instantiate_geometry(gr, scene, selected_index);
                         
