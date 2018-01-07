@@ -661,6 +661,8 @@ namespace put
             bv->max_extents = gr->physics_info.max_extents;
 			bv->radius = maths::magnitude(bv->max_extents - bv->min_extents) * 0.5f;
 
+            scene->geometry_names[node_index] = gr->geometry_name;
+            scene->id_geometry[node_index] = gr->hash;
             scene->entities[node_index] |= CMP_GEOMETRY;
         }
         

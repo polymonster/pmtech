@@ -110,8 +110,7 @@ namespace put
                 
                 scene->free_list_head = fnl_iter;
                 
-                if (end > scene->num_nodes)
-                    scene->num_nodes = end;
+                scene->num_nodes = std::max<u32>(end, scene->num_nodes);
             }
 		}
         
@@ -130,8 +129,7 @@ namespace put
             
 			scene->flags |= INVALIDATE_SCENE_TREE;
 
-            if( i > scene->num_nodes )
-                scene->num_nodes = i+1;
+            scene->num_nodes = std::max<u32>(i+1, scene->num_nodes);
             
 			scene->entities[i] = CMP_ALLOCATED;
 

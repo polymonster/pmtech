@@ -940,7 +940,7 @@ namespace put
                 ImGui::InputFloat("Mass", &mass);
 
 				static u32 collision_shape = 0;
-                ImGui::Combo("Shape", (s32*)&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
+                ImGui::Combo("Shape", (s32*)&collision_shape, "None\0Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
                 
                 static s32 up_axis = 0;
                 if(collision_shape == physics::CYLINDER || collision_shape == physics::CAPSULE )
@@ -959,7 +959,7 @@ namespace put
 
 						scene_node_physics& snp = scene->physics_data[s];
 						snp.mass = mass;
-						snp.collision_shape = collision_shape + 1;
+						snp.collision_shape = collision_shape;
 						snp.start_position = pos;
 						snp.start_rotation = rotation;
 
