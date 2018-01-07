@@ -3,6 +3,7 @@
 #include "pen_string.h"
 #include "str_utilities.h"
 #include "file_system.h"
+#include "debug_render.h"
 
 #include "ces/ces_utilities.h"
 #include "ces/ces_resources.h"
@@ -55,6 +56,28 @@ namespace put
                 vec3f(-1.0f,  1.0f,  1.0f)
             };
             
+            vec3f face_normals[] =
+            {
+                vec3f( 0.0f, -1.0f, 0.0f ),
+                vec3f( 0.0f, 0.0f, -1.0f ),
+                vec3f( 0.0f, 0.0f,  1.0f ),
+                
+                vec3f( 0.0f, 1.0f, 0.0f ),
+                vec3f( -1.0f, 0.0f, 0.0f ),
+                vec3f( 1.0f, 0.0f, 0.0f )
+            };
+            
+            vec3f face_tangents[] =
+            {
+                vec3f( -1.0f, 0.0f, 0.0f ),
+                vec3f( -1.0f, 0.0f, -1.0f ),
+                vec3f( 1.0f, 0.0f, 0.0f ),
+                
+                vec3f( 1.0f, 0.0f, 0.0f ),
+                vec3f( 0.0f, 0.0f, -1.0f ),
+                vec3f( 0.0f, 0.0f, 1.0f )
+            };
+            
             s32 c[] =
             {
                 0, 3, 2, 1,
@@ -66,12 +89,15 @@ namespace put
                 1, 2, 6, 5
             };
             
-            u16 indices[36];
+            const u32 num_indices = 36;
+            u16 indices[num_indices];
             
             for( s32 i = 0; i < 6; ++i )
             {
                 s32 offset = i*4;
                 s32 index_offset = i*6;
+                
+                vec3f bt = maths::cross(face_normals[i], face_tangents[i]);
                 
                 for( s32 j = 0; j < 4; ++j )
                 {
@@ -81,6 +107,21 @@ namespace put
                     v[offset+j].y = corners[cc].y;
                     v[offset+j].z = corners[cc].z;
                     v[offset+j].w = 1.0f;
+                    
+                    v[offset+j].nx = face_normals[i].x;
+                    v[offset+j].ny = face_normals[i].y;
+                    v[offset+j].nz = face_normals[i].z;
+                    v[offset+j].nw = 1.0f;
+                    
+                    v[offset+j].tx = face_tangents[i].x;
+                    v[offset+j].ty = face_tangents[i].y;
+                    v[offset+j].tz = face_tangents[i].z;
+                    v[offset+j].tw = 1.0f;
+                    
+                    v[offset+j].bx = bt.x;
+                    v[offset+j].by = bt.y;
+                    v[offset+j].bz = bt.z;
+                    v[offset+j].bw = 1.0f;
                 }
                 
                 indices[index_offset+0] = offset+0;
@@ -106,19 +147,242 @@ namespace put
             bcp.usage_flags = PEN_USAGE_DEFAULT;
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
-            bcp.buffer_size = 2 * 36;
+            bcp.buffer_size = 2 * num_indices;
             bcp.data = (void*)indices;
             
             p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
             
             p_geometry->num_indices = 36;
-            p_geometry->num_vertices = 24;
+            p_geometry->num_vertices = num_verts;
             p_geometry->vertex_size = sizeof(vertex_model);
             p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            
+            p_geometry->physics_info.min_extents = -vec3f::one();
+            p_geometry->physics_info.max_extents =  vec3f::one();
             
             //hash / ids
             p_geometry->geometry_name = "cube";
             p_geometry->hash = PEN_HASH("cube");
+            p_geometry->file_hash = PEN_HASH("primitive");
+            p_geometry->filename = "primitive";
+            p_geometry->p_skin = nullptr;
+        
+            k_geometry_resources.push_back(p_geometry);
+        }
+        
+        void create_cylinder_primitive()
+        {
+            static const u32 num_verts = 66;
+            vertex_model v[num_verts];
+            geometry_resource* p_geometry = new geometry_resource;
+            
+            vec3f axis = vec3f::unit_y();
+            vec3f right = vec3f::unit_x();
+            
+            vec3f up = maths::cross( axis, right );
+            right = maths::cross( axis, up );
+            
+            static const s32 segments = 16;
+            
+            vec3f points[segments];
+            
+            f32 angle = 0.0;
+            f32 angle_step = PI_2/segments;
+            for( s32 i = 0; i < segments; ++i )
+            {
+                f32 x = cos(angle);
+                f32 y = -sin(angle);
+                
+                vec3f v1 = maths::normalise(vec3f(x, y, 0.0 ));
+                
+                v1 = right * x + up * y;
+                
+                angle += angle_step;
+                
+                points[i] = v1;
+            }
+            
+            vec3f bottom_points[segments];
+            for( s32 i = 0; i < segments; ++i )
+                bottom_points[i] = points[i] - vec3f(0.0f, 1.0f, 0.0f );
+            
+            vec3f top_points[segments];
+            for( s32 i = 0; i < segments; ++i )
+                top_points[i] = points[i] + vec3f(0.0f, 1.0f, 0.0f );
+            
+            //bottom ring
+            for( s32 i = 0; i < segments; ++i )
+            {
+                v[i].x = bottom_points[i].x;
+                v[i].y = bottom_points[i].y;
+                v[i].z = bottom_points[i].z;
+                v[i].w = 1.0f;
+                
+                v[i].nx = bottom_points[i].x;
+                v[i].ny = bottom_points[i].y;
+                v[i].nz = bottom_points[i].z;
+                v[i].nw = 1.0f;
+                
+                put::dbg::add_point(bottom_points[i], 0.1f);
+            }
+            
+            //top ring
+            for( s32 i = 0; i < segments; ++i )
+            {
+                s32 vi = i + segments;
+                
+                v[vi].x = top_points[i].x;
+                v[vi].y = top_points[i].y;
+                v[vi].z = top_points[i].z;
+                v[vi].w = 1.0f;
+                
+                v[vi].nx = top_points[i].x;
+                v[vi].ny = top_points[i].y;
+                v[vi].nz = top_points[i].z;
+                v[vi].nw = 1.0f;
+                
+                put::dbg::add_point(top_points[i], 0.1f);
+            }
+            
+            //bottom face
+            for( s32 i = 0; i < segments; ++i )
+            {
+                s32 vi = (segments * 2) + i;
+                
+                v[vi].x = bottom_points[i].x;
+                v[vi].y = bottom_points[i].y;
+                v[vi].z = bottom_points[i].z;
+                v[vi].w = 1.0f;
+                
+                v[vi].nx = 0.0f;
+                v[vi].ny = -1.0f;
+                v[vi].nz = 0.0f;
+                v[vi].nw = 1.0f;
+            }
+            
+            //top face
+            for( s32 i = 0; i < segments; ++i )
+            {
+                s32 vi = (segments * 3) + i;
+                
+                v[vi].x = top_points[i].x;
+                v[vi].y = top_points[i].y;
+                v[vi].z = top_points[i].z;
+                v[vi].w = 1.0f;
+                
+                v[vi].nx = 0.0f;
+                v[vi].ny = 1.0f;
+                v[vi].nz = 0.0f;
+                v[vi].nw = 1.0f;
+            }
+            
+            //centre points
+            v[64].x = 0.0f;
+            v[64].y = -1.0f;
+            v[64].z = 0.0f;
+            v[64].w = 1.0f;
+            
+            v[64].nx = 0.0f;
+            v[64].ny = -1.0f;
+            v[64].nz = 0.0f;
+            v[64].nw = 1.0f;
+            
+            v[65].x = 0.0f;
+            v[65].y = 1.0f;
+            v[65].z = 0.0f;
+            v[65].w = 1.0f;
+            
+            v[65].nx = 0.0f;
+            v[65].ny = 1.0f;
+            v[65].nz = 0.0f;
+            v[65].nw = 1.0f;
+            
+            //sides
+            const u32 num_indices = segments*6 + segments*3*2;
+            u16 indices[num_indices] = { 0 };
+            
+            for( s32 i = 0; i < segments; ++i )
+            {
+                s32 bottom = i;
+                s32 top = i + segments;
+                s32 next = (i + 1) % segments;
+                s32 top_next = ((i + 1) % segments) + segments;
+                
+                s32 index_offset = i * 6;
+                
+                indices[index_offset+0] = bottom;
+                indices[index_offset+1] = top;
+                indices[index_offset+2] = next;
+                
+                indices[index_offset+3] = top;
+                indices[index_offset+4] = top_next;
+                indices[index_offset+5] = next;
+            }
+            
+            //bottom face
+            for( s32 i = 0; i < segments; ++i )
+            {
+                s32 face_offset = (segments*2);
+                
+                s32 face_current = face_offset + i;
+                s32 face_next = face_offset + (i+1)%segments;
+                
+                s32 index_offset = i*3 + (segments*6);
+                
+                indices[index_offset+0] = 64;
+                indices[index_offset+1] = face_current;
+                indices[index_offset+2] = face_next;
+            }
+            
+            //top face
+            for( s32 i = 0; i < segments; ++i )
+            {
+                s32 face_offset = (segments*3);
+
+                s32 face_current = face_offset + i;
+                s32 face_next = face_offset + (i+1)%segments;
+                
+                s32 index_offset = i*3 + (segments*6) + (segments*3);
+                
+                indices[index_offset+0] = 65;
+                indices[index_offset+1] = face_next;
+                indices[index_offset+2] = face_current;
+            }
+            
+            static bool once = false;
+            if(once)
+                return;
+            
+            once = true;
+            
+            //VB
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = sizeof(vertex_model) * num_verts;
+            bcp.data = (void*)v;
+            
+            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            
+            //IB
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = 2 * num_indices;
+            bcp.data = (void*)indices;
+            
+            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            
+            //info
+            p_geometry->num_indices = num_indices;
+            p_geometry->num_vertices = num_verts;
+            p_geometry->vertex_size = sizeof(vertex_model);
+            p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            p_geometry->physics_info.min_extents = -vec3f::one();
+            p_geometry->physics_info.max_extents =  vec3f::one();
+            p_geometry->geometry_name = "cylinder";
+            p_geometry->hash = PEN_HASH("cylinder");
             p_geometry->file_hash = PEN_HASH("primitive");
             p_geometry->filename = "primitive";
             p_geometry->p_skin = nullptr;
@@ -152,6 +416,7 @@ namespace put
             
             //geom primitives
             create_cube_primitive();
+            create_cylinder_primitive();
         }
         
         geometry_resource* get_geometry_resource( hash_id hash )

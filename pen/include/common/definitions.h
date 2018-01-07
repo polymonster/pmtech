@@ -7,7 +7,6 @@
 #define PEN_THREAD_OK                   0
 #define PEN_THREAD_ROUTINE( FP )        LPTHREAD_START_ROUTINE FP
 #define PEN_THREAD_RETURN               DWORD WINAPI
-//#define PEN_SHADER_COMPILE_CMD          "..\\..\\..\\tools\\build_shaders.py -root_dir ..\\..\\"
 #define PEN_DIR							'\\' 
 #define PEN_SHADER_COMPILE_PRE_CMD		"py -3 " 
 #define PEN_SHADER_COMPILE_CMD          "tools\\build_shaders.py -root_dir ..\\..\\"
@@ -16,7 +15,7 @@
 #define PEN_THREAD_OK                   nullptr
 #define PEN_THREAD_RETURN               void*
 #define PEN_THREAD_ROUTINE( FP )		PEN_THREAD_RETURN (*FP)(void* data)
-#define PEN_SHADER_COMPILE_PRE_CMD		"export PATH=$PATH:../../../tools/bin/python/osx; python3 " 
+#define PEN_SHADER_COMPILE_PRE_CMD      ". ~/.bash_profile;  python3 "
 #define PEN_SHADER_COMPILE_CMD          "tools/build_shaders.py -root_dir ../../"
 #define PEN_DIR							'/' 
 #define PEN_BUILD_CMD					"tools/build.py -root_dir ../../"

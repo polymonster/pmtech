@@ -1269,7 +1269,7 @@ namespace put
                     
                     if( ImGui::Button("Add Prim") )
                     {
-                        geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
+                        geometry_resource* gr = get_geometry_resource(PEN_HASH("cylinder"));
                         
                         instantiate_geometry(gr, scene, selected_index);
                         
@@ -1721,6 +1721,8 @@ namespace put
             entity_scene* scene = view.scene;
 
 			dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
+            
+            create_cylinder_primitive();
             
             if( scene->view_flags & DD_LIGHTS )
             {

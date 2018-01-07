@@ -250,8 +250,10 @@ ps_output_multi ps_gbuffer( vs_output input )
 	float3 n = normalize( mul( tbn, normal_sample ) );
 	
 	output.albedo = albedo;
-	output.normal = float4( n, 1.0 );
+	output.normal = float4( input.normal, 1.0 );
 		
+	output.normal = float4( 1.0, 0.0, 1.0, 0.0 );
+	
     return output;
 }
 
