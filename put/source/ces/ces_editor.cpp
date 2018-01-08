@@ -940,7 +940,7 @@ namespace put
                 ImGui::InputFloat("Mass", &mass);
 
 				static u32 collision_shape = 0;
-                ImGui::Combo("Shape", (s32*)&collision_shape, "None\0Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
+                ImGui::Combo("Shape##Physics", (s32*)&collision_shape, "None\0Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
                 
                 static s32 up_axis = 0;
                 if(collision_shape == physics::CYLINDER || collision_shape == physics::CAPSULE )
@@ -1119,7 +1119,56 @@ namespace put
                     list_view = false;
                 dev_ui::set_tooltip("Tree View");
                 
-                //ImGui::Columns( 1 );
+                struct scene_num_dump
+                {
+                    u32 component;
+                    const c8* display_name;
+                    u32 count;
+                };
+
+                static scene_num_dump dumps[] =
+                {
+                    { CMP_ALLOCATED, "Allocated", 0 },
+                    { CMP_GEOMETRY, "Geometries", 0 },
+                    { CMP_BONE, "Bones", 0 },
+                    { CMP_ANIM_CONTROLLER, "Anim Controllers", 0 }
+                };
+
+                if (ImGui::CollapsingHeader( "Scene Info" ))
+                {
+                    ImGui::Text( "Total Scene Nodes: %i", scene->num_nodes );
+                    ImGui::Text( "Selected: %i", ( s32 )k_selection_list.size() );
+
+                    for (s32 i = 0; i < PEN_ARRAY_SIZE( dumps ); ++i)
+                        dumps[i].count = 0;
+
+                    for (s32 i = 0; i < scene->num_nodes; ++i)
+                        for (s32 j = 0; j < PEN_ARRAY_SIZE( dumps ); ++j)
+                            if (scene->entities[i] & dumps[j].component)
+                                dumps[j].count++;
+
+                    for (s32 i = 0; i < PEN_ARRAY_SIZE( dumps ); ++i)
+                        ImGui::Text( "%s: %i", dumps[i].display_name, dumps[i].count );
+
+                    //debug free list
+                    /*
+                    ImGui::BeginChild( "Free List", ImVec2( 0, 100 ), true );
+
+                    free_node_list* fnl = scene->free_list_head;
+                    for(;;)
+                    {
+                    if(!fnl)
+                    break;
+
+                    Str v;
+                    v.appendf("%i", fnl->node);
+                    ImGui::Selectable(v.c_str());
+
+                    fnl = fnl->next;
+                    }
+                    ImGui::EndChild();
+                    */
+                }
                 
                 ImGui::BeginChild("Entities", ImVec2(0, 300), true );
                 
@@ -1163,139 +1212,89 @@ namespace put
                 
                 ImGui::EndChild();
                 
-				struct scene_num_dump
-				{
-					u32 component;
-					const c8* display_name;
-					u32 count;
-				};
+                //header
+                if (selected_index != -1)
+                {
+                    static c8 buf[64];
+                    u32 end_pos = std::min<u32>( scene->names[selected_index].length(), 64 );
+                    pen::memory_cpy( buf, scene->names[selected_index].c_str(), end_pos );
+                    buf[end_pos] = '\0';
 
-				static scene_num_dump dumps[] = 
-				{
-					{ CMP_ALLOCATED, "Allocated", 0 },
-					{ CMP_GEOMETRY, "Geometries", 0 },
-					{ CMP_BONE, "Bones", 0 },
-					{ CMP_ANIM_CONTROLLER, "Anim Controllers", 0 }
-				};
-
-				if (ImGui::CollapsingHeader("Scene Info"))
-				{
-					ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
-					ImGui::Text("Selected: %i", (s32)k_selection_list.size());
-
-					for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
-						dumps[i].count = 0;
-
-					for (s32 i = 0; i < scene->num_nodes; ++i)
-						for (s32 j = 0; j < PEN_ARRAY_SIZE(dumps); ++j)
-							if (scene->entities[i] & dumps[j].component)
-								dumps[j].count++;
-
-					for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
-						ImGui::Text("%s: %i", dumps[i].display_name, dumps[i].count);
-                    
-                    ImGui::BeginChild("Free List", ImVec2(0, 100), true );
-                    
-                    free_node_list* fnl = scene->free_list_head;
-                    for(;;)
+                    if (ImGui::InputText( "", buf, 64 ))
                     {
-                        if(!fnl)
-                            break;
-                        
-                        Str v;
-                        v.appendf("%i", fnl->node);
-                        ImGui::Selectable(v.c_str());
-                        
-                        fnl = fnl->next;
+                        scene->names[selected_index] = buf;
+                        scene->id_name[selected_index] = PEN_HASH( buf );
                     }
-                    
-                    ImGui::EndChild();
-				}
 
-				ImGui::Separator();
+                    s32 parent_index = scene->parents[selected_index];
+                    if (parent_index != selected_index)
+                        ImGui::Text( "Parent: %s", scene->names[parent_index].c_str() );
+                }
 
 				scene_physics_ui(scene);
-
-				ImGui::Separator();
                 
                 if (selected_index != -1)
                 {
-                    //header
-                    static c8 buf[64];
-                    u32 end_pos = std::min<u32>(scene->names[selected_index].length(), 64);
-                    pen::memory_cpy(buf, scene->names[selected_index].c_str(), end_pos);
-                    buf[end_pos] = '\0';
-                    
-                    if( ImGui::InputText("", buf, 64 ))
-                    {
-                        scene->names[selected_index] = buf;
-                        scene->id_name[selected_index] = PEN_HASH(buf);
-                    }
-                    
-                    s32 parent_index = scene->parents[selected_index];
-                    if( parent_index != selected_index)
-                        ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
-                    
-                    ImGui::Separator();
-
 					//transform
-					bool perform_transform = false;
-					transform& t = scene->transforms[selected_index];
-					perform_transform |= ImGui::InputFloat3("Translation", (float*)&t.translation);
+                    if (ImGui::CollapsingHeader( "Transform" ))
+                    {
+                        bool perform_transform = false;
+                        transform& t = scene->transforms[selected_index];
+                        perform_transform |= ImGui::InputFloat3( "Translation", ( float* )&t.translation );
 
-					vec3f euler = t.rotation.to_euler();
-					euler = euler * _PI_OVER_180;
-					
-					if (ImGui::InputFloat3("Rotation", (float*)&euler) )
-					{
-						euler = euler * _180_OVER_PI;
-						t.rotation.euler_angles(euler.z, euler.y, euler.x);
-						perform_transform = true;
-					}
+                        vec3f euler = t.rotation.to_euler();
+                        euler = euler * _PI_OVER_180;
 
-					perform_transform |= ImGui::InputFloat3("Scale", (float*)&t.scale);
+                        if (ImGui::InputFloat3( "Rotation", ( float* )&euler ))
+                        {
+                            euler = euler * _180_OVER_PI;
+                            t.rotation.euler_angles( euler.z, euler.y, euler.x );
+                            perform_transform = true;
+                        }
 
-					if (perform_transform)
-					{
-						scene->entities[selected_index] |= CMP_TRANSFORM;
-					}
+                        perform_transform |= ImGui::InputFloat3( "Scale", ( float* )&t.scale );
 
-					apply_transform_to_selection(scene, vec3f::zero());
+                        if (perform_transform)
+                        {
+                            scene->entities[selected_index] |= CMP_TRANSFORM;
+                        }
 
-					ImGui::Separator();
+                        apply_transform_to_selection( scene, vec3f::zero() );
+                    }
                     
                     //geom
-                    ImGui::Text("Geometry: %s", scene->geometry_names[selected_index].c_str());
-                    
-                    static s32 primitive_type = -1;
-                    ImGui::Combo("Shape", (s32*)&primitive_type, "Box\0Sphere\0Cylinder\0", 3 );
-                    
-                    static hash_id primitive_id[] =
+                    if (ImGui::CollapsingHeader( "Geometry" ))
                     {
-                        PEN_HASH("cube"),
-                        PEN_HASH("sphere"),
-                        PEN_HASH("cylinder")
-                    };
-                    
-                    if( ImGui::Button("Add Primitive") && primitive_type > -1)
-                    {
-                        geometry_resource* gr = get_geometry_resource(primitive_id[primitive_type]);
-                        
-                        instantiate_geometry(gr, scene, selected_index);
-                        
-                        material_resource* mr = get_material_resource(PEN_HASH("default_material"));
-                        
-                        instantiate_material(mr, scene, selected_index);
-                        
-                        scene->geometry_names[selected_index] = gr->geometry_name;
-                        
-                        instantiate_model_cbuffer(scene, selected_index);
-                        
-                        scene->entities[selected_index] |= CMP_TRANSFORM;
+                        ImGui::Text( "Geometry Name: %s", scene->geometry_names[selected_index].c_str() );
+
+                        static s32 primitive_type = -1;
+                        ImGui::Combo( "Shape##Primitive", ( s32* )&primitive_type, "Box\0Sphere\0Cylinder\0", 3 );
+
+                        static hash_id primitive_id[] =
+                        {
+                            PEN_HASH( "cube" ),
+                            PEN_HASH( "sphere" ),
+                            PEN_HASH( "cylinder" )
+                        };
+
+                        if (ImGui::Button( "Add Primitive" ) && primitive_type > -1)
+                        {
+                            geometry_resource* gr = get_geometry_resource( primitive_id[primitive_type] );
+
+                            instantiate_geometry( gr, scene, selected_index );
+
+                            material_resource* mr = get_material_resource( PEN_HASH( "default_material" ) );
+
+                            instantiate_material( mr, scene, selected_index );
+
+                            scene->geometry_names[selected_index] = gr->geometry_name;
+
+                            instantiate_model_cbuffer( scene, selected_index );
+
+                            scene->entities[selected_index] |= CMP_TRANSFORM;
+                        }
                     }
-                    
-                    ImGui::Separator();
-                    
+                                   
                     //material
 					if (ImGui::CollapsingHeader("Material"))
 					{
@@ -1321,12 +1320,9 @@ namespace put
                             ImGui::SliderFloat("Reflectity", (f32*)&mm.specular_rgb_reflect.w, 0.000001, 1.5);
 						}
 					}
-                    ImGui::Separator();
-                    
+
                     scene_anim_ui(scene, selected_index );
-                    
-                    ImGui::Separator();
-                                        
+                                                            
                     if( ImGui::CollapsingHeader("Light") )
                     {
                         if( scene->entities[selected_index] & CMP_LIGHT )
