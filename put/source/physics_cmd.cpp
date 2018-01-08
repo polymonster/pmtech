@@ -158,6 +158,10 @@ namespace physics
 		case CMD_ADD_TO_WORLD:
 			add_to_world_internal( cmd.entity_index );
 			break;
+                
+        case CMD_RELEASE_ENTITY:
+            release_entity_internal( cmd.entity_index );
+            break;
 
 		default:
 			break;
@@ -475,7 +479,18 @@ namespace physics
 
 		INC_WRAP( put_pos );
 	}
-
+    
+    void release_entity( const u32 &entity_index )
+    {
+        cmd_buffer[put_pos].command_index = CMD_RELEASE_ENTITY;
+        
+        cmd_buffer[put_pos].entity_index = entity_index;
+        
+        pen::slot_resources_free(&k_physics_slot_resources, entity_index);
+        
+        INC_WRAP( put_pos );
+    }
+    
 	void reset_wait_flag( )
 	{
 		g_readable_data.b_wait_flag = 0;

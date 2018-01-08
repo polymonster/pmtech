@@ -42,7 +42,8 @@ namespace physics
 		CMD_REMOVE_FROM_WORLD,
 		CMD_ADD_TO_WORLD,
 		CMD_ADD_COLLISION_TRIGGER,
-		CMD_ATTACH_RB_TO_COMPOUND
+		CMD_ATTACH_RB_TO_COMPOUND,
+        CMD_RELEASE_ENTITY
 	};
 
     enum e_physics_shape : s32
@@ -311,6 +312,8 @@ namespace physics
 	void	set_collision_group( const u32 &entity_index, const u32 &group, const u32 &mask );
 	void	remove_from_world( const u32 &entity_index );
 	void	add_to_world( const u32 &entity_index );
+    
+    void    release_entity( const u32 &entity_index );
 
 	void	sync_compound_multi( const u32 &compound_index, const u32 &multi_index );
 	void	sync_rigid_bodies( const u32 &master, const u32 &slave, const s32 &link_index, u32 cmd );

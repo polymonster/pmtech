@@ -188,6 +188,8 @@ namespace physics
 
 	void				add_to_world_internal( u32 entity_index );
 	void				remove_from_world_internal( u32 entity_index );
+    
+    void                release_entity_internal( u32 entity_index );
 
 	void				add_p2p_constraint_internal( const add_p2p_constraint_params &cmd );
 	void				remove_p2p_constraint_internal( u32 index );

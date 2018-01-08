@@ -284,6 +284,7 @@ namespace put
 
 		void			resize_scene_buffers( entity_scene* scene, s32 size = 1024 );
 		void			zero_entity_components( entity_scene* scene, u32 node_index );
+        void            delete_entity( entity_scene* scene, u32 node_index );
 
         void            update_view_flags( entity_scene* scene, bool error );
         

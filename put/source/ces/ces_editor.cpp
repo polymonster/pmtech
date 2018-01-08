@@ -907,7 +907,7 @@ namespace put
 
 					for (auto& c : node_index_list)
 						if (c > -1)
-							zero_entity_components(sc->scene, c);
+                            delete_entity(sc->scene, c);
 				}
 				k_selection_list.clear();
                 

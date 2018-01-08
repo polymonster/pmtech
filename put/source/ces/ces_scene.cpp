@@ -143,6 +143,15 @@ namespace put
 			scene->num_nodes = 0;
 		}
 
+        void delete_entity( entity_scene* scene, u32 node_index )
+        {
+            if(scene->physics_handles[node_index])
+                physics::release_entity(scene->physics_handles[node_index]);
+            
+            //zero
+            zero_entity_components( scene, node_index );
+        }
+        
 		void zero_entity_components(entity_scene* scene, u32 node_index)
 		{
 			ZERO_COMPONENT_ARRAY(scene, entities, node_index);

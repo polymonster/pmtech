@@ -43,7 +43,7 @@ namespace pen
         return r;
     }
     
-    inline void slot_resources_free( slot_resources* resources, u32 slot )
+    inline void slot_resources_free( slot_resources* resources, const u32 slot )
     {
         resources->slots[slot].next = resources->head;
         resources->head = &resources->slots[slot];
