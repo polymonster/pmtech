@@ -64,9 +64,20 @@ namespace put
 			quat rotation = scene->transforms[s].rotation;
 
 			scene->offset_matrices[s] = mat4::create_scale(scale);
-
-			physics::rigid_body_params rb = { 0 };
-			rb.dimensions = (max - min) * scale * 0.5;
+            
+            physics::rigid_body_params rb = { 0 };
+            
+            rb.dimensions = (max - min) * scale * 0.5;
+            
+            //capsule height is extents height + radius * 2 (for the capsule top and bottom)
+            if( snp.collision_shape == physics::CAPSULE )
+                rb.dimensions.y -= rb.dimensions.x / 2.0f;
+            
+            //fill the matrix array with the first matrix because of thread sync
+            mat4 mrot;
+            rotation.get_matrix(mrot);
+            mat4 start_transform = mrot * mat4::create_translation(pos);
+            
 			rb.mass = snp.mass;
 			rb.group = 1;
 			rb.position = pos;
@@ -74,6 +85,7 @@ namespace put
 			rb.shape = snp.collision_shape;
 			rb.shape_up_axis = physics::UP_Y;
 			rb.mask = 0xffffffff;
+            rb.start_matrix = start_transform;
 
 			scene->physics_handles[s] = physics::add_rb(rb);
 			scene->entities[s] |= CMP_PHYSICS;

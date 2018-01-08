@@ -109,6 +109,7 @@ namespace physics
 		f32		 mass;
 		u32		 group;
 		u32		 mask;
+        mat4     start_matrix;
 		collision_mesh_data mesh_data;
 	};
 

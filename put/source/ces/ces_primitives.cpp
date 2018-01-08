@@ -151,8 +151,8 @@ namespace put
             p_geometry->vertex_size = sizeof( vertex_model );
             p_geometry->index_type = PEN_FORMAT_R16_UINT;
 
-            p_geometry->physics_info.min_extents = vec3f(-1.0f, -1.0f, -1.0f);
-            p_geometry->physics_info.max_extents = vec3f(1.0f, 1.0f, 1.0f);
+            p_geometry->physics_info.min_extents = vec3f(-1.0f, -1.5f, -1.0f);
+            p_geometry->physics_info.max_extents = vec3f(1.0f, 1.5f, 1.0f);
 
             //hash / ids
             p_geometry->geometry_name = "capsule";

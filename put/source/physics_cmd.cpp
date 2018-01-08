@@ -289,6 +289,9 @@ namespace physics
         u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
         
+        for( s32 i = 0; i < NUM_OUTPUT_BUFFERS; ++i)
+            g_readable_data.output_matrices[i][resource_slot] = rbp.start_matrix;
+        
 		INC_WRAP( put_pos );
 
         return resource_slot;

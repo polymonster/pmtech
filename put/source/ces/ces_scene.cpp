@@ -105,6 +105,9 @@ namespace put
 
 		void free_scene_buffers( entity_scene* scene )
 		{
+            for( s32 i = 0; i < scene->num_nodes; ++i )
+                delete_entity( scene, i );
+                
             FREE_COMPONENT_ARRAY(scene, entities);
             
 			FREE_COMPONENT_ARRAY(scene, id_name);
@@ -145,8 +148,12 @@ namespace put
 
         void delete_entity( entity_scene* scene, u32 node_index )
         {
+            //free allocated stuff
             if(scene->physics_handles[node_index])
                 physics::release_entity(scene->physics_handles[node_index]);
+            
+            if(scene->cbuffer[node_index])
+                pen::renderer_release_buffer(scene->cbuffer[node_index]);
             
             //zero
             zero_entity_components( scene, node_index );
@@ -557,13 +564,13 @@ namespace put
                 
                 vec3f(1.0f, 0.0f, 0.0f),
                 vec3f(0.0f, 1.0f, 0.0f),
-                vec3f(0.0f, 1.0f, 1.0f),
+                vec3f(0.0f, 0.0f, 1.0f),
                 
-                vec3f(1.0f, 1.0f, 1.0f),
+                vec3f(1.0f, 1.0f, 0.0f),
                 vec3f(0.0f, 1.0f, 1.0f),
-                vec3f(0.0f, 1.0f, 1.0f),
+                vec3f(1.0f, 0.0f, 1.0f),
                 
-                vec3f(0.0f, 1.0f, 1.0f)
+                vec3f(1.0f, 1.0f, 1.0f)
             };
             
 			//transform extents by transform
