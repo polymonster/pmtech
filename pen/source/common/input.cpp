@@ -75,13 +75,13 @@ namespace pen
 		return mouse_state_.buttons[ button_index ] == KEY_PRESS;
 	}
 
-	void input_set_mouse_pos( u32 x, u32 y )
+	void input_set_mouse_pos( f32 x, f32 y )
 	{
 		mouse_state_.x = x;
 		mouse_state_.y = y;
 	}
 
-	void input_set_mouse_wheel( s32 wheel )
+	void input_set_mouse_wheel( f32 wheel )
 	{
 		mouse_state_.wheel += wheel;
 	}
