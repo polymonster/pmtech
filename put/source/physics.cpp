@@ -1135,6 +1135,8 @@ namespace physics
     void release_entity_internal( u32 entity_index )
     {
         remove_from_world_internal( entity_index );
+        
+        delete g_bullet_objects.entities[entity_index].rigid_body;
     }
 
 	void remove_from_world_internal( u32 entity_index )
