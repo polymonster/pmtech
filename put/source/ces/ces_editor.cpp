@@ -248,6 +248,8 @@ namespace put
         void editor_init( entity_scene* scene )
         {
             update_view_flags_ui( scene );
+            
+            create_geometry_primitives();
 
 			bool auto_load_last_scene = dev_ui::get_program_preference("load_last_scene").as_bool();
 			if (auto_load_last_scene)
@@ -276,8 +278,6 @@ namespace put
 			k_model_view_controller.main_camera.far_plane = dev_ui::get_program_preference("camera_far").as_f32(1000.0f);
 			k_model_view_controller.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
 			k_model_view_controller.invalidated = true;
-            
-            create_geometry_primitives();
         }
 
 		void editor_shutdown()

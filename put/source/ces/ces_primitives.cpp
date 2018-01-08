@@ -23,11 +23,11 @@ namespace put
 
             f32 angle = 0.0;
             f32 angle_step = PI_2 / segments;
-            f32 height_step = 3.0f / (rows - 1);
+            f32 height_step = 2.0f / (rows - 1);
 
             s32 v_index = 0;
 
-            f32 y = -1.5f;
+            f32 y = -1.0f;
             for (s32 r = 0; r < rows; ++r)
             {
                 for (s32 i = 0; i < segments; ++i)
@@ -37,24 +37,11 @@ namespace put
 
                     angle += angle_step;
 
-                    f32 radius = 1.0f;
+                    f32 radius = 1.0f - fabs( y );
 
                     vec3f xz = vec3f( x, 0.0f, z ) * radius;
                     vec3f p = vec3f( xz.x, y, xz.z );
-
-                    if (y < -1.0f || y > 1.0f)
-                    {
-                        radius = (1.5f - fabs( y )) * 2.0f;
-
-                        xz = vec3f( x, 0.0f, z ) * radius;
-                        
-                        p = vec3f( xz.x, y, xz.z );
-
-                        vec3f v = maths::normalise( p - vec3f( 0.0f, y, 0.0f ) );
-
-                        p = vec3f( 0.0f, y, 0.0f ) + v;
-                    }
-
+                    
                     //tangent
                     x = cos( angle );
                     z = -sin( angle );
@@ -62,18 +49,39 @@ namespace put
                     xz = vec3f( x, 0.0f, z ) * radius;
 
                     vec3f p_next = vec3f( xz.x, y + height_step, xz.z );
+                    
+                    p = maths::normalise( p );
+                    p_next = maths::normalise( p_next );
+                    
+                    vec3f n = p;
+                    
+                    if( r < segments / 2.0f )
+                    {
+                        p.y -= 0.5f;
+                        p_next -= 0.5f;
+                    }
+                    else if( r > segments / 2.0f )
+                    {
+                        p.y += 0.5f;
+                        p_next += 0.5f;
+                    }
+                    
+                    if( fabs(r - (segments / 2.0f)) < 2.0f )
+                    {
+                        n = put::maths::normalise(xz);
+                    }
 
                     v[v_index].x = p.x;
                     v[v_index].y = p.y;
                     v[v_index].z = p.z;
                     v[v_index].w = 1.0f;
 
-                    v[v_index].nx = p.x;
-                    v[v_index].ny = p.y;
-                    v[v_index].nz = p.z;
+                    v[v_index].nx = n.x;
+                    v[v_index].ny = n.y;
+                    v[v_index].nz = n.z;
                     v[v_index].nw = 1.0f;
 
-                    vec3f t = p_next - p;
+                    vec3f t = maths::normalise( p_next - p );
 
                     v[v_index].tx = t.x;
                     v[v_index].ty = t.y;
@@ -143,8 +151,8 @@ namespace put
             p_geometry->vertex_size = sizeof( vertex_model );
             p_geometry->index_type = PEN_FORMAT_R16_UINT;
 
-            p_geometry->physics_info.min_extents = -vec3f(1.0f, 1.5f, 1.0f);
-            p_geometry->physics_info.max_extents = vec3f(1.0f, 1.5f, 1.0f);
+            p_geometry->physics_info.min_extents = vec3f(-1.0f, -1.0f, -1.0f);
+            p_geometry->physics_info.max_extents = vec3f(1.0f, 1.0f, 1.0f);
 
             //hash / ids
             p_geometry->geometry_name = "capsule";

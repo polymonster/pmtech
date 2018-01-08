@@ -880,22 +880,37 @@ namespace put
                     ifs.read((c8*)&submesh, sizeof(u32));
 
                     Str filename = project_dir;
-                    filename.append( read_parsable_string(ifs).c_str() );
+                    Str name = read_parsable_string(ifs).c_str();
+                    hash_id name_hash = PEN_HASH(name.c_str());
+                    static hash_id primitive_id = PEN_HASH("primitive");
+                    
+                    filename.append( name.c_str() );
                     
                     Str geometry_name = read_parsable_string(ifs);
                     
-                    load_pmm(filename.c_str(), nullptr, PMM_GEOMETRY);
+                    geometry_resource* gr = nullptr;
                     
-                    pen::hash_murmur hm;
-                    hm.begin(0);
-                    hm.add(filename.c_str(), filename.length());
-                    hm.add(geometry_name.c_str(), geometry_name.length());
-                    hm.add(submesh);
-                    hash_id geom_hash = hm.end();
-                    
-                    geometry_resource* gr = get_geometry_resource(geom_hash);
-                    
-                    scene->id_geometry[n] = geom_hash;
+                    if(name_hash != primitive_id)
+                    {
+                        load_pmm(filename.c_str(), nullptr, PMM_GEOMETRY);
+                        
+                        pen::hash_murmur hm;
+                        hm.begin(0);
+                        hm.add(filename.c_str(), filename.length());
+                        hm.add(geometry_name.c_str(), geometry_name.length());
+                        hm.add(submesh);
+                        hash_id geom_hash = hm.end();
+                        
+                        gr = get_geometry_resource(geom_hash);
+                        
+                        scene->id_geometry[n] = geom_hash;
+                    }
+                    else
+                    {
+                        static hash_id geom_hash = PEN_HASH(geometry_name.c_str());
+                        
+                        gr = get_geometry_resource(geom_hash);
+                    }
                     
                     if( gr )
                     {
@@ -923,19 +938,37 @@ namespace put
                 if( scene->entities[n] & CMP_MATERIAL && has )
                 {
                     Str filename = project_dir;
+                    Str name = read_parsable_string(ifs).c_str();
+                    hash_id name_hash = PEN_HASH(name.c_str());
                     filename.append( read_parsable_string(ifs).c_str() );
+                    
+                    static hash_id default_id = PEN_HASH("default_material");
                     
                     Str material_name = read_parsable_string(ifs);
                     
-                    load_pmm(filename.c_str(), nullptr, PMM_MATERIAL);
+                    material_resource* mr;
                     
-                    pen::hash_murmur hm;
-                    hm.begin();
-                    hm.add(filename.c_str(), filename.length() );
-                    hm.add( material_name.c_str(), material_name.length());
-                    hash_id material_hash = hm.end();
+                    hash_id material_hash;
                     
-                    material_resource* mr = get_material_resource(material_hash);
+                    if( name_hash != default_id )
+                    {
+                        load_pmm(filename.c_str(), nullptr, PMM_MATERIAL);
+                        
+                        pen::hash_murmur hm;
+                        hm.begin();
+                        hm.add(filename.c_str(), filename.length() );
+                        hm.add( material_name.c_str(), material_name.length());
+                        material_hash = hm.end();
+                        
+                        mr = get_material_resource(material_hash);
+                    }
+                    else
+                    {
+                        static hash_id default_material_hash = PEN_HASH("default_material");
+                        material_hash = default_material_hash;
+                        
+                        mr = get_material_resource(default_material_hash);
+                    }
                     
                     if( mr )
                     {
