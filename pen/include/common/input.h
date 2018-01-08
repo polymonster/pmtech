@@ -11,9 +11,9 @@ namespace pen
 {
 	struct mouse_state
 	{
-		u32 x;
-		u32 y;
-		s32 wheel;
+		f32 x;
+		f32 y;
+		f32 wheel;
 		u8 buttons[ 3 ];
 
 	};
@@ -31,8 +31,8 @@ namespace pen
 
 	void				input_set_mouse_down( u32 button_index );
 	void				input_set_mouse_up( u32 button_index );
-	void				input_set_mouse_pos( u32 x, u32 y );
-	void				input_set_mouse_wheel( s32 wheel );
+	void				input_set_mouse_pos( f32 x, f32 y );
+	void				input_set_mouse_wheel( f32 wheel );
 
 	const mouse_state&	input_get_mouse_state( );
 	bool				input_is_mouse_pressed( u32 button_index );

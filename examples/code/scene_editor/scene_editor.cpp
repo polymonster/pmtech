@@ -94,8 +94,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         
 		put::dev_ui::new_frame();
         
-        ImGui::Text("%f", frame_time);
-        
         pmfx::update();
         
         pmfx::render();

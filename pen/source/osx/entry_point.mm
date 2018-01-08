@@ -126,7 +126,7 @@ void create_gl_context()
     _gl_context = glContext;
 }
 
-void get_mouse_pos( int& x, int& y )
+void get_mouse_pos( f32& x, f32& y )
 {
     NSRect original_frame = [_window frame];
     NSPoint location = [_window mouseLocationOutsideOfEventStream];
@@ -292,7 +292,7 @@ bool handle_event(NSEvent* event)
             case NSEventTypeRightMouseDragged:
             case NSEventTypeOtherMouseDragged:
             {
-                int x, y;
+                f32 x, y;
                 get_mouse_pos( x, y );
                 pen::input_set_mouse_pos( x, y );
                 return true;
@@ -309,7 +309,7 @@ bool handle_event(NSEvent* event)
             case NSEventTypeScrollWheel:
             {
                 f32 scroll_delta = [event deltaY];
-                pen::input_set_mouse_wheel((s32)scroll_delta);
+                pen::input_set_mouse_wheel(scroll_delta);
                 return true;
             }
                 
@@ -438,7 +438,7 @@ int main(int argc, char **argv)
             break;
         }
         
-        int x, y;
+        f32 x, y;
         get_mouse_pos( x, y );
         pen::input_set_mouse_pos( x, y );
         

@@ -3,6 +3,7 @@
 #include "pen_string.h"
 #include "str_utilities.h"
 #include "file_system.h"
+#include "debug_render.h"
 
 #include "ces/ces_utilities.h"
 #include "ces/ces_resources.h"
@@ -24,7 +25,18 @@ namespace put
     namespace ces
     {
         static std::vector<geometry_resource*> k_geometry_resources;
-        
+        static std::vector<material_resource*> k_material_resources;
+
+        void add_material_resource( material_resource* mr )
+        {
+            k_material_resources.push_back( mr );
+        }
+
+        void add_geometry_resource( geometry_resource* gr )
+        {
+            k_geometry_resources.push_back( gr );
+        }
+               
         geometry_resource* get_geometry_resource( hash_id hash )
         {
             for( auto* g : k_geometry_resources )
@@ -86,6 +98,8 @@ namespace put
             bv->max_extents = gr->physics_info.max_extents;
 			bv->radius = maths::magnitude(bv->max_extents - bv->min_extents) * 0.5f;
 
+            scene->geometry_names[node_index] = gr->geometry_name;
+            scene->id_geometry[node_index] = gr->hash;
             scene->entities[node_index] |= CMP_GEOMETRY;
         }
         
@@ -282,8 +296,6 @@ namespace put
             }
         }
         
-        static std::vector<material_resource*> k_material_resources;
-        
         material_resource* get_material_resource( hash_id hash )
         {
             for( auto* m : k_material_resources )
@@ -306,6 +318,9 @@ namespace put
             
             pen::memory_cpy(instance->texture_id, mr->texture_id, sizeof(u32)*SN_NUM_TEXTURES);
             
+            scene->id_material[node_index] = mr->hash;
+            scene->material_names[node_index] = mr->material_name;
+
             scene->entities[node_index] |= CMP_MATERIAL;
         }
         
@@ -738,7 +753,7 @@ namespace put
 					f32 sy = put::maths::magnitude(matrix.get_up());
 					f32 sz = put::maths::magnitude(matrix.get_fwd());
 
-					scene->transforms[current_node].scale = vec3f::one();
+                    scene->transforms[current_node].scale = vec3f( sx, sy, sz );
 				}
 
                 

@@ -51,83 +51,81 @@ namespace physics
 	{
 		btCollisionShape* shape = NULL;
 
-		if (params.shape == physics::BOX)
-		{
-			shape = new btBoxShape( btVector3( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ), btScalar( params.dimensions.z ) ) );
-		}
-		else if (params.shape == physics::CYLINDER)
-		{
-			//find primary axis
-			if (params.shape_up_axis == UP_X)
-			{
-				shape = new btCylinderShapeX( btVector3( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ), btScalar( params.dimensions.z ) ) );
-			}
-			else if (params.shape_up_axis == UP_Z)
-			{
-				shape = new btCylinderShapeZ( btVector3( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ), btScalar( params.dimensions.z ) ) );
-			}
-			else
-			{
-				shape = new btCylinderShape( btVector3( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ), btScalar( params.dimensions.z ) ) );
-			}
-		}
-		else if (params.shape == physics::CAPSULE)
-		{
-			//find primary axis
-			if (params.shape_up_axis == UP_X)
-			{
-				shape = new btCapsuleShapeX( btScalar( params.dimensions.y ), btScalar( params.dimensions.x ) );
-			}
-			else if (params.shape_up_axis == UP_Z)
-			{
-				shape = new btCapsuleShapeZ( btScalar( params.dimensions.x ), btScalar( params.dimensions.z ) );
-			}
-			else
-			{
-				shape = new btCapsuleShape( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ) );
-			}
-		}
-		else if (params.shape == physics::HULL)
-		{
-			//u32 num_tris = params.mesh_data.num_indices / 3;
-			//btTriangleIndexVertexArray* mesh = new btTriangleIndexVertexArray( num_tris, (s32*)params.mesh_data.indices, sizeof(u32) * 3, params.mesh_data.num_verts, params.mesh_data.vertices, sizeof(f32) * 3 );
+        switch (params.shape)
+        {
+        case physics::BOX:
+            shape = new btBoxShape( btVector3( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ), btScalar( params.dimensions.z ) ) );
+            break;
+        case physics::CYLINDER:
+            if (params.shape_up_axis == UP_X)
+            {
+                shape = new btCylinderShapeX( btVector3( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ), btScalar( params.dimensions.z ) ) );
+            }
+            else if (params.shape_up_axis == UP_Z)
+            {
+                shape = new btCylinderShapeZ( btVector3( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ), btScalar( params.dimensions.z ) ) );
+            }
+            else
+            {
+                shape = new btCylinderShape( btVector3( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ), btScalar( params.dimensions.z ) ) );
+            }
+            break;
+        case physics::CAPSULE:
+            if (params.shape_up_axis == UP_X)
+            {
+                shape = new btCapsuleShapeX( btScalar( params.dimensions.y ), btScalar( params.dimensions.x ) );
+            }
+            else if (params.shape_up_axis == UP_Z)
+            {
+                shape = new btCapsuleShapeZ( btScalar( params.dimensions.x ), btScalar( params.dimensions.z ) );
+            }
+            else
+            {
+                shape = new btCapsuleShape( btScalar( params.dimensions.x ), btScalar( params.dimensions.y ) );
+            }
+            break;
+        case physics::HULL:
+            shape = new btConvexHullShape( params.mesh_data.vertices, params.mesh_data.num_floats / 3, 12 );
+            break;
+        case physics::MESH:
+            {
+                u32 num_tris = params.mesh_data.num_indices / 3;
+                btTriangleIndexVertexArray* mesh = new btTriangleIndexVertexArray( num_tris, ( s32* )params.mesh_data.indices, sizeof( u32 ) * 3, params.mesh_data.num_floats / 3, params.mesh_data.vertices, sizeof( f32 ) * 3 );
+                btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape( mesh, true );
+                shape = concave_mesh;
+            }
+            break;
+        case physics::COMPOUND:
+        {
+            if (p_compound)
+            {
+                u32 num_shapes = p_compound->num_shapes;
 
-			btConvexHullShape* hull = new btConvexHullShape( params.mesh_data.vertices, params.mesh_data.num_floats / 3, 12 );
+                btCompoundShape* compound = new btCompoundShape( true );
 
-			shape = hull;
-		}
-		else if (params.shape == physics::MESH)
-		{
-			u32 num_tris = params.mesh_data.num_indices / 3;
+                for (u32 s = 0; s < num_shapes; ++s)
+                {
+                    btCollisionShape* p_sub_shape = create_collision_shape( entity, p_compound->rb[s] );
 
-			btTriangleIndexVertexArray* mesh = new btTriangleIndexVertexArray( num_tris, ( s32* ) params.mesh_data.indices, sizeof( u32 ) * 3, params.mesh_data.num_floats / 3, params.mesh_data.vertices, sizeof( f32 ) * 3 );
+                    btTransform trans = get_bttransform_from_params( p_compound->rb[s] );
 
-			btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape( mesh, true );
+                    compound->addChildShape( trans, p_sub_shape );
+                }
 
-			shape = concave_mesh;
-		}
-		else if (params.shape == physics::COMPOUND && p_compound)
-		{
-			u32 num_shapes = p_compound->num_shapes;
-
-			btCompoundShape* compound = new btCompoundShape( true );
-
-			for (u32 s = 0; s < num_shapes; ++s)
-			{
-				btCollisionShape* p_sub_shape = create_collision_shape( entity, p_compound->rb[s] );
-
-				btTransform trans = get_bttransform_from_params( p_compound->rb[s] );
-
-				compound->addChildShape( trans, p_sub_shape );
-			}
-
-			shape = compound;
-		}
+                shape = compound;
+            }
+        }
+        break;
+        case physics::SPHERE:
+            shape = new btSphereShape( params.dimensions.x );
+            break;
+        default:
+            PEN_ASSERT_MSG( 0, "unimplemented physics shape" );
+            break;
+        }
 
 		if (shape)
-		{
 			entity.collision_shape = shape;
-		}
 
 		return shape;
 	}

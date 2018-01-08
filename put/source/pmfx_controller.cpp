@@ -443,7 +443,7 @@ namespace put
                 rcp.sloped_scale_depth_bias = state["sloped_scale_depth_bias"].as_f32(0.0f);
                 rcp.depth_clip_enable = state["depth_clip_enable"].as_bool( true ) ? 1 : 0;
                 rcp.scissor_enable = state["scissor_enable"].as_bool( false ) ? 1 : 0;
-                rcp.multisample = state["multisample"].as_bool( false ) ? 1 : 0;
+                rcp.multisample = state["multisample"].as_bool( true ) ? 1 : 0;
                 rcp.aa_lines = state["aa_lines"].as_bool( false ) ? 1 : 0;
                 
                 hash_id hh = PEN_HASH(rcp);
