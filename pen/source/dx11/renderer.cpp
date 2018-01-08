@@ -342,7 +342,7 @@ namespace pen
 
 	void direct::renderer_create_query( u32 query_type, u32 flags )
 	{
-		u32 resoruce_index = get_next_query_index(DIRECT_RESOURCE);
+		u32 resoruce_index = get_next_query_index(1);
 
 		D3D11_QUERY_DESC desc;
 		desc.MiscFlags = flags;
@@ -1241,7 +1241,7 @@ namespace pen
 		u32 current_query = 0;
 		D3D10_QUERY_DATA_TIMESTAMP_DISJOINT disjoint;
 		u32 frame_ready = 0;
-		while (query_pool[current_query].asigned_flag &= DIRECT_RESOURCE)
+		while (query_pool[current_query].asigned_flag &= 1)
 		{
 			if (query_pool[current_query].flags[qi] & QUERY_ISSUED)
 			{
