@@ -699,7 +699,8 @@ namespace pen
 
 		INC_WRAP(put_pos);
 
-		return get_next_query_index(DEFER_RESOURCE);
+        
+		return get_next_query_index(1<<1);
 	}
 
 	void renderer_set_query(u32 query_index, u32 action)

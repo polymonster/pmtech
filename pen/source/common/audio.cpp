@@ -196,7 +196,7 @@ namespace pen
         
         for( s32 i = 0; i < MAX_AUDIO_RESOURCES; ++i )
         {
-            if( g_audio_resources[ i ].assigned_flag & DIRECT_RESOURCE )
+            if( g_audio_resources[ i ].assigned_flag )
             {
                 switch (g_audio_resources[ i ].type)
                 {

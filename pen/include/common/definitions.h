@@ -102,10 +102,6 @@ inline void output_debug( const c8* format, ... )
 //--------------------------------------------------------------------------------------
 enum resource_types
 {
-    DIRECT_RESOURCE = 1<<0,
-    DEFER_RESOURCE = 1<<1,
-    MARK_DELETE = 1<<2,
-    RECLAIMED = 1<<3,
     MAX_RENDERER_RESOURCES = 10000,
     MAX_AUDIO_RESOURCES = 100
 };
