@@ -1268,13 +1268,14 @@ namespace put
                         ImGui::Text( "Geometry Name: %s", scene->geometry_names[selected_index].c_str() );
 
                         static s32 primitive_type = -1;
-                        ImGui::Combo( "Shape##Primitive", ( s32* )&primitive_type, "Box\0Sphere\0Cylinder\0", 3 );
+                        ImGui::Combo( "Shape##Primitive", ( s32* )&primitive_type, "Box\0Sphere\0Cylinder\0Capsule\0", 4 );
 
                         static hash_id primitive_id[] =
                         {
                             PEN_HASH( "cube" ),
                             PEN_HASH( "sphere" ),
-                            PEN_HASH( "cylinder" )
+                            PEN_HASH( "cylinder" ),
+                            PEN_HASH( "capsule" ),
                         };
 
                         if (ImGui::Button( "Add Primitive" ) && primitive_type > -1)
