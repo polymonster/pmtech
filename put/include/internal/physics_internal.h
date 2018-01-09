@@ -14,8 +14,16 @@
 
 namespace physics
 {
+#define MAX_P2P_CONSTRAINTS     20
 #define MULTIBODY_WORLD
-	typedef struct physics_entity
+#define MAX_PHYSICS_RESOURCES	2048
+#define MAX_TRIGGERS			1024
+#define MAX_LINKS			    32
+#define NUM_OUTPUT_BUFFERS	    2
+#define MAX_OUTPUTS			    2048
+#define MAX_MULTIS			    2048
+
+	struct physics_entity
 	{
 		physics_entity( )
 		{
@@ -52,9 +60,9 @@ namespace physics
 		u32														group;
 		u32														mask;
 
-	}physics_entity;
+	};
 
-	typedef struct bullet_systems
+	struct bullet_systems
 	{
 		btDefaultCollisionConfiguration*		collision_config;
 		btCollisionDispatcher*					dispatcher;
@@ -68,9 +76,9 @@ namespace physics
 		btDynamicsWorld*						dynamics_world;
 #endif
 
-	}bullet_systems;
+	};
 
-	typedef struct generic_constraint
+	struct generic_constraint
 	{
 		generic_constraint( )
 		{
@@ -80,11 +88,9 @@ namespace physics
 		a_u32					 in_use;
 		btPoint2PointConstraint* p_point_constraint;
 		btMultiBodyPoint2Point*	 p_point_constraint_multi;
-	}generic_constraint;
+	};
 
-#define MAX_PHYSICS_RESOURCES	2048
-
-	typedef struct bullet_objects
+	struct bullet_objects
 	{
 		bullet_objects( )
 		{
@@ -96,31 +102,25 @@ namespace physics
 		physics_entity									entities		[MAX_PHYSICS_RESOURCES];
 
 		u32												num_entities;
-	}bullet_objects;
+	};
 
-#define MAX_TRIGGERS			1024
-	typedef struct trigger
+	struct trigger
 	{
 		btCollisionObject*		collision_object;
 		u32						group;
 		u32						mask;
 		u32						hit_flags;
 		u32						entity_index;
-	}trigger;
+	};
 
-	typedef struct detach_callback
+	struct detach_callback
 	{
 		void( *attach_function )(void* user_data, s32 attach_index);
 		void*   p_attach_user_data;
 		s32		attach_shape_index;
 		u32		call_attach;
+	};
 
-	}detach_callback;
-
-#define MAX_LINKS			32
-#define NUM_OUTPUT_BUFFERS	2
-#define MAX_OUTPUTS			2048
-#define MAX_MULTIS			2048
 	typedef struct readable_data
 	{
 		readable_data()
@@ -198,4 +198,5 @@ namespace physics
 
 	void				add_collision_watcher_internal( const collision_trigger_data &trigger_data );
 
+    void                cast_ray_internal(const ray_cast_params& rcp );
 }

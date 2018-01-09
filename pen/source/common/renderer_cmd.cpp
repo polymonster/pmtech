@@ -87,7 +87,6 @@ namespace pen
 	{
 		u32 shader_index;
 		u32 shader_type;
-
 	};
 
     static const u32 k_max_colour_targets = 8;
@@ -145,7 +144,6 @@ namespace pen
 		u32 start_index;
 		u32 base_vertex;
 		u32 primitive_topology;
-
 	};
 
 	struct set_texture_cmd
@@ -171,7 +169,6 @@ namespace pen
 		void*   data;
 		u32     data_size;
 		u32     offset;
-
 	};
 
 	struct query_params
@@ -493,15 +490,14 @@ namespace pen
 	//  THREAD SYNCRONISATION
 	//--------------------------------------------------------------------------------------
 
-	void				renderer_wait_for_jobs();
-	u32					renderer_init_from_window(void* window);
+	void				    renderer_wait_for_jobs();
 
-	pen::job_thread*    p_job_thread_info;
-	pen::semaphore*     p_consume_semaphore;
-	pen::semaphore*		p_continue_semaphore;
-    pen::slot_resources k_renderer_slot_resources;
+	pen::job_thread*        p_job_thread_info;
+	pen::semaphore*         p_consume_semaphore;
+	pen::semaphore*		    p_continue_semaphore;
+    pen::slot_resources     k_renderer_slot_resources;
     
-	bool                     consume_flag = false;
+	bool                    consume_flag = false;
 
 	void renderer_wait_init()
 	{

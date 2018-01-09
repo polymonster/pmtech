@@ -70,7 +70,6 @@
 		},
 	},
 	
-	
 	raster_states:
 	{
 		default:
@@ -96,7 +95,7 @@
 		picking:
 		{
 			size: equal,
-			format: r32f,
+			format: r32u,
 			cpu_read: true
 		},
 		

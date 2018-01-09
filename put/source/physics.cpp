@@ -1,12 +1,22 @@
 #include "pen_string.h"
 #include "timer.h"
+#include "slot_resource.h"
 
 #include "internal/physics_internal.h"
 
 namespace physics
 {
 #define SWAP_BUFFERS( b ) b = (b + 1)%NUM_OUTPUT_BUFFERS
-#define MAX_P2P_CONSTRAINTS 20
+
+    inline btVector3 from_lw_vec3( const lw_vec3f& v3 )
+    {
+        return btVector3( v3.x, v3.y, v3.z );
+    }
+
+    inline vec3f from_btvector( const btVector3& bt )
+    {
+        return vec3f( bt.getX(), bt.getY(), bt.getZ() );
+    }
 
 	readable_data				g_readable_data;
 
@@ -595,16 +605,17 @@ namespace physics
 	void add_rb_internal( const rigid_body_params &params, u32 resource_slot, bool ghost )
 	{
         g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
-		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
+		physics_entity& entity = g_bullet_objects.entities[ resource_slot ];
 
 		//add the body to the dynamics world
-		btRigidBody* rb = create_rb_internal( next_entity, params, ghost );
+		btRigidBody* rb = create_rb_internal( entity, params, ghost );
+        rb->setUserIndex( resource_slot );
 
-		next_entity.rigid_body = rb;
-		next_entity.rigid_body_in_world = !ghost;
+        entity.rigid_body = rb;
+        entity.rigid_body_in_world = !ghost;
 
-		next_entity.group = params.group;
-		next_entity.mask = params.mask;
+        entity.group = params.group;
+        entity.mask = params.mask;
 	}
 
 	void add_compound_rb_internal( const compound_rb_params &params, u32 resource_slot )
@@ -841,7 +852,6 @@ namespace physics
 	{
 		btMultiBody* p_multi = g_bullet_objects.entities[cmd.multi_index].multi_body;
 
-		//if (p_multi->isMultiDof( ))
 		if( 1 )
         {
 			f32 multi_dof_pos = cmd.data.x;
@@ -947,17 +957,6 @@ namespace physics
 
 			offset_index++;
 		}
-	}
-
-	u32 assign_next_free_p2p( )
-	{
-		for (u32 i = 0; i < MAX_P2P_CONSTRAINTS; ++i)
-		{
-			p2p_constraints[i].in_use = 1;
-			return i;
-		}
-
-		return 0;
 	}
 
 	void add_p2p_constraint_internal( const add_p2p_constraint_params &cmd )
@@ -1149,4 +1148,111 @@ namespace physics
 		physics_entity& rb = g_bullet_objects.entities[entity_index];
 		g_bullet_systems.dynamics_world->addRigidBody( rb.rigid_body, rb.group, rb.mask );
 	}
+
+    void cast_ray_internal( const ray_cast_params& rcp )
+    {
+        btVector3 from = from_lw_vec3( rcp.start );
+        btVector3 to = from_lw_vec3( rcp.end );
+
+        btCollisionWorld::ClosestRayResultCallback ray_callback( from, to );
+
+        g_bullet_systems.dynamics_world->rayTest( from, to, ray_callback );
+        if (ray_callback.hasHit())
+        {
+            btVector3 pick_pos = ray_callback.m_hitPointWorld;
+            btRigidBody* body = ( btRigidBody* )btRigidBody::upcast( ray_callback.m_collisionObject );
+
+            s32 user_index = 0;
+            if(body)
+                user_index = body->getUserIndex();
+
+            ray_cast_result rcr;
+            rcr.point = from_btvector( pick_pos );
+            rcr.physics_handle = user_index;
+
+            rcp.callback( rcr );
+        }
+    }
 }
+
+#if 0
+virtual bool pickBody( const btVector3& rayFromWorld, const btVector3& rayToWorld )
+{
+    if (m_dynamicsWorld == 0)
+        return false;
+
+    btCollisionWorld::ClosestRayResultCallback rayCallback( rayFromWorld, rayToWorld );
+
+    m_dynamicsWorld->rayTest( rayFromWorld, rayToWorld, rayCallback );
+    if (rayCallback.hasHit())
+    {
+
+        btVector3 pickPos = rayCallback.m_hitPointWorld;
+        btRigidBody* body = ( btRigidBody* )btRigidBody::upcast( rayCallback.m_collisionObject );
+        if (body)
+        {
+            //other exclusions?
+            if (!(body->isStaticObject() || body->isKinematicObject()))
+            {
+                m_pickedBody = body;
+                m_savedState = m_pickedBody->getActivationState();
+                m_pickedBody->setActivationState( DISABLE_DEACTIVATION );
+                btVector3 localPivot = body->getCenterOfMassTransform().inverse() * pickPos;
+                btPoint2PointConstraint* p2p = new btPoint2PointConstraint( *body, localPivot );
+                m_dynamicsWorld->addConstraint( p2p, true );
+                m_pickedConstraint = p2p;
+                btScalar mousePickClamping = 30.f;
+                p2p->m_setting.m_impulseClamp = mousePickClamping;
+                //very weak constraint for picking
+                p2p->m_setting.m_tau = 0.001f;
+            }
+        }
+
+
+        //??????????pickObject(pickPos, rayCallback.m_collisionObject);
+        m_oldPickingPos = rayToWorld;
+        m_hitPos = pickPos;
+        m_oldPickingDist = (pickPos - rayFromWorld).length();
+        //??????????printf("hit !\n");
+        //add p2p
+    }
+    return false;
+}
+
+virtual bool movePickedBody( const btVector3& rayFromWorld, const btVector3& rayToWorld )
+{
+    if (m_pickedBody??&& m_pickedConstraint)
+    {
+        btPoint2PointConstraint* pickCon = static_cast< btPoint2PointConstraint* >(m_pickedConstraint);
+        if (pickCon)
+        {
+            //keep it at the same picking distance
+
+            btVector3 newPivotB;
+
+            btVector3 dir = rayToWorld - rayFromWorld;
+            dir.normalize();
+            dir *= m_oldPickingDist;
+
+            newPivotB = rayFromWorld + dir;
+            pickCon->setPivotB( newPivotB );
+            return true;
+        }
+    }
+    return false;
+}
+
+virtual void removePickingConstraint()
+{
+    if (m_pickedConstraint)
+    {
+        m_pickedBody->forceActivationState( m_savedState );
+        m_pickedBody->activate();
+        m_dynamicsWorld->removeConstraint( m_pickedConstraint );
+        delete m_pickedConstraint;
+        m_pickedConstraint = 0;
+        m_pickedBody = 0;
+    }
+}
+
+#endif

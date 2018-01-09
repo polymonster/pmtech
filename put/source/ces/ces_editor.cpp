@@ -91,7 +91,7 @@ namespace put
             TRANSFORM_TRANSLATE = 2,
             TRANSFORM_ROTATE = 3,
             TRANSFORM_SCALE = 4,
-			TRANSFORM_TYPE_IN 
+			TRANSFORM_PHYSICS = 5
         };
         static transform_mode k_transform_mode = TRANSFORM_NONE;
 
@@ -732,7 +732,8 @@ namespace put
                 ICON_FA_MOUSE_POINTER,
                 ICON_FA_ARROWS,
                 ICON_FA_REPEAT,
-                ICON_FA_EXPAND
+                ICON_FA_EXPAND,
+                ICON_FA_HAND_POINTER_O
             };
             static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
             
@@ -741,13 +742,14 @@ namespace put
                 "Select (Q)",
                 "Translate (W)",
                 "Rotate (E)",
-                "Scale (R)"
+                "Scale (R)",
+                "Grab Physics (T)"
             };
             static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
             
             static u32 widget_shortcut_key[] =
             {
-                PENK_Q, PENK_W, PENK_E, PENK_R
+                PENK_Q, PENK_W, PENK_E, PENK_R, PENK_T
             };
             static_assert(PEN_ARRAY_SIZE(widget_shortcut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
             
@@ -1515,13 +1517,23 @@ namespace put
             }
         }
 
+        struct physics_pick
+        {
+            vec3f pos;
+            a_u8  ready;
+        };
+        physics_pick k_physics_pick_info;
+
+        void physics_pick_callback( const physics::ray_cast_result& result )
+        {
+            k_physics_pick_info.ready = true;
+            k_physics_pick_info.pos = result.point;
+        }
+
 		void transform_widget( const scene_view& view )
 		{
 			k_select_flags &= ~(WIDGET_SELECTED);
 
-            if( k_selection_list.empty() )
-                return;
-            
 			entity_scene* scene = view.scene;
 			vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
 
@@ -1536,6 +1548,32 @@ namespace put
 			vec3f r0 = put::maths::unproject(vec3f(mousev3.x, mousev3.y, 0.0f), view.camera->view, view.camera->proj, vpi);
 			vec3f r1 = put::maths::unproject(vec3f(mousev3.x, mousev3.y, 1.0f), view.camera->view, view.camera->proj, vpi);
 			vec3f vr = put::maths::normalise(r1 - r0);
+
+            if (k_transform_mode == TRANSFORM_PHYSICS)
+            {
+                if ( ms.buttons[PEN_MOUSE_L] && !pen_input_key(PENK_MENU) )
+                {
+                    k_physics_pick_info.ready = false;
+
+                    physics::ray_cast_params rcp;
+                    rcp.start = r0;
+                    rcp.end = r1;
+                    rcp.timestamp = pen::timer_get_time();
+                    rcp.callback = physics_pick_callback;
+
+                    physics::cast_ray( rcp );
+                }
+
+                if (k_physics_pick_info.ready)
+                {
+                    put::dbg::add_point( k_physics_pick_info.pos, 0.1f, vec4f::magenta() );
+                }
+
+                return;
+            }
+
+            if (k_selection_list.empty())
+                return;
             
             vec3f pos = vec3f::zero();
 			vec3f min = vec3f::flt_max();
