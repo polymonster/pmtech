@@ -323,11 +323,12 @@ namespace pen
     
     void     audio_release_resource( u32 index )
     {
+        if (!pen::slot_resources_free( &k_audio_slot_resources, index ))
+            return;
+
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_RELEASE_RESOURCE;
         audio_cmd_buffer[ audio_put_pos ].resource_index = index;
-        
-        pen::slot_resources_free(&k_audio_slot_resources, index);
-        
+                
         INC_WRAP( audio_put_pos );
     }
     

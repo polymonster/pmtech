@@ -488,8 +488,7 @@ namespace put
 						put::dbg::add_line_2f(source_points[2], source_points[3]);
 						put::dbg::add_line_2f(source_points[3], source_points[1]);
                         
-                        //if (maths::magnitude(max - min) < 4.0 )
-                        if( 1 )
+                        if (maths::magnitude(max - min) < 6.0 )
 						{
                             picking_state = PICKING_SINGLE;
                             

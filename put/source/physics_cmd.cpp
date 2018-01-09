@@ -485,12 +485,12 @@ namespace physics
     
     void release_entity( const u32 &entity_index )
     {
+        if (!pen::slot_resources_free( &k_physics_slot_resources, entity_index ))
+            return;
+
         cmd_buffer[put_pos].command_index = CMD_RELEASE_ENTITY;
-        
         cmd_buffer[put_pos].entity_index = entity_index;
-        
-        pen::slot_resources_free(&k_physics_slot_resources, entity_index);
-        
+                
         INC_WRAP( put_pos );
     }
     
