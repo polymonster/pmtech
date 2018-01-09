@@ -5,10 +5,17 @@
 
 namespace pen
 {
+    enum e_resource_flags
+    {
+        RESOURCE_FREE = 1,
+        RESOURCE_USED = 1<<1
+    };
+
     struct free_slot_list
     {
         u32 index;
         free_slot_list* next;
+        u32             flags;
     };
     
     struct slot_resources
@@ -20,7 +27,7 @@ namespace pen
     inline void slot_resources_init( slot_resources* resources, u32 num )
     {
         resources->slots = new free_slot_list[num];
-        
+
         //0 is reserved as null slot
         for( s32 i = num-1; i > 0; --i )
         {
@@ -32,21 +39,34 @@ namespace pen
                 resources->slots[i].next = resources->head;
             
             resources->head = &resources->slots[i];
+
+            resources->slots[i].flags |= RESOURCE_FREE;
         }
     }
     
     inline u32 slot_resources_get_next( slot_resources* resources )
     {
         u32 r = resources->head->index;
+        resources->head->flags &= ~RESOURCE_FREE;
+        resources->head->flags |= RESOURCE_USED;
+
         resources->head = resources->head->next;
         
         return r;
     }
     
-    inline void slot_resources_free( slot_resources* resources, const u32 slot )
+    inline bool slot_resources_free( slot_resources* resources, const u32 slot )
     {
+        //avoid double free
+        if (resources->slots[slot].flags & RESOURCE_FREE)
+            return false;
+
+        //mark free and add to free list
+        resources->slots[slot].flags |= RESOURCE_FREE;
         resources->slots[slot].next = resources->head;
         resources->head = &resources->slots[slot];
+
+        return true;
     }
 }
 

@@ -26,6 +26,7 @@ namespace physics
 	u32 get_pos = 0;
     
     pen::slot_resources k_physics_slot_resources;
+    pen::slot_resources k_p2p_slot_resources;
 		
 	void exec_cmd( const physics_cmd &cmd )
 	{
@@ -163,6 +164,10 @@ namespace physics
             release_entity_internal( cmd.entity_index );
             break;
 
+        case CMD_CAST_RAY:
+            cast_ray_internal( cmd.ray_cast );
+            break;
+
 		default:
 			break;
 		}
@@ -186,7 +191,8 @@ namespace physics
         p_physics_job_thread_info = p_thread_info;
         
         pen::slot_resources_init( &k_physics_slot_resources, MAX_PHYSICS_RESOURCES );
-        
+        pen::slot_resources_init( &k_p2p_slot_resources, MAX_P2P_CONSTRAINTS );
+
         physics_initialise();
         
         static u32 physics_timer = pen::timer_create("physics_timer");
@@ -393,7 +399,7 @@ namespace physics
 
 		cmd_buffer[put_pos].add_p2p = params;
 
-		u32 p2p_index = assign_next_free_p2p( );
+        u32 p2p_index = pen::slot_resources_get_next( &k_p2p_slot_resources );
 		cmd_buffer[put_pos].add_p2p.p2p_index = p2p_index;
 
 		INC_WRAP( put_pos );
@@ -403,8 +409,10 @@ namespace physics
 
 	void remove_p2p_constraint( u32 p2p_constraint )
 	{
-		cmd_buffer[put_pos].command_index = CMD_REMOVE_P2P_CONSTRAINT;
+        if (!pen::slot_resources_free( &k_p2p_slot_resources, p2p_constraint ))
+            return;
 
+		cmd_buffer[put_pos].command_index = CMD_REMOVE_P2P_CONSTRAINT;
 		cmd_buffer[put_pos].entity_index = p2p_constraint;
 
 		INC_WRAP( put_pos );
@@ -480,12 +488,20 @@ namespace physics
     
     void release_entity( const u32 &entity_index )
     {
+        if (!pen::slot_resources_free( &k_physics_slot_resources, entity_index ))
+            return;
+
         cmd_buffer[put_pos].command_index = CMD_RELEASE_ENTITY;
-        
         cmd_buffer[put_pos].entity_index = entity_index;
-        
-        pen::slot_resources_free(&k_physics_slot_resources, entity_index);
-        
+                
+        INC_WRAP( put_pos );
+    }
+
+    void cast_ray( const ray_cast_params& rcp )
+    {
+        cmd_buffer[put_pos].command_index = CMD_CAST_RAY;
+        cmd_buffer[put_pos].ray_cast = rcp;
+
         INC_WRAP( put_pos );
     }
 }

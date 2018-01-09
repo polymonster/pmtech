@@ -7,6 +7,8 @@
 
 namespace physics
 {
+#define MAX_TRIGGER_CONTACTS	8	
+
 	PEN_THREAD_RETURN physics_thread_main( void* params );
 
     enum e_physics_cmd : s32
@@ -43,7 +45,8 @@ namespace physics
 		CMD_ADD_TO_WORLD,
 		CMD_ADD_COLLISION_TRIGGER,
 		CMD_ATTACH_RB_TO_COMPOUND,
-        CMD_RELEASE_ENTITY
+        CMD_RELEASE_ENTITY,
+        CMD_CAST_RAY,
 	};
 
     enum e_physics_shape : s32
@@ -246,6 +249,29 @@ namespace physics
 		s32 link_index;
 	};
 
+    struct trigger_contact_data
+    {
+        u32		num;
+        u32		flag[MAX_TRIGGER_CONTACTS];
+        u32		entity[MAX_TRIGGER_CONTACTS];
+        vec3f	normals[MAX_TRIGGER_CONTACTS];
+        vec3f	pos[MAX_TRIGGER_CONTACTS];
+    };
+
+    struct ray_cast_result
+    {
+        vec3f point;
+        u32   physics_handle;
+    };
+
+    struct ray_cast_params
+    {
+        lw_vec3f start;
+        lw_vec3f end;
+        u32      timestamp;
+        void     (*callback)(const ray_cast_result& result);
+    };
+
     struct physics_cmd
 	{
 		u32		command_index;
@@ -270,17 +296,8 @@ namespace physics
 			collision_trigger_data			trigger_data;
 			attach_to_compound_params		attach_compound;
 			add_p2p_constraint_params		add_p2p;
+            ray_cast_params                 ray_cast;
 		};
-	};
-
-#define MAX_TRIGGER_CONTACTS	8	
-    struct trigger_contact_data
-	{
-		u32		num;
-		u32		flag	[MAX_TRIGGER_CONTACTS];
-		u32		entity	[MAX_TRIGGER_CONTACTS];
-		vec3f	normals	[MAX_TRIGGER_CONTACTS];
-		vec3f	pos		[MAX_TRIGGER_CONTACTS];
 	};
 
 	void	set_paused( bool val );
@@ -322,5 +339,10 @@ namespace physics
 	u32		get_hit_flags( u32 entity_index );
 
 	trigger_contact_data* get_trigger_contacts( u32 entity_index );
+
+    void    cast_ray( const ray_cast_params& rcp );
+
+	void	reset_wait_flag();
+	void	wait_complete( a_u32& result );
 }
 #endif

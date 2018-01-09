@@ -79,14 +79,14 @@ namespace pen
         CMD_RESOLVE_TARGET,
 		CMD_DRAW_AUTO,
         CMD_MAP_RESOURCE,
-		CMD_REPLACE_RESOURCE
+		CMD_REPLACE_RESOURCE,
+        CMD_CREATE_CLEAR_STATE
 	};
 
 	struct set_shader_cmd
 	{
 		u32 shader_index;
 		u32 shader_type;
-
 	};
 
     static const u32 k_max_colour_targets = 8;
@@ -144,7 +144,6 @@ namespace pen
 		u32 start_index;
 		u32 base_vertex;
 		u32 primitive_topology;
-
 	};
 
 	struct set_texture_cmd
@@ -170,7 +169,6 @@ namespace pen
 		void*   data;
 		u32     data_size;
 		u32     offset;
-
 	};
 
 	struct query_params
@@ -234,6 +232,7 @@ namespace pen
             resource_read_back_params           rrb_params;
 			msaa_resolve_params					resolve_params;
 			replace_resource					replace_resource_params;
+            clear_state                         clear_state_params;
 		};
 
 		deferred_cmd() {};
@@ -480,6 +479,10 @@ namespace pen
 				cmd.replace_resource_params.src_handle, 
 				cmd.replace_resource_params.type);
 			break;
+
+        case CMD_CREATE_CLEAR_STATE:
+            direct::renderer_create_clear_state( cmd.clear_state_params, cmd.resource_slot );
+            break;
 		}
 	}
 
@@ -487,15 +490,14 @@ namespace pen
 	//  THREAD SYNCRONISATION
 	//--------------------------------------------------------------------------------------
 
-	void				renderer_wait_for_jobs();
-	u32					renderer_init_from_window(void* window);
+	void				    renderer_wait_for_jobs();
 
-	pen::job_thread*    p_job_thread_info;
-	pen::semaphore*     p_consume_semaphore;
-	pen::semaphore*		p_continue_semaphore;
-    pen::slot_resources k_renderer_slot_resources;
+	pen::job_thread*        p_job_thread_info;
+	pen::semaphore*         p_consume_semaphore;
+	pen::semaphore*		    p_continue_semaphore;
+    pen::slot_resources     k_renderer_slot_resources;
     
-	bool                     consume_flag = false;
+	bool                    consume_flag = false;
 
 	void renderer_wait_init()
 	{
@@ -978,35 +980,38 @@ namespace pen
 
 	void renderer_release_shader(u32 shader_index, u32 shader_type)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, shader_index ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_SHADER;
 
 		cmd_buffer[put_pos].set_shader.shader_index = shader_index;
 		cmd_buffer[put_pos].set_shader.shader_type = shader_type;
         
-        slot_resources_free( &k_renderer_slot_resources, shader_index );
-
 		INC_WRAP(put_pos);
 	}
 
 	void renderer_release_buffer(u32 buffer_index)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, buffer_index ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_BUFFER;
 
 		cmd_buffer[put_pos].command_data_index = buffer_index;
-
-        slot_resources_free( &k_renderer_slot_resources, buffer_index );
         
 		INC_WRAP(put_pos);
 	}
 
 	void renderer_release_texture(u32 texture_index)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, texture_index ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_TEXTURE_2D;
 
 		cmd_buffer[put_pos].command_data_index = texture_index;
         
-        slot_resources_free( &k_renderer_slot_resources, texture_index );
-
 		INC_WRAP(put_pos);
 	}
 
@@ -1080,12 +1085,13 @@ namespace pen
 
 	void renderer_release_raster_state(u32 raster_state_index)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, raster_state_index ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_RASTER_STATE;
 
 		cmd_buffer[put_pos].command_data_index = raster_state_index;
         
-        slot_resources_free( &k_renderer_slot_resources, raster_state_index );
-
 		INC_WRAP(put_pos);
 	}
 
@@ -1206,78 +1212,84 @@ namespace pen
 
 	void renderer_release_blend_state(u32 blend_state)
 	{
-		cmd_buffer[put_pos].command_index = CMD_RELEASE_BLEND_STATE;
+        if (!slot_resources_free( &k_renderer_slot_resources, blend_state ))
+            return;
 
+		cmd_buffer[put_pos].command_index = CMD_RELEASE_BLEND_STATE;
 		cmd_buffer[put_pos].command_data_index = blend_state;
         
-        slot_resources_free( &k_renderer_slot_resources, blend_state );
-
 		INC_WRAP(put_pos);
 	}
 
 	void renderer_release_render_target(u32 render_target)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, render_target ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_RENDER_TARGET;
 
 		cmd_buffer[put_pos].command_data_index = render_target;
-        
-        slot_resources_free( &k_renderer_slot_resources, render_target );
 
 		INC_WRAP(put_pos);
 	}
 
 	void renderer_release_clear_state(u32 clear_state)
 	{
+        if (slot_resources_free( &k_renderer_slot_resources, clear_state ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_CLEAR_STATE;
 
 		cmd_buffer[put_pos].command_data_index = clear_state;
         
-        slot_resources_free( &k_renderer_slot_resources, clear_state );
-
 		INC_WRAP(put_pos);
 	}
 
 	void renderer_release_program(u32 program)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, program ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_PROGRAM;
 
 		cmd_buffer[put_pos].command_data_index = program;
         
-        slot_resources_free( &k_renderer_slot_resources, program );
-
 		INC_WRAP(put_pos);
 	}
 
 	void renderer_release_input_layout(u32 input_layout)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, input_layout ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_INPUT_LAYOUT;
 
 		cmd_buffer[put_pos].command_data_index = input_layout;
         
-        slot_resources_free( &k_renderer_slot_resources, input_layout );
-
 		INC_WRAP(put_pos);
 	}
 
 	void renderer_release_sampler(u32 sampler)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, sampler ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_SAMPLER;
 
 		cmd_buffer[put_pos].command_data_index = sampler;
         
-        slot_resources_free( &k_renderer_slot_resources, sampler );
-
 		INC_WRAP(put_pos);
 	}
 
 	void renderer_release_depth_stencil_state(u32 depth_stencil_state)
 	{
+        if (!slot_resources_free( &k_renderer_slot_resources, depth_stencil_state ))
+            return;
+
 		cmd_buffer[put_pos].command_index = CMD_RELEASE_DEPTH_STENCIL_STATE;
 
 		cmd_buffer[put_pos].command_data_index = depth_stencil_state;
         
-        slot_resources_free( &k_renderer_slot_resources, depth_stencil_state );
-
 		INC_WRAP(put_pos);
 	}
 
@@ -1337,8 +1349,13 @@ namespace pen
     u32     renderer_create_clear_state( const clear_state &cs )
     {
         u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
-        direct::renderer_create_clear_state(cs, resource_slot);
+
+        cmd_buffer[put_pos].command_index = CMD_CREATE_CLEAR_STATE;
+        cmd_buffer[put_pos].clear_state_params = cs;
+        cmd_buffer[put_pos].resource_slot = resource_slot;
         
+        INC_WRAP( put_pos );
+
         return resource_slot;
     }
 }
