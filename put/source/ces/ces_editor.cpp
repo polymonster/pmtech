@@ -949,25 +949,38 @@ namespace put
                 if(physics_shape == physics::CYLINDER || physics_shape == physics::CAPSULE )
                     ImGui::Combo("Shape Up-Axis", (s32*)&up_axis, "Y\0X\0Z\0", 7 );
                 
-                if( ImGui::Button("Add Physics") )
+                
+                bool has_physics = false;
+                if( k_selection_list.size() == 1 )
                 {
-					for (auto& s : k_selection_list)
-					{
-						if (scene->entities[s] & CMP_PHYSICS)
-							continue;
-
-						vec3f pos = scene->transforms[s].translation;
-						vec3f scale = scene->transforms[s].scale;
-						quat rotation = scene->transforms[s].rotation;
-
-						scene_node_physics& snp = scene->physics_data[s];
-						snp.mass = mass;
-                        snp.collision_shape = physics_shape;
-						snp.start_position = pos;
-						snp.start_rotation = rotation;
-                        
-						instantiate_physics(scene, s);
-					}
+                    if (scene->entities[k_selection_list[0]] & CMP_PHYSICS)
+                    {
+                        has_physics = true;
+                    }
+                }
+                
+                if(!has_physics)
+                {
+                    if(ImGui::Button("Add Physics") )
+                    {
+                        for (auto& s : k_selection_list)
+                        {
+                            if (scene->entities[s] & CMP_PHYSICS)
+                                continue;
+                            
+                            vec3f pos = scene->transforms[s].translation;
+                            vec3f scale = scene->transforms[s].scale;
+                            quat rotation = scene->transforms[s].rotation;
+                            
+                            scene_node_physics& snp = scene->physics_data[s];
+                            snp.mass = mass;
+                            snp.collision_shape = physics_shape;
+                            snp.start_position = pos;
+                            snp.start_rotation = rotation;
+                            
+                            instantiate_physics(scene, s);
+                        }
+                    }
                 }
             }
         }

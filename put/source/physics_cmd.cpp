@@ -336,12 +336,7 @@ namespace physics
 		return resource_slot;
 	}
 
-	void set_consume( u32 val )
-	{
-		g_readable_data.b_consume = val;
-	}
-
-	void set_paused( u32 val )
+	void set_paused( bool val )
 	{
 		g_readable_data.b_paused = val;
 	}
@@ -493,19 +488,4 @@ namespace physics
         
         INC_WRAP( put_pos );
     }
-    
-	void reset_wait_flag( )
-	{
-		g_readable_data.b_wait_flag = 0;
-	}
-
-	void wait_complete( a_u32& result )
-	{
-		if ( g_readable_data.b_wait_flag )
-		{
-            result = 1;
-		}
-
-        result = 0;
-	}
 }

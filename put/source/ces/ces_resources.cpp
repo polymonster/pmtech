@@ -50,7 +50,7 @@ namespace put
             return nullptr;
         }
 
-		void instantiate_physics(entity_scene* scene, u32 node_index )
+		void instantiate_physics( entity_scene* scene, u32 node_index )
 		{
 			u32 s = node_index;
 			scene_node_physics& snp = scene->physics_data[s];
@@ -86,9 +86,20 @@ namespace put
 			rb.shape_up_axis = physics::UP_Y;
 			rb.mask = 0xffffffff;
             rb.start_matrix = start_transform;
+            
+            physics::constraint_params cp;
+            cp.rb = rb;
+            cp.type = physics::HINGE;
+            cp.pivot = vec3f::unit_z() * 5.0f;
+            cp.axis = vec3f::unit_x();
+            cp.lower_limit_rotation = -vec3f::flt_max();
+            cp.upper_limit_rotation = vec3f::flt_max();
 
-			scene->physics_handles[s] = physics::add_rb(rb);
-			scene->entities[s] |= CMP_PHYSICS;
+			//scene->physics_handles[s] = physics::add_rb(rb);
+            
+            scene->physics_handles[s] = physics::add_constrained_rb(cp);
+            
+            scene->entities[s] |= CMP_PHYSICS;
 		}
         
         void instantiate_geometry( geometry_resource* gr, entity_scene* scene, s32 node_index )

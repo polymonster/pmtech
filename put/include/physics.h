@@ -283,10 +283,7 @@ namespace physics
 		vec3f	pos		[MAX_TRIGGER_CONTACTS];
 	};
 
-	//
-	void	set_consume( u32 val );	
-	void	set_paused( u32 val );
-    
+	void	set_paused( bool val );
     void    physics_consume_command_buffer( );
 
 	//add
@@ -296,24 +293,23 @@ namespace physics
 	u32		add_multibody( const multi_body_params &mbp );
 	u32		add_compound_rb( const compound_rb_params &crbp );
 	u32		add_compound_shape( const compound_rb_params &crbp );
+    void    add_to_world( const u32 &entity_index );
 	u32		add_p2p_constraint( const add_p2p_constraint_params &params );
+    void    add_collision_trigger( const collision_trigger_data &trigger_data );
+    
+    //compound shape
 	u32		attach_rb_to_compound( const attach_to_compound_params &params  );
 	u32		detach_all_from_compound( u32 compound_index );
-
-	void	add_collision_trigger( const collision_trigger_data &trigger_data );
-	
-	//remove
-	void	remove_p2p_constraint( u32 p2p_constraint );
-	
+    
 	//set
 	void	set_v3( const u32 &entity_index, const vec3f &velocity, u32 cmd );
 	void	set_float( const u32 &entity_index, const f32 &fval, u32 cmd );
 	void	set_transform( const u32 &entity_index, const vec3f &position, const quat &quaternion );
 	void	set_multi_v3( const u32 &entity_index, const u32 &link_index, const vec3f &v3_data, const u32 &cmd );
 	void	set_collision_group( const u32 &entity_index, const u32 &group, const u32 &mask );
-	void	remove_from_world( const u32 &entity_index );
-	void	add_to_world( const u32 &entity_index );
     
+    void    remove_p2p_constraint( u32 p2p_constraint );
+    void    remove_from_world( const u32 &entity_index );
     void    release_entity( const u32 &entity_index );
 
 	void	sync_compound_multi( const u32 &compound_index, const u32 &multi_index );
@@ -326,9 +322,5 @@ namespace physics
 	u32		get_hit_flags( u32 entity_index );
 
 	trigger_contact_data* get_trigger_contacts( u32 entity_index );
-
-	void	reset_wait_flag();
-	void	wait_complete( a_u32& result );
 }
-
 #endif

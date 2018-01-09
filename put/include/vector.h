@@ -490,7 +490,7 @@ public:
     }
 };
 
-typedef struct lw_vec3f
+struct lw_vec3f
 {
     f32 x, y, z;
     
@@ -501,6 +501,6 @@ typedef struct lw_vec3f
         return *this;
     }
     
-}lw_vec3f;
+};
 
 #endif //_vector_h

@@ -136,7 +136,7 @@ namespace physics
 		a_u32					current_ouput_frontbuffer;
 		a_u32					b_consume;
 		a_u32					b_paused;
-		a_u32					b_wait_flag;
+        
 		mat4					output_matrices[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
 		mat4					multi_output_matrices[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];
 		f32						multi_joint_positions[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];

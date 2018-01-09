@@ -709,7 +709,7 @@ namespace physics
 		next_entity.group = params.rb.group;
 		next_entity.mask = params.rb.mask;
 
-		btHingeConstraint* hinge = new btHingeConstraint( *rb, btVector3( params.pivot.x, params.pivot.y, params.pivot.z ), btVector3( params.axis.x, params.axis.y, params.pivot.z ) );
+		btHingeConstraint* hinge = new btHingeConstraint( *rb, btVector3( params.pivot.x, params.pivot.y, params.pivot.z ), btVector3( params.axis.x, params.axis.y, params.axis.z ) );
 		hinge->setLimit( params.lower_limit_rotation.x, params.upper_limit_rotation.x );
 
 		g_bullet_systems.dynamics_world->addConstraint( hinge );
