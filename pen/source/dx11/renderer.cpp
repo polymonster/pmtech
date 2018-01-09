@@ -1007,7 +1007,7 @@ namespace pen
 
 	void direct::renderer_release_blend_state( u32 blend_state )
 	{
-		resource_pool[ blend_state ].blend_state->Release();
+	    resource_pool[ blend_state ].blend_state->Release();
 	}
 
 	void release_render_target_internal(u32 render_target, bool remove_managed )
@@ -1092,6 +1092,7 @@ namespace pen
 
 	void direct::renderer_release_clear_state(u32 clear_state)
 	{
+
 	}
 
 	void direct::renderer_release_query( u32 query )

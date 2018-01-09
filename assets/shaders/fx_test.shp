@@ -146,8 +146,8 @@ vs_output_picking vs_picking_skinned( vs_input_skinned _input )
 ps_output_picking ps_picking( vs_output_picking _input ) 
 {	
 	ps_output_picking _output;
-	
-	_output.colour = uint(_input.index.x);
+		
+	_output.colour = uint(_input.index.x + 0.5);
 	
     return _output;
 }

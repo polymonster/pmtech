@@ -237,12 +237,8 @@ namespace put
 			p_sn->geometries[dst] = p_sn->geometries[src];
 			p_sn->materials[dst] = p_sn->materials[src];
 
-			p_sn->physics_handles[dst] = p_sn->physics_handles[src];
 			p_sn->multibody_handles[dst] = p_sn->multibody_handles[src];
 			p_sn->multibody_link[dst] = p_sn->multibody_link[src];
-
-			if(p_sn->entities[dst] & CMP_GEOMETRY)
-				instantiate_model_cbuffer(scene, dst);
 
 			p_sn->anim_controller[dst] = p_sn->anim_controller[src];
 
@@ -270,6 +266,12 @@ namespace put
 			p_sn->geometry_names[dst] = p_sn->geometry_names[src].c_str();
 			p_sn->material_names[dst] = p_sn->material_names[src].c_str();
 #endif
+
+            if (p_sn->physics_handles[src])
+                instantiate_physics( scene, dst );
+
+            if (p_sn->entities[dst] & CMP_GEOMETRY)
+                instantiate_model_cbuffer( scene, dst );
 
 			return dst;
 		}
