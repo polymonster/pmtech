@@ -1125,30 +1125,26 @@ namespace put
                 ImGui::Text( "%s", scene->material_names[selected_index].c_str() );
 
                 if (scene->material_names[selected_index].c_str())
+                {
                     if (scene->entities[k_selection_list[0]] & CMP_PHYSICS)
                     {
-                        has_physics = true;
-                    }
-                }
-                
-                if(!has_physics)
-                {
-                    u32 count = 0;
-                    for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
-                    {
-                        if (scene->materials[selected_index].texture_id[t] > 0)
+                        u32 count = 0;
+                        for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
                         {
-                            if (count++ > 0)
-                                ImGui::SameLine();
-
-                            ImGui::Image( &scene->materials[selected_index].texture_id[t], ImVec2( 64, 64 ) );
+                            if (scene->materials[selected_index].texture_id[t] > 0)
+                            {
+                                if (count++ > 0)
+                                    ImGui::SameLine();
+                                
+                                ImGui::Image( &scene->materials[selected_index].texture_id[t], ImVec2( 64, 64 ) );
+                            }
                         }
+                        
+                        auto& mm = scene->materials[selected_index];
+                        
+                        ImGui::SliderFloat( "Roughness", ( f32* )&mm.diffuse_rgb_shininess.w, 0.000001, 1.5 );
+                        ImGui::SliderFloat( "Reflectity", ( f32* )&mm.specular_rgb_reflect.w, 0.000001, 1.5 );
                     }
-
-                    auto& mm = scene->materials[selected_index];
-
-                    ImGui::SliderFloat( "Roughness", ( f32* )&mm.diffuse_rgb_shininess.w, 0.000001, 1.5 );
-                    ImGui::SliderFloat( "Reflectity", ( f32* )&mm.specular_rgb_reflect.w, 0.000001, 1.5 );
                 }
             }
         }
