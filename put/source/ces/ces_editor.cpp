@@ -945,95 +945,126 @@ namespace put
             //update render data
             put::ces::update_scene(sc->scene, dt_ms);
         }
-        
-        void scene_physics_ui( entity_scene* scene )
+
+        void scene_constraint_ui( entity_scene* scene )
+        {
+            static s32 constraint_type = 0;
+            ImGui::Combo( "Constraint##Physics", ( s32* )&constraint_type, "Six DOF\0Six DOF Rigid Body\0Hinge\0Point to Point\0Point to Point Multi", 7 );
+
+            s32 internal_type = constraint_type + 1;
+            if (internal_type == physics::CONSTRAINT_HINGE)
+            {
+                static vec3f lower, upper;
+                ImGui::InputFloat3( "Lower Limit Rotation", ( f32* )&lower );
+                ImGui::InputFloat3( "Upper Limit Rotation", ( f32* )&upper );
+            }
+        }
+
+        void scene_rigid_body_ui( entity_scene* scene )
         {
             static f32 mass = 0.0f;
             static u32 collision_shape = -1;
             static s32 up_axis = 0;
 
-            if( ImGui::CollapsingHeader("Physics") )
+            if (k_selection_list.size() == 1)
             {
-                if (k_selection_list.size() == 1)
+                s32 selected_index = k_selection_list[0];
+
+                mass = scene->physics_data[selected_index].mass;
+                collision_shape = scene->physics_data[selected_index].collision_shape - 1;
+            }
+
+            ImGui::InputFloat( "Mass", &mass );
+
+            ImGui::Combo( "Shape##Physics", ( s32* )&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
+
+            //box starts at 1.. 0 reserved for null
+            s32 physics_shape = collision_shape + 1;
+
+            if (k_selection_list.size() == 1)
+            {
+                s32 s = k_selection_list[0];
+
+                if (!(scene->entities[s] & CMP_PHYSICS))
                 {
-                    s32 selected_index = k_selection_list[0];
-
-                    mass = scene->physics_data[selected_index].mass;
-                    collision_shape = scene->physics_data[selected_index].collision_shape - 1;
-                }
-
-                ImGui::InputFloat("Mass", &mass);
-
-                ImGui::Combo("Shape##Physics", (s32*)&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
-                
-                //box starts at 1.. 0 reserved for null
-                s32 physics_shape = collision_shape+1;
-
-                if (k_selection_list.size() == 1)
-                {
-                    s32 s = k_selection_list[0];
-
-                    if (!(scene->entities[s] & CMP_PHYSICS))
+                    if (ImGui::Button( "Add" ))
                     {
-                        if (ImGui::Button( "Add Physics" ))
-                        {
-                            vec3f pos = scene->transforms[s].translation;
-                            vec3f scale = scene->transforms[s].scale;
-                            quat rotation = scene->transforms[s].rotation;
+                        vec3f pos = scene->transforms[s].translation;
+                        vec3f scale = scene->transforms[s].scale;
+                        quat rotation = scene->transforms[s].rotation;
 
-                            scene_node_physics& snp = scene->physics_data[s];
-                            snp.mass = mass;
-                            snp.collision_shape = physics_shape;
-                            snp.start_position = pos;
-                            snp.start_rotation = rotation;
+                        scene_node_physics& snp = scene->physics_data[s];
+                        snp.mass = mass;
+                        snp.collision_shape = physics_shape;
+                        snp.start_position = pos;
+                        snp.start_rotation = rotation;
 
-                            instantiate_physics( scene, s );
-                        }
-                    }
-                    else
-                    {
-                        if (ImGui::Button( "Set Physics Start Transform" ))
-                        {
-                            vec3f pos = scene->transforms[s].translation;
-                            vec3f scale = scene->transforms[s].scale;
-                            quat rotation = scene->transforms[s].rotation;
-
-                            scene_node_physics& snp = scene->physics_data[s];
-                            snp.mass = mass;
-                            snp.collision_shape = physics_shape;
-                            snp.start_position = pos;
-                            snp.start_rotation = rotation;
-                        }
+                        instantiate_physics( scene, s );
                     }
                 }
                 else
                 {
-                    if (ImGui::Button( "Add Physics" ))
+                    if (ImGui::Button( "Set Start Transform" ))
                     {
-                        for (auto& s : k_selection_list)
-                        {
-                            vec3f pos = scene->transforms[s].translation;
-                            vec3f scale = scene->transforms[s].scale;
-                            quat rotation = scene->transforms[s].rotation;
+                        vec3f pos = scene->transforms[s].translation;
+                        vec3f scale = scene->transforms[s].scale;
+                        quat rotation = scene->transforms[s].rotation;
 
-                            scene_node_physics& snp = scene->physics_data[s];
-                            snp.mass = mass;
-                            snp.collision_shape = physics_shape;
-                            snp.start_position = pos;
-                            snp.start_rotation = rotation;
-
-                            if (!(scene->entities[s] & CMP_PHYSICS))
-                                instantiate_physics( scene, s );
-                        }
+                        scene_node_physics& snp = scene->physics_data[s];
+                        snp.mass = mass;
+                        snp.collision_shape = physics_shape;
+                        snp.start_position = pos;
+                        snp.start_rotation = rotation;
                     }
                 }
-                                
-                if (k_selection_list.size() == 1)
+            }
+            else
+            {
+                if (ImGui::Button( "Add" ))
                 {
-                    s32 selected_index = k_selection_list[0];
+                    for (auto& s : k_selection_list)
+                    {
+                        vec3f pos = scene->transforms[s].translation;
+                        vec3f scale = scene->transforms[s].scale;
+                        quat rotation = scene->transforms[s].rotation;
 
-                    scene->physics_data[selected_index].mass = mass;
-                    scene->physics_data[selected_index].collision_shape = physics_shape;
+                        scene_node_physics& snp = scene->physics_data[s];
+                        snp.mass = mass;
+                        snp.collision_shape = physics_shape;
+                        snp.start_position = pos;
+                        snp.start_rotation = rotation;
+
+                        if (!(scene->entities[s] & CMP_PHYSICS))
+                            instantiate_physics( scene, s );
+                    }
+                }
+            }
+
+            if (k_selection_list.size() == 1)
+            {
+                s32 selected_index = k_selection_list[0];
+
+                scene->physics_data[selected_index].mass = mass;
+                scene->physics_data[selected_index].collision_shape = physics_shape;
+            }
+        }
+        
+        void scene_physics_ui( entity_scene* scene )
+        {
+            if( ImGui::CollapsingHeader("Physics") )
+            {
+                static s32 physics_type = 0;
+                ImGui::Combo( "Type##Physics", &physics_type, "Rigid Body\0Constarint" );
+
+                if (physics_type == 0)
+                {
+                    //rb
+                    scene_rigid_body_ui( scene );
+                }
+                else if (physics_type == 1)
+                {
+                    //constraint#
+                    scene_constraint_ui( scene );
                 }
             }
         }

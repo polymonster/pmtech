@@ -738,25 +738,18 @@ namespace physics
 
 	void add_hinge_internal( const constraint_params &params, u32 resource_slot )
 	{
-#if 0
         g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
         physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
 
 		//create the actual rigid body
-		btRigidBody* rb = create_rb_internal( next_entity, params.rb, 0 );
-
-		next_entity.rigid_body = rb;
-		next_entity.rigid_body_in_world = 1;
-		next_entity.group = params.rb.group;
-		next_entity.mask = params.rb.mask;
+        btRigidBody* rb = g_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
 
 		btHingeConstraint* hinge = new btHingeConstraint( *rb, btVector3( params.pivot.x, params.pivot.y, params.pivot.z ), btVector3( params.axis.x, params.axis.y, params.axis.z ) );
 		hinge->setLimit( params.lower_limit_rotation.x, params.upper_limit_rotation.x );
 
 		g_bullet_systems.dynamics_world->addConstraint( hinge );
 
-		next_entity.hinge_constraint = hinge;
-#endif
+		next_entity.constraint.hinge = hinge;
 	}
 
 	void add_constrained_rb_internal( const constraint_params &params, u32 resource_slot )

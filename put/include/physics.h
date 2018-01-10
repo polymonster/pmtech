@@ -61,7 +61,6 @@ namespace physics
     enum e_physics_constraint : s32
 	{
 		CONSTRAINT_DOF6 = 1,
-		CONSTRAINT_DOF6_NOCREATE,
 		CONSTRAINT_DOF6_RB,
 		CONSTRAINT_HINGE,
         CONSTRAINT_P2P,
