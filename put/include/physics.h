@@ -20,7 +20,6 @@ namespace physics
 		CMD_SET_TRANSFORM,
 		CMD_ADD_RIGID_BODY,
 		CMD_ADD_GHOST_RIGID_BODY,
-		CMD_ADD_CONSTRAINED_RB,
 		CMD_ADD_MULTI_BODY,
 		CMD_ADD_COMPOUND_RB,
 		CMD_ADD_COMPOUND_SHAPE,
@@ -36,8 +35,6 @@ namespace physics
 		CMD_SYNC_COMPOUND_TO_MULTI,
 		CMD_SYNC_RIGID_BODY_TRANSFORM,
 		CMD_SYNC_RIGID_BODY_VELOCITY,
-		CMD_ADD_P2P_CONSTRAINT,
-		CMD_REMOVE_P2P_CONSTRAINT,
 		CMD_SET_P2P_CONSTRAINT_POS,
 		CMD_SET_DAMPING,
 		CMD_SET_GROUP,
@@ -67,7 +64,8 @@ namespace physics
 		CONSTRAINT_DOF6_NOCREATE,
 		CONSTRAINT_DOF6_RB,
 		CONSTRAINT_HINGE,
-        CONSTRAINT_P2P
+        CONSTRAINT_P2P,
+        CONSTRAINT_P2P_MULTI
 	};
 
     enum e_multibody_link_type : s32
@@ -306,44 +304,38 @@ namespace physics
 	void	set_paused( bool val );
     void    physics_consume_command_buffer( );
 
-	//add
 	u32		add_rb( const rigid_body_params &rbp );
 	u32		add_ghost_rb( const rigid_body_params &rbp );
     u32		add_constraint( const constraint_params &crbp );
-	u32		add_constrained_rb( const constraint_params &crbp );
 	u32		add_multibody( const multi_body_params &mbp );
 	u32		add_compound_rb( const compound_rb_params &crbp );
 	u32		add_compound_shape( const compound_rb_params &crbp );
+    u32		attach_rb_to_compound( const attach_to_compound_params &params );
+
     void    add_to_world( const u32 &entity_index );
-	u32		add_p2p_constraint( const add_p2p_constraint_params &params );
+    void    remove_from_world( const u32 &entity_index );
+
     void    add_collision_trigger( const collision_trigger_data &trigger_data );
-    
-    //compound shape
-	u32		attach_rb_to_compound( const attach_to_compound_params &params  );
-	//u32		detach_all_from_compound( u32 compound_index );
-    
-	//set
+
 	void	set_v3( const u32 &entity_index, const vec3f &v3, u32 cmd );
 	void	set_float( const u32 &entity_index, const f32 &fval, u32 cmd );
 	void	set_transform( const u32 &entity_index, const vec3f &position, const quat &quaternion );
 	void	set_multi_v3( const u32 &entity_index, const u32 &link_index, const vec3f &v3_data, const u32 &cmd );
 	void	set_collision_group( const u32 &entity_index, const u32 &group, const u32 &mask );
     
-    void    remove_p2p_constraint( u32 p2p_constraint );
-    void    remove_from_world( const u32 &entity_index );
+
     void    release_entity( const u32 &entity_index );
+
+    void    cast_ray( const ray_cast_params& rcp );
 
 	void	sync_compound_multi( const u32 &compound_index, const u32 &multi_index );
 	void	sync_rigid_bodies( const u32 &master, const u32 &slave, const s32 &link_index, u32 cmd );
 
-	//get
 	mat4	get_rb_matrix( const u32 &entity_index );
 	mat4	get_multirb_matrix( const u32 &multi_index, const s32 &link_index );
 	f32		get_multi_joint_pos( const u32 &multi_index, const s32 &link_index );
 	u32		get_hit_flags( u32 entity_index );
 
 	trigger_contact_data* get_trigger_contacts( u32 entity_index );
-
-    void    cast_ray( const ray_cast_params& rcp );
 }
 #endif

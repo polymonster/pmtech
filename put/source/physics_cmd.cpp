@@ -60,11 +60,7 @@ namespace physics
 			add_rb_internal( cmd.add_rb, true );
 			break;
 
-		case CMD_ADD_CONSTRAINED_RB:
-			add_constrained_rb_internal( cmd.add_constained_rb, cmd.resource_slot );
-			break;
-
-		case CMD_SET_GRAVITY:
+        case CMD_SET_GRAVITY:
 			set_gravity_internal( cmd.set_v3 );
 			break;
 
@@ -120,17 +116,8 @@ namespace physics
 			sync_rigid_body_velocity_internal( cmd.sync_rb );
 			break;
 
-		case CMD_ADD_P2P_CONSTRAINT:
-            //todo remove
-			//add_p2p_constraint_internal( cmd.add_p2p, cmd.resource_slot );
-			break;
-
 		case CMD_SET_P2P_CONSTRAINT_POS:
 			set_p2p_constraint_pos_internal( cmd.set_v3 );
-			break;
-
-		case CMD_REMOVE_P2P_CONSTRAINT:
-			remove_p2p_constraint_internal( cmd.entity_index );
 			break;
 
 		case CMD_SET_DAMPING:
@@ -321,19 +308,6 @@ namespace physics
 		return resource_slot;
 	}
 
-	u32  add_constrained_rb( const constraint_params &crbp )
-	{
-		cmd_buffer[put_pos].command_index = CMD_ADD_CONSTRAINED_RB;
-		cmd_buffer[put_pos].add_constained_rb = crbp;
-        
-        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
-
-		INC_WRAP( put_pos );
-
-		return resource_slot;
-	}
-
 	u32 add_multibody( const multi_body_params &mbp )
 	{
 		cmd_buffer[put_pos].command_index = CMD_ADD_MULTI_BODY;
@@ -398,20 +372,6 @@ namespace physics
 		INC_WRAP( put_pos );
 	}
 
-	u32 add_p2p_constraint( const add_p2p_constraint_params &params )
-	{
-		cmd_buffer[put_pos].command_index = CMD_ADD_P2P_CONSTRAINT;
-
-		cmd_buffer[put_pos].add_p2p = params;
-
-        u32 p2p_index = pen::slot_resources_get_next( &k_p2p_slot_resources );
-		cmd_buffer[put_pos].add_p2p.p2p_index = p2p_index;
-
-		INC_WRAP( put_pos );
-
-		return p2p_index;
-	}
-
     u32 add_constraint( const constraint_params &crbp )
     {
         cmd_buffer[put_pos].command_index = CMD_ADD_CONSTRAINT;
@@ -425,17 +385,6 @@ namespace physics
 
         return resource_slot;
     }
-
-	void remove_p2p_constraint( u32 p2p_constraint )
-	{
-        if (!pen::slot_resources_free( &k_p2p_slot_resources, p2p_constraint ))
-            return;
-
-		cmd_buffer[put_pos].command_index = CMD_REMOVE_P2P_CONSTRAINT;
-		cmd_buffer[put_pos].entity_index = p2p_constraint;
-
-		INC_WRAP( put_pos );
-	}
 
 	void set_collision_group( const u32 &object_index, const u32 &group, const u32 &mask )
 	{

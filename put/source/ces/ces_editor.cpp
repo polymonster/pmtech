@@ -1605,10 +1605,7 @@ namespace put
                     {
                         vec3f new_pos = put::maths::ray_vs_plane( vr, r0, view.camera->view.get_fwd(), k_physics_pick_info.pos );
 
-                        put::dbg::add_point( new_pos, 0.1f, vec4f::green() );
-
-                        quat q;
-                        q.euler_angles( 0.0f, 0.0f, 0.0f );
+                        physics::set_v3( k_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS );
                     }
                     else
                     {
@@ -1617,8 +1614,6 @@ namespace put
                         k_physics_pick_info.state = PICKING_READY;
                     }
                 }
-
-                return;
             }
 
             if (k_selection_list.empty())
