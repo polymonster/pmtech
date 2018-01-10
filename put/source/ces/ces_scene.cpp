@@ -315,6 +315,9 @@ namespace put
             if( scene->view_flags & SV_HIDE )
                 return;
             
+            //todo - set sampler states from material
+            u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
+            
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
 			pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
 
@@ -408,9 +411,6 @@ namespace put
 				//set textures
 				if (p_mat)
 				{
-                    //todo - set sampler states from material
-                    static u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
-                        
 					for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
 					{
 						if ( is_valid(p_mat->texture_id[t]) && ss_wrap )

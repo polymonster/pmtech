@@ -217,6 +217,7 @@ void handle_key_event( NSEvent* event, bool down )
         
         if( mapped_key_char == 127 )
         {
+            mapped_key_char = 8;
             vk = PENK_BACK;
         }
         

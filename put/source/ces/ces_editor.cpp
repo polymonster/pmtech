@@ -872,7 +872,10 @@ namespace put
 
 			//disable selection when we are doing something else
 			static bool disable_picking = false;
-			if (pen_input_key(PENK_MENU) || pen_input_key(PENK_COMMAND) || (k_select_flags & WIDGET_SELECTED))
+			if (pen_input_key(PENK_MENU) ||
+                pen_input_key(PENK_COMMAND) ||
+                (k_select_flags & WIDGET_SELECTED) ||
+                (k_transform_mode == TRANSFORM_PHYSICS))
 			{
 				disable_picking = true;
 			}
@@ -1275,6 +1278,8 @@ namespace put
                 return;
 
             u32 selected_index = k_selection_list[0];
+            
+            static bool colour_picker_open = false;
 
             if (ImGui::CollapsingHeader( "Light" ))
             {
@@ -1300,15 +1305,37 @@ namespace put
                         ImGui::SliderAngle( "Cos Cutoff", &scene->lights[selected_index].data.z );
                         break;
                     }
-
-                    ImGui::ColorPicker3( "Colour", ( f32* )&scene->lights[selected_index].colour );
+                    
+                    vec3f& col = scene->lights[selected_index].colour;
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f ) );
+                    
+                    if( ImGui::Button("Colour") )
+                        colour_picker_open = true;
+                    
+                    ImGui::PopStyleColor();
                 }
                 else
                 {
                     if (ImGui::Button( "Add Light" ))
                     {
-                        scene->entities[selected_index] |= CMP_LIGHT;
+                        s32 s = selected_index;
+                        
+                        //todo move to resources
+                        scene->entities[s] |= CMP_LIGHT;
+                        
+                        scene->bounding_volumes[s].min_extents = -vec3f::one();
+                        scene->bounding_volumes[s].max_extents  = vec3f::one();
                     }
+                }
+            }
+
+            if( colour_picker_open )
+            {
+                if( ImGui::Begin("Light Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize ) )
+                {
+                    ImGui::ColorPicker3( "Colour", ( f32* )&scene->lights[selected_index].colour );
+                    
+                    ImGui::End();
                 }
             }
         }
@@ -1570,9 +1597,13 @@ namespace put
                 if (k_physics_pick_info.ready)
                 {
                     put::dbg::add_point( k_physics_pick_info.pos, 0.1f, vec4f::magenta() );
+                    
+                    vec3f plane_normal = view.camera->view.get_fwd();
+                    
+                    vec3f move_pos = put::maths::ray_vs_plane(vr, r0, plane_normal, k_physics_pick_info.pos);
+                    
+                    put::dbg::add_point( move_pos, 0.1f, vec4f::green() );
                 }
-
-                return;
             }
 
             if (k_selection_list.empty())
@@ -1866,7 +1897,7 @@ namespace put
                         p = put::maths::project(p, view.camera->view,  view.camera->proj, vpi);
                         
 						if( p.z > 0.0f )
-							put::dbg::add_quad_2f( p.xy(), vec2f( 3.0f, 3.0f ), vec4f( scene->lights[n].colour, 1.0f ) );
+							put::dbg::add_quad_2f( p.xy(), vec2f( 5.0f, 5.0f ), vec4f( scene->lights[n].colour, 1.0f ) );
                     }
                 }
             }
