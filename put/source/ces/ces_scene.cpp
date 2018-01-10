@@ -321,6 +321,9 @@ namespace put
 			s32 draw_count = 0;
 			s32 cull_count = 0;
 
+            //todo - set sampler states from material
+            u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH( "wrap_linear_sampler_state" ) );
+
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
 				if ( !(scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL) )
@@ -407,10 +410,7 @@ namespace put
 
 				//set textures
 				if (p_mat)
-				{
-                    //todo - set sampler states from material
-                    static u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
-                        
+				{                        
 					for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
 					{
 						if ( is_valid(p_mat->texture_id[t]) && ss_wrap )

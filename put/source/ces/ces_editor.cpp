@@ -143,8 +143,9 @@ namespace put
             DD_BONES    = 1<<(SV_BITS_END+4),
             DD_AABB     = 1<<(SV_BITS_END+5),
             DD_LIGHTS   = 1<<(SV_BITS_END+6),
+            DD_PHYSICS  = 1<<(SV_BITS_END+7),
 
-            DD_NUM_FLAGS = 7,
+            DD_NUM_FLAGS = 8
         };
         
         const c8* dd_names[]
@@ -155,12 +156,12 @@ namespace put
             "Matrices",
             "Bones",
             "AABB",
-            "Lights"
+            "Lights",
+            "Physics"
         };
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
 
-	
         void update_view_flags_ui( entity_scene* scene )
         {
             if(!k_dd_bools)
@@ -1895,6 +1896,44 @@ namespace put
             entity_scene* scene = view.scene;
 
 			dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
+
+            if (scene->view_flags & DD_PHYSICS)
+            {
+                pen::renderer_set_constant_buffer( view.cb_view, 0, PEN_SHADER_TYPE_VS );
+                pen::renderer_set_constant_buffer( view.cb_view, 0, PEN_SHADER_TYPE_PS );
+
+                for (u32 n = 0; n < scene->num_nodes; ++n)
+                {
+                    if (scene->entities[n] & CMP_PHYSICS)
+                    {
+                        static hash_id primitives[] =
+                        {
+                            PEN_HASH( "cube" ),
+                            PEN_HASH( "cylinder" ),
+                            PEN_HASH( "sphere" ),
+                            PEN_HASH( "capsule" ),
+                        };
+
+                        u32 prim = scene->physics_data[n].collision_shape;
+
+                        geometry_resource* gr = get_geometry_resource( primitives[prim-1] );
+
+                        if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
+                            continue;
+
+                        //set cbs
+                        pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS );
+                        pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS );
+
+                        //set ib / vb
+                        pen::renderer_set_vertex_buffer( gr->vertex_buffer, 0, gr->vertex_size, 0 );
+                        pen::renderer_set_index_buffer( gr->index_buffer, gr->index_type, 0 );
+
+                        //draw
+                        pen::renderer_draw_indexed( gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST );
+                    }
+                }
+            }
             
             if( scene->view_flags & DD_LIGHTS )
             {

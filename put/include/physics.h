@@ -166,7 +166,6 @@ namespace physics
 		f32		angular_damping;
 
 		s32		rb_indices[ 2 ];
-
 	};
 
     struct attach_to_compound_params
@@ -177,7 +176,6 @@ namespace physics
 		s32		detach_index;
 		void	(*function)(  void* user_data, s32 attach_index );
 		void*	p_user_data;
-
 	};
 
     struct  add_p2p_constraint_params
@@ -314,7 +312,7 @@ namespace physics
 
     void    add_to_world( const u32 &entity_index );
     void    remove_from_world( const u32 &entity_index );
-
+    void    cast_ray( const ray_cast_params& rcp );
     void    add_collision_trigger( const collision_trigger_data &trigger_data );
 
 	void	set_v3( const u32 &entity_index, const vec3f &v3, u32 cmd );
@@ -323,11 +321,6 @@ namespace physics
 	void	set_multi_v3( const u32 &entity_index, const u32 &link_index, const vec3f &v3_data, const u32 &cmd );
 	void	set_collision_group( const u32 &entity_index, const u32 &group, const u32 &mask );
     
-
-    void    release_entity( const u32 &entity_index );
-
-    void    cast_ray( const ray_cast_params& rcp );
-
 	void	sync_compound_multi( const u32 &compound_index, const u32 &multi_index );
 	void	sync_rigid_bodies( const u32 &master, const u32 &slave, const s32 &link_index, u32 cmd );
 
@@ -337,5 +330,7 @@ namespace physics
 	u32		get_hit_flags( u32 entity_index );
 
 	trigger_contact_data* get_trigger_contacts( u32 entity_index );
+
+    void    release_entity( const u32 &entity_index );
 }
 #endif
