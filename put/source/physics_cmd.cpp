@@ -121,7 +121,8 @@ namespace physics
 			break;
 
 		case CMD_ADD_P2P_CONSTRAINT:
-			add_p2p_constraint_internal( cmd.add_p2p );
+            //todo remove
+			//add_p2p_constraint_internal( cmd.add_p2p, cmd.resource_slot );
 			break;
 
 		case CMD_SET_P2P_CONSTRAINT_POS:
@@ -166,6 +167,10 @@ namespace physics
 
         case CMD_CAST_RAY:
             cast_ray_internal( cmd.ray_cast );
+            break;
+
+        case CMD_ADD_CONSTRAINT:
+            add_constraint_internal( cmd.add_constraint_params, cmd.resource_slot );
             break;
 
 		default:
@@ -237,10 +242,10 @@ namespace physics
         return PEN_THREAD_OK;
     }
 
-	void set_v3( const u32 &entity_index, const vec3f &velocity, u32 cmd )
+	void set_v3( const u32 &entity_index, const vec3f &v3, u32 cmd )
 	{
 		cmd_buffer[put_pos].command_index = cmd;
-		pen::memory_cpy( &cmd_buffer[put_pos].set_v3.data, &velocity, sizeof(vec3f) );
+		pen::memory_cpy( &cmd_buffer[put_pos].set_v3.data, &v3, sizeof(vec3f) );
 		cmd_buffer[put_pos].set_v3.object_index = entity_index;
 
 		INC_WRAP( put_pos );
@@ -406,6 +411,20 @@ namespace physics
 
 		return p2p_index;
 	}
+
+    u32 add_constraint( const constraint_params &crbp )
+    {
+        cmd_buffer[put_pos].command_index = CMD_ADD_CONSTRAINT;
+
+        cmd_buffer[put_pos].add_constraint_params = crbp;
+
+        u32 resource_slot = pen::slot_resources_get_next( &k_physics_slot_resources );
+        cmd_buffer[put_pos].resource_slot = resource_slot;
+
+        INC_WRAP( put_pos );
+
+        return resource_slot;
+    }
 
 	void remove_p2p_constraint( u32 p2p_constraint )
 	{

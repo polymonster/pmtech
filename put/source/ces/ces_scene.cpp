@@ -925,7 +925,7 @@ namespace put
                     }
                     else
                     {
-                        static hash_id geom_hash = PEN_HASH(geometry_name.c_str());
+                        hash_id geom_hash = PEN_HASH(geometry_name.c_str());
                         
                         gr = get_geometry_resource(geom_hash);
                     }
@@ -958,7 +958,7 @@ namespace put
                     Str filename = project_dir;
                     Str name = read_parsable_string(ifs).c_str();
                     hash_id name_hash = PEN_HASH(name.c_str());
-                    filename.append( read_parsable_string(ifs).c_str() );
+                    filename.append( name.c_str() );
                     
                     static hash_id default_id = PEN_HASH("default_material");
                     

@@ -50,7 +50,9 @@ namespace put
 		{
 			PICKING_READY = 0,
 			PICKING_SINGLE = 1,
-			PICKING_MULTI = 2
+			PICKING_MULTI = 2,
+            PICKING_COMPLETE = 3,
+            PICKING_GRABBED = 4
 		};
 
 		enum e_select_flags : u32
@@ -872,7 +874,10 @@ namespace put
 
 			//disable selection when we are doing something else
 			static bool disable_picking = false;
-			if (pen_input_key(PENK_MENU) || pen_input_key(PENK_COMMAND) || (k_select_flags & WIDGET_SELECTED))
+			if (pen_input_key(PENK_MENU) || 
+                pen_input_key(PENK_COMMAND) || 
+                (k_select_flags & WIDGET_SELECTED) ||
+                (k_transform_mode == TRANSFORM_PHYSICS))
 			{
 				disable_picking = true;
 			}
@@ -1523,14 +1528,19 @@ namespace put
         struct physics_pick
         {
             vec3f pos;
-            a_u8  ready;
+            a_u8  state = 0;
+            bool  grabbed = false;
+            s32   constraint = -1;
+            s32   physics_handle = -1;
         };
         physics_pick k_physics_pick_info;
 
         void physics_pick_callback( const physics::ray_cast_result& result )
         {
-            k_physics_pick_info.ready = true;
+            k_physics_pick_info.state = PICKING_COMPLETE;
             k_physics_pick_info.pos = result.point;
+            k_physics_pick_info.grabbed = false;
+            k_physics_pick_info.physics_handle = result.physics_handle;
         }
 
 		void transform_widget( const scene_view& view )
@@ -1554,22 +1564,58 @@ namespace put
 
             if (k_transform_mode == TRANSFORM_PHYSICS)
             {
-                if ( ms.buttons[PEN_MOUSE_L] && !pen_input_key(PENK_MENU) )
+                if (!k_physics_pick_info.grabbed && k_physics_pick_info.constraint == -1)
                 {
-                    k_physics_pick_info.ready = false;
+                    if(k_physics_pick_info.state == PICKING_READY)
+                    {
+                        if (ms.buttons[PEN_MOUSE_L] && !pen_input_key( PENK_MENU ))
+                        {
+                            k_physics_pick_info.state = PICKING_SINGLE;
 
-                    physics::ray_cast_params rcp;
-                    rcp.start = r0;
-                    rcp.end = r1;
-                    rcp.timestamp = pen::timer_get_time();
-                    rcp.callback = physics_pick_callback;
+                            physics::ray_cast_params rcp;
+                            rcp.start = r0;
+                            rcp.end = r1;
+                            rcp.timestamp = pen::timer_get_time();
+                            rcp.callback = physics_pick_callback;
 
-                    physics::cast_ray( rcp );
+                            physics::cast_ray( rcp );
+                        }
+                    }
+                    else if (k_physics_pick_info.state == PICKING_COMPLETE)
+                    {
+                        if (k_physics_pick_info.physics_handle != -1)
+                        {
+                            physics::constraint_params cp;
+                            cp.pivot = k_physics_pick_info.pos;
+                            cp.type = physics::CONSTRAINT_P2P;
+                            cp.rb_indices[0] = k_physics_pick_info.physics_handle;
+
+                            k_physics_pick_info.constraint = physics::add_constraint( cp );
+                            k_physics_pick_info.state = PICKING_GRABBED;
+                        }
+                        else
+                        {
+                            k_physics_pick_info.state = PICKING_READY;
+                        }
+                    }
                 }
-
-                if (k_physics_pick_info.ready)
+                else if(k_physics_pick_info.constraint > 0)
                 {
-                    put::dbg::add_point( k_physics_pick_info.pos, 0.1f, vec4f::magenta() );
+                    if (ms.buttons[PEN_MOUSE_L])
+                    {
+                        vec3f new_pos = put::maths::ray_vs_plane( vr, r0, view.camera->view.get_fwd(), k_physics_pick_info.pos );
+
+                        put::dbg::add_point( new_pos, 0.1f, vec4f::green() );
+
+                        quat q;
+                        q.euler_angles( 0.0f, 0.0f, 0.0f );
+                    }
+                    else
+                    {
+                        physics::release_entity( k_physics_pick_info.constraint );
+                        k_physics_pick_info.constraint = -1;
+                        k_physics_pick_info.state = PICKING_READY;
+                    }
                 }
 
                 return;

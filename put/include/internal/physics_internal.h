@@ -44,6 +44,8 @@ namespace physics
 		btHingeConstraint*										hinge_constraint;
 		btGeneric6DofConstraint*								dof6_constraint;
 		btFixedConstraint*										fixed_constraint;
+        btPoint2PointConstraint*                                point_constraint;
+        btMultiBodyPoint2Point*	                                point_constraint_multi;
 
 		btDefaultMotionState*									default_motion_state;
 		btAlignedObjectArray<btMultiBodyLinkCollider*>			link_colliders;
@@ -163,8 +165,9 @@ namespace physics
 	void				add_multibody_internal( const multi_body_params &params, u32 resource_slot );
 	void				add_hinge_internal( const constraint_params &params, u32 resource_slot );
 	void				add_constrained_rb_internal( const constraint_params &params, u32 resource_slot );
-    
-	void				set_linear_velocity_internal( const set_v3_params &cmd );
+    void				add_constraint_internal( const constraint_params &params, u32 resource_slot );
+
+    void				set_linear_velocity_internal( const set_v3_params &cmd );
 	void				set_angular_velocity_internal( const set_v3_params &cmd );
 	void				set_linear_factor_internal( const set_v3_params &cmd );
 	void				set_angular_factor_internal( const set_v3_params &cmd );
@@ -191,10 +194,9 @@ namespace physics
     
     void                release_entity_internal( u32 entity_index );
 
-	void				add_p2p_constraint_internal( const add_p2p_constraint_params &cmd );
+    void				add_p2p_constraint_internal( const add_p2p_constraint_params &cmd, u32 resource_slot );
 	void				remove_p2p_constraint_internal( u32 index );
 	void				set_p2p_constraint_pos_internal( const set_v3_params &cmd );
-	u32					assign_next_free_p2p( );
 
 	void				add_collision_watcher_internal( const collision_trigger_data &trigger_data );
 

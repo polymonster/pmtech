@@ -47,6 +47,7 @@ namespace physics
 		CMD_ATTACH_RB_TO_COMPOUND,
         CMD_RELEASE_ENTITY,
         CMD_CAST_RAY,
+        CMD_ADD_CONSTRAINT
 	};
 
     enum e_physics_shape : s32
@@ -62,10 +63,11 @@ namespace physics
 
     enum e_physics_constraint : s32
 	{
-		DOF6 = 1,
-		DOF6_NOCREATE,
-		DOF6_RB,
-		HINGE,
+		CONSTRAINT_DOF6 = 1,
+		CONSTRAINT_DOF6_NOCREATE,
+		CONSTRAINT_DOF6_RB,
+		CONSTRAINT_HINGE,
+        CONSTRAINT_P2P
 	};
 
     enum e_multibody_link_type : s32
@@ -285,6 +287,7 @@ namespace physics
 			set_float_params 				set_float;
 			rigid_body_params				add_rb;
 			constraint_params				add_constained_rb;
+            constraint_params				add_constraint_params;
 			multi_body_params				add_multi;
 			set_multi_v3_params				set_multi_v3;
 			compound_rb_params				add_compound_rb;
@@ -306,6 +309,7 @@ namespace physics
 	//add
 	u32		add_rb( const rigid_body_params &rbp );
 	u32		add_ghost_rb( const rigid_body_params &rbp );
+    u32		add_constraint( const constraint_params &crbp );
 	u32		add_constrained_rb( const constraint_params &crbp );
 	u32		add_multibody( const multi_body_params &mbp );
 	u32		add_compound_rb( const compound_rb_params &crbp );
@@ -316,10 +320,10 @@ namespace physics
     
     //compound shape
 	u32		attach_rb_to_compound( const attach_to_compound_params &params  );
-	u32		detach_all_from_compound( u32 compound_index );
+	//u32		detach_all_from_compound( u32 compound_index );
     
 	//set
-	void	set_v3( const u32 &entity_index, const vec3f &velocity, u32 cmd );
+	void	set_v3( const u32 &entity_index, const vec3f &v3, u32 cmd );
 	void	set_float( const u32 &entity_index, const f32 &fval, u32 cmd );
 	void	set_transform( const u32 &entity_index, const vec3f &position, const quat &quaternion );
 	void	set_multi_v3( const u32 &entity_index, const u32 &link_index, const vec3f &v3_data, const u32 &cmd );
@@ -341,8 +345,5 @@ namespace physics
 	trigger_contact_data* get_trigger_contacts( u32 entity_index );
 
     void    cast_ray( const ray_cast_params& rcp );
-
-	void	reset_wait_flag();
-	void	wait_complete( a_u32& result );
 }
 #endif

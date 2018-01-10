@@ -732,7 +732,7 @@ namespace physics
 	{
 		switch (params.type)
 		{
-			case physics::DOF6_RB:
+			case physics::CONSTRAINT_DOF6_RB:
 			{
 				btRigidBody* p_rb = NULL;
 				btRigidBody* p_fixed = NULL;
@@ -751,11 +751,11 @@ namespace physics
 			}
 			break;
 
-		case physics::DOF6:
+		case physics::CONSTRAINT_DOF6:
 			add_dof6_internal( params, resource_slot, NULL, NULL );
 			break;
 
-		case physics::HINGE:
+		case physics::CONSTRAINT_HINGE:
 			add_hinge_internal( params, resource_slot );
 			break;
 
@@ -763,6 +763,25 @@ namespace physics
 			break;
 		}
 	}
+
+    void add_constraint_internal( const constraint_params &params, u32 resource_slot )
+    {
+        switch (params.type)
+        {
+            case CONSTRAINT_P2P:
+            {
+                add_p2p_constraint_params p2p;
+                p2p.entity_index = params.rb_indices[0];
+                p2p.position = params.pivot;
+                add_p2p_constraint_internal( p2p, resource_slot );
+            }
+            break;
+
+            default:
+                PEN_ASSERT_MSG( 0, "unimplemented add constraint" );
+                break;
+        }
+    }
 
 	void set_linear_velocity_internal( const set_v3_params &cmd )
 	{
@@ -808,8 +827,13 @@ namespace physics
 		bt_trans.setOrigin( bt_v3 );
 		bt_trans.setRotation( bt_quat );
 
-		g_bullet_objects.entities[cmd.object_index].rigid_body->getMotionState( )->setWorldTransform( bt_trans );
-		g_bullet_objects.entities[cmd.object_index].rigid_body->setCenterOfMassTransform( bt_trans );
+        btRigidBody* rb = g_bullet_objects.entities[cmd.object_index].rigid_body;
+
+        if (rb)
+        {
+            g_bullet_objects.entities[cmd.object_index].rigid_body->getMotionState()->setWorldTransform( bt_trans );
+            g_bullet_objects.entities[cmd.object_index].rigid_body->setCenterOfMassTransform( bt_trans );
+        }
 	}
 
 	void set_gravity_internal( const set_v3_params &cmd )
@@ -959,9 +983,9 @@ namespace physics
 		}
 	}
 
-	void add_p2p_constraint_internal( const add_p2p_constraint_params &cmd )
+	void add_p2p_constraint_internal( const add_p2p_constraint_params &cmd, u32 resource_slot )
 	{
-		generic_constraint* p_next_p2p = &p2p_constraints[cmd.p2p_index];
+        physics_entity* entity = &g_bullet_objects.entities[resource_slot];
 
 		btRigidBody* rb = g_bullet_objects.entities[cmd.entity_index].rigid_body;
 		btMultiBody* mb = g_bullet_objects.entities[cmd.entity_index].multi_body;
@@ -984,7 +1008,7 @@ namespace physics
 			//very weak constraint for picking
 			p2p->m_setting.m_tau = 10.0f;
 
-			p_next_p2p->p_point_constraint = p2p;
+            entity->point_constraint = p2p;
 		}
 		else if (mb)
 		{
@@ -997,14 +1021,21 @@ namespace physics
 
 			g_bullet_systems.dynamics_world->addMultiBodyConstraint( p2p );
 
-			p_next_p2p->p_point_constraint_multi = p2p;
+            entity->point_constraint_multi = p2p;
 		}
 	}
 
 	void set_p2p_constraint_pos_internal( const set_v3_params &cmd )
 	{
-		generic_constraint* p_p2p = &p2p_constraints[cmd.object_index];
+        btPoint2PointConstraint* p2p = g_bullet_objects.entities[cmd.object_index].point_constraint;
 
+        btVector3 bt_v3;
+        pen::memory_cpy( &bt_v3, &cmd.data, sizeof( vec3f ) );
+
+        if (p2p)
+            p2p->setPivotB( bt_v3 );
+
+        /*
 		if (p_p2p->p_point_constraint)
 		{
 			btPoint2PointConstraint* p_con = p_p2p->p_point_constraint;
@@ -1019,6 +1050,7 @@ namespace physics
 			btVector3 constrain_pos = btVector3( cmd.data.x, cmd.data.y, cmd.data.z );
 			p_con->setPivotInB( constrain_pos );
 		}
+        */
 	}
 
 	void remove_p2p_constraint_internal( u32 index )
@@ -1130,12 +1162,27 @@ namespace physics
 			}
 		}
 	}
+
+    void release_constraint_internal( u32 entity_index )
+    {
+        btPoint2PointConstraint* p2p = g_bullet_objects.entities[entity_index].point_constraint;
+
+        if (p2p)
+            g_bullet_systems.dynamics_world->removeConstraint( p2p );
+
+        delete p2p;
+    }
     
     void release_entity_internal( u32 entity_index )
     {
-        remove_from_world_internal( entity_index );
-        
+        //rb
+        if(g_bullet_objects.entities[entity_index].rigid_body)
+            remove_from_world_internal( entity_index );
+
         delete g_bullet_objects.entities[entity_index].rigid_body;
+
+        //constraint
+        release_constraint_internal( entity_index );
     }
 
 	void remove_from_world_internal( u32 entity_index )
@@ -1155,23 +1202,24 @@ namespace physics
         btVector3 to = from_lw_vec3( rcp.end );
 
         btCollisionWorld::ClosestRayResultCallback ray_callback( from, to );
-
+        
+        btVector3 pick_pos = btVector3( 0.0, 0.0, 0.0 );
+        s32 user_index = -1;
         g_bullet_systems.dynamics_world->rayTest( from, to, ray_callback );
         if (ray_callback.hasHit())
         {
-            btVector3 pick_pos = ray_callback.m_hitPointWorld;
+            pick_pos = ray_callback.m_hitPointWorld;
             btRigidBody* body = ( btRigidBody* )btRigidBody::upcast( ray_callback.m_collisionObject );
 
-            s32 user_index = 0;
             if(body)
                 user_index = body->getUserIndex();
-
-            ray_cast_result rcr;
-            rcr.point = from_btvector( pick_pos );
-            rcr.physics_handle = user_index;
-
-            rcp.callback( rcr );
         }
+
+        ray_cast_result rcr;
+        rcr.point = from_btvector( pick_pos );
+        rcr.physics_handle = user_index;
+
+        rcp.callback( rcr );
     }
 }
 

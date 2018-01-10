@@ -89,15 +89,15 @@ namespace put
             
             physics::constraint_params cp;
             cp.rb = rb;
-            cp.type = physics::HINGE;
+            cp.type = physics::CONSTRAINT_HINGE;
             cp.pivot = vec3f::unit_z() * 5.0f;
             cp.axis = vec3f::unit_x();
             cp.lower_limit_rotation = -vec3f::flt_max();
             cp.upper_limit_rotation = vec3f::flt_max();
 
-			//scene->physics_handles[s] = physics::add_rb(rb);
+			scene->physics_handles[s] = physics::add_rb(rb);
             
-            scene->physics_handles[s] = physics::add_constrained_rb(cp);
+            //scene->physics_handles[s] = physics::add_constrained_rb(cp);
             
             scene->entities[s] |= CMP_PHYSICS;
 		}
