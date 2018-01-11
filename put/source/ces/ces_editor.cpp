@@ -22,6 +22,15 @@ namespace put
     
     namespace ces
     {
+        static hash_id k_primitives[] =
+        {
+            PEN_HASH( "cube" ),
+            PEN_HASH( "cylinder" ),
+            PEN_HASH( "sphere" ),
+            PEN_HASH( "capsule" ),
+            PEN_HASH( "cone" ),
+        };
+
 		struct transform_undo
 		{
 			transform state;
@@ -674,7 +683,10 @@ namespace put
 					if (sc->scene->entities[i] & CMP_PHYSICS)
 					{
 						vec3f t = sc->scene->physics_data[i].rigid_body.position;
-						quat q = sc->scene->physics_data[i].rigid_body.rotation;
+						//quat q = sc->scene->physics_data[i].rigid_body.rotation;
+                        
+                        quat q;
+                        q.euler_angles( 0.0f, 0.0f, 0.0f );
 
 						physics::set_transform(sc->scene->physics_handles[i], t, q );
 
@@ -1014,7 +1026,7 @@ namespace put
             u32 collision_shape = k_physics_preview.params.rigid_body.shape - 1;
 
             ImGui::InputFloat( "Mass", &k_physics_preview.params.rigid_body.mass );
-            ImGui::Combo( "Shape##Physics", ( s32* )&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
+            ImGui::Combo( "Shape##Physics", ( s32* )&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0", 7 );
 
             k_physics_preview.params.rigid_body.shape = collision_shape + 1;
 
@@ -1033,6 +1045,7 @@ namespace put
                 for (auto& i : k_selection_list)
                 {
                     scene->physics_data[i].rigid_body = k_physics_preview.params.rigid_body;
+
                     scene->physics_data[i].rigid_body.position = scene->transforms[i].translation;
                     scene->physics_data[i].rigid_body.rotation = scene->transforms[i].rotation;
 
@@ -1040,6 +1053,8 @@ namespace put
                     {
                         instantiate_physics( scene, i );
                     }
+
+                    k_physics_preview.params.rigid_body = scene->physics_data[i].rigid_body;
                 }
             }
         }
@@ -1096,19 +1111,11 @@ namespace put
                 }
 
                 static s32 primitive_type = -1;
-                ImGui::Combo( "Shape##Primitive", ( s32* )&primitive_type, "Box\0Sphere\0Cylinder\0Capsule\0", 4 );
-
-                static hash_id primitive_id[] =
-                {
-                    PEN_HASH( "cube" ),
-                    PEN_HASH( "sphere" ),
-                    PEN_HASH( "cylinder" ),
-                    PEN_HASH( "capsule" ),
-                };
+                ImGui::Combo( "Shape##Primitive", ( s32* )&primitive_type, "Box\0Sphere\0Cylinder\0Capsule\0Cone\0", 5 );
 
                 if (ImGui::Button( "Add Primitive" ) && primitive_type > -1)
                 {
-                    geometry_resource* gr = get_geometry_resource( primitive_id[primitive_type] );
+                    geometry_resource* gr = get_geometry_resource( k_primitives[primitive_type] );
 
                     instantiate_geometry( gr, scene, selected_index );
 
@@ -1946,14 +1953,6 @@ namespace put
 
         void render_physics_debug( const scene_view& view )
         {
-            static hash_id primitives[] =
-            {
-                PEN_HASH( "cube" ),
-                PEN_HASH( "cylinder" ),
-                PEN_HASH( "sphere" ),
-                PEN_HASH( "capsule" ),
-            };
-
             entity_scene* scene = view.scene;
 
             pen::renderer_set_constant_buffer( view.cb_view, 0, PEN_SHADER_TYPE_VS );
@@ -1967,7 +1966,7 @@ namespace put
                     {
                         u32 prim = scene->physics_data[n].rigid_body.shape;
 
-                        geometry_resource* gr = get_geometry_resource( primitives[prim - 1] );
+                        geometry_resource* gr = get_geometry_resource( k_primitives[prim - 1] );
 
                         if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
                             continue;
@@ -2010,7 +2009,7 @@ namespace put
                         {
                             u32 prim = scene->physics_data[i].rigid_body.shape;
 
-                            geometry_resource* gr = get_geometry_resource( primitives[prim - 1] );
+                            geometry_resource* gr = get_geometry_resource( k_primitives[prim - 1] );
 
                             if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
                                 continue;

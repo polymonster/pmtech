@@ -84,6 +84,9 @@ namespace put
             //capsule height is extents height + radius * 2 (for the capsule top and bottom)
             if( rb.shape == physics::CAPSULE )
                 rb.dimensions.y -= rb.dimensions.x / 2.0f;
+            //cone height is 1. (-0.5 to 0.5) but radius is 1.0;
+            if (rb.shape == physics::CONE)
+                rb.dimensions.y *= 2.0f;
             
             //fill the matrix array with the first matrix because of thread sync
             mat4 mrot;

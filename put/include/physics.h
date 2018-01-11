@@ -53,6 +53,7 @@ namespace physics
 		CYLINDER,
 		SPHERE,
 		CAPSULE,
+        CONE,
 		HULL,
 		MESH,
 		COMPOUND

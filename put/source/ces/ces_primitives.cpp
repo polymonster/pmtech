@@ -12,6 +12,199 @@ namespace put
 {       
     namespace ces
     {
+        void create_cone_primitive()
+        {
+            static const s32 segments = 16;
+
+            static const u32 num_verts = (segments + 1) + (segments*2);
+            vertex_model v[num_verts];
+            geometry_resource* p_geometry = new geometry_resource;
+
+            vec3f axis = vec3f::unit_y();
+            vec3f right = vec3f::unit_x();
+
+            vec3f up = maths::cross( axis, right );
+            right = maths::cross( axis, up );
+
+            vec3f points[segments];
+            vec3f tangents[segments];
+
+            f32 angle = 0.0;
+            f32 angle_step = PI_2 / segments;
+            for (s32 i = 0; i < segments; ++i)
+            {
+                f32 x = cos( angle );
+                f32 y = -sin( angle );
+
+                vec3f v1 = right * x + up * y;
+
+                angle += angle_step;
+
+                x = cos( angle );
+                y = -sin( angle );
+
+                vec3f v2 = right * x + up * y;
+
+                points[i] = v1;
+
+                tangents[i] = v2 - v1;
+            }
+
+            vec3f bottom_points[segments];
+            for (s32 i = 0; i < segments; ++i)
+                bottom_points[i] = points[i] - vec3f( 0.0f, 0.5f, 0.0f );
+
+            vec3f top_point = vec3f( 0.0, 0.5f, 0.0f );
+
+            //bottom face
+            for (s32 i = 0; i < segments; ++i)
+            {
+                s32 vi = i;
+
+                v[vi].x = bottom_points[i].x;
+                v[vi].y = bottom_points[i].y;
+                v[vi].z = bottom_points[i].z;
+                v[vi].w = 1.0f;
+
+                v[vi].nx = 0.0f;
+                v[vi].ny = -1.0f;
+                v[vi].nz = 0.0f;
+                v[vi].nw = 1.0f;
+
+                v[vi].tx = 1.0f;
+                v[vi].ty = 0.0f;
+                v[vi].tz = 0.0f;
+                v[vi].tw = 1.0f;
+
+                v[vi].bx = 0.0f;
+                v[vi].by = 0.0f;
+                v[vi].bz = 1.0f;
+                v[vi].bw = 1.0f;
+            }
+
+            s32 bm = segments;
+
+            //bottom middle
+            v[bm].x = 0.0f;
+            v[bm].y = -0.5f;
+            v[bm].z = 0.0f;
+            v[bm].w = 1.0f;
+
+            v[bm].nx = 0.0f;
+            v[bm].ny = -1.0f;
+            v[bm].nz = 0.0f;
+            v[bm].nw = 1.0f;
+
+            v[bm].tx = 1.0f;
+            v[bm].ty = 0.0f;
+            v[bm].tz = 0.0f;
+            v[bm].tw = 1.0f;
+
+            v[bm].bx = 0.0f;
+            v[bm].by = 0.0f;
+            v[bm].bz = 1.0f;
+            v[bm].bw = 1.0f;
+
+            //sides
+            for (s32 i = 0; i < segments; ++i)
+            {
+                s32 start_offset = segments + 1;
+                s32 vi = start_offset + (i * 2);
+
+                s32 next = (i + 1) % segments;
+
+                vec3f p1 = bottom_points[i];
+                vec3f p2 = top_point;
+                vec3f p3 = bottom_points[next];
+
+                vec3f t = p3 - p1;
+                vec3f b = p2 - p1;
+                vec3f n = maths::cross( t, b );
+
+                v[vi].x = bottom_points[i].x;
+                v[vi].y = bottom_points[i].y;
+                v[vi].z = bottom_points[i].z;
+                v[vi].w = 1.0f;
+
+                v[vi + 1].x = top_point.x;
+                v[vi + 1].y = top_point.y;
+                v[vi + 1].z = top_point.z;
+                v[vi + 1].w = 1.0f;
+
+                for (s32 x = 0; x < 2; ++x)
+                {
+                    v[vi + x].nx = n.x; v[vi + x].ny = n.y; v[vi + x].nz = n.z;
+                    v[vi + x].tx = t.x; v[vi + x].ty = t.y; v[vi + x].tz = t.z;
+                    v[vi + x].bx = b.x; v[vi + x].by = b.y; v[vi + x].bz = b.z;
+                }
+            }
+
+            const u32 num_indices = (segments * 3) + (segments * 3);
+            u16 indices[num_indices] = { 0 };
+
+            //bottom face
+            for (s32 i = 0; i < segments; ++i)
+            {
+                s32 face_current = i;
+                s32 face_next = (i + 1) % segments;
+
+                s32 index_offset = i * 3;
+
+                indices[index_offset + 0] = bm;
+                indices[index_offset + 1] = face_current;
+                indices[index_offset + 2] = face_next;
+            }
+
+            //sides
+            for (s32 i = 0; i < segments; ++i)
+            {
+                s32 sides_offset = segments + 1;
+
+                s32 face_current = sides_offset + (i * 2);
+                s32 index_offset = segments * 3 + (i * 3);
+
+                indices[index_offset + 0] = face_current;
+                indices[index_offset + 1] = face_current+1;
+
+                s32 face_next = sides_offset + ((i + 1) % segments) * 2;
+                indices[index_offset + 2] = face_next;
+            }
+
+            //VB
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = sizeof( vertex_model ) * num_verts;
+            bcp.data = ( void* )v;
+
+            p_geometry->vertex_buffer = pen::renderer_create_buffer( bcp );
+
+            //IB
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = 2 * num_indices;
+            bcp.data = ( void* )indices;
+
+            p_geometry->index_buffer = pen::renderer_create_buffer( bcp );
+
+            //info
+            p_geometry->num_indices = num_indices;
+            p_geometry->num_vertices = num_verts;
+            p_geometry->vertex_size = sizeof( vertex_model );
+            p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            p_geometry->min_extents = -vec3f( 1.0f, 0.5f, 1.0f );
+            p_geometry->max_extents = vec3f( 1.0f, 0.5f, 1.0f );
+            p_geometry->geometry_name = "cone";
+            p_geometry->hash = PEN_HASH( "cone" );
+            p_geometry->file_hash = PEN_HASH( "primitive" );
+            p_geometry->filename = "primitive";
+            p_geometry->p_skin = nullptr;
+
+            add_geometry_resource( p_geometry );
+        }
+
         void create_capsule_primitive()
         {
             static const s32 segments = 16;
@@ -730,6 +923,7 @@ namespace put
             create_cylinder_primitive();
             create_sphere_primitive();
             create_capsule_primitive();
+            create_cone_primitive();
         }
     }
 }

@@ -37,7 +37,7 @@ namespace physics
 			break;
 
 		case CMD_SET_ANGULAR_VELOCITY:
-			set_linear_velocity_internal( cmd.set_v3 );
+			set_angular_velocity_internal( cmd.set_v3 );
 			break;
 
 		case CMD_SET_LINEAR_FACTOR:
