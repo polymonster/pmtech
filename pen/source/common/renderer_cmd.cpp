@@ -492,13 +492,11 @@ namespace pen
 
 	void				    renderer_wait_for_jobs();
 
-	pen::job_thread*        p_job_thread_info;
-	pen::semaphore*         p_consume_semaphore;
-	pen::semaphore*		    p_continue_semaphore;
-    pen::slot_resources     k_renderer_slot_resources;
+	static pen::job_thread*        p_job_thread_info;
+    static pen::semaphore*         p_consume_semaphore;
+    static pen::semaphore*		   p_continue_semaphore;
+    static pen::slot_resources     k_renderer_slot_resources;
     
-	bool                    consume_flag = false;
-
 	void renderer_wait_init()
 	{
 		pen::threads_semaphore_wait(p_continue_semaphore);

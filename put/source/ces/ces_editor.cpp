@@ -22,6 +22,15 @@ namespace put
     
     namespace ces
     {
+        static hash_id k_primitives[] =
+        {
+            PEN_HASH( "cube" ),
+            PEN_HASH( "cylinder" ),
+            PEN_HASH( "sphere" ),
+            PEN_HASH( "capsule" ),
+            PEN_HASH( "cone" ),
+        };
+
 		struct transform_undo
 		{
 			transform state;
@@ -50,7 +59,9 @@ namespace put
 		{
 			PICKING_READY = 0,
 			PICKING_SINGLE = 1,
-			PICKING_MULTI = 2
+			PICKING_MULTI = 2,
+            PICKING_COMPLETE = 3,
+            PICKING_GRABBED = 4
 		};
 
 		enum e_select_flags : u32
@@ -141,8 +152,9 @@ namespace put
             DD_BONES    = 1<<(SV_BITS_END+4),
             DD_AABB     = 1<<(SV_BITS_END+5),
             DD_LIGHTS   = 1<<(SV_BITS_END+6),
+            DD_PHYSICS  = 1<<(SV_BITS_END+7),
 
-            DD_NUM_FLAGS = 7,
+            DD_NUM_FLAGS = 8
         };
         
         const c8* dd_names[]
@@ -153,12 +165,12 @@ namespace put
             "Matrices",
             "Bones",
             "AABB",
-            "Lights"
+            "Lights",
+            "Physics"
         };
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
 
-	
         void update_view_flags_ui( entity_scene* scene )
         {
             if(!k_dd_bools)
@@ -252,10 +264,9 @@ namespace put
             create_geometry_primitives();
 
 			bool auto_load_last_scene = dev_ui::get_program_preference("load_last_scene").as_bool();
-			if (auto_load_last_scene)
+            Str last_loaded_scene = dev_ui::get_program_preference_filename( "last_loaded_scene" );
+			if (auto_load_last_scene && last_loaded_scene.length() > 0)
 			{
-				Str last_loaded_scene = dev_ui::get_program_preference_filename("last_loaded_scene");
-
 				if (last_loaded_scene.length() > 0)
 					load_scene(last_loaded_scene.c_str(), scene);
 
@@ -295,9 +306,11 @@ namespace put
 					if (scene->parents[i] == i)
 						set_node_parent(scene, parent, i);
 			}
+            
+            scene->flags |= INVALIDATE_SCENE_TREE;
 		}
 
-		void add_selection( const entity_scene* scene, u32 index, u32 select_mode = SELECT_NORMAL )
+		void add_selection( const entity_scene* scene, u32 index, u32 select_mode )
 		{
 			if (pen::input_is_key_down(PENK_CONTROL))
 				select_mode = SELECT_REMOVE;
@@ -671,8 +684,9 @@ namespace put
 				{
 					if (sc->scene->entities[i] & CMP_PHYSICS)
 					{
-						const vec3f& t = sc->scene->physics_data[i].start_position;
-						const quat& q = sc->scene->physics_data[i].start_rotation;
+						vec3f t = sc->scene->physics_data[i].rigid_body.position;
+						quat q = sc->scene->physics_data[i].rigid_body.rotation;
+
 						physics::set_transform(sc->scene->physics_handles[i], t, q );
 
                         //reset velocity
@@ -872,8 +886,8 @@ namespace put
 
 			//disable selection when we are doing something else
 			static bool disable_picking = false;
-			if (pen_input_key(PENK_MENU) ||
-                pen_input_key(PENK_COMMAND) ||
+			if (pen_input_key(PENK_MENU) || 
+                pen_input_key(PENK_COMMAND) || 
                 (k_select_flags & WIDGET_SELECTED) ||
                 (k_transform_mode == TRANSFORM_PHYSICS))
 			{
@@ -942,97 +956,156 @@ namespace put
             //update render data
             put::ces::update_scene(sc->scene, dt_ms);
         }
+
+        struct physics_preview
+        {
+            bool active = false;
+            scene_node_physics params;
+
+            physics_preview() {};
+            ~physics_preview() {};
+        };
+        static physics_preview k_physics_preview;
+
+        void scene_constraint_ui( entity_scene* scene )
+        {
+            physics::constraint_params& preview_constraint = k_physics_preview.params.constraint;
+            s32 constraint_type = preview_constraint.type - 1;
+
+            k_physics_preview.params.type = PHYSICS_TYPE_CONSTRAINT;
+
+            ImGui::Combo( "Constraint##Physics", ( s32* )&constraint_type, "Six DOF\0Hinge\0Point to Point\0", 7 );
+
+            preview_constraint.type = constraint_type + 1;
+            if (preview_constraint.type == physics::CONSTRAINT_HINGE)
+            {
+                ImGui::InputFloat3( "Axis", ( f32* )&preview_constraint.axis );
+                ImGui::InputFloat( "Lower Limit Rotation", ( f32* )&preview_constraint.lower_limit_rotation );
+                ImGui::InputFloat( "Upper Limit Rotation", ( f32* )&preview_constraint.upper_limit_rotation );
+            }
+            else if (preview_constraint.type == physics::CONSTRAINT_DOF6)
+            {
+                ImGui::InputFloat3( "Lower Limit Rotation", ( f32* )&preview_constraint.lower_limit_rotation );
+                ImGui::InputFloat3( "Upper Limit Rotation", ( f32* )&preview_constraint.upper_limit_rotation );
+
+                ImGui::InputFloat3( "Lower Limit Translation", ( f32* )&preview_constraint.lower_limit_translation );
+                ImGui::InputFloat3( "Upper Limit Translation", ( f32* )&preview_constraint.upper_limit_translation );
+
+                ImGui::InputFloat( "Linear Damping", ( f32* )&preview_constraint.linear_damping );
+                ImGui::InputFloat( "Angular Damping", ( f32* )&preview_constraint.angular_damping );
+            }
+
+            std::vector<u32> index_lookup;
+            std::vector<const c8*> rb_names;
+            for (s32 i = 0; i < scene->num_nodes; ++i)
+            {
+                if (scene->entities[i] & CMP_PHYSICS)
+                {
+                    rb_names.push_back( scene->names[i].c_str() );
+                    index_lookup.push_back( i );
+                }
+            }
+
+            static s32 rb_index = -1;
+            if(rb_names.size() > 0)
+                ImGui::Combo( "Rigid Body##Constraint", &rb_index, (const c8* const*)&rb_names[0], rb_names.size() );
+            else
+                ImGui::Text( "No rigid bodies to constrain!" );
+
+            bool valid_type = preview_constraint.type <= physics::CONSTRAINT_DOF6 && preview_constraint.type > 0;
+            if (rb_index > -1 && valid_type )
+            {
+                preview_constraint.rb_indices[0] = index_lookup[rb_index];
+
+                if (ImGui::Button( "Add" ))
+                {
+                    for (auto& i : k_selection_list)
+                    {
+                        if( scene->entities[i] & CMP_CONSTRAINT )
+                            continue;
+                        
+                        scene->physics_data[i].constraint = preview_constraint;
+
+                        instantiate_constraint( scene, i );
+                    }
+                }
+            }
+
+            if (k_selection_list.size() == 1)
+                scene->physics_data[k_selection_list[0]].constraint = preview_constraint;
+        }
+
+        void scene_rigid_body_ui( entity_scene* scene )
+        {
+            u32 collision_shape = k_physics_preview.params.rigid_body.shape - 1;
+
+            ImGui::InputFloat( "Mass", &k_physics_preview.params.rigid_body.mass );
+            ImGui::Combo( "Shape##Physics", ( s32* )&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0", 7 );
+
+            k_physics_preview.params.rigid_body.shape = collision_shape + 1;
+
+            Str button_text = "Set Start Transform";
+            for (auto& i : k_selection_list)
+            {
+                if (!(scene->entities[i] & CMP_PHYSICS))
+                {
+                    button_text = "Add";
+                    break;
+                }
+            }
+
+            if (ImGui::Button( button_text.c_str() ))
+            {
+                for (auto& i : k_selection_list)
+                {
+                    scene->physics_data[i].rigid_body = k_physics_preview.params.rigid_body;
+
+                    scene->physics_data[i].rigid_body.position = scene->transforms[i].translation;
+                    scene->physics_data[i].rigid_body.rotation = scene->transforms[i].rotation;
+
+                    if (!(scene->entities[i] & CMP_PHYSICS))
+                    {
+                        instantiate_physics( scene, i );
+                    }
+
+                    k_physics_preview.params.rigid_body = scene->physics_data[i].rigid_body;
+                }
+            }
+        }
         
         void scene_physics_ui( entity_scene* scene )
         {
-            static f32 mass = 0.0f;
-            static u32 collision_shape = -1;
-            static s32 up_axis = 0;
+            static s32 physics_type = 0;
+            k_physics_preview.active = false; 
+
+            if (k_selection_list.size() == 1)
+            {
+                k_physics_preview.params = scene->physics_data[k_selection_list[0]];
+                physics_type = k_physics_preview.params.type;
+            }
 
             if( ImGui::CollapsingHeader("Physics") )
             {
-                if (k_selection_list.size() == 1)
-                {
-                    s32 selected_index = k_selection_list[0];
+                k_physics_preview.active = true;
 
-                    mass = scene->physics_data[selected_index].mass;
-                    collision_shape = scene->physics_data[selected_index].collision_shape - 1;
+                ImGui::Combo( "Type##Physics", &physics_type, "Rigid Body\0Constraint\0" );
+
+                k_physics_preview.params.type = physics_type;
+
+                if (physics_type == PHYSICS_TYPE_RIGID_BODY)
+                {
+                    //rb
+                    scene_rigid_body_ui( scene );
                 }
-
-                ImGui::InputFloat("Mass", &mass);
-
-                ImGui::Combo("Shape##Physics", (s32*)&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Hull\0Mesh\0Compound\0", 7 );
-                
-                //box starts at 1.. 0 reserved for null
-                s32 physics_shape = collision_shape+1;
-
-                if (k_selection_list.size() == 1)
+                else if (physics_type == PHYSICS_TYPE_CONSTRAINT)
                 {
-                    s32 s = k_selection_list[0];
-
-                    if (!(scene->entities[s] & CMP_PHYSICS))
-                    {
-                        if (ImGui::Button( "Add Physics" ))
-                        {
-                            vec3f pos = scene->transforms[s].translation;
-                            vec3f scale = scene->transforms[s].scale;
-                            quat rotation = scene->transforms[s].rotation;
-
-                            scene_node_physics& snp = scene->physics_data[s];
-                            snp.mass = mass;
-                            snp.collision_shape = physics_shape;
-                            snp.start_position = pos;
-                            snp.start_rotation = rotation;
-
-                            instantiate_physics( scene, s );
-                        }
-                    }
-                    else
-                    {
-                        if (ImGui::Button( "Set Physics Start Transform" ))
-                        {
-                            vec3f pos = scene->transforms[s].translation;
-                            vec3f scale = scene->transforms[s].scale;
-                            quat rotation = scene->transforms[s].rotation;
-
-                            scene_node_physics& snp = scene->physics_data[s];
-                            snp.mass = mass;
-                            snp.collision_shape = physics_shape;
-                            snp.start_position = pos;
-                            snp.start_rotation = rotation;
-                        }
-                    }
-                }
-                else
-                {
-                    if (ImGui::Button( "Add Physics" ))
-                    {
-                        for (auto& s : k_selection_list)
-                        {
-                            vec3f pos = scene->transforms[s].translation;
-                            vec3f scale = scene->transforms[s].scale;
-                            quat rotation = scene->transforms[s].rotation;
-
-                            scene_node_physics& snp = scene->physics_data[s];
-                            snp.mass = mass;
-                            snp.collision_shape = physics_shape;
-                            snp.start_position = pos;
-                            snp.start_rotation = rotation;
-
-                            if (!(scene->entities[s] & CMP_PHYSICS))
-                                instantiate_physics( scene, s );
-                        }
-                    }
-                }
-                                
-                if (k_selection_list.size() == 1)
-                {
-                    s32 selected_index = k_selection_list[0];
-
-                    scene->physics_data[selected_index].mass = mass;
-                    scene->physics_data[selected_index].collision_shape = physics_shape;
+                    //constraint
+                    scene_constraint_ui( scene );
                 }
             }
+
+            if (k_selection_list.size() == 1)
+                scene->physics_data[k_selection_list[0]] = k_physics_preview.params;
         }
 
         void scene_geometry_ui( entity_scene* scene )
@@ -1052,19 +1125,11 @@ namespace put
                 }
 
                 static s32 primitive_type = -1;
-                ImGui::Combo( "Shape##Primitive", ( s32* )&primitive_type, "Box\0Sphere\0Cylinder\0Capsule\0", 4 );
-
-                static hash_id primitive_id[] =
-                {
-                    PEN_HASH( "cube" ),
-                    PEN_HASH( "sphere" ),
-                    PEN_HASH( "cylinder" ),
-                    PEN_HASH( "capsule" ),
-                };
+                ImGui::Combo( "Shape##Primitive", ( s32* )&primitive_type, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0", 5 );
 
                 if (ImGui::Button( "Add Primitive" ) && primitive_type > -1)
                 {
-                    geometry_resource* gr = get_geometry_resource( primitive_id[primitive_type] );
+                    geometry_resource* gr = get_geometry_resource( k_primitives[primitive_type] );
 
                     instantiate_geometry( gr, scene, selected_index );
 
@@ -1129,7 +1194,7 @@ namespace put
 
                 if (scene->material_names[selected_index].c_str())
                 {
-                    if (scene->entities[k_selection_list[0]] & CMP_PHYSICS)
+                    if (scene->entities[k_selection_list[0]] & CMP_MATERIAL)
                     {
                         u32 count = 0;
                         for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
@@ -1358,6 +1423,8 @@ namespace put
 					scene->transforms[nn].translation = vec3f::zero();
 					scene->transforms[nn].rotation.euler_angles(0.0f, 0.0f, 0.0f);
 					scene->transforms[nn].scale = vec3f::one();
+                    
+                    scene->entities[nn] |= CMP_TRANSFORM;
 
 					add_selection(scene, nn);
                 }
@@ -1420,13 +1487,27 @@ namespace put
 						if (!(scene->entities[i] & CMP_ALLOCATED))
 							continue;
 
+                        //todo - avoid o(n^2) by adding (scene->editor_flags[i] & SELECTED)
                         bool selected = false;
-                        ImGui::Selectable(scene->names[i].c_str(), &selected);
-                        
-                        if (selected)
-                        {
-							add_selection(scene, i);
-                        }
+                        for (auto s : k_selection_list)
+                            if (s == i)
+                            {
+                                selected = true;
+                                break;
+                            }
+
+                        ImGui::Unindent( ImGui::GetTreeNodeToLabelSpacing() );
+
+                        ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
+                        bool node_open = ImGui::TreeNodeEx( ( void* )( intptr_t )i, node_flags, scene->names[i].c_str(), i );
+                       
+                        if (ImGui::IsItemClicked())
+                            add_selection( scene, i );
+
+                        if(node_open)
+                            ImGui::TreePop();
+
+                        ImGui::Indent( ImGui::GetTreeNodeToLabelSpacing() );
                     }
                 }
                 else
@@ -1441,7 +1522,7 @@ namespace put
 					}
                                         
 					s32 pre_selected = selected_index;
-                    scene_tree_enumerate(tree, selected_index);
+                    scene_tree_enumerate(scene, tree, k_selection_list);
 
 					if(pre_selected != selected_index)
 						add_selection(scene, selected_index);
@@ -1468,11 +1549,13 @@ namespace put
                         ImGui::Text( "Parent: %s", scene->names[parent_index].c_str() );
                 }
 
+                scene_transform_ui(scene);
+                
 				scene_physics_ui(scene);
 
-                scene_transform_ui(scene);
-
                 scene_geometry_ui(scene);
+                
+                scene_material_ui(scene);
                 
                 scene_anim_ui(scene);
 
@@ -1550,14 +1633,19 @@ namespace put
         struct physics_pick
         {
             vec3f pos;
-            a_u8  ready;
+            a_u8  state = {0};
+            bool  grabbed = false;
+            s32   constraint = -1;
+            s32   physics_handle = -1;
         };
         physics_pick k_physics_pick_info;
 
         void physics_pick_callback( const physics::ray_cast_result& result )
         {
-            k_physics_pick_info.ready = true;
+            k_physics_pick_info.state = PICKING_COMPLETE;
             k_physics_pick_info.pos = result.point;
+            k_physics_pick_info.grabbed = false;
+            k_physics_pick_info.physics_handle = result.physics_handle;
         }
 
 		void transform_widget( const scene_view& view )
@@ -1581,28 +1669,55 @@ namespace put
 
             if (k_transform_mode == TRANSFORM_PHYSICS)
             {
-                if ( ms.buttons[PEN_MOUSE_L] && !pen_input_key(PENK_MENU) )
+                if (!k_physics_pick_info.grabbed && k_physics_pick_info.constraint == -1)
                 {
-                    k_physics_pick_info.ready = false;
+                    if(k_physics_pick_info.state == PICKING_READY)
+                    {
+                        if (ms.buttons[PEN_MOUSE_L] && !pen_input_key( PENK_MENU ))
+                        {
+                            k_physics_pick_info.state = PICKING_SINGLE;
 
-                    physics::ray_cast_params rcp;
-                    rcp.start = r0;
-                    rcp.end = r1;
-                    rcp.timestamp = pen::timer_get_time();
-                    rcp.callback = physics_pick_callback;
+                            physics::ray_cast_params rcp;
+                            rcp.start = r0;
+                            rcp.end = r1;
+                            rcp.timestamp = pen::timer_get_time();
+                            rcp.callback = physics_pick_callback;
 
-                    physics::cast_ray( rcp );
+                            physics::cast_ray( rcp );
+                        }
+                    }
+                    else if (k_physics_pick_info.state == PICKING_COMPLETE)
+                    {
+                        if (k_physics_pick_info.physics_handle != -1)
+                        {
+                            physics::constraint_params cp;
+                            cp.pivot = k_physics_pick_info.pos;
+                            cp.type = physics::CONSTRAINT_P2P;
+                            cp.rb_indices[0] = k_physics_pick_info.physics_handle;
+
+                            k_physics_pick_info.constraint = physics::add_constraint( cp );
+                            k_physics_pick_info.state = PICKING_GRABBED;
+                        }
+                        else
+                        {
+                            k_physics_pick_info.state = PICKING_READY;
+                        }
+                    }
                 }
-
-                if (k_physics_pick_info.ready)
+                else if(k_physics_pick_info.constraint > 0)
                 {
-                    put::dbg::add_point( k_physics_pick_info.pos, 0.1f, vec4f::magenta() );
-                    
-                    vec3f plane_normal = view.camera->view.get_fwd();
-                    
-                    vec3f move_pos = put::maths::ray_vs_plane(vr, r0, plane_normal, k_physics_pick_info.pos);
-                    
-                    put::dbg::add_point( move_pos, 0.1f, vec4f::green() );
+                    if (ms.buttons[PEN_MOUSE_L])
+                    {
+                        vec3f new_pos = put::maths::ray_vs_plane( vr, r0, view.camera->view.get_fwd(), k_physics_pick_info.pos );
+
+                        physics::set_v3( k_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS );
+                    }
+                    else
+                    {
+                        physics::release_entity( k_physics_pick_info.constraint );
+                        k_physics_pick_info.constraint = -1;
+                        k_physics_pick_info.state = PICKING_READY;
+                    }
                 }
             }
 
@@ -1877,6 +1992,108 @@ namespace put
 				}
 			}
 		}
+
+        void render_physics_debug( const scene_view& view )
+        {
+            entity_scene* scene = view.scene;
+
+            pen::renderer_set_constant_buffer( view.cb_view, 0, PEN_SHADER_TYPE_VS );
+            pen::renderer_set_constant_buffer( view.cb_view, 0, PEN_SHADER_TYPE_PS );
+
+            if (scene->view_flags & DD_PHYSICS)
+            {
+                for (u32 n = 0; n < scene->num_nodes; ++n)
+                {
+                    if (scene->entities[n] & CMP_PHYSICS)
+                    {
+                        u32 prim = scene->physics_data[n].rigid_body.shape;
+
+                        geometry_resource* gr = get_geometry_resource( k_primitives[prim - 1] );
+
+                        if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
+                            continue;
+
+                        //set cbs
+                        pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS );
+                        pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS );
+
+                        //set ib / vb
+                        pen::renderer_set_vertex_buffer( gr->vertex_buffer, 0, gr->vertex_size, 0 );
+                        pen::renderer_set_index_buffer( gr->index_buffer, gr->index_type, 0 );
+
+                        //draw
+                        pen::renderer_draw_indexed( gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST );
+                    }
+                }
+            }
+
+            if (k_physics_preview.active)
+            {
+                for (auto& i : k_selection_list)
+                {
+                    physics::constraint_params& preview_constraint = k_physics_preview.params.constraint;
+
+                    vec3f pos = scene->transforms[i].translation;
+                    vec3f axis = preview_constraint.axis;
+                    
+                    f32 min_rot = preview_constraint.lower_limit_rotation.x;
+                    f32 max_rot = preview_constraint.upper_limit_rotation.x;
+                    
+                    vec3f min_rot_v3 = preview_constraint.lower_limit_rotation;
+                    vec3f max_rot_v3 = preview_constraint.upper_limit_rotation;
+
+                    vec3f min_pos_v3 = preview_constraint.lower_limit_translation - vec3f(0.0001f);
+                    vec3f max_pos_v3 = preview_constraint.upper_limit_translation + vec3f(0.0001f);
+                    
+                    if (k_physics_preview.params.type == PHYSICS_TYPE_CONSTRAINT)
+                    {
+                        switch( preview_constraint.type )
+                        {
+                            case physics::CONSTRAINT_HINGE:
+                                put::dbg::add_circle( axis, pos, 0.25f, vec4f::green() );
+                                put::dbg::add_line( pos - axis, pos + axis, vec4f::green() );
+                                put::dbg::add_circle_segment( axis, pos, 1.0f, min_rot, max_rot, vec4f::white() );
+                                break;
+                                
+                            case physics::CONSTRAINT_P2P:
+                                put::dbg::add_point( pos, 0.5f, vec4f::magenta() );
+                                break;
+                                
+                            case physics::CONSTRAINT_DOF6:
+                                put::dbg::add_circle_segment(vec3f::unit_x(), pos, 0.25f, min_rot_v3.x, max_rot_v3.x, vec4f::white() );
+                                put::dbg::add_circle_segment(vec3f::unit_y(), pos, 0.25f, min_rot_v3.y, max_rot_v3.y, vec4f::white() );
+                                put::dbg::add_circle_segment(vec3f::unit_z(), pos, 0.25f, min_rot_v3.z, max_rot_v3.z, vec4f::white() );
+                                put::dbg::add_aabb(min_pos_v3, max_pos_v3, vec4f::white());
+                                break;
+                        }
+
+                    }
+                    else if (k_physics_preview.params.type == PHYSICS_TYPE_RIGID_BODY)
+                    {
+                        if (scene->entities[i] & CMP_PHYSICS)
+                        {
+                            u32 prim = scene->physics_data[i].rigid_body.shape;
+
+                            geometry_resource* gr = get_geometry_resource( k_primitives[prim - 1] );
+
+                            if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
+                                continue;
+
+                            //set cbs
+                            pen::renderer_set_constant_buffer( scene->cbuffer[i], 1, PEN_SHADER_TYPE_VS );
+                            pen::renderer_set_constant_buffer( scene->cbuffer[i], 1, PEN_SHADER_TYPE_PS );
+
+                            //set ib / vb
+                            pen::renderer_set_vertex_buffer( gr->vertex_buffer, 0, gr->vertex_size, 0 );
+                            pen::renderer_set_index_buffer( gr->index_buffer, gr->index_type, 0 );
+
+                            //draw
+                            pen::renderer_draw_indexed( gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST );
+                        }
+                    }
+                }
+            }
+        }
         
         void render_scene_editor( const scene_view& view )
         {            
@@ -1885,7 +2102,9 @@ namespace put
             entity_scene* scene = view.scene;
 
 			dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
-            
+
+            render_physics_debug( view );
+                       
             if( scene->view_flags & DD_LIGHTS )
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)

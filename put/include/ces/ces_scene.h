@@ -54,7 +54,8 @@ namespace put
             CMP_ANIM_CONTROLLER = (1 << 9),
             CMP_ANIM_TRAJECTORY = (1 << 10),
             CMP_LIGHT           = (1 << 11),
-			CMP_TRANSFORM		= (1 << 12)
+			CMP_TRANSFORM		= (1 << 12),
+            CMP_CONSTRAINT      = (1 << 13)
 		};
 
         enum e_light_types : u32
@@ -94,17 +95,31 @@ namespace put
             vec4f    diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
             vec4f    specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
         };
+
+        enum e_physics_type
+        {
+            PHYSICS_TYPE_RIGID_BODY = 0,
+            PHYSICS_TYPE_CONSTRAINT
+        };
         
         struct scene_node_physics
         {
-            vec3f min_extents;
-            vec3f max_extents;
-            vec3f centre;
-            u32   collision_shape = 0;
-            vec3f start_position;
-            quat  start_rotation;
-            f32   mass = 0.0f;
-            physics::collision_mesh_data mesh_data;
+            s32 type;
+
+            union
+            {
+                physics::rigid_body_params rigid_body;
+                physics::constraint_params constraint;
+            };
+
+            scene_node_physics() {};
+            ~scene_node_physics() {};
+
+            scene_node_physics& operator = ( const scene_node_physics& other )
+            {
+                pen::memory_cpy( this, &other, sizeof( scene_node_physics ) );
+                return *this;
+            }
         };
         
         struct bounding_volume

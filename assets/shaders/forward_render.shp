@@ -64,7 +64,7 @@ cbuffer per_pass_view : register(b0)
 cbuffer per_draw_call : register(b1)
 {
 	float4x4 world_matrix;
-	float4   user_data; //x = id, yzw = unused
+	float4   user_data; //x = id, y roughness, z reflectivity
 };
 
 struct forward_light
@@ -231,6 +231,14 @@ ps_output ps_forward_lit( vs_output input )
     return output;
 }
 
+ps_output ps_constant_colour( vs_output input ) 
+{
+	ps_output output;
+	output.colour = float4( 1.0, 1.0, 1.0, 1.0 );
+	
+	return output;
+}
+
 ps_output_multi ps_gbuffer( vs_output input ) 
 {	
 	ps_output_multi output;
@@ -258,6 +266,12 @@ pmfx:
 	{
 		"vs": "vs_main_skinned",
 		"ps": "ps_forward_lit"
+	},
+	
+	"constant_colour":
+	{
+		"vs": "vs_main",
+		"ps": "ps_constant_colour"
 	},
 
 	"gbuffer":

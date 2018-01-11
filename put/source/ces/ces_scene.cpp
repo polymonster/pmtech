@@ -247,7 +247,7 @@ namespace put
 				p_sn->num_nodes = dst + 1;
 			}
 
-			p_sn->physics_data[dst].start_position += offset;
+			p_sn->physics_data[dst].rigid_body.position += offset;
 
 			vec3f right = p_sn->local_matrices[dst].get_right();
 			vec3f up = p_sn->local_matrices[dst].get_up();
@@ -410,7 +410,7 @@ namespace put
 
 				//set textures
 				if (p_mat)
-				{
+				{                        
 					for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
 					{
 						if ( is_valid(p_mat->texture_id[t]) && ss_wrap )
@@ -685,7 +685,7 @@ namespace put
             
             std::ofstream ofs(filename, std::ofstream::binary);
 
-            static s32 version = 2;
+            static s32 version = 3;
             ofs.write( (const c8*)&version, sizeof(s32));
             ofs.write( (const c8*)&scene->num_nodes, sizeof(u32));
             
@@ -850,9 +850,16 @@ namespace put
 				for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
 					if (scene->entities[n] & CMP_PHYSICS)
 						instantiate_physics(scene, n);
+
+                //version 3 adds constraints
+                if (version > 2)
+                {
+                    for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                        if (scene->entities[n] & CMP_CONSTRAINT)
+                            instantiate_constraint( scene, n );
+                }
 			}
 				
-
 			//fixup parents for scene import / merge
 			for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
 				scene->parents[n] += zero_offset;
@@ -925,7 +932,7 @@ namespace put
                     }
                     else
                     {
-                        static hash_id geom_hash = PEN_HASH(geometry_name.c_str());
+                        hash_id geom_hash = PEN_HASH(geometry_name.c_str());
                         
                         gr = get_geometry_resource(geom_hash);
                     }
@@ -958,7 +965,7 @@ namespace put
                     Str filename = project_dir;
                     Str name = read_parsable_string(ifs).c_str();
                     hash_id name_hash = PEN_HASH(name.c_str());
-                    filename.append( read_parsable_string(ifs).c_str() );
+                    filename.append( name.c_str() );
                     
                     static hash_id default_id = PEN_HASH("default_material");
                     

@@ -23,9 +23,78 @@ namespace physics
 #define MAX_OUTPUTS			    2048
 #define MAX_MULTIS			    2048
 
-	struct physics_entity
+    enum e_entity_type
+    {
+        ENTITY_NULL = 0,
+        ENTITY_RIGID_BODY,
+        ENTITY_MULTI_BODY,
+        ENTITY_CONSTRAINT
+    };
+
+    struct rigid_body_entity
+    {
+        btRigidBody*											rigid_body;
+        u32														rigid_body_in_world;
+
+        //for attaching and detaching rbs into compounds
+        void*													p_attach_user_data;
+        s32														attach_shape_index;
+        u32														call_attach = 0;
+        void( *attach_function )(void* user_data, s32 attach_index);
+
+        rigid_body_entity() {};
+        ~rigid_body_entity() {};
+    };
+
+    struct mutli_body_entity
+    {
+        btMultiBody*											multi_body;
+        btAlignedObjectArray<btMultiBodyJointMotor*>			joint_motors;
+        btAlignedObjectArray<btMultiBodyJointLimitConstraint*>	joint_limits;
+        btAlignedObjectArray<btMultiBodyLinkCollider*>			link_colliders;
+    };
+
+    struct constraint_entity
+    {
+        e_physics_constraint type;
+
+        union
+        {
+            btTypedConstraint*                                      generic;
+            btHingeConstraint*										hinge;
+            btGeneric6DofConstraint*								dof6;
+            btFixedConstraint*										fixed;
+            btPoint2PointConstraint*                                point;
+            btMultiBodyPoint2Point*	                                point_multi;
+        };
+    };
+
+    struct physics_entity
+    {
+        e_entity_type type = ENTITY_NULL;
+
+        union
+        {
+            rigid_body_entity rb;
+            mutli_body_entity mb;
+            constraint_entity constraint;
+        };
+
+        btDefaultMotionState*   default_motion_state;
+        btCollisionShape*       collision_shape;
+        btCompoundShape*        compound_shape;
+        u32                     num_base_compound_shapes;
+
+        u32 group;
+        u32 mask;
+
+        physics_entity() {};
+        ~physics_entity() {};
+    };
+
+	struct physics_entity_v1
 	{
-		physics_entity( )
+		physics_entity_v1( )
 		{
 			rigid_body = NULL;
 			multi_body = NULL;
@@ -37,16 +106,17 @@ namespace physics
 		u32														rigid_body_in_world;
 
 		btMultiBody*											multi_body;
-
 		btAlignedObjectArray<btMultiBodyJointMotor*>			joint_motors;
 		btAlignedObjectArray<btMultiBodyJointLimitConstraint*>	joint_limits;
+        btAlignedObjectArray<btMultiBodyLinkCollider*>			link_colliders;
 
 		btHingeConstraint*										hinge_constraint;
 		btGeneric6DofConstraint*								dof6_constraint;
 		btFixedConstraint*										fixed_constraint;
+        btPoint2PointConstraint*                                point_constraint;
+        btMultiBodyPoint2Point*	                                point_constraint_multi;
 
 		btDefaultMotionState*									default_motion_state;
-		btAlignedObjectArray<btMultiBodyLinkCollider*>			link_colliders;
 		btCollisionShape*										collision_shape;
 		btCompoundShape*										compound_shape;
 		u32														num_base_compound_shapes;
@@ -78,30 +148,13 @@ namespace physics
 
 	};
 
-	struct generic_constraint
+    struct bullet_objects
 	{
-		generic_constraint( )
-		{
-			in_use = 0;
-		}
+        physics_entity  entities[MAX_PHYSICS_RESOURCES];
+		u32             num_entities;
 
-		a_u32					 in_use;
-		btPoint2PointConstraint* p_point_constraint;
-		btMultiBodyPoint2Point*	 p_point_constraint_multi;
-	};
-
-	struct bullet_objects
-	{
-		bullet_objects( )
-		{
-			pen::memory_zero( &entity_allocated[ 0 ],	sizeof(entity_allocated) );
-			pen::memory_zero( &entities[ 0 ],			sizeof(entities) );
-		};
-
-		a_u8											entity_allocated[MAX_PHYSICS_RESOURCES];
-		physics_entity									entities		[MAX_PHYSICS_RESOURCES];
-
-		u32												num_entities;
+        bullet_objects() {};
+        ~bullet_objects() {};
 	};
 
 	struct trigger
@@ -121,7 +174,7 @@ namespace physics
 		u32		call_attach;
 	};
 
-	typedef struct readable_data
+	struct readable_data
 	{
 		readable_data()
 		{
@@ -142,14 +195,13 @@ namespace physics
 		f32						multi_joint_positions[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];
 		u32						output_hit_flags[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
 		trigger_contact_data	output_contact_data[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
-	}readable_data;
+	};
 
 	extern readable_data g_readable_data;
 
 	//--------------------------------------------------------------
-	//--------------------------------------------------------------
-	//--------------------------------------------------------------
-	//FUNCTIONS-----------------------------------------------------
+	//FUNCTIONS
+    //--------------------------------------------------------------
     void                physics_update( f32 dt );
     void                physics_initialise( );
     
@@ -163,8 +215,9 @@ namespace physics
 	void				add_multibody_internal( const multi_body_params &params, u32 resource_slot );
 	void				add_hinge_internal( const constraint_params &params, u32 resource_slot );
 	void				add_constrained_rb_internal( const constraint_params &params, u32 resource_slot );
-    
-	void				set_linear_velocity_internal( const set_v3_params &cmd );
+    void				add_constraint_internal( const constraint_params &params, u32 resource_slot );
+
+    void				set_linear_velocity_internal( const set_v3_params &cmd );
 	void				set_angular_velocity_internal( const set_v3_params &cmd );
 	void				set_linear_factor_internal( const set_v3_params &cmd );
 	void				set_angular_factor_internal( const set_v3_params &cmd );
@@ -191,10 +244,9 @@ namespace physics
     
     void                release_entity_internal( u32 entity_index );
 
-	void				add_p2p_constraint_internal( const add_p2p_constraint_params &cmd );
+    void				add_p2p_constraint_internal( const add_p2p_constraint_params &cmd, u32 resource_slot );
 	void				remove_p2p_constraint_internal( u32 index );
 	void				set_p2p_constraint_pos_internal( const set_v3_params &cmd );
-	u32					assign_next_free_p2p( );
 
 	void				add_collision_watcher_internal( const collision_trigger_data &trigger_data );
 

@@ -50,10 +50,24 @@ namespace put
             return nullptr;
         }
 
+        void instantiate_constraint( entity_scene* scene, u32 node_index )
+        {
+            physics::constraint_params& cp = scene->physics_data[node_index].constraint;
+
+            //hinge
+            s32 rb = cp.rb_indices[0];
+            cp.pivot = scene->transforms[node_index].translation - scene->physics_data[rb].rigid_body.position;
+
+            scene->physics_handles[node_index] = physics::add_constraint( cp );
+            scene->physics_data[node_index].type = PHYSICS_TYPE_CONSTRAINT;
+
+            scene->entities[node_index] |= CMP_CONSTRAINT;
+        }
+
 		void instantiate_physics( entity_scene* scene, u32 node_index )
 		{
 			u32 s = node_index;
-			scene_node_physics& snp = scene->physics_data[s];
+            physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
 
 			vec3f min = scene->bounding_volumes[s].min_extents;
 			vec3f max = scene->bounding_volumes[s].max_extents;
@@ -64,41 +78,30 @@ namespace put
 			quat rotation = scene->transforms[s].rotation;
 
 			scene->offset_matrices[s] = mat4::create_scale(scale);
-            
-            physics::rigid_body_params rb = { 0 };
-            
+                        
             rb.dimensions = (max - min) * scale * 0.5;
             
             //capsule height is extents height + radius * 2 (for the capsule top and bottom)
-            if( snp.collision_shape == physics::CAPSULE )
+            if( rb.shape == physics::CAPSULE )
                 rb.dimensions.y -= rb.dimensions.x / 2.0f;
+            //cone height is 1. (-0.5 to 0.5) but radius is 1.0;
+            if (rb.shape == physics::CONE)
+                rb.dimensions.y *= 2.0f;
             
             //fill the matrix array with the first matrix because of thread sync
             mat4 mrot;
             rotation.get_matrix(mrot);
             mat4 start_transform = mrot * mat4::create_translation(pos);
             
-			rb.mass = snp.mass;
+            //masks / groups are currently hardcoded.
 			rb.group = 1;
-			rb.position = pos;
-			rb.rotation = rotation;
-			rb.shape = snp.collision_shape;
 			rb.shape_up_axis = physics::UP_Y;
 			rb.mask = 0xffffffff;
             rb.start_matrix = start_transform;
             
-            physics::constraint_params cp;
-            cp.rb = rb;
-            cp.type = physics::HINGE;
-            cp.pivot = vec3f::unit_z() * 5.0f;
-            cp.axis = vec3f::unit_x();
-            cp.lower_limit_rotation = -vec3f::flt_max();
-            cp.upper_limit_rotation = vec3f::flt_max();
-
 			scene->physics_handles[s] = physics::add_rb(rb);
-            
-            //scene->physics_handles[s] = physics::add_constrained_rb(cp);
-            
+            scene->physics_data[node_index].type = PHYSICS_TYPE_RIGID_BODY;
+
             scene->entities[s] |= CMP_PHYSICS;
 		}
         
@@ -117,8 +120,8 @@ namespace put
             
             bounding_volume* bv = &scene->bounding_volumes[node_index];
             
-            bv->min_extents = gr->physics_info.min_extents;
-            bv->max_extents = gr->physics_info.max_extents;
+            bv->min_extents = gr->min_extents;
+            bv->max_extents = gr->max_extents;
 			bv->radius = maths::magnitude(bv->max_extents - bv->min_extents) * 0.5f;
 
             scene->geometry_names[node_index] = gr->geometry_name;
@@ -226,10 +229,10 @@ namespace put
                 vec3f min_extents;
                 vec3f max_extents;
                 
-                pen::memory_cpy(&p_geometry->physics_info.min_extents , p_reader, sizeof(vec3f));
+                pen::memory_cpy(&p_geometry->min_extents, p_reader, sizeof(vec3f));
                 p_reader += 3;
                 
-                pen::memory_cpy(&p_geometry->physics_info.max_extents , p_reader, sizeof(vec3f));
+                pen::memory_cpy(&p_geometry->max_extents, p_reader, sizeof(vec3f));
                 p_reader += 3;
                 
                 //vb and ib
@@ -783,8 +786,8 @@ namespace put
                 scene->local_matrices[current_node] = (matrix);
                 
                 //store intial position for physics to hook into later
-                scene->physics_data[current_node].start_position = translation;
-                scene->physics_data[current_node].start_rotation = final_rotation;
+                scene->physics_data[current_node].rigid_body.position = translation;
+                scene->physics_data[current_node].rigid_body.rotation = final_rotation;
 
                 //assign geometry, materials and physics
                 u32 dest = current_node;

@@ -221,6 +221,9 @@ void handle_key_event( NSEvent* event, bool down )
             vk = PENK_BACK;
         }
         
+        if( mapped_key_char == 32 )
+            vk = PENK_SPACE;
+
         if( down )
         {
             pen::input_set_unicode_key_down( mapped_key_char );

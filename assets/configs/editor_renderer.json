@@ -143,8 +143,23 @@
 			technique: forward_lit,
 			scene: main_scene,
 			camera: model_viewer_camera,
-			scene_views:["ces_render_scene", "ces_render_editor"],
+			scene_views:["ces_render_scene"],
 			render_flags:["forward_lit"]
+		},
+		
+		editor_view:
+		{
+			target:[main_colour, main_depth],
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: wireframe,
+			depth_stencil_state: default,
+			pmfx_shader: forward_render,
+			technique: constant_colour,
+			scene: main_scene,
+			camera: model_viewer_camera,
+			scene_views:["ces_render_editor"]
 		},
 		
 		picking_view:

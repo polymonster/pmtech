@@ -2,6 +2,7 @@
 #include "dev_ui.h"
 
 #include "ces/ces_utilities.h"
+#include "ces/ces_editor.h"
 
 namespace put
 {
@@ -158,38 +159,42 @@ namespace put
             }
         }
         
-        void scene_tree_enumerate( const scene_tree& tree, s32& selected )
+        void scene_tree_enumerate( entity_scene* scene, const scene_tree& tree, std::vector<u32>& selection_list )
         {
             for( auto& child : tree.children )
             {
-                if( child.children.empty() )
-                {
-					if (!child.node_name)
-						continue;
+                bool leaf = child.children.size() == 0;
+                //if (leaf)
+                    //ImGui::Unindent( ImGui::GetTreeNodeToLabelSpacing() );
 
-                    ImGui::Selectable(child.node_name);
-                    if (ImGui::IsItemClicked())
-                        selected = child.node_index;
-                }
-                else
-                {
-                    if(tree.node_index == -1)
-                        ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-                    
-                    ImGuiTreeNodeFlags node_flags = selected == child.node_index ? ImGuiTreeNodeFlags_Selected : 0;
-                    bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)child.node_index, node_flags, child.node_name, child.node_index);
-                    if (ImGui::IsItemClicked())
-                        selected = child.node_index;
-                    
-                    if( node_open )
+                //todo optimise this away o(n^2) to scene->flags[node_index] & SELCTED
+                bool selected = false;
+                for (auto i : selection_list)
+                    if (i == child.node_index)
                     {
-                        scene_tree_enumerate(child, selected);
-                        ImGui::TreePop();
+                        selected = true;
+                        break;
                     }
-                    
-                    if(tree.node_index == -1)
-                        ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+
+                ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
+                
+                if(leaf)
+                    node_flags |= ImGuiTreeNodeFlags_Leaf;
+                
+                bool node_open = ImGui::TreeNodeEx( ( void* )( intptr_t )child.node_index, node_flags, child.node_name, child.node_index );
+                if (ImGui::IsItemClicked())
+                {
+                    add_selection( scene, child.node_index );
                 }
+
+                if (node_open)
+                {
+                    scene_tree_enumerate( scene, child, selection_list );
+                    ImGui::TreePop();
+                }
+
+                //if (leaf)
+                    //ImGui::Indent( ImGui::GetTreeNodeToLabelSpacing() );
             }
         }
         
@@ -320,6 +325,8 @@ namespace put
 				//flush cmd buff
 				pen::renderer_consume_cmd_buffer();
 			}
+            
+            scene->flags |= INVALIDATE_SCENE_TREE;
 		}
     }
 }
