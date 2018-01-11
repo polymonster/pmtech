@@ -801,6 +801,12 @@ namespace physics
             }
             break;
 
+            case CONSTRAINT_HINGE:
+            {
+                add_hinge_internal( params, resource_slot );
+            }
+            break;
+
             default:
                 PEN_ASSERT_MSG( 0, "unimplemented add constraint" );
                 break;

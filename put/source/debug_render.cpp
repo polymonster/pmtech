@@ -246,45 +246,56 @@ namespace put
         
         void add_circle(const vec3f& axis, const vec3f& centre, f32 radius, const vec4f& col )
         {
-            alloc_3d_buffer(line_vert_3d_count + 24, VB_LINES);
-            
+            add_circle_segment( axis, centre, radius, 0.0f, PI_2, col );
+        }
+
+        void add_circle_segment( const vec3f& axis, const vec3f& centre, f32 radius, f32 min, f32 max, const vec4f& col )
+        {
+            alloc_3d_buffer( line_vert_3d_count + 24, VB_LINES );
+
             vec3f right = maths::cross( axis, vec3f::unit_y() );
-            if( maths::magnitude(right) < 0.1 )
+            if (maths::magnitude( right ) < 0.1)
                 right = maths::cross( axis, vec3f::unit_z() );
-            if( maths::magnitude(right) < 0.1 )
+            if (maths::magnitude( right ) < 0.1)
                 right = maths::cross( axis, vec3f::unit_x() );
-            
+
             vec3f up = maths::cross( axis, right );
             right = maths::cross( axis, up );
-            
+
             static const s32 segments = 16;
             f32 angle = 0.0;
-            f32 angle_step = PI_2/segments;
-            for( s32 i = 0; i < segments; ++i )
+            f32 angle_step = PI_2 / segments;
+            for (s32 i = 0; i < segments; ++i)
             {
-                f32 x = cos(angle);
-                f32 y = -sin(angle);
-                
-                vec3f v1 = maths::normalise(vec3f(x, y, 0.0 ));
-                
+                f32 clamped_angle = std::max<f32>( angle, min );
+                clamped_angle = std::min<f32>( angle, max );
+
+                f32 x = cos( clamped_angle );
+                f32 y = -sin( clamped_angle );
+
+                vec3f v1 = maths::normalise( vec3f( x, y, 0.0 ) );
+
                 v1 = right * x + up * y;
-                
+
                 angle += angle_step;
-                
-                x = cos(angle);
-                y = -sin(angle);
-                vec3f v2 = maths::normalise(vec3f(x, y, 0.0 ));
-                
+
+                clamped_angle = std::max<f32>( angle, min );
+                clamped_angle = std::min<f32>( angle, max );
+
+                x = cos( clamped_angle );
+                y = -sin( clamped_angle );
+                vec3f v2 = maths::normalise( vec3f( x, y, 0.0 ) );
+
                 v2 = right * x + up * y;
-                
+
                 vec3f p1 = centre + v1 * radius;
                 vec3f p2 = centre + v2 * radius;
-                                
-                add_line(p1, p2, col );
+
+                add_line( p1, p2, col );
             }
         }
 
-		void add_frustum(const vec3f* near_corners, const vec3f* far_corners, const vec4f& col )
+        void add_frustum( const vec3f* near_corners, const vec3f* far_corners, const vec4f& col )
 		{
 			for (s32 i = 0; i < 4; ++i)
 			{

@@ -12,7 +12,8 @@ namespace put
 
         void scene_browser_ui( entity_scene* scene, bool* open );
         void enumerate_resources( bool* open );
-        
+        void add_selection( const entity_scene* scene, u32 index, u32 select_mode = 0 );
+
         void update_model_viewer_camera( put::camera_controller* cc );
         void update_model_viewer_scene( put::scene_controller* sc );
 

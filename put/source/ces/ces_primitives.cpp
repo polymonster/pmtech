@@ -151,8 +151,8 @@ namespace put
             p_geometry->vertex_size = sizeof( vertex_model );
             p_geometry->index_type = PEN_FORMAT_R16_UINT;
 
-            p_geometry->physics_info.min_extents = vec3f(-1.0f, -1.5f, -1.0f);
-            p_geometry->physics_info.max_extents = vec3f(1.0f, 1.5f, 1.0f);
+            p_geometry->min_extents = vec3f(-1.0f, -1.5f, -1.0f);
+            p_geometry->max_extents = vec3f(1.0f, 1.5f, 1.0f);
 
             //hash / ids
             p_geometry->geometry_name = "capsule";
@@ -285,8 +285,8 @@ namespace put
             p_geometry->vertex_size = sizeof( vertex_model );
             p_geometry->index_type = PEN_FORMAT_R16_UINT;
 
-            p_geometry->physics_info.min_extents = -vec3f::one();
-            p_geometry->physics_info.max_extents = vec3f::one();
+            p_geometry->min_extents = -vec3f::one();
+            p_geometry->max_extents = vec3f::one();
 
             //hash / ids
             p_geometry->geometry_name = "sphere";
@@ -428,8 +428,8 @@ namespace put
             p_geometry->vertex_size = sizeof( vertex_model );
             p_geometry->index_type = PEN_FORMAT_R16_UINT;
 
-            p_geometry->physics_info.min_extents = -vec3f::one();
-            p_geometry->physics_info.max_extents = vec3f::one();
+            p_geometry->min_extents = -vec3f::one();
+            p_geometry->max_extents = vec3f::one();
 
             //hash / ids
             p_geometry->geometry_name = "cube";
@@ -690,8 +690,8 @@ namespace put
             p_geometry->num_vertices = num_verts;
             p_geometry->vertex_size = sizeof( vertex_model );
             p_geometry->index_type = PEN_FORMAT_R16_UINT;
-            p_geometry->physics_info.min_extents = -vec3f::one();
-            p_geometry->physics_info.max_extents = vec3f::one();
+            p_geometry->min_extents = -vec3f::one();
+            p_geometry->max_extents = vec3f::one();
             p_geometry->geometry_name = "cylinder";
             p_geometry->hash = PEN_HASH( "cylinder" );
             p_geometry->file_hash = PEN_HASH( "primitive" );
