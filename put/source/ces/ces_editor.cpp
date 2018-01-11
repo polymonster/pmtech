@@ -1560,7 +1560,7 @@ namespace put
         struct physics_pick
         {
             vec3f pos;
-            a_u8  state = 0;
+            a_u8  state = {0};
             bool  grabbed = false;
             s32   constraint = -1;
             s32   physics_handle = -1;
