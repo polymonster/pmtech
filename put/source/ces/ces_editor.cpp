@@ -683,10 +683,7 @@ namespace put
 					if (sc->scene->entities[i] & CMP_PHYSICS)
 					{
 						vec3f t = sc->scene->physics_data[i].rigid_body.position;
-						//quat q = sc->scene->physics_data[i].rigid_body.rotation;
-                        
-                        quat q;
-                        q.euler_angles( 0.0f, 0.0f, 0.0f );
+						quat q = sc->scene->physics_data[i].rigid_body.rotation;
 
 						physics::set_transform(sc->scene->physics_handles[i], t, q );
 
@@ -975,7 +972,7 @@ namespace put
 
             k_physics_preview.params.type = PHYSICS_TYPE_CONSTRAINT;
 
-            ImGui::Combo( "Constraint##Physics", ( s32* )&constraint_type, "Six DOF\0Six DOF Rigid Body\0Hinge\0Point to Point\0Point to Point Multi", 7 );
+            ImGui::Combo( "Constraint##Physics", ( s32* )&constraint_type, "Six DOF\0Hinge\0Point to Point\0Point to Point Multi", 7 );
 
             preview_constraint.type = constraint_type + 1;
             if (preview_constraint.type == physics::CONSTRAINT_HINGE)
@@ -983,6 +980,17 @@ namespace put
                 ImGui::InputFloat3( "Axis", ( f32* )&preview_constraint.axis );
                 ImGui::InputFloat( "Lower Limit Rotation", ( f32* )&preview_constraint.lower_limit_rotation );
                 ImGui::InputFloat( "Upper Limit Rotation", ( f32* )&preview_constraint.upper_limit_rotation );
+            }
+            else if (preview_constraint.type == physics::CONSTRAINT_DOF6)
+            {
+                ImGui::InputFloat3( "Lower Limit Rotation", ( f32* )&preview_constraint.lower_limit_rotation );
+                ImGui::InputFloat3( "Upper Limit Rotation", ( f32* )&preview_constraint.upper_limit_rotation );
+
+                ImGui::InputFloat3( "Lower Limit Translation", ( f32* )&preview_constraint.lower_limit_translation );
+                ImGui::InputFloat3( "Upper Limit Translation", ( f32* )&preview_constraint.upper_limit_translation );
+
+                ImGui::InputFloat( "Linear Damping", ( f32* )&preview_constraint.linear_damping );
+                ImGui::InputFloat( "Angular Damping", ( f32* )&preview_constraint.angular_damping );
             }
 
             std::vector<u32> index_lookup;

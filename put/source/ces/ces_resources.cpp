@@ -93,6 +93,7 @@ namespace put
             rotation.get_matrix(mrot);
             mat4 start_transform = mrot * mat4::create_translation(pos);
             
+            //masks / groups are currently hardcoded.
 			rb.group = 1;
 			rb.shape_up_axis = physics::UP_Y;
 			rb.mask = 0xffffffff;

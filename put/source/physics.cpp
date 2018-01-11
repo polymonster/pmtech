@@ -686,12 +686,11 @@ namespace physics
 
 	void add_dof6_internal( const constraint_params &params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body )
 	{
-#if 0
-        g_bullet_objects.num_entities = std::max<u32>(resource_slot+1, g_bullet_objects.num_entities);
-		physics_entity& next_entity = g_bullet_objects.entities[ resource_slot ];
+        k_bullet_objects.num_entities = std::max<u32>(resource_slot+1, k_bullet_objects.num_entities);
+		physics_entity& next_entity = k_bullet_objects.entities[ resource_slot ];
 
+        /*
 		u32 fixed_con = 1;
-
 		if (rb == NULL)
 		{
 			fixed_con = 0;
@@ -717,6 +716,7 @@ namespace physics
 			fixed_body = create_rb_internal( next_entity, fixed_rbp, 0 );
 			fixed_body->setActivationState( DISABLE_DEACTIVATION );
 		}
+        */
 
 		//reference frames are identity 
 		btTransform frameInA, frameInB;
@@ -725,8 +725,14 @@ namespace physics
 
 		rb->setDamping( params.linear_damping, params.angular_damping );
 
-		//create the constraint and lock all axes
-		btGeneric6DofConstraint* dof6 = new btGeneric6DofConstraint( *fixed_body, *rb, frameInA, frameInB, true );
+        btGeneric6DofConstraint* dof6 = nullptr;
+        if(fixed_body && rb)
+		    dof6 = new btGeneric6DofConstraint( *fixed_body, *rb, frameInA, frameInB, true );
+        else if( rb)
+            dof6 = new btGeneric6DofConstraint( *rb, frameInB, false );
+
+        if (!dof6)
+            return;
 
 		dof6->setLinearLowerLimit( btVector3( params.lower_limit_translation.x, params.lower_limit_translation.y, params.lower_limit_translation.z ) );
 		dof6->setLinearUpperLimit( btVector3( params.upper_limit_translation.x, params.upper_limit_translation.y, params.upper_limit_translation.z ) );
@@ -734,9 +740,8 @@ namespace physics
 		dof6->setAngularLowerLimit( btVector3( params.lower_limit_rotation.x, params.lower_limit_rotation.y, params.lower_limit_rotation.z ) );
 		dof6->setAngularUpperLimit( btVector3( params.upper_limit_rotation.x, params.upper_limit_rotation.y, params.upper_limit_rotation.z ) );
 
-		g_bullet_systems.dynamics_world->addConstraint( dof6 );
-		next_entity.dof6_constraint = dof6;
-#endif
+		k_bullet_systems.dynamics_world->addConstraint( dof6 );
+		next_entity.constraint.dof6 = dof6;
 	}
 
 	void add_multibody_internal( const multi_body_params &params, u32 resource_slot )
@@ -816,6 +821,21 @@ namespace physics
             case CONSTRAINT_HINGE:
             {
                 add_hinge_internal( params, resource_slot );
+            }
+            break;
+
+            case CONSTRAINT_DOF6:
+            {
+                btRigidBody* p_rb = nullptr;
+                btRigidBody* p_fixed = nullptr;
+
+                if (params.rb_indices[0] != -1)
+                    p_rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
+
+                if (params.rb_indices[1] != -1)
+                    p_fixed = k_bullet_objects.entities[params.rb_indices[1]].rb.rigid_body;
+
+                add_dof6_internal( params, resource_slot, p_rb, p_fixed );
             }
             break;
 
