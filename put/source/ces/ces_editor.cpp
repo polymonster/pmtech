@@ -1012,7 +1012,7 @@ namespace put
             else
                 ImGui::Text( "No rigid bodies to constrain!" );
 
-            bool valid_type = preview_constraint.type <= physics::CONSTRAINT_DOF6 && preview_constraint.type > 0;
+            bool valid_type = preview_constraint.type <= physics::CONSTRAINT_P2P && preview_constraint.type > 0;
             if (rb_index > -1 && valid_type )
             {
                 preview_constraint.rb_indices[0] = index_lookup[rb_index];
