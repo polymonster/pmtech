@@ -29,5 +29,6 @@ create_app_example( "input", script_path() )
 create_app_example( "audio_player", script_path() )
 create_app_example( "shader_toy", script_path() )
 create_app_example( "scene_editor", script_path() )
+create_app_example( "rigid_body_primitives", script_path() )
 	
 	
