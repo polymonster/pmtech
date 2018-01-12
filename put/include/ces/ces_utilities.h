@@ -15,10 +15,11 @@ namespace put
             
             std::vector<scene_tree> children;
         };
-        
+
         u32     get_new_node( entity_scene* scene );
 		void	get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start, s32& end);
-
+        void	get_new_nodes_append( entity_scene* scene, s32 num, s32& start, s32& end );
+        
         u32		clone_node( entity_scene* scene, u32 src, s32 dst = -1, s32 parent = -1, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
 		void	clone_selection_hierarchical(entity_scene* scene, std::vector<u32>& selection_list, const c8* suffix);
 

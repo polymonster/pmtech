@@ -46,16 +46,20 @@ namespace put
         void initialise_free_list( entity_scene* scene )
         {
             scene->free_list_head = nullptr;
-            
+            free_node_list* prev = nullptr;
+
             for( s32 i = scene->nodes_size-1; i >= 0; --i )
             {
                 scene->free_list[i].node = i;
-                
+
                 if( !(scene->entities[i] & CMP_ALLOCATED) )
                 {
                     free_node_list* l = &scene->free_list[i];
                     l->next = scene->free_list_head;
                     
+                    if(l->next)
+                        l->next->prev = l;
+
                     scene->free_list_head = l;
                 }
             }
@@ -68,6 +72,7 @@ namespace put
 			scene->nodes_size += size;
 			
 			ALLOC_COMPONENT_ARRAY(scene, entities, a_u64);
+            ALLOC_COMPONENT_ARRAY(scene, state_flags, a_u64 );
 
 			ALLOC_COMPONENT_ARRAY(scene, id_name, hash_id);
 			ALLOC_COMPONENT_ARRAY(scene, id_geometry, hash_id);
@@ -106,10 +111,14 @@ namespace put
 		void free_scene_buffers( entity_scene* scene )
 		{
             for( s32 i = 0; i < scene->num_nodes; ++i )
-                delete_entity( scene, i );
+                delete_entity_first_pass( scene, i );
+
+            for (s32 i = 0; i < scene->num_nodes; ++i)
+                delete_entity_second_pass( scene, i );
                 
             FREE_COMPONENT_ARRAY(scene, entities);
-            
+            FREE_COMPONENT_ARRAY(scene, state_flags);
+
 			FREE_COMPONENT_ARRAY(scene, id_name);
 			FREE_COMPONENT_ARRAY(scene, id_geometry);
 			FREE_COMPONENT_ARRAY(scene, id_material);
@@ -158,10 +167,30 @@ namespace put
             //zero
             zero_entity_components( scene, node_index );
         }
+
+        void delete_entity_first_pass( entity_scene* scene, u32 node_index )
+        {
+            //constraints must be freed or removed before we delete rigidbodies using them
+            if (scene->physics_handles[node_index] && (scene->entities[node_index] & CMP_CONSTRAINT))
+                physics::release_entity( scene->physics_handles[node_index] );
+
+            if (scene->cbuffer[node_index])
+                pen::renderer_release_buffer( scene->cbuffer[node_index] );
+        }
+
+        void delete_entity_second_pass( entity_scene* scene, u32 node_index )
+        {
+            //all constraints must be removed by this point.
+            if (scene->physics_handles[node_index] && (scene->entities[node_index] & CMP_PHYSICS))
+                physics::release_entity( scene->physics_handles[node_index] );
+
+            zero_entity_components( scene, node_index );
+        }
         
 		void zero_entity_components(entity_scene* scene, u32 node_index)
 		{
 			ZERO_COMPONENT_ARRAY(scene, entities, node_index);
+            ZERO_COMPONENT_ARRAY(scene, state_flags, node_index);
 
 			ZERO_COMPONENT_ARRAY(scene, id_name, node_index);
 			ZERO_COMPONENT_ARRAY(scene, id_geometry, node_index);
@@ -807,6 +836,10 @@ namespace put
 				zero_offset = scene->num_nodes;
 				new_num_nodes = scene->num_nodes + num_nodes;
 			}
+            else
+            {
+                clear_scene( scene );
+            }
 
             if(new_num_nodes > scene->nodes_size)
                 resize_scene_buffers(scene, num_nodes);

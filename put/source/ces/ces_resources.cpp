@@ -629,7 +629,9 @@ namespace put
             
             //scene nodes
 			s32 nodes_start, nodes_end;
-			get_new_nodes_contiguous(scene, num_import_nodes, nodes_start, nodes_end);
+			//get_new_nodes_contiguous(scene, num_import_nodes, nodes_start, nodes_end);
+
+            get_new_nodes_append( scene, num_import_nodes, nodes_start, nodes_end );
 
             u32 node_zero_offset = nodes_start;
             u32 current_node = node_zero_offset;

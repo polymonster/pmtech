@@ -58,6 +58,12 @@ namespace put
             CMP_CONSTRAINT      = (1 << 13)
 		};
 
+        enum e_state_flags : u32
+        {
+            SF_SELECTED         = (1<<0),
+            SF_CHILD_SELECTED   = (1<<1)
+        };
+
         enum e_light_types : u32
         {
             LIGHT_TYPE_DIR = 0,
@@ -188,6 +194,7 @@ namespace put
         {
             u32 node;
             free_node_list* next;
+            free_node_list* prev;
         };
 
 		struct entity_scene
@@ -196,6 +203,7 @@ namespace put
             u32                     nodes_size = 0;
 
             a_u64*                  entities;
+            a_u64*                  state_flags;
 
 			hash_id*				id_name;
 			hash_id*				id_geometry;
@@ -299,7 +307,10 @@ namespace put
 
 		void			resize_scene_buffers( entity_scene* scene, s32 size = 1024 );
 		void			zero_entity_components( entity_scene* scene, u32 node_index );
+
         void            delete_entity( entity_scene* scene, u32 node_index );
+        void            delete_entity_first_pass( entity_scene* scene, u32 node_index );
+        void            delete_entity_second_pass( entity_scene* scene, u32 node_index );
 
         void            update_view_flags( entity_scene* scene, bool error );
         

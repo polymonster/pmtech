@@ -153,8 +153,9 @@ namespace put
             DD_AABB     = 1<<(SV_BITS_END+5),
             DD_LIGHTS   = 1<<(SV_BITS_END+6),
             DD_PHYSICS  = 1<<(SV_BITS_END+7),
+            DD_SELECTED_CHILDREN = 1 << (SV_BITS_END + 8),
 
-            DD_NUM_FLAGS = 8
+            DD_NUM_FLAGS = 9
         };
         
         const c8* dd_names[]
@@ -166,7 +167,8 @@ namespace put
             "Bones",
             "AABB",
             "Lights",
-            "Physics"
+            "Physics",
+            "Selected Children"
         };
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
@@ -310,7 +312,7 @@ namespace put
             scene->flags |= INVALIDATE_SCENE_TREE;
 		}
 
-		void add_selection( const entity_scene* scene, u32 index, u32 select_mode )
+		void add_selection( entity_scene* scene, u32 index, u32 select_mode )
 		{
 			if (pen::input_is_key_down(PENK_CONTROL))
 				select_mode = SELECT_REMOVE;
@@ -321,6 +323,9 @@ namespace put
 
 			if (select_mode == SELECT_NORMAL)
 			{
+                for(auto i : k_selection_list)
+                    scene->state_flags[i] &= ~SF_SELECTED;
+
 				k_selection_list.clear();
 				if (valid)
 					k_selection_list.push_back(index);
@@ -338,6 +343,11 @@ namespace put
 				if (existing == -1 && select_mode == SELECT_ADD)
 					k_selection_list.push_back(index);
 			}
+
+            if (select_mode == SELECT_REMOVE)
+                scene->state_flags[index] &= ~SF_SELECTED;
+            else
+                scene->state_flags[index] |= SF_SELECTED;
 		}
 
         void enumerate_selection_ui( const entity_scene* scene, bool* opened )
@@ -364,7 +374,7 @@ namespace put
 			k_picking_info.ready = 1;
         }
                 
-        void picking_update( const entity_scene* scene, const camera* cam )
+        void picking_update( entity_scene* scene, const camera* cam )
         {
             static u32 picking_state = PICKING_READY;
             static u32 picking_result = (-1);
@@ -865,6 +875,8 @@ namespace put
                 {
                     put::ces::save_scene(save_file, sc->scene);
 					k_model_view_controller.current_working_scene = save_file;
+
+                    dev_ui::set_program_preference_filename( "last_loaded_scene", save_file );
                 }
             }
             
@@ -1487,14 +1499,7 @@ namespace put
 						if (!(scene->entities[i] & CMP_ALLOCATED))
 							continue;
 
-                        //todo - avoid o(n^2) by adding (scene->editor_flags[i] & SELECTED)
-                        bool selected = false;
-                        for (auto s : k_selection_list)
-                            if (s == i)
-                            {
-                                selected = true;
-                                break;
-                            }
+                        bool selected = scene->state_flags[i] & SF_SELECTED;
 
                         ImGui::Unindent( ImGui::GetTreeNodeToLabelSpacing() );
 
@@ -1993,6 +1998,46 @@ namespace put
 			}
 		}
 
+        void render_constraint( const entity_scene* scene, u32 index, const physics::constraint_params& con )
+        {
+            vec3f pos = scene->transforms[index].translation;
+            vec3f axis = con.axis;
+
+            f32 min_rot = con.lower_limit_rotation.x;
+            f32 max_rot = con.upper_limit_rotation.x;
+
+            vec3f min_rot_v3 = con.lower_limit_rotation;
+            vec3f max_rot_v3 = con.upper_limit_rotation;
+
+            vec3f min_pos_v3 = con.lower_limit_translation - vec3f( 0.0001f );
+            vec3f max_pos_v3 = con.upper_limit_translation + vec3f( 0.0001f );
+
+            vec3f link_pos = pos;
+            if (con.rb_indices[0] > -1)
+                link_pos = scene->transforms[con.rb_indices[0]].translation;
+
+            switch (con.type)
+            {
+            case physics::CONSTRAINT_HINGE:
+                put::dbg::add_circle( axis, pos, 0.25f, vec4f::green() );
+                put::dbg::add_line( pos - axis, pos + axis, vec4f::green() );
+                put::dbg::add_circle_segment( axis, pos, 1.0f, min_rot, max_rot, vec4f::white() );
+                break;
+
+            case physics::CONSTRAINT_P2P:
+                put::dbg::add_point( pos, 0.5f, vec4f::magenta() );
+                put::dbg::add_line( link_pos, pos, vec4f::magenta() );
+                break;
+
+            case physics::CONSTRAINT_DOF6:
+                put::dbg::add_circle_segment( vec3f::unit_x(), pos, 0.25f, min_rot_v3.x, max_rot_v3.x, vec4f::white() );
+                put::dbg::add_circle_segment( vec3f::unit_y(), pos, 0.25f, min_rot_v3.y, max_rot_v3.y, vec4f::white() );
+                put::dbg::add_circle_segment( vec3f::unit_z(), pos, 0.25f, min_rot_v3.z, max_rot_v3.z, vec4f::white() );
+                put::dbg::add_aabb( min_pos_v3, max_pos_v3, vec4f::white() );
+                break;
+            }
+        }
+
         void render_physics_debug( const scene_view& view )
         {
             entity_scene* scene = view.scene;
@@ -2000,98 +2045,46 @@ namespace put
             pen::renderer_set_constant_buffer( view.cb_view, 0, PEN_SHADER_TYPE_VS );
             pen::renderer_set_constant_buffer( view.cb_view, 0, PEN_SHADER_TYPE_PS );
 
-            if (scene->view_flags & DD_PHYSICS)
+            for (u32 n = 0; n < scene->num_nodes; ++n)
             {
-                for (u32 n = 0; n < scene->num_nodes; ++n)
+                if (!(scene->state_flags[n] & SF_SELECTED) && !(scene->view_flags & DD_PHYSICS))
+                    continue;
+
+                bool preview_rb = k_physics_preview.active && k_physics_preview.params.type == PHYSICS_TYPE_RIGID_BODY;
+
+                if ((scene->entities[n] & CMP_PHYSICS) || preview_rb)
                 {
-                    if (scene->entities[n] & CMP_PHYSICS)
-                    {
-                        u32 prim = scene->physics_data[n].rigid_body.shape;
+                    u32 prim = scene->physics_data[n].rigid_body.shape;
 
-                        geometry_resource* gr = get_geometry_resource( k_primitives[prim - 1] );
+                    if (prim == 0)
+                        continue;
 
-                        if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
-                            continue;
+                    geometry_resource* gr = get_geometry_resource( k_primitives[prim - 1] );
 
-                        //set cbs
-                        pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS );
-                        pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS );
+                    if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
+                        continue;
 
-                        //set ib / vb
-                        pen::renderer_set_vertex_buffer( gr->vertex_buffer, 0, gr->vertex_size, 0 );
-                        pen::renderer_set_index_buffer( gr->index_buffer, gr->index_type, 0 );
+                    //set cbs
+                    pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS );
+                    pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS );
 
-                        //draw
-                        pen::renderer_draw_indexed( gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST );
-                    }
+                    //set ib / vb
+                    pen::renderer_set_vertex_buffer( gr->vertex_buffer, 0, gr->vertex_size, 0 );
+                    pen::renderer_set_index_buffer( gr->index_buffer, gr->index_type, 0 );
+
+                    //draw
+                    pen::renderer_draw_indexed( gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST );
+
                 }
-            }
 
-            if (k_physics_preview.active)
-            {
-                for (auto& i : k_selection_list)
-                {
-                    physics::constraint_params& preview_constraint = k_physics_preview.params.constraint;
+                bool preview_con = k_physics_preview.active && k_physics_preview.params.type == PHYSICS_TYPE_CONSTRAINT;
+                bool physics_con = (scene->entities[n] & CMP_CONSTRAINT);
 
-                    vec3f pos = scene->transforms[i].translation;
-                    vec3f axis = preview_constraint.axis;
-                    
-                    f32 min_rot = preview_constraint.lower_limit_rotation.x;
-                    f32 max_rot = preview_constraint.upper_limit_rotation.x;
-                    
-                    vec3f min_rot_v3 = preview_constraint.lower_limit_rotation;
-                    vec3f max_rot_v3 = preview_constraint.upper_limit_rotation;
+                if (preview_con)
+                    render_constraint( scene, n, k_physics_preview.params.constraint );
 
-                    vec3f min_pos_v3 = preview_constraint.lower_limit_translation - vec3f(0.0001f);
-                    vec3f max_pos_v3 = preview_constraint.upper_limit_translation + vec3f(0.0001f);
-                    
-                    if (k_physics_preview.params.type == PHYSICS_TYPE_CONSTRAINT)
-                    {
-                        switch( preview_constraint.type )
-                        {
-                            case physics::CONSTRAINT_HINGE:
-                                put::dbg::add_circle( axis, pos, 0.25f, vec4f::green() );
-                                put::dbg::add_line( pos - axis, pos + axis, vec4f::green() );
-                                put::dbg::add_circle_segment( axis, pos, 1.0f, min_rot, max_rot, vec4f::white() );
-                                break;
-                                
-                            case physics::CONSTRAINT_P2P:
-                                put::dbg::add_point( pos, 0.5f, vec4f::magenta() );
-                                break;
-                                
-                            case physics::CONSTRAINT_DOF6:
-                                put::dbg::add_circle_segment(vec3f::unit_x(), pos, 0.25f, min_rot_v3.x, max_rot_v3.x, vec4f::white() );
-                                put::dbg::add_circle_segment(vec3f::unit_y(), pos, 0.25f, min_rot_v3.y, max_rot_v3.y, vec4f::white() );
-                                put::dbg::add_circle_segment(vec3f::unit_z(), pos, 0.25f, min_rot_v3.z, max_rot_v3.z, vec4f::white() );
-                                put::dbg::add_aabb(min_pos_v3, max_pos_v3, vec4f::white());
-                                break;
-                        }
-
-                    }
-                    else if (k_physics_preview.params.type == PHYSICS_TYPE_RIGID_BODY)
-                    {
-                        if (scene->entities[i] & CMP_PHYSICS)
-                        {
-                            u32 prim = scene->physics_data[i].rigid_body.shape;
-
-                            geometry_resource* gr = get_geometry_resource( k_primitives[prim - 1] );
-
-                            if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
-                                continue;
-
-                            //set cbs
-                            pen::renderer_set_constant_buffer( scene->cbuffer[i], 1, PEN_SHADER_TYPE_VS );
-                            pen::renderer_set_constant_buffer( scene->cbuffer[i], 1, PEN_SHADER_TYPE_PS );
-
-                            //set ib / vb
-                            pen::renderer_set_vertex_buffer( gr->vertex_buffer, 0, gr->vertex_size, 0 );
-                            pen::renderer_set_index_buffer( gr->index_buffer, gr->index_type, 0 );
-
-                            //draw
-                            pen::renderer_draw_indexed( gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST );
-                        }
-                    }
-                }
+                if((scene->entities[n] & CMP_CONSTRAINT))
+                    render_constraint( scene, n, scene->physics_data[n].constraint );
             }
         }
         
@@ -2136,12 +2129,41 @@ namespace put
                     put::dbg::add_aabb( scene->bounding_volumes[n].transformed_min_extents, scene->bounding_volumes[n].transformed_max_extents );
                 }
             }
-            
-            if( scene->view_flags & DD_NODE )
+
+            if (scene->view_flags & DD_NODE)
             {
-                for( auto& s : k_selection_list )
+                for (auto s : k_selection_list)
                 {
                     put::dbg::add_aabb( scene->bounding_volumes[s].transformed_min_extents, scene->bounding_volumes[s].transformed_max_extents );
+                }
+            }
+            
+            if( scene->view_flags & DD_SELECTED_CHILDREN )
+            {
+                for (u32 n = 0; n < scene->num_nodes; ++n)
+                {
+                    vec4f col = vec4f::white();
+                    bool selected = false;
+                    if (scene->state_flags[n] & SF_SELECTED)
+                        selected = true;
+
+                    u32 p = scene->parents[n];
+                    if (p != n)
+                    {
+                        if (scene->state_flags[p] & SF_SELECTED || scene->state_flags[p] & SF_CHILD_SELECTED)
+                        {
+                            scene->state_flags[n] |= SF_CHILD_SELECTED;
+                            selected = true;
+                            col = vec4f( 0.75f, 0.75f, 0.75f, 1.0f );
+                        }
+                        else
+                        {
+                            scene->state_flags[n] &= ~SF_CHILD_SELECTED;
+                        }
+                    }
+
+                    if(selected)
+                        put::dbg::add_aabb( scene->bounding_volumes[n].transformed_min_extents, scene->bounding_volumes[n].transformed_max_extents, col );
                 }
             }
             
