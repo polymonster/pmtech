@@ -53,6 +53,7 @@ namespace physics
 		CYLINDER,
 		SPHERE,
 		CAPSULE,
+        CONE,
 		HULL,
 		MESH,
 		COMPOUND
@@ -61,7 +62,6 @@ namespace physics
     enum e_physics_constraint : s32
 	{
 		CONSTRAINT_DOF6 = 1,
-		CONSTRAINT_DOF6_RB,
 		CONSTRAINT_HINGE,
         CONSTRAINT_P2P,
         CONSTRAINT_P2P_MULTI
@@ -103,8 +103,8 @@ namespace physics
 
     struct rigid_body_params
 	{
-		lw_vec3f position;
-		lw_vec3f dimensions;
+		vec3f    position;
+	    vec3f    dimensions;
 		u32		 shape_up_axis;
 		quat	 rotation;
 		u32		 shape;
@@ -113,6 +113,9 @@ namespace physics
 		u32		 mask;
         mat4     start_matrix;
 		collision_mesh_data mesh_data;
+
+        rigid_body_params() {};
+        ~rigid_body_params() {};
 	};
 
     struct compound_rb_params
@@ -148,23 +151,24 @@ namespace physics
 
     struct constraint_params
 	{
-		rigid_body_params rb;
+        u32     type;
 
-		u32 type;
+		vec3f   axis;
+		vec3f   pivot;
 
-		lw_vec3f axis;
-		lw_vec3f pivot;
+		vec3f   lower_limit_translation;
+		vec3f   upper_limit_translation;
 
-		lw_vec3f lower_limit_translation;
-		lw_vec3f upper_limit_translation;
-
-		lw_vec3f lower_limit_rotation;
-		lw_vec3f upper_limit_rotation;
+		vec3f   lower_limit_rotation;
+		vec3f   upper_limit_rotation;
 
 		f32		linear_damping;
 		f32		angular_damping;
 
 		s32		rb_indices[ 2 ];
+
+        constraint_params() { };
+        ~constraint_params() { };
 	};
 
     struct attach_to_compound_params
@@ -296,6 +300,9 @@ namespace physics
 			add_p2p_constraint_params		add_p2p;
             ray_cast_params                 ray_cast;
 		};
+
+        physics_cmd() {};
+        ~physics_cmd() {};
 	};
 
 	void	set_paused( bool val );

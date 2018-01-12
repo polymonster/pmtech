@@ -2,6 +2,7 @@
 #include "dev_ui.h"
 
 #include "ces/ces_utilities.h"
+#include "ces/ces_editor.h"
 
 namespace put
 {
@@ -57,9 +58,30 @@ namespace put
             }
         }
 
+        void get_new_nodes_append( entity_scene* scene, s32 num, s32& start, s32& end )
+        {
+            //o(1) - appends a bunch of nodes on the end
+
+            if (scene->num_nodes + num >= scene->nodes_size || !scene->free_list_head)
+                resize_scene_buffers( scene );
+
+            start = scene->num_nodes;
+            end = start + num;
+
+            //iterate over nodes flagging allocated
+            for (s32 i = start; i < end; ++i)
+                scene->entities[i] |= CMP_ALLOCATED;
+
+            //remove chunk from the free list
+            if (scene->free_list[start].prev)
+                scene->free_list[start].prev = scene->free_list[end].next;
+
+            scene->num_nodes = end;
+        }
+
 		void get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start, s32& end)
 		{
-            //o(n) - has to find contiguous nodes within the free list
+            //o(n) - has to find contiguous nodes within the free list, and worst case will allocate more mem and append the new nodes
             
             if (scene->num_nodes + num >= scene->nodes_size || !scene->free_list_head)
                 resize_scene_buffers(scene);
@@ -68,10 +90,8 @@ namespace put
             free_node_list* fnl_start = fnl_iter;
             
             s32 count = num;
-            
-            //todo improve the free list
-            
-            //finds contiguous nodes
+                        
+            //find contiguous nodes
             for(;;)
             {
                 if(!fnl_iter->next)
@@ -115,9 +135,9 @@ namespace put
 		}
         
         u32 get_new_node( entity_scene* scene )
-        {
-            //o(1) - uses free list
-            
+        {  
+            //o(1) using free list
+
             if(!scene->free_list_head)
                 resize_scene_buffers(scene);
             
@@ -158,37 +178,28 @@ namespace put
             }
         }
         
-        void scene_tree_enumerate( const scene_tree& tree, s32& selected )
+        void scene_tree_enumerate( entity_scene* scene, const scene_tree& tree, std::vector<u32>& selection_list )
         {
             for( auto& child : tree.children )
             {
-                if( child.children.empty() )
-                {
-					if (!child.node_name)
-						continue;
+                bool leaf = child.children.size() == 0;
 
-                    ImGui::Selectable(child.node_name);
-                    if (ImGui::IsItemClicked())
-                        selected = child.node_index;
-                }
-                else
+                bool selected = scene->state_flags[child.node_index];
+                ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
+                
+                if(leaf)
+                    node_flags |= ImGuiTreeNodeFlags_Leaf;
+                
+                bool node_open = ImGui::TreeNodeEx( ( void* )( intptr_t )child.node_index, node_flags, child.node_name, child.node_index );
+                if (ImGui::IsItemClicked())
                 {
-                    if(tree.node_index == -1)
-                        ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-                    
-                    ImGuiTreeNodeFlags node_flags = selected == child.node_index ? ImGuiTreeNodeFlags_Selected : 0;
-                    bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)child.node_index, node_flags, child.node_name, child.node_index);
-                    if (ImGui::IsItemClicked())
-                        selected = child.node_index;
-                    
-                    if( node_open )
-                    {
-                        scene_tree_enumerate(child, selected);
-                        ImGui::TreePop();
-                    }
-                    
-                    if(tree.node_index == -1)
-                        ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+                    add_selection( scene, child.node_index );
+                }
+
+                if (node_open)
+                {
+                    scene_tree_enumerate( scene, child, selection_list );
+                    ImGui::TreePop();
                 }
             }
         }
@@ -320,6 +331,8 @@ namespace put
 				//flush cmd buff
 				pen::renderer_consume_cmd_buffer();
 			}
+            
+            scene->flags |= INVALIDATE_SCENE_TREE;
 		}
     }
 }

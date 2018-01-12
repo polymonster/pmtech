@@ -8,6 +8,7 @@ struct vec2f;
 struct vec2i;
 struct vec3f;
 struct vec4f;
+struct lw_vec3f;
 
 struct vec2i
 {
@@ -137,11 +138,8 @@ struct vec3f
 {
 public:
     
-    vec3f()
-    {
-        
-    }
-    
+    vec3f(){}
+    //vec3f( lw_vec3f lw ) : x(lw.x), y(lw.y), z(lw.z) { }
 	vec3f( vec2f v2, f32 az ) : x(v2.x), y(v2.y), z(az) { }
     vec3f( f32 ax, f32 ay, f32 az ) : x( ax ), y( ay ), z( az ) { }
     vec3f( f32 f ) : x( f ), y( f ), z( f ) { }
@@ -500,7 +498,6 @@ struct lw_vec3f
         
         return *this;
     }
-    
 };
 
 #endif //_vector_h

@@ -54,8 +54,15 @@ namespace put
             CMP_ANIM_CONTROLLER = (1 << 9),
             CMP_ANIM_TRAJECTORY = (1 << 10),
             CMP_LIGHT           = (1 << 11),
-			CMP_TRANSFORM		= (1 << 12)
+			CMP_TRANSFORM		= (1 << 12),
+            CMP_CONSTRAINT      = (1 << 13)
 		};
+
+        enum e_state_flags : u32
+        {
+            SF_SELECTED         = (1<<0),
+            SF_CHILD_SELECTED   = (1<<1)
+        };
 
         enum e_light_types : u32
         {
@@ -94,17 +101,31 @@ namespace put
             vec4f    diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
             vec4f    specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
         };
+
+        enum e_physics_type
+        {
+            PHYSICS_TYPE_RIGID_BODY = 0,
+            PHYSICS_TYPE_CONSTRAINT
+        };
         
         struct scene_node_physics
         {
-            vec3f min_extents;
-            vec3f max_extents;
-            vec3f centre;
-            u32   collision_shape = 0;
-            vec3f start_position;
-            quat  start_rotation;
-            f32   mass = 0.0f;
-            physics::collision_mesh_data mesh_data;
+            s32 type;
+
+            union
+            {
+                physics::rigid_body_params rigid_body;
+                physics::constraint_params constraint;
+            };
+
+            scene_node_physics() {};
+            ~scene_node_physics() {};
+
+            scene_node_physics& operator = ( const scene_node_physics& other )
+            {
+                pen::memory_cpy( this, &other, sizeof( scene_node_physics ) );
+                return *this;
+            }
         };
         
         struct bounding_volume
@@ -173,6 +194,7 @@ namespace put
         {
             u32 node;
             free_node_list* next;
+            free_node_list* prev;
         };
 
 		struct entity_scene
@@ -181,6 +203,7 @@ namespace put
             u32                     nodes_size = 0;
 
             a_u64*                  entities;
+            a_u64*                  state_flags;
 
 			hash_id*				id_name;
 			hash_id*				id_geometry;
@@ -284,7 +307,10 @@ namespace put
 
 		void			resize_scene_buffers( entity_scene* scene, s32 size = 1024 );
 		void			zero_entity_components( entity_scene* scene, u32 node_index );
+
         void            delete_entity( entity_scene* scene, u32 node_index );
+        void            delete_entity_first_pass( entity_scene* scene, u32 node_index );
+        void            delete_entity_second_pass( entity_scene* scene, u32 node_index );
 
         void            update_view_flags( entity_scene* scene, bool error );
         

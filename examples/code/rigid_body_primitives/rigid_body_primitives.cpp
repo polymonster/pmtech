@@ -110,7 +110,7 @@ void create_physics_objects( ces::entity_scene* scene )
 
     s32 num_prims = 5;
 
-    for (s32 p = 0; p < num_prims; ++p)
+    for (s32 p = 0; p < 0; ++p)
     {
         //add stack of cubes
         vec3f start_pos = start_positions[p];
