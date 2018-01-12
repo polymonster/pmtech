@@ -39,9 +39,14 @@ const vec3f unit_cube_vertices[8] =
 	vec3f(-1,1,1)
 };
 
-typedef struct Quaternion
+struct Quaternion
 {
 public:
+    
+    Quaternion()
+    {
+        x = 0.0f; y = 0.0f; z = 0.0f; w = 1.0f;
+    };
 
 	const Quaternion operator *( const f32 &scale) const
 	{
@@ -264,7 +269,7 @@ public:
 	}
 
 	f32 x, y, z, w;
-} Quaternion;
+};
 
 typedef Quaternion quat;
 

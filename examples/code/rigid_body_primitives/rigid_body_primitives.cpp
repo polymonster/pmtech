@@ -60,6 +60,7 @@ void create_physics_objects( ces::entity_scene* scene )
     //ground
     u32 ground = get_new_node( scene );
     scene->names[ground] = "ground";
+    scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();
     scene->transforms[ground].scale = vec3f( 50.0f, 1.0f, 50.0f );
     scene->entities[ground] |= CMP_TRANSFORM;
@@ -110,7 +111,7 @@ void create_physics_objects( ces::entity_scene* scene )
 
     s32 num_prims = 5;
 
-    for (s32 p = 0; p < 0; ++p)
+    for (s32 p = 0; p < num_prims; ++p)
     {
         //add stack of cubes
         vec3f start_pos = start_positions[p];
