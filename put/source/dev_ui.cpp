@@ -195,7 +195,8 @@ namespace put
             
 			Str current_path;
 			Str search_path;
-			static Str selected_path;
+            static Str selected_path;
+            static Str selected_path_and_file;
             static Str last_result;
             
 			static pen::fs_tree_node fs_enumeration;
@@ -204,6 +205,8 @@ namespace put
 			{
 				s32 default_depth = 0;
 				const c8** default_dir = get_last_used_directory(default_depth);
+
+                selected_path = put::dev_ui::get_program_preference_filename("last_used_directory");
 
 				pen::filesystem_enum_volumes(fs_enumeration);
 
@@ -265,8 +268,9 @@ namespace put
                 {
                     set_last_used_directory(selected_path);
                     
+                    selected_path_and_file = selected_path;
 					if(pen::string_length(user_filename_buf) > 1)
-						selected_path.append(user_filename_buf);
+                        selected_path_and_file.append(user_filename_buf);
 
 					if (num_filetypes == 1 && flags & FB_SAVE )
 					{
@@ -288,24 +292,24 @@ namespace put
 
 						const c8* fts = ft + offset;
 
-						s32 filename_len = selected_path.length();
+						s32 filename_len = selected_path_and_file.length();
 
-						const c8* fn = &selected_path.c_str()[filename_len - ext_len];
+						const c8* fn = &selected_path_and_file.c_str()[filename_len - ext_len];
 
 						if (pen::string_compare(fts, fn) != 0)
 						{
-							selected_path.append('.');
-							selected_path.append(fts);
+                            selected_path_and_file.append('.');
+                            selected_path_and_file.append(fts);
 						}
 
 						va_end(wildcards);
 					}
 
 
-                    last_result = selected_path;
+                    last_result = selected_path_and_file;
                     return_value = last_result.c_str();
                     
-                    selected_path.clear();
+                    selected_path_and_file.clear();
                     
                     dialog_open = false;
                 }
