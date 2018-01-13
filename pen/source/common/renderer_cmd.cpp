@@ -23,7 +23,7 @@ namespace pen
 	u32 get_pos = 0;
 	u32 commands_this_frame = 0;
 
-#define MAX_COMMANDS (1<<15) //3mb
+#define MAX_COMMANDS (1<<16)
 #define INC_WRAP( V ) V = (V+1) & (MAX_COMMANDS-1); commands_this_frame++
 
 	enum commands : u32
