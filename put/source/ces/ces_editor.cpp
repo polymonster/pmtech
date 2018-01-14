@@ -2073,7 +2073,7 @@ namespace put
                 put::dbg::add_circle_segment( vec3f::unit_x(), pos, 0.25f, min_rot_v3.x, max_rot_v3.x, vec4f::white() );
                 put::dbg::add_circle_segment( vec3f::unit_y(), pos, 0.25f, min_rot_v3.y, max_rot_v3.y, vec4f::white() );
                 put::dbg::add_circle_segment( vec3f::unit_z(), pos, 0.25f, min_rot_v3.z, max_rot_v3.z, vec4f::white() );
-                put::dbg::add_aabb( min_pos_v3, max_pos_v3, vec4f::white() );
+                put::dbg::add_aabb( pos + min_pos_v3, pos + max_pos_v3, vec4f::white() );
                 break;
             }
         }
