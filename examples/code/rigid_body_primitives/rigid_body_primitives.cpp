@@ -71,7 +71,7 @@ void create_physics_objects( ces::entity_scene* scene )
 
     scene->physics_data[ground].rigid_body.shape = physics::BOX;
     scene->physics_data[ground].rigid_body.mass = 0.0f;
-    instantiate_physics( scene, ground );
+    instantiate_rigid_body( scene, ground );
 
     vec3f start_positions[] =
     {
@@ -140,7 +140,7 @@ void create_physics_objects( ces::entity_scene* scene )
 
                     scene->physics_data[new_prim].rigid_body.shape = primitive_types[p];
                     scene->physics_data[new_prim].rigid_body.mass = 1.0f;
-                    instantiate_physics( scene, new_prim );
+                    instantiate_rigid_body( scene, new_prim );
 
                     cur_pos.x += 2.5f;
                 }

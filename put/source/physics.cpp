@@ -593,9 +593,7 @@ namespace physics
             for (u32 j = 0; j < k_num_triggers; ++j)
             {
                 if (i == j)
-                {
                     continue;
-                }
                 
                 if (k_triggers[i].mask & k_triggers[j].group)
                 {
@@ -604,7 +602,6 @@ namespace physics
                     tc.trigger_b = j;
                     
                     k_bullet_systems.dynamics_world->getCollisionWorld( )->contactPairTest( k_triggers[i].collision_object, k_triggers[j].collision_object, tc );
-                    
                 }
             }
         }
@@ -744,9 +741,11 @@ namespace physics
 
 	void add_hinge_internal( const constraint_params &params, u32 resource_slot )
 	{
+        PEN_ASSERT(params.rb_indices[0] > -1);
+        
         k_bullet_objects.num_entities = std::max<u32>(resource_slot+1, k_bullet_objects.num_entities);
         physics_entity& next_entity = k_bullet_objects.entities[ resource_slot ];
-
+        
         btRigidBody* rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
 
 		btHingeConstraint* hinge = new btHingeConstraint( *rb, btVector3( params.pivot.x, params.pivot.y, params.pivot.z ), btVector3( params.axis.x, params.axis.y, params.axis.z ) );
@@ -789,6 +788,8 @@ namespace physics
 
                 if (params.rb_indices[1] != -1)
                     p_fixed = k_bullet_objects.entities[params.rb_indices[1]].rb.rigid_body;
+                
+                PEN_ASSERT(p_rb || p_fixed);
 
                 add_dof6_internal( params, resource_slot, p_rb, p_fixed );
             }

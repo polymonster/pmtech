@@ -1051,7 +1051,7 @@ namespace put
                 if (scene->entities[i] & CMP_PHYSICS)
                 {
                     rb_names.push_back( scene->names[i].c_str() );
-                    index_lookup.push_back( i );
+                    index_lookup.push_back( scene->physics_handles[i] );
                 }
             }
 
@@ -1114,7 +1114,7 @@ namespace put
 
                     if (!(scene->entities[i] & CMP_PHYSICS))
                     {
-                        instantiate_physics( scene, i );
+                        instantiate_rigid_body( scene, i );
                     }
 
                     k_physics_preview.params.rigid_body = scene->physics_data[i].rigid_body;

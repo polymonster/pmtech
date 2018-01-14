@@ -97,7 +97,7 @@ namespace put
         void            load_pmm( const c8* model_scene_name, entity_scene* scene = nullptr, u32 load_flags = PMM_ALL );
         anim_handle     load_pma( const c8* model_scene_name );
         
-		void			instantiate_physics(entity_scene* scene, u32 node_index);
+		void			instantiate_rigid_body(entity_scene* scene, u32 node_index);
         void            instantiate_constraint( entity_scene* scene, u32 node_index );
         void            instantiate_geometry( geometry_resource* gr, entity_scene* scene, s32 node_index );
         void            instantiate_model_cbuffer( entity_scene* scene, s32 node_index );

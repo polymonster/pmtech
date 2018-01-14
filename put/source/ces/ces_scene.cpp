@@ -290,8 +290,9 @@ namespace put
 
             if(flags == CLONE_INSTANTIATE)
             {
+                //todo, clone / instantiate constraint
                 if (p_sn->physics_handles[src])
-                    instantiate_physics( scene, dst );
+                    instantiate_rigid_body( scene, dst );
 
                 if (p_sn->entities[dst] & CMP_GEOMETRY)
                     instantiate_model_cbuffer( scene, dst );
@@ -885,7 +886,7 @@ namespace put
 
 				for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
 					if (scene->entities[n] & CMP_PHYSICS)
-						instantiate_physics(scene, n);
+						instantiate_rigid_body(scene, n);
 
                 //version 3 adds constraints
                 if (version > 2)

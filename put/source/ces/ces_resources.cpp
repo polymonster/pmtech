@@ -64,7 +64,7 @@ namespace put
             scene->entities[node_index] |= CMP_CONSTRAINT;
         }
 
-		void instantiate_physics( entity_scene* scene, u32 node_index )
+		void instantiate_rigid_body( entity_scene* scene, u32 node_index )
 		{
 			u32 s = node_index;
             physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
@@ -78,6 +78,9 @@ namespace put
 			quat rotation = scene->transforms[s].rotation;
 
 			scene->offset_matrices[s] = mat4::create_scale(scale);
+            
+            rb.position = pos;
+            rb.rotation = rotation;
                         
             rb.dimensions = (max - min) * scale * 0.5;
             
