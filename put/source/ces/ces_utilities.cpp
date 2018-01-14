@@ -313,7 +313,7 @@ namespace put
 					u32 parent_offset = j_parent - src_parent;
 					u32 parent = dst_parent + parent_offset;
 
-					u32 new_child = clone_node(scene, j, nodes_start + node_counter, parent, vec3f::zero(), "");
+					u32 new_child = clone_node(scene, j, nodes_start + node_counter, parent, CLONE_INSTANTIATE, vec3f::zero(), "");
 					node_counter++;
 
 					if(new_child == parent)

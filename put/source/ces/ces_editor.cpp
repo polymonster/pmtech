@@ -300,14 +300,51 @@ namespace put
         
 		void parent_selection(entity_scene* scene )
 		{
-			if (k_selection_list.size() > 1)
-			{
-				s32 parent = k_selection_list[0];
-
-				for (auto& i : k_selection_list)
-					if (scene->parents[i] == i)
-						set_node_parent(scene, parent, i);
-			}
+            s32 selection_size = k_selection_list.size();
+            
+            if(selection_size <= 1)
+                return;
+            
+            s32 parent = k_selection_list[0];
+            
+            //check contiguity
+            bool valid = true;
+            s32 last_index = -1;
+            for( s32 i = 1; i < selection_size; ++i)
+            {
+                if(k_selection_list[i] < parent)
+                {
+                    valid = false;
+                    break;
+                }
+                
+                last_index = std::max<s32>(k_selection_list[i], last_index);
+            }
+            
+            if(last_index > parent + selection_size)
+                valid = false;
+            
+            if(valid)
+            {
+                //list is already
+                dev_console_log("[parent] selection is contiguous %i to %i size %i", parent, last_index, selection_size);
+                
+                for (auto& i : k_selection_list)
+                    if (scene->parents[i] == i)
+                        set_node_parent(scene, parent, i);
+            }
+            else
+            {
+                //move nodes into a contiguous list with the parent first most
+                dev_console_log("[parent] selection is not contiguous size %i", parent, last_index, selection_size);
+                
+                s32 start, end;
+                get_new_nodes_append(scene, selection_size, start, end);
+                
+                s32 nn = start;
+                for (auto& i : k_selection_list)
+                    clone_node(scene, i, nn++, start, CLONE_MOVE, vec3f::zero(), "" );
+            }
             
             scene->flags |= INVALIDATE_SCENE_TREE;
 		}
@@ -1535,7 +1572,7 @@ namespace put
                 
                 ImGui::EndChild();
                 
-                //header
+                //node header
                 if (selected_index != -1)
                 {
                     static c8 buf[64];
@@ -1548,6 +1585,9 @@ namespace put
                         scene->names[selected_index] = buf;
                         scene->id_name[selected_index] = PEN_HASH( buf );
                     }
+                    
+                    ImGui::SameLine();
+                    ImGui::Text("ces node index %i", selected_index);
 
                     s32 parent_index = scene->parents[selected_index];
                     if (parent_index != selected_index)

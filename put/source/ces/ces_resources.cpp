@@ -805,7 +805,7 @@ namespace put
                         if (submesh > 0)
                         {
                             inserted_nodes++;
-                            clone_node( scene, current_node, dest, current_node, vec3f::zero(), (const c8*)node_suffix.c_str() );
+                            clone_node( scene, current_node, dest, current_node, CLONE_INSTANTIATE, vec3f::zero(), (const c8*)node_suffix.c_str() );
                             scene->local_matrices[dest] = mat4::create_identity();
                         }
                         

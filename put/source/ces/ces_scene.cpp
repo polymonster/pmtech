@@ -229,7 +229,7 @@ namespace put
 			resize_scene_buffers(scene);	
 		}
 
-		u32 clone_node(entity_scene* scene, u32 src, s32 dst, s32 parent, vec3f offset, const c8* suffix)
+		u32 clone_node(entity_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
 		{
 			if (dst == -1)
 				dst = get_new_node(scene);
@@ -265,24 +265,16 @@ namespace put
 			p_sn->physics_data[dst] = p_sn->physics_data[src];
 			p_sn->geometries[dst] = p_sn->geometries[src];
 			p_sn->materials[dst] = p_sn->materials[src];
-
 			p_sn->multibody_handles[dst] = p_sn->multibody_handles[src];
 			p_sn->multibody_link[dst] = p_sn->multibody_link[src];
-
 			p_sn->anim_controller[dst] = p_sn->anim_controller[src];
-
-			if (dst >= p_sn->num_nodes)
-			{
-				p_sn->num_nodes = dst + 1;
-			}
-
 			p_sn->physics_data[dst].rigid_body.position += offset;
 
 			vec3f right = p_sn->local_matrices[dst].get_right();
 			vec3f up = p_sn->local_matrices[dst].get_up();
 			vec3f fwd = p_sn->local_matrices[dst].get_fwd();
 			vec3f translation = p_sn->local_matrices[dst].get_translation();
-
+            
 			p_sn->local_matrices[dst].set_vectors(right, up, fwd, translation + offset);
 
 #ifdef CES_DEBUG
@@ -296,11 +288,22 @@ namespace put
 			p_sn->material_names[dst] = p_sn->material_names[src].c_str();
 #endif
 
-            if (p_sn->physics_handles[src])
-                instantiate_physics( scene, dst );
+            if(flags == CLONE_INSTANTIATE)
+            {
+                if (p_sn->physics_handles[src])
+                    instantiate_physics( scene, dst );
 
-            if (p_sn->entities[dst] & CMP_GEOMETRY)
-                instantiate_model_cbuffer( scene, dst );
+                if (p_sn->entities[dst] & CMP_GEOMETRY)
+                    instantiate_model_cbuffer( scene, dst );
+            }
+            else if(flags == CLONE_MOVE)
+            {
+                p_sn->cbuffer[dst] = p_sn->cbuffer[src];
+                p_sn->physics_handles[dst] = p_sn->physics_handles[src];
+                
+                p_sn->entities[dst] |= CMP_TRANSFORM;
+                zero_entity_components(scene, src);
+            }
 
 			return dst;
 		}
