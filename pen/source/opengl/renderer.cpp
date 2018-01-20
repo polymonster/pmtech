@@ -490,7 +490,9 @@ namespace pen
                     glUniformBlockBinding( prog, loc, constant.location );
                 }
                 break;
+                    
                 case pen::CT_SAMPLER_2D:
+                case pen::CT_SAMPLER_2DMS:
                 {
                     loc = glGetUniformLocation(prog, constant.name);
                     

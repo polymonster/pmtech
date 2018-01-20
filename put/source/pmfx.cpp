@@ -202,7 +202,8 @@ namespace put
                 {
                     "TEXTURE_2D",
                     "TEXTURE_3D",
-                    "TEXTURE_CUBE"
+                    "TEXTURE_CUBE",
+                    "TEXTURE_2DMS"
                 };
                 
                 for( u32 i = 0; i < 3; ++i )

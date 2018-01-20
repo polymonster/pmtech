@@ -235,7 +235,6 @@ namespace put
             update_view_flags_ui( scene );
         }
 
-
 		void default_scene(entity_scene* scene)
 		{
 			//add default view flags
@@ -2104,21 +2103,16 @@ namespace put
                     if (!pmfx::set_technique( view.pmfx_shader, view.technique, 0 ))
                         continue;
 
-                    //set cbs
+                    //draw
                     pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS );
                     pen::renderer_set_constant_buffer( scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS );
-
-                    //set ib / vb
                     pen::renderer_set_vertex_buffer( gr->vertex_buffer, 0, gr->vertex_size, 0 );
                     pen::renderer_set_index_buffer( gr->index_buffer, gr->index_type, 0 );
-
-                    //draw
                     pen::renderer_draw_indexed( gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST );
 
                 }
 
                 bool preview_con = k_physics_preview.active && k_physics_preview.params.type == PHYSICS_TYPE_CONSTRAINT;
-                bool physics_con = (scene->entities[n] & CMP_CONSTRAINT);
 
                 if (preview_con)
                     render_constraint( scene, n, k_physics_preview.params.constraint );
