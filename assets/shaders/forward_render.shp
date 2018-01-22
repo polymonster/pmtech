@@ -37,6 +37,15 @@ struct vs_input_skinned
 	float4 blend_weights	: TEXCOORD5;
 };
 
+struct vs_instance_input
+{
+	float4 world_matrix_0	 : TEXCOORD6;
+	float4 world_matrix_1	 : TEXCOORD7;
+	float4 world_matrix_2	 : TEXCOORD8;
+	float4 world_matrix_3	 : TEXCOORD9;
+	float4 user_data	 	 : TEXCOORD10;
+};
+
 struct ps_output
 {
 	float4 colour : SV_Target;
@@ -134,6 +143,35 @@ vs_output vs_main( vs_input input )
     return output;
 }
 
+vs_output vs_main_instanced( vs_input input, vs_instance_input instance_input )
+{
+	vs_output output;
+	
+	float4x4 instance_world_mat;
+	instance_world_mat[0] = instance_input.world_matrix_0;
+	instance_world_mat[1] = instance_input.world_matrix_1;
+	instance_world_mat[2] = instance_input.world_matrix_2;
+	instance_world_mat[3] = instance_input.world_matrix_3;
+	
+	float4x4 wvp = mul( instance_world_mat, vp_matrix );
+
+	output.position = mul( input.position, wvp );
+	output.world_pos = mul( input.position, instance_world_mat );
+		
+	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+	float3x3 ws_rotation_matrix = to_3x3(instance_world_mat);
+		
+	rotation_matrix = ws_rotation_matrix;
+		
+	output.normal = mul( input.normal.xyz, rotation_matrix );
+	output.tangent = mul( input.tangent.xyz, rotation_matrix );
+	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
+		
+	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+	
+    return output;
+}
+
 float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
 {
 	float3x3 tbn;
@@ -142,6 +180,15 @@ float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
 	tbn[2] = float3(t.z, b.z, n.z);
 	
 	return normalize( mul_tbn( tbn, ts_normal ) );
+}
+
+ps_output ps_instanced_test( vs_output input )
+{
+	ps_output output;
+	
+	output.colour = float4( 0.0, 1.0, 0.0, 1.0 );
+	
+	return output.colour;
 }
 
 ps_output ps_forward_lit( vs_output input ) 
@@ -259,6 +306,12 @@ pmfx:
 	"forward_lit":
 	{
 		"vs": "vs_main",
+		"ps": "ps_forward_lit"
+	},
+	
+	"forward_lit_instanced":
+	{
+		"vs": "vs_main_instanced",
 		"ps": "ps_forward_lit"
 	},
 	

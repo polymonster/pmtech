@@ -59,6 +59,7 @@ print("compiling directory: " + shader_source_dir)
 if os_platform == "win32":
     print("fx compiler directory :" + compiler_dir)
 
+
 def parse_and_split_block(code_block):
     start = code_block.find("{") + 1
     end = code_block.find("};")
@@ -68,7 +69,6 @@ def parse_and_split_block(code_block):
     block_conditioned = block_conditioned.replace(")", "")
     block_conditioned = block_conditioned.replace(",", "")
     return block_conditioned.split()
-
 
 
 def make_input_info(inputs):
@@ -218,10 +218,12 @@ def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, tec
     subprocess.call(cmdline)
     print("\n")
 
+
 token_io = ["input", "output"]
 token_io_replace = ["_input", "_output"]
 token_post_delimiters = ['.', ';', ' ', '(', ')', ',']
 token_pre_delimiters = [' ', '\t', '\n', '(', ')', ',']
+
 
 def replace_io_tokens(text):
     split = text.split(' ')
@@ -313,7 +315,9 @@ def find_main(shader_text, decl):
             body_pos += 1
     return shader_text[start:body_pos] + "\n\n"
 
-special_structs = ["vs_input", "vs_output", "ps_input", "ps_output"]
+
+special_structs = ["vs_input", "vs_output", "ps_input", "ps_output", "vs_instance_input"]
+
 
 def find_struct_declarations(shader_text):
     struct_list = []
@@ -334,6 +338,7 @@ def find_struct_declarations(shader_text):
                 struct_list.append(shader_text[start:end] + "\n")
         start = end
     return struct_list
+
 
 def find_generic_functions(shader_text):
     deliminator_list = [";", "\n"]
@@ -387,6 +392,8 @@ def clean_spaces(shader_text):
 
 
 def parse_io_struct(source):
+    if len(source) == 0:
+        return [], []
     io_source = source
     start = io_source.find("{")
     end = io_source.find("}")
@@ -421,7 +428,7 @@ def generate_global_io_struct(io_elements, decl):
 
 
 def generate_input_assignment(io_elements, decl, local_var, suffix):
-    assign_source = "\t//assign input struct from glsl inputs\n"
+    assign_source = "\t//assign " + decl + " struct from glsl inputs\n"
     assign_source += "\t" + decl + " " + local_var + ";\n"
     for element in io_elements:
         if element.split()[1] == "position" and "vs_output" in decl:
@@ -444,11 +451,12 @@ def generate_output_assignment(io_elements, local_var, suffix):
     return assign_source
 
 
-def compile_glsl(
+def generate_glsl(
         source_filename, macros,
         vs_main, ps_main,
         vs_functions, ps_functions,
-        vs_input_source, vs_output_source, ps_output_source,
+        vs_input_source, instance_input_source,
+        vs_output_source, ps_output_source,
         constant_buffers,
         texture_samplers_source,
         technique_name):
@@ -458,9 +466,16 @@ def compile_glsl(
     # parse input block
     vs_inputs, vs_input_semantics = parse_io_struct(vs_input_source)
     vs_outputs, vs_output_semantics = parse_io_struct(vs_output_source)
+    instance_inputs, instance_input_semantics = parse_io_struct(instance_input_source)
 
     vs_input_struct_name = vs_input_source.split()[1]
     vs_output_struct_name = vs_output_source.split()[1]
+
+    instanced = len(instance_input_source) > 0
+
+    instance_input_struct_name = ""
+    if instanced:
+        instance_input_struct_name = instance_input_source.split()[1]
 
     ps_output_struct_name = ps_output_source.split()[1]
 
@@ -491,6 +506,9 @@ def compile_glsl(
     for vs_input in vs_inputs:
         final_vs_source += "layout(location = " + str(index_counter) + ") in " + vs_input + "_vs_input;\n"
         index_counter += 1
+    for instance_input in instance_inputs:
+        final_vs_source += "layout(location = " + str(index_counter) + ") in " + instance_input + "_instance_input;\n"
+        index_counter += 1
     final_vs_source += "\n"
 
     # vs outputs
@@ -500,6 +518,10 @@ def compile_glsl(
     final_vs_source += "\n"
 
     final_vs_source += generate_global_io_struct(vs_inputs, "struct " + vs_input_struct_name)
+
+    if instanced:
+        final_vs_source += generate_global_io_struct(instance_inputs, "struct " + instance_input_struct_name)
+
     final_vs_source += generate_global_io_struct(vs_outputs, "struct " + vs_output_struct_name)
     final_vs_source += texture_samplers_source
     final_vs_source += uniform_buffers
@@ -511,6 +533,12 @@ def compile_glsl(
     glsl_vs_main = glsl_vs_main[skip_function_start:skip_function_end].strip()
 
     vs_main_pre_assign = generate_input_assignment(vs_inputs, vs_input_struct_name, "_input", "_vs_input")
+
+    if instanced:
+        vs_main_pre_assign += "\n"
+        vs_main_pre_assign += generate_input_assignment(instance_inputs, instance_input_struct_name,
+                                                        "instance_input", "_instance_input")
+
     vs_main_post_assign = generate_output_assignment(vs_outputs, "_output", "_vs_output")
 
     final_vs_source += "void main()\n{\n"
@@ -733,6 +761,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     vs_vertex_input_struct_name = "null"
 
     for i in range(0, len(vs_input_signature)):
+        vs_input_signature[i] = vs_input_signature[i].replace(",", "")
         if vs_input_signature[i] == "_input" or vs_input_signature[i] == "input":
             vs_vertex_input_struct_name = vs_input_signature[i-1]
         elif vs_input_signature[i] == "_instance_input" or vs_input_signature[i] == "instance_input":
@@ -785,11 +814,12 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
         for s in struct_list:
             macros_text += s
 
-        compile_glsl(
+        generate_glsl(
             filename, macros_text,
             vs_main, ps_main,
             vs_functions, ps_functions,
-            vs_input_source, vs_output_source, ps_output_source,
+            vs_input_source, instance_input_source,
+            vs_output_source, ps_output_source,
             constant_buffers, texture_samplers_source,
             technique_name)
 
