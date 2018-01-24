@@ -44,17 +44,28 @@ namespace put
             
             Str name = j_techique["name"].as_str();
             
-            if( put::str_find(name, "_skinned") != -1 )
+            static const c8* k_sub_types[] =
             {
-                Str name_base = put::str_replace_string(name, "_skinned", "");
-                
-                program.id_name = PEN_HASH(name_base.c_str());
-                program.id_sub_type = PEN_HASH("_skinned");
-            }
-            else
+                "_skinned",
+                "_instanced"
+            };
+            
+            //default sub type
+            program.id_name = PEN_HASH(name.c_str());
+            program.id_sub_type = PEN_HASH("");
+            
+            for( s32 i = 0; i < PEN_ARRAY_SIZE(k_sub_types); ++i )
             {
-                program.id_name = PEN_HASH(name.c_str());
-                program.id_sub_type = PEN_HASH("");
+                //override subtype
+                if( put::str_find(name, k_sub_types[i]) != -1 )
+                {
+                    Str name_base = put::str_replace_string(name, k_sub_types[i], "");
+                    
+                    program.id_name = PEN_HASH(name_base.c_str());
+                    program.id_sub_type = PEN_HASH(k_sub_types[i]);
+                    
+                    break;
+                }
             }
 
             const c8* sfp = pen::renderer_get_shader_platform();

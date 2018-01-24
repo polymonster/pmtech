@@ -55,7 +55,9 @@ namespace put
             CMP_ANIM_TRAJECTORY = (1 << 10),
             CMP_LIGHT           = (1 << 11),
 			CMP_TRANSFORM		= (1 << 12),
-            CMP_CONSTRAINT      = (1 << 13)
+            CMP_CONSTRAINT      = (1 << 13),
+            CMP_SUB_INSTANCE    = (1 << 14),
+            CMP_MASTER_INSTANCE = (1 << 15)
 		};
 
         enum e_state_flags : u32
@@ -151,6 +153,13 @@ namespace put
             u32                 vertex_size;
 			scene_node_skin*	p_skin;
 		};
+        
+        struct master_instance
+        {
+            u32                 num_instances;
+            u32                 instance_buffer;
+            u32                 instance_stride;
+        };
 
         struct animation_controller
         {
@@ -223,6 +232,7 @@ namespace put
             u32*                    multibody_handles;
             s32*                    multibody_link;
             
+            master_instance*        master_instances;
             scene_node_geometry*    geometries;
             scene_node_material*    materials;
             scene_node_physics*     physics_data;

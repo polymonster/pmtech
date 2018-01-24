@@ -297,7 +297,23 @@ namespace put
 			delete[] k_dd_bools;
 		}
         
-		void parent_selection(entity_scene* scene )
+        void instance_selection( entity_scene* scene )
+        {
+            s32 selection_size = k_selection_list.size();
+            
+            if(selection_size <= 1)
+                return;
+            
+            s32 master = k_selection_list[0];
+            
+            scene->entities[master] |= CMP_MASTER_INSTANCE;
+            
+            scene->master_instances[master].num_instances = selection_size;
+            
+            //todo - must ensure list is contiguous.
+        }
+        
+		void parent_selection( entity_scene* scene )
 		{
             s32 selection_size = k_selection_list.size();
             
@@ -325,7 +341,7 @@ namespace put
             
             if(valid)
             {
-                //list is already
+                //list is already contiguous
                 dev_console_log("[parent] selection is contiguous %i to %i size %i", parent, last_index, selection_size);
                 
                 for (auto& i : k_selection_list)
@@ -834,6 +850,11 @@ namespace put
 				parent_selection( sc->scene );
 			}
 			put::dev_ui::set_tooltip("Parent (P)");
+            
+            if( shortcut_key(PENK_I) )
+            {
+                instance_selection( sc->scene );
+            }
             
             ImGui::Separator();
             

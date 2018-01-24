@@ -528,6 +528,18 @@ namespace pen
 		g_immediate_context->IASetPrimitiveTopology( ( D3D11_PRIMITIVE_TOPOLOGY ) primitive_topology );
 		g_immediate_context->DrawIndexed( index_count, start_index, base_vertex );
 	}
+    
+    void direct::renderer_draw_indexed_instanced(
+         u32 instance_count,
+         u32 start_instance,
+         u32 index_count,
+         u32 start_index,
+         u32 base_vertex,
+         u32 primitive_topology )
+    {
+        g_immediate_context->IASetPrimitiveTopology( ( D3D11_PRIMITIVE_TOPOLOGY ) primitive_topology );
+        g_immediate_context->DrawIndexedInstanced( index_count, instance_count, start_index, base_vertex, start_instance );
+    }
 
 	u32 depth_texture_format_to_dsv_format( u32 tex_format )
 	{

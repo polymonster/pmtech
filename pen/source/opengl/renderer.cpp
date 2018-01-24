@@ -728,10 +728,31 @@ namespace pen
             
         CHECK_GL_ERROR;
 
+        
         void* offset = (void*)(size_t)(start_index * 2);
         
         glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, base_vertex );
 	}
+    
+    void direct::renderer_draw_indexed_instanced(
+        u32 instance_count,
+        u32 start_instance,
+        u32 index_count,
+        u32 start_index,
+        u32 base_vertex,
+        u32 primitive_topology )
+    {
+        bind_state();
+        
+        //bind index buffer -this must always be re-bound
+        GLuint res = resource_pool[g_bound_state.index_buffer].handle;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
+        
+        //todo this needs to check index size 32 or 16 bit
+        void* offset = (void*)(size_t)(start_index * 2);
+        
+        glDrawElementsInstancedBaseVertex(primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, instance_count, base_vertex);
+    }
     
     u32 calc_mip_level_size( u32 w, u32 h, u32 block_size, u32 pixels_per_block )
     {

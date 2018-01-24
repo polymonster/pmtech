@@ -341,6 +341,7 @@ namespace pen
 	//draw calls
 	void	renderer_draw( u32 vertex_count, u32 start_vertex, u32 primitive_topology );
 	void	renderer_draw_indexed( u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology );
+    void    renderer_draw_indexed_instanced( u32 instance_count, u32 start_instance,  u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology );
 	void	renderer_draw_auto();
 
 	//render targets
@@ -430,6 +431,7 @@ namespace pen
 		//draw calls
 		void	renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology);
 		void	renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
+        void    renderer_draw_indexed_instanced( u32 instance_count, u32 start_instance,  u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology );
 		void	renderer_draw_auto();
 
 		//render targets

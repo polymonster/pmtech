@@ -43,6 +43,7 @@ namespace pen
 		CMD_SET_INDEX_BUFFER,
 		CMD_DRAW,
 		CMD_DRAW_INDEXED,
+        CMD_DRAW_INDEXED_INSTANCED,
 		CMD_CREATE_TEXTURE,
 		CMD_RELEASE_SHADER,
 		CMD_RELEASE_BUFFER,
@@ -119,7 +120,6 @@ namespace pen
 		u32 num_buffers;
 		u32* strides;
 		u32* offsets;
-
 	};
 
 	struct set_index_buffer_cmd
@@ -127,7 +127,6 @@ namespace pen
 		u32 buffer_index;
 		u32 format;
 		u32 offset;
-
 	};
 
 	struct draw_cmd
@@ -135,7 +134,6 @@ namespace pen
 		u32 vertex_count;
 		u32 start_vertex;
 		u32 primitive_topology;
-
 	};
 
 	struct draw_indexed_cmd
@@ -145,6 +143,16 @@ namespace pen
 		u32 base_vertex;
 		u32 primitive_topology;
 	};
+    
+    struct draw_indexed_instanced_cmd
+    {
+        u32 instance_count;
+        u32 start_instance;
+        u32 index_count;
+        u32 start_index;
+        u32 base_vertex;
+        u32 primitive_topology;
+    };
 
 	struct set_texture_cmd
 	{
@@ -212,6 +220,7 @@ namespace pen
 			set_index_buffer_cmd                set_index_buffer;
 			draw_cmd                            draw;
 			draw_indexed_cmd                    draw_indexed;
+            draw_indexed_instanced_cmd          draw_indexed_instanced;
 			texture_creation_params             create_texture;
 			sampler_creation_params             create_sampler;
 			set_texture_cmd                     set_texture;
@@ -315,6 +324,16 @@ namespace pen
 				cmd.draw_indexed.base_vertex,
 				cmd.draw_indexed.primitive_topology);
 			break;
+                
+        case CMD_DRAW_INDEXED_INSTANCED:
+            direct::renderer_draw_indexed_instanced(
+                cmd.draw_indexed_instanced.instance_count,
+                cmd.draw_indexed_instanced.start_instance,
+                cmd.draw_indexed_instanced.index_count,
+                cmd.draw_indexed_instanced.start_index,
+                cmd.draw_indexed_instanced.base_vertex,
+                cmd.draw_indexed_instanced.primitive_topology);
+                break;
 
 		case CMD_CREATE_TEXTURE:
 			direct::renderer_create_texture(cmd.create_texture, cmd.resource_slot);
@@ -516,7 +535,7 @@ namespace pen
 		//this is a dedicated thread which stays for the duration of the program
         pen::threads_semaphore_signal(p_continue_semaphore, 1);
         
-		while (1)
+        for(;;)
 		{
 			PEN_TIMER_START(CMD_BUFFER);
 
@@ -936,6 +955,19 @@ namespace pen
 
 		INC_WRAP(put_pos);
 	}
+    
+    void renderer_draw_indexed_instanced( u32 instance_count, u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology )
+    {
+        cmd_buffer[put_pos].command_index = CMD_DRAW_INDEXED_INSTANCED;
+        cmd_buffer[put_pos].draw_indexed_instanced.instance_count = instance_count;
+        cmd_buffer[put_pos].draw_indexed_instanced.start_instance = start_instance;
+        cmd_buffer[put_pos].draw_indexed_instanced.index_count = index_count;
+        cmd_buffer[put_pos].draw_indexed_instanced.start_index = start_index;
+        cmd_buffer[put_pos].draw_indexed_instanced.base_vertex = base_vertex;
+        cmd_buffer[put_pos].draw_indexed_instanced.primitive_topology = primitive_topology;
+        
+        INC_WRAP(put_pos);
+    }
 
 	u32 renderer_create_render_target(const texture_creation_params& tcp)
 	{

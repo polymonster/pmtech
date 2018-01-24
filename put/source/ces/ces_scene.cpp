@@ -46,7 +46,6 @@ namespace put
         void initialise_free_list( entity_scene* scene )
         {
             scene->free_list_head = nullptr;
-            free_node_list* prev = nullptr;
 
             for( s32 i = scene->nodes_size-1; i >= 0; --i )
             {
@@ -93,6 +92,7 @@ namespace put
             ALLOC_COMPONENT_ARRAY(scene, cbuffer, u32);
             
             ALLOC_COMPONENT_ARRAY(scene, geometries, scene_node_geometry);
+            ALLOC_COMPONENT_ARRAY(scene, master_instances, master_instance);
             ALLOC_COMPONENT_ARRAY(scene, materials, scene_node_material);
             ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
             ALLOC_COMPONENT_ARRAY(scene, anim_controller, animation_controller);
@@ -137,6 +137,7 @@ namespace put
 			FREE_COMPONENT_ARRAY(scene, multibody_link);
             FREE_COMPONENT_ARRAY(scene, cbuffer);
             
+            FREE_COMPONENT_ARRAY(scene, master_instances);
             FREE_COMPONENT_ARRAY(scene, geometries);
             FREE_COMPONENT_ARRAY(scene, materials);
             FREE_COMPONENT_ARRAY(scene, physics_data);
@@ -176,6 +177,9 @@ namespace put
 
             if (scene->cbuffer[node_index])
                 pen::renderer_release_buffer( scene->cbuffer[node_index] );
+            
+            if(scene->master_instances[node_index].instance_buffer)
+                pen::renderer_release_buffer( scene->master_instances[node_index].instance_buffer );
         }
 
         void delete_entity_second_pass( entity_scene* scene, u32 node_index )
@@ -210,6 +214,7 @@ namespace put
 			ZERO_COMPONENT_ARRAY(scene, multibody_link, node_index);
 			ZERO_COMPONENT_ARRAY(scene, cbuffer, node_index);
 
+            ZERO_COMPONENT_ARRAY(scene, master_instances, node_index);
 			ZERO_COMPONENT_ARRAY(scene, geometries, node_index);
 			ZERO_COMPONENT_ARRAY(scene, materials, node_index);
 			ZERO_COMPONENT_ARRAY(scene, physics_data, node_index);
@@ -420,11 +425,13 @@ namespace put
                         
                     pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
                 }
-                    
+                
+                static hash_id ID_SUB_TYPE_INSTANCED = PEN_HASH("_instanced");
                 static hash_id ID_SUB_TYPE_SKINNED = PEN_HASH("_skinned");
                 static hash_id ID_SUB_TYPE_NON_SKINNED = PEN_HASH("");
                     
                 hash_id mh = p_geom->p_skin ? ID_SUB_TYPE_SKINNED : ID_SUB_TYPE_NON_SKINNED;
+                mh = scene->entities[n] & CMP_MASTER_INSTANCE ? ID_SUB_TYPE_INSTANCED : mh;
 
                 if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
                     continue;
@@ -452,6 +459,15 @@ namespace put
 						}
 					}
 				}
+                
+                //stride over instances
+                if( scene->entities[n] & CMP_MASTER_INSTANCE )
+                {
+                    u32 num_instances = scene->master_instances[n].num_instances;
+                    pen::renderer_draw_indexed_instanced(num_instances, 0, scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                    n += num_instances;
+                    continue;
+                }
 
 				//draw
 				pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
