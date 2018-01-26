@@ -1251,11 +1251,13 @@ namespace put
 
         void scene_material_ui( entity_scene* scene )
         {
+            static bool colour_picker_open = false;
+            
             if (k_selection_list.size() != 1)
                 return;
 
             u32 selected_index = k_selection_list[0];
-
+            
             //material
             if (ImGui::CollapsingHeader( "Material" ))
             {
@@ -1281,7 +1283,32 @@ namespace put
                         
                         ImGui::SliderFloat( "Roughness", ( f32* )&mm.diffuse_rgb_shininess.w, 0.000001, 1.5 );
                         ImGui::SliderFloat( "Reflectity", ( f32* )&mm.specular_rgb_reflect.w, 0.000001, 1.5 );
+                        
+                        vec4f& col = mm.diffuse_rgb_shininess;
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f ) );
+                        
+                        if( ImGui::Button("Colour") )
+                            colour_picker_open = true;
+                        
+                        ImGui::PopStyleColor();
                     }
+                }
+            }
+            
+            if( colour_picker_open )
+            {
+                auto& mm = scene->materials[selected_index];
+                
+                if( ImGui::Begin("Albedo Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize ) )
+                {
+                    vec3f col = mm.diffuse_rgb_shininess.xyz();
+                    ImGui::ColorPicker3( "Colour", ( f32* )&col );
+
+                    mm.diffuse_rgb_shininess.x = col.x;
+                    mm.diffuse_rgb_shininess.y = col.y;
+                    mm.diffuse_rgb_shininess.z = col.z;
+                    
+                    ImGui::End();
                 }
             }
         }

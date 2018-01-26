@@ -26,7 +26,7 @@ pen::window_creation_params pen_window
     1280,					    //width
     720,					    //height
     4,						    //MSAA samples
-    "rigid_body_primitives"		//window title / process name
+    "instancing"		        //window title / process name
 };
 
 namespace physics
@@ -51,18 +51,24 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->transforms->scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
+    
+    f32 spacing = 2.5f;
+    s32 num = 12;
+    
+    f32 start = ((1.0f + 1.25f) * num ) * 0.5f;
 
-    vec3f start_pos = vec3f( -20.0f, 10.0f, -20.0f );
+    vec3f start_pos = vec3f( -start, -start, -start );
+    
     vec3f cur_pos = start_pos;
-    for (s32 i = 0; i < 12; ++i)
+    for (s32 i = 0; i < num; ++i)
     {
         cur_pos.y = start_pos.y;
         
-        for (s32 j = 0; j < 12; ++j)
+        for (s32 j = 0; j < num; ++j)
         {
             cur_pos.x = start_pos.x;
             
-            for (s32 k = 0; k < 12; ++k)
+            for (s32 k = 0; k < num; ++k)
             {
                 u32 new_prim = get_new_node( scene );
                 scene->names[new_prim] = "box";
@@ -76,13 +82,13 @@ void create_physics_objects( ces::entity_scene* scene )
                 instantiate_material( default_material, scene, new_prim );
                 instantiate_model_cbuffer( scene, new_prim );
                 
-                cur_pos.x += 2.5f;
+                cur_pos.x += spacing;
             }
             
-            cur_pos.y += 2.5f;
+            cur_pos.y += spacing;
         }
         
-        cur_pos.z += 2.5f;
+        cur_pos.z += spacing;
     }
 }
 

@@ -44,6 +44,7 @@ struct vs_instance_input
 	float4 world_matrix_2	 : TEXCOORD8;
 	float4 world_matrix_3	 : TEXCOORD9;
 	float4 user_data	 	 : TEXCOORD10;
+	float4 user_data2	 	 : TEXCOORD11;
 };
 
 struct ps_output
@@ -73,7 +74,8 @@ cbuffer per_pass_view : register(b0)
 cbuffer per_draw_call : register(b1)
 {
 	float4x4 world_matrix;
-	float4   user_data; //x = id, y roughness, z reflectivity
+	float4   user_data; 	//x = id, y roughness, z reflectivity
+	float4   user_data2; 	//rgba colour
 };
 
 struct forward_light
@@ -200,7 +202,7 @@ ps_output ps_forward_lit( vs_output input )
 {	
 	ps_output output;
 	
-	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
+	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy ) * user_data2;	
 	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb * 2.0 - 1.0;
 	float4 specular_sample = SAMPLE_TEXTURE_2D( specular_texture, input.texcoord.xy );
 		

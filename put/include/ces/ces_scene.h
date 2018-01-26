@@ -12,8 +12,6 @@
 #include <vector>
 
 #define CES_DEBUG
-#define INVALID_HANDLE -1
-
 #ifdef CES_DEBUG
 #define ASSIGN_DEBUG_NAME( D, S ) D = S
 #else
@@ -73,10 +71,11 @@ namespace put
             LIGHT_TYPE_SPOT = 2
         };
         
-        struct per_model_cbuffer
+        struct per_draw_call
         {
-            mat4 world_matrix;
-            vec4f info;
+            mat4    world_matrix;
+            vec4f   v1;             //generic data ie colour
+            vec4f   v2;             //generic data ie roughness, shininess,
         };
 
 		struct scene_node_skin
@@ -229,17 +228,17 @@ namespace put
             scene_node_light*       lights;
             
             u32*                    physics_handles;
-            u32*                    multibody_handles;
-            s32*                    multibody_link;
             
             master_instance*        master_instances;
             scene_node_geometry*    geometries;
             scene_node_material*    materials;
+            
             scene_node_physics*     physics_data;
             
             animation_controller*   anim_controller;
             
             u32*                    cbuffer;
+            per_draw_call*          draw_call_data;
             
             free_node_list*         free_list;
             free_node_list*         free_list_head;
@@ -359,69 +358,3 @@ namespace put
 }
 
 #endif
-
-//todo port functions from old code base
-/*
- struct slider
- {
- vec3f limit_min;
- vec3f limit_max;
- f32      direction;
- u32   entity_index;
- };
- 
- struct button
- {
- vec3f limit_up;
- vec3f limit_down;
- vec3f offset;
- f32      spring;
- u32      entity_index;
- u32      lock_state;
- u32      debounce = 0;
- };
- 
- scene_nodes*            get_scene_nodes();
- u32                        get_num_nodes();
- void                    get_rb_params_from_node(u32 node_index, f32 mass, physics::rigid_body_params &rbp);
- 
- void                    create_compound_from_nodes(physics::compound_rb_params &crbp, const c8* compound_names, u32 clone = 0, c8* suffix = "", vec3f offset = vec3f::zero());
- void                    create_compound_rb(const c8* compound_name, const c8* base_name, f32 mass, u32 group, u32 mask, u32 &rb_index);
- 
- void                    create_physics_object(u32 node_index, physics::constraint_params* p_constraint, f32 mass, u32 group, u32 mask, vec3f scale_dimensions = vec3f(1.0f, 1.0f, 1.0f));
- 
- u32                        create_slider_widget(u32 node_index, u32 start_index, u32 end_index, f32 mass, f32 invert_max, vec3f &slider_start, vec3f &slider_end, u32 &rb_handle);
- f32                        get_slider_ratio(slider slider_node);
- 
- u32                        create_button_widget(u32 node_index, u32 up_index, u32 down_index, f32 mass, f32 spring, button &button_data);
- u32                        check_button_state(button &button_data, u32 button_lock, f32 down_epsilon, f32 up_epsilon);
- void                    release_button(button &button_data);
- 
- u32                        create_rotary_widget(u32 node_index, f32 mass, vec3f axis, vec3f pivot, u32 &rb_handle, vec2f limits = vec2f(-FLT_MAX, FLT_MAX));
- 
- a_u64*                    get_sn_entityflags(u32 index);
- 
- scene_node_physics*        get_sn_physics(u32 index);
- scene_node_geometry*    get_sn_geometry(u32 index);
- scene_node_material*    get_sn_material(u32 index);
- 
- s32*                    get_sn_multibodylink(u32 index);
- 
- u32*                    get_sn_physicshandle(u32 index);
- u32*                    get_sn_parents(u32 index);
- u32*                    get_sn_multibodyhandle(u32 index);
- 
- mat4*                    get_sn_offsetmat(u32 index);
- mat4*                    get_sn_worldmat(u32 index);
- mat4*                    get_sn_localmat(u32 index);
- 
- c8*                        get_sn_name(u32 index);
- 
- s32                        get_scene_node_by_name(const c8* name);
- s32                        get_cloned_scene_node_by_name(const c8* name, const c8* suffix, vec3f offset, u32 disble_src);
- 
- void                    clone_node(u32 src, u32 dst, s32 parent, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
- 
- void                    hide_node(u32 node_index, u32 remove_physics);
- void                    show_node(u32 node_index, u32 add_physics);
- */

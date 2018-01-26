@@ -87,9 +87,9 @@ namespace put
             ALLOC_COMPONENT_ARRAY(scene, bounding_volumes, bounding_volume);
         
 			ALLOC_COMPONENT_ARRAY(scene, physics_handles, u32);
-			ALLOC_COMPONENT_ARRAY(scene, multibody_handles, u32);
-			ALLOC_COMPONENT_ARRAY(scene, multibody_link, s32);
+            
             ALLOC_COMPONENT_ARRAY(scene, cbuffer, u32);
+            ALLOC_COMPONENT_ARRAY(scene, draw_call_data, per_draw_call);
             
             ALLOC_COMPONENT_ARRAY(scene, geometries, scene_node_geometry);
             ALLOC_COMPONENT_ARRAY(scene, master_instances, master_instance);
@@ -133,9 +133,9 @@ namespace put
             FREE_COMPONENT_ARRAY(scene, bounding_volumes);
             
 			FREE_COMPONENT_ARRAY(scene, physics_handles);
-			FREE_COMPONENT_ARRAY(scene, multibody_handles);
-			FREE_COMPONENT_ARRAY(scene, multibody_link);
+            
             FREE_COMPONENT_ARRAY(scene, cbuffer);
+            FREE_COMPONENT_ARRAY(scene, draw_call_data);
             
             FREE_COMPONENT_ARRAY(scene, master_instances);
             FREE_COMPONENT_ARRAY(scene, geometries);
@@ -210,9 +210,9 @@ namespace put
 			ZERO_COMPONENT_ARRAY(scene, bounding_volumes, node_index);
 
 			ZERO_COMPONENT_ARRAY(scene, physics_handles, node_index);
-			ZERO_COMPONENT_ARRAY(scene, multibody_handles, node_index);
-			ZERO_COMPONENT_ARRAY(scene, multibody_link, node_index);
+            
 			ZERO_COMPONENT_ARRAY(scene, cbuffer, node_index);
+            ZERO_COMPONENT_ARRAY(scene, draw_call_data, node_index);
 
             ZERO_COMPONENT_ARRAY(scene, master_instances, node_index);
 			ZERO_COMPONENT_ARRAY(scene, geometries, node_index);
@@ -270,10 +270,9 @@ namespace put
 			p_sn->physics_data[dst] = p_sn->physics_data[src];
 			p_sn->geometries[dst] = p_sn->geometries[src];
 			p_sn->materials[dst] = p_sn->materials[src];
-			p_sn->multibody_handles[dst] = p_sn->multibody_handles[src];
-			p_sn->multibody_link[dst] = p_sn->multibody_link[src];
 			p_sn->anim_controller[dst] = p_sn->anim_controller[src];
 			p_sn->physics_data[dst].rigid_body.position += offset;
+            p_sn->draw_call_data[dst] = p_sn->draw_call_data[src];
 
 			vec3f right = p_sn->local_matrices[dst].get_right();
 			vec3f up = p_sn->local_matrices[dst].get_up();
@@ -680,23 +679,41 @@ namespace put
 				}
 			}
             
-            //update c buffers
+            //todo - per draw call data is quite basic, might be a need in the future for more cutsom
+            //sets of data for draw calls
+            
+            //update draw call data
             for( s32 n = 0; n < scene->num_nodes; ++n )
             {
                 if( !(scene->entities[n] & CMP_MATERIAL) )
                     continue;
+                
+                scene_node_material& mat = scene->materials[n];
+                scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
+                scene->draw_call_data[n].v1 = vec4f((f32)n, mat.diffuse_rgb_shininess.w, mat.specular_rgb_reflect.w, 0.0f);
+                scene->draw_call_data[n].v2 = vec4f( mat.diffuse_rgb_shininess.xyz(), 1.0f);
                     
-                if( scene->cbuffer[n] == INVALID_HANDLE )
+                if( !scene->cbuffer[n] )
                     continue;
                 
-                per_model_cbuffer cb =
-                {
-                    scene->world_matrices[n],
-                    vec4f((f32)n, scene->materials[n].diffuse_rgb_shininess.w, scene->materials[n].specular_rgb_reflect.w, 0.0f)
-                };
+                if( scene->entities[n] & CMP_SUB_INSTANCE )
+                    continue;
                 
-                //per object world matrix
-                pen::renderer_update_buffer(scene->cbuffer[n], &cb, sizeof(per_model_cbuffer));
+                //per node cbuffer
+                pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(per_draw_call));
+            }
+            
+            //update instance buffers
+            for( s32 n = 0; n < scene->num_nodes; ++n )
+            {
+                if( !(scene->entities[n] & CMP_MASTER_INSTANCE) )
+                    continue;
+                
+                u32 instance_data_size = scene->master_instances[n].num_instances * scene->master_instances[n].instance_stride;
+                pen::renderer_update_buffer(scene->master_instances[n].instance_buffer, &scene->draw_call_data[n], instance_data_size);
+                
+                //stride over sub instances
+                n+= scene->master_instances[n].num_instances;
             }
             
 			static forward_light_buffer light_buffer;

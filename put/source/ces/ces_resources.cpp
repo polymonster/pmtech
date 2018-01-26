@@ -138,7 +138,7 @@ namespace put
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size = sizeof(per_model_cbuffer);
+            bcp.buffer_size = sizeof(per_draw_call);
             bcp.data = nullptr;
             
             scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
@@ -457,7 +457,7 @@ namespace put
             if( err != PEN_ERR_OK || anim_file_size == 0 )
             {
                 //TODO error dialog
-                return INVALID_HANDLE;
+                return PEN_INVALID_HANDLE;
             }
             
             const u32* p_u32reader = (u32*)anim_file;
@@ -467,7 +467,7 @@ namespace put
             if( version < 1 )
             {
                 pen::memory_free(anim_file);
-                return INVALID_HANDLE;
+                return PEN_INVALID_HANDLE;
             }
             
             k_animations.push_back(animation_resource());

@@ -116,45 +116,70 @@ namespace put
             pen::input_layout_creation_params ilp;
             ilp.vs_byte_code = vs_slp.byte_code;
             ilp.vs_byte_code_size = vs_slp.byte_code_size;
-            ilp.num_elements = j_techique["vs_inputs"].size();
+            
+            u32 vertex_elements = j_techique["vs_inputs"].size();
+            ilp.num_elements = vertex_elements;
+            
+            u32 instance_elements = j_techique["instance_inputs"].size();
+            ilp.num_elements += instance_elements;
             
             ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
             
-            for (u32 i = 0; i < ilp.num_elements; ++i)
+            struct layout
             {
-                pen::json vj = j_techique["vs_inputs"][i];
-                
-                u32 num_elements = vj["num_elements"].as_u32();
-                u32 elements_size = vj["element_size"].as_u32();
-                
-                static const s32 float_formats[4] =
+                const c8* name;
+                input_classification iclass;
+                u32 step_rate;
+                u32 num;
+            };
+            
+            layout layouts[2] =
+            {
+                { "vs_inputs", PEN_INPUT_PER_VERTEX, 0, vertex_elements},
+                { "instance_inputs", PEN_INPUT_PER_INSTANCE, 1, instance_elements},
+            };
+            
+            u32 input_index = 0;
+            for(u32 l = 0; l < 2; ++l)
+            {
+                for (u32 i = 0; i < layouts[l].num; ++i)
                 {
-                    PEN_VERTEX_FORMAT_FLOAT1,
-                    PEN_VERTEX_FORMAT_FLOAT2,
-                    PEN_VERTEX_FORMAT_FLOAT3,
-                    PEN_VERTEX_FORMAT_FLOAT4
-                };
-                
-                static const s32 byte_formats[4] =
-                {
-                    PEN_VERTEX_FORMAT_UNORM1,
-                    PEN_VERTEX_FORMAT_UNORM2,
-                    PEN_VERTEX_FORMAT_UNORM2,
-                    PEN_VERTEX_FORMAT_UNORM4
-                };
-                
-                const s32* fomats = float_formats;
-                
-                if (elements_size == 1)
-                    fomats = byte_formats;
-                
-                ilp.input_layout[i].semantic_index = vj["semantic_index"].as_u32();
-                ilp.input_layout[i].format = fomats[num_elements-1];
-                ilp.input_layout[i].semantic_name = &semantic_names[vj["semantic_id"].as_u32()][0];
-                ilp.input_layout[i].input_slot = 0;
-                ilp.input_layout[i].aligned_byte_offset = vj["offset"].as_u32();
-                ilp.input_layout[i].input_slot_class = PEN_INPUT_PER_VERTEX;
-                ilp.input_layout[i].instance_data_step_rate = 0;
+                    pen::json vj = j_techique[layouts[l].name][i];
+                    
+                    u32 num_elements = vj["num_elements"].as_u32();
+                    u32 elements_size = vj["element_size"].as_u32();
+                    
+                    static const s32 float_formats[4] =
+                    {
+                        PEN_VERTEX_FORMAT_FLOAT1,
+                        PEN_VERTEX_FORMAT_FLOAT2,
+                        PEN_VERTEX_FORMAT_FLOAT3,
+                        PEN_VERTEX_FORMAT_FLOAT4
+                    };
+                    
+                    static const s32 byte_formats[4] =
+                    {
+                        PEN_VERTEX_FORMAT_UNORM1,
+                        PEN_VERTEX_FORMAT_UNORM2,
+                        PEN_VERTEX_FORMAT_UNORM2,
+                        PEN_VERTEX_FORMAT_UNORM4
+                    };
+                    
+                    const s32* fomats = float_formats;
+                    
+                    if (elements_size == 1)
+                        fomats = byte_formats;
+                    
+                    ilp.input_layout[input_index].semantic_index = vj["semantic_index"].as_u32();
+                    ilp.input_layout[input_index].format = fomats[num_elements-1];
+                    ilp.input_layout[input_index].semantic_name = &semantic_names[vj["semantic_id"].as_u32()][0];
+                    ilp.input_layout[input_index].input_slot = 0;
+                    ilp.input_layout[input_index].aligned_byte_offset = vj["offset"].as_u32();
+                    ilp.input_layout[input_index].input_slot_class = layouts[l].iclass;
+                    ilp.input_layout[input_index].instance_data_step_rate = layouts[l].step_rate;
+                    
+                    ++input_index;
+                }
             }
             
             program.input_layout = pen::renderer_create_input_layout(ilp);
