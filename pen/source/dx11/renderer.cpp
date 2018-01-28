@@ -509,12 +509,11 @@ namespace pen
     
     void direct::renderer_set_vertex_buffers( u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets )
     {
-        ID3D11Buffer* buffers[2] =
-        {
-            buffer_indices[0],
-            buffer_indices[std::min<u32>(num_buffers-1, 1)]
-        };
+        ID3D11Buffer* buffers[4];
         
+        for( s32 i = 0; i < num_buffers; ++i )
+            buffers[i] = resource_pool[ buffer_indices[i] ].generic_buffer,
+            
         g_immediate_context->IASetVertexBuffers(
                                                 start_slot,
                                                 num_buffers,

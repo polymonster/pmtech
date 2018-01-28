@@ -309,6 +309,7 @@ namespace put
             scene->entities[master] |= CMP_MASTER_INSTANCE;
             
             scene->master_instances[master].num_instances = selection_size;
+            scene->master_instances[master].instance_stride = sizeof(per_draw_call);
             
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DEFAULT;
