@@ -496,16 +496,32 @@ namespace pen
 			PEN_ASSERT( 0 );
 		}
 	}
-
-	void direct::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
-	{
-		 g_immediate_context->IASetVertexBuffers( 
-			 start_slot, 
-			 num_buffers, 
-			 &resource_pool[ buffer_index ].generic_buffer, 
-			 strides, 
-			 offsets );
-	}
+    
+    void direct::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
+    {
+        g_immediate_context->IASetVertexBuffers(
+                                                start_slot,
+                                                num_buffers,
+                                                &resource_pool[ buffer_index ].generic_buffer,
+                                                strides,
+                                                offsets );
+    }
+    
+    void direct::renderer_set_vertex_buffers( u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets )
+    {
+        ID3D11Buffer* buffers[2] =
+        {
+            buffer_indices[0],
+            buffer_indices[std::min<u32>(num_buffers-1, 1)]
+        };
+        
+        g_immediate_context->IASetVertexBuffers(
+                                                start_slot,
+                                                num_buffers,
+                                                buffers,
+                                                strides,
+                                                offsets );
+    }
 
 	void direct::renderer_set_input_layout( u32 layout_index )
 	{
