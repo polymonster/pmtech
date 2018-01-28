@@ -137,8 +137,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
             //bind vertex buffer
             u32 stride = sizeof( textured_vertex );
-            u32 offset = 0;
-            pen::renderer_set_vertex_buffer( quad_vertex_buffer, 0, 1, &stride, &offset );
+            pen::renderer_set_vertex_buffer( quad_vertex_buffer, 0, stride, 0 );
             pen::renderer_set_index_buffer( quad_index_buffer, PEN_FORMAT_R16_UINT, 0 );
 
             //bind render target as texture on sampler 0

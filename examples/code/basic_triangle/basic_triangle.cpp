@@ -139,8 +139,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         //bind vertex buffer
         u32 stride = sizeof( vertex );
-        u32 offset = 0;
-        pen::renderer_set_vertex_buffer( vertex_buffer, 0, 1, &stride, &offset );
+        pen::renderer_set_vertex_buffer( vertex_buffer, 0, stride, 0 );
 
         //bind shaders
         pen::renderer_set_shader( vertex_shader, PEN_SHADER_TYPE_VS );

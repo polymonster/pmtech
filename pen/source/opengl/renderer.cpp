@@ -57,7 +57,8 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	//  COMMON API
 	//--------------------------------------------------------------------------------------
-	#define NUM_QUERY_BUFFERS		4
+	#define MAX_VERTEX_BUFFERS      4
+    #define NUM_QUERY_BUFFERS		4
 	#define MAX_QUERIES				64 
 	#define NUM_CUBEMAP_FACES		6
     #define MAX_VERTEX_ATTRIBUTES   16
@@ -102,6 +103,8 @@ namespace pen
         u32     stride;
         size_t  offset;
         u32     num_elements;
+        u32     input_slot;
+        u32     step_rate;
     };
     
     struct input_layout
@@ -200,10 +203,13 @@ namespace pen
 	};
 	query_allocation	query_pool		[MAX_QUERIES];
     
+    
     struct active_state
     {
-        u32 vertex_buffer;
-        u32 vertex_buffer_stride;
+        u32 vertex_buffer[MAX_VERTEX_BUFFERS] = { 0 };
+        u32 vertex_buffer_stride[MAX_VERTEX_BUFFERS] = { 0 };
+        u32 vertex_buffer_offset[MAX_VERTEX_BUFFERS] = { 0 };
+        u32 num_bound_vertex_buffers = 0;
         u32 index_buffer;
         u32 input_layout;
         u32 vertex_shader;
@@ -541,16 +547,30 @@ namespace pen
             attributes[ i ].num_elements    = UNPACK_NUM_ELEMENTS(params.input_layout[ i ].format);
             attributes[ i ].offset          = params.input_layout[ i ].aligned_byte_offset;
             attributes[ i ].stride          = 0;
+            attributes[ i ].input_slot      = params.input_layout[ i ].input_slot;
+            attributes[ i ].step_rate       = params.input_layout[ i ].instance_data_step_rate;
         }
 	}
 
 	void direct::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
 	{
-        g_current_state.vertex_buffer = buffer_index;
-        g_current_state.vertex_buffer_stride = strides[ 0 ];
-        
-        //todo support multiple vertex stream / instance data
+        g_current_state.vertex_buffer[0] = buffer_index;
+        g_current_state.vertex_buffer_stride[0] = strides[ 0 ];
+        g_current_state.vertex_buffer_offset[0] = offsets[0];
+        g_current_state.num_bound_vertex_buffers = 1;
 	}
+    
+    void direct::renderer_set_vertex_buffers( u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets )
+    {
+        for( s32 i = 0; i < num_buffers; ++i )
+        {
+            g_current_state.vertex_buffer[start_slot + i] = buffer_indices[i];
+            g_current_state.vertex_buffer_stride[start_slot + i] = strides[i];
+            g_current_state.vertex_buffer_offset[start_slot + i] = offsets[i];
+        }
+        
+        g_current_state.num_bound_vertex_buffers = num_buffers;
+    }
 
 	void direct::renderer_set_input_layout( u32 layout_index )
 	{
@@ -604,40 +624,80 @@ namespace pen
             CHECK_GL_ERROR;
         }
         
-        //bind vertex buffer
+#if 1
+        g_bound_state.input_layout = g_current_state.input_layout;
+        
+        auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
+        if( input_res->vertex_array_handle == 0 )
         {
-            g_bound_state.vertex_buffer = g_current_state.vertex_buffer;
+            glGenVertexArrays(1, &input_res->vertex_array_handle);
+        }
+        
+        glBindVertexArray(input_res->vertex_array_handle);
+        
+        for( s32 v = 0; v < g_current_state.num_bound_vertex_buffers; ++v )
+        {
+            //if( v > 0 )
+                //continue;
             
-            auto& res = resource_pool[g_bound_state.vertex_buffer].handle;
-            glBindBuffer(GL_ARRAY_BUFFER, res);
+            g_bound_state.vertex_buffer[v] = g_current_state.vertex_buffer[v];
+            g_bound_state.vertex_buffer_stride[v] = g_current_state.vertex_buffer_stride[v];
+            
+            auto& res = resource_pool[g_bound_state.vertex_buffer[v]].handle;
             
             CHECK_GL_ERROR;
+            
+            for( auto& attribute : input_res->attributes )
+            {
+                if( attribute.input_slot != v )
+                    continue;
+                
+                glEnableVertexAttribArray(attribute.location);
+                glBindBuffer(GL_ARRAY_BUFFER, res);
+                
+                glVertexAttribPointer(
+                                      attribute.location,
+                                      attribute.num_elements,
+                                      attribute.type,
+                                      attribute.type == GL_UNSIGNED_BYTE ? true : false,
+                                      g_bound_state.vertex_buffer_stride[v],
+                                      (void*)attribute.offset);
+                
+                glVertexAttribDivisor(attribute.location, attribute.step_rate);
+            }
+        }
+#else
+        {
+            g_bound_state.vertex_buffer[0] = g_current_state.vertex_buffer[0];
+            
+            auto& res = resource_pool[g_bound_state.vertex_buffer[0]].handle;
+            glBindBuffer(GL_ARRAY_BUFFER, res);
         }
         
         //bind input layout
         auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
 
         //if input layout has changed, vb has changed or the stride of the vb has changed
-        bool invalidate_input_layout = input_res->vb_handle == 0 || input_res->vb_handle != g_bound_state.vertex_buffer;
+        bool invalidate_input_layout = input_res->vb_handle == 0 || input_res->vb_handle != g_bound_state.vertex_buffer[0];
         invalidate_input_layout |= g_current_state.input_layout != g_bound_state.input_layout;
         invalidate_input_layout |= g_current_state.vertex_buffer_stride != g_bound_state.vertex_buffer_stride;
         
-        if( invalidate_input_layout )
+        //if( invalidate_input_layout )
         {
             g_bound_state.input_layout = g_current_state.input_layout;
-            g_bound_state.vertex_buffer_stride = g_current_state.vertex_buffer_stride;
+            g_bound_state.vertex_buffer_stride[0] = g_current_state.vertex_buffer_stride[0];
             
             auto* res = input_res;
             
             //if we havent already generated one or we have previously been bound to a different vb layout
-            if( res->vertex_array_handle == 0 || res->vb_handle != g_bound_state.vertex_buffer )
+            //if( res->vertex_array_handle == 0 || res->vb_handle != g_bound_state.vertex_buffer[0] )
             {
                 if( res->vertex_array_handle == 0 )
                 {
                     glGenVertexArrays(1, &res->vertex_array_handle);
                 }
                 
-                res->vb_handle = g_bound_state.vertex_buffer;
+                //res->vb_handle = g_bound_state.vertex_buffer[0];
                 
                 glBindVertexArray(res->vertex_array_handle);
                 
@@ -648,7 +708,7 @@ namespace pen
                                           attribute.num_elements,
                                           attribute.type,
                                           attribute.type == GL_UNSIGNED_BYTE ? true : false,
-                                          g_bound_state.vertex_buffer_stride,
+                                          g_bound_state.vertex_buffer_stride[0],
                                           (void*)attribute.offset);
                     
                     glEnableVertexAttribArray(attribute.location);
@@ -659,6 +719,7 @@ namespace pen
             
             CHECK_GL_ERROR;
         }
+#endif
 
         if( g_bound_state.raster_state != g_current_state.raster_state ||
             g_bound_state.backbuffer_bound != g_current_state.backbuffer_bound )

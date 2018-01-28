@@ -444,7 +444,29 @@ namespace put
                     pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
 
 				//set ib / vb
-				pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0 );
+                if( scene->entities[n] & CMP_MASTER_INSTANCE )
+                {
+                    u32 vbs[2] =
+                    {
+                        p_geom->vertex_buffer,
+                        scene->master_instances[n].instance_buffer
+                    };
+                    
+                    u32 strides[2] =
+                    {
+                        p_geom->vertex_size,
+                        scene->master_instances[n].instance_stride
+                    };
+                    
+                    u32 offsets[2] = { 0 };
+                    
+                    pen::renderer_set_vertex_buffers(vbs, 2, 0, strides, offsets );
+                }
+                else
+                {
+                    pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0 );
+                }
+                
 				pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
 
 				//set textures

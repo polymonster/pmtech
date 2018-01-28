@@ -159,10 +159,7 @@ vs_output vs_main_instanced( vs_input input, vs_instance_input instance_input )
 
 	float4x4 wvp = vp_matrix;
 	
-	float4 tt = input.position;
-	tt.x += gl_InstanceID;
-	
-	output.position = mul( tt, wvp );
+	output.position = mul( input.position, wvp );
 	output.world_pos = mul( input.position, instance_world_mat );
 		
 	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );

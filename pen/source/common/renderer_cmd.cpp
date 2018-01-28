@@ -23,7 +23,7 @@ namespace pen
 	u32 get_pos = 0;
 	u32 commands_this_frame = 0;
 
-#define MAX_COMMANDS (1<<17)
+#define MAX_COMMANDS (1<<18)
 #define INC_WRAP( V ) V = (V+1) & (MAX_COMMANDS-1); commands_this_frame++
 
 	enum commands : u32
@@ -115,8 +115,9 @@ namespace pen
 
 	struct set_vertex_buffer_cmd
 	{
-		u32 buffer_index;
+        u32 buffer_index;
 		u32 start_slot;
+        u32* buffer_indices;
 		u32 num_buffers;
 		u32* strides;
 		u32* offsets;
@@ -296,12 +297,13 @@ namespace pen
 			break;
 
 		case CMD_SET_VERTEX_BUFFER:
-			direct::renderer_set_vertex_buffer(
-				cmd.set_vertex_buffer.buffer_index,
-				cmd.set_vertex_buffer.start_slot,
+			direct::renderer_set_vertex_buffers(
+				cmd.set_vertex_buffer.buffer_indices,
 				cmd.set_vertex_buffer.num_buffers,
+                cmd.set_vertex_buffer.start_slot,
 				cmd.set_vertex_buffer.strides,
 				cmd.set_vertex_buffer.offsets);
+            pen::memory_free(cmd.set_vertex_buffer.buffer_indices);
 			pen::memory_free(cmd.set_vertex_buffer.strides);
 			pen::memory_free(cmd.set_vertex_buffer.offsets);
 			break;
@@ -902,28 +904,29 @@ namespace pen
 
 	void renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 stride, u32 offset)
 	{
-		pen::renderer_set_vertex_buffer(buffer_index, start_slot, 1, &stride, &offset);
+		pen::renderer_set_vertex_buffers( &buffer_index, 1, start_slot, &stride, &offset);
 	}
 
-	void renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets)
-	{
-		cmd_buffer[put_pos].command_index = CMD_SET_VERTEX_BUFFER;
-
-		cmd_buffer[put_pos].set_vertex_buffer.buffer_index = buffer_index;
-		cmd_buffer[put_pos].set_vertex_buffer.start_slot = start_slot;
-		cmd_buffer[put_pos].set_vertex_buffer.num_buffers = num_buffers;
-
-		cmd_buffer[put_pos].set_vertex_buffer.strides = (u32*)pen::memory_alloc(sizeof(u32) * num_buffers);
-		cmd_buffer[put_pos].set_vertex_buffer.offsets = (u32*)pen::memory_alloc(sizeof(u32) * num_buffers);
-
-		for (u32 i = 0; i < num_buffers; ++i)
-		{
-			cmd_buffer[put_pos].set_vertex_buffer.strides[i] = strides[i];
-			cmd_buffer[put_pos].set_vertex_buffer.offsets[i] = offsets[i];
-		}
-
-		INC_WRAP(put_pos);
-	}
+    void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
+    {
+        cmd_buffer[put_pos].command_index = CMD_SET_VERTEX_BUFFER;
+        
+        cmd_buffer[put_pos].set_vertex_buffer.start_slot = start_slot;
+        cmd_buffer[put_pos].set_vertex_buffer.num_buffers = num_buffers;
+        
+        cmd_buffer[put_pos].set_vertex_buffer.buffer_indices = (u32*)pen::memory_alloc(sizeof(u32) * num_buffers);
+        cmd_buffer[put_pos].set_vertex_buffer.strides = (u32*)pen::memory_alloc(sizeof(u32) * num_buffers);
+        cmd_buffer[put_pos].set_vertex_buffer.offsets = (u32*)pen::memory_alloc(sizeof(u32) * num_buffers);
+        
+        for (u32 i = 0; i < num_buffers; ++i)
+        {
+            cmd_buffer[put_pos].set_vertex_buffer.buffer_indices[i] = buffer_indices[i];
+            cmd_buffer[put_pos].set_vertex_buffer.strides[i] = strides[i];
+            cmd_buffer[put_pos].set_vertex_buffer.offsets[i] = offsets[i];
+        }
+        
+        INC_WRAP(put_pos);
+    }
 
 	void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
 	{

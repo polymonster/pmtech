@@ -173,7 +173,7 @@ namespace put
                     ilp.input_layout[input_index].semantic_index = vj["semantic_index"].as_u32();
                     ilp.input_layout[input_index].format = fomats[num_elements-1];
                     ilp.input_layout[input_index].semantic_name = &semantic_names[vj["semantic_id"].as_u32()][0];
-                    ilp.input_layout[input_index].input_slot = 0;
+                    ilp.input_layout[input_index].input_slot = l;
                     ilp.input_layout[input_index].aligned_byte_offset = vj["offset"].as_u32();
                     ilp.input_layout[input_index].input_slot_class = layouts[l].iclass;
                     ilp.input_layout[input_index].instance_data_step_rate = layouts[l].step_rate;

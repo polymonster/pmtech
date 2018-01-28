@@ -310,6 +310,15 @@ namespace put
             
             scene->master_instances[master].num_instances = selection_size;
             
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.buffer_size = sizeof(per_draw_call) * scene->master_instances[master].num_instances;
+            bcp.data = nullptr;
+            bcp.cpu_access_flags = 0;
+            
+            scene->master_instances[master].instance_buffer = pen::renderer_create_buffer(bcp);
+            
             //todo - must ensure list is contiguous.
         }
         
