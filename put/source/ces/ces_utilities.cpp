@@ -334,5 +334,30 @@ namespace put
             
             scene->flags |= INVALIDATE_SCENE_TREE;
 		}
+        
+        void instance_node_range( entity_scene* scene, u32 master_node, u32 num_nodes )
+        {
+            s32 master = master_node;
+            
+            if (scene->entities[master] & CMP_MASTER_INSTANCE)
+                return;
+            
+            scene->entities[master] |= CMP_MASTER_INSTANCE;
+            
+            scene->master_instances[master].num_instances = num_nodes;
+            scene->master_instances[master].instance_stride = sizeof(per_draw_call);
+            
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.buffer_size = sizeof(per_draw_call) * scene->master_instances[master].num_instances;
+            bcp.data = nullptr;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            
+            scene->master_instances[master].instance_buffer = pen::renderer_create_buffer(bcp);
+            
+            //todo - must ensure list is contiguous.
+            dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
+        }
     }
 }

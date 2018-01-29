@@ -46,16 +46,16 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH( "front_light" );
     scene->lights[light].colour = vec3f::one();
-    scene->transforms->translation = vec3f( 100.0f, 100.0f, 100.0f );
+    scene->transforms->translation = vec3f( 10000.0f, 10000.0f, 10000.0f );
     scene->transforms->rotation = quat();
     scene->transforms->scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
     
-    f32 spacing = 2.5f;
-    s32 num = 12;
+    f32 spacing = 4.0f;
+    s32 num = 32; //32768 instances;
     
-    f32 start = ((1.0f + 1.25f) * num ) * 0.5f;
+    f32 start = (( spacing + 2.0f ) * num) * 0.25f;
 
     vec3f start_pos = vec3f( -start, -start, -start );
     
@@ -73,14 +73,28 @@ void create_physics_objects( ces::entity_scene* scene )
                 u32 new_prim = get_new_node( scene );
                 scene->names[new_prim] = "box";
                 scene->names[new_prim].appendf( "%i", new_prim );
+                
+                //random rotation offset
+                f32 x = put::maths::deg_to_rad(rand()%360);
+                f32 y = put::maths::deg_to_rad(rand()%360);
+                f32 z = put::maths::deg_to_rad(rand()%360);
+                
                 scene->transforms[new_prim].rotation = quat();
+                scene->transforms[new_prim].rotation.euler_angles(z, y, x);
+                
                 scene->transforms[new_prim].scale = vec3f::one();
                 scene->transforms[new_prim].translation = cur_pos;
                 scene->entities[new_prim] |= CMP_TRANSFORM;
                 scene->parents[new_prim] = new_prim;
+                
                 instantiate_geometry( box_resource, scene, new_prim );
                 instantiate_material( default_material, scene, new_prim );
-                instantiate_model_cbuffer( scene, new_prim );
+                
+                if( i == 0 && j == 0 && k == 0)
+                    instantiate_model_cbuffer(scene, new_prim);
+                else
+                    scene->entities[new_prim] |= CMP_SUB_INSTANCE;
+                    
                 
                 cur_pos.x += spacing;
             }
@@ -89,6 +103,20 @@ void create_physics_objects( ces::entity_scene* scene )
         }
         
         cur_pos.z += spacing;
+    }
+    
+    instance_node_range(scene, 1, pow(num, 3) );
+}
+
+void animate_instances( entity_scene* scene )
+{
+    quat q;
+    q.euler_angles(0.01f, 0.01f, 0.01f);
+    
+    for( s32 i = 1; i < scene->num_nodes; ++i )
+    {
+        scene->transforms[i].rotation = scene->transforms[i].rotation * q;
+        scene->entities[i] |= CMP_TRANSFORM;
     }
 }
 
@@ -154,6 +182,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         f32 start = pen::timer_get_time();
         
 		put::dev_ui::new_frame();
+        
+        animate_instances(main_scene);
         
         pmfx::update();
         

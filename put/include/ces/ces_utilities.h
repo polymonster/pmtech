@@ -29,6 +29,8 @@ namespace put
         
         u32		clone_node( entity_scene* scene, u32 src, s32 dst = -1, s32 parent = -1, u32 flags = CLONE_INSTANTIATE, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
 		void	clone_selection_hierarchical(entity_scene* scene, std::vector<u32>& selection_list, const c8* suffix);
+        
+        void    instance_node_range( entity_scene* scene, u32 master_node, u32 num_nodes );
 
 		void	set_node_parent(entity_scene* scene, u32 parent, u32 child);
 

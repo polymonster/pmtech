@@ -365,6 +365,9 @@ namespace put
 			{
 				if ( !(scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL) )
 					continue;
+                
+                if ( scene->entities[n] & CMP_SUB_INSTANCE )
+                    continue;
 
 				//frustum cull
 				bool inside = true;
@@ -433,8 +436,15 @@ namespace put
                 mh = scene->entities[n] & CMP_MASTER_INSTANCE ? ID_SUB_TYPE_INSTANCED : mh;
 
                 if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
+                {
+                    if( scene->entities[n] & CMP_MASTER_INSTANCE )
+                    {
+                        u32 num_instances = scene->master_instances[n].num_instances;
+                        n += num_instances;
+                    }
                     continue;
-                    
+                }
+                
                 //set cbs
 				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);

@@ -181,20 +181,11 @@ float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
 	return normalize( mul_tbn( tbn, ts_normal ) );
 }
 
-ps_output ps_instanced_test( vs_output input )
-{
-	ps_output output;
-	
-	output.colour = float4( 0.0, 1.0, 0.0, 1.0 );
-	
-	return output.colour;
-}
-
 ps_output ps_forward_lit( vs_output input ) 
 {	
 	ps_output output;
 	
-	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy ) * user_data2;	
+	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );	
 	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb * 2.0 - 1.0;
 	float4 specular_sample = SAMPLE_TEXTURE_2D( specular_texture, input.texcoord.xy );
 		
@@ -273,7 +264,7 @@ ps_output ps_forward_lit( vs_output input )
 	
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
-		
+	
     return output;
 }
 

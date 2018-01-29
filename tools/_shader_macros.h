@@ -12,7 +12,7 @@
 
 #define to_3x3( M4 ) float3x3(M4)
 
-#define unpack_vb_instance_mat( r1, r2, r3, r4 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;
+#define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;
 
 #else
 	
