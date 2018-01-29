@@ -730,9 +730,11 @@ namespace put
             {
                 if( !(scene->entities[n] & CMP_MASTER_INSTANCE) )
                     continue;
+
+				master_instance& master = scene->master_instances[n];
                 
-                u32 instance_data_size = scene->master_instances[n].num_instances * scene->master_instances[n].instance_stride;
-                pen::renderer_update_buffer(scene->master_instances[n].instance_buffer, &scene->draw_call_data[n], instance_data_size);
+                u32 instance_data_size = master.num_instances * master.instance_stride;
+                pen::renderer_update_buffer(master.instance_buffer, &scene->draw_call_data[n], instance_data_size);
                 
                 //stride over sub instances
                 n+= scene->master_instances[n].num_instances;

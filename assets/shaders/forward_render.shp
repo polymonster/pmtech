@@ -150,11 +150,15 @@ vs_output vs_main_instanced( vs_input input, vs_instance_input instance_input )
 	vs_output output;
 	
 	float4x4 instance_world_mat;
-	instance_world_mat[0] = instance_input.world_matrix_0;
-	instance_world_mat[1] = instance_input.world_matrix_1;
-	instance_world_mat[2] = instance_input.world_matrix_2;
-	instance_world_mat[3] = instance_input.world_matrix_3;
-	
+	unpack_vb_instance_mat
+	( 
+		instance_world_mat, 
+		instance_input.world_matrix_0,
+		instance_input.world_matrix_1,
+		instance_input.world_matrix_2,
+		instance_input.world_matrix_3
+	);
+		
 	float4x4 wvp = mul( instance_world_mat, vp_matrix );
 	
 	output.position = mul( input.position, wvp );
@@ -168,7 +172,7 @@ vs_output vs_main_instanced( vs_input input, vs_instance_input instance_input )
 	output.normal = mul( input.normal.xyz, rotation_matrix );
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
 	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
-		
+				
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
 	
     return output;
@@ -275,7 +279,6 @@ ps_output ps_forward_lit( vs_output input )
 	}
 	
 	output.colour.rgb = lit_colour.rgb;
-	
 	output.colour.a = albedo.a;
 		
     return output;

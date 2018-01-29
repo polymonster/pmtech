@@ -511,8 +511,8 @@ namespace pen
     {
         ID3D11Buffer* buffers[4];
         
-        for( s32 i = 0; i < num_buffers; ++i )
-            buffers[i] = resource_pool[ buffer_indices[i] ].generic_buffer,
+		for (s32 i = 0; i < num_buffers; ++i)
+			buffers[i] = resource_pool[buffer_indices[i]].generic_buffer;
             
         g_immediate_context->IASetVertexBuffers(
                                                 start_slot,

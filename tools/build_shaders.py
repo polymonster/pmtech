@@ -250,7 +250,6 @@ def replace_io_tokens(text):
                     continue
         split_replace.append(token)
 
-
     replaced_text = ""
     for token in split_replace:
         replaced_text += token + " "
@@ -722,7 +721,6 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
 
     function_list = find_generic_functions(shader_file_text)
 
-
     #_find main ps and vs
     ps_main = ""
     vs_main = ""
@@ -785,6 +783,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     for s in struct_list:
         vs_source += s
     vs_source += vs_input_source
+    vs_source += instance_input_source
     vs_source += vs_output_source
     for cbuf in constant_buffers:
         vs_source += cbuf

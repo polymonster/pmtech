@@ -305,6 +305,9 @@ namespace put
                 return;
             
             s32 master = k_selection_list[0];
+
+			if (scene->entities[master] & CMP_MASTER_INSTANCE)
+				return;
             
             scene->entities[master] |= CMP_MASTER_INSTANCE;
             
@@ -312,15 +315,16 @@ namespace put
             scene->master_instances[master].instance_stride = sizeof(per_draw_call);
             
             pen::buffer_creation_params bcp;
-            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.buffer_size = sizeof(per_draw_call) * scene->master_instances[master].num_instances;
             bcp.data = nullptr;
-            bcp.cpu_access_flags = 0;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             
             scene->master_instances[master].instance_buffer = pen::renderer_create_buffer(bcp);
             
             //todo - must ensure list is contiguous.
+			dev_console_log("[instance] master instance: %i with %i sub instances", master, selection_size);
         }
         
 		void parent_selection( entity_scene* scene )
