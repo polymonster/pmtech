@@ -150,14 +150,7 @@ vs_output vs_main_instanced( vs_input input, vs_instance_input instance_input )
 	vs_output output;
 	
 	float4x4 instance_world_mat;
-	unpack_vb_instance_mat
-	( 
-		instance_world_mat, 
-		instance_input.world_matrix_0,
-		instance_input.world_matrix_1,
-		instance_input.world_matrix_2,
-		instance_input.world_matrix_3
-	);
+	unpack_vb_instance_mat(instance_world_mat, instance_input.world_matrix_0, instance_input.world_matrix_1, instance_input.world_matrix_2, instance_input.world_matrix_3);
 		
 	float4x4 wvp = mul( instance_world_mat, vp_matrix );
 	
