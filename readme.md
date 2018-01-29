@@ -20,11 +20,9 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 - Scene Editor - Scene editor built on the Component Entity Scene.
 
 **Thirdparty Stuff**  
-- [Str](https://github.com/ocornut/str)
 - [Jsmn](https://github.com/zserge/jsmn)
 - [Premake](https://github.com/premake/premake-core)
 - [Bullet](https://github.com/bulletphysics/bullet3)
-- [Jsmn](https://github.com/zserge/jsmn)
 - [ImGui](https://github.com/ocornut/imgui)
 
 **Tools**  
