@@ -1,6 +1,7 @@
 # Welcome to pmtech! [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/github/polymonster/pmtech?branch=master&svg=true&passingText=win32-passing&pendingText=win32-pending&failingText=win32-failing)](https://ci.appveyor.com/project/polymonster/pmtech)
 
-Follow work in progress: [Engine](https://trello.com/b/ciujzpUT) [Editor](https://trello.com/b/PJ76qXKH/editor)
+Follow work in progress: 
+[Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
 
 A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios using opengl 3 and directx 11 renderers.
 
@@ -50,7 +51,7 @@ This solution / workspace contains multiple examples of how to use the API's and
 - play_sound - Introduces linking to fmod 5 and some basic audio functions.
 - imgui - Displays the Imgui test example, this also introduces a few new rendering festures that are required, blending, depth stencil states and scissor testing.
 - audio_player - Introduces more audio features and supplies a UI to play and control audio files, it also introduces fft and some beat-detection code along with graphs and visualisations of the fft this is r&d work in progress.
-- Shader Toy - Introduces shader hot loading and a test bed for binding textures, samplers and constant/uniform buffers to different shader locations.
+- shader_toy - Introduces shader hot loading and a test bed for binding textures, samplers and constant/uniform buffers to different shader locations.
 - instancing - Intorduces instanced draw calls.
 - rigid_bodies - Introduces basic rigid body primitives using bullet physics and rendering primitives.
 - constraints - Introduces six degrees of freedom, hinge and point to point constraints.
