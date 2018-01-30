@@ -3,6 +3,11 @@ if _ACTION == "vs2017" or _ACTION == "vs2015" then
 	platform_dir = _ACTION
 end
 
+link_cmd = ""
+if platform_dir == "osx" then
+	link_cmd = "-mmacosx-version-min=10.8"
+end
+
 solution "bullet_build"
 	location ("build/" .. platform_dir ) 
 	configurations { "Debug", "Release" }
@@ -44,6 +49,7 @@ project "bullet_monolithic"
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain" }
+		linkoptions { link_cmd }
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
 		targetname "bullet_monolithic_d_x64"
@@ -52,6 +58,7 @@ project "bullet_monolithic"
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
+		linkoptions { link_cmd }
 		targetdir ("lib/" .. platform_dir)
 		targetname "bullet_monolithic_x64"
 		architecture "x64"
