@@ -283,7 +283,7 @@ namespace pen
         
         // Check the program
         GLint result = GL_FALSE;
-        int info_log_length;
+        int info_log_length = 0;
         
         glGetShaderiv(program_id, GL_LINK_STATUS, &result);
         glGetShaderiv(program_id, GL_INFO_LOG_LENGTH, &info_log_length);
@@ -295,7 +295,8 @@ namespace pen
             glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]);
             info_log_buf[info_log_length] = '\0';
             
-            PEN_PRINTF(info_log_buf);
+            output_debug("%s", info_log_buf);
+            pen::memory_free(info_log_buf);
         }
         
         shader_program program;

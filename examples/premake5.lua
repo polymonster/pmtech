@@ -32,5 +32,7 @@ create_app_example( "scene_editor", script_path() )
 create_app_example( "rigid_body_primitives", script_path() )
 create_app_example( "physics_constraints", script_path() )
 create_app_example( "instancing", script_path() )
+create_app_example( "shadows", script_path() )
+
 	
 	

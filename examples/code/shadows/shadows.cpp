@@ -26,7 +26,7 @@ pen::window_creation_params pen_window
     1280,					    //width
     720,					    //height
     4,						    //MSAA samples
-    "instancing"		        //window title / process name
+    "shadows"		            //window title / process name
 };
 
 namespace physics
@@ -34,7 +34,7 @@ namespace physics
     extern PEN_THREAD_RETURN physics_thread_main( void* params );
 }
 
-void create_instanced_objects( ces::entity_scene* scene )
+void create_scene_objects( ces::entity_scene* scene )
 {
     clear_scene( scene );
 
@@ -46,78 +46,23 @@ void create_instanced_objects( ces::entity_scene* scene )
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH( "front_light" );
     scene->lights[light].colour = vec3f::one();
-    scene->transforms->translation = vec3f( 10000.0f, 10000.0f, 10000.0f );
-    scene->transforms->rotation = quat();
-    scene->transforms->scale = vec3f::one();
+    scene->transforms[light].translation = vec3f( 10000.0f, 10000.0f, 10000.0f );
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-    
-    f32 spacing = 4.0f;
-    s32 num = 32; //32768 instances;
-    
-    f32 start = (( spacing + 2.0f ) * num) * 0.25f;
 
-    vec3f start_pos = vec3f( -start, -start, -start );
+    //add ground
+    u32 ground = get_new_node( scene );
+    scene->transforms[ground].rotation = quat();
+    scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
+    scene->transforms[ground].translation = vec3f::zero();
+    scene->parents[ground] = ground;
+    scene->entities[ground] |= CMP_TRANSFORM;
     
-    vec3f cur_pos = start_pos;
-    for (s32 i = 0; i < num; ++i)
-    {
-        cur_pos.y = start_pos.y;
-        
-        for (s32 j = 0; j < num; ++j)
-        {
-            cur_pos.x = start_pos.x;
-            
-            for (s32 k = 0; k < num; ++k)
-            {
-                u32 new_prim = get_new_node( scene );
-                scene->names[new_prim] = "box";
-                scene->names[new_prim].appendf( "%i", new_prim );
-                
-                //random rotation offset
-                f32 x = put::maths::deg_to_rad(rand()%360);
-                f32 y = put::maths::deg_to_rad(rand()%360);
-                f32 z = put::maths::deg_to_rad(rand()%360);
-                
-                scene->transforms[new_prim].rotation = quat();
-                scene->transforms[new_prim].rotation.euler_angles(z, y, x);
-                
-                scene->transforms[new_prim].scale = vec3f::one();
-                scene->transforms[new_prim].translation = cur_pos;
-                scene->entities[new_prim] |= CMP_TRANSFORM;
-                scene->parents[new_prim] = new_prim;
-                
-                instantiate_geometry( box_resource, scene, new_prim );
-                instantiate_material( default_material, scene, new_prim );
-                
-                if( i == 0 && j == 0 && k == 0)
-                    instantiate_model_cbuffer(scene, new_prim);
-                else
-                    scene->entities[new_prim] |= CMP_SUB_INSTANCE;
-                    
-                
-                cur_pos.x += spacing;
-            }
-            
-            cur_pos.y += spacing;
-        }
-        
-        cur_pos.z += spacing;
-    }
-    
-    instance_node_range(scene, 1, pow(num, 3) );
-}
-
-void animate_instances( entity_scene* scene )
-{
-    quat q;
-    q.euler_angles(0.01f, 0.01f, 0.01f);
-    
-    for( s32 i = 1; i < scene->num_nodes; ++i )
-    {
-        scene->transforms[i].rotation = scene->transforms[i].rotation * q;
-        scene->entities[i] |= CMP_TRANSFORM;
-    }
+    instantiate_geometry( box_resource, scene, ground );
+    instantiate_material( default_material, scene, ground );
+    instantiate_model_cbuffer( scene, ground );
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -172,7 +117,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     pmfx::init("data/configs/editor_renderer.json");
 
-    create_instanced_objects( main_scene );
+    create_scene_objects( main_scene );
     
     bool enable_dev_ui = true;
     f32 frame_time = 0.0f;
@@ -182,8 +127,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         f32 start = pen::timer_get_time();
         
 		put::dev_ui::new_frame();
-        
-        animate_instances(main_scene);
         
         pmfx::update();
         

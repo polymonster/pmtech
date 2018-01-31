@@ -152,7 +152,7 @@ if len(sys.argv) <= 1:
     print("0. show full command line options")
     input_val = int(input())
 
-    if input_val==0:
+    if input_val == 0:
         display_help()
 
     add_all = False
@@ -201,10 +201,10 @@ for step in build_steps:
 for step in extra_build_steps:
     subprocess.check_call(step, shell=True)
 
-# win32 / dds / block compression / mips / cubemaps
-print("--------------------------------------------------------------------------------------------------------------")
-print("Copy configs and fonts ---------------------------------------------------------------------------------------")
-print("--------------------------------------------------------------------------------------------------------------")
+if len(copy_steps) > 0:
+    print("-----------------------------------------------------------------------------------------------------------")
+    print("Copy configs and fonts ------------------------------------------------------------------------------------")
+    print("-----------------------------------------------------------------------------------------------------------")
 
 
 def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, files):
@@ -241,7 +241,7 @@ for step in copy_steps:
             if not os.path.exists(dest_sub):
                 os.makedirs(dest_sub)
 
-    # iterate over directorys and generate dependencies
+    # iterate over directories and generate dependencies
     for source in source_dirs:
         src_dir = os.path.join(source, step)
         dest_dir = os.path.join(data_dir, step)
@@ -264,7 +264,6 @@ for step in copy_steps:
 
 
 print("--------------------------------------------------------------------------------------------------------------")
-
 stats_end = time.time()
 millis = int((stats_end - stats_start) * 1000)
 print("All Jobs Done (" + str(millis) + "ms)")

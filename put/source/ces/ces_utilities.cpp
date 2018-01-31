@@ -152,6 +152,9 @@ namespace put
             scene->num_nodes = std::max<u32>(i+1, scene->num_nodes);
             
 			scene->entities[i] = CMP_ALLOCATED;
+            
+            //default parent is self (no parent)
+            scene->parents[i] = i;
 
             return i;
         }

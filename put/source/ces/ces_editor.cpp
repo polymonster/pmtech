@@ -505,6 +505,7 @@ namespace put
 								pm = SELECT_ADD;
 							}
 
+                            k_selection_list.clear();
 							for (s32 node = 0; node < scene->num_nodes; ++node)
 							{
 								if (!(scene->entities[node] & CMP_ALLOCATED))
