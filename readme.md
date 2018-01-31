@@ -38,7 +38,7 @@ Run the tools/build.py script from pmtech/examples to see how to build code proj
 on osx you can run ./travis.sh which will genereate GNU make files and compile from the command line.
 
 **Examples**   
-This solution / workspace contains multiple examples of how to use the API's and set up projects, I have been using them to aid porting, starting with a simple windowed application using minimal dependencies, samples introduce more dependancies as they go along, this would also be an ideal place to add some unit tests and continously test functionality of the engine.
+This workspace contains multiple examples of how to use the API's and set up projects, they are also useful to aid porting and test functionality. The samples also help catch errors when they continuously integrate changes using tavis and appveyor.
 
 - empty_project - First port of call to get a platform compiling, it creates an empty window with no rendering context.
 - basic_traingle - introduces a rendering context, clear sceen, shader loading / binding, vertex buffer and non-indexed draw calls.
@@ -53,3 +53,4 @@ This solution / workspace contains multiple examples of how to use the API's and
 - rigid_bodies - Introduces basic rigid body primitives using bullet physics and rendering primitives.
 - constraints - Introduces six degrees of freedom, hinge and point to point constraints.
 - scene_editor - Introduces cameras and camera controls, model loading and inspection, component entity system - simple c-style component entity system using structure of arrays layout for efficient cache utilisation.. a "scene" design pattern that is not object oriented but can be just as powerful.
+- shadows - Demonstrates how pmfx can be setup to render a scene from multiple views into different render targets and implements shadow maps, cascaded shadow maps and cube shadow maps for point lights.
