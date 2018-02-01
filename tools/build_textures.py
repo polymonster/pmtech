@@ -8,9 +8,9 @@ import time
 stats_start = time.time()
 
 # win32 / dds / block compression / mips / cubemaps
-print("--------------------------------------------------------------------------------------------------------------")
-print("pmtech texture compression and mip map generation ------------------------------------------------------------")
-print("--------------------------------------------------------------------------------------------------------------")
+print("--------------------------------------------------------------------------------")
+print("pmtech texture compression and mip map generation ------------------------------")
+print("--------------------------------------------------------------------------------")
 
 platform_name = "win32"
 if os.name == "posix":
@@ -68,7 +68,7 @@ for source in source_dirs:
 
             rd = relative_data_filename
             if dependencies.check_up_to_date(dependency_info[dest_dir], rd):
-                print(dest_file + " already up to date")
+                print(rd + " already up to date")
                 continue
 
             if not os.path.exists(dest_dir):

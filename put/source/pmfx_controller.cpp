@@ -1355,9 +1355,10 @@ namespace put
                     
                     ImGui::Combo("", &current_render_target, (const c8* const*)&k_render_target_names[0], k_render_target_names.size(), 10 );
                     
-					static s32 display_ratio = 2;
+					static s32 display_ratio = 3;
 					ImGui::InputInt("Buffer Size", &display_ratio );
 					display_ratio = std::max<s32>(1, display_ratio);
+                    display_ratio = std::min<s32>(4, display_ratio);
 
 					render_target& rt = k_render_targets[current_render_target];
 
@@ -1370,7 +1371,7 @@ namespace put
 					if (!unsupported_display)
 					{
 						f32 aspect = w / h;
-						ImGui::Image((void*)&rt.handle, ImVec2(512 / display_ratio * aspect, 512 / display_ratio));
+						ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
 					}
 
 					render_target_info_ui(rt);

@@ -52,9 +52,9 @@ shader_build_dir = os.path.join(root_dir,"bin", os_platform, "data", "pmfx", sha
 if not os.path.exists(shader_build_dir):
     os.makedirs(shader_build_dir)
 
-print("--------------------------------------------------------------------------------------------------------------")
-print("pmfx shader compilation --------------------------------------------------------------------------------------")
-print("--------------------------------------------------------------------------------------------------------------")
+print("--------------------------------------------------------------------------------")
+print("pmfx shader compilation --------------------------------------------------------")
+print("--------------------------------------------------------------------------------")
 print("compiling directory: " + shader_source_dir)
 if os_platform == "win32":
     print("fx compiler directory :" + compiler_dir)

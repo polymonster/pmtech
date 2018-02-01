@@ -53,9 +53,10 @@ void create_scene_objects( ces::entity_scene* scene )
     scene->entities[light] |= CMP_TRANSFORM;
 
     //add ground
+    f32 ground_size = 100.0f;
     u32 ground = get_new_node( scene );
     scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
+    scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);
     scene->transforms[ground].translation = vec3f::zero();
     scene->parents[ground] = ground;
     scene->entities[ground] |= CMP_TRANSFORM;
@@ -63,6 +64,35 @@ void create_scene_objects( ces::entity_scene* scene )
     instantiate_geometry( box_resource, scene, ground );
     instantiate_material( default_material, scene, ground );
     instantiate_model_cbuffer( scene, ground );
+    
+    //add some pillars for shadow casters
+    f32 num_pillar_rows = 5;
+    f32 pillar_size = 20.0f;
+    f32 d = ground_size * 0.5f;
+    vec3f start_pos = vec3f( -d, pillar_size, -d );
+    vec3f pos = start_pos;
+    for( s32 i = 0; i < num_pillar_rows; ++i )
+    {
+        pos.z = start_pos.z;
+        
+        for( s32 j = 0; j < num_pillar_rows; ++j )
+        {
+            u32 pillar = get_new_node( scene );
+            scene->transforms[pillar].rotation = quat();
+            scene->transforms[pillar].scale = vec3f(2.0f, pillar_size, 2.0f);
+            scene->transforms[pillar].translation = pos;
+            scene->parents[pillar] = pillar;
+            scene->entities[pillar] |= CMP_TRANSFORM;
+            
+            instantiate_geometry( box_resource, scene, pillar );
+            instantiate_material( default_material, scene, pillar );
+            instantiate_model_cbuffer( scene, pillar );
+            
+            pos.z += d / 2;
+        }
+        
+        pos.x += d / 2;
+    }
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -115,7 +145,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pmfx::register_scene(sc);
     pmfx::register_camera(cc);
     
-    pmfx::init("data/configs/editor_renderer.json");
+    pmfx::init("data/configs/shadows.json");
 
     create_scene_objects( main_scene );
     

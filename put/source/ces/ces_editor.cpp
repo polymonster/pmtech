@@ -583,6 +583,9 @@ namespace put
                             picking_state = PICKING_SINGLE;
                             
 							const put::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
+                            
+                            if(!rt)
+                                return;
 
 							f32 w, h;
 							pmfx::get_render_target_dimensions(rt, w, h);
