@@ -133,10 +133,15 @@ namespace put
         {
             vec3f min_extents;
             vec3f max_extents;
-            
             vec3f transformed_min_extents;
             vec3f transformed_max_extents;
             f32   radius;
+        };
+        
+        struct extents
+        {
+            vec3f min;
+            vec3f max;
         };
         
 		struct scene_node_geometry
@@ -245,6 +250,8 @@ namespace put
             
 			u32						forward_light_buffer = PEN_INVALID_HANDLE;
 			u32						flags;
+            
+            extents                 renderable_extents;
 
 #ifdef CES_DEBUG
             Str*                    names;

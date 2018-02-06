@@ -38,6 +38,8 @@ namespace put
         void register_camera( const camera_controller& cam );
         void register_scene_view_renderer( const scene_view_renderer& svr );
         
+        const camera* get_camera( hash_id id_name );
+        
         const render_target*  get_render_target( hash_id h );
         void                  get_render_target_dimensions( const render_target* rt, f32& w, f32& h);
         u32                   get_render_state_by_name( hash_id id_name );

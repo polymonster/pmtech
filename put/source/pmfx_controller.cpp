@@ -1380,5 +1380,16 @@ namespace put
                 }
             }
         }
+        
+        const camera* get_camera( hash_id id_name )
+        {
+            for( auto& cam : k_cameras )
+            {
+                if(cam.id_name == id_name)
+                    return cam.camera;
+            }
+            
+            return nullptr;
+        }
     }
 }

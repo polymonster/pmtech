@@ -139,20 +139,35 @@ namespace put
 
 		for (s32 i = 0; i < 4; ++i)
 		{
-			p_camera->camera_frustum.corners[0][i] = maths::unproject(vec3f(ndc_coords[i], 0.0f), p_camera->view, p_camera->proj, vpi);
-			p_camera->camera_frustum.corners[1][i] = maths::unproject(vec3f(ndc_coords[i], 1.0f), p_camera->view, p_camera->proj, vpi);
-		}
+			p_camera->camera_frustum.corners[0][i] = maths::unproject
+            (
+                vec3f(ndc_coords[i], 0.0f),
+                p_camera->view,
+                p_camera->proj,
+                vpi
 
+             );
+			p_camera->camera_frustum.corners[1][i] = maths::unproject
+            (
+                vec3f(ndc_coords[i], 1.0f),
+                p_camera->view,
+                p_camera->proj,
+                vpi
+            );
+		}
+        
+        const frustum& f = p_camera->camera_frustum;
+        
 		vec3f plane_vectors[] =
 		{
-			p_camera->camera_frustum.corners[0][0], p_camera->camera_frustum.corners[1][0], p_camera->camera_frustum.corners[0][2],	//left
-			p_camera->camera_frustum.corners[0][0], p_camera->camera_frustum.corners[0][1],	p_camera->camera_frustum.corners[1][0],	//top
+			f.corners[0][0], f.corners[1][0], f.corners[0][2],	//left
+			f.corners[0][0], f.corners[0][1], f.corners[1][0],	//top
 
-			p_camera->camera_frustum.corners[0][1], p_camera->camera_frustum.corners[0][3], p_camera->camera_frustum.corners[1][1],	//right
-			p_camera->camera_frustum.corners[0][2], p_camera->camera_frustum.corners[1][2], p_camera->camera_frustum.corners[0][3],	//bottom
+			f.corners[0][1], f.corners[0][3], f.corners[1][1],	//right
+			f.corners[0][2], f.corners[1][2], f.corners[0][3],	//bottom
 
-			p_camera->camera_frustum.corners[0][0], p_camera->camera_frustum.corners[0][2], p_camera->camera_frustum.corners[0][1],	//near
-			p_camera->camera_frustum.corners[1][0], p_camera->camera_frustum.corners[1][1], p_camera->camera_frustum.corners[1][2]	//far
+			f.corners[0][0], f.corners[0][2], f.corners[0][1],	//near
+			f.corners[1][0], f.corners[1][1], f.corners[1][2]	//far
 		};
 
 		for (s32 i = 0; i < 6; ++i)
@@ -186,7 +201,8 @@ namespace put
 				vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x);
 				p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
 			}
-			else if ( (ms.buttons[PEN_MOUSE_M] && pen_input_key(PENK_MENU)) || ((ms.buttons[PEN_MOUSE_L] && pen_input_key(PENK_COMMAND))) )
+			else if ( (ms.buttons[PEN_MOUSE_M] && pen_input_key(PENK_MENU)) ||
+                     ((ms.buttons[PEN_MOUSE_L] && pen_input_key(PENK_COMMAND))) )
 			{
 				//pan
 				vec3f up = p_camera->view.get_up();
@@ -228,7 +244,14 @@ namespace put
 
 	void camera_update_projection_matrix(camera* p_camera)
 	{
-		camera_create_perspective(p_camera, p_camera->fov, p_camera->aspect, p_camera->near_plane, p_camera->far_plane);
+		camera_create_perspective
+        (
+            p_camera,
+            p_camera->fov,
+            p_camera->aspect,
+            p_camera->near_plane,
+            p_camera->far_plane
+        );
 	}
 
 	void camera_update_shader_constants( camera* p_camera, bool viewport_correction )

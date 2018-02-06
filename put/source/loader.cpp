@@ -72,7 +72,7 @@ namespace put
 	};
 	static std::vector<texture_reference> k_texture_references;
 
-		struct file_watch
+    struct file_watch
 	{
 		hash_id		id_name;
 		Str			filename;

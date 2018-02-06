@@ -585,7 +585,10 @@ namespace put
 							const put::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
                             
                             if(!rt)
+                            {
+                                picking_state = PICKING_READY;
                                 return;
+                            }
 
 							f32 w, h;
 							pmfx::get_render_target_dimensions(rt, w, h);
@@ -624,8 +627,20 @@ namespace put
                                 
                                 for (s32 i = 0; i < 4; ++i)
                                 {
-                                    frustum_points[0][i] = maths::unproject(vec3f(source_points[i], 0.0f), cam->view, cam->proj, vpi);
-                                    frustum_points[1][i] = maths::unproject(vec3f(source_points[i], 1.0f), cam->view, cam->proj, vpi);
+                                    frustum_points[0][i] = maths::unproject
+                                    (
+                                        vec3f(source_points[i], 0.0f),
+                                        cam->view,
+                                        cam->proj,
+                                        vpi
+                                    );
+                                    frustum_points[1][i] = maths::unproject
+                                    (
+                                        vec3f(source_points[i], 1.0f),
+                                        cam->view,
+                                        cam->proj,
+                                        vpi
+                                    );
                                 }
                             }
 						}
@@ -912,7 +927,13 @@ namespace put
             {
                 if( ImGui::Begin("Camera", &open_camera_menu) )
                 {
-                    ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names, 2);
+                    ImGui::Combo
+                    (
+                        "Camera Mode",
+                        (s32*)&k_model_view_controller.camera_mode,
+                        (const c8**)&camera_mode_names,
+                        2
+                    );
                     
 					if (ImGui::SliderFloat("FOV", &k_model_view_controller.main_camera.fov, 10, 180))
 						dev_ui::set_program_preference("camera_fov", k_model_view_controller.main_camera.fov);
@@ -1127,7 +1148,13 @@ namespace put
             u32 collision_shape = k_physics_preview.params.rigid_body.shape - 1;
 
             ImGui::InputFloat( "Mass", &k_physics_preview.params.rigid_body.mass );
-            ImGui::Combo( "Shape##Physics", ( s32* )&collision_shape, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0", 7 );
+            ImGui::Combo
+            (
+                "Shape##Physics",
+                ( s32* )&collision_shape,
+                "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0",
+                7
+            );
 
             k_physics_preview.params.rigid_body.shape = collision_shape + 1;
 
@@ -1414,7 +1441,10 @@ namespace put
                                     {
                                         if( anim->channels[channel_index].target != scene->id_name[jnode] )
                                         {
-											dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s", "[error] animation - does not fit rig" );
+											dev_console_log_level(
+                                                dev_ui::CONSOLE_ERROR, "%s", "[error] animation - does not fit rig"
+                                            );
+                                            
                                             compatible = false;
                                             break;
                                         }
@@ -1818,7 +1848,13 @@ namespace put
                 {
                     if (ms.buttons[PEN_MOUSE_L])
                     {
-                        vec3f new_pos = put::maths::ray_vs_plane( vr, r0, view.camera->view.get_fwd(), k_physics_pick_info.pos );
+                        vec3f new_pos = put::maths::ray_vs_plane
+                        (
+                            vr,
+                            r0,
+                            view.camera->view.get_fwd(),
+                            k_physics_pick_info.pos
+                        );
 
                         physics::set_v3( k_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS );
                     }
@@ -1970,10 +2006,22 @@ namespace put
 					if (next_index > 3)
 						next_index = 1;
 
-					ppj[j_index] = put::maths::project(pos + unit_axis[i+1] * d * 0.3f, view.camera->view, view.camera->proj, vpi);
+					ppj[j_index] = put::maths::project
+                    (
+                        pos + unit_axis[i+1] * d * 0.3f,
+                        view.camera->view,
+                        view.camera->proj,
+                        vpi
+                    );
 					ppj[j_index].z = 0.0f;
 
-					ppj[j_index + 1] = put::maths::project(pos + unit_axis[next_index] * d * 0.3, view.camera->view, view.camera->proj, vpi);
+					ppj[j_index + 1] = put::maths::project
+                    (
+                        pos + unit_axis[next_index] * d * 0.3,
+                        view.camera->view,
+                        view.camera->proj,
+                        vpi
+                    );
 					ppj[j_index + 1].z = 0.0f;
 				}
 
@@ -2226,7 +2274,11 @@ namespace put
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
                 {
-                    put::dbg::add_aabb( scene->bounding_volumes[n].transformed_min_extents, scene->bounding_volumes[n].transformed_max_extents );
+                    put::dbg::add_aabb
+                    (
+                        scene->bounding_volumes[n].transformed_min_extents,
+                        scene->bounding_volumes[n].transformed_max_extents
+                    );
                 }
             }
 
@@ -2234,7 +2286,11 @@ namespace put
             {
                 for (auto s : k_selection_list)
                 {
-                    put::dbg::add_aabb( scene->bounding_volumes[s].transformed_min_extents, scene->bounding_volumes[s].transformed_max_extents );
+                    put::dbg::add_aabb
+                    (
+                        scene->bounding_volumes[s].transformed_min_extents,
+                        scene->bounding_volumes[s].transformed_max_extents
+                    );
                 }
             }
             
@@ -2263,7 +2319,12 @@ namespace put
                     }
 
                     if(selected)
-                        put::dbg::add_aabb( scene->bounding_volumes[n].transformed_min_extents, scene->bounding_volumes[n].transformed_max_extents, col );
+                        put::dbg::add_aabb
+                        (
+                            scene->bounding_volumes[n].transformed_min_extents,
+                            scene->bounding_volumes[n].transformed_max_extents,
+                            col
+                        );
                 }
             }
             

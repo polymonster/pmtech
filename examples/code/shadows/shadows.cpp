@@ -95,6 +95,97 @@ void create_scene_objects( ces::entity_scene* scene )
     }
 }
 
+//
+mat4 g_shadow_view;
+mat4 g_shadow_proj;
+
+void debug_render_frustum( const scene_view& view )
+{
+    put::dbg::add_aabb(view.scene->renderable_extents.min, view.scene->renderable_extents.max, vec4f::magenta());
+    put::dbg::render_3d(view.cb_view);
+    
+    dbg::add_coord_space(g_shadow_view, 10.0f);
+}
+
+void get_aabb_corners( vec3f* corners, vec3f min, vec3f max )
+{
+    static const vec3f offsets[8] =
+    {
+        vec3f::zero(),
+        vec3f::one(),
+        
+        vec3f::unit_x(),
+        vec3f::unit_y(),
+        vec3f::unit_z(),
+        
+        vec3f( 1.0f, 0.0f, 1.0f ),
+        vec3f( 1.0f, 1.0f, 0.0f ),
+        vec3f( 0.0f, 1.0f, 1.0f )
+    };
+    
+    vec3f size = max - min;
+    for( s32 i = 0; i < 8; ++i )
+    {
+        corners[i] = min + offsets[i] * size;
+    }
+}
+
+void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, vec3f min, vec3f max )
+{
+    //create view matrix
+    vec3f right = maths::cross(light_dir, vec3f::unit_y());
+    vec3f up = maths::cross(right, light_dir);
+    
+    mat4 shadow_view;
+    shadow_view.set_vectors(right, up, light_dir, vec3f::zero());
+    
+    //get corners
+    vec3f corners[8];
+    get_aabb_corners(&corners[0], min, max);
+    
+    //calculate extents in shadow space
+    vec3f cmin = vec3f::flt_max();
+    vec3f cmax = -vec3f::flt_max();
+    for( s32 i = 0; i < 8; ++i )
+    {
+        vec3f p = shadow_view.transform_vector(corners[i]);
+        
+        cmin = vec3f::vmin(cmin, p);
+        cmax = vec3f::vmax(cmax, p);
+    }
+    
+    //create ortho mat and set view matrix
+    shadow_cam->view = shadow_view;
+    shadow_cam->proj = mat4::create_orthographic_projection
+    (
+        cmin.x, cmax.x,
+        cmin.y, cmax.y,
+        cmin.z, cmax.z
+    );
+    shadow_cam->flags |= CF_INVALIDATED;
+}
+
+void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )
+{
+    //static hash_id id_main_cam = PEN_HASH("model_viewer_camera");
+    //const camera* main_cam = pmfx::get_camera(id_main_cam);
+    
+    vec3f light_dir = maths::normalise(-scene->transforms[0].translation);
+    
+    fit_directional_shadow_to_aabb
+    (
+        shadow_cam,
+        light_dir,
+        scene->renderable_extents.min,
+        scene->renderable_extents.max
+    );
+}
+
+void uu(put::camera_controller* cc)
+{
+    
+}
+
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
     //unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -116,6 +207,15 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     cc.update_function = &ces::update_model_viewer_camera;
     cc.name = "model_viewer_camera";
     cc.id_name = PEN_HASH(cc.name.c_str());
+    
+    //create shadow camera and controller
+    put::camera shadow_camera;
+    
+    put::camera_controller shadow_cc;
+    shadow_cc.camera = &shadow_camera;
+    shadow_cc.update_function = &uu;
+    shadow_cc.name = "shadow_camera";
+    shadow_cc.id_name = PEN_HASH(shadow_cc.name.c_str());
     
     //create the main scene and controller
     put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
@@ -139,11 +239,19 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
     
+    put::scene_view_renderer svr_debug;
+    svr_debug.name = "shadows_debug";
+    svr_debug.id_name = PEN_HASH(svr_editor.name.c_str());
+    svr_debug.render_function = &debug_render_frustum;
+    
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
+    pmfx::register_scene_view_renderer(svr_debug);
 
     pmfx::register_scene(sc);
+    
     pmfx::register_camera(cc);
+    pmfx::register_camera(shadow_cc);
     
     pmfx::init("data/configs/shadows.json");
 
@@ -159,6 +267,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 		put::dev_ui::new_frame();
         
         pmfx::update();
+        
+        update_shadow_frustum(main_scene, &shadow_camera);
         
         pmfx::render();
         

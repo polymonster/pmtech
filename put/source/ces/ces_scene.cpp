@@ -655,6 +655,9 @@ namespace put
                 vec3f(1.0f, 1.0f, 1.0f)
             };
             
+            scene->renderable_extents.min = vec3f::flt_max();
+            scene->renderable_extents.max = vec3f::flt_min();
+            
 			//transform extents by transform
             for( s32 n = 0; n < scene->num_nodes; ++n )
             {
@@ -683,6 +686,13 @@ namespace put
 
 				f32& trad = scene->bounding_volumes[n].radius;
 				trad = maths::magnitude(tmax-tmin) * 0.5f;
+                
+                if (!(scene->entities[n] & CMP_GEOMETRY))
+                    continue;
+                
+                //also set scene extents
+                scene->renderable_extents.min = vec3f::vmin( tmin, scene->renderable_extents.min );
+                scene->renderable_extents.max = vec3f::vmax( tmax, scene->renderable_extents.max );
             }
 
 			//reverse iterate over scene and expand parents extents by children
