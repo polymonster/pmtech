@@ -244,15 +244,15 @@ ps_output ps_forward_lit( vs_output input )
 	//project world pos to shadow
 	float4 sp = mul( input.world_pos, shadow_matrix );
 	sp.xyz /= sp.w;
+	sp.y *= -1.0;
 	sp.xyz = sp.xyz * 0.5 + 0.5;
 
 	float d = SAMPLE_TEXTURE_2D( shadowmap_texture, sp.xy ).r;
+	float shadow = sp.z < d ? 1.0 : 0.0;
 	
-	output.colour.rgb = lit_colour.rgb;
+	output.colour.rgb = lit_colour.rgb * shadow;
 	output.colour.a = albedo.a;
-	
-	output.colour = float4( sp.z < d, 0.0, 0.0, 1.0 );
-	
+		
     return output;
 }
 

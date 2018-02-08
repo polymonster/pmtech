@@ -48,6 +48,7 @@ typedef struct mat4
     static mat4 create_axis_swap(vec3f x, vec3f y, vec3f z);
     static mat4 create_perspective_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
     static mat4 create_orthographic_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
+    static mat4 create_orthographic_off_centre_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
     static mat4 create_bias();
     
     mat4    transpose();

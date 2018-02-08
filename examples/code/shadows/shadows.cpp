@@ -155,7 +155,7 @@ void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, v
         cmax = vec3f::vmax(cmax, p);
     }
     
-    //shadow_view.set_vectors(right, up, light_dir, -light_dir * (cmax.z - cmin.z));
+    float z_range = cmax.z - cmin.z;
     g_shadow_view = shadow_view;
     
     //create ortho mat and set view matrix
@@ -164,7 +164,7 @@ void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, v
     (
         cmin.x, cmax.x,
         cmin.y, cmax.y,
-        300, -100
+        z_range, cmin.z
     );
     shadow_cam->flags |= CF_INVALIDATED;
 }

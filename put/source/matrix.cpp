@@ -279,8 +279,8 @@ mat4 mat4::create_orthographic_projection( f32 left, f32 right, f32 bottom, f32 
     f32 ty = -((top + bottom) / (top - bottom));
     f32 tz = -((zfar + znear) / (zfar - znear));
     
-    m.m[ 0] = (2.0f / (right - left)); m.m[ 1] = 0.0f; m.m[ 2] = 0.0f; m.m[ 3] = tx;
-    m.m[ 4] = 0.0f; m.m[ 5] = (2.0f / (top - bottom)); m.m[ 6] = 0.0f; m.m[ 7] = ty;
+    m.m[ 0] = (2.0f / (right - left));  m.m[ 1] = 0.0f; m.m[ 2] = 0.0f; m.m[ 3] = tx;
+    m.m[ 4] = 0.0f; m.m[ 5] = (2.0f / (top - bottom));  m.m[ 6] = 0.0f; m.m[ 7] = ty;
     m.m[ 8] = 0.0f; m.m[ 9] = 0.0f; m.m[10] = (-2.0f / (zfar - znear)); m.m[11] = tz;
     m.m[12] = 0.0f; m.m[13] = 0.0f; m.m[14] = 0.0f; m.m[15] = 1.0f;
     
