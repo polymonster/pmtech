@@ -98,6 +98,7 @@ void create_scene_objects( ces::entity_scene* scene )
 //
 mat4 g_shadow_view;
 mat4 g_shadow_proj;
+u32  cbuffer_shadow = 0;
 
 void debug_render_frustum( const scene_view& view )
 {
@@ -154,19 +155,25 @@ void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, v
         cmax = vec3f::vmax(cmax, p);
     }
     
+    //shadow_view.set_vectors(right, up, light_dir, -light_dir * (cmax.z - cmin.z));
+    g_shadow_view = shadow_view;
+    
     //create ortho mat and set view matrix
     shadow_cam->view = shadow_view;
     shadow_cam->proj = mat4::create_orthographic_projection
     (
         cmin.x, cmax.x,
         cmin.y, cmax.y,
-        cmin.z, cmax.z
+        300, -100
     );
     shadow_cam->flags |= CF_INVALIDATED;
 }
 
 void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )
 {
+    static hash_id id_shadow_map = PEN_HASH("shadow_map");
+    static hash_id id_wrap_linear = PEN_HASH("wrap_linear");
+    
     //static hash_id id_main_cam = PEN_HASH("model_viewer_camera");
     //const camera* main_cam = pmfx::get_camera(id_main_cam);
     
@@ -179,6 +186,28 @@ void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )
         scene->renderable_extents.min,
         scene->renderable_extents.max
     );
+    
+    if(!cbuffer_shadow)
+    {
+        pen::buffer_creation_params bcp;
+        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+        bcp.buffer_size = sizeof(mat4);
+        bcp.data = nullptr;
+        
+        cbuffer_shadow = pen::renderer_create_buffer(bcp);
+    }
+    
+    mat4 shadow_vp = shadow_cam->proj * shadow_cam->view;
+    
+    pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));
+    
+    u32 shadow_map = pmfx::get_render_target(id_shadow_map)->handle;
+    u32 ss = pmfx::get_render_state_by_name(id_wrap_linear);
+    
+    pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
+    pen::renderer_set_constant_buffer(cbuffer_shadow, 4, PEN_SHADER_TYPE_PS);
 }
 
 void uu(put::camera_controller* cc)

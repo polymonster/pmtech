@@ -90,11 +90,17 @@ cbuffer per_pass_lights : register(b3)
 	float4 		  light_info;
 };
 
+cbuffer per_pass_shadow : register(b4)
+{
+	float4x4 shadow_matrix; 
+};
+
 declare_texture_samplers
 {
 	TEXTURE_2D( diffuse_texture, 0 );
 	TEXTURE_2D( normal_texture, 1 );
 	TEXTURE_2D( specular_texture, 2 );	
+	TEXTURE_2D( shadowmap_texture, 15 );
 };
 
 vs_output vs_main_skinned( vs_input_skinned input )
@@ -117,7 +123,8 @@ vs_output vs_main_skinned( vs_input_skinned input )
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
 	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
 	
-	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
+		input.texcoord.z, 1.0f - input.texcoord.w );
 	
     return output;
 }
@@ -140,7 +147,8 @@ vs_output vs_main( vs_input input )
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
 	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
 		
-	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
+		input.texcoord.z, 1.0f - input.texcoord.w );
 	
     return output;
 }
@@ -150,7 +158,11 @@ vs_output vs_main_instanced( vs_input input, vs_instance_input instance_input )
 	vs_output output;
 	
 	float4x4 instance_world_mat;
-	unpack_vb_instance_mat(instance_world_mat, instance_input.world_matrix_0, instance_input.world_matrix_1, instance_input.world_matrix_2, instance_input.world_matrix_3);
+	unpack_vb_instance_mat(instance_world_mat, 
+		instance_input.world_matrix_0, 
+		instance_input.world_matrix_1, 
+		instance_input.world_matrix_2, 
+		instance_input.world_matrix_3);
 		
 	float4x4 wvp = mul( instance_world_mat, vp_matrix );
 	
@@ -166,7 +178,8 @@ vs_output vs_main_instanced( vs_input input, vs_instance_input instance_input )
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
 	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
 				
-	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
+		input.texcoord.z, 1.0f - input.texcoord.w );
 	
     return output;
 }
@@ -186,56 +199,25 @@ ps_output ps_forward_lit( vs_output input )
 	ps_output output;
 	
 	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );	
-	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb * 2.0 - 1.0;
+	
+	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb;
+	normal_sample = normal_sample * 2.0 - 1.0;
+	
 	float4 specular_sample = SAMPLE_TEXTURE_2D( specular_texture, input.texcoord.xy );
 		
-	float3 n = transform_ts_normal( input.tangent, input.bitangent, input.normal, normal_sample );
+	float3 n = transform_ts_normal( 
+		input.tangent, 
+		input.bitangent, 
+		input.normal, 
+		normal_sample );
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 	
 	for( int i = 0; i < light_info.x; ++i )
 	{
 		float single_roughness = saturate(user_data.y); 
-		//float reflectivity = 1.0 - single_roughness;
-		
 		float reflectivity = saturate(user_data.z);
-#if 0
-		lit_colour += lambert( 
-			lights[i].pos_radius, 
-			lights[i].colour.rgb,
-			n,
-			input.world_pos.xyz,
-			albedo.rgb
-		);			 
-#endif
 
-#if 0
-		lit_colour += phong( 
-			lights[i].pos_radius, 
-			lights[i].colour.rgb,
-			n,
-			input.world_pos.xyz,
-			camera_view_pos.xyz,
-			albedo.rgb,
-			(1.0 - single_roughness) * 100.0,
-			reflectivity
-		);			 
-#endif
-
-#if 0
-		lit_colour += blinn( 
-			lights[i].pos_radius, 
-			lights[i].colour.rgb,
-			n,
-			input.world_pos.xyz,
-			camera_view_pos.xyz,
-			albedo.rgb,
-			(1.0 - single_roughness) * 100.0,
-			reflectivity
-		);			 
-#endif
-
-#if 1
 		lit_colour += cook_torrence( 
 			lights[i].pos_radius, 
 			lights[i].colour.rgb,
@@ -246,10 +228,8 @@ ps_output ps_forward_lit( vs_output input )
 			specular_sample.rgb,
 			single_roughness,
 			reflectivity
-		);			 
-#endif
-
-#if 1
+		);		
+			 
 		lit_colour += oren_nayar( 
 			lights[i].pos_radius, 
 			lights[i].colour.rgb,
@@ -259,11 +239,19 @@ ps_output ps_forward_lit( vs_output input )
 			single_roughness,
 			albedo.rgb
 		);			 
-#endif
 	}
+	
+	//project world pos to shadow
+	float4 sp = mul( input.world_pos, shadow_matrix );
+	sp.xyz /= sp.w;
+	sp.xyz = sp.xyz * 0.5 + 0.5;
+
+	float d = SAMPLE_TEXTURE_2D( shadowmap_texture, sp.xy ).r;
 	
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
+	
+	output.colour = float4( sp.z < d, 0.0, 0.0, 1.0 );
 	
     return output;
 }
@@ -281,9 +269,14 @@ ps_output_multi ps_gbuffer( vs_output input )
 	ps_output_multi output;
 	
 	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
-	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb * 2.0 - 1.0;
+	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb;
+	normal_sample = normal_sample * 2.0 - 1.0;
 	
-	float3 n = transform_ts_normal( input.tangent, input.bitangent, input.normal, normal_sample );
+	float3 n = transform_ts_normal( 
+		input.tangent, 
+		input.bitangent, 
+		input.normal, 
+		normal_sample );
 	
 	output.albedo = albedo;
 	output.normal = float4( n, 1.0 );

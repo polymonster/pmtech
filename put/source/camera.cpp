@@ -295,9 +295,9 @@ namespace put
             
             static mat4 scale = mat4::create_scale( vec3f( 1.0f, -1.0f, 1.0f ) );
             
-            if( viewport_correction && pen::renderer_viewport_vup() )
-                wvp.view_projection = scale * (p_camera->proj * p_camera->view);
-            else
+            //if( viewport_correction && pen::renderer_viewport_vup() )
+            //    wvp.view_projection = scale * (p_camera->proj * p_camera->view);
+            //else
                 wvp.view_projection = p_camera->proj * p_camera->view;
             
             mat4 inv_view = p_camera->view.inverse3x4();
