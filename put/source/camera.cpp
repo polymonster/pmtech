@@ -90,7 +90,6 @@ namespace put
 			{
 				//rotation
 				vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);
-
 				p_camera->rot += swapxy * 0.0075f;
 			}
 
