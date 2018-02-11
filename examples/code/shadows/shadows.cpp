@@ -96,16 +96,15 @@ void create_scene_objects( ces::entity_scene* scene )
 }
 
 //
-mat4 g_shadow_view;
-mat4 g_shadow_proj;
 u32  cbuffer_shadow = 0;
+frustum g_shadow_frustum;
 
 void debug_render_frustum( const scene_view& view )
 {
     put::dbg::add_aabb(view.scene->renderable_extents.min, view.scene->renderable_extents.max, vec4f::magenta());
     put::dbg::render_3d(view.cb_view);
     
-    dbg::add_coord_space(g_shadow_view, 10.0f);
+    put::dbg::add_frustum(g_shadow_frustum.corners[0], g_shadow_frustum.corners[1]);
 }
 
 void get_aabb_corners( vec3f* corners, vec3f min, vec3f max )
@@ -138,7 +137,7 @@ void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, v
     vec3f up = maths::cross(right, light_dir);
     
     mat4 shadow_view;
-    shadow_view.set_vectors(right, up, light_dir, vec3f::zero());
+    shadow_view.set_vectors(right, up, -light_dir, vec3f::zero());
     
     //get corners
     vec3f corners[8];
@@ -155,18 +154,17 @@ void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, v
         cmax = vec3f::vmax(cmax, p);
     }
     
-    float z_range = cmax.z - cmin.z;
-    g_shadow_view = shadow_view;
-    
     //create ortho mat and set view matrix
     shadow_cam->view = shadow_view;
     shadow_cam->proj = mat4::create_orthographic_projection
     (
         cmin.x, cmax.x,
         cmin.y, cmax.y,
-        z_range, cmin.z
+        cmin.z, cmax.z
     );
     shadow_cam->flags |= CF_INVALIDATED;
+    
+    g_shadow_frustum = shadow_cam->camera_frustum;
 }
 
 void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )

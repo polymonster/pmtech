@@ -149,7 +149,7 @@ vs_output vs_main( vs_input input )
 		
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
 		input.texcoord.z, 1.0f - input.texcoord.w );
-	
+		
     return output;
 }
 

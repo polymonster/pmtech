@@ -82,6 +82,11 @@
 			cull_mode: front,
 		},
 		
+		shadow_map:
+		{
+			cull_mode: front,
+		},
+		
 		wireframe:
 		{
 			cull_mode: none,

@@ -140,7 +140,7 @@ namespace put
 		{
 			p_camera->camera_frustum.corners[0][i] = maths::unproject
             (
-                vec3f(ndc_coords[i], 0.0f),
+                vec3f(ndc_coords[i], -1.0f),
                 p_camera->view,
                 p_camera->proj,
                 vpi

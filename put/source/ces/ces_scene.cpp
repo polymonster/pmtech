@@ -382,13 +382,14 @@ namespace put
 					f32 radius = scene->bounding_volumes[n].radius;
 
 					f32 d = maths::point_vs_plane(pos, camera_frustum.p[i], camera_frustum.n[i]);
-
+                    
 					if (d > radius)
 					{
 						inside = false;
 						break;
 					}
 				}
+                //inside = true;
 
 				if (!inside)
 				{
