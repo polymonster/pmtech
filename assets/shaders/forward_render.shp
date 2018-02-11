@@ -242,6 +242,7 @@ ps_output ps_forward_lit( vs_output input )
 	}
 	
 	//project world pos to shadow
+	/*
 	float4 sp = mul( input.world_pos, shadow_matrix );
 	sp.xyz /= sp.w;
 	sp.y *= -1.0;
@@ -252,7 +253,12 @@ ps_output ps_forward_lit( vs_output input )
 	
 	output.colour.rgb = lit_colour.rgb * shadow;
 	output.colour.a = albedo.a;
-		
+	*/
+	
+	
+	output.colour.rgb = lit_colour.rgb;
+	output.colour.a = albedo.a;
+	
     return output;
 }
 
