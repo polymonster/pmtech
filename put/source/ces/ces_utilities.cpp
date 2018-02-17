@@ -194,14 +194,15 @@ namespace put
                     node_flags |= ImGuiTreeNodeFlags_Leaf;
                 
                 bool node_open = false;
-                if( child.node_name )
+                const c8* node_name = scene->names[child.node_index].c_str();
+                if( node_name)
                 {
                     node_open = ImGui::TreeNodeEx
                     (
                         ( void* )( intptr_t )child.node_index,
                         node_flags,
-                        child.node_name,
-                        child.node_index
+                        "%s",
+                        node_name
                     );
                 }
                 
@@ -233,7 +234,6 @@ namespace put
 					continue;
 
                 scene_tree node;
-                node.node_name = scene->names[n].c_str();
                 node.node_index = n;
 
                 if( scene->parents[n] == n )

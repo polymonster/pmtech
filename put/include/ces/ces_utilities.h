@@ -11,7 +11,6 @@ namespace put
         struct scene_tree
         {
             s32 node_index;
-            const c8* node_name;
             
             std::vector<scene_tree> children;
         };
