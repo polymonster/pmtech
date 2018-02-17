@@ -19,7 +19,7 @@ namespace pen
 
 	} timer;
 
-	LARGE_INTEGER permonace_frequency;
+	LARGE_INTEGER performance_frequency;
 	f32			  ticks_to_ms;
     f32           ticks_to_us;
     f32           ticks_to_ns;
@@ -29,11 +29,11 @@ namespace pen
 
 	void timer_system_intialise( )
 	{
-		QueryPerformanceFrequency( &permonace_frequency );
+		QueryPerformanceFrequency( &performance_frequency);
 
-		ticks_to_ms = (f32)( 1.0 / ( permonace_frequency.QuadPart / 1000.0 ) );
-        ticks_to_us = ticks_to_ns / 1000.0f;
-        ticks_to_ms = ticks_to_us / 1000.0f;
+		ticks_to_ms = (f32)( 1.0 / (performance_frequency.QuadPart / 1000.0 ) );
+        ticks_to_us = ticks_to_ms / 1000.0f;
+        ticks_to_ns = ticks_to_us / 1000.0f;
         
 		next_free = 0;
 	}
@@ -55,7 +55,7 @@ namespace pen
 	{
         LARGE_INTEGER end_time;
         QueryPerformanceCounter( &end_time );
-        f32 last_duration = (f32)(end_time.QuadPart - timers[ index ].last_start.QuadPart);
+        f32 last_duration = (f32)(end_time.QuadPart - timers[timer_index].last_start.QuadPart);
         
 		return last_duration * ticks_to_ms;
 	}
@@ -64,18 +64,18 @@ namespace pen
     {
         LARGE_INTEGER end_time;
         QueryPerformanceCounter( &end_time );
-        f32 last_duration = (f32)(end_time.QuadPart - timers[ index ].last_start.QuadPart);
+        f32 last_duration = (f32)(end_time.QuadPart - timers[timer_index].last_start.QuadPart);
         
-        return timers[ timer_index ].accumulated * ticks_to_us;
+        return last_duration * ticks_to_us;
     }
     
     f32 timer_elapsed_ns( u32 timer_index )
     {
         LARGE_INTEGER end_time;
         QueryPerformanceCounter( &end_time );
-        f32 last_duration = (f32)(end_time.QuadPart - timers[ index ].last_start.QuadPart);
+        f32 last_duration = (f32)(end_time.QuadPart - timers[timer_index].last_start.QuadPart);
         
-        return timers[ timer_index ].accumulated * ticks_to_ns;
+        return last_duration* ticks_to_ns;
     }
 
 	f32 get_time_ms( )

@@ -239,7 +239,7 @@ namespace pen
 			s16 low_l = (s16)LOWORD(lParam);
 			s16 hi_l = (s16)HIWORD(lParam);
 
-			pen::input_set_mouse_wheel((f32)(hi_w / WHEEL_DELTA));
+			pen::input_set_mouse_wheel((f32)(hi_w / WHEEL_DELTA) * 10.0f );
 		}
 		break;
 

@@ -266,6 +266,7 @@ ps_output ps_forward_lit( vs_output input )
 			float4 sp = mul( input.world_pos, shadow_matrix );
 			sp.xyz /= sp.w;
 			sp.y *= -1.0;
+			
 			sp.xyz = sp.xyz * 0.5 + 0.5;
 
 			float d = SAMPLE_TEXTURE_2D( shadowmap_texture, sp.xy ).r;
