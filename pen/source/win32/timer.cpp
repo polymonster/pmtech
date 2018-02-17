@@ -32,8 +32,8 @@ namespace pen
 		QueryPerformanceFrequency( &performance_frequency);
 
 		ticks_to_ms = (f32)( 1.0 / (performance_frequency.QuadPart / 1000.0 ) );
-        ticks_to_us = ticks_to_ms / 1000.0f;
-        ticks_to_ns = ticks_to_us / 1000.0f;
+        ticks_to_us = ticks_to_ms * 1000.0f;
+        ticks_to_ns = ticks_to_us * 1000.0f;
         
 		next_free = 0;
 	}
