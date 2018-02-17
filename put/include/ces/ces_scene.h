@@ -175,12 +175,17 @@ namespace put
             u8                       play_flags = 0;
             bool                     apply_root_motion = true;
         };
-        
+    
         struct scene_node_light
         {
             u32     type;
             vec3f   colour;
-            vec4f   data;
+            
+            float   radius;
+            float   azimuth;
+            float   altitude;
+            
+            vec3f   direction;
         };
 
 		struct transform

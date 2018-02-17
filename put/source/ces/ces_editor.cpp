@@ -1494,26 +1494,30 @@ namespace put
             {
                 if (scene->entities[selected_index] & CMP_LIGHT)
                 {
+                    scene_node_light& snl = scene->lights[selected_index];
+                    
                     ImGui::Combo( "Type", ( s32* )&scene->lights[selected_index].type, "Directional\0Point\0Spot\0", 3 );
 
                     switch (scene->lights[selected_index].type)
                     {
                     case LIGHT_TYPE_DIR:
-                        ImGui::SliderAngle( "Azimuth", &scene->lights[selected_index].data.x );
-                        ImGui::SliderAngle( "Zenith", &scene->lights[selected_index].data.y );
+                        ImGui::SliderAngle( "Azimuth", &snl.azimuth);
+                        ImGui::SliderAngle( "Altitude", &snl.altitude);
                         break;
 
                     case LIGHT_TYPE_POINT:
-                        ImGui::SliderFloat( "Radius##slider", &scene->lights[selected_index].data.x, 0.0f, 100.0f );
-                        ImGui::InputFloat( "Radius##input", &scene->lights[selected_index].data.x );
+                        ImGui::SliderFloat( "Radius##slider", &snl.radius, 0.0f, 100.0f );
+                        ImGui::InputFloat( "Radius##input", &snl.radius);
                         break;
 
                     case LIGHT_TYPE_SPOT:
-                        ImGui::SliderAngle( "Azimuth", &scene->lights[selected_index].data.x );
-                        ImGui::SliderAngle( "Zenith", &scene->lights[selected_index].data.y );
-                        ImGui::SliderAngle( "Cos Cutoff", &scene->lights[selected_index].data.z );
+                        //ImGui::SliderAngle( "Azimuth", &scene->lights[selected_index].data.x );
+                        //ImGui::SliderAngle( "Zenith", &scene->lights[selected_index].data.y );
+                        //ImGui::SliderAngle( "Cos Cutoff", &scene->lights[selected_index].data.z );
                         break;
                     }
+                    
+                    snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth, snl.altitude);
                     
                     vec3f& col = scene->lights[selected_index].colour;
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f ) );
@@ -2068,7 +2072,7 @@ namespace put
 					if (k_transform_mode == TRANSFORM_TRANSLATE)
 					{
 						vec2f v = put::maths::normalise(pp[i].xy() - pp[0].xy());
-						vec2f perp = put::maths::perp(v, LEFT_HAND) * 5.0;
+						vec2f perp = put::maths::perp_lh(v) * 5.0;
 
 						vec2f base = pp[i].xy() - v * 5.0;
 
@@ -2274,7 +2278,7 @@ namespace put
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
                 {
-                    put::dbg::add_aabb
+                    dbg::add_aabb
                     (
                         scene->bounding_volumes[n].transformed_min_extents,
                         scene->bounding_volumes[n].transformed_max_extents
@@ -2286,11 +2290,23 @@ namespace put
             {
                 for (auto s : k_selection_list)
                 {
-                    put::dbg::add_aabb
-                    (
-                        scene->bounding_volumes[s].transformed_min_extents,
-                        scene->bounding_volumes[s].transformed_max_extents
-                    );
+                    if( scene->entities[s] & CMP_LIGHT )
+                    {
+                        scene_node_light& snl = scene->lights[s];
+                        
+                        if(snl.type == LIGHT_TYPE_DIR)
+                        {
+                            dbg::add_line(vec3f::zero(), snl.direction * 10000.0f, vec4f( snl.colour, 1.0f ) );
+                        }
+                    }
+                    else
+                    {
+                        dbg::add_aabb
+                        (
+                         scene->bounding_volumes[s].transformed_min_extents,
+                         scene->bounding_volumes[s].transformed_max_extents
+                         );
+                    }
                 }
             }
             
@@ -2319,7 +2335,7 @@ namespace put
                     }
 
                     if(selected)
-                        put::dbg::add_aabb
+                        dbg::add_aabb
                         (
                             scene->bounding_volumes[n].transformed_min_extents,
                             scene->bounding_volumes[n].transformed_max_extents,

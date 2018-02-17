@@ -1,119 +1,5 @@
 #include "put_math.h"
 
-f32 put::maths::deg_to_rad(f32 degree_angle)
-{
-    return( degree_angle * _PI_OVER_180 );
-}
-
-f32 put::maths::rad_to_deg(f32 radian_angle)
-{
-    return( radian_angle * _180_OVER_PI );
-}
-
-f32 put::maths::absolute(f32 value)
-{
-    if(value < 0.0f) value *= - 1;
-    
-    return value;
-}
-
-f32 put::maths::absolute_smallest_of(f32 value_1,f32 value_2)
-{
-    if(absolute(value_1) < absolute(value_2)) return value_1;
-    else return value_2;
-}
-
-vec3f put::maths::cross(vec3f v1, vec3f v2)
-{
-    vec3f result;
-    
-    result.x = ((v1.y * v2.z) - (v1.z * v2.y));
-    result.y = ((v1.x * v2.z) - (v1.z * v2.x));
-    result.z = ((v1.x * v2.y) - (v1.y * v2.x));
-    
-    result.y *= -1;
-    
-    return result;
-}
-
-f32 put::maths::cross( vec2f v1, vec2f v2 )
-{
-    return v1.x * v2.y - v1.y * v2.x;
-}
-
-f32 put::maths::dot(vec3f v1,vec3f v2)
-{
-    return ((v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z));
-}
-
-vec2f put::maths::perp(vec2f v1, s32 hand)
-{
-    switch(hand)
-    {
-        case LEFT_HAND:
-        {
-            return vec2f(v1.y,-v1.x);
-        }
-            break;
-            
-        case RIGHT_HAND:
-        {
-            return vec2f(-v1.y,v1.x);
-        }
-            break;
-    }
-    
-    //return left hand by default
-    return vec2f(v1.y,-v1.x);
-}
-
-f32 put::maths::magnitude(vec3f v)
-{
-    return (f32) sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
-}
-
-f32 put::maths::magnitude(vec2f v)
-{
-    return (f32) sqrt((v.x * v.x) + (v.y * v.y));
-}
-
-f32 put::maths::distance(vec3f p1, vec3f p2)
-{
-    double d = sqrt( (p2.x - p1.x) * (p2.x - p1.x) +
-                    (p2.y - p1.y) * (p2.y - p1.y) +
-                    (p2.z - p1.z) * (p2.z - p1.z));
-    
-    return (f32) d;
-}
-
-f32 put::maths::distance_squared(vec2f p1, vec2f p2)
-{
-    f32 d =  (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
-    return  d;
-}
-
-vec3f put::maths::normalise(vec3f v)
-{
-    
-    f32 r_mag = 1.0f / magnitude(v);
-    
-    v.x *= r_mag;
-    v.y *= r_mag;
-    v.z *= r_mag;
-    
-    return v;
-}
-
-vec2f put::maths::normalise(vec2f v)
-{
-    
-    f32 mag = 1.0f / magnitude(v);
-    
-    v *= mag;
-    
-    return v;
-}
-
 vec3f put::maths::project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normalise_coordinates)
 {
     mat4 res = proj * view;
@@ -242,6 +128,44 @@ f32 put::maths::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
     return t;
 }
 
+bool put::maths::point_inside_triangle( vec3f v1, vec3f v2, vec3f v3, vec3f p )
+{
+    vec3f cp1, cp2;
+    
+    //edge 1
+    cp1 = cross(v2 - v1, v3 - v1);
+    cp2 = cross(v2 - v1, p - v1);
+    if(dot(cp1, cp2) < 0)
+        return false;
+    
+    //edge 2
+    cp1 = cross(v3 - v1, v2 - v1);
+    cp2 = cross(v3 - v1, p - v1);
+    if(dot(cp1, cp2) < 0)
+        return false;
+    
+    //edge 3
+    cp1 = cross(v3 - v2, v1 - v2);
+    cp2 = cross(v3 - v2, p - v2);
+    if(dot(cp1, cp2) < 0)
+        return false;
+    
+    return true;
+}
+
+vec3f put::maths::get_normal(vec3f v1, vec3f v2, vec3f v3)
+{
+    vec3f vA = v3 - v1;
+    vec3f vB = v2 - v1;
+    
+    vec3f normal = cross(vA, vB);
+    
+    //negate for left handedness
+    normal = normalise(normal) * -1;
+    
+    return normal;
+}
+
 #if 0
 vec3f put::maths::get_normal(TRIANGLE t1)
 {
@@ -256,18 +180,6 @@ vec3f put::maths::get_normal(TRIANGLE t1)
     return normal;
 }
 
-vec3f put::maths::get_normal(vec3f v1, vec3f v2, vec3f v3)
-{
-    vec3f vA = v3 - v1;
-    vec3f vB = v2 - v1;
-    
-    vec3f normal = cross(vA, vB);
-    
-    //negate for opengl handedness
-    normal = normalise(normal) * -1;
-    
-    return normal;
-}
 
 s32 put::maths::classify_sphere(SPHERE s1, vec3f p, vec3f normal, f32 *distance)
 {
@@ -467,28 +379,6 @@ void put::maths::compute_tangents( vec3f v1, vec3f v2, vec3f v3, vec2f t1, vec2f
             bitangent->normalise();
         }
     }
-}
-
-bool put::maths::point_inside_triangle( vec3f v1, vec3f v2, vec3f v3, vec3f p )
-{
-    vec3f cp1, cp2;
-    
-    //edge 1
-    cp1 = cross(v2 - v1, v3 - v1);
-    cp2 = cross(v2 - v1, p - v1);
-    if(dot(cp1, cp2) < 0) return false;
-    
-    //edge 2
-    cp1 = cross(v3 - v1, v2 - v1);
-    cp2 = cross(v3 - v1, p - v1);
-    if(dot(cp1, cp2) < 0) return false;
-    
-    //edge 3
-    cp1 = cross(v3 - v2, v1 - v2);
-    cp2 = cross(v3 - v2, p - v2);
-    if(dot(cp1, cp2) < 0) return false;
-    
-    return true;
 }
 
 #endif

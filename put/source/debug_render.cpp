@@ -482,7 +482,7 @@ namespace put
                 if( type == 2 )
                 {
                     //translate
-                    vec2f perp = put::maths::perp(v1, 0);
+                    vec2f perp = put::maths::perp_lh(v1);
                     
                     static const f32 s = 5.0f;
                     

@@ -113,9 +113,14 @@ vs_output vs_main_skinned( vs_input_skinned input )
 	
 	output.position = mul( sp, vp_matrix );
 	output.world_pos = mul( input.position, world_matrix );
-		
-	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
-	float3x3 ws_rotation_matrix = to_3x3(world_matrix);
+	
+	float3x3 world_rot_mat = to_3x3(world_matrix);
+	world_rot_mat[0] = normalize(world_rot_mat[0]);
+	world_rot_mat[1] = normalize(world_rot_mat[1]);
+	world_rot_mat[2] = normalize(world_rot_mat[2]);
+	
+	float3x3 rotation_matrix = mul( world_rot_mat, to_3x3(view_matrix) );
+	float3x3 ws_rotation_matrix = world_rot_mat;
 	
 	rotation_matrix = ws_rotation_matrix;
 	
@@ -137,9 +142,14 @@ vs_output vs_main( vs_input input )
 
 	output.position = mul( input.position, wvp );
 	output.world_pos = mul( input.position, world_matrix );
+	
+	float3x3 world_rot_mat = to_3x3(world_matrix);
+	world_rot_mat[0] = normalize(world_rot_mat[0]);
+	world_rot_mat[1] = normalize(world_rot_mat[1]);
+	world_rot_mat[2] = normalize(world_rot_mat[2]);
 		
-	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
-	float3x3 ws_rotation_matrix = to_3x3(world_matrix);
+	float3x3 rotation_matrix = mul( world_rot_mat, to_3x3(view_matrix) );
+	float3x3 ws_rotation_matrix = world_rot_mat;
 		
 	rotation_matrix = ws_rotation_matrix;
 		
@@ -213,12 +223,18 @@ ps_output ps_forward_lit( vs_output input )
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 	
+	albedo.rgb = float3( 1.0, 1.0, 1.0 );
+	
+	//todo these need to be passed from vs for instancing
+	float single_roughness = saturate(user_data.y); 
+	float reflectivity = saturate(user_data.z);
+	
+	//for directional lights
 	for( int i = 0; i < light_info.x; ++i )
 	{
-		float single_roughness = saturate(user_data.y); 
-		float reflectivity = saturate(user_data.z);
-
-		lit_colour += cook_torrence( 
+		float3 light_col = float3( 0.0, 0.0, 0.0 );
+		
+		light_col += cook_torrence( 
 			lights[i].pos_radius, 
 			lights[i].colour.rgb,
 			n,
@@ -228,9 +244,9 @@ ps_output ps_forward_lit( vs_output input )
 			specular_sample.rgb,
 			single_roughness,
 			reflectivity
-		);		
-			 
-		lit_colour += oren_nayar( 
+		);	
+		
+		light_col += oren_nayar( 
 			lights[i].pos_radius, 
 			lights[i].colour.rgb,
 			n,
@@ -238,7 +254,44 @@ ps_output ps_forward_lit( vs_output input )
 			camera_view_pos.xyz,
 			single_roughness,
 			albedo.rgb
-		);			 
+		);		
+		
+		lit_colour += light_col;
+	}
+	
+	//for point lights
+	int point_start = int(light_info.x);
+	int point_end =  int(light_info.x) + int(light_info.y);
+	for( int i = point_start; i < point_end; ++i )
+	{
+		float3 light_col = float3( 0.0, 0.0, 0.0 );
+		
+		light_col += cook_torrence( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			camera_view_pos.xyz,
+			albedo.rgb,
+			specular_sample.rgb,
+			single_roughness,
+			reflectivity
+		);	
+		
+		light_col += oren_nayar( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			camera_view_pos.xyz,
+			single_roughness,
+			albedo.rgb
+		);		
+			
+		float a = point_light_attenuation( lights[i].pos_radius, input.world_pos.xyz );	
+		light_col *= a;
+		
+		lit_colour += light_col;
 	}
 	
 	//project world pos to shadow
@@ -255,9 +308,10 @@ ps_output ps_forward_lit( vs_output input )
 	output.colour.a = albedo.a;
 	*/
 	
-	
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
+	
+	//output.colour.rgb = n.rgb;
 	
     return output;
 }

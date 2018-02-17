@@ -193,7 +193,18 @@ namespace put
                 if(leaf)
                     node_flags |= ImGuiTreeNodeFlags_Leaf;
                 
-                bool node_open = ImGui::TreeNodeEx( ( void* )( intptr_t )child.node_index, node_flags, child.node_name, child.node_index );
+                bool node_open = false;
+                if( child.node_name )
+                {
+                    node_open = ImGui::TreeNodeEx
+                    (
+                        ( void* )( intptr_t )child.node_index,
+                        node_flags,
+                        child.node_name,
+                        child.node_index
+                    );
+                }
+                
                 if (ImGui::IsItemClicked())
                 {
                     add_selection( scene, child.node_index );

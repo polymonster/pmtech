@@ -761,27 +761,67 @@ namespace put
                 n+= scene->master_instances[n].num_instances;
             }
             
+            //forwar light buffer
 			static forward_light_buffer light_buffer;
 			s32 pos = 0;
             s32 num_lights = 0;
-			for (s32 n = 0; n < scene->num_nodes; ++n)
-			{
-				if (!(scene->entities[n] & CMP_LIGHT))
-					continue;
-				
-				transform& t = scene->transforms[n];
-				scene_node_light& l = scene->lights[n];
-
-				light_buffer.lights[pos].pos_radius = vec4f(t.translation, 1.0 );
-				light_buffer.lights[pos].colour = vec4f(l.colour, 1.0);
-
-                ++num_lights;
-				++pos;
-                
+            
+            //directional lights
+            s32 num_directions_lights = 0;
+            for (s32 n = 0; n < scene->num_nodes; ++n)
+            {
                 if( num_lights >= MAX_FORWARD_LIGHTS )
                     break;
-			}
-            light_buffer.info.x = (f32)num_lights;
+                
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                scene_node_light& l = scene->lights[n];
+                
+                if(l.type != LIGHT_TYPE_DIR)
+                    continue;
+
+                //current directional light is a point light very far away
+                //with no attenuation.. todo optitise
+                vec3f light_pos = l.direction * 100000.0f;
+                light_buffer.lights[pos].pos_radius = vec4f( light_pos, 0.0 );
+                light_buffer.lights[pos].colour = vec4f( l.colour, 1.0 );
+                
+                ++num_directions_lights;
+                ++num_lights;
+                ++pos;
+            }
+            
+            //point lights
+            s32 num_point_lights = 0;
+            for (s32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if( num_lights >= MAX_FORWARD_LIGHTS )
+                    break;
+                
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                scene_node_light& l = scene->lights[n];
+                
+                if(l.type != LIGHT_TYPE_POINT)
+                    continue;
+                
+                transform& t = scene->transforms[n];
+                
+                light_buffer.lights[pos].pos_radius = vec4f( t.translation, l.radius );
+                light_buffer.lights[pos].colour = vec4f( l.colour, 1.0 );
+                
+                ++num_point_lights;
+                ++num_lights;
+                ++pos;
+            }
+            
+            //spot lights
+            s32 num_spot_lights = 0;
+            
+            //info for loops
+            light_buffer.info = vec4f( num_directions_lights, num_point_lights, num_spot_lights, 0.0f );
 
 			pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
             

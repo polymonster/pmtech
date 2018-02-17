@@ -1,96 +1,3 @@
-float2 phong_point_light( float4 light_pos_radius, float4 camera_pos, float4 world_pos, float4 normal, float4 spec_pwr_stgth )
-{
-	float3 	v_light = light_pos_radius.xyz - world_pos.xyz;
-	float	d		= length( v_light );
-	float 	n_dot_l = saturate( dot( normalize( v_light ), normalize( normal.xyz ) ) );
-	float 	atten	= max( ( light_pos_radius.w - d ) / light_pos_radius.w, 0.0 );
-	
-	float	rv_dot_v = 0.0;
-	if( n_dot_l > 0.0 )
-	{
-		float3  v_view 	= normalize(camera_pos.xyz - world_pos.xyz);
-		
-	    float3 rv = reflect(-normalize( v_light ), normal.xyz); 
-		rv_dot_v = pow( max(dot(rv, v_view), 0.0), spec_pwr_stgth.x );
-	}
-			
-	return  float2( n_dot_l * atten, rv_dot_v * atten * spec_pwr_stgth.y );	
-}
-
-float2 phong_blinn_point_light( float4 light_pos_radius, float4 view_pos, float4 normal, float4 spec_pwr_stgth )
-{
-	float3 	v_light 	= light_pos_radius.xyz - view_pos.xyz;
-	float	d			= length( v_light );
-	float3 	v_normal 	= normalize( normal.xyz ); 
-	
-	v_light = normalize( v_light );
-	
-	float 	n_dot_l = saturate( dot( v_light, v_normal ) );
-	float 	atten	= max( ( light_pos_radius.w - d ) / light_pos_radius.w, 0.0 );
-	
-	float	n_dot_h = 0.0;
-	if( n_dot_l > 0.0 )
-	{
-		float3  v_view 	= normalize(-view_pos.xyz);
-				
-		float3  hv 		= normalize( v_view + v_light );
-		n_dot_h = pow( max( dot( hv, v_normal ), 0.0), spec_pwr_stgth.x );
-		
-		return  float2( n_dot_l * atten, n_dot_h * atten * spec_pwr_stgth.y );
-	}
-			
-	return float2( 0.0f, 0.0f );	
-}
-
-float2 cook_torrence_point_light( float4 light_pos_radius, float4 view_pos, float4 normal, float4 rghsq_refl_invrefl )
-{
-	float3 	v_light 	= light_pos_radius.xyz - view_pos.xyz;
-	float	d			= length( v_light );
-	float3 	v_normal 	= normalize( normal.xyz );
-	
-	v_light				= normalize( v_light );
-	
-	float 	n_dot_l		= dot( v_normal, v_light );
-	float 	atten		= max( ( light_pos_radius.w - d ) / light_pos_radius.w, 0.0 );
-	
-	//float 	atten		= light_pos_radius.w / (d);
-	
-	float specular = 0.0f;
-	if( n_dot_l > 0.0f )
-	{
-		float3  v_view 	= normalize(-view_pos.xyz);
-		float3  hv 		= normalize( v_view + v_light );
-		
-		float n_dot_v	= dot( v_normal, v_view );
-		float n_dot_h   = dot( v_normal, hv );
-		float v_dot_h   = dot( v_view, hv );
-		
-		// geometric attenuation
-        float n_dot_h_2 = 2.0f * n_dot_h;
-        float g1 = (n_dot_h_2 * n_dot_v) / v_dot_h;
-        float g2 = (n_dot_h_2 * n_dot_l) / v_dot_h;
-        float geom_atten = min(1.0, min(g1, g2));
-		
-		// roughness (or: microfacet distribution function)
-        // beckmann distribution function
-        float r1 = 1.0f / ( 4.0f * rghsq_refl_invrefl.x * pow(n_dot_h, 4.0f));
-        float r2 = (n_dot_h * n_dot_h - 1.0) / (rghsq_refl_invrefl.x * n_dot_h * n_dot_h);
-        float roughness = r1 * exp(r2);
-		
-		// fresnel
-        // Schlick approximation
-        float fresnel = pow(1.0 - v_dot_h, 5.0);
-        fresnel *= rghsq_refl_invrefl.z;
-        fresnel += rghsq_refl_invrefl.y;
-		
-        specular = (fresnel * geom_atten * roughness) / (n_dot_v * n_dot_l * 3.1419);
-
-		return saturate( float2( n_dot_l * atten, (rghsq_refl_invrefl.z + specular * rghsq_refl_invrefl.y) * atten ) );		
-	}
-		
-	return saturate( float2( 0.0f, 0.0f ) );
-}
-
 float omni_shadow( float4 light_pos_inv_radius, float3 world_pos )
 {
 	//point shadow
@@ -218,13 +125,10 @@ float3 cook_torrence(
 		
         float specular = (fresnel * geom_atten * roughness_atten) / (n_dot_v * n_dot_l * 3.1419);
         
-        //diffuse - lambert
-        //float3 lit_colour = n_dot_l * light_colour * albedo;
-        
         //specular
         float3 lit_colour = metalness * light_colour * n_dot_l * ( k + specular * ( 1.0 - k ) );
         
-        return lit_colour;	
+        return saturate(lit_colour);	
 	}
 		
 	return float3( 0.0, 0.0, 0.0 );
@@ -257,4 +161,36 @@ float3 oren_nayar(
   float B = 0.45 * sigma2 / (sigma2 + 0.09);
 
   return ( albedo * light_colour * max(0.0, n_dot_l) * (A + B * s / t) / 3.14159265 );
+}
+
+float point_light_attenuation(
+	float4 light_pos_radius,
+	float3 world_pos)
+{
+	float d = length( world_pos.xyz - light_pos_radius.xyz );
+	float r = light_pos_radius.w;
+	
+	float denom = d/r + 1.0;
+	float attenuation = 1.0 / (denom*denom);
+	
+	return attenuation;
+}
+
+float point_light_attenuation_cutoff(
+	float4 light_pos_radius,
+	float3 world_pos)
+{
+	float attenuation = point_light_attenuation(
+		light_pos_radius,
+		world_pos);
+		
+	float cutoff = 0.1;
+		
+    // scale and bias attenuation such that:
+    //   attenuation == 0 at extent of max influence
+    //   attenuation == 1 when d == 0
+    attenuation = (attenuation - cutoff) / (1.0 - cutoff);
+    attenuation = max(attenuation, 0.0);
+    
+    return attenuation;
 }
