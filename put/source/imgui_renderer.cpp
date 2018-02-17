@@ -448,9 +448,7 @@ namespace put
             
             static u32 timer_index = pen::timer_create("imgui_input_timer");
             
-            pen::timer_accum(timer_index);
-            f32 dt_ms = pen::timer_get_ms(timer_index);
-            pen::timer_reset(timer_index);
+            f32 dt_ms = pen::timer_elapsed_ms(timer_index);
             pen::timer_start(timer_index);
 
 			for (u32 i = 0; i < 512; ++i)
@@ -487,7 +485,7 @@ namespace put
 			ImGuiIO& io = ImGui::GetIO();
 
 			//set delta time
-			f32 cur_time = pen::timer_get_time();
+			f32 cur_time = pen::get_time_ms();
 			static f32 prev_time = cur_time;
 			io.DeltaTime = (cur_time - prev_time) / 1000.0f;
 			prev_time = cur_time;

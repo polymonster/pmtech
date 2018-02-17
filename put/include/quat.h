@@ -222,7 +222,7 @@ public:
 		// pitch (y-axis rotation)
 		double sinp = +2.0 * (w * y - z * x );
 		if (fabs(sinp) >= 1)
-			euler.y = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+			euler.y = copysign(3.1415926535897932f / 2.0f, sinp); // use 90 degrees if out of range
 		else
 			euler.y = asin(sinp);
 

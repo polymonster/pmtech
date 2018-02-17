@@ -186,6 +186,8 @@ namespace put
             float   altitude;
             
             vec3f   direction;
+            
+            bool    shadow = false;
         };
 
 		struct transform

@@ -785,7 +785,7 @@ namespace put
                 //with no attenuation.. todo optitise
                 vec3f light_pos = l.direction * 100000.0f;
                 light_buffer.lights[pos].pos_radius = vec4f( light_pos, 0.0 );
-                light_buffer.lights[pos].colour = vec4f( l.colour, 1.0 );
+                light_buffer.lights[pos].colour = vec4f( l.colour, l.shadow ? 1.0 : 0.0 );
                 
                 ++num_directions_lights;
                 ++num_lights;
@@ -810,7 +810,7 @@ namespace put
                 transform& t = scene->transforms[n];
                 
                 light_buffer.lights[pos].pos_radius = vec4f( t.translation, l.radius );
-                light_buffer.lights[pos].colour = vec4f( l.colour, 1.0 );
+                light_buffer.lights[pos].colour = vec4f( l.colour, l.shadow ? 1.0 : 0.0);
                 
                 ++num_point_lights;
                 ++num_lights;

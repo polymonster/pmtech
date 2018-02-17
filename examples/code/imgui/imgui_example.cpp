@@ -126,13 +126,12 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 			ImGui::ShowTestWindow(&show_test_window);
 		}
 
-		f32 start_time = pen::timer_get_time();
-		static f32 end_time = start_time;
+        static u32 timer = pen::timer_create("imgui_impl_timer");
+        pen::timer_start(timer);
 
 		put::dev_ui::render();
 
-		end_time = pen::timer_get_time();
-		renderer_time = end_time - start_time;
+        renderer_time = pen::timer_elapsed_ms(timer);
 
         //present 
         pen::renderer_present();

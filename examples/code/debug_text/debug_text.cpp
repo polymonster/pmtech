@@ -70,6 +70,9 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
     while( 1 )
     {
+        static u32 frame_timer = pen::timer_create("frame_timer");
+        pen::timer_start(frame_timer);
+        
         //viewport
         pen::viewport vp =
         {
@@ -111,10 +114,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 
         pen::renderer_consume_cmd_buffer();
         
-        pen::timer_accum(timer_test);
-        f32 time_ms = pen::timer_get_ms(timer_test);
+        f32 time_ms = pen::timer_elapsed_ms(frame_timer);
 		put::dbg::add_text_2f( 10.0f, 50.0f, vp, vec4f( 0.0f, 0.0f, 1.0f, 1.0f ), "%s%f", "Timer", time_ms );
-        pen::timer_reset(timer_test);
         
         //msg from the engine we want to terminate
         if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )

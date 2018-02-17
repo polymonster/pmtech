@@ -256,7 +256,23 @@ ps_output ps_forward_lit( vs_output input )
 			albedo.rgb
 		);		
 		
-		lit_colour += light_col;
+		if( lights[i].colour.a == 0.0 )
+		{
+			lit_colour += light_col;
+			continue;
+		}
+		else
+		{
+			float4 sp = mul( input.world_pos, shadow_matrix );
+			sp.xyz /= sp.w;
+			sp.y *= -1.0;
+			sp.xyz = sp.xyz * 0.5 + 0.5;
+
+			float d = SAMPLE_TEXTURE_2D( shadowmap_texture, sp.xy ).r;
+			float shadow = sp.z < d ? 1.0 : 0.0;
+			
+			lit_colour += light_col * shadow;
+		}
 	}
 	
 	//for point lights
@@ -296,16 +312,7 @@ ps_output ps_forward_lit( vs_output input )
 	
 	//project world pos to shadow
 	/*
-	float4 sp = mul( input.world_pos, shadow_matrix );
-	sp.xyz /= sp.w;
-	sp.y *= -1.0;
-	sp.xyz = sp.xyz * 0.5 + 0.5;
 
-	float d = SAMPLE_TEXTURE_2D( shadowmap_texture, sp.xy ).r;
-	float shadow = sp.z < d ? 1.0 : 0.0;
-	
-	output.colour.rgb = lit_colour.rgb * shadow;
-	output.colour.a = albedo.a;
 	*/
 	
 	output.colour.rgb = lit_colour.rgb;

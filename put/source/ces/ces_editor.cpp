@@ -706,6 +706,13 @@ namespace put
             static bool view_menu = false;
 			static bool settings_open = false;
             
+            //auto save
+            bool auto_save = dev_ui::get_program_preference("auto_save").as_bool();
+            if( auto_save )
+            {
+                
+            }
+            
             ImGui::BeginMainMenuBar();
             
             if (ImGui::BeginMenu(ICON_FA_LEMON_O))
@@ -1056,9 +1063,7 @@ namespace put
             
             static u32 timer_index = pen::timer_create("scene_update_timer");
             
-            pen::timer_accum(timer_index);
-            f32 dt_ms = pen::timer_get_ms(timer_index);
-            pen::timer_reset(timer_index);
+            f32 dt_ms = pen::timer_elapsed_ms(timer_index);
             pen::timer_start(timer_index);
             
             //update render data
@@ -1824,7 +1829,7 @@ namespace put
                             physics::ray_cast_params rcp;
                             rcp.start = r0;
                             rcp.end = r1;
-                            rcp.timestamp = pen::timer_get_time();
+                            rcp.timestamp = pen::get_time_ms();
                             rcp.callback = physics_pick_callback;
 
                             physics::cast_ray( rcp );

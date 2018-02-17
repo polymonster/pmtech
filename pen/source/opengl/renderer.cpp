@@ -922,7 +922,7 @@ namespace pen
         
         texture_creation_params _tcp = tcp;
         
-        res.render_target.uid = (u32)timer_get_time();
+        res.render_target.uid = (u32)pen::get_time_ms();
         
         if( tcp.width == PEN_BACK_BUFFER_RATIO )
         {

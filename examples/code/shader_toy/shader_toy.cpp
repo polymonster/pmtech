@@ -314,7 +314,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         //tweakbles
         k_tweakables.size_x = 1280.0f;
         k_tweakables.size_y = 720.0f;
-        k_tweakables.time = pen::timer_get_time();
+        k_tweakables.time = pen::get_time_ms();
         
         pen::renderer_update_buffer( k_render_handles.tweakable_cbuffer, &k_tweakables, sizeof(tweakable_cb), 0 );
         

@@ -47,7 +47,9 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH( "front_light" );
     scene->lights[light].colour = vec3f::one();
-    scene->transforms->translation = vec3f( 100.0f, 100.0f, 100.0f );
+    scene->lights[light].direction = vec3f::one();
+    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->transforms->translation = vec3f::zero();
     scene->transforms->rotation = quat();
     scene->transforms->scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
@@ -236,7 +238,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     while( 1 )
     {
-        f32 start = pen::timer_get_time();
+        static u32 frame_timer = pen::timer_create("frame_timer");
+        pen::timer_start(frame_timer);
         
 		put::dev_ui::new_frame();
         
@@ -255,7 +258,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         if( pen::input_is_key_held(PENK_MENU) && pen::input_is_key_pressed(PENK_D) )
             enable_dev_ui = !enable_dev_ui;
         
-        frame_time = pen::timer_get_time() - start;
+        frame_time = pen::timer_elapsed_ms(frame_timer);
         
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();

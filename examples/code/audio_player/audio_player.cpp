@@ -668,7 +668,7 @@ public:
     void ui_control()
     {
         f32 prev_time = timestamp;
-        timestamp = pen::timer_get_time();
+        timestamp = pen::get_time_ms();
         
         fame_time = timestamp - prev_time;
         

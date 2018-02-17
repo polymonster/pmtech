@@ -188,15 +188,11 @@ namespace physics
         physics_initialise();
         
         static u32 physics_timer = pen::timer_create("physics_timer");
-        pen::timer_reset(physics_timer);
         pen::timer_start(physics_timer);
         
         for(;;)
         {
-            pen::timer_accum(physics_timer);
-            f32 dt_ms = pen::timer_get_ms(physics_timer);
-            
-            pen::timer_reset(physics_timer);
+            f32 dt_ms = pen::timer_elapsed_ms(physics_timer);
             pen::timer_start(physics_timer);
             
             if( pen::threads_semaphore_try_wait( p_physics_job_thread_info->p_sem_consume ) )

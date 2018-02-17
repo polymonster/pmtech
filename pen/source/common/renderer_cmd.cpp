@@ -539,8 +539,6 @@ namespace pen
         
         for(;;)
 		{
-			PEN_TIMER_START(CMD_BUFFER);
-
 			if (pen::threads_semaphore_try_wait(p_consume_semaphore))
 			{
 				//put_pos might change on the producer thread.
@@ -567,9 +565,6 @@ namespace pen
 			{
 				pen::threads_sleep_ms(1);
 			}
-
-			PEN_TIMER_END(CMD_BUFFER);
-			PEN_TIMER_RESET(CMD_BUFFER);
 
 			if (pen::threads_semaphore_try_wait(p_job_thread_info->p_sem_exit))
 			{

@@ -90,7 +90,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     while( 1 )
     {
-        f32 start = pen::timer_get_time();
+        static u32 frame_timer = pen::timer_create("frame_timer");
+        pen::timer_start(frame_timer);
         
 		put::dev_ui::new_frame();
         
@@ -109,7 +110,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         if( pen::input_is_key_held(PENK_MENU) && pen::input_is_key_pressed(PENK_D) )
             enable_dev_ui = !enable_dev_ui;
         
-        frame_time = pen::timer_get_time() - start;
+        frame_time = pen::timer_elapsed_ms(frame_timer);
         
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
