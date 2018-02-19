@@ -44,8 +44,6 @@ namespace pen
         ticks_to_us = ticks_to_ns / 1000.0f;
         ticks_to_ms = ticks_to_us / 1000.0f;
 
-		next_free = MAX_TIMERS;
-
 		next_free = 0;
 	}
 
