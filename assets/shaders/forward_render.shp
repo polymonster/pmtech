@@ -370,7 +370,8 @@ ps_output_multi ps_gbuffer( vs_output input )
 
 void ps_null( vs_output_zonly input )
 {
-	
+	//stub
+	return;
 }
 
 pmfx:

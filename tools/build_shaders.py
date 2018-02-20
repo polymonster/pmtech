@@ -476,7 +476,10 @@ def generate_glsl(
     if instanced:
         instance_input_struct_name = instance_input_source.split()[1]
 
-    ps_output_struct_name = ps_output_source.split()[1]
+    ps_output_struct_name = ""
+
+    if len(ps_output_source.split()) > 0:
+        ps_output_struct_name = ps_output_source.split()[1]
 
     # cbuffers to unifom
     uniform_buffers = ""
@@ -585,7 +588,10 @@ def generate_glsl(
         final_ps_source += "\n"
 
         final_ps_source += generate_global_io_struct(vs_outputs, "struct " + vs_output_struct_name)
-        final_ps_source += generate_global_io_struct(ps_outputs, "struct " + ps_output_struct_name)
+
+        if ps_output_struct_name != "":
+            final_ps_source += generate_global_io_struct(ps_outputs, "struct " + ps_output_struct_name)
+            
         final_ps_source += texture_samplers_source
         final_ps_source += uniform_buffers
         final_ps_source += ps_functions
@@ -733,6 +739,11 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
         if vs_find_pos != -1:
             if func[vs_find_pos+len(vs_name)] == "(" and func[vs_find_pos-1] == " ":
                 vs_main = func
+
+    if ps_main == "":
+        print(ps_name + " cannot be found")
+        for func in function_list:
+            print(func)
 
     # remove from generic function list
     function_list.remove(vs_main)

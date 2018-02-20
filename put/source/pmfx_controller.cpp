@@ -1015,6 +1015,8 @@ namespace put
                                                           colour_write_mask, alpha_to_coverage);
                 
                 //scene and camera
+                //PEN_PRINTF(view.dumps().c_str());
+                
                 Str scene_str = view["scene"].as_str();
                 Str camera_str = view["camera"].as_str();
                 
@@ -1212,7 +1214,7 @@ namespace put
 
         void render()
         {
-#if 0
+#if 1
             static hash_id id_shadow_map = PEN_HASH("shadow_map");
             static hash_id id_wrap_linear = PEN_HASH("wrap_linear_sampler_state");
             
@@ -1236,7 +1238,7 @@ namespace put
 			int count = 0;
             for( auto& v : k_views )
             {
-#if 0
+#if 1
 				if (count == 0)
 				{
 					pen::renderer_set_texture(0, ss, 15, PEN_SHADER_TYPE_PS);
