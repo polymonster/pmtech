@@ -385,7 +385,9 @@ namespace put
                 pen::json state = j_sampler_states[i];
                 
                 scp.filter = mode_from_string( k_filter_mode_map, state["filter"].as_cstr(), PEN_FILTER_MIN_MAG_MIP_LINEAR );
-                scp.address_v = scp.address_w = scp.address_u = mode_from_string( k_address_mode_map, state["address"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
+                scp.address_u = mode_from_string( k_address_mode_map, state["address"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
+                scp.address_v = scp.address_w = scp.address_u;
+                
                 scp.address_u = mode_from_string( k_address_mode_map, state["address_u"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
                 scp.address_v = mode_from_string( k_address_mode_map, state["address_v"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
                 scp.address_w = mode_from_string( k_address_mode_map, state["address_w"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP );
@@ -837,7 +839,13 @@ namespace put
 			//clear state
 			pen::clear_state cs_info =
 			{
-				clear_colour_f[0], clear_colour_f[1], clear_colour_f[2], clear_colour_f[3], clear_depth_f, clear_stencil_val, clear_flags,
+				clear_colour_f[0],
+                clear_colour_f[1],
+                clear_colour_f[2],
+                clear_colour_f[3],
+                clear_depth_f,
+                clear_stencil_val,
+                clear_flags,
 			};
 
 			//clear mrt
@@ -939,7 +947,8 @@ namespace put
                             {
                                 if( new_view.rt_width != w || new_view.rt_height != h || new_view.rt_ratio != rr )
                                 {
-                                    PEN_PRINTF("render controller error: render target %s is incorrect dimension\n", target_str.c_str() );
+                                    PEN_PRINTF("render controller error: render target %s is incorrect dimension\n",
+                                               target_str.c_str() );
                                     valid = false;
                                 }
                             }
@@ -1002,7 +1011,8 @@ namespace put
                 pen::json colour_write_mask = view["colour_write_mask"];
                 pen::json blend_state = view["blend_state"];
                 
-                new_view.blend_state = create_blend_state( j_views[i].name().c_str(), blend_state, colour_write_mask, alpha_to_coverage);
+                new_view.blend_state = create_blend_state( j_views[i].name().c_str(), blend_state,
+                                                          colour_write_mask, alpha_to_coverage);
                 
                 //scene and camera
                 Str scene_str = view["scene"].as_str();
@@ -1202,11 +1212,13 @@ namespace put
 
         void render()
         {
+#if 0
             static hash_id id_shadow_map = PEN_HASH("shadow_map");
             static hash_id id_wrap_linear = PEN_HASH("wrap_linear_sampler_state");
             
             u32 shadow_map = pmfx::get_render_target(id_shadow_map)->handle;
             u32 ss = pmfx::get_render_state_by_name(id_wrap_linear);
+#endif
             
             static u32 cb_2d = 0;
             if(cb_2d == 0)
@@ -1224,6 +1236,7 @@ namespace put
 			int count = 0;
             for( auto& v : k_views )
             {
+#if 0
 				if (count == 0)
 				{
 					pen::renderer_set_texture(0, ss, 15, PEN_SHADER_TYPE_PS);
@@ -1233,6 +1246,7 @@ namespace put
 					pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 					pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
 				}
+#endif
 
 
 				++count;
@@ -1376,7 +1390,13 @@ namespace put
                         }
                     }
                     
-                    ImGui::Combo("", &current_render_target, (const c8* const*)&k_render_target_names[0], k_render_target_names.size(), 10 );
+                    ImGui::Combo
+                    (
+                        "",
+                        &current_render_target,
+                        (const c8* const*)&k_render_target_names[0],
+                        k_render_target_names.size(), 10
+                    );
                     
 					static s32 display_ratio = 3;
 					ImGui::InputInt("Buffer Size", &display_ratio );

@@ -57,11 +57,24 @@ void create_instanced_objects( ces::entity_scene* scene )
     f32 spacing = 4.0f;
     s32 num = 32; //32768 instances;
     
-    f32 start = (( spacing + 2.0f ) * num) * 0.25f;
+    f32 start = ( spacing * num ) * 0.5f;
 
     vec3f start_pos = vec3f( -start, -start, -start );
     
-    //u32 master_node = get_new_node( scene );
+    u32 master_node = get_new_node( scene );
+    scene->names[master_node] = "master";
+    
+    scene->transforms[master_node].rotation = quat();
+    scene->transforms[master_node].rotation.euler_angles(0.0f, 0.0f, 0.0f);
+    scene->transforms[master_node].scale = vec3f::one();
+    scene->transforms[master_node].translation = vec3f::zero();
+    
+    scene->entities[master_node] |= CMP_TRANSFORM;
+    scene->parents[master_node] = master_node;
+    
+    instantiate_geometry( box_resource, scene, master_node );
+    instantiate_material( default_material, scene, master_node );
+    instantiate_model_cbuffer( scene, master_node );
     
     vec3f cur_pos = start_pos;
     for (s32 i = 0; i < num; ++i)
@@ -89,15 +102,12 @@ void create_instanced_objects( ces::entity_scene* scene )
                 scene->transforms[new_prim].scale = vec3f::one();
                 scene->transforms[new_prim].translation = cur_pos;
                 scene->entities[new_prim] |= CMP_TRANSFORM;
-                scene->parents[new_prim] = new_prim;
+                scene->parents[new_prim] = master_node;
                 
-                instantiate_geometry( box_resource, scene, new_prim );
-                instantiate_material( default_material, scene, new_prim );
+                scene->entities[new_prim] |= CMP_GEOMETRY;
+                scene->entities[new_prim] |= CMP_MATERIAL;
                 
-                if( i == 0 && j == 0 && k == 0)
-                    instantiate_model_cbuffer(scene, new_prim);
-                else
-                    scene->entities[new_prim] |= CMP_SUB_INSTANCE;
+                scene->entities[new_prim] |= CMP_SUB_INSTANCE;
                 
                 ImColor ii = ImColor::HSV((rand()%255)/255.0f, (rand()%255)/255.0f, (rand()%255)/255.0f);
                 scene->materials[new_prim].diffuse_rgb_shininess = vec4f( ii.Value.x, ii.Value.y, ii.Value.z, 1.0f );
@@ -119,7 +129,7 @@ void animate_instances( entity_scene* scene )
     quat q;
     q.euler_angles(0.01f, 0.01f, 0.01f);
     
-    for( s32 i = 1; i < scene->num_nodes; ++i )
+    for( s32 i = 2; i < scene->num_nodes; ++i )
     {
         scene->transforms[i].rotation = scene->transforms[i].rotation * q;
         scene->entities[i] |= CMP_TRANSFORM;
