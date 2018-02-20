@@ -1214,7 +1214,7 @@ namespace put
 
         void render()
         {
-#if 1
+#if 0
             static hash_id id_shadow_map = PEN_HASH("shadow_map");
             static hash_id id_wrap_linear = PEN_HASH("wrap_linear_sampler_state");
             
@@ -1238,7 +1238,7 @@ namespace put
 			int count = 0;
             for( auto& v : k_views )
             {
-#if 1
+#if 0
 				if (count == 0)
 				{
 					pen::renderer_set_texture(0, ss, 15, PEN_SHADER_TYPE_PS);
