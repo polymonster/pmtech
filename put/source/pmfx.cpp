@@ -95,28 +95,24 @@ namespace put
             c8* ps_file_buf = (c8*)pen::memory_alloc(256);
             Str ps_filename_str = j_techique["ps_file"].as_str();
 
-			static hash_id k_id_ps_null = PEN_HASH("zonly.psc");
-			if (PEN_HASH(ps_filename_str.c_str()) != k_id_ps_null)
+			pen::string_format(ps_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str());
+
+			pen::shader_load_params ps_slp;
+			ps_slp.type = PEN_SHADER_TYPE_PS;
+
+			err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
+
+			pen::memory_free(ps_file_buf);
+
+			if (err != PEN_ERR_OK)
 			{
-				pen::string_format(ps_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str());
+				pen::memory_free(ps_slp.byte_code);
 
-				pen::shader_load_params ps_slp;
-				ps_slp.type = PEN_SHADER_TYPE_PS;
-
-				err = pen::filesystem_read_file_to_buffer(ps_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
-
-				pen::memory_free(ps_file_buf);
-
-				if (err != PEN_ERR_OK)
-				{
-					pen::memory_free(ps_slp.byte_code);
-
-					return program;
-				}
-
-				program.pixel_shader = pen::renderer_load_shader(ps_slp);
+				return program;
 			}
-            
+
+			program.pixel_shader = pen::renderer_load_shader(ps_slp);
+
             //create input layout from json
             pen::input_layout_creation_params ilp;
             ilp.vs_byte_code = vs_slp.byte_code;

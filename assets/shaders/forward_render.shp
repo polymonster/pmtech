@@ -368,13 +368,9 @@ ps_output_multi ps_gbuffer( vs_output input )
     return output;
 }
 
-ps_output ps_null( vs_output_zonly input )
+void ps_null( vs_output_zonly input )
 {
-	//stub function that is replaced by binding null shader
-	ps_output output;
-	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
 	
-	return output;
 }
 
 pmfx:
