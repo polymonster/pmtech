@@ -63,6 +63,7 @@ namespace pen
 	#define NUM_CUBEMAP_FACES		6
     #define MAX_VERTEX_ATTRIBUTES   16
     #define MAX_UNIFORM_BUFFERS     16
+    #define MAX_SHADER_TEXTURES     32
  
 	#define QUERY_DISJOINT			1
 	#define QUERY_ISSUED			(1<<1)
@@ -162,7 +163,7 @@ namespace pen
         u32 gs;
         GLuint program;
         u8 uniform_block_location[MAX_UNIFORM_BUFFERS];
-        u8 texture_location[MAX_UNIFORM_BUFFERS];
+        u8 texture_location[MAX_SHADER_TEXTURES];
     };
     static std::vector<shader_program> k_shader_programs;
     
@@ -790,7 +791,6 @@ namespace pen
             
         CHECK_GL_ERROR;
 
-        
         void* offset = (void*)(size_t)(start_index * 2);
         
         glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, base_vertex );

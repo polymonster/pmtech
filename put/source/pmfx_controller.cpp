@@ -1202,17 +1202,29 @@ namespace put
 
         void render()
         {
-            pen::buffer_creation_params bcp;
-            bcp.usage_flags = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size = sizeof(float) * 16;
-            bcp.data = (void*)nullptr;
+            static hash_id id_shadow_map = PEN_HASH("shadow_map");
+            static hash_id id_wrap_linear = PEN_HASH("wrap_linear_sampler_state");
             
-            static u32 cb_2d = pen::renderer_create_buffer(bcp);
+            u32 shadow_map = pmfx::get_render_target(id_shadow_map)->handle;
+            u32 ss = pmfx::get_render_state_by_name(id_wrap_linear);
+            
+            static u32 cb_2d = 0;
+            if(cb_2d == 0)
+            {
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(float) * 16;
+                bcp.data = (void*)nullptr;
+                
+                cb_2d = pen::renderer_create_buffer(bcp);
+            }
             
             for( auto& v : k_views )
             {
+                pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
+
                 //viewport and scissor
                 pen::viewport vp = { 0 };
                 get_rt_viewport( v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp );
@@ -1286,7 +1298,7 @@ namespace put
 
 			pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
-			for (s32 i = 0; i < 8; ++i)
+			for (s32 i = 0; i < 16; ++i)
 			{
 				pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
 				pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);

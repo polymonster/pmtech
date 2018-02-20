@@ -104,10 +104,12 @@ frustum g_shadow_frustum;
 
 void debug_render_frustum( const scene_view& view )
 {
+    /*
     put::dbg::add_aabb(view.scene->renderable_extents.min, view.scene->renderable_extents.max, vec4f::magenta());
     put::dbg::render_3d(view.cb_view);
     
     put::dbg::add_frustum(g_shadow_frustum.corners[0], g_shadow_frustum.corners[1]);
+    */
 }
 
 void get_aabb_corners( vec3f* corners, vec3f min, vec3f max )
@@ -172,9 +174,6 @@ void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, v
 
 void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )
 {
-    static hash_id id_shadow_map = PEN_HASH("shadow_map");
-    static hash_id id_wrap_linear = PEN_HASH("wrap_linear");
-    
     //static hash_id id_main_cam = PEN_HASH("model_viewer_camera");
     //const camera* main_cam = pmfx::get_camera(id_main_cam);
     
@@ -203,17 +202,25 @@ void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )
     mat4 shadow_vp = shadow_cam->proj * shadow_cam->view;
     
     pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));
+}
+
+void shadow_map_update(put::camera_controller* cc)
+{
+    /*
+    static hash_id id_shadow_map = PEN_HASH("shadow_map");
+    static hash_id id_wrap_linear = PEN_HASH("wrap_linear");
     
     u32 shadow_map = pmfx::get_render_target(id_shadow_map)->handle;
     u32 ss = pmfx::get_render_state_by_name(id_wrap_linear);
-    
+     
     pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
-    pen::renderer_set_constant_buffer(cbuffer_shadow, 4, PEN_SHADER_TYPE_PS);
-}
-
-void uu(put::camera_controller* cc)
-{
+    */
     
+    //pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
+    
+    //unbind
+    pen::renderer_set_texture(0, 0, 15, PEN_SHADER_TYPE_PS);
+    pen::renderer_set_constant_buffer(cbuffer_shadow, 4, PEN_SHADER_TYPE_PS);
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -243,7 +250,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     put::camera_controller shadow_cc;
     shadow_cc.camera = &shadow_camera;
-    shadow_cc.update_function = &uu;
+    shadow_cc.update_function = &shadow_map_update;
     shadow_cc.name = "shadow_camera";
     shadow_cc.id_name = PEN_HASH(shadow_cc.name.c_str());
     

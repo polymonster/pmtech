@@ -14,6 +14,8 @@
 
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;
 
+#define remap_depth( d ) d
+
 #else
 	
 #define TEXTURE_2D( name, sampler_index ) Texture2D name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 
@@ -26,5 +28,7 @@
 #define mul_tbn( A, B ) mul(A, B)
 
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3; mat = transpose(mat)
+
+#define remap_depth( d ) d = d * 0.5 + 0.5
 
 #endif

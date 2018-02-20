@@ -111,6 +111,23 @@
 			
 	views:
 	{
+		single_shadow_view:
+		{
+			target:[shadow_map],
+			clear_depth: 1.0,
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: reversed,
+			depth_stencil_state: default,
+			pmfx_shader: forward_render,
+			technique: zonly,
+			scene: main_scene,
+			camera: shadow_camera,
+			scene_views:["ces_render_scene"],
+			render_flags:["forward_lit"]
+		},
+		
 		main_view:
 		{
 			target:[main_colour, main_depth],
@@ -157,23 +174,6 @@
 			scene: main_scene,
 			camera: model_viewer_camera,
 			scene_views:["shadows_debug"]
-		},
-		
-		single_shadow_view:
-		{
-			target:[shadow_map],
-			clear_depth: 1.0,
-			colour_write_mask: 0x0,
-			blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: reversed,
-			depth_stencil_state: default,
-			pmfx_shader: forward_render,
-			technique: constant_colour,
-			scene: main_scene,
-			camera: shadow_camera,
-			scene_views:["ces_render_scene"],
-			render_flags:["forward_lit"]
 		},
 	},
 }

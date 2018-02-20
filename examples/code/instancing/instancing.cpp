@@ -61,6 +61,8 @@ void create_instanced_objects( ces::entity_scene* scene )
 
     vec3f start_pos = vec3f( -start, -start, -start );
     
+    //u32 master_node = get_new_node( scene );
+    
     vec3f cur_pos = start_pos;
     for (s32 i = 0; i < num; ++i)
     {
@@ -96,7 +98,9 @@ void create_instanced_objects( ces::entity_scene* scene )
                     instantiate_model_cbuffer(scene, new_prim);
                 else
                     scene->entities[new_prim] |= CMP_SUB_INSTANCE;
-                    
+                
+                ImColor ii = ImColor::HSV((rand()%255)/255.0f, (rand()%255)/255.0f, (rand()%255)/255.0f);
+                scene->materials[new_prim].diffuse_rgb_shininess = vec4f( ii.Value.x, ii.Value.y, ii.Value.z, 1.0f );
                 
                 cur_pos.x += spacing;
             }

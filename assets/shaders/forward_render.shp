@@ -9,6 +9,12 @@ struct vs_output
 	float3 tangent		: TEXCOORD2;
 	float3 bitangent	: TEXCOORD3;
 	float4 texcoord		: TEXCOORD4;
+	float4 colour		: TEXCOORD5;
+};
+
+struct vs_output_zonly
+{
+	float4 position		: SV_POSITION;
 };
 
 struct vs_output_picking
@@ -101,7 +107,21 @@ declare_texture_samplers
 	TEXTURE_2D( normal_texture, 1 );
 	TEXTURE_2D( specular_texture, 2 );	
 	TEXTURE_2D( shadowmap_texture, 15 );
+	TEXTURE_2D( test_texture, 16 );
 };
+
+vs_output_zonly vs_main_zonly( vs_input input )
+{
+	vs_output_zonly output;
+	
+	float4x4 wvp = mul( world_matrix, vp_matrix );
+
+	output.position = mul( input.position, wvp );
+	
+	output.position.z = remap_depth(output.position.z);
+	
+	return output;
+}
 
 vs_output vs_main_skinned( vs_input_skinned input )
 {
@@ -130,6 +150,8 @@ vs_output vs_main_skinned( vs_input_skinned input )
 	
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
 		input.texcoord.z, 1.0f - input.texcoord.w );
+		
+	output.colour = user_data2;
 	
     return output;
 }
@@ -159,6 +181,8 @@ vs_output vs_main( vs_input input )
 		
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
 		input.texcoord.z, 1.0f - input.texcoord.w );
+		
+	output.colour = user_data2;
 		
     return output;
 }
@@ -191,6 +215,8 @@ vs_output vs_main_instanced( vs_input input, vs_instance_input instance_input )
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
 		input.texcoord.z, 1.0f - input.texcoord.w );
 	
+	output.colour = instance_input.user_data2;
+		
     return output;
 }
 
@@ -220,11 +246,11 @@ ps_output ps_forward_lit( vs_output input )
 		input.bitangent, 
 		input.normal, 
 		normal_sample );
+		
+	albedo = input.colour;
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
-	
-	albedo.rgb = float3( 1.0, 1.0, 1.0 );
-	
+		
 	//todo these need to be passed from vs for instancing
 	float single_roughness = saturate(user_data.y); 
 	float reflectivity = saturate(user_data.z);
@@ -310,16 +336,9 @@ ps_output ps_forward_lit( vs_output input )
 		
 		lit_colour += light_col;
 	}
-	
-	//project world pos to shadow
-	/*
 
-	*/
-	
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
-	
-	//output.colour.rgb = n.rgb;
 	
     return output;
 }
@@ -352,6 +371,15 @@ ps_output_multi ps_gbuffer( vs_output input )
     return output;
 }
 
+ps_output ps_null( vs_output_zonly input )
+{
+	//stub function that is replaced by binding null shader
+	ps_output output;
+	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+	
+	return output;
+}
+
 pmfx:
 {	
 	"forward_lit":
@@ -377,7 +405,13 @@ pmfx:
 		"vs": "vs_main",
 		"ps": "ps_constant_colour"
 	},
-
+	
+	"zonly":
+	{
+		"vs": "vs_main_zonly",
+		"ps": "ps_null"
+	},
+	
 	"gbuffer":
 	{
 		"vs": "vs_main",
