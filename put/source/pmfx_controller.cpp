@@ -1221,10 +1221,21 @@ namespace put
                 cb_2d = pen::renderer_create_buffer(bcp);
             }
             
+			int count = 0;
             for( auto& v : k_views )
             {
-                pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
+				if (count == 0)
+				{
+					pen::renderer_set_texture(0, ss, 15, PEN_SHADER_TYPE_PS);
+				}
+				else
+				{
+					pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
+					pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
+				}
 
+
+				++count;
                 //viewport and scissor
                 pen::viewport vp = { 0 };
                 get_rt_viewport( v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp );

@@ -107,7 +107,6 @@ declare_texture_samplers
 	TEXTURE_2D( normal_texture, 1 );
 	TEXTURE_2D( specular_texture, 2 );	
 	TEXTURE_2D( shadowmap_texture, 15 );
-	TEXTURE_2D( test_texture, 16 );
 };
 
 vs_output_zonly vs_main_zonly( vs_input input )
@@ -292,12 +291,10 @@ ps_output ps_forward_lit( vs_output input )
 			float4 sp = mul( input.world_pos, shadow_matrix );
 			sp.xyz /= sp.w;
 			sp.y *= -1.0;
-			
 			sp.xyz = sp.xyz * 0.5 + 0.5;
-
+			
 			float d = SAMPLE_TEXTURE_2D( shadowmap_texture, sp.xy ).r;
 			float shadow = sp.z < d ? 1.0 : 0.0;
-			
 			lit_colour += light_col * shadow;
 		}
 	}
