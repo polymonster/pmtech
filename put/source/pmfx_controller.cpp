@@ -151,6 +151,15 @@ namespace put
             nullptr,            0
         };
         
+        struct sampler_binding
+        {
+            hash_id id_texture;
+            u32     handle;
+            u32     sampler_unit;
+            u32     sampler_state;
+            u32     shader_type;
+        };
+        
         struct view_params
         {
             Str     name;
@@ -181,6 +190,8 @@ namespace put
             ces::entity_scene* scene;
             put::camera* camera;
             
+            std::vector<sampler_binding> sampler_bindings;
+            
             std::vector<void(*)(const put::ces::scene_view&)> render_functions;
         };
 
@@ -208,6 +219,7 @@ namespace put
         static std::vector<render_target>       k_render_targets;
         static std::vector<const c8*>           k_render_target_names;
 		static std::vector<render_state>		k_render_states;
+        static std::vector<sampler_binding>     k_sampler_bindings;
         
         void register_scene( const scene_controller& scene )
         {
@@ -374,6 +386,38 @@ namespace put
             k_geometry.screen_quad_ib = pen::renderer_create_buffer(bcp);
         }
         
+        void parse_sampler_bindings( pen::json render_config, std::vector<sampler_binding>& bindings )
+        {
+            pen::json j_sampler_bindings = render_config["sampler_bindings"];
+            s32 num = j_sampler_bindings.size();
+            for( s32 i = 0; i < num; ++i )
+            {
+                pen::json binding = j_sampler_bindings[i];
+                
+                sampler_binding sb;
+                
+                //texture id and handle from render targets.. todo add global textures
+                sb.id_texture = binding["texture"].as_hash_id();
+                sb.handle = get_render_target(sb.id_texture)->handle;
+                
+                //sampler state from name
+                Str ss = binding["state"].as_str();
+                ss.append("_sampler_state");
+                sb.sampler_state = get_render_state_by_name(PEN_HASH(ss.c_str()));
+                
+                //unit
+                sb.sampler_unit = binding["unit"].as_u32();
+                
+                //shader type
+                Str st = binding["shader"].as_str("ps");
+                sb.shader_type = PEN_SHADER_TYPE_PS;
+                if(st == "vs")
+                    sb.shader_type = PEN_SHADER_TYPE_VS;
+                
+                bindings.push_back(sb);
+            }
+        }
+        
         void parse_sampler_states( pen::json render_config )
         {
             pen::json j_sampler_states = render_config["sampler_states"];
@@ -395,7 +439,9 @@ namespace put
                 scp.mip_lod_bias = state["mip_lod_bias"].as_f32( 0.0f );
                 scp.max_anisotropy = state["max_anisotropy"].as_u32( 0 );
                 
-                scp.comparison_func = mode_from_string( k_comparison_mode_map, state["comparison_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
+                scp.comparison_func = mode_from_string( k_comparison_mode_map,
+                                                       state["comparison_func"].as_cstr(),
+                                                       PEN_COMPARISON_ALWAYS );
                 
                 pen::json border = state["border"];
                 if( border.type() == JSMN_ARRAY )
@@ -501,10 +547,21 @@ namespace put
         {
             pen::stencil_op op;
             
-            op.stencil_failop = mode_from_string( k_stencil_mode_map, depth_stencil_state["stencil_fail"].as_cstr(), PEN_STENCIL_OP_KEEP );
-            op.stencil_depth_failop = mode_from_string( k_stencil_mode_map, depth_stencil_state["depth_fail"].as_cstr(), PEN_STENCIL_OP_KEEP );
-            op.stencil_passop = mode_from_string( k_stencil_mode_map, depth_stencil_state["stencil_pass"].as_cstr(), PEN_STENCIL_OP_REPLACE );
-            op.stencil_func = mode_from_string( k_comparison_mode_map, depth_stencil_state["stencil_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
+            op.stencil_failop = mode_from_string( k_stencil_mode_map,
+                                                depth_stencil_state["stencil_fail"].as_cstr(),
+                                                PEN_STENCIL_OP_KEEP );
+            
+            op.stencil_depth_failop = mode_from_string( k_stencil_mode_map,
+                                                    depth_stencil_state["depth_fail"].as_cstr(),
+                                                    PEN_STENCIL_OP_KEEP );
+            
+            op.stencil_passop = mode_from_string( k_stencil_mode_map,
+                                                depth_stencil_state["stencil_pass"].as_cstr(),
+                                                PEN_STENCIL_OP_REPLACE );
+            
+            op.stencil_func = mode_from_string( k_comparison_mode_map,
+                                               depth_stencil_state["stencil_func"].as_cstr(),
+                                               PEN_COMPARISON_ALWAYS );
             
             if( front )
                 pen::memory_cpy(front, &op, sizeof(op));
@@ -525,7 +582,10 @@ namespace put
                 
                 dscp.depth_enable = state["depth_enable"].as_bool( false ) ? 1 : 0;
                 dscp.depth_write_mask = state["depth_write"].as_bool( false ) ? 1 : 0;
-                dscp.depth_func = mode_from_string( k_comparison_mode_map, state["depth_func"].as_cstr(), PEN_COMPARISON_ALWAYS );
+                
+                dscp.depth_func = mode_from_string( k_comparison_mode_map,
+                                                    state["depth_func"].as_cstr(),
+                                                    PEN_COMPARISON_ALWAYS );
 
                 dscp.stencil_enable = state["stencil_enable"].as_bool( false ) ? 1 : 0;
                 dscp.stencil_read_mask = state["stencil_read_mask"].as_u8_hex( 0 );
@@ -1015,8 +1075,6 @@ namespace put
                                                           colour_write_mask, alpha_to_coverage);
                 
                 //scene and camera
-                //PEN_PRINTF(view.dumps().c_str());
-                
                 Str scene_str = view["scene"].as_str();
                 Str camera_str = view["camera"].as_str();
                 
@@ -1081,6 +1139,9 @@ namespace put
                             new_view.render_functions.push_back(sv.render_function);
                 }
                 
+                //sampler bindings
+                parse_sampler_bindings(view, new_view.sampler_bindings);
+                
                 if(valid)
                     k_views.push_back(new_view);
             }
@@ -1108,9 +1169,8 @@ namespace put
 			parse_raster_states(render_config);
 			parse_depth_stencil_states(render_config);
 			parse_partial_blend_states(render_config);
-
 			parse_render_targets(render_config);
-
+            
 			parse_views(render_config);
 		}
         
@@ -1214,14 +1274,6 @@ namespace put
 
         void render()
         {
-#if 0
-            static hash_id id_shadow_map = PEN_HASH("shadow_map");
-            static hash_id id_wrap_linear = PEN_HASH("wrap_linear_sampler_state");
-            
-            u32 shadow_map = pmfx::get_render_target(id_shadow_map)->handle;
-            u32 ss = pmfx::get_render_state_by_name(id_wrap_linear);
-#endif
-            
             static u32 cb_2d = 0;
             if(cb_2d == 0)
             {
@@ -1238,19 +1290,19 @@ namespace put
 			int count = 0;
             for( auto& v : k_views )
             {
-#if 0
-				if (count == 0)
-				{
-					pen::renderer_set_texture(0, ss, 15, PEN_SHADER_TYPE_PS);
-				}
-				else
-				{
-					pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-					pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
-				}
-#endif
-
-
+                //unbind textures
+                for (s32 i = 0; i < 16; ++i)
+                {
+                    pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
+                    pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+                }
+                
+                //bind samplers
+                for( auto& sb : v.sampler_bindings )
+                {
+                    pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
+                }
+            
 				++count;
                 //viewport and scissor
                 pen::viewport vp = { 0 };

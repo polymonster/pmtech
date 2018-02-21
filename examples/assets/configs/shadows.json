@@ -108,7 +108,7 @@
 			format: d24s8,
 		},
 	},
-			
+				
 	views:
 	{
 		single_shadow_view:
@@ -143,7 +143,12 @@
 			scene: main_scene,
 			camera: model_viewer_camera,
 			scene_views:["ces_render_scene"],
-			render_flags:["forward_lit"]
+			render_flags:["forward_lit"],
+			
+			sampler_bindings:
+			[
+				{ texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+			],
 		},
 		
 		editor_view:
