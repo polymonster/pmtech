@@ -286,12 +286,10 @@ namespace pen
 	u32					renderer_create_clear_state( const clear_state &cs );
 	f64					renderer_get_last_query(u32 query_index);
     const c8*           renderer_get_shader_platform();
-
-	//resource management
-    void    renderer_realloc_resource(u32 i, u32 domain);
+    bool                renderer_viewport_vup( );
     
-    //utility functions
-    bool    renderer_viewport_vup( );
+	//resource management
+    void                renderer_realloc_resource(u32 i, u32 domain);
     
 	//--------------------------------------------------------------------------------------
 	//  COMMAND BUFFERED API

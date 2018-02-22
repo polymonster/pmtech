@@ -20,7 +20,7 @@ dofile "../put/project.lua"
 -- ( project name, current script dir, )
 create_app_example( "empty_project", script_path() )
 create_app_example( "basic_triangle", script_path() )
-create_app_example( "textures", script_path() )
+create_app_example( "basic_texture", script_path() )
 create_app_example( "render_target", script_path() )
 create_app_example( "debug_text", script_path() )
 create_app_example( "play_sound", script_path() )
@@ -33,6 +33,8 @@ create_app_example( "rigid_body_primitives", script_path() )
 create_app_example( "physics_constraints", script_path() )
 create_app_example( "instancing", script_path() )
 create_app_example( "shadows", script_path() )
+create_app_example( "cubemap", script_path() )
+create_app_example( "texture_formats", script_path() )
 
 	
 	
