@@ -68,7 +68,7 @@ typedef std::atomic<uint64_t> a_u64;
 #define PEN_FMIN fmin
 
 #define PEN_UMIN std::min<u32>
-#define PEN_UMAX std::min<u32>
+#define PEN_UMAX std::max<u32>
 
 #define PEN_ARRAY_SIZE( A ) sizeof(A)/sizeof(A[0])
 
@@ -107,5 +107,9 @@ enum resource_types
 };
 
 #define PEN_INVALID_HANDLE (u32)-1
+
+#define PEN_FOURCC(ch0, ch1, ch2, ch3)											\
+					((ulong)(c8)(ch0) | ((ulong)(c8)(ch1) << 8) |				\
+					((ulong)(c8)(ch2) << 16) | ((ulong)(c8)(ch3) << 24 ))
 
 #endif

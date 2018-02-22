@@ -24,12 +24,11 @@ namespace put
     
     enum compression_format
     {
-        DXT1 = 0x31545844,
-        DXT2 = 0x32545844,
-        DXT3 = 0x33545844,
-        DXT4 = 0x34545844,
-        DXT5 = 0x35545844,
-        DX10 = 0x30315844,
+        BC1 = PEN_FOURCC('D', 'X', 'T', '1'),
+        BC2 = PEN_FOURCC('D', 'X', 'T', '3'),
+		BC3 = PEN_FOURCC('D', 'X', 'T', '5'),
+        BC4 = PEN_FOURCC('A', 'T', 'I', '1'),
+        BC5 = PEN_FOURCC('A', 'T', 'I', '2'),
     };
 
     //dds documentation os MSDN defines all these data types as ulongs.. but they are only 4 bytes in actual data..
@@ -91,7 +90,9 @@ namespace put
 	{
 		if( compressed )
 		{
-			return PEN_UMAX( 1, ( ( width + 3 ) / 4 ) ) * PEN_UMAX( 1, ( ( height + 3 ) / 4 ) ) * block_size;
+			u32 block_width = PEN_UMAX(1, ((width + 3) / 4));
+			u32 block_height = PEN_UMAX(1, ((width + 3) / 4));
+			return  block_width * block_height * block_size;
 		}
 
 		return	width * height * block_size; 		
@@ -109,20 +110,18 @@ namespace put
 
 			switch( pixel_format.four_cc )
 			{
-			case DXT1:
+			case BC1:
 				block_size = 8;
 				return PEN_TEX_FORMAT_BC1_UNORM;
-			case DXT2:
+			case BC2:
 				return PEN_TEX_FORMAT_BC2_UNORM;
-			case DXT3:
+			case BC3:
 				return PEN_TEX_FORMAT_BC3_UNORM;
-			case DXT4:
+			case BC4:
+				block_size = 8;
 				return PEN_TEX_FORMAT_BC4_UNORM;
-			case DXT5:
+			case BC5:
 				return PEN_TEX_FORMAT_BC5_UNORM;
-			case DX10:
-				dx10_header_present = true;
-				return 0;
 			}
 		}
 		else
@@ -135,9 +134,8 @@ namespace put
 			}
 		}
 
-		//only supported formats are RGBA 
-		PEN_ASSERT( 0 );
-
+		//supported formats are RGBA, BC1-BC5
+		PEN_ASSERT_MSG( 0, "Unsupported Image Format" );
 		return 0;
 	}
 

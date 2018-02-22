@@ -833,8 +833,14 @@ namespace pen
 		{
 			u8* image_data = (u8*)tcp.data;
 
-			u32 current_width = tcp.width / tcp.pixels_per_block;
-			u32 current_height = tcp.height / tcp.pixels_per_block;
+			u32 div = tcp.pixels_per_block;
+			if (tcp.pixels_per_block != 1)
+			{
+				div = 4;
+			}
+
+			u32 current_width = tcp.width / div;
+			u32 current_height = tcp.height / div;
 			u32 block_size = tcp.block_size;
 
 			for (u32 i = 0; i < tcp.num_mips; ++i)
