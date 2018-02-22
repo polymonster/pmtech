@@ -96,7 +96,6 @@ for source in source_dirs:
                         export_options_string = options_from_export(export_info, src_file)
                         print("converting " + src_file)
                         cmdline = nvtt_dir + " " + export_options_string + " -silent " + src_file + " " + dest_file
-                        print(cmdline)
                         subprocess.check_call(cmdline, shell=True)
 
 for dest_depends in dependency_info:

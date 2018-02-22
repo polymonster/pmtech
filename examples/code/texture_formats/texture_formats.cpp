@@ -34,20 +34,21 @@ void load_textures()
 	{
 		{ "rgb8", put::load_texture("data/textures/formats/texfmt_rgb8.dds") },
 		{ "rgba8", put::load_texture("data/textures/formats/texfmt_rgba8.dds") },
-		{ "luminance", put::load_texture("data/textures/formats/texfmt_lumi.dds") },
+        
+		//{ "luminance", put::load_texture("data/textures/formats/texfmt_lumi.dds") },
 
-		{ "bc1", put::load_texture("data/textures/formats/texfmt_bc1.dds") },
-		{ "bc2", put::load_texture("data/textures/formats/texfmt_bc2.dds") },
-		{ "bc3", put::load_texture("data/textures/formats/texfmt_bc3.dds") },
+		//{ "bc1", put::load_texture("data/textures/formats/texfmt_bc1.dds") },
+		//{ "bc2", put::load_texture("data/textures/formats/texfmt_bc2.dds") },
+		//{ "bc3", put::load_texture("data/textures/formats/texfmt_bc3.dds") },
 
-		{ "bc4", put::load_texture("data/textures/formats/texfmt_bc4.dds") },
-		{ "bc5", put::load_texture("data/textures/formats/texfmt_bc5.dds") },
+		//{ "bc4", put::load_texture("data/textures/formats/texfmt_bc4.dds") },
+		//{ "bc5", put::load_texture("data/textures/formats/texfmt_bc5.dds") },
 
 		//{ "bc6", put::load_texture("data/textures/formats/texfmt_bc6.dds") },
 		//{ "bc7", put::load_texture("data/textures/formats/texfmt_bc7.dds") },
 
-		{ "bc1n", put::load_texture("data/textures/formats/texfmt_bc1n.dds") },
-		{ "bc3n", put::load_texture("data/textures/formats/texfmt_bc3n.dds") }
+		//{ "bc1n", put::load_texture("data/textures/formats/texfmt_bc1n.dds") },
+		//{ "bc3n", put::load_texture("data/textures/formats/texfmt_bc3n.dds") }
 	};
 
 	k_textures = &textures[0];
