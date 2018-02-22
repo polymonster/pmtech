@@ -15,19 +15,19 @@ pen::window_creation_params pen_window
     1280,					//width
     720,					//height
     4,						//MSAA samples
-    "textures"		        //window title / process name
+    "basic_texture"		    //window title / process name
 };
 
-typedef struct vertex
+struct vertex
 {
     float x, y, z, w;
-} vertex;
+};
 
-typedef struct textured_vertex
+struct textured_vertex
 {
     float x, y, z, w;
     float u, v;
-} textured_vertex;
+};
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {

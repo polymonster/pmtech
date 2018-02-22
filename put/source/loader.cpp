@@ -69,6 +69,7 @@ namespace put
 		hash_id id_name;
 		Str filename;
 		u32 handle;
+		pen::texture_creation_params tcp;
 	};
 	static std::vector<texture_reference> k_texture_references;
 
@@ -140,22 +141,20 @@ namespace put
 		return 0;
 	}
 
-	u32 load_texture_internal(const c8* filename, hash_id hh)
+	u32 load_texture_internal(const c8* filename, hash_id hh, pen::texture_creation_params& tcp )
 	{
 		//load a texture file from disk.
-		void* file_data = NULL;
+		void* file_data = nullptr;
 		u32	  file_data_size = 0;
 
 		u32 pen_err = pen::filesystem_read_file_to_buffer(filename, &file_data, file_data_size);
 
 		if (pen_err != PEN_ERR_OK)
 		{
-			put::dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] texture - unabled to find file: %s", filename);
+			dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] texture - unabled to find file: %s", filename);
 			pen::memory_free(file_data);
 			return 0;
 		}
-
-		pen::texture_creation_params tcp;
 
 		//parse dds header
 		dds_header* ddsh = (dds_header*)file_data;
@@ -267,7 +266,7 @@ namespace put
 			{
 				if (tr.id_name == d)
 				{
-					u32 new_handle = load_texture_internal(tr.filename.c_str(), tr.id_name);
+					u32 new_handle = load_texture_internal(tr.filename.c_str(), tr.id_name, tr.tcp);
 
 					pen::renderer_replace_resource(tr.handle, new_handle, pen::RESOURCE_TEXTURE);
 				}
@@ -392,10 +391,20 @@ namespace put
 
 		add_file_watcher(filename, texture_build, texture_hotload );
 
-		u32 texture_index = load_texture_internal(filename, hh);
+		pen::texture_creation_params tcp;
+		u32 texture_index = load_texture_internal(filename, hh, tcp);
 
-		k_texture_references.push_back({ hh, filename, texture_index });
+		k_texture_references.push_back({ hh, filename, texture_index, tcp });
 
 		return texture_index;
+	}
+
+	void get_texture_info( u32 handle, texture_info& info )
+	{
+		for (auto& t : k_texture_references)
+		{
+			if (t.handle == handle)
+				info = t.tcp;
+		}
 	}
 }

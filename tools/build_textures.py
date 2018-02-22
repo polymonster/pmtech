@@ -5,7 +5,15 @@ import json
 import helpers
 import dependencies
 import time
+import json
 stats_start = time.time()
+
+def options_from_export(info, filename):
+    base_name = os.path.basename(filename)
+    if "files" in info.keys():
+        if base_name in info["files"]:
+            return info["files"][base_name]
+    return "-rgb"
 
 # win32 / dds / block compression / mips / cubemaps
 print("--------------------------------------------------------------------------------")
@@ -47,6 +55,12 @@ for source in source_dirs:
 for source in source_dirs:
     for root, dirs, files in os.walk(source):
         dest_dir = root.replace(source, build_dir)
+        export_info = dict()
+        dir_export_file = os.path.join(root, "export.json")
+        if os.path.exists(dir_export_file):
+            file = open(dir_export_file, "r")
+            file_json = file.read()
+            export_info = json.loads(file_json)
         for f in files:
             src_file = os.path.join(root, f)
             [fnoext, fext] = os.path.splitext(f)
@@ -79,8 +93,10 @@ for source in source_dirs:
             else:
                 for fmt in supported_formats:
                     if fmt in f:
+                        export_options_string = options_from_export(export_info, src_file)
                         print("converting " + src_file)
-                        cmdline = nvtt_dir + " -rgb -silent " + src_file + " " + dest_file
+                        cmdline = nvtt_dir + " " + export_options_string + " -silent " + src_file + " " + dest_file
+                        print(cmdline)
                         subprocess.check_call(cmdline, shell=True)
 
 for dest_depends in dependency_info:
