@@ -1,176 +1,164 @@
 #include "pen.h"
-#include "threads.h"
-#include "memory.h"
 #include "renderer.h"
 #include "timer.h"
 #include "file_system.h"
 #include "pen_string.h"
 #include "loader.h"
+#include "dev_ui.h"
+#include "camera.h"
+#include "debug_render.h"
+#include "pmfx_controller.h"
 #include "pmfx.h"
+#include "pen_json.h"
+#include "hash.h"
+#include "str_utilities.h"
+#include "input.h"
+#include "ces/ces_scene.h"
+#include "ces/ces_resources.h"
+#include "ces/ces_editor.h"
+#include "ces/ces_utilities.h"
 
 using namespace put;
+using namespace ces;
 
 pen::window_creation_params pen_window
 {
-    1280,					//width
-    720,					//height
-    4,						//MSAA samples
-    "textures"		        //window title / process name
+	1280,					    //width
+	720,					    //height
+	4,						    //MSAA samples
+	"cubemap"					//window title / process name
 };
 
-typedef struct vertex
+namespace physics
 {
-    float x, y, z, w;
-} vertex;
+	extern PEN_THREAD_RETURN physics_thread_main(void* params);
+}
 
-typedef struct textured_vertex
+void create_scene_objects(ces::entity_scene* scene)
 {
-    float x, y, z, w;
-    float u, v;
-} textured_vertex;
+	clear_scene(scene);
 
-PEN_THREAD_RETURN pen::game_entry( void* params )
+	material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+	geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
+
+	u32 new_prim = get_new_node(scene);
+	scene->names[new_prim] = "sphere";
+	scene->names[new_prim].appendf("%i", new_prim);
+	scene->transforms[new_prim].rotation = quat();
+	scene->transforms[new_prim].scale = vec3f(10.0f);
+	scene->transforms[new_prim].translation = vec3f::zero();
+	scene->entities[new_prim] |= CMP_TRANSFORM;
+	scene->parents[new_prim] = new_prim;
+	instantiate_geometry(sphere, scene, new_prim);
+	instantiate_material(default_material, scene, new_prim);
+	instantiate_model_cbuffer(scene, new_prim);
+
+	//scene->materials[new_prim].texture_id[0] = put::load_texture("data/textures/cubemap.dds");
+}
+
+PEN_THREAD_RETURN pen::game_entry(void* params)
 {
-    //unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job_thread* p_thread_info = job_params->job_thread_info;
-    pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
-    
-    //create 2 clear states one for the render target and one for the main screen, so we can see the difference
-    static pen::clear_state cs =
-    {
-        0.0f, 0.0, 1.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
-    };
+	//unpack the params passed to the thread and signal to the engine it ok to proceed
+	pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+	pen::job_thread* p_thread_info = job_params->job_thread_info;
+	pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
-    u32 clear_state = pen::renderer_create_clear_state( cs );
+	pen::threads_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
 
-    //raster state
-    pen::rasteriser_state_creation_params rcp;
-    pen::memory_zero( &rcp, sizeof( rasteriser_state_creation_params ) );
-    rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_NONE;
-    rcp.depth_bias_clamp = 0.0f;
-    rcp.sloped_scale_depth_bias = 0.0f;
+	put::dev_ui::init();
+	put::dbg::init();
 
-    u32 raster_state = pen::renderer_create_rasterizer_state( rcp );
+	//create main camera and controller
+	put::camera main_camera;
+	put::camera_create_perspective(&main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f);
 
-    //viewport
-    pen::viewport vp =
-    {
-        0.0f, 0.0f,
-        1280.0f, 720.0f,
-        0.0f, 1.0f
-    };
+	put::camera_controller cc;
+	cc.camera = &main_camera;
+	cc.update_function = &ces::update_model_viewer_camera;
+	cc.name = "model_viewer_camera";
+	cc.id_name = PEN_HASH(cc.name.c_str());
 
-    //load shaders now requiring dependency on pmfx to make loading simpler.
-    pmfx::pmfx_handle textured_shader = pmfx::load("textured");
-    
-    u32 test_texture = put::load_texture("data/textures/test_normal.dds");
+	//create the main scene and controller
+	put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
+	put::ces::editor_init(main_scene);
 
-    //create vertex buffer for a quad
-    textured_vertex quad_vertices[] =
-    {
-        -0.5f, -0.5f, 0.5f, 1.0f,       //p1
-        0.0f, 0.0f,                     //uv1
+	put::scene_controller sc;
+	sc.scene = main_scene;
+	sc.update_function = &ces::update_model_viewer_scene;
+	sc.name = "main_scene";
+	sc.camera = &main_camera;
+	sc.id_name = PEN_HASH(sc.name.c_str());
 
-        -0.5f, 0.5f, 0.5f, 1.0f,        //p2 
-        0.0f, 1.0f,                     //uv2     
+	//create view renderers
+	put::scene_view_renderer svr_main;
+	svr_main.name = "ces_render_scene";
+	svr_main.id_name = PEN_HASH(svr_main.name.c_str());
+	svr_main.render_function = &ces::render_scene_view;
 
-        0.5f, 0.5f, 0.5f, 1.0f,         //p3
-        1.0f, 1.0f,                     //uv3
+	put::scene_view_renderer svr_editor;
+	svr_editor.name = "ces_render_editor";
+	svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
+	svr_editor.render_function = &ces::render_scene_editor;
 
-        0.5f, -0.5f, 0.5f, 1.0f,        //p4
-        1.0f, 0.0f,                     //uv4
-    };
+	pmfx::register_scene_view_renderer(svr_main);
+	
+	pmfx::register_scene(sc);
+	pmfx::register_camera(cc);
 
-    pen::buffer_creation_params bcp;
-    bcp.usage_flags = PEN_USAGE_DEFAULT;
-    bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
-    bcp.cpu_access_flags = 0;
+	pmfx::init("data/configs/editor_renderer.json");
 
-    bcp.buffer_size = sizeof( textured_vertex ) * 4;
-    bcp.data = ( void* ) &quad_vertices[ 0 ];
+	create_scene_objects(main_scene);
 
-    u32 quad_vertex_buffer = pen::renderer_create_buffer( bcp );
+	bool enable_dev_ui = true;
+	f32 frame_time = 0.0f;
 
-    //create index buffer
-    u16 indices[] =
-    {
-        0, 1, 2,
-        2, 3, 0
-    };
+	while (1)
+	{
+		static u32 frame_timer = pen::timer_create("frame_timer");
+		pen::timer_start(frame_timer);
 
-    bcp.usage_flags = PEN_USAGE_IMMUTABLE;
-    bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
-    bcp.cpu_access_flags = 0;
-    bcp.buffer_size = sizeof( u16 ) * 6;
-    bcp.data = ( void* ) &indices[ 0 ];
+		put::dev_ui::new_frame();
 
-    u32 quad_index_buffer = pen::renderer_create_buffer( bcp );
+		pmfx::update();
 
-    //create a sampler object so we can sample a texture
-    pen::sampler_creation_params scp;
-    pen::memory_zero( &scp, sizeof( pen::sampler_creation_params ) );
-    scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-    scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.comparison_func = PEN_COMPARISON_ALWAYS;
-    scp.min_lod = 0.0f;
-    scp.max_lod = 4.0f;
+		pmfx::render();
 
-    u32 linear_sampler = pen::renderer_create_sampler( scp );
+		pmfx::show_dev_ui();
 
-    while( 1 )
-    {
-        pen::renderer_set_rasterizer_state( raster_state );
+		if (enable_dev_ui)
+		{
+			put::dev_ui::console();
+			put::dev_ui::render();
+		}
 
-        //bind back buffer and clear
-        pen::renderer_set_viewport( vp );
-        pen::renderer_set_targets( PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH );
-        pen::renderer_clear( clear_state );
+		if (pen::input_is_key_held(PENK_MENU) && pen::input_is_key_pressed(PENK_D))
+			enable_dev_ui = !enable_dev_ui;
 
-        //draw quad
-        {
-            //bind vertex layout and shaders
-            pmfx::set_technique(textured_shader, 0);
+		frame_time = pen::timer_elapsed_ms(frame_timer);
 
-            //bind vertex buffer
-            u32 stride = sizeof( textured_vertex );
-            pen::renderer_set_vertex_buffer( quad_vertex_buffer, 0, stride, 0 );
-            pen::renderer_set_index_buffer( quad_index_buffer, PEN_FORMAT_R16_UINT, 0 );
+		pen::renderer_present();
+		pen::renderer_consume_cmd_buffer();
 
-            //bind render target as texture on sampler 0
-            pen::renderer_set_texture( test_texture, linear_sampler, 0, PEN_SHADER_TYPE_PS );
+		pmfx::poll_for_changes();
+		put::poll_hot_loader();
 
-            //draw
-            pen::renderer_draw_indexed( 6, 0, 0, PEN_PT_TRIANGLELIST );
-        }
+		//msg from the engine we want to terminate
+		if (pen::threads_semaphore_try_wait(p_thread_info->p_sem_exit))
+			break;
+	}
 
-        //present 
-        pen::renderer_present();
+	ces::destroy_scene(main_scene);
+	ces::editor_shutdown();
 
-        pen::renderer_consume_cmd_buffer();
+	//clean up mem here
+	put::pmfx::shutdown();
+	put::dbg::shutdown();
+	put::dev_ui::shutdown();
 
-        //msg from the engine we want to terminate
-        if( pen::threads_semaphore_try_wait( p_thread_info->p_sem_exit ) )
-        {
-            break;
-        }
-    }
-    
-    //clean up mem here
-    pmfx::release( textured_shader );
-    
-    pen::renderer_release_buffer(quad_vertex_buffer);
-    pen::renderer_release_buffer(quad_index_buffer);
-    pen::renderer_release_sampler(linear_sampler);
-    pen::renderer_release_texture(test_texture);
-    pen::renderer_consume_cmd_buffer();
-    
-    //signal to the engine the thread has finished
-    pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
-    
+	pen::renderer_consume_cmd_buffer();
 
-    return PEN_THREAD_OK;
+	//signal to the engine the thread has finished
+	pen::threads_semaphore_signal(p_thread_info->p_sem_terminated, 1);
+
+	return PEN_THREAD_OK;
 }

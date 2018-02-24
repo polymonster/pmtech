@@ -1289,20 +1289,7 @@ namespace put
             
 			int count = 0;
             for( auto& v : k_views )
-            {
-                //unbind textures
-                for (s32 i = 0; i < 16; ++i)
-                {
-                    pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
-                    pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
-                }
-                
-                //bind samplers
-                for( auto& sb : v.sampler_bindings )
-                {
-                    pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
-                }
-            
+            {            
 				++count;
                 //viewport and scissor
                 pen::viewport vp = { 0 };
@@ -1330,6 +1317,19 @@ namespace put
                 pen::renderer_set_targets( v.render_targets, v.num_colour_targets, v.depth_target);
                 
                 pen::renderer_clear( v.clear_state );
+
+				//unbind samplers
+				for (s32 i = 0; i < 16; ++i)
+				{
+					pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
+					pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+				}
+
+				//bind samplers
+				for (auto& sb : v.sampler_bindings)
+				{
+					pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
+				}
                 
                 //render state
                 pen::renderer_set_rasterizer_state(v.raster_state);

@@ -879,8 +879,8 @@ namespace pen
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags )
 	{
-		ID3D11SamplerState* null_sampler = NULL;
-		ID3D11ShaderResourceView* null_srv = NULL;
+		ID3D11SamplerState* null_sampler = nullptr;
+		ID3D11ShaderResourceView* null_srv = nullptr;
 
 		if ( resource_pool[texture_index].type == RES_RENDER_TARGET && flags & TEXTURE_BIND_MSAA )
 		{

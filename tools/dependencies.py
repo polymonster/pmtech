@@ -27,6 +27,7 @@ def create_dependency_info(inputs, outputs):
 def check_up_to_date(dependencies, dest_file):
     filename = os.path.join(dependencies["dir"], "dependencies.json")
     if not os.path.exists(filename):
+        print("depends does not exist")
         return False
 
     file = open(filename)
