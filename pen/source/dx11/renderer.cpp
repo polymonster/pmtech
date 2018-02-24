@@ -823,44 +823,53 @@ namespace pen
 		D3D11_TEXTURE2D_DESC texture_desc;
 		pen::memory_cpy( &texture_desc, (void*)&tcp, sizeof( D3D11_TEXTURE2D_DESC ) );
 
+		D3D_SRV_DIMENSION view_dimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+		if (tcp.collection_type == TEXTURE_COLLECTION_CUBE)
+		{
+			view_dimension = D3D10_SRV_DIMENSION_TEXTURECUBE;
+			texture_desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+		}
+
 		resource_pool[ resource_index ].texture_2d = (texture2d_internal*)pen::memory_alloc( sizeof( texture2d_internal ) );
 
-		hr = g_device->CreateTexture2D( &texture_desc, NULL, &(resource_pool[ resource_index ].texture_2d->texture) );
+		hr = g_device->CreateTexture2D( &texture_desc, nullptr, &(resource_pool[ resource_index ].texture_2d->texture) );
 		PEN_ASSERT( hr == 0 );
 
 		//fill with data 
-		if( tcp.data )
+		if (tcp.data)
 		{
 			u8* image_data = (u8*)tcp.data;
 
-			u32 div = tcp.pixels_per_block;
-			if (tcp.pixels_per_block != 1)
+			//for arrays, slices, faces
+			for (s32 a = 0; a < tcp.num_arrays; ++a)
 			{
-				div = 4;
+				u32 current_width = tcp.width / tcp.pixels_per_block;
+				u32 current_height = tcp.height / tcp.pixels_per_block;
+				u32 block_size = tcp.block_size;
+
+				//for mips
+				for (s32 i = 0; i < tcp.num_mips; ++i)
+				{
+					u32 depth_pitch = current_width * current_height * block_size;
+					u32 row_pitch = current_width * block_size;
+
+					u32 sub = D3D11CalcSubresource(i, a, tcp.num_mips);
+
+					g_immediate_context->UpdateSubresource(resource_pool[resource_index].texture_2d->texture, sub, nullptr, image_data, row_pitch, depth_pitch);
+
+					image_data += depth_pitch;
+
+					min(current_width /= 2, 1);
+					min(current_height /= 2, 1);
+				}
 			}
 
-			u32 current_width = tcp.width / div;
-			u32 current_height = tcp.height / div;
-			u32 block_size = tcp.block_size;
-
-			for (u32 i = 0; i < tcp.num_mips; ++i)
-			{
-				u32 depth_pitch = current_width * current_height * block_size;
-				u32 row_pitch = current_width * block_size;
-
-				g_immediate_context->UpdateSubresource( resource_pool[ resource_index ].texture_2d->texture, i, NULL, image_data, row_pitch, depth_pitch );
-
-				image_data += depth_pitch;
-
-				min( current_width /= 2, 1 );
-				min( current_height /= 2, 1 );
-			}
 		}
 
 		//create shader resource view
 		D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
 		resource_view_desc.Format = texture_desc.Format;
-		resource_view_desc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+		resource_view_desc.ViewDimension = view_dimension;
 		resource_view_desc.Texture2D.MipLevels = -1;
 		resource_view_desc.Texture2D.MostDetailedMip = 0;
 

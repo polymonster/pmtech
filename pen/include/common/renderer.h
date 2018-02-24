@@ -133,12 +133,20 @@ namespace pen
         constant_layout_desc* constants;
         u32 num_constants;
     };
+
+	enum texture_collection_type
+	{
+		TEXTURE_COLLECTION_NONE = 0,
+		TEXTURE_COLLECTION_CUBE = 1,
+		TEXTURE_COLLECTION_VOLUME = 2,
+		TEXTURE_COLLECTION_ARRAY = 3
+	};
     
 	struct texture_creation_params
 	{
 		u32		width;
 		u32		height;
-		u32		num_mips;
+		s32		num_mips;
 		u32		num_arrays;
 		u32		format;
 		u32		sample_count;
@@ -150,7 +158,8 @@ namespace pen
 		void*	data;
 		u32		data_size;
 		u32		block_size;
-		u32		pixels_per_block;
+		u32		pixels_per_block;	//pixels in each axis bc is 4x4 blocks so pixels_per_block = 4
+		u32		collection_type;
 	};
 
 	struct sampler_creation_params

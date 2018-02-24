@@ -91,6 +91,7 @@ namespace put
             SN_ALBEDO_MAP = 0,
             SN_NORMAL_MAP,
             SN_SPECULAR_MAP,
+			SN_ENV_MAP,
             SN_EMISSIVE_MAP,
             
             SN_NUM_TEXTURES

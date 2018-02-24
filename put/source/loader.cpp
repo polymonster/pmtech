@@ -31,6 +31,24 @@ namespace put
         BC5 = PEN_FOURCC('A', 'T', 'I', '2'),
     };
 
+	enum dds_flags
+	{
+		DDSCAPS_COMPLEX = 0x8,
+		DDSCAPS2_CUBEMAP = 0x200,
+		DDSCAPS2_CUBEMAP_POSITIVEX = 0x400,
+		DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800,
+		DSCAPS2_CUBEMAP_POSITIVEY = 0x1000,
+		DDSCAPS2_CUBEMAP_NEGATIVEY = 0x2000,
+		DSCAPS2_CUBEMAP_POSITIVEZ = 0x4000,
+		DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000,
+		DDSCAPS2_VOLUME = 0x200000,
+
+		DDS_CUBEMAP_ALLFACES = (
+			DDSCAPS2_CUBEMAP_POSITIVEX | DDSCAPS2_CUBEMAP_NEGATIVEX |
+			DSCAPS2_CUBEMAP_POSITIVEY | DDSCAPS2_CUBEMAP_NEGATIVEY | 
+			DSCAPS2_CUBEMAP_POSITIVEZ | DDSCAPS2_CUBEMAP_NEGATIVEZ )
+	};
+
     //dds documentation os MSDN defines all these data types as ulongs.. but they are only 4 bytes in actual data..
     struct ddspf
     {
@@ -98,8 +116,10 @@ namespace put
 		return	width * height * block_size; 		
 	}
 
-	u32 dds_pixel_format_to_texture_format( const ddspf &pixel_format, bool &compressed, u32 &block_size, bool &dx10_header_present )
+	u32 dds_pixel_format_to_texture_format(const dds_header* ddsh, bool &compressed, u32 &block_size, bool &dx10_header_present )
 	{
+		const ddspf &pixel_format = ddsh->pixel_format;
+
 		dx10_header_present = false;
 		compressed = false;
 
@@ -129,7 +149,12 @@ namespace put
 			u32 rgba = (pixel_format.r_mask | pixel_format.g_mask | pixel_format.b_mask | pixel_format.a_mask);
 			if ( rgba == 0xffffffff)
 			{
-				block_size = 4;
+				block_size = pixel_format.size / 8;
+				return PEN_TEX_FORMAT_BGRA8_UNORM;
+			}
+			else if (rgba == 0xffffff)
+			{
+				block_size = pixel_format.size / 8;
 				return PEN_TEX_FORMAT_BGRA8_UNORM;
 			}
 		}
@@ -161,13 +186,13 @@ namespace put
 		bool compressed;
 		u32	 block_size;
 
-		u32 format = dds_pixel_format_to_texture_format(ddsh->pixel_format, compressed, block_size, dx10_header_present);
+		u32 format = dds_pixel_format_to_texture_format(ddsh, compressed, block_size, dx10_header_present);
 
 		//fill out texture_creation_params
 		tcp.width = ddsh->width;
 		tcp.height = ddsh->height;
 		tcp.format = format;
-		tcp.num_mips = ddsh->mip_map_count;
+		tcp.num_mips = std::max<u32>(ddsh->mip_map_count, 1);
 		tcp.num_arrays = 1;
 		tcp.sample_count = 1;
 		tcp.sample_quality = 0;
@@ -177,35 +202,49 @@ namespace put
 		tcp.flags = 0;
 		tcp.block_size = block_size;
 		tcp.pixels_per_block = compressed ? 4 : 1;
+		tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
 
-		//allocate and copy texture data
-
-		//top level
-		u32 data_size = calc_level_size(tcp.width, tcp.height, compressed, block_size);
-
-		//mips / faces / slices / depths
-		u32 ext_data_size = 0;
-
-		u32 mip_width = tcp.width >> 1;
-		u32 mip_height = tcp.height >> 1;
-
-		for (u32 i = 0; i < tcp.num_mips - 1; ++i)
+		if (ddsh->flags & DDSCAPS_COMPLEX)
 		{
-			ext_data_size += calc_level_size(mip_width, mip_height, compressed, block_size);
-
-			mip_width = mip_width > 1 ? mip_width >> 1 : 1;
-			mip_height = mip_height > 1 ? mip_height >> 1 : 1;
+			if (ddsh->caps2 & DDS_CUBEMAP_ALLFACES)
+			{
+				tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE;
+				tcp.num_arrays = 6;
+			}
 		}
 
-		tcp.data_size = data_size + ext_data_size;
+		//calculate total data size
+		tcp.data_size = 0;
+
+		//faces / slices / depths
+		for (s32 a = 0; a < tcp.num_arrays; ++a)
+		{
+			//top level
+			u32 data_size = calc_level_size(tcp.width, tcp.height, compressed, block_size);
+
+			//mips
+			u32 ext_data_size = 0;
+
+			u32 mip_width = tcp.width >> 1;
+			u32 mip_height = tcp.height >> 1;
+
+			for (s32 i = 0; i < tcp.num_mips - 1; ++i)
+			{
+				ext_data_size += calc_level_size(mip_width, mip_height, compressed, block_size);
+
+				mip_width = mip_width > 1 ? mip_width >> 1 : 1;
+				mip_height = mip_height > 1 ? mip_height >> 1 : 1;
+			}
+
+			tcp.data_size += data_size + ext_data_size;
+		}
+
+		//allocate mem and copy
 		tcp.data = pen::memory_alloc(tcp.data_size);
 
 		//copy texture data into the tcp storage
 		u8* top_image_start = (u8*)file_data + sizeof(dds_header);
-		u8* ext_image_start = top_image_start + data_size;
-
-		pen::memory_cpy(tcp.data, top_image_start, data_size);
-		pen::memory_cpy((u8*)tcp.data + data_size, ext_image_start, ext_data_size);
+		pen::memory_cpy(tcp.data, top_image_start, tcp.data_size);
 
 		//free the files contents
 		pen::memory_free(file_data);
