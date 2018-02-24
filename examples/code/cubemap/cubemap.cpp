@@ -53,7 +53,7 @@ void create_scene_objects(ces::entity_scene* scene)
 	instantiate_material(default_material, scene, new_prim);
 	instantiate_model_cbuffer(scene, new_prim);
 
-	//scene->materials[new_prim].texture_id[0] = put::load_texture("data/textures/cubemap.dds");
+	scene->materials[new_prim].texture_id[3] = put::load_texture("data/textures/cubemap.dds");
 }
 
 PEN_THREAD_RETURN pen::game_entry(void* params)
