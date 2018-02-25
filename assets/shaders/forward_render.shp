@@ -339,9 +339,8 @@ ps_output ps_forward_lit( vs_output input )
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
 	
-	//output.colour.rgb = sample_texture_cube( cube_test, normalize(input.world_pos.xyz)).rgb;
-	//output.colour.r = 1.0;
-		
+	output.colour.rgb = sample_texture_cube( cube_test, normalize(input.world_pos.xyz)).rgb;
+
     return output;
 }
 
