@@ -21,7 +21,7 @@ extern void pen_window_resize( );
 
 a_u8 g_window_resize( 0 );
 
-#define GL_DEBUGx
+#define GL_DEBUG
 
 void gl_error_break( GLenum err )
 {
@@ -502,6 +502,7 @@ namespace pen
                 break;
                     
                 case pen::CT_SAMPLER_2D:
+                case pen::CT_SAMPLER_3D:
                 case pen::CT_SAMPLER_2DMS:
                 case pen::CT_SAMPLER_CUBE:
                 {
@@ -851,7 +852,7 @@ namespace pen
         glGenTextures( 1, &handle);
         glBindTexture( texture_target, handle );
         
-        //for( u32 a = 0; a < tcp.num_arrays; ++a )
+        for( u32 a = 0; a < tcp.num_arrays; ++a )
         {
             mip_w = tcp.width;
             mip_h = tcp.height;
@@ -862,20 +863,9 @@ namespace pen
                 {
                     glTexImage2DMultisample(base_texture_target, tcp.sample_count, sized_format, mip_w, mip_h, GL_TRUE );
                 }
-                else if( texture_target == GL_TEXTURE_CUBE_MAP )
-                {
-                    u32 offset = calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
-                    
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*1);
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*2);
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*3);
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*4);
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*5);
-                }
                 else
                 {
-                    glTexImage2D(GL_TEXTURE_2D, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
+                    glTexImage2D(base_texture_target + a, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
                 }
                 
                 mip_data += calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
@@ -1187,6 +1177,17 @@ namespace pen
             }
             
             max_mip = res.render_target.texture_msaa.max_mip_level;
+        }
+        
+        if( target == GL_TEXTURE_CUBE_MAP )
+        {
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);
         }
         
         if(sampler_index == 0)
