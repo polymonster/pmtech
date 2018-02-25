@@ -805,6 +805,7 @@ namespace put
                         tcp.usage = PEN_USAGE_DEFAULT;
                         tcp.flags = 0;
                         tcp.num_mips = 1;
+                        tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
                         
                         //arays and mips
                         tcp.num_arrays = r["num_arrays"].as_u32(1);

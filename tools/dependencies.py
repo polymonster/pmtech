@@ -2,6 +2,34 @@ import os
 import json
 
 
+def export_config_merge(master, second):
+    for key in master.keys():
+        if key in second.keys():
+            master[key] = export_config_merge(master[key], second[key])
+    for key in second.keys():
+        if key not in master.keys():
+            master[key] = second[key]
+    return master
+
+
+def get_export_config(filename):
+    export_info = dict()
+    rpath = filename.replace(os.getcwd(), "")
+    rpath = os.path.normpath(rpath)
+    sub_dirs = rpath.split(os.sep)
+    full_path = os.getcwd()
+    for dir in sub_dirs:
+        full_path = os.path.join(full_path, dir)
+        dir_export_file = os.path.join(full_path, "_export.json")
+        if os.path.exists(dir_export_file):
+            file = open(dir_export_file, "r")
+            file_json = file.read()
+            dir_info = json.loads(file_json)
+            export_info = export_config_merge(export_info, dir_info)
+    print(json.dumps(export_info, indent=4, separators=(',', ': ')))
+    return export_info
+
+
 def correct_filename(file):
     file = file.replace("\\", '/')
     file = file.replace(":", "@")
@@ -11,7 +39,7 @@ def correct_filename(file):
 def create_info(file):
     modified_time = os.path.getmtime(file)
     file = correct_filename(file)
-    return {"name": file, "timestamp": int(modified_time)}
+    return {"name": file, "timestamp": float(modified_time)}
 
 
 def create_dependency_info(inputs, outputs):
@@ -38,6 +66,8 @@ def check_up_to_date(dependencies, dest_file):
         if dest_file in d.keys():
             for i in d[dest_file]:
                 if i["timestamp"] < os.path.getmtime(i["name"]):
+                    print(i["name"] + " " + str(os.path.getmtime(i["name"])))
+                    print(str(i["timestamp"]))
                     return False
     return True
 

@@ -6,8 +6,8 @@
 #define TEXTURE_2DMS( type, samples, sampler_name, sampler_index ) uniform sampler2DMS sampler_name
 #define SAMPLE_TEXTURE_2DMS( sampler_name, x, y, fragment ) texelFetch( sampler_name, ivec2( x, y ), fragment )
 
-#define texture_cube( name, sampler_index )	uniform samplerCube sampler_name
-#define sample_texture_cube( name, xyz ) texture( sampler_name, xyz )
+#define texture_cube( sampler_name, sampler_index )	uniform samplerCube sampler_name
+#define sample_texture_cube( name, xyz ) texture( name, xyz )
 
 #define sample_texture( sampler_name, V ) texture( sampler_name, V )
 

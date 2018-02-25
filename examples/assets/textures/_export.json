@@ -1,0 +1,6 @@
+{	
+	"files":
+	{
+		"*test*.png": "-rgb -color"
+	}
+}

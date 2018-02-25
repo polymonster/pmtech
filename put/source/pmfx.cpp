@@ -239,11 +239,11 @@ namespace put
                 {
                     "TEXTURE_2D",
                     "TEXTURE_3D",
-                    "TEXTURE_CUBE",
+                    "texture_cube",
                     "TEXTURE_2DMS"
                 };
                 
-                for( u32 i = 0; i < 3; ++i )
+                for( u32 i = 0; i < 4; ++i )
                 {
                     if( sampler["type"].as_str() == sampler_type_names[i] )
                     {

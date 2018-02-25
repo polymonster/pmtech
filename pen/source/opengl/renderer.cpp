@@ -21,25 +21,26 @@ extern void pen_window_resize( );
 
 a_u8 g_window_resize( 0 );
 
+#define GL_DEBUGx
+
 void gl_error_break( GLenum err )
 {
-    u32 a = 0;
     switch (err)
     {
         case GL_INVALID_ENUM:
-            a = 0;
+            printf("invalid enum\n");
             break;
         case GL_INVALID_VALUE:
-            a = 0;
+            printf("gl invalid value\n");
             break;
         case GL_INVALID_OPERATION:
-            a = 0;
+            printf("gl invalid operation\n");
             break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:
-            a = 0;
+            printf("gl invalid frame buffer operation\n");
             break;
         case GL_OUT_OF_MEMORY:
-            a = 0;
+            printf("gl out of memory\n");
             break;
         default:
             break;
@@ -129,6 +130,7 @@ namespace pen
     {
         GLuint handle;
         u32 max_mip_level;
+        u32 target;
     };
     
     struct render_target
@@ -501,12 +503,14 @@ namespace pen
                     
                 case pen::CT_SAMPLER_2D:
                 case pen::CT_SAMPLER_2DMS:
+                case pen::CT_SAMPLER_CUBE:
                 {
                     loc = glGetUniformLocation(prog, constant.name);
                     
                     linked_program->texture_location[constant.location] = loc;
                     
-                    glUniform1i( loc, constant.location );
+                    if(loc != -1)
+                        glUniform1i( loc, constant.location );
                 }
                 break;
                 default:
@@ -625,8 +629,7 @@ namespace pen
             
             CHECK_GL_ERROR;
         }
-        
-#if 1
+
         g_bound_state.input_layout = g_current_state.input_layout;
         
         auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
@@ -639,9 +642,6 @@ namespace pen
         
         for( s32 v = 0; v < g_current_state.num_bound_vertex_buffers; ++v )
         {
-            //if( v > 0 )
-                //continue;
-            
             g_bound_state.vertex_buffer[v] = g_current_state.vertex_buffer[v];
             g_bound_state.vertex_buffer_stride[v] = g_current_state.vertex_buffer_stride[v];
             
@@ -668,60 +668,6 @@ namespace pen
                 glVertexAttribDivisor(attribute.location, attribute.step_rate);
             }
         }
-#else
-        {
-            g_bound_state.vertex_buffer[0] = g_current_state.vertex_buffer[0];
-            
-            auto& res = resource_pool[g_bound_state.vertex_buffer[0]].handle;
-            glBindBuffer(GL_ARRAY_BUFFER, res);
-        }
-        
-        //bind input layout
-        auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
-
-        //if input layout has changed, vb has changed or the stride of the vb has changed
-        bool invalidate_input_layout = input_res->vb_handle == 0 || input_res->vb_handle != g_bound_state.vertex_buffer[0];
-        invalidate_input_layout |= g_current_state.input_layout != g_bound_state.input_layout;
-        invalidate_input_layout |= g_current_state.vertex_buffer_stride != g_bound_state.vertex_buffer_stride;
-        
-        //if( invalidate_input_layout )
-        {
-            g_bound_state.input_layout = g_current_state.input_layout;
-            g_bound_state.vertex_buffer_stride[0] = g_current_state.vertex_buffer_stride[0];
-            
-            auto* res = input_res;
-            
-            //if we havent already generated one or we have previously been bound to a different vb layout
-            //if( res->vertex_array_handle == 0 || res->vb_handle != g_bound_state.vertex_buffer[0] )
-            {
-                if( res->vertex_array_handle == 0 )
-                {
-                    glGenVertexArrays(1, &res->vertex_array_handle);
-                }
-                
-                //res->vb_handle = g_bound_state.vertex_buffer[0];
-                
-                glBindVertexArray(res->vertex_array_handle);
-                
-                for( auto& attribute : res->attributes )
-                {
-                    glVertexAttribPointer(
-                                          attribute.location,
-                                          attribute.num_elements,
-                                          attribute.type,
-                                          attribute.type == GL_UNSIGNED_BYTE ? true : false,
-                                          g_bound_state.vertex_buffer_stride[0],
-                                          (void*)attribute.offset);
-                    
-                    glEnableVertexAttribArray(attribute.location);
-                }
-            }
-            
-            glBindVertexArray( res->vertex_array_handle );
-            
-            CHECK_GL_ERROR;
-        }
-#endif
 
         if( g_bound_state.raster_state != g_current_state.raster_state ||
             g_bound_state.backbuffer_bound != g_current_state.backbuffer_bound )
@@ -882,29 +828,69 @@ namespace pen
         bool is_msaa = tcp.sample_count > 1;
         
         u32 texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+        u32 base_texture_target = texture_target;
         
+        switch((pen::texture_collection_type)tcp.collection_type)
+        {
+            case TEXTURE_COLLECTION_NONE:
+                texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+                base_texture_target = texture_target;
+                break;
+            case TEXTURE_COLLECTION_CUBE:
+                is_msaa = false;
+                texture_target = GL_TEXTURE_CUBE_MAP;
+                base_texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                break;
+            default:
+                PEN_ASSERT_MSG(0, "unhandled texture collection type");
+                break;
+                
+        }
+
         GLuint handle;
         glGenTextures( 1, &handle);
         glBindTexture( texture_target, handle );
         
-        for( u32 mip = 0; mip < tcp.num_mips; ++mip )
+        //for( u32 a = 0; a < tcp.num_arrays; ++a )
         {
-            if( is_msaa )
-                glTexImage2DMultisample( texture_target, tcp.sample_count, sized_format, mip_w, mip_h, GL_TRUE );
-            else
-                glTexImage2D(GL_TEXTURE_2D, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
+            mip_w = tcp.width;
+            mip_h = tcp.height;
             
-            mip_data += calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
-            
-            mip_w /= 2;
-            mip_h /= 2;
+            for( u32 mip = 0; mip < tcp.num_mips; ++mip )
+            {
+                if( is_msaa )
+                {
+                    glTexImage2DMultisample(base_texture_target, tcp.sample_count, sized_format, mip_w, mip_h, GL_TRUE );
+                }
+                else if( texture_target == GL_TEXTURE_CUBE_MAP )
+                {
+                    u32 offset = calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
+                    
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*1);
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*2);
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*3);
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*4);
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data + offset*5);
+                }
+                else
+                {
+                    glTexImage2D(GL_TEXTURE_2D, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
+                }
+                
+                mip_data += calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
+                
+                mip_w /= 2;
+                mip_h /= 2;
+            }
         }
-        
+
         glBindTexture(texture_target, 0 );
         
         texture_info ti;
         ti.handle = handle;
         ti.max_mip_level = tcp.num_mips - 1;
+        ti.target = texture_target;
         
         if( tcp.width != tcp.height && ti.max_mip_level > 0 )
         {
@@ -1181,7 +1167,7 @@ namespace pen
         
         u32 max_mip = 0;
         
-        u32 target = GL_TEXTURE_2D;
+        u32 target = resource_pool[ texture_index ].texture.target;
         
         if( res.type == RES_TEXTURE )
         {

@@ -1,12 +1,12 @@
 import os
 import subprocess
 import shutil
-import json
 import helpers
 import dependencies
 import time
 import json
 stats_start = time.time()
+
 
 def options_from_export(info, filename):
     base_name = os.path.basename(filename)
@@ -27,11 +27,13 @@ def get_output_name(source_dir, file):
     return supported, dest_file
 
 
-def process_single_file(source, f):
+def process_single_file(f):
     src_file = os.path.join(root, f)
     supported, dest_file = get_output_name(source, src_file)
     if not supported:
         return
+
+    export_info = dependencies.get_export_config(os.path.join(root, f))
 
     relative_data_filename = dest_file.replace(current_directory, "")
     relative_data_filename = relative_data_filename.replace(platform_data_dir, "")
@@ -59,17 +61,20 @@ def process_single_file(source, f):
         subprocess.call(cmdline, shell=True)
 
 
-def process_collection(source, container):
+def process_collection(container):
     supported, cubemap_file = get_output_name(source, container)
     if not supported:
         return
+
+    export_info = dependencies.get_export_config(container)
+
+    if "cubemap_faces" not in export_info.keys():
+        print("missing cubemap_faces array in export")
+        return
+
     cubemap_faces = []
-    for root, dirs, files in os.walk(container):
-        for file in files:
-            [fnoext, fext] = os.path.splitext(file)
-            if fext not in supported_formats:
-                continue
-            cubemap_faces.append(os.path.join(container, file))
+    for f in export_info["cubemap_faces"]:
+        cubemap_faces.append(os.path.join(container, f))
 
     relative_data_filename = cubemap_file.replace(current_directory, "")
     relative_data_filename = relative_data_filename.replace(platform_data_dir, "")
@@ -81,7 +86,7 @@ def process_collection(source, container):
 
     if dependencies.check_up_to_date(dependency_info[dest_container_dir], relative_data_filename):
         print(relative_data_filename + " already up to date")
-        return
+        # return
 
     print("assembling " + cubemap_file)
     cmdline = nvassemble
@@ -140,17 +145,11 @@ for source in source_dirs:
 for source in source_dirs:
     for root, dirs, files in os.walk(source):
         dest_dir = root.replace(source, build_dir)
-        export_info = dict()
-        dir_export_file = os.path.join(root, "export.json")
-        if os.path.exists(dir_export_file):
-            file = open(dir_export_file, "r")
-            file_json = file.read()
-            export_info = json.loads(file_json)
         if root.endswith(".cube"):
-            process_collection(source, root)
+            process_collection(root)
             continue
         for f in files:
-            process_single_file(source, f)
+            process_single_file(f)
 
 
 for dest_depends in dependency_info:
