@@ -43,7 +43,7 @@ This workspace contains multiple examples of how to use the API's and set up pro
 - empty_project - First port of call to get a platform compiling, it creates an empty window with no rendering context.
 - basic_traingle - introduces a rendering context, clear sceen, shader loading / binding, vertex buffer and non-indexed draw calls.
 - debug_font - introduces shader loading with the "put" library, vertex buffer updating and debug text rendering.
-- textures - Introduces texture loading using the "put" library, index buffers, indexed draw calls, texture samplers and texture binding.
+- basic_texture - Introduces texture loading using the "put" library, index buffers, indexed draw calls, texture samplers and texture binding.
 - render_target - Introduces render target creation / binding, shader program loading using the "put" library to automatically generate input layouts from the shaders input signature.
 - play_sound - Introduces linking to fmod 5 and some basic audio functions.
 - imgui - Displays the Imgui test example, this also introduces a few new rendering festures that are required, blending, depth stencil states and scissor testing.
@@ -52,5 +52,8 @@ This workspace contains multiple examples of how to use the API's and set up pro
 - instancing - Intorduces instanced draw calls.
 - rigid_bodies - Introduces basic rigid body primitives using bullet physics and rendering primitives.
 - constraints - Introduces six degrees of freedom, hinge and point to point constraints.
-- scene_editor - Introduces cameras and camera controls, model loading and inspection, component entity system - simple c-style component entity system using structure of arrays layout for efficient cache utilisation.. a "scene" design pattern that is not object oriented but can be just as powerful.
 - shadows - Demonstrates how pmfx can be setup to render a scene from multiple views into different render targets and implements shadow maps, cascaded shadow maps and cube shadow maps for point lights.
+- skinning - Introduces skinned vertex formats, animation controllers and animations in the component entity scene.
+- cubemap - Introduces cubemap loading and basic rendering.
+- texture_formats - Loads and displays a number of compressed and uncompressed texture formats with mip maps.
+- scene_editor - An editor to edit the data-oritented c-style component entity system.
