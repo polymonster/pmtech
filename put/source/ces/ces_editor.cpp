@@ -1061,12 +1061,17 @@ namespace put
                 view_ui( sc->scene, &view_menu );
             }
             
-            static u32 timer_index = pen::timer_create("scene_update_timer");
-            
+            //todo mnove this
+            static u32 timer_index = -1;
+            if( timer_index == -1 )
+            {
+                timer_index = pen::timer_create("scene_update_timer");
+                pen::timer_start(timer_index);
+            }
             f32 dt_ms = pen::timer_elapsed_ms(timer_index);
+            
             pen::timer_start(timer_index);
             
-            //update render data
             put::ces::update_scene(sc->scene, dt_ms);
         }
 
@@ -1404,19 +1409,19 @@ namespace put
                     if (is_valid( controller.current_animation ))
                     {
                         if (ImGui::InputInt( "Frame", &controller.current_frame ))
-                            controller.play_flags = 0;
+                            controller.play_flags = animation_controller::STOPPED;
                         
                         ImGui::SameLine();
                         
-                        if (controller.play_flags == 0)
+                        if (controller.play_flags == animation_controller::STOPPED)
                         {
                             if (ImGui::Button( ICON_FA_PLAY ))
-                                controller.play_flags = 1;
+                                controller.play_flags = animation_controller::PLAY;
                         }
                         else
                         {
                             if (ImGui::Button( ICON_FA_STOP ))
-                                controller.play_flags = 0;
+                                controller.play_flags = animation_controller::STOPPED;
                         }
                     }
                     

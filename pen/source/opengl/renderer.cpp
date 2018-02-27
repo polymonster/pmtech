@@ -21,7 +21,7 @@ extern void pen_window_resize( );
 
 a_u8 g_window_resize( 0 );
 
-#define GL_DEBUG
+//#define GL_DEBUG
 
 void gl_error_break( GLenum err )
 {

@@ -1,6 +1,8 @@
 #import <Cocoa/Cocoa.h>
-#import <OpenGL/gl3.h>
 #import <GameController/GameController.h>
+
+#import <OpenGL/gl3.h>
+#define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion3_2Core
 
 #include "pen.h"
 #include "threads.h"
@@ -84,7 +86,7 @@ void create_gl_context()
     NSOpenGLPixelFormatAttribute pixel_format_attribs[] =
     {
         //gl 3.2
-        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+        NSOpenGLPFAOpenGLProfile, PEN_GL_PROFILE_VERSION,
         
         //msaa
         NSOpenGLPFAMultisample,

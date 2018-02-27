@@ -389,7 +389,6 @@ namespace put
 						break;
 					}
 				}
-                //inside = true;
 
 				if (!inside)
 				{
@@ -496,7 +495,10 @@ namespace put
                 if( scene->entities[n] & CMP_MASTER_INSTANCE )
                 {
                     u32 num_instances = scene->master_instances[n].num_instances;
-                    pen::renderer_draw_indexed_instanced(num_instances, 0, scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                    pen::renderer_draw_indexed_instanced(
+                                                         num_instances,
+                                                         0, scene->geometries[n].num_indices,
+                                                         0, 0, PEN_PT_TRIANGLELIST);
                     n += num_instances;
                     continue;
                 }
@@ -524,7 +526,7 @@ namespace put
 						if (!anim)
 							continue;
 
-						if (controller.play_flags == 1)
+                        if (controller.play_flags == animation_controller::PLAY)
 							controller.current_time += dt*0.1f;
 
 						s32 joints_offset = scene->anim_controller[n].joints_offset;
@@ -855,7 +857,7 @@ namespace put
             //simple parts of the scene are just homogeonous chucks of data
             ofs.write( (const c8*)scene->entities,          sizeof( a_u64 )				* scene->num_nodes );
             ofs.write( (const c8*)scene->parents,           sizeof( u32 )				* scene->num_nodes );
-			ofs.write( (const c8*)scene->transforms,		sizeof(transform)			* scene->num_nodes );
+			ofs.write( (const c8*)scene->transforms,		sizeof( transform )			* scene->num_nodes );
             ofs.write( (const c8*)scene->local_matrices,    sizeof( mat4 )				* scene->num_nodes );
             ofs.write( (const c8*)scene->world_matrices,    sizeof( mat4 )				* scene->num_nodes );
             ofs.write( (const c8*)scene->offset_matrices,   sizeof( mat4 )				* scene->num_nodes );
@@ -880,7 +882,8 @@ namespace put
 					write_parsable_string(anim->name, ofs);
 				}
                 
-				ofs.write((const c8*)&scene->anim_controller[n].joints_offset, sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
+				ofs.write((const c8*)&scene->anim_controller[n].joints_offset,
+                          sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
             }
             
             Str project_dir = dev_ui::get_program_preference_filename("project_dir");
@@ -1034,14 +1037,16 @@ namespace put
                     
                     if( !is_valid(h) )
                     {
-                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] animation - cannot find pma file: %s", anim_name.c_str() );
+                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] animation - cannot find pma file: %s",
+                                          anim_name.c_str() );
                         error = true;
                     }
                     
                     scene->anim_controller[n].handles.push_back( h );
                 }
 
-				ifs.read((c8*)&scene->anim_controller[n].joints_offset, sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
+				ifs.read((c8*)&scene->anim_controller[n].joints_offset,
+                         sizeof(animation_controller) - sizeof(std::vector<anim_handle>));
 
 				if (scene->anim_controller[n].current_animation > scene->anim_controller[n].handles.size())
 					scene->anim_controller[n].current_animation = PEN_INVALID_HANDLE;
@@ -1102,7 +1107,8 @@ namespace put
                     }
                     else
                     {
-                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] geometry - cannot find pmm file: %s", filename.c_str() );
+                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] geometry - cannot find pmm file: %s",
+                                          filename.c_str() );
                         scene->entities[n] &= ~CMP_GEOMETRY;
                         error = true;
                     }
@@ -1159,7 +1165,8 @@ namespace put
                     }
                     else
                     {
-                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] material - cannot find pmm file: %s", filename.c_str() );
+                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] material - cannot find pmm file: %s",
+                                          filename.c_str() );
                         scene->entities[n] &= ~CMP_MATERIAL;
                         error = true;
                     }
