@@ -591,6 +591,18 @@ namespace put
 				update_animations(scene, dt);
 			}
             
+#if 0       //todo implement transform feedback for feedback
+            scene_node_geometry* p_geom = &p_geometries[ i ];
+            pen::defer::renderer_set_shader( g_djscene_data.sh_pre_skin_pos.vertex_shader, PEN_SHADER_TYPE_VS );
+            pen::defer::renderer_set_shader( g_djscene_data.sh_pre_skin_pos.pixel_shader, PEN_SHADER_TYPE_PS );
+            pen::defer::renderer_set_input_layout( g_djscene_data.sh_pre_skin_pos.input_layout );
+            pen::defer::renderer_set_shader( g_djscene_data.gs_pre_skin_pos, PEN_SHADER_TYPE_GS );
+            pen::defer::renderer_set_constant_buffer( g_djscene_data.cb_skin_controller, 3, PEN_SHADER_TYPE_VS );
+            pen::defer::renderer_set_vertex_buffer( p_geom->pre_skin_vertex_buffer, 0, 1, &stride, &offset );
+            pen::defer::renderer_set_so_target( p_geom->position_buffer );
+            pen::defer::renderer_draw( p_geom->num_vertices, 0, PEN_PT_POINTLIST );
+#endif
+            
             //scene node transform
 			for (u32 n = 0; n < scene->num_nodes; ++n)
 			{
