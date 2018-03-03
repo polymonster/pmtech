@@ -16,8 +16,9 @@ namespace put
 {
     namespace pmfx
     {
-        c8 semantic_names[7][16] =
+        const c8* semantic_names[] =
         {
+            "SV_POSITION",
             "POSITION",
             "TEXCOORD",
             "NORMAL",
@@ -85,8 +86,69 @@ namespace put
             if ( err != PEN_ERR_OK  )
             {
                 pen::memory_free(vs_slp.byte_code);
-                
                 return program;
+            }
+            
+            //vertex stream out shader
+            bool stream_out = j_techique["stream_out"].as_bool();
+            if( stream_out )
+            {
+                vs_slp.type = PEN_SHADER_TYPE_SO;
+                
+                u32 num_vertex_outputs = j_techique["vs_outputs"].size();
+                
+                u32 decl_size_bytes = sizeof(pen::stream_out_decl_entry) * num_vertex_outputs;
+                pen::stream_out_decl_entry* so_lit_decl = (pen::stream_out_decl_entry*)pen::memory_alloc(decl_size_bytes);
+                
+                for( u32 vo = 0; vo < num_vertex_outputs; ++vo )
+                {
+                    pen::json voj = j_techique["vs_outputs"][vo];
+                }
+                
+                
+                
+#if 0       //todo implement transform feedback
+                
+                "vs_outputs": [
+                               {
+                               "name": "vb_position",
+                               "semantic_index": 0,
+                               "semantic_id": 2,
+                               "size": 16,
+                               "element_size": 4,
+                               "num_elements": 4,
+                               "offset": 0
+                               },
+                               
+                //skinned lit stream out
+                g_djscene_data.sh_pre_skin_lit = put::loader_load_shader_program( "data\\shaders\\pre_skin_lit.vsc", NULL, "data\\shaders\\pre_skin_lit.vsi" );
+                pen::shader_load_params solp;
+                pen::filesystem_read_file_to_buffer( "data\\shaders\\pre_skin_lit.vsc", &solp.byte_code, solp.byte_code_size );
+                pen::stream_out_decl_entry so_lit_decl[] =
+                {
+                    // semantic name, semantic index, start component, component count, output slot
+                    { 0, "SV_POSITION",     0, 0, 4, 0 },   // position
+                    { 0, "TEXCOORD",        0, 0, 4, 0 },   // normal
+                    { 0, "TEXCOORD",        1, 0, 4, 0 },   // tex coordinate 1 + 2
+                    { 0, "TEXCOORD",        2, 0, 4, 0 },   // tangent
+                    { 0, "TEXCOORD",        3, 0, 4, 0 },   // bi tangent
+                };
+                solp.so_decl_entries = so_lit_decl;
+                solp.so_num_entries = 5;
+                g_djscene_data.gs_pre_skin_lit = pen::defer::renderer_create_so_shader( solp );
+                pen::memory_free( solp.byte_code );
+                
+                scene_node_geometry* p_geom = &p_geometries[ i ];
+                pen::defer::renderer_set_shader( g_djscene_data.sh_pre_skin_pos.vertex_shader, PEN_SHADER_TYPE_VS );
+                pen::defer::renderer_set_shader( g_djscene_data.sh_pre_skin_pos.pixel_shader, PEN_SHADER_TYPE_PS );
+                pen::defer::renderer_set_input_layout( g_djscene_data.sh_pre_skin_pos.input_layout );
+                pen::defer::renderer_set_shader( g_djscene_data.gs_pre_skin_pos, PEN_SHADER_TYPE_GS );
+                pen::defer::renderer_set_constant_buffer( g_djscene_data.cb_skin_controller, 3, PEN_SHADER_TYPE_VS );
+                pen::defer::renderer_set_vertex_buffer( p_geom->pre_skin_vertex_buffer, 0, 1, &stride, &offset );
+                pen::defer::renderer_set_so_target( p_geom->position_buffer );
+                pen::defer::renderer_draw( p_geom->num_vertices, 0, PEN_PT_POINTLIST );
+#endif
+                
             }
             
             program.vertex_shader = pen::renderer_load_shader(vs_slp);
@@ -171,9 +233,11 @@ namespace put
                     if (elements_size == 1)
                         fomats = byte_formats;
                     
+                    const c8* test = semantic_names[0];
+                               
                     ilp.input_layout[input_index].semantic_index = vj["semantic_index"].as_u32();
                     ilp.input_layout[input_index].format = fomats[num_elements-1];
-                    ilp.input_layout[input_index].semantic_name = &semantic_names[vj["semantic_id"].as_u32()][0];
+                    ilp.input_layout[input_index].semantic_name = test; //semantic_names[vj["semantic_id"].as_u32()];
                     ilp.input_layout[input_index].input_slot = l;
                     ilp.input_layout[input_index].aligned_byte_offset = vj["offset"].as_u32();
                     ilp.input_layout[input_index].input_slot_class = layouts[l].iclass;

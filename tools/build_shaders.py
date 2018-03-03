@@ -73,6 +73,7 @@ def parse_and_split_block(code_block):
 
 def make_input_info(inputs):
     semantic_info = [
+        ["SV_POSITION", "4"],
         ["POSITION", "4"],
         ["TEXCOORD", "4"],
         ["NORMAL", "4"],
@@ -90,7 +91,9 @@ def make_input_info(inputs):
         element_size = 1
         for type in type_info:
             if inputs_split[i].find(type) != -1:
-                num_elements = int(inputs_split[i].replace(type, ""))
+                str_num = inputs_split[i].replace(type, "")
+                if str_num != "":
+                    num_elements = int(str_num)
         for sem in semantic_info:
             if inputs_split[i+2].find(sem[0]) != -1:
                 semantic_id = semantic_info.index(sem)
@@ -740,11 +743,6 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
             if func[vs_find_pos+len(vs_name)] == "(" and func[vs_find_pos-1] == " ":
                 vs_main = func
 
-    if ps_main == "":
-        print(ps_name + " cannot be found")
-        for func in function_list:
-            print(func)
-
     # remove from generic function list
     function_list.remove(vs_main)
     if ps_main != "":
@@ -833,7 +831,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
             constant_buffers, texture_samplers_source,
             technique_name)
 
-    return make_input_info(vs_input_source), make_input_info(instance_input_source)
+    return make_input_info(vs_input_source), make_input_info(instance_input_source), make_input_info(vs_output_source)
 
 
 def shader_compile_v1():
@@ -859,24 +857,28 @@ def parse_pmfx(filename, root):
             pmfx_end = enclose_brackets(shader_file_text[pmfx_loc:])
             pmfx_block = json.loads(shader_file_text[json_loc:pmfx_end+json_loc])
             for technique in pmfx_block:
-                pmfx_block[technique]["vs_inputs"], pmfx_block[technique]["instance_inputs"] = create_vsc_psc(
-                    file_and_path,
-                    shader_file_text,
-                    pmfx_block[technique]["vs"],
-                    pmfx_block[technique]["ps"],
-                    technique)
-                del pmfx_block[technique]["vs"]
-                del pmfx_block[technique]["ps"]
+                ps_name = ""
+                if "ps" in pmfx_block[technique].keys():
+                    ps_name = pmfx_block[technique]["ps"]
+                pmfx_block[technique]["vs_inputs"], \
+                pmfx_block[technique]["instance_inputs"], \
+                pmfx_block[technique]["vs_outputs"] = \
+                    create_vsc_psc(file_and_path, shader_file_text, pmfx_block[technique]["vs"], ps_name, technique)
                 pmfx_block[technique]["name"] = technique
+                if "ps" in pmfx_block[technique].keys():
+                    del pmfx_block[technique]["ps"]
+                    pmfx_block[technique]["ps_file"] = technique + ".psc"
+                del pmfx_block[technique]["vs"]
                 pmfx_block[technique]["vs_file"] = technique + ".vsc"
-                pmfx_block[technique]["ps_file"] = technique + ".psc"
                 techniques.append(pmfx_block[technique])
         else:
             default_technique = dict()
             default_technique["name"] = "default"
             default_technique["vs_file"] = "default.vsc"
             default_technique["ps_file"] = "default.psc"
-            default_technique["vs_inputs"], default_technique["instance_inputs"] =\
+            default_technique["vs_inputs"], \
+            default_technique["instance_inputs"], \
+            default_technique["vs_outputs"] =\
                 create_vsc_psc(file_and_path, shader_file_text, "vs_main", "ps_main", "default")
             techniques.append(default_technique)
 

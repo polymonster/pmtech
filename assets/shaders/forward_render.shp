@@ -12,6 +12,15 @@ struct vs_output
 	float4 colour		: TEXCOORD5;
 };
 
+struct vs_output_pre_skin
+{
+	float4 vb_position	: TEXCOORD0;
+	float3 normal		: TEXCOORD1;
+	float3 tangent		: TEXCOORD2;
+	float3 bitangent	: TEXCOORD3;
+	float4 texcoord		: TEXCOORD4;
+};
+
 struct vs_output_zonly
 {
 	float4 position		: SV_POSITION;
@@ -154,6 +163,21 @@ vs_output vs_main_skinned( vs_input_skinned input )
 		
 	output.colour = user_data2;
 	
+    return output;
+}
+
+vs_output_pre_skin vs_main_pre_skin( vs_input_skinned input )
+{
+	vs_output_pre_skin output;
+	
+	float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+	
+	output.vb_position = sp;
+	output.normal = input.normal;
+	output.tangent = input.tangent;
+	output.bitangent = input.tangent;
+	output.texcoord = input.texcoord;
+		
     return output;
 }
 
@@ -381,6 +405,12 @@ void ps_null( vs_output_zonly input )
 
 pmfx:
 {	
+	"pre_skin":
+	{
+		"vs": "vs_main_pre_skin",
+		"stream_out": "true"
+	},
+	
 	"forward_lit":
 	{
 		"vs": "vs_main",

@@ -282,8 +282,8 @@ namespace pen
 		case CMD_CREATE_INPUT_LAYOUT:
 			direct::renderer_create_input_layout(cmd.create_input_layout, cmd.resource_slot);
 			pen::memory_free(cmd.create_input_layout.vs_byte_code);
-			for (u32 i = 0; i < cmd.create_input_layout.num_elements; ++i)
-				pen::memory_free(cmd.create_input_layout.input_layout[i].semantic_name);
+			//for (u32 i = 0; i < cmd.create_input_layout.num_elements; ++i)
+				//pen::memory_free(cmd.create_input_layout.input_layout[i].semantic_name);
 			pen::memory_free(cmd.create_input_layout.input_layout);
 			break;
 
@@ -848,6 +848,7 @@ namespace pen
 
 		pen::memory_cpy(cmd_buffer[put_pos].create_input_layout.input_layout, params.input_layout, input_layouts_size);
 
+        /*
 		for (u32 i = 0; i < params.num_elements; ++i)
 		{
 			//we need to also allocate and copy a string
@@ -858,6 +859,7 @@ namespace pen
 			//terminate string
 			cmd_buffer[put_pos].create_input_layout.input_layout[i].semantic_name[semantic_len] = '\0';
 		}
+        */
         
         u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;

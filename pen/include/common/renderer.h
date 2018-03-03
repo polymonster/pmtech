@@ -57,7 +57,7 @@ namespace pen
 		mrt_clear mrt[PEN_MAX_MRT];
 		u32 num_colour_targets;
 	};
-
+                   
 	struct stream_out_decl_entry
 	{
 		u32			stream;
@@ -83,14 +83,13 @@ namespace pen
 		u32 bind_flags;
 		u32 cpu_access_flags;
 		u32 buffer_size;
-
+        
 		void* data;
-
 	};
 
 	struct input_layout_desc
 	{
-		c8* semantic_name;
+		const c8* semantic_name;
 		u32 semantic_index;
 		u32 format;
 		u32 input_slot;
