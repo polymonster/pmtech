@@ -35,6 +35,5 @@ create_app_example( "instancing", script_path() )
 create_app_example( "shadows", script_path() )
 create_app_example( "cubemap", script_path() )
 create_app_example( "texture_formats", script_path() )
-
-	
+create_app_example( "skinning", script_path() )
 	

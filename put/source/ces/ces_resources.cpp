@@ -172,6 +172,9 @@ namespace put
                 }
 
 				controller.current_time = 0.0f;
+                controller.current_frame = 0;
+                
+                scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
             }
         }
         
@@ -542,7 +545,7 @@ namespace put
             Str name;
         };
         
-        void load_pmm(const c8* filename, entity_scene* scene, u32 load_flags )
+        s32 load_pmm(const c8* filename, entity_scene* scene, u32 load_flags )
         {
 			if(scene)
 				scene->flags |= INVALIDATE_SCENE_TREE;
@@ -556,7 +559,7 @@ namespace put
             {
                 //TODO error dialog
                 dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] load pmm - failed to find file: %s", filename );
-                return;
+                return PEN_INVALID_HANDLE;
             }
             
             const u32* p_u32reader = (u32*)model_file;
@@ -602,7 +605,7 @@ namespace put
             if( version < 1 )
             {
                 pen::memory_free(model_file);
-                return;
+                return PEN_INVALID_HANDLE;
             }
             
             //load resources
@@ -627,13 +630,11 @@ namespace put
             if(!(load_flags&PMM_NODES))
             {
                 pen::memory_free(model_file);
-                return;
+                return PEN_INVALID_HANDLE;
             }
             
             //scene nodes
 			s32 nodes_start, nodes_end;
-			//get_new_nodes_contiguous(scene, num_import_nodes, nodes_start, nodes_end);
-
             get_new_nodes_append( scene, num_import_nodes, nodes_start, nodes_end );
 
             u32 node_zero_offset = nodes_start;
@@ -877,7 +878,7 @@ namespace put
             }
             
             pen::memory_free(model_file);
-            return;
+            return nodes_start;
         }
         
         void enumerate_resources( bool* open )

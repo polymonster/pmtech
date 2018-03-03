@@ -55,7 +55,8 @@ namespace put
 			CMP_TRANSFORM		= (1 << 12),
             CMP_CONSTRAINT      = (1 << 13),
             CMP_SUB_INSTANCE    = (1 << 14),
-            CMP_MASTER_INSTANCE = (1 << 15)
+            CMP_MASTER_INSTANCE = (1 << 15),
+            CMP_PRE_SKINNED     = (1 << 16)
 		};
 
         enum e_state_flags : u32
@@ -168,12 +169,18 @@ namespace put
 
         struct animation_controller
         {
+            enum e_play_flags : u8
+            {
+                STOPPED = 0,
+                PLAY = 1
+            };
+            
             std::vector<anim_handle> handles;
             s32                      joints_offset;
             anim_handle              current_animation;
             f32                      current_time;
             s32                      current_frame = 0;
-            u8                       play_flags = 0;
+            u8                       play_flags = STOPPED;
             bool                     apply_root_motion = true;
         };
     
