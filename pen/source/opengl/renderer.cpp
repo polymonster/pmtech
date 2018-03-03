@@ -275,13 +275,42 @@ namespace pen
 		return res;
 	}
     
-    shader_program* link_program_internal( GLuint vs, GLuint ps )
+    shader_program* link_program_internal( u32 vs, u32 ps, const pen::shader_link_params* params = nullptr )
     {
         //link the shaders
         GLuint program_id = glCreateProgram();
         
-        glAttachShader(program_id, vs);
-        glAttachShader(program_id, ps);
+        if( params )
+        {
+            //this path is for a proper link with reflection info
+            vs = resource_pool[ params->vertex_shader ].handle;
+            ps = resource_pool[ params->pixel_shader ].handle;
+            GLuint so = resource_pool[ params->stream_out_shader ].handle;
+            
+            if(vs)
+                glAttachShader(program_id, vs);
+            
+            if(ps)
+                glAttachShader(program_id, ps);
+            
+            if(so)
+            {
+                glAttachShader(program_id, so);
+                glTransformFeedbackVaryings(
+                                            program_id,
+                                            params->num_stream_out_names,
+                                            params->stream_out_names,
+                                            GL_INTERLEAVED_ATTRIBS );
+            }
+        }
+        else
+        {
+            //on the fly link for bound vs and ps which have not been explicity linked
+            //to emulate d3d behaviour of set vs set ps etc
+            glAttachShader(program_id, vs);
+            glAttachShader(program_id, ps);
+        }
+
         glLinkProgram(program_id);
         
         // Check the program
@@ -478,10 +507,8 @@ namespace pen
     
     void direct::renderer_link_shader_program(const pen::shader_link_params &params, u32 resource_slot )
     {
-        GLuint vs = resource_pool[ params.vertex_shader ].handle;
-        GLuint ps = resource_pool[ params.pixel_shader ].handle;
-        
-        shader_program* linked_program = link_program_internal( vs, ps );
+        shader_link_params slp = params;
+        shader_program* linked_program = link_program_internal( 0, 0, &slp );
         
         GLuint prog = linked_program->program;
     

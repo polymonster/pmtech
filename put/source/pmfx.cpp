@@ -201,6 +201,10 @@ namespace put
                 pen::memory_free(vs_slp.so_decl_entries);
                 
                 get_link_params_constants(slp, j_info);
+                
+                slp.stream_out_shader = program.stream_out_shader;
+                slp.vertex_shader = 0;
+                slp.pixel_shader = 0;
 
                 program.program_index = pen::renderer_link_shader_program(slp);
                 
