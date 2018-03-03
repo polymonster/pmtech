@@ -477,10 +477,6 @@ namespace pen
 			direct::renderer_release_query(cmd.command_data_index);
 			break;
 
-		case CMD_CREATE_SO_SHADER:
-			direct::renderer_create_stream_out_shader(cmd.shader_load, cmd.resource_slot);
-			break;
-
 		case CMD_SET_SO_TARGET:
 			direct::renderer_set_stream_out_target(cmd.command_data_index);
 			break;
@@ -814,37 +810,6 @@ namespace pen
 	void renderer_set_shader_program(u32 program_index)
 	{
 
-	}
-
-	u32 renderer_create_stream_out_shader(const pen::shader_load_params &params)
-	{
-		cmd_buffer[put_pos].command_index = CMD_CREATE_SO_SHADER;
-
-		cmd_buffer[put_pos].shader_load.byte_code_size = params.byte_code_size;
-		cmd_buffer[put_pos].shader_load.type = params.type;
-
-		if (params.byte_code)
-		{
-			cmd_buffer[put_pos].shader_load.byte_code = pen::memory_alloc(params.byte_code_size);
-			pen::memory_cpy(cmd_buffer[put_pos].shader_load.byte_code, params.byte_code, params.byte_code_size);
-		}
-
-		if (params.so_decl_entries)
-		{
-			cmd_buffer[put_pos].shader_load.so_num_entries = params.so_num_entries;
-
-			u32 entries_size = sizeof(stream_out_decl_entry) * params.so_num_entries;
-			cmd_buffer[put_pos].shader_load.so_decl_entries = (stream_out_decl_entry*)pen::memory_alloc(entries_size);
-
-			pen::memory_cpy(cmd_buffer[put_pos].shader_load.so_decl_entries, params.so_decl_entries, entries_size);
-		}
-
-        u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
-
-		INC_WRAP(put_pos);
-
-		return resource_slot;
 	}
 
 	void renderer_set_shader(u32 shader_index, u32 shader_type)
