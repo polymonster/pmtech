@@ -1,4 +1,4 @@
-install: brew install python3
+install: brew upgrade python
 os: osx
 language: cpp
 compiler: clang
