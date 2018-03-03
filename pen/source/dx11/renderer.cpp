@@ -125,6 +125,12 @@ namespace pen
 		RES_RENDER_TARGET
 	};
 
+	struct stream_out_shader
+	{
+		ID3D11VertexShader*		vs;
+		ID3D11GeometryShader*	gs;
+	};
+
 	struct resource_allocation
 	{
 		u32 type = 0;
@@ -136,6 +142,7 @@ namespace pen
 			ID3D11InputLayout*				input_layout;
 			ID3D11PixelShader*				pixel_shader;
 			ID3D11GeometryShader*			geometry_shader;
+			stream_out_shader				stream_out_shader;
 			ID3D11Buffer*					generic_buffer;
 			texture2d_internal*				texture_2d;
 			ID3D11SamplerState*				sampler_state;
@@ -407,7 +414,11 @@ namespace pen
 		}
 		else if(params.type == PEN_SHADER_TYPE_SO)
 		{
+			stream_out_shader& sos = resource_pool[resource_index].stream_out_shader;
+
 			u32 resource_index = resource_slot;
+
+			hr = g_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr, &sos.vs);
 
 			HRESULT hr = g_device->CreateGeometryShaderWithStreamOutput(
 				params.byte_code,
@@ -418,10 +429,7 @@ namespace pen
 				0,
 				0,
 				NULL,
-				&resource_pool[resource_index].geometry_shader);
-
-			pen::memory_free(params.byte_code);
-			pen::memory_free(params.so_decl_entries);
+				&sos.gs);
 
 			if (FAILED(hr))
 			{
@@ -451,6 +459,13 @@ namespace pen
 		else if( shader_type == PEN_SHADER_TYPE_GS )
 		{
 			g_immediate_context->GSSetShader( resource_pool[ shader_index ].geometry_shader, nullptr, 0 );
+		}
+		else if (shader_type == PEN_SHADER_TYPE_SO)
+		{
+			auto& sos = resource_pool[shader_index].stream_out_shader;
+			g_immediate_context->VSSetShader(sos.vs, nullptr, 0);
+			g_immediate_context->GSSetShader(sos.gs, nullptr, 0);
+			g_immediate_context->PSSetShader(nullptr, nullptr, 0);
 		}
 	}
 
@@ -1261,30 +1276,6 @@ namespace pen
 			g_immediate_context->ResolveSubresource(rti->tex.texture, 0, rti->tex_msaa.texture, 0, rti->format);
 		}
     }
-
-	void direct::renderer_create_stream_out_shader( const pen::shader_load_params &params, u32 resource_slot )
-	{
-		u32 resource_index = resource_slot;
-
-		HRESULT hr = g_device->CreateGeometryShaderWithStreamOutput(
-			params.byte_code, 
-			params.byte_code_size, 
-			(const D3D11_SO_DECLARATION_ENTRY*)params.so_decl_entries, 
-			params.so_num_entries, 
-			NULL, 
-			0, 
-			0, 
-			NULL, 
-			&resource_pool[ resource_index ].geometry_shader );
-
-		pen::memory_free(params.byte_code);
-		pen::memory_free(params.so_decl_entries);
-
-		if( FAILED( hr ) )
-		{
-			PEN_ASSERT(0);
-		}
-	}
 
 	void direct::renderer_draw_auto()
 	{
