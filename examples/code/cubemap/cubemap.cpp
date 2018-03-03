@@ -101,14 +101,14 @@ PEN_THREAD_RETURN pen::game_entry(void* params)
 	svr_editor.render_function = &ces::render_scene_editor;
 
 	pmfx::register_scene_view_renderer(svr_main);
-	
+
 	pmfx::register_scene(sc);
 	pmfx::register_camera(cc);
 
 	pmfx::init("data/configs/editor_renderer.json");
 
 	create_scene_objects(main_scene);
-
+	
 	bool enable_dev_ui = true;
 	f32 frame_time = 0.0f;
 

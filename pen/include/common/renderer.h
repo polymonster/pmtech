@@ -10,19 +10,18 @@
 //--------------------------------------------------------------------------------------
 enum special_values
 {
-    PEN_SHADER_NULL             =   0xffffff
+	PEN_SHADER_NULL = 0xffffff,
+	PEN_BACK_BUFFER_RATIO = (u32) - 1,
+	PEN_MAX_MRT = 8
 };
-
-#define PEN_BACK_BUFFER_RATIO (u32)-1
-#define PEN_MAX_MRT 8
 
 namespace pen
 {
-    enum e_clear_types
-    {
-        CLEAR_F32,
-        CLEAR_U32
-    };
+	enum e_clear_types
+	{
+		CLEAR_F32,
+		CLEAR_U32
+	};
 
 	enum e_renderer_resource
 	{
@@ -31,32 +30,32 @@ namespace pen
 		RESOURCE_PIXEL_SHADER,
 		RESOURCE_BUFFER
 	};
-    
-    struct mrt_clear
-    {
-        union
-        {
-            f32 f[4];
-            u32 u[4];
-            f32 rf, gf, bf, af;
-            u32 ri, gi, bi, ai;
-        };
-        
-        e_clear_types type;
-    };
-    
+
+	struct mrt_clear
+	{
+		union
+		{
+			f32 f[4];
+			u32 u[4];
+			f32 rf, gf, bf, af;
+			u32 ri, gi, bi, ai;
+		};
+
+		e_clear_types type;
+	};
+
 	//--------------------------------------------------------------------------------------
 	//  PUBLIC API STRUCTS
 	//--------------------------------------------------------------------------------------
 	struct clear_state
 	{
 		f32 r, g, b, a;
-        f32 depth;
-        u8  stencil;
+		f32 depth;
+		u8  stencil;
 		u32 flags;
-        
-        mrt_clear mrt[PEN_MAX_MRT];
-        u32 num_colour_targets;
+
+		mrt_clear mrt[PEN_MAX_MRT];
+		u32 num_colour_targets;
 	};
 
 	struct stream_out_decl_entry
@@ -77,8 +76,8 @@ namespace pen
 		stream_out_decl_entry*	so_decl_entries;
 		u32						so_num_entries;
 	};
-	
-    struct buffer_creation_params
+
+	struct buffer_creation_params
 	{
 		u32	usage_flags;
 		u32 bind_flags;
@@ -107,32 +106,32 @@ namespace pen
 		void*				vs_byte_code;
 		u32					vs_byte_code_size;
 	};
-    
-    enum constant_type
-    {
-        CT_SAMPLER_2D = 0,
-        CT_SAMPLER_3D,
-        CT_SAMPLER_CUBE,
-        CT_SAMPLER_2DMS,
-        CT_CBUFFER,
-        CT_CONSTANT
-    };
-    
-    struct constant_layout_desc
-    {
-        c8*           name;
-        u32           location;
-        constant_type type; 
-    };
-    
-    struct shader_link_params
-    {
-        u32 vertex_shader;
-        u32 pixel_shader;
-        u32 input_layout;
-        constant_layout_desc* constants;
-        u32 num_constants;
-    };
+
+	enum constant_type
+	{
+		CT_SAMPLER_2D = 0,
+		CT_SAMPLER_3D,
+		CT_SAMPLER_CUBE,
+		CT_SAMPLER_2DMS,
+		CT_CBUFFER,
+		CT_CONSTANT
+	};
+
+	struct constant_layout_desc
+	{
+		c8*           name;
+		u32           location;
+		constant_type type;
+	};
+
+	struct shader_link_params
+	{
+		u32 vertex_shader;
+		u32 pixel_shader;
+		u32 input_layout;
+		constant_layout_desc* constants;
+		u32 num_constants;
+	};
 
 	enum texture_collection_type
 	{
@@ -141,7 +140,7 @@ namespace pen
 		TEXTURE_COLLECTION_VOLUME = 2,
 		TEXTURE_COLLECTION_ARRAY = 3
 	};
-    
+
 	struct texture_creation_params
 	{
 		u32		width;
@@ -158,7 +157,7 @@ namespace pen
 		void*	data;
 		u32		data_size;
 		u32		block_size;
-		u32		pixels_per_block;	//pixels in each axis bc is 4x4 blocks so pixels_per_block = 4
+		u32		pixels_per_block;	//pixels in each axis bc is 4x4 blocks so pixels_per_block = 4 not 16
 		u32		collection_type;
 	};
 
@@ -169,18 +168,18 @@ namespace pen
 		u32 address_v = PEN_TEXTURE_ADDRESS_WRAP;
 		u32 address_w = PEN_TEXTURE_ADDRESS_WRAP;
 		f32 mip_lod_bias = 0.0f;
-        u32	max_anisotropy = 0;
-        u32 comparison_func = PEN_COMPARISON_ALWAYS;
-        f32 border_color[ 4 ] = { 0.0f };
-        f32 min_lod = -1.0f;
-        f32 max_lod = -1.0f;
+		u32	max_anisotropy = 0;
+		u32 comparison_func = PEN_COMPARISON_ALWAYS;
+		f32 border_color[4] = { 0.0f };
+		f32 min_lod = -1.0f;
+		f32 max_lod = -1.0f;
 
-        sampler_creation_params(){};
+		sampler_creation_params() {};
 	};
 
 	struct rasteriser_state_creation_params
 	{
-        u32		fill_mode = PEN_FILL_SOLID;
+		u32		fill_mode = PEN_FILL_SOLID;
 		u32		cull_mode = PEN_CULL_BACK;
 		s32		front_ccw = 0;
 		s32		depth_bias = 0;
@@ -189,9 +188,9 @@ namespace pen
 		s32		depth_clip_enable = 1;
 		s32		scissor_enable = 0;
 		s32		multisample = 0;
-        s32		aa_lines = 0;
-        
-        rasteriser_state_creation_params(){};
+		s32		aa_lines = 0;
+
+		rasteriser_state_creation_params() {};
 	};
 
 	struct viewport
@@ -200,23 +199,23 @@ namespace pen
 		f32 min_depth, max_depth;
 	};
 
-    struct rect
-    {
-        f32 left, top, right, bottom;
-    };
+	struct rect
+	{
+		f32 left, top, right, bottom;
+	};
 
 	struct render_target_blend
 	{
-        s32	blend_enable = 0;
-        u32	src_blend = PEN_BLEND_ONE;
-        u32	dest_blend = PEN_BLEND_ZERO;
-        u32	blend_op = PEN_BLEND_OP_ADD;
-        u32	src_blend_alpha = PEN_BLEND_ONE;
-        u32	dest_blend_alpha = PEN_BLEND_ZERO;
-        u32	blend_op_alpha = PEN_BLEND_OP_ADD;
-        u8	render_target_write_mask = 0xff;
-        
-        render_target_blend(){};
+		s32	blend_enable = 0;
+		u32	src_blend = PEN_BLEND_ONE;
+		u32	dest_blend = PEN_BLEND_ZERO;
+		u32	blend_op = PEN_BLEND_OP_ADD;
+		u32	src_blend_alpha = PEN_BLEND_ONE;
+		u32	dest_blend_alpha = PEN_BLEND_ZERO;
+		u32	blend_op_alpha = PEN_BLEND_OP_ADD;
+		u8	render_target_write_mask = 0xff;
+
+		render_target_blend() {};
 	};
 
 	struct stencil_op
@@ -246,17 +245,17 @@ namespace pen
 		u32						num_render_targets;
 		render_target_blend*	render_targets;
 	};
-    
-    struct resource_read_back_params
-    {
-        u32 resource_index;
-        u32 format;
+
+	struct resource_read_back_params
+	{
+		u32 resource_index;
+		u32 format;
 		u32 row_pitch;
 		u32 depth_pitch;
 		u32 block_size;
-        u32 data_size;
-        void(*call_back_function)(void*, u32, u32, u32);
-    };
+		u32 data_size;
+		void(*call_back_function)(void*, u32, u32, u32);
+	};
 
 	enum e_texture_bind_flags
 	{
@@ -288,102 +287,102 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	//  COMMON FUNCTIONS
 	//--------------------------------------------------------------------------------------
-	
-    //runs on its own thread - will wait for jobs flagged by semaphone
-	PEN_THREAD_RETURN	renderer_thread_function( void* params );
-    
-	u32					renderer_create_clear_state( const clear_state &cs );
+
+	//runs on its own thread - will wait for jobs flagged by semaphone
+	PEN_THREAD_RETURN	renderer_thread_function(void* params);
+
+	u32					renderer_create_clear_state(const clear_state &cs);
 	f64					renderer_get_last_query(u32 query_index);
-    const c8*           renderer_get_shader_platform();
-    bool                renderer_viewport_vup( );
-    
+	const c8*           renderer_get_shader_platform();
+	bool                renderer_viewport_vup();
+
 	//resource management
-    void                renderer_realloc_resource(u32 i, u32 domain);
-    
+	void                renderer_realloc_resource(u32 i, u32 domain);
+
 	//--------------------------------------------------------------------------------------
 	//  COMMAND BUFFERED API
 	//--------------------------------------------------------------------------------------
 	//clears
-	void	renderer_clear( u32 clear_state_index );
-	void	renderer_clear_cube( u32 clear_state_index, u32 colour_face, u32 depth_face );
+	void	renderer_clear(u32 clear_state_index);
+	void	renderer_clear_cube(u32 clear_state_index, u32 colour_face, u32 depth_face);
 
 	//shaders
-	u32		renderer_load_shader( const pen::shader_load_params &params );
-	u32		renderer_create_stream_out_shader( const pen::shader_load_params &params );
-	void	renderer_set_shader( u32 shader_index, u32 shader_type );
-	u32		renderer_create_input_layout( const input_layout_creation_params &params );
-	void	renderer_set_input_layout( u32 layout_index );
-    u32     renderer_link_shader_program( const shader_link_params &params );
-    void    renderer_set_shader_program( u32 program_index );
+	u32		renderer_load_shader(const pen::shader_load_params &params);
+	u32		renderer_create_stream_out_shader(const pen::shader_load_params &params);
+	void	renderer_set_shader(u32 shader_index, u32 shader_type);
+	u32		renderer_create_input_layout(const input_layout_creation_params &params);
+	void	renderer_set_input_layout(u32 layout_index);
+	u32     renderer_link_shader_program(const shader_link_params &params);
+	void    renderer_set_shader_program(u32 program_index);
 
 	//buffers
-	u32		renderer_create_buffer( const buffer_creation_params &params );
-        
-    void	renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 stride, u32 offset );
-    void    renderer_set_vertex_buffers( u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets );
-    
-	void	renderer_set_index_buffer( u32 buffer_index, u32 format, u32 offset );
-	void	renderer_set_constant_buffer( u32 buffer_index, u32 resource_slot, u32 shader_type );
-	void	renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset = 0 );
+	u32		renderer_create_buffer(const buffer_creation_params &params);
+
+	void	renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 stride, u32 offset);
+	void    renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets);
+
+	void	renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
+	void	renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type);
+	void	renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset = 0);
 
 	//textures
-	u32		renderer_create_texture( const texture_creation_params& tcp );
-	u32		renderer_create_sampler( const sampler_creation_params& scp );
-	void	renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags = 0 );
+	u32		renderer_create_texture(const texture_creation_params& tcp);
+	u32		renderer_create_sampler(const sampler_creation_params& scp);
+	void	renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags = 0);
 
 	//rasterizer
-	u32		renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp );
-	void	renderer_set_rasterizer_state( u32 rasterizer_state_index );
-	void	renderer_set_viewport( const viewport &vp );
-    void    renderer_set_scissor_rect( const rect &r );
+	u32		renderer_create_rasterizer_state(const rasteriser_state_creation_params &rscp);
+	void	renderer_set_rasterizer_state(u32 rasterizer_state_index);
+	void	renderer_set_viewport(const viewport &vp);
+	void    renderer_set_scissor_rect(const rect &r);
 
 	//blending
-	u32		renderer_create_blend_state( const blend_creation_params &bcp );
-	void    renderer_set_blend_state( u32 blend_state_index );
+	u32		renderer_create_blend_state(const blend_creation_params &bcp);
+	void    renderer_set_blend_state(u32 blend_state_index);
 
 	//depth state
-	u32		renderer_create_depth_stencil_state( const depth_stencil_creation_params& dscp );
-	void	renderer_set_depth_stencil_state( u32 depth_stencil_state );
+	u32		renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp);
+	void	renderer_set_depth_stencil_state(u32 depth_stencil_state);
 
 	//draw calls
-	void	renderer_draw( u32 vertex_count, u32 start_vertex, u32 primitive_topology );
-	void	renderer_draw_indexed( u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology );
-    void    renderer_draw_indexed_instanced( u32 instance_count, u32 start_instance,  u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology );
+	void	renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology);
+	void	renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
+	void    renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
 	void	renderer_draw_auto();
 
 	//render targets
-	u32		renderer_create_render_target(const texture_creation_params& tcp );
+	u32		renderer_create_render_target(const texture_creation_params& tcp);
 	void	renderer_set_targets(u32 colour_target, u32 depth_target);
-    void    renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target);
-	void	renderer_set_targets_cube(u32 colour_target, u32 colour_face, u32 depth_target, u32 depth_face );
-	void	renderer_set_stream_out_target( u32 buffer_index );
-    void    renderer_resolve_target( u32 target, e_msaa_resolve_type type );
+	void    renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target);
+	void	renderer_set_targets_cube(u32 colour_target, u32 colour_face, u32 depth_target, u32 depth_face);
+	void	renderer_set_stream_out_target(u32 buffer_index);
+	void    renderer_resolve_target(u32 target, e_msaa_resolve_type type);
 
-    //resource
-    void    renderer_read_back_resource( const resource_read_back_params& rrbp );
-    
+	//resource
+	void    renderer_read_back_resource(const resource_read_back_params& rrbp);
+
 	//swap / present / vsync
-	void	renderer_present( );
-	u32		renderer_create_query( u32 query_type, u32 flags );
+	void	renderer_present();
+	u32		renderer_create_query(u32 query_type, u32 flags);
 	void	renderer_set_query(u32 query_index, u32 action);
 
 	//cleanup
 	void	renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type);
-	void	renderer_release_shader( u32 shader_index, u32 shader_type );
-    void	renderer_release_program( u32 program );
-    void	renderer_release_clear_state( u32 clear_state );
-	void	renderer_release_buffer( u32 buffer_index );
-	void	renderer_release_texture( u32 texture_index );
-	void	renderer_release_raster_state( u32 raster_state_index );
-	void	renderer_release_blend_state( u32 blend_state );
-	void	renderer_release_render_target( u32 render_target );
-	void	renderer_release_input_layout( u32 input_layout );
-	void	renderer_release_sampler( u32 sampler );
-	void	renderer_release_depth_stencil_state( u32 depth_stencil_state );
-	void	renderer_release_query( u32 query );
+	void	renderer_release_shader(u32 shader_index, u32 shader_type);
+	void	renderer_release_program(u32 program);
+	void	renderer_release_clear_state(u32 clear_state);
+	void	renderer_release_buffer(u32 buffer_index);
+	void	renderer_release_texture(u32 texture_index);
+	void	renderer_release_raster_state(u32 raster_state_index);
+	void	renderer_release_blend_state(u32 blend_state);
+	void	renderer_release_render_target(u32 render_target);
+	void	renderer_release_input_layout(u32 input_layout);
+	void	renderer_release_sampler(u32 sampler);
+	void	renderer_release_depth_stencil_state(u32 depth_stencil_state);
+	void	renderer_release_query(u32 query);
 
 	//cmd specific
-    void    renderer_window_resize( s32 width, s32 height );
+	void    renderer_window_resize(s32 width, s32 height);
 	void	renderer_consume_cmd_buffer();
 	void	renderer_update_queries();
 
@@ -392,17 +391,17 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	namespace direct
 	{
-		u32		renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res );
+		u32		renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res);
 		void	renderer_shutdown();
 		void    renderer_make_context_current();
 
 		//clears
-        void    renderer_create_clear_state( const clear_state &cs, u32 resource_slot );
+		void    renderer_create_clear_state(const clear_state &cs, u32 resource_slot);
 		void	renderer_clear(u32 clear_state_index, u32 colour_face = 0, u32 depth_face = 0);
 
 		//shaders
-		void	renderer_load_shader(const pen::shader_load_params &params, u32 resource_slot );
-		void	renderer_create_stream_out_shader(const pen::shader_load_params &params, u32 resource_slot );
+		void	renderer_load_shader(const pen::shader_load_params &params, u32 resource_slot);
+		void	renderer_create_stream_out_shader(const pen::shader_load_params &params, u32 resource_slot);
 		void	renderer_set_shader(u32 shader_index, u32 shader_type);
 		void	renderer_create_input_layout(const input_layout_creation_params &params, u32 resource_slot);
 		void	renderer_set_input_layout(u32 layout_index);
@@ -410,13 +409,13 @@ namespace pen
 		void    renderer_set_shader_program(u32 program_index);
 
 		//buffers
-		void	renderer_create_buffer(const buffer_creation_params &params, u32 resource_slot );
+		void	renderer_create_buffer(const buffer_creation_params &params, u32 resource_slot);
 		void	renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets);
-        void    renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets);
+		void    renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets);
 		void	renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
 		void	renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type);
 		void	renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset);
-        
+
 		//textures
 		void	renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot);
 		void	renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot);
@@ -439,18 +438,18 @@ namespace pen
 		//draw calls
 		void	renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology);
 		void	renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
-        void    renderer_draw_indexed_instanced( u32 instance_count, u32 start_instance,  u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology );
+		void    renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
 		void	renderer_draw_auto();
 
 		//render targets
-		void	renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track = true );
-		void	renderer_set_targets( const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face = 0, u32 depth_face = 0);
+		void	renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track = true);
+		void	renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face = 0, u32 depth_face = 0);
 		void	renderer_set_resolve_targets(u32 colour_target, u32 depth_target);
 		void	renderer_set_stream_out_target(u32 buffer_index);
-        void    renderer_resolve_target( u32 target, e_msaa_resolve_type type );
-        
-        //resource
-        void    renderer_read_back_resource( const resource_read_back_params& rrbp );
+		void    renderer_resolve_target(u32 target, e_msaa_resolve_type type);
+
+		//resource
+		void    renderer_read_back_resource(const resource_read_back_params& rrbp);
 
 		//swap / present / vsync
 		void	renderer_present();
@@ -473,7 +472,6 @@ namespace pen
 		void	renderer_release_depth_stencil_state(u32 depth_stencil_state);
 		void	renderer_release_query(u32 query);
 	}
-
 }
 
 #endif
