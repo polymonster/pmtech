@@ -93,7 +93,7 @@ namespace put
             bool stream_out = j_techique["stream_out"].as_bool();
             if( stream_out )
             {
-                vs_slp.type = PEN_SHADER_TYPE_SO;
+                //vs_slp.type = PEN_SHADER_TYPE_SO;
                 
                 u32 num_vertex_outputs = j_techique["vs_outputs"].size();
                 
@@ -232,12 +232,10 @@ namespace put
                     
                     if (elements_size == 1)
                         fomats = byte_formats;
-                    
-                    const c8* test = semantic_names[0];
-                               
+                                                   
                     ilp.input_layout[input_index].semantic_index = vj["semantic_index"].as_u32();
                     ilp.input_layout[input_index].format = fomats[num_elements-1];
-                    ilp.input_layout[input_index].semantic_name = test; //semantic_names[vj["semantic_id"].as_u32()];
+                    ilp.input_layout[input_index].semantic_name = semantic_names[vj["semantic_id"].as_u32()];
                     ilp.input_layout[input_index].input_slot = l;
                     ilp.input_layout[input_index].aligned_byte_offset = vj["offset"].as_u32();
                     ilp.input_layout[input_index].input_slot_class = layouts[l].iclass;

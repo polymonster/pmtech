@@ -387,12 +387,12 @@ namespace pen
 
 		u32 resource_index = resource_slot;
 
-		if( params.type == PEN_SHADER_TYPE_VS )
+		if(params.type == PEN_SHADER_TYPE_VS)
 		{
 			// Create a vertex shader
 			hr = g_device->CreateVertexShader( params.byte_code, params.byte_code_size, nullptr, &resource_pool[ resource_index ].vertex_shader );
 		}
-		else if( params.type == PEN_SHADER_TYPE_PS )
+		else if(params.type == PEN_SHADER_TYPE_PS)
 		{
 			// Create a pixel shader
 			if (params.byte_code)
@@ -403,6 +403,29 @@ namespace pen
 			{
 				resource_pool[resource_index].pixel_shader = NULL;
 				hr = S_OK;
+			}
+		}
+		else if(params.type == PEN_SHADER_TYPE_SO)
+		{
+			u32 resource_index = resource_slot;
+
+			HRESULT hr = g_device->CreateGeometryShaderWithStreamOutput(
+				params.byte_code,
+				params.byte_code_size,
+				(const D3D11_SO_DECLARATION_ENTRY*)params.so_decl_entries,
+				params.so_num_entries,
+				NULL,
+				0,
+				0,
+				NULL,
+				&resource_pool[resource_index].geometry_shader);
+
+			pen::memory_free(params.byte_code);
+			pen::memory_free(params.so_decl_entries);
+
+			if (FAILED(hr))
+			{
+				PEN_ASSERT(0);
 			}
 		}
 
