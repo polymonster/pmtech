@@ -421,6 +421,10 @@ namespace pen
 	{
         resource_allocation& res = resource_pool[ resource_slot ];
         
+        u32 internal_type = params.type;
+        if(params.type == PEN_SHADER_TYPE_SO)
+            internal_type = PEN_SHADER_TYPE_VS;
+        
         res.handle = glCreateShader(params.type);
         
         glShaderSource(res.handle, 1, (c8**)&params.byte_code, (s32*)&params.byte_code_size);

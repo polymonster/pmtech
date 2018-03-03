@@ -73,7 +73,7 @@ namespace pen
 		void*					byte_code;
 		u32						byte_code_size;
 		u32						type;
-		stream_out_decl_entry*	so_decl_entries;
+        stream_out_decl_entry*	so_decl_entries = nullptr;
 		u32						so_num_entries;
 	};
 

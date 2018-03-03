@@ -266,6 +266,7 @@ namespace pen
 		case CMD_LOAD_SHADER:
 			direct::renderer_load_shader(cmd.shader_load, cmd.resource_slot);
 			pen::memory_free(cmd.shader_load.byte_code);
+            pen::memory_free(cmd.shader_load.so_decl_entries);
 			break;
 
 		case CMD_SET_SHADER:
@@ -282,8 +283,6 @@ namespace pen
 		case CMD_CREATE_INPUT_LAYOUT:
 			direct::renderer_create_input_layout(cmd.create_input_layout, cmd.resource_slot);
 			pen::memory_free(cmd.create_input_layout.vs_byte_code);
-			//for (u32 i = 0; i < cmd.create_input_layout.num_elements; ++i)
-				//pen::memory_free(cmd.create_input_layout.input_layout[i].semantic_name);
 			pen::memory_free(cmd.create_input_layout.input_layout);
 			break;
 
@@ -742,6 +741,17 @@ namespace pen
 			pen::memory_cpy(cmd_buffer[put_pos].shader_load.byte_code, params.byte_code, params.byte_code_size);
 		}
         
+        cmd_buffer[put_pos].shader_load.so_decl_entries = nullptr;
+        if (params.so_decl_entries)
+        {
+            cmd_buffer[put_pos].shader_load.so_num_entries = params.so_num_entries;
+            
+            u32 entries_size = sizeof(stream_out_decl_entry) * params.so_num_entries;
+            cmd_buffer[put_pos].shader_load.so_decl_entries = (stream_out_decl_entry*)pen::memory_alloc(entries_size);
+            
+            pen::memory_cpy(cmd_buffer[put_pos].shader_load.so_decl_entries, params.so_decl_entries, entries_size);
+        }
+        
         u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
@@ -847,19 +857,6 @@ namespace pen
 		cmd_buffer[put_pos].create_input_layout.input_layout = (pen::input_layout_desc*)pen::memory_alloc(input_layouts_size);
 
 		pen::memory_cpy(cmd_buffer[put_pos].create_input_layout.input_layout, params.input_layout, input_layouts_size);
-
-        /*
-		for (u32 i = 0; i < params.num_elements; ++i)
-		{
-			//we need to also allocate and copy a string
-			u32 semantic_len = pen::string_length(params.input_layout[i].semantic_name);
-			cmd_buffer[put_pos].create_input_layout.input_layout[i].semantic_name = (c8*)pen::memory_alloc(semantic_len + 1);
-			pen::memory_cpy(cmd_buffer[put_pos].create_input_layout.input_layout[i].semantic_name, params.input_layout[i].semantic_name, semantic_len);
-
-			//terminate string
-			cmd_buffer[put_pos].create_input_layout.input_layout[i].semantic_name[semantic_len] = '\0';
-		}
-        */
         
         u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
