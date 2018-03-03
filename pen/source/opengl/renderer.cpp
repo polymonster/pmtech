@@ -425,7 +425,7 @@ namespace pen
         if(params.type == PEN_SHADER_TYPE_SO)
             internal_type = PEN_SHADER_TYPE_VS;
         
-        res.handle = glCreateShader(params.type);
+        res.handle = glCreateShader(internal_type);
         
         glShaderSource(res.handle, 1, (c8**)&params.byte_code, (s32*)&params.byte_code_size);
         glCompileShader(res.handle);
@@ -527,11 +527,6 @@ namespace pen
     }
     
     void direct::renderer_set_stream_out_target( u32 buffer_index )
-    {
-        
-    }
-    
-    void direct::renderer_create_stream_out_shader( const pen::shader_load_params &params, u32 resource_slot )
     {
         
     }

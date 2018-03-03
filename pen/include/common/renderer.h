@@ -125,9 +125,15 @@ namespace pen
 
 	struct shader_link_params
 	{
+        u32 stream_out_shader;
+        
 		u32 vertex_shader;
 		u32 pixel_shader;
 		u32 input_layout;
+        
+        c8** stream_out_names;
+        u32 num_stream_out_names;
+        
 		constant_layout_desc* constants;
 		u32 num_constants;
 	};

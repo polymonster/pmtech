@@ -17,6 +17,7 @@ namespace put
             hash_id id_name;
             hash_id id_sub_type;
             
+            u32 stream_out_shader;
             u32 vertex_shader;
             u32 pixel_shader;
             u32 input_layout;

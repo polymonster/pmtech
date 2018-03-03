@@ -278,6 +278,10 @@ namespace pen
 			for (u32 i = 0; i < cmd.link_params.num_constants; ++i)
 				pen::memory_free(cmd.link_params.constants[i].name);
 			pen::memory_free(cmd.link_params.constants);
+            if(cmd.link_params.stream_out_names)
+                for (u32 i = 0; i < cmd.link_params.num_stream_out_names; ++i)
+                    pen::memory_free(cmd.link_params.stream_out_names[i]);
+            pen::memory_free(cmd.link_params.stream_out_names);
 			break;
 
 		case CMD_CREATE_INPUT_LAYOUT:
@@ -764,13 +768,9 @@ namespace pen
 	{
 		cmd_buffer[put_pos].command_index = CMD_LINK_SHADER;
 
-		cmd_buffer[put_pos].link_params.input_layout = params.input_layout;
-		cmd_buffer[put_pos].link_params.vertex_shader = params.vertex_shader;
-		cmd_buffer[put_pos].link_params.pixel_shader = params.pixel_shader;
-
+        cmd_buffer[put_pos].link_params = params;
+        
 		u32 num = params.num_constants;
-		cmd_buffer[put_pos].link_params.num_constants = num;
-
 		cmd_buffer[put_pos].link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num);
 
 		pen::constant_layout_desc* c = cmd_buffer[put_pos].link_params.constants;
@@ -785,6 +785,23 @@ namespace pen
 			pen::memory_cpy(c[i].name, params.constants[i].name, len);
 			c[i].name[len] = '\0';
 		}
+        
+        cmd_buffer[put_pos].link_params.stream_out_names = nullptr;
+        if( params.stream_out_shader != 0 )
+        {
+            u32 num_so = params.num_stream_out_names;
+            cmd_buffer[put_pos].link_params.stream_out_names = (c8**)pen::memory_alloc(sizeof(c8*) * num_so);
+            
+            c8** so = cmd_buffer[put_pos].link_params.stream_out_names;
+            for( u32 i = 0; i < num_so; ++i )
+            {
+                u32 len = pen::string_length(params.stream_out_names[i]);
+                so[i] = (c8*)pen::memory_alloc(len + 1);
+                
+                pen::memory_cpy(c[i].name, params.stream_out_names[i], len);
+                so[i][len] = '\0';
+            }
+        }
 
         u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;

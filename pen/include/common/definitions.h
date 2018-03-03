@@ -75,7 +75,7 @@ typedef std::atomic<uint64_t> a_u64;
 //--------------------------------------------------------------------------------------
 // Print / Assert 
 //--------------------------------------------------------------------------------------
-#define	PEN_PRINT_CHAR_LIMIT 4096
+#define	PEN_PRINT_CHAR_LIMIT 1024*10
 inline void output_debug( const c8* format, ... )
 {
     va_list va;

@@ -39,6 +39,72 @@ namespace put
         };
         std::vector<pmfx> s_pmfx_list;
         
+        void get_link_params_constants( pen::shader_link_params& link_params, const pen::json& j_info )
+        {
+            u32 num_constants = j_info["cbuffers"].size() + j_info["texture_samplers"].size();
+            link_params.num_constants = num_constants;
+            
+            link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
+            
+            u32 cc = 0;
+            pen::json j_cbuffers = j_info["cbuffers"];
+            for( s32 i = 0; i < j_cbuffers.size(); ++i )
+            {
+                pen::json cbuf = j_cbuffers[i];
+                Str name_str = cbuf["name"].as_str();
+                
+                u32 name_len = name_str.length();
+                
+                link_params.constants[cc].name = new c8[name_len+1];
+                
+                pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len );
+                
+                link_params.constants[cc].name[name_len] = '\0';
+                
+                link_params.constants[cc].location = cbuf["location"].as_u32();
+                
+                link_params.constants[cc].type = pen::CT_CBUFFER;
+                
+                cc++;
+            }
+            
+            pen::json j_samplers = j_info["texture_samplers"];
+            for( s32 i = 0; i < j_samplers.size(); ++i )
+            {
+                pen::json sampler = j_samplers[i];
+                
+                Str name_str = sampler["name"].as_str();
+                u32 name_len = name_str.length();
+                
+                link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len+1);
+                
+                pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len );
+                
+                link_params.constants[cc].name[name_len] = '\0';
+                
+                link_params.constants[cc].location = sampler["location"].as_u32();
+                
+                static Str sampler_type_names[] =
+                {
+                    "TEXTURE_2D",
+                    "TEXTURE_3D",
+                    "texture_cube",
+                    "TEXTURE_2DMS"
+                };
+                
+                for( u32 i = 0; i < 4; ++i )
+                {
+                    if( sampler["type"].as_str() == sampler_type_names[i] )
+                    {
+                        link_params.constants[cc].type = (pen::constant_type)i;
+                        break;
+                    }
+                }
+                
+                cc++;
+            }
+        }
+        
         shader_program load_shader_technique( const c8* fx_filename, pen::json& j_techique, pen::json& j_info )
         {
             shader_program program = { 0 };
@@ -100,6 +166,14 @@ namespace put
                 u32 decl_size_bytes = sizeof(pen::stream_out_decl_entry) * num_vertex_outputs;
                 pen::stream_out_decl_entry* so_decl = (pen::stream_out_decl_entry*)pen::memory_alloc(decl_size_bytes);
                 
+                pen::shader_link_params slp;
+                slp.stream_out_shader = program.stream_out_shader;
+                slp.pixel_shader = 0;
+                slp.vertex_shader = 0;
+                
+                slp.stream_out_names = new c8*[num_vertex_outputs];
+                slp.num_stream_out_names = num_vertex_outputs;
+                
                 for( u32 vo = 0; vo < num_vertex_outputs; ++vo )
                 {
                     pen::json voj = j_techique["vs_outputs"][vo];
@@ -110,15 +184,32 @@ namespace put
                     so_decl[vo].start_component = 0;
                     so_decl[vo].component_count = voj["num_elements"].as_u32();
                     so_decl[vo].output_slot = 0;
+                    
+                    u32 name_len = voj["name"].as_str().length();
+                    slp.stream_out_names[vo] = new c8[name_len+1];
+                    pen::memory_cpy(slp.stream_out_names[vo], voj["name"].as_cstr(), name_len);
+                    slp.stream_out_names[vo][name_len] = '\0';
                 }
                 
                 vs_slp.so_decl_entries = so_decl;
                 vs_slp.so_num_entries = num_vertex_outputs;
+                
+                program.stream_out_shader = pen::renderer_load_shader(vs_slp);
+                program.vertex_shader = 0;
+                program.pixel_shader = 0;
+                
+                pen::memory_free(vs_slp.so_decl_entries);
+                
+                get_link_params_constants(slp, j_info);
+
+                program.program_index = pen::renderer_link_shader_program(slp);
+                
+                return program;
             }
             
+            //traditional vs / ps combo
             program.vertex_shader = pen::renderer_load_shader(vs_slp);
             pen::memory_free(vs_slp.so_decl_entries);
-                               
             
             //pixel shader
             c8* ps_file_buf = (c8*)pen::memory_alloc(256);
@@ -136,7 +227,6 @@ namespace put
 			if (err != PEN_ERR_OK)
 			{
 				pen::memory_free(ps_slp.byte_code);
-
 				return program;
 			}
 
@@ -221,70 +311,10 @@ namespace put
             link_params.input_layout = program.input_layout;
             link_params.vertex_shader = program.vertex_shader;
             link_params.pixel_shader = program.pixel_shader;
+            link_params.stream_out_shader = 0;
+            link_params.stream_out_names = nullptr;
             
-            u32 num_constants = j_info["cbuffers"].size() + j_info["texture_samplers"].size();
-            
-            link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
-            
-            u32 cc = 0;
-            pen::json j_cbuffers = j_info["cbuffers"];
-            for( s32 i = 0; i < j_cbuffers.size(); ++i )
-            {
-                pen::json cbuf = j_cbuffers[i];
-                Str name_str = cbuf["name"].as_str();
-                
-                u32 name_len = name_str.length();
-                
-                link_params.constants[cc].name = new c8[name_len+1];
-                
-                pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len );
-                
-                link_params.constants[cc].name[name_len] = '\0';
-                
-                link_params.constants[cc].location = cbuf["location"].as_u32();
-                
-                link_params.constants[cc].type = pen::CT_CBUFFER;
-                
-                cc++;
-            }
-            
-            pen::json j_samplers = j_info["texture_samplers"];
-            for( s32 i = 0; i < j_samplers.size(); ++i )
-            {
-                pen::json sampler = j_samplers[i];
-                
-                Str name_str = sampler["name"].as_str();
-                u32 name_len = name_str.length();
-                
-                link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len+1);
-                
-                pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len );
-                
-                link_params.constants[cc].name[name_len] = '\0';
-                
-                link_params.constants[cc].location = sampler["location"].as_u32();
-                
-                static Str sampler_type_names[] =
-                {
-                    "TEXTURE_2D",
-                    "TEXTURE_3D",
-                    "texture_cube",
-                    "TEXTURE_2DMS"
-                };
-                
-                for( u32 i = 0; i < 4; ++i )
-                {
-                    if( sampler["type"].as_str() == sampler_type_names[i] )
-                    {
-                        link_params.constants[cc].type = (pen::constant_type)i;
-                        break;
-                    }
-                }
-                
-                cc++;
-            }
-            
-            link_params.num_constants = num_constants;
+            get_link_params_constants( link_params, j_info );
             
             program.program_index = pen::renderer_link_shader_program(link_params);
             
