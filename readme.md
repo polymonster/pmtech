@@ -57,4 +57,4 @@ This workspace contains multiple examples of how to use the API's and set up pro
 - cubemap - Introduces cubemap loading and basic rendering.
 - texture_formats - Loads and displays a number of compressed and uncompressed texture formats with mip maps.
 - scene_editor - An editor to edit the data-oritented c-style component entity system.
-- vertex_stream_out - Uses vertex stream out / transform feedback to skin an animated character once per frame, the resulting vertex buffer that has been stream to is then rendered many times with instancing to demostrate how vertex stream out can avoid re-skinning a model many times during different render passes or draw call instances.
+- vertex_stream_out - Uses vertex stream out / transform feedback to skin an animated character once per frame, the resulting vertex buffer that has been written from the vertex shader is then rendered many times with instancing to demostrate how vertex stream out can avoid re-skinning a model many times during different render passes or draw call instances.
