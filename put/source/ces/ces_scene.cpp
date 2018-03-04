@@ -758,6 +758,10 @@ namespace put
                 if( scene->entities[n] & CMP_SUB_INSTANCE )
                     continue;
                 
+                //skinned meshes have the world matrix baked into the bones
+                if( scene->entities[n] & CMP_SKINNED || scene->entities[n] & CMP_PRE_SKINNED )
+                    scene->draw_call_data[n].world_matrix = mat4::create_identity();
+                
                 //per node cbuffer
                 pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(per_draw_call));
             }

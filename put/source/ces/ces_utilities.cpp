@@ -72,9 +72,19 @@ namespace put
             for (s32 i = start; i < end; ++i)
                 scene->entities[i] |= CMP_ALLOCATED;
 
+            scene->free_list_head  = scene->free_list[end].next;
+            
             //remove chunk from the free list
+            /*
             if (scene->free_list[start].prev)
-                scene->free_list[start].prev = scene->free_list[end].next;
+            {
+                
+            }
+            else
+            {
+                scene->free_list = scene->free_list[end].next;
+            }
+            */
 
             scene->num_nodes = end;
         }

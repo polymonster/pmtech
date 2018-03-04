@@ -85,17 +85,35 @@ namespace put
                 
                 link_params.constants[cc].location = sampler["location"].as_u32();
                 
+                //todo - retire the caps naming convention
                 static Str sampler_type_names[] =
                 {
                     "TEXTURE_2D",
                     "TEXTURE_3D",
-                    "texture_cube",
+                    "TEXTURE_CUBE",
                     "TEXTURE_2DMS"
                 };
                 
                 for( u32 i = 0; i < 4; ++i )
                 {
                     if( sampler["type"].as_str() == sampler_type_names[i] )
+                    {
+                        link_params.constants[cc].type = (pen::constant_type)i;
+                        break;
+                    }
+                }
+                
+                static Str sampler_type_names_lower[] =
+                {
+                    "texture_2d",
+                    "texture_3d",
+                    "texture_cube",
+                    "texture_2dms"
+                };
+                
+                for( u32 i = 0; i < 4; ++i )
+                {
+                    if( sampler["type"].as_str() == sampler_type_names_lower[i] )
                     {
                         link_params.constants[cc].type = (pen::constant_type)i;
                         break;

@@ -26,7 +26,7 @@ pen::window_creation_params pen_window
     1280,					    //width
     720,					    //height
     4,						    //MSAA samples
-    "skinning"		            //window title / process name
+    "vertex_stream_out"         //window title / process name
 };
 
 namespace physics
@@ -76,6 +76,8 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->transforms[skinned_char].scale = vec3f( 0.25f );
     scene->entities[skinned_char] |= CMP_TRANSFORM;
     
+    instantiate_model_pre_skin(scene, skinned_char);
+    
     //instantiate anim controller
     instantiate_anim_controller( scene, skinned_char );
     
@@ -87,6 +89,62 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->anim_controller[skinned_char].current_time = 1.0f;
     scene->anim_controller[skinned_char].current_animation = ah;
     scene->anim_controller[skinned_char].play_flags = animation_controller::PLAY;
+    
+    //remove the geometry flag from the skinned character as we just want to use it as vertex stream out
+    scene->entities[skinned_char] &= ~CMP_GEOMETRY;
+    
+    u32 master_node = get_new_node( scene );
+    scene->names[master_node] = "master skinned instance";
+    scene->transforms[master_node].translation = vec3f::zero();
+    scene->transforms[master_node].rotation = quat();
+    scene->transforms[master_node].scale = vec3f::one();
+    scene->parents[master_node] = master_node;
+    
+    scene->entities[master_node] |= ( CMP_TRANSFORM | CMP_GEOMETRY | CMP_MATERIAL );
+    
+    scene->geometries[master_node] = scene->geometries[skinned_char];
+    scene->materials[master_node] = scene->materials[skinned_char];
+    scene->cbuffer[master_node] = scene->cbuffer[skinned_char];
+    
+    s32 num = 20;
+    
+    f32 spacing = 20.0f;
+    f32 start = ( spacing * (num-1) ) * 0.5f;
+    
+    vec3f start_pos = vec3f( -start, 0, -start );
+    
+    vec3f cur_pos = start_pos;
+    
+    for( s32 i = 0; i < num; ++i )
+    {
+        cur_pos.x = start_pos.x;
+        
+        for( s32 j = 0; j < num; ++j )
+        {
+            u32 new_prim = get_new_node( scene );
+            scene->names[new_prim] = "skinned instance";
+            scene->names[new_prim].appendf( "%i", new_prim );
+            
+            scene->transforms[new_prim].rotation = quat();
+            scene->transforms[new_prim].scale = vec3f::one();
+            scene->transforms[new_prim].translation = cur_pos;
+            scene->parents[new_prim] = skinned_char;
+            
+            scene->entities[new_prim] |= CMP_TRANSFORM;
+            scene->entities[new_prim] |= CMP_GEOMETRY;
+            scene->entities[new_prim] |= CMP_MATERIAL;
+            scene->entities[new_prim] |= CMP_SUB_INSTANCE;
+            
+            ImColor ii = ImColor::HSV((rand()%255)/255.0f, (rand()%255)/255.0f, (rand()%255)/255.0f);
+            scene->materials[new_prim].diffuse_rgb_shininess = vec4f( ii.Value.x, ii.Value.y, ii.Value.z, 1.0f );
+            
+            cur_pos.x += spacing;
+        }
+        
+        cur_pos.z += spacing;
+    }
+    
+    instance_node_range(scene, master_node, pow(num, 2) );
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
