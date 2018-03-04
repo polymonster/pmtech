@@ -26,7 +26,7 @@ namespace put
     
         pmfx_handle     load( const c8* pmfx_name );
         void            release( pmfx_handle handle );
-        
+                
         void            set_technique( pmfx_handle handle, u32 index );
         bool            set_technique( pmfx_handle handle, hash_id id_technique, hash_id id_sub_type );
         

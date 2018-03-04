@@ -130,6 +130,9 @@ namespace put
             scene->geometry_names[node_index] = gr->geometry_name;
             scene->id_geometry[node_index] = gr->hash;
             scene->entities[node_index] |= CMP_GEOMETRY;
+            
+            if(gr->p_skin)
+                scene->entities[node_index] |= CMP_SKINNED;
         }
         
         void instantiate_model_cbuffer( entity_scene* scene, s32 node_index )
@@ -142,6 +145,42 @@ namespace put
             bcp.data = nullptr;
             
             scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
+        }
+        
+        void instantiate_model_pre_skin( entity_scene* scene, s32 node_index )
+        {
+            scene_node_geometry& geom = scene->geometries[node_index];
+            scene_node_pre_skin& pre_skin = scene->pre_skin[node_index];
+            
+            u32 num_verts = geom.num_vertices;
+            
+            //stream out / transform feedback vertex buffer
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_STREAM_OUT_VERTEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = sizeof(vertex_model) * num_verts;
+            bcp.data = nullptr;
+            
+            u32 vb = pen::renderer_create_buffer(bcp);
+            u32 pb = 0; //todo - position only buffer is currently not used
+            
+            //swap the bufers around
+            
+            //pre_skin has skinned vertex format containing weights and indices
+            pre_skin.vertex_buffer = geom.vertex_buffer;
+            pre_skin.position_buffer = geom.position_buffer;
+            pre_skin.vertex_size = geom.vertex_size;
+            pre_skin.num_verts = geom.num_vertices;
+            
+            //geometry has the streak out target and non-skinned vertex format
+            geom.vertex_buffer = vb;
+            geom.position_buffer = pb;
+            geom.vertex_size = sizeof(vertex_model);
+            
+            //set pre-skinned and unset skinned
+            scene->entities[node_index] |= CMP_PRE_SKINNED;
+            scene->entities[node_index] &= ~CMP_SKINNED;
         }
         
         void instantiate_anim_controller( entity_scene* scene, s32 node_index )
@@ -404,6 +443,7 @@ namespace put
             {
                 put::load_texture("data/textures/defaults/albedo.dds"),
                 put::load_texture("data/textures/defaults/normal.dds"),
+                put::load_texture("data/textures/defaults/spec.dds"),
                 put::load_texture("data/textures/defaults/spec.dds"),
                 put::load_texture("data/textures/defaults/black.dds")
             };
@@ -924,241 +964,4 @@ namespace put
         }
     }
 }
-
-#if 0
-void load_geometry
-(
- const c8* data,
- scene_node_geometry* p_geometries,
- scene_node_physics* p_physics,
- entity_scene* scene,
- u32 node_index,
- std::vector<Str>& material_symbols
- )
-{
-    u32* p_reader = (u32*)data;
-    u32 version = *p_reader++;
-    u32 num_meshes = *p_reader++;
-    
-    if( version < 1 )
-        return;
-    
-    u32 collision_mesh = 1;
-    
-    physics::collision_mesh_data* temp_collision_data;
-    if (collision_mesh)
-        temp_collision_data = (physics::collision_mesh_data*)pen::memory_alloc(sizeof(physics::collision_mesh_data) * num_meshes);
-    
-    //map mesh material id's to material file id's
-    for (u32 i = 0; i < num_meshes; ++i)
-    {
-        Str mesh_material = read_parsable_string((const u32**)&p_reader);
-        
-        //p_geometries[i].submesh_material_index = -1;
-        
-        u32 num_symbols = material_symbols.size();
-        for( u32 j = 0; j < num_symbols; ++j)
-        {
-            if ( mesh_material == material_symbols[j] )
-            {
-                //p_geometries[i].submesh_material_index = j;
-                break;
-            }
-        }
-        
-        //PEN_ASSERT(p_geometries[i].submesh_material_index != -1);
-    }
-    
-    for (u32 submesh = 0; submesh < num_meshes; ++submesh)
-    {
-        //physics
-        u32 collision_shape = *p_reader++;
-        u32 collision_dynamic = *p_reader++;
-        
-        vec3f min_extents;
-        vec3f max_extents;
-        
-        pen::memory_cpy(&min_extents, p_reader, sizeof(vec3f));
-        p_reader += 3;
-        
-        pen::memory_cpy(&max_extents, p_reader, sizeof(vec3f));
-        p_reader += 3;
-        
-        p_physics[submesh].min_extents = min_extents;
-        p_physics[submesh].max_extents = max_extents;
-        p_physics[submesh].centre = min_extents + ((max_extents - min_extents) / 2.0f);
-        p_physics[submesh].collision_shape = collision_shape;
-        p_physics[submesh].collision_dynamic = collision_dynamic;
-        
-        //vb and ib
-        u32 num_pos_floats = *p_reader++;
-        u32 num_floats = *p_reader++;
-        u32 num_indices = *p_reader++;
-        u32 num_collision_floats = *p_reader++;
-        u32 skinned = *p_reader++;
-        
-        u32 index_size = num_indices < 65535 ? 2 : 4;
-        
-        u32 vertex_size = sizeof(vertex_model);
-        
-        if (skinned)
-        {
-            vertex_size = sizeof(vertex_model_skinned);
-            
-            p_geometries[submesh].p_skin = (scene_node_skin*)pen::memory_alloc(sizeof(scene_node_skin));
-            
-            pen::memory_cpy(&p_geometries[submesh].p_skin->bind_shape_matirx, p_reader, sizeof(mat4));
-            p_reader += 16;
-            
-            mat4 max_swap;
-            max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 1.0f, 0.0f));
-            mat4 max_swap_inv = max_swap.inverse4x4();
-            
-            mat4 final_bind = max_swap * p_geometries[submesh].p_skin->bind_shape_matirx * max_swap_inv;
-            
-            p_geometries[submesh].p_skin->bind_shape_matirx = final_bind;
-            
-            u32 num_ijb_floats = *p_reader++;
-            pen::memory_cpy(&p_geometries[submesh].p_skin->joint_bind_matrices[0], p_reader, sizeof(f32) * num_ijb_floats);
-            p_reader += num_ijb_floats;
-            
-            p_geometries[submesh].p_skin->num_joints = num_ijb_floats / 16;
-            
-            for (u32 joint = 0; joint < p_geometries[submesh].p_skin->num_joints; ++joint)
-            {
-                p_geometries[submesh].p_skin->joint_bind_matrices[joint] = max_swap * p_geometries[submesh].p_skin->joint_bind_matrices[joint] * max_swap_inv;
-            }
-            
-            scene->entities[node_index] |= CMP_SKINNED;
-        }
-        
-        //all vertex data is written out as 4 byte ints
-        u32 num_verts = num_floats / (vertex_size / sizeof(u32));
-        u32 num_pos_verts = num_pos_floats / (sizeof(vertex_position) / sizeof(u32));
-        
-        p_geometries[submesh].num_vertices = num_verts;
-        
-        pen::buffer_creation_params bcp;
-        bcp.usage_flags = PEN_USAGE_DEFAULT;
-        bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
-        bcp.cpu_access_flags = 0;
-        bcp.buffer_size = sizeof(vertex_position) * num_pos_verts;
-        bcp.data = (void*)p_reader;
-        
-        p_geometries[submesh].position_buffer = pen::renderer_create_buffer(bcp);
-        
-        p_reader += bcp.buffer_size / sizeof(f32);
-        
-        bcp.buffer_size = vertex_size * num_verts;
-        bcp.data = (void*)p_reader;
-        
-        p_geometries[submesh].vertex_buffer = pen::renderer_create_buffer(bcp);
-        
-        p_reader += bcp.buffer_size / sizeof(u32);
-        
-        //stream out / transform feedback
-        if (0 /*skinned*/)
-        {
-            //create an empty buffer for stream out
-            bcp.buffer_size = sizeof(vertex_model) * num_verts;
-            bcp.bind_flags |= PEN_BIND_STREAM_OUTPUT;
-            
-            void* p_data = pen::memory_alloc(sizeof(vertex_model) * num_verts);
-            pen::memory_zero(p_data, sizeof(vertex_model) * num_verts);
-            
-            bcp.data = p_data;
-            
-            u32 vb = pen::renderer_create_buffer(bcp);
-            
-            bcp.buffer_size = sizeof(vertex_position) * num_verts;
-            
-            u32 pb = pen::renderer_create_buffer(bcp);
-            
-            p_geometries[submesh].skinned_position = p_geometries[submesh].position_buffer;
-            p_geometries[submesh].pre_skin_vertex_buffer = p_geometries[submesh].vertex_buffer;
-            
-            p_geometries[submesh].vertex_buffer = vb;
-            p_geometries[submesh].position_buffer = pb;
-            
-            pen::memory_free(p_data);
-        }
-        
-        bcp.usage_flags = PEN_USAGE_DEFAULT;
-        bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
-        bcp.cpu_access_flags = 0;
-        bcp.buffer_size = index_size * num_indices;
-        bcp.data = (void*)p_reader;
-        
-        p_geometries[submesh].num_indices = num_indices;
-        p_geometries[submesh].index_type = index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
-        p_geometries[submesh].index_buffer = pen::renderer_create_buffer(bcp);
-        
-        p_reader = (u32*)((c8*)p_reader + bcp.buffer_size);
-        
-        //collision mesh
-        if (collision_mesh)
-        {
-            temp_collision_data[submesh].vertices = (f32*)pen::memory_alloc(sizeof(f32) * num_collision_floats);
-            temp_collision_data[submesh].num_floats = num_collision_floats;
-            
-            pen::memory_cpy(temp_collision_data[submesh].vertices, p_reader, sizeof(f32) * num_collision_floats);
-        }
-        
-        p_reader += num_collision_floats;
-    }
-    
-    if (collision_mesh)
-    {
-        u32 total_num_floats = 0;
-        for (u32 s = 0; s < num_meshes; ++s)
-        {
-            total_num_floats += temp_collision_data[s].num_floats;
-        }
-        
-        p_physics->mesh_data.vertices = (f32*)pen::memory_alloc(sizeof(f32) * total_num_floats);
-        p_physics->mesh_data.indices = (u32*)pen::memory_alloc(sizeof(u32) * total_num_floats);
-        
-        p_physics->mesh_data.num_indices = total_num_floats;
-        p_physics->mesh_data.num_floats = total_num_floats;
-        
-        f32* p_vertices = p_physics->mesh_data.vertices;
-        
-        for (u32 s = 0; s < num_meshes; ++s)
-        {
-            pen::memory_cpy(p_vertices, temp_collision_data[s].vertices, sizeof(f32) * temp_collision_data[s].num_floats);
-            
-            p_vertices += temp_collision_data[s].num_floats;
-        }
-        
-        for (u32 v = 0; v < total_num_floats; ++v)
-        {
-            p_physics->mesh_data.indices[v] = v;
-        }
-        
-        //centralise mesh
-        vec3f avg = vec3f::zero();
-        for (u32 v = 0; v < total_num_floats; v += 3)
-        {
-            avg.x += p_physics->mesh_data.vertices[v + 0];
-            avg.y += p_physics->mesh_data.vertices[v + 1];
-            avg.z += p_physics->mesh_data.vertices[v + 2];
-        }
-        
-        avg /= (f32)(total_num_floats / 3);
-        for (u32 v = 0; v < total_num_floats; v += 3)
-        {
-            p_physics->mesh_data.vertices[v + 0] -= avg.x;
-            p_physics->mesh_data.vertices[v + 1] -= avg.y;
-            p_physics->mesh_data.vertices[v + 2] -= avg.z;
-        }
-        
-        for (u32 sm = 0; sm < num_meshes; ++sm)
-        {
-            pen::memory_free(temp_collision_data[sm].vertices);
-        }
-        
-        pen::memory_free(temp_collision_data);
-    }
-}
-#endif
 

@@ -76,6 +76,8 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->transforms[skinned_char].scale = vec3f( 0.25f );
     scene->entities[skinned_char] |= CMP_TRANSFORM;
     
+    instantiate_model_pre_skin(scene, skinned_char);
+    
     //instantiate anim controller
     instantiate_anim_controller( scene, skinned_char );
     

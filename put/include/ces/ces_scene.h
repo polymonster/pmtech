@@ -150,8 +150,6 @@ namespace put
 		{
 			u32					position_buffer;
 			u32					vertex_buffer;
-			u32					pre_skin_vertex_buffer;
-			u32					skinned_position;
 			u32					index_buffer;
 			u32					num_indices;
 			u32					num_vertices;
@@ -159,6 +157,14 @@ namespace put
             u32                 vertex_size;
 			scene_node_skin*	p_skin;
 		};
+        
+        struct scene_node_pre_skin
+        {
+            u32                 vertex_buffer;
+            u32                 position_buffer;
+            u32                 vertex_size;
+            u32                 num_verts;
+        };
         
         struct master_instance
         {
@@ -252,6 +258,7 @@ namespace put
             master_instance*        master_instances;
             scene_node_geometry*    geometries;
             scene_node_material*    materials;
+            scene_node_pre_skin*    pre_skin;
             
             scene_node_physics*     physics_data;
             

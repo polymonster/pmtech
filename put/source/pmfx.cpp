@@ -31,6 +31,7 @@ namespace put
         
         struct pmfx
         {
+            hash_id         id_filename;
 			Str				filename;
             bool            invalidated = false;
             pen::json       info;
@@ -102,6 +103,74 @@ namespace put
                 }
                 
                 cc++;
+            }
+        }
+        
+        void get_input_layout_params( pen::input_layout_creation_params& ilp, pen::json& j_techique )
+        {
+            u32 vertex_elements = j_techique["vs_inputs"].size();
+            ilp.num_elements = vertex_elements;
+            
+            u32 instance_elements = j_techique["instance_inputs"].size();
+            ilp.num_elements += instance_elements;
+            
+            ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
+            
+            struct layout
+            {
+                const c8* name;
+                input_classification iclass;
+                u32 step_rate;
+                u32 num;
+            };
+            
+            layout layouts[2] =
+            {
+                { "vs_inputs", PEN_INPUT_PER_VERTEX, 0, vertex_elements},
+                { "instance_inputs", PEN_INPUT_PER_INSTANCE, 1, instance_elements},
+            };
+            
+            u32 input_index = 0;
+            for(u32 l = 0; l < 2; ++l)
+            {
+                for (u32 i = 0; i < layouts[l].num; ++i)
+                {
+                    pen::json vj = j_techique[layouts[l].name][i];
+                    
+                    u32 num_elements = vj["num_elements"].as_u32();
+                    u32 elements_size = vj["element_size"].as_u32();
+                    
+                    static const s32 float_formats[4] =
+                    {
+                        PEN_VERTEX_FORMAT_FLOAT1,
+                        PEN_VERTEX_FORMAT_FLOAT2,
+                        PEN_VERTEX_FORMAT_FLOAT3,
+                        PEN_VERTEX_FORMAT_FLOAT4
+                    };
+                    
+                    static const s32 byte_formats[4] =
+                    {
+                        PEN_VERTEX_FORMAT_UNORM1,
+                        PEN_VERTEX_FORMAT_UNORM2,
+                        PEN_VERTEX_FORMAT_UNORM2,
+                        PEN_VERTEX_FORMAT_UNORM4
+                    };
+                    
+                    const s32* fomats = float_formats;
+                    
+                    if (elements_size == 1)
+                        fomats = byte_formats;
+                    
+                    ilp.input_layout[input_index].semantic_index = vj["semantic_index"].as_u32();
+                    ilp.input_layout[input_index].format = fomats[num_elements-1];
+                    ilp.input_layout[input_index].semantic_name = semantic_names[vj["semantic_id"].as_u32()];
+                    ilp.input_layout[input_index].input_slot = l;
+                    ilp.input_layout[input_index].aligned_byte_offset = vj["offset"].as_u32();
+                    ilp.input_layout[input_index].input_slot_class = layouts[l].iclass;
+                    ilp.input_layout[input_index].instance_data_step_rate = layouts[l].step_rate;
+                    
+                    ++input_index;
+                }
             }
         }
         
@@ -185,9 +254,12 @@ namespace put
                     so_decl[vo].component_count = voj["num_elements"].as_u32();
                     so_decl[vo].output_slot = 0;
                     
-                    u32 name_len = voj["name"].as_str().length();
+                    Str gl_name = voj["name"].as_str();
+                    gl_name.append("_vs_output");
+                    
+                    u32 name_len = gl_name.length();
                     slp.stream_out_names[vo] = new c8[name_len+1];
-                    pen::memory_cpy(slp.stream_out_names[vo], voj["name"].as_cstr(), name_len);
+                    pen::memory_cpy(slp.stream_out_names[vo], gl_name.c_str(), name_len);
                     slp.stream_out_names[vo][name_len] = '\0';
                 }
                 
@@ -207,6 +279,15 @@ namespace put
                 slp.pixel_shader = 0;
 
                 program.program_index = pen::renderer_link_shader_program(slp);
+                
+                //create input layout from json
+                pen::input_layout_creation_params ilp;
+                ilp.vs_byte_code = vs_slp.byte_code;
+                ilp.vs_byte_code_size = vs_slp.byte_code_size;
+                
+                get_input_layout_params(ilp, j_techique);
+                
+                program.input_layout = pen::renderer_create_input_layout(ilp);
                 
                 return program;
             }
@@ -240,72 +321,9 @@ namespace put
             pen::input_layout_creation_params ilp;
             ilp.vs_byte_code = vs_slp.byte_code;
             ilp.vs_byte_code_size = vs_slp.byte_code_size;
-            
-            u32 vertex_elements = j_techique["vs_inputs"].size();
-            ilp.num_elements = vertex_elements;
-            
-            u32 instance_elements = j_techique["instance_inputs"].size();
-            ilp.num_elements += instance_elements;
-            
-            ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
-            
-            struct layout
-            {
-                const c8* name;
-                input_classification iclass;
-                u32 step_rate;
-                u32 num;
-            };
-            
-            layout layouts[2] =
-            {
-                { "vs_inputs", PEN_INPUT_PER_VERTEX, 0, vertex_elements},
-                { "instance_inputs", PEN_INPUT_PER_INSTANCE, 1, instance_elements},
-            };
-            
-            u32 input_index = 0;
-            for(u32 l = 0; l < 2; ++l)
-            {
-                for (u32 i = 0; i < layouts[l].num; ++i)
-                {
-                    pen::json vj = j_techique[layouts[l].name][i];
-                    
-                    u32 num_elements = vj["num_elements"].as_u32();
-                    u32 elements_size = vj["element_size"].as_u32();
-                    
-                    static const s32 float_formats[4] =
-                    {
-                        PEN_VERTEX_FORMAT_FLOAT1,
-                        PEN_VERTEX_FORMAT_FLOAT2,
-                        PEN_VERTEX_FORMAT_FLOAT3,
-                        PEN_VERTEX_FORMAT_FLOAT4
-                    };
-                    
-                    static const s32 byte_formats[4] =
-                    {
-                        PEN_VERTEX_FORMAT_UNORM1,
-                        PEN_VERTEX_FORMAT_UNORM2,
-                        PEN_VERTEX_FORMAT_UNORM2,
-                        PEN_VERTEX_FORMAT_UNORM4
-                    };
-                    
-                    const s32* fomats = float_formats;
-                    
-                    if (elements_size == 1)
-                        fomats = byte_formats;
-                                                   
-                    ilp.input_layout[input_index].semantic_index = vj["semantic_index"].as_u32();
-                    ilp.input_layout[input_index].format = fomats[num_elements-1];
-                    ilp.input_layout[input_index].semantic_name = semantic_names[vj["semantic_id"].as_u32()];
-                    ilp.input_layout[input_index].input_slot = l;
-                    ilp.input_layout[input_index].aligned_byte_offset = vj["offset"].as_u32();
-                    ilp.input_layout[input_index].input_slot_class = layouts[l].iclass;
-                    ilp.input_layout[input_index].instance_data_step_rate = layouts[l].step_rate;
-                    
-                    ++input_index;
-                }
-            }
-            
+           
+            get_input_layout_params(ilp, j_techique);
+           
             program.input_layout = pen::renderer_create_input_layout(ilp);
             
             pen::memory_free(ilp.input_layout);
@@ -331,8 +349,16 @@ namespace put
         {
             auto& t = s_pmfx_list[ handle ].techniques[ index ];
             
-            pen::renderer_set_shader( t.vertex_shader, PEN_SHADER_TYPE_VS );
-            pen::renderer_set_shader( t.pixel_shader, PEN_SHADER_TYPE_PS );
+            if( t.stream_out_shader )
+            {
+                pen::renderer_set_shader( t.stream_out_shader, PEN_SHADER_TYPE_SO );
+            }
+            else
+            {
+                pen::renderer_set_shader( t.vertex_shader, PEN_SHADER_TYPE_VS );
+                pen::renderer_set_shader( t.pixel_shader, PEN_SHADER_TYPE_PS );
+            }
+            
             pen::renderer_set_input_layout( t.input_layout );
         }
         
@@ -346,8 +372,16 @@ namespace put
                 if( t.id_sub_type != id_sub_type )
                     continue;
                 
-                pen::renderer_set_shader( t.vertex_shader, PEN_SHADER_TYPE_VS );
-                pen::renderer_set_shader( t.pixel_shader, PEN_SHADER_TYPE_PS );
+                if( t.stream_out_shader )
+                {
+                    pen::renderer_set_shader( t.stream_out_shader, PEN_SHADER_TYPE_SO );
+                }
+                else
+                {
+                    pen::renderer_set_shader( t.vertex_shader, PEN_SHADER_TYPE_VS );
+                    pen::renderer_set_shader( t.pixel_shader, PEN_SHADER_TYPE_PS );
+                }
+                
                 pen::renderer_set_input_layout( t.input_layout );
                 
                 return true;
@@ -383,6 +417,7 @@ namespace put
             pmfx new_pmfx;
             
             new_pmfx.filename = filename;
+            new_pmfx.id_filename = PEN_HASH(filename);
             
             new_pmfx.info = pen::json::load_from_file(info_file_buf);
             
@@ -433,6 +468,18 @@ namespace put
             s_pmfx_list.push_back(new_pmfx);
             
             return ph;
+        }
+        
+        pmfx_handle get_pmfx_handle( hash_id id_filename )
+        {
+            pmfx_handle ph = 0;
+            for (auto& p : s_pmfx_list)
+                if (p.id_filename == id_filename)
+                    return ph;
+                else
+                    ph++;
+            
+            return PEN_INVALID_HANDLE;
         }
         
         void poll_for_changes( )

@@ -794,7 +794,7 @@ namespace pen
                 u32 len = pen::string_length(params.stream_out_names[i]);
                 so[i] = (c8*)pen::memory_alloc(len + 1);
                 
-                pen::memory_cpy(c[i].name, params.stream_out_names[i], len);
+                pen::memory_cpy(so[i], params.stream_out_names[i], len);
                 so[i][len] = '\0';
             }
         }

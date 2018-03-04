@@ -94,6 +94,8 @@ namespace put
             ALLOC_COMPONENT_ARRAY(scene, geometries, scene_node_geometry);
             ALLOC_COMPONENT_ARRAY(scene, master_instances, master_instance);
             ALLOC_COMPONENT_ARRAY(scene, materials, scene_node_material);
+            ALLOC_COMPONENT_ARRAY(scene, pre_skin, scene_node_pre_skin);
+            
             ALLOC_COMPONENT_ARRAY(scene, physics_data, scene_node_physics);
             ALLOC_COMPONENT_ARRAY(scene, anim_controller, animation_controller);
             ALLOC_COMPONENT_ARRAY(scene, lights, scene_node_light);
@@ -140,6 +142,7 @@ namespace put
             FREE_COMPONENT_ARRAY(scene, master_instances);
             FREE_COMPONENT_ARRAY(scene, geometries);
             FREE_COMPONENT_ARRAY(scene, materials);
+            FREE_COMPONENT_ARRAY(scene, pre_skin);
             FREE_COMPONENT_ARRAY(scene, physics_data);
             FREE_COMPONENT_ARRAY(scene, anim_controller);
             FREE_COMPONENT_ARRAY(scene, lights);
@@ -177,6 +180,15 @@ namespace put
 
             if (scene->cbuffer[node_index])
                 pen::renderer_release_buffer( scene->cbuffer[node_index] );
+            
+            if (scene->entities[node_index] & CMP_PRE_SKINNED)
+            {
+                if(scene->pre_skin[node_index].vertex_buffer)
+                    pen::renderer_release_buffer( scene->pre_skin[node_index].vertex_buffer );
+                
+                if(scene->pre_skin[node_index].position_buffer)
+                    pen::renderer_release_buffer( scene->pre_skin[node_index].position_buffer );
+            }
             
             if(scene->master_instances[node_index].instance_buffer)
                 pen::renderer_release_buffer( scene->master_instances[node_index].instance_buffer );
@@ -217,6 +229,8 @@ namespace put
             ZERO_COMPONENT_ARRAY(scene, master_instances, node_index);
 			ZERO_COMPONENT_ARRAY(scene, geometries, node_index);
 			ZERO_COMPONENT_ARRAY(scene, materials, node_index);
+            ZERO_COMPONENT_ARRAY(scene, pre_skin, node_index);
+            
 			ZERO_COMPONENT_ARRAY(scene, physics_data, node_index);
 			ZERO_COMPONENT_ARRAY(scene, anim_controller, node_index);
 			ZERO_COMPONENT_ARRAY(scene, lights, node_index);
@@ -401,7 +415,7 @@ namespace put
 				scene_node_geometry* p_geom = &scene->geometries[n];
 				scene_node_material* p_mat = &scene->materials[n];
 
-                if( p_geom->p_skin )
+                if( scene->entities[n] & CMP_SKINNED )
                 {
                     if( p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE )
                     {
@@ -424,15 +438,15 @@ namespace put
                     }
                         
                     pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
-                        
                     pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
                 }
                 
+                //todo - move this to instantiation time
                 static hash_id ID_SUB_TYPE_INSTANCED = PEN_HASH("_instanced");
                 static hash_id ID_SUB_TYPE_SKINNED = PEN_HASH("_skinned");
                 static hash_id ID_SUB_TYPE_NON_SKINNED = PEN_HASH("");
                     
-                hash_id mh = p_geom->p_skin ? ID_SUB_TYPE_SKINNED : ID_SUB_TYPE_NON_SKINNED;
+                hash_id mh = scene->entities[n] & CMP_SKINNED ? ID_SUB_TYPE_SKINNED : ID_SUB_TYPE_NON_SKINNED;
                 mh = scene->entities[n] & CMP_MASTER_INSTANCE ? ID_SUB_TYPE_INSTANCED : mh;
 
                 if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
@@ -829,6 +843,52 @@ namespace put
             
             //update physics
             physics::physics_consume_command_buffer();
+            
+            //update pre skinned vertex buffers
+            static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
+            static pmfx::pmfx_handle ph = pmfx::load("forward_render");
+            
+            if( pmfx::set_technique( ph, id_pre_skin_technique, 0 ) )
+            {
+                for (s32 n = 0; n < scene->num_nodes; ++n)
+                {
+                    if (!(scene->entities[n] & CMP_PRE_SKINNED))
+                        continue;
+                    
+                    //update bone cbuffer
+                    scene_node_geometry& geom = scene->geometries[n];
+                    if( geom.p_skin->bone_cbuffer == PEN_INVALID_HANDLE )
+                    {
+                        pen::buffer_creation_params bcp;
+                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                        bcp.buffer_size = sizeof(mat4) * 85;
+                        bcp.data = nullptr;
+                        
+                        geom.p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
+                    }
+                    
+                    static mat4 bb[85];
+                    s32 joints_offset = scene->anim_controller[n].joints_offset;
+                    for( s32 i = 0; i < geom.p_skin->num_joints; ++i )
+                        bb[i] = scene->world_matrices[n + joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
+                    
+                    pen::renderer_update_buffer(geom.p_skin->bone_cbuffer, bb, sizeof(bb));
+                    pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
+                    
+                    //bind stream out targets
+                    scene_node_pre_skin& pre_skin = scene->pre_skin[n];
+                    pen::renderer_set_stream_out_target(geom.vertex_buffer);
+                    
+                    pen::renderer_set_vertex_buffer(pre_skin.vertex_buffer, 0, pre_skin.vertex_size, 0);
+                    
+                    //render point list
+                    pen::renderer_draw(pre_skin.num_verts, 0, PEN_PT_POINTLIST);
+                    
+                    pen::renderer_set_stream_out_target(0);
+                }
+            }
 		}
         
         void save_scene( const c8* filename, entity_scene* scene )

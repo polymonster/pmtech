@@ -163,6 +163,7 @@ namespace pen
         u32 vs;
         u32 ps;
         u32 gs;
+        u32 so;
         GLuint program;
         u8 uniform_block_location[MAX_UNIFORM_BUFFERS];
         u8 texture_location[MAX_SHADER_TEXTURES];
@@ -213,12 +214,14 @@ namespace pen
         u32 vertex_buffer_stride[MAX_VERTEX_BUFFERS] = { 0 };
         u32 vertex_buffer_offset[MAX_VERTEX_BUFFERS] = { 0 };
         u32 num_bound_vertex_buffers = 0;
-        u32 index_buffer;
-        u32 input_layout;
-        u32 vertex_shader;
-        u32 pixel_shader;
-        u32 raster_state;
-        bool backbuffer_bound;
+        u32 index_buffer = 0;
+        u32 stream_out_buffer = 0;
+        u32 input_layout = 0;
+        u32 vertex_shader = 0;
+        u32 pixel_shader = 0;
+        u32 stream_out_shader = 0;
+        u32 raster_state = 0;
+        bool backbuffer_bound = false;
         u8 constant_buffer_bindings[MAX_UNIFORM_BUFFERS] = { 0 };
     };
     
@@ -280,12 +283,14 @@ namespace pen
         //link the shaders
         GLuint program_id = glCreateProgram();
         
+        GLuint so = 0;
+        
         if( params )
         {
             //this path is for a proper link with reflection info
             vs = resource_pool[ params->vertex_shader ].handle;
             ps = resource_pool[ params->pixel_shader ].handle;
-            GLuint so = resource_pool[ params->stream_out_shader ].handle;
+            so = resource_pool[ params->stream_out_shader ].handle;
             
             if(vs)
                 glAttachShader(program_id, vs);
@@ -334,6 +339,7 @@ namespace pen
         shader_program program;
         program.vs = vs;
         program.ps = ps;
+        program.so = so;
         program.program = program_id;
         
         for( s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i )
@@ -483,9 +489,20 @@ namespace pen
 	void direct::renderer_set_shader( u32 shader_index, u32 shader_type )
 	{
         if( shader_type == GL_VERTEX_SHADER )
+        {
             g_current_state.vertex_shader = shader_index;
+            g_current_state.stream_out_shader = 0;
+        }
         else if( shader_type == GL_FRAGMENT_SHADER )
+        {
             g_current_state.pixel_shader = shader_index;
+        }
+        else if( shader_type == PEN_SHADER_TYPE_SO )
+        {
+            g_current_state.stream_out_shader = shader_index;
+            g_current_state.vertex_shader = 0;
+            g_current_state.pixel_shader = 0;
+        }
 	}
 
 	void direct::renderer_create_buffer( const buffer_creation_params &params, u32 resource_slot )
@@ -555,7 +572,7 @@ namespace pen
     
     void direct::renderer_set_stream_out_target( u32 buffer_index )
     {
-        
+        g_current_state.stream_out_buffer = buffer_index;
     }
     
     void direct::renderer_draw_auto( )
@@ -615,32 +632,34 @@ namespace pen
         g_bound_state.index_buffer = buffer_index;
 	}
     
-    void bind_state()
+    void bind_state( u32 primitive_topology )
     {
         //bind shaders
-        if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
-            g_current_state.pixel_shader != g_bound_state.pixel_shader )
+        if( g_current_state.stream_out_shader  != 0 &&
+            (g_current_state.stream_out_shader != g_bound_state.stream_out_shader) )
         {
+            //stream out
             g_bound_state.vertex_shader = g_current_state.vertex_shader;
             g_bound_state.pixel_shader = g_current_state.pixel_shader;
+            g_bound_state.stream_out_shader = g_current_state.stream_out_shader;
             
             shader_program* linked_program = nullptr;
             
-            auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
-            auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
+            u32 so_handle = resource_pool[g_bound_state.stream_out_shader].handle;
             
             for( s32 i = 0; i < k_shader_programs.size(); ++i )
             {
-                if( k_shader_programs[i].vs == vs_handle && k_shader_programs[i].ps == ps_handle )
+                if( k_shader_programs[i].so == so_handle)
                 {
                     linked_program = &k_shader_programs[i];
                     break;
                 }
             }
-        
+            
             if( linked_program == nullptr )
             {
-                linked_program = link_program_internal(vs_handle, ps_handle);
+                //we need to link ahead of time to setup the transform feedback varying
+                PEN_ASSERT(0);
             }
             
             glUseProgram( linked_program->program );
@@ -654,9 +673,53 @@ namespace pen
                 }
             }
             
+            glEnable(GL_RASTERIZER_DISCARD);
+            
             CHECK_GL_ERROR;
         }
-
+        else
+        {
+            if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
+               g_current_state.pixel_shader != g_bound_state.pixel_shader )
+            {
+                g_bound_state.vertex_shader = g_current_state.vertex_shader;
+                g_bound_state.pixel_shader = g_current_state.pixel_shader;
+                g_bound_state.stream_out_shader = g_current_state.stream_out_shader;
+                
+                shader_program* linked_program = nullptr;
+                
+                auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
+                auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
+                
+                for( s32 i = 0; i < k_shader_programs.size(); ++i )
+                {
+                    if( k_shader_programs[i].vs == vs_handle && k_shader_programs[i].ps == ps_handle )
+                    {
+                        linked_program = &k_shader_programs[i];
+                        break;
+                    }
+                }
+                
+                if( linked_program == nullptr )
+                {
+                    linked_program = link_program_internal(vs_handle, ps_handle);
+                }
+                
+                glUseProgram( linked_program->program );
+                
+                //constant buffers and texture locations
+                for( s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i )
+                {
+                    if( linked_program->texture_location[ i ] != INVALID_LOC )
+                    {
+                        glUniform1i( linked_program->texture_location[ i ], i );
+                    }
+                }
+                
+                CHECK_GL_ERROR;
+            }
+        }
+        
         g_bound_state.input_layout = g_current_state.input_layout;
         
         auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
@@ -745,18 +808,41 @@ namespace pen
             
             CHECK_GL_ERROR;
         }
+        
+        if( g_current_state.stream_out_buffer != g_bound_state.stream_out_buffer )
+        {
+            g_bound_state.stream_out_buffer = g_current_state.stream_out_buffer;
+            
+            if( g_bound_state.stream_out_buffer )
+            {
+                u32 so_buffer = resource_pool[g_bound_state.stream_out_buffer].handle;
+                
+                glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, so_buffer);
+                glBeginTransformFeedback(primitive_topology);
+            }
+        }
     }
 
 	void direct::renderer_draw( u32 vertex_count, u32 start_vertex, u32 primitive_topology )
 	{
-        bind_state();
+        bind_state( primitive_topology );
         
         glDrawArrays(primitive_topology, start_vertex, vertex_count);
+        
+        if(g_bound_state.stream_out_buffer)
+        {
+            g_current_state.stream_out_buffer = 0;
+            g_bound_state.stream_out_buffer = 0;
+            
+            glEndTransformFeedback();
+            glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
+            glDisable(GL_RASTERIZER_DISCARD);
+        }
 	}
 
 	void direct::renderer_draw_indexed( u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology )
 	{
-        bind_state();
+        bind_state( primitive_topology );
         
         //bind index buffer -this must always be re-bound
         GLuint res = resource_pool[g_bound_state.index_buffer].handle;
@@ -777,7 +863,7 @@ namespace pen
         u32 base_vertex,
         u32 primitive_topology )
     {
-        bind_state();
+        bind_state( primitive_topology );
         
         //bind index buffer -this must always be re-bound
         GLuint res = resource_pool[g_bound_state.index_buffer].handle;
