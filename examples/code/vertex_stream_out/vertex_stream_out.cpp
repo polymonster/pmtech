@@ -93,6 +93,8 @@ void create_physics_objects( ces::entity_scene* scene )
     //remove the geometry flag from the skinned character as we just want to use it as vertex stream out
     scene->entities[skinned_char] &= ~CMP_GEOMETRY;
     
+	//in order to instance stuff we must have a contiguous list of nodes.
+	//this node aliases the geometry and materials from the skinned_char root node
     u32 master_node = get_new_node( scene );
     scene->names[master_node] = "master skinned instance";
     scene->transforms[master_node].translation = vec3f::zero();

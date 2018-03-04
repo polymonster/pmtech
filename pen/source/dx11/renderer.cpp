@@ -451,6 +451,7 @@ namespace pen
 		if( shader_type == PEN_SHADER_TYPE_VS )
 		{
 			g_immediate_context->VSSetShader( resource_pool[shader_index].vertex_shader, nullptr, 0);
+			g_immediate_context->GSSetShader(nullptr, nullptr, 0);
 		}
 		else if( shader_type == PEN_SHADER_TYPE_PS )
 		{
@@ -466,6 +467,19 @@ namespace pen
 			g_immediate_context->VSSetShader(sos.vs, nullptr, 0);
 			g_immediate_context->GSSetShader(sos.gs, nullptr, 0);
 			g_immediate_context->PSSetShader(nullptr, nullptr, 0);
+
+			//on feature level 10 we cant uses SO_RASTERISER_DISCARD, this prevents the validation layer barking
+			static ID3D11DepthStencilState* dss = nullptr;
+			if (!dss)
+			{
+				D3D11_DEPTH_STENCIL_DESC dss_disable = { 0 };
+				dss_disable.DepthEnable = 0;
+				dss_disable.StencilEnable = 0;
+
+				g_device->CreateDepthStencilState(&dss_disable, &dss);
+			}
+
+			g_immediate_context->OMSetDepthStencilState(dss, 0);
 		}
 	}
 
