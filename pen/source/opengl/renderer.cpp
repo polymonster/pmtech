@@ -21,7 +21,13 @@ extern void pen_window_resize( );
 
 a_u8 g_window_resize( 0 );
 
-//#define GL_DEBUG
+#define GL_DEBUG_LEVEL 2
+
+#if GL_DEBUG_LEVEL > 1
+#define GL_ASSERT(V) PEN_ASSERT(V)
+#else
+#define GL_ASSERT(V) (void)V
+#endif
 
 void gl_error_break( GLenum err )
 {
@@ -29,26 +35,32 @@ void gl_error_break( GLenum err )
     {
         case GL_INVALID_ENUM:
             printf("invalid enum\n");
+            GL_ASSERT( 0 );
             break;
         case GL_INVALID_VALUE:
             printf("gl invalid value\n");
+            GL_ASSERT( 0 );
             break;
         case GL_INVALID_OPERATION:
             printf("gl invalid operation\n");
+            GL_ASSERT( 0 );
             break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:
             printf("gl invalid frame buffer operation\n");
+            GL_ASSERT( 0 );
             break;
         case GL_OUT_OF_MEMORY:
             printf("gl out of memory\n");
+            GL_ASSERT( 0 );
             break;
         default:
             break;
     }
 }
 
-#ifdef GL_DEBUG
+#if GL_DEBUG_LEVEL > 0
 #define CHECK_GL_ERROR { GLenum err = glGetError( ); if( err != GL_NO_ERROR ) gl_error_break( err ); }
+#define CHECK_CALL( C ) C; CHECK_GL_ERROR
 #else
 #define CHECK_GL_ERROR
 #endif
@@ -281,7 +293,7 @@ namespace pen
     shader_program* link_program_internal( u32 vs, u32 ps, const pen::shader_link_params* params = nullptr )
     {
         //link the shaders
-        GLuint program_id = glCreateProgram();
+        GLuint program_id = CHECK_CALL( glCreateProgram() );
         
         GLuint so = 0;
         
@@ -293,43 +305,43 @@ namespace pen
             so = resource_pool[ params->stream_out_shader ].handle;
             
             if(vs)
-                glAttachShader(program_id, vs);
+                CHECK_CALL( glAttachShader(program_id, vs) );
             
             if(ps)
-                glAttachShader(program_id, ps);
+                CHECK_CALL( glAttachShader(program_id, ps) );
             
             if(so)
             {
-                glAttachShader(program_id, so);
-                glTransformFeedbackVaryings(
+                CHECK_CALL( glAttachShader(program_id, so) );
+                CHECK_CALL( glTransformFeedbackVaryings(
                                             program_id,
                                             params->num_stream_out_names,
                                             params->stream_out_names,
-                                            GL_INTERLEAVED_ATTRIBS );
+                                            GL_INTERLEAVED_ATTRIBS ) );
             }
         }
         else
         {
             //on the fly link for bound vs and ps which have not been explicity linked
             //to emulate d3d behaviour of set vs set ps etc
-            glAttachShader(program_id, vs);
-            glAttachShader(program_id, ps);
+            CHECK_CALL( glAttachShader(program_id, vs) );
+            CHECK_CALL( glAttachShader(program_id, ps) );
         }
 
-        glLinkProgram(program_id);
+        CHECK_CALL( glLinkProgram(program_id) );
         
         // Check the program
         GLint result = GL_FALSE;
         int info_log_length = 0;
         
-        glGetShaderiv(program_id, GL_LINK_STATUS, &result);
-        glGetShaderiv(program_id, GL_INFO_LOG_LENGTH, &info_log_length);
+        CHECK_CALL( glGetProgramiv(program_id, GL_LINK_STATUS, &result) );
+        CHECK_CALL( glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &info_log_length) );
         
         if ( info_log_length > 0 )
         {
             char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
             
-            glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]);
+            CHECK_CALL( glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]) );
             info_log_buf[info_log_length] = '\0';
             
             output_debug("%s", info_log_buf);
@@ -350,8 +362,6 @@ namespace pen
         
         k_shader_programs.push_back(program);
         
-        CHECK_GL_ERROR;
-        
         return &k_shader_programs.back();
     }
 
@@ -367,32 +377,37 @@ namespace pen
 	{
         resource_allocation& rc = resource_pool[ clear_state_index ];
         clear_state_internal& cs = rc.clear_state;
-        
-        glClearDepth( cs.depth );
-        glClearStencil( cs.stencil );
+
+        CHECK_CALL( glClearDepth( cs.depth ) );
+        CHECK_CALL( glClearStencil( cs.stencil ) );
         
         if( cs.num_colour_targets == 0 )
         {
-            glClearColor( rc.clear_state.rgba[ 0 ], rc.clear_state.rgba[ 1 ], rc.clear_state.rgba[ 2 ], rc.clear_state.rgba[ 3 ] );
-            glClear( rc.clear_state.flags );
+            CHECK_CALL( glClearColor(
+                                     rc.clear_state.rgba[ 0 ],
+                                     rc.clear_state.rgba[ 1 ],
+                                     rc.clear_state.rgba[ 2 ],
+                                     rc.clear_state.rgba[ 3 ] ));
+            
+            CHECK_CALL( glClear( rc.clear_state.flags ) );
             return;
         }
         
         u32 masked = rc.clear_state.flags &= ~GL_COLOR_BUFFER_BIT;
         
-        glClear( masked );
+        CHECK_CALL( glClear( masked ) );
         
         for( s32 i = 0; i < cs.num_colour_targets; ++i )
         {
             if( cs.mrt[i].type == pen::CLEAR_F32 )
             {
-                glClearBufferfv( GL_COLOR, i, cs.mrt[i].f );
+                CHECK_CALL( glClearBufferfv( GL_COLOR, i, cs.mrt[i].f ) );
                 continue;
             }
             
             if( cs.mrt[i].type == pen::CLEAR_U32 )
             {
-                glClearBufferuiv( GL_COLOR,  i, cs.mrt[i].u );
+                CHECK_CALL( glClearBufferuiv( GL_COLOR,  i, cs.mrt[i].u ) );
                 continue;
             }
         }
@@ -406,11 +421,11 @@ namespace pen
         for( auto& managed_rt : k_managed_render_targets )
         {
             resource_allocation& res = resource_pool[ managed_rt.render_target_handle ];
-            glDeleteTextures( 1, &res.render_target.texture.handle );
+            CHECK_CALL( glDeleteTextures( 1, &res.render_target.texture.handle ) );
             
             if( managed_rt.tcp.sample_count > 1 )
             {
-                glDeleteTextures( 1, &res.render_target.texture_msaa.handle );
+                CHECK_CALL( glDeleteTextures( 1, &res.render_target.texture_msaa.handle ) );
                 res.render_target.texture_msaa.handle = 0;
             }
             
@@ -460,17 +475,17 @@ namespace pen
         if(params.type == PEN_SHADER_TYPE_SO)
             internal_type = PEN_SHADER_TYPE_VS;
         
-        res.handle = glCreateShader(internal_type);
+        res.handle = CHECK_CALL( glCreateShader(internal_type) );
         
-        glShaderSource(res.handle, 1, (c8**)&params.byte_code, (s32*)&params.byte_code_size);
-        glCompileShader(res.handle);
+        CHECK_CALL( glShaderSource(res.handle, 1, (c8**)&params.byte_code, (s32*)&params.byte_code_size) );
+        CHECK_CALL( glCompileShader(res.handle) );
         
         // Check compilation status
         GLint result = GL_FALSE;
         int info_log_length;
         
-        glGetShaderiv(res.handle, GL_COMPILE_STATUS, &result);
-        glGetShaderiv(res.handle, GL_INFO_LOG_LENGTH, &info_log_length);
+        CHECK_CALL( glGetShaderiv(res.handle, GL_COMPILE_STATUS, &result) );
+        CHECK_CALL( glGetShaderiv(res.handle, GL_INFO_LOG_LENGTH, &info_log_length) );
         
         if ( info_log_length > 0 )
         {
@@ -478,12 +493,10 @@ namespace pen
             
             char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
             
-            glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]);
+            CHECK_CALL( glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]) );
             
             PEN_PRINTF(info_log_buf);
         }
-
-        CHECK_GL_ERROR;
 	}
 
 	void direct::renderer_set_shader( u32 shader_index, u32 shader_type )
@@ -509,16 +522,12 @@ namespace pen
 	{
         resource_allocation& res = resource_pool[resource_slot];
         
-        CHECK_GL_ERROR;
+        CHECK_CALL( glGenBuffers(1, &res.handle) );
         
-        glGenBuffers(1, &res.handle);
+        CHECK_CALL( glBindBuffer(params.bind_flags, res.handle) );
         
-        glBindBuffer(params.bind_flags, res.handle);
-        
-        glBufferData(params.bind_flags, params.buffer_size, params.data, params.usage_flags );
-        
-        CHECK_GL_ERROR;
-        
+        CHECK_CALL( glBufferData(params.bind_flags, params.buffer_size, params.data, params.usage_flags ) );
+
         res.type = params.bind_flags;
 	}
     
@@ -528,6 +537,7 @@ namespace pen
         shader_program* linked_program = link_program_internal( 0, 0, &slp );
         
         GLuint prog = linked_program->program;
+        glUseProgram( linked_program->program );
     
         //build lookup tables for uniform buffers and texture samplers
         for( u32 i = 0; i < params.num_constants; ++i )
@@ -539,13 +549,12 @@ namespace pen
             {
                 case pen::CT_CBUFFER:
                 {
-                    loc = glGetUniformBlockIndex(prog, constant.name);
-                    
+                    loc = CHECK_CALL( glGetUniformBlockIndex(prog, constant.name) );
                     PEN_ASSERT( loc < MAX_UNIFORM_BUFFERS );
                     
                     linked_program->uniform_block_location[constant.location] = loc;
                     
-                    glUniformBlockBinding( prog, loc, constant.location );
+                    CHECK_CALL( glUniformBlockBinding( prog, loc, constant.location ) );
                 }
                 break;
                     
@@ -554,12 +563,12 @@ namespace pen
                 case pen::CT_SAMPLER_2DMS:
                 case pen::CT_SAMPLER_CUBE:
                 {
-                    loc = glGetUniformLocation(prog, constant.name);
+                    loc = CHECK_CALL( glGetUniformLocation(prog, constant.name) );
                     
                     linked_program->texture_location[constant.location] = loc;
                     
-                    if(loc != -1)
-                        glUniform1i( loc, constant.location );
+                    if(loc != -1 && loc != constant.location )
+                        CHECK_CALL( glUniform1i( loc, constant.location ) );
                 }
                 break;
                 default:
@@ -662,20 +671,14 @@ namespace pen
                 PEN_ASSERT(0);
             }
             
-            glUseProgram( linked_program->program );
+            CHECK_CALL( glUseProgram( linked_program->program ) );
             
             //constant buffers and texture locations
             for( s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i )
-            {
                 if( linked_program->texture_location[ i ] != INVALID_LOC )
-                {
-                    glUniform1i( linked_program->texture_location[ i ], i );
-                }
-            }
+                    CHECK_CALL( glUniform1i( linked_program->texture_location[ i ], i ) );
             
-            glEnable(GL_RASTERIZER_DISCARD);
-            
-            CHECK_GL_ERROR;
+            CHECK_CALL( glEnable(GL_RASTERIZER_DISCARD) );
         }
         else
         {
@@ -701,22 +704,14 @@ namespace pen
                 }
                 
                 if( linked_program == nullptr )
-                {
                     linked_program = link_program_internal(vs_handle, ps_handle);
-                }
                 
-                glUseProgram( linked_program->program );
+                CHECK_CALL( glUseProgram( linked_program->program ) );
                 
                 //constant buffers and texture locations
                 for( s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i )
-                {
                     if( linked_program->texture_location[ i ] != INVALID_LOC )
-                    {
-                        glUniform1i( linked_program->texture_location[ i ], i );
-                    }
-                }
-                
-                CHECK_GL_ERROR;
+                        CHECK_CALL( glUniform1i( linked_program->texture_location[ i ], i ) );
             }
         }
         
@@ -725,10 +720,10 @@ namespace pen
         auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
         if( input_res->vertex_array_handle == 0 )
         {
-            glGenVertexArrays(1, &input_res->vertex_array_handle);
+            CHECK_CALL( glGenVertexArrays(1, &input_res->vertex_array_handle) );
         }
         
-        glBindVertexArray(input_res->vertex_array_handle);
+        CHECK_CALL( glBindVertexArray(input_res->vertex_array_handle) );
         
         for( s32 v = 0; v < g_current_state.num_bound_vertex_buffers; ++v )
         {
@@ -737,25 +732,23 @@ namespace pen
             
             auto& res = resource_pool[g_bound_state.vertex_buffer[v]].handle;
             
-            CHECK_GL_ERROR;
-            
             for( auto& attribute : input_res->attributes )
             {
                 if( attribute.input_slot != v )
                     continue;
                 
-                glEnableVertexAttribArray(attribute.location);
-                glBindBuffer(GL_ARRAY_BUFFER, res);
+                CHECK_CALL( glEnableVertexAttribArray(attribute.location) );
+                CHECK_CALL( glBindBuffer(GL_ARRAY_BUFFER, res) );
                 
-                glVertexAttribPointer(
+                CHECK_CALL( glVertexAttribPointer(
                                       attribute.location,
                                       attribute.num_elements,
                                       attribute.type,
                                       attribute.type == GL_UNSIGNED_BYTE ? true : false,
                                       g_bound_state.vertex_buffer_stride[v],
-                                      (void*)attribute.offset);
+                                      (void*)attribute.offset));
                 
-                glVertexAttribDivisor(attribute.location, attribute.step_rate);
+                CHECK_CALL( glVertexAttribDivisor(attribute.location, attribute.step_rate) );
             }
         }
 
@@ -772,41 +765,43 @@ namespace pen
                 ccw = !ccw;
             
             if( ccw )
-                glFrontFace(GL_CCW);
-            else
-                glFrontFace(GL_CW);
-            
-            if( rs.culling_enabled )
             {
-                glEnable( GL_CULL_FACE );
-                glCullFace(rs.cull_face);
+                CHECK_CALL( glFrontFace(GL_CCW) );
             }
             else
             {
-                glDisable(GL_CULL_FACE);
+                CHECK_CALL( glFrontFace(GL_CW) );
+            }
+            
+            if( rs.culling_enabled )
+            {
+                CHECK_CALL( glEnable( GL_CULL_FACE ) );
+                CHECK_CALL( glCullFace(rs.cull_face) );
+            }
+            else
+            {
+                CHECK_CALL( glDisable(GL_CULL_FACE) );
             }
             
             if( rs.depth_clip_enabled )
             {
-                glDisable(GL_DEPTH_CLAMP);
+                CHECK_CALL( glDisable(GL_DEPTH_CLAMP) );
             }
             else
             {
-                glEnable(GL_DEPTH_CLAMP);
+                CHECK_CALL( glEnable(GL_DEPTH_CLAMP) );
             }
             
-            glPolygonMode(GL_FRONT_AND_BACK, rs.polygon_mode);
+            CHECK_CALL( glPolygonMode(GL_FRONT_AND_BACK, rs.polygon_mode) );
             
             if( rs.scissor_enabled )
             {
-                glEnable(GL_SCISSOR_TEST);
+                CHECK_CALL( glEnable(GL_SCISSOR_TEST) );
             }
             else
             {
-                glDisable(GL_SCISSOR_TEST);
+                CHECK_CALL( glDisable(GL_SCISSOR_TEST) );
             }
-            
-            CHECK_GL_ERROR;
         }
         
         if( g_current_state.stream_out_buffer != g_bound_state.stream_out_buffer )
@@ -817,8 +812,8 @@ namespace pen
             {
                 u32 so_buffer = resource_pool[g_bound_state.stream_out_buffer].handle;
                 
-                glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, so_buffer);
-                glBeginTransformFeedback(primitive_topology);
+                CHECK_CALL( glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, so_buffer) );
+                CHECK_CALL( glBeginTransformFeedback(primitive_topology) );
             }
         }
     }
@@ -827,16 +822,16 @@ namespace pen
 	{
         bind_state( primitive_topology );
         
-        glDrawArrays(primitive_topology, start_vertex, vertex_count);
+        CHECK_CALL( glDrawArrays(primitive_topology, start_vertex, vertex_count) );
         
         if(g_bound_state.stream_out_buffer)
         {
             g_current_state.stream_out_buffer = 0;
             g_bound_state.stream_out_buffer = 0;
             
-            glEndTransformFeedback();
-            glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
-            glDisable(GL_RASTERIZER_DISCARD);
+            CHECK_CALL( glEndTransformFeedback() );
+            CHECK_CALL( glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0) );
+            CHECK_CALL( glDisable(GL_RASTERIZER_DISCARD) );
         }
 	}
 
@@ -846,13 +841,11 @@ namespace pen
         
         //bind index buffer -this must always be re-bound
         GLuint res = resource_pool[g_bound_state.index_buffer].handle;
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
-            
-        CHECK_GL_ERROR;
+        CHECK_CALL( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res) );
 
         void* offset = (void*)(size_t)(start_index * 2);
         
-        glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, base_vertex );
+        CHECK_CALL( glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, base_vertex ) );
 	}
     
     void direct::renderer_draw_indexed_instanced(
@@ -867,19 +860,30 @@ namespace pen
         
         //bind index buffer -this must always be re-bound
         GLuint res = resource_pool[g_bound_state.index_buffer].handle;
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
+        CHECK_CALL( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res) );
         
         //todo this needs to check index size 32 or 16 bit
         void* offset = (void*)(size_t)(start_index * 2);
         
-        glDrawElementsInstancedBaseVertex(primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, instance_count, base_vertex);
+        CHECK_CALL( glDrawElementsInstancedBaseVertex(primitive_topology,
+                                                      index_count,
+                                                      GL_UNSIGNED_SHORT,
+                                                      offset,
+                                                      instance_count,
+                                                      base_vertex) );
     }
     
     u32 calc_mip_level_size( u32 w, u32 h, u32 block_size, u32 pixels_per_block )
     {
+        if(block_size != 1)
+        {
+            u32 block_width = PEN_UMAX(1, ((w + (pixels_per_block-1))/ pixels_per_block));
+            u32 block_height = PEN_UMAX(1, ((h + (pixels_per_block-1)) / pixels_per_block));
+            return  block_width * block_height * block_size;
+        }
+        
         u32 num_blocks = (w * h) / pixels_per_block;
         u32 size = num_blocks * block_size;
-        
         return size;
     }
     
@@ -900,20 +904,15 @@ namespace pen
         { PEN_TEX_FORMAT_R16G16B16A16_FLOAT, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT },
         { PEN_TEX_FORMAT_R32_FLOAT, GL_R32F, GL_RED, GL_FLOAT },
         { PEN_TEX_FORMAT_R16_FLOAT, GL_R16F, GL_RED, GL_HALF_FLOAT },
-        { PEN_TEX_FORMAT_R32_UINT, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT }
+        { PEN_TEX_FORMAT_R32_UINT, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT },
+        { PEN_TEX_FORMAT_BC1_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_TEXTURE_COMPRESSED },
+        { PEN_TEX_FORMAT_BC2_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_TEXTURE_COMPRESSED },
+        { PEN_TEX_FORMAT_BC3_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_TEXTURE_COMPRESSED }
     };
     static u32 k_num_tex_maps = sizeof(k_tex_format_map) / sizeof(k_tex_format_map[0]);
     
     void get_texture_format( u32 pen_format, u32& sized_format, u32& format, u32& type )
     {
-        //todo compressed textures
-        //PEN_FORMAT_B8G8R8A8_UNORM       = 0,
-        //PEN_FORMAT_BC1_UNORM            = 1,
-        //PEN_FORMAT_BC2_UNORM            = 2,
-        //PEN_FORMAT_BC3_UNORM            = 3,
-        //PEN_FORMAT_BC4_UNORM            = 4,
-        //PEN_FORMAT_BC5_UNORM            = 5
-        
         for( s32 i = 0; i < k_num_tex_maps; ++i )
         {
             if( k_tex_format_map[i].pen_format == pen_format )
@@ -925,7 +924,7 @@ namespace pen
             }
         }
         
-        PEN_PRINTF("unimplemented texture format");
+        PEN_PRINTF("unimplemented / unsupported texture format");
         PEN_ASSERT( 0 );
     }
     
@@ -961,8 +960,8 @@ namespace pen
         }
 
         GLuint handle;
-        glGenTextures( 1, &handle);
-        glBindTexture( texture_target, handle );
+        CHECK_CALL( glGenTextures( 1, &handle) );
+        CHECK_CALL( glBindTexture( texture_target, handle ) );
         
         for( u32 a = 0; a < tcp.num_arrays; ++a )
         {
@@ -971,23 +970,39 @@ namespace pen
             
             for( u32 mip = 0; mip < tcp.num_mips; ++mip )
             {
+                u32 mip_size = calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
+                
                 if( is_msaa )
                 {
-                    glTexImage2DMultisample(base_texture_target, tcp.sample_count, sized_format, mip_w, mip_h, GL_TRUE );
+                    CHECK_CALL( glTexImage2DMultisample(base_texture_target,
+                                                        tcp.sample_count, sized_format, mip_w, mip_h, GL_TRUE ) );
                 }
                 else
                 {
-                    glTexImage2D(base_texture_target + a, mip, sized_format, mip_w, mip_h, 0, format, type, mip_data);
+                    if( type == GL_TEXTURE_COMPRESSED )
+                    {
+                        CHECK_CALL( glCompressedTexImage2D(base_texture_target + a,
+                                                           mip, format, mip_w, mip_h, 0, mip_size, mip_data ));
+                        
+                    }
+                    else
+                    {
+                        CHECK_CALL( glTexImage2D(base_texture_target + a,
+                                                 mip, sized_format, mip_w, mip_h, 0, format, type, mip_data));
+                    }
                 }
                 
-                mip_data += calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
+                mip_data += mip_size;
                 
                 mip_w /= 2;
                 mip_h /= 2;
+                                               
+                mip_w = std::max<u32>(1, mip_w);
+                mip_h = std::max<u32>(1, mip_h);
             }
         }
 
-        glBindTexture(texture_target, 0 );
+        CHECK_CALL( glBindTexture(texture_target, 0 ) );
         
         texture_info ti;
         ti.handle = handle;
@@ -1071,8 +1086,8 @@ namespace pen
         {
             g_current_state.backbuffer_bound = true;
             
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glDrawBuffers(1, k_draw_buffers);
+            CHECK_CALL( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
+            CHECK_CALL( glDrawBuffer(GL_BACK) );
             
             return;
         }
@@ -1107,26 +1122,34 @@ namespace pen
         {
             if( fb.hash == h)
             {
-                glBindFramebuffer( GL_FRAMEBUFFER, fb.framebuffer );
-                glDrawBuffers( num_colour_targets, k_draw_buffers );
+                CHECK_CALL( glBindFramebuffer( GL_FRAMEBUFFER, fb.framebuffer ) );
+                CHECK_CALL( glDrawBuffers( num_colour_targets, k_draw_buffers ) );
                 
                 return;
             }
         }
         
         GLuint fbh;
-        glGenFramebuffers(1, &fbh);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbh);
-        glDrawBuffers( num_colour_targets, k_draw_buffers );
+        CHECK_CALL( glGenFramebuffers(1, &fbh) );
+        CHECK_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fbh) );
+        CHECK_CALL( glDrawBuffers( num_colour_targets, k_draw_buffers ) );
         
         if( depth_target != PEN_NULL_DEPTH_BUFFER )
         {
             resource_allocation& depth_res = resource_pool[ depth_target ];
             
             if( msaa )
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_res.render_target.texture_msaa.handle, 0 );
+            {
+                CHECK_CALL( glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                                   GL_DEPTH_STENCIL_ATTACHMENT,
+                                                   GL_TEXTURE_2D_MULTISAMPLE,
+                                                   depth_res.render_target.texture_msaa.handle, 0 ));
+            }
             else
-                glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0);
+            {
+                CHECK_CALL( glFramebufferTexture(GL_FRAMEBUFFER,
+                                                 GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0));
+            }
         }
 
         for( s32 i = 0; i < num_colour_targets; ++i )
@@ -1134,12 +1157,20 @@ namespace pen
             resource_allocation& colour_res = resource_pool[ colour_targets[i] ];
             
             if( msaa )
-                glFramebufferTexture2D( GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 );
+            {
+                CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                                  k_draw_buffers[i],
+                                                  GL_TEXTURE_2D_MULTISAMPLE,
+                                                  colour_res.render_target.texture_msaa.handle, 0 ));
+            }
             else
-                glFramebufferTexture(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0);
+            {
+                CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER,
+                                                k_draw_buffers[i], colour_res.render_target.texture.handle, 0));
+            }
         }
         
-        GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+        GLenum status = CHECK_CALL(glCheckFramebufferStatus( GL_FRAMEBUFFER ));
         PEN_ASSERT( status == GL_FRAMEBUFFER_COMPLETE );
         
         framebuffer new_fb;
@@ -1202,13 +1233,17 @@ namespace pen
         {
             if( fbos[i] == 0 )
             {
-                glGenFramebuffers(1, &fbos[i]);
-                glBindFramebuffer(GL_FRAMEBUFFER, fbos[i]);
+                CHECK_CALL( glGenFramebuffers(1, &fbos[i]));
+                CHECK_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fbos[i]));
                 
                 if( i == 0 ) //src msaa
-                    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 );
+                {
+                    CHECK_CALL( glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 ));
+                }
                 else
-                    glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0);
+                {
+                    CHECK_CALL( glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0));
+                }
             }
             
             framebuffer fb = {hash[i], fbos[i]};
@@ -1219,7 +1254,7 @@ namespace pen
         {
             resolve_cbuffer cbuf = { w, h, 0.0f, 0.0f };
             
-            glBindFramebuffer(GL_FRAMEBUFFER, fbos[1]);
+            CHECK_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fbos[1]));
             
             direct::renderer_update_buffer(g_resolve_resources.constant_buffer, &cbuf, sizeof(cbuf), 0);
             direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, PEN_SHADER_TYPE_PS);
@@ -1238,10 +1273,10 @@ namespace pen
         }
         else
         {
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[1] );
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos[0] );
+            CHECK_CALL( glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[1] ));
+            CHECK_CALL( glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos[0] ));
             
-            glBlitFramebuffer(0, 0, (u32)w, (u32)h, 0, 0, (u32)w, (u32)h, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+            CHECK_CALL( glBlitFramebuffer(0, 0, (u32)w, (u32)h, 0, 0, (u32)w, (u32)h, GL_COLOR_BUFFER_BIT, GL_LINEAR ));
         }
     }
 
@@ -1260,12 +1295,14 @@ namespace pen
 
 	void direct::renderer_set_texture( u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags )
 	{
+        CHECK_GL_ERROR;
+        
         if( texture_index == 0)
             return;
         
         resource_allocation& res = resource_pool[ texture_index ];
         
-        glActiveTexture(GL_TEXTURE0 + resource_slot);
+        CHECK_CALL( glActiveTexture(GL_TEXTURE0 + resource_slot));
         
         u32 max_mip = 0;
         
@@ -1273,7 +1310,7 @@ namespace pen
         
         if( res.type == RES_TEXTURE )
         {
-            glBindTexture( target, res.texture.handle );
+            CHECK_CALL( glBindTexture( target, res.texture.handle ));
             max_mip = res.texture.max_mip_level;
         }
         else
@@ -1281,11 +1318,11 @@ namespace pen
             if( flags & TEXTURE_BIND_MSAA )
             {
                 target = GL_TEXTURE_2D_MULTISAMPLE;
-                glBindTexture( target, res.render_target.texture_msaa.handle );
+                CHECK_CALL( glBindTexture( target, res.render_target.texture_msaa.handle ));
             }
             else
             {
-                glBindTexture( target, res.render_target.texture.handle );
+                CHECK_CALL( glBindTexture( target, res.render_target.texture.handle ));
             }
             
             max_mip = res.render_target.texture_msaa.max_mip_level;
@@ -1293,13 +1330,13 @@ namespace pen
         
         if( target == GL_TEXTURE_CUBE_MAP )
         {
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);
+            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
+            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0));
+            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0));
         }
         
         if(sampler_index == 0)
@@ -1308,7 +1345,7 @@ namespace pen
         auto* sampler_state = resource_pool[sampler_index].sampler_state;
         
         //handle unmipped textures or textures with missisng mips
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_mip);
+        CHECK_CALL( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_mip));
         
         if( !sampler_state )
             return;
@@ -1317,42 +1354,40 @@ namespace pen
         switch( sampler_state->filter )
         {
             case PEN_FILTER_MIN_MAG_MIP_LINEAR:
-                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
                 break;
             case PEN_FILTER_MIN_MAG_MIP_POINT:
-                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_POINT);
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST));
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_POINT));
                 break;
             case PEN_FILTER_LINEAR:
-                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
                 break;
             case PEN_FILTER_POINT:
-                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_POINT);
-                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_POINT);
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_POINT));
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_POINT));
                 break;
         };
         
         //address mode
-        glTexParameteri(target, GL_TEXTURE_WRAP_S, sampler_state->address_u );
-        glTexParameteri(target, GL_TEXTURE_WRAP_T, sampler_state->address_v );
-        glTexParameteri(target, GL_TEXTURE_WRAP_R, sampler_state->address_w );
+        CHECK_CALL( glTexParameteri(target, GL_TEXTURE_WRAP_S, sampler_state->address_u ));
+        CHECK_CALL( glTexParameteri(target, GL_TEXTURE_WRAP_T, sampler_state->address_v ));
+        CHECK_CALL( glTexParameteri(target, GL_TEXTURE_WRAP_R, sampler_state->address_w ));
         
         //mip control
-        glTexParameterf(target, GL_TEXTURE_LOD_BIAS, sampler_state->mip_lod_bias );
+        CHECK_CALL( glTexParameterf(target, GL_TEXTURE_LOD_BIAS, sampler_state->mip_lod_bias ));
         
         if( sampler_state->max_lod > -1.0f )
         {
-            glTexParameterf(target, GL_TEXTURE_MAX_LOD, sampler_state->max_lod );
+            CHECK_CALL( glTexParameterf(target, GL_TEXTURE_MAX_LOD, sampler_state->max_lod ));
         }
         
         if( sampler_state->min_lod > -1.0f )
         {
-            glTexParameterf(target, GL_TEXTURE_MIN_LOD, sampler_state->min_lod );
+            CHECK_CALL( glTexParameterf(target, GL_TEXTURE_MIN_LOD, sampler_state->min_lod ));
         }
-        
-        CHECK_GL_ERROR;
 	}
 
 	void direct::renderer_create_rasterizer_state( const rasteriser_state_creation_params &rscp, u32 resource_slot )
@@ -1385,14 +1420,14 @@ namespace pen
 	{
         g_current_vp = vp;
         
-        glViewport( vp.x, vp.y, vp.width, vp.height );
-        glDepthRangef( vp.min_depth, vp.max_depth );
+        CHECK_CALL( glViewport( vp.x, vp.y, vp.width, vp.height ));
+        CHECK_CALL( glDepthRangef( vp.min_depth, vp.max_depth ));
 	}
     
     void direct::renderer_set_scissor_rect( const rect &r )
     {
         f32 top = g_current_vp.height - r.bottom;
-        glScissor(r.left, top, r.right - r.left, r.bottom - r.top);
+        CHECK_CALL( glScissor(r.left, top, r.right - r.left, r.bottom - r.top));
     }
 
 	void direct::renderer_create_blend_state( const blend_creation_params &bcp, u32 resource_slot )
@@ -1423,22 +1458,22 @@ namespace pen
             {
                 if( rt_blend.blend_enable )
                 {
-                    glEnable(GL_BLEND);
+                    CHECK_CALL( glEnable(GL_BLEND) );
                     
                     if( blend_state->independent_blend_enable )
                     {
-                        glBlendFuncSeparate(rt_blend.src_blend, rt_blend.dest_blend, rt_blend.src_blend_alpha, rt_blend.dest_blend_alpha);
-                        glBlendEquationSeparate(rt_blend.blend_op, rt_blend.blend_op_alpha);
+                        CHECK_CALL( glBlendFuncSeparate(rt_blend.src_blend, rt_blend.dest_blend, rt_blend.src_blend_alpha, rt_blend.dest_blend_alpha) );
+                        CHECK_CALL( glBlendEquationSeparate(rt_blend.blend_op, rt_blend.blend_op_alpha));
                     }
                     else
                     {
-                        glBlendFunc(rt_blend.src_blend, rt_blend.dest_blend);
-                        glBlendEquation(rt_blend.blend_op);
+                        CHECK_CALL( glBlendFunc(rt_blend.src_blend, rt_blend.dest_blend) );
+                        CHECK_CALL( glBlendEquation(rt_blend.blend_op) );
                     }
                 }
                 else
                 {
-                    glDisable(GL_BLEND);
+                    CHECK_CALL( glDisable(GL_BLEND) );
                 }
             }
         }
@@ -1448,18 +1483,16 @@ namespace pen
 	{
         resource_allocation& res = resource_pool[ buffer_index ];
         
-        glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle );
-        
-        //g_current_state.constant_buffer_bindings[ resource_slot ] = res.handle;
+        CHECK_CALL( glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle ) );
 	}
 
 	void direct::renderer_update_buffer( u32 buffer_index, const void* data, u32 data_size, u32 offset )
 	{
         resource_allocation& res = resource_pool[ buffer_index ];
         
-        glBindBuffer( res.type, res.handle );
+        CHECK_CALL( glBindBuffer( res.type, res.handle ) );
         
-        void* mapped_data = glMapBuffer( res.type, GL_WRITE_ONLY );
+        void* mapped_data = CHECK_CALL( glMapBuffer( res.type, GL_WRITE_ONLY ) );
         
         if( mapped_data )
         {
@@ -1467,9 +1500,9 @@ namespace pen
             pen::memory_cpy(mapped_offset, data, data_size);
         }
         
-        glUnmapBuffer( res.type );
+        CHECK_CALL( glUnmapBuffer( res.type ) );
         
-        glBindBuffer( res.type, 0 );
+        CHECK_CALL( glBindBuffer( res.type, 0 ) );
 	}
     
     void direct::renderer_read_back_resource( const resource_read_back_params& rrbp )
@@ -1486,10 +1519,10 @@ namespace pen
             if( t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA )
                 target_handle = res.render_target.texture.handle;
 
-            glBindTexture( GL_TEXTURE_2D, res.texture.handle );
+            CHECK_CALL( glBindTexture( GL_TEXTURE_2D, res.texture.handle ) );
             
             void* data = pen::memory_alloc(rrbp.data_size);
-            glGetTexImage( GL_TEXTURE_2D, 0, format, type, data );
+            CHECK_CALL( glGetTexImage( GL_TEXTURE_2D, 0, format, type, data ) );
             
             rrbp.call_back_function( data, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size );
             
@@ -1497,12 +1530,12 @@ namespace pen
         }
         else if( t == GL_ELEMENT_ARRAY_BUFFER || t == GL_UNIFORM_BUFFER || t == GL_ARRAY_BUFFER )
         {
-            glBindBuffer(t, res.handle );
+            CHECK_CALL( glBindBuffer(t, res.handle ) );
             void* map = glMapBuffer(t, GL_READ_ONLY);
             
             rrbp.call_back_function( map, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size );
             
-            glUnmapBuffer(t);
+            CHECK_CALL( glUnmapBuffer(t) );
         }
     }
 
@@ -1519,21 +1552,21 @@ namespace pen
         
         if( res.depth_stencil->depth_enable )
         {
-            glEnable(GL_DEPTH_TEST);
+            CHECK_CALL( glEnable(GL_DEPTH_TEST) );
         }
         else
         {
-            glDisable(GL_DEPTH_TEST);
+            CHECK_CALL( glDisable(GL_DEPTH_TEST) );
         }
         
-        glDepthFunc(res.depth_stencil->depth_func);
-        glDepthMask(res.depth_stencil->depth_write_mask);
+        CHECK_CALL( glDepthFunc(res.depth_stencil->depth_func) );
+        CHECK_CALL( glDepthMask(res.depth_stencil->depth_write_mask) );
 	}
 
 	void direct::renderer_release_shader( u32 shader_index, u32 shader_type )
     {
         resource_allocation& res = resource_pool[ shader_index ];
-        glDeleteShader( res.handle );
+        CHECK_CALL( glDeleteShader( res.handle ) );
         
         res.handle = 0;
 	}
@@ -1541,7 +1574,7 @@ namespace pen
 	void direct::renderer_release_buffer( u32 buffer_index )
 	{
         resource_allocation& res = resource_pool[ buffer_index ];
-        glDeleteBuffers(1, &res.handle);
+        CHECK_CALL( glDeleteBuffers(1, &res.handle) );
         
         res.handle = 0;
 	}
@@ -1549,7 +1582,7 @@ namespace pen
 	void direct::renderer_release_texture( u32 texture_index )
 	{
         resource_allocation& res = resource_pool[ texture_index ];
-        glDeleteTextures(1, &res.handle);
+        CHECK_CALL( glDeleteTextures(1, &res.handle) );
         
         res.handle = 0;
 	}
@@ -1591,10 +1624,10 @@ namespace pen
         resource_allocation& res = resource_pool[ render_target ];
         
         if( res.render_target.texture.handle > 0)
-            glDeleteTextures( 1, &res.render_target.texture.handle );
+            CHECK_CALL( glDeleteTextures( 1, &res.render_target.texture.handle ) );
         
         if( res.render_target.texture_msaa.handle > 0)
-            glDeleteTextures( 1, &res.render_target.texture_msaa.handle );
+            CHECK_CALL( glDeleteTextures( 1, &res.render_target.texture_msaa.handle ) );
 
         delete res.render_target.tcp;
 	}
@@ -1629,7 +1662,7 @@ namespace pen
     {
         resource_allocation& res = resource_pool[ program ];
         
-        glDeleteProgram(res.shader_program->program);
+        CHECK_CALL( glDeleteProgram(res.shader_program->program) );
     }
     
     void direct::renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)

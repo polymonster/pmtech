@@ -55,8 +55,7 @@ typedef char	        c8;
 typedef float           f32;
 typedef double          f64;
 
-
-typedef unsigned long ulong;
+typedef unsigned long   ulong;
 
 typedef std::atomic<uint8_t> a_u8;
 typedef std::atomic<uint32_t> a_u32;

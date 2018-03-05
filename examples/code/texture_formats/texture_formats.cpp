@@ -38,9 +38,12 @@ void load_textures()
 		{ "bc1", put::load_texture("data/textures/formats/texfmt_bc1.dds") },
 		{ "bc2", put::load_texture("data/textures/formats/texfmt_bc2.dds") },
 		{ "bc3", put::load_texture("data/textures/formats/texfmt_bc3.dds") },
-		{ "bc4", put::load_texture("data/textures/formats/texfmt_bc4.dds") },
-		{ "bc5", put::load_texture("data/textures/formats/texfmt_bc5.dds") },
+		
+        //unsupported on gl but work on d3d
+        //{ "bc4", put::load_texture("data/textures/formats/texfmt_bc4.dds") },
+		//{ "bc5", put::load_texture("data/textures/formats/texfmt_bc5.dds") },
 
+        //incorrect in d3d and visual studio (nvcompress issue?)
 		//{ "bc6", put::load_texture("data/textures/formats/texfmt_bc6.dds") },
 		//{ "bc7", put::load_texture("data/textures/formats/texfmt_bc7.dds") },
 		//{ "luminance", put::load_texture("data/textures/formats/texfmt_lumi.dds") },
@@ -116,6 +119,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     {
 		//bind back buffer and clear
 		pen::renderer_set_viewport(vp);
+        pen::renderer_set_scissor_rect( rect{ vp.x, vp.y, vp.width, vp.height} );
 		pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 		pen::renderer_clear(clear_state);
 
