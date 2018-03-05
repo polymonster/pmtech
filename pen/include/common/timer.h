@@ -1,7 +1,7 @@
 #ifndef _timer_h
 #define _timer_h
 
-#include "definitions.h"
+#include "pen.h"
 
 namespace pen
 {

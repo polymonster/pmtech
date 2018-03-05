@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "renderer.h"
 #include "memory.h"
 #include "pen_string.h"
@@ -81,7 +79,9 @@ namespace pen
 		CMD_DRAW_AUTO,
         CMD_MAP_RESOURCE,
 		CMD_REPLACE_RESOURCE,
-        CMD_CREATE_CLEAR_STATE
+        CMD_CREATE_CLEAR_STATE,
+        CMD_PUSH_PERF_MARKER,
+        CMD_POP_PERF_MARKER
 	};
 
 	struct set_shader_cmd
@@ -243,6 +243,7 @@ namespace pen
 			msaa_resolve_params					resolve_params;
 			replace_resource					replace_resource_params;
             clear_state                         clear_state_params;
+            const c8*                           name;
 		};
 
 		deferred_cmd() {};
@@ -255,254 +256,266 @@ namespace pen
 	{
 		switch (cmd.command_index)
 		{
-		case CMD_CLEAR:
-			direct::renderer_clear(cmd.command_data_index);
-			break;
-
-		case CMD_PRESENT:
-			direct::renderer_present();
-			break;
-
-		case CMD_LOAD_SHADER:
-			direct::renderer_load_shader(cmd.shader_load, cmd.resource_slot);
-			pen::memory_free(cmd.shader_load.byte_code);
-            pen::memory_free(cmd.shader_load.so_decl_entries);
-			break;
-
-		case CMD_SET_SHADER:
-			direct::renderer_set_shader(cmd.set_shader.shader_index, cmd.set_shader.shader_type);
-			break;
-
-		case CMD_LINK_SHADER:
-			direct::renderer_link_shader_program(cmd.link_params, cmd.resource_slot);
-			for (u32 i = 0; i < cmd.link_params.num_constants; ++i)
-				pen::memory_free(cmd.link_params.constants[i].name);
-			pen::memory_free(cmd.link_params.constants);
-            if(cmd.link_params.stream_out_names)
-                for (u32 i = 0; i < cmd.link_params.num_stream_out_names; ++i)
-                    pen::memory_free(cmd.link_params.stream_out_names[i]);
-            pen::memory_free(cmd.link_params.stream_out_names);
-			break;
-
-		case CMD_CREATE_INPUT_LAYOUT:
-			direct::renderer_create_input_layout(cmd.create_input_layout, cmd.resource_slot);
-			pen::memory_free(cmd.create_input_layout.vs_byte_code);
-			pen::memory_free(cmd.create_input_layout.input_layout);
-			break;
-
-		case CMD_SET_INPUT_LAYOUT:
-			direct::renderer_set_input_layout(cmd.command_data_index);
-			break;
-
-		case CMD_CREATE_BUFFER:
-			direct::renderer_create_buffer(cmd.create_buffer, cmd.resource_slot);
-			pen::memory_free(cmd.create_buffer.data);
-			break;
-
-		case CMD_SET_VERTEX_BUFFER:
-			direct::renderer_set_vertex_buffers(
-				cmd.set_vertex_buffer.buffer_indices,
-				cmd.set_vertex_buffer.num_buffers,
-                cmd.set_vertex_buffer.start_slot,
-				cmd.set_vertex_buffer.strides,
-				cmd.set_vertex_buffer.offsets);
-            pen::memory_free(cmd.set_vertex_buffer.buffer_indices);
-			pen::memory_free(cmd.set_vertex_buffer.strides);
-			pen::memory_free(cmd.set_vertex_buffer.offsets);
-			break;
-
-		case CMD_SET_INDEX_BUFFER:
-			direct::renderer_set_index_buffer(
-				cmd.set_index_buffer.buffer_index,
-				cmd.set_index_buffer.format,
-				cmd.set_index_buffer.offset);
-			break;
-
-		case CMD_DRAW:
-			direct::renderer_draw(cmd.draw.vertex_count, cmd.draw.start_vertex, cmd.draw.primitive_topology);
-			break;
-
-		case CMD_DRAW_INDEXED:
-			direct::renderer_draw_indexed(
-				cmd.draw_indexed.index_count,
-				cmd.draw_indexed.start_index,
-				cmd.draw_indexed.base_vertex,
-				cmd.draw_indexed.primitive_topology);
-			break;
-                
-        case CMD_DRAW_INDEXED_INSTANCED:
-            direct::renderer_draw_indexed_instanced(
-                cmd.draw_indexed_instanced.instance_count,
-                cmd.draw_indexed_instanced.start_instance,
-                cmd.draw_indexed_instanced.index_count,
-                cmd.draw_indexed_instanced.start_index,
-                cmd.draw_indexed_instanced.base_vertex,
-                cmd.draw_indexed_instanced.primitive_topology);
+            case CMD_CLEAR:
+                direct::renderer_clear(cmd.command_data_index);
                 break;
 
-		case CMD_CREATE_TEXTURE:
-			direct::renderer_create_texture(cmd.create_texture, cmd.resource_slot);
-			pen::memory_free(cmd.create_texture.data);
-			break;
+            case CMD_PRESENT:
+                direct::renderer_present();
+                break;
 
-		case CMD_CREATE_SAMPLER:
-			direct::renderer_create_sampler(cmd.create_sampler, cmd.resource_slot);
-			break;
+            case CMD_LOAD_SHADER:
+                direct::renderer_load_shader(cmd.shader_load, cmd.resource_slot);
+                pen::memory_free(cmd.shader_load.byte_code);
+                pen::memory_free(cmd.shader_load.so_decl_entries);
+                break;
 
-		case CMD_SET_TEXTURE:
-			direct::renderer_set_texture(
-				cmd.set_texture.texture_index,
-				cmd.set_texture.sampler_index,
-				cmd.set_texture.resource_slot,
-				cmd.set_texture.shader_type,
-				cmd.set_texture.flags);
-			break;
+            case CMD_SET_SHADER:
+                direct::renderer_set_shader(cmd.set_shader.shader_index, cmd.set_shader.shader_type);
+                break;
 
-		case CMD_CREATE_RASTER_STATE:
-			direct::renderer_create_rasterizer_state(cmd.create_raster_state, cmd.resource_slot);
-			break;
+            case CMD_LINK_SHADER:
+                direct::renderer_link_shader_program(cmd.link_params, cmd.resource_slot);
+                for (u32 i = 0; i < cmd.link_params.num_constants; ++i)
+                    pen::memory_free(cmd.link_params.constants[i].name);
+                pen::memory_free(cmd.link_params.constants);
+                if(cmd.link_params.stream_out_names)
+                    for (u32 i = 0; i < cmd.link_params.num_stream_out_names; ++i)
+                        pen::memory_free(cmd.link_params.stream_out_names[i]);
+                pen::memory_free(cmd.link_params.stream_out_names);
+                break;
 
-		case CMD_SET_RASTER_STATE:
-			direct::renderer_set_rasterizer_state(cmd.command_data_index);
-			break;
+            case CMD_CREATE_INPUT_LAYOUT:
+                direct::renderer_create_input_layout(cmd.create_input_layout, cmd.resource_slot);
+                pen::memory_free(cmd.create_input_layout.vs_byte_code);
+                pen::memory_free(cmd.create_input_layout.input_layout);
+                break;
 
-		case CMD_SET_VIEWPORT:
-			direct::renderer_set_viewport(cmd.set_viewport);
-			break;
+            case CMD_SET_INPUT_LAYOUT:
+                direct::renderer_set_input_layout(cmd.command_data_index);
+                break;
 
-		case CMD_SET_SCISSOR_RECT:
-			direct::renderer_set_scissor_rect(cmd.set_rect);
-			break;
+            case CMD_CREATE_BUFFER:
+                direct::renderer_create_buffer(cmd.create_buffer, cmd.resource_slot);
+                pen::memory_free(cmd.create_buffer.data);
+                break;
 
-		case CMD_RELEASE_SHADER:
-			direct::renderer_release_shader(cmd.set_shader.shader_index, cmd.set_shader.shader_type);
-			break;
+            case CMD_SET_VERTEX_BUFFER:
+                direct::renderer_set_vertex_buffers(
+                    cmd.set_vertex_buffer.buffer_indices,
+                    cmd.set_vertex_buffer.num_buffers,
+                    cmd.set_vertex_buffer.start_slot,
+                    cmd.set_vertex_buffer.strides,
+                    cmd.set_vertex_buffer.offsets);
+                pen::memory_free(cmd.set_vertex_buffer.buffer_indices);
+                pen::memory_free(cmd.set_vertex_buffer.strides);
+                pen::memory_free(cmd.set_vertex_buffer.offsets);
+                break;
 
-		case CMD_RELEASE_BUFFER:
-			direct::renderer_release_buffer(cmd.command_data_index);
-			break;
+            case CMD_SET_INDEX_BUFFER:
+                direct::renderer_set_index_buffer(
+                    cmd.set_index_buffer.buffer_index,
+                    cmd.set_index_buffer.format,
+                    cmd.set_index_buffer.offset);
+                break;
 
-		case CMD_RELEASE_TEXTURE_2D:
-			direct::renderer_release_texture(cmd.command_data_index);
-			break;
+            case CMD_DRAW:
+                direct::renderer_draw(cmd.draw.vertex_count, cmd.draw.start_vertex, cmd.draw.primitive_topology);
+                break;
 
-		case CMD_RELEASE_RASTER_STATE:
-			direct::renderer_release_raster_state(cmd.command_data_index);
-			break;
-
-		case CMD_CREATE_BLEND_STATE:
-            direct::renderer_create_blend_state(cmd.create_blend_state, cmd.resource_slot);
-            pen::memory_free(cmd.create_blend_state.render_targets);
-			break;
-
-		case CMD_SET_BLEND_STATE:
-			direct::renderer_set_blend_state(cmd.command_data_index);
-			break;
-
-		case CMD_SET_CONSTANT_BUFFER:
-			direct::renderer_set_constant_buffer(cmd.set_constant_buffer.buffer_index, cmd.set_constant_buffer.resource_slot, cmd.set_constant_buffer.shader_type);
-			break;
-
-		case CMD_UPDATE_BUFFER:
-			direct::renderer_update_buffer(cmd.update_buffer.buffer_index, cmd.update_buffer.data, cmd.update_buffer.data_size, cmd.update_buffer.offset);
-			pen::memory_free(cmd.update_buffer.data);
-			break;
-
-		case CMD_CREATE_DEPTH_STENCIL_STATE:
-			direct::renderer_create_depth_stencil_state(*cmd.p_create_depth_stencil_state, cmd.resource_slot);
-			pen::memory_free(cmd.p_create_depth_stencil_state);
-			break;
-
-		case CMD_SET_DEPTH_STENCIL_STATE:
-			direct::renderer_set_depth_stencil_state(cmd.command_data_index);
-			break;
-
-		case CMD_CREATE_QUERY:
-			direct::renderer_create_query(cmd.create_query.query_type, cmd.create_query.query_flags);
-			break;
-
-		case CMD_SET_QUERY:
-			direct::renderer_set_query(cmd.set_query.query_index, cmd.set_query.action);
-			break;
-
-		case CMD_UPDATE_QUERIES:
-			renderer_update_queries();
-			break;
-
-		case CMD_CREATE_RENDER_TARGET:
-			direct::renderer_create_render_target(cmd.create_render_target, cmd.resource_slot);
-			break;
-
-		case CMD_SET_TARGETS:
-			direct::renderer_set_targets(cmd.set_targets.colour, cmd.set_targets.num_colour, cmd.set_targets.depth);
-			break;
-
-		case CMD_SET_TARGETS_CUBE:
-			direct::renderer_set_targets(&cmd.set_targets_cube.colour, 1, cmd.set_targets_cube.depth, cmd.set_targets_cube.colour_face, cmd.set_targets_cube.depth_face);
-			break;
-
-		case CMD_CLEAR_CUBE:
-			direct::renderer_clear(cmd.clear_cube.clear_state, cmd.clear_cube.colour_face, cmd.clear_cube.depth_face);
-			break;
-
-		case CMD_RELEASE_BLEND_STATE:
-			direct::renderer_release_blend_state(cmd.command_data_index);
-			break;
-
-		case CMD_RELEASE_PROGRAM:
-			direct::renderer_release_program(cmd.command_data_index);
-			break;
-
-		case CMD_RELEASE_CLEAR_STATE:
-			direct::renderer_release_clear_state(cmd.command_data_index);
-			break;
-
-		case CMD_RELEASE_RENDER_TARGET:
-			direct::renderer_release_render_target(cmd.command_data_index);
-			break;
-
-		case CMD_RELEASE_INPUT_LAYOUT:
-			direct::renderer_release_input_layout(cmd.command_data_index);
-			break;
-
-		case CMD_RELEASE_SAMPLER:
-			direct::renderer_release_sampler(cmd.command_data_index);
-			break;
-
-		case CMD_RELEASE_DEPTH_STENCIL_STATE:
-			direct::renderer_release_depth_stencil_state(cmd.command_data_index);
-			break;
-
-		case CMD_RELEASE_QUERY:
-			direct::renderer_release_query(cmd.command_data_index);
-			break;
-
-		case CMD_SET_SO_TARGET:
-			direct::renderer_set_stream_out_target(cmd.command_data_index);
-			break;
-
-        case CMD_RESOLVE_TARGET:
-            direct::renderer_resolve_target( cmd.resolve_params.render_target, cmd.resolve_params.resolve_type );
-            break;
-
-		case CMD_DRAW_AUTO:
-			direct::renderer_draw_auto();
-			break;
+            case CMD_DRAW_INDEXED:
+                direct::renderer_draw_indexed(
+                    cmd.draw_indexed.index_count,
+                    cmd.draw_indexed.start_index,
+                    cmd.draw_indexed.base_vertex,
+                    cmd.draw_indexed.primitive_topology);
+                break;
                 
-        case CMD_MAP_RESOURCE:
-            direct::renderer_read_back_resource( cmd.rrb_params );
-            break;
+            case CMD_DRAW_INDEXED_INSTANCED:
+                direct::renderer_draw_indexed_instanced(
+                    cmd.draw_indexed_instanced.instance_count,
+                    cmd.draw_indexed_instanced.start_instance,
+                    cmd.draw_indexed_instanced.index_count,
+                    cmd.draw_indexed_instanced.start_index,
+                    cmd.draw_indexed_instanced.base_vertex,
+                    cmd.draw_indexed_instanced.primitive_topology);
+                    break;
 
-		case CMD_REPLACE_RESOURCE:
-			direct::renderer_replace_resource(
-				cmd.replace_resource_params.dest_handle,
-				cmd.replace_resource_params.src_handle, 
-				cmd.replace_resource_params.type);
-			break;
+            case CMD_CREATE_TEXTURE:
+                direct::renderer_create_texture(cmd.create_texture, cmd.resource_slot);
+                pen::memory_free(cmd.create_texture.data);
+                break;
 
-        case CMD_CREATE_CLEAR_STATE:
-            direct::renderer_create_clear_state( cmd.clear_state_params, cmd.resource_slot );
-            break;
+            case CMD_CREATE_SAMPLER:
+                direct::renderer_create_sampler(cmd.create_sampler, cmd.resource_slot);
+                break;
+
+            case CMD_SET_TEXTURE:
+                direct::renderer_set_texture(
+                    cmd.set_texture.texture_index,
+                    cmd.set_texture.sampler_index,
+                    cmd.set_texture.resource_slot,
+                    cmd.set_texture.shader_type,
+                    cmd.set_texture.flags);
+                break;
+
+            case CMD_CREATE_RASTER_STATE:
+                direct::renderer_create_rasterizer_state(cmd.create_raster_state, cmd.resource_slot);
+                break;
+
+            case CMD_SET_RASTER_STATE:
+                direct::renderer_set_rasterizer_state(cmd.command_data_index);
+                break;
+
+            case CMD_SET_VIEWPORT:
+                direct::renderer_set_viewport(cmd.set_viewport);
+                break;
+
+            case CMD_SET_SCISSOR_RECT:
+                direct::renderer_set_scissor_rect(cmd.set_rect);
+                break;
+
+            case CMD_RELEASE_SHADER:
+                direct::renderer_release_shader(cmd.set_shader.shader_index, cmd.set_shader.shader_type);
+                break;
+
+            case CMD_RELEASE_BUFFER:
+                direct::renderer_release_buffer(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_TEXTURE_2D:
+                direct::renderer_release_texture(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_RASTER_STATE:
+                direct::renderer_release_raster_state(cmd.command_data_index);
+                break;
+
+            case CMD_CREATE_BLEND_STATE:
+                direct::renderer_create_blend_state(cmd.create_blend_state, cmd.resource_slot);
+                pen::memory_free(cmd.create_blend_state.render_targets);
+                break;
+
+            case CMD_SET_BLEND_STATE:
+                direct::renderer_set_blend_state(cmd.command_data_index);
+                break;
+
+            case CMD_SET_CONSTANT_BUFFER:
+                direct::renderer_set_constant_buffer(cmd.set_constant_buffer.buffer_index,
+                                                     cmd.set_constant_buffer.resource_slot, cmd.set_constant_buffer.shader_type);
+                break;
+
+            case CMD_UPDATE_BUFFER:
+                direct::renderer_update_buffer(cmd.update_buffer.buffer_index,
+                                               cmd.update_buffer.data, cmd.update_buffer.data_size, cmd.update_buffer.offset);
+                pen::memory_free(cmd.update_buffer.data);
+                break;
+
+            case CMD_CREATE_DEPTH_STENCIL_STATE:
+                direct::renderer_create_depth_stencil_state(*cmd.p_create_depth_stencil_state, cmd.resource_slot);
+                pen::memory_free(cmd.p_create_depth_stencil_state);
+                break;
+
+            case CMD_SET_DEPTH_STENCIL_STATE:
+                direct::renderer_set_depth_stencil_state(cmd.command_data_index);
+                break;
+
+            case CMD_CREATE_QUERY:
+                direct::renderer_create_query(cmd.create_query.query_type, cmd.create_query.query_flags);
+                break;
+
+            case CMD_SET_QUERY:
+                direct::renderer_set_query(cmd.set_query.query_index, cmd.set_query.action);
+                break;
+
+            case CMD_UPDATE_QUERIES:
+                renderer_update_queries();
+                break;
+
+            case CMD_CREATE_RENDER_TARGET:
+                direct::renderer_create_render_target(cmd.create_render_target, cmd.resource_slot);
+                break;
+
+            case CMD_SET_TARGETS:
+                direct::renderer_set_targets(cmd.set_targets.colour, cmd.set_targets.num_colour, cmd.set_targets.depth);
+                break;
+
+            case CMD_SET_TARGETS_CUBE:
+                direct::renderer_set_targets(&cmd.set_targets_cube.colour, 1,
+                                             cmd.set_targets_cube.depth,
+                                             cmd.set_targets_cube.colour_face, cmd.set_targets_cube.depth_face);
+                break;
+
+            case CMD_CLEAR_CUBE:
+                direct::renderer_clear(cmd.clear_cube.clear_state, cmd.clear_cube.colour_face, cmd.clear_cube.depth_face);
+                break;
+
+            case CMD_RELEASE_BLEND_STATE:
+                direct::renderer_release_blend_state(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_PROGRAM:
+                direct::renderer_release_program(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_CLEAR_STATE:
+                direct::renderer_release_clear_state(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_RENDER_TARGET:
+                direct::renderer_release_render_target(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_INPUT_LAYOUT:
+                direct::renderer_release_input_layout(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_SAMPLER:
+                direct::renderer_release_sampler(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_DEPTH_STENCIL_STATE:
+                direct::renderer_release_depth_stencil_state(cmd.command_data_index);
+                break;
+
+            case CMD_RELEASE_QUERY:
+                direct::renderer_release_query(cmd.command_data_index);
+                break;
+
+            case CMD_SET_SO_TARGET:
+                direct::renderer_set_stream_out_target(cmd.command_data_index);
+                break;
+
+            case CMD_RESOLVE_TARGET:
+                direct::renderer_resolve_target( cmd.resolve_params.render_target, cmd.resolve_params.resolve_type );
+                break;
+
+            case CMD_DRAW_AUTO:
+                direct::renderer_draw_auto();
+                break;
+                
+            case CMD_MAP_RESOURCE:
+                direct::renderer_read_back_resource( cmd.rrb_params );
+                break;
+
+            case CMD_REPLACE_RESOURCE:
+                direct::renderer_replace_resource(
+                    cmd.replace_resource_params.dest_handle,
+                    cmd.replace_resource_params.src_handle,
+                    cmd.replace_resource_params.type);
+                break;
+
+            case CMD_CREATE_CLEAR_STATE:
+                direct::renderer_create_clear_state( cmd.clear_state_params, cmd.resource_slot );
+                break;
+                
+            case CMD_PUSH_PERF_MARKER:
+                direct::renderer_push_perf_marker( cmd.name );
+                break;
+                
+            case CMD_POP_PERF_MARKER:
+                direct::renderer_pop_perf_marker();
+                break;
 		}
 	}
 
@@ -767,7 +780,8 @@ namespace pen
         cmd_buffer[put_pos].link_params = params;
         
 		u32 num = params.num_constants;
-		cmd_buffer[put_pos].link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num);
+        u32 layout_size = sizeof(pen::constant_layout_desc) * num;
+		cmd_buffer[put_pos].link_params.constants = (pen::constant_layout_desc*)pen::memory_alloc(layout_size);
 
 		pen::constant_layout_desc* c = cmd_buffer[put_pos].link_params.constants;
 		for (u32 i = 0; i < num; ++i)
@@ -883,7 +897,8 @@ namespace pen
 		pen::renderer_set_vertex_buffers( &buffer_index, 1, start_slot, &stride, &offset);
 	}
 
-    void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
+    void renderer_set_vertex_buffers(u32* buffer_indices,
+                                     u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
     {
         cmd_buffer[put_pos].command_index = CMD_SET_VERTEX_BUFFER;
         
@@ -935,7 +950,9 @@ namespace pen
 		INC_WRAP(put_pos);
 	}
     
-    void renderer_draw_indexed_instanced( u32 instance_count, u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology )
+    void renderer_draw_indexed_instanced(u32 instance_count,
+                                         u32 start_instance,
+                                         u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology )
     {
         cmd_buffer[put_pos].command_index = CMD_DRAW_INDEXED_INSTANCED;
         cmd_buffer[put_pos].draw_indexed_instanced.instance_count = instance_count;
@@ -1115,7 +1132,8 @@ namespace pen
         void* mem = pen::memory_alloc(render_target_modes_size);
 		cmd_buffer[put_pos].create_blend_state.render_targets = (render_target_blend*)mem;
 
-		pen::memory_cpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
+		pen::memory_cpy(cmd_buffer[put_pos].create_blend_state.render_targets,
+                        (void*)bcp.render_targets, render_target_modes_size);
 
         u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
@@ -1168,7 +1186,9 @@ namespace pen
 	{
 		cmd_buffer[put_pos].command_index = CMD_CREATE_DEPTH_STENCIL_STATE;
 
-		cmd_buffer[put_pos].p_create_depth_stencil_state = (depth_stencil_creation_params*)pen::memory_alloc(sizeof(depth_stencil_creation_params));
+		cmd_buffer[put_pos].p_create_depth_stencil_state = (depth_stencil_creation_params*)
+                                                            memory_alloc(sizeof(depth_stencil_creation_params));
+        
 		pen::memory_cpy(cmd_buffer[put_pos].p_create_depth_stencil_state, &dscp, sizeof(depth_stencil_creation_params));
 
         u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
@@ -1346,7 +1366,7 @@ namespace pen
         INC_WRAP(put_pos);
     }
 
-	void	renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type )
+	void renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type )
 	{
 		cmd_buffer[put_pos].command_index = CMD_REPLACE_RESOURCE;
 
@@ -1355,7 +1375,7 @@ namespace pen
 		INC_WRAP(put_pos);
 	}
     
-    u32     renderer_create_clear_state( const clear_state &cs )
+    u32 renderer_create_clear_state( const clear_state &cs )
     {
         u32 resource_slot = pen::slot_resources_get_next(&k_renderer_slot_resources);
 
@@ -1366,6 +1386,21 @@ namespace pen
         INC_WRAP( put_pos );
 
         return resource_slot;
+    }
+    
+    void renderer_push_perf_marker( const c8* name )
+    {
+        cmd_buffer[put_pos].command_index = CMD_PUSH_PERF_MARKER;
+        cmd_buffer[put_pos].name = name;
+        
+        INC_WRAP( put_pos );
+    }
+    
+    void renderer_pop_perf_marker( )
+    {
+        cmd_buffer[put_pos].command_index = CMD_POP_PERF_MARKER;
+        
+        INC_WRAP( put_pos );
     }
 }
 

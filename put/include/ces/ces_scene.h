@@ -1,7 +1,7 @@
 #ifndef ces_scene_h__
 #define ces_scene_h__
 
-#include "definitions.h"
+#include "pen.h"
 #include "put_math.h"
 #include "camera.h"
 #include "loader.h"

@@ -1,7 +1,7 @@
 #ifndef _memory_h
 #define _memory_h
 
-#include "definitions.h"
+#include "pen.h"
 #include <stdlib.h>
 #include <stdio.h>
 

@@ -1,7 +1,7 @@
 #ifndef _window_h
 #define _window_h
 
-#include "definitions.h"
+#include "pen.h"
 
 namespace pen
 {

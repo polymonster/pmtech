@@ -1,7 +1,7 @@
 #ifndef _slot_resource_h
 #define _slot_resource_h
 
-#include "definitions.h"
+#include "pen.h"
 
 namespace pen
 {

@@ -611,7 +611,8 @@ namespace pen
         }
 	}
 
-	void direct::renderer_set_vertex_buffer( u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
+	void direct::renderer_set_vertex_buffer(u32 buffer_index,
+                                            u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets )
 	{
         g_current_state.vertex_buffer[0] = buffer_index;
         g_current_state.vertex_buffer_stride[0] = strides[ 0 ];
@@ -619,7 +620,8 @@ namespace pen
         g_current_state.num_bound_vertex_buffers = 1;
 	}
     
-    void direct::renderer_set_vertex_buffers( u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets )
+    void direct::renderer_set_vertex_buffers(u32* buffer_indices,
+                                             u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets )
     {
         for( s32 i = 0; i < num_buffers; ++i )
         {
@@ -1059,7 +1061,8 @@ namespace pen
         }
 	}
     
-	void direct::renderer_set_targets( const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face )
+	void direct::renderer_set_targets(const u32* const colour_targets,
+                                      u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face )
 	{
         static GLenum k_draw_buffers[PEN_MAX_MRT] =
         {
@@ -1238,7 +1241,10 @@ namespace pen
                 
                 if( i == 0 ) //src msaa
                 {
-                    CHECK_CALL( glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colour_res.render_target.texture_msaa.handle, 0 ));
+                    CHECK_CALL( glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                                       GL_COLOR_ATTACHMENT0,
+                                                       GL_TEXTURE_2D_MULTISAMPLE,
+                                                       colour_res.render_target.texture_msaa.handle, 0 ));
                 }
                 else
                 {
@@ -1438,7 +1444,8 @@ namespace pen
         
         *blend_state = bcp;
         
-        blend_state->render_targets = (render_target_blend*)pen::memory_alloc( sizeof(render_target_blend) * bcp.num_render_targets );
+        blend_state->render_targets = (render_target_blend*)pen::memory_alloc(sizeof(render_target_blend) *
+                                                                              bcp.num_render_targets );
         
         for( s32 i = 0; i < bcp.num_render_targets; ++i )
         {
@@ -1462,7 +1469,9 @@ namespace pen
                     
                     if( blend_state->independent_blend_enable )
                     {
-                        CHECK_CALL( glBlendFuncSeparate(rt_blend.src_blend, rt_blend.dest_blend, rt_blend.src_blend_alpha, rt_blend.dest_blend_alpha) );
+                        CHECK_CALL( glBlendFuncSeparate(rt_blend.src_blend,
+                                                        rt_blend.dest_blend,
+                                                        rt_blend.src_blend_alpha, rt_blend.dest_blend_alpha) );
                         CHECK_CALL( glBlendEquationSeparate(rt_blend.blend_op, rt_blend.blend_op_alpha));
                     }
                     else
@@ -1589,7 +1598,7 @@ namespace pen
 
 	void direct::renderer_release_raster_state( u32 raster_state_index )
 	{
-        
+        //no gl objects associated with raster state
 	}
 
 	void direct::renderer_release_blend_state( u32 blend_state )
@@ -1606,7 +1615,6 @@ namespace pen
             
             res.blend_state = nullptr;
         }
-
 	}
 
 	void direct::renderer_release_render_target( u32 render_target )
@@ -1697,6 +1705,20 @@ namespace pen
 	{
 
 	}
+    
+    //-----------------------------------------------------------------------------------------------------------------------
+    //  PERF MARKERS
+    //-----------------------------------------------------------------------------------------------------------------------
+
+    void direct::renderer_push_perf_marker( const c8* name )
+    {
+        
+    }
+    
+    void direct::renderer_pop_perf_marker( )
+    {
+        
+    }
     
     u32 direct::renderer_initialise( void*, u32, u32 )
     {

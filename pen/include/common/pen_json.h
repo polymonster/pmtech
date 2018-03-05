@@ -1,7 +1,7 @@
 #ifndef _pen_json_h
 #define _pen_json_h
 
-#include "definitions.h"
+#include "pen.h"
 #include "jsmn/jsmn.h"
 #include "str/Str.h"
 #include "hash.h"

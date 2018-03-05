@@ -1,7 +1,7 @@
 #ifndef debug_render_h__
 #define debug_render_h__
 
-#include "definitions.h"
+#include "pen.h"
 #include "put_math.h"
 #include "renderer.h"
 

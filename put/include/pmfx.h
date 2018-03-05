@@ -1,7 +1,7 @@
 #ifndef _pmfx_h
 #define _pmfx_h
 
-#include "definitions.h"
+#include "pen.h"
 #include "renderer.h"
 #include "put_math.h"
 

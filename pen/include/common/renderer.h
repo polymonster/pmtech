@@ -1,13 +1,12 @@
-
 #ifndef _renderer_h
 #define _renderer_h
 
-#include "definitions.h"
+#include "pen.h"
 #include "renderer_definitions.h"
 
-//--------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------
 //  TOKENS
-//--------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------
 enum special_values
 {
 	PEN_SHADER_NULL = 0xffffff,
@@ -44,9 +43,9 @@ namespace pen
 		e_clear_types type;
 	};
 
-	//--------------------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------------------------------------------------
 	//  PUBLIC API STRUCTS
-	//--------------------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------------------------------------------------
 	struct clear_state
 	{
 		f32 r, g, b, a;
@@ -289,9 +288,9 @@ namespace pen
 		float padding_0, padding_1;
 	};
 
-	//--------------------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------------------------------------------------
 	//  COMMON FUNCTIONS
-	//--------------------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------------------------------------------------
 
 	//runs on its own thread - will wait for jobs flagged by semaphone
 	PEN_THREAD_RETURN	renderer_thread_function(void* params);
@@ -304,9 +303,9 @@ namespace pen
 	//resource management
 	void                renderer_realloc_resource(u32 i, u32 domain);
 
-	//--------------------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------------------------------------------------
 	//  COMMAND BUFFERED API
-	//--------------------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------------------------------------------------
 	//clears
 	void	renderer_clear(u32 clear_state_index);
 	void	renderer_clear_cube(u32 clear_state_index, u32 colour_face, u32 depth_face);
@@ -323,7 +322,8 @@ namespace pen
 	u32		renderer_create_buffer(const buffer_creation_params &params);
 
 	void	renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 stride, u32 offset);
-	void    renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets);
+	void    renderer_set_vertex_buffers(u32* buffer_indices,
+                                        u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets);
 
 	void	renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
 	void	renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type);
@@ -351,7 +351,9 @@ namespace pen
 	//draw calls
 	void	renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology);
 	void	renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
-	void    renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
+	void    renderer_draw_indexed_instanced(u32 instance_count,
+                                            u32 start_instance,
+                                            u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
 	void	renderer_draw_auto();
 
 	//render targets
@@ -369,6 +371,10 @@ namespace pen
 	void	renderer_present();
 	u32		renderer_create_query(u32 query_type, u32 flags);
 	void	renderer_set_query(u32 query_index, u32 action);
+    
+    //perf
+    void    renderer_push_perf_marker( const c8* name );
+    void    renderer_pop_perf_marker( );
 
 	//cleanup
 	void	renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type);
@@ -413,8 +419,10 @@ namespace pen
 
 		//buffers
 		void	renderer_create_buffer(const buffer_creation_params &params, u32 resource_slot);
-		void	renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets);
-		void    renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets);
+		void	renderer_set_vertex_buffer(u32 buffer_index,
+                                           u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets);
+		void    renderer_set_vertex_buffers(u32* buffer_indices,
+                                            u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets);
 		void	renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
 		void	renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type);
 		void	renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset);
@@ -422,7 +430,8 @@ namespace pen
 		//textures
 		void	renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot);
 		void	renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot);
-		void	renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags = 0);
+		void	renderer_set_texture(u32 texture_index,
+                                     u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags = 0);
 
 		//rasterizer
 		void	renderer_create_rasterizer_state(const rasteriser_state_creation_params &rscp, u32 resource_slot);
@@ -441,12 +450,15 @@ namespace pen
 		//draw calls
 		void	renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology);
 		void	renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
-		void    renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
+		void    renderer_draw_indexed_instanced(u32 instance_count,
+                                                u32 start_instance,
+                                                u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology);
 		void	renderer_draw_auto();
 
 		//render targets
 		void	renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track = true);
-		void	renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face = 0, u32 depth_face = 0);
+		void	renderer_set_targets(const u32* const colour_targets,
+                                     u32 num_colour_targets, u32 depth_target, u32 colour_face = 0, u32 depth_face = 0);
 		void	renderer_set_resolve_targets(u32 colour_target, u32 depth_target);
 		void	renderer_set_stream_out_target(u32 buffer_index);
 		void    renderer_resolve_target(u32 target, e_msaa_resolve_type type);
@@ -456,9 +468,14 @@ namespace pen
 
 		//swap / present / vsync
 		void	renderer_present();
+        
 		void	renderer_create_query(u32 query_type, u32 flags);
 		void	renderer_set_query(u32 query_index, u32 action);
 		void    renderer_update_queries();
+        
+        //perf
+        void    renderer_push_perf_marker( const c8* name );
+        void    renderer_pop_perf_marker( );
 
 		//cleanup
 		void	renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type);

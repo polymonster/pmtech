@@ -1,7 +1,7 @@
 #ifndef _camera_h
 #define _camera_h
 
-#include "definitions.h"
+#include "pen.h"
 #include "renderer.h"
 #include "vector.h"
 #include "matrix.h"

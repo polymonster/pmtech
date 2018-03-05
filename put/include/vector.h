@@ -1,7 +1,7 @@
 #ifndef _vector_h
 #define _vector_h
 
-#include "definitions.h"
+#include "pen.h"
 #include <math.h>
 
 struct vec2f;

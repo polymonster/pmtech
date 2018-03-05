@@ -1,7 +1,7 @@
 #ifndef _audio_h
 #define _audio_h
 
-#include "definitions.h"
+#include "pen.h"
 
 namespace pen
 {
