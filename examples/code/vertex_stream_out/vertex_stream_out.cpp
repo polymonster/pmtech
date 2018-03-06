@@ -208,6 +208,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     
     while( 1 )
     {
+        pen::renderer_push_perf_marker("frame");
+        
         static u32 frame_timer = pen::timer_create("frame_timer");
         pen::timer_start(frame_timer);
         
@@ -229,6 +231,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
             enable_dev_ui = !enable_dev_ui;
         
         frame_time = pen::timer_elapsed_ms(frame_timer);
+        
+        pen::renderer_pop_perf_marker();
         
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();

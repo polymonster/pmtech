@@ -415,6 +415,7 @@ namespace pen
 
     static u32 k_resize_counter = 0;
     static bool k_needs_resize = false;
+    static u32 k_frame = 0;
     
     void renderer_resize_managed_targets( )
     {
@@ -435,8 +436,82 @@ namespace pen
         k_framebuffers.clear();
     }
     
+    //-----------------------------------------------------------------------------------------------------------------------
+    //  PERF MARKERS
+    //-----------------------------------------------------------------------------------------------------------------------
+    const u32 max_markers = 32;
+    struct perf_marker
+    {
+        u32             begin;
+        u32             end;
+        u32             frame;
+        u32             issued = 0;
+    };
+    perf_marker k_perf_markers[max_markers];
+    u32 k_perf_stack_begin = 0;
+    u32 k_perf_stack_end = 0;
+    
+    void direct::renderer_push_perf_marker( const c8* name )
+    {
+        static bool init = true;
+        if( init )
+        {
+            init = false;
+            for(u32 i = 0; i < max_markers; ++i )
+            {
+                CHECK_CALL( glGenQueries(1, &k_perf_markers[i].begin) );
+                CHECK_CALL( glGenQueries(1, &k_perf_markers[i].end) );
+            }
+        }
+        
+        if(k_perf_stack_begin > 0)
+            return;
+        
+        k_perf_markers[k_perf_stack_begin].frame = k_frame;
+        k_perf_markers[k_perf_stack_begin].issued = 1;
+        
+        CHECK_CALL( glBeginQuery( GL_TIME_ELAPSED, k_perf_markers[k_perf_stack_begin].begin ) );
+        
+        //CHECK_CALL( glQueryCounter( k_perf_markers[k_perf_stack_begin].begin, GL_TIMESTAMP ) );
+    }
+    
+    void direct::renderer_pop_perf_marker( )
+    {
+        if(k_perf_stack_begin > 0)
+            return;
+        
+        CHECK_CALL( glEndQuery( GL_TIME_ELAPSED ) );
+        
+        k_perf_markers[k_perf_stack_begin].issued = 2;
+        ++k_perf_stack_begin;
+    }
+    
+    void gather_queries( )
+    {
+        for( u32 i = 0; i < max_markers; ++i )
+        {
+            if( k_perf_markers[i].issued < 2 )
+                continue;
+            
+            s32 avail = 0;
+            CHECK_CALL( glGetQueryObjectiv(k_perf_markers[i].begin, GL_QUERY_RESULT_AVAILABLE, &avail) );
+
+            if(avail)
+            {
+                GLuint64 begin;
+                CHECK_CALL( glGetQueryObjectui64v(k_perf_markers[i].begin, GL_QUERY_RESULT, &begin) );
+                
+                //PEN_PRINTF("frame %i : elapsed : %llu", k_perf_markers[i].frame, begin );
+                
+                k_perf_stack_begin = 0;
+            }
+        }
+    }
+    
 	void direct::renderer_present( )
 	{
+        gather_queries();
+        
         pen_gl_swap_buffers();
 
         if( g_window_resize )
@@ -456,6 +531,8 @@ namespace pen
             renderer_resize_managed_targets( );
             k_needs_resize = false;
         }
+        
+        k_frame++;
 	}
     
 	void direct::renderer_create_query( u32 query_type, u32 flags )
@@ -1705,20 +1782,6 @@ namespace pen
 	{
 
 	}
-    
-    //-----------------------------------------------------------------------------------------------------------------------
-    //  PERF MARKERS
-    //-----------------------------------------------------------------------------------------------------------------------
-
-    void direct::renderer_push_perf_marker( const c8* name )
-    {
-        
-    }
-    
-    void direct::renderer_pop_perf_marker( )
-    {
-        
-    }
     
     u32 direct::renderer_initialise( void*, u32, u32 )
     {
