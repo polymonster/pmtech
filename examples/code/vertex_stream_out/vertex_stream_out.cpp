@@ -217,14 +217,23 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         
         pmfx::update();
         
+        pen::renderer_push_perf_marker("pmfx::render");
+        
         pmfx::render();
+        
+        pen::renderer_pop_perf_marker();
         
         pmfx::show_dev_ui();
         
         if( enable_dev_ui )
         {
             put::dev_ui::console();
+            
+            pen::renderer_push_perf_marker("dev_ui::render");
+            
             put::dev_ui::render();
+            
+            pen::renderer_pop_perf_marker();
         }
         
         if( pen::input_is_key_held(PENK_MENU) && pen::input_is_key_pressed(PENK_D) )
