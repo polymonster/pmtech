@@ -12,8 +12,6 @@
 
 namespace pen
 {
-	extern u32                 get_next_query_index(u32 domain);
-
 	//--------------------------------------------------------------------------------------
 	//  COMMAND BUFFER API
 	//--------------------------------------------------------------------------------------
@@ -59,8 +57,6 @@ namespace pen
 		CMD_UPDATE_BUFFER,
 		CMD_CREATE_DEPTH_STENCIL_STATE,
 		CMD_SET_DEPTH_STENCIL_STATE,
-		CMD_CREATE_QUERY,
-		CMD_SET_QUERY,
 		CMD_UPDATE_QUERIES,
 		CMD_CREATE_RENDER_TARGET,
 		CMD_SET_TARGETS,
@@ -72,7 +68,6 @@ namespace pen
 		CMD_RELEASE_PROGRAM,
 		CMD_RELEASE_CLEAR_STATE,
 		CMD_RELEASE_DEPTH_STENCIL_STATE,
-		CMD_RELEASE_QUERY,
 		CMD_CREATE_SO_SHADER,
 		CMD_SET_SO_TARGET,
         CMD_RESOLVE_TARGET,
@@ -180,18 +175,6 @@ namespace pen
 		u32     offset;
 	};
 
-	struct query_params
-	{
-		u32 action;
-		u32 query_index;
-	};
-
-	struct query_create_params
-	{
-		u32 query_type;
-		u32 query_flags;
-	};
-
 	struct msaa_resolve_params
 	{
 		u32 render_target;
@@ -232,8 +215,6 @@ namespace pen
 			set_constant_buffer_cmd             set_constant_buffer;
 			update_buffer_cmd                   update_buffer;
 			depth_stencil_creation_params*      p_create_depth_stencil_state;
-			query_params                        set_query;
-			query_create_params                 create_query;
 			texture_creation_params             create_render_target;
 			set_target_cmd                      set_targets;
 			set_target_cube_cmd                 set_targets_cube;
@@ -420,14 +401,6 @@ namespace pen
                 direct::renderer_set_depth_stencil_state(cmd.command_data_index);
                 break;
 
-            case CMD_CREATE_QUERY:
-                direct::renderer_create_query(cmd.create_query.query_type, cmd.create_query.query_flags);
-                break;
-
-            case CMD_SET_QUERY:
-                direct::renderer_set_query(cmd.set_query.query_index, cmd.set_query.action);
-                break;
-
             case CMD_UPDATE_QUERIES:
                 renderer_update_queries();
                 break;
@@ -476,10 +449,6 @@ namespace pen
 
             case CMD_RELEASE_DEPTH_STENCIL_STATE:
                 direct::renderer_release_depth_stencil_state(cmd.command_data_index);
-                break;
-
-            case CMD_RELEASE_QUERY:
-                direct::renderer_release_query(cmd.command_data_index);
                 break;
 
             case CMD_SET_SO_TARGET:
@@ -714,29 +683,6 @@ namespace pen
 	void renderer_present()
 	{
 		cmd_buffer[put_pos].command_index = CMD_PRESENT;
-
-		INC_WRAP(put_pos);
-	}
-
-	u32 renderer_create_query(u32 query_type, u32 flags)
-	{
-		cmd_buffer[put_pos].command_index = CMD_CREATE_QUERY;
-
-		cmd_buffer[put_pos].create_query.query_flags = flags;
-		cmd_buffer[put_pos].create_query.query_type = query_type;
-
-		INC_WRAP(put_pos);
-
-        
-		return get_next_query_index(1<<1);
-	}
-
-	void renderer_set_query(u32 query_index, u32 action)
-	{
-		cmd_buffer[put_pos].command_index = CMD_SET_QUERY;
-
-		cmd_buffer[put_pos].set_query.query_index = query_index;
-		cmd_buffer[put_pos].set_query.action = action;
 
 		INC_WRAP(put_pos);
 	}
@@ -1319,15 +1265,6 @@ namespace pen
 
 		cmd_buffer[put_pos].command_data_index = depth_stencil_state;
         
-		INC_WRAP(put_pos);
-	}
-
-	void renderer_release_query(u32 query)
-	{
-		cmd_buffer[put_pos].command_index = CMD_RELEASE_QUERY;
-
-		cmd_buffer[put_pos].command_data_index = query;
-
 		INC_WRAP(put_pos);
 	}
 

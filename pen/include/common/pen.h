@@ -11,6 +11,18 @@
 #define PEN_SHADER_COMPILE_PRE_CMD        "py -3 "
 #define PEN_SHADER_COMPILE_CMD          "tools\\build_shaders.py -root_dir ..\\..\\"
 #define PEN_BUILD_CMD                    "tools\\build.py -root_dir ..\\..\\"
+
+struct window_params
+{
+	HINSTANCE hinstance;
+	int		  cmdshow;
+};
+
+struct renderer_params
+{
+	HWND hwnd;
+};
+
 #else
 #define PEN_THREAD_OK                   nullptr
 #define PEN_THREAD_RETURN               void*

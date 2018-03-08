@@ -1,12 +1,11 @@
 #include <windows.h>
 
-#include "structs.h"
+//#include "structs.h"
 #include "pen.h"
 #include "entry_point.h"
 #include "threads.h"
 #include "timer.h"
 #include "audio.h"
-#include "definitions.h"
 #include "input.h"
 #include "pen.h"
 #include "pen_string.h"

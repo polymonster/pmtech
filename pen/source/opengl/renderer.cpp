@@ -21,6 +21,10 @@ extern void pen_window_resize( );
 
 a_u8 g_window_resize( 0 );
 
+namespace
+{
+    static u64 k_frame = 0;
+
 #define GL_DEBUG_LEVEL 2
 
 #if GL_DEBUG_LEVEL > 1
@@ -29,34 +33,34 @@ a_u8 g_window_resize( 0 );
 #define GL_ASSERT(V) (void)V
 #endif
 
-void gl_error_break( GLenum err )
-{
-    switch (err)
-    {
-        case GL_INVALID_ENUM:
-            printf("invalid enum\n");
-            GL_ASSERT( 0 );
-            break;
-        case GL_INVALID_VALUE:
-            printf("gl invalid value\n");
-            GL_ASSERT( 0 );
-            break;
-        case GL_INVALID_OPERATION:
-            printf("gl invalid operation\n");
-            GL_ASSERT( 0 );
-            break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            printf("gl invalid frame buffer operation\n");
-            GL_ASSERT( 0 );
-            break;
-        case GL_OUT_OF_MEMORY:
-            printf("gl out of memory\n");
-            GL_ASSERT( 0 );
-            break;
-        default:
-            break;
-    }
-}
+	void gl_error_break(GLenum err)
+	{
+		switch (err)
+		{
+		case GL_INVALID_ENUM:
+			printf("invalid enum\n");
+			GL_ASSERT(0);
+			break;
+		case GL_INVALID_VALUE:
+			printf("gl invalid value\n");
+			GL_ASSERT(0);
+			break;
+		case GL_INVALID_OPERATION:
+			printf("gl invalid operation\n");
+			GL_ASSERT(0);
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			printf("gl invalid frame buffer operation\n");
+			GL_ASSERT(0);
+			break;
+		case GL_OUT_OF_MEMORY:
+			printf("gl out of memory\n");
+			GL_ASSERT(0);
+			break;
+		default:
+			break;
+		}
+	}
 
 #if GL_DEBUG_LEVEL > 0
 #define CHECK_GL_ERROR { GLenum err = glGetError( ); if( err != GL_NO_ERROR ) gl_error_break( err ); }
@@ -64,10 +68,6 @@ void gl_error_break( GLenum err )
 #else
 #define CHECK_GL_ERROR
 #endif
-
-namespace
-{
-    static u32 k_frame = 0;
 }
 
 namespace pen
@@ -79,7 +79,7 @@ namespace pen
     {
         u64         elapsed;
         u32         depth;
-        u32         frame;
+		u64         frame;
         Str         name;
     };
     gpu_perf_result* k_perf_results = nullptr;
@@ -87,7 +87,7 @@ namespace pen
     struct perf_marker
     {
         u32         query   = 0;
-        u32         frame   = 0;
+		u64         frame   = 0;
         const c8*   name    = nullptr;
         bool        issued  = false;
         u32         depth   = 0;
@@ -261,22 +261,15 @@ namespace pen
 	//  COMMON API
 	//--------------------------------------------------------------------------------------
 	#define MAX_VERTEX_BUFFERS      4
-    #define NUM_QUERY_BUFFERS		4
-	#define MAX_QUERIES				64 
 	#define NUM_CUBEMAP_FACES		6
     #define MAX_VERTEX_ATTRIBUTES   16
     #define MAX_UNIFORM_BUFFERS     16
     #define MAX_SHADER_TEXTURES     32
  
-	#define QUERY_DISJOINT			1
-	#define QUERY_ISSUED			(1<<1)
-	#define QUERY_SO_STATS			(1<<2)
-    
     struct context_state
 	{
 		context_state()
 		{
-			active_query_index = 0;
 		}
 
 		u32 backbuffer_colour;
@@ -284,9 +277,6 @@ namespace pen
 
 		u32 active_colour_target;
 		u32 active_depth_target;
-
-		u32	active_query_index;
-
 	};
 
     struct clear_state_internal
@@ -398,17 +388,7 @@ namespace pen
             shader_program*                 shader_program;
 		};
 	};
-    resource_allocation		 resource_pool	[MAX_RENDERER_RESOURCES];
-
-    struct query_allocation
-	{
-		u8              asigned_flag;
-		GLuint          query           [NUM_QUERY_BUFFERS];
-		u32             flags           [NUM_QUERY_BUFFERS];
-		a_u64           last_result;
-	};
-	query_allocation	query_pool		[MAX_QUERIES];
-    
+    resource_allocation		 resource_pool	[MAX_RENDERER_RESOURCES];   
     
     struct active_state
     {
@@ -437,26 +417,8 @@ namespace pen
 		//reserve resource 0 for NULL binding.
 		resource_pool[0].asigned_flag |= 0xff;
 	}
-
-	void clear_query_table()
-	{
-		pen::memory_zero(&query_pool[0], sizeof(query_allocation) * MAX_QUERIES);
-	}
     
-	u32 get_next_query_index(u32 domain)
-	{
-		u32 i = 0;
-		while (query_pool[i].asigned_flag & domain)
-		{
-			++i;
-		}
-
-		query_pool[i].asigned_flag |= domain;
-
-		return i;
-	};
-
-	context_state			 g_context;
+	context_state g_context;
 
     void direct::renderer_create_clear_state( const clear_state &cs, u32 resource_slot )
 	{
@@ -472,14 +434,6 @@ namespace pen
         pen::memory_cpy(&resource_pool[ resource_slot ].clear_state.mrt, cs.mrt, sizeof(pen::mrt_clear)*PEN_MAX_MRT);
 	}
 
-	f64 renderer_get_last_query(u32 query_index)
-	{
-		f64 res;
-		pen::memory_cpy(&res, &query_pool[query_index].last_result, sizeof(f64));
-
-		return res;
-	}
-    
     u32 link_program_internal( u32 vs, u32 ps, const pen::shader_link_params* params = nullptr )
     {
         //link the shaders
@@ -666,15 +620,6 @@ namespace pen
         renderer_push_perf_marker(nullptr);
 	}
     
-	void direct::renderer_create_query( u32 query_type, u32 flags )
-	{
-	}
-
-	void direct::renderer_set_query(u32 query_index, u32 action)
-	{
-
-	}
-
 	void direct::renderer_load_shader(const pen::shader_load_params &params, u32 resource_slot)
 	{
         resource_allocation& res = resource_pool[ resource_slot ];
@@ -1941,16 +1886,6 @@ namespace pen
         resource_pool[dest] = resource_pool[src];
     }
 
-	void direct::renderer_release_query( u32 query )
-	{
-
-	}
-    
-    void direct::renderer_update_queries()
-	{
-
-	}
-    
     u32 direct::renderer_initialise( void*, u32, u32 )
     {
         //todo renderer caps

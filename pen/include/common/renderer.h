@@ -11,7 +11,8 @@ enum special_values
 {
 	PEN_SHADER_NULL = 0xffffff,
 	PEN_BACK_BUFFER_RATIO = (u32) - 1,
-	PEN_MAX_MRT = 8
+	PEN_MAX_MRT = 8,
+	PEN_CUBEMAP_FACES = 6
 };
 
 namespace pen
@@ -296,7 +297,6 @@ namespace pen
 	PEN_THREAD_RETURN	renderer_thread_function(void* params);
 
 	u32					renderer_create_clear_state(const clear_state &cs);
-	f64					renderer_get_last_query(u32 query_index);
 	const c8*           renderer_get_shader_platform();
 	bool                renderer_viewport_vup();
 
@@ -369,8 +369,6 @@ namespace pen
 
 	//swap / present / vsync
 	void	renderer_present();
-	u32		renderer_create_query(u32 query_type, u32 flags);
-	void	renderer_set_query(u32 query_index, u32 action);
     
     //perf
     void    renderer_push_perf_marker( const c8* name );
@@ -389,7 +387,6 @@ namespace pen
 	void	renderer_release_input_layout(u32 input_layout);
 	void	renderer_release_sampler(u32 sampler);
 	void	renderer_release_depth_stencil_state(u32 depth_stencil_state);
-	void	renderer_release_query(u32 query);
 
 	//cmd specific
 	void    renderer_window_resize(s32 width, s32 height);
@@ -468,11 +465,7 @@ namespace pen
 
 		//swap / present / vsync
 		void	renderer_present();
-        
-		void	renderer_create_query(u32 query_type, u32 flags);
-		void	renderer_set_query(u32 query_index, u32 action);
-		void    renderer_update_queries();
-        
+                
         //perf
         void    renderer_push_perf_marker( const c8* name );
         void    renderer_pop_perf_marker( );
@@ -490,7 +483,6 @@ namespace pen
 		void	renderer_release_render_target(u32 render_target);
 		void	renderer_release_input_layout(u32 input_layout);
 		void	renderer_release_depth_stencil_state(u32 depth_stencil_state);
-		void	renderer_release_query(u32 query);
 	}
 }
 
