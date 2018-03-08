@@ -3,7 +3,7 @@
 Follow work in progress: 
 [Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
 
-A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios using opengl 3 and directx 11 renderers.
+A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios using opengl 3 and directx 11 renderers... with future plans for Linux, Metal, Vulkan and D3D12.
 
 Core systems such as rendering, audio and physics are handled asyncronously on consumer threads which process command buffers that are created on the user thread, the command buffer api's provide thread safe access to add commands or read data back from a consumer thread.
 
