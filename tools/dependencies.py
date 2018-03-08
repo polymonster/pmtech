@@ -26,7 +26,7 @@ def get_export_config(filename):
             file_json = file.read()
             dir_info = json.loads(file_json)
             export_info = export_config_merge(export_info, dir_info)
-    print(json.dumps(export_info, indent=4, separators=(',', ': ')))
+    # print(json.dumps(export_info, indent=4, separators=(',', ': ')))
     return export_info
 
 

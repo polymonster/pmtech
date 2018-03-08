@@ -551,23 +551,6 @@ PLANE::PLANE( vec3f pos32_on_plane, vec3f normal )
 	m_normal = normal;
 }
 
-PLANE::PLANE( std::vector<vec3f> pos32s )
-{
-	//find a nice pos32 on the plane in the context of a shape like a frustum for instance
-	m_pos32_on_plane = vec3f::zero();
-	s32 pos32_count = pos32s.size();
-	
-	for(s32 i = 0; i < pos32_count; i++)
-	{
-		m_pos32_on_plane += pos32s[i];
-	}
-
-	m_pos32_on_plane /= (f32)pos32_count;
-
-	//find the normal of the plane
-	m_normal = put::maths::get_normal(TRIANGLE(pos32s));
-}
-
 RAY_3D::RAY_3D( vec3f pos32_on_ray, vec3f direction_vector )
 {
 	m_pos32_on_ray = pos32_on_ray;
