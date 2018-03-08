@@ -52,7 +52,7 @@ This workspace contains multiple examples of how to use the API's and set up pro
 - instancing - Intorduces instanced draw calls.
 - rigid_bodies - Introduces basic rigid body primitives using bullet physics and rendering primitives.
 - constraints - Introduces six degrees of freedom, hinge and point to point constraints.
-- shadows - Demonstrates how pmfx can be setup to render a scene from multiple views into different render targets and implements shadow maps, cascaded shadow maps and cube shadow maps for point lights.
+- shadows (wip) - Demonstrates how pmfx can be setup to render a scene from multiple views into different render targets and implements shadow maps, cascaded shadow maps and cube shadow maps for point lights.
 - skinning - Introduces skinned vertex formats, animation controllers and animations in the component entity scene.
 - cubemap - Introduces cubemap loading and basic rendering.
 - texture_formats - Loads and displays a number of compressed and uncompressed texture formats with mip maps.
