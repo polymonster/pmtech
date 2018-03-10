@@ -44,7 +44,7 @@ pmtech/examples python3 ../tools/build.py -help
 win32
 ```cmd
 pmtech cd examples
-pmtech\examples py -3 ../tools/build.py -help
+pmtech\examples py -3 ..\tools\build.py -help
 ```
 
 **Examples**   
