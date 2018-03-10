@@ -37,12 +37,12 @@ Tool scripts written in python and some executables are used to build data:
 requires python3
 ```bash
 pmtech> cd examples
-pmtech/examples> python3 ..tools/build.py -help
+pmtech/examples> python3 ../tools/build.py -help
 ```
 
 ```cmd
 pmtech> cd examples
-pmtech/examples> py -3 ..tools/build.py -help
+pmtech/examples> py -3 ../tools/build.py -help
 ```
 
 **Examples**   
