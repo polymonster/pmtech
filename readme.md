@@ -35,14 +35,16 @@ Tool scripts written in python and some executables are used to build data:
 
 **Getting started**  
 requires python3
+osx
 ```bash
-pmtech> cd examples
-pmtech/examples> python3 ../tools/build.py -help
+pmtech cd examples
+pmtech/examples python3 ../tools/build.py -help
 ```
 
+win32
 ```cmd
-pmtech> cd examples
-pmtech/examples> py -3 ../tools/build.py -help
+pmtech cd examples
+pmtech\examples py -3 ../tools/build.py -help
 ```
 
 **Examples**   
