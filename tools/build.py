@@ -59,7 +59,7 @@ def display_help():
     print("\t-ide <xcode4, vs2015, v2017>")
     print("\t-clean <clean destination directory>")
     print("\t-renderer <dx11, opengl>")
-    print("\t-actions")
+    print("\t-actions <action, ...>")
     for i in range(0, len(action_strings)):
         print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
 
