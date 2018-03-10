@@ -24,11 +24,12 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 - [Premake](https://github.com/premake/premake-core)
 - [Bullet](https://github.com/bulletphysics/bullet3)
 - [ImGui](https://github.com/ocornut/imgui)
+- [NVTT](https://github.com/castano/nvidia-texture-tools)
 
 **Tools**  
 Tool scripts written in python and some executables are used to build data:
-- Collada to Binary - Models, skeletons and animations.
-- Textures - Compression and conversion using NVTT (Nvidia).
+- Models - Convert Collada models, skeletons and animations to binary format.
+- Textures - Compression, conversion, mip-map generation and assembly using NVTT.
 - Premake5 - All projects are configured using premake and are IDE agnostic.
 - PMFX - shader reflection info and agnostic hlsl / glsl shaders
 - Shader Compiler - offline shader compilation.
