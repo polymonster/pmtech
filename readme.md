@@ -33,9 +33,17 @@ Tool scripts written in python and some executables are used to build data:
 - PMFX - shader reflection info and agnostic hlsl / glsl shaders
 - Shader Compiler - offline shader compilation.
 
-**Getting started**  
-Run the tools/build.py script from pmtech/examples to see how to build code projects and data.     
-on osx you can run ./travis.sh which will genereate GNU make files and compile from the command line.
+**Getting started**
+requires python3
+```bash
+pmtech> cd examples
+pmtech/examples> python3 ..tools/build.py -help
+```
+
+```cmd
+pmtech> cd examples
+pmtech/examples> py -3 ..tools/build.py -help
+```
 
 **Examples**   
 This workspace contains multiple examples of how to use the API's and set up projects, they are also useful to aid porting and test functionality. The samples also help catch errors when they continuously integrate changes using tavis and appveyor.
