@@ -15,26 +15,26 @@ struct ps_output
 	float4 colour : SV_Target;
 };
 
-vs_output vs_main( vs_input _input )
+vs_output vs_main( vs_input input )
 {
-	vs_output _output;
+	vs_output output;
 	
-	_output.position = _input.position;
-	_output.tex_coord = _input.tex_coord;
+	output.position = input.position;
+	output.tex_coord = input.tex_coord;
 	
-    return _output;
+    return output;
 }
 
 declare_texture_samplers
 {
-	TEXTURE_2D( tex, 0 );
+	texture_2d( tex, 0 );
 };
 
-ps_output ps_main( vs_output _input )
+ps_output ps_main( vs_output input )
 {
-	ps_output _output;
+	ps_output output;
 	
-	_output.colour = SAMPLE_TEXTURE_2D( tex, _input.tex_coord.xy );
+	output.colour = sample_texture( tex, input.tex_coord.xy );
 	
-    return _output;
+    return output;
 }

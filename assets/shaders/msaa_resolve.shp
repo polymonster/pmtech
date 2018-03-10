@@ -17,10 +17,10 @@ cbuffer per_pass : register(b0)
 
 declare_texture_samplers
 {
-	TEXTURE_2DMS( float4, 2, texture_msaa_2, 0 );
-	TEXTURE_2DMS( float4, 4, texture_msaa_4, 0 );
-	TEXTURE_2DMS( float4, 8, texture_msaa_8, 0 );
-	TEXTURE_2DMS( float4, 16, texture_msaa_16, 0 );
+	texture_2dms( float4, 2, texture_msaa_2, 0 );
+	texture_2dms( float4, 4, texture_msaa_4, 0 );
+	texture_2dms( float4, 8, texture_msaa_8, 0 );
+	texture_2dms( float4, 16, texture_msaa_16, 0 );
 };
 
 vs_output_textured vs_resolve( vs_input_2d_textured input )
@@ -46,7 +46,7 @@ ps_output ps_resolve_average_2x( vs_output_textured input )
 	ps_output output;
 	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
 	for( int i = 0; i < 2; ++i )
-		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_2, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+		output.colour += sample_texture_2dms( texture_msaa_2, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
 	output.colour /= 2.0;
 	return output;
 }
@@ -56,7 +56,7 @@ ps_output ps_resolve_average_4x( vs_output_textured input )
 	ps_output output;
 	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
 	for( int i = 0; i < 4; ++i )
-		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+		output.colour += sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
 	output.colour /= 4.0;
 	
 	return output;
@@ -67,7 +67,7 @@ ps_output ps_resolve_average_8x( vs_output_textured input )
 	ps_output output;
 	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
 	for( int i = 0; i < 8; ++i )
-		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_8, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+		output.colour += sample_texture_2dms( texture_msaa_8, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
 	output.colour /= 8.0;
 	return output;
 }
@@ -77,7 +77,7 @@ ps_output ps_resolve_average_16x( vs_output_textured input )
 	ps_output output;
 	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
 	for( int i = 0; i < 16; ++i )
-		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_16, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+		output.colour += sample_texture_2dms( texture_msaa_16, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
 	output.colour /= 16.0;
 	return output;
 }
@@ -87,7 +87,7 @@ ps_output ps_resolve_average_2x( vs_output_textured input )
 	ps_output output;
 	output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
 	for( int i = 0; i < 2; ++i )
-		output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa_2, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+		output.colour += sample_texture_2dms( texture_msaa_2, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
 	output.colour /= 2.0;
 	return output;
 }
@@ -104,11 +104,11 @@ ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
 {
 	ps_output_depth output;
 	
-	output.depth = SAMPLE_TEXTURE_2DMS( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, 0 ).r;
+	output.depth = sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, 0 ).r;
 	
 	for( int i = 1; i < 4; ++i )
 	{
-		float depth = SAMPLE_TEXTURE_2DMS( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i ).r;
+		float depth = sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i ).r;
 		output.depth = max( depth, output.depth );
 	}
 	

@@ -1229,15 +1229,18 @@ namespace pen
 	{
 		if (shader_type == PEN_SHADER_TYPE_PS)
 		{
-			resource_pool[shader_index].pixel_shader->Release( );
+			if (resource_pool[shader_index].pixel_shader)
+				resource_pool[shader_index].pixel_shader->Release( );
 		}
 		else if (shader_type == PEN_SHADER_TYPE_VS)
 		{
-			resource_pool[shader_index].vertex_shader->Release( );
+			if (resource_pool[shader_index].vertex_shader)
+				resource_pool[shader_index].vertex_shader->Release( );
 		}
 		else if (shader_type == PEN_SHADER_TYPE_GS)
 		{
-			resource_pool[shader_index].geometry_shader->Release( );
+			if(resource_pool[shader_index].geometry_shader)
+				resource_pool[shader_index].geometry_shader->Release( );
 		}
 	}
 

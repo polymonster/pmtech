@@ -96,8 +96,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     u32 colour_render_target = pen::renderer_create_render_target( tcp );
 
     //load shaders now requiring dependency on pmfx to make loading simpler.
-    pmfx::pmfx_handle basic_tri_shader = pmfx::load("basictri");
-    pmfx::pmfx_handle textured_shader = pmfx::load("textured");
+    pmfx::shader_handle basic_tri_shader = pmfx::load("basictri");
+    pmfx::shader_handle textured_shader = pmfx::load("textured");
 
     //create vertex buffer for a triangle
     vertex triangle_vertices[] =

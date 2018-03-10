@@ -136,7 +136,6 @@ def generate_shader_info(
     shader_info = dict()
     shader_info["files"] = []
 
-    print(dir_path)
     included_files.insert(0, base_filename)
 
     _this_file = os.path.join(root_dir, this_file)
@@ -158,7 +157,7 @@ def generate_shader_info(
     while i < len(texture_samplers_split):
         offset = i
         tex_type = texture_samplers_split[i+0]
-        if tex_type == "TEXTURE_2DMS":
+        if tex_type == "texture_2dms":
             data_type = texture_samplers_split[i+1]
             fragments = texture_samplers_split[i+2]
             offset = i+2
@@ -208,18 +207,19 @@ def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, tec
 
     compiler_exe_path = os.path.join(compiler_dir,"fxc")
 
-    print(output_file_and_path)
-    print(temp_file_name)
-    print(compiler_dir)
-
     temp_shader_source = open(temp_file_name, "w")
     temp_shader_source.write(source)
     temp_shader_source.close()
 
     cmdline = compiler_exe_path + " /T " + shader_model + " /Fo " + output_file_and_path + " " + temp_file_name
     cmdline += " /E " + entry_name
-    subprocess.call(cmdline)
-    print("\n")
+    proc = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE)
+    proc.wait()
+    if proc.returncode != 0:
+        print(output_file_and_path)
+        print(temp_file_name)
+        print(proc.stdout.read())
+        print("\n")
 
 
 token_io = ["input", "output"]

@@ -18,25 +18,25 @@ struct ps_output
 	float4 colour : SV_Target;
 };
 
-vs_output vs_main( vs_input _input )
+vs_output vs_main( vs_input input )
 {
-	vs_output _output;
+	vs_output output;
 	
-	_output.position = _input.position;
+	output.position = input.position;
 	
-	return _output;
+	return output;
 }
 
-ps_output ps_main( vs_output _input )
+ps_output ps_main( vs_output input )
 {
-	ps_output _output;
+	ps_output output;
 	
-	_output.colour = float4( 1.0f, 1.0f, 1.0f, 1.0f );
+	output.colour = float4( 1.0f, 1.0f, 1.0f, 1.0f );
 	
 	{
 		//test scope for the shader parser to
 		//correctly find the body of the main function
 	}
 			
-	return _output;
+	return output;
 }

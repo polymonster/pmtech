@@ -1,4 +1,4 @@
-#include "pmfx_controller.h"
+#include "pmfx.h"
 #include "entry_point.h"
 #include "dev_ui.h"
 #include "debug_render.h"
@@ -6,7 +6,7 @@
 #include "file_system.h"
 #include "hash.h"
 #include "pen_string.h"
-#include "pmfx.h"
+#include "ces/ces_scene.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -183,7 +183,7 @@ namespace put
             u32     depth_stencil_state = 0;
             u32     blend_state = 0;
             
-			pmfx_handle pmfx_shader;
+			shader_handle pmfx_shader;
             hash_id		technique;
             u32         render_flags;
             
@@ -1369,7 +1369,7 @@ namespace put
 			{
 				if (rt.samples > 1)
 				{
-					static pmfx_handle pmfx_resolve = pmfx::load("msaa_resolve");
+					static shader_handle pmfx_resolve = pmfx::load("msaa_resolve");
 					pmfx::set_technique(pmfx_resolve, PEN_HASH("average_4x"), 0);
 
 					pen::renderer_resolve_target(rt.handle, pen::RESOLVE_CUSTOM);

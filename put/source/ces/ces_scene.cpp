@@ -4,7 +4,7 @@
 #include "file_system.h"
 #include "dev_ui.h"
 #include "debug_render.h"
-#include "pmfx_controller.h"
+#include "pmfx.h"
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
@@ -852,7 +852,7 @@ namespace put
             
             //update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
-            static pmfx::pmfx_handle ph = pmfx::load("forward_render");
+            static pmfx::shader_handle ph = pmfx::load("forward_render");
             
             if( pmfx::set_technique( ph, id_pre_skin_technique, 0 ) )
             {

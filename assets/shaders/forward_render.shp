@@ -115,7 +115,6 @@ declare_texture_samplers
 	texture_2d( diffuse_texture, 0 );
 	texture_2d( normal_texture, 1 );
 	texture_2d( specular_texture, 2 );	
-	texture_cube( cube_test, 3 );
 	
 	texture_2d( shadowmap_texture, 15 );
 };
@@ -255,15 +254,6 @@ float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
 	return normalize( mul_tbn( tbn, ts_normal ) );
 }
 
-ps_output ps_cubemapped( vs_output input ) 
-{
-	ps_output output;
-	
-	output.colour.rgb = sample_texture_cube( cube_test, normalize(input.world_pos.xyz)).rgb;
-	
-	return output;
-}
-
 ps_output ps_forward_lit( vs_output input ) 
 {	
 	ps_output output;
@@ -381,14 +371,15 @@ ps_output ps_constant_colour( vs_output input )
 	output.colour = float4( 1.0, 1.0, 1.0, 1.0 );
 	
 	return output;
+	
 }
 
 ps_output_multi ps_gbuffer( vs_output input ) 
 {	
 	ps_output_multi output;
 	
-	float4 albedo = SAMPLE_TEXTURE_2D( diffuse_texture, input.texcoord.xy );
-	float3 normal_sample = SAMPLE_TEXTURE_2D( normal_texture, input.texcoord.xy ).rgb;
+	float4 albedo = sample_texture( diffuse_texture, input.texcoord.xy );
+	float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
 	normal_sample = normal_sample * 2.0 - 1.0;
 	
 	float3 n = transform_ts_normal( 

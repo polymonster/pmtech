@@ -84,26 +84,8 @@ namespace put
                 link_params.constants[cc].name[name_len] = '\0';
                 
                 link_params.constants[cc].location = sampler["location"].as_u32();
-                
-                //todo - retire the caps naming convention
+                               
                 static Str sampler_type_names[] =
-                {
-                    "TEXTURE_2D",
-                    "TEXTURE_3D",
-                    "TEXTURE_CUBE",
-                    "TEXTURE_2DMS"
-                };
-                
-                for( u32 i = 0; i < 4; ++i )
-                {
-                    if( sampler["type"].as_str() == sampler_type_names[i] )
-                    {
-                        link_params.constants[cc].type = (pen::constant_type)i;
-                        break;
-                    }
-                }
-                
-                static Str sampler_type_names_lower[] =
                 {
                     "texture_2d",
                     "texture_3d",
@@ -113,7 +95,7 @@ namespace put
                 
                 for( u32 i = 0; i < 4; ++i )
                 {
-                    if( sampler["type"].as_str() == sampler_type_names_lower[i] )
+                    if( sampler["type"].as_str() == sampler_type_names[i] )
                     {
                         link_params.constants[cc].type = (pen::constant_type)i;
                         break;
@@ -363,7 +345,7 @@ namespace put
             return program;
         }
         
-        void set_technique( pmfx_handle handle, u32 index )
+        void set_technique(shader_handle handle, u32 index )
         {
             auto& t = s_pmfx_list[ handle ].techniques[ index ];
             
@@ -380,7 +362,7 @@ namespace put
             pen::renderer_set_input_layout( t.input_layout );
         }
         
-        bool set_technique( pmfx_handle handle, hash_id id_technique, hash_id id_sub_type )
+        bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type )
         {
             for( auto& t : s_pmfx_list[ handle ].techniques )
             {
@@ -413,7 +395,7 @@ namespace put
             pen::string_format( file_buf, 256, "data/pmfx/%s/%s/info.json", pen::renderer_get_shader_platform(), pmfx_filename );
         }
         
-        void release( pmfx_handle handle )
+        void release( shader_handle handle )
         {
 			s_pmfx_list[handle].filename = nullptr;
             
@@ -459,10 +441,10 @@ namespace put
             return new_pmfx;
         }
 
-        pmfx_handle load( const c8* pmfx_name )
+        shader_handle load( const c8* pmfx_name )
         {
 			//return existing
-			pmfx_handle ph = PEN_INVALID_HANDLE;
+			shader_handle ph = PEN_INVALID_HANDLE;
 			if (!pmfx_name)
 				return ph;
 
@@ -492,9 +474,9 @@ namespace put
             return ph;
         }
         
-        pmfx_handle get_pmfx_handle( hash_id id_filename )
+        shader_handle get_shader_handle( hash_id id_filename )
         {
-            pmfx_handle ph = 0;
+            shader_handle ph = 0;
             for (auto& p : s_pmfx_list)
                 if (p.id_filename == id_filename)
                     return ph;
@@ -538,7 +520,7 @@ namespace put
 			if (shader_compiler_str == "")
 				return;
 
-            pmfx_handle current_counter = 0;
+            shader_handle current_counter = 0;
             
             for( auto& pmfx_set : s_pmfx_list )
             {

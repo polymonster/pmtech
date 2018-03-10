@@ -58,7 +58,7 @@ namespace put
         vertex_debug_2d*  debug_2d_verts = debug_2d_buffers[VB_LINES];
         vertex_debug_2d*  debug_2d_tris = debug_2d_buffers[VB_TRIS];
 
-        pmfx_handle       debug_shader;
+        shader_handle       debug_shader;
 
 		void create_shaders()
 		{

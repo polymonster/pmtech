@@ -8,7 +8,7 @@
 #include "debug_render.h"
 #include "input.h"
 #include "camera.h"
-#include "pmfx_controller.h"
+#include "pmfx.h"
 #include "timer.h"
 #include "str_utilities.h"
 #include "physics.h"
@@ -582,7 +582,7 @@ namespace put
 						{
                             picking_state = PICKING_SINGLE;
                             
-							const put::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
+							const pmfx::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
                             
                             if(!rt)
                             {

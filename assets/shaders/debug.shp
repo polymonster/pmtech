@@ -73,8 +73,8 @@ vs_output vs_main_3d( vs_input_3d input )
 
 declare_texture_samplers
 {
-	TEXTURE_2D( texture_0, 0 );
-	TEXTURE_2DMS( float4, 4, texture_msaa, 1 );
+	texture_2d( texture_0, 0 );
+	texture_2dms( float4, 4, texture_msaa, 1 );
 };
 
 ps_output ps_main( vs_output input )
@@ -100,7 +100,7 @@ ps_output ps_main_screen_quad( vs_output_textured input )
 {
 	ps_output output;
 		
-	output.colour = SAMPLE_TEXTURE_2D( texture_0, input.tex_coord.xy );
+	output.colour = sample_texture( texture_0, input.tex_coord.xy );
 	
 	
 	return output;
@@ -110,10 +110,10 @@ ps_output ps_main_screen_quad_msaa( vs_output_textured input )
 {
 	ps_output output;
 		
-	output.colour = SAMPLE_TEXTURE_2DMS( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 0 );
-	output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 1 );
-	output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 2 );
-	output.colour += SAMPLE_TEXTURE_2DMS( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 3 );		
+	output.colour = sample_texture_2dms( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 0 );
+	output.colour += sample_texture_2dms( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 1 );
+	output.colour += sample_texture_2dms( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 2 );
+	output.colour += sample_texture_2dms( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 3 );		
 	
 	output.colour /= 4;
 	

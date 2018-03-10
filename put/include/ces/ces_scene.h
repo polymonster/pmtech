@@ -105,7 +105,7 @@ namespace put
             vec4f    specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
 			hash_id  id_default_shader;
 			hash_id	 id_default_technique;
-			pmfx::pmfx_handle default_pmfx_shader;
+			pmfx::shader_handle default_pmfx_shader;
         };
 
         enum e_physics_type
@@ -332,7 +332,7 @@ namespace put
             camera* camera;
             pen::viewport* viewport;
             
-			pmfx::pmfx_handle pmfx_shader;
+			pmfx::shader_handle pmfx_shader;
             hash_id technique;
 
 			entity_scene* scene = nullptr;
