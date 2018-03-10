@@ -1,4 +1,3 @@
-#include <string>
 #include <fstream>
 
 #include "pen.h"
@@ -42,24 +41,25 @@ namespace put
 		void set_last_used_directory(Str& dir)
 		{
 			//make a copy of the string to format
-			std::string formatted = dir.c_str();
+			Str formatted = dir;
 
-			//always use / for consistency
-			std::replace(formatted.begin(), formatted.end(), '\\', '/');
-            std::replace( formatted.begin(), formatted.end(), ':', '@' );
+			str_replace_chars(formatted, '\\', '/');
+			str_replace_chars(formatted, ':', '@');
 
 			//strip the file
-			s32 last_dir = formatted.rfind("/");
-			s32 ext = formatted.rfind(".");
+			s32 last_dir = str_find_reverse(formatted, "/");
+			s32 ext = str_find_reverse(formatted, ".");
+
+			Str final = "\"";
 
 			if (last_dir < ext)
 			{
-				formatted = formatted.substr(0, last_dir);
+				for (u32 i = 0; i < last_dir; ++i)
+					final.append(formatted.c_str()[i]);
 			}
+			final.append("\"");
 
-            formatted = "\"" + formatted + "\"";
-
-            k_program_preferences.set("last_used_directory", formatted);
+            k_program_preferences.set("last_used_directory", final);
 
             save_program_preferences();
 		}
@@ -125,8 +125,8 @@ namespace put
 
 				if (last_dir.type() != JSMN_UNDEFINED)
 				{
-					std::string path = last_dir.as_str().c_str();
-                    std::replace( path.begin(), path.end(), '@', ':' );
+					Str path = last_dir.as_str();
+					path = str_replace_chars(path, '@', ':');
 
 					s32 dir_pos = 0;
 					directory_depth = 0;
@@ -134,10 +134,9 @@ namespace put
 					while (!finished)
 					{
 						s32 prev_pos = dir_pos;
+						dir_pos = str_find(path, "/", prev_pos);
 
-						dir_pos = path.find("/", prev_pos);
-
-						if (dir_pos != std::string::npos)
+						if (dir_pos != -1)
 						{
 							dir_pos += 1;
 						}

@@ -93,6 +93,7 @@ namespace put
             SN_NORMAL_MAP,
             SN_SPECULAR_MAP,
 			SN_ENV_MAP,
+			SN_VOLUME,
             SN_EMISSIVE_MAP,
             
             SN_NUM_TEXTURES

@@ -37,4 +37,5 @@ create_app_example( "cubemap", script_path() )
 create_app_example( "texture_formats", script_path() )
 create_app_example( "skinning", script_path() )
 create_app_example( "vertex_stream_out", script_path() )
+create_app_example( "volume_texture", script_path() )
 	

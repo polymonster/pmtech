@@ -57,7 +57,7 @@ def display_help():
     print("\t-all <build all>")
     print("\t-platform <osx, win32, ios>")
     print("\t-ide <xcode4, vs2015, v2017>")
-    print("\t-clean <clean destination directory>")
+    print("\t-clean <clean build, bin and temp dirs>")
     print("\t-renderer <dx11, opengl>")
     print("\t-actions <action, ...>")
     for i in range(0, len(action_strings)):
@@ -91,7 +91,8 @@ def parse_args(args):
             for s in action_strings:
                 execute_actions.append(s)
         elif sys.argv[index] == "-clean":
-            clean_destinations = True
+            for s in action_strings:
+                execute_actions.append(s)
 
 
 def get_platform_info():
@@ -172,17 +173,16 @@ get_platform_info()
 copy_steps = []
 
 for action in execute_actions:
-    if action == "code":
-        if clean_destinations:
-            pen_build = os.path.join("..", "pen", "build", platform)
-            put_build = os.path.join("..", "put", "build", platform)
-            proj_build =  os.path.join("build", platform)
-            if os.path.exists(pen_build):
-                shutil.rmtree(pen_build)
-            if os.path.exists(put_build):
-                shutil.rmtree(put_build)
-            if os.path.exists(proj_build):
-                shutil.rmtree(proj_build)
+    if action == "clean":
+        built_dirs = [os.path.join("..", "pen", "build", platform),
+                      os.path.join("..", "put", "build", platform),
+                      os.path.join("build", platform),
+                      "bin",
+                      "temp"]
+        for bd in built_dirs:
+            if os.path.exists(bd):
+                shutil.rmtree(bd)
+    elif action == "code":
         build_steps.append(premake_exec + " " + project_options)
     elif action == "shaders":
         build_steps.append(python_exec + " " + shader_script + " " + shader_options)

@@ -271,7 +271,7 @@ ps_output ps_forward_lit( vs_output input )
 		input.normal, 
 		normal_sample );
 		
-	albedo = input.colour;
+	albedo *= input.colour;
 	
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 		

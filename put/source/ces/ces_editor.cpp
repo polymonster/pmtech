@@ -243,15 +243,16 @@ namespace put
 			k_dd_bools = nullptr;
 			update_view_flags_ui(scene);
 
-			//add front light
+			//add light
 			u32 light = get_new_node(scene);
 			scene->names[light] = "front_light";
 			scene->id_name[light] = PEN_HASH("front_light");
 			scene->lights[light].colour = vec3f::one();
-			scene->transforms->translation = vec3f(100.0f, 100.0f, 100.0f);
+			scene->lights[light].direction = vec3f::one();
+			scene->lights[light].type = LIGHT_TYPE_DIR;
+			scene->transforms->translation = vec3f::zero();
 			scene->transforms->rotation = quat();
 			scene->transforms->scale = vec3f::one();
-
 			scene->entities[light] |= CMP_LIGHT;
 			scene->entities[light] |= CMP_TRANSFORM;
 

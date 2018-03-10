@@ -86,7 +86,7 @@ def process_collection(container):
 
     if dependencies.check_up_to_date(dependency_info[dest_container_dir], relative_data_filename):
         print(relative_data_filename + " already up to date")
-        # return
+        return
 
     print("assembling " + cubemap_file)
     cmdline = nvassemble

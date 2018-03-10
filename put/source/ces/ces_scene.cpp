@@ -251,7 +251,14 @@ namespace put
 		u32 clone_node(entity_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
 		{
 			if (dst == -1)
+			{
 				dst = get_new_node(scene);
+			}
+			else
+			{
+				if (dst >= scene->num_nodes)
+					scene->num_nodes = dst + 1;
+			}
 
 			entity_scene* p_sn = scene;
 

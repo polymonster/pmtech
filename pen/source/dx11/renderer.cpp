@@ -300,6 +300,18 @@ namespace pen
 		ID3D11ShaderResourceView* srv = nullptr;
 	};
 
+	struct texture3d_internal
+	{
+		ID3D11Texture3D*		  texture = nullptr;
+		ID3D11ShaderResourceView* srv = nullptr;
+	};
+
+	struct texture_resource
+	{
+		ID3D11Resource*			  resource = nullptr;
+		ID3D11ShaderResourceView* srv = nullptr;
+	};
+
 	struct render_target_internal
 	{
 		texture2d_internal			tex;
@@ -340,7 +352,8 @@ namespace pen
 		RES_NONE,
 		RES_BUFFER,
 		RES_TEXTURE,
-		RES_RENDER_TARGET
+		RES_RENDER_TARGET,
+		RES_TEXTURE_3D
 	};
 
 	struct stream_out_shader
@@ -362,7 +375,9 @@ namespace pen
 			ID3D11GeometryShader*			geometry_shader;
 			stream_out_shader				stream_out_shader;
 			ID3D11Buffer*					generic_buffer;
+			texture_resource*				texture_resource;
 			texture2d_internal*				texture_2d;
+			texture3d_internal*				texture_3d;
 			ID3D11SamplerState*				sampler_state;
 			ID3D11RasterizerState*			raster_state;
 			ID3D11BlendState*				blend_state;
@@ -1029,21 +1044,53 @@ namespace pen
 
 		HRESULT hr;
 
-		//create an empty texture
-		D3D11_TEXTURE2D_DESC texture_desc;
-		pen::memory_cpy( &texture_desc, (void*)&tcp, sizeof( D3D11_TEXTURE2D_DESC ) );
-
 		D3D_SRV_DIMENSION view_dimension = D3D10_SRV_DIMENSION_TEXTURE2D;
-		if (tcp.collection_type == TEXTURE_COLLECTION_CUBE)
+
+		u32 num_slices = 1;
+		u32 num_arrays = tcp.num_arrays;
+
+		if (tcp.collection_type == TEXTURE_COLLECTION_VOLUME)
 		{
-			view_dimension = D3D10_SRV_DIMENSION_TEXTURECUBE;
-			texture_desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+			//texture 3d
+			view_dimension = D3D10_SRV_DIMENSION_TEXTURE3D;
+			
+			num_slices = tcp.num_arrays;
+			num_arrays = 1;
+
+			D3D11_TEXTURE3D_DESC texture_desc = {
+				tcp.width,
+				tcp.height,
+				tcp.num_arrays,
+				tcp.num_mips,
+				(DXGI_FORMAT)tcp.format,
+				(D3D11_USAGE)tcp.usage,
+				tcp.bind_flags,
+				tcp.cpu_access_flags,
+				tcp.flags
+			};
+
+			resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
+			hr = g_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture));
+			PEN_ASSERT(hr == 0);
+		}
+		else
+		{
+			//texture 2d, arrays and cubemaps
+			D3D11_TEXTURE2D_DESC texture_desc;
+			pen::memory_cpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+
+			if (tcp.collection_type == TEXTURE_COLLECTION_CUBE)
+			{
+				view_dimension = D3D10_SRV_DIMENSION_TEXTURECUBE;
+				texture_desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+			}
+
+			resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
+			hr = g_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture));
+			PEN_ASSERT(hr == 0);
 		}
 
-		resource_pool[ resource_index ].texture_2d = (texture2d_internal*)pen::memory_alloc( sizeof( texture2d_internal ) );
-
-		hr = g_device->CreateTexture2D( &texture_desc, nullptr, &(resource_pool[ resource_index ].texture_2d->texture) );
-		PEN_ASSERT( hr == 0 );
+		texture_resource* tex_res = resource_pool[resource_index].texture_resource;
 
 		//fill with data 
 		if (tcp.data)
@@ -1051,7 +1098,7 @@ namespace pen
 			u8* image_data = (u8*)tcp.data;
 
 			//for arrays, slices, faces
-			for (s32 a = 0; a < tcp.num_arrays; ++a)
+			for (s32 a = 0; a < num_arrays; ++a)
 			{
 				u32 current_width = tcp.width / tcp.pixels_per_block;
 				u32 current_height = tcp.height / tcp.pixels_per_block;
@@ -1060,12 +1107,12 @@ namespace pen
 				//for mips
 				for (s32 i = 0; i < tcp.num_mips; ++i)
 				{
-					u32 depth_pitch = current_width * current_height * block_size;
 					u32 row_pitch = current_width * block_size;
+					u32 depth_pitch = current_height * row_pitch;
 
 					u32 sub = D3D11CalcSubresource(i, a, tcp.num_mips);
 
-					g_immediate_context->UpdateSubresource(resource_pool[resource_index].texture_2d->texture, sub, nullptr, image_data, row_pitch, depth_pitch);
+					g_immediate_context->UpdateSubresource(tex_res->resource, sub, nullptr, image_data, row_pitch, depth_pitch);
 
 					image_data += depth_pitch;
 
@@ -1078,12 +1125,12 @@ namespace pen
 
 		//create shader resource view
 		D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
-		resource_view_desc.Format = texture_desc.Format;
+		resource_view_desc.Format = (DXGI_FORMAT)tcp.format;
 		resource_view_desc.ViewDimension = view_dimension;
 		resource_view_desc.Texture2D.MipLevels = -1;
 		resource_view_desc.Texture2D.MostDetailedMip = 0;
 
-		hr = g_device->CreateShaderResourceView( resource_pool[ resource_index ].texture_2d->texture, &resource_view_desc, &resource_pool[ resource_index ].texture_2d->srv );
+		hr = g_device->CreateShaderResourceView( tex_res->resource, &resource_view_desc, &tex_res->srv );
 		PEN_ASSERT( hr == 0 );
 	}
 
@@ -1121,12 +1168,12 @@ namespace pen
 			if (shader_type == PEN_SHADER_TYPE_PS)
 			{
 				g_immediate_context->PSSetSamplers(resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-				g_immediate_context->PSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_2d->srv);
+				g_immediate_context->PSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_resource->srv);
 			}
 			else if (shader_type == PEN_SHADER_TYPE_VS)
 			{
 				g_immediate_context->VSSetSamplers(resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-				g_immediate_context->VSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_2d->srv);
+				g_immediate_context->VSSetShaderResources(resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_resource->srv);
 			}
 		}
 	}

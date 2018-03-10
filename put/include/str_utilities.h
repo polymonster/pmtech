@@ -39,13 +39,13 @@ namespace put
         return -1;
     }
     
-    inline s32 str_find( const Str& string, const c8* search )
+    inline s32 str_find( const Str& string, const c8* search, u32 start_pos = 0 )
     {
         s32 len = string.length();
         s32 search_len = pen::string_length(search);
         
-        s32 i = 0;
-        s32 j = 0;
+        s32 i = start_pos;
+        s32 j = start_pos;
         s32 find_start = 0;
         while( search_len - j <= len - i )
         {
