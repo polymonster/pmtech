@@ -290,7 +290,6 @@ namespace psengine
 
 		PLANE(){};
 		PLANE(vec3f pos32_on_plane, vec3f normal);
-		PLANE(std::vector<vec3f> pos32s);
 
 		vec3f m_pos32_on_plane;
 		vec3f m_normal;
