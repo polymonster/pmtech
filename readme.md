@@ -3,7 +3,7 @@
 Follow work in progress: 
 [Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
 
-A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios using opengl 3 and directx 11 renderers... with future plans for Linux, Metal, Vulkan and D3D12.
+A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios using OpenGL 3 and D3D11 renderers... with future plans for Linux, Metal, Vulkan and D3D12.
 
 Core systems such as rendering, audio and physics are handled asyncronously on consumer threads which process command buffers that are created on the user thread, the command buffer api's provide thread safe access to add commands or read data back from a consumer thread.
 
@@ -24,25 +24,28 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 - [Premake](https://github.com/premake/premake-core)
 - [Bullet](https://github.com/bulletphysics/bullet3)
 - [ImGui](https://github.com/ocornut/imgui)
+- [NVTT](https://github.com/castano/nvidia-texture-tools)
 
 **Tools**  
 Tool scripts written in python and some executables are used to build data:
-- Collada to Binary - Models, skeletons and animations.
-- Textures - Compression and conversion using NVTT (Nvidia).
+- Models - Convert Collada models, skeletons and animations to binary format.
+- Textures - Compression, conversion, mip-map generation and assembly using NVTT.
 - Premake5 - All projects are configured using premake and are IDE agnostic.
 - PMFX - shader reflection info and agnostic hlsl / glsl shaders
 - Shader Compiler - offline shader compilation.
 
 **Getting started**  
-requires python3
+requires python3  
+osx
 ```bash
-pmtech> cd examples
-pmtech/examples> python3 ../tools/build.py -help
+pmtech cd examples
+pmtech/examples python3 ../tools/build.py -help
 ```
 
+win32
 ```cmd
-pmtech> cd examples
-pmtech/examples> py -3 ../tools/build.py -help
+pmtech cd examples
+pmtech\examples py -3 ..\tools\build.py -help
 ```
 
 **Examples**   
