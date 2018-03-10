@@ -51,7 +51,7 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->id_name[light] = PEN_HASH( "front_light" );
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;f
+    scene->lights[light].type = LIGHT_TYPE_DIR;
     scene->transforms->translation = vec3f::zero();
     scene->transforms->rotation = quat();
     scene->transforms->scale = vec3f::one();
