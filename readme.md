@@ -3,7 +3,7 @@
 Follow work in progress: 
 [Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
 
-A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios using opengl 3 and directx 11 renderers.
+A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios using opengl 3 and directx 11 renderers... with future plans for Linux, Metal, Vulkan and D3D12.
 
 Core systems such as rendering, audio and physics are handled asyncronously on consumer threads which process command buffers that are created on the user thread, the command buffer api's provide thread safe access to add commands or read data back from a consumer thread.
 
@@ -52,7 +52,7 @@ This workspace contains multiple examples of how to use the API's and set up pro
 - instancing - Intorduces instanced draw calls.
 - rigid_bodies - Introduces basic rigid body primitives using bullet physics and rendering primitives.
 - constraints - Introduces six degrees of freedom, hinge and point to point constraints.
-- shadows - Demonstrates how pmfx can be setup to render a scene from multiple views into different render targets and implements shadow maps, cascaded shadow maps and cube shadow maps for point lights.
+- shadows (wip) - Demonstrates how pmfx can be setup to render a scene from multiple views into different render targets and implements shadow maps, cascaded shadow maps and cube shadow maps for point lights.
 - skinning - Introduces skinned vertex formats, animation controllers and animations in the component entity scene.
 - cubemap - Introduces cubemap loading and basic rendering.
 - texture_formats - Loads and displays a number of compressed and uncompressed texture formats with mip maps.
