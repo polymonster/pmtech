@@ -33,7 +33,7 @@ Tool scripts written in python and some executables are used to build data:
 - PMFX - shader reflection info and agnostic hlsl / glsl shaders
 - Shader Compiler - offline shader compilation.
 
-**Getting started**
+**Getting started**  
 requires python3
 ```bash
 pmtech> cd examples
