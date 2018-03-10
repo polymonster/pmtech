@@ -679,23 +679,25 @@ def add_files_recursive(filename, root):
 def check_dependencies(filename, included_files):
     # look for .json file
     file_list = list()
-    file_list.append(os.path.join(root_dir, filename))
-    file_list.append(os.path.join(root_dir, this_file))
-    file_list.append(os.path.join(root_dir, macros_file))
+    file_list.append(dependencies.sanitize_filename(os.path.join(root_dir, filename)))
+    file_list.append(dependencies.sanitize_filename(os.path.join(root_dir, this_file)))
+    file_list.append(dependencies.sanitize_filename(os.path.join(root_dir, macros_file)))
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
     for f in included_files:
-        file_list.append(os.path.join(root_dir, dir_path, f))
+        file_list.append(dependencies.sanitize_filename(os.path.join(root_dir, dir_path, f)))
     if os.path.exists(info_filename):
         info_file = open(info_filename, "r")
         info = json.loads(info_file.read())
         for prev_built_with_file in info["files"]:
-            if prev_built_with_file["name"] in file_list:
-                if prev_built_with_file["timestamp"] < os.path.getmtime(prev_built_with_file["name"]):
+            sanitized_name = dependencies.sanitize_filename(prev_built_with_file["name"])
+            if sanitized_name in file_list:
+                if prev_built_with_file["timestamp"] < os.path.getmtime(sanitized_name):
                     info_file.close()
-                    print(os.path.basename(prev_built_with_file["name"]) + " is out of date")
+                    print(os.path.basename(sanitized_name) + " is out of date")
                     return False
             else:
-                print(os.path.basename(prev_built_with_file["name"]) + " is not in list")
+                print(file_list)
+                print(sanitized_name + " is not in list")
                 return False
         info_file.close()
     else:

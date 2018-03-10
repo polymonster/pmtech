@@ -29,23 +29,27 @@ def get_export_config(filename):
     # print(json.dumps(export_info, indent=4, separators=(',', ': ')))
     return export_info
 
-
-def correct_filename(file):
+def unstrict_json_safe_filename(file):
     file = file.replace("\\", '/')
     file = file.replace(":", "@")
     return file
 
+def sanitize_filename(filename):
+    sanitized_name = filename.replace("@", ":")
+    sanitized_name = sanitized_name.replace('/', os.sep)
+    return sanitized_name
 
 def create_info(file):
+    file = sanitize_filename(file)
     modified_time = os.path.getmtime(file)
-    file = correct_filename(file)
+    file = unstrict_json_safe_filename(file)
     return {"name": file, "timestamp": float(modified_time)}
 
 
 def create_dependency_info(inputs, outputs):
     info = dict()
     for o in outputs:
-        o = correct_filename(o)
+        o = unstrict_json_safe_filename(o)
         info[o] = []
         for i in inputs:
             info[o].append(create_info(i))
