@@ -181,6 +181,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     svr_editor.render_function = &ces::render_scene_editor;
     
     pmfx::register_scene_view_renderer(svr_main);
+	pmfx::register_scene_view_renderer(svr_editor);
 
     pmfx::register_scene(sc);
     pmfx::register_camera(cc);

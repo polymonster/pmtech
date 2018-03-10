@@ -125,6 +125,12 @@
 			format: d24s8,
 			samples: 4,
 		},
+		
+		shadow_map:
+		{
+			size: [2048,2048],
+			format: d24s8,
+		},
 	},
 			
 	views:
@@ -139,12 +145,15 @@
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			raster_state: default,
 			depth_stencil_state: default,
-			pmfx_shader: forward_render,
-			technique: forward_lit,
 			scene: main_scene,
 			camera: model_viewer_camera,
 			scene_views:["ces_render_scene"],
-			render_flags:["forward_lit"]
+			render_flags:["forward_lit"],
+			
+			sampler_bindings:
+			[
+				{ texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+			],
 		},
 		
 		editor_view:
@@ -177,7 +186,7 @@
 			blend_state: disabled,
 			raster_state: default,
 			depth_stencil_state: default,
-			pmfx_shader: fx_test,
+			pmfx_shader: pmfx_utility,
 			technique: picking,
 			scene: main_scene,
 			camera: model_viewer_camera,

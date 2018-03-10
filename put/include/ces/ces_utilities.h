@@ -2,7 +2,15 @@
 #define ces_utility_h__
 
 #include "ces/ces_scene.h"
+#include "hash.h"
 #include <vector>
+
+namespace
+{
+	hash_id ID_VERTEX_CLASS_INSTANCED = PEN_HASH("_instanced");
+	hash_id ID_VERTEX_CLASS_SKINNED = PEN_HASH("_skinned");
+	hash_id ID_VERTEX_CLASS_BASIC = PEN_HASH("");
+}
 
 namespace put
 {

@@ -379,6 +379,8 @@ namespace put
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             
             scene->master_instances[master].instance_buffer = pen::renderer_create_buffer(bcp);
+
+			scene->geometries[master].vertex_shader_class = ID_VERTEX_CLASS_INSTANCED;
             
             //todo - must ensure list is contiguous.
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);

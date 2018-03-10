@@ -133,6 +133,11 @@ namespace put
             
             if(gr->p_skin)
                 scene->entities[node_index] |= CMP_SKINNED;
+
+			instance->vertex_shader_class = ID_VERTEX_CLASS_BASIC;
+
+			if (scene->entities[node_index] & CMP_SKINNED)
+				instance->vertex_shader_class = ID_VERTEX_CLASS_SKINNED;
         }
         
         void instantiate_model_cbuffer( entity_scene* scene, s32 node_index )
@@ -181,6 +186,8 @@ namespace put
             //set pre-skinned and unset skinned
             scene->entities[node_index] |= CMP_PRE_SKINNED;
             scene->entities[node_index] &= ~CMP_SKINNED;
+
+			geom.vertex_shader_class = ID_VERTEX_CLASS_BASIC;
         }
         
         void instantiate_anim_controller( entity_scene* scene, s32 node_index )
@@ -393,6 +400,13 @@ namespace put
             scene->material_names[node_index] = mr->material_name;
 
             scene->entities[node_index] |= CMP_MATERIAL;
+
+			static hash_id id_default_shader = PEN_HASH("forward_render");
+			static hash_id id_default_technique = PEN_HASH("forward_lit");
+
+			instance->default_pmfx_shader = pmfx::load("forward_render");
+			instance->id_default_shader = id_default_shader;
+			instance->id_default_technique = id_default_technique;
         }
         
         void load_material_resource( const c8* filename, const c8* material_name, const c8* data )

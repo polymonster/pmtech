@@ -372,6 +372,10 @@ namespace put
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
 			pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
 
+			//forward lights
+			if (view.render_flags & RENDER_FORWARD_LIT)
+				pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
+
 			s32 draw_count = 0;
 			s32 cull_count = 0;
 
@@ -441,15 +445,17 @@ namespace put
                     pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
                 }
                 
-                //todo - move this to instantiation time
-                static hash_id ID_SUB_TYPE_INSTANCED = PEN_HASH("_instanced");
-                static hash_id ID_SUB_TYPE_SKINNED = PEN_HASH("_skinned");
-                static hash_id ID_SUB_TYPE_NON_SKINNED = PEN_HASH("");
-                    
-                hash_id mh = scene->entities[n] & CMP_SKINNED ? ID_SUB_TYPE_SKINNED : ID_SUB_TYPE_NON_SKINNED;
-                mh = scene->entities[n] & CMP_MASTER_INSTANCE ? ID_SUB_TYPE_INSTANCED : mh;
+				//set shader / technique
+				u32 shader = view.pmfx_shader;
+				hash_id technique = view.technique;
 
-                if( !pmfx::set_technique( view.pmfx_shader, view.technique, mh ) )
+				if (shader == PEN_INVALID_HANDLE)
+				{
+					shader = p_mat->default_pmfx_shader;
+					technique = p_mat->id_default_technique;
+				}
+
+                if( !pmfx::set_technique(shader, technique, p_geom->vertex_shader_class ) )
                 {
                     if( scene->entities[n] & CMP_MASTER_INSTANCE )
                     {
@@ -462,10 +468,6 @@ namespace put
                 //set cbs
 				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
-
-				//forward lights
-                if( view.render_flags & RENDER_FORWARD_LIT )
-                    pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
 
 				//set ib / vb
                 if( scene->entities[n] & CMP_MASTER_INSTANCE )

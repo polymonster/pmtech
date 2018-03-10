@@ -462,7 +462,11 @@ namespace put
         pmfx_handle load( const c8* pmfx_name )
         {
 			//return existing
-			pmfx_handle ph = 0;
+			pmfx_handle ph = PEN_INVALID_HANDLE;
+			if (!pmfx_name)
+				return ph;
+
+			ph = 0;
 			for (auto& p : s_pmfx_list)
 				if (p.filename == pmfx_name)
 					return ph;

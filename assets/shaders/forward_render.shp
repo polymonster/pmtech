@@ -255,6 +255,15 @@ float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
 	return normalize( mul_tbn( tbn, ts_normal ) );
 }
 
+ps_output ps_cubemapped( vs_output input ) 
+{
+	ps_output output;
+	
+	output.colour.rgb = sample_texture_cube( cube_test, normalize(input.world_pos.xyz)).rgb;
+	
+	return output;
+}
+
 ps_output ps_forward_lit( vs_output input ) 
 {	
 	ps_output output;
@@ -363,9 +372,6 @@ ps_output ps_forward_lit( vs_output input )
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
 	
-	//debug for cubemap sample
-	//output.colour.rgb = sample_texture_cube( cube_test, normalize(input.world_pos.xyz)).rgb;
-
     return output;
 }
 

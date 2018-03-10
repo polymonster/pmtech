@@ -103,6 +103,9 @@ namespace put
             s32      texture_id[SN_NUM_TEXTURES] = { 0 };
             vec4f    diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
             vec4f    specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+			hash_id  id_default_shader;
+			hash_id	 id_default_technique;
+			pmfx::pmfx_handle default_pmfx_shader;
         };
 
         enum e_physics_type
@@ -156,6 +159,7 @@ namespace put
 			u32					index_type;
             u32                 vertex_size;
 			scene_node_skin*	p_skin;
+			hash_id				vertex_shader_class;
 		};
         
         struct scene_node_pre_skin

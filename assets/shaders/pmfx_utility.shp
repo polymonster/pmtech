@@ -1,0 +1,251 @@
+#include "libs/lighting.slib"
+#include "libs/skinning.slib"
+
+struct vs_output
+{
+	float4 position		: SV_POSITION;
+	float4 world_pos 	: TEXCOORD0;
+	float3 normal		: TEXCOORD1;
+	float3 tangent		: TEXCOORD2;
+	float3 bitangent	: TEXCOORD3;
+	float4 texcoord		: TEXCOORD4;
+};
+
+struct vs_output_picking
+{
+	float4 position		: SV_POSITION;
+	float4 index		: TEXCOORD0;
+};
+
+struct vs_input
+{
+	float4 position	 	: POSITION;
+	float4 normal	 	: TEXCOORD0;
+	float4 texcoord	 	: TEXCOORD1;
+	float4 tangent	 	: TEXCOORD2;
+	float4 bitangent	: TEXCOORD3;
+};
+
+struct vs_input_skinned
+{
+	float4 position	 		: POSITION;
+	float4 normal	 		: TEXCOORD0;
+	float4 texcoord	 		: TEXCOORD1;
+	float4 tangent	 		: TEXCOORD2;
+	float4 bitangent		: TEXCOORD3;
+	float4 blend_indices	: TEXCOORD4;
+	float4 blend_weights	: TEXCOORD5;
+};
+
+struct vs_instance_input
+{
+	float4 world_matrix_0	 : TEXCOORD6;
+	float4 world_matrix_1	 : TEXCOORD7;
+	float4 world_matrix_2	 : TEXCOORD8;
+	float4 world_matrix_3	 : TEXCOORD9;
+	float4 user_data	 	 : TEXCOORD10;
+	float4 user_data2	 	 : TEXCOORD11;
+};
+
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
+struct ps_output_picking
+{
+	uint colour : SV_Target;
+};
+
+struct ps_output_multi
+{
+	float4 albedo : SV_Target0;
+	float4 normal : SV_Target1;
+};
+
+cbuffer per_pass_view : register(b0)
+{
+	float4x4 vp_matrix;
+	float4x4 view_matrix;
+};
+
+cbuffer per_draw_call : register(b1)
+{
+	float4x4 world_matrix;
+	float4   user_data; //x = id, yzw = unused
+};
+
+cbuffer debug_options : register(b13)
+{
+	float4 debug_render_options;
+};
+
+declare_texture_samplers
+{
+	texture_2d( diffuse_texture, 0 );
+	texture_2d( normal_texture, 1 );
+	texture_2d( specular_texture, 2 );
+	
+	texture_cube( cubemap_texture, 3 );
+};
+
+vs_output vs_main_skinned( vs_input_skinned input )
+{
+	vs_output output;
+	
+	float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+	
+	output.position = mul( sp, vp_matrix );
+	output.world_pos = mul( input.position, world_matrix );
+		
+	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+	
+	output.normal = mul( input.normal.xyz, rotation_matrix );
+	output.tangent = mul( input.tangent.xyz, rotation_matrix );
+	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
+	
+	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+	
+	output.texcoord = input.blend_weights;
+	
+    return output;
+}
+
+vs_output vs_main( vs_input input )
+{
+	vs_output output;
+	
+	float4x4 wvp = mul( world_matrix, vp_matrix );
+
+	output.position = mul( input.position, wvp );
+	output.world_pos = mul( input.position, world_matrix );
+		
+	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+	
+	output.normal = mul( input.normal.xyz, rotation_matrix );
+	output.tangent = mul( input.tangent.xyz, rotation_matrix );
+	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
+	
+	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+	
+    return output;
+}
+
+vs_output_picking vs_picking( vs_input input )
+{
+	vs_output_picking output;
+	
+	float4x4 wvp = mul( world_matrix, vp_matrix );
+
+	output.position = mul( input.position, wvp );
+	output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
+	
+	return output;
+}
+
+vs_output_picking vs_picking_skinned( vs_input_skinned input )
+{
+	vs_output_picking output;
+
+	float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+	
+	output.position = mul( sp, vp_matrix );
+	output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
+		
+	return output;
+}
+
+vs_output_picking vs_picking_instanced( vs_input input, vs_instance_input instance_input )
+{
+	vs_output_picking output;
+	
+	float4x4 instance_world_mat;
+	unpack_vb_instance_mat(instance_world_mat, 
+		instance_input.world_matrix_0, 
+		instance_input.world_matrix_1, 
+		instance_input.world_matrix_2, 
+		instance_input.world_matrix_3);
+		
+	float4x4 wvp = mul( instance_world_mat, vp_matrix );
+	
+	output.position = mul( input.position, wvp );
+	output.index = float4( instance_input.user_data.x, 0.0, 0.0, 0.0 );
+				
+    return output;
+}
+
+ps_output_picking ps_picking( vs_output_picking input ) 
+{	
+	ps_output_picking output;
+		
+	output.colour = uint(input.index.x + 0.5);
+	
+    return output;
+}
+
+ps_output ps_diffuse( vs_output input ) 
+{	
+	ps_output output;
+	
+	output.colour = sample_texture( diffuse_texture, input.texcoord.xy );
+	
+    return output;
+}
+
+ps_output ps_debug( vs_output_picking input ) 
+{	
+	ps_output_picking output;
+	
+	output.colour = uint(input.index.x);
+	
+    return output;
+}
+
+ps_output ps_cubemapped( vs_output input ) 
+{
+	ps_output output;
+	
+	output.colour.rgb = sample_texture( cubemap_texture, normalize(input.world_pos.xyz)).rgb;
+	
+	return output;
+}
+
+pmfx:
+{	
+	"diffuse":
+	{
+		"vs": "vs_main",
+		"ps": "ps_diffuse"
+	},
+	
+	"diffuse_skinned":
+	{
+		"vs": "vs_main_skinned",
+		"ps": "ps_diffuse"
+	},
+	
+	"cubemap":
+	{
+		"vs": "vs_main",
+		"ps": "ps_cubemapped"
+	},
+	
+	"picking":
+	{
+		"vs": "vs_picking",
+		"ps": "ps_picking"
+	},
+	
+	"picking_skinned":
+	{
+		"vs": "vs_picking_skinned",
+		"ps": "ps_picking"
+	},
+	
+	"picking_instanced":
+	{
+		"vs": "vs_picking_instanced",
+		"ps": "ps_picking"
+	}
+}
+
