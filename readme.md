@@ -34,7 +34,7 @@ Tool scripts written in python and some executables are used to build data:
 - Shader Compiler - offline shader compilation.
 
 **Getting started**  
-requires python3
+requires python3  
 osx
 ```bash
 pmtech cd examples
