@@ -207,6 +207,7 @@ namespace put
 			tcp.pixels_per_block = 1;
 			tcp.data_size = tcp.block_size * width * height;
 			tcp.data = pixels;
+            tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
 
 			g_imgui_rs.font_texture = pen::renderer_create_texture(tcp);
 

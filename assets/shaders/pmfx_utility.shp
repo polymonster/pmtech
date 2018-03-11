@@ -215,7 +215,7 @@ ps_output ps_volume_texture( vs_output input )
 {
 	ps_output output;
 	
-	output.colour = sample_texture( volume_texture, normalize(input.world_pos.xyz));
+	output.colour = sample_texture_3d( volume_texture, normalize(input.world_pos.xyz));
 	
 	return output;
 }

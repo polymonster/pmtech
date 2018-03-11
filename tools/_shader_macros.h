@@ -7,6 +7,7 @@
 
 #define sample_texture_2dms( sampler_name, x, y, fragment ) texelFetch( sampler_name, ivec2( x, y ), fragment )
 #define sample_texture( sampler_name, V ) texture( sampler_name, V )
+#define sample_texture_3d( sampler_name, V ) texture( sampler_name, V )
 
 #define mul( A, B ) A * B
 #define mul_tbn( A, B ) B * A
@@ -27,6 +28,7 @@
 
 #define sample_texture_2dms( name, x, y, fragment ) name.Load( uint2(x, y), fragment )
 #define sample_texture( name, V ) name.Sample( sampler_##name, V )
+#define sample_texture_3d( sampler_name, V ) sample_texture( sampler_name, V )
 
 #define to_3x3( M4 ) (float3x3)M4
 #define mul_tbn( A, B ) mul(A, B)

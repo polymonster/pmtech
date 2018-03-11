@@ -927,6 +927,17 @@ namespace pen
 
 	u32 renderer_create_texture(const texture_creation_params& tcp)
 	{
+        switch((pen::texture_collection_type)tcp.collection_type)
+        {
+            case TEXTURE_COLLECTION_NONE:
+            case TEXTURE_COLLECTION_CUBE:
+            case TEXTURE_COLLECTION_VOLUME:
+                break;
+            default:
+                PEN_ASSERT_MSG(0, "inavlid collection type");
+                break;
+        }
+        
 		cmd_buffer[put_pos].command_index = CMD_CREATE_TEXTURE;
 
 		memory_cpy(&cmd_buffer[put_pos].create_texture, (void*)&tcp, sizeof(texture_creation_params));

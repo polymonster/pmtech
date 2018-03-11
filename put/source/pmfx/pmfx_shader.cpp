@@ -31,14 +31,29 @@ namespace put
         
         struct pmfx
         {
-            hash_id         id_filename;
-			Str				filename;
+            hash_id         id_filename = 0;
+            Str				filename = nullptr;
             bool            invalidated = false;
             pen::json       info;
             u32             info_timestamp = 0;
-			std::vector<shader_program> techniques;
+            shader_program* techniques = nullptr;
+            
+            const pmfx operator= (const pmfx& rhs)
+            {
+                pen::memory_zero(this, sizeof(*this));
+                
+                id_filename = rhs.id_filename;
+                info = rhs.info;
+                invalidated = rhs.invalidated;
+                info_timestamp = rhs.info_timestamp;
+                techniques = rhs.techniques;
+                
+                filename = rhs.filename;
+                
+                return *this;
+            }
         };
-        std::vector<pmfx> s_pmfx_list;
+        pmfx* k_pmfx_list = nullptr;
         
         void get_link_params_constants( pen::shader_link_params& link_params, const pen::json& j_info )
         {
@@ -347,7 +362,7 @@ namespace put
         
         void set_technique(shader_handle handle, u32 index )
         {
-            auto& t = s_pmfx_list[ handle ].techniques[ index ];
+            auto& t = k_pmfx_list[ handle ].techniques[ index ];
             
             if( t.stream_out_shader )
             {
@@ -364,8 +379,11 @@ namespace put
         
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type )
         {
-            for( auto& t : s_pmfx_list[ handle ].techniques )
+            u32 num_techniques = sb_count(k_pmfx_list[ handle ].techniques);
+            for( u32 i = 0; i < num_techniques; ++i )
             {
+                auto& t = k_pmfx_list[ handle ].techniques[ i ];
+                
                 if( t.id_name != id_technique )
                     continue;
                 
@@ -397,10 +415,14 @@ namespace put
         
         void release( shader_handle handle )
         {
-			s_pmfx_list[handle].filename = nullptr;
+			k_pmfx_list[handle].filename = nullptr;
             
-            for( auto& t : s_pmfx_list[handle].techniques )
+            u32 num_techniques = sb_count(k_pmfx_list[ handle ].techniques);
+            
+            for( u32 i = 0; i < num_techniques; ++i )
             {
+                auto& t = k_pmfx_list[ handle ].techniques[ i ];
+                
                 pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
 				pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
 				pen::renderer_release_input_layout(t.input_layout );
@@ -435,7 +457,9 @@ namespace put
                 pen::json t = _techniques[i];
                 shader_program new_technique = load_shader_technique( filename, t, new_pmfx.info );
 
-				new_pmfx.techniques.push_back(new_technique);
+				//new_pmfx.techniques.push_back(new_technique);
+                
+                sb_push(new_pmfx.techniques, new_technique);
             }
             
             return new_pmfx;
@@ -447,10 +471,13 @@ namespace put
 			shader_handle ph = PEN_INVALID_HANDLE;
 			if (!pmfx_name)
 				return ph;
+            
+            u32 num_pmfx = sb_count(k_pmfx_list);
 
 			ph = 0;
-			for (auto& p : s_pmfx_list)
-				if (p.filename == pmfx_name)
+			//for (auto& p : s_pmfx_list)
+            for( u32 i = 0; i < num_pmfx; ++i )
+				if (k_pmfx_list[i].filename == pmfx_name)
 					return ph;
                 else
                     ph++;
@@ -458,8 +485,10 @@ namespace put
 			pmfx new_pmfx = load_internal(pmfx_name);
 
 			ph = 0;
-			for (auto& p : s_pmfx_list)
+			//for (auto& p : s_pmfx_list)
+            for( u32 i = 0; i < num_pmfx; ++i )
 			{
+                auto& p = k_pmfx_list[i];
 				if (p.filename.length() == 0)
 				{
 					p = new_pmfx;
@@ -468,17 +497,22 @@ namespace put
 
 				++ph;
 			}
-                        
-            s_pmfx_list.push_back(new_pmfx);
+            
+            sb_push(k_pmfx_list, new_pmfx);
+            
+            //s_pmfx_list.push_back(new_pmfx);
             
             return ph;
         }
         
         shader_handle get_shader_handle( hash_id id_filename )
         {
+            u32 num_pmfx = sb_count(k_pmfx_list);
+            
             shader_handle ph = 0;
-            for (auto& p : s_pmfx_list)
-                if (p.id_filename == id_filename)
+            //for (auto& p : s_pmfx_list)
+            for( u32 i = 0; i < num_pmfx; ++i )
+                if (k_pmfx_list[i].id_filename == id_filename)
                     return ph;
                 else
                     ph++;
@@ -522,8 +556,13 @@ namespace put
 
             shader_handle current_counter = 0;
             
-            for( auto& pmfx_set : s_pmfx_list )
+            u32 num_pmfx = sb_count(k_pmfx_list);
+            
+            //for( auto& pmfx_set : s_pmfx_list )
+            for( u32 i = 0; i < num_pmfx; ++i )
             {
+                auto& pmfx_set = k_pmfx_list[i];
+                
                 if( pmfx_set.invalidated )
                 {
                     c8 info_file_buf[ 256 ];

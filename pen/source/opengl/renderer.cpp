@@ -712,9 +712,13 @@ namespace pen
                     CHECK_CALL( glUniformBlockBinding( prog, loc, constant.location ) );
                 }
                 break;
+                
+                case pen::CT_SAMPLER_3D:
+                {
+                    u32 a = 0;
+                }
                     
                 case pen::CT_SAMPLER_2D:
-                case pen::CT_SAMPLER_3D:
                 case pen::CT_SAMPLER_2DMS:
                 case pen::CT_SAMPLER_CUBE:
                 {
@@ -1109,6 +1113,9 @@ namespace pen
         u32 texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
         u32 base_texture_target = texture_target;
         
+        u32 num_slices = 1;
+        u32 num_arrays = tcp.num_arrays;
+        
         switch((pen::texture_collection_type)tcp.collection_type)
         {
             case TEXTURE_COLLECTION_NONE:
@@ -1120,8 +1127,16 @@ namespace pen
                 texture_target = GL_TEXTURE_CUBE_MAP;
                 base_texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
                 break;
+            case TEXTURE_COLLECTION_VOLUME:
+                is_msaa = false;
+                num_slices = tcp.num_arrays;
+                num_arrays = 1;
+                texture_target = GL_TEXTURE_3D;
+                base_texture_target = texture_target;
+                break;
             default:
-                PEN_ASSERT_MSG(0, "unhandled texture collection type");
+                texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+                base_texture_target = texture_target;
                 break;
                 
         }
@@ -1130,7 +1145,7 @@ namespace pen
         CHECK_CALL( glGenTextures( 1, &handle) );
         CHECK_CALL( glBindTexture( texture_target, handle ) );
         
-        for( u32 a = 0; a < tcp.num_arrays; ++a )
+        for( u32 a = 0; a < num_arrays; ++a )
         {
             mip_w = tcp.width;
             mip_h = tcp.height;
@@ -1154,8 +1169,17 @@ namespace pen
                     }
                     else
                     {
-                        CHECK_CALL( glTexImage2D(base_texture_target + a,
-                                                 mip, sized_format, mip_w, mip_h, 0, format, type, mip_data));
+                        if( base_texture_target == GL_TEXTURE_3D )
+                        {
+                            CHECK_CALL( glTexImage3D(base_texture_target,
+                                                     mip, sized_format, mip_w, mip_h, num_slices, 0, format,
+                                                     type, mip_data) );
+                        }
+                        else
+                        {
+                            CHECK_CALL( glTexImage2D(base_texture_target + a,
+                                                     mip, sized_format, mip_w, mip_h, 0, format, type, mip_data));
+                        }
                     }
                 }
                 
@@ -1507,24 +1531,13 @@ namespace pen
             max_mip = res.render_target.texture_msaa.max_mip_level;
         }
         
-        if( target == GL_TEXTURE_CUBE_MAP )
-        {
-            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
-            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0));
-            CHECK_CALL( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0));
-        }
-        
         if(sampler_index == 0)
             return;
         
         auto* sampler_state = resource_pool[sampler_index].sampler_state;
         
         //handle unmipped textures or textures with missisng mips
-        CHECK_CALL( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_mip));
+        CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip));
         
         if( !sampler_state )
             return;
