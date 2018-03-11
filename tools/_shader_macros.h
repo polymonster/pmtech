@@ -7,7 +7,7 @@
 
 #define sample_texture_2dms( sampler_name, x, y, fragment ) texelFetch( sampler_name, ivec2( x, y ), fragment )
 #define sample_texture( sampler_name, V ) texture( sampler_name, V )
-#define sample_texture_level( name, V, l ) textureLod( sampler_name, V, l )
+#define sample_texture_level( sampler_name, V, l ) textureLod( sampler_name, V, l )
 #define sample_texture_grad( sampler_name, V, vddx, vddy ) textureGrad( sampler_name, V, vddx, vddy )
 
 #define mul( A, B ) A * B

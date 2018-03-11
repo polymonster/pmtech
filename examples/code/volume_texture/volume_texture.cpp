@@ -70,9 +70,9 @@ void create_scene_objects(ces::entity_scene* scene)
 				u32 offset = z * slice_pitch + y * row_pitch  + x * block_size;
 				
 				u8 r, g, b, a;
-				r = rand() % 255;
-				g = rand() % 255;
-				b = rand() % 255;
+				r = 255;
+				g = 255;
+				b = 255;
                 a = 255;
                 
                 u32 black = 0;
@@ -85,7 +85,7 @@ void create_scene_objects(ces::entity_scene* scene)
                 if( z < volume_dimension / 3 || z > volume_dimension - volume_dimension / 3 )
                     black++;
                 
-                if(black == 3)
+                if(black == 2)
                 {
                     a = 0;
                 }
