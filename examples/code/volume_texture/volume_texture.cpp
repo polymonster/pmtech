@@ -55,17 +55,17 @@ void create_scene_objects(ces::entity_scene* scene)
 	//create a simple 3d texture
 	u32 block_size = 4;
 	u32 volume_dimension = 64;
-	u32 data_size = 64 * 64 * 64 * block_size;
+	u32 data_size = volume_dimension * volume_dimension * volume_dimension * block_size;
 
 	u8* volume_data = (u8*)pen::memory_alloc(data_size);
-	u32 row_pitch = 64 * block_size;
-	u32 slice_pitch = 64  * row_pitch;
+	u32 row_pitch = volume_dimension * block_size;
+	u32 slice_pitch = volume_dimension  * row_pitch;
 
-	for (u32 z = 0; z < 64; ++z)
+	for (u32 z = 0; z < volume_dimension; ++z)
 	{
-		for (u32 y = 0; y < 64; ++y)
+		for (u32 y = 0; y < volume_dimension; ++y)
 		{
-			for (u32 x = 0; x < 64; ++x)
+			for (u32 x = 0; x < volume_dimension; ++x)
 			{
 				u32 offset = z * slice_pitch + y * row_pitch  + x * block_size;
 				
@@ -73,7 +73,22 @@ void create_scene_objects(ces::entity_scene* scene)
 				r = rand() % 255;
 				g = rand() % 255;
 				b = rand() % 255;
-				a = rand() % 2 > 0;
+                a = 255;
+                
+                u32 black = 0;
+                if( x < volume_dimension / 3 || x > volume_dimension - volume_dimension / 3 )
+                    black++;
+                
+                if( y < volume_dimension / 3 || y > volume_dimension - volume_dimension / 3 )
+                    black++;
+                
+                if( z < volume_dimension / 3 || z > volume_dimension - volume_dimension / 3 )
+                    black++;
+                
+                if(black == 3)
+                {
+                    a = 0;
+                }
 
 				volume_data[offset + 0] = b;
 				volume_data[offset + 1] = g;

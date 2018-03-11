@@ -67,6 +67,8 @@ cbuffer per_pass_view : register(b0)
 {
 	float4x4 vp_matrix;
 	float4x4 view_matrix;
+	float4 camera_view_pos;
+	float4 camera_view_dir;
 };
 
 cbuffer per_draw_call : register(b1)
@@ -215,7 +217,37 @@ ps_output ps_volume_texture( vs_output input )
 {
 	ps_output output;
 	
-	output.colour = sample_texture_3d( volume_texture, normalize(input.world_pos.xyz));
+	float3 v = input.world_pos.xyz;
+	
+	float3 chebyshev_norm = v / max( max(abs(v.x), abs(v.y)), abs(v.z) );
+	
+	float3 uvw = chebyshev_norm * 0.5 + 0.5;
+	
+	float3 ray_dir = normalize(v - camera_view_pos.xyz);
+	float3 ray_step = ray_dir / 32.0;
+	float depth = 1.0;
+	
+	for( int s = 0; s < 32; ++s )
+	{
+		output.colour = sample_texture_3d( volume_texture, uvw);
+		
+		if(output.colour.a != 0.0)
+			break;
+		
+		depth -= 1.0 / 32.0;
+		uvw += ray_step;
+		
+		if(uvw.x > 1.0 || uvw.x < 0.0)
+			discard;
+			
+		if(uvw.y > 1.0 || uvw.y < 0.0)
+			discard;
+			
+		if(uvw.z > 1.0 || uvw.z < 0.0)
+			discard;
+	}
+	
+	output.colour.rgb *= lerp( 0.5, 1.0, depth );
 	
 	return output;
 }

@@ -25,7 +25,7 @@ namespace
 {
     static u64 k_frame = 0;
 
-#define GL_DEBUG_LEVEL 1
+#define GL_DEBUG_LEVEL 2
 
 #if GL_DEBUG_LEVEL > 1
 #define GL_ASSERT(V) PEN_ASSERT(V)

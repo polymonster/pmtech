@@ -52,7 +52,8 @@ namespace put
 		{
 			SELECT_NORMAL = 0,
 			SELECT_ADD = 1,
-			SELECT_REMOVE = 2
+			SELECT_REMOVE = 2,
+            SELECT_ADD_MULTI = 3
 		};
 
 		enum e_picking_state : u32
@@ -523,11 +524,6 @@ namespace put
 								pm = SELECT_ADD;
 							}
 
-                            sb_free(k_selection_list);
-                            k_selection_list = nullptr;
-                            
-                            stb__sbgrow(k_selection_list, scene->num_nodes);
-                            
 							for (s32 node = 0; node < scene->num_nodes; ++node)
 							{
 								if (!(scene->entities[node] & CMP_ALLOCATED))
@@ -556,9 +552,23 @@ namespace put
 
 								if (selected)
 								{
-									add_selection(scene, node, SELECT_ADD);
+									add_selection(scene, node, SELECT_ADD_MULTI);
 								}
 							}
+                            
+                            sb_free(k_selection_list);
+                            k_selection_list = nullptr;
+                            stb__sbgrow(k_selection_list, scene->num_nodes);
+                            
+                            u32 pos = 0;
+                            for (s32 node = 0; node < scene->num_nodes; ++node)
+                            {
+                                if(scene->state_flags[node] &= SF_SELECTED)
+                                    stb__sbraw(k_selection_list)[pos++] = node;
+                            }
+                            
+                            stb__sbm(k_selection_list) = scene->num_nodes;
+                            stb__sbn(k_selection_list) = pos-1;
 
 							picking_state = PICKING_READY;
 						}
