@@ -25,9 +25,6 @@ for i in range(1, len(sys.argv)):
 
 root_dir = os.getcwd()
 
-hlsl_key = ["float4x4", "float3x3", "float2x2", "float4", "float3", "float2", "lerp", "modf", "depth_ps_output"]
-glsl_key = ["mat4", "mat3", "mat2", "vec4", "vec3", "vec2", "mix", "mod", "gl_FragDepth"]
-
 config = open("build_config.json")
 build_config = json.loads(config.read())
 pmtech_dir = helpers.correct_path(build_config["pmtech_dir"])
@@ -553,9 +550,6 @@ def generate_glsl(
     final_vs_source += vs_main_post_assign
     final_vs_source += "}\n"
 
-    for key_index in range(0, len(hlsl_key)):
-        final_vs_source = final_vs_source.replace(hlsl_key[key_index], glsl_key[key_index])
-
     final_vs_source = replace_io_tokens(final_vs_source)
 
     vs_fn = os.path.join(shader_build_dir, shader_name, technique_name + ".vsc")
@@ -613,9 +607,6 @@ def generate_glsl(
         final_ps_source += "\t" + glsl_ps_main + "\n"
         final_ps_source += ps_main_post_assign
         final_ps_source += "}\n"
-
-        for key_index in range(0, len(hlsl_key)):
-            final_ps_source = final_ps_source.replace(hlsl_key[key_index], glsl_key[key_index])
 
         final_ps_source = replace_io_tokens(final_ps_source)
 
