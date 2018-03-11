@@ -37,21 +37,6 @@ namespace put
             pen::json       info;
             u32             info_timestamp = 0;
             shader_program* techniques = nullptr;
-            
-            const pmfx operator= (const pmfx& rhs)
-            {
-                pen::memory_zero(this, sizeof(*this));
-                
-                id_filename = rhs.id_filename;
-                info = rhs.info;
-                invalidated = rhs.invalidated;
-                info_timestamp = rhs.info_timestamp;
-                techniques = rhs.techniques;
-                
-                filename = rhs.filename;
-                
-                return *this;
-            }
         };
         pmfx* k_pmfx_list = nullptr;
         
@@ -457,8 +442,6 @@ namespace put
                 pen::json t = _techniques[i];
                 shader_program new_technique = load_shader_technique( filename, t, new_pmfx.info );
 
-				//new_pmfx.techniques.push_back(new_technique);
-                
                 sb_push(new_pmfx.techniques, new_technique);
             }
             

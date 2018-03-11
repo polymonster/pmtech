@@ -25,7 +25,7 @@ namespace
 {
     static u64 k_frame = 0;
 
-#define GL_DEBUG_LEVEL 2
+#define GL_DEBUG_LEVEL 1
 
 #if GL_DEBUG_LEVEL > 1
 #define GL_ASSERT(V) PEN_ASSERT(V)
@@ -754,7 +754,7 @@ namespace pen
         
         res.input_layout = new input_layout;
     
-        auto& attributes = res.input_layout->attributes;
+        res.input_layout->attributes = nullptr;
         
         for( u32 i = 0; i < params.num_elements; ++i )
         {
@@ -768,7 +768,7 @@ namespace pen
             new_attrib.input_slot      = params.input_layout[ i ].input_slot;
             new_attrib.step_rate       = params.input_layout[ i ].instance_data_step_rate;
             
-            sb_push(attributes, new_attrib);
+            sb_push(res.input_layout->attributes, new_attrib);
         }
 	}
 
@@ -1449,10 +1449,10 @@ namespace pen
                 {
                     CHECK_CALL( glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colour_res.render_target.texture.handle, 0));
                 }
+                
+                framebuffer fb = {hash[i], fbos[i]};
+                sb_push(k_framebuffers, fb);
             }
-            
-            framebuffer fb = {hash[i], fbos[i]};
-            sb_push(k_framebuffers, fb);
         }
         
         if( type == pen::RESOLVE_CUSTOM )

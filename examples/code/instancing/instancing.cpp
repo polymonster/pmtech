@@ -103,6 +103,8 @@ void create_instanced_objects( ces::entity_scene* scene )
                 scene->entities[new_prim] |= CMP_TRANSFORM;
                 scene->parents[new_prim] = master_node;
                 
+                scene->bounding_volumes[new_prim] = scene->bounding_volumes[master_node];
+                
                 scene->entities[new_prim] |= CMP_GEOMETRY;
                 scene->entities[new_prim] |= CMP_MATERIAL;
                 

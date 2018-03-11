@@ -167,10 +167,22 @@ namespace pen
 
 static void * stb__sbgrowf(void *arr, int increment, int itemsize)
 {
+    int start = stb_sb_count(arr);
     int dbl_cur = arr ? 2*stb__sbm(arr) : 0;
     int min_needed = stb_sb_count(arr) + increment;
     int m = dbl_cur > min_needed ? dbl_cur : min_needed;
-    int *p = (int *) realloc(arr ? stb__sbraw(arr) : 0, itemsize * m + sizeof(int)*2);
+    
+    //stretch buffer and zero mem
+    int* p = nullptr;
+    {
+        u32 total_size = itemsize * m + sizeof(int)*2;
+        p = (int *) realloc(arr ? stb__sbraw(arr) : 0, total_size);
+        
+        u8* pp = (u8*)p;
+        u32 preserve_size = sizeof(int)*2 + itemsize * start;
+        memset(pp + preserve_size, 0x00, total_size - preserve_size);
+    }
+
     if (p) {
         if (!arr)
             p[1] = 0;

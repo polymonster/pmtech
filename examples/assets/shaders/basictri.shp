@@ -3,11 +3,6 @@ struct vs_input
 	float4 position : POSITION;
 };
 
-struct instance_input
-{
-	float4 colour : COLOR0;
-};
-
 struct vs_output
 {
 	float4 position : SV_POSITION0;

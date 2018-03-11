@@ -191,7 +191,7 @@ namespace put
             }
         }
         
-        void scene_tree_enumerate( entity_scene* scene, const scene_tree& tree, std::vector<u32>& selection_list )
+        void scene_tree_enumerate( entity_scene* scene, const scene_tree& tree )
         {
             for( auto& child : tree.children )
             {
@@ -223,7 +223,7 @@ namespace put
 
                 if (node_open)
                 {
-                    scene_tree_enumerate( scene, child, selection_list );
+                    scene_tree_enumerate( scene, child );
                     ImGui::TreePop();
                 }
             }
@@ -301,17 +301,21 @@ namespace put
 			scene->local_matrices[child] = parent_mat.inverse4x4() * scene->local_matrices[child];
 		}
 
-		void clone_selection_hierarchical(entity_scene* scene, std::vector<u32>& selection_list, const c8* suffix )
+		void clone_selection_hierarchical(entity_scene* scene, u32** selection_list, const c8* suffix )
 		{
 			std::vector<u32> parent_list;
 
-			for (u32 i : selection_list)
-			{
+            u32 sel_num = sb_count(*selection_list);
+            for( u32 s = 0; s < sel_num; ++s )
+            {
+                u32 i = (*selection_list)[s];
+
 				if( scene->parents[i] == i || i == 0 )
 					parent_list.push_back(i);
 			}
             
-            selection_list.clear( );
+            sb_free(*selection_list);
+            *selection_list = nullptr;
 
 			for (u32 i : parent_list)
 			{
@@ -341,7 +345,7 @@ namespace put
 					node_counter++;
 
 					if(new_child == parent)
-						selection_list.push_back(new_child);
+						sb_push(*selection_list, new_child);
                     
 					dev_console_log("[clone] node [%i]%s to [%i]%s, parent [%i]%s", 
 						j,

@@ -39,7 +39,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //create 2 clear states one for the render target and one for the main screen, so we can see the difference
     static pen::clear_state cs =
     {
-        0.0f, 0.0, 1.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        0.0f, 0.0, 1.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER,
     };
 
     u32 clear_state = pen::renderer_create_clear_state( cs );

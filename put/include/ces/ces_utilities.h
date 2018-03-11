@@ -35,7 +35,7 @@ namespace put
         void	get_new_nodes_append( entity_scene* scene, s32 num, s32& start, s32& end );
         
         u32		clone_node( entity_scene* scene, u32 src, s32 dst = -1, s32 parent = -1, u32 flags = CLONE_INSTANTIATE, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
-		void	clone_selection_hierarchical(entity_scene* scene, std::vector<u32>& selection_list, const c8* suffix);
+		void	clone_selection_hierarchical(entity_scene* scene, u32** selection_list, const c8* suffix);
         
         void    instance_node_range( entity_scene* scene, u32 master_node, u32 num_nodes );
 
@@ -45,7 +45,7 @@ namespace put
         void    build_scene_tree( entity_scene* scene, s32 start_node, scene_tree& tree_out );
         void    build_heirarchy_node_list( entity_scene* scene, s32 start_node, std::vector<s32>& node_list );
         
-        void    scene_tree_enumerate( entity_scene* scene, const scene_tree& tree, std::vector<u32>& selection_list );
+        void    scene_tree_enumerate( entity_scene* scene, const scene_tree& tree );
         void    scene_tree_add_node( scene_tree& tree, scene_tree& node, std::vector<s32>& heirarchy );
 
         
