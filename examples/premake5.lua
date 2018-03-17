@@ -38,4 +38,5 @@ create_app_example( "texture_formats", script_path() )
 create_app_example( "skinning", script_path() )
 create_app_example( "vertex_stream_out", script_path() )
 create_app_example( "volume_texture", script_path() )
+create_app_example( "multiple_render_targets", script_path() )
 	

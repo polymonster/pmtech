@@ -1093,11 +1093,8 @@ namespace put
                     }
                 }
                 
-                if(!found_scene)
-                {
-                    PEN_PRINTF("render controller error: missing scene - %s\n", scene_str.c_str() );
-                    valid = false;
-                }
+				if (!found_scene)
+					new_view.scene = nullptr;
 
                 bool found_camera = false;
                 for( auto& c : k_cameras )
@@ -1111,10 +1108,7 @@ namespace put
                 }
                 
                 if(!found_camera)
-                {
-                    PEN_PRINTF("render controller error: missing camera - %s\n", camera_str.c_str() );
-                    valid = false;
-                }
+					new_view.camera = nullptr;
                 
 				//shader and technique
                 Str technique_str = view["technique"].as_str();
@@ -1295,22 +1289,7 @@ namespace put
                 //viewport and scissor
                 pen::viewport vp = { 0 };
                 get_rt_viewport( v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp );
-                
-                //create 2d view proj matrix
-                float W = 2.0f / vp.width;
-                float H = 2.0f / vp.height;
-                float mvp[4][4] =
-                {
-                    { W, 0.0, 0.0, 0.0 },
-                    { 0.0, H, 0.0, 0.0 },
-                    { 0.0, 0.0, 1.0, 0.0 },
-                    { -1.0, -1.0, 0.0, 1.0 }
-                };
-                pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
-                
-                //generate 3d view proj matrix
-                put::camera_update_shader_constants(v.camera, v.viewport_correction);
-                
+                                
                 //target
                 pen::renderer_set_viewport( vp );
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
@@ -1318,6 +1297,27 @@ namespace put
                 pen::renderer_set_targets( v.render_targets, v.num_colour_targets, v.depth_target);
                 
                 pen::renderer_clear( v.clear_state );
+
+				if (!v.camera)
+					continue;
+
+				if (!v.scene)
+					continue;
+
+				//create 2d view proj matrix
+				float W = 2.0f / vp.width;
+				float H = 2.0f / vp.height;
+				float mvp[4][4] =
+				{
+					{ W, 0.0, 0.0, 0.0 },
+					{ 0.0, H, 0.0, 0.0 },
+					{ 0.0, 0.0, 1.0, 0.0 },
+					{ -1.0, -1.0, 0.0, 1.0 }
+				};
+				pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
+
+				//generate 3d view proj matrix
+				put::camera_update_shader_constants(v.camera, v.viewport_correction);
 
 				//unbind samplers
 				for (s32 i = 0; i < 16; ++i)
