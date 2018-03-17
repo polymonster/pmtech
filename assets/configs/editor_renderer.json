@@ -131,6 +131,19 @@
 			size: [2048,2048],
 			format: d24s8,
 		},
+		
+		volume_raster:
+		{
+			size: [512,512],
+			format: rgba8,
+			cpu_read: true
+		},
+		
+		volume_raster_ds:
+		{
+			size: [512,512],
+			format: d24s8,
+		},
 	},
 			
 	views:
@@ -219,6 +232,27 @@
 			scene: main_scene,
 			camera: model_viewer_camera,
 			scene_views:["ces_render_scene"]
+		},
+		
+		volume_rasteriser:
+		{
+			target:[volume_raster, volume_raster_ds],
+			clear_colour:[0.5, 0.5, 0.5, 1.0],
+			clear_depth: 1.0,
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: default,
+			depth_stencil_state: default,
+			scene: main_scene,
+			camera: volume_rasteriser_camera,
+			scene_views:["ces_render_scene"],
+			render_flags:["forward_lit"],
+			
+			sampler_bindings:
+			[
+				{ texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+			],
 		},
 	},
 }

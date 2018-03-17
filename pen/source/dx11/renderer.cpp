@@ -1069,7 +1069,8 @@ namespace pen
 				tcp.flags
 			};
 
-			resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
+			resource_pool[resource_index].type = RES_TEXTURE_3D;
+			resource_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
 			hr = g_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture));
 			PEN_ASSERT(hr == 0);
 		}
@@ -1085,6 +1086,7 @@ namespace pen
 				texture_desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 			}
 
+			resource_pool[resource_index].type = RES_TEXTURE;
 			resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
 			hr = g_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture));
 			PEN_ASSERT(hr == 0);
@@ -1257,6 +1259,16 @@ namespace pen
 			rrbp.call_back_function((void*)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size );
 
 			g_immediate_context->Unmap(rt->tex_read_back.texture, 0);
+		}
+		else if (resource_pool[rrbp.resource_index].type == RES_TEXTURE)
+		{
+			texture2d_internal* tex = resource_pool[rrbp.resource_index].texture_2d;
+
+			g_immediate_context->Map(tex->texture, 0, D3D11_MAP_READ, 0, &mapped_res);
+
+			rrbp.call_back_function((void*)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size);
+
+			g_immediate_context->Unmap(tex->texture, 0);
 		}
     }
 

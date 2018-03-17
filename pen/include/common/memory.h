@@ -15,6 +15,8 @@
 #define BAD_ALLOC std::bad_alloc
 #endif
 
+//#include "stb_leakcheck.h"
+
 namespace pen
 {
 	//c 

@@ -54,8 +54,14 @@ namespace put
 
 			if (last_dir < ext)
 			{
-				for (u32 i = 0; i < last_dir; ++i)
+				//strip file
+				for (u32 i = 0; i < last_dir+1; ++i)
 					final.append(formatted.c_str()[i]);
+			}
+			else
+			{
+				//directory
+				final.append(formatted.c_str());
 			}
 			final.append("\"");
 
