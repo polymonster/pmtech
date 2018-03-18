@@ -74,17 +74,16 @@ namespace put
 
             scene->free_list_head  = scene->free_list[end].next;
             
-            //remove chunk from the free list
-            /*
             if (scene->free_list[start].prev)
             {
-                
+				//remove chunk from the free list
+				scene->free_list[start].prev = scene->free_list[end].next;
             }
-            else
-            {
-                scene->free_list = scene->free_list[end].next;
-            }
-            */
+			else
+			{
+				//if we are at the head
+				scene->free_list_head = scene->free_list[end].next;
+			}
 
             scene->num_nodes = end;
         }
@@ -135,11 +134,10 @@ namespace put
                 for( s32 i = 0; i < num+1; ++i )
                 {
                     scene->entities[fnl_iter->node] |= CMP_ALLOCATED;
+					scene->free_list_head = fnl_iter;
                     fnl_iter = fnl_iter->next;
                 }
-                
-                scene->free_list_head = fnl_iter;
-                
+                                
                 scene->num_nodes = std::max<u32>(end, scene->num_nodes);
             }
 		}
@@ -246,7 +244,7 @@ namespace put
                 scene_tree node;
                 node.node_index = n;
 
-                if( scene->parents[n] == n )
+				if( scene->parents[n] == n )
                 {
 					if (!enum_all && n != start_node)
 						break;
@@ -309,6 +307,8 @@ namespace put
             for( u32 s = 0; s < sel_num; ++s )
             {
                 u32 i = (*selection_list)[s];
+
+				scene->state_flags[i] &= ~SF_SELECTED;
 
 				if( scene->parents[i] == i || i == 0 )
 					parent_list.push_back(i);

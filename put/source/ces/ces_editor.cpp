@@ -426,6 +426,9 @@ namespace put
                     sb_push( k_selection_list, index);
 			}
 
+			if (!valid)
+				return;
+
             if (select_mode == SELECT_REMOVE)
                 scene->state_flags[index] &= ~SF_SELECTED;
             else
@@ -518,6 +521,11 @@ namespace put
 							u32 pm = SELECT_NORMAL;
 							if (!pen::input_is_key_down(PENK_CONTROL) && !pen::input_is_key_down(PENK_SHIFT))
 							{
+								//unflag current selected
+								u32 sls = sb_count(k_selection_list);
+								for (u32 i = 0; i < sls; ++i)
+									scene->state_flags[k_selection_list[i]] &= ~SF_SELECTED;
+
                                 sb_free(k_selection_list);
                                 k_selection_list = nullptr;
                                 
@@ -559,16 +567,22 @@ namespace put
                             sb_free(k_selection_list);
                             k_selection_list = nullptr;
                             stb__sbgrow(k_selection_list, scene->num_nodes);
-                            
-                            u32 pos = 0;
+
+                            s32 pos = 0;
                             for (s32 node = 0; node < scene->num_nodes; ++node)
                             {
                                 if(scene->state_flags[node] &= SF_SELECTED)
-                                    stb__sbraw(k_selection_list)[pos++] = node;
+                                   k_selection_list[pos++] = node;
                             }
                             
                             stb__sbm(k_selection_list) = scene->num_nodes;
-                            stb__sbn(k_selection_list) = pos-1;
+							stb__sbn(k_selection_list) = pos+1;
+
+							u32 sls = sb_count(k_selection_list);
+							for (u32 i = 0; i < sls; ++i)
+							{
+								dev_console_log("selected index %i", k_selection_list[i]);
+							}
 
 							picking_state = PICKING_READY;
 						}
