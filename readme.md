@@ -70,3 +70,4 @@ This workspace contains multiple examples of how to use the API's and set up pro
 - scene_editor - An editor to edit the data-oritented c-style component entity system.
 - vertex_stream_out - Uses vertex stream out / transform feedback to skin an animated character once per frame, the resulting vertex buffer that has been written from the vertex shader is then rendered many times with instancing to demostrate how vertex stream out can avoid re-skinning a model many times during different render passes or draw call instances.
 - volume_texture - Demonstrates loading and rendering of 3d volume textures.
+- multiple_render_targets - Renders a simple scene into multiple output buffers (albedo and normals), to illustrate how to use pmfx to setup deferred rendering or other rendering strategies which require mrt.
