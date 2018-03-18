@@ -81,7 +81,7 @@ typedef std::atomic<uint64_t> a_u64;
 #define PEN_UMIN( A, B ) A < B ? A : B
 #define PEN_UMAX( A, B ) A > B ? A : B
 
-#define PEN_ARRAY_SIZE( A ) sizeof(A)/sizeof(A[0])
+#define PEN_ARRAY_SIZE( A ) (sizeof(A)/sizeof(A[0]))
 
 //--------------------------------------------------------------------------------------
 // Print / Assert
