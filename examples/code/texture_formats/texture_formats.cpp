@@ -30,15 +30,6 @@ struct typed_texture
 const c8**		k_texture_formats;
 typed_texture*	k_textures = nullptr;
 u32				k_num_textures = 0;
-
-void image_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
-{
-	u32 w = row_pitch / block_size;
-	u32 h = depth_pitch / row_pitch;
-
-	stbi_write_bmp("bmp_tester_file.bmp", w, h, 4, p_data);
-}
-
 void load_textures()
 {
 	static typed_texture textures[] =
@@ -69,20 +60,6 @@ void load_textures()
 	k_texture_formats = new const c8*[k_num_textures];
 	for (int i = 0; i < k_num_textures; ++i)
 		k_texture_formats[i] = k_textures[i].fromat;
-
-	texture_info info;
-	get_texture_info(k_textures[1].handle, info);
-
-	pen::resource_read_back_params rrbp;
-	rrbp.block_size = 4;
-	rrbp.row_pitch = info.width * rrbp.block_size;
-	rrbp.depth_pitch = info.height * rrbp.row_pitch;
-	rrbp.data_size = rrbp.depth_pitch;
-	rrbp.resource_index = k_textures[1].handle;
-	rrbp.format = PEN_TEX_FORMAT_BGRA8_UNORM;
-	rrbp.call_back_function = image_read_back;
-
-	pen::renderer_read_back_resource(rrbp);
 }
 
 void texture_formats_ui()

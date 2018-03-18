@@ -31,6 +31,29 @@ namespace physics
     extern PEN_THREAD_RETURN physics_thread_main( void* params );
 }
 
+#if 0
+texture_info info;
+get_texture_info(k_textures[1].handle, info);
+
+pen::resource_read_back_params rrbp;
+rrbp.block_size = 4;
+rrbp.row_pitch = info.width * rrbp.block_size;
+rrbp.depth_pitch = info.height * rrbp.row_pitch;
+rrbp.data_size = rrbp.depth_pitch;
+rrbp.resource_index = k_textures[1].handle;
+rrbp.format = PEN_TEX_FORMAT_BGRA8_UNORM;
+rrbp.call_back_function = image_read_back;
+
+void image_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
+{
+	u32 w = row_pitch / block_size;
+	u32 h = depth_pitch / row_pitch;
+
+	stbi_write_bmp("bmp_tester_file.bmp", w, h, 4, p_data);
+}
+pen::renderer_read_back_resource(rrbp);
+#endif
+
 put::ces::entity_scene* main_scene;
 put::camera volume_raster_ortho;
 void volume_rasteriser_update(put::camera_controller* cc)
