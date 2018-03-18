@@ -1304,6 +1304,7 @@ namespace pen
         {
             resource_allocation& colour_res = resource_pool[ colour_targets[i] ];
             hh.add(colour_res.render_target.uid);
+            hh.add(colour_targets[i]);
             
             if( colour_res.type == RES_RENDER_TARGET_MSAA )
                 msaa = true;

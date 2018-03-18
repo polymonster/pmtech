@@ -317,6 +317,7 @@ ps_output ps_forward_lit( vs_output input )
 			sp.xyz /= sp.w;
 			sp.y *= -1.0;
 			sp.xy = sp.xy * 0.5 + 0.5;
+			sp.z = remap_depth(sp.z);
 			
 			float d = sample_texture( shadowmap_texture, sp.xy ).r;
 			float shadow = sp.z < d ? 1.0 : 0.0;

@@ -38,10 +38,6 @@ void mrt_example_ui()
 	bool opened = true;
 	ImGui::Begin("Multiple Render Targets", &opened, ImGuiWindowFlags_AlwaysAutoResize);
 
-	static hash_id a = PEN_HASH("gbuffer_albedo");
-	static hash_id n = PEN_HASH("gbuffer_normals");
-	static hash_id d = PEN_HASH("gbuffer_depth");
-
 	static hash_id rt_ids[] =
 	{
 		PEN_HASH("gbuffer_albedo"),
@@ -50,9 +46,9 @@ void mrt_example_ui()
 	};
 
 	int c = 0;
-	for (hash_id h : rt_ids)
+	for (hash_id id : rt_ids)
 	{
-		const pmfx::render_target* r = pmfx::get_render_target(h);
+		const pmfx::render_target* r = pmfx::get_render_target(id);
 		
 		f32 w, h;
 		pmfx::get_render_target_dimensions(r, w, h);

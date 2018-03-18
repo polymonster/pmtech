@@ -14,7 +14,8 @@
 #define to_3x3( M4 ) float3x3(M4)
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;
 
-#define remap_depth( d ) d
+#define remap_depth( d ) d = d * 0.5 + 0.5
+
 #define depth_ps_output gl_FragDepth
 
 //hlsl / glsl portability macros
@@ -54,6 +55,6 @@
 
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3; mat = transpose(mat)
 
-#define remap_depth( d ) d = d * 0.5 + 0.5
+#define remap_depth( d ) d
 
 #endif

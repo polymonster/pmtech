@@ -1314,10 +1314,9 @@ namespace put
                 get_rt_viewport( v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp );
                                 
                 //target
+                pen::renderer_set_targets( v.render_targets, v.num_colour_targets, v.depth_target);
                 pen::renderer_set_viewport( vp );
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-                
-                pen::renderer_set_targets( v.render_targets, v.num_colour_targets, v.depth_target);
                 
                 pen::renderer_clear( v.clear_state );
 
