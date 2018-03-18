@@ -87,6 +87,11 @@
 		{
 			cull_mode: front,
 			fill_mode: solid
+		},
+		
+		volume_raster:
+		{
+			cull_mode: back
 		}
 	},
 	
@@ -104,28 +109,7 @@
 			size: equal,
 			format: d24s8,
 		},
-		
-		gbuffer_albedo:
-		{
-			size: equal,
-			format: rgba8,
-			samples: 4,
-		},
-		
-		gbuffer_normals:
-		{
-			size: equal,
-			format: rgba8,
-			samples: 4,
-		},
-		
-		gbuffer_depth:
-		{
-			size: equal,
-			format: d24s8,
-			samples: 4,
-		},
-		
+				
 		shadow_map:
 		{
 			size: [2048,2048],
@@ -162,6 +146,7 @@
 			camera: model_viewer_camera,
 			scene_views:["ces_render_scene"],
 			render_flags:["forward_lit"],
+			
 			
 			sampler_bindings:
 			[
@@ -205,35 +190,7 @@
 			camera: model_viewer_camera,
 			scene_views:["ces_render_scene"]
 		},
-				
-		gbuffer_view:
-		{
-			target:[gbuffer_albedo, gbuffer_normals, gbuffer_depth],
-			clear_colour:[1.0, 1.0, 1.0, 1.0],			
-			clear_depth: 1.0,
-			clear:
-			{
-				gbuffer_albedo:
-				{
-					clear_colour_f:[0.0, 0.0, 1.0, 1.0]
-				},
-				
-				gbuffer_normals:
-				{
-					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
-				}
-			},
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			blend_state: disabled,
-			raster_state: default,
-			depth_stencil_state: default,
-			pmfx_shader: forward_render,
-			technique: gbuffer,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			scene_views:["ces_render_scene"]
-		},
-		
+						
 		volume_rasteriser:
 		{
 			target:[volume_raster, volume_raster_ds],
@@ -242,10 +199,12 @@
 			colour_write_mask: 0xf,
 			blend_state: disabled,
 			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: default,
+			raster_state: volume_raster,
 			depth_stencil_state: default,
 			scene: main_scene,
 			camera: volume_rasteriser_camera,
+			pmfx_shader: pmfx_utility,
+			technique: volume_raster_albedo,
 			scene_views:["ces_render_scene"],
 			render_flags:["forward_lit"],
 			

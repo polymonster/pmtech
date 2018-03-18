@@ -284,7 +284,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     put::dev_ui::init();
     
     //load shaders now requiring dependency on put to make loading simpler.
-    pmfx::shader_handle shader_toy_pmfx = pmfx::load("shader_toy");
+    pmfx::shader_handle shader_toy_pmfx = pmfx::load_shader("shader_toy");
 
     u32 test_texture = put::load_texture("data/textures/test_normal.dds");
 
@@ -365,7 +365,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
-    pmfx::release( shader_toy_pmfx );
+    pmfx::release_shader( shader_toy_pmfx );
     pen::renderer_release_texture(test_texture);
     
     k_render_handles.release();

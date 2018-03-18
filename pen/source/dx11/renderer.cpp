@@ -1061,7 +1061,7 @@ namespace pen
 				tcp.width,
 				tcp.height,
 				tcp.num_arrays,
-				tcp.num_mips,
+				(u32)tcp.num_mips,
 				(DXGI_FORMAT)tcp.format,
 				(D3D11_USAGE)tcp.usage,
 				tcp.bind_flags,

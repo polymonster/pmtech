@@ -404,7 +404,7 @@ namespace put
 			static hash_id id_default_shader = PEN_HASH("forward_render");
 			static hash_id id_default_technique = PEN_HASH("forward_lit");
 
-			instance->default_pmfx_shader = pmfx::load("forward_render");
+			instance->default_pmfx_shader = pmfx::load_shader("forward_render");
 			instance->id_default_shader = id_default_shader;
 			instance->id_default_technique = id_default_technique;
         }

@@ -398,7 +398,7 @@ namespace put
             pen::string_format( file_buf, 256, "data/pmfx/%s/%s/info.json", pen::renderer_get_shader_platform(), pmfx_filename );
         }
         
-        void release( shader_handle handle )
+        void release_shader( shader_handle handle )
         {
 			k_pmfx_list[handle].filename = nullptr;
             
@@ -448,7 +448,7 @@ namespace put
             return new_pmfx;
         }
 
-        shader_handle load( const c8* pmfx_name )
+        shader_handle load_shader( const c8* pmfx_name )
         {
 			//return existing
 			shader_handle ph = PEN_INVALID_HANDLE;
@@ -562,7 +562,7 @@ namespace put
                         pmfx pmfx_new = load_internal( pmfx_set.filename.c_str() );
                         
                         //release existing
-                        release(current_counter);
+                        release_shader(current_counter);
                         
                         //set exisiting to the new one
                         pmfx_set = pmfx_new;

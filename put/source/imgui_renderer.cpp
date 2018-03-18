@@ -79,7 +79,7 @@ namespace put
             io.ImeWindowHandle = pen::window_get_primary_display_handle();
 
 			//load shaders
-            g_imgui_rs.imgui_shader = pmfx::load("imgui");
+            g_imgui_rs.imgui_shader = pmfx::load_shader("imgui");
 
 			create_texture_atlas();
 

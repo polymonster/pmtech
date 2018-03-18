@@ -55,7 +55,7 @@ void create_scene_objects(ces::entity_scene* scene)
 	//set material for basic cubemap
 	scene_node_material& mat = scene->materials[new_prim];
 	mat.texture_id[3] = put::load_texture("data/textures/cubemap.dds");
-	mat.default_pmfx_shader = pmfx::load("pmfx_utility");
+	mat.default_pmfx_shader = pmfx::load_shader("pmfx_utility");
 	mat.id_default_shader = PEN_HASH("pmfx_utility");
 	mat.id_default_technique = PEN_HASH("cubemap");
 }

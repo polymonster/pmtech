@@ -63,7 +63,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     };
 
     //load shaders now requiring dependency on pmfx to make loading simpler.
-    pmfx::shader_handle textured_shader = pmfx::load("textured");
+    pmfx::shader_handle textured_shader = pmfx::load_shader("textured");
     
     u32 test_texture = put::load_texture("data/textures/test_normal.dds");
 
@@ -160,7 +160,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     }
     
     //clean up mem here
-    pmfx::release( textured_shader );
+    pmfx::release_shader( textured_shader );
     
     pen::renderer_release_buffer(quad_vertex_buffer);
     pen::renderer_release_buffer(quad_index_buffer);

@@ -62,7 +62,7 @@ namespace put
 
 		void create_shaders()
 		{
-            debug_shader = pmfx::load("debug");
+            debug_shader = pmfx::load_shader("debug");
 		}
         
         void release_3d_buffers( )

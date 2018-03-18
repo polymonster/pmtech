@@ -418,7 +418,7 @@ namespace put
 				if (!inside)
 				{
 					cull_count++;
-					continue;
+					//continue;
 				}
 
 				draw_count++;
@@ -859,7 +859,7 @@ namespace put
             
             //update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
-            static pmfx::shader_handle ph = pmfx::load("forward_render");
+            static pmfx::shader_handle ph = pmfx::load_shader("forward_render");
             
             if( pmfx::set_technique( ph, id_pre_skin_technique, 0 ) )
             {

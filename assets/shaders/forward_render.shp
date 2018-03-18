@@ -127,7 +127,7 @@ vs_output_zonly vs_main_zonly( vs_input input )
 
 	output.position = mul( input.position, wvp );
 	
-	output.position.z = remap_depth(output.position.z);
+	//output.position.z = remap_depth(output.position.z);
 	
 	return output;
 }
@@ -316,7 +316,7 @@ ps_output ps_forward_lit( vs_output input )
 			float4 sp = mul( input.world_pos, shadow_matrix );
 			sp.xyz /= sp.w;
 			sp.y *= -1.0;
-			sp.xyz = sp.xyz * 0.5 + 0.5;
+			sp.xy = sp.xy * 0.5 + 0.5;
 			
 			float d = sample_texture( shadowmap_texture, sp.xy ).r;
 			float shadow = sp.z < d ? 1.0 : 0.0;

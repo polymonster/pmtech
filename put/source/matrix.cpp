@@ -273,8 +273,26 @@ mat4 mat4::create_perspective_projection(f32 left, f32 right, f32 bottom, f32 to
 
 mat4 mat4::create_orthographic_projection( f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar )
 {
-    mat4 m;
-    
+	f32& l = left;
+	f32& r = right;
+
+	f32& t = top;
+	f32& b = bottom;
+
+	f32& n = znear;
+	f32& f = zfar;
+
+	mat4 m = create_identity();
+
+	m.m[0] = 2.0f / (r - l);
+	m.m[5] = 2.0f / (t - b);
+	m.m[10] = 1.0f / (n - f);
+
+	m.m[3] = (l + r) / (l - r);
+	m.m[7] = (t + b) / (b - t);
+	m.m[11] = n / (n - f);
+
+	/*
     f32 tx = -((right + left) / (right - left));
     f32 ty = -((top + bottom) / (top - bottom));
     f32 tz = -((zfar + znear) / (zfar - znear));
@@ -284,6 +302,8 @@ mat4 mat4::create_orthographic_projection( f32 left, f32 right, f32 bottom, f32 
     m.m[ 8] = 0.0f; m.m[ 9] = 0.0f; m.m[10] = (-2.0f / (zfar - znear)); m.m[11] = tz;
     m.m[12] = 0.0f; m.m[13] = 0.0f; m.m[14] = 0.0f; m.m[15] = 1.0f;
     
+	*/
+
     return m;
 }
 

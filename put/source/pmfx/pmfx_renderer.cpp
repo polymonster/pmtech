@@ -493,6 +493,11 @@ namespace put
                 rcp.scissor_enable = state["scissor_enable"].as_bool( false ) ? 1 : 0;
                 rcp.multisample = state["multisample"].as_bool( true ) ? 1 : 0;
                 rcp.aa_lines = state["aa_lines"].as_bool( false ) ? 1 : 0;
+
+				if (!rcp.depth_clip_enable)
+				{
+					int a = 0;
+				}
                 
                 hash_id hh = PEN_HASH(rcp);
                 
@@ -1008,8 +1013,8 @@ namespace put
                             {
                                 if( new_view.rt_width != w || new_view.rt_height != h || new_view.rt_ratio != rr )
                                 {
-                                    PEN_PRINTF("render controller error: render target %s is incorrect dimension\n",
-                                               target_str.c_str() );
+									dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: render target %s is incorrect dimension", target_str.c_str());
+
                                     valid = false;
                                 }
                             }
@@ -1027,7 +1032,7 @@ namespace put
                     
                     if(!found)
                     {
-                        PEN_PRINTF("render controller error: missing render target - %s\n", target_str.c_str() );
+						dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: missing render target - %s", target_str.c_str());
                         valid = false;
                     }
                 }
@@ -1075,46 +1080,64 @@ namespace put
                 new_view.blend_state = create_blend_state( j_views[i].name().c_str(), blend_state,
                                                           colour_write_mask, alpha_to_coverage);
                 
-                //scene and camera
+                //scene
                 Str scene_str = view["scene"].as_str();
-                Str camera_str = view["camera"].as_str();
-                
-                hash_id scene_id = PEN_HASH(scene_str.c_str());
-                hash_id camera_id = PEN_HASH(camera_str.c_str());
-                
-                bool found_scene = false;
-                for( auto& s : k_scenes )
-                {
-                    if(s.id_name == scene_id)
-                    {
-                        new_view.scene = s.scene;
-                        found_scene = true;
-                        break;
-                    }
-                }
-                
-				if (!found_scene)
-					new_view.scene = nullptr;
 
-                bool found_camera = false;
-                for( auto& c : k_cameras )
-                {
-                    if(c.id_name == camera_id)
-                    {
-                        new_view.camera = c.camera;
-                        found_camera = true;
-                        break;
-                    }
-                }
-                
-                if(!found_camera)
-					new_view.camera = nullptr;
-                
+				new_view.scene = nullptr;
+				if (scene_str.length() > 0)
+				{
+					hash_id scene_id = PEN_HASH(scene_str.c_str());
+
+					bool found_scene = false;
+					for (auto& s : k_scenes)
+					{
+						if (s.id_name == scene_id)
+						{
+							new_view.scene = s.scene;
+							found_scene = true;
+							break;
+						}
+					}
+
+					if (!found_scene)
+					{
+						dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: missing scene - %s", scene_str.c_str());
+						valid = false;
+					}
+				}
+
+                //camera
+				Str camera_str = view["camera"].as_str();
+		
+				new_view.camera = nullptr;
+				if (camera_str.length() > 0)
+				{
+					hash_id camera_id = PEN_HASH(camera_str.c_str());
+
+					bool found_camera = false;
+					for (auto& c : k_cameras)
+					{
+						if (c.id_name == camera_id)
+						{
+							new_view.camera = c.camera;
+							found_camera = true;
+							break;
+						}
+					}
+
+					if (!found_camera)
+					{
+						dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: missing camera - %s", camera_str.c_str());
+						valid = false;
+					}
+
+				}
+
 				//shader and technique
                 Str technique_str = view["technique"].as_str();
                 new_view.technique = PEN_HASH(technique_str.c_str());
 
-				new_view.pmfx_shader = pmfx::load(view["pmfx_shader"].as_cstr());
+				new_view.pmfx_shader = pmfx::load_shader(view["pmfx_shader"].as_cstr());
                 
                 //render flags
                 pen::json render_flags = view["render_flags"];
@@ -1369,7 +1392,7 @@ namespace put
 			{
 				if (rt.samples > 1)
 				{
-					static shader_handle pmfx_resolve = pmfx::load("msaa_resolve");
+					static shader_handle pmfx_resolve = pmfx::load_shader("msaa_resolve");
 					pmfx::set_technique(pmfx_resolve, PEN_HASH("average_4x"), 0);
 
 					pen::renderer_resolve_target(rt.handle, pen::RESOLVE_CUSTOM);

@@ -260,6 +260,28 @@ ps_output ps_volume_texture( vs_output input )
 	return output;
 }
 
+vs_output vs_main_volume_raster( vs_input input )
+{
+	vs_output output;
+	
+	float4x4 wvp = mul( world_matrix, vp_matrix );
+
+	output.position = mul( input.position, wvp );
+	output.world_pos = mul( input.position, world_matrix );
+		
+	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+	
+	output.normal = mul( input.normal.xyz, rotation_matrix );
+	output.tangent = mul( input.tangent.xyz, rotation_matrix );
+	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
+	
+	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+	
+	//output.position.z = remap_depth(output.position.z);
+	
+    return output;
+}
+
 pmfx:
 {	
 	"diffuse":
@@ -302,6 +324,12 @@ pmfx:
 	{
 		"vs": "vs_picking_instanced",
 		"ps": "ps_picking"
+	},
+	
+	"volume_raster_albedo":
+	{
+		"vs": "vs_main_volume_raster",
+		"ps": "ps_diffuse"
 	}
 }
 

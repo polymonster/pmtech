@@ -50,6 +50,7 @@ namespace put
 		);
 
 		p_camera->flags |= CF_INVALIDATED;
+		p_camera->flags |= CF_ORTHO;
 	}
 
 	void camera_update_fly(camera* p_camera, bool has_focus, bool invert_y )
@@ -255,11 +256,14 @@ namespace put
 
 	void camera_update_shader_constants( camera* p_camera, bool viewport_correction )
 	{
-        f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
-		if (cur_aspect != p_camera->aspect)
+		if (!(p_camera->flags & CF_ORTHO))
 		{
-			p_camera->aspect = cur_aspect;
-			camera_update_projection_matrix(p_camera);
+			f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
+			if (cur_aspect != p_camera->aspect)
+			{
+				p_camera->aspect = cur_aspect;
+				camera_update_projection_matrix(p_camera);
+			}
 		}
 
 		update_frustum(p_camera);
@@ -304,6 +308,11 @@ namespace put
 			wvp.view_matrix = p_camera->view;
             wvp.view_position = vec4f( inv_view.get_translation(), 0.0 );
             wvp.view_direction = vec4f( inv_view.get_fwd(), 0.0 );
+
+			if (p_camera->flags & CF_ORTHO)
+			{
+				wvp.view_projection = p_camera->proj;
+			}
             
 			pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
 

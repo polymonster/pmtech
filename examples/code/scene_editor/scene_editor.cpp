@@ -31,6 +31,40 @@ namespace physics
     extern PEN_THREAD_RETURN physics_thread_main( void* params );
 }
 
+put::ces::entity_scene* main_scene;
+put::camera volume_raster_ortho;
+void volume_rasteriser_update(put::camera_controller* cc)
+{
+	vec3f min = main_scene->renderable_extents.min;
+	vec3f max = main_scene->renderable_extents.max;
+
+	f32 slice_thickness = (max.z - min.z) / 32.0f;
+	static f32 cur_slice_pos = 50.0;
+
+	static int slice = 0;
+	ImGui::InputInt("slice", &slice);
+
+	f32 near_slice = min.z + slice_thickness * slice;
+
+	//put::camera_create_orthographic(&volume_raster_ortho, min.x, max.x, min.y, max.y, near_slice, near_slice + slice_thickness);
+
+	put::camera_create_orthographic(&volume_raster_ortho, min.x, max.x, min.y, max.y, min.z, max.z);
+}
+
+void volume_rasteriser_init()
+{
+	//create ortho camera and controller
+	//put::camera_create_orthographic(&volume_raster_ortho, -50, 50, -50, 50, 50, -50);
+
+	put::camera_controller cc;
+	cc.camera = &volume_raster_ortho;
+	cc.update_function = &volume_rasteriser_update;
+	cc.name = "volume_rasteriser_camera";
+	cc.id_name = PEN_HASH(cc.name.c_str());
+
+	pmfx::register_camera(cc);
+}
+
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
     //unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -54,7 +88,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     cc.id_name = PEN_HASH(cc.name.c_str());
     
     //create the main scene and controller
-    put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
+    main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init( main_scene );
     
     put::scene_controller sc;
@@ -75,6 +109,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
     
+	volume_rasteriser_init();
+
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
 

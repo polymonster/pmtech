@@ -10,8 +10,9 @@ namespace put
 {
 	enum camera_flags : u32
 	{
-		CF_INVALIDATED = 1<<1,
-        CF_VP_CORRECTED = 1<<2,
+		CF_INVALIDATED = 1 << 1,
+		CF_VP_CORRECTED = 1 << 2,
+		CF_ORTHO = 1 << 3,
 	};
 
 	struct camera_cbuffer
