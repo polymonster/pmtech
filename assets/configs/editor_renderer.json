@@ -118,14 +118,14 @@
 		
 		volume_raster:
 		{
-			size: [512,512],
+			size: [64,64],
 			format: rgba8,
 			cpu_read: true
 		},
 		
 		volume_raster_ds:
 		{
-			size: [512,512],
+			size: [64,64],
 			format: d24s8,
 		},
 	},
@@ -194,7 +194,7 @@
 		volume_rasteriser:
 		{
 			target:[volume_raster, volume_raster_ds],
-			clear_colour:[0.5, 0.5, 0.5, 1.0],
+			clear_colour:[0.0, 0.0, 0.0, 0.0],
 			clear_depth: 1.0,
 			colour_write_mask: 0xf,
 			blend_state: disabled,
