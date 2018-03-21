@@ -253,6 +253,9 @@ ps_output ps_volume_texture( vs_output input )
 			
 		if(uvw.z > 1.0 || uvw.z < 0.0)
 			discard;
+		
+		if( s == max_samples-1)
+			discard;
 	}
 	
 	output.colour.rgb *= lerp( 0.5, 1.0, depth );

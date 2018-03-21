@@ -131,7 +131,17 @@ public:
 		return v;
 	}
     
-    f32		x, y;  
+	inline f32 max_component()
+	{
+		return fmax(x, y);
+	}
+
+	inline f32 min_component()
+	{
+		return fmin(x, y);
+	}
+
+    f32	x, y;  
 };
 
 struct vec3f
@@ -219,6 +229,16 @@ public:
         vec3f v( -FLT_MAX, -FLT_MAX, -FLT_MAX );
         return v;
     }
+
+	inline f32 max_component()
+	{
+		return fmax(fmax(x, y), z);
+	}
+
+	inline f32 min_component()
+	{
+		return fmin(fmin(x, y), z);
+	}
     
     inline static vec3f zero()
     {
@@ -420,6 +440,16 @@ public:
         vec3f v( -FLT_MAX, -FLT_MAX, -FLT_MAX );
         return v;
     }
+
+	inline f32 max_component()
+	{
+		return fmax(fmax(fmax(x, y), z ), w);
+	}
+
+	inline f32 min_component()
+	{
+		return fmin(fmin(fmin(x, y), z), w);
+	}
     
     inline static vec4f zero() 
     {

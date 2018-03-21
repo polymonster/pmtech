@@ -41,14 +41,84 @@ put::ces::entity_scene* main_scene;
 // Volume Rasteriser WIP --------------------------------------------------------------------------------------------------------
 
 static bool enable_volume_raster = false;
-const u32	volume_dim = 64;
+const u32	volume_dim = 256;
 put::camera volume_raster_ortho;
 u32			current_requestd_slice = -1;
-u32			current_slice = 0;
-u32			current_axis = 0;
+s32			current_slice = 0;
+s32			current_axis = 0;
 bool		added_to_scene = false;
 
-void*		volume_slices[6][64] = { 0 };
+void*		volume_slices[6][volume_dim] = { 0 };
+
+enum volume_raster_axis
+{
+	ZAXIS_POS,
+	YAXIS_POS,
+	XAXIS_POS,
+	ZAXIS_NEG,
+	YAXIS_NEG,
+	XAXIS_NEG
+};
+
+inline u8* get_texel(u32 axis, u32 x, u32 y, u32 z )
+{
+	static u32 block_size = 4;
+	static u32 row_pitch = volume_dim * 4;
+	static u32 slice_pitch = volume_dim  * row_pitch;
+
+	u32 invx = volume_dim - x - 1;
+	u32 invy = volume_dim - y - 1;
+	u32 invz = volume_dim - z - 1;
+	u8* slice = nullptr;
+
+	switch (axis)
+	{
+	case ZAXIS_POS:
+	{
+		//return nullptr;
+
+		u32 offset_xpos = y * row_pitch + x * block_size;
+		slice = (u8*)volume_slices[0][z];
+		return &((u8*)volume_slices[0][z])[offset_xpos];
+	}
+	case ZAXIS_NEG:
+	{
+		//return nullptr;
+
+		u32 offset_xneg = y * row_pitch + x * block_size;
+		slice = (u8*)volume_slices[3][invz];
+		return &slice[offset_xneg];
+	}
+	case YAXIS_POS:
+	{
+		//return nullptr;
+
+		u32 offset_ypos = x * row_pitch + z * block_size;
+		slice = (u8*)volume_slices[1][invy];
+		return &slice[offset_ypos];
+	}
+	case YAXIS_NEG:
+	{
+		//return nullptr;
+
+		u32 offset_yneg = x * row_pitch + z * block_size;
+		slice = (u8*)volume_slices[4][y];
+		return &slice[offset_yneg];
+	}
+	case XAXIS_POS:
+	{
+		//return nullptr;
+
+		u32 offset_xpos = y * row_pitch + z * block_size;
+		slice = (u8*)volume_slices[2][x];
+		return &slice[offset_xpos];
+	}
+	default:
+		return nullptr;
+	}
+
+	return nullptr;
+}
 
 void image_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
 {
@@ -112,17 +182,18 @@ void volume_raster_completed()
 			{
 				u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
 
-				u32 slice_offset = y * row_pitch + x * block_size;
-
 				u8 rgba[4] = { 0 };
 
 				for (u32 a = 0; a < 6; ++a)
 				{
-					if (slice_mem[a][slice_offset + 3] > 128)
-					{
+					u8* tex = get_texel(a, x, y, z);
+					
+					if (!tex)
+						continue;
+
+					if (tex[3] > 16)
 						for( u32 p = 0; p < 4; ++p )
-							rgba[p] = slice_mem[a][slice_offset + p];
-					}
+							rgba[p] = tex[p];
 				}
 
 				volume_data[offset + 0] = rgba[2];
@@ -164,6 +235,7 @@ void volume_raster_completed()
 
 void volume_rasteriser_update(put::camera_controller* cc)
 {
+#if 1
 	if (!enable_volume_raster)
 		return;
 
@@ -181,6 +253,7 @@ void volume_rasteriser_update(put::camera_controller* cc)
 		volume_raster_completed();
 		return;
 	}
+#endif
 
 	static mat4 axis_swaps[] =
 	{
@@ -195,6 +268,11 @@ void volume_rasteriser_update(put::camera_controller* cc)
 
 	vec3f min = main_scene->renderable_extents.min;
 	vec3f max = main_scene->renderable_extents.max;
+
+	vec3f dim = max - min;
+	f32 texel_boarder = dim.max_component() / 64;
+	min -= texel_boarder;
+	max += texel_boarder;
 
 	vec3f smin[] =
 	{
@@ -221,7 +299,10 @@ void volume_rasteriser_update(put::camera_controller* cc)
 	vec3f mmin = smin[current_axis];
 	vec3f mmax = smax[current_axis];
 
-	f32 slice_thickness = fabs(mmax.z - mmin.z) / volume_dim;
+	//ImGui::InputInt("axis", &current_axis);
+	//ImGui::InputInt("slice", &current_slice);
+
+	f32 slice_thickness = (mmax.z - mmin.z) / volume_dim;
 	f32 near_slice = mmin.z + slice_thickness * current_slice;
 
 	put::camera_create_orthographic(&volume_raster_ortho, mmin.x, mmax.x, mmin.y, mmax.y, near_slice, near_slice + slice_thickness);
