@@ -41,7 +41,6 @@ namespace put
 		{
 			static u32 block_size = 4;
 			static u32 row_pitch = volume_dim * 4;
-			static u32 slice_pitch = volume_dim  * row_pitch;
 
 			u32 invx = volume_dim - x - 1;
 			u32 invy = volume_dim - y - 1;

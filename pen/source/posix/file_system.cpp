@@ -173,7 +173,7 @@ namespace pen
                     }
                     
                     u32 len = pen::string_length( ent->d_name );
-                    len = PEN_UMIN( len, 1022 );
+                    len = PEN_MIN( len, 1022 );
                     
                     pen::memory_cpy(results.children[i].name, ent->d_name, len);
                     results.children[i].name[len] = '\0';
