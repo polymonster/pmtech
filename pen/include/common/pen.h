@@ -69,17 +69,18 @@ typedef double          f64;
 
 typedef unsigned long   ulong;
 
-typedef std::atomic<uint8_t> a_u8;
-typedef std::atomic<uint32_t> a_u32;
-typedef std::atomic<uint64_t> a_u64;
+typedef std::atomic<uint8_t>	a_u8;
+typedef std::atomic<uint32_t>	a_u32;
+typedef std::atomic<uint64_t>	a_u64;
 
 #define PEN_F32_MAX FLT_MAX
 
 #define PEN_FMAX fmax
 #define PEN_FMIN fmin
 
-#define PEN_UMIN( A, B ) A < B ? A : B
-#define PEN_UMAX( A, B ) A > B ? A : B
+#define PEN_MIN( A, B ) A < B ? A : B
+#define PEN_MAX( A, B ) A > B ? A : B
+#define PEN_SWAP( A, B ) A ^= B; B ^= A; A ^= B
 
 #define PEN_ARRAY_SIZE( A ) (sizeof(A)/sizeof(A[0]))
 

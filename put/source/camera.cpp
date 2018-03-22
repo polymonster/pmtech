@@ -311,6 +311,7 @@ namespace put
 			wvp.view_matrix = p_camera->view;
             wvp.view_position = vec4f( inv_view.get_translation(), 0.0 );
             wvp.view_direction = vec4f( inv_view.get_fwd(), 0.0 );
+			wvp.view_matrix_inverse = inv_view;
 
 			pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
 

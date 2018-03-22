@@ -108,8 +108,8 @@ namespace put
 	{
 		if( compressed )
 		{
-			u32 block_width = PEN_UMAX(1, ((width + 3) / 4));
-			u32 block_height = PEN_UMAX(1, ((width + 3) / 4));
+			u32 block_width = PEN_MAX(1, ((width + 3) / 4));
+			u32 block_height = PEN_MAX(1, ((width + 3) / 4));
 			return  block_width * block_height * block_size;
 		}
 

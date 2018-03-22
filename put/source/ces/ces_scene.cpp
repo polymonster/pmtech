@@ -374,8 +374,10 @@ namespace put
                 return;
             
             //todo - set sampler states from material
-            u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("wrap_linear_sampler_state") );
-            
+            //u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("clamp_point_sampler_state") );
+
+			u32 ss_wrap = put::pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
+
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
 			pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
 
@@ -770,7 +772,10 @@ namespace put
                 //skinned meshes have the world matrix baked into the bones
                 if( scene->entities[n] & CMP_SKINNED || scene->entities[n] & CMP_PRE_SKINNED )
                     scene->draw_call_data[n].world_matrix = mat4::create_identity();
-                
+
+				//temp todo, make a custom buffer
+				scene->draw_call_data[n].m1 = scene->world_matrices[n].inverse3x4();
+
                 //per node cbuffer
                 pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(per_draw_call));
             }

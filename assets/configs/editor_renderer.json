@@ -28,6 +28,12 @@
 			filter: linear,
 			address: wrap
 		},
+		
+		clamp_point:
+		{
+			filter: point,
+			address: clamp
+		},
 	},
 	
 	depth_stencil_states:
@@ -146,7 +152,6 @@
 			camera: model_viewer_camera,
 			scene_views:["ces_render_scene"],
 			render_flags:["forward_lit"],
-			
 			
 			sampler_bindings:
 			[

@@ -58,3 +58,9 @@
 #define remap_depth( d ) d
 
 #endif
+
+//platform agnostic pmfx macros
+#define chebyshev_normalize( V ) (V.xyz / max( max(abs(V.x), abs(V.y)), abs(V.z) ))	
+
+
+

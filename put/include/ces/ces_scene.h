@@ -77,6 +77,7 @@ namespace put
             mat4    world_matrix;
             vec4f   v1;             //generic data ie colour
             vec4f   v2;             //generic data ie roughness, shininess,
+			mat4	m1;				//generic matrix ie inverse world_matrix
         };
 
 		struct scene_node_skin

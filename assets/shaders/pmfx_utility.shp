@@ -65,16 +65,19 @@ struct ps_output_multi
 
 cbuffer per_pass_view : register(b0)
 {
-	float4x4 vp_matrix;
-	float4x4 view_matrix;
-	float4 camera_view_pos;
-	float4 camera_view_dir;
+	float4x4 	vp_matrix;
+	float4x4 	view_matrix;
+	float4x4 	view_matrix_inverse;
+	float4 		camera_view_pos;
+	float4 		camera_view_dir;
 };
 
 cbuffer per_draw_call : register(b1)
 {
 	float4x4 world_matrix;
-	float4   user_data; //x = id, yzw = unused
+	float4   user_data; //x = id, yzw = unused 
+	float4 	 user_data2; 
+	float4x4 world_matrix_inverse;
 };
 
 cbuffer debug_options : register(b13)
@@ -217,17 +220,22 @@ ps_output ps_volume_texture( vs_output input )
 {
 	ps_output output;
 	
-	float3 v = input.world_pos.xyz;
-	
-	float3 chebyshev_norm = v / max( max(abs(v.x), abs(v.y)), abs(v.z) );
+	float3 v = input.texcoord.xyz;
+		
+	float3 chebyshev_norm = chebyshev_normalize(v);
 	
 	float3 uvw = chebyshev_norm * 0.5 + 0.5;
 	float depth = 1.0;
 	
 	float max_samples = 128.0;
 	
-	float3 ray_dir = normalize(v - camera_view_pos.xyz);
-	float3 ray_step = ray_dir / max_samples;
+	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
+			
+	//transform ray into volume space
+	ray_dir = mul( world_matrix_inverse, ray_dir );
+			
+	float3 ray_step = chebyshev_normalize( ray_dir.xyz ) / max_samples;
+	
 	float depth_step = 1.0 / max_samples;
 	
 	float3 vddx = ddx( uvw );
@@ -236,8 +244,6 @@ ps_output ps_volume_texture( vs_output input )
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		output.colour = sample_texture_grad( volume_texture, uvw, vddx, vddy );
-		
-		//output.colour = sample_texture_level( volume_texture, uvw, 0.0 );
 		
 		if(output.colour.a != 0.0)
 			break;
@@ -258,12 +264,12 @@ ps_output ps_volume_texture( vs_output input )
 			discard;
 	}
 	
-	output.colour.rgb *= lerp( 0.5, 1.0, depth );
-	
+	//output.colour.rgb *= lerp( 0.5, 1.0, depth );
+		
 	return output;
 }
 
-vs_output vs_main_volume_raster( vs_input input )
+vs_output vs_main_volume_texture( vs_input input )
 {
 	vs_output output;
 	
@@ -272,16 +278,12 @@ vs_output vs_main_volume_raster( vs_input input )
 	output.position = mul( input.position, wvp );
 	output.world_pos = mul( input.position, world_matrix );
 		
-	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+	output.normal = input.normal.xyz;
+	output.tangent = input.tangent.xyz;
+	output.bitangent = input.bitangent.xyz;
 	
-	output.normal = mul( input.normal.xyz, rotation_matrix );
-	output.tangent = mul( input.tangent.xyz, rotation_matrix );
-	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
-	
-	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
-	
-	//output.position.z = remap_depth(output.position.z);
-	
+	output.texcoord = input.position;
+		
     return output;
 }
 
@@ -307,7 +309,7 @@ pmfx:
 	
 	"volume_texture":
 	{
-		"vs": "vs_main",
+		"vs": "vs_main_volume_texture",
 		"ps": "ps_volume_texture"
 	},
 	
@@ -331,7 +333,7 @@ pmfx:
 	
 	"volume_raster_albedo":
 	{
-		"vs": "vs_main_volume_raster",
+		"vs": "vs_main",
 		"ps": "ps_diffuse"
 	}
 }

@@ -19,6 +19,8 @@ namespace put
 	{
 		mat4 view_projection;
 		mat4 view_matrix;
+		mat4 view_matrix_inverse;
+
         vec4f view_position;
         vec4f view_direction;
 	};

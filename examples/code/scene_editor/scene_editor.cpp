@@ -41,6 +41,7 @@ put::ces::entity_scene* main_scene;
 // Volume Rasteriser WIP --------------------------------------------------------------------------------------------------------
 
 static bool enable_volume_raster = false;
+
 const u32	volume_dim = 256;
 put::camera volume_raster_ortho;
 u32			current_requestd_slice = -1;
@@ -71,50 +72,53 @@ inline u8* get_texel(u32 axis, u32 x, u32 y, u32 z )
 	u32 invz = volume_dim - z - 1;
 	u8* slice = nullptr;
 
+	u32 mask = 0xff;
+
+	if (!(mask & 1 << axis))
+		return nullptr;
+
+	PEN_SWAP(y, invy);
+
 	switch (axis)
 	{
-	case ZAXIS_POS:
-	{
-		//return nullptr;
-
-		u32 offset_xpos = y * row_pitch + x * block_size;
-		slice = (u8*)volume_slices[0][z];
-		return &((u8*)volume_slices[0][z])[offset_xpos];
-	}
-	case ZAXIS_NEG:
-	{
-		//return nullptr;
-
-		u32 offset_xneg = y * row_pitch + x * block_size;
-		slice = (u8*)volume_slices[3][invz];
-		return &slice[offset_xneg];
-	}
-	case YAXIS_POS:
-	{
-		//return nullptr;
-
-		u32 offset_ypos = x * row_pitch + z * block_size;
-		slice = (u8*)volume_slices[1][invy];
-		return &slice[offset_ypos];
-	}
-	case YAXIS_NEG:
-	{
-		//return nullptr;
-
-		u32 offset_yneg = x * row_pitch + z * block_size;
-		slice = (u8*)volume_slices[4][y];
-		return &slice[offset_yneg];
-	}
-	case XAXIS_POS:
-	{
-		//return nullptr;
-
-		u32 offset_xpos = y * row_pitch + z * block_size;
-		slice = (u8*)volume_slices[2][x];
-		return &slice[offset_xpos];
-	}
-	default:
-		return nullptr;
+		case ZAXIS_POS:
+		{
+			u32 offset_zpos = y * row_pitch + x * block_size;
+			slice = (u8*)volume_slices[0][z];
+			return &slice[offset_zpos];
+		}
+		case ZAXIS_NEG:
+		{
+			u32 offset_zneg = y * row_pitch + x * block_size;
+			slice = (u8*)volume_slices[3][invz];
+			return &slice[offset_zneg];
+		}
+		case YAXIS_POS:
+		{
+			u32 offset_ypos = z * row_pitch + x * block_size;
+			slice = (u8*)volume_slices[1][invy];
+			return &slice[offset_ypos];
+		}
+		case YAXIS_NEG:
+		{
+			u32 offset_yneg = z * row_pitch + x * block_size;
+			slice = (u8*)volume_slices[4][y];
+			return &slice[offset_yneg];
+		}
+		case XAXIS_POS:
+		{
+			u32 offset_xpos = y * row_pitch + z * block_size;
+			slice = (u8*)volume_slices[2][invx];
+			return &slice[offset_xpos];
+		}
+		case XAXIS_NEG:
+		{
+			u32 offset_xneg = y * row_pitch + z * block_size;
+			slice = (u8*)volume_slices[5][x];
+			return &slice[offset_xneg];
+		}
+		default:
+			return nullptr;
 	}
 
 	return nullptr;
