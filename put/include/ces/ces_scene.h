@@ -363,8 +363,9 @@ namespace put
 
     struct camera_controller
     {
-        hash_id id_name;
-        put::camera* camera;
+        hash_id				id_name;
+        camera*				camera = nullptr;
+		ces::entity_scene*	scene = nullptr;
         
         void(*update_function)(put::camera_controller*) = nullptr;
         

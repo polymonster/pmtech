@@ -72,7 +72,6 @@ namespace put
         void					set_technique(shader_handle handle, u32 index );
         bool					set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type );
         void					poll_for_changes();
-
     }
 }
 

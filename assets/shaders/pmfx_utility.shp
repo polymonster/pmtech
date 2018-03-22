@@ -227,7 +227,7 @@ ps_output ps_volume_texture( vs_output input )
 	float3 uvw = chebyshev_norm * 0.5 + 0.5;
 	float depth = 1.0;
 	
-	float max_samples = 128.0;
+	float max_samples = 256.0;
 	
 	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
 			
