@@ -73,6 +73,7 @@ namespace put
 			s32			current_requested_slice = -1;
 			s32			current_axis = 0;
 			u32			dimension;
+			extents		scene_extents;
 			extents		current_slice_aabb;
 			bool		in_progress = false;
 		};
@@ -96,7 +97,7 @@ namespace put
 			u32 invz = volume_dim - z - 1;
 			u8* slice = nullptr;
 
-			u32 mask = 0xff;
+			u32 mask = k_rasteriser_job.options.rasterise_axes;
 
 			if (!(mask & 1 << axis))
 				return nullptr;
@@ -107,7 +108,7 @@ namespace put
 			{
 				case ZAXIS_POS:
 				{
-					u32 offset_zpos = y * row_pitch + x * block_size;
+					u32 offset_zpos = y * row_pitch + invx * block_size;
 					slice = (u8*)volume_slices[0][z];
 					return &slice[offset_zpos];
 				}
@@ -119,7 +120,7 @@ namespace put
 				}
 				case YAXIS_POS:
 				{
-					u32 offset_ypos = z * row_pitch + x * block_size;
+					u32 offset_ypos = invz * row_pitch + x * block_size;
 					slice = (u8*)volume_slices[1][invy];
 					return &slice[offset_ypos];
 				}
@@ -132,13 +133,13 @@ namespace put
 				case XAXIS_POS:
 				{
 					u32 offset_xpos = y * row_pitch + z * block_size;
-					slice = (u8*)volume_slices[2][invx];
+					slice = (u8*)volume_slices[2][x];
 					return &slice[offset_xpos];
 				}
 				case XAXIS_NEG:
 				{
-					u32 offset_xneg = y * row_pitch + z * block_size;
-					slice = (u8*)volume_slices[5][x];
+					u32 offset_xneg = y * row_pitch + invz * block_size;
+					slice = (u8*)volume_slices[5][invx];
 					return &slice[offset_xneg];
 				}
 				default:
@@ -175,12 +176,15 @@ namespace put
 			material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
 			geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
+			vec3f scale = (k_rasteriser_job.scene_extents.max - k_rasteriser_job.scene_extents.min) / 2.0f;
+			vec3f pos = k_rasteriser_job.scene_extents.min + scale;
+
 			u32 new_prim = get_new_node(scene);
 			scene->names[new_prim] = "sphere";
 			scene->names[new_prim].appendf("%i", new_prim);
 			scene->transforms[new_prim].rotation = quat();
-			scene->transforms[new_prim].scale = vec3f(10.0f);
-			scene->transforms[new_prim].translation = vec3f::zero();
+			scene->transforms[new_prim].scale = scale;
+			scene->transforms[new_prim].translation = pos;
 			scene->entities[new_prim] |= CMP_TRANSFORM;
 			scene->parents[new_prim] = new_prim;
 			instantiate_geometry(cube, scene, new_prim);
@@ -274,6 +278,7 @@ namespace put
 
 		void volume_rasteriser_update(put::camera_controller* cc)
 		{
+			//update incremental job
 			if (!k_rasteriser_job.in_progress)
 				return;
 
@@ -282,7 +287,10 @@ namespace put
 
 			if (k_rasteriser_job.current_slice >= k_rasteriser_job.dimension)
 			{
-				k_rasteriser_job.current_axis++;
+				while (!(k_rasteriser_job.options.rasterise_axes & 1<<(++k_rasteriser_job.current_axis)))
+					if (k_rasteriser_job.current_axis > 5)
+						break;
+
 				k_rasteriser_job.current_slice = 0;
 			}
 
@@ -292,50 +300,58 @@ namespace put
 				return;
 			}
 
+			if (!(k_rasteriser_job.options.rasterise_axes & 1 << k_rasteriser_job.current_axis))
+			{
+				k_rasteriser_job.current_axis++;
+				return;
+			}
+
 			u32& volume_dim = k_rasteriser_job.dimension;
 			s32& current_slice = k_rasteriser_job.current_slice;
 			s32& current_axis = k_rasteriser_job.current_axis;
 			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
+			k_rasteriser_job.scene_extents = cc->scene->renderable_extents;
 
 			vec3f min = cc->scene->renderable_extents.min;
 			vec3f max = cc->scene->renderable_extents.max;
 
 			vec3f dim = max - min;
 			f32 texel_boarder = dim.max_component() / volume_dim;
+
 			min -= texel_boarder;
 			max += texel_boarder;
 
 			static mat4 axis_swaps[] =
 			{
-				mat4::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z()),
+				mat4::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), -vec3f::unit_z()),
 				mat4::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), vec3f::unit_y()),
-				mat4::create_axis_swap(vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x()),
+				mat4::create_axis_swap(-vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x()),
 
 				mat4::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), -vec3f::unit_z()),
-				mat4::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), -vec3f::unit_y()),
-				mat4::create_axis_swap(vec3f::unit_z(), vec3f::unit_y(), -vec3f::unit_x())
+				mat4::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), vec3f::unit_y()),
+				mat4::create_axis_swap(-vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x())
 			};
 
 			vec3f smin[] =
 			{
-				vec3f(min.x, min.y, min.z),
+				vec3f(max.x, min.y, min.z),
 				vec3f(min.x, min.z, min.y),
 				vec3f(min.z, min.y, min.x),
 
 				vec3f(min.x, min.y, max.z),
-				vec3f(min.x, min.z, max.y),
-				vec3f(min.z, min.y, max.x)
+				vec3f(min.x, max.z, max.y),
+				vec3f(max.z, min.y, max.x)
 			};
 
 			vec3f smax[] =
 			{
-				vec3f(max.x, max.y, max.z),
+				vec3f(min.x, max.y, max.z),
 				vec3f(max.x, max.z, max.y),
 				vec3f(max.z, max.y, max.x),
 
 				vec3f(max.x, max.y, min.z),
-				vec3f(max.x, max.z, min.y),
-				vec3f(max.z, max.y, min.x)
+				vec3f(max.x, min.z, min.y),
+				vec3f(min.z, max.y, min.x)
 			};
 
 			vec3f mmin = smin[current_axis];
@@ -353,11 +369,8 @@ namespace put
 			k_rasteriser_job.current_slice_aabb.min = k_volume_raster_ortho.view.transform_vector(mmin);
 			k_rasteriser_job.current_slice_aabb.max = k_volume_raster_ortho.view.transform_vector(mmax);
 
-			if(current_axis == YAXIS_NEG)
-			{
-				k_rasteriser_job.current_slice_aabb.min.y *= -1;
-				k_rasteriser_job.current_slice_aabb.max.y *= -1;
-			}
+			k_rasteriser_job.current_slice_aabb.min.z *= -1;
+			k_rasteriser_job.current_slice_aabb.max.z *= -1;
 
 			static hash_id id_volume_raster = PEN_HASH("volume_raster");
 			const pmfx::render_target* rt = pmfx::get_render_target(id_volume_raster);
@@ -436,9 +449,8 @@ namespace put
 				{
 					static const c8* axis_names[] =
 					{
-						"z+", "z-",
-						"y+", "y-",
-						"x+", "x-"
+						"z+", "y+", "x+",
+						"z-", "y-", "x-"
 					};
 
 					ImGui::Text("Rasterise Axes");
@@ -469,6 +481,8 @@ namespace put
 							//setup new job
 							k_rasteriser_job.options = k_options;
 							k_rasteriser_job.dimension = 1 << k_rasteriser_job.options.volume_dimension;
+							k_rasteriser_job.current_axis = 0;
+							k_rasteriser_job.current_slice = 0;
 
 							//allocate cpu mem for rasterised slices
 							for (u32 a = 0; a < 6; ++a)

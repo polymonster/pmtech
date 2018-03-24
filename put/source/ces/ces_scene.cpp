@@ -374,9 +374,9 @@ namespace put
                 return;
             
             //todo - set sampler states from material
-            //u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("clamp_point_sampler_state") );
-
-			u32 ss_wrap = put::pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
+            u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("clamp_point_sampler_state") );
+			//u32 ss_wrap = put::pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
+			//u32 ss_wrap = put::pmfx::get_render_state_by_name(PEN_HASH("clamp_linear_sampler_state"));
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
 			pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);

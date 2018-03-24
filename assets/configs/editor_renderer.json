@@ -29,6 +29,12 @@
 			address: wrap
 		},
 		
+		clamp_linear:
+		{
+			filter: linear,
+			address: clamp
+		},
+		
 		clamp_point:
 		{
 			filter: point,
