@@ -125,6 +125,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
         
+		put::vgt::post_update();
 		pmfx::poll_for_changes();
 		put::poll_hot_loader();
 

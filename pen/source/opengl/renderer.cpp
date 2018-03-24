@@ -1893,6 +1893,9 @@ namespace pen
             case RESOURCE_PIXEL_SHADER:
                 direct::renderer_release_shader(dest, PEN_SHADER_TYPE_PS);
                 break;
+			case RESOURCE_RENDER_TARGET:
+				direct::renderer_release_render_target(dest);
+				break;
             default:
                 break;
         }
