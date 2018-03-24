@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "pmfx.h"
 #include "dev_ui.h"
+#include "debug_render.h"
 
 #include "memory.h"
 #include "hash.h"
@@ -72,6 +73,7 @@ namespace put
 			s32			current_requested_slice = -1;
 			s32			current_axis = 0;
 			u32			dimension;
+			extents		current_slice_aabb;
 			bool		in_progress = false;
 		};
 
@@ -342,8 +344,20 @@ namespace put
 			f32 slice_thickness = (mmax.z - mmin.z) / volume_dim;
 			f32 near_slice = mmin.z + slice_thickness * current_slice;
 
-			put::camera_create_orthographic(&k_volume_raster_ortho, mmin.x, mmax.x, mmin.y, mmax.y, near_slice, near_slice + slice_thickness);
+			mmin.z = near_slice;
+			mmax.z = near_slice + slice_thickness;
+
+			put::camera_create_orthographic(&k_volume_raster_ortho, mmin.x, mmax.x, mmin.y, mmax.y, mmin.z, mmax.z);
 			k_volume_raster_ortho.view = axis_swaps[current_axis];
+
+			k_rasteriser_job.current_slice_aabb.min = k_volume_raster_ortho.view.transform_vector(mmin);
+			k_rasteriser_job.current_slice_aabb.max = k_volume_raster_ortho.view.transform_vector(mmax);
+
+			if(current_axis == YAXIS_NEG)
+			{
+				k_rasteriser_job.current_slice_aabb.min.y *= -1;
+				k_rasteriser_job.current_slice_aabb.max.y *= -1;
+			}
 
 			static hash_id id_volume_raster = PEN_HASH("volume_raster");
 			const pmfx::render_target* rt = pmfx::get_render_target(id_volume_raster);
@@ -482,6 +496,8 @@ namespace put
 						static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
 						const pmfx::render_target* volume_rt = pmfx::get_render_target(id_volume_raster_rt);
 						ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
+
+						put::dbg::add_aabb(k_rasteriser_job.current_slice_aabb.min, k_rasteriser_job.current_slice_aabb.max, vec4f::cyan());
 					}
 				}
 
