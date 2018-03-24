@@ -115,22 +115,23 @@ namespace put
         
         struct format_info
         {
-            Str name;
-            s32 format;
-            u32 block_size;
-            bind_flags flags;
+            Str			name;
+			hash_id		id_name;
+            s32			format;
+            u32			block_size;
+            bind_flags	flags;
         };
         
         format_info rt_format[] =
         {
-            {"rgba8",   PEN_TEX_FORMAT_RGBA8_UNORM,         32,     PEN_BIND_RENDER_TARGET },
-            {"bgra8",   PEN_TEX_FORMAT_BGRA8_UNORM,         32,     PEN_BIND_RENDER_TARGET },
-            {"rgba32f", PEN_TEX_FORMAT_R32G32B32A32_FLOAT,  32*4,   PEN_BIND_RENDER_TARGET },
-            {"rgba16f", PEN_TEX_FORMAT_R16G16B16A16_FLOAT,  16*4,   PEN_BIND_RENDER_TARGET },
-            {"r32f",    PEN_TEX_FORMAT_R32_FLOAT,           32,     PEN_BIND_RENDER_TARGET },
-            {"r16f",    PEN_TEX_FORMAT_R16_FLOAT,           16,     PEN_BIND_RENDER_TARGET },
-            {"r32u",    PEN_TEX_FORMAT_R32_UINT,            32,     PEN_BIND_RENDER_TARGET },
-            {"d24s8",   PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL }
+            {"rgba8",   PEN_HASH("rgba8"),		PEN_TEX_FORMAT_RGBA8_UNORM,         32,     PEN_BIND_RENDER_TARGET },
+            {"bgra8",   PEN_HASH("bgra8"),		PEN_TEX_FORMAT_BGRA8_UNORM,         32,     PEN_BIND_RENDER_TARGET },
+            {"rgba32f", PEN_HASH("rgba32f"),	PEN_TEX_FORMAT_R32G32B32A32_FLOAT,  32*4,   PEN_BIND_RENDER_TARGET },
+            {"rgba16f", PEN_HASH("rgba16f"),	PEN_TEX_FORMAT_R16G16B16A16_FLOAT,  16*4,   PEN_BIND_RENDER_TARGET },
+            {"r32f",    PEN_HASH("r32f"),		PEN_TEX_FORMAT_R32_FLOAT,           32,     PEN_BIND_RENDER_TARGET },
+            {"r16f",    PEN_HASH("r16f"),		PEN_TEX_FORMAT_R16_FLOAT,           16,     PEN_BIND_RENDER_TARGET },
+            {"r32u",    PEN_HASH("r32u"),		PEN_TEX_FORMAT_R32_UINT,            32,     PEN_BIND_RENDER_TARGET },
+            {"d24s8",   PEN_HASH("d24s8"),		PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL }
         };
         s32 num_formats = PEN_ARRAY_SIZE(rt_format);
         
@@ -760,9 +761,11 @@ namespace put
             {
                 pen::json r = j_render_targets[i];
                 
+				hash_id id_format = r["format"].as_hash_id();
+
                 for( s32 f = 0; f < num_formats; ++f)
                 {
-                    if( rt_format[f].name == r["format"].as_str() )
+                    if( rt_format[f].id_name == id_format)
                     {
                         k_render_targets.push_back(render_target());
                         render_target& new_info = k_render_targets.back();
@@ -810,6 +813,7 @@ namespace put
                         tcp.usage = PEN_USAGE_DEFAULT;
                         tcp.flags = 0;
                         tcp.num_mips = 1;
+						tcp.num_arrays = 1;
                         tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
                         
                         //arays and mips
@@ -856,6 +860,96 @@ namespace put
             
             return nullptr;
         }
+
+		void resize_render_target(hash_id target, u32 width, u32 height, const c8* format)
+		{
+			render_target* current_target = nullptr;
+			u32 num = k_render_targets.size();
+			for (u32 i = 0; i < num; ++i)
+			{
+				if (k_render_targets[i].id_name == target)
+				{
+					current_target = &k_render_targets[i];
+					break;
+				}
+			}
+
+			s32 new_format = current_target->format;
+			u32 format_index = 0;
+
+			if (format)
+			{
+				hash_id id_format = PEN_HASH(format);
+				for (auto& fmt : rt_format)
+				{
+					if (fmt.id_name == id_format)
+					{
+						new_format = fmt.format;
+						break;
+					}
+
+					format_index++;
+				}
+			}
+			else
+			{
+				for (auto& fmt : rt_format)
+				{
+					if (fmt.format == new_format)
+						break;
+
+					format_index++;
+				}
+			}
+
+			if (current_target->width == width && 
+				current_target->height == height && 
+				current_target->format == new_format)
+			{
+				return;
+			}
+
+			pen::texture_creation_params tcp;
+			tcp.data = nullptr;
+			tcp.width = width;
+			tcp.height = height;
+			tcp.format = new_format;
+			tcp.pixels_per_block = 1;
+			tcp.block_size = rt_format[format_index].block_size;
+			tcp.usage = PEN_USAGE_DEFAULT;
+			tcp.flags = 0;
+			tcp.num_mips = 1;
+			tcp.num_arrays = 1;
+			tcp.sample_count = 1;
+			tcp.cpu_access_flags = PEN_CPU_ACCESS_READ;
+			tcp.sample_quality = 0;
+			tcp.bind_flags = rt_format[format_index].flags | PEN_BIND_SHADER_RESOURCE;
+			tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
+
+			u32 h = pen::renderer_create_render_target(tcp);
+			pen::renderer_replace_resource(current_target->handle, h, pen::RESOURCE_RENDER_TARGET);
+
+			current_target->width = width;
+			current_target->height = height;
+			current_target->format = new_format;
+		}
+
+		void resize_viewports()
+		{
+			s32 num = k_views.size();
+			for (s32 i = 0; i < num; ++i)
+			{
+				for (s32 j = 0; j < k_views[i].num_colour_targets; ++j)
+				{
+					const render_target* rt = get_render_target(k_views[i].id_render_target[j]);
+					k_views[i].rt_width = rt->width; 
+					k_views[i].rt_height = rt->height;
+					k_views[i].rt_ratio = rt->ratio;
+				}
+
+				//depth
+			}
+		}
         
         void get_render_target_dimensions( const render_target* rt, f32& w, f32& h)
         {

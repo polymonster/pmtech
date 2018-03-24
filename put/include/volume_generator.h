@@ -14,6 +14,7 @@ namespace put
 		void shutdown();
 
 		void show_dev_ui();
+		void post_update();
 	}
 }
 

@@ -61,6 +61,10 @@ namespace put
 
 		const render_target*	get_render_target(hash_id h);
 		void					get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
+		void					resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr );
+
+		void					resize_viewports();
+
 		u32						get_render_state_by_name(hash_id id_name);
 
 		void					show_dev_ui();

@@ -89,12 +89,13 @@ namespace put
 			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
 			void*** volume_slices = k_rasteriser_job.volume_slices;
 
-			static u32 block_size = 4;
-			static u32 row_pitch = volume_dim * 4;
+			u32 block_size = 4;
+			u32 row_pitch = volume_dim * 4;
 
 			u32 invx = volume_dim - x - 1;
 			u32 invy = volume_dim - y - 1;
 			u32 invz = volume_dim - z - 1;
+
 			u8* slice = nullptr;
 
 			u32 mask = k_rasteriser_job.options.rasterise_axes;
@@ -400,6 +401,7 @@ namespace put
 			pmfx::register_camera(cc);
 		}
 
+		static vgt_options k_options;
 		void show_dev_ui()
 		{
 			//main menu option -------------------------------------------------
@@ -417,8 +419,6 @@ namespace put
 			//volume generator ui -----------------------------------------------
 			if (open_vgt)
 			{
-				static vgt_options k_options;
-
 				ImGui::Begin("Volume Generator", &open_vgt);
 
 				//choose resolution
@@ -480,7 +480,9 @@ namespace put
 						{
 							//setup new job
 							k_rasteriser_job.options = k_options;
-							k_rasteriser_job.dimension = 1 << k_rasteriser_job.options.volume_dimension;
+							u32 dim = 1 << k_rasteriser_job.options.volume_dimension;
+
+							k_rasteriser_job.dimension = dim;
 							k_rasteriser_job.current_axis = 0;
 							k_rasteriser_job.current_slice = 0;
 
@@ -495,6 +497,7 @@ namespace put
 									k_rasteriser_job.volume_slices[a][s] = pen::memory_alloc(pow(k_rasteriser_job.dimension, 2) * 4);
 							}
 
+							//flag to start reasterising
 							k_rasteriser_job.in_progress = true;
 						}
 					}
@@ -516,6 +519,27 @@ namespace put
 				}
 
 				ImGui::End();
+			}
+		}
+
+		void post_update()
+		{
+			static u32 dim = 128;
+			static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
+			static hash_id id_volume_raster_ds = PEN_HASH("volume_raster_ds");
+
+			u32 cur_dim = 1 << k_options.volume_dimension;
+
+			//resize targets
+			if(cur_dim != dim)
+			{ 
+				dim = cur_dim;
+
+				pmfx::resize_render_target(id_volume_raster_rt, dim, dim, "rgba8");
+				pmfx::resize_render_target(id_volume_raster_ds, dim, dim, "d24s8");
+				pmfx::resize_viewports();
+
+				pen::renderer_consume_cmd_buffer();
 			}
 		}
 	}
