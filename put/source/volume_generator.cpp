@@ -161,7 +161,22 @@ namespace put
 			u32 w = row_pitch / block_size;
 			u32 h = depth_pitch / row_pitch;
 
-			pen::memory_cpy(volume_slices[current_axis][current_slice], p_data, depth_pitch);
+			if (w != k_rasteriser_job.dimension)
+			{
+				u32 dest_row_pitch = k_rasteriser_job.dimension * block_size;
+				u8* src_iter = (u8*)p_data;
+				u8* dest_iter = (u8*)volume_slices[current_axis][current_slice];
+				for (u32 y = 0; y < h; ++y)
+				{
+					pen::memory_cpy(dest_iter, src_iter, dest_row_pitch);
+					src_iter += row_pitch;
+					dest_iter += dest_row_pitch;
+				}
+			}
+			else
+			{
+				pen::memory_cpy(volume_slices[current_axis][current_slice], p_data, depth_pitch);
+			}
 
 			current_slice++;
 		}

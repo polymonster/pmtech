@@ -170,11 +170,12 @@ namespace put
             f32     rt_ratio;
             
             u32     render_targets[PEN_MAX_MRT] = { 0 };
-            hash_id id_render_target[PEN_MAX_MRT] = { };
-            
+            hash_id id_render_target[PEN_MAX_MRT] = { 0 };
+			u32     num_colour_targets = 0;
+
             u32     depth_target = 0;
-            u32     num_colour_targets = 0;
-            
+			hash_id id_depth_target = 0;
+
             bool    viewport_correction = true;
             
             f32     viewport[4] = { 0 };
@@ -939,15 +940,47 @@ namespace put
 			s32 num = k_views.size();
 			for (s32 i = 0; i < num; ++i)
 			{
-				for (s32 j = 0; j < k_views[i].num_colour_targets; ++j)
+				s32 target_w;
+				s32 target_h;
+				f32 target_r;
+
+				bool first = true;
+
+				for (s32 j = 0; j < PEN_MAX_MRT; ++j)
 				{
+					if (k_views[i].id_render_target[j] == 0)
+						continue;
+
 					const render_target* rt = get_render_target(k_views[i].id_render_target[j]);
-					k_views[i].rt_width = rt->width; 
-					k_views[i].rt_height = rt->height;
-					k_views[i].rt_ratio = rt->ratio;
+
+					if (!first)
+					{
+						bool valid = true;
+
+						if (rt->width != target_w)
+							valid = false;
+
+						if (rt->height != target_h)
+							valid = false;
+
+						if (rt->ratio != target_r)
+							valid = false;
+
+						if (!valid)
+						{
+							dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: render target %s is incorrect dimension", rt->name.c_str() );
+						}
+					}
+
+					target_w = rt->width;
+					target_h = rt->height;
+					target_r = rt->ratio;
+					first = false;
 				}
 
-				//depth
+				k_views[i].rt_width = target_w;
+				k_views[i].rt_height = target_h;
+				k_views[i].rt_ratio = target_r;
 			}
 		}
         
