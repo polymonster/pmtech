@@ -1555,7 +1555,7 @@ namespace pen
             case PEN_FILTER_MIN_MAG_MIP_POINT:
             {
                 CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST));
-                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_POINT));
+                CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
             }
             break;
             case PEN_FILTER_LINEAR:
