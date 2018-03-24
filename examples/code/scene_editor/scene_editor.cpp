@@ -2,7 +2,7 @@
 #include "ces/ces_resources.h"
 #include "ces/ces_editor.h"
 #include "ces/ces_utilities.h"
-#include "volume_rasteriser.h"
+#include "volume_generator.h"
 
 #include "pmfx.h"
 #include "dev_ui.h"
@@ -88,7 +88,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     pmfx::register_camera(cc);
 
 	//volume rasteriser tool
-	put::vrt::init(main_scene);
+	put::vgt::init(main_scene);
     
     pmfx::init("data/configs/editor_renderer.json");
     
@@ -108,6 +108,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         pmfx::render();
         
         pmfx::show_dev_ui();
+
+		put::vgt::show_dev_ui();
         
         if( enable_dev_ui )
         {

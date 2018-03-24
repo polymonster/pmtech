@@ -1,5 +1,5 @@
-#ifndef _volume_rasteriser_h
-#define _volume_rasteriser_h
+#ifndef _volume_generator_h
+#define _volume_generator_h
 
 namespace put
 {
@@ -8,7 +8,7 @@ namespace put
 		struct entity_scene;
 	}
 
-	namespace vrt
+	namespace vgt
 	{
 		void init(ces::entity_scene* scene);
 		void shutdown();
@@ -17,4 +17,4 @@ namespace put
 	}
 }
 
-#endif //_volume_rasteriser_h
+#endif //_volume_generator_h

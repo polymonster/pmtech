@@ -124,14 +124,14 @@
 		
 		volume_raster:
 		{
-			size: [256,256],
+			size: [128,128],
 			format: rgba8,
 			cpu_read: true
 		},
 		
 		volume_raster_ds:
 		{
-			size: [256,256],
+			size: [128,128],
 			format: d24s8,
 		},
 	},

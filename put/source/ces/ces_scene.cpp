@@ -420,7 +420,7 @@ namespace put
 				if (!inside)
 				{
 					cull_count++;
-					//continue;
+					continue;
 				}
 
 				draw_count++;

@@ -1,31 +1,29 @@
-#include "volume_rasteriser.h"
+#include "volume_generator.h"
 
 #include "ces/ces_scene.h"
 #include "ces/ces_resources.h"
 #include "ces/ces_utilities.h"
 #include "camera.h"
+#include "pmfx.h"
+#include "dev_ui.h"
 
-#include "pen.h"
 #include "memory.h"
 #include "hash.h"
-#include "pmfx.h"
+#include "pen.h"
 
 namespace put
 {
 	using namespace ces;
 
-	namespace vrt
+	namespace vgt
 	{
-		static bool enable_volume_raster = false;
+		static const int k_num_axes = 6;
 
-		const u32	volume_dim = 256;
-		put::camera volume_raster_ortho;
-		u32			current_requestd_slice = -1;
-		s32			current_slice = 0;
-		s32			current_axis = 0;
-		bool		added_to_scene = false;
-
-		void*		volume_slices[6][volume_dim] = { 0 };
+		enum volume_types
+		{
+			VOLUME_RASTERISED_TEXELS = 0,
+			VOLUME_SIGNED_DISTANCE_FIELD
+		};
 
 		enum volume_raster_axis
 		{
@@ -37,8 +35,57 @@ namespace put
 			XAXIS_NEG
 		};
 
+		enum volume_raster_axis_flags
+		{
+			Z_POS_MASK = 1<<0,
+			Y_POS_MASK = 1<<1,
+			X_POS_MASK = 1<<2,
+			Z_NEG_MASK = 1<<3,
+			Y_NEG_MASK = 1<<4,
+			X_NEG_MASK = 1<<5,
+
+			AXIS_ALL_MASK = (1<<6)-1
+		};
+
+		enum rasterise_capture_data
+		{
+			CAPTURE_ALBEDO = 0,
+			CAPTURE_NORMALS,
+			CAPTURE_BAKED_LIGHTING,
+			CAPTURE_OCCUPANCY,
+			CAPTURE_CUSTOM
+		};
+
+		struct vgt_options
+		{
+			s32		volume_dimension = 7;
+			u32		rasterise_axes = AXIS_ALL_MASK;
+			s32		volume_type = VOLUME_RASTERISED_TEXELS;
+			s32		capture_data = 0;
+		};
+
+		struct vgt_rasteriser_job
+		{
+			vgt_options options;
+			void**		volume_slices[k_num_axes] = { 0 };
+			s32			current_slice = 0;
+			s32			current_requested_slice = -1;
+			s32			current_axis = 0;
+			u32			dimension;
+			bool		in_progress = false;
+		};
+
+		static vgt_rasteriser_job	k_rasteriser_job;
+		static put::camera			k_volume_raster_ortho;
+
 		inline u8* get_texel(u32 axis, u32 x, u32 y, u32 z)
 		{
+			u32& volume_dim = k_rasteriser_job.dimension;
+			s32& current_slice = k_rasteriser_job.current_slice;
+			s32& current_axis = k_rasteriser_job.current_axis;
+			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
+			void*** volume_slices = k_rasteriser_job.volume_slices;
+
 			static u32 block_size = 4;
 			static u32 row_pitch = volume_dim * 4;
 
@@ -101,24 +148,27 @@ namespace put
 
 		void image_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
 		{
+			u32& volume_dim = k_rasteriser_job.dimension;
+			s32& current_slice = k_rasteriser_job.current_slice;
+			s32& current_axis = k_rasteriser_job.current_axis;
+			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
+			void*** volume_slices = k_rasteriser_job.volume_slices;
+
 			u32 w = row_pitch / block_size;
 			u32 h = depth_pitch / row_pitch;
 
-			if (!volume_slices[current_axis][current_slice])
-			{
-				volume_slices[current_axis][current_slice] = pen::memory_alloc(depth_pitch);
-				pen::memory_cpy(volume_slices[current_axis][current_slice], p_data, depth_pitch);
-			}
+			pen::memory_cpy(volume_slices[current_axis][current_slice], p_data, depth_pitch);
 
 			current_slice++;
 		}
 
 		void volume_raster_completed(ces::entity_scene* scene)
 		{
-			if (added_to_scene)
-				return;
-
-			added_to_scene = true;
+			u32& volume_dim = k_rasteriser_job.dimension;
+			s32& current_slice = k_rasteriser_job.current_slice;
+			s32& current_axis = k_rasteriser_job.current_axis;
+			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
+			void*** volume_slices = k_rasteriser_job.volume_slices;
 
 			material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
 			geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
@@ -171,8 +221,6 @@ namespace put
 									rgba[p] = tex[p];
 						}
 
-
-
 						volume_data[offset + 0] = rgba[2];
 						volume_data[offset + 1] = rgba[1];
 						volume_data[offset + 2] = rgba[0];
@@ -208,27 +256,52 @@ namespace put
 			mat.default_pmfx_shader = pmfx::load_shader("pmfx_utility");
 			mat.id_default_shader = PEN_HASH("pmfx_utility");
 			mat.id_default_technique = PEN_HASH("volume_texture");
+
+			//clean up
+			for (u32 a = 0; a < 6; ++a)
+			{
+				for (u32 s = 0; s < k_rasteriser_job.dimension; ++s)
+					pen::memory_free(k_rasteriser_job.volume_slices[a][s]);
+
+				pen::memory_free(k_rasteriser_job.volume_slices[a]);
+			}
+
+			//completed
+			k_rasteriser_job.in_progress = false;
 		}
 
 		void volume_rasteriser_update(put::camera_controller* cc)
 		{
-			if (!enable_volume_raster)
+			if (!k_rasteriser_job.in_progress)
 				return;
 
-			if (current_requestd_slice == current_slice)
+			if (k_rasteriser_job.current_requested_slice == k_rasteriser_job.current_slice)
 				return;
 
-			if (current_slice >= volume_dim)
+			if (k_rasteriser_job.current_slice >= k_rasteriser_job.dimension)
 			{
-				current_axis++;
-				current_slice = 0;
+				k_rasteriser_job.current_axis++;
+				k_rasteriser_job.current_slice = 0;
 			}
 
-			if (current_axis > 5)
+			if (k_rasteriser_job.current_axis > 5)
 			{
 				volume_raster_completed( cc->scene );
 				return;
 			}
+
+			u32& volume_dim = k_rasteriser_job.dimension;
+			s32& current_slice = k_rasteriser_job.current_slice;
+			s32& current_axis = k_rasteriser_job.current_axis;
+			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
+
+			vec3f min = cc->scene->renderable_extents.min;
+			vec3f max = cc->scene->renderable_extents.max;
+
+			vec3f dim = max - min;
+			f32 texel_boarder = dim.max_component() / volume_dim;
+			min -= texel_boarder;
+			max += texel_boarder;
 
 			static mat4 axis_swaps[] =
 			{
@@ -240,14 +313,6 @@ namespace put
 				mat4::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), -vec3f::unit_y()),
 				mat4::create_axis_swap(vec3f::unit_z(), vec3f::unit_y(), -vec3f::unit_x())
 			};
-
-			vec3f min = cc->scene->renderable_extents.min;
-			vec3f max = cc->scene->renderable_extents.max;
-
-			vec3f dim = max - min;
-			f32 texel_boarder = dim.max_component() / volume_dim;
-			min -= texel_boarder;
-			max += texel_boarder;
 
 			vec3f smin[] =
 			{
@@ -277,8 +342,8 @@ namespace put
 			f32 slice_thickness = (mmax.z - mmin.z) / volume_dim;
 			f32 near_slice = mmin.z + slice_thickness * current_slice;
 
-			put::camera_create_orthographic(&volume_raster_ortho, mmin.x, mmax.x, mmin.y, mmax.y, near_slice, near_slice + slice_thickness);
-			volume_raster_ortho.view = axis_swaps[current_axis];
+			put::camera_create_orthographic(&k_volume_raster_ortho, mmin.x, mmax.x, mmin.y, mmax.y, near_slice, near_slice + slice_thickness);
+			k_volume_raster_ortho.view = axis_swaps[current_axis];
 
 			static hash_id id_volume_raster = PEN_HASH("volume_raster");
 			const pmfx::render_target* rt = pmfx::get_render_target(id_volume_raster);
@@ -293,19 +358,135 @@ namespace put
 			rrbp.call_back_function = image_read_back;
 
 			pen::renderer_read_back_resource(rrbp);
-			current_requestd_slice = current_slice;
+			current_requested_slice = current_slice;
 		}
 
 		void init(ces::entity_scene* scene)
 		{
 			put::camera_controller cc;
-			cc.camera = &volume_raster_ortho;
+			cc.camera = &k_volume_raster_ortho;
 			cc.update_function = &volume_rasteriser_update;
 			cc.name = "volume_rasteriser_camera";
 			cc.id_name = PEN_HASH(cc.name.c_str());
 			cc.scene = scene;
 
 			pmfx::register_camera(cc);
+		}
+
+		void show_dev_ui()
+		{
+			//main menu option -------------------------------------------------
+			ImGui::BeginMainMenuBar();
+
+			static bool open_vgt = false;
+			if (ImGui::Button(ICON_FA_CUBE))
+			{
+				open_vgt = true;
+			}
+			put::dev_ui::set_tooltip("Volume Generator");
+
+			ImGui::EndMainMenuBar();
+
+			//volume generator ui -----------------------------------------------
+			if (open_vgt)
+			{
+				static vgt_options k_options;
+
+				ImGui::Begin("Volume Generator", &open_vgt);
+
+				//choose resolution
+				static const c8* dimensions[] =
+				{
+					"1", "2", "4", "8", "16", "32", "64", "128", "256", "512"
+				};
+
+				ImGui::Combo("Resolution", &k_options.volume_dimension, dimensions, PEN_ARRAY_SIZE(dimensions));
+
+				ImGui::SameLine();
+
+				float size_mb = (pow(1 << k_options.volume_dimension, 3) * 4) / 1024 / 1024;
+
+				ImGui::LabelText("Size", "%.2f(mb)", size_mb);
+
+				//choose volume data type
+				static const c8* volume_type[] =
+				{
+					"Rasterised Texels", "Signed Distance Field"
+				};
+
+				ImGui::Combo("Type", &k_options.volume_type, volume_type, PEN_ARRAY_SIZE(volume_type));
+
+				ImGui::Separator();
+
+				if (k_options.volume_type == VOLUME_RASTERISED_TEXELS)
+				{
+					static const c8* axis_names[] =
+					{
+						"z+", "z-",
+						"y+", "y-",
+						"x+", "x-"
+					};
+
+					ImGui::Text("Rasterise Axes");
+
+					for (u32 a = 0; a < k_num_axes; a++)
+					{
+						ImGui::CheckboxFlags(axis_names[a], &k_options.rasterise_axes, 1<<a);
+
+						if (a < k_num_axes - 1)
+							ImGui::SameLine();
+					}
+
+					static const c8* capture_data_names[] =
+					{
+						"Albedo",
+						"Normals",
+						"Baked Lighting",
+						"Occupancy",
+						"Custom"
+					};
+
+					ImGui::Combo("Capture", &k_options.capture_data, capture_data_names, PEN_ARRAY_SIZE(capture_data_names));
+
+					if (!k_rasteriser_job.in_progress)
+					{
+						if (ImGui::Button("Go"))
+						{
+							//setup new job
+							k_rasteriser_job.options = k_options;
+							k_rasteriser_job.dimension = 1 << k_rasteriser_job.options.volume_dimension;
+
+							//allocate cpu mem for rasterised slices
+							for (u32 a = 0; a < 6; ++a)
+							{
+								//alloc slices array
+								k_rasteriser_job.volume_slices[a] = (void**)pen::memory_alloc(k_rasteriser_job.dimension*sizeof(void**));
+
+								//alloc slices mem
+								for(u32 s = 0; s < k_rasteriser_job.dimension; ++s)
+									k_rasteriser_job.volume_slices[a][s] = pen::memory_alloc(pow(k_rasteriser_job.dimension, 2) * 4);
+							}
+
+							k_rasteriser_job.in_progress = true;
+						}
+					}
+					else
+					{
+						ImGui::Separator();
+
+						ImGui::Text("Rasteriser Progress");
+
+						ImGui::Text("Axis %i", k_rasteriser_job.current_axis);
+						ImGui::Text("Slice %i", k_rasteriser_job.current_slice);
+
+						static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
+						const pmfx::render_target* volume_rt = pmfx::get_render_target(id_volume_raster_rt);
+						ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
+					}
+				}
+
+				ImGui::End();
+			}
 		}
 	}
 }
