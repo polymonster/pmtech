@@ -773,8 +773,12 @@ namespace put
                 if( scene->entities[n] & CMP_SKINNED || scene->entities[n] & CMP_PRE_SKINNED )
                     scene->draw_call_data[n].world_matrix = mat4::create_identity();
 
-				//temp todo, make a custom buffer
-				scene->draw_call_data[n].m1 = scene->world_matrices[n].inverse3x4();
+				mat4 invt = scene->world_matrices[n];
+				invt.set_translation(vec3f(0.0f, 0.0f, 0.0f));
+				invt = invt.transpose();
+				invt = invt.inverse4x4();
+
+				scene->draw_call_data[n].world_matrix_inv_transpose = invt;
 
                 //per node cbuffer
                 pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(per_draw_call));

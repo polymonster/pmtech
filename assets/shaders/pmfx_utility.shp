@@ -1,5 +1,6 @@
 #include "libs/lighting.slib"
 #include "libs/skinning.slib"
+#include "libs/globals.slib"
 
 struct vs_output
 {
@@ -61,28 +62,6 @@ struct ps_output_multi
 {
 	float4 albedo : SV_Target0;
 	float4 normal : SV_Target1;
-};
-
-cbuffer per_pass_view : register(b0)
-{
-	float4x4 	vp_matrix;
-	float4x4 	view_matrix;
-	float4x4 	view_matrix_inverse;
-	float4 		camera_view_pos;
-	float4 		camera_view_dir;
-};
-
-cbuffer per_draw_call : register(b1)
-{
-	float4x4 world_matrix;
-	float4   user_data; //x = id, yzw = unused 
-	float4 	 user_data2; 
-	float4x4 world_matrix_inverse;
-};
-
-cbuffer debug_options : register(b13)
-{
-	float4 debug_render_options;
 };
 
 declare_texture_samplers
@@ -230,17 +209,17 @@ ps_output ps_volume_texture( vs_output input )
 	float max_samples = 256.0;
 	
 	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
-			
+				
 	//transform ray into volume space
-	ray_dir = mul( world_matrix_inverse, ray_dir );
-			
-	float3 ray_step = chebyshev_normalize( ray_dir.xyz ) / max_samples;
-	
+	ray_dir = mul( world_matrix_inv_transpose, ray_dir );
+		
+	float3 ray_step = chebyshev_normalize(ray_dir.xyz) / max_samples;
+				
 	float depth_step = 1.0 / max_samples;
 	
 	float3 vddx = ddx( uvw );
 	float3 vddy = ddy( uvw );
-		
+	
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		output.colour = sample_texture_grad( volume_texture, uvw, vddx, vddy );
@@ -264,7 +243,7 @@ ps_output ps_volume_texture( vs_output input )
 			discard;
 	}
 	
-	//output.colour.rgb *= lerp( 0.5, 1.0, depth );
+	output.colour.rgb *= lerp( 0.5, 1.0, depth );
 		
 	return output;
 }

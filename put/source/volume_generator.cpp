@@ -196,7 +196,7 @@ namespace put
 			vec3f pos = k_rasteriser_job.scene_extents.min + scale;
 
 			u32 new_prim = get_new_node(scene);
-			scene->names[new_prim] = "sphere";
+			scene->names[new_prim] = "volume";
 			scene->names[new_prim].appendf("%i", new_prim);
 			scene->transforms[new_prim].rotation = quat();
 			scene->transforms[new_prim].scale = scale;

@@ -1,0 +1,37 @@
+//generic render pass cbuffers
+cbuffer per_pass_view : register(b0)
+{
+	float4x4 vp_matrix;
+	float4x4 view_matrix;
+	float4x4 view_matrix_inverse;
+	
+	float4 camera_view_pos;
+	float4 camera_view_dir;
+};
+
+cbuffer per_draw_call : register(b1)
+{
+	float4x4 world_matrix;
+	float4   user_data; 	//x = id, y roughness, z reflectivity
+	float4   user_data2; 	//rgba colour
+	
+	float4x4 world_matrix_inv_transpose;
+};
+
+//lighting cbuffers
+struct forward_light
+{
+	float4 pos_radius;
+	float4 colour;
+};
+
+cbuffer per_pass_lights : register(b3)
+{
+	forward_light lights[8];
+	float4 		  light_info;
+};
+
+cbuffer per_pass_shadow : register(b4)
+{
+	float4x4 shadow_matrix; 
+};

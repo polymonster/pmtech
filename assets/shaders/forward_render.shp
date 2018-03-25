@@ -1,5 +1,6 @@
 #include "libs/lighting.slib"
 #include "libs/skinning.slib"
+#include "libs/globals.slib"
 
 struct vs_output
 {
@@ -78,40 +79,6 @@ struct ps_output_multi
 	float4 normal : SV_Target1;
 };
 
-cbuffer per_pass_view : register(b0)
-{
-	float4x4 vp_matrix;
-	float4x4 view_matrix;
-	float4x4 view_matrix_inverse;
-	
-	float4 camera_view_pos;
-	float4 camera_view_dir;
-};
-
-cbuffer per_draw_call : register(b1)
-{
-	float4x4 world_matrix;
-	float4   user_data; 	//x = id, y roughness, z reflectivity
-	float4   user_data2; 	//rgba colour
-};
-
-struct forward_light
-{
-	float4 pos_radius;
-	float4 colour;
-};
-
-cbuffer per_pass_lights : register(b3)
-{
-	forward_light lights[8];
-	float4 		  light_info;
-};
-
-cbuffer per_pass_shadow : register(b4)
-{
-	float4x4 shadow_matrix; 
-};
-
 declare_texture_samplers
 {
 	texture_2d( diffuse_texture, 0 );
@@ -128,9 +95,7 @@ vs_output_zonly vs_main_zonly( vs_input input )
 	float4x4 wvp = mul( world_matrix, vp_matrix );
 
 	output.position = mul( input.position, wvp );
-	
-	//output.position.z = remap_depth(output.position.z);
-	
+		
 	return output;
 }
 

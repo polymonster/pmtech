@@ -66,16 +66,20 @@ def check_up_to_date(dependencies, dest_file):
     d_str = file.read()
     d_json = json.loads(d_str)
 
+    file_exists = False
     for d in d_json["files"]:
         for key in d.keys():
             dependecy_file = sanitize_filename(key)
             if dest_file == dependecy_file:
+                file_exists = True
                 for i in d[key]:
                     sanitized = sanitize_filename(i["name"])
                     if i["timestamp"] < os.path.getmtime(sanitized):
-                        #print(sanitized + " " + str(os.path.getmtime(sanitized)))
-                        #print(str(i["timestamp"]))
                         return False
+
+    if not file_exists:
+        return False
+
     return True
 
 
