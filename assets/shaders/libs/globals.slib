@@ -1,4 +1,4 @@
-//generic render pass cbuffers
+//generic render pass buffers
 cbuffer per_pass_view : register(b0)
 {
 	float4x4 vp_matrix;
@@ -18,7 +18,7 @@ cbuffer per_draw_call : register(b1)
 	float4x4 world_matrix_inv_transpose;
 };
 
-//lighting cbuffers
+//lighting buffers
 struct forward_light
 {
 	float4 pos_radius;
