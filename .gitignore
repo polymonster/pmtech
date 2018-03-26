@@ -29,6 +29,8 @@ $RECYCLE.BIN/
 .LSOverride
 
 examples/*ios_files*
+**__pycache__**
+*.pyc
 
 # Thumbnails
 ._*

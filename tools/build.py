@@ -44,7 +44,7 @@ ide = ""
 renderer = ""
 data_dir = ""
 
-premake_exec = os.path.join(tools_dir, "premake","premake5")
+premake_exec = os.path.join(tools_dir, "premake", "premake5")
 shader_script = os.path.join(tools_dir, "build_shaders.py")
 textures_script = os.path.join(tools_dir, "build_textures.py")
 audio_script = os.path.join(tools_dir, "build_audio.py")
