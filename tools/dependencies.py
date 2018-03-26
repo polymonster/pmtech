@@ -1,6 +1,19 @@
 import os
 import json
 
+default_settings = dict()
+default_settings["textures_dir"] = "assets/textures/"
+default_settings["models_dir"] = "assets/mesh/"
+
+def get_build_config_setting(dir_name):
+    if os.path.exists("build_config.json"):
+        build_config_file = open("build_config.json", "r")
+        build_config_json = json.loads(build_config_file.read())
+        build_config_file.close()
+        if dir_name in build_config_json:
+            return build_config_json[dir_name]
+    return default_settings[dir_name]
+
 
 def export_config_merge(master, second):
     for key in master.keys():

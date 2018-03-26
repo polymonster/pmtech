@@ -404,6 +404,119 @@ namespace put
 			current_requested_slice = current_slice;
 		}
 
+		void sdf_generate()
+		{
+#if 0
+			u32& volume_dim = k_rasteriser_job.dimension;
+			s32& current_slice = k_rasteriser_job.current_slice;
+			s32& current_axis = k_rasteriser_job.current_axis;
+			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
+			void*** volume_slices = k_rasteriser_job.volume_slices;
+
+			material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+			geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
+
+			vec3f scale = (k_rasteriser_job.scene_extents.max - k_rasteriser_job.scene_extents.min) / 2.0f;
+			vec3f pos = k_rasteriser_job.scene_extents.min + scale;
+
+			u32 new_prim = get_new_node(scene);
+			scene->names[new_prim] = "volume";
+			scene->names[new_prim].appendf("%i", new_prim);
+			scene->transforms[new_prim].rotation = quat();
+			scene->transforms[new_prim].scale = scale;
+			scene->transforms[new_prim].translation = pos;
+			scene->entities[new_prim] |= CMP_TRANSFORM;
+			scene->parents[new_prim] = new_prim;
+			instantiate_geometry(cube, scene, new_prim);
+			instantiate_material(default_material, scene, new_prim);
+			instantiate_model_cbuffer(scene, new_prim);
+
+			//create a simple 3d texture
+			u32 block_size = 4;
+			u32 data_size = volume_dim * volume_dim * volume_dim * block_size;
+
+			u8* volume_data = (u8*)pen::memory_alloc(data_size);
+			u32 row_pitch = volume_dim * block_size;
+			u32 slice_pitch = volume_dim  * row_pitch;
+
+			for (u32 z = 0; z < volume_dim; ++z)
+			{
+				u8* slice_mem[6] = { 0 };
+				for (u32 a = 0; a < 6; ++a)
+				{
+					slice_mem[a] = (u8*)volume_slices[a][z];
+				}
+
+				for (u32 y = 0; y < volume_dim; ++y)
+				{
+					for (u32 x = 0; x < volume_dim; ++x)
+					{
+						u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
+
+						u8 rgba[4] = { 0 };
+
+						for (u32 a = 0; a < 6; ++a)
+						{
+							u8* tex = get_texel(a, x, y, z);
+
+							if (!tex)
+								continue;
+
+							if (tex[3] > 8)
+								for (u32 p = 0; p < 4; ++p)
+									rgba[p] = tex[p];
+						}
+
+						volume_data[offset + 0] = rgba[2];
+						volume_data[offset + 1] = rgba[1];
+						volume_data[offset + 2] = rgba[0];
+						volume_data[offset + 3] = rgba[3];
+					}
+				}
+			}
+
+			pen::texture_creation_params tcp;
+			tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
+
+			tcp.width = volume_dim;
+			tcp.height = volume_dim;
+			tcp.format = PEN_TEX_FORMAT_BGRA8_UNORM;
+			tcp.num_mips = 1;
+			tcp.num_arrays = volume_dim;
+			tcp.sample_count = 1;
+			tcp.sample_quality = 0;
+			tcp.usage = PEN_USAGE_DEFAULT;
+			tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
+			tcp.cpu_access_flags = 0;
+			tcp.flags = 0;
+			tcp.block_size = block_size;
+			tcp.pixels_per_block = 1;
+			tcp.data = volume_data;
+			tcp.data_size = data_size;
+
+			u32 volume_texture = pen::renderer_create_texture(tcp);
+
+			//set material for basic volume texture
+			scene_node_material& mat = scene->materials[new_prim];
+			mat.texture_id[4] = volume_texture;
+			mat.default_pmfx_shader = pmfx::load_shader("pmfx_utility");
+			mat.id_default_shader = PEN_HASH("pmfx_utility");
+			mat.id_default_technique = PEN_HASH("volume_texture");
+
+			//clean up
+			for (u32 a = 0; a < 6; ++a)
+			{
+				for (u32 s = 0; s < k_rasteriser_job.dimension; ++s)
+					pen::memory_free(k_rasteriser_job.volume_slices[a][s]);
+
+				pen::memory_free(k_rasteriser_job.volume_slices[a]);
+			}
+
+			//completed
+			k_rasteriser_job.in_progress = false;
+#endif
+		}
+
 		void init(ces::entity_scene* scene)
 		{
 			put::camera_controller cc;

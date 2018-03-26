@@ -13,8 +13,11 @@ if len(sys.argv) > 1:
     if "-root_dir" in sys.argv[1]:
         os.chdir(sys.argv[2])
 
-config = open("build_config.json")
-build_config = json.loads(config.read())
+if os.path.exists("build_config.json"):
+    config = open("build_config.json")
+    build_config = json.loads(config.read())
+else:
+    build_config = dict()
 
 tools_dir = os.path.join(helpers.correct_path(build_config["pmtech_dir"]), "tools")
 

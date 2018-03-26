@@ -428,7 +428,7 @@ namespace put
 				scene_node_geometry* p_geom = &scene->geometries[n];
 				scene_node_material* p_mat = &scene->materials[n];
 
-                if( scene->entities[n] & CMP_SKINNED )
+                if( scene->entities[n] & CMP_SKINNED && !(scene->entities[n] & CMP_SUB_GEOMETRY) )
                 {
                     if( p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE )
                     {
@@ -451,9 +451,9 @@ namespace put
                     }
                         
                     pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
-                    pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
+					pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
                 }
-                
+
 				//set shader / technique
 				u32 shader = view.pmfx_shader;
 				hash_id technique = view.technique;

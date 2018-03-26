@@ -102,7 +102,7 @@ namespace put
         void            instantiate_geometry( geometry_resource* gr, entity_scene* scene, s32 node_index );
         void            instantiate_model_pre_skin( entity_scene* scene, s32 node_index );
         void            instantiate_model_cbuffer( entity_scene* scene, s32 node_index );
-        void            instantiate_anim_controller( entity_scene* scene, s32 node_index );
+        void            instantiate_anim_controller( entity_scene* scene, s32 node_index);
         void            instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index );
         
         void            create_geometry_primitives( );

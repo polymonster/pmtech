@@ -124,22 +124,22 @@ def write_corrected_4x4matrix(output, matrix_array):
         num_mats = len(matrix_array) / 16
         for m in range(0, int(num_mats), 1):
             index = m * 16
-            #xrow
+            # xrow
             output.write(struct.pack("f", (float(matrix_array[index+0]))))
             output.write(struct.pack("f", (float(matrix_array[index+1]))))
             output.write(struct.pack("f", (float(matrix_array[index+2]))))
             output.write(struct.pack("f", (float(matrix_array[index+3]))))
-            #yrow
+            # yrow
             output.write(struct.pack("f", (float(matrix_array[index+8]))))
             output.write(struct.pack("f", (float(matrix_array[index+9]))))
             output.write(struct.pack("f", (float(matrix_array[index+10]))))
             output.write(struct.pack("f", (float(matrix_array[index+11]))))
-            #zrow
+            # zrow
             output.write(struct.pack("f", (float(matrix_array[index+4]) * -1.0)))
             output.write(struct.pack("f", (float(matrix_array[index+5]) * -1.0)))
             output.write(struct.pack("f", (float(matrix_array[index+6]) * -1.0)))
             output.write(struct.pack("f", (float(matrix_array[index+7]) * -1.0)))
-            #wrow
+            # wrow
             output.write(struct.pack("f", (float(matrix_array[index+12]))))
             output.write(struct.pack("f", (float(matrix_array[index+13]))))
             output.write(struct.pack("f", (float(matrix_array[index+14]))))

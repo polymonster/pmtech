@@ -694,12 +694,12 @@ namespace put
             u32 node_zero_offset = nodes_start;
             u32 current_node = node_zero_offset;
             u32 inserted_nodes = 0;
-            
+
             //load scene nodes
             for (u32 n = 0; n < num_import_nodes; ++n)
             {
                 p_u32reader++; //e_node type
-                
+			               
                 Str node_name = read_parsable_string(&p_u32reader);
                 Str geometry_name = read_parsable_string(&p_u32reader);
                 
@@ -865,6 +865,9 @@ namespace put
                             inserted_nodes++;
                             clone_node( scene, current_node, dest, current_node, CLONE_INSTANTIATE, vec3f::zero(), (const c8*)node_suffix.c_str() );
                             scene->local_matrices[dest] = mat4::create_identity();
+
+							//child geometry which will inherit any skinning from its parent
+							scene->entities[dest] |= CMP_SUB_GEOMETRY;
                         }
                         
                         //generate geometry hash
@@ -925,6 +928,10 @@ namespace put
             //now we have loaded the whole scene fix up any anim controllers
             for( s32 i = node_zero_offset; i < node_zero_offset + num_import_nodes; ++i )
             {
+				if (scene->entities[i] & CMP_SUB_GEOMETRY)
+					continue;
+
+				//parent geometry deals with skinning
                 if( (scene->entities[i] & CMP_GEOMETRY) && scene->geometries[i].p_skin )
                 {
                     instantiate_anim_controller(scene, i);

@@ -1,6 +1,7 @@
 import helpers
 import os
 import struct
+import dependencies
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 image_list = []
@@ -52,10 +53,9 @@ def parse_library_images(library_node):
         lib_img = library_image()
         lib_img.id = img_node.get("id")
         for file_node in img_node.iter(schema+'init_from'):
-
             corrected = file_node.text.replace('\\', '/')
-
-            identifier = "assets/textures/"
+            identifier = dependencies.get_build_config_setting("textures_dir")
+            identifier += "/"
             texture_src = corrected.find(identifier)
             if texture_src != -1:
                 texture_sub_dir = corrected[texture_src + len(identifier):len(corrected)]
@@ -78,18 +78,18 @@ def parse_library_images(library_node):
             cur_dir = 0
             lib_img.filename = ""
             while split_dirs[cur_dir] != "assets" and cur_dir < filename_split:
-                cur_dir = cur_dir + 1
+                cur_dir += 1
 
-            if(cur_dir == len(split_dirs)-1):
+            if cur_dir == len(split_dirs)-1:
                 print("warning: texture not in assets folder")
                 lib_img.filename = "data/textures/" + split_dirs[filename_split]
             else:
                 split_dirs[cur_dir] = "data"
                 while cur_dir < len(split_dirs):
                     lib_img.filename += split_dirs[cur_dir]
-                    if(cur_dir!=filename_split):
+                    if cur_dir != filename_split:
                         lib_img.filename += '/'
-                    cur_dir = cur_dir + 1
+                    cur_dir += 1
 
             image_list.append(lib_img)
             break

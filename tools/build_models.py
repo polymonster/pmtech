@@ -175,8 +175,8 @@ def write_scene_file():
         return
 
     print("packing scene")
-    scene_data = [struct.pack("i", (int(helpers.version_number)))]
-    scene_data.append(struct.pack("i", (int(numjoints))))
+    scene_data = [struct.pack("i", (int(helpers.version_number))),
+                  struct.pack("i", (int(numjoints)))]
 
     for j in range(numjoints):
         if joint_list[j] is None:
@@ -210,14 +210,14 @@ def write_joint_file():
     numjoints = len(joint_list)
 
     print("packing " + str(numjoints) + " joints")
-    joint_data = [struct.pack("i", (int(helpers.version_number)))]
+    joint_data = [struct.pack("i", (int(helpers.version_number))),
+                  struct.pack("i", (int(len(animations))))]
 
     # write out anims
-    joint_data.append(struct.pack("i", (int(len(animations)))))
     for animation_instance in animations:
         num_times = len(animation_instance.inputs)
         bone_index = int(animation_instance.bone_index)
-        joint_data.append(struct.pack("i", (bone_index)))
+        joint_data.append(struct.pack("i", bone_index))
         joint_data.append(struct.pack("i", (int(num_times))))
         joint_data.append(struct.pack("i", (int(len(animation_instance.translation_x)))))
         joint_data.append(struct.pack("i", (int(len(animation_instance.rotation_x)))))
@@ -280,9 +280,20 @@ for root, dirs, files in os.walk(model_dir):
 
             depends_dest = base_out_file.replace(helpers.bin_dir, "")
 
+            # add dependency to these scripts
             dependency_inputs = [os.path.join(os.getcwd(), f)]
-            dependency_outputs = [depends_dest + ".pmm"]
-            dependency_outputs.append(depends_dest + ".pma")
+            dependency_outputs = [depends_dest + ".pmm", depends_dest + ".pma"]
+
+            main_file = os.path.realpath(__file__)
+            dependency_inputs.append(os.path.realpath(__file__))
+            models_lib = ["parse_materials.py",
+                          "parse_animations.py",
+                          "parse_meshes.py",
+                          "parse_scene.py"]
+
+            for lib_file in models_lib:
+                print(main_file.replace("build_models.py", lib_file))
+                dependency_inputs.append(main_file.replace("build_models.py", lib_file))
 
             file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
 
@@ -300,7 +311,7 @@ for root, dirs, files in os.walk(model_dir):
             helpers.output_file.write(base_out_file + ".pmm")
             parse_animations.write_animation_file(base_out_file + ".pma")
 
-    if(len(dependencies_directory["files"]) > 0):
+    if len(dependencies_directory["files"]) > 0:
         dependencies.write_to_file(dependencies_directory)
 
 stats_end = time.time()
