@@ -75,7 +75,12 @@ namespace put
 			u32			dimension;
 			extents		scene_extents;
 			extents		current_slice_aabb;
-			bool		in_progress = false;
+			bool		rasterise_in_progress = false;
+			a_u32		combine_in_progress;
+			a_u32		combine_position[3];
+			u32			block_size;
+			u32			data_size;
+			u8*			volume_data;
 		};
 
 		static vgt_rasteriser_job	k_rasteriser_job;
@@ -84,9 +89,6 @@ namespace put
 		inline u8* get_texel(u32 axis, u32 x, u32 y, u32 z)
 		{
 			u32& volume_dim = k_rasteriser_job.dimension;
-			s32& current_slice = k_rasteriser_job.current_slice;
-			s32& current_axis = k_rasteriser_job.current_axis;
-			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
 			void*** volume_slices = k_rasteriser_job.volume_slices;
 
 			u32 block_size = 4;
@@ -181,8 +183,87 @@ namespace put
 			current_slice++;
 		}
 
+		PEN_THREAD_RETURN raster_voxel_combine(void* params)
+		{
+			pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+			vgt_rasteriser_job*		rasteriser_job = (vgt_rasteriser_job*)job_params->user_data;
+			pen::job_thread*		p_thread_info = job_params->job_thread_info;
+			pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+
+			u32& volume_dim = rasteriser_job->dimension;
+			void*** volume_slices = rasteriser_job->volume_slices;
+
+			//create a simple 3d texture
+			rasteriser_job->block_size = 4;
+			rasteriser_job->data_size = volume_dim * volume_dim * volume_dim * rasteriser_job->block_size;
+
+			u8* volume_data = (u8*)pen::memory_alloc(rasteriser_job->data_size);
+			u32 row_pitch = volume_dim * rasteriser_job->block_size;
+			u32 slice_pitch = volume_dim  * row_pitch;
+
+			for (u32 z = 0; z < volume_dim; ++z)
+			{
+				rasteriser_job->combine_position[2] = z;
+
+				u8* slice_mem[6] = { 0 }; 
+				for (u32 a = 0; a < 6; ++a)
+				{
+					slice_mem[a] = (u8*)volume_slices[a][z];
+				}
+
+				for (u32 y = 0; y < volume_dim; ++y)
+				{
+					rasteriser_job->combine_position[1] = y;
+
+					for (u32 x = 0; x < volume_dim; ++x)
+					{
+						rasteriser_job->combine_position[0] = x;
+
+						u32 offset = z * slice_pitch + y * row_pitch + x * rasteriser_job->block_size;
+
+						u8 rgba[4] = { 0 };
+
+						for (u32 a = 0; a < 6; ++a)
+						{
+							u8* tex = get_texel(a, x, y, z);
+
+							if (!tex)
+								continue;
+
+							if (tex[3] > 8)
+								for (u32 p = 0; p < 4; ++p)
+									rgba[p] = tex[p];
+						}
+
+						volume_data[offset + 0] = rgba[2];
+						volume_data[offset + 1] = rgba[1];
+						volume_data[offset + 2] = rgba[0];
+						volume_data[offset + 3] = rgba[3];
+					}
+				}
+			}
+
+			rasteriser_job->volume_data = volume_data;
+
+			rasteriser_job->combine_in_progress = 2;
+
+			return PEN_THREAD_OK;
+		}
+
 		void volume_raster_completed(ces::entity_scene* scene)
 		{
+			if (k_rasteriser_job.combine_in_progress == 0)
+			{
+				k_rasteriser_job.combine_in_progress = 1;
+				pen::job_thread* job = pen::threads_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &k_rasteriser_job, pen::THREAD_START_DETACHED);
+				return;
+			}
+			else
+			{
+				if (k_rasteriser_job.combine_in_progress < 2)
+					return;
+			}
+
 			u32& volume_dim = k_rasteriser_job.dimension;
 			s32& current_slice = k_rasteriser_job.current_slice;
 			s32& current_axis = k_rasteriser_job.current_axis;
@@ -207,50 +288,6 @@ namespace put
 			instantiate_material(default_material, scene, new_prim);
 			instantiate_model_cbuffer(scene, new_prim);
 
-			//create a simple 3d texture
-			u32 block_size = 4;
-			u32 data_size = volume_dim * volume_dim * volume_dim * block_size;
-
-			u8* volume_data = (u8*)pen::memory_alloc(data_size);
-			u32 row_pitch = volume_dim * block_size;
-			u32 slice_pitch = volume_dim  * row_pitch;
-
-			for (u32 z = 0; z < volume_dim; ++z)
-			{
-				u8* slice_mem[6] = { 0 };
-				for (u32 a = 0; a < 6; ++a)
-				{
-					slice_mem[a] = (u8*)volume_slices[a][z];
-				}
-
-				for (u32 y = 0; y < volume_dim; ++y)
-				{
-					for (u32 x = 0; x < volume_dim; ++x)
-					{
-						u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
-
-						u8 rgba[4] = { 0 };
-
-						for (u32 a = 0; a < 6; ++a)
-						{
-							u8* tex = get_texel(a, x, y, z);
-
-							if (!tex)
-								continue;
-
-							if (tex[3] > 8)
-								for (u32 p = 0; p < 4; ++p)
-									rgba[p] = tex[p];
-						}
-
-						volume_data[offset + 0] = rgba[2];
-						volume_data[offset + 1] = rgba[1];
-						volume_data[offset + 2] = rgba[0];
-						volume_data[offset + 3] = rgba[3];
-					}
-				}
-			}
-
 			pen::texture_creation_params tcp;
 			tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
 
@@ -265,10 +302,10 @@ namespace put
 			tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
 			tcp.cpu_access_flags = 0;
 			tcp.flags = 0;
-			tcp.block_size = block_size;
+			tcp.block_size = k_rasteriser_job.block_size;
 			tcp.pixels_per_block = 1;
-			tcp.data = volume_data;
-			tcp.data_size = data_size;
+			tcp.data = k_rasteriser_job.volume_data;
+			tcp.data_size = k_rasteriser_job.data_size;
 
 			u32 volume_texture = pen::renderer_create_texture(tcp);
 
@@ -288,14 +325,18 @@ namespace put
 				pen::memory_free(k_rasteriser_job.volume_slices[a]);
 			}
 
+			//save to disk?
+			pen::memory_free(k_rasteriser_job.volume_data);
+
 			//completed
-			k_rasteriser_job.in_progress = false;
+			k_rasteriser_job.rasterise_in_progress = false;
+			k_rasteriser_job.combine_in_progress = 0;
 		}
 
 		void volume_rasteriser_update(put::camera_controller* cc)
 		{
 			//update incremental job
-			if (!k_rasteriser_job.in_progress)
+			if (!k_rasteriser_job.rasterise_in_progress)
 				return;
 
 			if (k_rasteriser_job.current_requested_slice == k_rasteriser_job.current_slice)
@@ -602,7 +643,7 @@ namespace put
 
 					ImGui::Combo("Capture", &k_options.capture_data, capture_data_names, PEN_ARRAY_SIZE(capture_data_names));
 
-					if (!k_rasteriser_job.in_progress)
+					if (!k_rasteriser_job.rasterise_in_progress)
 					{
 						if (ImGui::Button("Go"))
 						{
@@ -626,23 +667,53 @@ namespace put
 							}
 
 							//flag to start reasterising
-							k_rasteriser_job.in_progress = true;
+							k_rasteriser_job.rasterise_in_progress = true;
 						}
 					}
 					else
 					{
 						ImGui::Separator();
 
-						ImGui::Text("Rasteriser Progress");
+						ImGui::Text("Progress");
 
-						ImGui::Text("Axis %i", k_rasteriser_job.current_axis);
-						ImGui::Text("Slice %i", k_rasteriser_job.current_slice);
+						if (k_rasteriser_job.combine_in_progress > 0)
+						{
+							u32 x = k_rasteriser_job.combine_position[0];
+							u32 y = k_rasteriser_job.combine_position[1];
+							u32 z = k_rasteriser_job.combine_position[2];
 
-						static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
-						const pmfx::render_target* volume_rt = pmfx::get_render_target(id_volume_raster_rt);
-						ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
+							ImGui::Text("Combining Axes and Slices");
+							ImGui::Text("x[%3i], y[%3i], z[%3i]", x, y, z);
 
-						put::dbg::add_aabb(k_rasteriser_job.current_slice_aabb.min, k_rasteriser_job.current_slice_aabb.max, vec4f::cyan());
+							vec3f scene_size = k_rasteriser_job.scene_extents.max - k_rasteriser_job.scene_extents.min;
+							vec3f size = scene_size / k_rasteriser_job.dimension;
+
+							f32 cur_z = k_rasteriser_job.combine_position[2];
+
+							vec3f start = k_rasteriser_job.scene_extents.min;
+
+							vec3f cur_min = k_rasteriser_job.scene_extents.min;
+							vec3f cur_max = k_rasteriser_job.scene_extents.max;
+
+							cur_min.z = k_rasteriser_job.scene_extents.min.z + size.z * cur_z;
+							cur_max.z = k_rasteriser_job.scene_extents.min.z + size.z * cur_z + 1.0f;
+
+							put::dbg::add_aabb(cur_min, cur_max, vec4f::green());
+						}
+						else
+						{
+							ImGui::Text("Rasterising");
+
+							ImGui::Text("Axis %i", k_rasteriser_job.current_axis);
+							ImGui::Text("Slice %i", k_rasteriser_job.current_slice);
+
+							static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
+							const pmfx::render_target* volume_rt = pmfx::get_render_target(id_volume_raster_rt);
+							ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
+
+							put::dbg::add_aabb(k_rasteriser_job.current_slice_aabb.min, k_rasteriser_job.current_slice_aabb.max, vec4f::cyan());
+						}
+
 					}
 				}
 
