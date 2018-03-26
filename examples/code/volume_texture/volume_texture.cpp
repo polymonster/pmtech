@@ -178,7 +178,7 @@ PEN_THREAD_RETURN pen::game_entry(void* params)
 	pmfx::register_scene(sc);
 	pmfx::register_camera(cc);
 
-	pmfx::init("data/configs/editor_renderer.json");
+	pmfx::init("data/configs/basic_renderer.json");
 
 	create_scene_objects(main_scene);
 	
