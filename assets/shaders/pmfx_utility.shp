@@ -248,6 +248,57 @@ ps_output ps_volume_texture( vs_output input )
 	return output;
 }
 
+ps_output ps_volume_sdf( vs_output input ) 
+{
+	ps_output output;
+	
+	float3 v = input.texcoord.xyz;
+		
+	float3 chebyshev_norm = chebyshev_normalize(v);
+	
+	float3 uvw = chebyshev_norm * 0.5 + 0.5;
+	float depth = 1.0;
+	
+	float max_samples = 64.0;
+	
+	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
+				
+	//transform ray into volume space
+	ray_dir = mul( world_matrix_inv_transpose, ray_dir );
+	ray_dir.xyz = normalize(ray_dir.xyz);
+		
+	float3 ray_step = chebyshev_normalize(ray_dir.xyz) / max_samples;
+					
+	float3 vddx = ddx( uvw );
+	float3 vddy = ddy( uvw );
+	
+	for( int s = 0; s < int(max_samples); ++s )
+	{		
+		float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r * 2.0 - 1.0;
+
+		uvw += ray_dir.xyz * d * 0.5;
+		
+		if( d < 0.0 )
+			break;
+		
+		if(uvw.x > 1.0 || uvw.x < 0.0)
+			discard;
+			
+		if(uvw.y > 1.0 || uvw.y < 0.0)
+			discard;
+			
+		if(uvw.z > 1.0 || uvw.z < 0.0)
+			discard;
+		
+		if( s == max_samples-1)
+			discard;
+	}
+
+	output.colour.rgba = float4( 1.0, 1.0, 1.0, 1.0);
+		
+	return output;
+}
+
 vs_output vs_main_volume_texture( vs_input input )
 {
 	vs_output output;
@@ -290,6 +341,12 @@ pmfx:
 	{
 		"vs": "vs_main_volume_texture",
 		"ps": "ps_volume_texture"
+	},
+	
+	"volume_sdf":
+	{
+		"vs": "vs_main_volume_texture",
+		"ps": "ps_volume_sdf"
 	},
 	
 	"picking":

@@ -576,7 +576,7 @@ namespace put
                             }
                             
                             stb__sbm(k_selection_list) = scene->num_nodes;
-							stb__sbn(k_selection_list) = pos+1;
+							stb__sbn(k_selection_list) = pos;
 
 							u32 sls = sb_count(k_selection_list);
 							for (u32 i = 0; i < sls; ++i)

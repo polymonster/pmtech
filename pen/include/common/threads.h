@@ -8,15 +8,18 @@ namespace pen
 	struct thread;
 	struct mutex;
 	struct semaphore;
+
+	typedef void(*completion_callback)(void*);
     
     struct job_thread
     {
-        thread* p_thread;
-        semaphore* p_sem_consume;
-        semaphore* p_sem_continue;
-        semaphore* p_sem_exit;
-        semaphore* p_sem_terminated;
-        
+        thread* p_thread = nullptr;
+        semaphore* p_sem_consume = nullptr;
+        semaphore* p_sem_continue = nullptr;
+        semaphore* p_sem_exit = nullptr;
+        semaphore* p_sem_terminated = nullptr;
+		completion_callback p_completion_callback = nullptr;
+
         f32 thread_time;
     };
     
@@ -51,7 +54,7 @@ namespace pen
     
     void             threads_create_default_jobs( const default_thread_info& info) ;
     void             threads_terminate_jobs();
-    pen::job_thread* threads_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags );
+    pen::job_thread* threads_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags, completion_callback cb = nullptr);
     
 	//threads
 	pen::thread*	threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags );
