@@ -9,7 +9,7 @@ namespace pen
     static job_thread   s_jt[ MAX_THREADS ];
     static u32          s_num_active_threads = 0;
     
-    pen::job_thread* threads_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags )
+    pen::job_thread* threads_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags, completion_callback cb)
     {
         if( s_num_active_threads >= MAX_THREADS )
         {
@@ -24,6 +24,7 @@ namespace pen
         jt->p_sem_consume = threads_semaphore_create(0,1);
         jt->p_sem_exit = threads_semaphore_create(0,1);
         jt->p_sem_terminated = threads_semaphore_create(0,1);
+		jt->p_completion_callback = cb;
         
         params.user_data = user_data;
         params.job_thread_info = jt;
