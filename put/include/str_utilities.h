@@ -45,7 +45,7 @@ namespace put
         s32 search_len = pen::string_length(search);
         
         s32 i = start_pos;
-        s32 j = start_pos;
+        s32 j = 0;
         s32 find_start = 0;
         while( search_len - j <= len - i )
         {

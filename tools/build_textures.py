@@ -58,6 +58,7 @@ def process_single_file(f):
         export_options_string = options_from_export(export_info, src_file)
         print("compress and generate mips " + src_file)
         cmdline = nvcompress + " " + export_options_string + " -silent " + src_file + " " + dest_file
+        print(cmdline)
         subprocess.call(cmdline, shell=True)
 
 

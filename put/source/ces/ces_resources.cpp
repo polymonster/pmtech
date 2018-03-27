@@ -459,8 +459,10 @@ namespace put
                 put::load_texture("data/textures/defaults/normal.dds"),
                 put::load_texture("data/textures/defaults/spec.dds"),
                 put::load_texture("data/textures/defaults/spec.dds"),
+                put::load_texture("data/textures/defaults/black.dds"),
                 put::load_texture("data/textures/defaults/black.dds")
             };
+            static_assert(SN_NUM_TEXTURES == PEN_ARRAY_SIZE(default_maps), "mismatched defaults size");
             
             for( u32 map = 0; map < SN_NUM_TEXTURES; ++map )
                 p_mat->texture_id[map] = default_maps[map];
