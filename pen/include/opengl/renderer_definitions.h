@@ -110,6 +110,7 @@ enum texture_format : s32
     PEN_TEX_FORMAT_R16G16B16A16_FLOAT,
     PEN_TEX_FORMAT_R16_FLOAT,
     PEN_TEX_FORMAT_R32_UINT,
+    PEN_TEX_FORMAT_R8_UNORM,
     
     //bc compressed
     PEN_TEX_FORMAT_BC1_UNORM,
