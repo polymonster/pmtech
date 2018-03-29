@@ -549,7 +549,7 @@ namespace put
 							vec3f& max = scene->bounding_volumes[node].transformed_max_extents;
 
 							u32 c = maths::aabb_vs_plane(min, max, p[i], n[i]);
-							if ( c == 1 )
+							if ( c == INFRONT )
 							{
 								selected = false;
 								break;

@@ -73,7 +73,9 @@ namespace put
 		f32     plane_distance(vec3f normal, vec3f pos);
 		f32     point_vs_plane(const vec3f& pos, const vec3f& p, const vec3f& normal);
 		vec3f   ray_vs_plane(vec3f vray, vec3f pray, vec3f nplane, vec3f pplane);
+
 		u32		aabb_vs_plane(vec3f aabb_min, vec3f aabb_max, vec3f nplane, vec3f pplane);
+		u32		sphere_vs_plane(vec3f sphere_cente, f32 radius, vec3f nplane, vec3f pplane);
 
 		//lines
 		f32     distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
@@ -222,7 +224,7 @@ namespace put
 
 		inline u32 aabb_vs_plane(vec3f aabb_min, vec3f aabb_max, vec3f pplane, vec3f nplane)
 		{
-			vec3f e = (aabb_max - aabb_min)/2.0f;
+			vec3f e = (aabb_max - aabb_min) / 2.0f;
 
 			vec3f centre = aabb_min + e;
 
@@ -233,12 +235,27 @@ namespace put
 			f32 d = dot(nplane, centre) + pd;
 
 			if (d > radius)
-				return 1;
+				return INFRONT;
 
 			if (d < -radius)
-				return 2;
+				return BEHIND;
 
-			return 3;
+			return INTERSECTS;
+		}
+
+		inline u32 sphere_vs_plane(vec3f sphere_cente, f32 radius, vec3f nplane, vec3f pplane)
+		{
+			f32 pd = plane_distance(nplane, pplane);
+
+			f32 d = dot(nplane, sphere_cente) + pd;
+
+			if (d > radius)
+				return INFRONT;
+
+			if (d < -radius)
+				return BEHIND;
+
+			return INTERSECTS;
 		}
         
         inline f32 distance_fast(const vec2f p1, const vec2f p2)
