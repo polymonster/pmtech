@@ -465,6 +465,9 @@ namespace put
             static u32 picking_state = PICKING_READY;
             static u32 picking_result = (-1);
 
+			if (dev_ui::want_capture() & dev_ui::MOUSE)
+				return;
+
             if( picking_state == PICKING_SINGLE )
             {
                 if( k_picking_info.ready )
@@ -476,222 +479,215 @@ namespace put
 
                     k_picking_info.ready = false;
                 }
+				
+				return;
             }
-            else
-            {
-                if( !(dev_ui::want_capture() & dev_ui::MOUSE) )
-                {
-                    pen::mouse_state ms = pen::input_get_mouse_state();
-					f32 corrected_y = pen_window.height - ms.y;
 
-					static s32		drag_timer = 0;
-					static vec2f	drag_start;
-					static vec3f	frustum_points[2][4];
+            pen::mouse_state ms = pen::input_get_mouse_state();
+			f32 corrected_y = pen_window.height - ms.y;
 
-					//frustum select
-					vec3f n[6];
-					vec3f p[6];
+			static s32		drag_timer = 0;
+			static vec2f	drag_start;
+			static vec3f	frustum_points[2][4];
 
-					vec3f plane_vectors[] =
+			//frustum select
+			vec3f n[6];
+			vec3f p[6];
+
+			vec3f plane_vectors[] =
+			{
+				frustum_points[0][0], frustum_points[1][0], frustum_points[0][2],	//left
+				frustum_points[0][0], frustum_points[0][1],	frustum_points[1][0],	//top
+
+				frustum_points[0][1], frustum_points[0][3], frustum_points[1][1],	//right
+				frustum_points[0][2], frustum_points[1][2], frustum_points[0][3],	//bottom
+
+				frustum_points[0][0], frustum_points[0][2], frustum_points[0][1],	//near
+				frustum_points[1][0], frustum_points[1][1], frustum_points[1][2]	//far
+			};
+
+			for (s32 i = 0; i < 6; ++i)
+			{
+				s32 offset = i * 3;
+				vec3f v1 = maths::normalise(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
+				vec3f v2 = maths::normalise(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+
+				n[i] = put::maths::cross(v1, v2);
+				p[i] = plane_vectors[offset];
+			}
+					
+			if (!ms.buttons[PEN_MOUSE_L])
+			{
+				if (picking_state == PICKING_MULTI)
+				{
+					u32 pm = SELECT_NORMAL;
+					if (!pen::input_is_key_down(PENK_CONTROL) && !pen::input_is_key_down(PENK_SHIFT))
 					{
-						frustum_points[0][0], frustum_points[1][0], frustum_points[0][2],	//left
-						frustum_points[0][0], frustum_points[0][1],	frustum_points[1][0],	//top
+						//unflag current selected
+						u32 sls = sb_count(k_selection_list);
+						for (u32 i = 0; i < sls; ++i)
+							scene->state_flags[k_selection_list[i]] &= ~SF_SELECTED;
 
-						frustum_points[0][1], frustum_points[0][3], frustum_points[1][1],	//right
-						frustum_points[0][2], frustum_points[1][2], frustum_points[0][3],	//bottom
+                        sb_free(k_selection_list);
+                        k_selection_list = nullptr;
+                                
+						pm = SELECT_ADD;
+					}
 
-						frustum_points[0][0], frustum_points[0][2], frustum_points[0][1],	//near
-						frustum_points[1][0], frustum_points[1][1], frustum_points[1][2]	//far
+					for (s32 node = 0; node < scene->num_nodes; ++node)
+					{
+						if (!(scene->entities[node] & CMP_ALLOCATED))
+							continue;
+
+						if (!(scene->entities[node] & CMP_GEOMETRY))
+							continue;
+
+						bool selected = true;
+						for (s32 i = 0; i < 6; ++i)
+						{
+							vec3f& min = scene->bounding_volumes[node].transformed_min_extents;
+							vec3f& max = scene->bounding_volumes[node].transformed_max_extents;
+
+							u32 c = maths::aabb_vs_plane(min, max, p[i], n[i]);
+							if ( c == 1 )
+							{
+								selected = false;
+								break;
+							}
+						}
+
+						if (selected)
+						{
+							add_selection(scene, node, SELECT_ADD_MULTI);
+						}
+					}
+                            
+                    sb_free(k_selection_list);
+                    k_selection_list = nullptr;
+                    stb__sbgrow(k_selection_list, scene->num_nodes);
+
+                    s32 pos = 0;
+                    for (s32 node = 0; node < scene->num_nodes; ++node)
+                    {
+                        if(scene->state_flags[node] &= SF_SELECTED)
+                            k_selection_list[pos++] = node;
+                    }
+                            
+                    stb__sbm(k_selection_list) = scene->num_nodes;
+					stb__sbn(k_selection_list) = pos;
+
+					u32 sls = sb_count(k_selection_list);
+					for (u32 i = 0; i < sls; ++i)
+					{
+						dev_console_log("selected index %i", k_selection_list[i]);
+					}
+
+					picking_state = PICKING_READY;
+				}
+							
+				drag_timer = 0;
+				drag_start = vec2f(ms.x, corrected_y);
+			}
+
+            if (ms.buttons[PEN_MOUSE_L] && pen::mouse_coords_valid( ms.x, ms.y ) )
+            {
+				vec2f cur_mouse = vec2f(ms.x, corrected_y);
+
+				vec2f c1 = vec2f(cur_mouse.x, drag_start.y);
+				vec2f c2 = vec2f(drag_start.x, cur_mouse.y);
+
+				//frustum selection
+				vec2f source_points[] =
+				{
+					drag_start, c1,
+					c2, cur_mouse
+				};
+
+				//sort source points 
+				vec2f min = vec2f::flt_max();
+				vec2f max = vec2f::flt_min();
+				for (s32 i = 0; i < 4; ++i)
+				{
+					min = vec2f::vmin(source_points[i], min);
+					max = vec2f::vmax(source_points[i], max);
+				}
+
+				source_points[0] = vec2f(min.x, max.y);
+				source_points[1] = vec2f(max.x, max.y);
+				source_points[2] = vec2f(min.x, min.y);
+				source_points[3] = vec2f(max.x, min.y);
+
+				put::dbg::add_line_2f(source_points[0], source_points[1]);
+				put::dbg::add_line_2f(source_points[0], source_points[2]);
+				put::dbg::add_line_2f(source_points[2], source_points[3]);
+				put::dbg::add_line_2f(source_points[3], source_points[1]);
+                        
+                if (maths::magnitude(max - min) < 6.0 )
+				{
+                    picking_state = PICKING_SINGLE;
+                            
+					const pmfx::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
+                            
+                    if(!rt)
+                    {
+                        picking_state = PICKING_READY;
+                        return;
+                    }
+
+					f32 w, h;
+					pmfx::get_render_target_dimensions(rt, w, h);
+
+					u32 pitch = (u32)w * 4;
+					u32 data_size = (u32)h*pitch;
+
+					pen::resource_read_back_params rrbp =
+					{
+						rt->handle,
+						rt->format,
+						pitch,
+						data_size,
+						4,
+						data_size,
+						&picking_read_back
 					};
 
-					for (s32 i = 0; i < 6; ++i)
-					{
-						s32 offset = i * 3;
-						vec3f v1 = maths::normalise(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
-						vec3f v2 = maths::normalise(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+					pen::renderer_read_back_resource(rrbp);
 
-						n[i] = put::maths::cross(v1, v2);
-						p[i] = plane_vectors[offset];
-					}
-					
-					if (!ms.buttons[PEN_MOUSE_L])
-					{
-						if (picking_state == PICKING_MULTI)
-						{
-							u32 pm = SELECT_NORMAL;
-							if (!pen::input_is_key_down(PENK_CONTROL) && !pen::input_is_key_down(PENK_SHIFT))
-							{
-								//unflag current selected
-								u32 sls = sb_count(k_selection_list);
-								for (u32 i = 0; i < sls; ++i)
-									scene->state_flags[k_selection_list[i]] &= ~SF_SELECTED;
-
-                                sb_free(k_selection_list);
-                                k_selection_list = nullptr;
-                                
-								pm = SELECT_ADD;
-							}
-
-							for (s32 node = 0; node < scene->num_nodes; ++node)
-							{
-								if (!(scene->entities[node] & CMP_ALLOCATED))
-									continue;
-
-								if (!(scene->entities[node] & CMP_GEOMETRY))
-									continue;
-
-								bool selected = true;
-								for (s32 i = 0; i < 6; ++i)
-								{
-									vec3f& min = scene->bounding_volumes[node].transformed_min_extents;
-									vec3f& max = scene->bounding_volumes[node].transformed_max_extents;
-
-									vec3f pos = min + (max - min) * 0.5f;
-									f32 radius = scene->bounding_volumes[node].radius;
-
-									f32 d = maths::point_vs_plane(pos, p[i], n[i]);
-									
-									if (d > radius)
-									{
-										selected = false;
-										break;
-									}
-								}
-
-								if (selected)
-								{
-									add_selection(scene, node, SELECT_ADD_MULTI);
-								}
-							}
+					k_picking_info.ready = 0;
+					k_picking_info.x = ms.x;
+					k_picking_info.y = ms.y;
+				}
+				else
+				{
+                    //do not perfrom frustum picking if min and max are not square
+                    bool invalid_quad = min.x == max.x || min.y == max.y;
                             
-                            sb_free(k_selection_list);
-                            k_selection_list = nullptr;
-                            stb__sbgrow(k_selection_list, scene->num_nodes);
-
-                            s32 pos = 0;
-                            for (s32 node = 0; node < scene->num_nodes; ++node)
-                            {
-                                if(scene->state_flags[node] &= SF_SELECTED)
-                                   k_selection_list[pos++] = node;
-                            }
-                            
-                            stb__sbm(k_selection_list) = scene->num_nodes;
-							stb__sbn(k_selection_list) = pos;
-
-							u32 sls = sb_count(k_selection_list);
-							for (u32 i = 0; i < sls; ++i)
-							{
-								dev_console_log("selected index %i", k_selection_list[i]);
-							}
-
-							picking_state = PICKING_READY;
-						}
-							
-						drag_timer = 0;
-						drag_start = vec2f(ms.x, corrected_y);
-					}
-
-                    if (ms.buttons[PEN_MOUSE_L] && pen::mouse_coords_valid( ms.x, ms.y ) )
+                    if(!invalid_quad)
                     {
-						vec2f cur_mouse = vec2f(ms.x, corrected_y);
-
-						vec2f c1 = vec2f(cur_mouse.x, drag_start.y);
-						vec2f c2 = vec2f(drag_start.x, cur_mouse.y);
-
-						//frustum selection
-						vec2f source_points[] =
-						{
-							drag_start, c1,
-							c2, cur_mouse
-						};
-
-						//sort source points 
-						vec2f min = vec2f::flt_max();
-						vec2f max = vec2f::flt_min();
-						for (s32 i = 0; i < 4; ++i)
-						{
-							min = vec2f::vmin(source_points[i], min);
-							max = vec2f::vmax(source_points[i], max);
-						}
-
-						source_points[0] = vec2f(min.x, max.y);
-						source_points[1] = vec2f(max.x, max.y);
-						source_points[2] = vec2f(min.x, min.y);
-						source_points[3] = vec2f(max.x, min.y);
-
-						put::dbg::add_line_2f(source_points[0], source_points[1]);
-						put::dbg::add_line_2f(source_points[0], source_points[2]);
-						put::dbg::add_line_2f(source_points[2], source_points[3]);
-						put::dbg::add_line_2f(source_points[3], source_points[1]);
-                        
-                        if (maths::magnitude(max - min) < 6.0 )
-						{
-                            picking_state = PICKING_SINGLE;
-                            
-							const pmfx::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
-                            
-                            if(!rt)
-                            {
-                                picking_state = PICKING_READY;
-                                return;
-                            }
-
-							f32 w, h;
-							pmfx::get_render_target_dimensions(rt, w, h);
-
-							u32 pitch = (u32)w * 4;
-							u32 data_size = (u32)h*pitch;
-
-							pen::resource_read_back_params rrbp =
-							{
-								rt->handle,
-								rt->format,
-								pitch,
-								data_size,
-								4,
-								data_size,
-								&picking_read_back
-							};
-
-							pen::renderer_read_back_resource(rrbp);
-
-							k_picking_info.ready = 0;
-							k_picking_info.x = ms.x;
-							k_picking_info.y = ms.y;
-						}
-						else
-						{
-                            //do not perfrom frustum picking if min and max are not square
-                            bool invalid_quad = min.x == max.x || min.y == max.y;
-                            
-                            if(!invalid_quad)
-                            {
-                                picking_state = PICKING_MULTI;
+                        picking_state = PICKING_MULTI;
                                 
-                                //todo this should really be passed in, incase we want non window sized viewports
-                                vec2i vpi = vec2i(pen_window.width, pen_window.height);
+                        //todo this should really be passed in, incase we want non window sized viewports
+                        vec2i vpi = vec2i(pen_window.width, pen_window.height);
                                 
-                                for (s32 i = 0; i < 4; ++i)
-                                {
-                                    frustum_points[0][i] = maths::unproject
-                                    (
-                                        vec3f(source_points[i], 0.0f),
-                                        cam->view,
-                                        cam->proj,
-                                        vpi
-                                    );
-                                    frustum_points[1][i] = maths::unproject
-                                    (
-                                        vec3f(source_points[i], 1.0f),
-                                        cam->view,
-                                        cam->proj,
-                                        vpi
-                                    );
-                                }
-                            }
-						}
+                        for (s32 i = 0; i < 4; ++i)
+                        {
+                            frustum_points[0][i] = maths::unproject
+                            (
+                                vec3f(source_points[i], 0.0f),
+                                cam->view,
+                                cam->proj,
+                                vpi
+                            );
+                            frustum_points[1][i] = maths::unproject
+                            (
+                                vec3f(source_points[i], 1.0f),
+                                cam->view,
+                                cam->proj,
+                                vpi
+                            );
+                        }
                     }
-                }
+				}
             }
         }
 

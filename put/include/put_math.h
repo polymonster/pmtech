@@ -37,8 +37,8 @@ namespace put
 {
 	namespace maths
 	{
-        //functions decls----------------------------------------------------------------------------------------------------
-        
+		//functions decls----------------------------------------------------------------------------------------------------
+
 		//generic
 		f32     absolute(f32 value);
 		f32     absolute_smallest_of(f32 value_1, f32 value_2);
@@ -47,13 +47,13 @@ namespace put
 		f32     deg_to_rad(f32 degree_angle);
 		f32     rad_to_deg(f32 radian_angle);
 		f32     angle_between_vectors(vec3f v1, vec3f v2);
-        vec3f   azimuth_altitude_to_xyz(f32 azimuth, f32 altitude);
+		vec3f   azimuth_altitude_to_xyz(f32 azimuth, f32 altitude);
 
 		//vectors
 		vec3f   cross(vec3f v1, vec3f v2);
-        f32     cross(vec2f v1, vec2f v2);
-        vec2f   perp_lh(vec2f v1);
-        vec2f   perp_rh(vec2f v1);
+		f32     cross(vec2f v1, vec2f v2);
+		vec2f   perp_lh(vec2f v1);
+		vec2f   perp_rh(vec2f v1);
 		vec3f   normalise(vec3f v);
 		vec2f   normalise(vec2f v);
 		f32     dot(vec3f v1, vec3f v2);
@@ -61,164 +61,185 @@ namespace put
 		f32     magnitude(vec3f v);
 		f32     magnitude(vec2f v);
 		f32     distance(vec3f p1, vec3f p2);
-        f32     distance(const vec2f p1, const vec2f p2);
-        f32     distance_fast(const vec2f p1, const vec2f p2);
-        f32     distance_squared(vec2f p1, vec2f p2);
-        
-        //projection
-        vec3f   project(vec3f v, mat4 view, mat4 proj, vec2i viewport = vec2i( 0, 0 ), bool normalise_coordinates = false);
-        vec3f   unproject(vec3f scrren_space_pos, mat4 view, mat4 proj, vec2i viewport);
-        vec3f   unproject(vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport);
-        
-        //planes
-        f32     plane_distance(vec3f normal, vec3f pos);
-        f32     point_vs_plane( const vec3f& pos, const vec3f& p, const vec3f& normal );
-        vec3f   ray_vs_plane(vec3f vray, vec3f pray, vec3f nplane, vec3f pplane);
-        
-        //lines
+		f32     distance_fast(const vec2f p1, const vec2f p2);
+		f32     distance_squared(vec2f p1, vec2f p2);
+
+		//projection
+		vec3f   project(vec3f v, mat4 view, mat4 proj, vec2i viewport = vec2i(0, 0), bool normalise_coordinates = false);
+		vec3f   unproject(vec3f scrren_space_pos, mat4 view, mat4 proj, vec2i viewport);
+		vec3f   unproject(vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport);
+
+		//planes
+		f32     plane_distance(vec3f normal, vec3f pos);
+		f32     point_vs_plane(const vec3f& pos, const vec3f& p, const vec3f& normal);
+		vec3f   ray_vs_plane(vec3f vray, vec3f pray, vec3f nplane, vec3f pplane);
+		u32		aabb_vs_plane(vec3f aabb_min, vec3f aabb_max, vec3f nplane, vec3f pplane);
+
+		//lines
 		f32     distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
 		vec3f   closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
-        
-        //traingles
-        vec3f   get_normal(vec3f v1, vec3f v2, vec3f v3);
-        bool    point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
-        
-        //inline functions---------------------------------------------------------------------------------------------------
-        
-        inline f32 deg_to_rad(f32 degree_angle)
-        {
-            return( degree_angle * _PI_OVER_180 );
-        }
-        
-        inline f32 rad_to_deg(f32 radian_angle)
-        {
-            return( radian_angle * _180_OVER_PI );
-        }
-        
-        inline f32 absolute(f32 value)
-        {
-            if(value < 0.0f) value *= - 1;
-            
-            return value;
-        }
-        
-        inline f32 absolute_smallest_of(f32 value_1,f32 value_2)
-        {
-            if(absolute(value_1) < absolute(value_2)) return value_1;
-            else return value_2;
-        }
-        
-        inline vec3f cross(vec3f v1, vec3f v2)
-        {
-            vec3f result;
-            
-            result.x = ((v1.y * v2.z) - (v1.z * v2.y));
-            result.y = ((v1.x * v2.z) - (v1.z * v2.x));
-            result.z = ((v1.x * v2.y) - (v1.y * v2.x));
-            
-            result.y *= -1;
-            
-            return result;
-        }
-        
-        inline f32 cross( vec2f v1, vec2f v2 )
-        {
-            return v1.x * v2.y - v1.y * v2.x;
-        }
-        
-        inline f32 dot(vec3f v1,vec3f v2)
-        {
-            return ((v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z));
-        }
-        
-        inline vec2f perp_lh(vec2f v1)
-        {
-            return vec2f(v1.y,-v1.x);
-        }
-        
-        inline vec2f perp_rh(vec2f v1)
-        {
-            return vec2f(-v1.y,v1.x);
-        }
-        
-        inline f32 magnitude(vec3f v)
-        {
-            return sqrtf((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
-        }
-        
-        inline f32 magnitude(vec2f v)
-        {
-            return sqrtf((v.x * v.x) + (v.y * v.y));
-        }
-        
-        inline f32 distance(vec3f p1, vec3f p2)
-        {
-            f32 d = sqrtf( (p2.x - p1.x) * (p2.x - p1.x) +
-                            (p2.y - p1.y) * (p2.y - p1.y) +
-                            (p2.z - p1.z) * (p2.z - p1.z));
-            
-            return d;
-        }
-        
-        inline f32 distance_squared(vec2f p1, vec2f p2)
-        {
-            f32 d =  (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
-            return  d;
-        }
-        
-        inline vec3f normalise(vec3f v)
-        {
-            f32 r_mag = 1.0f / magnitude(v);
-            return v * r_mag;
-        }
-        
-        inline vec2f normalise(vec2f v)
-        {
-            f32 r_mag = 1.0f / magnitude(v);
-            return v * r_mag;
-        }
-        
-        inline vec3f azimuth_altitude_to_xyz( f32 azimuth, f32 altitude )
-        {
-            f32 z = sin(altitude);
-            f32 hyp = cos(altitude);
-            f32 y = hyp * cos(azimuth);
-            f32 x = hyp * sin(azimuth);
-            
-            return vec3f(x,z,y);
-        }
-        
-        inline f32 plane_distance(vec3f normal, vec3f pos)
-        {
-            f32 distance = 0.0f;
-            
-            distance = dot(normal, pos) * -1.0f;
-            
-            return distance;
-        }
-        
-        inline vec3f ray_vs_plane(vec3f vray, vec3f pray, vec3f nplane, vec3f pplane)
-        {
-            vec3f v = vray;
-            v.normalise();
-            
-            vec3f p = pray;
-            vec3f n = nplane;
-            
-            f32 d = plane_distance(n, pplane);
-            f32 t = -(dot(p, n) + d) / dot(v, n);
-            
-            vec3f point_on_plane = p + (v * t);
-            
-            return point_on_plane;
-        }
-        
-        inline f32 point_vs_plane( const vec3f& pos, const vec3f& p, const vec3f& normal )
-        {
-            f32 d = plane_distance(normal, p);
-            
-            return  (normal.x * pos.x + normal.y * pos.y + normal.z * pos.z + d);
-        }
+
+		//traingles
+		vec3f   get_normal(vec3f v1, vec3f v2, vec3f v3);
+		bool    point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
+
+		//inline functions---------------------------------------------------------------------------------------------------
+
+		inline f32 deg_to_rad(f32 degree_angle)
+		{
+			return(degree_angle * _PI_OVER_180);
+		}
+
+		inline f32 rad_to_deg(f32 radian_angle)
+		{
+			return(radian_angle * _180_OVER_PI);
+		}
+
+		inline f32 absolute(f32 value)
+		{
+			if (value < 0.0f) value *= -1;
+
+			return value;
+		}
+
+		inline f32 absolute_smallest_of(f32 value_1, f32 value_2)
+		{
+			if (absolute(value_1) < absolute(value_2)) return value_1;
+			else return value_2;
+		}
+
+		inline vec3f cross(vec3f v1, vec3f v2)
+		{
+			vec3f result;
+
+			result.x = ((v1.y * v2.z) - (v1.z * v2.y));
+			result.y = ((v1.x * v2.z) - (v1.z * v2.x));
+			result.z = ((v1.x * v2.y) - (v1.y * v2.x));
+
+			result.y *= -1;
+
+			return result;
+		}
+
+		inline f32 cross(vec2f v1, vec2f v2)
+		{
+			return v1.x * v2.y - v1.y * v2.x;
+		}
+
+		inline f32 dot(vec3f v1, vec3f v2)
+		{
+			return ((v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z));
+		}
+
+		inline vec2f perp_lh(vec2f v1)
+		{
+			return vec2f(v1.y, -v1.x);
+		}
+
+		inline vec2f perp_rh(vec2f v1)
+		{
+			return vec2f(-v1.y, v1.x);
+		}
+
+		inline f32 magnitude(vec3f v)
+		{
+			return sqrtf((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
+		}
+
+		inline f32 magnitude(vec2f v)
+		{
+			return sqrtf((v.x * v.x) + (v.y * v.y));
+		}
+
+		inline f32 distance(vec3f p1, vec3f p2)
+		{
+			f32 d = sqrtf((p2.x - p1.x) * (p2.x - p1.x) +
+				(p2.y - p1.y) * (p2.y - p1.y) +
+				(p2.z - p1.z) * (p2.z - p1.z));
+
+			return d;
+		}
+
+		inline f32 distance_squared(vec2f p1, vec2f p2)
+		{
+			f32 d = (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
+			return  d;
+		}
+
+		inline vec3f normalise(vec3f v)
+		{
+			f32 r_mag = 1.0f / magnitude(v);
+			return v * r_mag;
+		}
+
+		inline vec2f normalise(vec2f v)
+		{
+			f32 r_mag = 1.0f / magnitude(v);
+			return v * r_mag;
+		}
+
+		inline vec3f azimuth_altitude_to_xyz(f32 azimuth, f32 altitude)
+		{
+			f32 z = sin(altitude);
+			f32 hyp = cos(altitude);
+			f32 y = hyp * cos(azimuth);
+			f32 x = hyp * sin(azimuth);
+
+			return vec3f(x, z, y);
+		}
+
+		inline f32 plane_distance(vec3f normal, vec3f pos)
+		{
+			f32 distance = 0.0f;
+
+			distance = dot(normal, pos) * -1.0f;
+
+			return distance;
+		}
+
+		inline vec3f ray_vs_plane(vec3f vray, vec3f pray, vec3f nplane, vec3f pplane)
+		{
+			vec3f v = vray;
+			v.normalise();
+
+			vec3f p = pray;
+			vec3f n = nplane;
+
+			f32 d = plane_distance(n, pplane);
+			f32 t = -(dot(p, n) + d) / dot(v, n);
+
+			vec3f point_on_plane = p + (v * t);
+
+			return point_on_plane;
+		}
+
+		inline f32 point_vs_plane(const vec3f& pos, const vec3f& p, const vec3f& normal)
+		{
+			f32 d = plane_distance(normal, p);
+
+			return  (normal.x * pos.x + normal.y * pos.y + normal.z * pos.z + d);
+		}
+
+		inline u32 aabb_vs_plane(vec3f aabb_min, vec3f aabb_max, vec3f pplane, vec3f nplane)
+		{
+			vec3f e = (aabb_max - aabb_min)/2.0f;
+
+			vec3f centre = aabb_min + e;
+
+			f32 radius = abs(nplane.x*e.x) + abs(nplane.y*e.y) + abs(nplane.z*e.z);
+
+			f32 pd = plane_distance(nplane, pplane);
+
+			f32 d = dot(nplane, centre) + pd;
+
+			if (d > radius)
+				return 1;
+
+			if (d < -radius)
+				return 2;
+
+			return 3;
+		}
         
         inline f32 distance_fast(const vec2f p1, const vec2f p2)
         {
