@@ -345,6 +345,10 @@ namespace put
                 bcp.buffer_size = sizeof(vertex_position) * num_pos_verts;
                 bcp.data = (void*)p_reader;
                 
+				//keep a cpu copy of position data
+				p_geometry->cpu_position_buffer = pen::memory_alloc(bcp.buffer_size);
+				pen::memory_cpy(p_geometry->cpu_position_buffer, bcp.data, bcp.buffer_size);
+
                 p_geometry->position_buffer = pen::renderer_create_buffer(bcp);
                 
                 p_reader += bcp.buffer_size / sizeof(f32);
@@ -365,6 +369,10 @@ namespace put
                 p_geometry->num_indices = num_indices;
                 p_geometry->index_type = index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
                 p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+
+				//keep a cpu copy of index data
+				p_geometry->cpu_index_buffer = pen::memory_alloc(bcp.buffer_size);
+				pen::memory_cpy(p_geometry->cpu_index_buffer, bcp.data, bcp.buffer_size);
                 
                 p_reader = (u32*)((c8*)p_reader + bcp.buffer_size);
                 

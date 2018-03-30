@@ -106,7 +106,10 @@ namespace put
             ImVec4 foreground_dark = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
             ImVec4 foreground_dark_highlight = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
             ImVec4 foreground_inactive = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
-            
+
+			ImVec4 accent = ImVec4(0.00f, 0.65f, 0.65f, 0.46f);
+			ImVec4 accent_light = ImVec4(0.00f, 0.75f, 0.75f, 0.46f);
+
             style.Colors[ImGuiCol_Text] = text_light;
             style.Colors[ImGuiCol_TextDisabled] = text_dark;
             
@@ -159,10 +162,10 @@ namespace put
             style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
             style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
             
-            style.Colors[ImGuiCol_PlotLines] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
-            style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
-            style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
-            style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
+            style.Colors[ImGuiCol_PlotLines] = accent;
+			style.Colors[ImGuiCol_PlotLinesHovered] = accent_light;
+            style.Colors[ImGuiCol_PlotHistogram] = accent;
+            style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
             style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
             
             dev_ui::util_init();

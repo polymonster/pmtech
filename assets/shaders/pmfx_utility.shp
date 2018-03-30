@@ -272,29 +272,35 @@ ps_output ps_volume_sdf( vs_output input )
 	float3 vddx = ddx( uvw );
 	float3 vddy = ddy( uvw );
 	
+	float d;
+	
+	d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
+	
+	/*
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
-		float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r * 2.0 - 1.0;
+		d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r * 2.0 - 1.0;
 
 		uvw += ray_dir.xyz * d * 0.5;
 		
-		if( d < 0.0 )
+		if( d <= 0.001 )
 			break;
 		
-		if(uvw.x > 1.0 || uvw.x < 0.0)
+		if(uvw.x >= 1.0 || uvw.x < 0.0)
 			discard;
 			
-		if(uvw.y > 1.0 || uvw.y < 0.0)
+		if(uvw.y >= 1.0 || uvw.y < 0.0)
 			discard;
 			
-		if(uvw.z > 1.0 || uvw.z < 0.0)
+		if(uvw.z >= 1.0 || uvw.z < 0.0)
 			discard;
 		
 		if( s == max_samples-1)
 			discard;
 	}
-
-	output.colour.rgba = float4( 1.0, 1.0, 1.0, 1.0);
+	*/
+		
+	output.colour.rgba = float4( d, d, d, 1.0);
 		
 	return output;
 }

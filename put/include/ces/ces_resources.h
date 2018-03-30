@@ -67,28 +67,31 @@ namespace put
         
         struct geometry_resource
         {
-            hash_id                file_hash;
-            hash_id                hash;
+            hash_id					file_hash;
+            hash_id					hash;
             
-            Str                    filename;
-            Str                    geometry_name;
-            Str                    material_name;
-            hash_id                material_id_name;
-            u32                    submesh_index;
+            Str						filename;
+            Str						geometry_name;
+            Str						material_name;
+            hash_id					material_id_name;
+            u32						submesh_index;
             
-            u32                    position_buffer;
-            u32                    vertex_buffer;
-            u32                    index_buffer;
-            u32                    num_indices;
-            u32                    num_vertices;
-            u32                    index_type;
-            u32                    material_index;
-            u32                    vertex_size;
+            u32						position_buffer;
+            u32						vertex_buffer;
+            u32						index_buffer;
+            u32						num_indices;
+            u32						num_vertices;
+            u32						index_type;
+            u32						material_index;
+            u32						vertex_size;
 
-            vec3f                  min_extents;
-            vec3f                  max_extents;
+            vec3f					min_extents;
+            vec3f					max_extents;
+
+			void*					cpu_index_buffer;
+			void*					cpu_position_buffer;
             
-            scene_node_skin*       p_skin;
+            scene_node_skin*		p_skin;
         };
         
         void            save_scene( const c8* filename, entity_scene* scene );

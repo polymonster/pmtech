@@ -18,6 +18,8 @@ namespace put
 
 	namespace vgt
 	{
+		vec4f closest_point_on_scene(entity_scene* scene, vec3f pos );
+
 		static const int k_num_axes = 6;
 
 		enum volume_types
@@ -77,7 +79,7 @@ namespace put
 			extents		current_slice_aabb;
 			bool		rasterise_in_progress = false;
 			a_u32		combine_in_progress;
-			a_u32		combine_position[3];
+			a_u32		combine_position;
 			u32			block_size;
 			u32			data_size;
 			u8*			volume_data;
@@ -86,13 +88,15 @@ namespace put
 
 		struct vgt_sdf_job
 		{
-			vgt_options options;
-			u32			volume_dim;
-			u32			block_size;
-			u32			data_size;
-			u8*			volume_data;
-			a_u32		generate_in_progress;
-			a_u32		generate_position;
+			vgt_options		options;
+			entity_scene*	scene;
+			u32				volume_dim;
+			u32				block_size;
+			u32				data_size;
+			u8*				volume_data;
+			extents			scene_extents;
+			a_u32			generate_in_progress;
+			a_u32			generate_position;
 		};
 		static vgt_sdf_job			k_sdf_job;
 
@@ -213,10 +217,10 @@ namespace put
 			u32 row_pitch = volume_dim * rasteriser_job->block_size;
 			u32 slice_pitch = volume_dim  * row_pitch;
 
+			rasteriser_job->combine_position = 0;
+
 			for (u32 z = 0; z < volume_dim; ++z)
 			{
-				rasteriser_job->combine_position[2] = z;
-
 				u8* slice_mem[6] = { 0 }; 
 				for (u32 a = 0; a < 6; ++a)
 				{
@@ -225,11 +229,9 @@ namespace put
 
 				for (u32 y = 0; y < volume_dim; ++y)
 				{
-					rasteriser_job->combine_position[1] = y;
-
 					for (u32 x = 0; x < volume_dim; ++x)
 					{
-						rasteriser_job->combine_position[0] = x;
+						rasteriser_job->combine_position++;
 
 						u32 offset = z * slice_pitch + y * row_pitch + x * rasteriser_job->block_size;
 
@@ -480,34 +482,55 @@ namespace put
 			u32 row_pitch = volume_dim * block_size;
 			u32 slice_pitch = volume_dim  * row_pitch;
 
+			k_sdf_job.scene_extents = sdf_job->scene->renderable_extents;
+			
+			k_sdf_job.scene_extents.min -= vec3f(0.1f);
+			k_sdf_job.scene_extents.max += vec3f(0.1f);
+
+			extents scene_extents = k_sdf_job.scene_extents;
+			vec3f scene_dimension = scene_extents.max - scene_extents.min;
+
+			sdf_job->volume_data = volume_data;
+			sdf_job->volume_dim = volume_dim;
+			sdf_job->block_size = 1;
+			sdf_job->data_size = data_size;
+
 			for (u32 z = 0; z < volume_dim; ++z)
 			{
 				for (u32 y = 0; y < volume_dim; ++y)
 				{
 					for (u32 x = 0; x < volume_dim; ++x)
 					{
+						sdf_job->generate_position++;
+
 						u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
 
-						vec3f pos = vec3f(x, y, z) / volume_dim;
-						pos = pos * 2.0 - 1.0;
+						vec3f volume_pos = vec3f(x, y, z) / volume_dim;
 
-						f32 radius = 0.5;
+						vec3f world_pos = scene_extents.min + volume_pos * scene_dimension;
 
-						f32 d = maths::magnitude(pos) - radius;
-						d = d * 0.5f + 0.5f;
+						bool inside;
+						vec4f cps = closest_point_on_scene(sdf_job->scene, world_pos);
 
-						u32 signed_distance = d * 255.0f;
+						vec3f cp = cps.xyz();
+
+						f32 d = maths::distance(cp, world_pos);
+
+						//make distance signed
+						d *= cps.w;
+
+						f32 volume_space_d = d / scene_dimension.y;
+
+						//scale and bias
+						volume_space_d = volume_space_d * 0.5f + 0.5f;
+
+						u32 signed_distance = volume_space_d * 255.0f;
 						signed_distance = PEN_MIN(signed_distance, 255);
 
 						volume_data[offset + 0] = signed_distance;
 					}
 				}
 			}
-
-			sdf_job->volume_data = volume_data;
-			sdf_job->volume_dim = volume_dim;
-			sdf_job->block_size = 1;
-			sdf_job->data_size = data_size;
 
 			if (p_thread_info->p_completion_callback)
 				p_thread_info->p_completion_callback(nullptr);
@@ -596,13 +619,10 @@ namespace put
 
 				if (k_rasteriser_job.combine_in_progress > 0)
 				{
-					u32 x = k_rasteriser_job.combine_position[0];
-					u32 y = k_rasteriser_job.combine_position[1];
-					u32 z = k_rasteriser_job.combine_position[2];
+					f32 progress = (f32)k_rasteriser_job.combine_position / (f32)pow(k_rasteriser_job.dimension, 3);
+					ImGui::ProgressBar(progress);
 
-					ImGui::Text("Combining Axes and Slices");
-					ImGui::Text("x[%3i], y[%3i], z[%3i]", x, y, z);
-
+					/*
 					vec3f scene_size = k_rasteriser_job.scene_extents.max - k_rasteriser_job.scene_extents.min;
 					vec3f size = scene_size / k_rasteriser_job.dimension;
 
@@ -617,6 +637,7 @@ namespace put
 					cur_max.z = k_rasteriser_job.scene_extents.min.z + size.z * cur_z + 1.0f;
 
 					put::dbg::add_aabb(cur_min, cur_max, vec4f::green());
+					*/
 				}
 				else
 				{
@@ -634,6 +655,86 @@ namespace put
 			}
 		}
 
+		vec4f closest_point_on_scene( entity_scene* scene, vec3f pos )
+		{
+			vec3f closest_point = vec3f::flt_max();
+			f32 closest_distance = FLT_MAX;
+
+			bool inside = false;
+			for (u32 n = 0; n < scene->nodes_size; ++n)
+			{
+				if (scene->entities[n] & CMP_GEOMETRY)
+				{
+					geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
+
+					u16* indices = (u16*)gr->cpu_index_buffer;
+					vec4f* vertices = (vec4f*)gr->cpu_position_buffer;
+
+					for (u32 i = 0; i < gr->num_indices; i += 3)
+					{
+						u16 i0, i1, i2;
+						i0 = indices[i + 0];
+						i1 = indices[i + 1];
+						i2 = indices[i + 2];
+
+						vec3f tv0 = scene->world_matrices[n].transform_vector(vertices[i0].xyz());
+						vec3f tv1 = scene->world_matrices[n].transform_vector(vertices[i1].xyz());
+						vec3f tv2 = scene->world_matrices[n].transform_vector(vertices[i2].xyz());
+
+						vec3f n = maths::normalise(maths::cross(tv2 - tv0, tv1 - tv0));
+
+						f32 d = maths::point_vs_plane(pos, tv0, n);
+
+						vec3f cp = pos - n * d;
+
+						bool inside = maths::point_inside_triangle(tv0, tv1, tv2, cp);
+
+						if (!inside)
+						{
+							vec3f cl[] =
+							{
+								maths::closest_point_on_line(tv0, tv1, cp),
+								maths::closest_point_on_line(tv1, tv2, cp),
+								maths::closest_point_on_line(tv1, tv2, cp)
+							};
+
+							f32 ld = maths::distance(pos, cl[0]);
+							cp = cl[0];
+
+							for (int l = 1; l < 3; ++l)
+							{
+								f32 ldd = maths::distance(pos, cl[1]);
+
+								if (ldd < ld)
+								{
+									cp = cl[l];
+									ld = ldd;
+								}
+							}
+						}
+
+						f32 cd = maths::distance(cp, pos);
+
+						if (cd < closest_distance)
+						{
+							closest_point = cp;
+							closest_distance = cd;
+							inside = d < 0.0f;
+						}
+
+						//put::dbg::add_line(tv0, tv0 + n * 0.1f, vec4f::green());
+						//put::dbg::add_line(tv0, tv1, vec4f::magenta());
+						//put::dbg::add_line(tv1, tv2, vec4f::magenta());
+						//put::dbg::add_line(tv2, tv0, vec4f::magenta());
+					}
+				}
+			}
+
+			//put::dbg::add_point(closest_point, 0.3f);
+
+			return vec4f( closest_point, inside ? -1.0f : 1.0f );
+		}
+
 		void sdf_ui()
 		{
 			if (!k_sdf_job.generate_in_progress)
@@ -641,23 +742,32 @@ namespace put
 				if (ImGui::Button("Go"))
 				{
 					k_sdf_job.generate_in_progress = 1;
+					k_sdf_job.scene = k_main_scene;
+					k_sdf_job.options = k_options;
+
 					pen::job_thread* job = pen::threads_create_job(sdf_generate, 1024 * 1024 * 1024, &k_sdf_job, pen::THREAD_START_DETACHED);
 					return;
 				}
 			}
 			else
 			{
+				f32 progress = (f32)k_sdf_job.generate_position / (f32)pow(k_sdf_job.volume_dim, 3);
+				ImGui::ProgressBar(progress);
+
 				if (k_sdf_job.generate_in_progress == 2)
 				{
 					material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
 					geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
+					vec3f scale = (k_sdf_job.scene_extents.max - k_sdf_job.scene_extents.min) / 2.0f;
+					vec3f pos = k_sdf_job.scene_extents.min + scale;
+
 					u32 new_prim = get_new_node(k_main_scene);
 					k_main_scene->names[new_prim] = "volume";
 					k_main_scene->names[new_prim].appendf("%i", new_prim);
 					k_main_scene->transforms[new_prim].rotation = quat();
-					k_main_scene->transforms[new_prim].scale = vec3f::one();
-					k_main_scene->transforms[new_prim].translation = vec3f::zero();
+					k_main_scene->transforms[new_prim].scale = scale;
+					k_main_scene->transforms[new_prim].translation = pos;
 					k_main_scene->entities[new_prim] |= CMP_TRANSFORM;
 					k_main_scene->parents[new_prim] = new_prim;
 					instantiate_geometry(cube, k_main_scene, new_prim);
