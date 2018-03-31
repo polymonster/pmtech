@@ -1172,6 +1172,16 @@ namespace pen
                     {
                         if( base_texture_target == GL_TEXTURE_3D )
                         {
+                            //3d textures rgba / bgra are reversed?
+                            if( format == GL_RGBA )
+                            {
+                                format = GL_BGRA;
+                            }
+                            else if( format == GL_BGRA )
+                            {
+                                format = GL_RGBA;
+                            }
+                            
                             CHECK_CALL( glTexImage3D(base_texture_target,
                                                      mip, sized_format, mip_w, mip_h, num_slices, 0, format,
                                                      type, mip_data) );

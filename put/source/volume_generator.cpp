@@ -170,10 +170,8 @@ namespace put
 
 		void image_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
 		{
-			u32& volume_dim = k_rasteriser_job.dimension;
 			s32& current_slice = k_rasteriser_job.current_slice;
 			s32& current_axis = k_rasteriser_job.current_axis;
-			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
 			void*** volume_slices = k_rasteriser_job.volume_slices;
 
 			u32 w = row_pitch / block_size;
@@ -293,7 +291,8 @@ namespace put
 			if (k_rasteriser_job.combine_in_progress == 0)
 			{
 				k_rasteriser_job.combine_in_progress = 1;
-				pen::job_thread* job = pen::threads_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &k_rasteriser_job, pen::THREAD_START_DETACHED);
+				pen::threads_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &k_rasteriser_job,
+                                        pen::THREAD_START_DETACHED);
 				return;
 			}
 			else
@@ -303,13 +302,11 @@ namespace put
 			}
 
 			u32& volume_dim = k_rasteriser_job.dimension;
-			s32& current_slice = k_rasteriser_job.current_slice;
-			s32& current_axis = k_rasteriser_job.current_axis;
-			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
-			void*** volume_slices = k_rasteriser_job.volume_slices;
 
 			//create texture
-			u32 volume_texture = create_volume_from_data(volume_dim, k_rasteriser_job.block_size, k_rasteriser_job.data_size, k_rasteriser_job.volume_data);
+			u32 volume_texture = create_volume_from_data(volume_dim,
+                                                         k_rasteriser_job.block_size,
+                                                         k_rasteriser_job.data_size, k_rasteriser_job.volume_data);
 
 			//create material for volume ray trace
 			material_resource* volume_material = new material_resource;
@@ -653,7 +650,8 @@ namespace put
 					const pmfx::render_target* volume_rt = pmfx::get_render_target(id_volume_raster_rt);
 					ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
 
-					put::dbg::add_aabb(k_rasteriser_job.current_slice_aabb.min, k_rasteriser_job.current_slice_aabb.max, vec4f::cyan());
+					put::dbg::add_aabb(k_rasteriser_job.current_slice_aabb.min,
+                                       k_rasteriser_job.current_slice_aabb.max, vec4f::cyan());
 				}
 			}
 		}
@@ -748,7 +746,7 @@ namespace put
 					k_sdf_job.scene = k_main_scene;
 					k_sdf_job.options = k_options;
 
-					pen::job_thread* job = pen::threads_create_job(sdf_generate, 1024 * 1024 * 1024, &k_sdf_job, pen::THREAD_START_DETACHED);
+					pen::threads_create_job(sdf_generate, 1024 * 1024 * 1024, &k_sdf_job, pen::THREAD_START_DETACHED);
 					return;
 				}
 			}
@@ -760,7 +758,9 @@ namespace put
 				if (k_sdf_job.generate_in_progress == 2)
 				{
 					//create texture
-					u32 volume_texture = create_volume_from_data(k_sdf_job.volume_dim, k_sdf_job.block_size, k_sdf_job.data_size, k_sdf_job.volume_data);
+					u32 volume_texture = create_volume_from_data(k_sdf_job.volume_dim,
+                                                                 k_sdf_job.block_size,
+                                                                 k_sdf_job.data_size, k_sdf_job.volume_data);
 
 					//create material for volume sdf sphere trace
 					material_resource* sdf_material = new material_resource;
