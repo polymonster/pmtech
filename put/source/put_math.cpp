@@ -177,7 +177,7 @@ namespace put
 			{
 				maths::closest_point_on_line(v1, v2, cp),
 				maths::closest_point_on_line(v2, v3, cp),
-				maths::closest_point_on_line(v2, v3, cp)
+				maths::closest_point_on_line(v1, v3, cp)
 			};
 
 			f32 ld = maths::distance(p, cl[0]);
@@ -185,7 +185,7 @@ namespace put
 
 			for (int l = 1; l < 3; ++l)
 			{
-				f32 ldd = maths::distance(p, cl[1]);
+				f32 ldd = maths::distance(p, cl[l]);
 
 				if (ldd < ld)
 				{

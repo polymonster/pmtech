@@ -496,6 +496,12 @@ public:
         return vec4f( 0.0f, 0.0f, 1.0f, 1.0f );
     }
     
+	inline static vec4f orange()
+	{
+		return vec4f(1.0f, 0.5f, 0.0f, 1.0f);
+	}
+
+
     inline static vec4f black()
     {
         return vec4f::zero();

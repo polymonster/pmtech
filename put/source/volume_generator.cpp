@@ -27,12 +27,13 @@ namespace put
 		struct triangle_octree
 		{
 			triangle*			triangles = nullptr;
+			triangle*			failed_triangles = nullptr;
 			triangle_octree*	children = nullptr;
+			u32					id = 0;
 			extents				e;
 		};
 
-		vec4f	closest_point_on_scene(entity_scene* scene, vec3f pos );
-		vec4f	closest_point_on_scene_v2(const triangle_octree* scene, vec3f pos);
+		vec4f	closest_point_on_scene(const triangle_octree* scene, vec3f pos, bool debug = false);
 		void	subdivide_octree(triangle_octree* node, u32 depth, u32 max_depth);
 		void	build_triangle_octree(entity_scene* scene, triangle_octree& tree);
 
@@ -102,10 +103,17 @@ namespace put
 		};
 		static vgt_rasteriser_job	k_rasteriser_job;
 
+		struct dd
+		{
+			vec3f pos;
+			vec4f closest;
+		};
+
 		struct vgt_sdf_job
 		{
 			vgt_options		options;
 			entity_scene*	scene;
+			triangle_octree tree;
 			u32				volume_dim;
 			u32				block_size;
 			u32				data_size;
@@ -113,6 +121,7 @@ namespace put
 			extents			scene_extents;
 			a_u32			generate_in_progress;
 			a_u32			generate_position;
+			dd*				debug_data = nullptr;
 		};
 		static vgt_sdf_job			k_sdf_job;
 
@@ -511,8 +520,9 @@ namespace put
 			sdf_job->block_size = 1;
 			sdf_job->data_size = data_size;
 
-			triangle_octree tree;
-			build_triangle_octree(sdf_job->scene, tree);
+			sdf_job->debug_data = new dd[volume_dim * volume_dim * volume_dim];
+
+			build_triangle_octree(sdf_job->scene, sdf_job->tree);
 
 			sdf_job->generate_position = 0;
 
@@ -530,7 +540,7 @@ namespace put
 
 						vec3f world_pos = scene_extents.min + volume_pos * scene_dimension;
 
-						vec4f cps = closest_point_on_scene_v2(&tree, world_pos);
+						vec4f cps = closest_point_on_scene(&sdf_job->tree, world_pos);
 
 						vec3f cp = cps.xyz();
 
@@ -538,15 +548,14 @@ namespace put
 
 						f32 volume_space_d = d / scene_dimension.max_component();
 
+						volume_space_d *= cps.w;
+						volume_space_d = volume_space_d * 0.5 + 0.5;
+
 						//scale and bias
 						u32 signed_distance = volume_space_d * 255.0f;
 
-						/*
-						if (cps.w < 0.0f)
-						{
-							signed_distance = 0;
-						}
-						*/
+						sdf_job->debug_data[offset].pos = world_pos;
+						sdf_job->debug_data[offset].closest = cps;
 
 						signed_distance = PEN_MIN(signed_distance, 255);
 
@@ -644,23 +653,6 @@ namespace put
 				{
 					f32 progress = (f32)k_rasteriser_job.combine_position / (f32)pow(k_rasteriser_job.dimension, 3);
 					ImGui::ProgressBar(progress);
-
-					/*
-					vec3f scene_size = k_rasteriser_job.scene_extents.max - k_rasteriser_job.scene_extents.min;
-					vec3f size = scene_size / k_rasteriser_job.dimension;
-
-					f32 cur_z = k_rasteriser_job.combine_position[2];
-
-					vec3f start = k_rasteriser_job.scene_extents.min;
-
-					vec3f cur_min = k_rasteriser_job.scene_extents.min;
-					vec3f cur_max = k_rasteriser_job.scene_extents.max;
-
-					cur_min.z = k_rasteriser_job.scene_extents.min.z + size.z * cur_z;
-					cur_max.z = k_rasteriser_job.scene_extents.min.z + size.z * cur_z + 1.0f;
-
-					put::dbg::add_aabb(cur_min, cur_max, vec4f::green());
-					*/
 				}
 				else
 				{
@@ -679,6 +671,7 @@ namespace put
 			}
 		}
 
+		static u32 octree_id = 0;
 		void subdivide_octree(triangle_octree* node, u32 depth, u32 max_depth )
 		{
 			node->children = new triangle_octree[8];
@@ -704,6 +697,11 @@ namespace put
 
 			for (u32 i = 0; i < 8; ++i)
 			{
+				if (octree_id == 4587)
+				{
+					u32 a = 0;
+				}
+
 				node->children[i].e =
 				{
 					child_min[i],
@@ -722,11 +720,17 @@ namespace put
 					triangle& t = node->triangles[ti];
 					vec3f cp = maths::closest_point_on_triangle(t.v[0], t.v[1], t.v[2], centre, side);
 
-					if (maths::point_inside_aabb(e.min, e.max, cp))
+					if (maths::point_inside_aabb(e.min - vec3f(0.1f), e.max + vec3f(0.1f), cp))
 					{
 						sb_push(node->children[i].triangles, t);
 					}
+					else
+					{
+						sb_push(node->children[i].failed_triangles, t);
+					}
 				}
+
+				node->children[i].id = octree_id++;
 
 				u32 child_tris = sb_count(node->children[i].triangles);
 				if (depth < max_depth && child_tris > 0)
@@ -763,7 +767,7 @@ namespace put
 						triangle t = { tv0 , tv1, tv2, n };
 
 						sb_push(tree.triangles, t);
-					}
+					} 
 				}
 			}
 
@@ -771,18 +775,62 @@ namespace put
 			subdivide_octree(&tree, 0, 4);
 		}
 
-		vec4f closest_point_on_scene_v2(const triangle_octree* scene, vec3f pos)
+		vec4f closest_point_on_scene(const triangle_octree* scene, vec3f pos, bool debug )
 		{
 			vec3f closest_point = vec3f::flt_max();
 			f32 closest_distance = FLT_MAX;
 			f32 closest_side = FLT_MAX;
 
+			static s32 level = 0;
+			if (debug)
+			{
+				ImGui::InputInt("Level", &level);
+			}
+
 			//get to deepest node
 			const triangle_octree* node_iter = scene;
+			s32 count = 0;
 			while (node_iter->children)
 			{
 				//pick side
 				vec3f centre = node_iter->e.min + (node_iter->e.max - node_iter->e.min) / 2.0f;
+
+				if (debug)
+				{
+					if (count == level)
+					{
+						u32 tris = sb_count(node_iter->triangles);
+						for (u32 ti = 0; ti < tris; ++ti)
+						{
+							f32 side = 0.0f;
+							triangle t = node_iter->triangles[ti];
+							dbg::add_triangle(t.v[0], t.v[1], t.v[2], vec4f::magenta());
+						}
+
+						dbg::add_aabb(node_iter->e.min, node_iter->e.max, vec4f::green());
+
+						vec3f octree_size = node_iter->e.max - node_iter->e.min;
+						vec3f centre = node_iter->e.min + octree_size * 0.5f;
+
+						dbg::add_point(centre, 0.1f, vec4f::yellow());
+
+						u32 failed_tris = sb_count(node_iter->failed_triangles);
+						for (u32 ti = 0; ti < failed_tris; ++ti)
+						{
+							f32 side = 0.0f;
+							triangle t = node_iter->failed_triangles[ti];
+							dbg::add_triangle(t.v[0], t.v[1], t.v[2], vec4f::red());
+
+							vec3f cp2 = maths::closest_point_on_triangle(t.v[0], t.v[1], t.v[2], centre, side);
+
+							dbg::add_point(cp2, 0.05f, vec4f::green());
+						}
+					}
+					else
+					{
+						dbg::add_aabb(node_iter->e.min, node_iter->e.max, vec4f::black());
+					}
+				}
 
 				u32 octant = 0;
 				if (pos.y > centre.y)
@@ -800,6 +848,7 @@ namespace put
 					break;
 
 				node_iter = &node_iter->children[octant];
+				count++;
 			}
 
 			//distance to closest triangle
@@ -813,95 +862,25 @@ namespace put
 
 				f32 cd = maths::distance(cp, pos);
 
-				if (cd < closest_distance)
+				if (cd <= closest_distance)
 				{
-					closest_point = cp;
-					closest_distance = cd;
-					closest_side = side;
-				}
-			}
+					f32 abs_diff = fabs(cd - closest_distance);
 
-			return vec4f(closest_point, closest_side);
-		}
+					bool valid_change = true;
+					if (closest_side == 1.0f)
+						if (side == -1.0f && abs_diff < 0.001f)
+							valid_change = false;
 
-		vec4f closest_point_on_scene( entity_scene* scene, vec3f pos )
-		{
-			vec3f closest_point = vec3f::flt_max();
-			f32 closest_distance = FLT_MAX;
-
-			bool inside = false;
-			for (u32 n = 0; n < scene->nodes_size; ++n)
-			{
-				if (scene->entities[n] & CMP_GEOMETRY)
-				{
-					geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
-
-					u16* indices = (u16*)gr->cpu_index_buffer;
-					vec4f* vertices = (vec4f*)gr->cpu_position_buffer;
-
-					for (u32 i = 0; i < gr->num_indices; i += 3)
+					if (valid_change)
 					{
-						u16 i0, i1, i2;
-						i0 = indices[i + 0];
-						i1 = indices[i + 1];
-						i2 = indices[i + 2];
-
-						vec3f tv0 = scene->world_matrices[n].transform_vector(vertices[i0].xyz());
-						vec3f tv1 = scene->world_matrices[n].transform_vector(vertices[i1].xyz());
-						vec3f tv2 = scene->world_matrices[n].transform_vector(vertices[i2].xyz());
-
-						vec3f n = maths::normalise(maths::cross(tv2 - tv0, tv1 - tv0));
-
-						f32 d = maths::point_vs_plane(pos, tv0, n);
-
-						vec3f cp = pos - n * d;
-
-						bool inside = maths::point_inside_triangle(tv0, tv1, tv2, cp);
-
-						if (!inside)
-						{
-							vec3f cl[] =
-							{
-								maths::closest_point_on_line(tv0, tv1, cp),
-								maths::closest_point_on_line(tv1, tv2, cp),
-								maths::closest_point_on_line(tv1, tv2, cp)
-							};
-
-							f32 ld = maths::distance(pos, cl[0]);
-							cp = cl[0];
-
-							for (int l = 1; l < 3; ++l)
-							{
-								f32 ldd = maths::distance(pos, cl[1]);
-
-								if (ldd < ld)
-								{
-									cp = cl[l];
-									ld = ldd;
-								}
-							}
-						}
-
-						f32 cd = maths::distance(cp, pos);
-
-						if (cd < closest_distance)
-						{
-							closest_point = cp;
-							closest_distance = cd;
-							inside = d <= 0.0f;
-						}
-
-						//put::dbg::add_line(tv0, tv0 + n * 0.1f, vec4f::green());
-						//put::dbg::add_line(tv0, tv1, vec4f::magenta());
-						//put::dbg::add_line(tv1, tv2, vec4f::magenta());
-						//put::dbg::add_line(tv2, tv0, vec4f::magenta());
+						closest_point = cp;
+						closest_distance = cd;
+						closest_side = side;
 					}
 				}
 			}
 
-			//put::dbg::add_point(closest_point, 0.3f);
-
-			return vec4f( closest_point, inside ? -1.0f : 1.0f );
+			return vec4f(closest_point, closest_side);
 		}
 
 		void sdf_ui()
@@ -960,6 +939,38 @@ namespace put
 					k_sdf_job.generate_in_progress = 0;
 				}
 			}
+
+			/*
+			if (k_sdf_job.debug_data)
+			{
+				static s32 debug_x = 0;
+				static s32 debug_y = 0;
+				static s32 debug_z = 0;
+
+				ImGui::InputInt("Debug X", &debug_x);
+				ImGui::InputInt("Debug Y", &debug_y);
+				ImGui::InputInt("Debug Z", &debug_z);
+
+				debug_x = PEN_MIN(debug_x, k_sdf_job.volume_dim - 1);
+				debug_y = PEN_MIN(debug_y, k_sdf_job.volume_dim - 1);
+				debug_z = PEN_MIN(debug_z, k_sdf_job.volume_dim - 1);
+
+				debug_x = PEN_MAX(debug_x, 0);
+				debug_y = PEN_MAX(debug_y, 0);
+				debug_z = PEN_MAX(debug_z, 0);
+
+				u32 debug_index = debug_z * k_sdf_job.volume_dim * k_sdf_job.volume_dim;
+				debug_index += debug_y * k_sdf_job.volume_dim;
+				debug_index += debug_x;
+
+				bool inside = k_sdf_job.debug_data[debug_index].closest.w < 0.0f;
+				put::dbg::add_point(k_sdf_job.debug_data[debug_index].pos, 0.05f, inside ? vec4f::red() : vec4f::green());
+
+				//put::dbg::add_point(k_sdf_job.debug_data[debug_index].closest.xyz(), 0.05f, vec4f::cyan());
+
+				closest_point_on_scene(&k_sdf_job.tree, k_sdf_job.debug_data[debug_index].pos, true);
+			}
+			*/
 
 			/*
 			vec3f v1 = vec3f(-10.0f, -10.0f, -10.0f);
