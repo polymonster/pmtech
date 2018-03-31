@@ -11,6 +11,7 @@
 #include "str/Str.h"
 #include "hash.h"
 #include "dev_ui.h"
+#include "ces/ces_resources.h"
 
 namespace put
 {
@@ -569,6 +570,8 @@ namespace put
                         
                         //no longer invalidated
                         pmfx_set.invalidated = false;
+
+						ces::bake_material_handles();
                     }
                 }
                 else

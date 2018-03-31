@@ -18,7 +18,23 @@ namespace put
 
 	namespace vgt
 	{
-		vec4f closest_point_on_scene(entity_scene* scene, vec3f pos );
+		struct triangle
+		{
+			vec3f v[3];
+			vec3f n;
+		};
+
+		struct triangle_octree
+		{
+			triangle*			triangles = nullptr;
+			triangle_octree*	children = nullptr;
+			extents				e;
+		};
+
+		vec4f	closest_point_on_scene(entity_scene* scene, vec3f pos );
+		vec4f	closest_point_on_scene_v2(const triangle_octree* scene, vec3f pos);
+		void	subdivide_octree(triangle_octree* node, u32 depth, u32 max_depth);
+		void	build_triangle_octree(entity_scene* scene, triangle_octree& tree);
 
 		static const int k_num_axes = 6;
 
@@ -495,6 +511,11 @@ namespace put
 			sdf_job->block_size = 1;
 			sdf_job->data_size = data_size;
 
+			triangle_octree tree;
+			build_triangle_octree(sdf_job->scene, tree);
+
+			sdf_job->generate_position = 0;
+
 			for (u32 z = 0; z < volume_dim; ++z)
 			{
 				for (u32 y = 0; y < volume_dim; ++y)
@@ -509,21 +530,23 @@ namespace put
 
 						vec3f world_pos = scene_extents.min + volume_pos * scene_dimension;
 
-						vec4f cps = closest_point_on_scene(sdf_job->scene, world_pos);
+						vec4f cps = closest_point_on_scene_v2(&tree, world_pos);
 
 						vec3f cp = cps.xyz();
 
 						f32 d = maths::distance(cp, world_pos);
 
-						//make distance signed
-						d *= cps.w;
-
 						f32 volume_space_d = d / scene_dimension.max_component();
 
 						//scale and bias
-						volume_space_d = volume_space_d * 0.5f + 0.5f;
-
 						u32 signed_distance = volume_space_d * 255.0f;
+
+						/*
+						if (cps.w < 0.0f)
+						{
+							signed_distance = 0;
+						}
+						*/
 
 						signed_distance = PEN_MIN(signed_distance, 255);
 
@@ -656,6 +679,151 @@ namespace put
 			}
 		}
 
+		void subdivide_octree(triangle_octree* node, u32 depth, u32 max_depth )
+		{
+			node->children = new triangle_octree[8];
+
+			vec3f half_size = (node->e.max - node->e.min) / 2.0f;
+
+			vec3f half_x = vec3f(half_size.x, 0.0f, 0.0f);
+			vec3f half_y = vec3f(0.0f, half_size.y, 0.0f);
+			vec3f half_z = vec3f(0.0f, 0.0f, half_size.z);
+
+			vec3f child_min[8] =
+			{
+				node->e.min,
+				node->e.min + half_x,
+				node->e.min + half_z,
+				node->e.min + half_x + half_z,
+
+				child_min[0] + half_y,
+				child_min[1] + half_y,
+				child_min[2] + half_y,
+				child_min[3] + half_y
+			};
+
+			for (u32 i = 0; i < 8; ++i)
+			{
+				node->children[i].e =
+				{
+					child_min[i],
+					child_min[i] + half_size
+				};
+
+				extents& e = node->children[i].e;
+
+				vec3f centre = child_min[i] + half_size * 0.5f;
+
+				u32 num_tris = sb_count(node->triangles);
+
+				f32 side = 0.0f;
+				for (u32 ti = 0; ti < num_tris; ++ti)
+				{
+					triangle& t = node->triangles[ti];
+					vec3f cp = maths::closest_point_on_triangle(t.v[0], t.v[1], t.v[2], centre, side);
+
+					if (maths::point_inside_aabb(e.min, e.max, cp))
+					{
+						sb_push(node->children[i].triangles, t);
+					}
+				}
+
+				u32 child_tris = sb_count(node->children[i].triangles);
+				if (depth < max_depth && child_tris > 0)
+					subdivide_octree(&node->children[i], depth + 1, max_depth);
+			}
+		}
+
+		void build_triangle_octree( entity_scene* scene, triangle_octree& tree )
+		{
+			tree.e = scene->renderable_extents;
+
+			for (u32 n = 0; n < scene->nodes_size; ++n)
+			{
+				if (scene->entities[n] & CMP_GEOMETRY)
+				{
+					geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
+
+					u16* indices = (u16*)gr->cpu_index_buffer;
+					vec4f* vertices = (vec4f*)gr->cpu_position_buffer;
+
+					for (u32 i = 0; i < gr->num_indices; i += 3)
+					{
+						u16 i0, i1, i2;
+						i0 = indices[i + 0];
+						i1 = indices[i + 1];
+						i2 = indices[i + 2];
+
+						vec3f tv0 = scene->world_matrices[n].transform_vector(vertices[i0].xyz());
+						vec3f tv1 = scene->world_matrices[n].transform_vector(vertices[i1].xyz());
+						vec3f tv2 = scene->world_matrices[n].transform_vector(vertices[i2].xyz());
+
+						vec3f n = maths::normalise(maths::cross(tv2 - tv0, tv1 - tv0));
+
+						triangle t = { tv0 , tv1, tv2, n };
+
+						sb_push(tree.triangles, t);
+					}
+				}
+			}
+
+			//sub divide octree
+			subdivide_octree(&tree, 0, 4);
+		}
+
+		vec4f closest_point_on_scene_v2(const triangle_octree* scene, vec3f pos)
+		{
+			vec3f closest_point = vec3f::flt_max();
+			f32 closest_distance = FLT_MAX;
+			f32 closest_side = FLT_MAX;
+
+			//get to deepest node
+			const triangle_octree* node_iter = scene;
+			while (node_iter->children)
+			{
+				//pick side
+				vec3f centre = node_iter->e.min + (node_iter->e.max - node_iter->e.min) / 2.0f;
+
+				u32 octant = 0;
+				if (pos.y > centre.y)
+					octant += 4;
+
+				if (pos.x > centre.x)
+					octant += 1;
+
+				if (pos.z > centre.z)
+					octant += 2;
+
+				u32 child_tris = sb_count(node_iter->children[octant].triangles);
+				
+				if (child_tris <= 0)
+					break;
+
+				node_iter = &node_iter->children[octant];
+			}
+
+			//distance to closest triangle
+			u32 num_triangles = sb_count(node_iter->triangles);
+			for (u32 ti = 0; ti < num_triangles; ++ti)
+			{
+				triangle t = node_iter->triangles[ti];
+
+				f32 side = 0.0f;
+				vec3f cp = maths::closest_point_on_triangle(t.v[0], t.v[1], t.v[2], pos, side);
+
+				f32 cd = maths::distance(cp, pos);
+
+				if (cd < closest_distance)
+				{
+					closest_point = cp;
+					closest_distance = cd;
+					closest_side = side;
+				}
+			}
+
+			return vec4f(closest_point, closest_side);
+		}
+
 		vec4f closest_point_on_scene( entity_scene* scene, vec3f pos )
 		{
 			vec3f closest_point = vec3f::flt_max();
@@ -768,7 +936,7 @@ namespace put
 					sdf_material->shader_name = "pmfx_utility";
 					sdf_material->id_shader = PEN_HASH("pmfx_utility");
 					sdf_material->id_technique = PEN_HASH("volume_sdf");
-					sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+					sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
 					sdf_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
 					add_material_resource(sdf_material);
 
@@ -792,6 +960,21 @@ namespace put
 					k_sdf_job.generate_in_progress = 0;
 				}
 			}
+
+			/*
+			vec3f v1 = vec3f(-10.0f, -10.0f, -10.0f);
+			vec3f v2 = vec3f(-10.0f, 10.0f, -10.0f);
+			vec3f v3 = vec3f(0.0f, 0.0f, 0.0f);
+
+			dbg::add_triangle(v1, v2, v3, vec4f::cyan());
+
+			vec3f cp = k_main_scene->transforms[2].translation;
+			
+			f32 side = 0.0f;
+			maths::closest_point_on_triangle(v1, v2, v3, cp, side);
+
+			put::dbg::add_point(cp, 0.3f, side < 0.0f ? vec4f::red() : vec4f::green());
+			*/
 		}
 
 		void show_dev_ui()

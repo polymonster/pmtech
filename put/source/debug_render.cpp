@@ -318,6 +318,13 @@ namespace put
 			}
 		}
 
+		void add_triangle(const vec3f& v1, const vec3f& v2, const vec3f& v3, const vec4f& col)
+		{
+			put::dbg::add_line(v1, v2, col);
+			put::dbg::add_line(v2, v3, col);
+			put::dbg::add_line(v3, v1, col);
+		}
+
         void add_aabb(const vec3f &min, const vec3f& max, const vec4f& col )
         {
             alloc_3d_buffer(line_vert_3d_count + 24, VB_LINES);

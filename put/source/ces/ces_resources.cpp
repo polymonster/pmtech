@@ -398,7 +398,7 @@ namespace put
         void instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index )
         {
             scene_node_material* instance = &scene->materials[node_index];
-            
+
             instance->diffuse_rgb_shininess = mr->diffuse_rgb_shininess;
             instance->specular_rgb_reflect = mr->specular_rgb_reflect;
             

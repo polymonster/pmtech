@@ -84,6 +84,10 @@ namespace put
 		//traingles
 		vec3f   get_normal(vec3f v1, vec3f v2, vec3f v3);
 		bool    point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
+		vec3f	closest_point_on_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p, f32& side );
+
+		//aabb
+		bool	point_inside_aabb(vec3f min, vec3f max, vec3f p);
 
 		//inline functions---------------------------------------------------------------------------------------------------
 
@@ -270,6 +274,20 @@ namespace put
         {
             return v1.x * v2.x + v1.y * v2.y;
         }
+
+		inline bool point_inside_aabb(vec3f min, vec3f max, vec3f p)
+		{
+			if (p.x < min.x || p.x > max.x )
+				return false;
+
+			if (p.y < min.y || p.y > max.y)
+				return false;
+
+			if (p.z < min.z || p.z > max.z)
+				return false;
+
+			return true;
+		}
 	}
 };
 
