@@ -7,6 +7,7 @@
 #include "hash.h"
 #include "pen_string.h"
 #include "ces/ces_scene.h"
+#include "ces/ces_resources.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -1317,6 +1318,9 @@ namespace put
 			parse_render_targets(render_config);
             
 			parse_views(render_config);
+
+			//rebake material handles
+			ces::bake_material_handles();
 		}
         
 		std::vector<Str> k_script_files;

@@ -37,7 +37,18 @@ void create_scene_objects(ces::entity_scene* scene)
 {
 	clear_scene(scene);
 
-	material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+	u32 cubemap_texture = put::load_texture("data/textures/cubemap.dds");
+
+	//create material for cubemap
+	material_resource* cubemap_material = new material_resource;
+	cubemap_material->material_name = "volume_material";
+	cubemap_material->shader_name = "pmfx_utility";
+	cubemap_material->id_shader = PEN_HASH("pmfx_utility");
+	cubemap_material->id_technique = PEN_HASH("cubemap");
+	cubemap_material->id_sampler_state[SN_ENV_MAP] = PEN_HASH("clamp_linear_sampler_state");
+	cubemap_material->texture_handles[SN_ENV_MAP] = cubemap_texture;
+	add_material_resource(cubemap_material);
+
 	geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
 
 	u32 new_prim = get_new_node(scene);
@@ -49,15 +60,8 @@ void create_scene_objects(ces::entity_scene* scene)
 	scene->entities[new_prim] |= CMP_TRANSFORM;
 	scene->parents[new_prim] = new_prim;
 	instantiate_geometry(sphere, scene, new_prim);
-	instantiate_material(default_material, scene, new_prim);
+	instantiate_material(cubemap_material, scene, new_prim);
 	instantiate_model_cbuffer(scene, new_prim);
-
-	//set material for basic cubemap
-	scene_node_material& mat = scene->materials[new_prim];
-	mat.texture_id[3] = put::load_texture("data/textures/cubemap.dds");
-	mat.default_pmfx_shader = pmfx::load_shader("pmfx_utility");
-	mat.id_default_shader = PEN_HASH("pmfx_utility");
-	mat.id_default_technique = PEN_HASH("cubemap");
 }
 
 PEN_THREAD_RETURN pen::game_entry(void* params)

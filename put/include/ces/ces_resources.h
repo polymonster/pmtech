@@ -60,9 +60,14 @@ namespace put
             Str         material_name;
             hash_id     hash;
             
-            s32         texture_id[SN_NUM_TEXTURES] = { 0 };
+            s32         texture_handles[SN_NUM_TEXTURES] = { 0 };
             vec4f       diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
             vec4f       specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+
+			Str			shader_name;
+			hash_id		id_shader = 0;
+			hash_id		id_technique = 0;
+			hash_id		id_sampler_state[SN_NUM_TEXTURES] = { 0 };
         };
         
         struct geometry_resource
@@ -106,7 +111,11 @@ namespace put
         void            instantiate_model_pre_skin( entity_scene* scene, s32 node_index );
         void            instantiate_model_cbuffer( entity_scene* scene, s32 node_index );
         void            instantiate_anim_controller( entity_scene* scene, s32 node_index);
+
         void            instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index );
+
+		void			bake_material_handles(entity_scene* scene, u32 node_index);
+		void			bake_material_handles();
         
         void            create_geometry_primitives( );
 

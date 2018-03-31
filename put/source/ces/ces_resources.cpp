@@ -402,20 +402,67 @@ namespace put
             instance->diffuse_rgb_shininess = mr->diffuse_rgb_shininess;
             instance->specular_rgb_reflect = mr->specular_rgb_reflect;
             
-            pen::memory_cpy(instance->texture_id, mr->texture_id, sizeof(u32)*SN_NUM_TEXTURES);
+            pen::memory_cpy(instance->texture_handles, mr->texture_handles, sizeof(u32)*SN_NUM_TEXTURES);
             
             scene->id_material[node_index] = mr->hash;
             scene->material_names[node_index] = mr->material_name;
 
             scene->entities[node_index] |= CMP_MATERIAL;
 
-			static hash_id id_default_shader = PEN_HASH("forward_render");
-			static hash_id id_default_technique = PEN_HASH("forward_lit");
+			//set defaults
+			if (mr->id_shader == 0)
+			{
+				static hash_id id_default_shader = PEN_HASH("forward_render");
+				static hash_id id_default_technique = PEN_HASH("forward_lit");
 
-			instance->default_pmfx_shader = pmfx::load_shader("forward_render");
-			instance->id_default_shader = id_default_shader;
-			instance->id_default_technique = id_default_technique;
+				mr->shader_name = "forward_render";
+				mr->id_shader = id_default_shader;
+				mr->id_technique = id_default_technique;
+			}
+
+			static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
+
+			for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
+			{
+				if (!mr->id_sampler_state[i])
+					mr->id_sampler_state[i] = id_default_sampler_state;
+			}
+
+			instance->resource = mr;
+
+			bake_material_handles(scene, node_index);
         }
+
+		void bake_material_handles(entity_scene* scene, u32 node_index)
+		{
+			scene_node_material* material = &scene->materials[node_index];
+			scene_node_geometry* geometry = &scene->geometries[node_index];
+
+			if (!material->resource)
+				return;
+
+			material->pmfx_shader = pmfx::load_shader(material->resource->shader_name.c_str());
+
+			material->technique = pmfx::get_technique_index(material->pmfx_shader, material->resource->id_technique, geometry->vertex_shader_class);
+
+			for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
+				material->sampler_states[i] = pmfx::get_render_state_by_name(material->resource->id_sampler_state[i]);
+		}
+
+		extern std::vector<entity_scene_instance> k_scenes;
+		void bake_material_handles()
+		{
+			for (auto& si : k_scenes)
+			{
+				entity_scene* scene = si.scene;
+
+				for (u32 n = 0; n < scene->nodes_size; ++n)
+				{
+					if (scene->entities[n] & CMP_MATERIAL)
+						bake_material_handles(scene, n);
+				}
+			}
+		}
         
         void load_material_resource( const c8* filename, const c8* material_name, const c8* data )
         {
@@ -473,16 +520,15 @@ namespace put
             static_assert(SN_NUM_TEXTURES == PEN_ARRAY_SIZE(default_maps), "mismatched defaults size");
             
             for( u32 map = 0; map < SN_NUM_TEXTURES; ++map )
-                p_mat->texture_id[map] = default_maps[map];
+                p_mat->texture_handles[map] = default_maps[map];
             
             for (u32 map = 0; map < num_maps; ++map)
             {
                 u32 map_type = *p_reader++;
                 Str texture_name = read_parsable_string(&p_reader);
-                p_mat->texture_id[map_type] = put::load_texture(texture_name.c_str());
+                p_mat->texture_handles[map_type] = put::load_texture(texture_name.c_str());
             }
-            
-            
+
             k_material_resources.push_back(p_mat);
             
             return;
@@ -978,12 +1024,12 @@ namespace put
                 {
                     for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
                     {
-                        if (m->texture_id[t] > 0)
+                        if (m->texture_handles[t] > 0)
                         {
                             if (t > 0)
                                 ImGui::SameLine();
                             
-                            ImGui::Image(&m->texture_id[t], ImVec2(128, 128));
+                            ImGui::Image(&m->texture_handles[t], ImVec2(128, 128));
                         }
                     }
                     

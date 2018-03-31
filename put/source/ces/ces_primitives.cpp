@@ -914,7 +914,7 @@ namespace put
             };
 
             for (s32 i = 0; i < 4; ++i)
-                mr->texture_id[i] = default_maps[i];
+                mr->texture_handles[i] = default_maps[i];
 
             add_material_resource( mr );
 

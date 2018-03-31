@@ -36,13 +36,6 @@ namespace put
 #define FREE_COMPONENT_ARRAY( SCENE, COMPONENT ) pen::memory_free( SCENE->COMPONENT ); SCENE->COMPONENT = nullptr
 #define ZERO_COMPONENT_ARRAY( SCENE, COMPONENT, INDEX ) pen::memory_zero( &SCENE->COMPONENT[INDEX], sizeof(SCENE->COMPONENT[INDEX]) )
         
-		struct entity_scene_instance
-		{
-			u32 id_name;
-			const c8* name;
-			entity_scene* scene;
-		};
-        
         void initialise_free_list( entity_scene* scene )
         {
             scene->free_list_head = nullptr;
@@ -373,11 +366,6 @@ namespace put
             if( scene->view_flags & SV_HIDE )
                 return;
             
-            //todo - set sampler states from material
-            u32 ss_wrap = put::pmfx::get_render_state_by_name( PEN_HASH("clamp_point_sampler_state") );
-			//u32 ss_wrap = put::pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
-			//u32 ss_wrap = put::pmfx::get_render_state_by_name(PEN_HASH("clamp_linear_sampler_state"));
-
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
 			pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
 
@@ -408,8 +396,8 @@ namespace put
 					vec3f pos = min + (max - min) * 0.5f;
 					f32 radius = scene->bounding_volumes[n].radius;
 
-					f32 d = maths::point_vs_plane(pos, camera_frustum.p[i], camera_frustum.n[i]);
-                    
+					f32 d = maths::point_vs_plane(pos, camera_frustum.p[i], camera_frustum.n[i]);          
+
 					if (d > radius)
 					{
 						inside = false;
@@ -456,24 +444,28 @@ namespace put
 
 				//set shader / technique
 				u32 shader = view.pmfx_shader;
-				hash_id technique = view.technique;
 
-				if (shader == PEN_INVALID_HANDLE)
+				if (!is_valid(shader))
 				{
-					shader = p_mat->default_pmfx_shader;
-					technique = p_mat->id_default_technique;
+					shader = p_mat->pmfx_shader;
+					u32 technique = p_mat->technique;
+
+					pmfx::set_technique(shader, technique);
+				}
+				else
+				{
+					hash_id technique = view.technique;
+					if (!pmfx::set_technique(shader, technique, p_geom->vertex_shader_class))
+					{
+						if (scene->entities[n] & CMP_MASTER_INSTANCE)
+						{
+							u32 num_instances = scene->master_instances[n].num_instances;
+							n += num_instances;
+						}
+						continue;
+					}
 				}
 
-                if( !pmfx::set_technique(shader, technique, p_geom->vertex_shader_class ) )
-                {
-                    if( scene->entities[n] & CMP_MASTER_INSTANCE )
-                    {
-                        u32 num_instances = scene->master_instances[n].num_instances;
-                        n += num_instances;
-                    }
-                    continue;
-                }
-                
                 //set cbs
 				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
 				pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
@@ -509,9 +501,9 @@ namespace put
 				{                        
 					for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
 					{
-						if ( is_valid(p_mat->texture_id[t]) && ss_wrap )
+						if ( is_valid(p_mat->texture_handles[t]) )
 						{
-							pen::renderer_set_texture(p_mat->texture_id[t], ss_wrap, t, PEN_SHADER_TYPE_PS );
+							pen::renderer_set_texture(p_mat->texture_handles[t], p_mat->sampler_states[t], t, PEN_SHADER_TYPE_PS );
 						}
 					}
 				}

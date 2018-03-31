@@ -73,8 +73,11 @@ namespace put
 
 		shader_handle			load_shader(const c8* pmfx_name);
         void					release_shader(shader_handle handle );
+
         void					set_technique(shader_handle handle, u32 index );
         bool					set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type );
+		u32						get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
+
         void					poll_for_changes();
     }
 }

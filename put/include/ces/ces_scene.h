@@ -24,6 +24,8 @@ namespace put
     
 	namespace ces
 	{
+		struct material_resource;
+
         enum e_scene_view_flags : u32
         {
             SV_NONE = 0,
@@ -96,20 +98,23 @@ namespace put
             SN_NORMAL_MAP,
             SN_SPECULAR_MAP,
 			SN_ENV_MAP,
-			SN_VOLUME,
+			SN_VOLUME_TEXTURE,
             SN_EMISSIVE_MAP,
             
             SN_NUM_TEXTURES
         };
-        
+
         struct scene_node_material
         {
-            s32      texture_id[SN_NUM_TEXTURES] = { 0 };
+            s32      texture_handles[SN_NUM_TEXTURES] = { 0 };
+			u32		 sampler_states[SN_NUM_TEXTURES] = { 0 };
             vec4f    diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
             vec4f    specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-			hash_id  id_default_shader;
-			hash_id	 id_default_technique;
-			pmfx::shader_handle default_pmfx_shader;
+
+			pmfx::shader_handle pmfx_shader;
+			u32					technique;
+
+			material_resource*	resource = nullptr;
         };
 
         enum e_physics_type
@@ -291,6 +296,13 @@ namespace put
             s32                     selected_index = -1;
             u32                     view_flags;
 #endif
+		};
+
+		struct entity_scene_instance
+		{
+			u32 id_name;
+			const c8* name;
+			entity_scene* scene;
 		};
 
 		struct vertex_model

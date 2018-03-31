@@ -48,20 +48,9 @@ namespace put
         void    scene_tree_enumerate( entity_scene* scene, const scene_tree& tree );
         void    scene_tree_add_node( scene_tree& tree, scene_tree& node, std::vector<s32>& heirarchy );
 
-        
-        bool    is_valid( u32 handle );
-        
         Str     read_parsable_string(const u32** data);
         Str     read_parsable_string( std::ifstream& ifs );
         void    write_parsable_string( const Str& str, std::ofstream& ofs );
-        
-        //-----------------------------------------------------------------------------------------------------------------------------------
-        //inlines
-        //-----------------------------------------------------------------------------------------------------------------------------------
-        inline bool is_valid( u32 handle )
-        {
-            return handle != -1;
-        }
 	}
 }
 #endif

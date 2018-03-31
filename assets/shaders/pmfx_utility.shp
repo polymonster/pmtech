@@ -276,14 +276,13 @@ ps_output ps_volume_sdf( vs_output input )
 	
 	d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
 	
-	/*
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r * 2.0 - 1.0;
 
 		uvw += ray_dir.xyz * d * 0.5;
 		
-		if( d <= 0.001 )
+		if( d <= 0.0 )
 			break;
 		
 		if(uvw.x >= 1.0 || uvw.x < 0.0)
@@ -295,11 +294,10 @@ ps_output ps_volume_sdf( vs_output input )
 		if(uvw.z >= 1.0 || uvw.z < 0.0)
 			discard;
 		
-		if( s == max_samples-1)
-			discard;
+		//if( s == max_samples-1)
+			//discard;
 	}
-	*/
-		
+
 	output.colour.rgba = float4( d, d, d, 1.0);
 		
 	return output;

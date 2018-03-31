@@ -364,34 +364,34 @@ namespace put
         
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type )
         {
-            u32 num_techniques = sb_count(k_pmfx_list[ handle ].techniques);
-            for( u32 i = 0; i < num_techniques; ++i )
-            {
-                auto& t = k_pmfx_list[ handle ].techniques[ i ];
-                
-                if( t.id_name != id_technique )
-                    continue;
-                
-                if( t.id_sub_type != id_sub_type )
-                    continue;
-                
-                if( t.stream_out_shader )
-                {
-                    pen::renderer_set_shader( t.stream_out_shader, PEN_SHADER_TYPE_SO );
-                }
-                else
-                {
-                    pen::renderer_set_shader( t.vertex_shader, PEN_SHADER_TYPE_VS );
-                    pen::renderer_set_shader( t.pixel_shader, PEN_SHADER_TYPE_PS );
-                }
-                
-                pen::renderer_set_input_layout( t.input_layout );
-                
-                return true;
-            }
+			u32 technique_index = get_technique_index(handle, id_technique, id_sub_type);
+
+			if (!is_valid(technique_index))
+				return false;
+
+			set_technique(handle, technique_index);
             
-            return false;
+			return true;
         }
+
+		u32 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type)
+		{
+			u32 num_techniques = sb_count(k_pmfx_list[handle].techniques);
+			for (u32 i = 0; i < num_techniques; ++i)
+			{
+				auto& t = k_pmfx_list[handle].techniques[i];
+
+				if (t.id_name != id_technique)
+					continue;
+
+				if (t.id_sub_type != id_sub_type)
+					continue;
+
+				return i;
+			}
+
+			return PEN_INVALID_HANDLE;
+		}
         
         void get_pmfx_info_filename( c8* file_buf, const c8* pmfx_filename )
         {

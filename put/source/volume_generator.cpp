@@ -308,7 +308,19 @@ namespace put
 			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
 			void*** volume_slices = k_rasteriser_job.volume_slices;
 
-			material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+			//create texture
+			u32 volume_texture = create_volume_from_data(volume_dim, k_rasteriser_job.block_size, k_rasteriser_job.data_size, k_rasteriser_job.volume_data);
+
+			//create material for volume ray trace
+			material_resource* volume_material = new material_resource;
+			volume_material->material_name = "volume_material";
+			volume_material->shader_name = "pmfx_utility";
+			volume_material->id_shader = PEN_HASH("pmfx_utility");
+			volume_material->id_technique = PEN_HASH("volume_texture");
+			volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
+			volume_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
+			add_material_resource(volume_material);
+
 			geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
 			vec3f scale = (k_rasteriser_job.scene_extents.max - k_rasteriser_job.scene_extents.min) / 2.0f;
@@ -323,17 +335,8 @@ namespace put
 			scene->entities[new_prim] |= CMP_TRANSFORM;
 			scene->parents[new_prim] = new_prim;
 			instantiate_geometry(cube, scene, new_prim);
-			instantiate_material(default_material, scene, new_prim);
+			instantiate_material(volume_material, scene, new_prim);
 			instantiate_model_cbuffer(scene, new_prim);
-
-			u32 volume_texture = create_volume_from_data(volume_dim, k_rasteriser_job.block_size, k_rasteriser_job.data_size, k_rasteriser_job.volume_data);
-
-			//set material for basic volume texture
-			scene_node_material& mat = scene->materials[new_prim];
-			mat.texture_id[4] = volume_texture;
-			mat.default_pmfx_shader = pmfx::load_shader("pmfx_utility");
-			mat.id_default_shader = PEN_HASH("pmfx_utility");
-			mat.id_default_technique = PEN_HASH("volume_texture");
 
 			//clean up
 			for (u32 a = 0; a < 6; ++a)
@@ -509,7 +512,6 @@ namespace put
 
 						vec3f world_pos = scene_extents.min + volume_pos * scene_dimension;
 
-						bool inside;
 						vec4f cps = closest_point_on_scene(sdf_job->scene, world_pos);
 
 						vec3f cp = cps.xyz();
@@ -519,12 +521,13 @@ namespace put
 						//make distance signed
 						d *= cps.w;
 
-						f32 volume_space_d = d / scene_dimension.y;
+						f32 volume_space_d = d / scene_dimension.max_component();
 
 						//scale and bias
 						volume_space_d = volume_space_d * 0.5f + 0.5f;
 
 						u32 signed_distance = volume_space_d * 255.0f;
+
 						signed_distance = PEN_MIN(signed_distance, 255);
 
 						volume_data[offset + 0] = signed_distance;
@@ -719,7 +722,7 @@ namespace put
 						{
 							closest_point = cp;
 							closest_distance = cd;
-							inside = d < 0.0f;
+							inside = d <= 0.0f;
 						}
 
 						//put::dbg::add_line(tv0, tv0 + n * 0.1f, vec4f::green());
@@ -756,7 +759,19 @@ namespace put
 
 				if (k_sdf_job.generate_in_progress == 2)
 				{
-					material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+					//create texture
+					u32 volume_texture = create_volume_from_data(k_sdf_job.volume_dim, k_sdf_job.block_size, k_sdf_job.data_size, k_sdf_job.volume_data);
+
+					//create material for volume sdf sphere trace
+					material_resource* sdf_material = new material_resource;
+					sdf_material->material_name = "volume_sdf_material";
+					sdf_material->shader_name = "pmfx_utility";
+					sdf_material->id_shader = PEN_HASH("pmfx_utility");
+					sdf_material->id_technique = PEN_HASH("volume_sdf");
+					sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+					sdf_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
+					add_material_resource(sdf_material);
+
 					geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
 					vec3f scale = (k_sdf_job.scene_extents.max - k_sdf_job.scene_extents.min) / 2.0f;
@@ -771,17 +786,8 @@ namespace put
 					k_main_scene->entities[new_prim] |= CMP_TRANSFORM;
 					k_main_scene->parents[new_prim] = new_prim;
 					instantiate_geometry(cube, k_main_scene, new_prim);
-					instantiate_material(default_material, k_main_scene, new_prim);
+					instantiate_material(sdf_material, k_main_scene, new_prim);
 					instantiate_model_cbuffer(k_main_scene, new_prim);
-
-					u32 volume_texture = create_volume_from_data(k_sdf_job.volume_dim, k_sdf_job.block_size, k_sdf_job.data_size, k_sdf_job.volume_data);
-
-					//set material for basic volume texture
-					scene_node_material& mat = k_main_scene->materials[new_prim];
-					mat.texture_id[4] = volume_texture;
-					mat.default_pmfx_shader = pmfx::load_shader("pmfx_utility");
-					mat.id_default_shader = PEN_HASH("pmfx_utility");
-					mat.id_default_technique = PEN_HASH("volume_sdf");
 
 					k_sdf_job.generate_in_progress = 0;
 				}

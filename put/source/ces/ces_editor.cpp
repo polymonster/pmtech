@@ -1378,12 +1378,12 @@ namespace put
                         u32 count = 0;
                         for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
                         {
-                            if (scene->materials[selected_index].texture_id[t] > 0)
+                            if (scene->materials[selected_index].texture_handles[t] > 0)
                             {
                                 if (count++ > 0)
                                     ImGui::SameLine();
                                 
-                                ImGui::Image( &scene->materials[selected_index].texture_id[t], ImVec2( 64, 64 ) );
+                                ImGui::Image( &scene->materials[selected_index].texture_handles[t], ImVec2( 64, 64 ) );
                             }
                         }
                         

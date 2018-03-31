@@ -119,6 +119,10 @@ enum resource_types
 };
 
 #define PEN_INVALID_HANDLE (u32)-1
+inline bool is_valid(u32 handle)
+{
+	return handle != PEN_INVALID_HANDLE;
+}
 
 #define PEN_FOURCC(ch0, ch1, ch2, ch3)                                            \
 ((ulong)(c8)(ch0) | ((ulong)(c8)(ch1) << 8) |                \

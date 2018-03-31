@@ -37,20 +37,7 @@ void create_scene_objects(ces::entity_scene* scene)
 {
 	clear_scene(scene);
 
-	material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
 	geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
-
-	u32 new_prim = get_new_node(scene);
-	scene->names[new_prim] = "sphere";
-	scene->names[new_prim].appendf("%i", new_prim);
-	scene->transforms[new_prim].rotation = quat();
-	scene->transforms[new_prim].scale = vec3f(10.0f);
-	scene->transforms[new_prim].translation = vec3f::zero();
-	scene->entities[new_prim] |= CMP_TRANSFORM;
-	scene->parents[new_prim] = new_prim;
-	instantiate_geometry(cube, scene, new_prim);
-	instantiate_material(default_material, scene, new_prim);
-	instantiate_model_cbuffer(scene, new_prim);
 
 	//create a simple 3d texture
 	u32 block_size = 4;
@@ -119,14 +106,28 @@ void create_scene_objects(ces::entity_scene* scene)
 
 	u32 volume_texture = pen::renderer_create_texture(tcp);
 
-	//set material for basic volume texture
-	scene_node_material& mat = scene->materials[new_prim];
-	mat.texture_id[4] = volume_texture;
-	mat.default_pmfx_shader = pmfx::load_shader("pmfx_utility");
-	mat.id_default_shader = PEN_HASH("pmfx_utility");
-	mat.id_default_technique = PEN_HASH("volume_texture");
+	//create material for volume ray trace
+	material_resource* volume_material = new material_resource;
+	volume_material->material_name = "volume_material";
+	volume_material->shader_name = "pmfx_utility";
+	volume_material->id_shader = PEN_HASH("pmfx_utility");
+	volume_material->id_technique = PEN_HASH("volume_texture");
+	volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
+	volume_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
+	add_material_resource(volume_material);
 
-
+	//create scene node
+	u32 new_prim = get_new_node(scene);
+	scene->names[new_prim] = "sphere";
+	scene->names[new_prim].appendf("%i", new_prim);
+	scene->transforms[new_prim].rotation = quat();
+	scene->transforms[new_prim].scale = vec3f(10.0f);
+	scene->transforms[new_prim].translation = vec3f::zero();
+	scene->entities[new_prim] |= CMP_TRANSFORM;
+	scene->parents[new_prim] = new_prim;
+	instantiate_geometry(cube, scene, new_prim);
+	instantiate_material(volume_material, scene, new_prim);
+	instantiate_model_cbuffer(scene, new_prim);
 }
 
 PEN_THREAD_RETURN pen::game_entry(void* params)
