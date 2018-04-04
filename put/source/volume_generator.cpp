@@ -697,11 +697,6 @@ namespace put
 
 			for (u32 i = 0; i < 8; ++i)
 			{
-				if (octree_id == 4587)
-				{
-					u32 a = 0;
-				}
-
 				node->children[i].e =
 				{
 					child_min[i],
@@ -772,7 +767,7 @@ namespace put
 			}
 
 			//sub divide octree
-			subdivide_octree(&tree, 0, 4);
+			subdivide_octree(&tree, 0, 5);
 		}
 
 		vec4f closest_point_on_scene(const triangle_octree* scene, vec3f pos, bool debug )
@@ -826,10 +821,6 @@ namespace put
 							dbg::add_point(cp2, 0.05f, vec4f::green());
 						}
 					}
-					else
-					{
-						dbg::add_aabb(node_iter->e.min, node_iter->e.max, vec4f::black());
-					}
 				}
 
 				u32 octant = 0;
@@ -853,6 +844,9 @@ namespace put
 
 			//distance to closest triangle
 			u32 num_triangles = sb_count(node_iter->triangles);
+
+			f32 sides_score = 0;
+
 			for (u32 ti = 0; ti < num_triangles; ++ti)
 			{
 				triangle t = node_iter->triangles[ti];
@@ -862,24 +856,26 @@ namespace put
 
 				f32 cd = maths::distance(cp, pos);
 
+				if(debug)
+					ImGui::Text("tri %i, cd = %f, side = %f", ti, cd, side);
+
+				if (cd == closest_distance)
+				{
+					sides_score += side;
+				}
+
 				if (cd <= closest_distance)
 				{
-					f32 abs_diff = fabs(cd - closest_distance);
-
-					bool valid_change = true;
-					if (closest_side == 1.0f)
-						if (side == -1.0f && abs_diff < 0.001f)
-							valid_change = false;
-
-					if (valid_change)
-					{
-						closest_point = cp;
-						closest_distance = cd;
-						closest_side = side;
-					}
+					closest_point = cp;
+					closest_distance = cd;
+					closest_side = side;
 				}
 			}
 
+			if (debug)
+				dbg::add_line(pos, closest_point);
+
+			closest_side = 1.0f;
 			return vec4f(closest_point, closest_side);
 		}
 
@@ -915,7 +911,7 @@ namespace put
 					sdf_material->shader_name = "pmfx_utility";
 					sdf_material->id_shader = PEN_HASH("pmfx_utility");
 					sdf_material->id_technique = PEN_HASH("volume_sdf");
-					sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
+					sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
 					sdf_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
 					add_material_resource(sdf_material);
 
@@ -936,12 +932,34 @@ namespace put
 					instantiate_material(sdf_material, k_main_scene, new_prim);
 					instantiate_model_cbuffer(k_main_scene, new_prim);
 
+					//add shadow receiver
+					material_resource* sdf_shadow_material = new material_resource;
+					sdf_shadow_material->material_name = "shadow_sdf_material";
+					sdf_shadow_material->shader_name = "pmfx_utility";
+					sdf_shadow_material->id_shader = PEN_HASH("pmfx_utility");
+					sdf_shadow_material->id_technique = PEN_HASH("shadow_sdf");
+					sdf_shadow_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+					sdf_shadow_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
+					add_material_resource(sdf_shadow_material);
+
+					new_prim = get_new_node(k_main_scene);
+					k_main_scene->names[new_prim] = "volume_receiever";
+					k_main_scene->names[new_prim].appendf("%i", new_prim);
+					k_main_scene->transforms[new_prim].rotation = quat();
+					k_main_scene->transforms[new_prim].scale = vec3f(10, 1, 10);
+					k_main_scene->transforms[new_prim].translation = vec3f(0, 0, 0);
+					k_main_scene->entities[new_prim] |= CMP_TRANSFORM;
+					k_main_scene->parents[new_prim] = new_prim;
+					instantiate_geometry(cube, k_main_scene, new_prim);
+					instantiate_material(sdf_shadow_material, k_main_scene, new_prim);
+					instantiate_model_cbuffer(k_main_scene, new_prim);
+
 					k_sdf_job.generate_in_progress = 0;
 				}
 			}
 
-			/*
-			if (k_sdf_job.debug_data)
+			static bool debug = true;
+			if (k_sdf_job.debug_data && debug)
 			{
 				static s32 debug_x = 0;
 				static s32 debug_y = 0;
@@ -965,27 +983,8 @@ namespace put
 
 				bool inside = k_sdf_job.debug_data[debug_index].closest.w < 0.0f;
 				put::dbg::add_point(k_sdf_job.debug_data[debug_index].pos, 0.05f, inside ? vec4f::red() : vec4f::green());
-
-				//put::dbg::add_point(k_sdf_job.debug_data[debug_index].closest.xyz(), 0.05f, vec4f::cyan());
-
-				closest_point_on_scene(&k_sdf_job.tree, k_sdf_job.debug_data[debug_index].pos, true);
+				closest_point_on_scene(&k_sdf_job.tree, k_sdf_job.debug_data[debug_index].pos, debug);
 			}
-			*/
-
-			/*
-			vec3f v1 = vec3f(-10.0f, -10.0f, -10.0f);
-			vec3f v2 = vec3f(-10.0f, 10.0f, -10.0f);
-			vec3f v3 = vec3f(0.0f, 0.0f, 0.0f);
-
-			dbg::add_triangle(v1, v2, v3, vec4f::cyan());
-
-			vec3f cp = k_main_scene->transforms[2].translation;
-			
-			f32 side = 0.0f;
-			maths::closest_point_on_triangle(v1, v2, v3, cp, side);
-
-			put::dbg::add_point(cp, 0.3f, side < 0.0f ? vec4f::red() : vec4f::green());
-			*/
 		}
 
 		void show_dev_ui()

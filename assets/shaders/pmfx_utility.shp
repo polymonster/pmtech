@@ -2,6 +2,8 @@
 #include "libs/skinning.slib"
 #include "libs/globals.slib"
 
+// Structs -----------------------------------------------------------------------------------------------------------
+
 struct vs_output
 {
 	float4 position		: SV_POSITION;
@@ -64,6 +66,8 @@ struct ps_output_multi
 	float4 normal : SV_Target1;
 };
 
+// Textures ----------------------------------------------------------------------------------------------------------------
+
 declare_texture_samplers
 {
 	texture_2d( diffuse_texture, 0 );
@@ -73,6 +77,8 @@ declare_texture_samplers
 	texture_cube( cubemap_texture, 3 );
 	texture_3d( volume_texture, 4 );
 };
+
+// Vertex Shaders -----------------------------------------------------------------------------------------------------------
 
 vs_output vs_main_skinned( vs_input_skinned input )
 {
@@ -158,6 +164,26 @@ vs_output_picking vs_picking_instanced( vs_input input, vs_instance_input instan
 				
     return output;
 }
+
+vs_output vs_main_volume_texture( vs_input input )
+{
+	vs_output output;
+	
+	float4x4 wvp = mul( world_matrix, vp_matrix );
+
+	output.position = mul( input.position, wvp );
+	output.world_pos = mul( input.position, world_matrix );
+		
+	output.normal = input.normal.xyz;
+	output.tangent = input.tangent.xyz;
+	output.bitangent = input.bitangent.xyz;
+	
+	output.texcoord = input.position;
+		
+    return output;
+}
+
+// Pixel Shaders -----------------------------------------------------------------------------------------------------------
 
 ps_output_picking ps_picking( vs_output_picking input ) 
 {	
@@ -282,9 +308,9 @@ ps_output ps_volume_sdf( vs_output input )
 	{		
 		d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r * 2.0 - 1.0;
 		
-		uvw += ray_dir.xyz * d;
+		uvw += ray_dir.xyz * abs(d) * 0.5;
 		
-		if( d <= 0.0 )
+		if( d <= 0.01 )
 			break;
 		
 		if(uvw.x >= 1.0 || uvw.x < 0.0)
@@ -295,9 +321,6 @@ ps_output ps_volume_sdf( vs_output input )
 		
 		if(uvw.z >= 1.0 || uvw.z < 0.0)
 			discard;
-		
-		if( s == max_samples-1)
-			discard;
 	}
 
 	output.colour.rgba = float4( d, d, d, 1.0);
@@ -305,22 +328,68 @@ ps_output ps_volume_sdf( vs_output input )
 	return output;
 }
 
-vs_output vs_main_volume_texture( vs_input input )
+ps_output ps_shadow_sdf( vs_output input ) 
 {
-	vs_output output;
+	ps_output output;
 	
-	float4x4 wvp = mul( world_matrix, vp_matrix );
+	output.colour = float4(0.0, 0.0, 0.0, 1.0);
+	
+	float3 albedo = float3( 1.0, 1.0, 1.0 );
+	
+	float max_samples = 64.0;
+	
+	float3 v = input.texcoord.xyz;
+	float3 chebyshev_norm = chebyshev_normalize(v);
+	float3 uvw = chebyshev_norm * 0.5 + 0.5;
+	float3 vddx = ddx( uvw );
+	float3 vddy = ddy( uvw );
+		
+	for( int i = 0; i < light_info.x; ++i )
+	{
+		float3 light_col = float3( 0.0, 0.0, 0.0 );
+					
+		light_col += lambert(lights[i].pos_radius,
+							 lights[i].colour.rgb,
+							 input.normal.xyz,
+							 input.world_pos.xyz,
+							 albedo.rgb);
+		
+		output.colour.rgb += light_col; 	
+		
+		float4 ray_dir = float4( normalize(lights[i].pos_radius.xyz - input.world_pos.xyz), 1.0 );
+							 
+		ray_dir = mul( world_matrix_inv_transpose, ray_dir );
+		ray_dir.xyz = normalize(ray_dir.xyz);		
+		
+		float shad = 1.0;
 
-	output.position = mul( input.position, wvp );
-	output.world_pos = mul( input.position, world_matrix );
 		
-	output.normal = input.normal.xyz;
-	output.tangent = input.tangent.xyz;
-	output.bitangent = input.bitangent.xyz;
+		for( int s = 0; s < int(max_samples); ++s )
+		{		
+			float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r * 2.0 - 1.0;
+					
+			uvw += ray_dir.xyz * abs(d) * 0.5;
+		
+			if( d <= 0.01 )
+			{
+				shad = 0.0;
+				break;
+			}
+
+			if(uvw.x >= 1.0 || uvw.x < 0.0)
+				break;
+		
+			if(uvw.y >= 1.0 || uvw.y < 0.0)
+				break;
+		
+			if(uvw.z >= 1.0 || uvw.z < 0.0)
+				break;
+		}
+		
+		output.colour *= shad;
+	}
 	
-	output.texcoord = input.position;
-		
-    return output;
+	return output;
 }
 
 pmfx:
@@ -353,6 +422,12 @@ pmfx:
 	{
 		"vs": "vs_main_volume_texture",
 		"ps": "ps_volume_sdf"
+	},
+	
+	"shadow_sdf":
+	{
+		"vs": "vs_main_volume_texture",
+		"ps": "ps_shadow_sdf"
 	},
 	
 	"picking":

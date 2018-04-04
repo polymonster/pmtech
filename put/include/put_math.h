@@ -42,6 +42,7 @@ namespace put
 		//generic
 		f32     absolute(f32 value);
 		f32     absolute_smallest_of(f32 value_1, f32 value_2);
+		f32		sign(f32 value);
 
 		//angles
 		f32     deg_to_rad(f32 degree_angle);
@@ -88,6 +89,8 @@ namespace put
 
 		//aabb
 		bool	point_inside_aabb(vec3f min, vec3f max, vec3f p);
+		bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& intersection);
+		bool	ray_vs_obb(const vec3f& min, const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection);
 
 		//inline functions---------------------------------------------------------------------------------------------------
 
@@ -106,6 +109,11 @@ namespace put
 			if (value < 0.0f) value *= -1;
 
 			return value;
+		}
+
+		inline f32 sign(f32 value)
+		{
+			return value < 0.0f ? -1.0f : 0.0f;
 		}
 
 		inline f32 absolute_smallest_of(f32 value_1, f32 value_2)
@@ -287,6 +295,56 @@ namespace put
 				return false;
 
 			return true;
+		}
+
+		inline bool ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& intersection)
+		{
+			vec3f dirfrac = vec3f(1.0f) / rv;
+
+			f32 t1 = (min.x - r1.x)*dirfrac.x;
+			f32 t2 = (max.x - r1.x)*dirfrac.x;
+			f32 t3 = (min.y - r1.y)*dirfrac.y;
+			f32 t4 = (max.y - r1.y)*dirfrac.y;
+			f32 t5 = (min.z - r1.z)*dirfrac.z;
+			f32 t6 = (max.z - r1.z)*dirfrac.z;
+
+			f32 tmin = PEN_MAX(PEN_MAX(PEN_MIN(t1, t2), PEN_MIN(t3, t4)), PEN_MIN(t5, t6));
+			f32 tmax = PEN_MIN(PEN_MIN(PEN_MAX(t1, t2), PEN_MAX(t3, t4)), PEN_MAX(t5, t6));
+
+			f32 t = 0.0f;
+
+			// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+			if (tmax < 0)
+			{
+				t = tmax;
+				return false;
+			}
+
+			// if tmin > tmax, ray doesn't intersect AABB
+			if (tmin > tmax)
+			{
+				t = tmax;
+				return false;
+			}
+
+			t = tmin;
+
+			intersection = r1 + rv * t;
+
+			return true;
+		}
+
+		inline bool ray_vs_obb(const vec3f& min, const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection)
+		{
+			mat4 invm = mat;
+			invm = invm.inverse4x4();
+
+			vec3f tr1 = invm.transform_vector(r1);
+
+			invm.set_translation(vec3f::zero());
+			vec3f trv = invm.transform_vector(rv);
+
+			return ray_vs_aabb(min, max, tr1, maths::normalise(trv), intersection);
 		}
 	}
 };

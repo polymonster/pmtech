@@ -36,6 +36,25 @@ namespace physics
     extern PEN_THREAD_RETURN physics_thread_main( void* params );
 }
 
+void obb_test(put::ces::entity_scene* scene)
+{
+	vec3f r1 = scene->transforms[1].translation;
+	vec3f r2 = scene->transforms[2].translation;
+
+	dbg::add_line(r1, r2, vec4f::green());
+
+	//transform ray
+	vec3f v = maths::normalise(r2 - r1);
+
+	mat4 m = scene->world_matrices[3];
+
+	vec3f ip;
+	maths::ray_vs_obb(-vec3f::one(), vec3f::one(), m, r1, v, ip);
+
+	ip = m.transform_vector(ip);
+	dbg::add_point(ip, 0.1f, vec4f::magenta());
+}
+
 PEN_THREAD_RETURN pen::game_entry( void* params )
 {
     //unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -104,6 +123,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 		put::dev_ui::new_frame();
         
         pmfx::update();
+
+		obb_test(main_scene);
         
         pmfx::render();
         
