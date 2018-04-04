@@ -958,7 +958,7 @@ namespace put
 				}
 			}
 
-			static bool debug = true;
+			static bool debug = false;
 			if (k_sdf_job.debug_data && debug)
 			{
 				static s32 debug_x = 0;

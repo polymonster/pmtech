@@ -123,8 +123,6 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
 		put::dev_ui::new_frame();
         
         pmfx::update();
-
-		obb_test(main_scene);
         
         pmfx::render();
         
