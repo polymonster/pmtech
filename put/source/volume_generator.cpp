@@ -926,7 +926,7 @@ namespace put
 					k_main_scene->transforms[new_prim].rotation = quat();
 					k_main_scene->transforms[new_prim].scale = scale;
 					k_main_scene->transforms[new_prim].translation = pos;
-					k_main_scene->entities[new_prim] |= CMP_TRANSFORM;
+					k_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
 					k_main_scene->parents[new_prim] = new_prim;
 					instantiate_geometry(cube, k_main_scene, new_prim);
 					instantiate_material(sdf_material, k_main_scene, new_prim);

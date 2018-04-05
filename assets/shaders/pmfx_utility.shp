@@ -328,6 +328,43 @@ ps_output ps_volume_sdf( vs_output input )
 	return output;
 }
 
+bool ray_vs_aabb(	float3 emin, float3 emax, 
+					float3 r1, float3 rv, out float3 intersection)
+{
+	float3 dirfrac = float3(1.0, 1.0, 1.0) / rv;
+
+	float t1 = (emin.x - r1.x)*dirfrac.x;
+	float t2 = (emax.x - r1.x)*dirfrac.x;
+	float t3 = (emin.y - r1.y)*dirfrac.y;
+	float t4 = (emax.y - r1.y)*dirfrac.y;
+	float t5 = (emin.z - r1.z)*dirfrac.z;
+	float t6 = (emax.z - r1.z)*dirfrac.z;
+
+	float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+	float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+	float t = 0.0f;
+
+	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (tmax < 0)
+	{
+		t = tmax;
+		return false;
+	}
+
+	// if tmin > tmax, ray doesn't intersect AABB
+	if (tmin > tmax)
+	{
+		t = tmax;
+		return false;
+	}
+
+	t = tmin;
+
+	intersection = r1 + rv * t;
+
+	return true;
+}
 ps_output ps_shadow_sdf( vs_output input ) 
 {
 	ps_output output;
@@ -363,7 +400,6 @@ ps_output ps_shadow_sdf( vs_output input )
 		
 		float shad = 1.0;
 
-		
 		for( int s = 0; s < int(max_samples); ++s )
 		{		
 			float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r * 2.0 - 1.0;
@@ -389,6 +425,32 @@ ps_output ps_shadow_sdf( vs_output input )
 		output.colour *= shad;
 	}
 	
+	float3 light_pos = lights[0].pos_radius.xyz;
+	
+	float3 rv = normalize(light_pos);
+	float3 r1 = input.world_pos.xyz;
+	
+	float3 min = float3(-1.0, -1.0, -1.0);
+	float3 max = float3(1.0, 1.0, 1.0);
+	
+	float4x4 inv_rot = sdf_shadow.world_matrix_inv;
+	inv_rot[0].w = 0.0;
+	inv_rot[1].w = 0.0;
+	inv_rot[2].w = 0.0;
+	inv_rot[3].xyzw = float4(0.0, 0.0, 0.0, 1.0 );
+	
+	//transform into obb
+	float3 trv = mul( float4(rv, 1.0), inv_rot ).xyz;
+	float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
+	
+	float3 ip;
+	bool hit = ray_vs_aabb( min, max, tr1, normalize(trv), ip);
+	
+	if( hit )
+		output.colour = float4( 1.0, 1.0, 1.0, 1.0 );
+	
+	//output.colour.rgb = (light_pos.rgb * 0.5 + 0.5);
+		
 	return output;
 }
 

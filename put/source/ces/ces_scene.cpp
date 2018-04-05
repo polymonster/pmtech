@@ -339,6 +339,8 @@ namespace put
 
 			//create buffers
 			pen::buffer_creation_params bcp;
+
+			//forward lights
 			bcp.usage_flags = PEN_USAGE_DYNAMIC;
 			bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
 			bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
@@ -346,6 +348,15 @@ namespace put
 			bcp.data = nullptr;
 
 			new_instance.scene->forward_light_buffer = pen::renderer_create_buffer(bcp);
+
+			//sdf shadows
+			bcp.usage_flags = PEN_USAGE_DYNAMIC;
+			bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+			bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+			bcp.buffer_size = sizeof(distance_field_shadow_buffer);
+			bcp.data = nullptr;
+
+			new_instance.scene->sdf_shadow_buffer = pen::renderer_create_buffer(bcp);
 
 			return new_instance.scene;
 		}
@@ -607,6 +618,9 @@ namespace put
 				physics::set_paused(0);
 				update_animations(scene, dt);
 			}
+
+			//update physics
+			physics::physics_consume_command_buffer();
             
             //scene node transform
 			for (u32 n = 0; n < scene->num_nodes; ++n)
@@ -853,11 +867,25 @@ namespace put
             //info for loops
             light_buffer.info = vec4f( num_directions_lights, num_point_lights, num_spot_lights, 0.0f );
 
+			//distance field shadows
+			for (s32 n = 0; n < scene->num_nodes; ++n)
+			{
+				if (!(scene->entities[n] & CMP_SDF_SHADOW))
+					continue;
+				
+				static distance_field_shadow_buffer sdf_buffer;
+
+				sdf_buffer.shadows.half_size = vec4f(scene->transforms[n].scale, 1.0f);
+				sdf_buffer.shadows.world_matrix = scene->world_matrices[n];
+				sdf_buffer.shadows.world_matrix_inverse = scene->world_matrices[n].inverse4x4();
+
+				pen::renderer_update_buffer(scene->sdf_shadow_buffer, &sdf_buffer, sizeof(sdf_buffer));
+
+				pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, PEN_SHADER_TYPE_PS);
+			}
+
 			pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
-            
-            //update physics
-            physics::physics_consume_command_buffer();
-            
+                        
             //update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
             static pmfx::shader_handle ph = pmfx::load_shader("forward_render");

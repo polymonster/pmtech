@@ -59,7 +59,8 @@ namespace put
             CMP_SUB_INSTANCE    = (1 << 14),
             CMP_MASTER_INSTANCE = (1 << 15),
             CMP_PRE_SKINNED     = (1 << 16),
-			CMP_SUB_GEOMETRY	= (1 << 17)
+			CMP_SUB_GEOMETRY	= (1 << 17),
+			CMP_SDF_SHADOW		= (1 << 18)
 		};
 
         enum e_state_flags : u32
@@ -236,7 +237,19 @@ namespace put
             forward_light lights[MAX_FORWARD_LIGHTS];
             vec4f         info;
         };
-        
+
+		struct distance_field_shadow
+		{
+			vec4f	half_size;
+			mat4	world_matrix;
+			mat4	world_matrix_inverse;
+		};
+
+		struct distance_field_shadow_buffer
+		{
+			distance_field_shadow shadows;
+		};
+
         struct free_node_list
         {
             u32 node;
@@ -284,6 +297,7 @@ namespace put
             free_node_list*         free_list_head;
             
 			u32						forward_light_buffer = PEN_INVALID_HANDLE;
+			u32						sdf_shadow_buffer = PEN_INVALID_HANDLE;
 			u32						flags;
             
             extents                 renderable_extents;

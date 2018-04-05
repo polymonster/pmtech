@@ -31,7 +31,19 @@ cbuffer per_pass_lights : register(b3)
 	float4 		  light_info;
 };
 
+struct distance_field_shadow
+{
+	float4 		half_size;
+	float4x4 	world_matrix;
+	float4x4 	world_matrix_inv;
+};
+
 cbuffer per_pass_shadow : register(b4)
 {
 	float4x4 shadow_matrix; 
+};
+
+cbuffer per_pass_shadow_distance_fields : register(b5)
+{
+	distance_field_shadow sdf_shadow; 
 };
