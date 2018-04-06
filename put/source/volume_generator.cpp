@@ -549,7 +549,7 @@ namespace put
 						f32 volume_space_d = d / scene_dimension.max_component();
 
 						volume_space_d *= cps.w;
-						volume_space_d = volume_space_d * 0.5 + 0.5;
+						volume_space_d = volume_space_d;
 
 						//scale and bias
 						u32 signed_distance = volume_space_d * 255.0f;
