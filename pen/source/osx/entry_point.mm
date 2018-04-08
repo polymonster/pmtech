@@ -414,7 +414,7 @@ int main(int argc, char **argv)
     thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
     
     //main thread loop
-    bool threads_started = false;
+    bool thread_started = false;
     while( !pen_terminate_app )
     {
         NSAutoreleasePool * _pool = [[NSAutoreleasePool alloc] init];
@@ -456,19 +456,19 @@ int main(int argc, char **argv)
 
         //sleep a bit
         [_pool drain];
-        pen::threads_sleep_ms( 4 );
+        pen::thread_sleep_ms( 4 );
         
-        if(!threads_started)
+        if(!thread_started)
         {
-            pen::threads_create_default_jobs( thread_info );
-            threads_started = true;
+            pen::thread_create_default_jobs( thread_info );
+            thread_started = true;
         }
         
         g_rs--;
     }
     
     //shutdown
-    pen::threads_terminate_jobs();
+    pen::thread_terminate_jobs();
 }
 
 namespace pen
