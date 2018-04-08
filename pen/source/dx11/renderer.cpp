@@ -293,7 +293,7 @@ namespace pen
         u8 stencil;
 		u32 flags;
 
-		mrt_clear mrt[PEN_MAX_MRT];
+		mrt_clear mrt[MAX_MRT];
 		u32 num_colour_targets;
 	};
 
@@ -318,10 +318,10 @@ namespace pen
 	struct render_target_internal
 	{
 		texture2d_internal			tex;
-		ID3D11RenderTargetView*		rt[PEN_CUBEMAP_FACES] = { nullptr };
+		ID3D11RenderTargetView*		rt[CUBEMAP_FACES] = { nullptr };
 
         texture2d_internal			tex_msaa;
-        ID3D11RenderTargetView*		rt_msaa[PEN_CUBEMAP_FACES] = { nullptr };
+        ID3D11RenderTargetView*		rt_msaa[CUBEMAP_FACES] = { nullptr };
 
 		texture2d_internal			tex_read_back;
 
@@ -332,10 +332,10 @@ namespace pen
 	struct depth_stencil_target_internal
 	{
 		texture2d_internal			tex;
-		ID3D11DepthStencilView*		ds[PEN_CUBEMAP_FACES];
+		ID3D11DepthStencilView*		ds[CUBEMAP_FACES];
 
         texture2d_internal			tex_msaa;
-        ID3D11DepthStencilView*		ds_msaa[PEN_CUBEMAP_FACES];
+        ID3D11DepthStencilView*		ds_msaa[CUBEMAP_FACES];
 
 		texture2d_internal			tex_read_back;
 
@@ -996,7 +996,7 @@ namespace pen
 
 	void direct::renderer_set_resolve_targets( u32 colour_target, u32 depth_target )
 	{
-		ID3D11RenderTargetView* colour_rtv[PEN_MAX_MRT] = { 0 };
+		ID3D11RenderTargetView* colour_rtv[MAX_MRT] = { 0 };
 
 		if( colour_target > 0 )
 			colour_rtv[0] = resource_pool[colour_target].render_target->rt[0];
@@ -1014,7 +1014,7 @@ namespace pen
 		g_context.num_active_colour_targets = num_colour_targets;
 
 		u32 num_views = num_colour_targets;
-        ID3D11RenderTargetView* colour_rtv[ PEN_MAX_MRT ] = { 0 };
+        ID3D11RenderTargetView* colour_rtv[MAX_MRT] = { 0 };
         for( s32 i = 0; i < num_colour_targets; ++i )
         {
             u32 colour_target = colour_targets[i];
@@ -1349,7 +1349,7 @@ namespace pen
 
 		render_target_internal* rt = resource_pool[render_target].render_target;
 
-		for (s32 i = 0; i < PEN_CUBEMAP_FACES; ++i)
+		for (s32 i = 0; i < CUBEMAP_FACES; ++i)
 		{
 			if (rt->rt[i])
 			{

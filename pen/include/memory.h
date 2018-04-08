@@ -15,11 +15,15 @@
 #define BAD_ALLOC std::bad_alloc
 #endif
 
-//#include "stb_leakcheck.h"
-
 namespace pen
 {
-	//c 
+	// Minimalist C-Style memory API wrapping up malloc and free
+	// It provides some very minor portability solutions between windows and unix
+	// But mostly it is here to intercept all allocations
+	// So at a later date custom allocation or mem tracking schemes could be used.
+
+	// Functions
+
 	void*	memory_alloc( u32 size_bytes );
 	void*	memory_alloc_align( u32 size_bytes, u32 alignment );
 	void*	memory_realloc(void* mem, u32 size_bytes);
@@ -28,6 +32,8 @@ namespace pen
 	void	memory_cpy( void* dest, const void* src, u32 size_bytes );
 	void	memory_set( void* dest, u8 val, u32 size_bytes );
 	void	memory_zero( void* dest, u32 size_bytes );
+
+	// Implementation
 
     inline void* memory_alloc( u32 size_bytes )
     {
@@ -73,7 +79,12 @@ namespace pen
     }
 }
 
+// And override global new and delete
+
 void*	operator new(size_t n) throw(BAD_ALLOC);
 void	operator delete(void *p) throw();
+
+void*	operator new[](size_t n) throw(BAD_ALLOC);
+void	operator delete[](void *p) throw();
 
 #endif

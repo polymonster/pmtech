@@ -166,7 +166,7 @@ namespace physics
 	}
     
     //thread sync
-    pen::job_thread*         p_physics_job_thread_info;
+    pen::job*         p_physics_job_thread_info;
     
     void physics_consume_command_buffer()
     {
@@ -177,7 +177,7 @@ namespace physics
     PEN_TRV physics_thread_main( void* params )
     {
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-        pen::job_thread* p_thread_info = job_params->job_thread_info;
+        pen::job* p_thread_info = job_params->job_info;
         pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
         
         p_physics_job_thread_info = p_thread_info;

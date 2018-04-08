@@ -4,19 +4,21 @@
 #include "pen.h"
 #include "renderer_definitions.h"
 
-//---------------------------------------------------------------------------------------------------------------------------
-//  TOKENS
-//---------------------------------------------------------------------------------------------------------------------------
-enum special_values
-{
-	PEN_SHADER_NULL = 0xffffff,
-	PEN_BACK_BUFFER_RATIO = (u32) - 1,
-	PEN_MAX_MRT = 8,
-	PEN_CUBEMAP_FACES = 6
-};
-
 namespace pen
 {
+	// Simple C-Style generic rendering API wrapper
+	// Currently implementations in Direct3D11 and OpenGL 3.1+
+	// Public API used by the user thread will store function call arguments in a command buffer
+	// Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
+	// command buffer will be consumed passing arguments to the direct:: functions.
+
+	enum special_values
+	{
+		BACK_BUFFER_RATIO = (u32)-1,
+		MAX_MRT = 8,
+		CUBEMAP_FACES = 6
+	};
+
 	enum e_clear_types
 	{
 		CLEAR_F32,
@@ -45,9 +47,6 @@ namespace pen
 		e_clear_types type;
 	};
 
-	//-----------------------------------------------------------------------------------------------------------------------
-	//  PUBLIC API STRUCTS
-	//-----------------------------------------------------------------------------------------------------------------------
 	struct clear_state
 	{
 		f32 r, g, b, a;
@@ -55,7 +54,7 @@ namespace pen
 		u8  stencil;
 		u32 flags;
 
-		mrt_clear mrt[PEN_MAX_MRT];
+		mrt_clear mrt[MAX_MRT];
 		u32 num_colour_targets;
 	};
                    
@@ -290,9 +289,7 @@ namespace pen
 		float padding_0, padding_1;
 	};
 
-	//-----------------------------------------------------------------------------------------------------------------------
-	//  COMMON FUNCTIONS
-	//-----------------------------------------------------------------------------------------------------------------------
+	// Threading
 
 	//runs on its own thread - will wait for jobs flagged by semaphone
 	PEN_TRV	renderer_thread_function(void* params);
@@ -304,9 +301,8 @@ namespace pen
 	//resource management
 	void	renderer_realloc_resource(u32 i, u32 domain);
 
-	//-----------------------------------------------------------------------------------------------------------------------
-	//  COMMAND BUFFERED API
-	//-----------------------------------------------------------------------------------------------------------------------
+	// Public API called by user thread
+
 	//clears
 	void	renderer_clear(u32 clear_state_index);
 	void	renderer_clear_cube(u32 clear_state_index, u32 colour_face, u32 depth_face);
@@ -394,11 +390,10 @@ namespace pen
 	void	renderer_consume_cmd_buffer();
 	void	renderer_update_queries();
 
-	//--------------------------------------------------------------------------------------
-	//  DIRECT API
-	//--------------------------------------------------------------------------------------
 	namespace direct
 	{
+		// Platform specific implementation, implements these functions
+
 		u32		renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res);
 		void	renderer_shutdown();
 		void    renderer_make_context_current();

@@ -571,7 +571,7 @@ Vec<N, T> operator/(const Vec<N, T>& lhs, T a)
 {
 	Vec<N, T> w(lhs);
 	w /= a;
-	return lhs;
+	return w;
 }
 
 template<unsigned int N, class T>

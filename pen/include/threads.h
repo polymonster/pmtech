@@ -25,7 +25,7 @@ namespace pen
 	// A Job is just a thread with some data, a callback
 	// and some syncronisation semaphores
 
-    struct job_thread
+    struct job
     {
         thread* p_thread = nullptr;
         semaphore* p_sem_consume = nullptr;
@@ -39,7 +39,7 @@ namespace pen
     
     struct job_thread_params
     {
-        job_thread* job_thread_info;
+        job*		job_info;
         void*       user_data;
     };
     
@@ -66,9 +66,9 @@ namespace pen
 
     //thread job
     
-    void             threads_create_default_jobs( const default_thread_info& info) ;
-    void             threads_terminate_jobs();
-    pen::job_thread* threads_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags, completion_callback cb = nullptr);
+    void			threads_create_default_jobs( const default_thread_info& info) ;
+    void			threads_terminate_jobs();
+    pen::job*		threads_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags, completion_callback cb = nullptr);
     
 	//threads
 	pen::thread*	threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags );
@@ -94,6 +94,5 @@ namespace pen
 	void			threads_sleep_ms( u32 milliseconds );
 	void			threads_sleep_us( u32 microseconds );
 }
-
 
 #endif

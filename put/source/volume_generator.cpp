@@ -228,7 +228,7 @@ namespace put
 		{
 			pen::job_thread_params* job_params = (pen::job_thread_params*)params;
 			vgt_rasteriser_job*		rasteriser_job = (vgt_rasteriser_job*)job_params->user_data;
-			pen::job_thread*		p_thread_info = job_params->job_thread_info;
+			pen::job*		p_thread_info = job_params->job_info;
 			pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
 			u32& volume_dim = rasteriser_job->dimension;
@@ -498,7 +498,7 @@ namespace put
 			pen::job_thread_params* job_params = (pen::job_thread_params*)params;
 			vgt_sdf_job*			sdf_job = (vgt_sdf_job*)job_params->user_data;
 
-			pen::job_thread*		p_thread_info = job_params->job_thread_info;
+			pen::job*		p_thread_info = job_params->job_info;
 			pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
 			u32 volume_dim = 1<<sdf_job->options.volume_dimension;
