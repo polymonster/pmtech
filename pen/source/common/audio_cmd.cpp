@@ -131,7 +131,7 @@ namespace pen
     }
 
     //thread sync
-    pen::job_thread*         p_audio_job_thread_info;
+    pen::job*         p_audio_job_thread_info;
     pen::slot_resources      k_audio_slot_resources;
     
     void audio_consume_command_buffer()
@@ -143,7 +143,7 @@ namespace pen
     PEN_TRV audio_thread_function( void* params )
     {
         job_thread_params* job_params = (job_thread_params*)params;
-        p_audio_job_thread_info = job_params->job_thread_info;
+        p_audio_job_thread_info = job_params->job_info;
         
         //create resource slots
         pen::slot_resources_init(&k_audio_slot_resources, MAX_AUDIO_RESOURCES);

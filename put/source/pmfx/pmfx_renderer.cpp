@@ -172,8 +172,8 @@ namespace put
             s32     rt_width, rt_height;
             f32     rt_ratio;
             
-            u32     render_targets[PEN_MAX_MRT] = { 0 };
-            hash_id id_render_target[PEN_MAX_MRT] = { 0 };
+            u32     render_targets[pen::MAX_MRT] = { 0 };
+            hash_id id_render_target[pen::MAX_MRT] = { 0 };
 			u32     num_colour_targets = 0;
 
             u32     depth_target = 0;
@@ -796,7 +796,7 @@ namespace put
                             for( s32 rr = 0; rr < num_ratios; ++rr )
                                 if( rt_ratio[rr] == ratio_str )
                                 {
-                                    new_info.width = PEN_BACK_BUFFER_RATIO;
+                                    new_info.width = pen::BACK_BUFFER_RATIO;
                                     new_info.height = rr;
                                     
                                     new_info.ratio = 1.0f / (f32)rr;
@@ -949,7 +949,7 @@ namespace put
 
 				bool first = true;
 
-				for (s32 j = 0; j < PEN_MAX_MRT; ++j)
+				for (s32 j = 0; j < pen::MAX_MRT; ++j)
 				{
 					if (k_views[i].id_render_target[j] == 0)
 						continue;

@@ -7,6 +7,9 @@ namespace pen
 {
 	// Simple C-Style generic audio API wrapper
 	// Currently implementation is in fmod.
+	// Public API used by the user thread will store function call arguments in a command buffer
+	// Dedicated thread will wait on a semaphore until audio_consume_command_buffer is called
+	// command buffer will be consumed passing arguments to the direct:: functions.
 
     enum audio_play_state : s32
     {
@@ -56,14 +59,10 @@ namespace pen
     };
 
     // Threading
-	// Dedicated thread will wait on a semaphore until audio_consume_command_buffer is called
-	// command buffer will be consumed passing arguments to the direct:: functions.
 
     PEN_TRV	audio_thread_function( void* params );
     void	audio_consume_command_buffer();
      
-	// Public API used by the user thread will store function call arguments in a command buffer
-
     // Creation
     u32		audio_create_stream( const c8* filename );
     u32		audio_create_sound( const c8* filename );

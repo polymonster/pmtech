@@ -9,6 +9,10 @@ extern pen::window_creation_params pen_window;
 
 namespace pen
 {
+	// Simple input API for getting keyboard and mouse presses
+	// and character keys for typing.
+	// Implemented with win32 and NS
+
 	struct mouse_state
 	{
 		f32 x;

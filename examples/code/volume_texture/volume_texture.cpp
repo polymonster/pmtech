@@ -134,7 +134,7 @@ PEN_TRV pen::user_entry(void* params)
 {
 	//unpack the params passed to the thread and signal to the engine it ok to proceed
 	pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-	pen::job_thread* p_thread_info = job_params->job_thread_info;
+	pen::job* p_thread_info = job_params->job_info;
 	pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
 	pen::threads_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);

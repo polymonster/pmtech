@@ -8,6 +8,32 @@
 
 namespace pen
 {
+	// C++ wrapper API for JSMN
+	// Provides operators to access JSON objects and arrays and get retreive typed values, examples:
+	//
+	// Load:
+	// json j = load_from_file("filename");
+	//
+	// Value by Key:
+	// json member = j["key"];
+	//
+	// As Type:
+	// u32 value = member.as_u32();
+	// 
+	// Arrays (json can be an object or an array)
+	// u32 num_array_elements = j.size()
+	// for(u32 i = 0; i < num_array_elements; ++i)
+	//		value = j[i].as_bool;
+	//
+	// Print:
+	// printf(j.dumps().c_str())
+
+	// Combine will combine members of j1 and j2 on an object by object basis
+
+	// API for writing json is limited, if you want to write to nested members or arrays 
+	// you will need to create copies of the objects and then manually recursively write the objects
+	// back upwards once you have written to a value (leaf).
+
     struct json_object;
     
     class json

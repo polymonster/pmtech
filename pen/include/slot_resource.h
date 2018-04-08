@@ -5,6 +5,9 @@
 
 namespace pen
 {
+	// Simple slot resource API can be used to allocate an array slot to a generic resource
+	// implements a free list so getting a new resource index is a o(1) operation
+
     enum e_resource_flags
     {
         RESOURCE_FREE = 1,
