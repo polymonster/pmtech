@@ -286,7 +286,7 @@ namespace put
 
 			rasteriser_job->combine_in_progress = 2;
 
-			return PEN_OK;
+			return PEN_THREAD_OK;
 		}
 
 		u32 create_volume_from_data( u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data )
@@ -584,7 +584,7 @@ namespace put
 				p_thread_info->p_completion_callback(nullptr);
 
 			sdf_job->generate_in_progress = 2;
-			return PEN_OK;
+			return PEN_THREAD_OK;
 		}
 
 		static ces::entity_scene* k_main_scene;

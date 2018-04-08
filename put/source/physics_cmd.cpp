@@ -222,7 +222,7 @@ namespace physics
         pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
         pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_terminated, 1 );
         
-        return PEN_OK;
+        return PEN_THREAD_OK;
     }
 
 	void set_v3( const u32 &entity_index, const vec3f &v3, u32 cmd )

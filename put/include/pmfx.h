@@ -30,7 +30,7 @@ namespace put
             u32 input_layout;
             u32 program_index;
         };
-
+        
 		struct render_target
 		{
 			hash_id id_name;

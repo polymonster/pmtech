@@ -22,7 +22,7 @@ int g_rs = 0;
 
 pen::user_info pen_user_info;
 
-extern PEN_THREAD_RETURN pen::game_entry( void* params );
+extern PEN_TRV pen::user_entry( void* params );
 
 @interface app_delegate : NSObject<NSApplicationDelegate>
 {

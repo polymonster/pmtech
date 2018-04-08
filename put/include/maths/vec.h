@@ -681,7 +681,7 @@ bool almost_equal(const Vec<N, T>& lhs, const Vec<N, T> &rhs, const T& epsilon )
 }
 
 template<unsigned int N, class T>
-bool nonzero(void)
+bool nonzero(const Vec<N,T> &v)
 {
 	for (unsigned int i = 0; i<N; ++i) if (v[i]) return true;
 	return false;

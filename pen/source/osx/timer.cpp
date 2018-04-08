@@ -4,6 +4,8 @@
 #include <mach/mach_time.h>
 #include <unistd.h>
 
+#include "console.h"
+
 namespace pen
 {
 #define MAX_TIMERS 100

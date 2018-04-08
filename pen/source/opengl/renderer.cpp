@@ -10,6 +10,10 @@
 #include "str/Str.h"
 #include <vector>
 
+#include "console.h"
+#include "data_struct.h"
+
+
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
@@ -1048,8 +1052,8 @@ namespace pen
     {
         if(block_size != 1)
         {
-            u32 block_width = PEN_MAX(1, ((w + (pixels_per_block-1))/ pixels_per_block));
-            u32 block_height = PEN_MAX(1, ((h + (pixels_per_block-1)) / pixels_per_block));
+            u32 block_width = max<u32>(1, ((w + (pixels_per_block-1))/ pixels_per_block));
+            u32 block_height = max<u32>(1, ((h + (pixels_per_block-1)) / pixels_per_block));
             return  block_width * block_height * block_size;
         }
         
@@ -1199,8 +1203,8 @@ namespace pen
                 mip_w /= 2;
                 mip_h /= 2;
                                                
-                mip_w = PEN_MAX(1, mip_w);
-                mip_h = PEN_MAX(1, mip_h);
+                mip_w = max<u32>(1, mip_w);
+                mip_h = max<u32>(1, mip_h);
             }
         }
 

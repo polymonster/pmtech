@@ -234,5 +234,5 @@ PEN_TRV pen::user_entry(void* params)
 	//signal to the engine the thread has finished
 	pen::threads_semaphore_signal(p_thread_info->p_sem_terminated, 1);
 
-	return PEN_OK;
+	return PEN_THREAD_OK;
 }
