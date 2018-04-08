@@ -435,6 +435,7 @@ ps_output ps_shadow_sdf( vs_output input )
 		
 			if( d <= 0.0 )
 			{			
+				closest = 0;
 				shad = max( d, 0.0 );
 				break;
 			}
@@ -450,7 +451,7 @@ ps_output ps_shadow_sdf( vs_output input )
 		}
 		
 		if( hit )
-			output.colour *= smoothstep( 0.0, 0.05, closest);
+			output.colour *= smoothstep( 0.0, 0.02, closest);
 	}
 				
 	return output;

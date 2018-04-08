@@ -4,6 +4,8 @@
 #include "pen.h"
 #include <math.h>
 
+#if 1
+
 struct vec2f;
 struct vec2i;
 struct vec3f;
@@ -536,3 +538,4 @@ struct lw_vec3f
 };
 
 #endif //_vector_h
+#endif

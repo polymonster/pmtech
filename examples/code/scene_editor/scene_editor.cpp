@@ -20,8 +20,11 @@
 #include "pen.h"
 #include "renderer.h"
 
+#include "maths/vec.h"
+
 using namespace put;
 using namespace put::ces;
+
 
 pen::window_creation_params pen_window
 {
@@ -53,6 +56,12 @@ void obb_test(put::ces::entity_scene* scene)
 
 	ip = m.transform_vector(ip);
 	dbg::add_point(ip, 0.1f, vec4f::magenta());
+
+	Vec3f a = Vec3f(1.0f, 0.0f, 1.0f);
+	Vec3f b = Vec3f(1.0f, 2.0f, 1.0f);
+
+	vec3f aa = vec3f(1.0f, 0.0f, 1.0f);
+	vec3f bb = vec3f(1.0f, 2.0f, 1.0f);
 }
 
 PEN_THREAD_RETURN pen::game_entry( void* params )
@@ -114,6 +123,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     bool enable_dev_ui = true;
     
     f32 frame_time = 0.0f;
+
+	obb_test(main_scene);
     
     while( 1 )
     {

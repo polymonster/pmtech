@@ -115,6 +115,7 @@ namespace put
 			entity_scene*	scene;
 			triangle_octree tree;
 			u32				volume_dim;
+			u32				texture_format;
 			u32				block_size;
 			u32				data_size;
 			u8*				volume_data;
@@ -287,14 +288,14 @@ namespace put
 			return PEN_THREAD_OK;
 		}
 
-		u32 create_volume_from_data(u32 volume_dim, u32 block_size, u32 data_size, u8* volume_data )
+		u32 create_volume_from_data( u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data )
 		{
 			pen::texture_creation_params tcp;
 			tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
 
 			tcp.width = volume_dim;
 			tcp.height = volume_dim;
-			tcp.format = block_size == 4 ? PEN_TEX_FORMAT_BGRA8_UNORM : PEN_TEX_FORMAT_R8_UNORM;
+			tcp.format = tex_format;
 			tcp.num_mips = 1;
 			tcp.num_arrays = volume_dim;
 			tcp.sample_count = 1;
@@ -331,7 +332,7 @@ namespace put
 			//create texture
 			u32 volume_texture = create_volume_from_data(volume_dim,
                                                          k_rasteriser_job.block_size,
-                                                         k_rasteriser_job.data_size, k_rasteriser_job.volume_data);
+                                                         k_rasteriser_job.data_size, PEN_TEX_FORMAT_BGRA8_UNORM, k_rasteriser_job.volume_data);
 
 			//create material for volume ray trace
 			material_resource* volume_material = new material_resource;
@@ -500,7 +501,7 @@ namespace put
 			u32 volume_dim = 1<<sdf_job->options.volume_dimension;
 
 			//create a simple 3d texture
-			u32 block_size = 1;
+			u32 block_size = sdf_job->block_size;
 			u32 data_size = volume_dim * volume_dim * volume_dim * block_size;
 
 			u8* volume_data = (u8*)pen::memory_alloc(data_size);
@@ -517,7 +518,6 @@ namespace put
 
 			sdf_job->volume_data = volume_data;
 			sdf_job->volume_dim = volume_dim;
-			sdf_job->block_size = 1;
 			sdf_job->data_size = data_size;
 
 			sdf_job->debug_data = new dd[volume_dim * volume_dim * volume_dim];
@@ -549,17 +549,28 @@ namespace put
 						f32 volume_space_d = d / scene_dimension.max_component();
 
 						volume_space_d *= cps.w;
-						volume_space_d = volume_space_d;
 
 						//scale and bias
-						u32 signed_distance = volume_space_d * 255.0f;
+						if (block_size == 1)
+						{
+							volume_space_d = volume_space_d;
 
-						sdf_job->debug_data[offset].pos = world_pos;
-						sdf_job->debug_data[offset].closest = cps;
+							//8bit signed distance
+							u32 signed_distance = volume_space_d * 255.0f;
 
-						signed_distance = PEN_MIN(signed_distance, 255);
+							sdf_job->debug_data[offset].pos = world_pos;
+							sdf_job->debug_data[offset].closest = cps;
 
-						volume_data[offset + 0] = signed_distance;
+							signed_distance = PEN_MIN(signed_distance, 255);
+
+							volume_data[offset + 0] = signed_distance;
+						}
+						else
+						{
+							//32bit floating point signed distance
+							f32* f = (f32*)(&volume_data[offset + 0]);
+							*f = volume_space_d;
+						}
 					}
 				}
 			}
@@ -881,10 +892,30 @@ namespace put
 
 		void sdf_ui()
 		{
+			static const c8* texture_fromat[] =
+			{
+				"8bit",
+				"32bit Floating Point",
+			};
+
+			static s32 sdf_texture_format = 0;
+			ImGui::Combo("Capture", &sdf_texture_format, texture_fromat, PEN_ARRAY_SIZE(texture_fromat));
+
 			if (!k_sdf_job.generate_in_progress)
 			{
 				if (ImGui::Button("Go"))
 				{
+					if (sdf_texture_format == 0)
+					{
+						k_sdf_job.block_size = 1;
+						k_sdf_job.texture_format = PEN_TEX_FORMAT_R8_UNORM;
+					}
+					else
+					{
+						k_sdf_job.block_size = 4;
+						k_sdf_job.texture_format = PEN_TEX_FORMAT_R32_FLOAT;
+					}
+
 					k_sdf_job.generate_in_progress = 1;
 					k_sdf_job.scene = k_main_scene;
 					k_sdf_job.options = k_options;
@@ -901,9 +932,13 @@ namespace put
 				if (k_sdf_job.generate_in_progress == 2)
 				{
 					//create texture
-					u32 volume_texture = create_volume_from_data(k_sdf_job.volume_dim,
-                                                                 k_sdf_job.block_size,
-                                                                 k_sdf_job.data_size, k_sdf_job.volume_data);
+					u32 format = k_sdf_job.block_size == 1 ? PEN_TEX_FORMAT_R8_UNORM : PEN_TEX_FORMAT_R32_FLOAT;
+
+					u32 volume_texture = create_volume_from_data(	k_sdf_job.volume_dim,
+																	k_sdf_job.block_size,
+																	k_sdf_job.data_size,
+																	k_sdf_job.texture_format,
+																	k_sdf_job.volume_data);
 
 					//create material for volume sdf sphere trace
 					material_resource* sdf_material = new material_resource;

@@ -361,6 +361,7 @@ namespace put
             debug_3d_verts[line_vert_3d_count + 6].x = min.x;
             debug_3d_verts[line_vert_3d_count + 6].y = min.y;
             debug_3d_verts[line_vert_3d_count + 6].z = max.z;
+
             
             debug_3d_verts[line_vert_3d_count + 7].x = min.x;
             debug_3d_verts[line_vert_3d_count + 7].y = max.y;

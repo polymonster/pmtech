@@ -45,7 +45,7 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
         0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
-    u32 clear_state = pen::renderer_create_clear_state( cs );
+    u32 clear_state = pen::renderer_create_clear_state( cs );		
 
     //raster state
     pen::rasteriser_state_creation_params rcp;
