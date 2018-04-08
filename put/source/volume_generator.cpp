@@ -11,6 +11,7 @@
 #include "memory.h"
 #include "hash.h"
 #include "pen.h"
+#include "data_struct.h"
 
 namespace put
 {
@@ -147,7 +148,7 @@ namespace put
 			if (!(mask & 1 << axis))
 				return nullptr;
 
-			PEN_SWAP(y, invy);
+			swap(y, invy);
 
 			switch (axis)
 			{
@@ -223,7 +224,7 @@ namespace put
 			current_slice++;
 		}
 
-		PEN_THREAD_RETURN raster_voxel_combine(void* params)
+		PEN_TRV raster_voxel_combine(void* params)
 		{
 			pen::job_thread_params* job_params = (pen::job_thread_params*)params;
 			vgt_rasteriser_job*		rasteriser_job = (vgt_rasteriser_job*)job_params->user_data;
@@ -285,7 +286,7 @@ namespace put
 
 			rasteriser_job->combine_in_progress = 2;
 
-			return PEN_THREAD_OK;
+			return PEN_OK;
 		}
 
 		u32 create_volume_from_data( u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data )
@@ -418,7 +419,9 @@ namespace put
 			vec3f max = cc->scene->renderable_extents.max;
 
 			vec3f dim = max - min;
-			f32 texel_boarder = dim.max_component() / volume_dim;
+			//f32 texel_boarder = dim.max_component() / volume_dim;
+
+			f32 texel_boarder = component_wise_max(dim) / volume_dim;
 
 			min -= texel_boarder;
 			max += texel_boarder;
@@ -490,7 +493,7 @@ namespace put
 			current_requested_slice = current_slice;
 		}
 
-		PEN_THREAD_RETURN sdf_generate(void* params)
+		PEN_TRV sdf_generate(void* params)
 		{
 			pen::job_thread_params* job_params = (pen::job_thread_params*)params;
 			vgt_sdf_job*			sdf_job = (vgt_sdf_job*)job_params->user_data;
@@ -536,7 +539,7 @@ namespace put
 
 						u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
 
-						vec3f volume_pos = vec3f(x, y, z) / volume_dim;
+						vec3f volume_pos = vec3f(x, y, z) / (f32)volume_dim;
 
 						vec3f world_pos = scene_extents.min + volume_pos * scene_dimension;
 
@@ -546,7 +549,9 @@ namespace put
 
 						f32 d = maths::distance(cp, world_pos);
 
-						f32 volume_space_d = d / scene_dimension.max_component();
+						//f32 volume_space_d = d / scene_dimension.max_component();
+
+						f32 volume_space_d = d / component_wise_max(scene_dimension);
 
 						volume_space_d *= cps.w;
 
@@ -561,7 +566,7 @@ namespace put
 							sdf_job->debug_data[offset].pos = world_pos;
 							sdf_job->debug_data[offset].closest = cps;
 
-							signed_distance = PEN_MIN(signed_distance, 255);
+							signed_distance = min<u32>(signed_distance, 255);
 
 							volume_data[offset + 0] = signed_distance;
 						}
@@ -579,7 +584,7 @@ namespace put
 				p_thread_info->p_completion_callback(nullptr);
 
 			sdf_job->generate_in_progress = 2;
-			return PEN_THREAD_OK;
+			return PEN_OK;
 		}
 
 		static ces::entity_scene* k_main_scene;
@@ -1004,13 +1009,13 @@ namespace put
 				ImGui::InputInt("Debug Y", &debug_y);
 				ImGui::InputInt("Debug Z", &debug_z);
 
-				debug_x = PEN_MIN(debug_x, k_sdf_job.volume_dim - 1);
-				debug_y = PEN_MIN(debug_y, k_sdf_job.volume_dim - 1);
-				debug_z = PEN_MIN(debug_z, k_sdf_job.volume_dim - 1);
+				debug_x = min<u32>(debug_x, k_sdf_job.volume_dim - 1);
+				debug_y = min<u32>(debug_y, k_sdf_job.volume_dim - 1);
+				debug_z = min<u32>(debug_z, k_sdf_job.volume_dim - 1);
 
-				debug_x = PEN_MAX(debug_x, 0);
-				debug_y = PEN_MAX(debug_y, 0);
-				debug_z = PEN_MAX(debug_z, 0);
+				debug_x = max<u32>(debug_x, 0);
+				debug_y = max<u32>(debug_y, 0);
+				debug_z = max<u32>(debug_z, 0);
 
 				u32 debug_index = debug_z * k_sdf_job.volume_dim * k_sdf_job.volume_dim;
 				debug_index += debug_y * k_sdf_job.volume_dim;

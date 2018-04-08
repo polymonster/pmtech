@@ -690,7 +690,7 @@ namespace put
             };
             
             scene->renderable_extents.min = vec3f::flt_max();
-            scene->renderable_extents.max = vec3f::flt_min();
+            scene->renderable_extents.max = -vec3f::flt_max();
             
 			//transform extents by transform
             for( s32 n = 0; n < scene->num_nodes; ++n )
@@ -707,7 +707,7 @@ namespace put
 					continue;
 				}
 
-                tmax = vec3f::flt_min();
+                tmax = -vec3f::flt_max();
                 tmin = vec3f::flt_max();
                 
                 for( s32 c = 0; c < 8; ++c )

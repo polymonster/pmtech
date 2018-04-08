@@ -127,6 +127,50 @@ struct Vec<2, T> {
 	{
 		return v[index];
 	}
+
+	inline static Vec<2, T> one()
+	{
+		return Vec<2, T>(1, 1);
+	}
+
+	inline static Vec<2, T> zero()
+	{
+		return Vec<2, T>(0, 0);
+	}
+
+	inline static Vec<2, T> flt_max()
+	{
+		return Vec<2, T>(FLT_MAX, FLT_MAX);
+	}
+
+	inline static Vec<2, T> unit_x()
+	{
+		return Vec<2, T>(1, 0);
+	}
+
+	inline static Vec<2, T> unit_y()
+	{
+		return Vec<2, T>(0, 1);
+	}
+
+	//temporary
+	inline void vfloor()
+	{
+		x = (f32)floor((double)x);
+		y = (f32)floor((double)y);
+	}
+
+	inline static Vec<2, T>  vmax(Vec<2, T>  a, Vec<2, T>  b)
+	{
+		Vec<2, T>  v(max(a.x, b.x), max(a.y, b.y));
+		return v;
+	}
+
+	inline static Vec<2, T>  vmin(Vec<2, T>  a, Vec<2, T>  b)
+	{
+		Vec<2, T>  v(min(a.x, b.x), min(a.y, b.y));
+		return v;
+	}
 };
 
 template<class T>
@@ -135,7 +179,7 @@ struct Vec<3, T> {
 		T v[3];
 		struct { T x, y, z; };
 		struct { T r, g, b; };
-		Vec<2, T> xy;
+		//Vec<2, T> xy;
 	};
 
 	Vec<3, T>(void)
@@ -166,6 +210,14 @@ struct Vec<3, T> {
 		v[0] = v0; v[1] = v1; v[2] = v2;
 	}
 
+	Vec<3, T>(const Vec<2, T>& v2, T _z)
+	{
+		for (unsigned int i = 0; i<2; ++i)
+			v[i] = (T)v2[i];
+
+		v[2] = _z;
+	}
+
 	T &operator[](int index)
 	{
 		return v[index];
@@ -175,6 +227,101 @@ struct Vec<3, T> {
 	{
 		return v[index];
 	}
+
+	inline static Vec<3, T> one()
+	{
+		return Vec<3, T>(1, 1, 1);
+	}
+
+	inline static Vec<3, T> zero()
+	{
+		return Vec<3, T>(0, 0, 0);
+	}
+
+	inline static Vec<3, T> flt_max()
+	{
+		return Vec<3, T>(FLT_MAX, FLT_MAX, FLT_MAX);
+	}
+
+	inline static Vec<3, T> unit_x()
+	{
+		return Vec<3, T>(1, 0, 0);
+	}
+
+	inline static Vec<3, T> unit_y()
+	{
+		return Vec<3, T>(0, 1, 0);
+	}
+
+	inline static Vec<3, T> unit_z()
+	{
+		return Vec<3, T>(0, 0, 1);
+	}
+
+	inline static Vec<3, T> white()
+	{
+		return Vec<3, T>(1, 1, 1);
+	}
+
+	inline static Vec<3, T> black()
+	{
+		return Vec<3, T>(0, 0, 0);
+	}
+
+	inline static Vec<3, T> red()
+	{
+		return Vec<3, T>(1, 0, 0);
+	}
+
+	inline static Vec<3, T> green()
+	{
+		return Vec<3, T>(0, 1, 0);
+	}
+
+	inline static Vec<3, T> blue()
+	{
+		return Vec<3, T>(0, 0, 1);
+	}
+
+	inline static Vec<3, T> yellow()
+	{
+		return Vec<3, T>(1, 1, 0);
+	}
+
+	inline static Vec<3, T> cyan()
+	{
+		return Vec<3, T>(0, 1, 1);
+	}
+
+	inline static Vec<3, T> magenta()
+	{
+		return Vec<3, T>(1, 0, 1);
+	}
+
+	inline Vec<2, T> xy()
+	{
+		return Vec<2, T>(x, y);
+	}
+
+	//temporary
+	inline void vfloor()
+	{
+		x = (f32)floor((double)x);
+		y = (f32)floor((double)y);
+		z = (f32)floor((double)z);
+	}
+
+	inline static Vec<3, T> vmax(Vec<3, T> a, Vec<3, T> b)
+	{
+		Vec<3, T> v(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z));
+		return v;
+	}
+
+	inline static Vec<3, T> vmin(Vec<3, T> a, Vec<3, T> b)
+	{
+		Vec<3, T> v(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z));
+		return v;
+	}
 };
 
 template<class T>
@@ -183,8 +330,8 @@ struct Vec<4, T> {
 		T v[4];
 		struct { T x, y, z, w; };
 		struct { T r, g, b, a; };
-		Vec<2, T> xy;
-		Vec<3, T> xyz;
+		//Vec<2, T> xy;
+		//Vec<3, T> xyz;
 	};
 
 	Vec<4, T>(void)
@@ -215,6 +362,14 @@ struct Vec<4, T> {
 		v[0] = v0; v[1] = v1; v[2] = v2; v[3] = v3;
 	}
 
+	Vec<4, T>(const Vec<3, T>& v3, T _w)
+	{
+		for (unsigned int i = 0; i<3; ++i)
+			v[i] = (T)v3[i];
+
+		v[3] = _w;
+	}
+
 	T &operator[](int index)
 	{
 		return v[index];
@@ -223,6 +378,76 @@ struct Vec<4, T> {
 	const T &operator[](int index) const
 	{
 		return v[index];
+	}
+
+	inline static Vec<4, T> one()
+	{
+		return Vec<4, T>(1, 1, 1, 1);
+	}
+
+	inline static Vec<4, T> zero()
+	{
+		return Vec<4, T>(0, 0, 0, 0);
+	}
+
+	inline static Vec<4, T> unit_x()
+	{
+		return Vec<4, T>(1, 0, 0, 0);
+	}
+
+	inline static Vec<4, T> unit_y()
+	{
+		return Vec<4, T>(0, 1, 0, 0);
+	}
+
+	inline static Vec<4, T> unit_z()
+	{
+		return Vec<4, T>(0, 0, 1, 0);
+	}
+
+	inline static Vec<4, T> white()
+	{
+		return Vec<4, T>(1, 1, 1, 1);
+	}
+
+	inline static Vec<4, T> black()
+	{
+		return Vec<3, T>(0, 0, 0, 1);
+	}
+
+	inline static Vec<4, T> red()
+	{
+		return Vec<4, T>(1, 0, 0, 1);
+	}
+
+	inline static Vec<4, T> green()
+	{
+		return Vec<4, T>(0, 1, 0, 1);
+	}
+
+	inline static Vec<4, T> blue()
+	{
+		return Vec<4, T>(0, 0, 1, 1);
+	}
+
+	inline static Vec<4, T> yellow()
+	{
+		return Vec<4, T>(1, 1, 0, 1);
+	}
+
+	inline static Vec<4, T> cyan()
+	{
+		return Vec<4, T>(0, 1, 1, 1);
+	}
+
+	inline static Vec<4, T> magenta()
+	{
+		return Vec<4, T>(1, 0, 1, 1);
+	}
+
+	inline Vec<3, T> xyz()
+	{
+		return Vec<3, T>(x, y, z);
 	}
 };
 
@@ -308,7 +533,7 @@ template<unsigned int N, class T>
 Vec<N, T> operator*=(Vec<N, T>& lhs, T a)
 {
 	for (unsigned int i = 0; i<N; ++i) lhs.v[i] *= a;
-	return *this;
+	return lhs;
 }
 
 template<unsigned int N, class T>
@@ -360,7 +585,7 @@ template<unsigned int N, class T>
 Vec<N, T> operator/(const Vec<N, T>& lhs, const Vec<N, T> &rhs)
 {
 	Vec<N, T> componentwise_divide;
-	for (unsigned int i = 0; i<N; ++i) componentwise_divide[i] = lhs.v[i] * rhs.v[i];
+	for (unsigned int i = 0; i<N; ++i) componentwise_divide[i] = lhs.v[i] / rhs.v[i];
 	return componentwise_divide;
 }
 
@@ -376,7 +601,65 @@ Vec<N, T> operator!=(Vec<N, T>& lhs, const Vec<N, T> &rhs)
 	return(!equals(lhs, rhs));
 }
 
+// Non standard operations with scalars
+
+template<unsigned int N, class T>
+Vec<N, T> operator+=(Vec<N, T>& lhs, T a)
+{
+	for (unsigned int i = 0; i<N; ++i) lhs[i] += a;
+	return lhs;
+}
+
+template<unsigned int N, class T>
+Vec<N, T> operator+(const Vec<N, T>& lhs, T a)
+{
+	Vec<N, T> sum(lhs);
+	sum += a;
+	return sum;
+}
+
+template<unsigned int N, class T>
+Vec<N, T> operator-=(Vec<N, T>& lhs, T a)
+{
+	for (unsigned int i = 0; i<N; ++i) lhs[i] -= a;
+	return lhs;
+}
+
+template<unsigned int N, class T>
+Vec<N, T> operator-(const Vec<N, T>& lhs, T a)
+{
+	Vec<N, T> sum(lhs);
+	sum -= a;
+	return sum;
+}
+
 // Free Functions
+template<unsigned int N, class T>
+T component_wise_min(const Vec<N, T>& v)
+{
+	T _min = v.v[0];
+	for (unsigned int i = 1; i < N; ++i)
+		_min = v.v[i] < _min ? v.v[i] : _min;
+
+	return _min;
+}
+
+template<unsigned int N, class T>
+T component_wise_max(const Vec<N, T>& v)
+{
+	T _max = v.v[0];
+	for (unsigned int i = 1; i < N; ++i)
+		_max = v.v[i] > _max ? v.v[i] : _max;
+
+	return _max;
+}
+
+//todo
+//lerp
+//clamp
+//saturate
+//all
+//any
 
 template<unsigned int N, class T>
 bool equals(const Vec<N, T>& lhs, const Vec<N, T> &rhs)
@@ -442,6 +725,20 @@ inline T infnorm(const Vec<N,T> &a)
    T d=std::fabs(a.v[0]);
    for(unsigned int i=1; i<N; ++i) d=max(std::fabs(a.v[i]),d);
    return d;
+}
+
+// UK Reprasent Math (s), Normali(s)e
+
+template<unsigned int N, class T>
+inline void normalise(Vec<N, T> &a)
+{
+	a /= mag(a);
+}
+
+template<unsigned int N, class T>
+inline Vec<N, T> normalised(const Vec<N, T> &a)
+{
+	return a / mag(a);
 }
 
 template<unsigned int N, class T>

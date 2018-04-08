@@ -1,6 +1,5 @@
 #include <windows.h>
 
-//#include "structs.h"
 #include "pen.h"
 #include "entry_point.h"
 #include "threads.h"
@@ -11,10 +10,17 @@
 #include "pen_string.h"
 
 extern a_u8 g_window_resize;
+
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
 // loop. Idle time is used to render the scene.
 //--------------------------------------------------------------------------------------
+struct window_params
+{
+	HINSTANCE hinstance;
+	int		  cmdshow;
+};
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR lpCmdLine, INT nCmdShow)
 {
@@ -30,13 +36,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	//initilaise any generic systems
 	pen::timer_system_intialise( );
-
-	renderer_params rp;
-	rp.hwnd = (HWND)pen::window_get_primary_display_handle();
+	HWND hwnd = (HWND)pen::window_get_primary_display_handle();
 
 	pen::default_thread_info thread_info;
 	thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
-	thread_info.render_thread_params = &rp;
+	thread_info.render_thread_params = &hwnd;
 
 	pen::threads_create_default_jobs( thread_info );
 
@@ -73,11 +77,11 @@ namespace pen
 	//--------------------------------------------------------------------------------------
 	// Structs
 	//--------------------------------------------------------------------------------------
-	typedef struct window_params
+	struct window_params
 	{
 		HINSTANCE hinstance;
 		int		  cmdshow;
-	} window_params;
+	};
 
 	//--------------------------------------------------------------------------------------
 	// Globals

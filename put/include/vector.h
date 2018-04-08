@@ -6,6 +6,27 @@
 
 #if 1
 
+#include "maths/vec.h"
+
+typedef Vec2i vec2i;
+typedef Vec2f vec2f;
+typedef Vec3f vec3f;
+typedef Vec4f vec4f;
+
+struct lw_vec3f
+{
+	f32 x, y, z;
+
+	inline lw_vec3f& operator = (const vec3f &v)
+	{
+		x = v.x; y = v.y; z = v.z;
+
+		return *this;
+	}
+};
+
+#else
+
 struct vec2f;
 struct vec2i;
 struct vec3f;
@@ -537,5 +558,33 @@ struct lw_vec3f
     }
 };
 
+inline float component_wise_min(vec2f v)
+{
+	return v.min_component();
+}
+inline float component_wise_min(vec3f v)
+{
+	return v.min_component();
+}
+inline float component_wise_min(vec4f v)
+{
+	return v.min_component();
+}
+
+inline float component_wise_max(vec2f v)
+{
+	return v.max_component();
+}
+inline float component_wise_max(vec3f v)
+{
+	return v.max_component();
+}
+inline float component_wise_max(vec4f v)
+{
+	return v.max_component();
+}
+
+
 #endif //_vector_h
+
 #endif

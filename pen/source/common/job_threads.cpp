@@ -49,7 +49,7 @@ namespace pen
 			threads_create_job(&pen::audio_thread_function, 1024 * 1024, info.audio_thread_params, pen::THREAD_START_DETACHED);
 		}
 
-		threads_create_job(&pen::game_entry, 1024 * 1024, info.user_thread_params, pen::THREAD_START_DETACHED);
+		threads_create_job(&pen::user_entry, 1024 * 1024, info.user_thread_params, pen::THREAD_START_DETACHED);
     }
     
     void threads_terminate_jobs()

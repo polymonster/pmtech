@@ -5,6 +5,7 @@
 #include "timer.h"
 #include "pen.h"
 #include "slot_resource.h"
+#include "console.h"
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -624,7 +625,7 @@ namespace pen
 		g_resolve_resources.constant_buffer = renderer_create_buffer(bcp);
 	}
 
-	PEN_THREAD_RETURN renderer_thread_function(void* params)
+	PEN_TRV renderer_thread_function(void* params)
 	{
 		job_thread_params* job_params = (job_thread_params*)params;
 
@@ -648,7 +649,7 @@ namespace pen
 		
 		renderer_wait_for_jobs();
 
-		return PEN_THREAD_OK;
+		return PEN_OK;
 	}
 
 

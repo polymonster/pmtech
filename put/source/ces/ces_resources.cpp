@@ -8,6 +8,8 @@
 #include "ces/ces_utilities.h"
 #include "ces/ces_resources.h"
 
+#include "console.h"
+
 namespace put
 {    
     enum pmm_transform_types
@@ -82,7 +84,7 @@ namespace put
             rb.position = pos;
             rb.rotation = rotation;
                         
-            rb.dimensions = (max - min) * scale * 0.5;
+            rb.dimensions = (max - min) * scale * 0.5f;
             
             //capsule height is extents height + radius * 2 (for the capsule top and bottom)
             if( rb.shape == physics::CAPSULE )

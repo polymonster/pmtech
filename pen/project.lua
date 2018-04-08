@@ -5,7 +5,8 @@ project "pen"
 	language "C++"
 	
 	files 
-	{ 
+	{
+		"include/*.h",
 		"include/common/**.h",
 		"source/common/**.cpp",
 		 
@@ -33,7 +34,8 @@ project "pen"
 	end
 	
 	includedirs 
-	{ 
+	{
+		"include",
 		"include/common",
 		 
 		"include/" .. platform_dir, 

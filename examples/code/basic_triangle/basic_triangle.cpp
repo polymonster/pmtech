@@ -5,6 +5,7 @@
 #include "timer.h"
 #include "file_system.h"
 #include "pen_string.h"
+#include "console.h"
 
 pen::window_creation_params pen_window
 {
@@ -19,7 +20,7 @@ typedef struct vertex
     float x, y, z, w;
 } vertex;
 
-PEN_THREAD_RETURN pen::game_entry( void* params )
+PEN_TRV pen::user_entry( void* params )
 {
     //unpack the params passed to the thread and signal to the engine it ok to proceed
     pen::job_thread_params* job_params = (pen::job_thread_params*)params;
@@ -170,5 +171,5 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
 
-    return PEN_THREAD_OK;
+    return PEN_OK;
 }

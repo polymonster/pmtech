@@ -1,5 +1,6 @@
 #include "timer.h"
 #include "pen_string.h"
+#include "console.h"
 
 namespace pen
 {

@@ -3,6 +3,7 @@
 #include "slot_resource.h"
 
 #include "internal/physics_internal.h"
+#include "console.h"
 
 namespace physics
 {

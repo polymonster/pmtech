@@ -1,5 +1,6 @@
 #include "pen_string.h"
 #include "memory.h"
+#include <stdarg.h>
 
 namespace pen
 {
@@ -80,18 +81,5 @@ namespace pen
 	u32 string_length_wide( const c16* string )
 	{
 		return wcslen( string );
-	}
-
-	void string_output_debug( const c8* format, ... )
-	{
-		va_list va;
-		va_start( va, format );
-
-		c8 buf[ PEN_PRINT_CHAR_LIMIT ];
-		vsprintf_s( buf, PEN_PRINT_CHAR_LIMIT, format, va );
-
-		va_end( va );
-
-		OutputDebugStringA( buf );
 	}
 }

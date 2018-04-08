@@ -213,8 +213,7 @@ namespace put
 
 		inline vec3f ray_vs_plane(vec3f vray, vec3f pray, vec3f nplane, vec3f pplane)
 		{
-			vec3f v = vray;
-			v.normalise();
+			vec3f v = normalise(vray);
 
 			vec3f p = pray;
 			vec3f n = nplane;
@@ -297,19 +296,19 @@ namespace put
 			return true;
 		}
 
-		inline bool ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& intersection)
+		inline bool ray_vs_aabb(const vec3f& emin, const vec3f& emax, const vec3f& r1, const vec3f& rv, vec3f& intersection)
 		{
 			vec3f dirfrac = vec3f(1.0f) / rv;
 
-			f32 t1 = (min.x - r1.x)*dirfrac.x;
-			f32 t2 = (max.x - r1.x)*dirfrac.x;
-			f32 t3 = (min.y - r1.y)*dirfrac.y;
-			f32 t4 = (max.y - r1.y)*dirfrac.y;
-			f32 t5 = (min.z - r1.z)*dirfrac.z;
-			f32 t6 = (max.z - r1.z)*dirfrac.z;
+			f32 t1 = (emin.x - r1.x)*dirfrac.x;
+			f32 t2 = (emax.x - r1.x)*dirfrac.x;
+			f32 t3 = (emin.y - r1.y)*dirfrac.y;
+			f32 t4 = (emax.y - r1.y)*dirfrac.y;
+			f32 t5 = (emin.z - r1.z)*dirfrac.z;
+			f32 t6 = (emax.z - r1.z)*dirfrac.z;
 
-			f32 tmin = PEN_MAX(PEN_MAX(PEN_MIN(t1, t2), PEN_MIN(t3, t4)), PEN_MIN(t5, t6));
-			f32 tmax = PEN_MIN(PEN_MIN(PEN_MAX(t1, t2), PEN_MAX(t3, t4)), PEN_MAX(t5, t6));
+			f32 tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+			f32 tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
 			f32 t = 0.0f;
 

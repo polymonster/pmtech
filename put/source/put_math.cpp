@@ -205,7 +205,7 @@ namespace put
 			vec3f normal = cross(vA, vB);
 
 			//negate for left handedness
-			normal = normalise(normal) * -1;
+			normal = normalise(normal) * -1.0f;
 
 			return normal;
 		}

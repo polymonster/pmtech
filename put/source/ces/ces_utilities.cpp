@@ -5,6 +5,8 @@
 #include "ces/ces_editor.h"
 #include "ces/ces_resources.h"
 
+#include "data_struct.h"
+
 namespace put
 {
     namespace ces

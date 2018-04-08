@@ -9,6 +9,9 @@
 #include "timer.h"
 #include "pen.h"
 #include "str/Str.h"
+#include "data_struct.h"
+
+#include "console.h"
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -1118,8 +1121,8 @@ namespace pen
 
 					image_data += depth_pitch;
 
-					min(current_width /= 2, 1);
-					min(current_height /= 2, 1);
+					min<u32>(current_width /= 2, 1);
+					min<u32>(current_height /= 2, 1);
 				}
 			}
 
@@ -1612,12 +1615,12 @@ namespace pen
 	{
 		clear_resource_table( );
 		
-		renderer_params* rp = (renderer_params*)params;
+		HWND* hwnd = (HWND*)params;
 		 
 		HRESULT hr = S_OK;
 
 		RECT rc;
-		GetClientRect(rp->hwnd, &rc);
+		GetClientRect(*hwnd, &rc);
 		UINT width = rc.right - rc.left;
 		UINT height = rc.bottom - rc.top;
 
@@ -1705,7 +1708,7 @@ namespace pen
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			sd.BufferCount = 1;
 
-			hr = dxgiFactory2->CreateSwapChainForHwnd(g_device, rp->hwnd, &sd, nullptr, nullptr, &g_swap_chain_1);
+			hr = dxgiFactory2->CreateSwapChainForHwnd(g_device, *hwnd, &sd, nullptr, nullptr, &g_swap_chain_1);
 			if (SUCCEEDED(hr))
 			{
 				hr = g_swap_chain_1->QueryInterface(__uuidof(IDXGISwapChain), reinterpret_cast<void**>(&g_swap_chain));
@@ -1725,7 +1728,7 @@ namespace pen
 			sd.BufferDesc.RefreshRate.Numerator = 60;
 			sd.BufferDesc.RefreshRate.Denominator = 1;
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-			sd.OutputWindow = rp->hwnd;
+			sd.OutputWindow = *hwnd;
 			sd.SampleDesc.Count = pen_window.sample_count;
 			sd.SampleDesc.Quality = 0;
 			sd.Windowed = TRUE;
