@@ -57,9 +57,7 @@ namespace pen
     }
 }
 
-#define INPUT_PKEY_PRESS( key_index ) pen::input_is_key_pressed( key_index )
 #define INPUT_PKEY( key_index ) (pen::input_is_key_pressed( key_index ) || pen::input_is_key_held( key_index ))
-#define INPUT_PMOUSE( key_index ) (pen::input_is_mouse_pressed( key_index ) || pen::input_is_mouse_held( key_index ))
 
 #define	pen_input_key( key_index ) (pen::input_is_key_pressed( key_index ) || pen::input_is_key_held( key_index ))
 #define	pen_input_key_press( key_index ) pen::input_is_key_pressed( key_index )

@@ -91,5 +91,6 @@ enum pen_error
 ((ulong)(c8)(ch2) << 16) | ((ulong)(c8)(ch3) << 24 ))
 
 #define PEN_ARRAY_SIZE( A ) (sizeof(A)/sizeof(A[0]))
+#define PEN_REQUIRE( A ) // for tests
 
 #endif //_pen_types_h

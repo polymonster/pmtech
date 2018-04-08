@@ -1,8 +1,7 @@
 #ifndef _pen_data_struct_h
 #define _pen_data_struct_h
 
-// Minimalist data structures to use as alternative to vector et al
-// Built around ontop of stretchy buffer.
+// Minimalist data structures to use as alternative to vector
 
 // Stretchy buffer itself akin to vector
 

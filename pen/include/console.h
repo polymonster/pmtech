@@ -8,7 +8,7 @@
 #endif
 
 // Wrapper around assert and print for portability 
-// and to all them to be controlled and re-directed in the future if required
+// and to control and re-direct in the future if required
 
 #define    PEN_PRINT_CHAR_LIMIT 1024*10
 inline void output_debug(const c8* format, ...)

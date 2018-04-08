@@ -15,5 +15,4 @@ namespace pen
     void os_show_cursor( bool show );
 }
 
-
 #endif

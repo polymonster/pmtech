@@ -106,7 +106,7 @@ PEN_TRV pen::user_entry( void* params )
 
         for( s32 key = 0; key < PENK_ARRAY_SIZE; ++key )
         {
-            if( INPUT_PKEY(key) )
+            if(pen_input_key(key) )
             {
                 key_msg.append("[");
                 key_msg.append(pen::input_get_key_str(key));

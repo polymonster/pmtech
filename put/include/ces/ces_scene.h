@@ -220,9 +220,9 @@ namespace put
 
 		struct transform
 		{
-			vec3f	translation;
-			quat	rotation;
-			vec3f	scale;
+			vec3f	translation = vec3f::zero();
+			quat	rotation = quat();
+			vec3f	scale = vec3f::one();
 		};
 
 		struct forward_light
