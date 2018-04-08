@@ -136,8 +136,8 @@ namespace pen
     
     void audio_consume_command_buffer()
     {
-        pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_consume, 1 );
-        pen::threads_semaphore_wait( p_audio_job_thread_info->p_sem_continue );
+        pen::thread_semaphore_signal( p_audio_job_thread_info->p_sem_consume, 1 );
+        pen::thread_semaphore_wait( p_audio_job_thread_info->p_sem_continue );
     }
 
     PEN_TRV audio_thread_function( void* params )
@@ -151,15 +151,15 @@ namespace pen
 		direct::audio_system_initialise();
         
 		//allow main thread to continue now we are initialised
-		pen::threads_semaphore_signal(p_audio_job_thread_info->p_sem_continue, 1);
+		pen::thread_semaphore_signal(p_audio_job_thread_info->p_sem_continue, 1);
 
         for(;;)
         {
-            if( pen::threads_semaphore_try_wait( p_audio_job_thread_info->p_sem_consume ) )
+            if( pen::thread_semaphore_try_wait( p_audio_job_thread_info->p_sem_consume ) )
             {
                 u32 end_pos = audio_put_pos;
                 
-                pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
+                pen::thread_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
 
                 while( audio_get_pos != end_pos )
                 {
@@ -172,10 +172,10 @@ namespace pen
             }
             else
             {
-                pen::threads_sleep_ms(1);
+                pen::thread_sleep_ms(1);
             }
             
-            if( pen::threads_semaphore_try_wait(p_audio_job_thread_info->p_sem_exit) )
+            if( pen::thread_semaphore_try_wait(p_audio_job_thread_info->p_sem_exit) )
             {
                 break;
             }
@@ -183,8 +183,8 @@ namespace pen
         
         direct::audio_system_shutdown();
         
-        pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
-        pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_terminated, 1 );
+        pen::thread_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
+        pen::thread_semaphore_signal( p_audio_job_thread_info->p_sem_terminated, 1 );
 
 		return PEN_THREAD_OK;
     }

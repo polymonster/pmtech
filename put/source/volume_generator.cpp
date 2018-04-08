@@ -229,7 +229,7 @@ namespace put
 			pen::job_thread_params* job_params = (pen::job_thread_params*)params;
 			vgt_rasteriser_job*		rasteriser_job = (vgt_rasteriser_job*)job_params->user_data;
 			pen::job*		p_thread_info = job_params->job_info;
-			pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+			pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
 			u32& volume_dim = rasteriser_job->dimension;
 			void*** volume_slices = rasteriser_job->volume_slices;
@@ -318,7 +318,7 @@ namespace put
 			if (k_rasteriser_job.combine_in_progress == 0)
 			{
 				k_rasteriser_job.combine_in_progress = 1;
-				pen::threads_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &k_rasteriser_job,
+				pen::thread_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &k_rasteriser_job,
                                         pen::THREAD_START_DETACHED);
 				return;
 			}
@@ -499,7 +499,7 @@ namespace put
 			vgt_sdf_job*			sdf_job = (vgt_sdf_job*)job_params->user_data;
 
 			pen::job*		p_thread_info = job_params->job_info;
-			pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+			pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
 			u32 volume_dim = 1<<sdf_job->options.volume_dimension;
 
@@ -925,7 +925,7 @@ namespace put
 					k_sdf_job.scene = k_main_scene;
 					k_sdf_job.options = k_options;
 
-					pen::threads_create_job(sdf_generate, 1024 * 1024 * 1024, &k_sdf_job, pen::THREAD_START_DETACHED);
+					pen::thread_create_job(sdf_generate, 1024 * 1024 * 1024, &k_sdf_job, pen::THREAD_START_DETACHED);
 					return;
 				}
 			}

@@ -42,7 +42,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
 	thread_info.render_thread_params = &hwnd;
 
-	pen::threads_create_default_jobs( thread_info );
+	pen::thread_create_default_jobs( thread_info );
 
 	// Main message loop
 	MSG msg = { 0 };
@@ -56,7 +56,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		if (WM_QUIT == msg.message)
 		{
-			pen::threads_terminate_jobs();
+			pen::thread_terminate_jobs();
 			break;
 		}
 

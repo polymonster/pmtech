@@ -170,15 +170,15 @@ namespace physics
     
     void physics_consume_command_buffer()
     {
-        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_consume, 1 );
-        pen::threads_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
+        pen::thread_semaphore_signal( p_physics_job_thread_info->p_sem_consume, 1 );
+        pen::thread_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
     }
     
     PEN_TRV physics_thread_main( void* params )
     {
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
         pen::job* p_thread_info = job_params->job_info;
-        pen::threads_semaphore_signal(p_thread_info->p_sem_continue, 1);
+        pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
         
         p_physics_job_thread_info = p_thread_info;
         
@@ -195,11 +195,11 @@ namespace physics
             f32 dt_ms = pen::timer_elapsed_ms(physics_timer);
             pen::timer_start(physics_timer);
             
-            if( pen::threads_semaphore_try_wait( p_physics_job_thread_info->p_sem_consume ) )
+            if( pen::thread_semaphore_try_wait( p_physics_job_thread_info->p_sem_consume ) )
             {
                 u32 end_pos = put_pos;
                 
-                pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
+                pen::thread_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
                 
                 while (get_pos != end_pos)
                 {
@@ -211,16 +211,16 @@ namespace physics
             
             physics_update( dt_ms * 1000.0f );
             
-            pen::threads_sleep_ms( 16 );
+            pen::thread_sleep_ms( 16 );
             
-            if( pen::threads_semaphore_try_wait(p_physics_job_thread_info->p_sem_exit) )
+            if( pen::thread_semaphore_try_wait(p_physics_job_thread_info->p_sem_exit) )
             {
                 break;
             }
         }
         
-        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
-        pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_terminated, 1 );
+        pen::thread_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
+        pen::thread_semaphore_signal( p_physics_job_thread_info->p_sem_terminated, 1 );
         
         return PEN_THREAD_OK;
     }
