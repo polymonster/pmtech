@@ -22,7 +22,7 @@ namespace pen
 
 	typedef void(*completion_callback)(void*);
     
-	// A Job is just a thread with some data, a callback
+	// A Job is just a thread with some user data, a callback
 	// and some syncronisation semaphores
 
     struct job
@@ -63,36 +63,35 @@ namespace pen
 		void* audio_thread_params;
 		void* user_thread_params;
 	};
-
-    //thread job
     
-    void			thread_create_default_jobs( const default_thread_info& info) ;
-    void			thread_terminate_jobs();
-    pen::job*		thread_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags, completion_callback cb = nullptr);
+	// Job
+    void		thread_create_default_jobs( const default_thread_info& info) ;
+    void		thread_terminate_jobs();
+    job*		thread_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags, completion_callback cb = nullptr);
     
-	//threads
-	pen::thread*	thread_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags );
-	void			thread_destroy( pen::thread* p_thread );
+	// Threads
+	thread*		thread_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags );
+	void		thread_destroy( pen::thread* p_thread );
 
-	//mutex
-	pen::mutex*		thread_mutex_create( );
-	void			thread_mutex_destroy( pen::mutex* p_mutex );
+	// Mutex
+	mutex*		thread_mutex_create( );
+	void		thread_mutex_destroy( mutex* p_mutex );
 
-	void			thread_mutex_lock( pen::mutex* p_mutex );
-	u32				thread_mutex_try_lock( pen::mutex* p_mutex );
-	void			thread_mutex_unlock( pen::mutex* p_mutex );
+	void		thread_mutex_lock( mutex* p_mutex );
+	u32			thread_mutex_try_lock( mutex* p_mutex );
+	void		thread_mutex_unlock( mutex* p_mutex );
 
-	//semaphore
-	pen::semaphore* thread_semaphore_create( u32 initial_count, u32 max_count );
-	void			thread_semaphore_destroy( pen::semaphore* p_semaphore );
+	// Semaphore
+	semaphore*	thread_semaphore_create( u32 initial_count, u32 max_count );
+	void		thread_semaphore_destroy( semaphore* p_semaphore );
 
-    bool			thread_semaphore_try_wait( pen::semaphore* p_semaphore );
-	bool			thread_semaphore_wait( pen::semaphore* p_semaphore );
-	void			thread_semaphore_signal( pen::semaphore* p_semaphore, u32 count );
+    bool		thread_semaphore_try_wait( semaphore* p_semaphore );
+	bool		thread_semaphore_wait( semaphore* p_semaphore );
+	void		thread_semaphore_signal( semaphore* p_semaphore, u32 count );
 
-	//actions
-	void			thread_sleep_ms( u32 milliseconds );
-	void			thread_sleep_us( u32 microseconds );
+	// Actions
+	void		thread_sleep_ms( u32 milliseconds );
+	void		thread_sleep_us( u32 microseconds );
 }
 
 #endif
