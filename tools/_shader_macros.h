@@ -30,9 +30,9 @@
 #define lerp mix
 #define modf mod
 
-#define mul( A, B ) A * B
-#define mul_tbn( A, B ) B * A
-#define saturate( A ) clamp( A, 0.0, 1.0 );
+#define mul( A, B ) (A * B)
+#define mul_tbn( A, B ) (B * A)
+#define saturate( A ) (clamp( A, 0.0, 1.0 ))
 	
 #define ddx dFdx
 #define ddy dFdy
@@ -55,7 +55,7 @@
 
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3; mat = transpose(mat)
 
-#define remap_depth( d ) d
+#define remap_depth( d ) (d)
 
 #endif
 

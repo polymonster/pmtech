@@ -937,8 +937,6 @@ namespace put
 				if (k_sdf_job.generate_in_progress == 2)
 				{
 					//create texture
-					u32 format = k_sdf_job.block_size == 1 ? PEN_TEX_FORMAT_R8_UNORM : PEN_TEX_FORMAT_R32_FLOAT;
-
 					u32 volume_texture = create_volume_from_data(	k_sdf_job.volume_dim,
 																	k_sdf_job.block_size,
 																	k_sdf_job.data_size,
