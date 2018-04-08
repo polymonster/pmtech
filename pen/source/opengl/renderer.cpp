@@ -290,7 +290,7 @@ namespace pen
         u8 stencil;
 		u32 flags;
         
-        pen::mrt_clear mrt[PEN_MAX_MRT];
+        pen::mrt_clear mrt[MAX_MRT];
         u32 num_colour_targets;
 	};
     
@@ -435,7 +435,7 @@ namespace pen
 		resource_pool[ resource_slot ].clear_state.flags = cs.flags;
         
         resource_pool[ resource_slot ].clear_state.num_colour_targets = cs.num_colour_targets;
-        pen::memory_cpy(&resource_pool[ resource_slot ].clear_state.mrt, cs.mrt, sizeof(pen::mrt_clear)*PEN_MAX_MRT);
+        pen::memory_cpy(&resource_pool[ resource_slot ].clear_state.mrt, cs.mrt, sizeof(pen::mrt_clear)*MAX_MRT);
 	}
 
     u32 link_program_internal( u32 vs, u32 ps, const pen::shader_link_params* params = nullptr )
@@ -1233,7 +1233,7 @@ namespace pen
         
         res.render_target.uid = (u32)pen::get_time_ms();
         
-        if( tcp.width == PEN_BACK_BUFFER_RATIO )
+        if( tcp.width == BACK_BUFFER_RATIO )
         {
             _tcp.width = pen_window.width / tcp.height;
             _tcp.height = pen_window.height / tcp.height;
@@ -1271,7 +1271,7 @@ namespace pen
 	void direct::renderer_set_targets(const u32* const colour_targets,
                                       u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face )
 	{
-        static GLenum k_draw_buffers[PEN_MAX_MRT] =
+        static GLenum k_draw_buffers[MAX_MRT] =
         {
             GL_COLOR_ATTACHMENT0,
             GL_COLOR_ATTACHMENT1,

@@ -24,7 +24,7 @@ namespace pen
     
     u32 semaphone_index = 0;
 
-	pen::thread* threads_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags )
+	pen::thread* thread_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags )
 	{
         //allocate penthread handle
         pen::thread* new_thread = (pen::thread*)pen::memory_alloc( sizeof( pen::thread ) );
@@ -50,14 +50,14 @@ namespace pen
 		return new_thread;
 	}
 
-	void threads_destroy( pen::thread* p_thread )
+	void thread_destroy( pen::thread* p_thread )
 	{
         pthread_cancel( p_thread->handle );
 
 		pen::memory_free( p_thread );
 	}
 
-	pen::mutex* threads_mutex_create( )
+	pen::mutex* thread_mutex_create( )
 	{
 		pen::mutex* new_mutex = (pen::mutex*)pen::memory_alloc( sizeof( pen::mutex ) );
         
@@ -71,31 +71,31 @@ namespace pen
 		return new_mutex;
 	}
 
-	void threads_mutex_destroy( mutex* p_mutex )
+	void thread_mutex_destroy( mutex* p_mutex )
 	{
         pthread_mutex_destroy( &p_mutex->handle );
 
 		pen::memory_free( p_mutex );
 	}
 
-	void threads_mutex_lock( mutex* p_mutex )
+	void thread_mutex_lock( mutex* p_mutex )
 	{
         pthread_mutex_lock( &p_mutex->handle );
 	}
 
-	u32 threads_mutex_try_lock( mutex* p_mutex )
+	u32 thread_mutex_try_lock( mutex* p_mutex )
 	{
         int err = pthread_mutex_trylock( &p_mutex->handle );
         
         return err == 0;
 	}
 
-	void threads_mutex_unlock( mutex* p_mutex )
+	void thread_mutex_unlock( mutex* p_mutex )
 	{
         pthread_mutex_unlock( &p_mutex->handle );
 	}
 
-	pen::semaphore* threads_semaphore_create( u32 initial_count, u32 max_count )
+	pen::semaphore* thread_semaphore_create( u32 initial_count, u32 max_count )
 	{
 		pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc( sizeof( pen::semaphore ) );
 
@@ -111,21 +111,21 @@ namespace pen
 		return new_semaphore;
 	}
 
-	void threads_semaphore_destroy( semaphore* p_semaphore )
+	void thread_semaphore_destroy( semaphore* p_semaphore )
 	{
         sem_close( p_semaphore->handle );
 
 		pen::memory_free( p_semaphore );
 	}
 
-	bool threads_semaphore_wait( semaphore* p_semaphore )
+	bool thread_semaphore_wait( semaphore* p_semaphore )
 	{
         sem_wait(p_semaphore->handle);
         
 		return true;
 	}
     
-    bool threads_semaphore_try_wait( pen::semaphore* p_semaphore )
+    bool thread_semaphore_try_wait( pen::semaphore* p_semaphore )
     {
         if( sem_trywait(p_semaphore->handle) == 0 )
         {
@@ -135,17 +135,17 @@ namespace pen
         return false;
     }
 
-	void threads_semaphore_signal( semaphore* p_semaphore, u32 count )
+	void thread_semaphore_signal( semaphore* p_semaphore, u32 count )
 	{
         sem_post(p_semaphore->handle);
 	}
 
-	void threads_sleep_ms( u32 milliseconds )
+	void thread_sleep_ms( u32 milliseconds )
 	{
         usleep(milliseconds*1000);
 	}
 
-	void threads_sleep_us( u32 microseconds )
+	void thread_sleep_us( u32 microseconds )
 	{
         usleep(microseconds);
 	}
