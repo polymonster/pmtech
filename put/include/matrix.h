@@ -15,7 +15,7 @@ typedef enum
 struct mat4;
 struct mat3;
 
-//Matrix 4 - Row Major
+//mat4 - Row Major
 
 /*
  m[ 0] m[ 1] m[ 2] m[ 3]
@@ -48,14 +48,13 @@ typedef struct mat4
     static mat4 create_axis_swap(vec3f x, vec3f y, vec3f z);
     static mat4 create_perspective_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
     static mat4 create_orthographic_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
-    static mat4 create_orthographic_off_centre_projection(f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
     static mat4 create_bias();
     
     mat4    transpose();
-    mat4    inverse3x3();
-    mat4    inverse3x4();
-    mat4    inverse4x4();
-    f32     determinant4x4();
+    mat4    inverse3x3() const;
+    mat4    inverse3x4() const;
+    mat4    inverse4x4() const;
+    f32     determinant4x4() const;
     
     vec3f   get_translation() const;
     mat4    get_orientation() const;

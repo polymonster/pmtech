@@ -338,7 +338,7 @@ mat4 mat4::get_orientation() const
     return om;
 }
 
-mat4 mat4::inverse3x3()
+mat4 mat4::inverse3x3() const
 {
     //determinant
     f32 det =
@@ -367,7 +367,7 @@ mat4 mat4::inverse3x3()
     return inverse;
 }
 
-mat4 mat4::inverse3x4()
+mat4 mat4::inverse3x4() const
 {
     //determinant
     f32 det =
@@ -413,7 +413,7 @@ mat4 mat4::transpose()
     return t;
 }
 
-mat4 mat4::inverse4x4()
+mat4 mat4::inverse4x4() const
 {
     //laplace expansion theorum
     
@@ -467,7 +467,7 @@ mat4 mat4::inverse4x4()
     return inverse;
 }
 
-f32 mat4::determinant4x4()
+f32 mat4::determinant4x4() const
 {
     //calculate the 4x4 determinant
     //4 3x3 determinants

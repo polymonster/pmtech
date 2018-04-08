@@ -5,6 +5,9 @@
 
 namespace pen
 {
+	// string API which has functions for win32 / unix portability
+	// since uft-8 this is not used that much and will be removed in future
+
     void string_to_ascii( const c16* src, c8* dest );
     void string_to_wide( const c8* src, c16* dest );
 
@@ -20,8 +23,6 @@ namespace pen
 
     u32  string_length( const c8* string );
     u32  string_length_wide( const c16* string );
-
-    void string_output_debug( const c8* format, ... );
 
     c8* sub_string( c8* src, u32 length );
 

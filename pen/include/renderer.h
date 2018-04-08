@@ -295,14 +295,14 @@ namespace pen
 	//-----------------------------------------------------------------------------------------------------------------------
 
 	//runs on its own thread - will wait for jobs flagged by semaphone
-	PEN_THREAD_RETURN	renderer_thread_function(void* params);
+	PEN_TRV	renderer_thread_function(void* params);
 
-	u32					renderer_create_clear_state(const clear_state &cs);
-	const c8*           renderer_get_shader_platform();
-	bool                renderer_viewport_vup();
+	u32		renderer_create_clear_state(const clear_state &cs);
+	const c8*	renderer_get_shader_platform();
+	bool	renderer_viewport_vup();
 
 	//resource management
-	void                renderer_realloc_resource(u32 i, u32 domain);
+	void	renderer_realloc_resource(u32 i, u32 domain);
 
 	//-----------------------------------------------------------------------------------------------------------------------
 	//  COMMAND BUFFERED API

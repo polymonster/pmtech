@@ -68,7 +68,8 @@ project ( project_name )
 	}
 	
 	includedirs
-	{ 
+	{
+		pmtech_dir .. "pen/include",
 		pmtech_dir .. "pen/include/common", 
 		pmtech_dir .. "pen/include/" .. platform_dir,
 		pmtech_dir .. "pen/include/" .. renderer_dir,

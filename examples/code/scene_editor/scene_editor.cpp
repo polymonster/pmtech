@@ -20,8 +20,11 @@
 #include "pen.h"
 #include "renderer.h"
 
+#include "maths/vec.h"
+
 using namespace put;
 using namespace put::ces;
+
 
 pen::window_creation_params pen_window
 {
@@ -33,10 +36,35 @@ pen::window_creation_params pen_window
 
 namespace physics
 {
-    extern PEN_THREAD_RETURN physics_thread_main( void* params );
+    extern PEN_TRV physics_thread_main( void* params );
 }
 
-PEN_THREAD_RETURN pen::game_entry( void* params )
+void obb_test(put::ces::entity_scene* scene)
+{
+	vec3f r1 = scene->transforms[1].translation;
+	vec3f r2 = scene->transforms[2].translation;
+
+	dbg::add_line(r1, r2, vec4f::green());
+
+	//transform ray
+	vec3f v = maths::normalise(r2 - r1);
+
+	mat4 m = scene->world_matrices[3];
+
+	vec3f ip;
+	maths::ray_vs_obb(-vec3f::one(), vec3f::one(), m, r1, v, ip);
+
+	ip = m.transform_vector(ip);
+	dbg::add_point(ip, 0.1f, vec4f::magenta());
+
+	Vec3f a = Vec3f(1.0f, 0.0f, 1.0f);
+	Vec3f b = Vec3f(1.0f, 2.0f, 1.0f);
+
+	vec3f aa = vec3f(1.0f, 0.0f, 1.0f);
+	vec3f bb = vec3f(1.0f, 2.0f, 1.0f);
+}
+
+PEN_TRV pen::user_entry( void* params )
 {
     //unpack the params passed to the thread and signal to the engine it ok to proceed
     pen::job_thread_params* job_params = (pen::job_thread_params*)params;
@@ -95,6 +123,8 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     bool enable_dev_ui = true;
     
     f32 frame_time = 0.0f;
+
+	obb_test(main_scene);
     
     while( 1 )
     {
@@ -147,5 +177,5 @@ PEN_THREAD_RETURN pen::game_entry( void* params )
     //signal to the engine the thread has finished
     pen::threads_semaphore_signal( p_thread_info->p_sem_terminated, 1);
     
-    return PEN_THREAD_OK;
+    return PEN_OK;
 }

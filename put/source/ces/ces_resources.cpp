@@ -8,6 +8,8 @@
 #include "ces/ces_utilities.h"
 #include "ces/ces_resources.h"
 
+#include "console.h"
+
 namespace put
 {    
     enum pmm_transform_types
@@ -82,7 +84,7 @@ namespace put
             rb.position = pos;
             rb.rotation = rotation;
                         
-            rb.dimensions = (max - min) * scale * 0.5;
+            rb.dimensions = (max - min) * scale * 0.5f;
             
             //capsule height is extents height + radius * 2 (for the capsule top and bottom)
             if( rb.shape == physics::CAPSULE )
@@ -398,7 +400,7 @@ namespace put
         void instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index )
         {
             scene_node_material* instance = &scene->materials[node_index];
-            
+
             instance->diffuse_rgb_shininess = mr->diffuse_rgb_shininess;
             instance->specular_rgb_reflect = mr->specular_rgb_reflect;
             

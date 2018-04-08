@@ -14,6 +14,8 @@
 
 #include <vector>
 
+#include "console.h"
+
 namespace put
 {
     enum texture_type
@@ -108,8 +110,8 @@ namespace put
 	{
 		if( compressed )
 		{
-			u32 block_width = PEN_MAX(1, ((width + 3) / 4));
-			u32 block_height = PEN_MAX(1, ((width + 3) / 4));
+			u32 block_width = max<u32>(1, ((width + 3) / 4));
+			u32 block_height = max<u32>(1, ((width + 3) / 4));
 			return  block_width * block_height * block_size;
 		}
 
@@ -271,7 +273,7 @@ namespace put
 
 				put::str_replace_chars(pmtech_dir, '/', PEN_DIR);
 
-				build_tool_str.append(PEN_SHADER_COMPILE_PRE_CMD);
+				build_tool_str.append(PEN_PYTHON3);
 				build_tool_str.append(pmtech_dir.c_str());
 				build_tool_str.append(PEN_BUILD_CMD);
 

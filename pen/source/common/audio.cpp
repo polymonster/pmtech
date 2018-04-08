@@ -3,7 +3,8 @@
 #include "pen.h"
 #include "fmod.hpp"
 #include "slot_resource.h"
-#include <math.h>
+
+#include "console.h"
 
 namespace pen
 {
@@ -431,7 +432,7 @@ namespace pen
                 resource_type = AUDIO_RESOURCE_DSP_GAIN;
                 return FMOD_DSP_TYPE_CHANNELMIX;
             default:
-                PEN_ERR;
+                PEN_ERROR;
         }
         
         return FMOD_DSP_TYPE_UNKNOWN;

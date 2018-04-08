@@ -1,169 +1,215 @@
 #include "put_math.h"
 
-vec3f put::maths::project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normalise_coordinates)
-{
-    mat4 res = proj * view;
-    
-    f32 depth = 1;
-    
-    vec3f screen_space_coord = res.transform_vector(v,&depth);
-    screen_space_coord.x /= depth;
-    screen_space_coord.y /= depth;
-    screen_space_coord.z /= depth;
-    
-    screen_space_coord = (screen_space_coord * 0.5f);
-    screen_space_coord.x += 0.5f;
-    screen_space_coord.y += 0.5f;
-    screen_space_coord.z += 0.5f;
-    
-    if(!normalise_coordinates)
-    {
-        screen_space_coord.x *= viewport.x;
-        screen_space_coord.y *= viewport.y;
-    }
-    
-    return screen_space_coord;
-}
+using namespace put;
+using namespace put::maths;
 
-vec3f put::maths::unproject( vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport )
+namespace put
 {
-    //inverse the view projection matrix
-    mat4 view_proj = proj * view;
-    mat4 inverse_view_projection = view_proj.inverse4x4();
-    
-    //normalise the screen coordinates
-    vec3f normalised_device_coordinates;
-    normalised_device_coordinates.x = (((screen_space_pos.x / viewport.x) * 2.0f) - 1.0f);
-    normalised_device_coordinates.y = (((screen_space_pos.y / viewport.y) * 2.0f) - 1.0f);
-    
-    normalised_device_coordinates.z = screen_space_pos.z; //((screen_space_pos.z * 2.0f) - 1.0f);
-    
-    //multiply the normalised device coordinates by the inverse view projection matrix
-    f32 w = 1.0f;
-    vec3f post_perspective_coordinates = inverse_view_projection.transform_vector(normalised_device_coordinates, &w);
-    w = 1.0f / w;
-    
-    //perform the inverse of perspective divide
-    vec3f world_space_coordinates;
-    world_space_coordinates.x = post_perspective_coordinates.x * w;
-    world_space_coordinates.y = post_perspective_coordinates.y * w;
-    world_space_coordinates.z = post_perspective_coordinates.z * w;
-    
-    return world_space_coordinates;
-}
+	namespace maths
+	{
+		vec3f project(vec3f v, mat4 view, mat4 proj, vec2i viewport, bool normalise_coordinates)
+		{
+			mat4 res = proj * view;
 
-vec3f put::maths::closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
-{
-    //create a vector from line start to the point.
-    vec3f v1 = p - l1;
-    
-    //get the normalised direction vector of the line
-    vec3f v2 = normalise(l2 - l1);
-    
-    //use the distance formula to get the length of the line
-    f32 d = distance(l1, l2);
-    
-    //using dot product project v1 onto v2
-    f32 t = dot(v2, v1);
-    
-    if( clamp )
-    {
-        //if the points at either end of the line
-        //the point is before the line start
-        if (t <= 0)
-        {
-            return l1;
-        }
-        
-        //the point is after the line end
-        if (t >= d)
-        {
-            return l2;
-        }
-    }
-    
-    //otherwise the point is on the line
-    
-    //vector of length t and direction of the line
-    vec3f v3 = v2 * t;
-    
-    //to get the closest point simply add v3 to the starting point of the line
-    vec3f closest_point = l1 + v3;
-    
-    return closest_point;
-}
+			f32 depth = 1;
 
-f32 put::maths::distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp )
-{
-    //create a vector from line start to the point.
-    vec3f v1 = p - l1;
-    
-    //get the normalised direction vector of the line
-    vec3f v2 = normalise(l2 - l1);
-    
-    //use the distance formula to get the length of the line
-    f32 d = distance(l1, l2);
-    
-    //using dot product project v1 onto v2
-    f32 t = dot(v2, v1);
-    
-    t /= d;
-    
-    if( clamp )
-    {
-        //if the points at either end of the line
-        //the point is before the line start
-        if (t <= 0 )
-        {
-            return 0.0f;
-        }
-        
-        //the point is after the line end
-        if (t >= 1.0f )
-        {
-            return 1.0f;
-        }
-    }
-    
-    return t;
-}
+			vec3f screen_space_coord = res.transform_vector(v, &depth);
+			screen_space_coord.x /= depth;
+			screen_space_coord.y /= depth;
+			screen_space_coord.z /= depth;
 
-bool put::maths::point_inside_triangle( vec3f v1, vec3f v2, vec3f v3, vec3f p )
-{
-    vec3f cp1, cp2;
-    
-    //edge 1
-    cp1 = cross(v2 - v1, v3 - v1);
-    cp2 = cross(v2 - v1, p - v1);
-    if(dot(cp1, cp2) < 0)
-        return false;
-    
-    //edge 2
-    cp1 = cross(v3 - v1, v2 - v1);
-    cp2 = cross(v3 - v1, p - v1);
-    if(dot(cp1, cp2) < 0)
-        return false;
-    
-    //edge 3
-    cp1 = cross(v3 - v2, v1 - v2);
-    cp2 = cross(v3 - v2, p - v2);
-    if(dot(cp1, cp2) < 0)
-        return false;
-    
-    return true;
-}
+			screen_space_coord = (screen_space_coord * 0.5f);
+			screen_space_coord.x += 0.5f;
+			screen_space_coord.y += 0.5f;
+			screen_space_coord.z += 0.5f;
 
-vec3f put::maths::get_normal(vec3f v1, vec3f v2, vec3f v3)
-{
-    vec3f vA = v3 - v1;
-    vec3f vB = v2 - v1;
-    
-    vec3f normal = cross(vA, vB);
-    
-    //negate for left handedness
-    normal = normalise(normal) * -1;
-    
-    return normal;
+			if (!normalise_coordinates)
+			{
+				screen_space_coord.x *= viewport.x;
+				screen_space_coord.y *= viewport.y;
+			}
+
+			return screen_space_coord;
+		}
+
+		vec3f unproject(vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport)
+		{
+			//inverse the view projection matrix
+			mat4 view_proj = proj * view;
+			mat4 inverse_view_projection = view_proj.inverse4x4();
+
+			//normalise the screen coordinates
+			vec3f normalised_device_coordinates;
+			normalised_device_coordinates.x = (((screen_space_pos.x / viewport.x) * 2.0f) - 1.0f);
+			normalised_device_coordinates.y = (((screen_space_pos.y / viewport.y) * 2.0f) - 1.0f);
+
+			normalised_device_coordinates.z = screen_space_pos.z; //((screen_space_pos.z * 2.0f) - 1.0f);
+
+																  //multiply the normalised device coordinates by the inverse view projection matrix
+			f32 w = 1.0f;
+			vec3f post_perspective_coordinates = inverse_view_projection.transform_vector(normalised_device_coordinates, &w);
+			w = 1.0f / w;
+
+			//perform the inverse of perspective divide
+			vec3f world_space_coordinates;
+			world_space_coordinates.x = post_perspective_coordinates.x * w;
+			world_space_coordinates.y = post_perspective_coordinates.y * w;
+			world_space_coordinates.z = post_perspective_coordinates.z * w;
+
+			return world_space_coordinates;
+		}
+
+		vec3f closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp)
+		{
+			//create a vector from line start to the point.
+			vec3f v1 = p - l1;
+
+			//get the normalised direction vector of the line
+			vec3f v2 = normalise(l2 - l1);
+
+			//use the distance formula to get the length of the line
+			f32 d = distance(l1, l2);
+
+			//using dot product project v1 onto v2
+			f32 t = dot(v2, v1);
+
+			if (clamp)
+			{
+				//if the points at either end of the line
+				//the point is before the line start
+				if (t <= 0)
+				{
+					return l1;
+				}
+
+				//the point is after the line end
+				if (t >= d)
+				{
+					return l2;
+				}
+			}
+
+			//otherwise the point is on the line
+
+			//vector of length t and direction of the line
+			vec3f v3 = v2 * t;
+
+			//to get the closest point simply add v3 to the starting point of the line
+			vec3f closest_point = l1 + v3;
+
+			return closest_point;
+		}
+
+		f32 distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp)
+		{
+			//create a vector from line start to the point.
+			vec3f v1 = p - l1;
+
+			//get the normalised direction vector of the line
+			vec3f v2 = normalise(l2 - l1);
+
+			//use the distance formula to get the length of the line
+			f32 d = distance(l1, l2);
+
+			//using dot product project v1 onto v2
+			f32 t = dot(v2, v1);
+
+			t /= d;
+
+			if (clamp)
+			{
+				//if the points at either end of the line
+				//the point is before the line start
+				if (t <= 0)
+				{
+					return 0.0f;
+				}
+
+				//the point is after the line end
+				if (t >= 1.0f)
+				{
+					return 1.0f;
+				}
+			}
+
+			return t;
+		}
+
+		bool point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p)
+		{
+			vec3f cp1, cp2;
+
+			//edge 1
+			cp1 = cross(v2 - v1, v3 - v1);
+			cp2 = cross(v2 - v1, p - v1);
+			if (dot(cp1, cp2) < 0)
+				return false;
+
+			//edge 2
+			cp1 = cross(v3 - v1, v2 - v1);
+			cp2 = cross(v3 - v1, p - v1);
+			if (dot(cp1, cp2) < 0)
+				return false;
+
+			//edge 3
+			cp1 = cross(v3 - v2, v1 - v2);
+			cp2 = cross(v3 - v2, p - v2);
+			if (dot(cp1, cp2) < 0)
+				return false;
+
+			return true;
+		}
+
+		vec3f closest_point_on_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p, f32& side)
+		{
+			vec3f n = maths::normalise(maths::cross(v3 - v1, v2 - v1));
+
+			f32 d = maths::point_vs_plane(p, v1, n);
+
+			side = d <= 0.0f ? -1.0f : 1.0f;
+
+			vec3f cp = p - n * d;
+
+			if (put::maths::point_inside_triangle(v1, v2, v3, cp))
+				return cp;
+
+			vec3f cl[] =
+			{
+				maths::closest_point_on_line(v1, v2, cp),
+				maths::closest_point_on_line(v2, v3, cp),
+				maths::closest_point_on_line(v1, v3, cp)
+			};
+
+			f32 ld = maths::distance(p, cl[0]);
+			cp = cl[0];
+
+			for (int l = 1; l < 3; ++l)
+			{
+				f32 ldd = maths::distance(p, cl[l]);
+
+				if (ldd < ld)
+				{
+					cp = cl[l];
+					ld = ldd;
+				}
+			}
+
+			return cp;
+		}
+
+		vec3f get_normal(vec3f v1, vec3f v2, vec3f v3)
+		{
+			vec3f vA = v3 - v1;
+			vec3f vB = v2 - v1;
+
+			vec3f normal = cross(vA, vB);
+
+			//negate for left handedness
+			normal = normalise(normal) * -1.0f;
+
+			return normal;
+		}
+	}
 }
 
 #if 0

@@ -5,6 +5,9 @@
 
 namespace pen
 {
+	// Simple C-Style generic audio API wrapper
+	// Currently implementation is in fmod.
+
     enum audio_play_state : s32
     {
         NOT_PLAYING = 0,
@@ -51,23 +54,28 @@ namespace pen
         s32 num_channels;
         f32 *spectrum[32];
     };
-    
-    //threading
-    PEN_THREAD_RETURN	audio_thread_function( void* params );
-    void                audio_consume_command_buffer();
-         
-    //creation
+
+    // Threading
+	// Dedicated thread will wait on a semaphore until audio_consume_command_buffer is called
+	// command buffer will be consumed passing arguments to the direct:: functions.
+
+    PEN_TRV	audio_thread_function( void* params );
+    void	audio_consume_command_buffer();
+     
+	// Public API used by the user thread will store function call arguments in a command buffer
+
+    // Creation
     u32		audio_create_stream( const c8* filename );
     u32		audio_create_sound( const c8* filename );
     u32	    audio_create_channel_for_sound( const u32 sound_index );
     u32		audio_create_channel_group( );
     void    audio_release_resource( u32 index );
 
-    //binding
+    // Binding
     void	audio_add_channel_to_group( const u32 channel_index, const u32 group_index );
     u32     audio_add_dsp_to_group( const u32 group_index, dsp_type type );
 
-    //manipulation
+    // Manipulation
     void	audio_channel_set_position( const u32 channel_index, const u32 position_ms );
     void	audio_channel_set_frequency( const u32 channel_index, const f32 frequency );
     void	audio_channel_stop( const u32 channel_index );
@@ -80,7 +88,7 @@ namespace pen
     void    audio_dsp_set_three_band_eq( const u32 eq_index, const f32 low, const f32 med, const f32 high );
     void    audio_dsp_set_gain( const u32 dsp_index, const f32 gain );
     
-    //accessors
+    // Accessors
     pen_error   audio_channel_get_state( const u32 channel_index, audio_channel_state* state );
     pen_error   audio_channel_get_sound_file_info( const u32 sound_index, audio_sound_file_info* info );
     pen_error   audio_group_get_state( const u32 group_index, audio_group_state* state );
@@ -90,23 +98,25 @@ namespace pen
 
     namespace direct
     {
-        //system
+		// The audio platform will implement these functions and execute them on a dedicated thread
+
+        // System
         void	audio_system_initialise();
         void	audio_system_shutdown();
         void	audio_system_update();
 
-        //creation
+        // Creation
         u32		audio_create_stream( const c8* filename, u32 resource_slot );
         u32		audio_create_sound( const c8* filename, u32 resource_slot );
         u32     audio_create_channel_for_sound( u32 sound_index, u32 resource_slot );
         u32     audio_create_channel_group( u32 resource_slot);
         u32     audio_release_resource( u32 index );
         
-        //binding
+        // Binding
         void    audio_add_channel_to_group( const u32 channel_index, const u32 group_index );
         u32     audio_add_dsp_to_group( const u32 group_index, dsp_type type, u32 resource_slot );
         
-        //manipulation
+        // Manipulation
         void	audio_channel_set_position( const u32 channel_index, const u32 position_ms );
         void	audio_channel_set_frequency( const u32 channel_index, const f32 frequency );
         void	audio_channel_stop( const u32 channel_index );

@@ -174,7 +174,7 @@ namespace physics
         pen::threads_semaphore_wait( p_physics_job_thread_info->p_sem_continue );
     }
     
-    PEN_THREAD_RETURN physics_thread_main( void* params )
+    PEN_TRV physics_thread_main( void* params )
     {
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
         pen::job_thread* p_thread_info = job_params->job_thread_info;
@@ -222,7 +222,7 @@ namespace physics
         pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_continue, 1 );
         pen::threads_semaphore_signal( p_physics_job_thread_info->p_sem_terminated, 1 );
         
-        return PEN_THREAD_OK;
+        return PEN_OK;
     }
 
 	void set_v3( const u32 &entity_index, const vec3f &v3, u32 cmd )

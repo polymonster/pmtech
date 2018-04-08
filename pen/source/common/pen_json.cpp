@@ -3,6 +3,7 @@
 #include "pen_string.h"
 #include "memory.h"
 #include "../third_party/jsmn/jsmn.c"
+#include "console.h"
 
 namespace pen
 {

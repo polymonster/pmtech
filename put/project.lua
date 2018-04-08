@@ -16,7 +16,8 @@ project "put"
 	}
 	
 	includedirs
-	{ 
+	{
+		"..\\pen\\include\\",
 		"..\\pen\\include\\common", 
 		"..\\pen\\include\\" .. platform_dir,
 		"..\\pen\\include\\" .. renderer_dir,
@@ -33,7 +34,8 @@ project "put"
 					
 	files 
 	{ 
-		"include\\**.h", "source\\**.cpp", 
+		"include\\**.h", 
+		"source\\**.cpp", 
 		
 		"..\\pen\\third_party\\imgui\\*.cpp",
 		"..\\pen\\third_party\\imgui\\*.h",

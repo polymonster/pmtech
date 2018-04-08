@@ -2,6 +2,8 @@
 #include "libs/skinning.slib"
 #include "libs/globals.slib"
 
+// Structs -----------------------------------------------------------------------------------------------------------
+
 struct vs_output
 {
 	float4 position		: SV_POSITION;
@@ -64,6 +66,8 @@ struct ps_output_multi
 	float4 normal : SV_Target1;
 };
 
+// Textures ----------------------------------------------------------------------------------------------------------------
+
 declare_texture_samplers
 {
 	texture_2d( diffuse_texture, 0 );
@@ -73,6 +77,8 @@ declare_texture_samplers
 	texture_cube( cubemap_texture, 3 );
 	texture_3d( volume_texture, 4 );
 };
+
+// Vertex Shaders -----------------------------------------------------------------------------------------------------------
 
 vs_output vs_main_skinned( vs_input_skinned input )
 {
@@ -158,6 +164,26 @@ vs_output_picking vs_picking_instanced( vs_input input, vs_instance_input instan
 				
     return output;
 }
+
+vs_output vs_main_volume_texture( vs_input input )
+{
+	vs_output output;
+	
+	float4x4 wvp = mul( world_matrix, vp_matrix );
+
+	output.position = mul( input.position, wvp );
+	output.world_pos = mul( input.position, world_matrix );
+		
+	output.normal = input.normal.xyz;
+	output.tangent = input.tangent.xyz;
+	output.bitangent = input.bitangent.xyz;
+	
+	output.texcoord = input.position;
+		
+    return output;
+}
+
+// Pixel Shaders -----------------------------------------------------------------------------------------------------------
 
 ps_output_picking ps_picking( vs_output_picking input ) 
 {	
@@ -276,26 +302,25 @@ ps_output ps_volume_sdf( vs_output input )
 	
 	d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
 	
+	float3 col = float3( 1.0, 0.0, 1.0 );
+	
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
-		d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r * 2.0 - 1.0;
-
-		uvw += ray_dir.xyz * d * 0.5;
+		d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
 		
-		if( d <= 0.0 )
+		uvw += ray_dir.xyz * abs(d) * 0.5;
+		
+		if( d <= 0.01 )
 			break;
 		
 		if(uvw.x >= 1.0 || uvw.x < 0.0)
 			discard;
-			
+		
 		if(uvw.y >= 1.0 || uvw.y < 0.0)
 			discard;
-			
+		
 		if(uvw.z >= 1.0 || uvw.z < 0.0)
 			discard;
-		
-		//if( s == max_samples-1)
-			//discard;
 	}
 
 	output.colour.rgba = float4( d, d, d, 1.0);
@@ -303,22 +328,133 @@ ps_output ps_volume_sdf( vs_output input )
 	return output;
 }
 
-vs_output vs_main_volume_texture( vs_input input )
+bool ray_vs_aabb(	float3 emin, float3 emax, 
+					float3 r1, float3 rv, out float3 intersection)
 {
-	vs_output output;
-	
-	float4x4 wvp = mul( world_matrix, vp_matrix );
+	float3 dirfrac = float3(1.0, 1.0, 1.0) / rv;
 
-	output.position = mul( input.position, wvp );
-	output.world_pos = mul( input.position, world_matrix );
-		
-	output.normal = input.normal.xyz;
-	output.tangent = input.tangent.xyz;
-	output.bitangent = input.bitangent.xyz;
+	float t1 = (emin.x - r1.x)*dirfrac.x;
+	float t2 = (emax.x - r1.x)*dirfrac.x;
+	float t3 = (emin.y - r1.y)*dirfrac.y;
+	float t4 = (emax.y - r1.y)*dirfrac.y;
+	float t5 = (emin.z - r1.z)*dirfrac.z;
+	float t6 = (emax.z - r1.z)*dirfrac.z;
+
+	float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+	float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+	float t = 0.0f;
+
+	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (tmax < 0)
+	{
+		t = tmax;
+		return false;
+	}
+
+	// if tmin > tmax, ray doesn't intersect AABB
+	if (tmin > tmax)
+	{
+		t = tmax;
+		return false;
+	}
+
+	t = tmin;
+
+	intersection = r1 + rv * t;
+
+	return true;
+}
+ps_output ps_shadow_sdf( vs_output input ) 
+{
+	ps_output output;
 	
-	output.texcoord = input.position;
+	output.colour = float4(0.0, 0.0, 0.0, 1.0);
+	
+	float3 albedo = float3( 1.0, 1.0, 1.0 );
+	
+	float max_samples = 64.0;
+	
+	float3 v = input.texcoord.xyz;
+	float3 chebyshev_norm = chebyshev_normalize(v);
+	
+	float3 light_pos = lights[0].pos_radius.xyz;
+	
+	float3 rv = normalize(light_pos);
+	float3 r1 = input.world_pos.xyz;
+	
+	float3 emin = float3(-1.0, -1.0, -1.0);
+	float3 emax = float3(1.0, 1.0, 1.0);
+	
+	float4x4 inv_rot = sdf_shadow.world_matrix_inv;
+	inv_rot[0].w = 0.0;
+	inv_rot[1].w = 0.0;
+	inv_rot[2].w = 0.0;
+	inv_rot[3].xyzw = float4(0.0, 0.0, 0.0, 1.0 );
+	
+	//transform into obb
+	float3 trv = mul( float4(rv, 1.0), inv_rot ).xyz;
+	float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
+	
+	float3 ip;
+	bool hit = ray_vs_aabb( emin, emax, tr1, normalize(trv), ip);
+	
+	float length_to_box = length( tr1 - ip ) / 5.0;
+	
+	float3 uvw = ip * 0.5 + 0.5;
+	float3 vddx = ddx( uvw );
+	float3 vddy = ddy( uvw );
 		
-    return output;
+	for( int i = 0; i < light_info.x; ++i )
+	{
+		float3 light_col = float3( 0.0, 0.0, 0.0 );
+					
+		light_col += lambert(lights[i].pos_radius,
+							 lights[i].colour.rgb,
+							 input.normal.xyz,
+							 input.world_pos.xyz,
+							 albedo.rgb);
+		
+		output.colour.rgb += light_col; 	
+		
+		float4 ray_dir = float4( normalize(lights[i].pos_radius.xyz - input.world_pos.xyz), 1.0 );
+							 
+		ray_dir = mul( ray_dir, inv_rot );
+		ray_dir.xyz = normalize(ray_dir.xyz);		
+		
+		float shad = 1.0;
+		float closest = 1.0;
+
+		for( int s = 0; s < int(max_samples); ++s )
+		{		
+			float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
+					
+			uvw += ray_dir.xyz * abs(d) * 0.7;
+			
+			closest = min(d, closest);
+		
+			if( d <= 0.0 )
+			{			
+				closest = 0;
+				shad = max( d, 0.0 );
+				break;
+			}
+
+			if(uvw.x >= 1.0 || uvw.x < 0.0)
+				break;
+		
+			if(uvw.y >= 1.0 || uvw.y < 0.0)
+				break;
+		
+			if(uvw.z >= 1.0 || uvw.z < 0.0)
+				break;
+		}
+		
+		if( hit )
+			output.colour *= smoothstep( 0.0, 0.02, closest);
+	}
+				
+	return output;
 }
 
 pmfx:
@@ -351,6 +487,12 @@ pmfx:
 	{
 		"vs": "vs_main_volume_texture",
 		"ps": "ps_volume_sdf"
+	},
+	
+	"shadow_sdf":
+	{
+		"vs": "vs_main_volume_texture",
+		"ps": "ps_shadow_sdf"
 	},
 	
 	"picking":

@@ -9,6 +9,8 @@
 #include "ces/ces_scene.h"
 #include "ces/ces_resources.h"
 
+#include "console.h"
+
 extern pen::window_creation_params pen_window;
 
 namespace put
@@ -455,7 +457,7 @@ namespace put
                 }
 
                 scp.min_lod = state["min_lod"].as_f32( 0.0f );
-                scp.max_lod = state["max_lod"].as_f32( PEN_F32_MAX );
+                scp.max_lod = state["max_lod"].as_f32( FLT_MAX );
                 
                 hash_id hh = PEN_HASH(scp);
                 
@@ -1304,7 +1306,7 @@ namespace put
 			{
 				//failed load file
 				pen::memory_free(config_data);
-				PEN_ASSERT(0);
+				PEN_ERROR;
 			}
 
 			create_geometry_utilities();

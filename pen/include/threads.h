@@ -3,14 +3,28 @@
 
 #include "pen.h"
 
+#if _WIN32
+#include <windows.h>
+#define PEN_THREAD_ROUTINE( FP ) LPTHREAD_START_ROUTINE FP
+#else
+#define PEN_THREAD_ROUTINE( FP ) PEN_TRV (*FP)(void* data)
+#endif
+
 namespace pen
 {
+	// Minimalist C-Style thread wrapper API 
+	// Includes functions to create jobs, threads, mutex and semaphore
+	// Implementations currently in posix and win32
+
 	struct thread;
 	struct mutex;
 	struct semaphore;
 
 	typedef void(*completion_callback)(void*);
     
+	// A Job is just a thread with some data, a callback
+	// and some syncronisation semaphores
+
     struct job_thread
     {
         thread* p_thread = nullptr;

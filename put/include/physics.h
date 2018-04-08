@@ -9,7 +9,7 @@ namespace physics
 {
 #define MAX_TRIGGER_CONTACTS	8	
 
-	PEN_THREAD_RETURN physics_thread_main( void* params );
+	PEN_TRV physics_thread_main( void* params );
 
     enum e_physics_cmd : s32
 	{

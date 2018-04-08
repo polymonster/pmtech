@@ -13,6 +13,8 @@
 #include "str_utilities.h"
 #include "physics.h"
 
+#include "data_struct.h"
+
 namespace put
 {
     namespace dev_ui
@@ -605,7 +607,7 @@ namespace put
 
 				//sort source points 
 				vec2f min = vec2f::flt_max();
-				vec2f max = vec2f::flt_min();
+				vec2f max = -vec2f::flt_max();
 				for (s32 i = 0; i < 4; ++i)
 				{
 					min = vec2f::vmin(source_points[i], min);
@@ -1822,7 +1824,7 @@ namespace put
                 if (k_transform_mode == TRANSFORM_TRANSLATE)
                     t.translation += move_axis;
                 if (k_transform_mode == TRANSFORM_SCALE)
-                    t.scale += move_axis * 0.1;
+                    t.scale += move_axis * 0.1f;
                 if (k_transform_mode == TRANSFORM_ROTATE)
                 {
                     quat q;
@@ -1942,7 +1944,7 @@ namespace put
             
             vec3f pos = vec3f::zero();
 			vec3f min = vec3f::flt_max();
-			vec3f max = vec3f::flt_min();
+			vec3f max = -vec3f::flt_max();
 
             u32 sel_num = sb_count(k_selection_list);
             for( u32 i = 0; i < sel_num; ++i )
@@ -2007,7 +2009,7 @@ namespace put
                             selected[i] = true;
                     }
                     
-                    vec3f col = plane_normals[i] * 0.7;
+                    vec3f col = plane_normals[i] * 0.7f;
                     if( selected[i] )
                     {
                         _cp = cp;
@@ -2090,7 +2092,7 @@ namespace put
 
 					ppj[j_index + 1] = put::maths::project
                     (
-                        pos + unit_axis[next_index] * d * 0.3,
+                        pos + unit_axis[next_index] * d * 0.3f,
                         view.camera->view,
                         view.camera->proj,
                         vpi
@@ -2141,9 +2143,9 @@ namespace put
 					if (k_transform_mode == TRANSFORM_TRANSLATE)
 					{
 						vec2f v = put::maths::normalise(pp[i].xy() - pp[0].xy());
-						vec2f perp = put::maths::perp_lh(v) * 5.0;
+						vec2f perp = put::maths::perp_lh(v) * 5.0f;
 
-						vec2f base = pp[i].xy() - v * 5.0;
+						vec2f base = pp[i].xy() - v * 5.0f;
 
 						put::dbg::add_line_2f(pp[i].xy(), base + perp, col);
 						put::dbg::add_line_2f(pp[i].xy(), base - perp, col);
@@ -2447,7 +2449,7 @@ namespace put
             if( scene->view_flags & DD_GRID )
             {
 				f32 divisions = k_model_view_controller.grid_size / k_model_view_controller.grid_cell_size;
-                put::dbg::add_grid(vec3f::zero(), vec3f(k_model_view_controller.grid_size), divisions);
+                put::dbg::add_grid(vec3f::zero(), vec3f(k_model_view_controller.grid_size), vec3f(divisions));
             }
 
             put::dbg::render_3d(view.cb_view);

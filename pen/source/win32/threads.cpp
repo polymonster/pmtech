@@ -1,6 +1,5 @@
 #include "threads.h"
 #include "memory.h"
-#include <windows.h>
 
 namespace pen
 {

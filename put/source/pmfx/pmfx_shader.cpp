@@ -1,16 +1,20 @@
 #include <vector>
 
-#include "pen.h"
 #include "pmfx.h"
+#include "str_utilities.h"
+#include "str/Str.h"
+#include "dev_ui.h"
+#include "ces/ces_resources.h"
+
+#include "hash.h"
+#include "pen_json.h"
+#include "pen.h"
 #include "memory.h"
 #include "file_system.h"
 #include "renderer.h"
 #include "pen_string.h"
-#include "pen_json.h"
-#include "str_utilities.h"
-#include "str/Str.h"
-#include "hash.h"
-#include "dev_ui.h"
+#include "data_struct.h"
+#include "console.h"
 
 namespace put
 {
@@ -522,7 +526,7 @@ namespace put
 
 					put::str_replace_chars(pmtech_dir, '/', PEN_DIR);
 
-					shader_compiler_str.append(PEN_SHADER_COMPILE_PRE_CMD);
+					shader_compiler_str.append(PEN_PYTHON3);
 					shader_compiler_str.append(pmtech_dir.c_str());
 					shader_compiler_str.append(PEN_SHADER_COMPILE_CMD);
 
@@ -569,6 +573,8 @@ namespace put
                         
                         //no longer invalidated
                         pmfx_set.invalidated = false;
+
+						ces::bake_material_handles();
                     }
                 }
                 else

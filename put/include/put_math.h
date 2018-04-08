@@ -42,6 +42,7 @@ namespace put
 		//generic
 		f32     absolute(f32 value);
 		f32     absolute_smallest_of(f32 value_1, f32 value_2);
+		f32		sign(f32 value);
 
 		//angles
 		f32     deg_to_rad(f32 degree_angle);
@@ -84,6 +85,12 @@ namespace put
 		//traingles
 		vec3f   get_normal(vec3f v1, vec3f v2, vec3f v3);
 		bool    point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
+		vec3f	closest_point_on_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p, f32& side );
+
+		//aabb
+		bool	point_inside_aabb(vec3f min, vec3f max, vec3f p);
+		bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& intersection);
+		bool	ray_vs_obb(const vec3f& min, const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection);
 
 		//inline functions---------------------------------------------------------------------------------------------------
 
@@ -102,6 +109,11 @@ namespace put
 			if (value < 0.0f) value *= -1;
 
 			return value;
+		}
+
+		inline f32 sign(f32 value)
+		{
+			return value < 0.0f ? -1.0f : 0.0f;
 		}
 
 		inline f32 absolute_smallest_of(f32 value_1, f32 value_2)
@@ -201,8 +213,7 @@ namespace put
 
 		inline vec3f ray_vs_plane(vec3f vray, vec3f pray, vec3f nplane, vec3f pplane)
 		{
-			vec3f v = vray;
-			v.normalise();
+			vec3f v = normalise(vray);
 
 			vec3f p = pray;
 			vec3f n = nplane;
@@ -270,6 +281,70 @@ namespace put
         {
             return v1.x * v2.x + v1.y * v2.y;
         }
+
+		inline bool point_inside_aabb(vec3f min, vec3f max, vec3f p)
+		{
+			if (p.x < min.x || p.x > max.x )
+				return false;
+
+			if (p.y < min.y || p.y > max.y)
+				return false;
+
+			if (p.z < min.z || p.z > max.z)
+				return false;
+
+			return true;
+		}
+
+		inline bool ray_vs_aabb(const vec3f& emin, const vec3f& emax, const vec3f& r1, const vec3f& rv, vec3f& intersection)
+		{
+			vec3f dirfrac = vec3f(1.0f) / rv;
+
+			f32 t1 = (emin.x - r1.x)*dirfrac.x;
+			f32 t2 = (emax.x - r1.x)*dirfrac.x;
+			f32 t3 = (emin.y - r1.y)*dirfrac.y;
+			f32 t4 = (emax.y - r1.y)*dirfrac.y;
+			f32 t5 = (emin.z - r1.z)*dirfrac.z;
+			f32 t6 = (emax.z - r1.z)*dirfrac.z;
+
+			f32 tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+			f32 tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+			f32 t = 0.0f;
+
+			// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+			if (tmax < 0)
+			{
+				t = tmax;
+				return false;
+			}
+
+			// if tmin > tmax, ray doesn't intersect AABB
+			if (tmin > tmax)
+			{
+				t = tmax;
+				return false;
+			}
+
+			t = tmin;
+
+			intersection = r1 + rv * t;
+
+			return true;
+		}
+
+		inline bool ray_vs_obb(const vec3f& min, const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection)
+		{
+			mat4 invm = mat;
+			invm = invm.inverse4x4();
+
+			vec3f tr1 = invm.transform_vector(r1);
+
+			invm.set_translation(vec3f::zero());
+			vec3f trv = invm.transform_vector(rv);
+
+			return ray_vs_aabb(min, max, tr1, maths::normalise(trv), intersection);
+		}
 	}
 };
 
