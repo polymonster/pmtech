@@ -43,6 +43,8 @@ typedef std::atomic<uint64_t>	a_u64;
 #define PEN_TRV void*
 #endif
 
+#define PEN_THREAD_OK 0
+
 // Use min max and swap everywhere and undef windows 
 
 #ifdef WIN32
@@ -74,7 +76,6 @@ inline bool is_invalid(u32 handle)
 
 enum pen_error
 {
-	PEN_OK = 0,
 	PEN_ERR_OK = 0,
 	PEN_ERR_FILE_NOT_FOUND = 1,
 	PEN_ERR_NOT_READY = 2,

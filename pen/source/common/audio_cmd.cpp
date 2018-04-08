@@ -186,7 +186,7 @@ namespace pen
         pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_continue, 1 );
         pen::threads_semaphore_signal( p_audio_job_thread_info->p_sem_terminated, 1 );
 
-		return PEN_OK;
+		return PEN_THREAD_OK;
     }
 
     void    create_file_command( const c8* filename, u32 command, u32 resource_slot )

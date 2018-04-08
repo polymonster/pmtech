@@ -649,7 +649,7 @@ namespace pen
 		
 		renderer_wait_for_jobs();
 
-		return PEN_OK;
+		return PEN_THREAD_OK;
 	}
 
 
