@@ -61,7 +61,13 @@ namespace put
         
 		void resize_scene_buffers(entity_scene* scene, s32 size)
 		{
+            soa tester;
+            
+            u32 ss = tester.entities.size;
+            
 			scene->nodes_size += size;
+            
+            s32 nn = tester.num;
 			
 			ALLOC_COMPONENT_ARRAY(scene, entities, a_u64);
             ALLOC_COMPONENT_ARRAY(scene, state_flags, a_u64 );

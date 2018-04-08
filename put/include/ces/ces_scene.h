@@ -256,6 +256,33 @@ namespace put
             free_node_list* next;
             free_node_list* prev;
         };
+        
+        template<typename T>
+        struct array
+        {
+            u32 size = sizeof(T);
+            T* data;
+        };
+        
+        struct generic_array
+        {
+            u32 size;
+            void* data;
+        };
+        
+        struct soa
+        {
+            soa()
+            {
+                num = sizeof(soa)/sizeof(generic_array);
+            };
+            
+            array<a_u64>    entities;
+            array<hash_id>  hash;
+            array<mat4>     mat;
+            
+            u32             num;
+        };
 
 		struct entity_scene
 		{
@@ -301,7 +328,7 @@ namespace put
 			u32						flags;
             
             extents                 renderable_extents;
-
+            
 #ifdef CES_DEBUG
             Str*                    names;
 			Str*					geometry_names;
