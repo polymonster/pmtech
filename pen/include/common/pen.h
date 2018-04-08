@@ -84,6 +84,8 @@ typedef std::atomic<uint64_t>	a_u64;
 
 #define PEN_ARRAY_SIZE( A ) (sizeof(A)/sizeof(A[0]))
 
+#define pen_countof( A ) (sizeof(A)/sizeof(A[0]))
+
 //--------------------------------------------------------------------------------------
 // Print / Assert
 //--------------------------------------------------------------------------------------
@@ -104,10 +106,10 @@ inline void output_debug( const c8* format, ... )
     printf( "%s\n", buf );
 #endif
 }
-#define PEN_PRINTF                output_debug
-#define PEN_ASSERT                assert
-#define PEN_ASSERT_MSG(A,M)        assert(A); output_debug(M)
-#define PEN_ERR                    assert( 0 )
+#define PEN_PRINTF                  output_debug
+#define PEN_ASSERT                  assert
+#define PEN_ASSERT_MSG(A,M)         assert(A); output_debug(M)
+#define PEN_ERR                     assert( 0 )
 
 //--------------------------------------------------------------------------------------
 // Multithreaded Resource allocations
