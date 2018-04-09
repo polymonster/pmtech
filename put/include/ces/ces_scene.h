@@ -274,14 +274,14 @@ namespace put
         {
             soa()
             {
-                num = sizeof(soa)/sizeof(generic_array);
+                num_components = sizeof(soa)/sizeof(generic_array);
             };
             
             array<a_u64>    entities;
             array<hash_id>  hash;
             array<mat4>     mat;
             
-            u32             num;
+            u32             num_components;
         };
 
 		struct entity_scene
@@ -348,22 +348,58 @@ namespace put
 
 		struct vertex_model
 		{
-			f32 x, y, z, w;
-			f32 nx, ny, nz, nw;
-			f32 u, v, _u, _v;
-			f32 tx, ty, tz, tw;
-			f32 bx, by, bz, bw;
+            union
+            {
+                struct
+                {
+                    f32 x, y, z, w;
+                    f32 nx, ny, nz, nw;
+                    f32 u, v, _u, _v;
+                    f32 tx, ty, tz, tw;
+                    f32 bx, by, bz, bw;
+                };
+                
+                struct
+                {
+                    vec4f pos;
+                    vec4f normal;
+                    vec4f uv12;
+                    vec4f tangent;
+                    vec4f bitangent;
+                };
+            };
+            
+            vertex_model() { };
 		};
 
 		struct vertex_model_skinned
 		{
-			f32 x, y, z, w;
-			f32 nx, ny, nz, nw;
-			f32 u, v, _u, _v;
-			f32 tx, ty, tz, tw;
-			f32 bx, by, bz, bw;
-			u32 i1, i2, i3, i4;
-			f32 w1, w2, w3, w4;
+            union
+            {
+                struct
+                {
+                    f32 x, y, z, w;
+                    f32 nx, ny, nz, nw;
+                    f32 u, v, _u, _v;
+                    f32 tx, ty, tz, tw;
+                    f32 bx, by, bz, bw;
+                    u32 i1, i2, i3, i4;
+                    f32 w1, w2, w3, w4;
+                };
+                
+                struct
+                {
+                    vec4f pos;
+                    vec4f normal;
+                    vec4f uv12;
+                    vec4f tangent;
+                    vec4f bitangent;
+                    vec4i blend_indices;
+                    vec4f blend_weights;
+                };
+            };
+            
+            vertex_model_skinned() { };
 		};
 
 		struct vertex_position

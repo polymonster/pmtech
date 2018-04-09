@@ -23,8 +23,8 @@ namespace put
             vec3f axis = vec3f::unit_y();
             vec3f right = vec3f::unit_x();
 
-            vec3f up = maths::cross( axis, right );
-            right = maths::cross( axis, up );
+            vec3f up = cross( axis, right );
+            right = cross( axis, up );
 
             vec3f points[segments];
             vec3f tangents[segments];
@@ -60,51 +60,19 @@ namespace put
             for (s32 i = 0; i < segments; ++i)
             {
                 s32 vi = i;
-
-                v[vi].x = bottom_points[i].x;
-                v[vi].y = bottom_points[i].y;
-                v[vi].z = bottom_points[i].z;
-                v[vi].w = 1.0f;
-
-                v[vi].nx = 0.0f;
-                v[vi].ny = -1.0f;
-                v[vi].nz = 0.0f;
-                v[vi].nw = 1.0f;
-
-                v[vi].tx = 1.0f;
-                v[vi].ty = 0.0f;
-                v[vi].tz = 0.0f;
-                v[vi].tw = 1.0f;
-
-                v[vi].bx = 0.0f;
-                v[vi].by = 0.0f;
-                v[vi].bz = 1.0f;
-                v[vi].bw = 1.0f;
+                v[vi].pos = vec4f(bottom_points[i], 1.0f);
+                v[vi].normal = vec4f( 0.0f, -1.0f, 0.0f, 1.0f);
+                v[vi].tangent = vec4f( 1.0f, 0.0f, 0.0f, 1.0f);
+                v[vi].bitangent = vec4f( 0.0f, 0.0f, 1.0f, 1.0f);
             }
 
-            s32 bm = segments;
-
             //bottom middle
-            v[bm].x = 0.0f;
-            v[bm].y = -0.5f;
-            v[bm].z = 0.0f;
-            v[bm].w = 1.0f;
-
-            v[bm].nx = 0.0f;
-            v[bm].ny = -1.0f;
-            v[bm].nz = 0.0f;
-            v[bm].nw = 1.0f;
-
-            v[bm].tx = 1.0f;
-            v[bm].ty = 0.0f;
-            v[bm].tz = 0.0f;
-            v[bm].tw = 1.0f;
-
-            v[bm].bx = 0.0f;
-            v[bm].by = 0.0f;
-            v[bm].bz = 1.0f;
-            v[bm].bw = 1.0f;
-
+            s32 bm = segments;
+            v[bm].pos = vec4f(0.0f, -0.5f, 0.0f, 1.0f);
+            v[bm].normal = vec4f( 0.0f, -1.0f, 0.0f, 1.0f);
+            v[bm].tangent = vec4f( 1.0f, 0.0f, 0.0f, 1.0f);
+            v[bm].bitangent = vec4f( 0.0f, 0.0f, 1.0f, 1.0f);
+            
             //sides
             for (s32 i = 0; i < segments; ++i)
             {
@@ -119,23 +87,16 @@ namespace put
 
                 vec3f t = p3 - p1;
                 vec3f b = p2 - p1;
-                vec3f n = maths::cross( t, b );
-
-                v[vi].x = bottom_points[i].x;
-                v[vi].y = bottom_points[i].y;
-                v[vi].z = bottom_points[i].z;
-                v[vi].w = 1.0f;
-
-                v[vi + 1].x = top_point.x;
-                v[vi + 1].y = top_point.y;
-                v[vi + 1].z = top_point.z;
-                v[vi + 1].w = 1.0f;
+                vec3f n = cross( t, b );
+                
+                v[vi].pos = vec4f(bottom_points[i], 1.0f);
+                v[vi + 1].pos = vec4f(top_point, 1.0f);
 
                 for (s32 x = 0; x < 2; ++x)
                 {
-                    v[vi + x].nx = n.x; v[vi + x].ny = n.y; v[vi + x].nz = n.z;
-                    v[vi + x].tx = t.x; v[vi + x].ty = t.y; v[vi + x].tz = t.z;
-                    v[vi + x].bx = b.x; v[vi + x].by = b.y; v[vi + x].bz = b.z;
+                    v[vi].normal = vec4f( n, 1.0f);
+                    v[vi].tangent = vec4f( t, 1.0f);
+                    v[vi].bitangent = vec4f( b, 1.0f);
                 }
             }
 
@@ -243,8 +204,8 @@ namespace put
 
                     vec3f p_next = vec3f( xz.x, y + height_step, xz.z );
                     
-                    p = maths::normalise( p );
-                    p_next = maths::normalise( p_next );
+                    p = normalised( p );
+                    p_next = normalised( p_next );
                     
                     vec3f n = p;
                     
@@ -260,34 +221,16 @@ namespace put
                     }
                     
                     if( fabs(r - (segments / 2.0f)) < 2.0f )
-                    {
-                        n = put::maths::normalise(xz);
-                    }
-
-                    v[v_index].x = p.x;
-                    v[v_index].y = p.y;
-                    v[v_index].z = p.z;
-                    v[v_index].w = 1.0f;
-
-                    v[v_index].nx = n.x;
-                    v[v_index].ny = n.y;
-                    v[v_index].nz = n.z;
-                    v[v_index].nw = 1.0f;
-
-                    vec3f t = maths::normalise( p_next - p );
-
-                    v[v_index].tx = t.x;
-                    v[v_index].ty = t.y;
-                    v[v_index].tz = t.z;
-                    v[v_index].tw = 1.0f;
-
-                    vec3f bt = maths::cross( p, t );
-
-                    v[v_index].bx = bt.x;
-                    v[v_index].by = bt.y;
-                    v[v_index].bz = bt.z;
-                    v[v_index].bw = 1.0f;
-
+                        n = normalised(xz);
+                    
+                    vec3f t = normalised( p_next - p );
+                    vec3f bt = cross( p, t );
+                    
+                    v[v_index].pos = vec4f(p, 1.0f);
+                    v[v_index].normal = vec4f(n, 1.0f);
+                    v[v_index].tangent = vec4f(t, 1.0f);
+                    v[v_index].bitangent = vec4f(bt, 1.0f);
+                    
                     v_index++;
                 }
 
@@ -394,33 +337,16 @@ namespace put
                     xz = vec3f( x, 0.0f, z ) * radius;
 
                     vec3f p_next = vec3f( xz.x, y, xz.z );
-
-                    p = maths::normalise( p );
-                    p_next = maths::normalise( p_next );
-
-                    v[v_index].x = p.x;
-                    v[v_index].y = p.y;
-                    v[v_index].z = p.z;
-                    v[v_index].w = 1.0f;
-
-                    v[v_index].nx = p.x;
-                    v[v_index].ny = p.y;
-                    v[v_index].nz = p.z;
-                    v[v_index].nw = 1.0f;
-
+                    p_next = normalised( p_next );
+                    
+                    p = normalised( p );
                     vec3f t = p_next - p;
-
-                    v[v_index].tx = t.x;
-                    v[v_index].ty = t.y;
-                    v[v_index].tz = t.z;
-                    v[v_index].tw = 1.0f;
-
-                    vec3f bt = maths::cross( p, t );
-
-                    v[v_index].bx = bt.x;
-                    v[v_index].by = bt.y;
-                    v[v_index].bz = bt.z;
-                    v[v_index].bw = 1.0f;
+                    vec3f bt = cross( p, t );
+                    
+                    v[v_index].pos = vec4f(p, 1.0f);
+                    v[v_index].normal = vec4f(p, 1.0f);
+                    v[v_index].tangent = vec4f(t, 1.0f);
+                    v[v_index].bitangent = vec4f(bt, 1.0f);
 
                     v_index++;
                 }
@@ -561,31 +487,16 @@ namespace put
                 s32 offset = i * 4;
                 s32 index_offset = i * 6;
 
-                vec3f bt = maths::cross( face_normals[i], face_tangents[i] );
+                vec3f bt = cross( face_normals[i], face_tangents[i] );
 
                 for (s32 j = 0; j < 4; ++j)
                 {
                     s32 cc = c[offset + j];
-
-                    v[offset + j].x = corners[cc].x;
-                    v[offset + j].y = corners[cc].y;
-                    v[offset + j].z = corners[cc].z;
-                    v[offset + j].w = 1.0f;
-
-                    v[offset + j].nx = face_normals[i].x;
-                    v[offset + j].ny = face_normals[i].y;
-                    v[offset + j].nz = face_normals[i].z;
-                    v[offset + j].nw = 1.0f;
-
-                    v[offset + j].tx = face_tangents[i].x;
-                    v[offset + j].ty = face_tangents[i].y;
-                    v[offset + j].tz = face_tangents[i].z;
-                    v[offset + j].tw = 1.0f;
-
-                    v[offset + j].bx = bt.x;
-                    v[offset + j].by = bt.y;
-                    v[offset + j].bz = bt.z;
-                    v[offset + j].bw = 1.0f;
+                    
+                    v[offset + j].pos = vec4f(corners[cc], 1.0f);
+                    v[offset + j].normal = vec4f(face_normals[i], 1.0f);
+                    v[offset + j].tangent = vec4f(face_tangents[i], 1.0f);
+                    v[offset + j].bitangent = vec4f(bt, 1.0f);
                 }
 
                 indices[index_offset + 0] = offset + 0;
@@ -643,8 +554,8 @@ namespace put
             vec3f axis = vec3f::unit_y();
             vec3f right = vec3f::unit_x();
 
-            vec3f up = maths::cross( axis, right );
-            right = maths::cross( axis, up );
+            vec3f up = cross( axis, right );
+            right = cross( axis, up );
 
             static const s32 segments = 16;
 
@@ -683,55 +594,24 @@ namespace put
             //bottom ring
             for (s32 i = 0; i < segments; ++i)
             {
-                v[i].x = bottom_points[i].x;
-                v[i].y = bottom_points[i].y;
-                v[i].z = bottom_points[i].z;
-                v[i].w = 1.0f;
-
-                v[i].nx = points[i].x;
-                v[i].ny = points[i].y;
-                v[i].nz = points[i].z;
-                v[i].nw = 1.0f;
-
-                v[i].tx = tangents[i].x;
-                v[i].ty = tangents[i].y;
-                v[i].tz = tangents[i].z;
-                v[i].tw = 1.0f;
-
-                vec3f bt = maths::cross( tangents[i], points[i] );
-
-                v[i].bx = bt.x;
-                v[i].by = bt.y;
-                v[i].bz = bt.z;
-                v[i].bw = 1.0f;
+                vec3f bt = cross( tangents[i], points[i] );
+                
+                v[i].pos = vec4f(bottom_points[i], 1.0f);
+                v[i].normal = vec4f(points[i], 1.0f);
+                v[i].tangent = vec4f(tangents[i], 1.0f);
+                v[i].bitangent = vec4f(bt, 1.0f);
             }
 
             //top ring
             for (s32 i = 0; i < segments; ++i)
             {
                 s32 vi = i + segments;
-
-                v[vi].x = top_points[i].x;
-                v[vi].y = top_points[i].y;
-                v[vi].z = top_points[i].z;
-                v[vi].w = 1.0f;
-
-                v[vi].nx = points[i].x;
-                v[vi].ny = points[i].y;
-                v[vi].nz = points[i].z;
-                v[vi].nw = 1.0f;
-
-                v[vi].tx = tangents[i].x;
-                v[vi].ty = tangents[i].y;
-                v[vi].tz = tangents[i].z;
-                v[vi].tw = 1.0f;
-
-                vec3f bt = maths::cross( tangents[i], points[i] );
-
-                v[vi].bx = bt.x;
-                v[vi].by = bt.y;
-                v[vi].bz = bt.z;
-                v[vi].bw = 1.0f;
+                vec3f bt = cross( tangents[i], points[i] );
+                
+                v[vi].pos = vec4f(top_points[i], 1.0f);
+                v[vi].normal = vec4f(points[i], 1.0f);
+                v[vi].tangent = vec4f(tangents[i], 1.0f);
+                v[vi].bitangent = vec4f(bt, 1.0f);
             }
 
             //bottom face
@@ -739,25 +619,10 @@ namespace put
             {
                 s32 vi = (segments * 2) + i;
 
-                v[vi].x = bottom_points[i].x;
-                v[vi].y = bottom_points[i].y;
-                v[vi].z = bottom_points[i].z;
-                v[vi].w = 1.0f;
-
-                v[vi].nx = 0.0f;
-                v[vi].ny = -1.0f;
-                v[vi].nz = 0.0f;
-                v[vi].nw = 1.0f;
-
-                v[vi].tx = 1.0f;
-                v[vi].ty = 0.0f;
-                v[vi].tz = 0.0f;
-                v[vi].tw = 1.0f;
-
-                v[vi].bx = 0.0f;
-                v[vi].by = 0.0f;
-                v[vi].bz = 1.0f;
-                v[vi].bw = 1.0f;
+                v[vi].pos = vec4f(bottom_points[i], 1.0f);
+                v[vi].normal = vec4f(0.0f, -1.0f, 0.0f, 1.0f);
+                v[vi].tangent = vec4f(1.0f, 0.0f, 1.0f, 1.0f);
+                v[vi].bitangent = vec4f(0.0f, 0.0f, 1.0f, 1.0f);
             }
 
             //top face
@@ -765,47 +630,18 @@ namespace put
             {
                 s32 vi = (segments * 3) + i;
 
-                v[vi].x = top_points[i].x;
-                v[vi].y = top_points[i].y;
-                v[vi].z = top_points[i].z;
-                v[vi].w = 1.0f;
-
-                v[vi].nx = 0.0f;
-                v[vi].ny = 1.0f;
-                v[vi].nz = 0.0f;
-                v[vi].nw = 1.0f;
-
-                v[vi].tx = 1.0f;
-                v[vi].ty = 0.0f;
-                v[vi].tz = 0.0f;
-                v[vi].tw = 1.0f;
-
-                v[vi].bx = 0.0f;
-                v[vi].by = 0.0f;
-                v[vi].bz = 1.0f;
-                v[vi].bw = 1.0f;
+                v[vi].pos = vec4f(top_points[i], 1.0f);
+                v[vi].normal = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+                v[vi].tangent = vec4f(1.0f, 0.0f, 1.0f, 1.0f);
+                v[vi].bitangent = vec4f(0.0f, 0.0f, 1.0f, 1.0f);
             }
-
+            
             //centre points
-            v[64].x = 0.0f;
-            v[64].y = -1.0f;
-            v[64].z = 0.0f;
-            v[64].w = 1.0f;
-
-            v[64].nx = 0.0f;
-            v[64].ny = -1.0f;
-            v[64].nz = 0.0f;
-            v[64].nw = 1.0f;
-
-            v[65].x = 0.0f;
-            v[65].y = 1.0f;
-            v[65].z = 0.0f;
-            v[65].w = 1.0f;
-
-            v[65].nx = 0.0f;
-            v[65].ny = 1.0f;
-            v[65].nz = 0.0f;
-            v[65].nw = 1.0f;
+            v[64].pos = vec4f(0.0f, -1.0f, 0.0f, 1.0f);
+            v[64].normal = vec4f(0.0f, -1.0f, 0.0f, 1.0f);
+            
+            v[65].pos = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+            v[65].normal = vec4f(0.0f, 1.0f, 1.0f, 1.0f);
 
             //sides
             const u32 num_indices = segments * 6 + segments * 3 * 2;
