@@ -37,6 +37,21 @@ struct debug_ray
     vec3f direction;
 };
 
+struct debug_triangle
+{
+    u32 node;
+    vec3f t0;
+    vec3f t1;
+    vec3f t2;
+};
+
+struct debug_line
+{
+    u32 node;
+    vec3f l1;
+    vec3f l2;
+};
+
 struct debug_plane
 {
     u32   node;
@@ -76,7 +91,11 @@ vec3f random_vec_range( const debug_extents& extents )
     vec3f range = extents.max - extents.min;
     range *= 100.0f;
     
-    vec3f random = vec3f( rand()%(u32)range.x, rand()%(u32)range.y, rand()%(u32)range.z );
+    f32 rx = range.x == 0.0 ? 0.0 : rand()%(u32)range.x;
+    f32 ry = range.y == 0.0 ? 0.0 : rand()%(u32)range.y;
+    f32 rz = range.z == 0.0 ? 0.0 : rand()%(u32)range.z;
+    
+    vec3f random = vec3f( rx, ry, rz );
     random /= 100.0f;
 
     return extents.min + random;
@@ -121,6 +140,19 @@ void add_debug_ray( const debug_extents& extents, entity_scene* scene, debug_ray
     ray.origin = scene->transforms[node].translation;
 }
 
+//Spawn a random line which contains both points within extents
+void add_debug_line( const debug_extents& extents, entity_scene* scene, debug_line& line )
+{
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "line";
+    scene->transforms[node].translation = random_vec_range(extents);
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    line.l1 = random_vec_range(extents);
+    line.l2 = random_vec_range(extents);
+}
+
 //Spawn a random ray which contains point within extents
 void add_debug_aabb( const debug_extents& extents, entity_scene* scene, debug_aabb& aabb )
 {
@@ -161,6 +193,20 @@ void add_debug_sphere( const debug_extents& extents, entity_scene* scene, debug_
     sphere.pos = scene->transforms[node].translation;
     sphere.radius = size.x;
     sphere.node = node;
+}
+
+//Spawn a random ray which contains point within extents
+void add_debug_triangle( const debug_extents& extents, entity_scene* scene, debug_triangle& tri )
+{
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "triangle";
+    scene->transforms[node].translation = random_vec_range(extents);
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    tri.t0 = random_vec_range(extents);
+    tri.t1 = random_vec_range(extents);
+    tri.t2 = random_vec_range(extents);
 }
 
 void test_ray_plane_intersect(entity_scene* scene, bool initialise)
@@ -340,6 +386,73 @@ void test_point_inside_aabb(entity_scene* scene, bool initialise)
     dbg::add_point(point.point, 0.3f, col);
 }
 
+void test_point_line(entity_scene* scene, bool initialise)
+{
+    static debug_line line;
+    static debug_point point;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_line(e, scene, line);
+        add_debug_point(e, scene, point);
+    }
+    
+    vec3f cp = maths2::closest_point_on_line(line.l1, line.l2, point.point);
+    
+    f32 distance = maths2::point_segment_distance(point.point, line.l1, line.l2);
+    ImGui::Text("Distance %f", distance);
+    
+    dbg::add_line(line.l1, line.l2, vec4f::green());
+    
+    dbg::add_line(point.point, cp);
+    
+    dbg::add_point(point.point, 0.3f);
+    
+    dbg::add_point(cp, 0.3f, vec4f::red());
+}
+
+void test_point_triangle(entity_scene* scene, bool initialise)
+{
+    static debug_triangle tri;
+    static debug_point point;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, 0.0, -10.0),
+        vec3f(10.0, 0.0, 10.0)
+    };
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_triangle(e, scene, tri);
+        add_debug_point(e, scene, point);
+    }
+    
+    bool inside = maths2::point_inside_triangle(tri.t0, tri.t1, tri.t2, point.point);
+    
+    f32 distance = maths2::point_triangle_distance(point.point, tri.t0, tri.t1, tri.t2);
+    ImGui::Text("Distance %f", distance);
+    
+    vec4f col = inside ? vec4f::red() : vec4f::green();
+    
+    dbg::add_point(point.point, 0.3f, col);
+    dbg::add_triangle(tri.t0, tri.t1, tri.t2, col);
+}
+
 const c8* test_names[]
 {
 	"Point Plane Distance",
@@ -347,7 +460,9 @@ const c8* test_names[]
     "AABB Plane Classification",
     "Sphere Plane Classification",
     "Project",
-    "Point Inside AABB"
+    "Point Inside AABB",
+    "Closest Point on Line / Point Segment Distance",
+    "Point Inside Triangle / Point Triangle Distance"
 };
 
 typedef void(*maths_test_function)(entity_scene*, bool);
@@ -359,7 +474,9 @@ maths_test_function test_functions[] =
     test_aabb_vs_plane,
     test_sphere_vs_plane,
     test_project,
-    test_point_inside_aabb
+    test_point_inside_aabb,
+    test_point_line,
+    test_point_triangle
 };
 
 void maths_test_ui( entity_scene* scene )

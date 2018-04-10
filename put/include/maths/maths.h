@@ -35,7 +35,6 @@ namespace maths2
     vec3f   project_to_ndc(const vec3f& p, const mat4& view_projection);
     vec3f   project_to_sc(const vec3f& p, const mat4 view_projection, const vec2i& viewport);
     
-	vec3f   project(vec3f v, mat4 view, mat4 proj, vec2i viewport = vec2i(0, 0), bool normalise_coordinates = false);
 	vec3f   unproject(vec3f scrren_space_pos, mat4 view, mat4 proj, vec2i viewport);
 
 	// Plane
@@ -46,19 +45,21 @@ namespace maths2
     u32		sphere_vs_plane(const vec3f& s, f32 r, const vec3f& x0, const vec3f& xN);
 
 	// Line Segment
-	f32     distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
-	vec3f   closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
+    float   point_segment_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2);
+    float   point_triangle_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2, const vec3f &x3);
+    
+    vec3f   closest_point_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p);
+    vec3f   closest_point_on_ray(const vec3f& r0, const vec3f& rV, const vec3f& p); //
 
 	// Traingle
-	vec3f   get_normal(vec3f v1, vec3f v2, vec3f v3);
-	bool    point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
-	vec3f	closest_point_on_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p, f32& side);
+	vec3f   get_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3); //
+    bool    point_inside_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3);
+	vec3f	closest_point_on_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3, f32& side); //
 
 	// AABB
 	bool	point_inside_aabb(const vec3f& min, const vec3f& max, const vec3f& p0);
-	bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& intersection);
-	bool	ray_vs_obb(const vec3f& min,
-                       const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection);
+	bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& ip);
+	bool	ray_vs_obb(const vec3f& min,const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip);
 
 	// Inline functions ---------------------------------------------------------------------------------------------------
 
@@ -174,8 +175,94 @@ namespace maths2
 
 		return true;
 	}
+    
+    // Returns the closest point to p on the line segment l1 to l2
+    inline vec3f closest_point_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p)
+    {
+        vec3f v1 = p - l1;
+        vec3f v2 = normalised(l2 - l1);
+    
+        f32 d = dist(l1, l2);
+        f32 t = dot(v2, v1);
+        
+        if (t <= 0)
+            return l1;
+        
+        if (t >= d)
+            return l2;
+        
+        return l1 + v2 * t;
+    }
+    
+    // find distance x0 is from segment x1-x2
+    inline float point_segment_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2)
+    {
+        Vec3f dx(x2-x1);
+        double m2=mag2(dx);
+        // find parameter value of closest point on segment
+        float s12=(float)(dot(x2-x0, dx)/m2);
+        if(s12<0){
+            s12=0;
+        }else if(s12>1){
+            s12=1;
+        }
+        // and find the distance
+        return dist(x0, s12*x1+(1-s12)*x2);
+    }
+    
+    // find distance x0 is from triangle x1-x2-x3
+    inline float point_triangle_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2, const vec3f &x3)
+    {
+        // first find barycentric coordinates of closest point on infinite plane
+        vec3f x13(x1-x3), x23(x2-x3), x03(x0-x3);
+        float m13=mag2(x13), m23=mag2(x23), d=dot(x13,x23);
+        float invdet=1.f/max(m13*m23-d*d,1e-30f);
+        float a=dot(x13,x03), b=dot(x23,x03);
+        // the barycentric coordinates themselves
+        float w23=invdet*(m23*a-d*b);
+        float w31=invdet*(m13*b-d*a);
+        float w12=1-w23-w31;
+        if(w23>=0 && w31>=0 && w12>=0){ // if we're inside the triangle
+            return dist(x0, w23*x1+w31*x2+w12*x3);
+        }else{ // we have to clamp to one of the edges
+            if(w23>0) // this rules out edge 2-3 for us
+                return min(point_segment_distance(x0,x1,x2), point_segment_distance(x0,x1,x3));
+            else if(w31>0) // this rules out edge 1-3
+                return min(point_segment_distance(x0,x1,x2), point_segment_distance(x0,x2,x3));
+            else // w12 must be >0, ruling out edge 1-2
+                return min(point_segment_distance(x0,x1,x3), point_segment_distance(x0,x2,x3));
+        }
+    }
+    
+    // Returns true is p is inside the triangle v1, v2, v3
+    inline bool point_inside_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3)
+    {
+        vec3f cp1, cp2;
+        
+        //edge 1
+        cp1 = cross(v2 - v1, v3 - v1);
+        cp2 = cross(v2 - v1, p - v1);
+        if (dot(cp1, cp2) < 0)
+            return false;
+        
+        //edge 2
+        cp1 = cross(v3 - v1, v2 - v1);
+        cp2 = cross(v3 - v1, p - v1);
+        if (dot(cp1, cp2) < 0)
+            return false;
+        
+        //edge 3
+        cp1 = cross(v3 - v2, v1 - v2);
+        cp2 = cross(v3 - v2, p - v2);
+        if (dot(cp1, cp2) < 0)
+            return false;
+        
+        return true;
+    }
 
-	inline bool ray_vs_aabb(const vec3f& emin, const vec3f& emax, const vec3f& r1, const vec3f& rv, vec3f& intersection)
+    // Returns true is ray with origin r1 and direction rv intersects the aabb defined by emin and emax
+    // Intersection point is stored in ip
+	inline bool ray_vs_aabb(const vec3f& emin, const vec3f& emax, const vec3f& r1, const vec3f& rv, vec3f& ip)
 	{
 		vec3f dirfrac = vec3f(1.0f) / rv;
 
@@ -193,27 +280,20 @@ namespace maths2
 
 		// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
 		if (tmax < 0)
-		{
-			t = tmax;
 			return false;
-		}
 
 		// if tmin > tmax, ray doesn't intersect AABB
 		if (tmin > tmax)
-		{
-			t = tmax;
 			return false;
-		}
 
 		t = tmin;
-
-		intersection = r1 + rv * t;
-
+        ip = r1 + rv * t;
 		return true;
 	}
 
-	inline bool ray_vs_obb(const vec3f& min,
-                           const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection)
+    // Returns true if there is an intersection bewteen ray with origin r1 and direction rv
+    // intersects with obb defined by matrix mat
+	inline bool ray_vs_obb(const vec3f& min, const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip)
 	{
 		mat4 invm = mat;
 		invm = invm.inverse4x4();
@@ -223,7 +303,7 @@ namespace maths2
 		invm.set_translation(vec3f::zero());
 		vec3f trv = invm.transform_vector(rv);
 
-		return ray_vs_aabb(min, max, tr1, normalised(trv), intersection);
+		return ray_vs_aabb(min, max, tr1, normalised(trv), ip);
 	}
 }
 
