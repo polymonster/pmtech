@@ -763,7 +763,7 @@ namespace put
                 scene_node_material& mat = scene->materials[n];
                 scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
                 scene->draw_call_data[n].v1 = vec4f((f32)n, mat.diffuse_rgb_shininess.w, mat.specular_rgb_reflect.w, 0.0f);
-                scene->draw_call_data[n].v2 = vec4f( mat.diffuse_rgb_shininess.xyz(), 1.0f);
+                scene->draw_call_data[n].v2 = vec4f( mat.diffuse_rgb_shininess.xyz, 1.0f);
                     
                 if( !scene->cbuffer[n] )
                     continue;

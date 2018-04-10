@@ -7,7 +7,10 @@
 #include "quat.h"
 #include "matrix.h"
 
+#ifndef M_PI_2
 #define	M_PI_2			M_PI * 2.0
+#endif
+
 #define	M_PI_OVER_180	M_PI / 180.0
 #define M_180_OVER_PI	180.0 / M_PI
 
@@ -29,36 +32,37 @@ namespace maths2
 	vec3f   azimuth_altitude_to_xyz(f32 azimuth, f32 altitude);
 
 	// Projection
+    vec3f   project_to_ndc(const vec3f& p, const mat4& view_projection);
+    vec3f   project_to_sc(const vec3f& p, const mat4 view_projection, const vec2i& viewport);
+    
 	vec3f   project(vec3f v, mat4 view, mat4 proj, vec2i viewport = vec2i(0, 0), bool normalise_coordinates = false);
 	vec3f   unproject(vec3f scrren_space_pos, mat4 view, mat4 proj, vec2i viewport);
-	vec3f   unproject(vec3f screen_space_pos, mat4 view, mat4 proj, vec2i viewport);
 
-	// Planes
+	// Plane
 	f32     plane_distance(const vec3f& x0, const vec3f& xN);
 	f32		point_plane_distance(const vec3f& p0, const vec3f& x0, const vec3f& xN);
+	vec3f   ray_plane_intersect(const vec3f& r0, const vec3f& rV, const vec3f& x0, const vec3f& xN);
+    u32     aabb_vs_plane(const vec3f& aabb_min, const vec3f& aabb_max, const vec3f& x0, const vec3f& xN);
+    u32		sphere_vs_plane(const vec3f& s, f32 r, const vec3f& x0, const vec3f& xN);
 
-
-	vec3f   ray_plane_intersect(const vec3f r0, vec3f rV, vec3f x0, vec3f xN);
-
-	u32		aabb_vs_plane(vec3f aabb_min, vec3f aabb_max, vec3f nplane, vec3f pplane);
-	u32		sphere_vs_plane(vec3f sphere_cente, f32 radius, vec3f nplane, vec3f pplane);
-
-	// Lines
+	// Line Segment
 	f32     distance_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
 	vec3f   closest_point_on_line(vec3f l1, vec3f l2, vec3f p, bool clamp = true);
 
-	// Traingles
+	// Traingle
 	vec3f   get_normal(vec3f v1, vec3f v2, vec3f v3);
 	bool    point_inside_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p);
 	vec3f	closest_point_on_triangle(vec3f v1, vec3f v2, vec3f v3, vec3f p, f32& side);
 
-	// Aabb
-	bool	point_inside_aabb(vec3f min, vec3f max, vec3f p);
+	// AABB
+	bool	point_inside_aabb(const vec3f& min, const vec3f& max, const vec3f& p0);
 	bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& intersection);
-	bool	ray_vs_obb(const vec3f& min, const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection);
+	bool	ray_vs_obb(const vec3f& min,
+                       const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection);
 
 	// Inline functions ---------------------------------------------------------------------------------------------------
 
+    // Self explanitory rad to deg, deg to rad
 	inline f32 deg_to_rad(f32 degree_angle)
 	{
 		return(degree_angle * M_PI_OVER_180);
@@ -68,6 +72,23 @@ namespace maths2
 	{
 		return(radian_angle * M_180_OVER_PI);
 	}
+    
+    // Project point p by view_projection to normalised device coordinates, perfroming homogenous divide
+    inline vec3f project_to_ndc(const vec3f& p, const mat4& view_projection)
+    {
+        vec4f ndc = view_projection.transform_vector(vec4f(p, 1.0f));
+        ndc /= ndc.w;
+        return ndc.xyz;
+    }
+    
+    // Project point p to screen coordinates of viewport
+    inline vec3f project_to_sc(const vec3f& p, const mat4 view_projection, const vec2i& viewport)
+    {
+        vec3f ndc = project_to_ndc(p, view_projection);
+        vec3f sc = ndc * 0.5f + 0.5f;
+        sc.xy *= vec2f(viewport.x, viewport.y);
+        return sc;
+    }
 
 	// Convert azimuth / altitude to vec3f xyz
 	inline vec3f azimuth_altitude_to_xyz(f32 azimuth, f32 altitude)
@@ -95,27 +116,23 @@ namespace maths2
 
 	// Returns the intersection point of ray defined by origin r0 direction rV, 
 	// with plane defined by point on plane x0 normal of plane xN
-	inline vec3f ray_plane_intersect(const vec3f r0, vec3f rV, vec3f x0, vec3f xN)
+	inline vec3f ray_plane_intersect(const vec3f& r0, const vec3f& rV, const vec3f& x0, const vec3f& xN)
 	{
-		vec3f rVn = normalised(rV);
-
 		f32 d = plane_distance(x0, xN);
 		f32 t = -(dot(r0, xN) + d) / dot(rV, xN);
 
 		return r0 + (rV * t);
 	}
 
-	inline u32 aabb_vs_plane(vec3f aabb_min, vec3f aabb_max, vec3f pplane, vec3f nplane)
+    // Returns the classification of an aabb vs a plane aabb defined by min and max
+    // plane defined by point on plane x0 and normal of plane xN
+	inline u32 aabb_vs_plane(const vec3f& aabb_min, const vec3f& aabb_max, const vec3f& x0, const vec3f& xN)
 	{
-		vec3f e = (aabb_max - aabb_min) / 2.0f;
-
-		vec3f centre = aabb_min + e;
-
-		f32 radius = abs(nplane.x*e.x) + abs(nplane.y*e.y) + abs(nplane.z*e.z);
-
-		f32 pd = plane_distance(nplane, pplane);
-
-		f32 d = dot(nplane, centre) + pd;
+        vec3f   e = (aabb_max - aabb_min) / 2.0f;
+		vec3f   centre = aabb_min + e;
+        f32     radius = abs(xN.x*e.x) + abs(xN.y*e.y) + abs(xN.z*e.z);
+		f32     pd = plane_distance(xN, x0);
+		f32     d = dot(xN, centre) + pd;
 
 		if (d > radius)
 			return INFRONT;
@@ -125,31 +142,34 @@ namespace maths2
 
 		return INTERSECTS;
 	}
+    
+    // Returns the classification of a sphere vs a plane
+    // Sphere defined by centre s, and radius r
+    // Plane defined by point on plane x0 and normal of plane xN
+    inline u32 sphere_vs_plane(const vec3f& s, f32 r, const vec3f& x0, const vec3f& xN)
+    {
+        f32 pd = plane_distance(xN, x0);
+        f32 d = dot(x0, s) + pd;
+        
+        if (d > r)
+            return INFRONT;
+        
+        if (d < -r)
+            return BEHIND;
+        
+        return INTERSECTS;
+    }
 
-	inline u32 sphere_vs_plane(vec3f sphere_cente, f32 radius, vec3f nplane, vec3f pplane)
+    // Returns true is point p0 is inside aabb define by min and max
+	inline bool point_inside_aabb(const vec3f& min, const vec3f& max, const vec3f& p0)
 	{
-		f32 pd = plane_distance(nplane, pplane);
-
-		f32 d = dot(nplane, sphere_cente) + pd;
-
-		if (d > radius)
-			return INFRONT;
-
-		if (d < -radius)
-			return BEHIND;
-
-		return INTERSECTS;
-	}
-
-	inline bool point_inside_aabb(vec3f min, vec3f max, vec3f p)
-	{
-		if (p.x < min.x || p.x > max.x)
+		if (p0.x < min.x || p0.x > max.x)
 			return false;
 
-		if (p.y < min.y || p.y > max.y)
+		if (p0.y < min.y || p0.y > max.y)
 			return false;
 
-		if (p.z < min.z || p.z > max.z)
+		if (p0.z < min.z || p0.z > max.z)
 			return false;
 
 		return true;
@@ -192,7 +212,8 @@ namespace maths2
 		return true;
 	}
 
-	inline bool ray_vs_obb(const vec3f& min, const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection)
+	inline bool ray_vs_obb(const vec3f& min,
+                           const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& intersection)
 	{
 		mat4 invm = mat;
 		invm = invm.inverse4x4();

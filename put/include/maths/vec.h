@@ -179,7 +179,7 @@ struct Vec<3, T> {
 		T v[3];
 		struct { T x, y, z; };
 		struct { T r, g, b; };
-		//Vec<2, T> xy;
+		Vec<2, T> xy;
 	};
 
 	Vec<3, T>(void)
@@ -272,7 +272,7 @@ struct Vec<3, T> {
 	{
 		return Vec<3, T>(1, 0, 0);
 	}
-
+    
 	inline static Vec<3, T> green()
 	{
 		return Vec<3, T>(0, 1, 0);
@@ -296,11 +296,6 @@ struct Vec<3, T> {
 	inline static Vec<3, T> magenta()
 	{
 		return Vec<3, T>(1, 0, 1);
-	}
-
-	inline Vec<2, T> xy()
-	{
-		return Vec<2, T>(x, y);
 	}
 
 	//temporary
@@ -330,8 +325,8 @@ struct Vec<4, T> {
 		T v[4];
 		struct { T x, y, z, w; };
 		struct { T r, g, b, a; };
-		//Vec<2, T> xy;
-		//Vec<3, T> xyz;
+		Vec<2, T> xy;
+		Vec<3, T> xyz;
 	};
 
 	Vec<4, T>(void)
@@ -443,11 +438,6 @@ struct Vec<4, T> {
 	inline static Vec<4, T> magenta()
 	{
 		return Vec<4, T>(1, 0, 1, 1);
-	}
-
-	inline Vec<3, T> xyz()
-	{
-		return Vec<3, T>(x, y, z);
 	}
 };
 

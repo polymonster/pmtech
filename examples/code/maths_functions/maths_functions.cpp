@@ -26,147 +26,328 @@ pen::window_creation_params pen_window
 	1280,					    //width
 	720,					    //height
 	4,						    //MSAA samples
-	"maths_test_functions"		//window title / process name
+	"maths_functions"		    //window title / process name
 };
 
-void draw_plane(const vec3f* plane_points, const vec3f& plane_normal)
+// Small structs for debug maths rendering and test primitives
+struct debug_ray
 {
-	vec3f plane_centre = vec3f::zero();
+    u32 node;
+    vec3f origin;
+    vec3f direction;
+};
 
-	for (u32 i = 0; i < 3; ++i)
-	{
-		dbg::add_point(plane_points[i], 0.1f, vec4f::white());
+struct debug_plane
+{
+    u32   node;
+    vec3f point;
+    vec3f normal;
+};
 
-		u32 next = (i + 1) % 3;
-		dbg::add_line(plane_points[i], plane_points[next], vec4f::white());
+struct debug_aabb
+{
+    u32   node;
+    vec3f min;
+    vec3f max;
+};
 
-		plane_centre += plane_points[i];
-	}
+struct debug_sphere
+{
+    u32   node;
+    vec3f pos;
+    f32   radius;
+};
 
-	plane_centre /= 3.0f;
+struct debug_point
+{
+    u32   node;
+    vec3f point;
+};
 
-	dbg::add_line(plane_centre, plane_centre + plane_normal, vec4f::blue());
+struct debug_extents
+{
+    vec3f min;
+    vec3f max;
+};
+
+// Randomise vector in range of extents
+vec3f random_vec_range( const debug_extents& extents )
+{
+    vec3f range = extents.max - extents.min;
+    range *= 100.0f;
+    
+    vec3f random = vec3f( rand()%(u32)range.x, rand()%(u32)range.y, rand()%(u32)range.z );
+    random /= 100.0f;
+
+    return extents.min + random;
+}
+
+// Spawn a randomised point within range of extents
+void add_debug_point( const debug_extents& extents, entity_scene* scene, debug_point& point )
+{
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "point";
+    scene->transforms[node].translation = random_vec_range(extents);
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    point.node = node;
+    point.point = scene->transforms[node].translation;
+}
+
+// Spawn a random plane which starts at a point within extents
+void add_debug_plane( const debug_extents& extents, entity_scene* scene, debug_plane& plane )
+{
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "plane";
+    scene->transforms[node].translation = random_vec_range(extents);
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    plane.normal = normalised(random_vec_range({-vec3f::one(), vec3f::one()}));
+    plane.point = scene->transforms[node].translation;
+}
+
+//Spawn a random ray which contains point within extents
+void add_debug_ray( const debug_extents& extents, entity_scene* scene, debug_ray& ray )
+{
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "ray";
+    scene->transforms[node].translation = random_vec_range(extents);
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    ray.direction = normalised(random_vec_range({-vec3f::one(), vec3f::one()}));
+    ray.origin = scene->transforms[node].translation;
+}
+
+//Spawn a random ray which contains point within extents
+void add_debug_aabb( const debug_extents& extents, entity_scene* scene, debug_aabb& aabb )
+{
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "aabb";
+    scene->transforms[node].translation = random_vec_range(extents);
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    vec3f size = random_vec_range(extents);
+    
+    aabb.min = scene->transforms[node].translation - size;
+    aabb.max = scene->transforms[node].translation + size;
+}
+
+// Add debug sphere with randon radius within range extents and at random position within extents
+void add_debug_sphere( const debug_extents& extents, entity_scene* scene, debug_sphere& sphere )
+{
+    material_resource* default_material = get_material_resource( PEN_HASH( "default_material" ) );
+    geometry_resource* sphere_res = get_geometry_resource( PEN_HASH( "sphere" ) );
+    
+    vec3f size = random_vec_range(extents);
+    
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "sphere";
+    
+    scene->transforms[node].rotation = quat();
+    scene->transforms[node].scale = vec3f(size.x);
+    scene->transforms[node].translation = random_vec_range(extents);
+    
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    instantiate_geometry(sphere_res, scene, node);
+    instantiate_material(default_material, scene, node );
+    instantiate_model_cbuffer(scene, node);
+    
+    sphere.pos = scene->transforms[node].translation;
+    sphere.radius = size.x;
+    sphere.node = node;
 }
 
 void test_ray_plane_intersect(entity_scene* scene, bool initialise)
 {
-	static u32 ray[2] = { 0 };
-	static u32 plane_point[3] = { 0 };
-
-	static vec3f default_plane[] =
-	{
-		vec3f(-10.0f, -0.1f, -10.0f),
-		vec3f(0.0f, 0.0f, 8.0f),
-		vec3f(10.0f, 0.1f, -10.0f)
-	};
-
-	static vec3f default_ray[] =
-	{
-		vec3f(-3.0f, 20.0f, 0.0f),
-		vec3f(0.0f, -20.0f, 0.0f),
-	};
-
-	if (initialise)
+    static debug_plane plane;
+    static debug_ray ray;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+	if (initialise || randomise)
 	{
 		ces::clear_scene(scene);
 
-		//a ray defined by 3 points
-		for (u32 i = 0; i < 2; ++i)
-		{
-			ray[i] = ces::get_new_node(scene);
-			scene->names[ray[i]] = "ray";
-			scene->transforms[ray[i]].translation = default_ray[i];
-		}
-
-		//a plane defined by 3 points
-		for (u32 i = 0; i < 3; ++i)
-		{
-			plane_point[i] = ces::get_new_node(scene);
-			scene->names[plane_point[i]] = "plane_point";
-			scene->names[plane_point[i]].appendf("%i", i);
-
-			scene->transforms[plane_point[i]].translation = default_plane[i];
-		}
+        add_debug_ray(e, scene, ray);
+        add_debug_plane(e, scene, plane);
 	}
 
-	vec3f ray_pos[2];
-	vec3f plane_pos[3];
-
-	for (u32 i = 0; i< 2; ++i)
-		ray_pos[i] = scene->transforms[ray[i]].translation;
-
-	for (u32 i = 0; i< 3; ++i)
-		plane_pos[i] = scene->transforms[plane_point[i]].translation;
-
-	vec3f plane_normal = cross(normalised(plane_pos[1] - plane_pos[0]), normalised(plane_pos[2] - plane_pos[0]));
-
-	vec3f ip = maths2::ray_plane_intersect(ray_pos[0], ray_pos[1] - ray_pos[0], plane_pos[0], plane_normal);
+	vec3f ip = maths2::ray_plane_intersect(ray.origin, ray.direction, plane.point, plane.normal);
 
 	//debug output
-	dbg::add_point(ip, 0.1f, vec4f::red());
+	dbg::add_point(ip, 0.3f, vec4f::red());
 
-	draw_plane(plane_pos, plane_normal);
+    dbg::add_plane(plane.point, plane.normal);
 
-	dbg::add_line(ray_pos[0], ray_pos[1], vec4f::green());
+	dbg::add_line(ray.origin, ray.direction, vec4f::green());
 }
 
 void test_point_plane_distance(entity_scene* scene, bool initialise)
 {
-	static u32 point = 0;
-	static u32 plane_point[3] = { 0 };
+    static debug_point point;
+    static debug_plane plane;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
 
-	static vec3f default_plane[] =
-	{
-		vec3f(-10.0f, 0.01f, -10.0f),
-		vec3f( 0.0f, -0.01f, 10.0f),
-		vec3f( 7.0f, 0.0f, -10.0f)
-	};
-
-	static vec3f default_point = vec3f(0.0f, 1.0f, 0.0f);
-
-	if (initialise)
+    bool randomise = ImGui::Button("Randomise");
+    
+	if (initialise || randomise)
 	{
 		ces::clear_scene(scene);
 
-		//we need a point and a plane
-		point = ces::get_new_node(scene);
-		scene->names[point] = "point";
-		scene->transforms[point].translation = default_point;
-
-		//a plane defined by 3 points
-		for (u32 i = 0; i < 3; ++i)
-		{
-			plane_point[i] = ces::get_new_node(scene);
-			scene->names[plane_point[i]] = "plane_point";
-			scene->names[plane_point[i]].appendf("%i", i);
-
-			scene->transforms[plane_point[i]].translation = default_plane[i];
-		}
+        add_debug_point(e, scene, point);
+        add_debug_plane(e, scene, plane);
 	}
 
-	//get data to test
-	vec3f point_pos = scene->transforms[point].translation;
-	vec3f plane_pos[3];
-
-	for(u32 i = 0; i< 3; ++i)
-		plane_pos[i] = scene->transforms[plane_point[i]].translation;
-
-	vec3f plane_normal = cross(normalised(plane_pos[1] - plane_pos[0]), normalised(plane_pos[2] - plane_pos[0]));
-	
-	f32 distance = maths2::point_plane_distance(point_pos, plane_pos[0], plane_normal);
+	f32 distance = maths2::point_plane_distance(point.point, plane.point, plane.normal);
 
 	//debug output
 	ImGui::Text("Distance %f", distance);
 	
-	dbg::add_point(point_pos, 0.1f, vec4f::green());
+	dbg::add_point(point.point, 0.3f, vec4f::green());
+    
+    dbg::add_plane(plane.point, plane.normal);
+}
 
-	draw_plane(plane_pos, plane_normal);
+const c8* classifications[]
+{
+    "Intersects",
+    "Behind",
+    "Infront",
+};
+
+const vec4f classification_colours[] =
+{
+    vec4f::red(),
+    vec4f::cyan(),
+    vec4f::green()
+};
+
+void test_aabb_vs_plane(entity_scene* scene, bool initialise)
+{
+    static debug_aabb aabb;
+    static debug_plane plane;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_plane(e, scene, plane);
+        add_debug_aabb(e, scene, aabb);
+    }
+
+    u32 c = maths2::aabb_vs_plane(aabb.min, aabb.max, plane.point, plane.normal);
+    
+    //debug output
+    ImGui::Text("Classification %s", classifications[c]);
+    
+    dbg::add_aabb(aabb.min, aabb.max, classification_colours[c]);
+    
+    dbg::add_plane(plane.point, plane.normal);
+}
+
+void test_sphere_vs_plane(entity_scene* scene, bool initialise)
+{
+    static debug_sphere sphere;
+    static debug_plane plane;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_plane(e, scene, plane);
+        add_debug_sphere(e, scene, sphere);
+    }
+    
+    u32 c = maths2::sphere_vs_plane(sphere.pos, sphere.radius, plane.point, plane.normal);
+    
+    //debug output
+    ImGui::Text("Classification %s", classifications[c]);
+    
+    scene->materials[sphere.node].diffuse_rgb_shininess = vec4f( classification_colours[c] );
+    
+    dbg::add_plane(plane.point, plane.normal);
+}
+
+void test_project(entity_scene* scene, bool initialise)
+{
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+    }
+}
+
+void test_point_inside_aabb(entity_scene* scene, bool initialise)
+{
+    static debug_aabb aabb;
+    static debug_point point;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_aabb(e, scene, aabb);
+        add_debug_point(e, scene, point);
+    }
+    
+    bool inside = maths2::point_inside_aabb(aabb.min, aabb.max, point.point);
+    
+    vec4f col = inside ? vec4f::red() : vec4f::green();
+    
+    dbg::add_aabb(aabb.min, aabb.max, col);
+    dbg::add_point(point.point, 0.3f, col);
 }
 
 const c8* test_names[]
 {
 	"Point Plane Distance",
 	"Ray Plane Intersect",
+    "AABB Plane Classification",
+    "Sphere Plane Classification",
+    "Project",
+    "Point Inside AABB"
 };
 
 typedef void(*maths_test_function)(entity_scene*, bool);
@@ -174,7 +355,11 @@ typedef void(*maths_test_function)(entity_scene*, bool);
 maths_test_function test_functions[] =
 {
 	test_point_plane_distance,
-	test_ray_plane_intersect
+	test_ray_plane_intersect,
+    test_aabb_vs_plane,
+    test_sphere_vs_plane,
+    test_project,
+    test_point_inside_aabb
 };
 
 void maths_test_ui( entity_scene* scene )
@@ -244,7 +429,7 @@ PEN_TRV pen::user_entry(void* params)
 	pmfx::register_scene(sc);
 	pmfx::register_camera(cc);
 
-	pmfx::init("data/configs/editor_renderer.json");
+	pmfx::init("data/configs/basic_renderer.json");
 	
 	bool enable_dev_ui = true;
 	f32 frame_time = 0.0f;

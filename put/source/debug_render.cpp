@@ -26,15 +26,42 @@ namespace put
 
 		struct vertex_debug_3d
 		{
-			float x, y, z, w;
-			float r, g, b, a;
-
+            union
+            {
+                struct
+                {
+                    float x, y, z, w;
+                    float r, g, b, a;
+                };
+                
+                struct
+                {
+                    vec4f pos;
+                    vec4f col;
+                };
+            };
+            
+            vertex_debug_3d() { };
 		};
         
         struct vertex_debug_2d
         {
-            float x, y;
-            float r, g, b, a;
+            union
+            {
+                struct
+                {
+                    float x, y;
+                    float r, g, b, a;
+                };
+                
+                struct
+                {
+                    vec2f pos;
+                    vec4f col;
+                };
+            };
+            
+            vertex_debug_2d() { };
         };
         
         shader_program*      debug_3d_program;
@@ -223,23 +250,11 @@ namespace put
 		{
             alloc_3d_buffer(line_vert_3d_count + 2, VB_LINES);
             
-			debug_3d_verts[line_vert_3d_count].x = start.x;
-			debug_3d_verts[line_vert_3d_count].y = start.y;
-			debug_3d_verts[line_vert_3d_count].z = start.z;
-			debug_3d_verts[line_vert_3d_count].w = 1.0f;
-
-			debug_3d_verts[line_vert_3d_count + 1].x = end.x;
-			debug_3d_verts[line_vert_3d_count + 1].y = end.y;
-			debug_3d_verts[line_vert_3d_count + 1].z = end.z;
-			debug_3d_verts[line_vert_3d_count + 1].w = 1.0f;
+			debug_3d_verts[line_vert_3d_count].pos = vec4f(start, 1.0f);
+            debug_3d_verts[line_vert_3d_count + 1].pos = vec4f(end, 1.0f);
 
 			for (u32 j = 0; j < 2; ++j)
-			{
-				debug_3d_verts[line_vert_3d_count + j].r = col.x;
-				debug_3d_verts[line_vert_3d_count + j].g = col.y;
-				debug_3d_verts[line_vert_3d_count + j].b = col.z;
-				debug_3d_verts[line_vert_3d_count + j].a = col.w;
-			}
+                debug_3d_verts[line_vert_3d_count + j].col = col;
 
 			line_vert_3d_count += 2;
 		}
@@ -253,14 +268,14 @@ namespace put
         {
             alloc_3d_buffer( line_vert_3d_count + 24, VB_LINES );
 
-            vec3f right = maths::cross( axis, vec3f::unit_y() );
-            if (maths::magnitude( right ) < 0.1)
-                right = maths::cross( axis, vec3f::unit_z() );
-            if (maths::magnitude( right ) < 0.1)
-                right = maths::cross( axis, vec3f::unit_x() );
+            vec3f right = cross( axis, vec3f::unit_y() );
+            if (mag( right ) < 0.1)
+                right = cross( axis, vec3f::unit_z() );
+            if (mag( right ) < 0.1)
+                right = cross( axis, vec3f::unit_x() );
 
-            vec3f up = maths::cross( axis, right );
-            right = maths::cross( axis, up );
+            vec3f up = cross( axis, right );
+            right = cross( axis, up );
 
             static const s32 segments = 16;
             f32 angle = 0.0;
@@ -273,7 +288,7 @@ namespace put
                 f32 x = cos( clamped_angle );
                 f32 y = -sin( clamped_angle );
 
-                vec3f v1 = maths::normalise( vec3f( x, y, 0.0 ) );
+                vec3f v1 = normalised( vec3f( x, y, 0.0 ) );
 
                 v1 = right * x + up * y;
 
@@ -284,7 +299,7 @@ namespace put
 
                 x = cos( clamped_angle );
                 y = -sin( clamped_angle );
-                vec3f v2 = maths::normalise( vec3f( x, y, 0.0 ) );
+                vec3f v2 = normalised( vec3f( x, y, 0.0 ) );
 
                 v2 = right * x + up * y;
 
@@ -448,10 +463,7 @@ namespace put
             add_coord_space( mat, size, selected_axis );
             
             vec3f p = mat.get_translation();
-            vec3f up = mat.get_up();
-            vec3f right = mat.get_right();
-            vec3f fwd = mat.get_fwd();
-            
+
             static vec3f axis[4] =
             {
                 vec3f::zero(),
@@ -658,6 +670,30 @@ namespace put
 			}
 		}
         
+        void add_plane(const vec3f& point, const vec3f& normal, f32 size, vec4f colour)
+        {
+            vec3f v = vec3f::unit_y();
+            
+            if( dot(normal, v) < 0.1f )
+                v = vec3f::unit_z();
+            
+            vec3f b = cross(normal,v);
+            vec3f t = cross(b, normal);
+            
+            vec3f horiz = point - b * size;
+            vec3f vert = point - t * size;
+            for( int i = 0; i < size * 2; ++i )
+            {
+                dbg::add_line(horiz - t * size, horiz + t * size, vec4f::white());
+                dbg::add_line(vert - b * size, vert + b * size, vec4f::white());
+                
+                horiz += b;
+                vert += t;
+            }
+            
+            dbg::add_line(point, point + normal, colour);
+        }
+        
         void add_text_2f(const f32 x, const f32 y, const pen::viewport& vp, const vec4f& colour, const c8* format, ...)
         {
             va_list va;
@@ -797,38 +833,27 @@ namespace put
 
 			//tri 1
             s32 start_index = tri_vert_2d_count;
-			debug_2d_tris[tri_vert_2d_count].x = corners[0].x;
-			debug_2d_tris[tri_vert_2d_count].y = corners[0].y;
+			debug_2d_tris[tri_vert_2d_count].pos = corners[0];
 			tri_vert_2d_count++;
 
-			debug_2d_tris[tri_vert_2d_count].x = corners[1].x;
-			debug_2d_tris[tri_vert_2d_count].y = corners[1].y;
+			debug_2d_tris[tri_vert_2d_count].pos = corners[1];
 			tri_vert_2d_count++;
 
-			debug_2d_tris[tri_vert_2d_count].x = corners[2].x;
-			debug_2d_tris[tri_vert_2d_count].y = corners[2].y;
+			debug_2d_tris[tri_vert_2d_count].pos = corners[2];
 			tri_vert_2d_count++;
 
 			//tri 2
-			debug_2d_tris[tri_vert_2d_count].x = corners[2].x;
-			debug_2d_tris[tri_vert_2d_count].y = corners[2].y;
+			debug_2d_tris[tri_vert_2d_count].pos = corners[2];
 			tri_vert_2d_count++;
 
-			debug_2d_tris[tri_vert_2d_count].x = corners[3].x;
-			debug_2d_tris[tri_vert_2d_count].y = corners[3].y;
+			debug_2d_tris[tri_vert_2d_count].pos = corners[3];
 			tri_vert_2d_count++;
 
-			debug_2d_tris[tri_vert_2d_count].x = corners[0].x;
-			debug_2d_tris[tri_vert_2d_count].y = corners[0].y;
+			debug_2d_tris[tri_vert_2d_count].pos = corners[0];
 			tri_vert_2d_count++;
             
             for( s32 i = start_index; i < start_index + 6; ++i )
-            {
-                debug_2d_tris[i].r = colour.x;
-                debug_2d_tris[i].g = colour.y;
-                debug_2d_tris[i].b = colour.z;
-                debug_2d_tris[i].a = colour.w;
-            }
+                debug_2d_tris[i].col = colour;
 		}
 	}
 }

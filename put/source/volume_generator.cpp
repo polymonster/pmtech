@@ -545,7 +545,7 @@ namespace put
 
 						vec4f cps = closest_point_on_scene(&sdf_job->tree, world_pos);
 
-						vec3f cp = cps.xyz();
+						vec3f cp = cps.xyz;
 
 						f32 d = maths::distance(cp, world_pos);
 
@@ -769,9 +769,9 @@ namespace put
 						i1 = indices[i + 1];
 						i2 = indices[i + 2];
 
-						vec3f tv0 = scene->world_matrices[n].transform_vector(vertices[i0].xyz());
-						vec3f tv1 = scene->world_matrices[n].transform_vector(vertices[i1].xyz());
-						vec3f tv2 = scene->world_matrices[n].transform_vector(vertices[i2].xyz());
+						vec3f tv0 = scene->world_matrices[n].transform_vector(vertices[i0].xyz);
+						vec3f tv1 = scene->world_matrices[n].transform_vector(vertices[i1].xyz);
+						vec3f tv2 = scene->world_matrices[n].transform_vector(vertices[i2].xyz);
 
 						vec3f n = maths::normalise(maths::cross(tv2 - tv0, tv1 - tv0));
 

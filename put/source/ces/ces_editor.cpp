@@ -1411,7 +1411,7 @@ namespace put
                 
                 if( ImGui::Begin("Albedo Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize ) )
                 {
-                    vec3f col = mm.diffuse_rgb_shininess.xyz();
+                    vec3f col = mm.diffuse_rgb_shininess.xyz;
                     ImGui::ColorPicker3( "Colour", ( f32* )&col );
 
                     mm.diffuse_rgb_shininess.x = col.x;
@@ -2138,21 +2138,21 @@ namespace put
 						col = vec4f::one();
 					}
 
-					put::dbg::add_line_2f(pp[0].xy(), pp[i].xy(), col);
+					put::dbg::add_line_2f(pp[0].xy, pp[i].xy, col);
 
 					if (k_transform_mode == TRANSFORM_TRANSLATE)
 					{
-						vec2f v = put::maths::normalise(pp[i].xy() - pp[0].xy());
+						vec2f v = put::maths::normalise(pp[i].xy - pp[0].xy);
 						vec2f perp = put::maths::perp_lh(v) * 5.0f;
 
-						vec2f base = pp[i].xy() - v * 5.0f;
+						vec2f base = pp[i].xy - v * 5.0f;
 
-						put::dbg::add_line_2f(pp[i].xy(), base + perp, col);
-						put::dbg::add_line_2f(pp[i].xy(), base - perp, col);
+						put::dbg::add_line_2f(pp[i].xy, base + perp, col);
+						put::dbg::add_line_2f(pp[i].xy, base - perp, col);
 					}
 					else if (k_transform_mode == TRANSFORM_SCALE)
 					{
-						put::dbg::add_quad_2f(pp[i].xy(), vec2f(3.0f, 3.0f), col);
+						put::dbg::add_quad_2f(pp[i].xy, vec2f(3.0f, 3.0f), col);
 					}
 				}
 
@@ -2171,7 +2171,7 @@ namespace put
 					if((selected_axis & (1<<ii)) && (selected_axis & (1 << i_next)))
 						col = vec4f::one();
 
-					put::dbg::add_line_2f(ppj[j_index].xy(), ppj[j_index+1].xy(), col);
+					put::dbg::add_line_2f(ppj[j_index].xy, ppj[j_index+1].xy, col);
 				}
 
 				//project mouse to planes
@@ -2332,7 +2332,7 @@ namespace put
                         p = put::maths::project(p, view.camera->view,  view.camera->proj, vpi);
                         
 						if( p.z > 0.0f )
-							put::dbg::add_quad_2f( p.xy(), vec2f( 5.0f, 5.0f ), vec4f( scene->lights[n].colour, 1.0f ) );
+							put::dbg::add_quad_2f( p.xy, vec2f( 5.0f, 5.0f ), vec4f( scene->lights[n].colour, 1.0f ) );
                     }
                 }
             }
