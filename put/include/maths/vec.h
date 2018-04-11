@@ -644,12 +644,94 @@ T component_wise_max(const Vec<N, T>& v)
 	return _max;
 }
 
-//todo
-//lerp
-//clamp
-//saturate
-//all
-//any
+// Lerp
+template<unsigned int N, class T>
+inline Vec<N, T> lerp(const Vec<N, T>& value0, const Vec<N, T>& value1, T f)
+{
+    value0*(1-f) + value1*f;
+}
+
+template<unsigned int N, class T>
+inline Vec<N, T> lerp(const Vec<N, T>& value0, const Vec<N, T>& value1, const Vec<N, T>& f)
+{
+    value0*(1-f) + value1*f;
+}
+
+template<unsigned int N, class T>
+inline Vec<N, T> clamp(const Vec<N, T>& a, T lower, T upper)
+{
+    Vec<N, T> res = a;
+    for (unsigned int i = 0; i < N; ++i)
+    {
+        if(a[i] < lower)
+            res[i] = lower;
+        else if(a[i] > upper)
+            res[i] = upper;
+    }
+    
+    return res;
+}
+
+// Saturate
+template<unsigned int N, class T>
+inline Vec<N, T> saturate(Vec<N, T>& a)
+{
+    Vec<N, T> res = a;
+    for (unsigned int i = 0; i < N; ++i)
+    {
+        if(a[i] < 0)
+            res[i] = 0;
+        else if(a[i] > 1)
+            res[i] = 1;
+    }
+    
+    a = res;
+    return res;
+}
+
+// All
+template<unsigned int N, class T>
+inline bool all(const Vec<N, T>& a)
+{
+    for (unsigned int i = 0; i < N; ++i)
+        if(a[i] == 0)
+            return false;
+    
+    return true;
+}
+
+// Any
+template<unsigned int N, class T>
+inline bool any(const Vec<N, T>& a)
+{
+    for (unsigned int i = 0; i < N; ++i)
+        if(a[i] != 0)
+            return true;
+    
+    return false;
+}
+
+// Smooth_step
+template<unsigned int N, class T>
+inline Vec<N, T> smooth_step(T r, const Vec<N, T>& edge0, const Vec<N, T>& edge1)
+{
+    Vec<N, T> res;
+    for (unsigned int i = 0; i < N; ++i)
+        res[i] = smooth_step(r, edge0[i], edge1[i], 0, 1);
+    
+    return res;
+}
+
+// Step
+template<unsigned int N, class T>
+inline Vec<N, T> step(const Vec<N, T>& value0, const Vec<N, T>& value1)
+{
+    Vec<N, T> res;
+    for (unsigned int i = 0; i < N; ++i)
+        res[i] = value0[i] > value1[i] ? 1 : 0;
+    
+    return res;
+}
 
 template<unsigned int N, class T>
 bool equals(const Vec<N, T>& lhs, const Vec<N, T> &rhs)

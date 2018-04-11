@@ -43,23 +43,30 @@ namespace maths2
 	vec3f   ray_plane_intersect(const vec3f& r0, const vec3f& rV, const vec3f& x0, const vec3f& xN);
     u32     aabb_vs_plane(const vec3f& aabb_min, const vec3f& aabb_max, const vec3f& x0, const vec3f& xN);
     u32		sphere_vs_plane(const vec3f& s, f32 r, const vec3f& x0, const vec3f& xN);
-
+    
+    // Sphere
+    bool    sphere_vs_sphere(const vec3f& s0, f32 r0, const vec3f& s1, f32 r1);
+    bool    sphere_vs_aabb(const vec3f& s0, f32 r0, const vec3f& aabb_min, const vec3f& aabb_max);
+    
 	// Line Segment
     float   point_segment_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2);
     float   point_triangle_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2, const vec3f &x3);
     
+    vec3f   closest_point_on_aabb(const vec3f& s0, const vec3f& aabb_min, const vec3f& aabb_max);
     vec3f   closest_point_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p);
     vec3f   closest_point_on_ray(const vec3f& r0, const vec3f& rV, const vec3f& p); //
 
+    //line segment intersection
+    
 	// Traingle
-	vec3f   get_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3); //
+	vec3f   get_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3);
     bool    point_inside_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3);
 	vec3f	closest_point_on_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3, f32& side); //
 
 	// AABB
 	bool	point_inside_aabb(const vec3f& min, const vec3f& max, const vec3f& p0);
-	bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& ip);
-	bool	ray_vs_obb(const vec3f& min,const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip);
+	bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& ip); //
+	bool	ray_vs_obb(const vec3f& min,const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip); //
 
 	// Inline functions ---------------------------------------------------------------------------------------------------
 
@@ -176,6 +183,36 @@ namespace maths2
 		return true;
 	}
     
+    // Returns true if sphere with centre s0 and radius r0 overlaps
+    // Sphere with centre s1 and radius r1
+    bool sphere_vs_sphere(const vec3f& s0, f32 r0, const vec3f& s1, f32 r1)
+    {
+        f32 rr = r0 + r1;
+        f32 d = dist(s0, s1);
+        
+        if(d<rr)
+            return true;
+        
+        return false;
+    }
+    
+    // Returns true if sphere with centre s0 and radius r0 overlaps
+    // AABB defined by aabb_min and aabb_max
+    bool sphere_vs_aabb(const vec3f& s0, f32 r0, const vec3f& aabb_min, const vec3f& aabb_max)
+    {
+        vec3f cp = closest_point_on_aabb(s0, aabb_min, aabb_max);
+        f32 d = dist(cp, s0);
+        
+        return d < r0;
+    }
+    
+    vec3f closest_point_on_aabb(const vec3f& s0, const vec3f& aabb_min, const vec3f& aabb_max)
+    {
+        vec3f t1 = max_union(s0, aabb_min);
+        vec3f t2 = min_union(t1, aabb_max);
+        return t2;
+    }
+    
     // Returns the closest point to p on the line segment l1 to l2
     inline vec3f closest_point_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p)
     {
@@ -234,7 +271,7 @@ namespace maths2
         }
     }
     
-    // Returns true is p is inside the triangle v1, v2, v3
+    // Returns true is p is inside the triangle v1-v2-v3
     inline bool point_inside_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3)
     {
         vec3f cp1, cp2;
@@ -259,7 +296,55 @@ namespace maths2
         
         return true;
     }
+    
+    // Returns the cloest point on trianglt v1-v2-v3 to point p
+    // side is 1 or -1 depending on whether the point is infront or behind the triangle
+    vec3f closest_point_on_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3, f32& side)
+    {
+        vec3f n = normalised(cross(v3 - v1, v2 - v1));
+        
+        f32 d = point_plane_distance(p, v1, n);
+        
+        side = d <= 0.0f ? -1.0f : 1.0f;
+        
+        vec3f cp = p - n * d;
+        
+        if (put::maths::point_inside_triangle(v1, v2, v3, cp))
+            return cp;
+        
+        vec3f cl[] =
+        {
+            closest_point_on_line(v1, v2, cp),
+            closest_point_on_line(v2, v3, cp),
+            closest_point_on_line(v1, v3, cp)
+        };
+        
+        f32 ld = dist(p, cl[0]);
+        cp = cl[0];
+        
+        for (int l = 1; l < 3; ++l)
+        {
+            f32 ldd = dist(p, cl[l]);
+            
+            if (ldd < ld)
+            {
+                cp = cl[l];
+                ld = ldd;
+            }
+        }
+        
+        return cp;
+    }
+    
+    // Get normal of triangle v1-v2-v3 with left handed winding
+    vec3f get_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3)
+    {
+        vec3f vA = v3 - v1;
+        vec3f vB = v2 - v1;
 
+        return normalised(cross(vB, vA));
+    }
+    
     // Returns true is ray with origin r1 and direction rv intersects the aabb defined by emin and emax
     // Intersection point is stored in ip
 	inline bool ray_vs_aabb(const vec3f& emin, const vec3f& emax, const vec3f& r1, const vec3f& rv, vec3f& ip)

@@ -85,6 +85,8 @@ struct debug_extents
     vec3f max;
 };
 
+material_resource* constant_colour_material = new material_resource;
+
 // Randomise vector in range of extents
 vec3f random_vec_range( const debug_extents& extents )
 {
@@ -162,7 +164,7 @@ void add_debug_aabb( const debug_extents& extents, entity_scene* scene, debug_aa
     scene->entities[node] |= CMP_TRANSFORM;
     scene->parents[node] = node;
     
-    vec3f size = random_vec_range(extents);
+    vec3f size = fabs(random_vec_range(extents));
     
     aabb.min = scene->transforms[node].translation - size;
     aabb.max = scene->transforms[node].translation + size;
@@ -171,10 +173,9 @@ void add_debug_aabb( const debug_extents& extents, entity_scene* scene, debug_aa
 // Add debug sphere with randon radius within range extents and at random position within extents
 void add_debug_sphere( const debug_extents& extents, entity_scene* scene, debug_sphere& sphere )
 {
-    material_resource* default_material = get_material_resource( PEN_HASH( "default_material" ) );
     geometry_resource* sphere_res = get_geometry_resource( PEN_HASH( "sphere" ) );
     
-    vec3f size = random_vec_range(extents);
+    vec3f size = fabs(random_vec_range(extents));
     
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "sphere";
@@ -187,12 +188,38 @@ void add_debug_sphere( const debug_extents& extents, entity_scene* scene, debug_
     scene->parents[node] = node;
     
     instantiate_geometry(sphere_res, scene, node);
-    instantiate_material(default_material, scene, node );
+    instantiate_material(constant_colour_material, scene, node );
     instantiate_model_cbuffer(scene, node);
     
     sphere.pos = scene->transforms[node].translation;
     sphere.radius = size.x;
     sphere.node = node;
+}
+
+// Add debug sphere with randon radius within range extents and at random position within extents
+void add_debug_solid_aabb(const debug_extents& extents, entity_scene* scene, debug_aabb& aabb)
+{
+    geometry_resource* cube_res = get_geometry_resource( PEN_HASH( "cube" ) );
+    
+    vec3f size = fabs(random_vec_range(extents));
+    
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "cube";
+    
+    scene->transforms[node].rotation = quat();
+    scene->transforms[node].scale = size;
+    scene->transforms[node].translation = random_vec_range(extents);
+    
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    instantiate_geometry(cube_res, scene, node);
+    instantiate_material(constant_colour_material, scene, node );
+    instantiate_model_cbuffer(scene, node);
+    
+    aabb.min = scene->transforms[node].translation - size;
+    aabb.max = scene->transforms[node].translation + size;
+    aabb.node = node;
 }
 
 //Spawn a random ray which contains point within extents
@@ -237,7 +264,7 @@ void test_ray_plane_intersect(entity_scene* scene, bool initialise)
 
     dbg::add_plane(plane.point, plane.normal);
 
-	dbg::add_line(ray.origin, ray.direction, vec4f::green());
+	dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, vec4f::green());
 }
 
 void test_point_plane_distance(entity_scene* scene, bool initialise)
@@ -380,10 +407,15 @@ void test_point_inside_aabb(entity_scene* scene, bool initialise)
     
     bool inside = maths2::point_inside_aabb(aabb.min, aabb.max, point.point);
     
+    vec3f cp = maths2::closest_point_on_aabb(point.point,aabb.min, aabb.max);
+    
     vec4f col = inside ? vec4f::red() : vec4f::green();
     
     dbg::add_aabb(aabb.min, aabb.max, col);
     dbg::add_point(point.point, 0.3f, col);
+    
+    dbg::add_line(cp, point.point, vec4f::cyan());
+    dbg::add_point(cp, 0.3f, vec4f::cyan());
 }
 
 void test_point_line(entity_scene* scene, bool initialise)
@@ -442,7 +474,7 @@ void test_point_triangle(entity_scene* scene, bool initialise)
         add_debug_point(e, scene, point);
     }
     
-    bool inside = maths2::point_inside_triangle(tri.t0, tri.t1, tri.t2, point.point);
+    bool inside = maths2::point_inside_triangle(point.point, tri.t0, tri.t1, tri.t2);
     
     f32 distance = maths2::point_triangle_distance(point.point, tri.t0, tri.t1, tri.t2);
     ImGui::Text("Distance %f", distance);
@@ -451,6 +483,85 @@ void test_point_triangle(entity_scene* scene, bool initialise)
     
     dbg::add_point(point.point, 0.3f, col);
     dbg::add_triangle(tri.t0, tri.t1, tri.t2, col);
+    
+    //debug get normal
+    vec3f n = maths2::get_normal(tri.t0, tri.t1, tri.t2);
+    vec3f cc = (tri.t0 + tri.t1 + tri.t2) / 3.0f;
+    dbg::add_line(cc, cc + n, col);
+    
+    f32 side = 1.0f;
+    vec3f cp = maths2::closest_point_on_triangle(point.point, tri.t0, tri.t1, tri.t2, side);
+    
+    Vec4f col2 = vec4f::cyan();
+    if(side < 1.0)
+        col2 = vec4f::magenta();
+    
+    dbg::add_line(cp, point.point, col2);
+    dbg::add_point(cp, 0.3f, col2);
+}
+
+void test_sphere_vs_sphere(entity_scene* scene, bool initialise)
+{
+    static debug_sphere sphere0;
+    static debug_sphere sphere1;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+
+        add_debug_sphere(e, scene, sphere0);
+        add_debug_sphere(e, scene, sphere1);
+    }
+    
+    bool i = maths2::sphere_vs_sphere(sphere0.pos, sphere0.radius, sphere1.pos, sphere1.radius);
+    
+    //debug output
+    vec4f col = vec4f::green();
+    if(i)
+        col = vec4f::red();
+    
+    scene->materials[sphere0.node].diffuse_rgb_shininess = vec4f(col);
+    scene->materials[sphere1.node].diffuse_rgb_shininess = vec4f(col);
+}
+
+void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
+{
+    static debug_aabb aabb;
+    static debug_sphere sphere;
+    
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_solid_aabb(e, scene, aabb);
+        add_debug_sphere(e, scene, sphere);
+    }
+    
+    bool i = maths2::sphere_vs_aabb(sphere.pos, sphere.radius, aabb.min, aabb.max);
+    
+    //debug output
+    vec4f col = vec4f::green();
+    if(i)
+        col = vec4f::red();
+    
+    scene->materials[sphere.node].diffuse_rgb_shininess = vec4f(col);
+    scene->materials[aabb.node].diffuse_rgb_shininess = vec4f(col);
 }
 
 const c8* test_names[]
@@ -460,9 +571,11 @@ const c8* test_names[]
     "AABB Plane Classification",
     "Sphere Plane Classification",
     "Project",
-    "Point Inside AABB",
+    "Point Inside AABB / Closest Point on AABB",
     "Closest Point on Line / Point Segment Distance",
-    "Point Inside Triangle / Point Triangle Distance"
+    "Point Inside Triangle / Point Triangle Distance / Closest Point on Triangle / Get Normal",
+    "Sphere vs Sphere",
+    "Sphere vs AABB",
 };
 
 typedef void(*maths_test_function)(entity_scene*, bool);
@@ -476,7 +589,9 @@ maths_test_function test_functions[] =
     test_project,
     test_point_inside_aabb,
     test_point_line,
-    test_point_triangle
+    test_point_triangle,
+    test_sphere_vs_sphere,
+    test_sphere_vs_aabb
 };
 
 void maths_test_ui( entity_scene* scene )
@@ -547,6 +662,13 @@ PEN_TRV pen::user_entry(void* params)
 	pmfx::register_camera(cc);
 
 	pmfx::init("data/configs/basic_renderer.json");
+    
+    //create constant col material
+    constant_colour_material->material_name = "constant_colour";
+    constant_colour_material->shader_name = "pmfx_utility";
+    constant_colour_material->id_shader = PEN_HASH("pmfx_utility");
+    constant_colour_material->id_technique = PEN_HASH("constant_colour");
+    add_material_resource(constant_colour_material);
 	
 	bool enable_dev_ui = true;
 	f32 frame_time = 0.0f;
@@ -565,7 +687,7 @@ PEN_TRV pen::user_entry(void* params)
 		pmfx::show_dev_ui();
 
 		maths_test_ui(main_scene);
-
+        
 		if (enable_dev_ui)
 		{
 			put::dev_ui::console();

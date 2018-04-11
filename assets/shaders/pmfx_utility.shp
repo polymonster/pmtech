@@ -457,8 +457,22 @@ ps_output ps_shadow_sdf( vs_output input )
 	return output;
 }
 
+ps_output ps_constant_colour( vs_output input ) 
+{
+	ps_output output;
+	output.colour = float4( user_data2.rgb, 1.0 );
+	
+	return output;	
+}
+
 pmfx:
 {	
+	"constant_colour":
+	{
+		"vs": "vs_main",
+		"ps": "ps_constant_colour"
+	},
+	
 	"diffuse":
 	{
 		"vs": "vs_main",
