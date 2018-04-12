@@ -21,6 +21,8 @@
 using namespace put;
 using namespace ces;
 
+put::camera main_camera;
+
 pen::window_creation_params pen_window
 {
 	1280,					    //width
@@ -64,6 +66,11 @@ struct debug_aabb
     u32   node;
     vec3f min;
     vec3f max;
+};
+
+struct debug_obb
+{
+	u32   node;
 };
 
 struct debug_sphere
@@ -155,7 +162,7 @@ void add_debug_line( const debug_extents& extents, entity_scene* scene, debug_li
     line.l2 = random_vec_range(extents);
 }
 
-//Spawn a random ray which contains point within extents
+//Spawn a random AABB which contains centre within extents and size within extents
 void add_debug_aabb( const debug_extents& extents, entity_scene* scene, debug_aabb& aabb )
 {
     u32 node = ces::get_new_node(scene);
@@ -196,7 +203,6 @@ void add_debug_sphere( const debug_extents& extents, entity_scene* scene, debug_
     sphere.node = node;
 }
 
-// Add debug sphere with randon radius within range extents and at random position within extents
 void add_debug_solid_aabb(const debug_extents& extents, entity_scene* scene, debug_aabb& aabb)
 {
     geometry_resource* cube_res = get_geometry_resource( PEN_HASH( "cube" ) );
@@ -222,7 +228,29 @@ void add_debug_solid_aabb(const debug_extents& extents, entity_scene* scene, deb
     aabb.node = node;
 }
 
-//Spawn a random ray which contains point within extents
+void add_debug_solid_obb(const debug_extents& extents, entity_scene* scene, debug_obb& obb)
+{
+	geometry_resource* cube_res = get_geometry_resource(PEN_HASH("cube"));
+
+	u32 node = ces::get_new_node(scene);
+	scene->names[node] = "obb";
+	scene->transforms[node].translation = random_vec_range(extents);
+
+	vec3f rr = random_vec_range(extents);
+
+	scene->transforms[node].rotation.euler_angles(rr.x, rr.y, rr.z);
+
+	scene->transforms[node].scale = fabs(random_vec_range(extents));
+	scene->entities[node] |= CMP_TRANSFORM;
+	scene->parents[node] = node;
+
+	instantiate_geometry(cube_res, scene, node);
+	instantiate_material(constant_colour_material, scene, node);
+	instantiate_model_cbuffer(scene, node);
+
+	obb.node = node;
+}
+
 void add_debug_triangle( const debug_extents& extents, entity_scene* scene, debug_triangle& tri )
 {
     u32 node = ces::get_new_node(scene);
@@ -265,6 +293,82 @@ void test_ray_plane_intersect(entity_scene* scene, bool initialise)
     dbg::add_plane(plane.point, plane.normal);
 
 	dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, vec4f::green());
+}
+
+void test_ray_vs_aabb(entity_scene* scene, bool initialise)
+{
+	static debug_aabb aabb;
+	static debug_ray ray;
+
+	static debug_extents e =
+	{
+		vec3f(-10.0, -10.0, -10.0),
+		vec3f(10.0, 10.0, 10.0)
+	};
+
+	bool randomise = ImGui::Button("Randomise");
+
+	if (initialise || randomise)
+	{
+		ces::clear_scene(scene);
+
+		add_debug_ray(e, scene, ray);
+		add_debug_solid_aabb(e, scene, aabb);
+	}
+
+	vec3f ip;
+	bool intersect = maths2::ray_vs_aabb(aabb.min, aabb.max, ray.origin, ray.direction, ip);
+
+	vec4f col = vec4f::green();
+
+	if (intersect)
+		col = vec4f::red();
+
+	dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, col);
+
+	//debug output
+	if (intersect)
+		dbg::add_point(ip, 0.5f, vec4f::white());
+
+	scene->materials[aabb.node].diffuse_rgb_shininess = col;
+}
+
+void test_ray_vs_obb(entity_scene* scene, bool initialise)
+{
+	static debug_obb obb;
+	static debug_ray ray;
+
+	static debug_extents e =
+	{
+		vec3f(-10.0, -10.0, -10.0),
+		vec3f(10.0, 10.0, 10.0)
+	};
+
+	bool randomise = ImGui::Button("Randomise");
+
+	if (initialise || randomise)
+	{
+		ces::clear_scene(scene);
+
+		add_debug_ray(e, scene, ray);
+		add_debug_solid_obb(e, scene, obb);
+	}
+
+	vec3f ip;
+	bool intersect = maths2::ray_vs_obb(scene->world_matrices[obb.node], ray.origin, ray.direction, ip);
+
+	vec4f col = vec4f::green();
+
+	if (intersect)
+		col = vec4f::red();
+
+	dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, col);
+
+	//debug output
+	if (intersect)
+		dbg::add_point(ip, 0.5f, vec4f::white());
+
+	scene->materials[obb.node].diffuse_rgb_shininess = col;
 }
 
 void test_point_plane_distance(entity_scene* scene, bool initialise)
@@ -376,12 +480,33 @@ void test_sphere_vs_plane(entity_scene* scene, bool initialise)
 
 void test_project(entity_scene* scene, bool initialise)
 {
-    bool randomise = ImGui::Button("Randomise");
+	static debug_point point;
+
+	static debug_extents e =
+	{
+		vec3f(-10.0, -10.0, -10.0),
+		vec3f(10.0, 10.0, 10.0)
+	};
+
+	bool randomise = ImGui::Button("Randomise");
     
     if (initialise || randomise)
     {
         ces::clear_scene(scene);
+
+		add_debug_point(e, scene, point);
     }
+
+	vec2i vp = vec2i(pen_window.width, pen_window.height);
+
+	mat4 view_proj = main_camera.proj * main_camera.view;
+	vec3f screen_point = maths2::project_to_sc(point.point, view_proj, vp);
+
+	vec3f unproj = maths2::unproject_sc(screen_point, view_proj, vp);
+
+	dbg::add_point(point.point, 0.5f, vec4f::magenta());
+	dbg::add_point(point.point, 1.0f, vec4f::cyan());
+	dbg::add_point_2f(screen_point.xy, vec4f::green());
 }
 
 void test_point_inside_aabb(entity_scene* scene, bool initialise)
@@ -452,6 +577,39 @@ void test_point_line(entity_scene* scene, bool initialise)
     
     dbg::add_point(cp, 0.3f, vec4f::red());
 }
+
+void test_point_ray(entity_scene* scene, bool initialise)
+{
+	static debug_point point;
+	static debug_ray ray;
+
+	static debug_extents e =
+	{
+		vec3f(-10.0, -10.0, -10.0),
+		vec3f(10.0, 10.0, 10.0)
+	};
+
+	bool randomise = ImGui::Button("Randomise");
+
+	if (initialise || randomise)
+	{
+		ces::clear_scene(scene);
+
+		add_debug_point(e, scene, point);
+		add_debug_ray(e, scene, ray);
+	}
+
+	vec3f cp = maths2::closest_point_on_ray(ray.origin, ray.direction, point.point);
+
+	dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, vec4f::green());
+
+	dbg::add_line(point.point, cp);
+
+	dbg::add_point(point.point, 0.3f);
+
+	dbg::add_point(cp, 0.3f, vec4f::red());
+}
+
 
 void test_point_triangle(entity_scene* scene, bool initialise)
 {
@@ -564,18 +722,55 @@ void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
     scene->materials[aabb.node].diffuse_rgb_shininess = vec4f(col);
 }
 
+void test_line_vs_line(entity_scene* scene, bool initialise)
+{
+	static debug_line line0;
+	static debug_line line1;
+
+	static debug_extents e =
+	{
+		vec3f(-10.0, 0.0, -10.0),
+		vec3f(10.0, 0.0, 10.0)
+	};
+
+	bool randomise = ImGui::Button("Randomise");
+
+	if (initialise || randomise)
+	{
+		ces::clear_scene(scene);
+
+		add_debug_line(e, scene, line0);
+		add_debug_line(e, scene, line1);
+	}
+
+	vec3f ip;
+	bool intersect = maths2::line_vs_line(line0.l1, line0.l2, line1.l1, line1.l2, ip);
+
+	if (intersect)
+		dbg::add_point(ip, 0.3f, vec4f::yellow());
+
+	vec4f col = intersect ? vec4f::red() : vec4f::green();
+
+	dbg::add_line(line0.l1, line0.l2, col);
+	dbg::add_line(line1.l1, line1.l2, col);
+}
+
 const c8* test_names[]
 {
 	"Point Plane Distance",
 	"Ray Plane Intersect",
     "AABB Plane Classification",
     "Sphere Plane Classification",
-    "Project",
+    "Project / Unproject",
     "Point Inside AABB / Closest Point on AABB",
     "Closest Point on Line / Point Segment Distance",
+	"Closest Point on Ray",
     "Point Inside Triangle / Point Triangle Distance / Closest Point on Triangle / Get Normal",
     "Sphere vs Sphere",
     "Sphere vs AABB",
+	"Ray vs AABB",
+	"Ray vs OBB",
+	"Line vs Line"
 };
 
 typedef void(*maths_test_function)(entity_scene*, bool);
@@ -589,9 +784,13 @@ maths_test_function test_functions[] =
     test_project,
     test_point_inside_aabb,
     test_point_line,
+	test_point_ray,
     test_point_triangle,
     test_sphere_vs_sphere,
-    test_sphere_vs_aabb
+    test_sphere_vs_aabb,
+	test_ray_vs_aabb,
+	test_ray_vs_obb,
+	test_line_vs_line
 };
 
 void maths_test_ui( entity_scene* scene )
@@ -624,7 +823,6 @@ PEN_TRV pen::user_entry(void* params)
 	put::dbg::init();
 
 	//create main camera and controller
-	put::camera main_camera;
 	put::camera_create_perspective(&main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f);
 
 	put::camera_controller cc;

@@ -6,7 +6,7 @@
 namespace pen
 {
 	// Minimalist C-Style filesystem api for portability between windows and unix
-	// Implemented in win32 and using the c filesystem and windir stat on unix
+	// Implemented in win32 and using the c file system and windir stat on unix
 	// Can read files and also enumerate file system and volumes as an fs_tree_node
 
 	// Make sure to free p_buffer yourself allocated from filesystem_read_file_to_buffer 

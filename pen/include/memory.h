@@ -18,7 +18,7 @@
 namespace pen
 {
 	// Minimalist C-Style memory API wrapping up malloc and free
-	// It provides some very minor portability solutions between windows and unix
+	// It provides some very minor portability solutions between win32 and posix
 	// But mostly it is here to intercept all allocations
 	// So at a later date custom allocation or mem tracking schemes could be used.
 

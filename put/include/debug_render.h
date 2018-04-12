@@ -10,7 +10,7 @@ namespace put
 	namespace dbg
 	{
         // Minimalist C-Style Api for rendering debug primitives
-        // Adding primitives will push verts into a vertex buffer which will grow to accomodate space as required
+        // Adding primitives will push verts into a buffer which will grow to accomodate space as required
         // 2D vertices and 3D vertices are stored in different buffers
         // calling render_2d or render_3d will flush the buffers and reset them ready for reuse
         

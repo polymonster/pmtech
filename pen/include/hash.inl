@@ -1,8 +1,3 @@
-/*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
- * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
- */
-
 #ifndef _hash_h
 #	error "Must be included from hash.h!"
 #endif
@@ -102,24 +97,11 @@ namespace pen
 	{
 		const uint8_t* data = (const uint8_t*)_data;
 		
-        if ( 0 ) //big endian PPC.. any other platdorms todo
-		{
-			_out = 0
-				| data[0]<<24
-				| data[1]<<16
-				| data[2]<<8
-				| data[3]
-				;
-		}
-		else
-		{
-			_out = 0
-				| data[0]
-				| data[1]<<8
-				| data[2]<<16
-				| data[3]<<24
-				;
-		}
+		_out = 0
+			| data[0]
+			| data[1] << 8
+			| data[2] << 16
+			| data[3] << 24;
 	}
 
 	inline void HashMurmur2A::mixTail(const uint8_t*& _data, int& _len)
@@ -156,7 +138,6 @@ namespace pen
 	inline uint32_t hashMurmur2A(const Ty& _data)
 	{
         //assert on non-pod?
-        
 		return hashMurmur2A(&_data, sizeof(Ty) );
 	}
 
@@ -170,4 +151,4 @@ namespace pen
         return hashMurmur2A(_data, strlen(_data));
     }
     
-} // namespace bx
+} // namespace pen

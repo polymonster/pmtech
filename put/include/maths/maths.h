@@ -7,12 +7,9 @@
 #include "quat.h"
 #include "matrix.h"
 
-#ifndef M_PI_2
-#define	M_PI_2			M_PI * 2.0
-#endif
-
-#define	M_PI_OVER_180	M_PI / 180.0
-#define M_180_OVER_PI	180.0 / M_PI
+constexpr double M_PI_2 = 3.1415926535897932384626433832795 * 2.0;
+constexpr double M_PI_OVER_180 = 3.1415926535897932384626433832795 * 180.0;
+constexpr double M_180_OVER_PI = 180.0 / 3.1415926535897932384626433832795;
 
 namespace maths2
 {
@@ -33,9 +30,9 @@ namespace maths2
 
 	// Projection
     vec3f   project_to_ndc(const vec3f& p, const mat4& view_projection);
-    vec3f   project_to_sc(const vec3f& p, const mat4 view_projection, const vec2i& viewport);
-    
-	vec3f   unproject(vec3f scrren_space_pos, mat4 view, mat4 proj, vec2i viewport);
+    vec3f   project_to_sc(const vec3f& p, const mat4& view_projection, const vec2i& viewport);
+	vec3f	unproject_ndc(const vec3f& p, const mat4& view_projection);
+	vec3f	unproject_sc(const vec3f& p, const mat4& view_projection, const vec2i& viewport);
 
 	// Plane
 	f32     plane_distance(const vec3f& x0, const vec3f& xN);
@@ -51,26 +48,26 @@ namespace maths2
 	// Line Segment
     float   point_segment_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2);
     float   point_triangle_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2, const vec3f &x3);
-    
+	bool	line_vs_ray(const vec2f& l1, const vec2f& l2, const vec2f& s1, const vec2f& s2, vec3f& ip);
+	bool	line_vs_line(const vec2f& l1, const vec2f& l2, const vec2f& s1, const vec2f& s2, vec3f& ip);
+
     vec3f   closest_point_on_aabb(const vec3f& s0, const vec3f& aabb_min, const vec3f& aabb_max);
     vec3f   closest_point_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p);
-    vec3f   closest_point_on_ray(const vec3f& r0, const vec3f& rV, const vec3f& p); //
+	f32		distance_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p);
+    vec3f   closest_point_on_ray(const vec3f& r0, const vec3f& rV, const vec3f& p);
 
-    //line segment intersection
-    
 	// Traingle
 	vec3f   get_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3);
     bool    point_inside_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3);
-	vec3f	closest_point_on_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3, f32& side); //
+	vec3f	closest_point_on_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3, f32& side);
 
 	// AABB
 	bool	point_inside_aabb(const vec3f& min, const vec3f& max, const vec3f& p0);
-	bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& ip); //
-	bool	ray_vs_obb(const vec3f& min,const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip); //
+	bool	ray_vs_aabb(const vec3f& min, const vec3f& max, const vec3f& r1, const vec3f& rv, vec3f& ip); 
+	bool	ray_vs_obb(const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip);
 
 	// Inline functions ---------------------------------------------------------------------------------------------------
 
-    // Self explanitory rad to deg, deg to rad
 	inline f32 deg_to_rad(f32 degree_angle)
 	{
 		return(degree_angle * M_PI_OVER_180);
@@ -90,13 +87,33 @@ namespace maths2
     }
     
     // Project point p to screen coordinates of viewport
-    inline vec3f project_to_sc(const vec3f& p, const mat4 view_projection, const vec2i& viewport)
+    inline vec3f project_to_sc(const vec3f& p, const mat4& view_projection, const vec2i& viewport)
     {
         vec3f ndc = project_to_ndc(p, view_projection);
         vec3f sc = ndc * 0.5f + 0.5f;
         sc.xy *= vec2f(viewport.x, viewport.y);
         return sc;
     }
+
+	// Unproject normalised device coordinate p wih viewport using iverse view_projection
+	inline vec3f unproject_ndc(const vec3f& p, const mat4& view_projection)
+	{
+		mat4 inv = view_projection.inverse4x4();
+
+		f32 w = 1.0f;
+		vec3f ppc = inv.transform_vector(p, &w);
+
+		return ppc / w;
+	}
+
+	// Unproject screen coordinate p wih viewport using iverse view_projection
+	inline vec3f unproject_sc(const vec3f& p, const mat4& view_projection, const vec2i& viewport)
+	{
+		vec2f ndc_xy = (p.xy / (vec2f)viewport) * vec2f(2.0) - vec2f(1.0);
+		vec3f ndc = vec3f(ndc_xy, p.z);
+
+		return unproject_ndc(p, view_projection);
+	}
 
 	// Convert azimuth / altitude to vec3f xyz
 	inline vec3f azimuth_altitude_to_xyz(f32 azimuth, f32 altitude)
@@ -230,6 +247,64 @@ namespace maths2
         
         return l1 + v2 * t;
     }
+
+	// Returns the distance (t) of p along the line l1-l2
+	inline f32 distance_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p)
+	{
+		vec3f v1 = p - l1;
+		vec3f v2 = normalised(l2 - l1);
+
+		return dot(v2, v1);
+	}
+
+	bool line_vs_ray(const vec3f& l1, const vec3f& l2, const vec3f& r0, const vec3f& rV, vec3f& ip)
+	{
+		vec3f da = l2 - l1;
+		vec3f db = rV;
+		vec3f dc = r0 - l1;
+
+		if (dot(dc, cross(da, db)) != 0.0) // lines are not coplanar
+			return false;
+
+		f32 s = dot(cross(dc, db), cross(da, db)) / mag2(cross(da, db));
+		if (s >= 0.0 && s <= 1.0)
+		{
+			ip = l1 + da * s;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool line_vs_line(const vec3f& l1, const vec3f& l2, const vec3f& s1, const vec3f& s2, vec3f& ip)
+	{
+		vec3f da = l2 - l1;
+		vec3f db = s2 - s1;
+		vec3f dc = s1 - l1;
+
+		if (dot(dc, cross(da, db)) != 0.0) // lines are not coplanar
+			return false;
+
+		f32 s = dot(cross(dc, db), cross(da, db)) / mag2(cross(da, db));
+		if (s >= 0.0 && s <= 1.0)
+		{
+			ip = l1 + da * s;
+			f32 t = distance_on_line(s1, s2, ip) / dist(s1, s2);
+			if(t >= 0.0f && t <= 1.0f)
+				return true;
+		}
+
+		return false;
+	}
+
+	// Returns the closest point to p on the line the ray r0 with diection rV
+	inline vec3f closest_point_on_ray(const vec3f& r0, const vec3f& rV, const vec3f& p)
+	{
+		vec3f v1 = p - r0;
+		f32 t = dot(v1, rV);
+
+		return r0 + rV * t;
+	}
     
     // find distance x0 is from segment x1-x2
     inline float point_segment_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2)
@@ -376,9 +451,9 @@ namespace maths2
 		return true;
 	}
 
-    // Returns true if there is an intersection bewteen ray with origin r1 and direction rv
-    // intersects with obb defined by matrix mat
-	inline bool ray_vs_obb(const vec3f& min, const vec3f& max, const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip)
+    // Returns true if there is an intersection bewteen ray with origin r1 and direction rv and obb defined by matrix mat 
+	// mat will transform a cube centred at 0 with extents -1 to 1 into an obb
+	inline bool ray_vs_obb(const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip)
 	{
 		mat4 invm = mat;
 		invm = invm.inverse4x4();
@@ -388,7 +463,10 @@ namespace maths2
 		invm.set_translation(vec3f::zero());
 		vec3f trv = invm.transform_vector(rv);
 
-		return ray_vs_aabb(min, max, tr1, normalised(trv), ip);
+		bool ii = ray_vs_aabb(-vec3f::one(), vec3f::one(), tr1, normalised(trv), ip);
+
+		ip = mat.transform_vector(ip);
+		return ii;
 	}
 }
 

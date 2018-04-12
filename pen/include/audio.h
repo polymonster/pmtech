@@ -7,6 +7,7 @@ namespace pen
 {
 	// Simple C-Style generic audio API wrapper
 	// Currently implementation is in fmod.
+
 	// Public API used by the user thread will store function call arguments in a command buffer
 	// Dedicated thread will wait on a semaphore until audio_consume_command_buffer is called
 	// command buffer will be consumed passing arguments to the direct:: functions.
