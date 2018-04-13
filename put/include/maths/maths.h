@@ -7,7 +7,10 @@
 #include "quat.h"
 #include "matrix.h"
 
+#ifndef M_PI_2
 constexpr double M_PI_2 = 3.1415926535897932384626433832795 * 2.0;
+#endif
+
 constexpr double M_PI_OVER_180 = 3.1415926535897932384626433832795 * 180.0;
 constexpr double M_180_OVER_PI = 180.0 / 3.1415926535897932384626433832795;
 
@@ -112,7 +115,7 @@ namespace maths2
 		vec2f ndc_xy = (p.xy / (vec2f)viewport) * vec2f(2.0) - vec2f(1.0);
 		vec3f ndc = vec3f(ndc_xy, p.z);
 
-		return unproject_ndc(p, view_projection);
+		return unproject_ndc(ndc, view_projection);
 	}
 
 	// Convert azimuth / altitude to vec3f xyz
