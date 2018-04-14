@@ -299,7 +299,7 @@ namespace put
 
 			mat4 parent_mat = scene->world_matrices[parent];
 
-			scene->local_matrices[child] = parent_mat.inverse4x4() * scene->local_matrices[child];
+			scene->local_matrices[child] = mat::inverse4x4(parent_mat) * scene->local_matrices[child];
 		}
 
 		void clone_selection_hierarchical(entity_scene* scene, u32** selection_list, const c8* suffix )

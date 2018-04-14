@@ -285,7 +285,7 @@ void test_ray_plane_intersect(entity_scene* scene, bool initialise)
         add_debug_plane(e, scene, plane);
 	}
 
-	vec3f ip = maths2::ray_plane_intersect(ray.origin, ray.direction, plane.point, plane.normal);
+	vec3f ip = maths::ray_plane_intersect(ray.origin, ray.direction, plane.point, plane.normal);
 
 	//debug output
 	dbg::add_point(ip, 0.3f, vec4f::red());
@@ -317,7 +317,7 @@ void test_ray_vs_aabb(entity_scene* scene, bool initialise)
 	}
 
 	vec3f ip;
-	bool intersect = maths2::ray_vs_aabb(aabb.min, aabb.max, ray.origin, ray.direction, ip);
+	bool intersect = maths::ray_vs_aabb(aabb.min, aabb.max, ray.origin, ray.direction, ip);
 
 	vec4f col = vec4f::green();
 
@@ -355,7 +355,7 @@ void test_ray_vs_obb(entity_scene* scene, bool initialise)
 	}
 
 	vec3f ip;
-	bool intersect = maths2::ray_vs_obb(scene->world_matrices[obb.node], ray.origin, ray.direction, ip);
+	bool intersect = maths::ray_vs_obb(scene->world_matrices[obb.node], ray.origin, ray.direction, ip);
 
 	vec4f col = vec4f::green();
 
@@ -392,7 +392,7 @@ void test_point_plane_distance(entity_scene* scene, bool initialise)
         add_debug_plane(e, scene, plane);
 	}
 
-	f32 distance = maths2::point_plane_distance(point.point, plane.point, plane.normal);
+	f32 distance = maths::point_plane_distance(point.point, plane.point, plane.normal);
 
 	//debug output
 	ImGui::Text("Distance %f", distance);
@@ -437,7 +437,7 @@ void test_aabb_vs_plane(entity_scene* scene, bool initialise)
         add_debug_aabb(e, scene, aabb);
     }
 
-    u32 c = maths2::aabb_vs_plane(aabb.min, aabb.max, plane.point, plane.normal);
+    u32 c = maths::aabb_vs_plane(aabb.min, aabb.max, plane.point, plane.normal);
     
     //debug output
     ImGui::Text("Classification %s", classifications[c]);
@@ -468,7 +468,7 @@ void test_sphere_vs_plane(entity_scene* scene, bool initialise)
         add_debug_sphere(e, scene, sphere);
     }
     
-    u32 c = maths2::sphere_vs_plane(sphere.pos, sphere.radius, plane.point, plane.normal);
+    u32 c = maths::sphere_vs_plane(sphere.pos, sphere.radius, plane.point, plane.normal);
     
     //debug output
     ImGui::Text("Classification %s", classifications[c]);
@@ -500,9 +500,9 @@ void test_project(entity_scene* scene, bool initialise)
 	vec2i vp = vec2i(pen_window.width, pen_window.height);
 
 	mat4 view_proj = main_camera.proj * main_camera.view;
-	vec3f screen_point = maths2::project_to_sc(point.point, view_proj, vp);
+	vec3f screen_point = maths::project_to_sc(point.point, view_proj, vp);
 
-	vec3f unproj = maths2::unproject_sc(screen_point, view_proj, vp);
+	vec3f unproj = maths::unproject_sc(screen_point, view_proj, vp);
 
 	dbg::add_point(point.point, 0.5f, vec4f::magenta());
 	dbg::add_point(point.point, 1.0f, vec4f::cyan());
@@ -530,9 +530,9 @@ void test_point_inside_aabb(entity_scene* scene, bool initialise)
         add_debug_point(e, scene, point);
     }
     
-    bool inside = maths2::point_inside_aabb(aabb.min, aabb.max, point.point);
+    bool inside = maths::point_inside_aabb(aabb.min, aabb.max, point.point);
     
-    vec3f cp = maths2::closest_point_on_aabb(point.point,aabb.min, aabb.max);
+    vec3f cp = maths::closest_point_on_aabb(point.point,aabb.min, aabb.max);
     
     vec4f col = inside ? vec4f::red() : vec4f::green();
     
@@ -564,9 +564,9 @@ void test_point_line(entity_scene* scene, bool initialise)
         add_debug_point(e, scene, point);
     }
     
-    vec3f cp = maths2::closest_point_on_line(line.l1, line.l2, point.point);
+    vec3f cp = maths::closest_point_on_line(line.l1, line.l2, point.point);
     
-    f32 distance = maths2::point_segment_distance(point.point, line.l1, line.l2);
+    f32 distance = maths::point_segment_distance(point.point, line.l1, line.l2);
     ImGui::Text("Distance %f", distance);
     
     dbg::add_line(line.l1, line.l2, vec4f::green());
@@ -599,7 +599,7 @@ void test_point_ray(entity_scene* scene, bool initialise)
 		add_debug_ray(e, scene, ray);
 	}
 
-	vec3f cp = maths2::closest_point_on_ray(ray.origin, ray.direction, point.point);
+	vec3f cp = maths::closest_point_on_ray(ray.origin, ray.direction, point.point);
 
 	dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, vec4f::green());
 
@@ -632,9 +632,9 @@ void test_point_triangle(entity_scene* scene, bool initialise)
         add_debug_point(e, scene, point);
     }
     
-    bool inside = maths2::point_inside_triangle(point.point, tri.t0, tri.t1, tri.t2);
+    bool inside = maths::point_inside_triangle(point.point, tri.t0, tri.t1, tri.t2);
     
-    f32 distance = maths2::point_triangle_distance(point.point, tri.t0, tri.t1, tri.t2);
+    f32 distance = maths::point_triangle_distance(point.point, tri.t0, tri.t1, tri.t2);
     ImGui::Text("Distance %f", distance);
     
     vec4f col = inside ? vec4f::red() : vec4f::green();
@@ -643,12 +643,12 @@ void test_point_triangle(entity_scene* scene, bool initialise)
     dbg::add_triangle(tri.t0, tri.t1, tri.t2, col);
     
     //debug get normal
-    vec3f n = maths2::get_normal(tri.t0, tri.t1, tri.t2);
+    vec3f n = maths::get_normal(tri.t0, tri.t1, tri.t2);
     vec3f cc = (tri.t0 + tri.t1 + tri.t2) / 3.0f;
     dbg::add_line(cc, cc + n, col);
     
     f32 side = 1.0f;
-    vec3f cp = maths2::closest_point_on_triangle(point.point, tri.t0, tri.t1, tri.t2, side);
+    vec3f cp = maths::closest_point_on_triangle(point.point, tri.t0, tri.t1, tri.t2, side);
     
     Vec4f col2 = vec4f::cyan();
     if(side < 1.0)
@@ -679,7 +679,7 @@ void test_sphere_vs_sphere(entity_scene* scene, bool initialise)
         add_debug_sphere(e, scene, sphere1);
     }
     
-    bool i = maths2::sphere_vs_sphere(sphere0.pos, sphere0.radius, sphere1.pos, sphere1.radius);
+    bool i = maths::sphere_vs_sphere(sphere0.pos, sphere0.radius, sphere1.pos, sphere1.radius);
     
     //debug output
     vec4f col = vec4f::green();
@@ -711,7 +711,7 @@ void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
         add_debug_sphere(e, scene, sphere);
     }
     
-    bool i = maths2::sphere_vs_aabb(sphere.pos, sphere.radius, aabb.min, aabb.max);
+    bool i = maths::sphere_vs_aabb(sphere.pos, sphere.radius, aabb.min, aabb.max);
     
     //debug output
     vec4f col = vec4f::green();
@@ -744,7 +744,7 @@ void test_line_vs_line(entity_scene* scene, bool initialise)
 	}
 
 	vec3f ip;
-	bool intersect = maths2::line_vs_line(line0.l1, line0.l2, line1.l1, line1.l2, ip);
+	bool intersect = maths::line_vs_line(line0.l1, line0.l2, line1.l1, line1.l2, ip);
 
 	if (intersect)
 		dbg::add_point(ip, 0.3f, vec4f::yellow());

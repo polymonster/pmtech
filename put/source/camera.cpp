@@ -1,5 +1,5 @@
 #include "camera.h"
-#include "put_math.h"
+#include "maths/maths.h"
 #include "input.h"
 #include "renderer.h"
 #include "debug_render.h"
@@ -13,10 +13,10 @@ namespace put
 		vec2f near_size;
 		vec2f far_size;
 
-		near_size.y = 2.0f * tan( put::maths::deg_to_rad( fov_degrees ) / 2.0f ) * near_plane;
+		near_size.y = 2.0f * tan( maths::deg_to_rad( fov_degrees ) / 2.0f ) * near_plane;
 		near_size.x = near_size.y * aspect_ratio;
 
-		far_size.y = 2.0f * tan( put::maths::deg_to_rad( fov_degrees ) / 2.0f ) * far_plane;
+		far_size.y = 2.0f * tan( maths::deg_to_rad( fov_degrees ) / 2.0f ) * far_plane;
 		far_size.x = far_size.y * aspect_ratio;
         
         p_camera->fov = fov_degrees;
@@ -24,7 +24,7 @@ namespace put
         p_camera->near_plane = near_plane;
         p_camera->far_plane = far_plane;
 
-        p_camera->proj = mat4::create_perspective_projection
+        p_camera->proj = mat::create_perspective_projection
 		(
 			-near_size.x * 0.5f,
 			 near_size.x * 0.5f,
@@ -39,7 +39,7 @@ namespace put
 
 	void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
 	{
-        p_camera->proj = mat4::create_orthographic_projection
+        p_camera->proj = mat::create_orthographic_projection
 		(
 			left,
 			right,
@@ -115,9 +115,9 @@ namespace put
 			}
 		}
 		
-		mat4 rx = mat4::create_x_rotation(p_camera->rot.x);
-		mat4 ry = mat4::create_y_rotation(p_camera->rot.y);
-		mat4 t = mat4::create_translation(p_camera->pos * -1.0f);
+		mat4 rx = mat::create_x_rotation(p_camera->rot.x);
+		mat4 ry = mat::create_y_rotation(p_camera->rot.y);
+		mat4 t = mat::create_translation(p_camera->pos * -1.0f);
 
 		mat4 view_rotation = rx * ry;
 		p_camera->view = view_rotation * t;
@@ -137,21 +137,21 @@ namespace put
 
 		vec2i vpi = vec2i(1, 1);
 
+		mat4 view_proj = p_camera->proj * p_camera->view;
+
 		for (s32 i = 0; i < 4; ++i)
 		{
-			p_camera->camera_frustum.corners[0][i] = maths::unproject
+			p_camera->camera_frustum.corners[0][i] = maths::unproject_sc
             (
                 vec3f(ndc_coords[i], -1.0f),
-                p_camera->view,
-                p_camera->proj,
+				view_proj,
                 vpi
 
              );
-			p_camera->camera_frustum.corners[1][i] = maths::unproject
+			p_camera->camera_frustum.corners[1][i] = maths::unproject_sc
             (
                 vec3f(ndc_coords[i], 1.0f),
-                p_camera->view,
-                p_camera->proj,
+				view_proj,
                 vpi
             );
 		}
@@ -173,10 +173,10 @@ namespace put
 		for (s32 i = 0; i < 6; ++i)
 		{
 			s32 offset = i * 3;
-			vec3f v1 = maths::normalise(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
-			vec3f v2 = maths::normalise(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+			vec3f v1 = normalised(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
+			vec3f v2 = normalised(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
 
-			p_camera->camera_frustum.n[i] = put::maths::cross(v1, v2);
+			p_camera->camera_frustum.n[i] = cross(v1, v2);
 			p_camera->camera_frustum.p[i] = plane_vectors[offset];
 		}
 	}
@@ -199,7 +199,7 @@ namespace put
 			{
 				//rotation
 				vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x);
-				p_camera->rot += swapxy * ((2.0f * PI) / 360.0f);
+				p_camera->rot += swapxy * ((2.0f * (f32)M_PI) / 360.0f);
 			}
 			else if ( (ms.buttons[PEN_MOUSE_M] && pen_input_key(PENK_MENU)) ||
                      ((ms.buttons[PEN_MOUSE_L] && pen_input_key(PENK_COMMAND))) )
@@ -230,14 +230,14 @@ namespace put
 			p_camera->zoom = fmax(p_camera->zoom, 1.0f);
 		}
 
-        mat4 rx = mat4::create_x_rotation(p_camera->rot.x);
-        mat4 ry = mat4::create_y_rotation(-p_camera->rot.y);
-        mat4 t = mat4::create_translation( vec3f(0.0f, 0.0f, p_camera->zoom) );
-        mat4 t2 = mat4::create_translation(p_camera->focus);
+        mat4 rx = mat::create_x_rotation(p_camera->rot.x);
+        mat4 ry = mat::create_y_rotation(-p_camera->rot.y);
+        mat4 t = mat::create_translation( vec3f(0.0f, 0.0f, p_camera->zoom) );
+        mat4 t2 = mat::create_translation(p_camera->focus);
 
 		p_camera->view = t2 * (ry * rx) * t;
 
-		p_camera->view = p_camera->view.inverse3x4();
+		p_camera->view = mat::inverse3x4(p_camera->view);
 
 		p_camera->flags |= CF_INVALIDATED;
 	}
@@ -265,9 +265,9 @@ namespace put
 				camera_update_projection_matrix(p_camera);
 			}
 		}
-
-		update_frustum(p_camera);
         
+		update_frustum(p_camera);
+
         if( viewport_correction && !(p_camera->flags & CF_VP_CORRECTED) )
         {
             p_camera->flags |= CF_VP_CORRECTED;
@@ -296,7 +296,7 @@ namespace put
 		{
 			camera_cbuffer wvp;
             
-            static mat4 scale = mat4::create_scale( vec3f( 1.0f, -1.0f, 1.0f ) );
+            static mat4 scale = mat::create_scale( vec3f( 1.0f, -1.0f, 1.0f ) );
             
 			if (viewport_correction && pen::renderer_viewport_vup())
 			{
@@ -307,7 +307,7 @@ namespace put
 				wvp.view_projection = p_camera->proj * p_camera->view;
 			}
 
-            mat4 inv_view = p_camera->view.inverse3x4();
+            mat4 inv_view = mat::inverse3x4(p_camera->view);
 			wvp.view_matrix = p_camera->view;
             wvp.view_position = vec4f( inv_view.get_translation(), 0.0 );
             wvp.view_direction = vec4f( inv_view.get_fwd(), 0.0 );

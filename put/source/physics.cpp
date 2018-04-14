@@ -453,7 +453,7 @@ namespace physics
                     for (s32 m = 0; m < 16; ++m)
                         g_readable_data.output_matrices[bb][i].m[m] = _mm[m];
 
-                    g_readable_data.output_matrices[bb][i] = g_readable_data.output_matrices[bb][i].transpose();
+                    g_readable_data.output_matrices[bb][i] = g_readable_data.output_matrices[bb][i].transposed();
                 }
                 break;
                     
@@ -473,7 +473,7 @@ namespace physics
                             rb_transform.getOpenGLMatrix( g_readable_data.multi_output_matrices[bb][i][0].m );
                         }
                         
-                        g_readable_data.multi_output_matrices[bb][i][0] = g_readable_data.multi_output_matrices[bb][i][0].transpose( );
+                        g_readable_data.multi_output_matrices[bb][i][0] = g_readable_data.multi_output_matrices[bb][i][0].transposed( );
                         
                         for (s32 j = 0; j < p_multi->getNumLinks( ); ++j)
                         {
@@ -482,7 +482,7 @@ namespace physics
                                 rb_transform = p_multi->getLink( j ).m_collider->getWorldTransform( );
                                 rb_transform.getOpenGLMatrix( g_readable_data.multi_output_matrices[bb][i][j + 1].m );
                                 
-                                g_readable_data.multi_output_matrices[bb][i][j + 1] = g_readable_data.multi_output_matrices[bb][i][j + 1].transpose( );
+                                g_readable_data.multi_output_matrices[bb][i][j + 1] = g_readable_data.multi_output_matrices[bb][i][j + 1].transposed( );
                             }
                             
                             g_readable_data.multi_joint_positions[bb][i][j + 1] = p_multi->getJointPos( j );

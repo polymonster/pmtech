@@ -261,7 +261,7 @@ namespace put
         
         void add_circle(const vec3f& axis, const vec3f& centre, f32 radius, const vec4f& col )
         {
-            add_circle_segment( axis, centre, radius, 0.0f, PI_2, col );
+            add_circle_segment( axis, centre, radius, 0.0f, M_PI_2, col );
         }
 
         void add_circle_segment( const vec3f& axis, const vec3f& centre, f32 radius, f32 min, f32 max, const vec4f& col )
@@ -279,7 +279,7 @@ namespace put
 
             static const s32 segments = 16;
             f32 angle = 0.0;
-            f32 angle_step = PI_2 / segments;
+            f32 angle_step = M_PI_2 / segments;
             for (s32 i = 0; i < segments; ++i)
             {
                 f32 clamped_angle = std::max<f32>( angle, min );
@@ -450,10 +450,10 @@ namespace put
 		void add_line_transform(const vec3f &start, const vec3f &end, const mat4 *matrix, const vec4f &col )
 		{
 			f32 w = 1.0f;
-			vec3f transformed_s = matrix->transform_vector(start, &w);
+			vec3f transformed_s = matrix->transform_vector(start, w);
 
 			w = 1.0f;
-			vec3f transformed_e = matrix->transform_vector(end, &w);
+			vec3f transformed_e = matrix->transform_vector(end, w);
 
 			dbg::add_line(transformed_s, transformed_e, col);
 		}
@@ -484,7 +484,8 @@ namespace put
             
             for( s32 i = 0; i < 4; ++i )
             {
-                pp[i] = put::maths::project( p + axis[i] * size, view, proj, vp );
+				mat4 view_proj = proj * view;
+                pp[i] = maths::project_to_sc( p + axis[i] * size, view_proj, vp );
             }
             
             for( s32 i = 0; i < 3; ++i )
@@ -492,7 +493,7 @@ namespace put
                 vec2f p2 = vec2f( pp[i+1].x, pp[i+1].y );
                 vec2f base = vec2f( pp[0].x, pp[0].y );
                 
-                vec2f v1 = put::maths::normalise( p2 - base );
+                vec2f v1 = normalised( p2 - base );
                 
                 vec4f col = colours[i+1];
                 
@@ -502,11 +503,13 @@ namespace put
                 if( type == 2 )
                 {
                     //translate
-                    vec2f perp = put::maths::perp_lh(v1);
+                    vec2f pp = perp(v1);
+
+
                     
                     static const f32 s = 5.0f;
                     
-                    add_tri_2f( p2 - perp * s, p2 + v1 * s, p2 + perp * s, col );
+                    add_tri_2f( p2 - pp * s, p2 + v1 * s, p2 + pp * s, col );
                 }
                 else if( type == 4 )
                 {

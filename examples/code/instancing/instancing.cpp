@@ -91,9 +91,9 @@ void create_instanced_objects( ces::entity_scene* scene )
                 scene->names[new_prim].appendf( "%i", new_prim );
                 
                 //random rotation offset
-                f32 x = put::maths::deg_to_rad(rand()%360);
-                f32 y = put::maths::deg_to_rad(rand()%360);
-                f32 z = put::maths::deg_to_rad(rand()%360);
+                f32 x = maths::deg_to_rad(rand()%360);
+                f32 y = maths::deg_to_rad(rand()%360);
+                f32 z = maths::deg_to_rad(rand()%360);
                 
                 scene->transforms[new_prim].rotation = quat();
                 scene->transforms[new_prim].rotation.euler_angles(z, y, x);

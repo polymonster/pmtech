@@ -470,14 +470,26 @@ typedef Vec<4,unsigned short> Vec4us;
 typedef Vec<4,char>           Vec4c;
 typedef Vec<4,unsigned char>  Vec4uc;
 
-typedef Vec<6,double>         Vec6d;
-typedef Vec<6,float>          Vec6f;
-typedef Vec<6,unsigned int>   Vec6ui;
-typedef Vec<6,int>            Vec6i;
-typedef Vec<6,short>          Vec6s;
-typedef Vec<6,unsigned short> Vec6us;
-typedef Vec<6,char>           Vec6c;
-typedef Vec<6,unsigned char>  Vec6uc;
+typedef Vec2i vec2i;
+typedef Vec2f vec2f;
+
+typedef Vec3f vec3f;
+
+typedef Vec4f vec4f;
+typedef Vec4i vec4i;
+
+// For bullet
+struct lw_vec3f
+{
+	f32 x, y, z;
+
+	inline lw_vec3f& operator = (const vec3f &v)
+	{
+		x = v.x; y = v.y; z = v.z;
+
+		return *this;
+	}
+};
 
 // Operators
 

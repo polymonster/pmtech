@@ -407,7 +407,7 @@ namespace put
 					vec3f pos = min + (max - min) * 0.5f;
 					f32 radius = scene->bounding_volumes[n].radius;
 
-					f32 d = maths::point_vs_plane(pos, camera_frustum.p[i], camera_frustum.n[i]);          
+					f32 d = maths::point_plane_distance(pos, camera_frustum.p[i], camera_frustum.n[i]);          
 
 					if (d > radius)
 					{
@@ -630,9 +630,9 @@ namespace put
 					mat4 rot_mat;
 					t.rotation.get_matrix(rot_mat);
 
-					mat4 translation_mat = mat4::create_translation(t.translation);
+					mat4 translation_mat = mat::create_translation(t.translation);
 
-					mat4 scale_mat = mat4::create_scale(t.scale);
+					mat4 scale_mat = mat::create_scale(t.scale);
 
 					scene->local_matrices[n] = translation_mat * rot_mat * scale_mat;
 
@@ -650,7 +650,7 @@ namespace put
 					{
 						scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]);
 
-						scene->local_matrices[n].transpose();
+						scene->local_matrices[n].transposed();
 
 						scene->local_matrices[n] *= scene->offset_matrices[n];
 
@@ -715,7 +715,7 @@ namespace put
                 }
 
 				f32& trad = scene->bounding_volumes[n].radius;
-				trad = maths::magnitude(tmax-tmin) * 0.5f;
+				trad = mag(tmax-tmin) * 0.5f;
                 
                 if (!(scene->entities[n] & CMP_GEOMETRY))
                     continue;
@@ -777,8 +777,8 @@ namespace put
 
 				mat4 invt = scene->world_matrices[n];
 				invt.set_translation(vec3f(0.0f, 0.0f, 0.0f));
-				invt = invt.transpose();
-				invt = invt.inverse4x4();
+				invt = invt.transposed();
+				invt = mat::inverse4x4(invt);
 
 				scene->draw_call_data[n].world_matrix_inv_transpose = invt;
 
@@ -873,7 +873,7 @@ namespace put
 
 				sdf_buffer.shadows.half_size = vec4f(scene->transforms[n].scale, 1.0f);
 				sdf_buffer.shadows.world_matrix = scene->world_matrices[n];
-				sdf_buffer.shadows.world_matrix_inverse = scene->world_matrices[n].inverse4x4();
+				sdf_buffer.shadows.world_matrix_inverse = mat::inverse4x4(scene->world_matrices[n]);
 
 				pen::renderer_update_buffer(scene->sdf_shadow_buffer, &sdf_buffer, sizeof(sdf_buffer));
 

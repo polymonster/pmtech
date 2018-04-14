@@ -3,18 +3,18 @@
 
 #include "types.h"
 #include "util.h"
-#include "vector.h"
-#include "quat.h"
-#include "matrix.h"
+#include "maths/vec.h"
+#include "maths/quat.h"
+#include "maths/mat.h"
 
 #ifndef M_PI_2
 constexpr double M_PI_2 = 3.1415926535897932384626433832795 * 2.0;
 #endif
 
-constexpr double M_PI_OVER_180 = 3.1415926535897932384626433832795 * 180.0;
+constexpr double M_PI_OVER_180 = 3.1415926535897932384626433832795 / 180.0;
 constexpr double M_180_OVER_PI = 180.0 / 3.1415926535897932384626433832795;
 
-namespace maths2
+namespace maths
 {
 	typedef enum
 	{
@@ -51,8 +51,8 @@ namespace maths2
 	// Line Segment
     float   point_segment_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2);
     float   point_triangle_distance(const vec3f &x0, const vec3f &x1, const vec3f &x2, const vec3f &x3);
-	bool	line_vs_ray(const vec2f& l1, const vec2f& l2, const vec2f& s1, const vec2f& s2, vec3f& ip);
-	bool	line_vs_line(const vec2f& l1, const vec2f& l2, const vec2f& s1, const vec2f& s2, vec3f& ip);
+	bool	line_vs_ray(const vec3f& l1, const vec3f& l2, const vec3f& r0, const vec3f& rV, vec3f& ip);
+	bool	line_vs_line(const vec3f& l1, const vec3f& l2, const vec3f& s1, const vec3f& s2, vec3f& ip);
 
     vec3f   closest_point_on_aabb(const vec3f& s0, const vec3f& aabb_min, const vec3f& aabb_max);
     vec3f   closest_point_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p);
@@ -85,6 +85,7 @@ namespace maths2
     inline vec3f project_to_ndc(const vec3f& p, const mat4& view_projection)
     {
         vec4f ndc = view_projection.transform_vector(vec4f(p, 1.0f));
+
         ndc /= ndc.w;
         return ndc.xyz;
     }
@@ -101,15 +102,14 @@ namespace maths2
 	// Unproject normalised device coordinate p wih viewport using iverse view_projection
 	inline vec3f unproject_ndc(const vec3f& p, const mat4& view_projection)
 	{
-		mat4 inv = view_projection.inverse4x4();
+		mat4 inv = mat::inverse4x4(view_projection);
 
-		f32 w = 1.0f;
-		vec3f ppc = inv.transform_vector(p, &w);
+		vec4f ppc = inv.transform_vector(vec4f(p, 1.0f));
 
-		return ppc / w;
+		return ppc.xyz / ppc.w;
 	}
 
-	// Unproject screen coordinate p wih viewport using iverse view_projection
+	// Unproject screen coordinate p wih viewport using inverse view_projection
 	inline vec3f unproject_sc(const vec3f& p, const mat4& view_projection, const vec2i& viewport)
 	{
 		vec2f ndc_xy = (p.xy / (vec2f)viewport) * vec2f(2.0) - vec2f(1.0);
@@ -159,7 +159,7 @@ namespace maths2
         vec3f   e = (aabb_max - aabb_min) / 2.0f;
 		vec3f   centre = aabb_min + e;
         f32     radius = abs(xN.x*e.x) + abs(xN.y*e.y) + abs(xN.z*e.z);
-		f32     pd = plane_distance(xN, x0);
+		f32     pd = plane_distance(x0, xN);
 		f32     d = dot(xN, centre) + pd;
 
 		if (d > radius)
@@ -176,8 +176,8 @@ namespace maths2
     // Plane defined by point on plane x0 and normal of plane xN
     inline u32 sphere_vs_plane(const vec3f& s, f32 r, const vec3f& x0, const vec3f& xN)
     {
-        f32 pd = plane_distance(xN, x0);
-        f32 d = dot(x0, s) + pd;
+        f32 pd = plane_distance(x0, xN);
+        f32 d = dot(xN, s) + pd;
         
         if (d > r)
             return INFRONT;
@@ -205,7 +205,7 @@ namespace maths2
     
     // Returns true if sphere with centre s0 and radius r0 overlaps
     // Sphere with centre s1 and radius r1
-    bool sphere_vs_sphere(const vec3f& s0, f32 r0, const vec3f& s1, f32 r1)
+    inline bool sphere_vs_sphere(const vec3f& s0, f32 r0, const vec3f& s1, f32 r1)
     {
         f32 rr = r0 + r1;
         f32 d = dist(s0, s1);
@@ -218,7 +218,7 @@ namespace maths2
     
     // Returns true if sphere with centre s0 and radius r0 overlaps
     // AABB defined by aabb_min and aabb_max
-    bool sphere_vs_aabb(const vec3f& s0, f32 r0, const vec3f& aabb_min, const vec3f& aabb_max)
+	inline bool sphere_vs_aabb(const vec3f& s0, f32 r0, const vec3f& aabb_min, const vec3f& aabb_max)
     {
         vec3f cp = closest_point_on_aabb(s0, aabb_min, aabb_max);
         f32 d = dist(cp, s0);
@@ -226,7 +226,7 @@ namespace maths2
         return d < r0;
     }
     
-    vec3f closest_point_on_aabb(const vec3f& s0, const vec3f& aabb_min, const vec3f& aabb_max)
+	inline vec3f closest_point_on_aabb(const vec3f& s0, const vec3f& aabb_min, const vec3f& aabb_max)
     {
         vec3f t1 = max_union(s0, aabb_min);
         vec3f t2 = min_union(t1, aabb_max);
@@ -260,7 +260,8 @@ namespace maths2
 		return dot(v2, v1);
 	}
 
-	bool line_vs_ray(const vec3f& l1, const vec3f& l2, const vec3f& r0, const vec3f& rV, vec3f& ip)
+	// Returns true if the line and ray intersect and stores the intersection point in ip
+	inline bool line_vs_ray(const vec3f& l1, const vec3f& l2, const vec3f& r0, const vec3f& rV, vec3f& ip)
 	{
 		vec3f da = l2 - l1;
 		vec3f db = rV;
@@ -279,7 +280,8 @@ namespace maths2
 		return false;
 	}
 
-	bool line_vs_line(const vec3f& l1, const vec3f& l2, const vec3f& s1, const vec3f& s2, vec3f& ip)
+	// Returns true if the line l1-l2 intersects with s1-s2 and stores the intersection point in ip
+	inline bool line_vs_line(const vec3f& l1, const vec3f& l2, const vec3f& s1, const vec3f& s2, vec3f& ip)
 	{
 		vec3f da = l2 - l1;
 		vec3f db = s2 - s1;
@@ -377,7 +379,7 @@ namespace maths2
     
     // Returns the cloest point on trianglt v1-v2-v3 to point p
     // side is 1 or -1 depending on whether the point is infront or behind the triangle
-    vec3f closest_point_on_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3, f32& side)
+	inline vec3f closest_point_on_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3, f32& side)
     {
         vec3f n = normalised(cross(v3 - v1, v2 - v1));
         
@@ -387,7 +389,7 @@ namespace maths2
         
         vec3f cp = p - n * d;
         
-        if (put::maths::point_inside_triangle(v1, v2, v3, cp))
+        if (maths::point_inside_triangle(v1, v2, v3, cp))
             return cp;
         
         vec3f cl[] =
@@ -415,7 +417,7 @@ namespace maths2
     }
     
     // Get normal of triangle v1-v2-v3 with left handed winding
-    vec3f get_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3)
+	inline vec3f get_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3)
     {
         vec3f vA = v3 - v1;
         vec3f vB = v2 - v1;
@@ -458,17 +460,15 @@ namespace maths2
 	// mat will transform a cube centred at 0 with extents -1 to 1 into an obb
 	inline bool ray_vs_obb(const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip)
 	{
-		mat4 invm = mat;
-		invm = invm.inverse4x4();
-
-		vec3f tr1 = invm.transform_vector(r1);
+		mat4 invm = mat::inverse4x4(mat);
+		vec3f tr1 = invm.transform_vector(vec4f(r1, 1.0f)).xyz;
 
 		invm.set_translation(vec3f::zero());
-		vec3f trv = invm.transform_vector(rv);
+		vec3f trv = invm.transform_vector(vec4f(rv, 1.0f)).xyz;
 
 		bool ii = ray_vs_aabb(-vec3f::one(), vec3f::one(), tr1, normalised(trv), ip);
 
-		ip = mat.transform_vector(ip);
+		ip = mat.transform_vector(vec4f(ip, 1.0f)).xyz;
 		return ii;
 	}
 }

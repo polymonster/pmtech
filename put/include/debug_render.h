@@ -2,7 +2,7 @@
 #define debug_render_h__
 
 #include "pen.h"
-#include "put_math.h"
+#include "maths/maths.h"
 #include "renderer.h"
 
 namespace put
@@ -27,7 +27,7 @@ namespace put
         void add_aabb(const vec3f &min, const vec3f& max, const vec4f& col = vec4f(1.0f, 1.0f, 1.0f, 1.0f) );
         void add_circle(const vec3f& axis, const vec3f& centre, f32 radius, const vec4f& col = vec4f::white());
         void add_circle_segment(const vec3f& axis, const vec3f& centre,
-                                f32 radius, f32 min = 0.0, f32 max = PI_2, const vec4f& col = vec4f::white());
+                                f32 radius, f32 min = 0.0, f32 max = M_PI_2, const vec4f& col = vec4f::white());
 		void add_frustum(const vec3f* near_corners, const vec3f* far_corners, const vec4f& col = vec4f::white() );
 		void add_triangle(const vec3f& v1, const vec3f& v2, const vec3f& v3, const vec4f& col = vec4f::white());
         void add_plane(const vec3f& point, const vec3f& normal, f32 size = 50.0f, vec4f colour = vec4f::white());

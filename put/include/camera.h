@@ -3,8 +3,8 @@
 
 #include "pen.h"
 #include "renderer.h"
-#include "vector.h"
-#include "matrix.h"
+#include "maths/vec.h"
+#include "maths/mat.h"
 
 namespace put
 {

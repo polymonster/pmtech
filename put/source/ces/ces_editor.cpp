@@ -511,10 +511,10 @@ namespace put
 			for (s32 i = 0; i < 6; ++i)
 			{
 				s32 offset = i * 3;
-				vec3f v1 = maths::normalise(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
-				vec3f v2 = maths::normalise(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+				vec3f v1 = normalised(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
+				vec3f v2 = normalised(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
 
-				n[i] = put::maths::cross(v1, v2);
+				n[i] = cross(v1, v2);
 				p[i] = plane_vectors[offset];
 			}
 					
@@ -551,7 +551,7 @@ namespace put
 							vec3f& max = scene->bounding_volumes[node].transformed_max_extents;
 
 							u32 c = maths::aabb_vs_plane(min, max, p[i], n[i]);
-							if ( c == INFRONT )
+							if ( c == maths::INFRONT )
 							{
 								selected = false;
 								break;
@@ -624,7 +624,7 @@ namespace put
 				put::dbg::add_line_2f(source_points[2], source_points[3]);
 				put::dbg::add_line_2f(source_points[3], source_points[1]);
                         
-                if (maths::magnitude(max - min) < 6.0 )
+                if (mag(max - min) < 6.0 )
 				{
                     picking_state = PICKING_SINGLE;
                             
@@ -673,18 +673,18 @@ namespace put
                                 
                         for (s32 i = 0; i < 4; ++i)
                         {
-                            frustum_points[0][i] = maths::unproject
+							mat4 view_proj = cam->proj * cam->view;
+                            frustum_points[0][i] = maths::unproject_sc
                             (
                                 vec3f(source_points[i], 0.0f),
-                                cam->view,
-                                cam->proj,
+								view_proj,
                                 vpi
                             );
-                            frustum_points[1][i] = maths::unproject
+
+                            frustum_points[1][i] = maths::unproject_sc
                             (
                                 vec3f(source_points[i], 1.0f),
-                                cam->view,
-                                cam->proj,
+								view_proj,
                                 vpi
                             );
                         }
@@ -1339,11 +1339,11 @@ namespace put
                 perform_transform |= ImGui::InputFloat3( "Translation", ( float* )&t.translation );
 
                 vec3f euler = t.rotation.to_euler();
-                euler = euler * _PI_OVER_180;
+                euler = euler * (f32)M_PI_OVER_180;
 
                 if (ImGui::InputFloat3( "Rotation", ( float* )&euler ))
                 {
-                    euler = euler * _180_OVER_PI;
+                    euler = euler * (f32)M_180_OVER_PI;
                     t.rotation.euler_angles( euler.z, euler.y, euler.x );
                     perform_transform = true;
                 }
@@ -1875,9 +1875,10 @@ namespace put
 			const pen::mouse_state& ms = pen::input_get_mouse_state();
 			vec3f mousev3 = vec3f(ms.x, view.viewport->height - ms.y, 0.0f);
 
-			vec3f r0 = put::maths::unproject(vec3f(mousev3.x, mousev3.y, 0.0f), view.camera->view, view.camera->proj, vpi);
-			vec3f r1 = put::maths::unproject(vec3f(mousev3.x, mousev3.y, 1.0f), view.camera->view, view.camera->proj, vpi);
-			vec3f vr = put::maths::normalise(r1 - r0);
+			mat4 view_proj = view.camera->proj * view.camera->view;
+			vec3f r0 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 0.0f), view_proj, vpi);
+			vec3f r1 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 1.0f), view_proj, vpi);
+			vec3f vr = normalised(r1 - r0);
 
             if (k_transform_mode == TRANSFORM_PHYSICS)
             {
@@ -1920,12 +1921,11 @@ namespace put
                 {
                     if (ms.buttons[PEN_MOUSE_L])
                     {
-                        vec3f new_pos = put::maths::ray_vs_plane
+                        vec3f new_pos = maths::ray_plane_intersect
                         (
-                            vr,
-                            r0,
-                            view.camera->view.get_fwd(),
-                            k_physics_pick_info.pos
+							r0, vr,
+                            k_physics_pick_info.pos,
+							view.camera->view.get_fwd()
                         );
 
                         physics::set_v3( k_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS );
@@ -1960,7 +1960,7 @@ namespace put
                 pos += _min + (_max - _min) * 0.5f;
             }
 
-			f32 extents_mag = maths::magnitude(max - min);
+			f32 extents_mag = mag(max - min);
 			            
             pos /= (f32)sb_count(k_selection_list);
             
@@ -1977,7 +1977,7 @@ namespace put
             mat4 res = view.camera->proj * view.camera->view;
             
             f32 w = 1.0;
-            vec3f screen_pos = res.transform_vector(pos, &w);
+            vec3f screen_pos = res.transform_vector(pos, w);
             f32 d = fabs(screen_pos.z) * 0.1f;
             
             if( screen_pos.z < -0.0 )
@@ -1998,12 +1998,12 @@ namespace put
                 static bool selected[3] = { 0 };
                 for( s32 i = 0; i < 3; ++i )
                 {
-                    vec3f cp = maths::ray_vs_plane( vr, r0, plane_normals[i], pos );
+                    vec3f cp = maths::ray_plane_intersect(r0, vr, pos, plane_normals[i]);
                     
                     if(!ms.buttons[PEN_MOUSE_L])
                     {
                         selected[i] = false;
-                        f32 dd = maths::magnitude(cp - pos);
+                        f32 dd = mag(cp - pos);
                         if( dd < rd + rd * 0.05 &&
                            dd > rd - rd * 0.05 )
                             selected[i] = true;
@@ -2032,14 +2032,14 @@ namespace put
                     {
 						k_select_flags |= WIDGET_SELECTED;
 
-                        vec3f prev_line = maths::normalise(attach_point - pos);
-                        vec3f cur_line = maths::normalise(_cp - pos);
+                        vec3f prev_line = normalised(attach_point - pos);
+                        vec3f cur_line = normalised(_cp - pos);
                         
                         dbg::add_line(pos, attach_point, vec4f::cyan());
                         dbg::add_line(pos, _cp, vec4f::magenta());
                         
-                        vec3f x = maths::cross(prev_line, cur_line);
-                        f32 amt = maths::dot( x, plane_normals[i] );
+                        vec3f x = cross(prev_line, cur_line);
+                        f32 amt = dot( x, plane_normals[i] );
                         
                         apply_transform_to_selection( view.scene, plane_normals[i] * amt);
                         
@@ -2061,13 +2061,15 @@ namespace put
 					vec3f::unit_z(),
 				};
 
+				mat4 view_proj = view.camera->proj * view.camera->view;
+
 				//work out major axes
 				vec3f pp[4];
 				for (s32 i = 0; i < 4; ++i)
 				{
 					widget_points[i] = pos + unit_axis[i] * d;
 
-					pp[i] = put::maths::project(widget_points[i], view.camera->view, view.camera->proj, vpi);
+					pp[i] = maths::project_to_sc(widget_points[i], view_proj, vpi);
 					pp[i].z = 0.0f;
 				}
 
@@ -2081,20 +2083,18 @@ namespace put
 					if (next_index > 3)
 						next_index = 1;
 
-					ppj[j_index] = put::maths::project
+					ppj[j_index] = maths::project_to_sc
                     (
                         pos + unit_axis[i+1] * d * 0.3f,
-                        view.camera->view,
-                        view.camera->proj,
+						view_proj,
                         vpi
                     );
 					ppj[j_index].z = 0.0f;
 
-					ppj[j_index + 1] = put::maths::project
+					ppj[j_index + 1] = maths::project_to_sc
                     (
                         pos + unit_axis[next_index] * d * 0.3f,
-                        view.camera->view,
-                        view.camera->proj,
+						view_proj,
                         vpi
                     );
 					ppj[j_index + 1].z = 0.0f;
@@ -2105,9 +2105,9 @@ namespace put
 					selected_axis = 0;
 					for (s32 i = 1; i < 4; ++i)
 					{
-						vec3f cp = put::maths::closest_point_on_line(pp[0], pp[i], mousev3);
+						vec3f cp = maths::closest_point_on_line(pp[0], pp[i], mousev3);
 
-						if (put::maths::distance(cp, mousev3) < selection_radius)
+						if (dist(cp, mousev3) < selection_radius)
 							selected_axis |= (1 << i);
 					}
 
@@ -2120,9 +2120,9 @@ namespace put
 						if (i_next > 3)
 							i_next = 1;
 
-						vec3f cp = put::maths::closest_point_on_line(ppj[j_index], ppj[j_index + 1], mousev3);
+						vec3f cp = maths::closest_point_on_line(ppj[j_index], ppj[j_index + 1], mousev3);
 
-						if (put::maths::distance(cp, mousev3) < selection_radius)
+						if (dist(cp, mousev3) < selection_radius)
 							selected_axis |= (1<< ii) | (1<<i_next);
 					}
 				}
@@ -2142,13 +2142,13 @@ namespace put
 
 					if (k_transform_mode == TRANSFORM_TRANSLATE)
 					{
-						vec2f v = put::maths::normalise(pp[i].xy - pp[0].xy);
-						vec2f perp = put::maths::perp_lh(v) * 5.0f;
+						vec2f v = normalised(pp[i].xy - pp[0].xy);
+						vec2f px = perp(v) * 5.0f;
 
 						vec2f base = pp[i].xy - v * 5.0f;
 
-						put::dbg::add_line_2f(pp[i].xy, base + perp, col);
-						put::dbg::add_line_2f(pp[i].xy, base - perp, col);
+						put::dbg::add_line_2f(pp[i].xy, base + px, col);
+						put::dbg::add_line_2f(pp[i].xy, base - px, col);
 					}
 					else if (k_transform_mode == TRANSFORM_SCALE)
 					{
@@ -2197,12 +2197,12 @@ namespace put
 
 					static vec3f box_size = vec3f(0.5, 0.5, 0.5);
                     
-					vec3f plane_normal = maths::cross(translation_axis[i], view.camera->view.get_up());
+					vec3f plane_normal = cross(translation_axis[i], view.camera->view.get_up());
 
 					if (i == 1)
-						plane_normal = maths::cross(translation_axis[i], view.camera->view.get_right());
+						plane_normal = cross(translation_axis[i], view.camera->view.get_right());
 
-					axis_pos[i] = put::maths::ray_vs_plane(vr, r0, plane_normal, widget_points[0]);
+					axis_pos[i] = maths::ray_plane_intersect(r0, vr, widget_points[0], plane_normal);
 
 					if (!ms.buttons[PEN_MOUSE_L])
 						pre_click_axis_pos[i] = axis_pos[i];
@@ -2321,6 +2321,8 @@ namespace put
 
             render_physics_debug( view );
                        
+			mat4 view_proj = view.camera->proj * view.camera->view;
+
             if( scene->view_flags & DD_LIGHTS )
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
@@ -2329,7 +2331,7 @@ namespace put
                     {
                         vec3f p = scene->world_matrices[n].get_translation();
                         
-                        p = put::maths::project(p, view.camera->view,  view.camera->proj, vpi);
+                        p = maths::project_to_sc(p, view_proj, vpi);
                         
 						if( p.z > 0.0f )
 							put::dbg::add_quad_2f( p.xy, vec2f( 5.0f, 5.0f ), vec4f( scene->lights[n].colour, 1.0f ) );

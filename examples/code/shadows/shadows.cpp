@@ -137,8 +137,8 @@ void get_aabb_corners( vec3f* corners, vec3f min, vec3f max )
 void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, vec3f min, vec3f max )
 {
     //create view matrix
-    vec3f right = maths::cross(light_dir, vec3f::unit_y());
-    vec3f up = maths::cross(right, light_dir);
+    vec3f right = cross(light_dir, vec3f::unit_y());
+    vec3f up = cross(right, light_dir);
     
     mat4 shadow_view;
     shadow_view.set_vectors(right, up, -light_dir, vec3f::zero());
@@ -160,7 +160,7 @@ void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, v
     
     //create ortho mat and set view matrix
     shadow_cam->view = shadow_view;
-    shadow_cam->proj = mat4::create_orthographic_projection
+    shadow_cam->proj = mat::create_orthographic_projection
     (
         cmin.x, cmax.x,
         cmin.y, cmax.y,
@@ -176,7 +176,7 @@ void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )
     //static hash_id id_main_cam = PEN_HASH("model_viewer_camera");
     //const camera* main_cam = pmfx::get_camera(id_main_cam);
     
-    vec3f light_dir = maths::normalise(-scene->lights[0].direction);
+    vec3f light_dir = normalised(-scene->lights[0].direction);
     
     fit_directional_shadow_to_aabb
     (

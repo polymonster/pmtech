@@ -81,8 +81,8 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->physics_data[hinge_x_constraint].constraint.type = physics::CONSTRAINT_HINGE;
     scene->physics_data[hinge_x_constraint].constraint.axis = vec3f::unit_x();
     scene->physics_data[hinge_x_constraint].constraint.rb_indices[0] = scene->physics_handles[hinge_x_body];
-    scene->physics_data[hinge_x_constraint].constraint.lower_limit_rotation.x = -PI;
-    scene->physics_data[hinge_x_constraint].constraint.upper_limit_rotation.x = PI;
+    scene->physics_data[hinge_x_constraint].constraint.lower_limit_rotation.x = -M_PI;
+    scene->physics_data[hinge_x_constraint].constraint.upper_limit_rotation.x = M_PI;
     instantiate_constraint( scene, hinge_x_constraint );
     
     //add hinge in the y-axis with rotational limits
@@ -112,8 +112,8 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->physics_data[hinge_y_constraint].constraint.type = physics::CONSTRAINT_HINGE;
     scene->physics_data[hinge_y_constraint].constraint.axis = vec3f::unit_y();
     scene->physics_data[hinge_y_constraint].constraint.rb_indices[0] = scene->physics_handles[hinge_y_body];
-    scene->physics_data[hinge_y_constraint].constraint.lower_limit_rotation.x = -PI/2;
-    scene->physics_data[hinge_y_constraint].constraint.upper_limit_rotation.x = PI/2;
+    scene->physics_data[hinge_y_constraint].constraint.lower_limit_rotation.x = -M_PI /2;
+    scene->physics_data[hinge_y_constraint].constraint.upper_limit_rotation.x = M_PI /2;
     instantiate_constraint( scene, hinge_y_constraint );
     
     //add box with a point to point constraint

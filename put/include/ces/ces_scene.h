@@ -2,12 +2,13 @@
 #define ces_scene_h__
 
 #include "pen.h"
-#include "put_math.h"
+#include "maths/maths.h"
 #include "camera.h"
 #include "loader.h"
 #include "physics.h"
 #include "str/Str.h"
 #include "pmfx.h"
+#include "maths/quat.h"
 
 #include <vector>
 

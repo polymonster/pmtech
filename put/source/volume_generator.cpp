@@ -428,13 +428,13 @@ namespace put
 
 			static mat4 axis_swaps[] =
 			{
-				mat4::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), -vec3f::unit_z()),
-				mat4::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), vec3f::unit_y()),
-				mat4::create_axis_swap(-vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x()),
+				mat::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), -vec3f::unit_z()),
+				mat::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), vec3f::unit_y()),
+				mat::create_axis_swap(-vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x()),
 
-				mat4::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), -vec3f::unit_z()),
-				mat4::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), vec3f::unit_y()),
-				mat4::create_axis_swap(-vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x())
+				mat::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), -vec3f::unit_z()),
+				mat::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), vec3f::unit_y()),
+				mat::create_axis_swap(-vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x())
 			};
 
 			vec3f smin[] =
@@ -547,9 +547,7 @@ namespace put
 
 						vec3f cp = cps.xyz;
 
-						f32 d = maths::distance(cp, world_pos);
-
-						//f32 volume_space_d = d / scene_dimension.max_component();
+						f32 d = dist(cp, world_pos);
 
 						f32 volume_space_d = d / component_wise_max(scene_dimension);
 
@@ -773,7 +771,7 @@ namespace put
 						vec3f tv1 = scene->world_matrices[n].transform_vector(vertices[i1].xyz);
 						vec3f tv2 = scene->world_matrices[n].transform_vector(vertices[i2].xyz);
 
-						vec3f n = maths::normalise(maths::cross(tv2 - tv0, tv1 - tv0));
+						vec3f n = normalised(cross(tv2 - tv0, tv1 - tv0));
 
 						triangle t = { tv0 , tv1, tv2, n };
 
@@ -870,7 +868,7 @@ namespace put
 				f32 side = 0.0f;
 				vec3f cp = maths::closest_point_on_triangle(t.v[0], t.v[1], t.v[2], pos, side);
 
-				f32 cd = maths::distance(cp, pos);
+				f32 cd = dist(cp, pos);
 
 				if(debug)
 					ImGui::Text("tri %i, cd = %f, side = %f", ti, cd, side);

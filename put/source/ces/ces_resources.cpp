@@ -79,7 +79,7 @@ namespace put
 			vec3f scale = scene->transforms[s].scale;
 			quat rotation = scene->transforms[s].rotation;
 
-			scene->offset_matrices[s] = mat4::create_scale(scale);
+			scene->offset_matrices[s] = mat::create_scale(scale);
             
             rb.position = pos;
             rb.rotation = rotation;
@@ -96,7 +96,7 @@ namespace put
             //fill the matrix array with the first matrix because of thread sync
             mat4 mrot;
             rotation.get_matrix(mrot);
-            mat4 start_transform = mrot * mat4::create_translation(pos);
+            mat4 start_transform = mrot * mat::create_translation(pos);
             
             //masks / groups are currently hardcoded.
 			rb.group = 1;
@@ -127,7 +127,7 @@ namespace put
             
             bv->min_extents = gr->min_extents;
             bv->max_extents = gr->max_extents;
-			bv->radius = maths::magnitude(bv->max_extents - bv->min_extents) * 0.5f;
+			bv->radius = mag(bv->max_extents - bv->min_extents) * 0.5f;
 
             scene->geometry_names[node_index] = gr->geometry_name;
             scene->id_geometry[node_index] = gr->hash;
@@ -310,9 +310,9 @@ namespace put
                     p_reader += 16;
                     
                     //max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 1.0f, 0.0f));
-                    mat4 max_swap = mat4::create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f));
+                    mat4 max_swap = mat::create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f));
         
-                    mat4 max_swap_inv = max_swap.inverse4x4();
+                    mat4 max_swap_inv = mat::inverse4x4(max_swap);
                     
                     mat4 final_bind = max_swap * p_geometry->p_skin->bind_shape_matirx * max_swap_inv;
                     
@@ -816,7 +816,7 @@ namespace put
                             break;
                         case PMM_ROTATE:
                             pen::memory_cpy(&rotations[num_rotations], p_u32reader, 16);
-                            rotations[num_rotations].w = put::maths::deg_to_rad(rotations[num_rotations].w);
+                            rotations[num_rotations].w = maths::deg_to_rad(rotations[num_rotations].w);
                             if (rotations[num_rotations].w < zero_rotation_epsilon && rotations[num_rotations].w > zero_rotation_epsilon)
                                 rotations[num_rotations].w = 0.0f;
                             num_rotations++;
@@ -883,7 +883,7 @@ namespace put
 					mat4 rot_mat;
 					final_rotation.get_matrix(rot_mat);
 
-					mat4 translation_mat = mat4::create_translation(translation);
+					mat4 translation_mat = mat::create_translation(translation);
 
 					matrix = translation_mat * rot_mat;
 				}
@@ -893,9 +893,9 @@ namespace put
 					scene->transforms[current_node].translation = matrix.get_translation();
 					scene->transforms[current_node].rotation.from_matrix(matrix);
 					
-					f32 sx = put::maths::magnitude(matrix.get_right());
-					f32 sy = put::maths::magnitude(matrix.get_up());
-					f32 sz = put::maths::magnitude(matrix.get_fwd());
+					f32 sx = mag(matrix.get_right());
+					f32 sy = mag(matrix.get_up());
+					f32 sz = mag(matrix.get_fwd());
 
                     scene->transforms[current_node].scale = vec3f( sx, sy, sz );
 				}
