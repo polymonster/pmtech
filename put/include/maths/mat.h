@@ -384,7 +384,7 @@ namespace mat
 		//determinant
 		T one_over_det = (T)1 / compute_determinant(mat);
 
-		Mat< 4, 4, T > inverse = mat::create_identity();
+		Mat< 4, 4, T > inverse = Mat<4, 4, T>::create_identity();
 
 		//find the adjoint matrix (transposed) and multiply by 1/det to get the inverse
 		inverse.m[0] = (m[5] * m[10] - m[6] * m[9]) * one_over_det;
@@ -619,7 +619,7 @@ namespace mat
 	template<typename T>
 	inline Mat<4, 4, T> create_axis_swap(const Vec<3, T>& x, const Vec<3, T>& y, const Vec<3, T>&  z)
 	{
-		mat4 m;
+		Mat<4, 4, T> m;
 
 		m.m[0] = x.x;  m.m[1] = y.x;  m.m[2] = z.x;  m.m[3] = 0.0f;
 		m.m[4] = x.y;  m.m[5] = y.y;  m.m[6] = z.y;	m.m[7] = 0.0f;
