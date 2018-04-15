@@ -14,7 +14,7 @@ namespace put
         void enumerate_resources( bool* open );
         void add_selection( entity_scene* scene, u32 index, u32 select_mode = 0 );
 
-        void update_model_viewer_camera( put::camera_controller* cc );
+        void update_model_viewer_camera( put::scene_controller* sc );
         void update_model_viewer_scene( put::scene_controller* sc );
 
 		void apply_transform_to_selection(entity_scene* scene, const vec3f move_axis);

@@ -172,10 +172,7 @@ void fit_directional_shadow_to_aabb( put::camera* shadow_cam, vec3f light_dir, v
 }
 
 void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )
-{
-    //static hash_id id_main_cam = PEN_HASH("model_viewer_camera");
-    //const camera* main_cam = pmfx::get_camera(id_main_cam);
-    
+{    
     vec3f light_dir = normalised(-scene->lights[0].direction);
     
     fit_directional_shadow_to_aabb
@@ -203,7 +200,7 @@ void update_shadow_frustum( ces::entity_scene* scene, put::camera* shadow_cam )
     pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));
 }
 
-void shadow_map_update(put::camera_controller* cc)
+void shadow_map_update(put::scene_controller* sc)
 {
     /*
     static hash_id id_shadow_map = PEN_HASH("shadow_map");
@@ -238,7 +235,7 @@ PEN_TRV pen::user_entry( void* params )
 	put::camera main_camera;
 	put::camera_create_perspective( &main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f );
     
-    put::camera_controller cc;
+    put::scene_controller cc;
     cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
     cc.name = "model_viewer_camera";
@@ -247,7 +244,7 @@ PEN_TRV pen::user_entry( void* params )
     //create shadow camera and controller
     put::camera shadow_camera;
     
-    put::camera_controller shadow_cc;
+    put::scene_controller shadow_cc;
     shadow_cc.camera = &shadow_camera;
     shadow_cc.update_function = &shadow_map_update;
     shadow_cc.name = "shadow_camera";
@@ -284,10 +281,9 @@ PEN_TRV pen::user_entry( void* params )
     pmfx::register_scene_view_renderer(svr_editor);
     pmfx::register_scene_view_renderer(svr_debug);
 
-    pmfx::register_scene(sc);
-    
-    pmfx::register_camera(cc);
-    pmfx::register_camera(shadow_cc);
+    pmfx::register_scene_controller(sc);
+    pmfx::register_scene_controller(cc);
+    pmfx::register_scene_controller(shadow_cc);
     
     pmfx::init("data/configs/shadows.json");
 

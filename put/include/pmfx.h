@@ -4,12 +4,9 @@
 #include "pen.h"
 #include "str/Str.h"
 
-namespace put
+namespace pen
 {
-	struct scene_controller;
-	struct scene_view_renderer;
-	struct camera_controller;
-	struct camera;
+    struct viewport;
 }
 
 namespace put
@@ -18,7 +15,66 @@ namespace put
     {
         typedef u32 shader_program_handle;
         typedef u32 shader_handle;
+    }
 
+    namespace ces
+    {
+        struct entity_scene;
+    }
+
+    struct camera;
+}
+
+namespace put
+{
+    enum e_update_order
+    {
+        PRE_UPDATE = 0,
+        MAIN_UPDATE,
+        POST_UPDATE,
+
+        UPDATES_NUM
+    };
+
+    struct scene_view
+    {
+        u32 cb_view = PEN_INVALID_HANDLE;
+        u32 cb_2d_view = PEN_INVALID_HANDLE;
+        u32 render_flags = 0;
+        u32 depth_stencil_state = 0;
+        u32 blend_state_state = 0;
+        u32 raster_state = 0;
+        camera* camera = nullptr;
+        pen::viewport* viewport = nullptr;
+        pmfx::shader_handle pmfx_shader = PEN_INVALID_HANDLE;
+        hash_id technique = 0;
+        ces::entity_scene* scene = nullptr;
+    };
+
+    struct scene_controller
+    {
+        Str                     name;
+        hash_id                 id_name = 0;
+        ces::entity_scene*      scene = nullptr;
+        camera*                 camera = nullptr;
+        e_update_order          order = MAIN_UPDATE;
+
+        void(*update_function)(scene_controller*) = nullptr;
+    };
+
+    struct scene_view_renderer
+    {
+        Str name;
+        hash_id id_name = 0;
+
+        void(*render_function)(const scene_view&) = nullptr; 
+    };
+}
+
+namespace put
+{
+    namespace pmfx
+    {
         struct shader_program
         {
             hash_id id_name;
@@ -53,8 +109,7 @@ namespace put
 		void					update();
 		void					render();
 
-		void					register_scene(const scene_controller& scene);
-		void					register_camera(const camera_controller& cam);
+        void                    register_scene_controller(const scene_controller& controller);
 		void					register_scene_view_renderer(const scene_view_renderer& svr);
 
 		const camera*			get_camera(hash_id id_name);

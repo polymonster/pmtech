@@ -14,6 +14,8 @@
 
 namespace put
 {
+    struct scene_view;
+
     typedef s32 anim_handle;
 
     namespace ces
@@ -350,25 +352,6 @@ namespace put
             RENDER_FORWARD_LIT = 1
         };
 
-        struct scene_view
-        {
-            u32 cb_view;
-            u32 cb_2d_view;
-            u32 render_flags = 0;
-
-            u32 depth_stencil_state = 0;
-            u32 blend_state_state = 0;
-            u32 raster_state = 0;
-
-            camera* camera;
-            pen::viewport* viewport;
-
-            pmfx::shader_handle pmfx_shader;
-            hash_id technique;
-
-            entity_scene* scene = nullptr;
-        };
-
         entity_scene*   create_scene(const c8* name);
         void			destroy_scene(entity_scene* scene);
 
@@ -389,37 +372,6 @@ namespace put
 
         void            initialise_free_list(entity_scene* scene);
     }
-
-    struct camera_controller
-    {
-        hash_id				id_name;
-        camera*				camera = nullptr;
-        ces::entity_scene*	scene = nullptr;
-
-        void(*update_function)(put::camera_controller*) = nullptr;
-
-        Str name;
-    };
-
-    struct scene_controller
-    {
-        hash_id id_name;
-        put::ces::entity_scene* scene;
-        put::camera* camera;
-
-        void(*update_function)(put::scene_controller*) = nullptr;
-
-        Str name;
-    };
-
-    struct scene_view_renderer
-    {
-        hash_id id_name;
-
-        void(*render_function)(const put::ces::scene_view&) = nullptr;
-
-        Str name;
-    };
 }
 
 #endif

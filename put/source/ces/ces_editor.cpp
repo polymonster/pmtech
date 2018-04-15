@@ -122,14 +122,14 @@ namespace put
 			return pen_input_key(key);
 		}
         
-        void update_model_viewer_camera(put::camera_controller* cc)
+        void update_model_viewer_camera(put::scene_controller* sc)
         {
 			if (k_model_view_controller.invalidated)
 			{
-				cc->camera->fov = k_model_view_controller.main_camera.fov;
-				cc->camera->near_plane = k_model_view_controller.main_camera.near_plane;
-				cc->camera->far_plane = k_model_view_controller.main_camera.far_plane;
-				camera_update_projection_matrix(cc->camera);
+                sc->camera->fov = k_model_view_controller.main_camera.fov;
+                sc->camera->near_plane = k_model_view_controller.main_camera.near_plane;
+                sc->camera->far_plane = k_model_view_controller.main_camera.far_plane;
+				camera_update_projection_matrix(sc->camera);
 				k_model_view_controller.invalidated = false;
 			}
 
@@ -138,10 +138,10 @@ namespace put
             switch (k_model_view_controller.camera_mode)
             {
                 case CAMERA_MODELLING:
-                    put::camera_update_modelling(cc->camera, has_focus, k_model_view_controller.invert_y);
+                    put::camera_update_modelling(sc->camera, has_focus, k_model_view_controller.invert_y);
                     break;
                 case CAMERA_FLY:
-                    put::camera_update_fly(cc->camera, has_focus, k_model_view_controller.invert_y);
+                    put::camera_update_fly(sc->camera, has_focus, k_model_view_controller.invert_y);
                     break;
             }
         }
