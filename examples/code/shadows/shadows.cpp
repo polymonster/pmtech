@@ -48,9 +48,9 @@ void create_scene_objects( ces::entity_scene* scene )
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = LIGHT_TYPE_DIR;
     scene->lights[light].shadow = true;
-    scene->transforms->translation = vec3f::zero();
-    scene->transforms->rotation = quat();
-    scene->transforms->scale = vec3f::one();
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
     

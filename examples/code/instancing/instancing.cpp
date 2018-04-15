@@ -47,9 +47,9 @@ void create_instanced_objects( ces::entity_scene* scene )
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = LIGHT_TYPE_DIR;
-    scene->transforms->translation = vec3f::zero();
-    scene->transforms->rotation = quat();
-    scene->transforms->scale = vec3f::one();
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
     

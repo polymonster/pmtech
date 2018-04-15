@@ -49,9 +49,9 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = LIGHT_TYPE_DIR;
-    scene->transforms->translation = vec3f::zero();
-    scene->transforms->rotation = quat();
-    scene->transforms->scale = vec3f::one();
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
 
@@ -88,7 +88,7 @@ void create_physics_objects( ces::entity_scene* scene )
     scene->anim_controller[skinned_char].current_frame = 0;
     scene->anim_controller[skinned_char].current_time = 1.0f;
     scene->anim_controller[skinned_char].current_animation = ah;
-    scene->anim_controller[skinned_char].play_flags = animation_controller::PLAY;
+    scene->anim_controller[skinned_char].play_flags = cmp_anim_controller::PLAY;
     
     //remove the geometry flag from the skinned character as we just want to use it as vertex stream out
     scene->entities[skinned_char] &= ~CMP_GEOMETRY;

@@ -35,7 +35,7 @@ namespace put
 
 		struct transform_undo
 		{
-			transform state;
+			cmp_transform state;
 			u32		  node_index;
 		};
 
@@ -253,9 +253,9 @@ namespace put
 			scene->lights[light].colour = vec3f::one();
 			scene->lights[light].direction = vec3f::one();
 			scene->lights[light].type = LIGHT_TYPE_DIR;
-			scene->transforms->translation = vec3f::zero();
-			scene->transforms->rotation = quat();
-			scene->transforms->scale = vec3f::one();
+            scene->transforms[light].translation = vec3f::zero();
+            scene->transforms[light].rotation = quat();
+            scene->transforms[light].scale = vec3f::one();
 			scene->entities[light] |= CMP_LIGHT;
 			scene->entities[light] |= CMP_TRANSFORM;
 
@@ -317,12 +317,12 @@ namespace put
             scene->entities[master] |= CMP_MASTER_INSTANCE;
             
             scene->master_instances[master].num_instances = selection_size;
-            scene->master_instances[master].instance_stride = sizeof(per_draw_call);
+            scene->master_instances[master].instance_stride = sizeof(cmp_draw_call);
             
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
-            bcp.buffer_size = sizeof(per_draw_call) * scene->master_instances[master].num_instances;
+            bcp.buffer_size = sizeof(cmp_draw_call) * scene->master_instances[master].num_instances;
             bcp.data = nullptr;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             
@@ -1126,7 +1126,7 @@ namespace put
         struct physics_preview
         {
             bool active = false;
-            scene_node_physics params;
+            cmp_physics params;
 
             physics_preview() {};
             ~physics_preview() {};
@@ -1335,7 +1335,7 @@ namespace put
             if (ImGui::CollapsingHeader( "Transform" ))
             {
                 bool perform_transform = false;
-                transform& t = scene->transforms[selected_index];
+                cmp_transform& t = scene->transforms[selected_index];
                 perform_transform |= ImGui::InputFloat3( "Translation", ( float* )&t.translation );
 
                 vec3f euler = t.rotation.to_euler();
@@ -1464,19 +1464,19 @@ namespace put
                     if (is_valid( controller.current_animation ))
                     {
                         if (ImGui::InputInt( "Frame", &controller.current_frame ))
-                            controller.play_flags = animation_controller::STOPPED;
+                            controller.play_flags = cmp_anim_controller::STOPPED;
                         
                         ImGui::SameLine();
                         
-                        if (controller.play_flags == animation_controller::STOPPED)
+                        if (controller.play_flags == cmp_anim_controller::STOPPED)
                         {
                             if (ImGui::Button( ICON_FA_PLAY ))
-                                controller.play_flags = animation_controller::PLAY;
+                                controller.play_flags = cmp_anim_controller::PLAY;
                         }
                         else
                         {
                             if (ImGui::Button( ICON_FA_STOP ))
-                                controller.play_flags = animation_controller::STOPPED;
+                                controller.play_flags = cmp_anim_controller::STOPPED;
                         }
                     }
                     
@@ -1559,7 +1559,7 @@ namespace put
             {
                 if (scene->entities[selected_index] & CMP_LIGHT)
                 {
-                    scene_node_light& snl = scene->lights[selected_index];
+                    cmp_light& snl = scene->lights[selected_index];
                     
                     ImGui::Combo( "Type", ( s32* )&scene->lights[selected_index].type, "Directional\0Point\0Spot\0", 3 );
 
@@ -1820,7 +1820,7 @@ namespace put
                         continue;
                 }
                 
-                transform& t = scene->transforms[i];
+                cmp_transform& t = scene->transforms[i];
                 if (k_transform_mode == TRANSFORM_TRANSLATE)
                     t.translation += move_axis;
                 if (k_transform_mode == TRANSFORM_SCALE)
@@ -2368,7 +2368,7 @@ namespace put
 
                     if( scene->entities[s] & CMP_LIGHT )
                     {
-                        scene_node_light& snl = scene->lights[s];
+                        cmp_light& snl = scene->lights[s];
                         
                         if(snl.type == LIGHT_TYPE_DIR)
                         {
