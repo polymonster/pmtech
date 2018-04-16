@@ -175,6 +175,10 @@ namespace put
         };
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
+        
+        void undo( entity_scene* scene );
+        void redo( entity_scene* scene );
+        void update_undo_stack(entity_scene* scene, f32 dt);
 
         void update_view_flags_ui( entity_scene* scene )
         {
@@ -1109,6 +1113,21 @@ namespace put
                 view_ui( sc->scene, &view_menu );
             }
             
+            //undo / redo
+            static bool debounce_undo = false;
+            if (shortcut_key(PENK_Z))
+            {
+                if(!debounce_undo)
+                {
+                    debounce_undo = true;
+                    undo(sc->scene);
+                }
+            }
+            else if(debounce_undo)
+            {
+                debounce_undo = false;
+            }
+            
             //todo mnove this
             static u32 timer_index = -1;
             if( timer_index == -1 )
@@ -1121,6 +1140,8 @@ namespace put
             pen::timer_start(timer_index);
             
             put::ces::update_scene(sc->scene, dt_ms);
+            
+            update_undo_stack(sc->scene, dt_ms);
         }
 
         struct physics_preview
@@ -1775,24 +1796,115 @@ namespace put
         }
         
         //undoable / redoable actions
+        enum e_editor_actions
+        {
+            UNDO = 0,
+            REDO,
+            NUM_ACTIONS
+        };
+        
+        struct node_state
+        {
+            void** components = nullptr;
+        };
+        
         struct editor_action
         {
-            int node_index;
-            
-            
+            int         node_index;
+            node_state  action_state[NUM_ACTIONS];
+            f32         timer = 0.0f;
         };
         
         static pen_stack<editor_action> k_undo_stack;
         static pen_stack<editor_action> k_redo_stack;
+    
+        static editor_action* k_editor_nodes = nullptr;
         
-        
-        void add_editor_action( )
+        void store_node_state( entity_scene* scene, u32 node_index, e_editor_actions action )
         {
+            static const f32 undo_push_timer = 33.0f;
+            k_editor_nodes[node_index].timer = undo_push_timer;
+            node_state& ns = k_editor_nodes[node_index].action_state[action];
+            
+            u32 num = scene->num_components;
+            
+            if(action == UNDO)
+                if(ns.components)
+                    return;
+            
+            if(!ns.components)
+            {
+                ns.components = (void**)pen::memory_alloc(num*sizeof(generic_cmp_array));
+                pen::memory_zero(ns.components, num*sizeof(generic_cmp_array));
+            }
+
+            for( u32 i = 0; i < num; ++i )
+            {
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                
+                if(!ns.components[i])
+                    ns.components[i] = pen::memory_alloc(cmp.size);
+                
+                void* data = cmp[node_index];
+                
+                pen::memory_cpy(ns.components[i], data, cmp.size);
+            }
+        }
+        
+        void restore_node_state( entity_scene* scene, node_state& ns, u32 node_index )
+        {
+            u32 num = scene->num_components;
+            for( u32 i = 0; i < num; ++i )
+            {
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                
+                pen::memory_cpy(cmp[node_index], ns.components[i], cmp.size);
+            }
+        }
+        
+        void undo( entity_scene* scene )
+        {
+            if(k_undo_stack.size() <+ 0)
+                return;
+            
+            editor_action ua = k_undo_stack.pop();
+            restore_node_state(scene, ua.action_state[UNDO], ua.node_index);
+        }
+        
+        void redo( entity_scene* scene )
+        {
+            //editor_action ua = k_redo_stack.pop();
+            //restore_node_state(scene, ua.undo, ua.node_index);
+        }
+        
+        void update_undo_stack(entity_scene* scene, f32 dt)
+        {
+            //resize buffers
+            if(!k_editor_nodes || sb_count(k_editor_nodes) < scene->nodes_size)
+            {
+                stb__sbgrow(k_editor_nodes, scene->nodes_size);
+                stb__sbm(k_editor_nodes) = scene->num_nodes;
+                stb__sbn(k_editor_nodes) = scene->nodes_size;
+            }
+            
+            for(u32 i = 0; i < scene->nodes_size; ++i)
+            {
+                if(k_editor_nodes[i].action_state[UNDO].components)
+                {
+                    if(k_editor_nodes[i].timer <= 0.0f)
+                    {
+                        k_editor_nodes[i].node_index = i;
+                        k_undo_stack.push(k_editor_nodes[i]);
+                        k_editor_nodes[i].action_state[UNDO].components = nullptr;
+                    }
+                    
+                    k_editor_nodes[i].timer -= dt * 0.1f;
+                }
+            }
         }
         
         void apply_transform_to_selection( entity_scene* scene, const vec3f move_axis )
         {
-            scene->c
             if( move_axis == vec3f::zero() )
                 return;
             
@@ -1817,6 +1929,8 @@ namespace put
                         continue;
                 }
                 
+                store_node_state(scene, i, UNDO);
+                
                 cmp_transform& t = scene->transforms[i];
                 if (k_transform_mode == TRANSFORM_TRANSLATE)
                     t.translation += move_axis;
@@ -1836,6 +1950,8 @@ namespace put
 				}
                 
                 scene->entities[i] |= CMP_TRANSFORM;
+                
+                store_node_state(scene, i, REDO);
             }
         }
 

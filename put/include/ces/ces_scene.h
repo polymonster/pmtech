@@ -280,6 +280,13 @@ namespace put
         {
             u32 size;
             void* data;
+            
+            void* operator[] (size_t index)
+            {
+                u8* d = (u8*)data;
+                u8* di = &d[index * size];
+                return (void*)(di);
+            }
         };
 
         struct entity_scene
