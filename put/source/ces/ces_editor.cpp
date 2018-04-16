@@ -1777,25 +1777,22 @@ namespace put
         //undoable / redoable actions
         struct editor_action
         {
-            enum e_action
-            {
-                TRANSFORM = 1,
-            };
+            int node_index;
             
-            e_action    action;
-            u32         type;
-            u32*        affected_nodes;
             
-            vec3f       value;
         };
+        
+        static pen_stack<editor_action> k_undo_stack;
+        static pen_stack<editor_action> k_redo_stack;
+        
         
         void add_editor_action( )
         {
-            
         }
         
         void apply_transform_to_selection( entity_scene* scene, const vec3f move_axis )
         {
+            scene->c
             if( move_axis == vec3f::zero() )
                 return;
             
@@ -2194,8 +2191,6 @@ namespace put
 				{
 					if (!(selected_axis & 1 << (i + 1)))
 						continue;
-
-					static vec3f box_size = vec3f(0.5, 0.5, 0.5);
                     
 					vec3f plane_normal = cross(translation_axis[i], view.camera->view.get_up());
 
