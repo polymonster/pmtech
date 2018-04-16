@@ -112,7 +112,7 @@ namespace put
         
         void instantiate_geometry( geometry_resource* gr, entity_scene* scene, s32 node_index )
         {
-            scene_node_geometry* instance = &scene->geometries[node_index];
+            cmp_geometry* instance = &scene->geometries[node_index];
             
             instance->position_buffer = gr->position_buffer;
             instance->vertex_buffer = gr->vertex_buffer;
@@ -123,7 +123,7 @@ namespace put
             instance->vertex_size = gr->vertex_size;
             instance->p_skin = gr->p_skin;
             
-            bounding_volume* bv = &scene->bounding_volumes[node_index];
+            cmp_bounding_volume* bv = &scene->bounding_volumes[node_index];
             
             bv->min_extents = gr->min_extents;
             bv->max_extents = gr->max_extents;
@@ -148,7 +148,7 @@ namespace put
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size = sizeof(per_draw_call);
+            bcp.buffer_size = sizeof(cmp_draw_call);
             bcp.data = nullptr;
             
             scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
@@ -156,8 +156,8 @@ namespace put
         
         void instantiate_model_pre_skin( entity_scene* scene, s32 node_index )
         {
-            scene_node_geometry& geom = scene->geometries[node_index];
-            scene_node_pre_skin& pre_skin = scene->pre_skin[node_index];
+            cmp_geometry& geom = scene->geometries[node_index];
+            cmp_pre_skin& pre_skin = scene->pre_skin[node_index];
             
             u32 num_verts = geom.num_vertices;
             
@@ -194,11 +194,11 @@ namespace put
         
         void instantiate_anim_controller( entity_scene* scene, s32 node_index )
         {
-            scene_node_geometry* geom = &scene->geometries[node_index];
+            cmp_geometry* geom = &scene->geometries[node_index];
             
             if( geom->p_skin )
             {
-                animation_controller& controller = scene->anim_controller[node_index];
+                cmp_anim_controller& controller = scene->anim_controller[node_index];
                 
                 std::vector<s32> joint_indices;
 				build_heirarchy_node_list( scene, node_index, joint_indices );
@@ -304,7 +304,7 @@ namespace put
                 {
                     vertex_size = sizeof(vertex_model_skinned);
                     
-                    p_geometry->p_skin = (scene_node_skin*)pen::memory_alloc(sizeof(scene_node_skin));
+                    p_geometry->p_skin = (cmp_skin*)pen::memory_alloc(sizeof(cmp_skin));
                     
                     pen::memory_cpy(&p_geometry->p_skin->bind_shape_matirx, p_reader, sizeof(mat4));
                     p_reader += 16;
@@ -399,7 +399,7 @@ namespace put
         
         void instantiate_material( material_resource* mr, entity_scene* scene, u32 node_index )
         {
-            scene_node_material* instance = &scene->materials[node_index];
+            cmp_material* instance = &scene->materials[node_index];
 
             instance->diffuse_rgb_shininess = mr->diffuse_rgb_shininess;
             instance->specular_rgb_reflect = mr->specular_rgb_reflect;
@@ -437,8 +437,8 @@ namespace put
 
 		void bake_material_handles(entity_scene* scene, u32 node_index)
 		{
-			scene_node_material* material = &scene->materials[node_index];
-			scene_node_geometry* geometry = &scene->geometries[node_index];
+			cmp_material* material = &scene->materials[node_index];
+			cmp_geometry* geometry = &scene->geometries[node_index];
 
 			if (!material->resource)
 				return;
@@ -594,7 +594,7 @@ namespace put
             u32 num_channels = *p_u32reader++;
             
             new_animation.num_channels = num_channels;
-            new_animation.channels = new node_animation_channel[num_channels];
+            new_animation.channels = new animation_channel[num_channels];
             
             new_animation.length = 0.0f;
             new_animation.step = FLT_MAX;
@@ -764,8 +764,8 @@ namespace put
                 scene->id_name[current_node] = PEN_HASH( node_name.c_str() );
                 scene->id_geometry[current_node] = PEN_HASH( geometry_name.c_str() );
                 
-                ASSIGN_DEBUG_NAME( scene->names[current_node], node_name );
-                ASSIGN_DEBUG_NAME( scene->geometry_names[current_node], geometry_name );
+                scene->names[current_node] = node_name;
+                scene->geometry_names[current_node] = geometry_name;
                 
                 scene->entities[current_node] |= CMP_ALLOCATED;
                 
@@ -961,7 +961,7 @@ namespace put
                             
                             if( mr )
                             {
-                                ASSIGN_DEBUG_NAME(scene->material_names[dest], mat_name);
+                                scene->material_names[dest] = mat_name;
                                 
                                 instantiate_material(mr, scene, dest);
                                 

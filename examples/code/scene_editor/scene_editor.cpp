@@ -55,7 +55,7 @@ PEN_TRV pen::user_entry( void* params )
 	put::camera main_camera;
 	put::camera_create_perspective( &main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f );
     
-    put::camera_controller cc;
+    put::scene_controller cc;
     cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
     cc.name = "model_viewer_camera";
@@ -87,8 +87,8 @@ PEN_TRV pen::user_entry( void* params )
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
 
-    pmfx::register_scene(sc);
-    pmfx::register_camera(cc);
+    pmfx::register_scene_controller(sc);
+    pmfx::register_scene_controller(cc);
 
 	//volume rasteriser tool
 	put::vgt::init(main_scene);

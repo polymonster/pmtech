@@ -47,9 +47,9 @@ void create_instanced_objects( ces::entity_scene* scene )
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = LIGHT_TYPE_DIR;
-    scene->transforms->translation = vec3f::zero();
-    scene->transforms->rotation = quat();
-    scene->transforms->scale = vec3f::one();
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
     
@@ -153,7 +153,7 @@ PEN_TRV pen::user_entry( void* params )
 	put::camera main_camera;
 	put::camera_create_perspective( &main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f );
     
-    put::camera_controller cc;
+    put::scene_controller cc;
     cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
     cc.name = "model_viewer_camera";
@@ -184,8 +184,8 @@ PEN_TRV pen::user_entry( void* params )
     pmfx::register_scene_view_renderer(svr_main);
 	pmfx::register_scene_view_renderer(svr_editor);
 
-    pmfx::register_scene(sc);
-    pmfx::register_camera(cc);
+    pmfx::register_scene_controller(sc);
+    pmfx::register_scene_controller(cc);
     
     pmfx::init("data/configs/basic_renderer.json");
 

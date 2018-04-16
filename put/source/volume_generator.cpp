@@ -379,7 +379,7 @@ namespace put
 			k_rasteriser_job.combine_in_progress = 0;
 		}
 
-		void volume_rasteriser_update(put::camera_controller* cc)
+		void volume_rasteriser_update(put::scene_controller* sc)
 		{
 			//update incremental job
 			if (!k_rasteriser_job.rasterise_in_progress)
@@ -399,7 +399,7 @@ namespace put
 
 			if (k_rasteriser_job.current_axis > 5)
 			{
-				volume_raster_completed( cc->scene );
+				volume_raster_completed( sc->scene );
 				return;
 			}
 
@@ -413,10 +413,10 @@ namespace put
 			s32& current_slice = k_rasteriser_job.current_slice;
 			s32& current_axis = k_rasteriser_job.current_axis;
 			s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
-			k_rasteriser_job.scene_extents = cc->scene->renderable_extents;
+			k_rasteriser_job.scene_extents = sc->scene->renderable_extents;
 
-			vec3f min = cc->scene->renderable_extents.min;
-			vec3f max = cc->scene->renderable_extents.max;
+			vec3f min = sc->scene->renderable_extents.min;
+			vec3f max = sc->scene->renderable_extents.max;
 
 			vec3f dim = max - min;
 			//f32 texel_boarder = dim.max_component() / volume_dim;
@@ -589,14 +589,14 @@ namespace put
 		void init(ces::entity_scene* scene)
 		{
 			k_main_scene = scene;
-			put::camera_controller cc;
+			put::scene_controller cc;
 			cc.camera = &k_volume_raster_ortho;
 			cc.update_function = &volume_rasteriser_update;
 			cc.name = "volume_rasteriser_camera";
 			cc.id_name = PEN_HASH(cc.name.c_str());
 			cc.scene = scene;
 
-			pmfx::register_camera(cc);
+			pmfx::register_scene_controller(cc);
 		}
 
 		static vgt_options k_options;

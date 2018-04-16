@@ -376,12 +376,12 @@ namespace put
             scene->entities[master] |= CMP_MASTER_INSTANCE;
             
             scene->master_instances[master].num_instances = num_nodes;
-            scene->master_instances[master].instance_stride = sizeof(per_draw_call);
+            scene->master_instances[master].instance_stride = sizeof(cmp_draw_call);
             
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
-            bcp.buffer_size = sizeof(per_draw_call) * scene->master_instances[master].num_instances;
+            bcp.buffer_size = sizeof(cmp_draw_call) * scene->master_instances[master].num_instances;
             bcp.data = nullptr;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             

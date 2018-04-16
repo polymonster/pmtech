@@ -197,7 +197,7 @@ namespace put
             
             std::vector<sampler_binding> sampler_bindings;
             
-            std::vector<void(*)(const put::ces::scene_view&)> render_functions;
+            std::vector<void(*)(const put::scene_view&)> render_functions;
         };
 
 		enum e_render_state_type : u32
@@ -218,27 +218,21 @@ namespace put
 		};
         
         static std::vector<view_params>         k_views;
-        static std::vector<scene_controller>    k_scenes;
+        static std::vector<scene_controller>    k_controllers;
         static std::vector<scene_view_renderer> k_scene_view_renderers;
-        static std::vector<camera_controller>   k_cameras;
         static std::vector<render_target>       k_render_targets;
         static std::vector<const c8*>           k_render_target_names;
 		static std::vector<render_state>		k_render_states;
         static std::vector<sampler_binding>     k_sampler_bindings;
-        
-        void register_scene( const scene_controller& scene )
+
+        void register_scene_controller(const scene_controller& controller)
         {
-            k_scenes.push_back(scene);
+            k_controllers.push_back(controller);
         }
-        
+                
         void register_scene_view_renderer( const scene_view_renderer& svr )
         {
             k_scene_view_renderers.push_back(svr);
-        }
-
-        void register_camera( const camera_controller& cam )
-        {
-            k_cameras.push_back(cam);
         }
         
         s32 calc_num_mips( s32 width, s32 height )
@@ -1219,7 +1213,7 @@ namespace put
 					hash_id scene_id = PEN_HASH(scene_str.c_str());
 
 					bool found_scene = false;
-					for (auto& s : k_scenes)
+					for (auto& s : k_controllers)
 					{
 						if (s.id_name == scene_id)
 						{
@@ -1245,7 +1239,7 @@ namespace put
 					hash_id camera_id = PEN_HASH(camera_str.c_str());
 
 					bool found_camera = false;
-					for (auto& c : k_cameras)
+					for (auto& c : k_controllers)
 					{
 						if (c.id_name == camera_id)
 						{
@@ -1403,24 +1397,18 @@ namespace put
 			release_script_resources();
 
 			//clear vectors of remaining stuff
-			k_scenes.clear();
+            k_controllers.clear();
 			k_scene_view_renderers.clear();
-			k_cameras.clear();
 		}
         
         void update()
         {
-            s32 num_cameras = k_cameras.size();
-            for( s32 i = 0; i < num_cameras; ++i )
-            {
-                k_cameras[i].update_function( &k_cameras[i] );
-            }
-            
-            s32 num_scenes = k_scenes.size();
-            for( s32 i = 0; i < num_scenes; ++i )
-            {
-                k_scenes[i].update_function( &k_scenes[i] );
-            }
+            u32 num_controllers = k_controllers.size();
+
+            for (u32 u = 0; u < put::UPDATES_NUM; ++u)
+                for (u32 i = 0; i < num_controllers; ++i)
+                    if(k_controllers[i].order == u)
+                        k_controllers[i].update_function(&k_controllers[i]);
         }
 
         void render()
@@ -1493,7 +1481,7 @@ namespace put
                 pen::renderer_set_blend_state(v.blend_state);
                 
                 //build view info
-                ces::scene_view sv;
+                scene_view sv;
                 sv.scene = v.scene;
                 sv.cb_view = v.camera->cbuffer;
                 sv.render_flags = v.render_flags;
@@ -1636,7 +1624,7 @@ namespace put
         
         const camera* get_camera( hash_id id_name )
         {
-            for( auto& cam : k_cameras )
+            for( auto& cam : k_controllers )
             {
                 if(cam.id_name == id_name)
                     return cam.camera;
