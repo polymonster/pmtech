@@ -49,6 +49,11 @@ namespace pen
     bool                mouse_coords_valid( u32 x, u32 y );
     
     const c8*           input_get_key_str( u32 key_index );
+    
+    // Special os specific functions
+    
+    bool                input_undo_pressed();
+    bool                input_redo_pressed();
 
 	//inline
     inline bool         mouse_coords_valid( u32 x, u32 y )
@@ -56,8 +61,6 @@ namespace pen
         return x < pen_window.width && y < pen_window.height;
     }
 }
-
-#define INPUT_PKEY( key_index ) (pen::input_is_key_pressed( key_index ) || pen::input_is_key_held( key_index ))
 
 #define	pen_input_key( key_index ) (pen::input_is_key_pressed( key_index ) || pen::input_is_key_held( key_index ))
 #define	pen_input_key_press( key_index ) pen::input_is_key_pressed( key_index )

@@ -483,6 +483,16 @@ namespace pen
         
     }
     
+    bool input_undo_pressed()
+    {
+        return input_is_key_held(PENK_COMMAND) && input_is_key_pressed(PENK_Z);
+    }
+    
+    bool input_redo_pressed()
+    {
+        return input_is_key_held(PENK_COMMAND) && input_is_key_pressed(PENK_Y);
+    }
+    
     void window_get_size( s32& width, s32& height )
     {
         NSScreen* screen = [_window screen];

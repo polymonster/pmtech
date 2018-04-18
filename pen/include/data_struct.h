@@ -64,7 +64,7 @@ static void * stb__sbgrowf(void *arr, int increment, int itemsize)
 template<class T>
 struct pen_stack
 {
-	T*	 data;
+    T*	 data = nullptr;
 	s32  pos = 0;
 
 	void clear()
