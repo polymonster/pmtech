@@ -104,7 +104,7 @@ PEN_TRV pen::user_entry( void* params )
         //key down
         Str key_msg = "key down: ";
 
-        for( s32 key = 0; key < PENK_ARRAY_SIZE; ++key )
+        for( s32 key = 0; key < PK_ARRAY_SIZE; ++key )
         {
             if(pen_input_key(key) )
             {
@@ -118,7 +118,7 @@ PEN_TRV pen::user_entry( void* params )
 		put::dbg::add_text_2f( 10.0f, 30.0f, vp, vec4f( 1.0f, 1.0f, 1.0f, 1.0f ), "%s", key_msg.c_str() );
         
         Str  ascii_msg = "character down: ";
-        for( s32 key = 0; key < PENK_ARRAY_SIZE; ++key )
+        for( s32 key = 0; key < PK_ARRAY_SIZE; ++key )
         {
             if( pen::input_get_unicode_key(key) )
             {
@@ -132,7 +132,7 @@ PEN_TRV pen::user_entry( void* params )
 		put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", ascii_msg.c_str());
 
 		Str press_msg = "character press: ";
-		for (s32 key = 0; key < PENK_ARRAY_SIZE; ++key)
+		for (s32 key = 0; key < PK_ARRAY_SIZE; ++key)
 		{
 			if (pen::input_is_key_pressed(key))
 			{

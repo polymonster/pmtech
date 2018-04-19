@@ -228,6 +228,23 @@ void add_debug_solid_aabb(const debug_extents& extents, entity_scene* scene, deb
     aabb.node = node;
 }
 
+void add_debug_obb(const debug_extents& extents, entity_scene* scene, debug_obb& obb)
+{
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "obb";
+    scene->transforms[node].translation = random_vec_range(extents);
+
+    vec3f rr = random_vec_range(extents);
+
+    scene->transforms[node].rotation.euler_angles(rr.x, rr.y, rr.z);
+
+    scene->transforms[node].scale = fabs(random_vec_range(extents));
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+
+    obb.node = node;
+}
+
 void add_debug_solid_obb(const debug_extents& extents, entity_scene* scene, debug_obb& obb)
 {
 	geometry_resource* cube_res = get_geometry_resource(PEN_HASH("cube"));
@@ -509,7 +526,7 @@ void test_project(entity_scene* scene, bool initialise)
 	dbg::add_point_2f(screen_point.xy, vec4f::green());
 }
 
-void test_point_inside_aabb(entity_scene* scene, bool initialise)
+void test_point_aabb(entity_scene* scene, bool initialise)
 {
     static debug_aabb aabb;
     static debug_point point;
@@ -539,6 +556,42 @@ void test_point_inside_aabb(entity_scene* scene, bool initialise)
     dbg::add_aabb(aabb.min, aabb.max, col);
     dbg::add_point(point.point, 0.3f, col);
     
+    dbg::add_line(cp, point.point, vec4f::cyan());
+    dbg::add_point(cp, 0.3f, vec4f::cyan());
+}
+
+
+void test_point_obb(entity_scene* scene, bool initialise)
+{
+    static debug_obb obb;
+    static debug_point point;
+
+    static debug_extents e =
+    {
+        vec3f(-10.0, -10.0, -10.0),
+        vec3f(10.0, 10.0, 10.0)
+    };
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+
+        add_debug_obb(e, scene, obb);
+        add_debug_point(e, scene, point);
+    }
+
+    bool inside = maths::point_inside_obb(scene->world_matrices[obb.node], point.point);
+
+    vec3f cp = maths::closest_point_on_obb(scene->world_matrices[obb.node], point.point);
+
+    vec4f col = inside ? vec4f::red() : vec4f::green();
+
+    dbg::add_obb(scene->world_matrices[obb.node], col);
+
+    dbg::add_point(point.point, 0.3f, col);
+
     dbg::add_line(cp, point.point, vec4f::cyan());
     dbg::add_point(cp, 0.3f, vec4f::cyan());
 }
@@ -770,7 +823,8 @@ const c8* test_names[]
     "Sphere vs AABB",
 	"Ray vs AABB",
 	"Ray vs OBB",
-	"Line vs Line"
+	"Line vs Line",
+    "Point Inside OBB / Closest Point on OBB"
 };
 
 typedef void(*maths_test_function)(entity_scene*, bool);
@@ -782,7 +836,7 @@ maths_test_function test_functions[] =
     test_aabb_vs_plane,
     test_sphere_vs_plane,
     test_project,
-    test_point_inside_aabb,
+    test_point_aabb,
     test_point_line,
 	test_point_ray,
     test_point_triangle,
@@ -790,7 +844,8 @@ maths_test_function test_functions[] =
     test_sphere_vs_aabb,
 	test_ray_vs_aabb,
 	test_ray_vs_obb,
-	test_line_vs_line
+	test_line_vs_line,
+    test_point_obb
 };
 
 void maths_test_ui( entity_scene* scene )
@@ -892,7 +947,7 @@ PEN_TRV pen::user_entry(void* params)
 			put::dev_ui::render();
 		}
 
-		if (pen::input_is_key_held(PENK_MENU) && pen::input_is_key_pressed(PENK_D))
+		if (pen::input_is_key_held(PK_MENU) && pen::input_is_key_pressed(PK_D))
 			enable_dev_ui = !enable_dev_ui;
 
 		frame_time = pen::timer_elapsed_ms(frame_timer);

@@ -288,4 +288,14 @@ namespace pen
 	{
 		ShowCursor(show);
 	}
+
+    bool input_undo_pressed()
+    {
+        return pen_input_key(PK_CONTROL) && pen_input_key(PK_Z);
+    }
+
+    bool input_redo_pressed()
+    {
+        return pen_input_key(PK_CONTROL) && pen_input_key(PK_Y);
+    }
 }

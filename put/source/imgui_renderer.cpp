@@ -54,25 +54,25 @@ namespace put
 			pen::memory_zero(&g_imgui_rs, sizeof(g_imgui_rs));
 
 			ImGuiIO& io = ImGui::GetIO();
-			io.KeyMap[ImGuiKey_Tab] = PENK_TAB;
-			io.KeyMap[ImGuiKey_LeftArrow] = PENK_LEFT;
-			io.KeyMap[ImGuiKey_RightArrow] = PENK_RIGHT;
-			io.KeyMap[ImGuiKey_UpArrow] = PENK_UP;
-			io.KeyMap[ImGuiKey_DownArrow] = PENK_DOWN;
-			io.KeyMap[ImGuiKey_PageUp] = PENK_PRIOR;
-			io.KeyMap[ImGuiKey_PageDown] = PENK_NEXT;
-			io.KeyMap[ImGuiKey_Home] = PENK_HOME;
-			io.KeyMap[ImGuiKey_End] = PENK_END;
-			io.KeyMap[ImGuiKey_Delete] = PENK_DELETE;
-			io.KeyMap[ImGuiKey_Backspace] = PENK_BACK;
-			io.KeyMap[ImGuiKey_Enter] = PENK_RETURN;
-			io.KeyMap[ImGuiKey_Escape] = PENK_ESCAPE;
-			io.KeyMap[ImGuiKey_A] = PENK_A;
-			io.KeyMap[ImGuiKey_C] = PENK_C;
-			io.KeyMap[ImGuiKey_V] = PENK_V;
-			io.KeyMap[ImGuiKey_X] = PENK_X;
-			io.KeyMap[ImGuiKey_Y] = PENK_Y;
-			io.KeyMap[ImGuiKey_Z] = PENK_Z;
+			io.KeyMap[ImGuiKey_Tab] = PK_TAB;
+			io.KeyMap[ImGuiKey_LeftArrow] = PK_LEFT;
+			io.KeyMap[ImGuiKey_RightArrow] = PK_RIGHT;
+			io.KeyMap[ImGuiKey_UpArrow] = PK_UP;
+			io.KeyMap[ImGuiKey_DownArrow] = PK_DOWN;
+			io.KeyMap[ImGuiKey_PageUp] = PK_PRIOR;
+			io.KeyMap[ImGuiKey_PageDown] = PK_NEXT;
+			io.KeyMap[ImGuiKey_Home] = PK_HOME;
+			io.KeyMap[ImGuiKey_End] = PK_END;
+			io.KeyMap[ImGuiKey_Delete] = PK_DELETE;
+			io.KeyMap[ImGuiKey_Backspace] = PK_BACK;
+			io.KeyMap[ImGuiKey_Enter] = PK_RETURN;
+			io.KeyMap[ImGuiKey_Escape] = PK_ESCAPE;
+			io.KeyMap[ImGuiKey_A] = PK_A;
+			io.KeyMap[ImGuiKey_C] = PK_C;
+			io.KeyMap[ImGuiKey_V] = PK_V;
+			io.KeyMap[ImGuiKey_X] = PK_X;
+			io.KeyMap[ImGuiKey_Y] = PK_Y;
+			io.KeyMap[ImGuiKey_Z] = PK_Z;
 
 			io.RenderDrawListsFn = render;
 
@@ -476,9 +476,9 @@ namespace put
 			}
 
 			// Read keyboard modifiers inputs
-			io.KeyCtrl = pen_input_key(PENK_CONTROL);
-			io.KeyShift = pen_input_key(PENK_SHIFT);
-			io.KeyAlt = pen_input_key(PENK_MENU);
+			io.KeyCtrl = pen_input_key(PK_CONTROL);
+			io.KeyShift = pen_input_key(PK_SHIFT);
+			io.KeyAlt = pen_input_key(PK_MENU);
 			io.KeySuper = false;
 		}
 

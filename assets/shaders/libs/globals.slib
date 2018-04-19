@@ -47,3 +47,15 @@ cbuffer per_pass_shadow_distance_fields : register(b5)
 {
 	distance_field_shadow sdf_shadow; 
 };
+
+struct area_light
+{
+	float4x4 	world_matrix;
+	float4x4 	world_matrix_inv;
+};
+
+cbuffer per_pass_area_lights : register(b6)
+{
+	area_light area_lights; 
+	float4	area_light_info;
+};

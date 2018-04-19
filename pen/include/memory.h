@@ -40,6 +40,11 @@ namespace pen
         return malloc( size_bytes );
     }
 
+    inline void* memory_calloc(u32 count, u32 size_bytes)
+    {
+        return calloc(count, size_bytes);
+    }
+
     inline void* memory_realloc( void* mem, u32 size_bytes )
     {
         return realloc( mem, size_bytes );

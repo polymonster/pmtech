@@ -32,7 +32,7 @@ namespace put
             "BLENDINDICES"
         };
         shader_program null_shader = { 0 };
-        
+
         struct pmfx
         {
             hash_id         id_filename = 0;
@@ -43,7 +43,50 @@ namespace put
             shader_program* techniques = nullptr;
         };
         pmfx* k_pmfx_list = nullptr;
-        
+
+        const char**    k_shader_names = nullptr;
+        const char***   k_technique_names = nullptr;
+        u32             k_num_shader_names = 0;
+
+        void generate_name_lists()
+        {
+            pen::memory_free(k_shader_names);
+
+            for (u32 i = 0; i < k_num_shader_names; ++i)
+                sb_free(k_technique_names[i]);
+
+            pen::memory_free(k_technique_names);
+
+            u32 num_pmfx = sb_count(k_pmfx_list);
+            k_technique_names = (const char***)pen::memory_calloc(num_pmfx, sizeof(k_technique_names));
+            k_shader_names = (const char**)pen::memory_calloc(num_pmfx, sizeof(k_shader_names));
+
+            for (u32 i = 0; i < num_pmfx; ++i)
+            {
+                k_shader_names[i] = k_pmfx_list[i].filename.c_str();
+
+                u32 num_techniques = sb_count(k_pmfx_list[i].techniques);
+                for (u32 t = 0; t < num_techniques; ++t)
+                {
+                    sb_push(k_technique_names[i], k_pmfx_list[i].techniques[t].name.c_str());
+                }
+            }
+
+            k_num_shader_names = num_pmfx;
+        }
+
+        const char** get_shader_list(u32& count)
+        {
+            count = k_num_shader_names;
+            return k_shader_names;
+        }
+
+        const char** get_technique_list(shader_handle index, u32& count)
+        {
+            count = sb_count(k_technique_names[index]);
+            return k_technique_names[index];
+        }
+
         void get_link_params_constants( pen::shader_link_params& link_params, const pen::json& j_info )
         {
             u32 num_constants = j_info["cbuffers"].size() + j_info["texture_samplers"].size();
@@ -191,6 +234,7 @@ namespace put
             };
 			            
             //default sub type
+            program.name = name;
             program.id_name = PEN_HASH(name.c_str());
             program.id_sub_type = PEN_HASH("");
             
@@ -488,7 +532,8 @@ namespace put
             sb_push(k_pmfx_list, new_pmfx);
             
             //s_pmfx_list.push_back(new_pmfx);
-            
+            generate_name_lists();
+
             return ph;
         }
         
@@ -575,6 +620,7 @@ namespace put
                         pmfx_set.invalidated = false;
 
 						ces::bake_material_handles();
+                        generate_name_lists();
                     }
                 }
                 else

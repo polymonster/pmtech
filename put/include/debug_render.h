@@ -31,14 +31,13 @@ namespace put
 		void add_frustum(const vec3f* near_corners, const vec3f* far_corners, const vec4f& col = vec4f::white() );
 		void add_triangle(const vec3f& v1, const vec3f& v2, const vec3f& v3, const vec4f& col = vec4f::white());
         void add_plane(const vec3f& point, const vec3f& normal, f32 size = 50.0f, vec4f colour = vec4f::white());
+        void add_obb(const mat4& matrix, vec4f colour = vec4f::white());
 
 		//2d
 		void add_line_2f(const vec2f& start, const vec2f& end, const vec4f& colour = vec4f::white());
 		void add_point_2f(const vec2f& pos, const vec4f& colour = vec4f::white());
 		void add_quad_2f(const vec2f& pos, const vec2f& size, const vec4f& colour = vec4f::white());
         void add_tri_2f(const vec2f& p1, const vec2f& p2, const vec2f& p3, const vec4f& colour = vec4f::white());
-        
-		//text
 		void add_text_2f(const f32 x, const f32 y, const pen::viewport& vp, const vec4f& colour, const c8* format, ... );
         
         //combinations

@@ -69,7 +69,8 @@ namespace put
         {
             LIGHT_TYPE_DIR = 0,
             LIGHT_TYPE_POINT = 1,
-            LIGHT_TYPE_SPOT = 2
+            LIGHT_TYPE_SPOT = 2,
+            LIGHT_TYPE_AREA_BOX = 3
         };
 
         enum e_scene_node_textures
@@ -252,6 +253,17 @@ namespace put
             distance_field_shadow shadows;
         };
 
+        struct area_box_light
+        {
+            mat4	world_matrix;
+            mat4	world_matrix_inverse;
+        };
+
+        struct area_box_light_buffer
+        {
+            area_box_light area_lights;
+        };
+
         struct free_node_list
         {
             u32 node;
@@ -334,6 +346,7 @@ namespace put
             free_node_list*                 free_list_head = nullptr;
             u32						        forward_light_buffer = PEN_INVALID_HANDLE;
             u32						        sdf_shadow_buffer = PEN_INVALID_HANDLE;
+            u32                             area_box_light_buffer = PEN_INVALID_HANDLE;
             s32                             selected_index = -1;
             u32						        flags = 0;
             u32                             view_flags = 0;

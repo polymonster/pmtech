@@ -340,7 +340,7 @@ namespace put
 			put::dbg::add_line(v3, v1, col);
 		}
 
-        void add_aabb(const vec3f &min, const vec3f& max, const vec4f& col )
+        void add_aabb(const vec3f &min, const vec3f& max, const vec4f& col)
         {
             alloc_3d_buffer(line_vert_3d_count + 24, VB_LINES);
             
@@ -445,6 +445,18 @@ namespace put
             }
             
             line_vert_3d_count += num_verts;
+        }
+
+        void add_obb(const mat4& matrix, vec4f col)
+        {
+            u32 start_index = line_vert_3d_count;
+            add_aabb(vec3f::one(), -vec3f::one(), col);
+            u32 end_index = line_vert_3d_count;
+
+            for (u32 i = start_index; i < end_index; i++)
+            {
+                debug_3d_verts[i].pos = matrix.transform_vector(debug_3d_verts[i].pos);
+            }
         }
 
 		void add_line_transform(const vec3f &start, const vec3f &end, const mat4 *matrix, const vec4f &col )

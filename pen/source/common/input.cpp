@@ -8,8 +8,8 @@ namespace pen
 	#define KEY_PRESS 0x01
 	#define KEY_HELD  0x02
 
-	u8 keyboard_state[ PENK_ARRAY_SIZE ];
-    u8 ascii_state[ PENK_ARRAY_SIZE ];
+	u8 keyboard_state[ PK_ARRAY_SIZE ];
+    u8 ascii_state[ PK_ARRAY_SIZE ];
 
 	mouse_state mouse_state_ = { 0 };
 
@@ -110,49 +110,49 @@ namespace pen
     {
         switch (key_index)
         {
-            case PENK_LBUTTON:      return "L button";
-            case PENK_RBUTTON:      return "R button";
-            case PENK_CANCEL:       return "cancel";
-            case PENK_MBUTTON:      return "M button";
-            case PENK_BACK:         return "back";
-            case PENK_TAB:          return "tab";
-            case PENK_CLEAR:        return "clear";
-            case PENK_RETURN:       return "return";
-            case PENK_SHIFT:        return "shift";
-            case PENK_CONTROL:      return "ctrl";
-            case PENK_MENU:         return "menu";
-            case PENK_PAUSE:        return "pause";
-            case PENK_CAPITAL:      return "caps lock";
-            case PENK_ESCAPE:       return "escape";
-            case PENK_SPACE:        return "space";
-            case PENK_PRIOR:        return "page down";
-            case PENK_NEXT:         return "page up";
-            case PENK_HOME:         return "home";
-            case PENK_LEFT:         return "left";
-            case PENK_UP:           return "up";
-            case PENK_RIGHT:        return "right";
-            case PENK_DOWN:         return "down";
-            case PENK_SELECT:       return "select";
-            case PENK_EXECUTE:      return "execute";
-            case PENK_INSERT:       return "insert";
-            case PENK_SNAPSHOT:     return "screen shot";
-            case PENK_DELETE:       return "delete";
-            case PENK_HELP:         return "help";
-            case PENK_F1:           return "f1";
-            case PENK_F2:           return "f2";
-            case PENK_F3:           return "f3";
-            case PENK_F4:           return "f4";
-            case PENK_F5:           return "f5";
-            case PENK_F6:           return "f6";
-            case PENK_F7:           return "f7";
-            case PENK_F8:           return "f8";
-            case PENK_F9:           return "f9";
-            case PENK_F10:          return "f10";
-            case PENK_F11:          return "f11";
-            case PENK_F12:          return "f12";
-            case PENK_NUMLOCK:      return "num lock";
-            case PENK_SCROLL:       return "scroll";
-            case PENK_COMMAND:      return "command";
+            case PK_LBUTTON:      return "L button";
+            case PK_RBUTTON:      return "R button";
+            case PK_CANCEL:       return "cancel";
+            case PK_MBUTTON:      return "M button";
+            case PK_BACK:         return "back";
+            case PK_TAB:          return "tab";
+            case PK_CLEAR:        return "clear";
+            case PK_RETURN:       return "return";
+            case PK_SHIFT:        return "shift";
+            case PK_CONTROL:      return "ctrl";
+            case PK_MENU:         return "menu";
+            case PK_PAUSE:        return "pause";
+            case PK_CAPITAL:      return "caps lock";
+            case PK_ESCAPE:       return "escape";
+            case PK_SPACE:        return "space";
+            case PK_PRIOR:        return "page down";
+            case PK_NEXT:         return "page up";
+            case PK_HOME:         return "home";
+            case PK_LEFT:         return "left";
+            case PK_UP:           return "up";
+            case PK_RIGHT:        return "right";
+            case PK_DOWN:         return "down";
+            case PK_SELECT:       return "select";
+            case PK_EXECUTE:      return "execute";
+            case PK_INSERT:       return "insert";
+            case PK_SNAPSHOT:     return "screen shot";
+            case PK_DELETE:       return "delete";
+            case PK_HELP:         return "help";
+            case PK_F1:           return "f1";
+            case PK_F2:           return "f2";
+            case PK_F3:           return "f3";
+            case PK_F4:           return "f4";
+            case PK_F5:           return "f5";
+            case PK_F6:           return "f6";
+            case PK_F7:           return "f7";
+            case PK_F8:           return "f8";
+            case PK_F9:           return "f9";
+            case PK_F10:          return "f10";
+            case PK_F11:          return "f11";
+            case PK_F12:          return "f12";
+            case PK_NUMLOCK:      return "num lock";
+            case PK_SCROLL:       return "scroll";
+            case PK_COMMAND:      return "command";
         }
         
         static c8 key_char[512] = { 0 };

@@ -272,6 +272,15 @@ namespace put
 
 			new_instance.scene->sdf_shadow_buffer = pen::renderer_create_buffer(bcp);
 
+            //area lights
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = sizeof(area_box_light_buffer);
+            bcp.data = nullptr;
+
+            new_instance.scene->area_box_light_buffer = pen::renderer_create_buffer(bcp);
+
 			return new_instance.scene;
 		}
 
@@ -715,7 +724,7 @@ namespace put
                 n+= scene->master_instances[n].num_instances;
             }
             
-            //forwar light buffer
+            // Forward light buffer
 			static forward_light_buffer light_buffer;
 			s32 pos = 0;
             s32 num_lights = 0;
@@ -777,7 +786,9 @@ namespace put
             //info for loops
             light_buffer.info = vec4f( num_directions_lights, num_point_lights, num_spot_lights, 0.0f );
 
-			//distance field shadows
+            pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
+
+			// Distance field shadows
 			for (s32 n = 0; n < scene->num_nodes; ++n)
 			{
 				if (!(scene->entities[n] & CMP_SDF_SHADOW))
@@ -794,9 +805,27 @@ namespace put
 				pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, PEN_SHADER_TYPE_PS);
 			}
 
-			pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
-                        
-            //update pre skinned vertex buffers
+            // Area box lights
+            for (s32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+
+                if (scene->lights[n].type != LIGHT_TYPE_AREA_BOX)
+                    continue;
+
+                static area_box_light_buffer abl_buffer;
+
+                abl_buffer.area_lights.world_matrix = scene->world_matrices[n];
+                abl_buffer.area_lights.world_matrix_inverse = mat::inverse4x4(scene->world_matrices[n]);
+
+                pen::renderer_update_buffer(scene->area_box_light_buffer, &abl_buffer, sizeof(abl_buffer));
+
+                pen::renderer_set_constant_buffer(scene->area_box_light_buffer, 6, PEN_SHADER_TYPE_PS);
+            }
+
+
+            // Update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
             static pmfx::shader_handle ph = pmfx::load_shader("forward_render");
             
