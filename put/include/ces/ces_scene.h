@@ -39,7 +39,7 @@ namespace put
         enum e_component_flags : u32
         {
             CMP_ALLOCATED = (1 << 0),
-            CMP_GEOMETRY = (1 << 1),
+            CMP_GEOMETRY   = (1 << 1),
             CMP_PHYSICS = (1 << 2),
             CMP_PHYSICS_MULTI = (1 << 3),
             CMP_MATERIAL = (1 << 4),

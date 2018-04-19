@@ -13,7 +13,6 @@ namespace put
 {
     namespace pmfx
     {
-        typedef u32 shader_program_handle;
         typedef u32 shader_handle;
     }
 
@@ -94,9 +93,9 @@ namespace put
 			s32     width = 0;
 			s32     height = 0;
 			f32     ratio = 0;
-			s32     num_mips;
-			u32     format;
-			u32     handle;
+            s32     num_mips = 0;
+            u32     format = 0;
+            u32     handle = PEN_INVALID_HANDLE;
 			u32     samples = 1;
 			Str     name;
 		};
