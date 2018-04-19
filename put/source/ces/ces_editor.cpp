@@ -175,6 +175,10 @@ namespace put
         };
         static_assert(sizeof(dd_names)/sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
+        
+        void undo( entity_scene* scene );
+        void redo( entity_scene* scene );
+        void update_undo_stack(entity_scene* scene, f32 dt);
 
         void update_view_flags_ui( entity_scene* scene )
         {
@@ -692,6 +696,174 @@ namespace put
 				}
             }
         }
+        
+        //undoable / redoable actions
+        enum e_editor_actions
+        {
+            MACRO_BEGIN = -1,
+            MACRO_END = -2,
+            UNDO = 0,
+            REDO,
+            NUM_ACTIONS
+        };
+        
+        struct node_state
+        {
+            void** components = nullptr;
+        };
+        
+        struct editor_action
+        {
+            s32         node_index;
+            node_state  action_state[NUM_ACTIONS];
+            f32         timer = 0.0f;
+        };
+        
+        typedef pen_stack<editor_action> action_stack;
+        
+        static action_stack k_undo_stack;
+        static action_stack k_redo_stack;
+        static editor_action* k_editor_nodes = nullptr;
+        
+        void store_node_state( entity_scene* scene, u32 node_index, e_editor_actions action )
+        {
+            static const f32 undo_push_timer = 33.0f;
+            node_state& ns = k_editor_nodes[node_index].action_state[action];
+            u32 num = scene->num_components;
+            
+            if(action == UNDO)
+                if(ns.components)
+                    return;
+            
+            if(action == REDO)
+            {
+                node_state& us = k_editor_nodes[node_index].action_state[UNDO];
+                
+                int diff = 0;
+                for( u32 i = 0; i < num; ++i )
+                {
+                    generic_cmp_array& cmp = scene->get_component_array(i);
+                    diff += memcmp(cmp[node_index], us.components[i], cmp.size);
+                }
+                
+                if(diff == 0)
+                    return;
+            }
+            
+            k_editor_nodes[node_index].timer = undo_push_timer;
+
+            
+            if(!ns.components)
+            {
+                ns.components = (void**)pen::memory_alloc(num*sizeof(generic_cmp_array));
+                pen::memory_zero(ns.components, num*sizeof(generic_cmp_array));
+            }
+            
+            for( u32 i = 0; i < num; ++i )
+            {
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                
+                if(!ns.components[i])
+                    ns.components[i] = pen::memory_alloc(cmp.size);
+                
+                void* data = cmp[node_index];
+                
+                pen::memory_cpy(ns.components[i], data, cmp.size);
+            }
+        }
+        
+        void restore_node_state( entity_scene* scene, node_state& ns, u32 node_index )
+        {
+            u32 num = scene->num_components;
+            for( u32 i = 0; i < num; ++i )
+            {
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                
+                pen::memory_cpy(cmp[node_index], ns.components[i], cmp.size);
+            }
+        }
+        
+        void restore_from_stack( entity_scene* scene, action_stack& stack, action_stack& reverse, e_editor_actions action )
+        {
+            if(stack.size() <= 0)
+                return;
+            
+            u32 count = stack.size();
+            u32 rev_count = reverse.size();
+            dev_console_log("stack size is %i", count);
+            dev_console_log("reverse stack size is %i", rev_count);
+            
+            for(;;)
+            {
+                editor_action ua = stack.pop();
+                reverse.push(ua);
+                
+                if(ua.node_index == MACRO_END)
+                    break;
+                
+                if(ua.node_index == MACRO_BEGIN)
+                    continue;
+                
+                dev_console_log("perform action %i", ua.node_index);
+                restore_node_state(scene, ua.action_state[action], ua.node_index);
+            }
+        }
+        
+        void undo( entity_scene* scene )
+        {
+            restore_from_stack(scene, k_undo_stack, k_redo_stack, UNDO);
+        }
+        
+        void redo( entity_scene* scene )
+        {
+            restore_from_stack(scene, k_redo_stack, k_undo_stack, REDO);
+        }
+        
+        void update_undo_stack(entity_scene* scene, f32 dt)
+        {
+            //resize buffers
+            if(!k_editor_nodes || sb_count(k_editor_nodes) < scene->nodes_size)
+            {
+                stb__sbgrow(k_editor_nodes, scene->nodes_size);
+                stb__sbm(k_editor_nodes) = scene->num_nodes;
+                stb__sbn(k_editor_nodes) = scene->nodes_size;
+            }
+            
+            static editor_action macro_begin;
+            static editor_action macro_end;
+            
+            macro_begin.node_index = MACRO_BEGIN;
+            macro_end.node_index = MACRO_END;
+            
+            bool first_item = true;
+            
+            for(u32 i = 0; i < scene->nodes_size; ++i)
+            {
+                if(k_editor_nodes[i].action_state[REDO].components)
+                {
+                    if(k_editor_nodes[i].timer <= 0.0f)
+                    {
+                        if(first_item)
+                        {
+                            k_undo_stack.push(macro_end);
+                            first_item = false;
+                        }
+                        
+                        dev_console_log("%s", "adding undo");
+                        
+                        k_editor_nodes[i].node_index = i;
+                        k_undo_stack.push(k_editor_nodes[i]);
+                        k_editor_nodes[i].action_state[UNDO].components = nullptr;
+                        k_editor_nodes[i].action_state[REDO].components = nullptr;
+                    }
+                    
+                    k_editor_nodes[i].timer -= dt * 0.1f;
+                }
+            }
+            
+            if(!first_item)
+                k_undo_stack.push(macro_begin);
+        }
 
 		void settings_ui(bool* opened)
 		{
@@ -1109,6 +1281,35 @@ namespace put
                 view_ui( sc->scene, &view_menu );
             }
             
+            //undo / redo
+            static bool debounce_undo = false;
+            if (pen::input_undo_pressed())
+            {
+                if(!debounce_undo)
+                {
+                    debounce_undo = true;
+                    undo(sc->scene);
+                }
+            }
+            else if(debounce_undo)
+            {
+                debounce_undo = false;
+            }
+            
+            static bool debounce_redo = false;
+            if (pen::input_redo_pressed())
+            {
+                if(!debounce_redo)
+                {
+                    debounce_redo = true;
+                    redo(sc->scene);
+                }
+            }
+            else if(debounce_redo)
+            {
+                debounce_redo = false;
+            }
+            
             //todo mnove this
             static u32 timer_index = -1;
             if( timer_index == -1 )
@@ -1121,6 +1322,8 @@ namespace put
             pen::timer_start(timer_index);
             
             put::ces::update_scene(sc->scene, dt_ms);
+            
+            update_undo_stack(sc->scene, dt_ms);
         }
 
         struct physics_preview
@@ -1287,10 +1490,12 @@ namespace put
                 scene->physics_data[k_selection_list[0]] = k_physics_preview.params;
         }
 
-        void scene_geometry_ui( entity_scene* scene )
+        bool scene_geometry_ui( entity_scene* scene )
         {
+            bool iv = false;
+            
             if (sb_count(k_selection_list) != 1)
-                return;
+                return iv;
 
             u32 selected_index = k_selection_list[0];
 
@@ -1300,7 +1505,7 @@ namespace put
                 if (scene->geometry_names[selected_index].c_str())
                 {
                     ImGui::Text( "Geometry Name: %s", scene->geometry_names[selected_index].c_str() );
-                    return;
+                    return iv;
                 }
 
                 static s32 primitive_type = -1;
@@ -1308,6 +1513,8 @@ namespace put
 
                 if (ImGui::Button( "Add Primitive" ) && primitive_type > -1)
                 {
+                    iv = true;
+                    
                     geometry_resource* gr = get_geometry_resource( k_primitives[primitive_type] );
 
                     instantiate_geometry( gr, scene, selected_index );
@@ -1323,12 +1530,14 @@ namespace put
                     scene->entities[selected_index] |= CMP_TRANSFORM;
                 }
             }
+            
+            return iv;
         }
 
-        void scene_transform_ui( entity_scene* scene )
+        bool scene_transform_ui( entity_scene* scene )
         {
             if (sb_count(k_selection_list) != 1)
-                return;
+                return false;
 
             u32 selected_index = k_selection_list[0];
 
@@ -1357,14 +1566,19 @@ namespace put
 
                 apply_transform_to_selection( scene, vec3f::zero() );
             }
+            
+            //transforms undos are handled by apply_transform_to_selection
+            return false;
         }
 
-        void scene_material_ui( entity_scene* scene )
+        bool scene_material_ui( entity_scene* scene )
         {
+            bool iv = false;
+            
             static bool colour_picker_open = false;
             
             if (sb_count(k_selection_list) != 1)
-                return;
+                return false;
 
             u32 selected_index = k_selection_list[0];
             
@@ -1391,8 +1605,8 @@ namespace put
                         
                         auto& mm = scene->materials[selected_index];
                         
-                        ImGui::SliderFloat( "Roughness", ( f32* )&mm.diffuse_rgb_shininess.w, 0.000001, 1.5 );
-                        ImGui::SliderFloat( "Reflectity", ( f32* )&mm.specular_rgb_reflect.w, 0.000001, 1.5 );
+                        iv |= ImGui::SliderFloat( "Roughness", ( f32* )&mm.diffuse_rgb_shininess.w, 0.000001, 1.5 );
+                        iv |= ImGui::SliderFloat( "Reflectity", ( f32* )&mm.specular_rgb_reflect.w, 0.000001, 1.5 );
                         
                         vec4f& col = mm.diffuse_rgb_shininess;
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f ) );
@@ -1412,7 +1626,7 @@ namespace put
                 if( ImGui::Begin("Albedo Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize ) )
                 {
                     vec3f col = mm.diffuse_rgb_shininess.xyz;
-                    ImGui::ColorPicker3( "Colour", ( f32* )&col );
+                    iv |= ImGui::ColorPicker3( "Colour", ( f32* )&col );
 
                     mm.diffuse_rgb_shininess.x = col.x;
                     mm.diffuse_rgb_shininess.y = col.y;
@@ -1421,6 +1635,8 @@ namespace put
                     ImGui::End();
                 }
             }
+            
+            return iv;
         }
 
         void scene_anim_ui( entity_scene* scene )
@@ -1758,6 +1974,11 @@ namespace put
                         ImGui::Text( "Parent: %s", scene->names[parent_index].c_str() );
                 }
 
+                if (sb_count(k_selection_list) == 1)
+                {
+                    store_node_state(scene, k_selection_list[0], UNDO);
+                }
+                
                 scene_transform_ui(scene);
                 
 				scene_physics_ui(scene);
@@ -1769,29 +1990,14 @@ namespace put
                 scene_anim_ui(scene);
 
                 scene_light_ui(scene);
+                
+                if (sb_count(k_selection_list) == 1)
+                {
+                    store_node_state(scene, k_selection_list[0], REDO);
+                }
 
                 ImGui::End();
             }
-        }
-        
-        //undoable / redoable actions
-        struct editor_action
-        {
-            enum e_action
-            {
-                TRANSFORM = 1,
-            };
-            
-            e_action    action;
-            u32         type;
-            u32*        affected_nodes;
-            
-            vec3f       value;
-        };
-        
-        void add_editor_action( )
-        {
-            
         }
         
         void apply_transform_to_selection( entity_scene* scene, const vec3f move_axis )
@@ -1820,6 +2026,8 @@ namespace put
                         continue;
                 }
                 
+                store_node_state(scene, i, UNDO);
+                
                 cmp_transform& t = scene->transforms[i];
                 if (k_transform_mode == TRANSFORM_TRANSLATE)
                     t.translation += move_axis;
@@ -1839,6 +2047,8 @@ namespace put
 				}
                 
                 scene->entities[i] |= CMP_TRANSFORM;
+                
+                store_node_state(scene, i, REDO);
             }
         }
 
@@ -2194,8 +2404,6 @@ namespace put
 				{
 					if (!(selected_axis & 1 << (i + 1)))
 						continue;
-
-					static vec3f box_size = vec3f(0.5, 0.5, 0.5);
                     
 					vec3f plane_normal = cross(translation_axis[i], view.camera->view.get_up());
 

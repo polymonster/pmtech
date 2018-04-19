@@ -64,8 +64,8 @@ static void * stb__sbgrowf(void *arr, int increment, int itemsize)
 template<class T>
 struct pen_stack
 {
-	T*	 data;
-	u32  pos = 0;
+    T*	 data = nullptr;
+	s32  pos = 0;
 
 	void clear()
 	{
@@ -89,8 +89,16 @@ struct pen_stack
 	T  pop()
 	{
 		--pos;
+        if(pos < 0)
+            pos = 0;
+        
 		return data[pos];
 	}
+    
+    s32 size()
+    {
+        return pos;
+    }
 };
 
 #endif //_pen_data_struct
