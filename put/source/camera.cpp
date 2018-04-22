@@ -72,19 +72,19 @@ namespace put
 
 		if (has_focus)
 		{
-			if (pen_input_key(PK_SHIFT))
+			if (pen::input_key(PK_SHIFT))
 			{
 				speed = 0.01f;
 				cursor_speed = 0.1f;
 			}
 
-			if (pen_input_key(PK_UP))
+			if (pen::input_key(PK_UP))
 				p_camera->rot.x -= cursor_speed;
-			if (pen_input_key(PK_DOWN))
+			if (pen::input_key(PK_DOWN))
 				p_camera->rot.x += cursor_speed;
-			if (pen_input_key(PK_LEFT))
+			if (pen::input_key(PK_LEFT))
 				p_camera->rot.y -= cursor_speed;
-			if (pen_input_key(PK_RIGHT))
+			if (pen::input_key(PK_RIGHT))
 				p_camera->rot.y += cursor_speed;
 
 			if (ms.buttons[PEN_MOUSE_R])
@@ -94,22 +94,22 @@ namespace put
 				p_camera->rot += swapxy * 0.0075f;
 			}
 
-			if (pen_input_key(PK_W))
+			if (pen::input_key(PK_W))
 			{
 				p_camera->pos -= p_camera->view.get_fwd() * speed;
 			}
 
-			if (pen_input_key(PK_A))
+			if (pen::input_key(PK_A))
 			{
 				p_camera->pos -= p_camera->view.get_right() * speed;
 			}
 
-			if (pen_input_key(PK_S))
+			if (pen::input_key(PK_S))
 			{
 				p_camera->pos += p_camera->view.get_fwd() * speed;
 			}
 
-			if (pen_input_key(PK_D))
+			if (pen::input_key(PK_D))
 			{
 				p_camera->pos += p_camera->view.get_right() * speed;
 			}
@@ -195,14 +195,14 @@ namespace put
 
 		if (has_focus)
 		{
-			if (ms.buttons[PEN_MOUSE_L] && pen_input_key(PK_MENU))
+			if (ms.buttons[PEN_MOUSE_L] && pen::input_key(PK_MENU))
 			{
 				//rotation
 				vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x);
 				p_camera->rot += swapxy * ((2.0f * (f32)M_PI) / 360.0f);
 			}
-			else if ( (ms.buttons[PEN_MOUSE_M] && pen_input_key(PK_MENU)) ||
-                     ((ms.buttons[PEN_MOUSE_L] && pen_input_key(PK_COMMAND))) )
+			else if ( (ms.buttons[PEN_MOUSE_M] && pen::input_key(PK_MENU)) ||
+                     ((ms.buttons[PEN_MOUSE_L] && pen::input_key(PK_COMMAND))) )
 			{
 				//pan
 				vec3f up = p_camera->view.get_up();
@@ -211,7 +211,7 @@ namespace put
 				p_camera->focus += up * mouse_drag.y * mouse_y_inv * 0.5f;
 				p_camera->focus += right * mouse_drag.x * 0.5f;
 			}
-			else if (ms.buttons[PEN_MOUSE_R] && pen_input_key(PK_MENU))
+			else if (ms.buttons[PEN_MOUSE_R] && pen::input_key(PK_MENU))
 			{
 				//zoom
 				vec3f up = p_camera->view.get_up();
