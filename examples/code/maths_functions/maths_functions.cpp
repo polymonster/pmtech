@@ -381,6 +381,26 @@ void test_ray_vs_obb(entity_scene* scene, bool initialise)
 
 	dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, col);
 
+    {
+        vec3f r1 = ray.origin;
+        vec3f rv = ray.direction;
+        mat4 mat = scene->world_matrices[obb.node];
+
+        mat4 invm = mat::inverse4x4(mat);
+        vec3f tr1 = invm.transform_vector(vec4f(r1, 1.0f)).xyz;
+
+        invm.set_translation(vec3f::zero());
+        vec3f trv = invm.transform_vector(vec4f(rv, 1.0f)).xyz;
+
+        vec3f cp = maths::closest_point_on_ray(tr1, normalised(trv), vec3f::zero());
+        vec3f ccp = mat.transform_vector(vec4f(cp, 1.0f)).xyz;
+
+        put::dbg::add_point(ccp, 0.1f, vec4f::yellow());
+
+        ip = mat.transform_vector(vec4f(ip, 1.0f)).xyz;
+    }
+
+
 	//debug output
 	if (intersect)
 		dbg::add_point(ip, 0.5f, vec4f::white());

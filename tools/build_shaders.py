@@ -633,6 +633,7 @@ def find_includes(file_text):
 
 def find_used_functions(entry_func, function_list):
     used_functions = [entry_func]
+    added_function_names = []
     ordered_function_list = [entry_func]
     for used_func in used_functions:
         for func in function_list:
@@ -642,8 +643,16 @@ def find_used_functions(entry_func, function_list):
             end = name.find("(")
             name = name[0:end]
             if used_func.find(name + "(") != -1:
+                if name in added_function_names:
+                    continue
                 used_functions.append(func)
-                ordered_function_list.insert(0, func)
+                added_function_names.append(name)
+    for func in function_list:
+        name = func.split(" ")[1]
+        end = name.find("(")
+        name = name[0:end]
+        if name in added_function_names:
+            ordered_function_list.append(func)
     ordered_function_list.remove(entry_func)
     used_function_source = ""
     for used_func in ordered_function_list:

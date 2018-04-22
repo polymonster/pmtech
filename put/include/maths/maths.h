@@ -487,6 +487,8 @@ namespace maths
 
         vec3f tcp = mat.transform_vector(vec4f(cp, 1.0f)).xyz;
 
+
+
         return tcp;
     }
 

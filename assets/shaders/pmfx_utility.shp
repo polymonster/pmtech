@@ -1,8 +1,10 @@
 #include "libs/lighting.slib"
 #include "libs/skinning.slib"
 #include "libs/globals.slib"
+#include "libs/maths.slib"
 
 // Structs -----------------------------------------------------------------------------------------------------------
+
 
 struct vs_output
 {
@@ -336,63 +338,6 @@ ps_output ps_volume_sdf( vs_output input )
 	return output;
 }
 
-bool ray_vs_aabb(float3 emin, float3 emax, 
-				 float3 r1, float3 rv, out float3 intersection)
-{
-	float3 dirfrac = float3(1.0, 1.0, 1.0) / rv;
-
-	float t1 = (emin.x - r1.x)*dirfrac.x;
-	float t2 = (emax.x - r1.x)*dirfrac.x;
-	float t3 = (emin.y - r1.y)*dirfrac.y;
-	float t4 = (emax.y - r1.y)*dirfrac.y;
-	float t5 = (emin.z - r1.z)*dirfrac.z;
-	float t6 = (emax.z - r1.z)*dirfrac.z;
-
-	float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-	float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-	float t = 0.0f;
-
-	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-	if (tmax < 0)
-	{
-		t = tmax;
-		return false;
-	}
-
-	// if tmin > tmax, ray doesn't intersect AABB
-	if (tmin > tmax)
-	{
-		t = tmax;
-		return false;
-	}
-
-	t = tmin;
-
-	intersection = r1 + rv * t;
-
-	return true;
-}
-
-float3 closest_point_on_aabb(float3 emin, float3 emax, float3 p)
-{
-	float3 t1 = float3(max(p.x, emin.x), max(p.y, emin.y), max(p.z, emin.z));
-	float3 t2 = float3(min(t1.x, emax.x), min(t1.y, emax.y), min(t1.z, emax.z));
-	
-    return t2;
-}
-
-float3 closest_point_on_obb(float4x4 mat, float4x4 inv_mat, float3 p)
-{	
-	float3 tp = mul(float4(p, 1.0), inv_mat).xyz;
-
-	float3 cp = closest_point_on_aabb(float3(-1.0, -1.0, -1.0), float3(1.0, 1.0, 1.0), tp);
-
-	float3 tcp = mul(float4(cp, 1.0f), mat).xyz;
-
-	return tcp;
-}
-
 ps_output ps_shadow_sdf( vs_output input ) 
 {
 	ps_output output;
@@ -508,30 +453,28 @@ ps_output ps_area_box_light( vs_output input )
 	float3 rv = normalize(refl);
 	float3 r1 = input.world_pos.xyz;
 	
-	float3 emin = float3(-1.0, -1.0, -1.0);
-	float3 emax = float3(1.0, 1.0, 1.0);
+	float3 ip, bp, rp;
+	bool hit = ray_vs_obb_ex(area_lights.world_matrix, area_lights.world_matrix_inv, r1, rv, ip, bp, rp);
 	
-	float4x4 inv_rot = area_lights.world_matrix_inv;
-	inv_rot[0].w = 0.0;
-	inv_rot[1].w = 0.0;
-	inv_rot[2].w = 0.0;
-	inv_rot[3].xyzw = float4(0.0, 0.0, 0.0, 1.0 );
+	float wd = length(input.world_pos-rp)/20;
 	
-	float3 ldir = normalize(cp - input.world_pos.xyz);
+	float dp = dot(normalize(input.world_pos-cp), view_v);
 	
-	float l = dot(-ldir, -input.normal);
+	float n_dot_l = saturate( dot(normalize(cp-input.world_pos), input.normal) );
 	
-	//transform into obb
-	float3 trv = mul( float4(rv, 1.0), inv_rot ).xyz;
-	float3 tr1 = mul( float4(r1, 1.0), area_lights.world_matrix_inv ).xyz;
+	//if(dp > 0.0)
+		//wd = 0.0;
 	
-	float3 ip;
-	bool hit = ray_vs_aabb( emin, emax, tr1, normalize(trv), ip);
+	float s = lerp(0.01, 10.0, wd);
 	
-	output.colour = float4( l, 0, l, 1.0);
-	if(hit)
-		output.colour += float4(1.0, 0.0, 1.0, 1.0);
+	float d = 1.0 - length(bp-rp) / s;
 	
+	if(n_dot_l <= 0.0)
+			d = 0.0;
+		
+	//output.colour += float4(d, 0.0, d, 10.0) * n_dot_l;
+	
+	output.colour = float4( d, d, d, 1.0);
 	
 	return output;
 }
