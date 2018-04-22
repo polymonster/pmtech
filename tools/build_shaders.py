@@ -221,8 +221,8 @@ def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, tec
 
 token_io = ["input", "output"]
 token_io_replace = ["_input", "_output"]
-token_post_delimiters = ['.', ';', ' ', '(', ')', ',']
-token_pre_delimiters = [' ', '\t', '\n', '(', ')', ',']
+token_post_delimiters = ['.', ';', ' ', '(', ')', ',', '-', '+', '*', '/']
+token_pre_delimiters = [' ', '\t', '\n', '(', ')', ',', '-', '+', '*', '/']
 
 
 def replace_io_tokens(text):

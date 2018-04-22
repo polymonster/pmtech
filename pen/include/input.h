@@ -42,6 +42,9 @@ namespace pen
 	bool				input_is_mouse_pressed( u32 button_index );
 	bool				input_is_mouse_held( u32 button_index );
 	bool				input_is_mouse_down( u32 button_index );
+    
+    bool                input_key(u32 key_index);
+    bool                input_mouse(u32 button_index);
 
 	void				input_set_cursor_pos( u32 client_x, u32 client_y );
 	void				input_show_cursor( bool show );
@@ -56,15 +59,21 @@ namespace pen
     bool                input_redo_pressed();
 
 	//inline
-    inline bool         mouse_coords_valid( u32 x, u32 y )
+    inline bool mouse_coords_valid( u32 x, u32 y )
     {
         return x < pen_window.width && y < pen_window.height;
     }
+    
+    inline bool input_key(u32 key_index)
+    {
+        return (pen::input_is_key_pressed( key_index ) || pen::input_is_key_held( key_index ));
+    }
+    
+    inline bool input_mouse(u32 button_index)
+    {
+        return (pen::input_is_mouse_pressed( button_index ) || pen::input_is_mouse_held( button_index ));
+    }
 }
-
-#define	pen_input_key( key_index ) (pen::input_is_key_pressed( key_index ) || pen::input_is_key_held( key_index ))
-#define	pen_input_key_press( key_index ) pen::input_is_key_pressed( key_index )
-#define pen_input_mouse( button_index ) (pen::input_is_mouse_pressed( button_index ) || pen::input_is_mouse_held( button_index ))
 
 enum mouse_button
 {

@@ -119,7 +119,7 @@ namespace put
             if (flags & dev_ui::TEXT)
                 return false;
 
-            return pen_input_key(key);
+            return pen::input_key(key);
         }
 
         void update_model_viewer_camera(put::scene_controller* sc)
@@ -822,9 +822,6 @@ namespace put
             if (stack.size() <= 0)
                 return;
 
-            u32 count = stack.size();
-            u32 rev_count = reverse.size();
-
             int macro_count = 0;
             for (;;)
             {
@@ -1301,8 +1298,8 @@ namespace put
 
             //disable selection when we are doing something else
             static bool disable_picking = false;
-            if (pen_input_key(PK_MENU) ||
-                pen_input_key(PK_COMMAND) ||
+            if (pen::input_key(PK_MENU) ||
+                pen::input_key(PK_COMMAND) ||
                 (k_select_flags & WIDGET_SELECTED) ||
                 (k_transform_mode == TRANSFORM_PHYSICS))
             {
@@ -1310,7 +1307,7 @@ namespace put
             }
             else
             {
-                if (!pen_input_mouse(PEN_MOUSE_L))
+                if (!pen::input_mouse(PEN_MOUSE_L))
                     disable_picking = false;
             }
 
@@ -1327,7 +1324,7 @@ namespace put
 
             //duplicate
             static bool debounce_duplicate = false;
-            if (pen_input_key(PK_CONTROL) && shortcut_key(PK_D))
+            if (pen::input_key(PK_CONTROL) && shortcut_key(PK_D))
             {
                 debounce_duplicate = true;
             }
@@ -2171,7 +2168,7 @@ namespace put
                 {
                     if (k_physics_pick_info.state == PICKING_READY)
                     {
-                        if (ms.buttons[PEN_MOUSE_L] && !pen_input_key(PK_MENU))
+                        if (ms.buttons[PEN_MOUSE_L] && !pen::input_key(PK_MENU))
                         {
                             k_physics_pick_info.state = PICKING_SINGLE;
 

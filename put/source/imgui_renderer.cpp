@@ -476,9 +476,9 @@ namespace put
 			}
 
 			// Read keyboard modifiers inputs
-			io.KeyCtrl = pen_input_key(PK_CONTROL);
-			io.KeyShift = pen_input_key(PK_SHIFT);
-			io.KeyAlt = pen_input_key(PK_MENU);
+			io.KeyCtrl = pen::input_key(PK_CONTROL);
+			io.KeyShift = pen::input_key(PK_SHIFT);
+			io.KeyAlt = pen::input_key(PK_MENU);
 			io.KeySuper = false;
 		}
 

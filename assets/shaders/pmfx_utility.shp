@@ -456,11 +456,11 @@ ps_output ps_area_box_light( vs_output input )
 	float3 ip, bp, rp;
 	bool hit = ray_vs_obb_ex(area_lights.world_matrix, area_lights.world_matrix_inv, r1, rv, ip, bp, rp);
 	
-	float wd = length(input.world_pos-rp)/20;
+	float wd = length(input.world_pos.xyz-rp)/20;
 	
-	float dp = dot(normalize(input.world_pos-cp), view_v);
+	float dp = dot(normalize(input.world_pos.xyz-cp), view_v);
 	
-	float n_dot_l = saturate( dot(normalize(cp-input.world_pos), input.normal) );
+	float n_dot_l = 1.0; //saturate( dot(normalize(cp - input.world_pos), input.normal) );
 	
 	//if(dp > 0.0)
 		//wd = 0.0;

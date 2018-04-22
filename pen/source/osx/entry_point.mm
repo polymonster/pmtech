@@ -152,38 +152,38 @@ void handle_modifiers( NSEvent* event )
     
     if (flags & NSEventModifierFlagShift)
     {
-        pen::input_set_key_down(PENK_SHIFT);
+        pen::input_set_key_down(PK_SHIFT);
     }
     else
     {
-        pen::input_set_key_up(PENK_SHIFT);
+        pen::input_set_key_up(PK_SHIFT);
     }
     
     if (flags & NSEventModifierFlagOption)
     {
-        pen::input_set_key_down(PENK_MENU);
+        pen::input_set_key_down(PK_MENU);
     }
     else
     {
-        pen::input_set_key_up(PENK_MENU);
+        pen::input_set_key_up(PK_MENU);
     }
     
     if (flags & NSEventModifierFlagControl)
     {
-        pen::input_set_key_down(PENK_CONTROL);
+        pen::input_set_key_down(PK_CONTROL);
     }
     else
     {
-        pen::input_set_key_up(PENK_CONTROL);
+        pen::input_set_key_up(PK_CONTROL);
     }
     
     if (flags & NSEventModifierFlagCommand)
     {
-        pen::input_set_key_down(PENK_COMMAND);
+        pen::input_set_key_down(PK_COMMAND);
     }
     else
     {
-        pen::input_set_key_up(PENK_COMMAND);
+        pen::input_set_key_up(PK_COMMAND);
     }
     
 }
@@ -209,22 +209,22 @@ void handle_key_event( NSEvent* event, bool down )
         
         if( mapped_key_char >= 'a' && mapped_key_char <= 'z' )
         {
-            vk = PENK_A + (mapped_key_char - 'a');
+            vk = PK_A + (mapped_key_char - 'a');
         }
         
         if( mapped_key_char >= '0' && mapped_key_char <= '9' )
         {
-            vk = PENK_0 + (mapped_key_char - '0');
+            vk = PK_0 + (mapped_key_char - '0');
         }
         
         if( mapped_key_char == 127 )
         {
             mapped_key_char = 8;
-            vk = PENK_BACK;
+            vk = PK_BACK;
         }
         
         if( mapped_key_char == 32 )
-            vk = PENK_SPACE;
+            vk = PK_SPACE;
 
         if( down )
         {
@@ -245,33 +245,33 @@ void handle_key_event( NSEvent* event, bool down )
         
         switch (key_char)
         {
-            case NSF1FunctionKey:           penk = PENK_F1; break;
-            case NSF2FunctionKey:           penk = PENK_F2; break;
-            case NSF3FunctionKey:           penk = PENK_F3; break;
-            case NSF4FunctionKey:           penk = PENK_F4; break;
-            case NSF5FunctionKey:           penk = PENK_F5; break;
-            case NSF6FunctionKey:           penk = PENK_F6; break;
-            case NSF7FunctionKey:           penk = PENK_F7; break;
-            case NSF8FunctionKey:           penk = PENK_F8; break;
-            case NSF9FunctionKey:           penk = PENK_F9; break;
-            case NSF10FunctionKey:          penk = PENK_F10; break;
-            case NSF11FunctionKey:          penk = PENK_F11; break;
-            case NSF12FunctionKey:          penk = PENK_F12; break;
+            case NSF1FunctionKey:           penk = PK_F1; break;
+            case NSF2FunctionKey:           penk = PK_F2; break;
+            case NSF3FunctionKey:           penk = PK_F3; break;
+            case NSF4FunctionKey:           penk = PK_F4; break;
+            case NSF5FunctionKey:           penk = PK_F5; break;
+            case NSF6FunctionKey:           penk = PK_F6; break;
+            case NSF7FunctionKey:           penk = PK_F7; break;
+            case NSF8FunctionKey:           penk = PK_F8; break;
+            case NSF9FunctionKey:           penk = PK_F9; break;
+            case NSF10FunctionKey:          penk = PK_F10; break;
+            case NSF11FunctionKey:          penk = PK_F11; break;
+            case NSF12FunctionKey:          penk = PK_F12; break;
                 
-            case NSLeftArrowFunctionKey:    penk = PENK_LEFT; break;
-            case NSRightArrowFunctionKey:   penk = PENK_RIGHT; break;
-            case NSUpArrowFunctionKey:      penk = PENK_UP; break;
-            case NSDownArrowFunctionKey:    penk = PENK_DOWN; break;
+            case NSLeftArrowFunctionKey:    penk = PK_LEFT; break;
+            case NSRightArrowFunctionKey:   penk = PK_RIGHT; break;
+            case NSUpArrowFunctionKey:      penk = PK_UP; break;
+            case NSDownArrowFunctionKey:    penk = PK_DOWN; break;
                 
-            case NSPageUpFunctionKey:       penk = PENK_NEXT; break;
-            case NSPageDownFunctionKey:     penk = PENK_PRIOR; break;
-            case NSHomeFunctionKey:         penk = PENK_HOME; break;
-            case NSEndFunctionKey:          penk = PENK_END; break;
+            case NSPageUpFunctionKey:       penk = PK_NEXT; break;
+            case NSPageDownFunctionKey:     penk = PK_PRIOR; break;
+            case NSHomeFunctionKey:         penk = PK_HOME; break;
+            case NSEndFunctionKey:          penk = PK_END; break;
                 
-            case NSDeleteFunctionKey:       penk = PENK_BACK; break;
-            case NSDeleteCharFunctionKey:   penk = PENK_BACK; break;
+            case NSDeleteFunctionKey:       penk = PK_BACK; break;
+            case NSDeleteCharFunctionKey:   penk = PK_BACK; break;
                 
-            case NSPrintScreenFunctionKey:  penk = PENK_SNAPSHOT; break;
+            case NSPrintScreenFunctionKey:  penk = PK_SNAPSHOT; break;
         }
         
         if( down )
@@ -485,12 +485,12 @@ namespace pen
     
     bool input_undo_pressed()
     {
-        return input_is_key_held(PENK_COMMAND) && input_is_key_pressed(PENK_Z);
+        return input_is_key_held(PK_COMMAND) && input_is_key_pressed(PK_Z);
     }
     
     bool input_redo_pressed()
     {
-        return input_is_key_held(PENK_COMMAND) && input_is_key_pressed(PENK_Y);
+        return input_is_key_held(PK_COMMAND) && input_is_key_pressed(PK_Y);
     }
     
     void window_get_size( s32& width, s32& height )
