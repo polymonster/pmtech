@@ -450,6 +450,8 @@ ps_output ps_area_box_light( vs_output input )
 	
 	float3 cp = closest_point_on_obb(area_lights.world_matrix, area_lights.world_matrix_inv, input.world_pos.xyz);
 	
+	float diff = saturate(dot(-normalize(input.world_pos-cp), input.normal));
+	
 	float3 rv = normalize(refl);
 	float3 r1 = input.world_pos.xyz;
 	
@@ -458,23 +460,24 @@ ps_output ps_area_box_light( vs_output input )
 	
 	float wd = length(input.world_pos-rp)/20;
 	
-	float dp = dot(normalize(input.world_pos-cp), view_v);
+	float dp2 = dot(normalize(input.world_pos-cp), refl);
+	
+	float n_dot_v = dot(input.normal, -view_v);
 	
 	float n_dot_l = saturate( dot(normalize(cp-input.world_pos), input.normal) );
-	
-	//if(dp > 0.0)
-		//wd = 0.0;
-	
+		
 	float s = lerp(0.01, 10.0, wd);
 	
 	float d = 1.0 - length(bp-rp) / s;
 	
 	if(n_dot_l <= 0.0)
-			d = 0.0;
-		
-	//output.colour += float4(d, 0.0, d, 10.0) * n_dot_l;
+		d = 0.0;
+
+	float mask = 1.0 - saturate(dp2);
 	
-	output.colour = float4( d, d, d, 1.0);
+	float light = saturate(d * mask);
+		
+	output.colour = float4( light, light, light, 1.0);
 	
 	return output;
 }
