@@ -261,7 +261,7 @@ namespace put
         
         void add_circle(const vec3f& axis, const vec3f& centre, f32 radius, const vec4f& col )
         {
-            add_circle_segment( axis, centre, radius, 0.0f, M_PI_2, col );
+            add_circle_segment( axis, centre, radius, 0.0f, M_TWO_PI, col );
         }
 
         void add_circle_segment( const vec3f& axis, const vec3f& centre, f32 radius, f32 min, f32 max, const vec4f& col )
@@ -279,7 +279,7 @@ namespace put
 
             static const s32 segments = 16;
             f32 angle = 0.0;
-            f32 angle_step = M_PI_2 / segments;
+            f32 angle_step = M_TWO_PI / segments;
             for (s32 i = 0; i < segments; ++i)
             {
                 f32 clamped_angle = std::max<f32>( angle, min );
@@ -470,7 +470,8 @@ namespace put
 			dbg::add_line(transformed_s, transformed_e, col);
 		}
         
-        void add_axis_transform_widget(const mat4& mat, const f32 size, u32 selected_axis, u32 type, const mat4& view, const mat4& proj, const vec2i& vp )
+        void add_axis_transform_widget(const mat4& mat, const f32 size,
+                                       u32 selected_axis, u32 type, const mat4& view, const mat4& proj, const vec2i& vp )
         {
             add_coord_space( mat, size, selected_axis );
             

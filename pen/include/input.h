@@ -19,7 +19,6 @@ namespace pen
 		f32 y;
 		f32 wheel;
 		u8 buttons[ 3 ];
-
 	};
 
     void				input_set_unicode_key_down( u32 key_index );

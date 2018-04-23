@@ -459,7 +459,7 @@ ps_output ps_area_box_light( vs_output input )
 	float3 ip, bp, rp;
 	bool hit = ray_vs_obb_ex(area_lights.world_matrix, area_lights.world_matrix_inv, r1, rv, ip, bp, rp);
 	
-	float wd = length(input.world_pos.xyz-rp)/20;
+	float wd = length(input.world_pos.xyz-rp)/100;
 	
 	float dp2 = dot(normalize(input.world_pos.xyz-cp), refl);
 	
@@ -476,7 +476,7 @@ ps_output ps_area_box_light( vs_output input )
 
 	float mask = 1.0 - saturate(dp2);
 	
-	float light = saturate(d * mask);
+	float light = diff; //saturate(d + diff);
 		
 	output.colour = float4( light, light, light, 1.0);
 	

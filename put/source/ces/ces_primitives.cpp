@@ -30,7 +30,7 @@ namespace put
             vec3f tangents[segments];
 
             f32 angle = 0.0;
-            f32 angle_step = M_PI_2 / segments;
+            f32 angle_step = M_TWO_PI / segments;
             for (s32 i = 0; i < segments; ++i)
             {
                 f32 x = cos( angle );
@@ -176,7 +176,7 @@ namespace put
             geometry_resource* p_geometry = new geometry_resource;
 
             f32 angle = 0.0;
-            f32 angle_step = M_PI_2 / segments;
+            f32 angle_step = M_TWO_PI / segments;
             f32 height_step = 2.0f / (rows - 1);
 
             s32 v_index = 0;
@@ -310,7 +310,7 @@ namespace put
             geometry_resource* p_geometry = new geometry_resource;
 
             f32 angle = 0.0;
-            f32 angle_step = M_PI_2 / segments;
+            f32 angle_step = M_TWO_PI / segments;
             f32 height_step = 2.0f / (segments - 1);
 
             s32 v_index = 0;

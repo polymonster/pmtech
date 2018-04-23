@@ -11,18 +11,22 @@
 #include "audio.h"
 #include "input.h"
 
-NSOpenGLView* _gl_view;
-NSWindow * _window;
-NSOpenGLContext* _gl_context;
-NSOpenGLPixelFormat* _pixel_format;
-
+//global stuff for window graphics api sync
 extern pen::window_creation_params pen_window;
 extern a_u8 g_window_resize;
 int g_rs = 0;
 
+//pen required externs
 pen::user_info pen_user_info;
-
 extern PEN_TRV pen::user_entry( void* params );
+
+namespace
+{
+    NSOpenGLView* _gl_view;
+    NSWindow * _window;
+    NSOpenGLContext* _gl_context;
+    NSOpenGLPixelFormat* _pixel_format;
+}
 
 @interface app_delegate : NSObject<NSApplicationDelegate>
 {
@@ -136,14 +140,6 @@ void get_mouse_pos( f32& x, f32& y )
     
     x = location.x;
     y = (int)adjust_frame.size.height - location.y;
-    
-    // clamp within the range of the window
-    /*
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
-    if (x > (int)adjust_frame.size.width) x = (int)adjust_frame.size.width;
-    if (y > (int)adjust_frame.size.height) y = (int)adjust_frame.size.height;
-    */
 }
 
 void handle_modifiers( NSEvent* event )
@@ -471,6 +467,7 @@ int main(int argc, char **argv)
     pen::thread_terminate_jobs();
 }
 
+
 namespace pen
 {
     void os_set_cursor_pos( u32 client_x, u32 client_y )
@@ -485,12 +482,12 @@ namespace pen
     
     bool input_undo_pressed()
     {
-        return input_is_key_held(PK_COMMAND) && input_is_key_pressed(PK_Z);
+        return input_key(PK_COMMAND) && input_key(PK_Z);
     }
     
     bool input_redo_pressed()
     {
-        return input_is_key_held(PK_COMMAND) && input_is_key_pressed(PK_Y);
+        return input_key(PK_COMMAND) && input_key(PK_SHIFT) && input_get_unicode_key('Z');
     }
     
     void window_get_size( s32& width, s32& height )
@@ -507,6 +504,8 @@ namespace pen
         return (void*)_window;
     }
 }
+
+// Objective C Stuff
 
 @implementation app_delegate
 

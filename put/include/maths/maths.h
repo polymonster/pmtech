@@ -7,12 +7,9 @@
 #include "maths/quat.h"
 #include "maths/mat.h"
 
-#ifndef M_PI_2
-constexpr double M_PI_2 = 3.1415926535897932384626433832795 * 2.0;
-#endif
-
 constexpr double M_PI_OVER_180 = 3.1415926535897932384626433832795 / 180.0;
 constexpr double M_180_OVER_PI = 180.0 / 3.1415926535897932384626433832795;
+constexpr double M_TWO_PI = M_PI * 2.0;
 
 namespace maths
 {
