@@ -474,6 +474,7 @@ typedef Vec2i vec2i;
 typedef Vec2f vec2f;
 
 typedef Vec3f vec3f;
+typedef Vec3ui vec3ui;
 
 typedef Vec4f vec4f;
 typedef Vec4i vec4i;

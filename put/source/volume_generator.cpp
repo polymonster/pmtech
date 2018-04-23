@@ -13,6 +13,8 @@
 #include "pen.h"
 #include "data_struct.h"
 
+#include "sdf/makelevelset3.h"
+
 namespace put
 {
 	using namespace ces;
@@ -522,7 +524,59 @@ namespace put
 			sdf_job->volume_data = volume_data;
 			sdf_job->volume_dim = volume_dim;
 			sdf_job->data_size = data_size;
-
+            
+            std::vector<vec3f> vertices;
+            std::vector<vec3ui> triangles;
+            
+            for (u32 n = 0; n < sdf_job->scene->nodes_size; ++n)
+            {
+                if (sdf_job->scene->entities[n] & CMP_GEOMETRY)
+                {
+                    geometry_resource* gr = get_geometry_resource(sdf_job->scene->id_geometry[n]);
+                    
+                    u16* indices = (u16*)gr->cpu_index_buffer;
+                    vec4f* vertex_positions = (vec4f*)gr->cpu_position_buffer;
+                    
+                    for(u32 i = 0; i < gr->num_vertices; ++i)
+                        vertices.push_back(vertex_positions[i].xyz);
+                    
+                    for (u32 i = 0; i < gr->num_indices; i += 3)
+                    {
+                        u16 i0, i1, i2;
+                        i0 = indices[i + 0];
+                        i1 = indices[i + 1];
+                        i2 = indices[i + 2];
+                        
+                        triangles.push_back(vec3ui(i0, i1, i2));
+                    }
+                }
+            }
+            
+            vec3f grid_spacing = scene_dimension / (f32)volume_dim;
+            
+            vec3f grid_origin = vec3f(0.0f, 0.0f, 0.0f);
+            
+            Array3f phi_grid;
+            make_level_set3(triangles, vertices, scene_extents.min, component_wise_max(grid_spacing),
+                            volume_dim, volume_dim, volume_dim, phi_grid );
+            
+            for (u32 z = 0; z < volume_dim; ++z)
+            {
+                for (u32 y = 0; y < volume_dim; ++y)
+                {
+                    for (u32 x = 0; x < volume_dim; ++x)
+                    {
+                        u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
+                        
+                        f32 d = phi_grid(x, y, z);
+                        
+                        f32* f = (f32*)(&volume_data[offset + 0]);
+                        *f = phi_grid(x, y, z) / mag(scene_dimension);
+                    }
+                }
+            }
+        
+#if 0
 			sdf_job->debug_data = new dd[volume_dim * volume_dim * volume_dim];
 
 			build_triangle_octree(sdf_job->scene, sdf_job->tree);
@@ -577,6 +631,7 @@ namespace put
 					}
 				}
 			}
+#endif
 
 			if (p_thread_info->p_completion_callback)
 				p_thread_info->p_completion_callback(nullptr);
