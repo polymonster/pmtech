@@ -3,7 +3,7 @@
 
 #include "types.h"
 #include "array3.h"
-#include "vec.h"
+#include "maths/vec.h"
 
 
 // tri is a list of triangles in the mesh, and x is the positions of the vertices
