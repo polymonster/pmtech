@@ -1669,7 +1669,16 @@ namespace put
 
                         if (cm)
                         {
-                            mm.resource = nullptr;
+                            material_resource* mr = new material_resource();
+                            *mr = *mm.resource;
+
+                            mr->shader_name = shader_list[mm.pmfx_shader];
+                            mr->id_technique = PEN_HASH(technique_list[mm.technique]);
+
+                            //create a new material resource
+                            add_material_resource(mr);
+
+                            scene->materials[selected_index].resource = mr;
                         }
 
                         iv |= ImGui::SliderFloat("Roughness", (f32*)&mm.diffuse_rgb_shininess.w, 0.000001, 1.5);
