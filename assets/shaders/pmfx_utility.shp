@@ -295,15 +295,13 @@ ps_output ps_volume_sdf( vs_output input )
 	float3 uvw = chebyshev_norm * 0.5 + 0.5;
 	float depth = 1.0;
 	
-	float max_samples = 32.0;
+	float max_samples = 256.0;
 	
 	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
 				
 	//transform ray into volume space
 	ray_dir = mul( world_matrix_inv_transpose, ray_dir );
 	ray_dir.xyz = normalize(ray_dir.xyz);
-		
-	float3 ray_step = chebyshev_normalize(ray_dir.xyz) / max_samples;
 					
 	float3 vddx = ddx( uvw );
 	float3 vddy = ddy( uvw );
@@ -312,13 +310,13 @@ ps_output ps_volume_sdf( vs_output input )
 	
 	d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
 	
-	float3 col = float3( 0.0, 0.0, 1.0 );
+	float3 col = float3( 0.0, 0.0, 0.0 );
 	
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
 						
-		uvw += ray_dir.xyz * d * 0.9; // * 0.5;
+		uvw += ray_dir.xyz * d;
 		
 		if( d <= 0.01 )
 			break;
@@ -333,7 +331,6 @@ ps_output ps_volume_sdf( vs_output input )
 			discard;
 	}
 
-	//output.colour.rgba = float4( d, 1, d, 1.0);
 	output.colour.rgb = col;
 	
 	return output;
@@ -347,7 +344,7 @@ ps_output ps_shadow_sdf( vs_output input )
 	
 	float3 albedo = float3( 1.0, 1.0, 1.0 );
 	
-	float max_samples = 64.0;
+	float max_samples = 32.0;
 	
 	float3 v = input.texcoord.xyz;
 	float3 chebyshev_norm = chebyshev_normalize(v);
@@ -403,7 +400,7 @@ ps_output ps_shadow_sdf( vs_output input )
 		{		
 			float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
 					
-			uvw += ray_dir.xyz * abs(d) * 0.7;
+			uvw += ray_dir.xyz * d;
 			
 			closest = min(d, closest);
 		

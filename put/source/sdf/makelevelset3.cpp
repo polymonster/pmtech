@@ -1,5 +1,6 @@
 #include "sdf/makelevelset3.h"
 
+
 // find distance x0 is from segment x1-x2
 static float point_segment_distance(const Vec3f &x0, const Vec3f &x1, const Vec3f &x2)
 {

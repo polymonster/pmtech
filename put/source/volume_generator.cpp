@@ -537,8 +537,20 @@ namespace put
                     u16* indices = (u16*)gr->cpu_index_buffer;
                     vec4f* vertex_positions = (vec4f*)gr->cpu_position_buffer;
                     
+                    if(!indices || !vertex_positions)
+                    {
+                        dev_console_log_level(dev_ui::CONSOLE_ERROR,
+                                              "[error] mesh %s does not have cpu vertex / triangle data",
+                                              sdf_job->scene->names[n].c_str());
+                        
+                        continue;
+                    }
+                    
                     for(u32 i = 0; i < gr->num_vertices; ++i)
-                        vertices.push_back(vertex_positions[i].xyz);
+                    {
+                        vec3f tv = sdf_job->scene->world_matrices[n].transform_vector(vertex_positions[i].xyz);
+                        vertices.push_back(tv);
+                    }
                     
                     for (u32 i = 0; i < gr->num_indices; i += 3)
                     {
@@ -552,86 +564,37 @@ namespace put
                 }
             }
             
-            vec3f grid_spacing = scene_dimension / (f32)volume_dim;
-            
-            vec3f grid_origin = vec3f(0.0f, 0.0f, 0.0f);
-            
-            Array3f phi_grid;
-            make_level_set3(triangles, vertices, scene_extents.min, component_wise_max(grid_spacing),
-                            volume_dim, volume_dim, volume_dim, phi_grid );
-            
-            for (u32 z = 0; z < volume_dim; ++z)
+            if(triangles.size() > 0)
             {
-                for (u32 y = 0; y < volume_dim; ++y)
+                f32 dx = component_wise_max(scene_dimension) / (f32)volume_dim;
+                
+                vec3f centre = scene_extents.min + ((scene_extents.max - scene_extents.min) / 2.0f);
+                
+                vec3f grid_origin = centre - vec3f(component_wise_max(scene_dimension)/2.0f);
+                
+                Array3f phi_grid;
+                make_level_set3(triangles, vertices, grid_origin, dx,
+                                volume_dim, volume_dim, volume_dim, phi_grid );
+                
+                for (u32 z = 0; z < volume_dim; ++z)
                 {
-                    for (u32 x = 0; x < volume_dim; ++x)
+                    for (u32 y = 0; y < volume_dim; ++y)
                     {
-                        u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
-                        
-                        f32 d = phi_grid(x, y, z);
-                        
-                        f32* f = (f32*)(&volume_data[offset + 0]);
-                        *f = phi_grid(x, y, z) / mag(scene_dimension);
+                        for (u32 x = 0; x < volume_dim; ++x)
+                        {
+                            u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
+                            
+                            f32* f = (f32*)(&volume_data[offset + 0]);
+                            *f = fabs(phi_grid(x, y, z)) / component_wise_max(scene_dimension);
+                        }
                     }
                 }
             }
-        
-#if 0
-			sdf_job->debug_data = new dd[volume_dim * volume_dim * volume_dim];
-
-			build_triangle_octree(sdf_job->scene, sdf_job->tree);
-
-			sdf_job->generate_position = 0;
-
-			for (u32 z = 0; z < volume_dim; ++z)
-			{
-				for (u32 y = 0; y < volume_dim; ++y)
-				{
-					for (u32 x = 0; x < volume_dim; ++x)
-					{
-						sdf_job->generate_position++;
-
-						u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
-
-						vec3f volume_pos = vec3f(x, y, z) / (f32)volume_dim;
-
-						vec3f world_pos = scene_extents.min + volume_pos * scene_dimension;
-
-						vec4f cps = closest_point_on_scene(&sdf_job->tree, world_pos);
-
-						vec3f cp = cps.xyz;
-
-						f32 d = dist(cp, world_pos);
-
-						f32 volume_space_d = d / component_wise_max(scene_dimension);
-
-						volume_space_d *= cps.w;
-
-						//scale and bias
-						if (block_size == 1)
-						{
-							volume_space_d = volume_space_d;
-
-							//8bit signed distance
-							u32 signed_distance = volume_space_d * 255.0f;
-
-							sdf_job->debug_data[offset].pos = world_pos;
-							sdf_job->debug_data[offset].closest = cps;
-
-							signed_distance = min<u32>(signed_distance, 255);
-
-							volume_data[offset + 0] = signed_distance;
-						}
-						else
-						{
-							//32bit floating point signed distance
-							f32* f = (f32*)(&volume_data[offset + 0]);
-							*f = volume_space_d;
-						}
-					}
-				}
-			}
-#endif
+            else
+            {
+                dev_console_log_level(dev_ui::CONSOLE_ERROR,
+                                      "%s", "[error] no triangles in scene to generate sdf");
+            }
 
 			if (p_thread_info->p_completion_callback)
 				p_thread_info->p_completion_callback(nullptr);
