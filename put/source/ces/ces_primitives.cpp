@@ -563,7 +563,7 @@ namespace put
             vec3f tangents[segments];
 
             f32 angle = 0.0;
-            f32 angle_step = M_PI_2 / segments;
+            f32 angle_step = M_TWO_PI / segments;
             for (s32 i = 0; i < segments; ++i)
             {
                 f32 x = cos( angle );
