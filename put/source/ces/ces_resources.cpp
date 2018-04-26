@@ -73,7 +73,6 @@ namespace put
 
 			vec3f min = scene->bounding_volumes[s].min_extents;
 			vec3f max = scene->bounding_volumes[s].max_extents;
-			vec3f centre = min + (max - min);
 
 			vec3f pos = scene->transforms[s].translation;
 			vec3f scale = scene->transforms[s].scale;
@@ -280,9 +279,6 @@ namespace put
                 p_reader++;
                 p_reader++;
                 
-                vec3f min_extents;
-                vec3f max_extents;
-                
                 pen::memory_cpy(&p_geometry->min_extents, p_reader, sizeof(vec3f));
                 p_reader += 3;
                 
@@ -350,6 +346,15 @@ namespace put
 				//keep a cpu copy of position data
 				p_geometry->cpu_position_buffer = pen::memory_alloc(bcp.buffer_size);
 				pen::memory_cpy(p_geometry->cpu_position_buffer, bcp.data, bcp.buffer_size);
+                
+                if(p_geometry->min_extents.x == -1.0f)
+                {
+                    for( u32 v = 0; v < num_pos_verts; ++v)
+                    {
+                        vertex_position vp = ((vertex_position*)p_geometry->cpu_position_buffer)[v];
+                        dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "Pos: %f, %f, %f", vp.x, vp.y, vp.z );
+                    }
+                }
 
                 p_geometry->position_buffer = pen::renderer_create_buffer(bcp);
                 

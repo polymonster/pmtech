@@ -104,6 +104,23 @@ def add_vertex_input(input_node, vertex_input_instance):
     vertex_input_instance.offsets.append(input_node.get("offset"))
     vertex_input_instance.offsets.append(input_node.get("set"))
 
+
+def grow_extents(vals, mesh):
+    if len(mesh.min_extents) == 0:
+        mesh.min_extents.append(vals[0])
+        mesh.min_extents.append(vals[1])
+        mesh.min_extents.append(vals[2])
+        mesh.max_extents.append(vals[0])
+        mesh.max_extents.append(vals[1])
+        mesh.max_extents.append(vals[2])
+    else:
+        for i in range(0, 3, 1):
+            if vals[i] <= float(mesh.min_extents[i]):
+                mesh.min_extents[i] = vals[i]
+            if vals[i] >= float(mesh.max_extents[i]):
+                mesh.max_extents[i] = vals[i]
+
+
 def write_source_float_channel(p, src, sem_id, mesh):
     stream = mesh.get_element_stream(sem_id)
 
@@ -117,6 +134,9 @@ def write_source_float_channel(p, src, sem_id, mesh):
 
         for i in range(0, int(src.stride)):
             vals[i] = float(src.float_values[base_p + i])
+
+        if sem_id == "POSITION":
+            grow_extents(vals, mesh)
 
         cval_x = vals[0]
         cval_y = vals[1]
@@ -133,61 +153,26 @@ def write_source_float_channel(p, src, sem_id, mesh):
         stream.float_values.append(cval_z)
         stream.float_values.append(vals[3])
 
-def grow_extents(p, src, mesh):
-    base_p = int(p) * int(src.stride)
-
-    v = [float(src.float_values[base_p + 0]), float(src.float_values[base_p + 1]), float(src.float_values[base_p + 2])]
-
-    if helpers.author == "Max":
-        v = [float(src.float_values[base_p + 0]), float(src.float_values[base_p + 2]),
-             float(src.float_values[base_p + 1]) * -1.0]
-
-    mesh.collision_vertices.append(v[0])
-    mesh.collision_vertices.append(v[1])
-    mesh.collision_vertices.append(v[2])
-
-    if len(mesh.min_extents) == 0:
-        mesh.min_extents.append(v[0])
-        mesh.min_extents.append(v[1])
-        mesh.min_extents.append(v[2])
-        mesh.max_extents.append(v[0])
-        mesh.max_extents.append(v[1])
-        mesh.max_extents.append(v[2])
-    else:
-        for i in range(0, 3, 1):
-            if (v[i] <= float(mesh.min_extents[i])):
-                mesh.min_extents[i] = v[i]
-            if (v[i] >= float(mesh.max_extents[i])):
-                mesh.max_extents[i] = v[i]
-
 
 def write_vertex_data(p, src_id, sem_id, mesh):
     source_index = mesh.triangle_indices[int(p)]
 
     # find source
     for src in mesh.sources:
-        if (src.id == src_id):
+        if src.id == src_id:
             write_source_float_channel(source_index, src, sem_id, mesh)
-            # grow_extents(source_index, src, mesh)
             return
-
-    #if mesh.controller != None:
-        #print("wights")
-        #print(mesh.controller.vec4_weights.float_values)
-        #print("indices")
-        #print(mesh.controller.vec4_indices.float_values)
 
     # look in vertex list
     # This is the vertex position buffer
     for v in mesh.vertices:
-        if (v.id == src_id):
+        if v.id == src_id:
             itr = 0
             for v_src in v.source_ids:
                 for src in mesh.sources:
-                    if (v_src == src.id):
+                    if v_src == src.id:
                         write_source_float_channel(source_index, src, v.semantic_ids[itr], mesh)
-                        grow_extents(source_index, src, mesh)
-                        #also write WEIGHTS and JOINTS if we need them
+                        # also write WEIGHTS and JOINTS if we need them
                         if mesh.controller != None:
                             write_source_float_channel(source_index, mesh.controller.vec4_indices, "BLENDINDICES", mesh)
                             write_source_float_channel(source_index, mesh.controller.vec4_weights, "BLENDWEIGHTS", mesh)
@@ -259,6 +244,7 @@ def generate_vertex_buffer(mesh):
             for f in range(0, 4, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[7].float_values[i+f])
 
+
 def generate_index_buffer(mesh):
     mesh.index_buffer = []
     vert_count = int(len(mesh.vertex_buffer)) / (int(4) * int(5))
@@ -266,6 +252,7 @@ def generate_index_buffer(mesh):
         mesh.index_buffer.append(i + 2)
         mesh.index_buffer.append(i + 1)
         mesh.index_buffer.append(i + 0)
+
 
 def parse_mesh(node, tris, controller):
     mesh_instance = geometry_mesh()
