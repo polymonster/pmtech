@@ -8,6 +8,7 @@ import helpers
 import json
 import dependencies
 import time
+import parse_obj
 stats_start = time.time()
 
 #win32 / collada
@@ -234,12 +235,13 @@ def write_joint_file():
 
     helpers.output_file.joints.append(joint_data)
 
-
 # entry
 for root, dirs, files in os.walk(model_dir):
     dependencies_directory = dict()
     dependencies_directory["files"] = []
     for file in files:
+        if file.endswith(".obj"):
+            parse_obj.write_geometry(file, root)
         if file.endswith(".dae"):
             joint_list = []
             transform_list = []

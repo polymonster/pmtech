@@ -362,8 +362,8 @@ def parse_controller(controller_root,geom_name):
             return sc
     return None
 
-def parse_geometry(node, lib_controllers):
 
+def parse_geometry(node, lib_controllers):
     helpers.output_file.geometry_names.clear()
     helpers.output_file.geometry_sizes.clear()
     helpers.output_file.geometry.clear()
