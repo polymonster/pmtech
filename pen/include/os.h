@@ -1,5 +1,5 @@
-#ifndef _window_h
-#define _window_h
+#ifndef _os_h
+#define _os_h
 
 #include "pen.h"
 

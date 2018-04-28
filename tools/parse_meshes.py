@@ -4,6 +4,7 @@ import struct
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 
+
 class skin_controller:
     bind_shape_matrix = []
     joints_sid = []
@@ -14,6 +15,7 @@ class skin_controller:
     joint_weight_indices = []
     vec4_weights = None
     vec4_indices = None
+
 
 # Geometries
 class vertex_input:
@@ -30,10 +32,12 @@ class vertex_input:
         self.sets = []
         self.id = ""
 
+
 class geometry_source:
     id = ""
     float_values = []
     stride = 0
+
 
 class vertex_stream:
     semantic_id = ""
@@ -41,6 +45,7 @@ class vertex_stream:
 
     def __init__(self):
         self.float_values = []
+
 
 class geometry_mesh:
     sources = []
@@ -84,6 +89,7 @@ class geometry_mesh:
             self.vertex_elements.append(vertex_stream())
             self.vertex_elements[index].semantic_id = s
             index += 1
+
 
 class geometry_container:
     id = ""
@@ -135,9 +141,6 @@ def write_source_float_channel(p, src, sem_id, mesh):
         for i in range(0, int(src.stride)):
             vals[i] = float(src.float_values[base_p + i])
 
-        if sem_id == "POSITION":
-            grow_extents(vals, mesh)
-
         cval_x = vals[0]
         cval_y = vals[1]
         cval_z = vals[2]
@@ -152,6 +155,9 @@ def write_source_float_channel(p, src, sem_id, mesh):
         stream.float_values.append(cval_y)
         stream.float_values.append(cval_z)
         stream.float_values.append(vals[3])
+
+        if sem_id == "POSITION":
+            grow_extents([cval_x, cval_y, cval_z], mesh)
 
 
 def write_vertex_data(p, src_id, sem_id, mesh):
@@ -402,20 +408,8 @@ def write_geometry_file(geom_instance):
 
     print("packing geometry: " + geom_instance.name)
 
-    geometry_data = [struct.pack("i", (int(helpers.version_number)))]
-    geometry_data.append(struct.pack("i", (int(num_meshes))))
-
-    collision_type = 0
-    collision_dynamic = 0
-
-    collision_names = ["pxbox", "pxcyl", "pxsph", "pxcap", "pxhul", "pxmsh", "pxcmp"]
-    for col_type in range(0, len(collision_names), 1):
-        if geom_instance.name.find(collision_names[col_type] + "_d") != -1:
-            collision_type = col_type + 1
-            collision_dynamic = 1
-        elif geom_instance.name.find(collision_names[col_type] + "_s") != -1:
-            collision_type = col_type + 1
-            collision_dynamic = 0
+    geometry_data = [struct.pack("i", (int(helpers.version_number))),
+                     struct.pack("i", (int(num_meshes)))]
 
     for mat in geom_instance.materials:
         helpers.pack_parsable_string(geometry_data, mat)
@@ -424,8 +418,6 @@ def write_geometry_file(geom_instance):
     for mesh in geom_instance.meshes:
         # write collision info
         mesh_data = []
-        mesh_data.append(struct.pack("i", (int(collision_type))))
-        mesh_data.append(struct.pack("i", (int(collision_dynamic))))
 
         # write min / max extents
         for i in range(0, 3, 1):

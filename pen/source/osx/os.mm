@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "audio.h"
 #include "input.h"
+#include "console.h"
 
 //global stuff for window graphics api sync
 extern pen::window_creation_params pen_window;
@@ -26,6 +27,7 @@ namespace
     NSWindow * _window;
     NSOpenGLContext* _gl_context;
     NSOpenGLPixelFormat* _pixel_format;
+    bool pen_terminate_app = false;
 }
 
 @interface app_delegate : NSObject<NSApplicationDelegate>
@@ -40,12 +42,12 @@ namespace
 
 @end
 
-@interface i_window : NSObject<NSWindowDelegate>
+@interface window_delegate : NSObject<NSWindowDelegate>
 {
     uint32_t window_count;
 }
 
-+ (i_window*)shared_delegate;
++ (window_delegate*)shared_delegate;
 - (id)init;
 - (void)windowCreated:(NSWindow*)window;
 - (void)windowWillClose:(NSNotification*)notification;
@@ -53,6 +55,9 @@ namespace
 - (void)windowDidResize:(NSNotification*)notification;
 - (void)windowDidBecomeKey:(NSNotification *)notification;
 - (void)windowDidResignKey:(NSNotification *)notification;
+- (NSDragOperation)draggingEntered:(id < NSDraggingInfo >)sender;
+- (NSDragOperation)draggingEnded:(id < NSDraggingInfo >)sender;
+- (BOOL)performDragOperation:(id < NSDraggingInfo >)sender;
 
 @end
 
@@ -341,8 +346,6 @@ bool handle_event(NSEvent* event)
     return false;
 }
 
-static bool pen_terminate_app = false;
-
 void users()
 {
     NSString* ns_full_user_name = NSFullUserName();
@@ -387,13 +390,17 @@ int main(int argc, char **argv)
 
     [_window makeKeyAndOrderFront: _window];
     
-    id wd = [i_window shared_delegate];
+    id wd = [window_delegate shared_delegate];
     [_window setDelegate:wd];
     
     [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
     [_window setAcceptsMouseMovedEvents:YES];
     
     [_window center];
+    
+    NSArray<NSPasteboardType>* pbt = @[NSPasteboardTypeFileURL];
+    
+    [_window registerForDraggedTypes:(pbt)];
     
     create_gl_context();
     
@@ -542,12 +549,12 @@ namespace pen
 
 @end
 
-@implementation i_window
+@implementation window_delegate
 
-+ (i_window*)shared_delegate
++ (window_delegate*)shared_delegate
 {
-    static id window_delegate = [i_window new];
-    return window_delegate;
+    static id d = [window_delegate new];
+    return d;
 }
 
 - (id)init
@@ -603,6 +610,30 @@ namespace pen
 
 - (void)windowDidResignKey:(NSNotification*)notification
 {
+}
+
+- (NSDragOperation)draggingEntered:(id < NSDraggingInfo >)sender
+{
+    return NSDragOperationCopy;
+}
+
+- (NSDragOperation)draggingEnded:(id < NSDraggingInfo >)sender
+{
+    return NSDragOperationCopy;
+}
+
+- (BOOL)performDragOperation:(id < NSDraggingInfo >)sender
+{
+    NSPasteboard *pboard = [sender draggingPasteboard];
+    NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
+    
+    for(u32 i = 0; i < files.count; ++i)
+    {
+        NSString *newString = [files objectAtIndex:i];
+        PEN_PRINTF("%s", newString.UTF8String);
+    }
+    
+    return NO;
 }
 
 @end

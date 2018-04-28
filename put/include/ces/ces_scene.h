@@ -110,7 +110,7 @@ namespace put
         struct cmp_skin
         {
             u32		num_joints;
-            mat4	bind_shape_matirx;
+            mat4	bind_shape_matrix;
             mat4	joint_bind_matrices[85];
             u32     bone_cbuffer = PEN_INVALID_HANDLE;
         };

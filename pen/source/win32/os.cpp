@@ -1,7 +1,7 @@
 #include <windows.h>
 
 #include "pen.h"
-#include "entry_point.h"
+#include "os.h"
 #include "threads.h"
 #include "timer.h"
 #include "audio.h"

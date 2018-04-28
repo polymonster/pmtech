@@ -1,5 +1,5 @@
 #include "input.h"
-#include "entry_point.h"
+#include "os.h"
 #include <atomic>
 
 namespace pen

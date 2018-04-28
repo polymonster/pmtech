@@ -179,7 +179,7 @@ namespace put
             pre_skin.vertex_size = geom.vertex_size;
             pre_skin.num_verts = geom.num_vertices;
             
-            //geometry has the streak out target and non-skinned vertex format
+            //geometry has the stream out target and non-skinned vertex format
             geom.vertex_buffer = vb;
             geom.position_buffer = pb;
             geom.vertex_size = sizeof(vertex_model);
@@ -275,10 +275,6 @@ namespace put
                 p_geometry->material_id_name = PEN_HASH(mat_names[submesh].c_str());
                 p_geometry->submesh_index = submesh;
                 
-                //skip physics
-                p_reader++;
-                p_reader++;
-                
                 pen::memory_cpy(&p_geometry->min_extents, p_reader, sizeof(vec3f));
                 p_reader += 3;
                 
@@ -302,17 +298,17 @@ namespace put
                     
                     p_geometry->p_skin = (cmp_skin*)pen::memory_alloc(sizeof(cmp_skin));
                     
-                    pen::memory_cpy(&p_geometry->p_skin->bind_shape_matirx, p_reader, sizeof(mat4));
+                    pen::memory_cpy(&p_geometry->p_skin->bind_shape_matrix, p_reader, sizeof(mat4));
                     p_reader += 16;
                     
-                    //max_swap.create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 1.0f, 0.0f));
-                    mat4 max_swap = mat::create_axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f));
-        
-                    mat4 max_swap_inv = mat::inverse4x4(max_swap);
+                    // Conversion from max to lhs - this needs to go into the build pipeline
+                    // max_swap.axis_swap(vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 1.0f, 0.0f));
+                    // final_bind = max_swap * p_geometry->p_skin->bind_shape_matrix * max_swap_inv;
+                    // joint_bind_matrices[joint] = max_swap * joint_bind_matrices[joint] * max_swap_inv;
                     
-                    mat4 final_bind = max_swap * p_geometry->p_skin->bind_shape_matirx * max_swap_inv;
+                    mat4 final_bind = p_geometry->p_skin->bind_shape_matrix;
                     
-                    p_geometry->p_skin->bind_shape_matirx = final_bind;
+                    p_geometry->p_skin->bind_shape_matrix = final_bind;
                     
                     u32 num_ijb_floats = *p_reader++;
                     pen::memory_cpy(&p_geometry->p_skin->joint_bind_matrices[0], p_reader, sizeof(f32) * num_ijb_floats);
@@ -322,7 +318,7 @@ namespace put
                     
                     for (u32 joint = 0; joint < p_geometry->p_skin->num_joints; ++joint)
                     {
-                        p_geometry->p_skin->joint_bind_matrices[joint] = max_swap * p_geometry->p_skin->joint_bind_matrices[joint] * max_swap_inv;
+                        p_geometry->p_skin->joint_bind_matrices[joint] = p_geometry->p_skin->joint_bind_matrices[joint];
                     }
                     
                     p_geometry->p_skin->bone_cbuffer = PEN_INVALID_HANDLE;
@@ -873,7 +869,6 @@ namespace put
                         }
                         
                         final_rotation.euler_angles(z_theta, y_theta, x_theta);
-                        vec3f corrected_euler = vec3f(x_theta, y_theta, z_theta);
                     }
                 }
 
@@ -905,7 +900,6 @@ namespace put
                     scene->transforms[current_node].scale = vec3f( sx, sy, sz );
 				}
 
-                
                 scene->local_matrices[current_node] = (matrix);
                 
                 //store intial position for physics to hook into later
