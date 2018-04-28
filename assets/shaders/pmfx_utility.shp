@@ -205,6 +205,16 @@ ps_output ps_diffuse( vs_output input )
     return output;
 }
 
+ps_output ps_vertex_normals( vs_output input ) 
+{	
+	ps_output output;
+	
+	output.colour.rgb = input.normal * 0.5 + 0.5;
+	output.colour.a = 1.0;
+	
+    return output;
+}
+
 ps_output ps_debug( vs_output_picking input ) 
 {	
 	ps_output_picking output;
@@ -492,6 +502,12 @@ pmfx:
 	{
 		"vs": "vs_main",
 		"ps": "ps_diffuse"
+	},
+	
+	"vertex_normals":
+	{
+		"vs": "vs_main",
+		"ps": "ps_vertex_normals"
 	},
 	
 	"diffuse_skinned":

@@ -409,6 +409,7 @@ namespace pen
         u32 raster_state = 0;
         bool backbuffer_bound = false;
         u8 constant_buffer_bindings[MAX_UNIFORM_BUFFERS] = { 0 };
+        u32 index_format = GL_UNSIGNED_SHORT;
     };
     
     active_state g_bound_state;
@@ -806,6 +807,7 @@ namespace pen
 	void direct::renderer_set_index_buffer( u32 buffer_index, u32 format, u32 offset )
 	{
         g_bound_state.index_buffer = buffer_index;
+        g_bound_state.index_format = format;
 	}
     
     void bind_state( u32 primitive_topology )
@@ -1020,7 +1022,7 @@ namespace pen
 
         void* offset = (void*)(size_t)(start_index * 2);
         
-        CHECK_CALL( glDrawElementsBaseVertex( primitive_topology, index_count, GL_UNSIGNED_SHORT, offset, base_vertex ) );
+        CHECK_CALL( glDrawElementsBaseVertex( primitive_topology, index_count, g_bound_state.index_format, offset, base_vertex ) );
 	}
     
     void direct::renderer_draw_indexed_instanced(
@@ -1042,7 +1044,7 @@ namespace pen
         
         CHECK_CALL( glDrawElementsInstancedBaseVertex(primitive_topology,
                                                       index_count,
-                                                      GL_UNSIGNED_SHORT,
+                                                      g_bound_state.index_format,
                                                       offset,
                                                       instance_count,
                                                       base_vertex) );

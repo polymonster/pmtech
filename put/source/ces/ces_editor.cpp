@@ -263,8 +263,7 @@ namespace put
             scene->entities[light] |= CMP_LIGHT;
             scene->entities[light] |= CMP_TRANSFORM;
 
-            sb_free(k_selection_list);
-            k_selection_list = nullptr;
+            sb_clear(k_selection_list);
         }
 
         void editor_init(entity_scene* scene)
@@ -404,8 +403,7 @@ namespace put
                 for (int i = 0; i < sel_count; ++i)
                     scene->state_flags[k_selection_list[i]] &= ~SF_SELECTED;
 
-                sb_free(k_selection_list);
-                k_selection_list = nullptr;
+                sb_clear(k_selection_list);
 
                 if (valid)
                     sb_push(k_selection_list, index);
@@ -534,8 +532,7 @@ namespace put
                         for (u32 i = 0; i < sls; ++i)
                             scene->state_flags[k_selection_list[i]] &= ~SF_SELECTED;
 
-                        sb_free(k_selection_list);
-                        k_selection_list = nullptr;
+                        sb_clear(k_selection_list);
 
                         pm = SELECT_ADD;
                     }
@@ -568,8 +565,7 @@ namespace put
                         }
                     }
 
-                    sb_free(k_selection_list);
-                    k_selection_list = nullptr;
+                    sb_clear(k_selection_list);
                     stb__sbgrow(k_selection_list, scene->num_nodes);
 
                     s32 pos = 0;
@@ -836,7 +832,10 @@ namespace put
 
                     continue;
                 }
-
+                
+                if(scene->state_flags[ua.node_index] & SF_SELECTED)
+                    sb_clear(k_selection_list);
+                
                 restore_node_state(scene, ua.action_state[action], ua.node_index);
             }
         }
@@ -1349,8 +1348,7 @@ namespace put
                         if (c > -1)
                             delete_entity(sc->scene, c);
                 }
-                sb_free(k_selection_list);
-                k_selection_list = nullptr;
+                sb_clear(k_selection_list);
 
                 initialise_free_list(sc->scene);
 
@@ -1919,8 +1917,11 @@ namespace put
             {
                 if (ImGui::Button(ICON_FA_PLUS))
                 {
+                    u32 ni = ces::get_next_node(scene);
+                    store_node_state(scene, ni, UNDO);
+                    
                     u32 nn = ces::get_new_node(scene);
-
+                    
                     scene->entities[nn] |= CMP_ALLOCATED;
 
                     scene->names[nn] = "node_";
@@ -1935,6 +1936,8 @@ namespace put
                     scene->entities[nn] |= CMP_TRANSFORM;
 
                     add_selection(scene, nn);
+                    
+                    store_node_state(scene, ni, REDO);
                 }
                 put::dev_ui::set_tooltip("Add New Node");
 
@@ -2053,7 +2056,7 @@ namespace put
                         ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
                 }
 
-                // Transform uno's are handled by the transform selection function
+                // Transform undo's are handled by the transform selection function
                 scene_transform_ui(scene);
 
                 // Undoable actions
@@ -2749,9 +2752,11 @@ namespace put
 
             //no depth test
             u32 depth_disabled = pmfx::get_render_state_by_name(PEN_HASH("disabled_depth_stencil_state"));
+            u32 fill = pmfx::get_render_state_by_name(PEN_HASH("default_raster_state"));
 
             pen::renderer_set_depth_stencil_state(depth_disabled);
-
+            pen::renderer_set_rasterizer_state(fill);
+            
             transform_widget(view);
 
             put::dbg::render_3d(view.cb_view);

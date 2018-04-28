@@ -145,6 +145,14 @@ namespace put
             }
 		}
         
+        u32 get_next_node( entity_scene* scene )
+        {
+            if(!scene->free_list_head)
+                resize_scene_buffers(scene);
+
+            return scene->free_list_head->node;
+        }
+        
         u32 get_new_node( entity_scene* scene )
         {  
             //o(1) using free list

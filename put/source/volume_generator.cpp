@@ -14,6 +14,7 @@
 #include "data_struct.h"
 
 #include "sdf/makelevelset3.h"
+extern mls_progress g_mls_progress;
 
 namespace put
 {
@@ -683,7 +684,7 @@ namespace put
 
 				if (k_rasteriser_job.combine_in_progress > 0)
 				{
-					f32 progress = (f32)k_rasteriser_job.combine_position / (f32)pow(k_rasteriser_job.dimension, 3);
+                    f32 progress = (f32)k_rasteriser_job.combine_position / (f32)pow(k_rasteriser_job.dimension, 3);
 					ImGui::ProgressBar(progress);
 				}
 				else
@@ -947,8 +948,10 @@ namespace put
 			}
 			else
 			{
-				f32 progress = (f32)k_sdf_job.generate_position / (f32)pow(k_sdf_job.volume_dim, 3);
-				ImGui::ProgressBar(progress);
+				ImGui::ProgressBar(g_mls_progress.triangle_distances, ImVec2(-1,0), "Triangle Distances");
+                ImGui::ProgressBar(g_mls_progress.intersections, ImVec2(-1,0), "Intersections");
+                ImGui::ProgressBar(g_mls_progress.sweeps, ImVec2(-1,0), "Sweeps");
+                ImGui::ProgressBar(g_mls_progress.intersection_counts, ImVec2(-1,0), "Intersection Counts");
 
 				if (k_sdf_job.generate_in_progress == 2)
 				{

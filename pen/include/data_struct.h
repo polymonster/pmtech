@@ -11,6 +11,7 @@
 #define sb_count  stb_sb_count
 #define sb_add    stb_sb_add
 #define sb_last   stb_sb_last
+#define sb_clear(v) sb_free(v); v = nullptr
 #endif
 
 #define stb_sb_free(a)         ((a) ? free(stb__sbraw(a)),0 : 0)

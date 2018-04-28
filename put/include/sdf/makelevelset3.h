@@ -5,6 +5,12 @@
 #include "array3.h"
 #include "maths/vec.h"
 
+struct mls_progress
+{
+    f32 triangles;
+    f32 sweeps;
+    f32 intersection_counts;
+};
 
 // tri is a list of triangles in the mesh, and x is the positions of the vertices
 // absolute distances will be nearly correct for triangle soup, but a closed mesh is

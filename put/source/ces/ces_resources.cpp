@@ -16,7 +16,8 @@ namespace put
     {
         PMM_TRANSLATE = 0,
         PMM_ROTATE = 1,
-        PMM_MATRIX
+        PMM_MATRIX = 2,
+        PMM_IDENTITY
     };
     
     //id hashes
@@ -828,6 +829,9 @@ namespace put
                             pen::memory_cpy(&matrix, p_u32reader, 16 * 4);
                             p_u32reader += 16;
                             break;
+                        case PMM_IDENTITY:
+                            matrix = mat4::create_identity();
+                            break;
                         default:
                             //unsupported transform type
                             PEN_ASSERT(0);
@@ -968,7 +972,15 @@ namespace put
                             }
                             else
                             {
-                                scene->entities[n] |= CMP_MATERIAL;
+                                static hash_id id_default = PEN_HASH("default_material");
+                                
+                                mr = get_material_resource(id_default);
+                                
+                                scene->material_names[dest] = "default_material";
+                                
+                                instantiate_material(mr, scene, dest);
+                                
+                                scene->id_material[dest] = id_default;
                             }
                         }
                         else

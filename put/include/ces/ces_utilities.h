@@ -30,9 +30,10 @@ namespace put
             CLONE_MOVE = 2  //clones the node to the new location keeping physics and rendering entities and zeros the src node
         };
     
-        u32     get_new_node( entity_scene* scene );
-		void	get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start, s32& end);
-        void	get_new_nodes_append( entity_scene* scene, s32 num, s32& start, s32& end );
+        u32     get_next_node( entity_scene* scene ); //gets next node index
+        u32     get_new_node( entity_scene* scene ); //allocates a new node at the next index o(1)
+		void	get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start, s32& end); //gets new nodes finding contiguous space in the scene o(n)
+        void	get_new_nodes_append( entity_scene* scene, s32 num, s32& start, s32& end ); //gets new nodes appending them on the end o(1)
         
         u32		clone_node( entity_scene* scene, u32 src, s32 dst = -1, s32 parent = -1, u32 flags = CLONE_INSTANTIATE, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
 		void	clone_selection_hierarchical(entity_scene* scene, u32** selection_list, const c8* suffix);

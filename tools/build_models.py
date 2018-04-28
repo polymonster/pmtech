@@ -240,9 +240,39 @@ for root, dirs, files in os.walk(model_dir):
     dependencies_directory = dict()
     dependencies_directory["files"] = []
     for file in files:
+        if not file.endswith(".obj") and not file.endswith(".dae"):
+            continue
+
+        # file path stuff, messy!
+        [fnoext, fext] = os.path.splitext(file)
+
+        helpers.bin_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "")
+        helpers.build_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "data", "models")
+
+        assets_pos = root.find(model_dir)
+        assets_pos += len(model_dir) + 1
+        sub_dir = root[int(assets_pos):int(len(root))]
+        out_dir = os.path.join(helpers.build_dir, sub_dir)
+
+        f = os.path.join(root, file)
+
+        current_filename = file
+        helpers.current_filename = file
+        helpers.build_dir = out_dir
+
+        dependencies_directory["dir"] = out_dir
+
+        helpers.output_file = helpers.pmm_file()
+
+        base_out_file = os.path.join(out_dir, fnoext)
+
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
         if file.endswith(".obj"):
             parse_obj.write_geometry(file, root)
-        if file.endswith(".dae"):
+            helpers.output_file.write(base_out_file + ".pmm")
+        elif file.endswith(".dae"):
             joint_list = []
             transform_list = []
             parent_list = []
@@ -254,31 +284,6 @@ for root, dirs, files in os.walk(model_dir):
             node_name_list = []
             animations = []
             image_list = []
-
-            [fnoext, fext] = os.path.splitext(file)
-
-            helpers.bin_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "")
-            helpers.build_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "data", "models")
-
-            assets_pos = root.find(model_dir)
-            assets_pos += len(model_dir) + 1
-            sub_dir = root[int(assets_pos):int(len(root))]
-            out_dir = os.path.join(helpers.build_dir, sub_dir)
-
-            if not os.path.exists(out_dir):
-                os.makedirs(out_dir)
-
-            f = os.path.join(root, file)
-
-            current_filename = file
-            helpers.current_filename = file
-            helpers.build_dir = out_dir
-
-            dependencies_directory["dir"] = out_dir
-
-            helpers.output_file = helpers.pmm_file()
-
-            base_out_file = os.path.join(out_dir, fnoext)
 
             depends_dest = base_out_file.replace(helpers.bin_dir, "")
 
