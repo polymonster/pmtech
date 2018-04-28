@@ -299,19 +299,21 @@ ps_output ps_volume_sdf( vs_output input )
 	ps_output output;
 	
 	float3 v = input.texcoord.xyz;
-		
-	//float3 chebyshev_norm = chebyshev_normalize(v);
 	float3 chebyshev_norm = chebyshev_normalize(v);
-	
 	float3 uvw = chebyshev_norm * 0.5 + 0.5;
-	float depth = 1.0;
 	
 	float max_samples = 32.0;
 	
 	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
 				
 	//transform ray into volume space
-	//ray_dir = mul( world_matrix_inv_transpose, ray_dir );
+	float4x4 inv_rot = world_matrix_inv_transpose;
+	inv_rot[0].w = 0.0;
+	inv_rot[1].w = 0.0;
+	inv_rot[2].w = 0.0;
+	inv_rot[3].xyzw = float4(0.0, 0.0, 0.0, 1.0 );
+	
+	ray_dir = mul( inv_rot, ray_dir );
 	ray_dir.xyz = normalize(ray_dir.xyz);
 					
 	float3 vddx = ddx( uvw );
@@ -331,12 +333,13 @@ ps_output ps_volume_sdf( vs_output input )
 	{		
 		taken += 1.0/max_samples;
 		
-		uvw = mul(world_matrix_inv_transpose, vec4(ray_pos, 1.0)).xyz;
-		uvw = uvw * 0.5 + 0.5;
+		//uvw = mul(world_matrix_inv_transpose, vec4(ray_pos, 1.0)).xyz;
+		//uvw = uvw * 0.5 + 0.5;
+		//d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
+		//ray_pos += ray_dir.xyz * d * 0.8;
 		
-		d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
-		
-		ray_pos += ray_dir.xyz * d * 0.5;				
+		d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
+		uvw += ray_dir.xyz * (d / (3.37*2.0)) * 0.9;				
 		
 		if( s == 0 )
 			continue;
