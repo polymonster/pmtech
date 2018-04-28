@@ -70,9 +70,7 @@ static void sweep(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x,
     if(dk>0){ k0=1; k1=phi.nk; }
     else{ k0=phi.nk-2; k1=-1; }
     
-    f32 sweep_tick = 1.0f / (k1*j1*i1) /9.0f;
     for(int k=k0; k!=k1; k+=dk) for(int j=j0; j!=j1; j+=dj) for(int i=i0; i!=i1; i+=di){
-        g_mls_progress.sweeps += sweep_tick;
         Vec3f gx(i*dx+origin[0], j*dx+origin[1], k*dx+origin[2]);
         check_neighbour(tri, x, phi, closest_tri, gx, i, j, k, i-di, j,    k);
         check_neighbour(tri, x, phi, closest_tri, gx, i, j, k, i,    j-dj, k);
@@ -124,10 +122,8 @@ void make_level_set3(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x
                      const Vec3f &origin, float dx, int ni, int nj, int nk,
                      Array3f &phi, const int exact_band)
 {
-    g_mls_progress.triangle_distances = 0.0f;
-    g_mls_progress.intersections = 0.0f;
+    g_mls_progress.triangles = 0.0f;
     g_mls_progress.sweeps = 0.0f;
-    g_mls_progress.intersection_counts = 0.0f;
     
     phi.resize(ni, nj, nk);
     phi.assign((ni+nj+nk)*dx); // upper bound on distance
@@ -138,7 +134,7 @@ void make_level_set3(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x
     f32 tri_tick = 1.0f / tri.size();
     for(unsigned int t=0; t<tri.size(); ++t)
     {
-        g_mls_progress.triangle_distances += tri_tick;
+        g_mls_progress.triangles += tri_tick;
         unsigned int p, q, r; assign(tri[t], p, q, r);
         // coordinates in grid to high precision
         double fip=((double)x[p][0]-origin[0])/dx, fjp=((double)x[p][1]-origin[1])/dx, fkp=((double)x[p][2]-origin[2])/dx;
@@ -174,20 +170,20 @@ void make_level_set3(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x
         }
     }
     // and now we fill in the rest of the distances with fast sweeping
-    for(unsigned int pass=0; pass<2; ++pass){
-        sweep(tri, x, phi, closest_tri, origin, dx, +1, +1, +1);
-        sweep(tri, x, phi, closest_tri, origin, dx, -1, -1, -1);
-        sweep(tri, x, phi, closest_tri, origin, dx, +1, +1, -1);
-        sweep(tri, x, phi, closest_tri, origin, dx, -1, -1, +1);
-        sweep(tri, x, phi, closest_tri, origin, dx, +1, -1, +1);
-        sweep(tri, x, phi, closest_tri, origin, dx, -1, +1, -1);
-        sweep(tri, x, phi, closest_tri, origin, dx, +1, -1, -1);
-        sweep(tri, x, phi, closest_tri, origin, dx, -1, +1, +1);
+    f32 sweep_tick = 1.0f / 16.0;
+    for(unsigned int pass=0; pass<2; ++pass)
+    {
+        sweep(tri, x, phi, closest_tri, origin, dx, +1, +1, +1); g_mls_progress.sweeps += sweep_tick;
+        sweep(tri, x, phi, closest_tri, origin, dx, -1, -1, -1); g_mls_progress.sweeps += sweep_tick;
+        sweep(tri, x, phi, closest_tri, origin, dx, +1, +1, -1); g_mls_progress.sweeps += sweep_tick;
+        sweep(tri, x, phi, closest_tri, origin, dx, -1, -1, +1); g_mls_progress.sweeps += sweep_tick;
+        sweep(tri, x, phi, closest_tri, origin, dx, +1, -1, +1); g_mls_progress.sweeps += sweep_tick;
+        sweep(tri, x, phi, closest_tri, origin, dx, -1, +1, -1); g_mls_progress.sweeps += sweep_tick;
+        sweep(tri, x, phi, closest_tri, origin, dx, +1, -1, -1); g_mls_progress.sweeps += sweep_tick;
+        sweep(tri, x, phi, closest_tri, origin, dx, -1, +1, +1); g_mls_progress.sweeps += sweep_tick;
     }
     // then figure out signs (inside/outside) from intersection counts
-    f32 counts_tick = 1.0f / (nk*nj*ni);
     for(int k=0; k<nk; ++k) for(int j=0; j<nj; ++j){
-        g_mls_progress.intersection_counts += counts_tick;
         int total_count=0;
         for(int i=0; i<ni; ++i){
             total_count+=intersection_count(i,j,k);

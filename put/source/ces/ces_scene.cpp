@@ -699,7 +699,7 @@ namespace put
                     scene->draw_call_data[n].world_matrix = mat4::create_identity();
 
 				mat4 invt = scene->world_matrices[n];
-				invt.set_translation(vec3f(0.0f, 0.0f, 0.0f));
+				//invt.set_translation(vec3f(0.0f, 0.0f, 0.0f));
 				invt = invt.transposed();
 				invt = mat::inverse4x4(invt);
 

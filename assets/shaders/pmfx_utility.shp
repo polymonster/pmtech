@@ -300,17 +300,18 @@ ps_output ps_volume_sdf( vs_output input )
 	
 	float3 v = input.texcoord.xyz;
 		
+	//float3 chebyshev_norm = chebyshev_normalize(v);
 	float3 chebyshev_norm = chebyshev_normalize(v);
 	
 	float3 uvw = chebyshev_norm * 0.5 + 0.5;
 	float depth = 1.0;
 	
-	float max_samples = 256.0;
+	float max_samples = 32.0;
 	
 	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
 				
 	//transform ray into volume space
-	ray_dir = mul( world_matrix_inv_transpose, ray_dir );
+	//ray_dir = mul( world_matrix_inv_transpose, ray_dir );
 	ray_dir.xyz = normalize(ray_dir.xyz);
 					
 	float3 vddx = ddx( uvw );
@@ -322,26 +323,40 @@ ps_output ps_volume_sdf( vs_output input )
 	
 	float3 col = float3( 0.0, 0.0, 0.0 );
 	
+	float3 ray_pos = input.world_pos.xyz;
+	
+	float taken = 0.0;
+	
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
+		taken += 1.0/max_samples;
+		
+		uvw = mul(world_matrix_inv_transpose, vec4(ray_pos, 1.0)).xyz;
+		uvw = uvw * 0.5 + 0.5;
+		
 		d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
-						
-		uvw += ray_dir.xyz * d;
 		
-		if( d <= 0.01 )
+		ray_pos += ray_dir.xyz * d * 0.5;				
+		
+		if( s == 0 )
+			continue;
+			
+		if( d <= 0.0 )	
 			break;
-		
-		if(uvw.x >= 1.0 || uvw.x < 0.0)
+										
+		if(uvw.x >= 1.0 || uvw.x <= 0.0)
 			discard;
 		
-		if(uvw.y >= 1.0 || uvw.y < 0.0)
+		if(uvw.y >= 1.0 || uvw.y <= 0.0)
 			discard;
 		
-		if(uvw.z >= 1.0 || uvw.z < 0.0)
+		if(uvw.z >= 1.0 || uvw.z <= 0.0)
 			discard;
 	}
-
-	output.colour.rgb = col;
+	
+	float vd = (1.0 - d);
+	output.colour.rgb = float3(vd*vd,vd*vd, vd*vd);
+	output.colour.rgb = float3(taken, taken, taken);
 	
 	return output;
 }
@@ -410,7 +425,7 @@ ps_output ps_shadow_sdf( vs_output input )
 		{		
 			float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
 					
-			uvw += ray_dir.xyz * d;
+			uvw += ray_dir.xyz * (d/1.65) * 0.9;
 			
 			closest = min(d, closest);
 		

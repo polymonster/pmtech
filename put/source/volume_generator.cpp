@@ -127,6 +127,8 @@ namespace put
 			a_u32			generate_in_progress;
 			a_u32			generate_position;
 			dd*				debug_data = nullptr;
+            bool            trust_sign = true;
+            f32             padding;
 		};
 		static vgt_sdf_job			k_sdf_job;
 
@@ -516,8 +518,9 @@ namespace put
 
 			k_sdf_job.scene_extents = sdf_job->scene->renderable_extents;
 			
-			k_sdf_job.scene_extents.min -= vec3f(0.1f);
-			k_sdf_job.scene_extents.max += vec3f(0.1f);
+            vec3f sd = k_sdf_job.scene_extents.max - k_sdf_job.scene_extents.min;
+			k_sdf_job.scene_extents.min -= sd * k_sdf_job.padding;
+			k_sdf_job.scene_extents.max += sd * k_sdf_job.padding;
 
 			extents scene_extents = k_sdf_job.scene_extents;
 			vec3f scene_dimension = scene_extents.max - scene_extents.min;
@@ -535,10 +538,9 @@ namespace put
                 {
                     geometry_resource* gr = get_geometry_resource(sdf_job->scene->id_geometry[n]);
                     
-                    u16* indices = (u16*)gr->cpu_index_buffer;
                     vec4f* vertex_positions = (vec4f*)gr->cpu_position_buffer;
                     
-                    if(!indices || !vertex_positions)
+                    if(!gr->cpu_index_buffer || !vertex_positions)
                     {
                         dev_console_log_level(dev_ui::CONSOLE_ERROR,
                                               "[error] mesh %s does not have cpu vertex / triangle data",
@@ -555,15 +557,29 @@ namespace put
                     
                     for (u32 i = 0; i < gr->num_indices; i += 3)
                     {
-                        u16 i0, i1, i2;
-                        i0 = indices[i + 0];
-                        i1 = indices[i + 1];
-                        i2 = indices[i + 2];
-                        
-                        triangles.push_back(vec3ui(i0, i1, i2));
+                        if(gr->index_type == PEN_FORMAT_R32_UINT)
+                        {
+                            u32* indices = (u32*)gr->cpu_index_buffer;
+                            u32 i0, i1, i2;
+                            i0 = indices[i + 0];
+                            i1 = indices[i + 1];
+                            i2 = indices[i + 2];
+                            triangles.push_back(vec3ui(i0, i1, i2));
+                        }
+                        else
+                        {
+                            u16* indices = (u16*)gr->cpu_index_buffer;
+                            u16 i0, i1, i2;
+                            i0 = indices[i + 0];
+                            i1 = indices[i + 1];
+                            i2 = indices[i + 2];
+                            triangles.push_back(vec3ui(i0, i1, i2));
+                        }
                     }
                 }
             }
+            
+            pen::renderer_set_rasterizer_state(0);
             
             if(triangles.size() > 0)
             {
@@ -586,7 +602,13 @@ namespace put
                             u32 offset = z * slice_pitch + y * row_pitch + x * block_size;
                             
                             f32* f = (f32*)(&volume_data[offset + 0]);
-                            *f = fabs(phi_grid(x, y, z)) / component_wise_max(scene_dimension);
+                            
+                            //non water tight meshes signs cannot be trusted
+                            f32 tsf = phi_grid(x, y, z);
+                            if( !sdf_job->trust_sign )
+                                tsf = fabs(tsf);
+                            
+                            *f = tsf;
                         }
                     }
                 }
@@ -704,214 +726,6 @@ namespace put
 			}
 		}
 
-		static u32 octree_id = 0;
-		void subdivide_octree(triangle_octree* node, u32 depth, u32 max_depth )
-		{
-			node->children = new triangle_octree[8];
-
-			vec3f half_size = (node->e.max - node->e.min) / 2.0f;
-
-			vec3f half_x = vec3f(half_size.x, 0.0f, 0.0f);
-			vec3f half_y = vec3f(0.0f, half_size.y, 0.0f);
-			vec3f half_z = vec3f(0.0f, 0.0f, half_size.z);
-
-			vec3f child_min[8] =
-			{
-				node->e.min,
-				node->e.min + half_x,
-				node->e.min + half_z,
-				node->e.min + half_x + half_z,
-
-				child_min[0] + half_y,
-				child_min[1] + half_y,
-				child_min[2] + half_y,
-				child_min[3] + half_y
-			};
-
-			for (u32 i = 0; i < 8; ++i)
-			{
-				node->children[i].e =
-				{
-					child_min[i],
-					child_min[i] + half_size
-				};
-
-				extents& e = node->children[i].e;
-
-				vec3f centre = child_min[i] + half_size * 0.5f;
-
-				u32 num_tris = sb_count(node->triangles);
-
-				f32 side = 0.0f;
-				for (u32 ti = 0; ti < num_tris; ++ti)
-				{
-					triangle& t = node->triangles[ti];
-					vec3f cp = maths::closest_point_on_triangle(t.v[0], t.v[1], t.v[2], centre, side);
-
-					if (maths::point_inside_aabb(e.min - vec3f(0.1f), e.max + vec3f(0.1f), cp))
-					{
-						sb_push(node->children[i].triangles, t);
-					}
-					else
-					{
-						sb_push(node->children[i].failed_triangles, t);
-					}
-				}
-
-				node->children[i].id = octree_id++;
-
-				u32 child_tris = sb_count(node->children[i].triangles);
-				if (depth < max_depth && child_tris > 0)
-					subdivide_octree(&node->children[i], depth + 1, max_depth);
-			}
-		}
-
-		void build_triangle_octree( entity_scene* scene, triangle_octree& tree )
-		{
-			tree.e = scene->renderable_extents;
-
-			for (u32 n = 0; n < scene->nodes_size; ++n)
-			{
-				if (scene->entities[n] & CMP_GEOMETRY)
-				{
-					geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
-
-					u16* indices = (u16*)gr->cpu_index_buffer;
-					vec4f* vertices = (vec4f*)gr->cpu_position_buffer;
-
-					for (u32 i = 0; i < gr->num_indices; i += 3)
-					{
-						u16 i0, i1, i2;
-						i0 = indices[i + 0];
-						i1 = indices[i + 1];
-						i2 = indices[i + 2];
-
-						vec3f tv0 = scene->world_matrices[n].transform_vector(vertices[i0].xyz);
-						vec3f tv1 = scene->world_matrices[n].transform_vector(vertices[i1].xyz);
-						vec3f tv2 = scene->world_matrices[n].transform_vector(vertices[i2].xyz);
-
-						vec3f n = normalised(cross(tv2 - tv0, tv1 - tv0));
-
-						triangle t = { tv0 , tv1, tv2, n };
-
-						sb_push(tree.triangles, t);
-					} 
-				}
-			}
-
-			//sub divide octree
-			subdivide_octree(&tree, 0, 5);
-		}
-
-		vec4f closest_point_on_scene(const triangle_octree* scene, vec3f pos, bool debug )
-		{
-			vec3f closest_point = vec3f::flt_max();
-			f32 closest_distance = FLT_MAX;
-			f32 closest_side = FLT_MAX;
-
-			static s32 level = 0;
-			if (debug)
-			{
-				ImGui::InputInt("Level", &level);
-			}
-
-			//get to deepest node
-			const triangle_octree* node_iter = scene;
-			s32 count = 0;
-			while (node_iter->children)
-			{
-				//pick side
-				vec3f centre = node_iter->e.min + (node_iter->e.max - node_iter->e.min) / 2.0f;
-
-				if (debug)
-				{
-					if (count == level)
-					{
-						u32 tris = sb_count(node_iter->triangles);
-						for (u32 ti = 0; ti < tris; ++ti)
-						{
-							f32 side = 0.0f;
-							triangle t = node_iter->triangles[ti];
-							dbg::add_triangle(t.v[0], t.v[1], t.v[2], vec4f::magenta());
-						}
-
-						dbg::add_aabb(node_iter->e.min, node_iter->e.max, vec4f::green());
-
-						vec3f octree_size = node_iter->e.max - node_iter->e.min;
-						vec3f centre = node_iter->e.min + octree_size * 0.5f;
-
-						dbg::add_point(centre, 0.1f, vec4f::yellow());
-
-						u32 failed_tris = sb_count(node_iter->failed_triangles);
-						for (u32 ti = 0; ti < failed_tris; ++ti)
-						{
-							f32 side = 0.0f;
-							triangle t = node_iter->failed_triangles[ti];
-							dbg::add_triangle(t.v[0], t.v[1], t.v[2], vec4f::red());
-
-							vec3f cp2 = maths::closest_point_on_triangle(t.v[0], t.v[1], t.v[2], centre, side);
-
-							dbg::add_point(cp2, 0.05f, vec4f::green());
-						}
-					}
-				}
-
-				u32 octant = 0;
-				if (pos.y > centre.y)
-					octant += 4;
-
-				if (pos.x > centre.x)
-					octant += 1;
-
-				if (pos.z > centre.z)
-					octant += 2;
-
-				u32 child_tris = sb_count(node_iter->children[octant].triangles);
-				
-				if (child_tris <= 0)
-					break;
-
-				node_iter = &node_iter->children[octant];
-				count++;
-			}
-
-			//distance to closest triangle
-			u32 num_triangles = sb_count(node_iter->triangles);
-
-			f32 sides_score = 0;
-
-			for (u32 ti = 0; ti < num_triangles; ++ti)
-			{
-				triangle t = node_iter->triangles[ti];
-
-				f32 side = 0.0f;
-				vec3f cp = maths::closest_point_on_triangle(t.v[0], t.v[1], t.v[2], pos, side);
-
-				f32 cd = dist(cp, pos);
-
-				if(debug)
-					ImGui::Text("tri %i, cd = %f, side = %f", ti, cd, side);
-
-				if (cd == closest_distance)
-				{
-					sides_score += side;
-				}
-
-				if (cd <= closest_distance)
-				{
-					closest_point = cp;
-					closest_distance = cd;
-					closest_side = side;
-				}
-			}
-
-			if (debug)
-				dbg::add_line(pos, closest_point);
-
-			closest_side = 1.0f;
-			return vec4f(closest_point, closest_side);
-		}
-
 		void sdf_ui()
 		{
 			static const c8* texture_fromat[] =
@@ -920,9 +734,11 @@ namespace put
 				"32bit Floating Point",
 			};
 
-			static s32 sdf_texture_format = 0;
+			static s32 sdf_texture_format = 1;
 			ImGui::Combo("Capture", &sdf_texture_format, texture_fromat, PEN_ARRAY_SIZE(texture_fromat));
-
+            ImGui::Checkbox("Signed", &k_sdf_job.trust_sign);
+            ImGui::InputFloat("Padding", &k_sdf_job.padding);
+            
 			if (!k_sdf_job.generate_in_progress)
 			{
 				if (ImGui::Button("Go"))
@@ -948,10 +764,7 @@ namespace put
 			}
 			else
 			{
-				ImGui::ProgressBar(g_mls_progress.triangle_distances, ImVec2(-1,0), "Triangle Distances");
-                ImGui::ProgressBar(g_mls_progress.intersections, ImVec2(-1,0), "Intersections");
-                ImGui::ProgressBar(g_mls_progress.sweeps, ImVec2(-1,0), "Sweeps");
-                ImGui::ProgressBar(g_mls_progress.intersection_counts, ImVec2(-1,0), "Intersection Counts");
+				ImGui::ProgressBar((g_mls_progress.triangles + g_mls_progress.sweeps) * 0.5f, ImVec2(-1,0));
 
 				if (k_sdf_job.generate_in_progress == 2)
 				{
@@ -974,7 +787,8 @@ namespace put
 
 					geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
-					vec3f scale = (k_sdf_job.scene_extents.max - k_sdf_job.scene_extents.min) / 2.0f;
+                    f32 single_scale = component_wise_max((k_sdf_job.scene_extents.max - k_sdf_job.scene_extents.min) / 2.0f);
+					vec3f scale = vec3f(single_scale);
 					vec3f pos = k_sdf_job.scene_extents.min + scale;
 
 					u32 new_prim = get_new_node(k_main_scene);
@@ -1004,7 +818,7 @@ namespace put
 					k_main_scene->names[new_prim].appendf("%i", new_prim);
 					k_main_scene->transforms[new_prim].rotation = quat();
 					k_main_scene->transforms[new_prim].scale = vec3f(10, 1, 10);
-					k_main_scene->transforms[new_prim].translation = vec3f(0, 0, 0);
+					k_main_scene->transforms[new_prim].translation = vec3f(0, -1, 0);
 					k_main_scene->entities[new_prim] |= CMP_TRANSFORM;
 					k_main_scene->parents[new_prim] = new_prim;
 					instantiate_geometry(cube, k_main_scene, new_prim);
