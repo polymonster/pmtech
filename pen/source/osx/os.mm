@@ -399,8 +399,7 @@ int main(int argc, char **argv)
     
     [_window center];
     
-    NSArray<NSPasteboardType>* pbt = @[NSFilenamesPboardType];
-    [_window registerForDraggedTypes:(pbt)];
+    [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]] ;
     
     create_gl_context();
     
