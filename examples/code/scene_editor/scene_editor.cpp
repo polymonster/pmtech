@@ -99,6 +99,8 @@ PEN_TRV pen::user_entry( void* params )
     
     f32 frame_time = 0.0f;
     
+	u32 aa = put::load_texture("data/textures/tester.dds");
+
     while( 1 )
     {
         static u32 frame_timer = pen::timer_create("frame_timer");

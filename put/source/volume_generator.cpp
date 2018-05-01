@@ -309,6 +309,8 @@ namespace put
 			tcp.data = volume_data;
 			tcp.data_size = data_size;
 
+			save_texture("tester.dds", tcp);
+
 			return pen::renderer_create_texture(tcp);
 		}
 

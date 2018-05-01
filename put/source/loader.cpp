@@ -13,6 +13,7 @@
 #include "pen_json.h"
 
 #include <vector>
+#include <fstream>
 
 #include "console.h"
 
@@ -22,6 +23,7 @@ namespace put
     {
         DDS_RGBA = 0x01,
         DDS_BC = 0x04,
+		DDS_R32_FLOAT = 114
     };
     
     enum compression_format
@@ -33,9 +35,31 @@ namespace put
         BC5 = PEN_FOURCC('A', 'T', 'I', '2'),
     };
 
+	enum ddpf_flags
+	{
+		DDPF_ALPHAPIXELS = 0x1,
+		DDPF_ALPHA = 0x2,
+		DDPF_FOURCC = 0x4,
+		DDPF_RGB = 0x40,
+		DDPF_YUV = 0x200,
+		DDPF_LUMINANCE = 0x20000
+	};
+
 	enum dds_flags
 	{
+		DDS_CAPS = 0x1,
+		DDS_HEIGHT = 0x2,
+		DDS_WIDTH = 0x4,
+		DDS_PITCH = 0x8,
+		DDS_PIXELFORMAT = 0x1000,
+		DDS_MIPMAPCOUNT = 0x20000,
+		DDS_LINEARSIZE = 0x80000,
+		DDS_DEPTH = 0x8000000,
+
 		DDSCAPS_COMPLEX = 0x8,
+		DDSCAPS_TEXTURE = 0x1000,
+		DDSCAPS_MIPMAP = 0x400000,
+
 		DDSCAPS2_CUBEMAP = 0x200,
 		DDSCAPS2_CUBEMAP_POSITIVEX = 0x400,
 		DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800,
@@ -51,7 +75,7 @@ namespace put
 			DSCAPS2_CUBEMAP_POSITIVEZ | DDSCAPS2_CUBEMAP_NEGATIVEZ )
 	};
 
-    //dds documentation os MSDN defines all these data types as ulongs.. but they are only 4 bytes in actual data..
+    //dds documentation on MSDN defines all these data types as ulongs.. but they are only 4 bytes in actual data..
     struct ddspf
     {
         u32 size;
@@ -127,23 +151,34 @@ namespace put
 
 		if( pixel_format.four_cc )
 		{
-			compressed = true;
-			block_size = 16;
+			
+			
 
 			switch( pixel_format.four_cc )
 			{
 			case BC1:
+				compressed = true;
 				block_size = 8;
 				return PEN_TEX_FORMAT_BC1_UNORM;
 			case BC2:
+				block_size = 16;
+				compressed = true;
 				return PEN_TEX_FORMAT_BC2_UNORM;
 			case BC3:
+				block_size = 16;
+				compressed = true;
 				return PEN_TEX_FORMAT_BC3_UNORM;
 			case BC4:
+				compressed = true;
 				block_size = 8;
 				return PEN_TEX_FORMAT_BC4_UNORM;
 			case BC5:
+				compressed = true;
+				block_size = 16;
 				return PEN_TEX_FORMAT_BC5_UNORM;
+			case DDS_R32_FLOAT:
+				block_size = 4;
+				return PEN_TEX_FORMAT_R32_FLOAT;
 			}
 		}
 		else
@@ -164,6 +199,22 @@ namespace put
 		//supported formats are RGBA, BC1-BC5
 		PEN_ASSERT_MSG( 0, "Unsupported Image Format" );
 		return 0;
+	}
+
+	ddspf dds_pixel_format_from_texture_format(u32 fmt)
+	{
+		ddspf pf = { 0 };
+		pf.size = 32;
+		
+		switch(fmt)
+		{
+			case PEN_TEX_FORMAT_R32_FLOAT:
+				pf.flags |= DDPF_FOURCC; 
+				pf.four_cc = DDS_R32_FLOAT;
+				break;
+		}
+
+		return pf;
 	}
 
 	u32 load_texture_internal(const c8* filename, hash_id hh, pen::texture_creation_params& tcp )
@@ -206,12 +257,18 @@ namespace put
 		tcp.pixels_per_block = compressed ? 4 : 1;
 		tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
 
-		if (ddsh->flags & DDSCAPS_COMPLEX)
+		if (ddsh->caps & DDSCAPS_COMPLEX)
 		{
 			if (ddsh->caps2 & DDS_CUBEMAP_ALLFACES)
 			{
 				tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE;
 				tcp.num_arrays = 6;
+			}
+
+			if (ddsh->caps2 & DDSCAPS2_VOLUME)
+			{
+				tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
+				tcp.num_arrays = ddsh->depth;
 			}
 		}
 
@@ -418,6 +475,58 @@ namespace put
 				}
 			}
 		}
+	}
+
+	void save_texture(const c8* filename, const texture_info& info)
+	{
+		//dds header
+		dds_header hdr = { 0 };
+		hdr.magic = 0x20534444;
+		hdr.size = 124;
+		hdr.flags |= (DDS_CAPS | DDS_HEIGHT | DDS_WIDTH | DDS_PIXELFORMAT);
+		hdr.caps |= DDSCAPS_TEXTURE;
+
+		hdr.width = info.width;
+		hdr.height = info.height;
+		hdr.mip_map_count = info.num_mips;
+		hdr.depth = 1;
+		hdr.pitch_or_linear_size = (info.width * info.block_size + 7) / 8;
+
+		//conditional flags
+		if (info.num_mips > 1)
+		{
+			hdr.flags |= DDS_MIPMAPCOUNT;
+			hdr.caps |= (DDSCAPS_MIPMAP | DDSCAPS_COMPLEX);
+		}
+
+		if( info.collection_type != pen::TEXTURE_COLLECTION_NONE)
+			hdr.caps |= DDSCAPS_COMPLEX;
+
+		if (info.collection_type == pen::TEXTURE_COLLECTION_VOLUME)
+		{
+			hdr.depth = info.num_arrays;
+			hdr.caps2 |= DDSCAPS2_VOLUME;
+			hdr.caps |= DDS_DEPTH;
+		}
+		else if (info.collection_type == pen::TEXTURE_COLLECTION_CUBE)
+		{
+			hdr.caps2 |= DDSCAPS2_CUBEMAP;
+			hdr.caps2 |= DDS_CUBEMAP_ALLFACES;
+		}
+
+		if (hdr.caps & DDSCAPS_COMPLEX)
+			int i = 0;
+
+		//pixel format
+		ddspf pf = dds_pixel_format_from_texture_format(info.format);
+		hdr.pixel_format = pf;
+
+		std::ofstream ofs(filename, std::ofstream::binary);
+		
+		ofs.write((const c8*)&hdr, sizeof(dds_header));
+		ofs.write((const c8*)info.data, info.data_size);
+
+		ofs.close();
 	}
     
 	u32 load_texture( const c8* filename )
