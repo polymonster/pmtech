@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #import <GameController/GameController.h>
+#import <AppKit/NSPasteboard.h>
 
 #import <OpenGL/gl3.h>
 #define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion3_2Core
@@ -398,9 +399,7 @@ int main(int argc, char **argv)
     
     [_window center];
     
-    NSArray<NSPasteboardType>* pbt = @[NSPasteboardTypeFileURL];
-    
-    [_window registerForDraggedTypes:(pbt)];
+    [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]] ;
     
     create_gl_context();
     

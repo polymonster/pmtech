@@ -157,7 +157,7 @@ namespace maths
     {
         vec3f   e = (aabb_max - aabb_min) / 2.0f;
         vec3f   centre = aabb_min + e;
-        f32     radius = abs(xN.x*e.x) + abs(xN.y*e.y) + abs(xN.z*e.z);
+        f32     radius = fabs(xN.x*e.x) + fabs(xN.y*e.y) + fabs(xN.z*e.z);
         f32     pd = plane_distance(x0, xN);
         f32     d = dot(xN, centre) + pd;
 
