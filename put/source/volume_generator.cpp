@@ -722,6 +722,38 @@ namespace put
 			}
 		}
 
+		void add_volume_test()
+		{
+			u32 volume_texture = put::load_texture("data/textures/tester.dds");
+
+			//create material for volume sdf sphere trace
+			material_resource* sdf_material = new material_resource;
+			sdf_material->material_name = "volume_sdf_material";
+			sdf_material->shader_name = "pmfx_utility";
+			sdf_material->id_shader = PEN_HASH("pmfx_utility");
+			sdf_material->id_technique = PEN_HASH("volume_sdf");
+			sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+			sdf_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
+			add_material_resource(sdf_material);
+
+			geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
+
+			vec3f scale = vec3f(1.0f);
+			vec3f pos = vec3f::zero();
+
+			u32 new_prim = get_new_node(k_main_scene);
+			k_main_scene->names[new_prim] = "volume";
+			k_main_scene->names[new_prim].appendf("%i", new_prim);
+			k_main_scene->transforms[new_prim].rotation = quat();
+			k_main_scene->transforms[new_prim].scale = scale;
+			k_main_scene->transforms[new_prim].translation = pos;
+			k_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
+			k_main_scene->parents[new_prim] = new_prim;
+			instantiate_geometry(cube, k_main_scene, new_prim);
+			instantiate_material(sdf_material, k_main_scene, new_prim);
+			instantiate_model_cbuffer(k_main_scene, new_prim);
+		}
+
 		void sdf_ui()
 		{
 			static const c8* texture_fromat[] =
@@ -877,6 +909,11 @@ namespace put
 				else if (k_options.volume_type == VOLUME_SIGNED_DISTANCE_FIELD)
 				{
 					sdf_ui();
+				}
+
+				if (ImGui::Button("Test"))
+				{
+					add_volume_test();
 				}
 
 				ImGui::End();

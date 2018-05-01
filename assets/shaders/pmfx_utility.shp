@@ -254,11 +254,13 @@ ps_output ps_volume_texture( vs_output input )
 	
 	float max_samples = 256.0;
 	
-	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
+	float3 ray_dir = normalize(input.world_pos.xyz - camera_view_pos.xyz);
 				
 	//transform ray into volume space
-	ray_dir = mul( world_matrix_inv_transpose, ray_dir );
-		
+	float3x3 inv_rot = to_3x3(world_matrix_inv_transpose);
+	
+	ray_dir = mul( inv_rot, ray_dir );
+	
 	float3 ray_step = chebyshev_normalize(ray_dir.xyz) / max_samples;
 				
 	float depth_step = 1.0 / max_samples;
@@ -304,17 +306,13 @@ ps_output ps_volume_sdf( vs_output input )
 	
 	float max_samples = 32.0;
 	
-	float4 ray_dir = float4( normalize(input.world_pos.xyz - camera_view_pos.xyz), 1.0 );
+	float3 ray_dir = normalize(input.world_pos.xyz - camera_view_pos.xyz);
 				
 	//transform ray into volume space
-	float4x4 inv_rot = world_matrix_inv_transpose;
-	inv_rot[0].w = 0.0;
-	inv_rot[1].w = 0.0;
-	inv_rot[2].w = 0.0;
-	inv_rot[3].xyzw = float4(0.0, 0.0, 0.0, 1.0 );
+	float3x3 inv_rot = to_3x3(world_matrix_inv_transpose);
 	
-	ray_dir = mul( inv_rot, ray_dir );
-	ray_dir.xyz = normalize(ray_dir.xyz);
+	ray_dir = mul(inv_rot, ray_dir);
+	ray_dir = normalize(ray_dir);
 					
 	float3 vddx = ddx( uvw );
 	float3 vddy = ddy( uvw );
@@ -332,21 +330,10 @@ ps_output ps_volume_sdf( vs_output input )
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		taken += 1.0/max_samples;
-		
-		//uvw = mul(world_matrix_inv_transpose, vec4(ray_pos, 1.0)).xyz;
-		//uvw = uvw * 0.5 + 0.5;
-		//d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
-		//ray_pos += ray_dir.xyz * d * 0.8;
-		
+				
 		d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
-		uvw += ray_dir.xyz * (d / (2.18*2.0)) * 0.9;				
-		
-		if( s == 0 )
-			continue;
-			
-		if( d <= 0.01 )	
-			break;
-										
+		uvw += ray_dir.xyz * (d / (1.93*2.0));				
+													
 		if(uvw.x >= 1.0 || uvw.x <= 0.0)
 			discard;
 		
@@ -355,11 +342,15 @@ ps_output ps_volume_sdf( vs_output input )
 		
 		if(uvw.z >= 1.0 || uvw.z <= 0.0)
 			discard;
+		
+		if( d <= 0.01 )	
+			break;
 	}
 	
 	float vd = (1.0 - d);
 	output.colour.rgb = float3(vd*vd,vd*vd, vd*vd);
 	output.colour.rgb = float3(taken, taken, taken);
+	//output.colour.rgb = uvw;
 	
 	return output;
 }
@@ -385,14 +376,10 @@ ps_output ps_shadow_sdf( vs_output input )
 	float3 emin = float3(-1.0, -1.0, -1.0);
 	float3 emax = float3(1.0, 1.0, 1.0);
 	
-	float4x4 inv_rot = sdf_shadow.world_matrix_inv;
-	inv_rot[0].w = 0.0;
-	inv_rot[1].w = 0.0;
-	inv_rot[2].w = 0.0;
-	inv_rot[3].xyzw = float4(0.0, 0.0, 0.0, 1.0 );
+	float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
 	
 	//transform into obb
-	float3 trv = mul( float4(rv, 1.0), inv_rot ).xyz;
+	float3 trv = mul( rv, inv_rot );
 	float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
 	
 	float3 ip;
@@ -416,10 +403,8 @@ ps_output ps_shadow_sdf( vs_output input )
 		
 		output.colour.rgb += light_col; 	
 		
-		float4 ray_dir = float4( normalize(lights[i].pos_radius.xyz - input.world_pos.xyz), 1.0 );
-							 
-		ray_dir = mul( ray_dir, inv_rot );
-		ray_dir.xyz = normalize(ray_dir.xyz);		
+		float3 ray_dir = normalize(lights[i].pos_radius.xyz - input.world_pos.xyz);			 
+		ray_dir = normalize( mul( ray_dir, inv_rot ) );
 		
 		float shad = 1.0;
 		float closest = 1.0;
