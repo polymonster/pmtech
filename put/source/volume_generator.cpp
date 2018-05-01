@@ -37,10 +37,6 @@ namespace put
 			extents				e;
 		};
 
-		vec4f	closest_point_on_scene(const triangle_octree* scene, vec3f pos, bool debug = false);
-		void	subdivide_octree(triangle_octree* node, u32 depth, u32 max_depth);
-		void	build_triangle_octree(entity_scene* scene, triangle_octree& tree);
-
 		static const int k_num_axes = 6;
 
 		enum volume_types
@@ -124,11 +120,9 @@ namespace put
 			u32				data_size;
 			u8*				volume_data;
 			extents			scene_extents;
-			a_u32			generate_in_progress;
-			a_u32			generate_position;
-			dd*				debug_data = nullptr;
             bool            trust_sign = true;
             f32             padding;
+			u32				generate_in_progress = 0;
 		};
 		static vgt_sdf_job			k_sdf_job;
 
@@ -827,34 +821,6 @@ namespace put
 
 					k_sdf_job.generate_in_progress = 0;
 				}
-			}
-
-			static bool debug = false;
-			if (k_sdf_job.debug_data && debug)
-			{
-				static s32 debug_x = 0;
-				static s32 debug_y = 0;
-				static s32 debug_z = 0;
-
-				ImGui::InputInt("Debug X", &debug_x);
-				ImGui::InputInt("Debug Y", &debug_y);
-				ImGui::InputInt("Debug Z", &debug_z);
-
-				debug_x = min<u32>(debug_x, k_sdf_job.volume_dim - 1);
-				debug_y = min<u32>(debug_y, k_sdf_job.volume_dim - 1);
-				debug_z = min<u32>(debug_z, k_sdf_job.volume_dim - 1);
-
-				debug_x = max<u32>(debug_x, 0);
-				debug_y = max<u32>(debug_y, 0);
-				debug_z = max<u32>(debug_z, 0);
-
-				u32 debug_index = debug_z * k_sdf_job.volume_dim * k_sdf_job.volume_dim;
-				debug_index += debug_y * k_sdf_job.volume_dim;
-				debug_index += debug_x;
-
-				bool inside = k_sdf_job.debug_data[debug_index].closest.w < 0.0f;
-				put::dbg::add_point(k_sdf_job.debug_data[debug_index].pos, 0.05f, inside ? vec4f::red() : vec4f::green());
-				closest_point_on_scene(&k_sdf_job.tree, k_sdf_job.debug_data[debug_index].pos, debug);
 			}
 		}
 

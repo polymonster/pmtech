@@ -339,12 +339,12 @@ ps_output ps_volume_sdf( vs_output input )
 		//ray_pos += ray_dir.xyz * d * 0.8;
 		
 		d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
-		uvw += ray_dir.xyz * (d / (3.37*2.0)) * 0.9;				
+		uvw += ray_dir.xyz * (d / (2.18*2.0)) * 0.9;				
 		
 		if( s == 0 )
 			continue;
 			
-		if( d <= 0.0 )	
+		if( d <= 0.01 )	
 			break;
 										
 		if(uvw.x >= 1.0 || uvw.x <= 0.0)
@@ -428,7 +428,7 @@ ps_output ps_shadow_sdf( vs_output input )
 		{		
 			float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
 					
-			uvw += ray_dir.xyz * (d/1.65) * 0.9;
+			uvw += ray_dir.xyz * (d/(2.18*2.0)) * 0.9;
 			
 			closest = min(d, closest);
 		
