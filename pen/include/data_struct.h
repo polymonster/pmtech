@@ -31,34 +31,34 @@
 
 static void * stb__sbgrowf(void *arr, int increment, int itemsize)
 {
-	int start = stb_sb_count(arr);
-	int dbl_cur = arr ? 2 * stb__sbm(arr) : 0;
-	int min_needed = stb_sb_count(arr) + increment;
-	int m = dbl_cur > min_needed ? dbl_cur : min_needed;
-
-	//stretch buffer and zero mem
-	int* p = nullptr;
-	{
-		u32 total_size = itemsize * m + sizeof(int) * 2;
-		p = (int *)realloc(arr ? stb__sbraw(arr) : 0, total_size);
-
-		u8* pp = (u8*)p;
-		u32 preserve_size = sizeof(int) * 2 + itemsize * start;
-		memset(pp + preserve_size, 0x00, total_size - preserve_size);
-	}
-
-	if (p) {
-		if (!arr)
-			p[1] = 0;
-		p[0] = m;
-		return p + 2;
-	}
-	else {
+    int start = stb_sb_count(arr);
+    int dbl_cur = arr ? 2 * stb__sbm(arr) : 0;
+    int min_needed = stb_sb_count(arr) + increment;
+    int m = dbl_cur > min_needed ? dbl_cur : min_needed;
+    
+    //stretch buffer and zero mem
+    int* p = nullptr;
+    {
+        u32 total_size = itemsize * m + sizeof(int) * 2;
+        p = (int *)realloc(arr ? stb__sbraw(arr) : 0, total_size);
+        
+        u8* pp = (u8*)p;
+        u32 preserve_size = sizeof(int) * 2 + itemsize * start;
+        memset(pp + preserve_size, 0x00, total_size - preserve_size);
+    }
+    
+    if (p) {
+        if (!arr)
+            p[1] = 0;
+        p[0] = m;
+        return p + 2;
+    }
+    else {
 #ifdef STRETCHY_BUFFER_OUT_OF_MEMORY
-		STRETCHY_BUFFER_OUT_OF_MEMORY;
+        STRETCHY_BUFFER_OUT_OF_MEMORY;
 #endif
-		return (void *)(2 * sizeof(int)); // try to force a NULL pointer exception later
-	}
+        return (void *)(2 * sizeof(int)); // try to force a NULL pointer exception later
+    }
 }
 
 // Simple stack wraps up stretchy buffer
@@ -66,36 +66,36 @@ static void * stb__sbgrowf(void *arr, int increment, int itemsize)
 template<class T>
 struct pen_stack
 {
-    T*	 data = nullptr;
-	s32  pos = 0;
-
-	void clear()
-	{
-		pos = 0;
-	}
-
-	void push(T i)
-	{
-		if (pos >= sb_count(data))
-		{
-			sb_push(data, i);
-		}
-		else
-		{
-			data[pos] = i;
-		}
-
-		++pos;
-	}
-
-	T  pop()
-	{
-		--pos;
+    T*     data = nullptr;
+    s32  pos = 0;
+    
+    void clear()
+    {
+        pos = 0;
+    }
+    
+    void push(T i)
+    {
+        if (pos >= sb_count(data))
+        {
+            sb_push(data, i);
+        }
+        else
+        {
+            data[pos] = i;
+        }
+        
+        ++pos;
+    }
+    
+    T  pop()
+    {
+        --pos;
         if(pos < 0)
             pos = 0;
         
-		return data[pos];
-	}
+        return data[pos];
+    }
     
     s32 size()
     {
@@ -104,3 +104,4 @@ struct pen_stack
 };
 
 #endif //_pen_data_struct
+
