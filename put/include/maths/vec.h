@@ -483,6 +483,7 @@ typedef Vec2f vec2f;
 
 typedef Vec3f vec3f;
 typedef Vec3ui vec3ui;
+typedef Vec3f vec3i;
 
 typedef Vec4f vec4f;
 typedef Vec4i vec4i;
@@ -679,7 +680,7 @@ inline Vec<N, T> lerp(const Vec<N, T>& value0, const Vec<N, T>& value1, const Ve
 }
 
 template<unsigned int N, class T>
-inline Vec<N, T> clamp(const Vec<N, T>& a, T lower, T upper)
+inline Vec<N, T> vclamp(const Vec<N, T>& a, T lower, T upper)
 {
     Vec<N, T> res = a;
     for (unsigned int i = 0; i < N; ++i)
@@ -691,6 +692,21 @@ inline Vec<N, T> clamp(const Vec<N, T>& a, T lower, T upper)
     }
     
     return res;
+}
+
+template<unsigned int N, class T>
+inline Vec<N, T> vclamp(const Vec<N, T>& a, const Vec<N, T>& lower, const Vec<N, T>& upper)
+{
+	Vec<N, T> res = a;
+	for (unsigned int i = 0; i < N; ++i)
+	{
+		if (a[i] < lower[i])
+			res[i] = lower[i];
+		else if (a[i] > upper[i])
+			res[i] = upper[i];
+	}
+
+	return res;
 }
 
 // Saturate

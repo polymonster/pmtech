@@ -128,7 +128,7 @@ namespace put
 
 		static put::camera			k_volume_raster_ortho;
 
-		inline u8* get_texel(u32 axis, u32 x, u32 y, u32 z)
+		u8* get_texel(u32 axis, u32 x, u32 y, u32 z)
 		{
 			u32& volume_dim = k_rasteriser_job.dimension;
 			void*** volume_slices = k_rasteriser_job.volume_slices;
@@ -192,6 +192,11 @@ namespace put
 			}
 
 			return nullptr;
+		}
+
+		u32 get_texel_offset(u32 slice_pitch, u32 row_pitch, u32 block_size, u32 x, u32 y, u32 z)
+		{
+			return z * slice_pitch + y * row_pitch + x * block_size;
 		}
 
 		void image_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
@@ -281,11 +286,66 @@ namespace put
 				}
 			}
 
+			//with the 3d texture now initialised dilate colour edges so we can used bilinear
+			u32 bs = rasteriser_job->block_size;
+			u32 rp = row_pitch;
+			u32 sp = slice_pitch;
+
+			static vec3i nb[] =
+			{
+				{-1, -1, 0 },	{ -1, -1, 1 },	{ -1, -1, -1 },
+				{ 0, -1, 0 },	{ 0, -1, 1 },	{ 0, -1, -1 },
+				{ 1, -1, 0 },	{ 1, -1, 1 },	{ 1, -1, -1 },
+				{ 1, 0, 0 },	{ 1, 0, 1 },	{ 1, 0, -1 },
+				{ 1, 1, 0 },	{ 1, 1, 1 },	{ 1, 1, -1 },
+				{ 0, 1, 0 },	{ 0, 1, 1 },	{ 0, 1, -1 },
+				{ -1, 1, 0 },	{ -1, 1, 1 },	{ -1, 1, -1 },
+				{ -1, 0, 0 },	{ -1, 0, 1 },	{ -1, 0, -1 },
+				{ 0, 0, 1 },	{ 0, 0, -1 },
+			};
+
+			vec3i clamp_min = vec3i::zero();
+			vec3i clamp_max = vec3i(volume_dim - 1);
+
+			for (u32 z = 0; z < volume_dim; ++z)
+			{
+				for (u32 y = 0; y < volume_dim; ++y)
+				{
+					for (u32 x = 0; x < volume_dim; ++x)
+					{
+						//check neighbours
+						u32 offset = get_texel_offset(sp, rp, bs, x, y, z);
+
+						if (volume_data[offset + 3] == 0)
+						{
+							for (u32 n = 0; n < PEN_ARRAY_SIZE(nb); n += 3)
+							{
+								vec3i nn = vec3i(x + nb[n].x, y + nb[n].y, z + nb[n].z);
+								nn = vclamp(nn, clamp_min, clamp_max);
+
+								u32 noffset = get_texel_offset(sp, rp, bs, nn.x, nn.y, nn.z);
+
+								if (volume_data[noffset + 3] > 0)
+								{
+									//copy rgb to dilate
+									pen::memory_cpy(&volume_data[offset + 0], &volume_data[noffset + 0], 3);
+								}
+							}
+						}
+					}
+				}
+			}
+
 			rasteriser_job->volume_data = volume_data;
 
 			rasteriser_job->combine_in_progress = 2;
 
 			return PEN_THREAD_OK;
+		}
+
+		void generate_mips_rgba8(pen::texture_creation_params tcp)
+		{
+
 		}
 
 		u32 create_volume_from_data( u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data )
@@ -309,7 +369,7 @@ namespace put
 			tcp.data = volume_data;
 			tcp.data_size = data_size;
 
-			save_texture("tester.dds", tcp);
+			//save_texture("tester.dds", tcp);
 
 			return pen::renderer_create_texture(tcp);
 		}
@@ -342,7 +402,7 @@ namespace put
 			volume_material->shader_name = "pmfx_utility";
 			volume_material->id_shader = PEN_HASH("pmfx_utility");
 			volume_material->id_technique = PEN_HASH("volume_texture");
-			volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
+			volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
 			volume_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
 			add_material_resource(volume_material);
 
@@ -532,6 +592,9 @@ namespace put
             {
                 if (sdf_job->scene->entities[n] & CMP_GEOMETRY)
                 {
+					if (!(sdf_job->scene->state_flags[n] & SF_SELECTED))
+						continue;
+
                     geometry_resource* gr = get_geometry_resource(sdf_job->scene->id_geometry[n]);
                     
                     vec4f* vertex_positions = (vec4f*)gr->cpu_position_buffer;
