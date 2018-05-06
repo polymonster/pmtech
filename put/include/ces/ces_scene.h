@@ -62,7 +62,8 @@ namespace put
         enum e_state_flags : u32
         {
             SF_SELECTED = (1 << 0),
-            SF_CHILD_SELECTED = (1 << 1)
+            SF_CHILD_SELECTED = (1 << 1),
+			SF_HIDDEN = (1 << 2)
         };
         
         enum e_light_types : u32
@@ -242,7 +243,6 @@ namespace put
         
         struct distance_field_shadow
         {
-            vec4f   half_size;
             mat4    world_matrix;
             mat4    world_matrix_inverse;
         };
@@ -308,8 +308,8 @@ namespace put
             };
             
             // Components
-            cmp_array<a_u64>                entities;
-            cmp_array<a_u64>                state_flags;
+            cmp_array<u64>					entities;
+            cmp_array<u64>					state_flags;
             cmp_array<hash_id>              id_name;
             cmp_array<hash_id>              id_geometry;
             cmp_array<hash_id>              id_material;

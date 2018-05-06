@@ -317,6 +317,9 @@ namespace put
                 
                 if ( scene->entities[n] & CMP_SUB_INSTANCE )
                     continue;
+
+				if (scene->state_flags[n] & SF_HIDDEN)
+					continue;
                 
                 //frustum cull
                 bool inside = true;
@@ -796,7 +799,6 @@ namespace put
                 
                 static distance_field_shadow_buffer sdf_buffer;
                 
-                sdf_buffer.shadows.half_size = vec4f(scene->transforms[n].scale, 1.0f);
                 sdf_buffer.shadows.world_matrix = scene->world_matrices[n];
                 sdf_buffer.shadows.world_matrix_inverse = mat::inverse4x4(scene->world_matrices[n]);
                 

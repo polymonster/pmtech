@@ -33,7 +33,6 @@ cbuffer per_pass_lights : register(b3)
 
 struct distance_field_shadow
 {
-	float4 		half_size;
 	float4x4 	world_matrix;
 	float4x4 	world_matrix_inv;
 };

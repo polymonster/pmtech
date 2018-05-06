@@ -317,6 +317,8 @@ ps_output ps_volume_sdf( vs_output input )
 	float3 vddx = ddx( uvw );
 	float3 vddy = ddy( uvw );
 	
+	float3 scale = float3(length(world_matrix[0].xyz), length(world_matrix[1].xyz), length(world_matrix[2].xyz)) * 2.0;
+	
 	float d;
 	
 	d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
@@ -332,7 +334,7 @@ ps_output ps_volume_sdf( vs_output input )
 		taken += 1.0/max_samples;
 				
 		d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
-		uvw += ray_dir.xyz * (d / (1.93*2.0));				
+		uvw += ray_dir.xyz * float3(d / scale);				
 													
 		if(uvw.x >= 1.0 || uvw.x <= 0.0)
 			discard;
@@ -350,8 +352,8 @@ ps_output ps_volume_sdf( vs_output input )
 	float vd = (1.0 - d);
 	output.colour.rgb = float3(vd*vd,vd*vd, vd*vd);
 	output.colour.rgb = float3(taken, taken, taken);
-	//output.colour.rgb = uvw;
-	
+	output.colour.a = 1.0;
+		
 	return output;
 }
 
@@ -368,28 +370,14 @@ ps_output ps_shadow_sdf( vs_output input )
 	float3 v = input.texcoord.xyz;
 	float3 chebyshev_norm = chebyshev_normalize(v);
 	
-	float3 light_pos = lights[0].pos_radius.xyz;
-	
-	float3 rv = normalize(light_pos);
-	float3 r1 = input.world_pos.xyz;
-	
-	float3 emin = float3(-1.0, -1.0, -1.0);
-	float3 emax = float3(1.0, 1.0, 1.0);
-	
 	float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
 	
-	//transform into obb
-	float3 trv = mul( rv, inv_rot );
+	//point on surface ray origin
+	float3 r1 = input.world_pos.xyz;
 	float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
-	
-	float3 ip;
-	bool hit = ray_vs_aabb( emin, emax, tr1, normalize(trv), ip);
-	
-	float length_to_box = length( tr1 - ip ) / 5.0;
-	
-	float3 uvw = ip * 0.5 + 0.5;
-	float3 vddx = ddx( uvw );
-	float3 vddy = ddy( uvw );
+			
+	float3 vddx = ddx( r1 );
+	float3 vddy = ddy( r1 );
 		
 	for( int i = 0; i < light_info.x; ++i )
 	{
@@ -401,19 +389,37 @@ ps_output ps_shadow_sdf( vs_output input )
 							 input.world_pos.xyz,
 							 albedo.rgb);
 		
-		output.colour.rgb += light_col; 	
-		
 		float3 ray_dir = normalize(lights[i].pos_radius.xyz - input.world_pos.xyz);			 
 		ray_dir = normalize( mul( ray_dir, inv_rot ) );
 		
 		float shad = 1.0;
 		float closest = 1.0;
+		
+		float3 rv = normalize(ray_dir);
+
+		float3 emin = float3(-1.0, -1.0, -1.0);
+		float3 emax = float3(1.0, 1.0, 1.0);
+	
+		//transform into obb
+		float3 trv = mul( rv, inv_rot );
+		float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
+	
+		float3 ip;
+		bool hit = ray_vs_aabb( emin, emax, tr1, normalize(trv), ip);
+		
+		float3 uvw = ip * 0.5 + 0.5;
+		
+		//if(!hit)
+		{
+			//output.colour.rgb += light_col;
+			//continue;
+		}
 
 		for( int s = 0; s < int(max_samples); ++s )
 		{		
-			float d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
+			float d = sample_texture_level( volume_texture, uvw, 0.0 ).r;
 					
-			uvw += ray_dir.xyz * (d/(2.18*2.0)) * 0.9;
+			uvw += ray_dir.xyz * float3(d, d, d) / scale * 0.9;
 			
 			closest = min(d, closest);
 		
@@ -435,7 +441,9 @@ ps_output ps_shadow_sdf( vs_output input )
 		}
 		
 		if( hit )
-			output.colour *= smoothstep( 0.0, 0.02, closest);
+			light_col *= smoothstep( 0.0, 0.02, closest);
+		
+		output.colour.rgb += light_col;
 	}
 				
 	return output;

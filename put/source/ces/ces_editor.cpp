@@ -691,6 +691,17 @@ namespace put
                     }
                 }
             }
+
+            //set child selected
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                u32 p = scene->parents[n];
+                if (p == n)
+                    continue;
+
+                if (scene->state_flags[p] & SF_SELECTED || scene->state_flags[p] & SF_CHILD_SELECTED)
+                    scene->state_flags[n] |= SF_CHILD_SELECTED;
+            }
         }
 
         //undoable / redoable actions

@@ -741,7 +741,7 @@ namespace put
                 }
             }
             
-            if(!(load_flags&PMM_NODES))
+            if(!(load_flags & PMM_NODES))
             {
                 pen::memory_free(model_file);
                 return PEN_INVALID_HANDLE;
@@ -830,6 +830,7 @@ namespace put
                             p_u32reader += 16;
                             break;
                         case PMM_IDENTITY:
+                            has_matrix_transform = true;
                             matrix = mat4::create_identity();
                             break;
                         default:
