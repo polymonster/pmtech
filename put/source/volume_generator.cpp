@@ -351,9 +351,97 @@ namespace put
             return PEN_THREAD_OK;
         }
 
-        void generate_mips_rgba8(pen::texture_creation_params tcp)
+        void generate_mips_rgba8(pen::texture_creation_params& tcp)
         {
-
+            //calc num mips
+            u32 num_mips = 1;
+            u32 data_size = 0;
+            static const u32 block_size = 4;
+            
+            vec3ui m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
+            
+            while(m.x > 1 && m.y > 1 && m.z > 1)
+            {
+                data_size += m.x * m.y * m.z * block_size;
+                
+                num_mips++;
+                
+                m /= vec3ui(2, 2, 2);
+                m = max_union(m, vec3ui::one());
+            }
+            
+            //offsets
+            vec3ui offsets[] =
+            {
+                vec3ui(1, 0, 0),
+                vec3ui(0, 1, 0),
+                vec3ui(1, 1, 0),
+                
+                vec3ui(1, 0, 1),
+                vec3ui(0, 1, 1),
+                vec3ui(1, 1, 1)
+            };
+            
+            u8* data = (u8*)pen::memory_alloc(data_size);
+            pen::memory_cpy(data, tcp.data, tcp.data_size);
+            
+            m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
+            
+            u8* prev_level = (u8*)data;
+            u8* cur_level = prev_level + tcp.data_size;
+            
+            for(u32 i = 0; i < num_mips; ++i)
+            {
+                u32 p_rp = m.x * block_size;    //prev row pitch
+                u32 p_sp = p_rp * m.y;          //prev slice pitch
+                
+                m /= vec3ui(2, 2, 2);
+                m = max_union(m, vec3ui::one());
+                
+                u32 c_rp = m.x * block_size;    //cur row pitch
+                u32 c_sp = c_rp * m.y;          //cur slice pitch
+                
+                for(u32 x = 0; x < m.x; ++x)
+                {
+                    for(u32 y = 0; y < m.y; ++y)
+                    {
+                        for(u32 z = 0; z < m.z; ++z)
+                        {
+                            u32 c_offset = c_sp * z + c_rp * y + block_size * x;
+                            
+                            u8 rgba[4] = { 0 };
+                            
+                            for( u32 o = 0; o < PEN_ARRAY_SIZE(offsets); ++o)
+                            {
+                                vec3ui vo = vec3ui(x*2, y*2, z*2) + offsets[o];
+                                
+                                u32 p_offset = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
+                                
+                                for(u32 r = 0; r < 4; ++r)
+                                    rgba[r] += prev_level[p_offset + r];
+                            }
+                            
+                            for(u32 r = 0; r < 4; ++r)
+                            {
+                                rgba[r] /= PEN_ARRAY_SIZE(offsets);
+                                cur_level[c_offset] = rgba[r];
+                            }
+                            
+                            cur_level[c_offset + 0] = 1;
+                            cur_level[c_offset + 1] = 0;
+                            cur_level[c_offset + 2] = 1;
+                            cur_level[c_offset + 3] = 1;
+                        }
+                    }
+                }
+                
+                prev_level = cur_level;
+                cur_level += c_sp * m.z;
+            }
+            
+            tcp.num_mips = num_mips;
+            tcp.data_size = data_size;
+            tcp.data = data;
         }
 
         u32 create_volume_from_data(u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data)
@@ -376,6 +464,8 @@ namespace put
             tcp.pixels_per_block = 1;
             tcp.data = volume_data;
             tcp.data_size = data_size;
+            
+            generate_mips_rgba8(tcp);
 
             return pen::renderer_create_texture(tcp);
         }
