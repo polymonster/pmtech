@@ -1107,22 +1107,25 @@ namespace pen
 			{
 				u32 current_width = tcp.width / tcp.pixels_per_block;
 				u32 current_height = tcp.height / tcp.pixels_per_block;
+                u32 current_depth = num_slices / tcp.pixels_per_block;
 				u32 block_size = tcp.block_size;
 
 				//for mips
 				for (s32 i = 0; i < tcp.num_mips; ++i)
 				{
 					u32 row_pitch = current_width * block_size;
-					u32 depth_pitch = current_height * row_pitch;
+					u32 slice_pitch = current_height * row_pitch;
+                    u32 depth_pitch = slice_pitch * current_depth;
 
 					u32 sub = D3D11CalcSubresource(i, a, tcp.num_mips);
 
-					g_immediate_context->UpdateSubresource(tex_res->resource, sub, nullptr, image_data, row_pitch, depth_pitch);
+					g_immediate_context->UpdateSubresource(tex_res->resource, sub, nullptr, image_data, row_pitch, slice_pitch);
 
 					image_data += depth_pitch;
 
 					min<u32>(current_width /= 2, 1);
 					min<u32>(current_height /= 2, 1);
+                    min<u32>(current_depth /= 2, 1);
 				}
 			}
 

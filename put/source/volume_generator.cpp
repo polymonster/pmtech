@@ -395,46 +395,18 @@ namespace put
             {
                 vec3ui(0, 0, 0),
 
-                //vec3ui(1, 0, 0),
-                //vec3ui(0, 1, 0),
-                //vec3ui(1, 1, 0),
+                vec3ui(1, 0, 0),
+                vec3ui(0, 1, 0),
+                vec3ui(1, 1, 0),
                 
-                //vec3ui(1, 0, 1),
-                //vec3ui(0, 1, 1),
-                //vec3ui(1, 1, 1)
+                vec3ui(1, 0, 1),
+                vec3ui(0, 1, 1),
+                vec3ui(1, 1, 1)
             };
             
             u8* data = (u8*)pen::memory_alloc(data_size);
             pen::memory_cpy(data, tcp.data, tcp.data_size);
 
-            m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
-
-            m /= vec3ui(2, 2, 2);
-            m = max_union(m, vec3ui::one());
-
-            u32 p_rp = m.x * block_size;       //prev row pitch
-            u32 p_sp = p_rp * m.y;           //prev slice pitch
-
-            u8* prev_level = (u8*)data;
-            u8* cur_level = prev_level + tcp.data_size;
-
-            for (u32 z = 0; z < m.z; ++z)
-            {
-                for (u32 y = 0; y < m.y; ++y)
-                {
-                    for (u32 x = 0; x < m.x; ++x)
-                    {
-                        u32 offset = get_texel_offset(p_sp, p_rp, 4, x, y, z) + tcp.data_size;
-
-                        //data[offset + 0] = 255;
-                        //data[offset + 1] = 0;
-                        //data[offset + 2] = 255;
-                        //data[offset + 3] = 255;
-                    }
-                }
-            }
-
-#if 0
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
             
             u8* prev_level = (u8*)data;
@@ -461,7 +433,6 @@ namespace put
                             
                             u8 rgba[4] = { 0 };
                             
-                            /*
                             for( u32 o = 0; o < PEN_ARRAY_SIZE(offsets); ++o)
                             {
                                 vec3ui vo = vec3ui(x*2, y*2, z*2) + offsets[o];
@@ -469,22 +440,14 @@ namespace put
                                 u32 p_offset = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
                                 
                                 for(u32 r = 0; r < 4; ++r)
-                                    rgba[r] += prev_level[p_offset + r];
+                                    rgba[r] = max<u8>(prev_level[p_offset + r], rgba[r]);
                             }
-                            */
-                            
-                            /*
+                           
                             for(u32 r = 0; r < 4; ++r)
                             {
-                                rgba[r] /= PEN_ARRAY_SIZE(offsets);
-                                cur_level[c_offset] = rgba[r];
+                                //rgba[r] /= PEN_ARRAY_SIZE(offsets);
+                                cur_level[c_offset + r] = rgba[r];
                             }
-                            */
-
-                            cur_level[c_offset + 0] = 255;
-                            cur_level[c_offset + 1] = 0;
-                            cur_level[c_offset + 2] = 0;
-                            cur_level[c_offset + 3] = 255;
                         }
                     }
                 }
@@ -492,7 +455,6 @@ namespace put
                 prev_level = cur_level;
                 cur_level += c_sp * m.z;
             }
-#endif
 
             tcp.num_mips = num_mips;
             tcp.data_size = data_size;

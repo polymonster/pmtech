@@ -271,7 +271,7 @@ ps_output ps_volume_texture( vs_output input )
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		//output.colour = sample_texture_grad( volume_texture, uvw, vddx, vddy );
-		output.colour = sample_texture_level( volume_texture, uvw, 1.0 );
+		output.colour = sample_texture_level( volume_texture, uvw, 2.0 );
 		
 		if(output.colour.a != 0.0)
 			break;
