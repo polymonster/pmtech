@@ -852,7 +852,7 @@ namespace pen
         }
         else
         {
-            if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
+            if(g_current_state.vertex_shader != g_bound_state.vertex_shader ||
                g_current_state.pixel_shader != g_bound_state.pixel_shader )
             {
                 g_bound_state.vertex_shader = g_current_state.vertex_shader;

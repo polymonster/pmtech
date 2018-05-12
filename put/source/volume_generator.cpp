@@ -426,11 +426,6 @@ namespace put
                                 rgba[r] /= PEN_ARRAY_SIZE(offsets);
                                 cur_level[c_offset] = rgba[r];
                             }
-                            
-                            cur_level[c_offset + 0] = 1;
-                            cur_level[c_offset + 1] = 0;
-                            cur_level[c_offset + 2] = 1;
-                            cur_level[c_offset + 3] = 1;
                         }
                     }
                 }
@@ -439,8 +434,9 @@ namespace put
                 cur_level += c_sp * m.z;
             }
             
-            tcp.num_mips = num_mips;
-            tcp.data_size = data_size;
+            //tcp.num_mips = num_mips;
+            //tcp.data_size = data_size;
+            
             tcp.data = data;
         }
 
