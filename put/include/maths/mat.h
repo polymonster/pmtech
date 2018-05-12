@@ -2,6 +2,7 @@
 #define _MATRIX_H
 
 #include "maths/vec.h"
+#include "memory.h"
 
 // Mat stored in row major order as such:
 // row0 = m[0], m[1], m[2], m[3]
@@ -130,7 +131,7 @@ template<u32 R, u32 C, typename T>
 inline void Mat<R, C, T>::set_row(u32 index, const Vec<R, T>& row)
 {
     int i = index*C;
-    memcpy(&m[i], &row.v, sizeof(T)*C);
+    pen::memory_cpy(&m[i], &row.v, sizeof(T)*C);
 }
 
 template<u32 R, u32 C, typename T>

@@ -6,25 +6,28 @@
 #include <stdio.h>
 
 #ifdef __linux__ 
-#include <string.h>
-#define BAD_ALLOC
+#include <string.h> //memcpy
+#define THROW_BAD_ALLOC
+#define THROW_NO_EXCEPT
 #define PEN_MEM_ALIGN_ALLOC( mem, align, size ) posix_memalign( &mem, align, size )
 #define PEN_MEM_ALIGN_FREE free
 #elif _WIN32
-#define BAD_ALLOC
+#define THROW_BAD_ALLOC
+#define THROW_NO_EXCEPT
 #define PEN_MEM_ALIGN_ALLOC( mem, align, size ) mem = _aligned_malloc( align, size )
 #define PEN_MEM_ALIGN_FREE _aligned_free
 #else //OSX
 #define PEN_MEM_ALIGN_ALLOC( mem, align, size ) posix_memalign( &mem, align, size )
 #define PEN_MEM_ALIGN_FREE free
-#define BAD_ALLOC std::bad_alloc
+#define THROW_BAD_ALLOC throw(std::bad_alloc)
+#define THROW_NO_EXCEPT throw()
 #endif
 
 namespace pen
 {
     // Minimalist C-Style memory API wrapping up malloc and free
     // It provides some very minor portability solutions between win32 and osx and linux
-    // But mostly it is here to intercept all allocations
+    // But mostly it is here to intercept all allocations,
     // So at a later date custom allocation or mem tracking schemes could be used.
     
     // Functions
@@ -38,7 +41,7 @@ namespace pen
     void    memory_set( void* dest, u8 val, u32 size_bytes );
     void    memory_zero( void* dest, u32 size_bytes );
     
-    // Implementation
+    // ImplementationCHECK_CALL
     
     inline void* memory_alloc( u32 size_bytes )
     {
@@ -90,12 +93,13 @@ namespace pen
 }
 
 // And override global new and delete
+void*   operator new (std::size_t size, const std::nothrow_t& nothrow_value) THROW_NO_EXCEPT;
 
-void*   operator new(size_t n) throw(BAD_ALLOC);
-void    operator delete(void *p) throw();
+void*   operator new(size_t n) THROW_BAD_ALLOC;
+void    operator delete(void *p) THROW_NO_EXCEPT;
 
-void*   operator new[](size_t n) throw(BAD_ALLOC);
-void    operator delete[](void *p) throw();
+void*   operator new[](size_t n) THROW_BAD_ALLOC;
+void    operator delete[](void *p) THROW_NO_EXCEPT;
 
 #endif
 

@@ -12,8 +12,12 @@
 #define glClearDepth glClearDepthf      //gl es has these type suffixes
 
 #else
+#ifdef __linux__
+#include "GL/gl.h"
+#else //osx
 #include <OpenGL/gl3.h>
 #include <OpenGL/gl3ext.h>
+#endif
 #endif
 
 enum null_values

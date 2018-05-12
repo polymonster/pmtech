@@ -2,9 +2,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/param.h>
-//#include <sys/ucred.h>
 #include <sys/mount.h>
 #include <fnmatch.h>
+#include <stdarg.h>
 
 #include "pen.h"
 #include "file_system.h"
@@ -12,6 +12,12 @@
 #include "pen_string.h"
 
 extern pen::user_info pen_user_info;
+
+#ifdef __linux__
+#define get_mtime(s) s.st_mtime
+#else
+#define get_mtime(s) s.st_mtimespec.tv_sec
+#endif
 
 namespace pen
 {
@@ -46,11 +52,12 @@ namespace pen
     
     pen_error filesystem_enum_volumes( fs_tree_node &results )
     {
+#ifndef __linux__
         struct statfs* mounts;
         int num_mounts = getmntinfo(&mounts, MNT_WAIT);
         
         results.children = (fs_tree_node*)pen::memory_alloc( sizeof(fs_tree_node) * num_mounts );
-        results.num_children = num_mounts;
+        results.num_children = num_mounts;pen_user_info
         
         static const c8* volumes_name = "Volumes";
         
@@ -70,7 +77,7 @@ namespace pen
             results.children[i].children = nullptr;
             results.children[i].num_children = 0;
         }
-        
+#endif
         return PEN_ERR_OK;
     }
     
@@ -209,10 +216,8 @@ namespace pen
         
         stat( filename, &stat_res);
         
-        timespec t = stat_res.st_mtimespec;
-        
-        mtime_out = t.tv_sec;
-        
+        mtime_out = get_mtime(stat_res);
+                
         return PEN_ERR_OK;
     }
     

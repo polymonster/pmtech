@@ -13,6 +13,8 @@ const double M_PI = 3.1415926535897932384626433832795;
 #ifdef WIN32
 #undef min
 #undef max
+#elif __linux__
+#include <limits.h>
 #endif
 
 using std::min;

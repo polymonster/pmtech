@@ -7,6 +7,7 @@ A lightweight code base with powerful features that can be used for games, 3d an
 
 Supported Platforms: Windows, MacOS, Linux (wip), iOS (wip)  
 Supported Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+  
+Supported Compilers: vs2015, vs2017, Clang 6, Gcc 7
 
 The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread.
 
@@ -35,7 +36,7 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 
 **Getting started**  
 requires python3  
-osx
+osx / linux
 ```bash
 pmtech cd examples
 pmtech/examples python3 ../tools/build.py -all
