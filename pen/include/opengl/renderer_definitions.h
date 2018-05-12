@@ -13,7 +13,7 @@
 
 #else
 #ifdef __linux__
-#include "GL/gl.h"
+#include "GL/glew.h"
 #else //osx
 #include <OpenGL/gl3.h>
 #include <OpenGL/gl3ext.h>

@@ -12,7 +12,10 @@ end
 function add_linux_links()
 links 
 { 
-	"pthread"
+	"pthread",
+	"GLEW",
+	"GLU",
+	"GL"
 }
 end
 
