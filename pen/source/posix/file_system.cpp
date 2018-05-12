@@ -57,7 +57,7 @@ namespace pen
         int num_mounts = getmntinfo(&mounts, MNT_WAIT);
         
         results.children = (fs_tree_node*)pen::memory_alloc( sizeof(fs_tree_node) * num_mounts );
-        results.num_children = num_mounts;pen_user_info
+        results.num_children = num_mounts;
         
         static const c8* volumes_name = "Volumes";
         
