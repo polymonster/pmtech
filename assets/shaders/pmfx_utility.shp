@@ -271,7 +271,7 @@ ps_output ps_volume_texture( vs_output input )
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		//output.colour = sample_texture_grad( volume_texture, uvw, vddx, vddy );
-		output.colour = sample_texture_level( volume_texture, uvw, 1.0 );
+		output.colour = sample_texture_level( volume_texture, uvw, 2.0 );
 		
 		if(output.colour.a != 0.0)
 			break;
@@ -410,10 +410,10 @@ ps_output ps_shadow_sdf( vs_output input )
 		
 		float3 uvw = ip * 0.5 + 0.5;
 		
-		//if(!hit)
+		if(!hit)
 		{
-			//output.colour.rgb += light_col;
-			//continue;
+			output.colour.rgb += light_col;
+			continue;
 		}
 
 		for( int s = 0; s < int(max_samples); ++s )
@@ -441,9 +441,7 @@ ps_output ps_shadow_sdf( vs_output input )
 				break;
 		}
 		
-		if( hit )
-			light_col *= smoothstep( 0.0, 0.02, closest);
-		
+		light_col *= smoothstep( 0.0, 0.1, closest);
 		output.colour.rgb += light_col;
 	}
 				

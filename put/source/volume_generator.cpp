@@ -14,7 +14,11 @@
 #include "data_struct.h"
 
 #include "sdf/makelevelset3.h"
+
+// Progress / Cancellation
 extern mls_progress g_mls_progress;
+std::atomic<bool>   g_cancel_volume_job;
+std::atomic<bool>   g_cancel_handled;
 
 namespace put
 {
@@ -209,6 +213,12 @@ namespace put
 
         void image_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
         {
+            if (g_cancel_volume_job)
+            {
+                g_cancel_handled = true;
+                return;
+            }
+
             s32& current_slice = k_rasteriser_job.current_slice;
             s32& current_axis = k_rasteriser_job.current_axis;
             void*** volume_slices = k_rasteriser_job.volume_slices;
@@ -258,6 +268,9 @@ namespace put
 
             for (u32 z = 0; z < volume_dim; ++z)
             {
+                if (g_cancel_volume_job)
+                    break;
+
                 u8* slice_mem[6] = { 0 };
                 for (u32 a = 0; a < 6; ++a)
                 {
@@ -292,6 +305,13 @@ namespace put
                         volume_data[offset + 3] = rgba[3];
                     }
                 }
+            }
+
+            if (g_cancel_volume_job)
+            {
+                pen::memory_free(volume_data);
+                g_cancel_handled = true;
+                return PEN_THREAD_OK;
             }
 
             //with the 3d texture now initialised dilate colour edges so we can used bilinear
@@ -373,6 +393,8 @@ namespace put
             //offsets
             vec3ui offsets[] =
             {
+                vec3ui(0, 0, 0),
+
                 vec3ui(1, 0, 0),
                 vec3ui(0, 1, 0),
                 vec3ui(1, 1, 0),
@@ -384,13 +406,13 @@ namespace put
             
             u8* data = (u8*)pen::memory_alloc(data_size);
             pen::memory_cpy(data, tcp.data, tcp.data_size);
-            
+
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
             
             u8* prev_level = (u8*)data;
             u8* cur_level = prev_level + tcp.data_size;
             
-            for(u32 i = 0; i < num_mips; ++i)
+            for(u32 i = 0; i < num_mips-1; ++i)
             {
                 u32 p_rp = m.x * block_size;    //prev row pitch
                 u32 p_sp = p_rp * m.y;          //prev slice pitch
@@ -401,11 +423,11 @@ namespace put
                 u32 c_rp = m.x * block_size;    //cur row pitch
                 u32 c_sp = c_rp * m.y;          //cur slice pitch
                 
-                for(u32 x = 0; x < m.x; ++x)
+                for (u32 z = 0; z < m.z; ++z)
                 {
                     for(u32 y = 0; y < m.y; ++y)
                     {
-                        for(u32 z = 0; z < m.z; ++z)
+                        for (u32 x = 0; x < m.x; ++x)
                         {
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
                             
@@ -418,13 +440,13 @@ namespace put
                                 u32 p_offset = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
                                 
                                 for(u32 r = 0; r < 4; ++r)
-                                    rgba[r] += prev_level[p_offset + r];
+                                    rgba[r] = max<u8>(prev_level[p_offset + r], rgba[r]);
                             }
-                            
+                           
                             for(u32 r = 0; r < 4; ++r)
                             {
-                                rgba[r] /= PEN_ARRAY_SIZE(offsets);
-                                cur_level[c_offset] = rgba[r];
+                                //rgba[r] /= PEN_ARRAY_SIZE(offsets);
+                                cur_level[c_offset + r] = rgba[r];
                             }
                         }
                     }
@@ -433,7 +455,7 @@ namespace put
                 prev_level = cur_level;
                 cur_level += c_sp * m.z;
             }
-            
+
             //tcp.num_mips = num_mips;
             //tcp.data_size = data_size;
             
@@ -534,6 +556,13 @@ namespace put
 
         void volume_rasteriser_update(put::scene_controller* sc)
         {
+            if (g_cancel_volume_job)
+            {
+                k_rasteriser_job.rasterise_in_progress = 0;
+                if (k_rasteriser_job.current_requested_slice == k_rasteriser_job.current_slice)
+                    g_cancel_handled = true;
+            }
+
             //update incremental job
             if (!k_rasteriser_job.rasterise_in_progress)
                 return;
@@ -754,6 +783,16 @@ namespace put
                 make_level_set3(triangles, vertices, grid_origin, dx,
                     volume_dim, volume_dim, volume_dim, phi_grid);
 
+                if (g_cancel_volume_job)
+                {
+                    k_sdf_job.generate_in_progress = false;
+                    g_mls_progress.sweeps = 0;
+                    g_mls_progress.triangles = 0;
+                    pen::memory_free(volume_data);
+                    g_cancel_handled = true;
+                    return PEN_THREAD_OK;
+                }
+
                 for (u32 z = 0; z < volume_dim; ++z)
                 {
                     for (u32 y = 0; y < volume_dim; ++y)
@@ -838,6 +877,8 @@ namespace put
             {
                 if (ImGui::Button("Generate"))
                 {
+                    g_cancel_volume_job = 0;
+
                     if (k_rasteriser_job.capture_type == CAPTURE_SELECTED)
                     {
                         //hide stuff we dont want
@@ -897,7 +938,10 @@ namespace put
             {
                 ImGui::Separator();
 
-                ImGui::Text("Progress");
+                if (ImGui::Button("Cancel"))
+                    g_cancel_volume_job = 1;
+
+                ImGui::SameLine();
 
                 if (k_rasteriser_job.combine_in_progress > 0)
                 {
@@ -919,10 +963,8 @@ namespace put
                 }
                 else
                 {
-                    ImGui::Text("Rasterising");
-
-                    ImGui::Text("Axis %i", k_rasteriser_job.current_axis);
-                    ImGui::Text("Slice %i", k_rasteriser_job.current_slice);
+                    f32 progress = (6 * k_rasteriser_job.dimension) / ((f32)(k_rasteriser_job.current_axis * k_rasteriser_job.current_slice)+0.1f);
+                    ImGui::ProgressBar(progress);
 
                     static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
                     const pmfx::render_target* volume_rt = pmfx::get_render_target(id_volume_raster_rt);
@@ -983,6 +1025,8 @@ namespace put
             {
                 if (ImGui::Button("Generate"))
                 {
+                    g_cancel_volume_job = 0;
+
                     if (sdf_texture_format == 0)
                     {
                         k_sdf_job.block_size = 1;
@@ -1007,6 +1051,11 @@ namespace put
             }
             else
             {
+                if (ImGui::Button("Cancel"))
+                    g_cancel_volume_job = 1;
+
+                ImGui::SameLine();
+
                 ImGui::ProgressBar((g_mls_progress.triangles + g_mls_progress.sweeps) * 0.5f, ImVec2(-1, 0));
 
                 if (k_sdf_job.generate_in_progress == 2)
@@ -1117,18 +1166,20 @@ namespace put
 
                 ImGui::Separator();
 
-                if (k_options.volume_type == VOLUME_RASTERISED_TEXELS)
+                if (g_cancel_volume_job && !g_cancel_handled)
                 {
-                    rasterise_ui();
+                    ImGui::Text("%s", "Cancelling Job");
                 }
-                else if (k_options.volume_type == VOLUME_SIGNED_DISTANCE_FIELD)
+                else
                 {
-                    sdf_ui();
-                }
-
-                if (ImGui::Button("Test"))
-                {
-                    add_volume_test();
+                    if (k_options.volume_type == VOLUME_RASTERISED_TEXELS)
+                    {
+                        rasterise_ui();
+                    }
+                    else if (k_options.volume_type == VOLUME_SIGNED_DISTANCE_FIELD)
+                    {
+                        sdf_ui();
+                    }
                 }
 
                 ImGui::End();

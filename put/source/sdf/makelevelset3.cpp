@@ -1,6 +1,12 @@
 #include "sdf/makelevelset3.h"
 
 mls_progress g_mls_progress;
+extern std::atomic<bool>   g_cancel_volume_job;
+extern std::atomic<bool>   g_cancel_handled;
+
+#define cancel_return if(g_cancel_volume_job) return
+#define tri_progress g_mls_progress.triangles += tri_tick
+#define sweep_progress g_mls_progress.sweeps += sweep_tick
 
 // find distance x0 is from segment x1-x2
 static float point_segment_distance(const Vec3f &x0, const Vec3f &x1, const Vec3f &x2)
@@ -134,7 +140,9 @@ void make_level_set3(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x
     f32 tri_tick = 1.0f / tri.size();
     for(unsigned int t=0; t<tri.size(); ++t)
     {
-        g_mls_progress.triangles += tri_tick;
+        tri_progress;
+        cancel_return;
+
         unsigned int p, q, r; assign(tri[t], p, q, r);
         // coordinates in grid to high precision
         double fip=((double)x[p][0]-origin[0])/dx, fjp=((double)x[p][1]-origin[1])/dx, fkp=((double)x[p][2]-origin[2])/dx;
@@ -158,14 +166,21 @@ void make_level_set3(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x
         j1=clamp((int)std::floor(max(fjp,fjq,fjr)), 0, nj-1);
         k0=clamp((int)std::ceil(min(fkp,fkq,fkr)), 0, nk-1);
         k1=clamp((int)std::floor(max(fkp,fkq,fkr)), 0, nk-1);
-        for(int k=k0; k<=k1; ++k) for(int j=j0; j<=j1; ++j){
-            double a, b, c;
-            if(point_in_triangle_2d(j, k, fjp, fkp, fjq, fkq, fjr, fkr, a, b, c)){
-                double fi=a*fip+b*fiq+c*fir; // intersection i coordinate
-                int i_interval=int(std::ceil(fi)); // intersection is in (i_interval-1,i_interval]
-                if(i_interval<0) ++intersection_count(0, j, k); // we enlarge the first interval to include everything to the -x direction
-                else if(i_interval<ni) ++intersection_count(i_interval,j,k);
-                // we ignore intersections that are beyond the +x side of the grid
+        for(int k=k0; k<=k1; ++k) 
+        {
+            if (g_cancel_volume_job)
+                return;
+
+            for (int j = j0; j <= j1; ++j)
+            {
+                double a, b, c;
+                if (point_in_triangle_2d(j, k, fjp, fkp, fjq, fkq, fjr, fkr, a, b, c)) {
+                    double fi = a * fip + b * fiq + c * fir; // intersection i coordinate
+                    int i_interval = int(std::ceil(fi)); // intersection is in (i_interval-1,i_interval]
+                    if (i_interval < 0) ++intersection_count(0, j, k); // we enlarge the first interval to include everything to the -x direction
+                    else if (i_interval < ni) ++intersection_count(i_interval, j, k);
+                    // we ignore intersections that are beyond the +x side of the grid
+                }
             }
         }
     }
@@ -173,22 +188,27 @@ void make_level_set3(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x
     f32 sweep_tick = 1.0f / 16.0;
     for(unsigned int pass=0; pass<2; ++pass)
     {
-        sweep(tri, x, phi, closest_tri, origin, dx, +1, +1, +1); g_mls_progress.sweeps += sweep_tick;
-        sweep(tri, x, phi, closest_tri, origin, dx, -1, -1, -1); g_mls_progress.sweeps += sweep_tick;
-        sweep(tri, x, phi, closest_tri, origin, dx, +1, +1, -1); g_mls_progress.sweeps += sweep_tick;
-        sweep(tri, x, phi, closest_tri, origin, dx, -1, -1, +1); g_mls_progress.sweeps += sweep_tick;
-        sweep(tri, x, phi, closest_tri, origin, dx, +1, -1, +1); g_mls_progress.sweeps += sweep_tick;
-        sweep(tri, x, phi, closest_tri, origin, dx, -1, +1, -1); g_mls_progress.sweeps += sweep_tick;
-        sweep(tri, x, phi, closest_tri, origin, dx, +1, -1, -1); g_mls_progress.sweeps += sweep_tick;
-        sweep(tri, x, phi, closest_tri, origin, dx, -1, +1, +1); g_mls_progress.sweeps += sweep_tick;
+        sweep(tri, x, phi, closest_tri, origin, dx, +1, +1, +1); sweep_progress; cancel_return;
+        sweep(tri, x, phi, closest_tri, origin, dx, -1, -1, -1); sweep_progress; cancel_return;
+        sweep(tri, x, phi, closest_tri, origin, dx, +1, +1, -1); sweep_progress; cancel_return;
+        sweep(tri, x, phi, closest_tri, origin, dx, -1, -1, +1); sweep_progress; cancel_return;
+        sweep(tri, x, phi, closest_tri, origin, dx, +1, -1, +1); sweep_progress; cancel_return;
+        sweep(tri, x, phi, closest_tri, origin, dx, -1, +1, -1); sweep_progress; cancel_return;
+        sweep(tri, x, phi, closest_tri, origin, dx, +1, -1, -1); sweep_progress; cancel_return;
+        sweep(tri, x, phi, closest_tri, origin, dx, -1, +1, +1); sweep_progress; cancel_return;
     }
     // then figure out signs (inside/outside) from intersection counts
-    for(int k=0; k<nk; ++k) for(int j=0; j<nj; ++j){
-        int total_count=0;
-        for(int i=0; i<ni; ++i){
-            total_count+=intersection_count(i,j,k);
-            if(total_count%2==1){ // if parity of intersections so far is odd,
-                phi(i,j,k)=-phi(i,j,k); // we are inside the mesh
+    for (int k = 0; k < nk; ++k)
+    {
+        cancel_return;
+
+        for (int j = 0; j<nj; ++j) {
+            int total_count = 0;
+            for (int i = 0; i<ni; ++i) {
+                total_count += intersection_count(i, j, k);
+                if (total_count % 2 == 1) { // if parity of intersections so far is odd,
+                    phi(i, j, k) = -phi(i, j, k); // we are inside the mesh
+                }
             }
         }
     }
