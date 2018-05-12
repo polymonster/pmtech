@@ -5,11 +5,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef _WIN32
+#ifdef __linux__ 
+#include <string.h>
+#define BAD_ALLOC
+#define PEN_MEM_ALIGN_ALLOC( mem, align, size ) posix_memalign( &mem, align, size )
+#define PEN_MEM_ALIGN_FREE free
+#elif _WIN32
 #define BAD_ALLOC
 #define PEN_MEM_ALIGN_ALLOC( mem, align, size ) mem = _aligned_malloc( align, size )
 #define PEN_MEM_ALIGN_FREE _aligned_free
-#else
+#else //OSX
 #define PEN_MEM_ALIGN_ALLOC( mem, align, size ) posix_memalign( &mem, align, size )
 #define PEN_MEM_ALIGN_FREE free
 #define BAD_ALLOC std::bad_alloc
@@ -18,7 +23,7 @@
 namespace pen
 {
     // Minimalist C-Style memory API wrapping up malloc and free
-    // It provides some very minor portability solutions between win32 and posix
+    // It provides some very minor portability solutions between win32 and osx and linux
     // But mostly it is here to intercept all allocations
     // So at a later date custom allocation or mem tracking schemes could be used.
     

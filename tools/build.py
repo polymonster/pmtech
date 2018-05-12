@@ -7,6 +7,7 @@ import json
 import helpers
 import dependencies
 import time
+import platform
 stats_start = time.time()
 
 if len(sys.argv) > 1:
@@ -39,12 +40,15 @@ python_exec = ""
 shader_options = ""
 project_options = ""
 
-platform = ""
+platform_name = ""
 ide = ""
 renderer = ""
 data_dir = ""
 
 premake_exec = os.path.join(tools_dir, "premake", "premake5")
+if platform.system() == "Linux":
+    premake_exec = os.path.join(tools_dir, "premake", "premake5_linux")
+
 shader_script = os.path.join(tools_dir, "build_shaders.py")
 textures_script = os.path.join(tools_dir, "build_textures.py")
 audio_script = os.path.join(tools_dir, "build_audio.py")
@@ -52,6 +56,7 @@ models_script = os.path.join(tools_dir, "build_models.py")
 
 clean_destinations = False
 
+print(platform.system())
 
 def display_help():
     print("--------pmtech build--------")
@@ -70,13 +75,13 @@ def display_help():
 def parse_args(args):
     global ide
     global renderer
-    global platform
+    global platform_name
     global clean_destinations
     for index in range(0, len(sys.argv)):
         if sys.argv[index] == "-help":
             display_help()
         if sys.argv[index] == "-platform":
-            platform = sys.argv[index+1]
+            platform_name = sys.argv[index+1]
             index += 1
         if sys.argv[index] == "-ide":
             ide = sys.argv[index+1]
@@ -101,34 +106,38 @@ def parse_args(args):
 def get_platform_info():
     global ide
     global renderer
-    global platform
+    global platform_name
     global python_exec
     global shader_options
     global project_options
     global data_dir
 
     if os.name == "posix":
-        if ide == "":
-            ide = "xcode4"
         if renderer == "":
             renderer = "opengl"
-        if platform == "":
-            platform = "osx"
-        # python_exec = os.path.join(tools_dir, "bin", "python", "osx", "python3")
+        if platform.system() == "Linux":
+            platform_name = "linux"
+            ide = "gmake"
+        else:
+            if ide == "":
+                ide = "xcode4"
+            if platform_name == "":
+                platform_name = "osx"
+
         python_exec = "python3"
     else:
         if ide == "":
             ide = "vs2017"
         if renderer == "":
             renderer = "dx11"
-        if platform == "":
-            platform = "win32"
+        if platform_name == "":
+            platform_name = "win32"
 
-    extra_target_info = "--platform_dir=" + platform
+    extra_target_info = "--platform_dir=" + platform_name
 
     extra_target_info += " --pmtech_dir=" + build_config["pmtech_dir"] + "/"
 
-    if platform == "ios":
+    if platform_name == "ios":
         extra_target_info = "--xcode_target=ios"
         extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "copy_files.py"))
         extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "set_xcode_target.py"))
@@ -140,7 +149,7 @@ def get_platform_info():
     elif renderer == "opengl":
         shader_options = "glsl osx"
 
-    data_dir = os.path.join("bin", platform, "data")
+    data_dir = os.path.join("bin", platform_name, "data")
 
 
 if len(sys.argv) <= 1:
@@ -177,9 +186,9 @@ copy_steps = []
 
 for action in execute_actions:
     if action == "clean":
-        built_dirs = [os.path.join("..", "pen", "build", platform),
-                      os.path.join("..", "put", "build", platform),
-                      os.path.join("build", platform),
+        built_dirs = [os.path.join("..", "pen", "build", platform_name),
+                      os.path.join("..", "put", "build", platform_name),
+                      os.path.join("build", platform_name),
                       "bin",
                       "temp"]
         for bd in built_dirs:
@@ -211,7 +220,7 @@ if len(copy_steps) > 0:
 
 
 def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, files):
-    platform_bin = os.path.join("bin", platform, "")
+    platform_bin = os.path.join("bin", platform_name, "")
     for file in files:
         dest_file = os.path.join(dest_sub_dir, file)
         src_file = os.path.join(src_dir, file)

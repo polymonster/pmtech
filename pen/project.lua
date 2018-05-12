@@ -27,6 +27,13 @@ project "pen"
 		"source/posix/**.cpp"
 	}
 	end
+
+	if platform_dir == "linux" then
+	files 
+	{  
+		"source/posix/**.cpp"
+	}
+	end
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
 		systemversion(windows_sdk_version())

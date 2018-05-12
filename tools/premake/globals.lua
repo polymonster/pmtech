@@ -23,9 +23,12 @@ if _OPTIONS["pmtech_dir"] then
 end
 
 if _ACTION == "gmake" then
-
-	build_cmd = "-std=c++11 -stdlib=libc++"
-	link_cmd = "-stdlib=libc++"
+	if platform_dir == "linux" then
+		build_cmd = "-std=c++11"
+	else
+		build_cmd = "-std=c++11 -stdlib=libc++"
+		link_cmd = "-stdlib=libc++"
+	end
 	
 elseif _ACTION == "xcode4" then 
 	
