@@ -26,40 +26,16 @@ namespace put
 
 		struct vertex_debug_3d
 		{
-            union
-            {
-                struct
-                {
-                    float x, y, z, w;
-                    float r, g, b, a;
-                };
-                
-                struct
-                {
-                    vec4f pos;
-                    vec4f col;
-                };
-            };
+            vec4f pos;
+            vec4f col;
             
             vertex_debug_3d() { };
 		};
         
         struct vertex_debug_2d
         {
-            union
-            {
-                struct
-                {
-                    float x, y;
-                    float r, g, b, a;
-                };
-                
-                struct
-                {
-                    vec2f pos;
-                    vec4f col;
-                };
-            };
+            vec2f pos;
+            vec4f col;
             
             vertex_debug_2d() { };
         };
@@ -346,41 +322,41 @@ namespace put
             
             //sides
             //
-            debug_3d_verts[line_vert_3d_count + 0].x = min.x;
-            debug_3d_verts[line_vert_3d_count + 0].y = min.y;
-            debug_3d_verts[line_vert_3d_count + 0].z = min.z;
+            debug_3d_verts[line_vert_3d_count + 0].pos.x = min.x;
+            debug_3d_verts[line_vert_3d_count + 0].pos.y = min.y;
+            debug_3d_verts[line_vert_3d_count + 0].pos.z = min.z;
             
-            debug_3d_verts[line_vert_3d_count + 1].x = min.x;
-            debug_3d_verts[line_vert_3d_count + 1].y = max.y;
-            debug_3d_verts[line_vert_3d_count + 1].z = min.z;
-            
-            //
-            debug_3d_verts[line_vert_3d_count + 2].x = max.x;
-            debug_3d_verts[line_vert_3d_count + 2].y = min.y;
-            debug_3d_verts[line_vert_3d_count + 2].z = min.z;
-            
-            debug_3d_verts[line_vert_3d_count + 3].x = max.x;
-            debug_3d_verts[line_vert_3d_count + 3].y = max.y;
-            debug_3d_verts[line_vert_3d_count + 3].z = min.z;
+            debug_3d_verts[line_vert_3d_count + 1].pos.x = min.x;
+            debug_3d_verts[line_vert_3d_count + 1].pos.y = max.y;
+            debug_3d_verts[line_vert_3d_count + 1].pos.z = min.z;
             
             //
-            debug_3d_verts[line_vert_3d_count + 4].x = max.x;
-            debug_3d_verts[line_vert_3d_count + 4].y = min.y;
-            debug_3d_verts[line_vert_3d_count + 4].z = max.z;
+            debug_3d_verts[line_vert_3d_count + 2].pos.x = max.x;
+            debug_3d_verts[line_vert_3d_count + 2].pos.y = min.y;
+            debug_3d_verts[line_vert_3d_count + 2].pos.z = min.z;
             
-            debug_3d_verts[line_vert_3d_count + 5].x = max.x;
-            debug_3d_verts[line_vert_3d_count + 5].y = max.y;
-            debug_3d_verts[line_vert_3d_count + 5].z = max.z;
+            debug_3d_verts[line_vert_3d_count + 3].pos.x = max.x;
+            debug_3d_verts[line_vert_3d_count + 3].pos.y = max.y;
+            debug_3d_verts[line_vert_3d_count + 3].pos.z = min.z;
             
             //
-            debug_3d_verts[line_vert_3d_count + 6].x = min.x;
-            debug_3d_verts[line_vert_3d_count + 6].y = min.y;
-            debug_3d_verts[line_vert_3d_count + 6].z = max.z;
+            debug_3d_verts[line_vert_3d_count + 4].pos.x = max.x;
+            debug_3d_verts[line_vert_3d_count + 4].pos.y = min.y;
+            debug_3d_verts[line_vert_3d_count + 4].pos.z = max.z;
+            
+            debug_3d_verts[line_vert_3d_count + 5].pos.x = max.x;
+            debug_3d_verts[line_vert_3d_count + 5].pos.y = max.y;
+            debug_3d_verts[line_vert_3d_count + 5].pos.z = max.z;
+            
+            //
+            debug_3d_verts[line_vert_3d_count + 6].pos.x = min.x;
+            debug_3d_verts[line_vert_3d_count + 6].pos.y = min.y;
+            debug_3d_verts[line_vert_3d_count + 6].pos.z = max.z;
 
             
-            debug_3d_verts[line_vert_3d_count + 7].x = min.x;
-            debug_3d_verts[line_vert_3d_count + 7].y = max.y;
-            debug_3d_verts[line_vert_3d_count + 7].z = max.z;
+            debug_3d_verts[line_vert_3d_count + 7].pos.x = min.x;
+            debug_3d_verts[line_vert_3d_count + 7].pos.y = max.y;
+            debug_3d_verts[line_vert_3d_count + 7].pos.z = max.z;
             
             //top and bottom
             s32 cur_offset = line_vert_3d_count + 8;
@@ -388,47 +364,47 @@ namespace put
             for( s32 i = 0; i < 2; ++i)
             {
                 //
-                debug_3d_verts[cur_offset].x = min.x;
-                debug_3d_verts[cur_offset].y = y[i];
-                debug_3d_verts[cur_offset].z = min.z;
+                debug_3d_verts[cur_offset].pos.x = min.x;
+                debug_3d_verts[cur_offset].pos.y = y[i];
+                debug_3d_verts[cur_offset].pos.z = min.z;
                 cur_offset++;
                 
-                debug_3d_verts[cur_offset].x = max.x;
-                debug_3d_verts[cur_offset].y = y[i];
-                debug_3d_verts[cur_offset].z = min.z;
-                cur_offset++;
-                
-                //
-                debug_3d_verts[cur_offset].x = min.x;
-                debug_3d_verts[cur_offset].y = y[i];
-                debug_3d_verts[cur_offset].z = min.z;
-                cur_offset++;
-                
-                debug_3d_verts[cur_offset].x = min.x;
-                debug_3d_verts[cur_offset].y = y[i];
-                debug_3d_verts[cur_offset].z = max.z;
+                debug_3d_verts[cur_offset].pos.x = max.x;
+                debug_3d_verts[cur_offset].pos.y = y[i];
+                debug_3d_verts[cur_offset].pos.z = min.z;
                 cur_offset++;
                 
                 //
-                debug_3d_verts[cur_offset].x = max.x;
-                debug_3d_verts[cur_offset].y = y[i];
-                debug_3d_verts[cur_offset].z = max.z;
+                debug_3d_verts[cur_offset].pos.x = min.x;
+                debug_3d_verts[cur_offset].pos.y = y[i];
+                debug_3d_verts[cur_offset].pos.z = min.z;
                 cur_offset++;
                 
-                debug_3d_verts[cur_offset].x = min.x;
-                debug_3d_verts[cur_offset].y = y[i];
-                debug_3d_verts[cur_offset].z = max.z;
+                debug_3d_verts[cur_offset].pos.x = min.x;
+                debug_3d_verts[cur_offset].pos.y = y[i];
+                debug_3d_verts[cur_offset].pos.z = max.z;
                 cur_offset++;
                 
                 //
-                debug_3d_verts[cur_offset].x = max.x;
-                debug_3d_verts[cur_offset].y = y[i];
-                debug_3d_verts[cur_offset].z = max.z;
+                debug_3d_verts[cur_offset].pos.x = max.x;
+                debug_3d_verts[cur_offset].pos.y = y[i];
+                debug_3d_verts[cur_offset].pos.z = max.z;
                 cur_offset++;
                 
-                debug_3d_verts[cur_offset].x = max.x;
-                debug_3d_verts[cur_offset].y = y[i];
-                debug_3d_verts[cur_offset].z = min.z;
+                debug_3d_verts[cur_offset].pos.x = min.x;
+                debug_3d_verts[cur_offset].pos.y = y[i];
+                debug_3d_verts[cur_offset].pos.z = max.z;
+                cur_offset++;
+                
+                //
+                debug_3d_verts[cur_offset].pos.x = max.x;
+                debug_3d_verts[cur_offset].pos.y = y[i];
+                debug_3d_verts[cur_offset].pos.z = max.z;
+                cur_offset++;
+                
+                debug_3d_verts[cur_offset].pos.x = max.x;
+                debug_3d_verts[cur_offset].pos.y = y[i];
+                debug_3d_verts[cur_offset].pos.z = min.z;
                 cur_offset++;
             }
             
@@ -436,12 +412,8 @@ namespace put
             u32 num_verts = cur_offset - line_vert_3d_count;
             for( s32 i = 0; i < num_verts; ++i )
             {
-                debug_3d_verts[line_vert_3d_count + i].w = 1.0;
-                
-                debug_3d_verts[line_vert_3d_count + i].r = col.x;
-                debug_3d_verts[line_vert_3d_count + i].g = col.y;
-                debug_3d_verts[line_vert_3d_count + i].b = col.z;
-                debug_3d_verts[line_vert_3d_count + i].a = col.w;
+                debug_3d_verts[line_vert_3d_count + i].pos.w = 1.0;
+                debug_3d_verts[line_vert_3d_count + i].col = col;
             }
             
             line_vert_3d_count += num_verts;
@@ -518,8 +490,6 @@ namespace put
                     //translate
                     vec2f pp = perp(v1);
 
-
-                    
                     static const f32 s = 5.0f;
                     
                     add_tri_2f( p2 - pp * s, p2 + v1 * s, p2 + pp * s, col );
@@ -540,22 +510,19 @@ namespace put
 
 			for (u32 i = 0; i < 3; ++i)
 			{
-				debug_3d_verts[line_vert_3d_count].x = pos.x;
-				debug_3d_verts[line_vert_3d_count].y = pos.y;
-				debug_3d_verts[line_vert_3d_count].z = pos.z;
-				debug_3d_verts[line_vert_3d_count].w = 1.0f;
+				debug_3d_verts[line_vert_3d_count].pos = vec4f(pos, 1.0f);
 
-				debug_3d_verts[line_vert_3d_count + 1].x = pos.x + mat.m[0 + i * 4] * size;
-				debug_3d_verts[line_vert_3d_count + 1].y = pos.y + mat.m[1 + i * 4] * size;
-				debug_3d_verts[line_vert_3d_count + 1].z = pos.z + mat.m[2 + i * 4] * size;
-				debug_3d_verts[line_vert_3d_count + 1].w = 1.0f;
+				debug_3d_verts[line_vert_3d_count + 1].pos.x = pos.x + mat.m[0 + i * 4] * size;
+				debug_3d_verts[line_vert_3d_count + 1].pos.y = pos.y + mat.m[1 + i * 4] * size;
+				debug_3d_verts[line_vert_3d_count + 1].pos.z = pos.z + mat.m[2 + i * 4] * size;
+				debug_3d_verts[line_vert_3d_count + 1].pos.w = 1.0f;
 
 				for (u32 j = 0; j < 2; ++j)
 				{
-                    debug_3d_verts[line_vert_3d_count + j].r = i == 0 || (1<<i) & selected ? 1.0f : 0.0f;
-					debug_3d_verts[line_vert_3d_count + j].g = i == 1 || (1<<i) & selected ? 1.0f : 0.0f;
-					debug_3d_verts[line_vert_3d_count + j].b = i == 2 || (1<<i) & selected ? 1.0f : 0.0f;
-					debug_3d_verts[line_vert_3d_count + j].a = 1.0f;
+                    debug_3d_verts[line_vert_3d_count + j].col.r = i == 0 || (1<<i) & selected ? 1.0f : 0.0f;
+					debug_3d_verts[line_vert_3d_count + j].col.g = i == 1 || (1<<i) & selected ? 1.0f : 0.0f;
+					debug_3d_verts[line_vert_3d_count + j].col.b = i == 2 || (1<<i) & selected ? 1.0f : 0.0f;
+					debug_3d_verts[line_vert_3d_count + j].col.a = 1.0f;
 				}
 
 				line_vert_3d_count += 2;
@@ -580,22 +547,12 @@ namespace put
 
 			for (u32 i = 0; i < 6; ++i)
 			{
-				debug_3d_verts[line_vert_3d_count].x = point.x;
-				debug_3d_verts[line_vert_3d_count].y = point.y;
-				debug_3d_verts[line_vert_3d_count].z = point.z;
-				debug_3d_verts[line_vert_3d_count].w = 1.0f;
-
-				debug_3d_verts[line_vert_3d_count + 1].x = point.x + units[i].x * size;
-				debug_3d_verts[line_vert_3d_count + 1].y = point.y + units[i].y * size;
-				debug_3d_verts[line_vert_3d_count + 1].z = point.z + units[i].z * size;
-				debug_3d_verts[line_vert_3d_count + 1].w = 1.0f;
+				debug_3d_verts[line_vert_3d_count].pos = vec4f(point, 1.0f);
+                debug_3d_verts[line_vert_3d_count + 1].pos = vec4f(point + units[i] * size, 1.0f);
 
 				for (u32 j = 0; j < 2; ++j)
 				{
-					debug_3d_verts[line_vert_3d_count + j].r = col.x;
-					debug_3d_verts[line_vert_3d_count + j].g = col.y;
-					debug_3d_verts[line_vert_3d_count + j].b = col.z;
-					debug_3d_verts[line_vert_3d_count + j].a = 1.0f;
+					debug_3d_verts[line_vert_3d_count + j].col = col;
 				}
 
 				line_vert_3d_count += 2;
@@ -626,24 +583,18 @@ namespace put
                         grayness = 0.1f;
                 }
 
-				debug_3d_verts[line_vert_3d_count + 0].x = current.x;
-				debug_3d_verts[line_vert_3d_count + 0].y = current.y;
-				debug_3d_verts[line_vert_3d_count + 0].z = current.z;
-				debug_3d_verts[line_vert_3d_count + 0].w = 1.0f;
+				debug_3d_verts[line_vert_3d_count + 0].pos = vec4f(current, 1.0f);
 
-				debug_3d_verts[line_vert_3d_count + 1].x = current.x;
-				debug_3d_verts[line_vert_3d_count + 1].y = current.y;
-				debug_3d_verts[line_vert_3d_count + 1].z = current.z + size.z;
-				debug_3d_verts[line_vert_3d_count + 1].w = 1.0f;
+				debug_3d_verts[line_vert_3d_count + 1].pos.x = current.x;
+				debug_3d_verts[line_vert_3d_count + 1].pos.y = current.y;
+				debug_3d_verts[line_vert_3d_count + 1].pos.z = current.z + size.z;
+				debug_3d_verts[line_vert_3d_count + 1].pos.w = 1.0f;
 
 				current.x += division_size.x;
 
 				for (u32 j = 0; j < 2; ++j)
 				{
-					debug_3d_verts[line_vert_3d_count + j].r = grayness;
-					debug_3d_verts[line_vert_3d_count + j].g = grayness;
-					debug_3d_verts[line_vert_3d_count + j].b = grayness;
-					debug_3d_verts[line_vert_3d_count + j].a = 1.0f;
+					debug_3d_verts[line_vert_3d_count + j].col = vec4f(grayness, grayness, grayness, 1.0f);
 				}
 
 				line_vert_3d_count += 2;
@@ -662,24 +613,18 @@ namespace put
                         grayness = 0.1f;
                 }
 
-				debug_3d_verts[line_vert_3d_count + 0].x = current.x;
-				debug_3d_verts[line_vert_3d_count + 0].y = current.y;
-				debug_3d_verts[line_vert_3d_count + 0].z = current.z;
-				debug_3d_verts[line_vert_3d_count + 0].w = 1.0f;
+				debug_3d_verts[line_vert_3d_count + 0].pos = vec4f(current, 1.0f);
 
-				debug_3d_verts[line_vert_3d_count + 1].x = current.x + size.x;
-				debug_3d_verts[line_vert_3d_count + 1].y = current.y;
-				debug_3d_verts[line_vert_3d_count + 1].z = current.z;
-				debug_3d_verts[line_vert_3d_count + 1].w = 1.0f;
+				debug_3d_verts[line_vert_3d_count + 1].pos.x = current.x + size.x;
+				debug_3d_verts[line_vert_3d_count + 1].pos.y = current.y;
+				debug_3d_verts[line_vert_3d_count + 1].pos.z = current.z;
+				debug_3d_verts[line_vert_3d_count + 1].pos.w = 1.0f;
 
 				current.z += division_size.z;
 
 				for (u32 j = 0; j < 2; ++j)
 				{
-					debug_3d_verts[line_vert_3d_count + j].r = grayness;
-					debug_3d_verts[line_vert_3d_count + j].g = grayness;
-					debug_3d_verts[line_vert_3d_count + j].b = grayness;
-					debug_3d_verts[line_vert_3d_count + j].a = 1.0f;
+                    debug_3d_verts[line_vert_3d_count + j].col = vec4f(grayness, grayness, grayness, 1.0f);
 				}
 
 				line_vert_3d_count += 2;
@@ -747,38 +692,35 @@ namespace put
                 }
                 
                 //t1
-                debug_2d_tris[tri_vert_2d_count].x = x[0];
-                debug_2d_tris[tri_vert_2d_count].y = y[0];
+                debug_2d_tris[tri_vert_2d_count].pos.x = x[0];
+                debug_2d_tris[tri_vert_2d_count].pos.y = y[0];
                 tri_vert_2d_count++;
                 
-                debug_2d_tris[tri_vert_2d_count].x = x[1];
-                debug_2d_tris[tri_vert_2d_count].y = y[1];
+                debug_2d_tris[tri_vert_2d_count].pos.x = x[1];
+                debug_2d_tris[tri_vert_2d_count].pos.y = y[1];
                 tri_vert_2d_count++;
                 
-                debug_2d_tris[tri_vert_2d_count].x = x[2];
-                debug_2d_tris[tri_vert_2d_count].y = y[2];
+                debug_2d_tris[tri_vert_2d_count].pos.x = x[2];
+                debug_2d_tris[tri_vert_2d_count].pos.y = y[2];
                 tri_vert_2d_count++;
                 
                 //2
-                debug_2d_tris[tri_vert_2d_count].x = x[2];
-                debug_2d_tris[tri_vert_2d_count].y = y[2];
+                debug_2d_tris[tri_vert_2d_count].pos.x = x[2];
+                debug_2d_tris[tri_vert_2d_count].pos.y = y[2];
                 tri_vert_2d_count++;
                 
-                debug_2d_tris[tri_vert_2d_count].x = x[3];
-                debug_2d_tris[tri_vert_2d_count].y = y[3];
+                debug_2d_tris[tri_vert_2d_count].pos.x = x[3];
+                debug_2d_tris[tri_vert_2d_count].pos.y = y[3];
                 tri_vert_2d_count++;
                 
-                debug_2d_tris[tri_vert_2d_count].x = x[0];
-                debug_2d_tris[tri_vert_2d_count].y = y[0];
+                debug_2d_tris[tri_vert_2d_count].pos.x = x[0];
+                debug_2d_tris[tri_vert_2d_count].pos.y = y[0];
                 tri_vert_2d_count++;
             }
             
             for (u32 i = start_vertex; i < tri_vert_2d_count; ++i)
             {
-                debug_2d_tris[i].r = colour.x;
-                debug_2d_tris[i].g = colour.y;
-                debug_2d_tris[i].b = colour.z;
-                debug_2d_tris[i].a = colour.w;
+                debug_2d_tris[i].col = colour;
             }
         }
 
@@ -786,18 +728,12 @@ namespace put
 		{
             alloc_2d_buffer(line_vert_2d_count + 2, VB_LINES);
             
-			debug_2d_verts[line_vert_2d_count].x = start.x;
-			debug_2d_verts[line_vert_2d_count].y = start.y;
-
-			debug_2d_verts[line_vert_2d_count + 1].x = end.x;
-			debug_2d_verts[line_vert_2d_count + 1].y = end.y;
+			debug_2d_verts[line_vert_2d_count].pos = start;
+			debug_2d_verts[line_vert_2d_count + 1].pos = end;
 
 			for (u32 i = 0; i < 2; ++i)
 			{
-				debug_2d_verts[line_vert_2d_count + i].r = colour.x;
-				debug_2d_verts[line_vert_2d_count + i].g = colour.y;
-				debug_2d_verts[line_vert_2d_count + i].b = colour.z;
-                debug_2d_verts[line_vert_2d_count + i].a = colour.w;
+				debug_2d_verts[line_vert_2d_count + i].col = colour;
 			}
 
 			line_vert_2d_count += 2;
@@ -814,25 +750,17 @@ namespace put
             
             //tri 1
             s32 start_index = tri_vert_2d_count;
-            debug_2d_tris[tri_vert_2d_count].x = p1.x;
-            debug_2d_tris[tri_vert_2d_count].y = p1.y;
+            debug_2d_tris[tri_vert_2d_count].pos = p1;
             tri_vert_2d_count++;
             
-            debug_2d_tris[tri_vert_2d_count].x = p2.x;
-            debug_2d_tris[tri_vert_2d_count].y = p2.y;
+            debug_2d_tris[tri_vert_2d_count].pos = p2;
             tri_vert_2d_count++;
             
-            debug_2d_tris[tri_vert_2d_count].x = p3.x;
-            debug_2d_tris[tri_vert_2d_count].y = p3.y;
+            debug_2d_tris[tri_vert_2d_count].pos = p3;
             tri_vert_2d_count++;
             
             for( s32 i = start_index; i < start_index + 3; ++i )
-            {
-                debug_2d_tris[i].r = colour.x;
-                debug_2d_tris[i].g = colour.y;
-                debug_2d_tris[i].b = colour.z;
-                debug_2d_tris[i].a = colour.w;
-            }
+                debug_2d_tris[i].col = colour;
         }
 
 		void add_quad_2f(const vec2f& pos, const vec2f& size, const vec4f& colour)

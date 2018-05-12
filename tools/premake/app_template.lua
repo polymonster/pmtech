@@ -9,6 +9,13 @@ links
 }
 end
 
+function add_linux_links()
+links 
+{ 
+	"pthread"
+}
+end
+
 function add_win32_links()
 links 
 { 
@@ -93,6 +100,7 @@ project ( project_name )
 	elseif platform_dir == "ios" then 
 		add_ios_links() 
 		add_ios_files( project_name, root_directory )
+	elseif platform_dir == "linux" then add_linux_links()
 	end
 	
 	files 

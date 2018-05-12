@@ -17,6 +17,10 @@ if _OPTIONS["platform_dir"] then
 	platform_dir = _OPTIONS["platform_dir"]
 end
 
+if _OPTIONS["toolset"] then
+	toolset = _OPTIONS["toolset"]
+end
+
 pmtech_dir = "../"
 if _OPTIONS["pmtech_dir"] then
 	pmtech_dir = _OPTIONS["pmtech_dir"]

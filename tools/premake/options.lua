@@ -27,6 +27,13 @@ newoption
 
 newoption 
 {
+   trigger     = "toolset",
+   value       = "value",
+   description = "specify toolset (clang, gcc)",
+}
+
+newoption 
+{
    trigger     = "xcode_target",
    value       = "TARGET",
    description = "Choose an xcode build target",

@@ -60,11 +60,11 @@ namespace pen
         
         union
         {
-            c8*         filename;
-            u32         resource_index;
-            set_valuei  _set_valuei;
-            set_valuef  _set_valuef;
-            set_value3f _set_value3f;
+            c8*                 filename;
+            u32                 resource_index;
+            pen::set_valuei     set_valuei;
+            pen::set_valuef     set_valuef;
+            pen::set_value3f    set_value3f;
         };
     };
 
@@ -89,44 +89,44 @@ namespace pen
             pen::memory_free( cmd.filename );
             break;
         case CMD_AUDIO_ADD_CHANNEL_TO_GROUP:
-            direct::audio_add_channel_to_group( cmd._set_valuei.resource_index, cmd._set_valuei.value );
+            direct::audio_add_channel_to_group( cmd.set_valuei.resource_index, cmd.set_valuei.value );
             break;
         case CMD_AUDIO_ADD_DSP_TO_GROUP:
-            direct::audio_add_dsp_to_group( cmd._set_valuei.resource_index, (dsp_type)cmd._set_valuei.value, cmd.resource_slot );
+            direct::audio_add_dsp_to_group( cmd.set_valuei.resource_index, (dsp_type)cmd.set_valuei.value, cmd.resource_slot );
             break;
         case CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND:
             direct::audio_create_channel_for_sound( cmd.resource_index, cmd.resource_slot );
             break;
         case CMD_AUDIO_CHANNEL_SET_POSITION:
-            direct::audio_channel_set_position( cmd._set_valuei.resource_index, cmd._set_valuei.value );
+            direct::audio_channel_set_position( cmd.set_valuei.resource_index, cmd.set_valuei.value );
             break;
         case CMD_AUDIO_CHANNEL_SET_FREQUENCY:
-            direct::audio_channel_set_frequency( cmd.resource_index, cmd._set_valuef.value );
+            direct::audio_channel_set_frequency( cmd.resource_index, cmd.set_valuef.value );
             break;
         case CMD_AUDIO_CHANNEL_STOP:
             direct::audio_channel_stop( cmd.resource_index );
             break;
         case CMD_AUDIO_GROUP_SET_MUTE:
-            direct::audio_group_set_mute( cmd._set_valuei.resource_index, (bool)cmd._set_valuei.value );
+            direct::audio_group_set_mute( cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value );
             break;
         case CMD_AUDIO_GROUP_SET_PAUSE:
-            direct::audio_group_set_pause( cmd._set_valuei.resource_index, (bool)cmd._set_valuei.value );
+            direct::audio_group_set_pause( cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value );
             break;
         case CMD_AUDIO_GROUP_SET_VOLUME:
-            direct::audio_group_set_volume( cmd._set_valuef.resource_index, cmd._set_valuef.value );
+            direct::audio_group_set_volume( cmd.set_valuef.resource_index, cmd.set_valuef.value );
             break;
         case CMD_AUDIO_DSP_SET_GAIN:
-            direct::audio_dsp_set_gain( cmd._set_valuef.resource_index, cmd._set_valuef.value );
+            direct::audio_dsp_set_gain( cmd.set_valuef.resource_index, cmd.set_valuef.value );
             break;
         case CMD_AUDIO_GROUP_SET_PITCH:
-            direct::audio_group_set_pitch( cmd._set_valuef.resource_index, cmd._set_valuef.value );
+            direct::audio_group_set_pitch( cmd.set_valuef.resource_index, cmd.set_valuef.value );
             break;
         case CMD_AUDIO_RELEASE_RESOURCE:
             direct::audio_release_resource( cmd.resource_index );
             break;
             case CMD_AUDIO_DSP_SET_THREE_BAND_EQ:
-            direct::audio_dsp_set_three_band_eq(cmd._set_value3f.resource_index, 
-                                                cmd._set_value3f.value[0], cmd._set_value3f.value[1], cmd._set_value3f.value[2] );
+            direct::audio_dsp_set_three_band_eq(cmd.set_value3f.resource_index, 
+                                                cmd.set_value3f.value[0], cmd.set_value3f.value[1], cmd.set_value3f.value[2] );
                 break;
         }
     }
@@ -257,8 +257,8 @@ namespace pen
     void	audio_channel_set_position( const u32 channel_index, const u32 position_ms )
     {
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_CHANNEL_SET_POSITION;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.resource_index = channel_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.value = position_ms;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = channel_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = position_ms;
         
         INC_WRAP( audio_put_pos );
     }
@@ -266,8 +266,8 @@ namespace pen
     void	audio_channel_set_frequency( const u32 channel_index, const f32 frequency )
     {
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_CHANNEL_SET_FREQUENCY;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuef.resource_index = channel_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuef.value = frequency;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = channel_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.value = frequency;
         
         INC_WRAP( audio_put_pos );
     }
@@ -275,8 +275,8 @@ namespace pen
     void	audio_group_set_pause( const u32 group_index, const bool val )
     {
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_GROUP_SET_PAUSE;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.resource_index = group_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.value = (s32)val;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = (s32)val;
         
         INC_WRAP( audio_put_pos );
     }
@@ -284,8 +284,8 @@ namespace pen
     void	audio_group_set_mute( const u32 group_index, const bool val )
     {
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_GROUP_SET_MUTE;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.resource_index = group_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.value = (s32)val;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = (s32)val;
         
         INC_WRAP( audio_put_pos );
     }
@@ -293,8 +293,8 @@ namespace pen
     void	audio_group_set_pitch( const u32 group_index, const f32 pitch )
     {
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_GROUP_SET_PITCH;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuef.resource_index = group_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuef.value = pitch;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.value = pitch;
         
         INC_WRAP( audio_put_pos );
     }
@@ -302,8 +302,8 @@ namespace pen
     void	audio_group_set_volume( const u32 group_index, const f32 volume )
     {
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_GROUP_SET_VOLUME;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuef.resource_index = group_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuef.value = volume;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.value = volume;
         
         INC_WRAP( audio_put_pos );
     }
@@ -316,8 +316,8 @@ namespace pen
         }
         
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_ADD_CHANNEL_TO_GROUP;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.resource_index = channel_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.value = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = channel_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = group_index;
         
         INC_WRAP( audio_put_pos );
     }
@@ -338,8 +338,8 @@ namespace pen
         u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
         
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_ADD_DSP_TO_GROUP;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.resource_index = group_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuei.value = type;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.resource_index = group_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuei.value = type;
         audio_cmd_buffer[ audio_put_pos ].resource_slot = res;
         
         INC_WRAP( audio_put_pos );
@@ -350,10 +350,10 @@ namespace pen
     void audio_dsp_set_three_band_eq( const u32 eq_index, const f32 low, const f32 med, const f32 high )
     {
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_DSP_SET_THREE_BAND_EQ;
-        audio_cmd_buffer[ audio_put_pos ]._set_value3f.resource_index = eq_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_value3f.value[0] = low;
-        audio_cmd_buffer[ audio_put_pos ]._set_value3f.value[1] = med;
-        audio_cmd_buffer[ audio_put_pos ]._set_value3f.value[2] = high;
+        audio_cmd_buffer[ audio_put_pos ].set_value3f.resource_index = eq_index;
+        audio_cmd_buffer[ audio_put_pos ].set_value3f.value[0] = low;
+        audio_cmd_buffer[ audio_put_pos ].set_value3f.value[1] = med;
+        audio_cmd_buffer[ audio_put_pos ].set_value3f.value[2] = high;
         
         INC_WRAP( audio_put_pos );
     }
@@ -361,8 +361,8 @@ namespace pen
     void audio_dsp_set_gain( const u32 dsp_index, const f32 gain )
     {
         audio_cmd_buffer[ audio_put_pos ].command_index = CMD_AUDIO_DSP_SET_GAIN;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuef.resource_index = dsp_index;
-        audio_cmd_buffer[ audio_put_pos ]._set_valuef.value = gain;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.resource_index = dsp_index;
+        audio_cmd_buffer[ audio_put_pos ].set_valuef.value = gain;
         
         INC_WRAP( audio_put_pos );
     }

@@ -43,7 +43,7 @@ namespace put
         u32 depth_stencil_state = 0;
         u32 blend_state_state = 0;
         u32 raster_state = 0;
-        camera* camera = nullptr;
+        put::camera* camera = nullptr;
         pen::viewport* viewport = nullptr;
         pmfx::shader_handle pmfx_shader = PEN_INVALID_HANDLE;
         hash_id technique = 0;
@@ -55,7 +55,7 @@ namespace put
         Str                     name;
         hash_id                 id_name = 0;
         ces::entity_scene*      scene = nullptr;
-        camera*                 camera = nullptr;
+        put::camera*            camera = nullptr;
         e_update_order          order = MAIN_UPDATE;
         
         void(*update_function)(scene_controller*) = nullptr;
