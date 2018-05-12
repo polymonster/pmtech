@@ -2,7 +2,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/param.h>
-#include <sys/ucred.h>
+//#include <sys/ucred.h>
 #include <sys/mount.h>
 #include <fnmatch.h>
 
@@ -243,21 +243,4 @@ namespace pen
 		//directory depth 0 can be a slash
 		return 0;
 	}
-	
-	//ICONV ref for utf8 -> wchar conversion
-	 /*
-		iconv_t ic;
-		ic = iconv_open("UTF8", "WCHAR_T");
-		
-		u32 sowc = sizeof( wchar_t );
-		
-		size_t dir_name_len = pen::string_length_wide(directory);
-		size_t target_buffer_len = dir_name_len+1;
-		size_t dir_name_size_bytes = target_buffer_len * sowc;
-		
-		signed char* utf8_dir = (signed char*)pen::memory_alloc(target_buffer_len);
-		
-		size_t ret = iconv( ic, (c8**)&directory, &dir_name_size_bytes, (c8**)&utf8_dir, &target_buffer_len );
-    */
-    
 }

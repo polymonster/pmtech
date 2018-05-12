@@ -1571,14 +1571,6 @@ namespace pen
         if( !sampler_state )
             return;
         
-        if( res.type == RES_TEXTURE_3D )
-        {
-            int a = 0;
-            
-            
-            
-        }
-        
         // filter
         switch( sampler_state->filter )
         {
