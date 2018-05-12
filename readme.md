@@ -3,11 +3,12 @@
 Follow work in progress: 
 [Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
 
-A lightweight code base with powerful features that can be used for games, 3d and real-time applications. It offers cross platform support for osx, win32 and ios using OpenGL 3 and D3D11 renderers... with future plans for Linux, Metal, Vulkan and D3D12.
+A lightweight code base with powerful features that can be used for games, 3d and real-time applications.
 
-Core systems such as rendering, audio and physics are handled asyncronously on consumer threads which process command buffers that are created on the user thread, the command buffer api's provide thread safe access to add commands or read data back from a consumer thread.
+Supported Platforms: windows, macos, linux (wip), ios (wip)
+Supported Renderers: Direct3D 11, OpenGL3.1+, OpenGLES3+
 
-The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project, with minimal use of c++ features just for convenience.
+The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread.
 
 **Features**  
 - Cross Platform - Renderer, Window, Audio, Memory, Timers, File System, Threads.
@@ -16,8 +17,15 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 - Maths Library. 
 - JSON - Fast minimal json parser for data driven config scripts.
 - PMFX - Generic shader language with GPU state specification for setting blend, depth, stencil, raster and other GPU state. PMFX is also a data driven renderer where a JSON config can be used to define render passes, target scene cameras to render targets, select shader techniques and specify GPU state.
-- Component Entity System - Data-Oriented, written in c+, handling mesh rendering, skeletal animation and scene and transformation heirarchies.
-- Scene Editor - Scene editor built on the Component Entity Scene.
+- Data-Oriented Component Entity System - handling mesh rendering, skeletal animation and scene and transformation heirarchies.
+- Editor - Scene, lighting, materials, 3D Volume texture generator and more.
+
+**Tools / Build Scripts**  
+- Models - Convert Collada models, skeletons and animations to binary format.
+- Textures - Compression, conversion, mip-map generation and assembly using NVTT.
+- Premake5 - All projects are configured using premake and are IDE agnostic.
+- PMFX - shader reflection info and agnostic hlsl / glsl shaders
+- Shader Compiler - offline shader compilation.
 
 **Thirdparty Stuff**  
 - [Jsmn](https://github.com/zserge/jsmn)
@@ -25,14 +33,6 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 - [Bullet](https://github.com/bulletphysics/bullet3)
 - [ImGui](https://github.com/ocornut/imgui)
 - [NVTT](https://github.com/castano/nvidia-texture-tools)
-
-**Tools**  
-Tool scripts written in python and some executables are used to build data:
-- Models - Convert Collada models, skeletons and animations to binary format.
-- Textures - Compression, conversion, mip-map generation and assembly using NVTT.
-- Premake5 - All projects are configured using premake and are IDE agnostic.
-- PMFX - shader reflection info and agnostic hlsl / glsl shaders
-- Shader Compiler - offline shader compilation.
 
 **Getting started**  
 requires python3  
