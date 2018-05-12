@@ -38,13 +38,13 @@ requires python3
 osx
 ```bash
 pmtech cd examples
-pmtech/examples python3 ../tools/build.py -help
+pmtech/examples python3 ../tools/build.py -all
 ```
 
 win32
 ```cmd
 pmtech cd examples
-pmtech\examples py -3 ..\tools\build.py -help
+pmtech\examples py -3 ..\tools\build.py -all
 ```
 
 **Examples**   
