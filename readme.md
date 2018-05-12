@@ -12,8 +12,7 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 
 **Features**  
 - Cross Platform - Renderer, Window, Audio, Memory, Timers, File System, Threads.
-- Model, Texture, Shader loading.
-- Resource hot loading.
+- Model, Texture, Shader loading and hot reloading.
 - Maths Library. 
 - JSON - Fast minimal json parser for data driven config scripts.
 - PMFX - Generic shader language with GPU state specification for setting blend, depth, stencil, raster and other GPU state. PMFX is also a data driven renderer where a JSON config can be used to define render passes, target scene cameras to render targets, select shader techniques and specify GPU state.
