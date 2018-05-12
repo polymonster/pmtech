@@ -456,8 +456,8 @@ namespace put
                 cur_level += c_sp * m.z;
             }
 
-            //tcp.num_mips = num_mips;
-            //tcp.data_size = data_size;
+            tcp.num_mips = num_mips;
+            tcp.data_size = data_size;
             
             tcp.data = data;
         }
@@ -516,7 +516,10 @@ namespace put
             volume_material->shader_name = "pmfx_utility";
             volume_material->id_shader = PEN_HASH("pmfx_utility");
             volume_material->id_technique = PEN_HASH("volume_texture");
-            volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+            //volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+            
+            volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
+            
             volume_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
             add_material_resource(volume_material);
 
