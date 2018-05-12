@@ -18,7 +18,7 @@ if _OPTIONS["platform_dir"] then
 end
 
 if _OPTIONS["toolset"] then
-	toolset = _OPTIONS["toolset"]
+	toolset(_OPTIONS["toolset"])
 end
 
 pmtech_dir = "../"

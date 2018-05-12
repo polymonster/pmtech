@@ -44,6 +44,7 @@ platform_name = ""
 ide = ""
 renderer = ""
 data_dir = ""
+toolset = ""
 
 premake_exec = os.path.join(tools_dir, "premake", "premake5")
 if platform.system() == "Linux":
@@ -56,18 +57,17 @@ models_script = os.path.join(tools_dir, "build_models.py")
 
 clean_destinations = False
 
-print(platform.system())
-
 def display_help():
     print("--------pmtech build--------")
     print("run with no arguments for prompted input")
     print("commandline arguments")
     print("\t-all <build all>")
+    print("\t-actions <action, ...>")
     print("\t-platform <osx, win32, ios>")
     print("\t-ide <xcode4, vs2015, v2017>")
     print("\t-clean <clean build, bin and temp dirs>")
     print("\t-renderer <dx11, opengl>")
-    print("\t-actions <action, ...>")
+    print("\t-toolset <gcc, clang, msc>")
     for i in range(0, len(action_strings)):
         print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
 
@@ -77,6 +77,7 @@ def parse_args(args):
     global renderer
     global platform_name
     global clean_destinations
+    global toolset
     for index in range(0, len(sys.argv)):
         if sys.argv[index] == "-help":
             display_help()
@@ -101,6 +102,9 @@ def parse_args(args):
         elif sys.argv[index] == "-clean":
             for s in action_strings:
                 execute_actions.append(s)
+        elif sys.argv[index] == "-toolset":
+            toolset = sys.argv[index+1]
+            index += 1
 
 
 def get_platform_info():
@@ -111,6 +115,7 @@ def get_platform_info():
     global shader_options
     global project_options
     global data_dir
+    global toolset
 
     if os.name == "posix":
         if renderer == "":
@@ -134,8 +139,10 @@ def get_platform_info():
             platform_name = "win32"
 
     extra_target_info = "--platform_dir=" + platform_name
-
     extra_target_info += " --pmtech_dir=" + build_config["pmtech_dir"] + "/"
+
+    if toolset != "":
+        extra_target_info += " --toolset=" + toolset
 
     if platform_name == "ios":
         extra_target_info = "--xcode_target=ios"
