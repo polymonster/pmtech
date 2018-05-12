@@ -35,7 +35,7 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 
 **Getting started**  
 requires python3  
-osx
+osx / linux
 ```bash
 pmtech cd examples
 pmtech/examples python3 ../tools/build.py -all
