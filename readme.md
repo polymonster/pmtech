@@ -15,8 +15,8 @@ The engine and toolkit are designed with simplicitiy in mind, c-style api's and 
 - Model, Texture, Shader loading and hot reloading.
 - Maths Library. 
 - JSON - Fast minimal json parser for data driven config scripts.
-- PMFX - Generic shader language with GPU state specification for setting blend, depth, stencil, raster and other GPU state. PMFX is also a data driven renderer where a JSON config can be used to define render passes, target scene cameras to render targets, select shader techniques and specify GPU state.
-- Data-Oriented Component Entity System - handling mesh rendering, skeletal animation and scene and transformation heirarchies.
+- PMFX - Generic shader language, data driven renderer using JSON config to specify render state, passes and techniques.
+- Data-Oriented Component Entity System - handling mesh rendering, animation and transformation heirarchies.
 - Editor - Scene, lighting, materials, 3D Volume texture generator and more.
 
 **Tools / Build Scripts**  
