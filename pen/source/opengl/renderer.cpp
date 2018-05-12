@@ -13,6 +13,7 @@
 #include "console.h"
 #include "data_struct.h"
 
+#ifndef __linux__
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -1963,3 +1964,4 @@ namespace pen
     }
 }
 
+#endif

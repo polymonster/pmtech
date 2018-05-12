@@ -1,9 +1,11 @@
 #include <pthread.h>
-#include <semaphore.h>
 #include "pen_string.h"
 #include "threads.h"
 #include "memory.h"
+
+#include <semaphore.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 namespace pen
 {
