@@ -349,6 +349,7 @@ namespace pen
     enum resource_type : s32
     {
         RES_TEXTURE = 0,
+        RES_TEXTURE_3D,
         RES_RENDER_TARGET,
         RES_RENDER_TARGET_MSAA
     };
@@ -719,10 +720,6 @@ namespace pen
                 break;
                 
                 case pen::CT_SAMPLER_3D:
-                {
-                    u32 a = 0;
-                }
-                    
                 case pen::CT_SAMPLER_2D:
                 case pen::CT_SAMPLER_2DMS:
                 case pen::CT_SAMPLER_CUBE:
@@ -852,7 +849,7 @@ namespace pen
         }
         else
         {
-            if( g_current_state.vertex_shader != g_bound_state.vertex_shader ||
+            if(g_current_state.vertex_shader != g_bound_state.vertex_shader ||
                g_current_state.pixel_shader != g_bound_state.pixel_shader )
             {
                 g_bound_state.vertex_shader = g_current_state.vertex_shader;
@@ -1050,16 +1047,18 @@ namespace pen
                                                       base_vertex) );
     }
     
-    u32 calc_mip_level_size( u32 w, u32 h, u32 block_size, u32 pixels_per_block )
+    u32 calc_mip_level_size( u32 w, u32 h, u32 d, u32 block_size, u32 pixels_per_block )
     {
         if(block_size != 1)
         {
             u32 block_width = max<u32>(1, ((w + (pixels_per_block-1))/ pixels_per_block));
             u32 block_height = max<u32>(1, ((h + (pixels_per_block-1)) / pixels_per_block));
-            return  block_width * block_height * block_size;
+            u32 block_depth = max<u32>(1, ((d + (pixels_per_block-1)) / pixels_per_block));
+            
+            return  block_width * block_height * block_depth * block_size;
         }
         
-        u32 num_blocks = (w * h) / pixels_per_block;
+        u32 num_blocks = (w * h * d) / pixels_per_block;
         u32 size = num_blocks * block_size;
         return size;
     }
@@ -1147,19 +1146,35 @@ namespace pen
                 break;
                 
         }
+        
+        u32 mip_d = num_slices;
 
         GLuint handle;
         CHECK_CALL( glGenTextures( 1, &handle) );
         CHECK_CALL( glBindTexture( texture_target, handle ) );
         
+        if( base_texture_target == GL_TEXTURE_3D )
+        {
+            //3d textures rgba / bgra are reversed for some reason
+            if( format == GL_RGBA )
+            {
+                format = GL_BGRA;
+            }
+            else if( format == GL_BGRA )
+            {
+                format = GL_RGBA;
+            }
+        }
+        
         for( u32 a = 0; a < num_arrays; ++a )
         {
             mip_w = tcp.width;
             mip_h = tcp.height;
+            mip_d = num_slices;
             
             for( u32 mip = 0; mip < tcp.num_mips; ++mip )
             {
-                u32 mip_size = calc_mip_level_size(mip_w, mip_h, tcp.block_size, tcp.pixels_per_block);
+                u32 mip_size = calc_mip_level_size(mip_w, mip_h, mip_d, tcp.block_size, tcp.pixels_per_block);
                 
                 if( is_msaa )
                 {
@@ -1178,18 +1193,8 @@ namespace pen
                     {
                         if( base_texture_target == GL_TEXTURE_3D )
                         {
-                            //3d textures rgba / bgra are reversed?
-                            if( format == GL_RGBA )
-                            {
-                                format = GL_BGRA;
-                            }
-                            else if( format == GL_BGRA )
-                            {
-                                format = GL_RGBA;
-                            }
-                            
                             CHECK_CALL( glTexImage3D(base_texture_target,
-                                                     mip, sized_format, mip_w, mip_h, num_slices, 0, format,
+                                                     mip, sized_format, mip_w, mip_h, mip_d, 0, format,
                                                      type, mip_data) );
                         }
                         else
@@ -1204,9 +1209,11 @@ namespace pen
                 
                 mip_w /= 2;
                 mip_h /= 2;
+                mip_d /= 2;
                                                
                 mip_w = max<u32>(1, mip_w);
                 mip_h = max<u32>(1, mip_h);
+                mip_d = max<u32>(1, mip_d);
             }
         }
 
@@ -1506,6 +1513,10 @@ namespace pen
 	void direct::renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot )
 	{
         resource_pool[ resource_slot ].type = RES_TEXTURE;
+        
+        if(tcp.collection_type == TEXTURE_COLLECTION_VOLUME)
+            resource_pool[ resource_slot ].type = RES_TEXTURE_3D;
+        
         resource_pool[ resource_slot ].texture = create_texture_internal( tcp );
 	}
 
@@ -1529,7 +1540,7 @@ namespace pen
         
         u32 target = resource_pool[ texture_index ].texture.target;
         
-        if( res.type == RES_TEXTURE )
+        if( res.type == RES_TEXTURE || res.type == RES_TEXTURE_3D)
         {
             CHECK_CALL( glBindTexture( target, res.texture.handle ));
             max_mip = res.texture.max_mip_level;
@@ -1554,11 +1565,19 @@ namespace pen
         
         auto* sampler_state = resource_pool[sampler_index].sampler_state;
         
-        //handle unmipped textures or textures with missisng mips
+        //handle unmipped textures or textures with missing mips
         CHECK_CALL( glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip));
         
         if( !sampler_state )
             return;
+        
+        if( res.type == RES_TEXTURE_3D )
+        {
+            int a = 0;
+            
+            
+            
+        }
         
         // filter
         switch( sampler_state->filter )

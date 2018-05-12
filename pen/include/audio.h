@@ -61,14 +61,14 @@ namespace pen
     
     // Threading
     
-    PEN_TRV    audio_thread_function( void* params );
+    PEN_TRV audio_thread_function( void* params );
     void    audio_consume_command_buffer();
     
     // Creation
-    u32        audio_create_stream( const c8* filename );
-    u32        audio_create_sound( const c8* filename );
-    u32        audio_create_channel_for_sound( const u32 sound_index );
-    u32        audio_create_channel_group( );
+    u32     audio_create_stream( const c8* filename );
+    u32     audio_create_sound( const c8* filename );
+    u32     audio_create_channel_for_sound( const u32 sound_index );
+    u32     audio_create_channel_group( );
     void    audio_release_resource( u32 index );
     
     // Binding
@@ -106,8 +106,8 @@ namespace pen
         void    audio_system_update();
         
         // Creation
-        u32        audio_create_stream( const c8* filename, u32 resource_slot );
-        u32        audio_create_sound( const c8* filename, u32 resource_slot );
+        u32     audio_create_stream( const c8* filename, u32 resource_slot );
+        u32     audio_create_sound( const c8* filename, u32 resource_slot );
         u32     audio_create_channel_for_sound( u32 sound_index, u32 resource_slot );
         u32     audio_create_channel_group( u32 resource_slot);
         u32     audio_release_resource( u32 index );
