@@ -57,19 +57,22 @@ models_script = os.path.join(tools_dir, "build_models.py")
 
 clean_destinations = False
 
+print("--------------------------------------------------------------------------------")
+print("pmtech build -------------------------------------------------------------------")
+print("--------------------------------------------------------------------------------")
+
 def display_help():
-    print("--------pmtech build--------")
     print("run with no arguments for prompted input")
     print("commandline arguments")
     print("\t-all <build all>")
     print("\t-actions <action, ...>")
-    print("\t-platform <osx, win32, ios>")
-    print("\t-ide <xcode4, vs2015, v2017>")
+    for i in range(0, len(action_strings)):
+        print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
+    print("\t-platform <osx, win32, ios, linux>")
+    print("\t-ide <xcode4, vs2015, v2017, gmake>")
     print("\t-clean <clean build, bin and temp dirs>")
     print("\t-renderer <dx11, opengl>")
     print("\t-toolset <gcc, clang, msc>")
-    for i in range(0, len(action_strings)):
-        print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
 
 
 def parse_args(args):
