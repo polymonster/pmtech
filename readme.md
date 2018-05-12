@@ -5,8 +5,8 @@ Follow work in progress:
 
 A lightweight code base with powerful features that can be used for games, 3d and real-time applications.
 
-Supported Platforms: windows, macos, linux (wip), ios (wip)
-Supported Renderers: Direct3D 11, OpenGL3.1+, OpenGLES3+
+Supported Platforms: windows, macos, linux (wip), ios (wip)  
+Supported Renderers: Direct3D 11, OpenGL3.1+, OpenGLES3+  
 
 The engine and toolkit are designed with simplicitiy in mind, c-style api's and data-oriented design are the philosophy behind this project. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread.
 
