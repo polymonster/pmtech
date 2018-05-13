@@ -12,7 +12,7 @@ matrix:
         - sudo apt-get install python3
         - sudo apt-get install libglew-dev
         - sudo apt-get install gcc-7 g++-7
-        - update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 60
+        - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 60
     - compiler: clang
       os: osx
       install: brew upgrade python
