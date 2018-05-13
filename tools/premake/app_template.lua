@@ -58,6 +58,11 @@ end
 bullet_lib = "bullet_monolithic"
 bullet_lib_debug = "bullet_monolithic_d"
 bullet_lib_dir = "osx"
+
+if platform_dir == "linux" then
+	bullet_lib_dir = "linux"
+end
+
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
 	bullet_lib_dir = _ACTION
 	bullet_lib = (bullet_lib .. "_x64")
@@ -120,14 +125,14 @@ project ( project_name )
 		flags { "WinMain" }
 		symbols "On"
 		targetname (project_name .. "_d")
-		links { "pen", "put", bullet_lib_debug }
+		links { "put", "pen", bullet_lib_debug }
 		architecture "x64"
   
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetname (project_name)
-		links { "pen", "put", bullet_lib }
+		links { "put", "pen", bullet_lib }
 		architecture "x64"
 		
 end

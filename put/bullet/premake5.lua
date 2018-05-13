@@ -1,4 +1,4 @@
-platform_dir = "osx"
+platform_dir = "linux"
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
 	platform_dir = _ACTION
 end
@@ -52,7 +52,7 @@ project "bullet_monolithic"
 		linkoptions { link_cmd }
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
-		targetname "bullet_monolithic_d_x64"
+		targetname "bullet_monolithic_d"
 		architecture "x64"
  
 	configuration "Release"
@@ -60,5 +60,5 @@ project "bullet_monolithic"
 		flags { "WinMain", "OptimizeSpeed" }
 		linkoptions { link_cmd }
 		targetdir ("lib/" .. platform_dir)
-		targetname "bullet_monolithic_x64"
+		targetname "bullet_monolithic"
 		architecture "x64"

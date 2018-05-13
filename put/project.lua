@@ -1,4 +1,7 @@
 bullet_lib_dir = "osx"
+if platform_dir == "linux" then
+	bullet_lib_dir = "linux"
+end
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
 	bullet_lib_dir = _ACTION
 end
@@ -11,7 +14,6 @@ project "put"
 	libdirs
 	{ 
 		"../pen/lib/" .. platform_dir,
-		
 		"../put/bullet/lib/" .. bullet_lib_dir,
 	}
 	
@@ -49,6 +51,7 @@ project "put"
 		targetdir ("lib/" .. platform_dir)
 		targetname "put_d"
 		architecture "x64"
+		links { "pen_d" }
  
 	configuration "Release"
 		defines { "NDEBUG" }
@@ -57,3 +60,4 @@ project "put"
 		targetdir ("lib/" .. platform_dir)
 		targetname "put"
 		architecture "x64"
+		links { "pen" }
