@@ -3,7 +3,7 @@ language: cpp
 
 matrix:
   include:
-    - compiler: gcc
+    - compiler: clang
       os: linux
       script: ./travis_linux.sh
       before_install:
