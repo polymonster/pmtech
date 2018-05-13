@@ -16,7 +16,8 @@ links
 	"GLEW",
 	"GLU",
 	"GL",
-	"X11"
+	"X11",
+	"fmod"
 }
 end
 
