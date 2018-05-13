@@ -9,6 +9,7 @@ matrix:
       before_install:
         - sudo apt-get update
         - sudo apt-get install python3
+        - sudo apt-get install libglew-dev
     - compiler: clang
       os: osx
       install: brew upgrade python
