@@ -8,7 +8,7 @@
 #ifdef __linux__ 
 #include <string.h> //memcpy
 #define THROW_BAD_ALLOC
-#define THROW_NO_EXCEPT
+#define THROW_NO_EXCEPT noexcept(true)
 #define PEN_MEM_ALIGN_ALLOC( mem, align, size ) posix_memalign( &mem, align, size )
 #define PEN_MEM_ALIGN_FREE free
 #elif _WIN32

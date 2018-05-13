@@ -469,7 +469,7 @@ namespace pen
                 CHECK_CALL( glTransformFeedbackVaryings(
                                             program_id,
                                             params->num_stream_out_names,
-                                            params->stream_out_names,
+                                            (const c8**)params->stream_out_names,
                                             GL_INTERLEAVED_ATTRIBS ) );
             }
         }
@@ -635,7 +635,7 @@ namespace pen
         
         res.handle = CHECK_CALL( glCreateShader(internal_type) );
         
-        CHECK_CALL( glShaderSource(res.handle, 1, (c8**)&params.byte_code, (s32*)&params.byte_code_size) );
+        CHECK_CALL( glShaderSource(res.handle, 1, (const c8**)&params.byte_code, (s32*)&params.byte_code_size) );
         CHECK_CALL( glCompileShader(res.handle) );
         
         // Check compilation status
