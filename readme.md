@@ -22,7 +22,7 @@ The engine (pen) and toolkit (put) are designed with simplicitiy in mind, c-styl
 - Editor - Scene, lighting, materials, 3D Volume texture generator and more.
 
 **Tools / Build Scripts**  
-- Models - Convert Collada models, skeletons and animations to binary format.
+- Models - Convert models, skeletons, scenes and animations to binary format. (Collada, Obj)
 - Textures - Compression, conversion, mip-map generation and assembly using NVTT.
 - Premake5 - All projects are configured using premake and are IDE agnostic.
 - PMFX - shader reflection info and agnostic hlsl / glsl shaders
