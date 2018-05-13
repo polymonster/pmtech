@@ -15,7 +15,8 @@ links
 	"pthread",
 	"GLEW",
 	"GLU",
-	"GL"
+	"GL",
+	"X11"
 }
 end
 
