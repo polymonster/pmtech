@@ -3,13 +3,15 @@ language: cpp
 
 matrix:
   include:
-    - compiler: clang
+    - compiler: gcc
       os: linux
       script: ./travis_linux.sh
       before_install:
+        - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         - sudo apt-get update
         - sudo apt-get install python3
         - sudo apt-get install libglew-dev
+        - sudo apt-get install gcc-6 g++-6
     - compiler: clang
       os: osx
       install: brew upgrade python
