@@ -42,6 +42,12 @@ pmtech cd examples
 pmtech/examples python3 ../tools/build.py -all
 ```
 
+ios
+```bash
+pmtech cd examples
+pmtech/examples python3 ../tools/build.py -all -platform ios
+```
+
 win32
 ```cmd
 pmtech cd examples
