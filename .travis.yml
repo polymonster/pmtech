@@ -6,6 +6,9 @@ matrix:
     - compiler: gcc
       os: linux
       script: ./travis_linux.sh
+      before_install:
+        - sudo apt-get update
+        - sudo apt-get install python3
     - compiler: clang
       os: osx
       install: brew upgrade python
