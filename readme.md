@@ -8,9 +8,9 @@ A lightweight code base with powerful features that can be used for games, 3d an
 The engine (pen) and toolkit (put) are designed with simplicitiy in mind, c-style api's, minimal amounts of code and data-oriented design are the philosophy behind this project. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread.  
 
 **Support**  
-Platforms: Windows, MacOS, Linux (wip), iOS (wip)  
-Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+  
-Compilers: vs2015, vs2017, Clang 6, Apple LLVM 9, Gcc 7
+- Platforms: Windows, MacOS, Linux (wip), iOS (wip).   
+- Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+.   
+- Compilers: vs2015, vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
 **Features**  
 - Cross Platform - Renderer, Window, Audio, Memory, Timers, File System, Threads.
