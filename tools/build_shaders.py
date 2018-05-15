@@ -7,15 +7,17 @@ import json
 import dependencies
 import helpers
 import time
+import build
+
 stats_start = time.time()
 
 root_dir = os.getcwd()
 
 shader_platform = "hlsl"
-os_platform = "win32"
-if os.name == "posix":
+os_platform = build.get_platform_name()
+
+if os_platform == "osx" or os_platform == "linux":
     shader_platform = "glsl"
-    os_platform = "osx"
 
 for i in range(1, len(sys.argv)):
     if "-root_dir" in sys.argv[i]:
@@ -27,7 +29,7 @@ root_dir = os.getcwd()
 
 config = open("build_config.json")
 build_config = json.loads(config.read())
-pmtech_dir = helpers.correct_path(build_config["pmtech_dir"])
+pmtech_dir = build.correct_path(build_config["pmtech_dir"])
 
 tools_dir = os.path.join(pmtech_dir, "tools")
 compiler_dir = os.path.join(pmtech_dir, "tools", "bin", "fxc")

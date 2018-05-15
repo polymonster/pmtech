@@ -4,11 +4,26 @@ import os.path
 import sys
 import shutil
 import json
-import helpers
 import dependencies
 import time
 import platform
 stats_start = time.time()
+
+
+def get_platform_name():
+    plat = "win32"
+    if os.name == "posix":
+        plat = "osx"
+        if platform.system() == "Linux":
+            plat = "linux"
+    return plat
+
+
+def correct_path(path):
+    if os.name == "nt":
+        return path.replace("/", "\\")
+    return path
+
 
 if len(sys.argv) > 1:
     if "-root_dir" in sys.argv[1]:
@@ -20,7 +35,7 @@ if os.path.exists("build_config.json"):
 else:
     build_config = dict()
 
-tools_dir = os.path.join(helpers.correct_path(build_config["pmtech_dir"]), "tools")
+tools_dir = os.path.join(correct_path(build_config["pmtech_dir"]), "tools")
 
 assets_dir = "assets"
 
@@ -60,6 +75,7 @@ clean_destinations = False
 print("--------------------------------------------------------------------------------")
 print("pmtech build -------------------------------------------------------------------")
 print("--------------------------------------------------------------------------------")
+
 
 def display_help():
     print("run with no arguments for prompted input")

@@ -65,9 +65,12 @@ namespace
 		}
 	}
 
-#if GL_DEBUG_LEVEL > 0
+#if GL_DEBUG_LEVEL > 2
 #define CHECK_GL_ERROR { GLenum err = glGetError( ); if( err != GL_NO_ERROR ) gl_error_break( err ); }
-#define CHECK_CALL( C ) C; CHECK_GL_ERROR
+#define CHECK_CALL( C ) C; CHECK_GL_ERROR; printf(#C "\n");
+#elif GL_DEBUG_LEVEL > 0
+#define CHECK_GL_ERROR { GLenum err = glGetError( ); if( err != GL_NO_ERROR ) gl_error_break( err ); }
+#define CHECK_CALL( C ) C; CHECK_GL_ERROR;
 #else
 #define CHECK_GL_ERROR
 #endif
@@ -596,6 +599,7 @@ namespace pen
 	{
         pen_gl_swap_buffers();
         
+#ifndef __linux__
         if( k_frame > 0 )
             renderer_pop_perf_marker(); //gpu total
         
@@ -620,9 +624,10 @@ namespace pen
         }
         
         k_frame++;
-        
+
         //gpu total
         renderer_push_perf_marker(nullptr);
+#endif
 	}
     
 	void direct::renderer_load_shader(const pen::shader_load_params &params, u32 resource_slot)
@@ -632,9 +637,9 @@ namespace pen
         u32 internal_type = params.type;
         if(params.type == PEN_SHADER_TYPE_SO)
             internal_type = PEN_SHADER_TYPE_VS;
-        
+
         res.handle = CHECK_CALL( glCreateShader(internal_type) );
-        
+
         CHECK_CALL( glShaderSource(res.handle, 1, (const c8**)&params.byte_code, (s32*)&params.byte_code_size) );
         CHECK_CALL( glCompileShader(res.handle) );
         

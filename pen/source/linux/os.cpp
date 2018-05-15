@@ -1,8 +1,11 @@
+#include "GL/glew.h"
+
 #include "os.h"
 #include "pen.h"
 #include "console.h"
 #include "input.h"
 #include "threads.h"
+#include "timer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,13 +16,22 @@
 
 using namespace pen;
 
+namespace pen
+{
+    extern void renderer_init(void* user_data);
+}
+
 //pen required externs
 extern window_creation_params pen_window;
 pen::user_info pen_user_info;
 
-//glx
+//glx / gl stuff
 #define GLX_CONTEXT_MAJOR_VERSION_ARB       0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB       0x2092
+#define GLX_CONTEXT_FLAGS_ARB               0x2094
+#define GLX_CONTEXT_PROFILE_MASK_ARB        0x9126
+#define GLX_CONTEXT_CORE_PROFILE_BIT_ARB    0x00000001
+
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 GLXContext  _gl_context = 0;
 Display     *_display;
@@ -75,14 +87,13 @@ int main (int argc, char *argv[])
     s32 glx_major, glx_minor = 0;
 	glXQueryVersion(_display, &glx_major, &glx_minor);
 
-    PEN_PRINTF("glx version %i.%i", glx_major, glx_minor);
-
     // glx setup
     const char *glxExts = glXQueryExtensionsString( _display, DefaultScreen( _display ) );
 
     ctx_error_occured = false;
     int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctx_error_handler);
 
+    // find fb with matching samples
     s32 fbcount;
     GLXFBConfig* fbc = glXChooseFBConfig(_display, DefaultScreen(_display), visual_attribs, &fbcount);
     for (int i = 0; i < fbcount; ++i)
@@ -104,7 +115,6 @@ int main (int argc, char *argv[])
     swa.border_pixel      = 0;
     swa.event_mask        = StructureNotifyMask;
 
-    printf( "Creating window\n" );
     _window = XCreateWindow( _display, RootWindow( _display, vi->screen ), 
                                 0, 0, pen_window.width, pen_window.height, 0, vi->depth, InputOutput, 
                                 vi->visual, 
@@ -122,52 +132,43 @@ int main (int argc, char *argv[])
     int context_attribs[] =
     {
         GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-        None
+        GLX_CONTEXT_MINOR_VERSION_ARB, 1,
+        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB
     };
 
     _gl_context = glXCreateContextAttribsARB( _display, best_fbc, 0, True, context_attribs );
 
     XSync( _display, False );
-    if ( !ctx_error_occured && _gl_context )
+
+    if(ctx_error_occured || !_gl_context)
     {
-        PEN_PRINTF("openGL 3.0 context created");
+        PEN_PRINTF("Error: openGL Context Failed to create");
     }
 
-    // Verifying that context is a direct context
-    if ( ! glXIsDirect ( _display, _gl_context ) )
+    // Make current and init glew
+    pen_make_gl_context_current();
+
+    glewExperimental = true;
+    GLenum err = glewInit();
+    if(err != GLEW_OK)
     {
-        PEN_PRINTF( "Indirect GLX rendering context obtained\n" );
-    }
-    else
-    {
-        PEN_PRINTF( "Direct GLX rendering context obtained\n" );
+        PEN_PRINTF("Error: glewInit failed: %s\n", glewGetErrorString(err));
     }
 
-    /*
     //initilaise any generic systems
 	pen::timer_system_intialise( );
-	HWND hwnd = (HWND)pen::window_get_primary_display_handle();
 
-	pen::default_thread_info thread_info;
-	thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
-	thread_info.render_thread_params = &hwnd;
+	//pen::default_thread_info thread_info;
+	//thread_info.flags = 0;
 
-	pen::thread_create_default_jobs( thread_info );
-    */
+	//pen::thread_create_default_jobs( thread_info );
+    
+    renderer_init(nullptr);
 
     while ( 1 ) 
 	{
         XNextEvent(_display, (XEvent *)&event);
-
-        pen_make_gl_context_current();
-
-        glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        pen_gl_swap_buffers();
-
-        pen::thread_sleep_ms(1);
+        pen::thread_sleep_ms(16);
     }
 
     return(0);
@@ -182,7 +183,7 @@ namespace pen
 
     void* window_get_primary_display_handle()
 	{
-		return nullptr;
+		return (void*)(intptr_t)_window;
 	}
 
     void window_get_size( s32& width, s32& height )

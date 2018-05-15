@@ -5,6 +5,8 @@ import helpers
 import dependencies
 import time
 import json
+import build
+
 stats_start = time.time()
 
 
@@ -102,17 +104,15 @@ print("-------------------------------------------------------------------------
 print("pmtech texture compression and mip map generation ------------------------------")
 print("--------------------------------------------------------------------------------")
 
-platform_name = "win32"
-if os.name == "posix":
-    platform_name = "osx"
+platform_name = build.get_platform_name()
 
 config = open("build_config.json")
 build_config = json.loads(config.read())
-pmtech_dir = helpers.correct_path(build_config["pmtech_dir"])
+pmtech_dir = build.correct_path(build_config["pmtech_dir"])
 
 nvcompress = os.path.join(pmtech_dir, "tools", "bin", "nvtt", platform_name, "nvcompress")
 nvassemble = os.path.join(pmtech_dir, "tools", "bin", "nvtt", platform_name, "nvassemble")
-texture_dir = helpers.correct_path(build_config["textures_dir"])
+texture_dir = build.correct_path(build_config["textures_dir"])
 build_dir = os.path.join(os.getcwd(), "bin", platform_name, "data", "textures")
 current_directory = os.path.join(os.getcwd(), "")
 platform_data_dir = os.path.join("bin", platform_name, "")

@@ -1,5 +1,6 @@
 import struct
 import os
+import build
 
 version_number = 1
 anim_version_number = 1
@@ -7,17 +8,8 @@ current_filename = ""
 author = ""
 log_level = "verbose"
 
-platform = "win32"
-if os.name == "posix":
-    platform = "osx"
-
+platform = build.get_platform_name()
 build_dir = os.path.join(os.getcwd(), "bin", platform, "data", "models")
-
-
-def correct_path(path):
-    if os.name == "nt":
-        return path.replace("/", "\\")
-    return path
 
 
 class pmm_file:

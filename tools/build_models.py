@@ -9,9 +9,10 @@ import json
 import dependencies
 import time
 import parse_obj
+import build
 stats_start = time.time()
 
-#win32 / collada
+
 print("--------------------------------------------------------------------------------")
 print("pmtech model and animation conversion ------------------------------------------")
 print("--------------------------------------------------------------------------------")
@@ -21,7 +22,7 @@ root_dir = os.getcwd()
 config = open("build_config.json")
 build_config = json.loads(config.read())
 
-model_dir = helpers.correct_path(build_config["models_dir"])
+model_dir = build.correct_path(build_config["models_dir"])
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 transform_types = ["translate", "rotate", "matrix"]

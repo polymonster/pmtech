@@ -1,6 +1,7 @@
 #include "pen.h"
 #include "threads.h"
 #include "file_system.h"
+#include "console.h"
 
 pen::window_creation_params pen_window
 {
@@ -12,13 +13,17 @@ pen::window_creation_params pen_window
 
 PEN_TRV pen::user_entry( void* params )
 {
+    PEN_PRINTF("User Thread Entry");
+
     //unpack the params passed to the thread and signal to the engine it ok to proceed
     pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
     for( ;; )
-    {                
+    {
+        PEN_PRINTF("User Thread Update");
+
         pen::thread_sleep_us(16000);
         
         //msg from the engine we want to terminate

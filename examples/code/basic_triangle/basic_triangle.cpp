@@ -6,6 +6,8 @@
 #include "file_system.h"
 #include "pen_string.h"
 #include "console.h"
+#include "console.h"
+
 
 pen::window_creation_params pen_window
 {
@@ -152,9 +154,9 @@ PEN_TRV pen::user_entry( void* params )
 
         //present 
         pen::renderer_present();
-        
+
         pen::renderer_consume_cmd_buffer();
-        
+
         //msg from the engine we want to terminate
         if( pen::thread_semaphore_try_wait( p_thread_info->p_sem_exit ) )
         {

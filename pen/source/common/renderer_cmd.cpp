@@ -495,10 +495,10 @@ namespace pen
     
     void renderer_wait_for_jobs();
     
-    static pen::job*        p_job_thread_info;
-    static pen::semaphore*         p_consume_semaphore;
-    static pen::semaphore*           p_continue_semaphore;
-    static pen::slot_resources     k_renderer_slot_resources;
+    static pen::job*            p_job_thread_info;
+    static pen::semaphore*      p_consume_semaphore = nullptr;
+    static pen::semaphore*      p_continue_semaphore = nullptr;
+    static pen::slot_resources  k_renderer_slot_resources;
     
     void renderer_wait_init()
     {
@@ -518,7 +518,15 @@ namespace pen
     {
         //this is a dedicated thread which stays for the duration of the program
         thread_semaphore_signal(p_continue_semaphore, 1);
-        
+
+        //todo ove osx and windows onto the window thread
+#ifdef __linux__
+        pen::default_thread_info thread_info;
+	    thread_info.flags = 0;
+
+	    pen::thread_create_default_jobs( thread_info );
+#endif
+
         for(;;)
         {
             if (thread_semaphore_try_wait(p_consume_semaphore))
@@ -533,7 +541,7 @@ namespace pen
                 
                 //some api's need to set the current context on the caller thread.
                 direct::renderer_make_context_current();
-                
+
                 while (get_pos != end_pos)
                 {
                     exec_cmd(cmd_buffer[get_pos]);
@@ -548,11 +556,13 @@ namespace pen
                 thread_sleep_ms(1);
             }
             
+#ifndef __linux__
             if (thread_semaphore_try_wait(p_job_thread_info->p_sem_exit))
             {
                 //exit
                 break;
             }
+#endif
         }
         
         thread_semaphore_signal(p_continue_semaphore, 1);
@@ -624,16 +634,15 @@ namespace pen
         
         g_resolve_resources.constant_buffer = renderer_create_buffer(bcp);
     }
-    
-    PEN_TRV renderer_thread_function(void* params)
+
+    void renderer_init( void* user_data )
     {
-        job_thread_params* job_params = (job_thread_params*)params;
-        
-        p_job_thread_info = job_params->job_info;
-        
-        p_consume_semaphore = p_job_thread_info->p_sem_consume;
-        p_continue_semaphore = p_job_thread_info->p_sem_continue;
-        
+        if(!p_consume_semaphore)
+            p_consume_semaphore = thread_semaphore_create(0, 1);
+
+        if(!p_continue_semaphore)
+            p_continue_semaphore = thread_semaphore_create(0, 1);
+
         //clear command buffer
         memory_set(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
         
@@ -643,11 +652,23 @@ namespace pen
         u32 bb_res = slot_resources_get_next( &k_renderer_slot_resources );
         u32 bb_depth_res = slot_resources_get_next( &k_renderer_slot_resources );
         
-        direct::renderer_initialise(job_params->user_data, bb_res, bb_depth_res );
+        direct::renderer_initialise(user_data, bb_res, bb_depth_res);
         
         init_resolve_resources();
         
         renderer_wait_for_jobs();
+    }
+    
+    PEN_TRV renderer_thread_function(void* params)
+    {
+        job_thread_params* job_params = (job_thread_params*)params;
+        
+        p_job_thread_info = job_params->job_info;
+
+        p_consume_semaphore = p_job_thread_info->p_sem_consume;
+        p_continue_semaphore = p_job_thread_info->p_sem_continue;
+        
+        renderer_init(job_params->user_data);
         
         return PEN_THREAD_OK;
     }

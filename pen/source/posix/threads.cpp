@@ -2,6 +2,8 @@
 #include "pen_string.h"
 #include "threads.h"
 #include "memory.h"
+#include "memory.h"
+#include "console.h"
 
 #include <semaphore.h>
 #include <unistd.h>
@@ -24,7 +26,7 @@ namespace pen
         sem_t* handle;
 	} semaphore;
     
-    u32 semaphone_index = 0;
+    	u32 semaphone_index = 0;
 
 	pen::thread* thread_create( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* thread_params, thread_start_flags flags )
 	{
@@ -139,7 +141,7 @@ namespace pen
 
 	void thread_semaphore_signal( semaphore* p_semaphore, u32 count )
 	{
-        sem_post(p_semaphore->handle);
+        	sem_post(p_semaphore->handle);
 	}
 
 	void thread_sleep_ms( u32 milliseconds )

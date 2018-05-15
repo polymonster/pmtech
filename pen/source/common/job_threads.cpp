@@ -8,9 +8,9 @@ namespace pen
     
     static job   s_jt[ MAX_THREADS ];
     static u32          s_num_active_threads = 0;
-    
+       
     pen::job* thread_create_job( PEN_THREAD_ROUTINE( thread_func ), u32 stack_size, void* user_data, thread_start_flags flags, completion_callback cb)
-    {
+    {           
         if( s_num_active_threads >= MAX_THREADS )
         {
             return nullptr;

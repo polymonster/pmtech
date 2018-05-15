@@ -4,6 +4,7 @@ import shutil
 import json
 import helpers
 import time
+import build
 stats_start = time.time()
 
 print("--------------------------------------------------------------------------------")
@@ -13,11 +14,10 @@ print("-------------------------------------------------------------------------
 config = open("build_config.json")
 build_config = json.loads(config.read())
 
-pmtech_dir = helpers.correct_path(build_config["pmtech_dir"])
+pmtech_dir = build.correct_path(build_config["pmtech_dir"])
 
-platform_name = "win32"
-if os.name == "posix":
-    platform_name = "osx"
+platform_name = build.get_platform_name()
+print(platform_name)
 
 audio_dir = os.path.join(os.getcwd(), "assets", "audio")
 build_dir = os.path.join(os.getcwd(), "bin", platform_name, "data", "audio")
@@ -30,6 +30,8 @@ if not os.path.exists(build_dir):
 dll = "fmod64.dll"
 if platform_name == "osx":
     dll = "libfmod.dylib"
+elif platform_name == "linux":
+    dll = "libfmod.so"
 
 # copy fmod dll / dylib
 print("copying dynamic library to binary dir")
