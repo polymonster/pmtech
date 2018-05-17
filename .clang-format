@@ -21,5 +21,6 @@ Standard: Cpp11
 TabWidth: '4'
 IndentWidth: '4'
 UseTab: Never
+NamespaceIndentation: All
 
 ...

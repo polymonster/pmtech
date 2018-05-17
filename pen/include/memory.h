@@ -25,71 +25,71 @@
 
 namespace pen
 {
-// Minimalist C-Style memory API wrapping up malloc and free
-// It provides some very minor portability solutions between win32 and osx and linux
-// But mostly it is here to intercept all allocations,
-// So at a later date custom allocation or mem tracking schemes could be used.
+    // Minimalist C-Style memory API wrapping up malloc and free
+    // It provides some very minor portability solutions between win32 and osx and linux
+    // But mostly it is here to intercept all allocations,
+    // So at a later date custom allocation or mem tracking schemes could be used.
 
-// Functions
+    // Functions
 
-void *memory_alloc( u32 size_bytes );
-void *memory_alloc_align( u32 size_bytes, u32 alignment );
-void *memory_realloc( void *mem, u32 size_bytes );
-void memory_free( void *mem );
-void memory_free_align( void *mem );
-void memory_cpy( void *dest, const void *src, u32 size_bytes );
-void memory_set( void *dest, u8 val, u32 size_bytes );
-void memory_zero( void *dest, u32 size_bytes );
+    void *memory_alloc( u32 size_bytes );
+    void *memory_alloc_align( u32 size_bytes, u32 alignment );
+    void *memory_realloc( void *mem, u32 size_bytes );
+    void memory_free( void *mem );
+    void memory_free_align( void *mem );
+    void memory_cpy( void *dest, const void *src, u32 size_bytes );
+    void memory_set( void *dest, u8 val, u32 size_bytes );
+    void memory_zero( void *dest, u32 size_bytes );
 
-// ImplementationCHECK_CALL
+    // ImplementationCHECK_CALL
 
-inline void *memory_alloc( u32 size_bytes )
-{
-    return malloc( size_bytes );
-}
+    inline void *memory_alloc( u32 size_bytes )
+    {
+        return malloc( size_bytes );
+    }
 
-inline void *memory_calloc( u32 count, u32 size_bytes )
-{
-    return calloc( count, size_bytes );
-}
+    inline void *memory_calloc( u32 count, u32 size_bytes )
+    {
+        return calloc( count, size_bytes );
+    }
 
-inline void *memory_realloc( void *mem, u32 size_bytes )
-{
-    return realloc( mem, size_bytes );
-}
+    inline void *memory_realloc( void *mem, u32 size_bytes )
+    {
+        return realloc( mem, size_bytes );
+    }
 
-inline void memory_free( void *mem )
-{
-    free( mem );
-}
+    inline void memory_free( void *mem )
+    {
+        free( mem );
+    }
 
-inline void memory_zero( void *dest, u32 size_bytes )
-{
-    memory_set( dest, 0x00, size_bytes );
-}
+    inline void memory_zero( void *dest, u32 size_bytes )
+    {
+        memory_set( dest, 0x00, size_bytes );
+    }
 
-inline void memory_set( void *dest, u8 val, u32 size_bytes )
-{
-    memset( dest, val, size_bytes );
-}
+    inline void memory_set( void *dest, u8 val, u32 size_bytes )
+    {
+        memset( dest, val, size_bytes );
+    }
 
-inline void memory_cpy( void *dest, const void *src, u32 size_bytes )
-{
-    memcpy( dest, src, size_bytes );
-}
+    inline void memory_cpy( void *dest, const void *src, u32 size_bytes )
+    {
+        memcpy( dest, src, size_bytes );
+    }
 
-inline void *memory_alloc_align( u32 size_bytes, u32 alignment )
-{
-    void *mem;
-    PEN_MEM_ALIGN_ALLOC( mem, size_bytes, alignment );
+    inline void *memory_alloc_align( u32 size_bytes, u32 alignment )
+    {
+        void *mem;
+        PEN_MEM_ALIGN_ALLOC( mem, size_bytes, alignment );
 
-    return mem;
-}
+        return mem;
+    }
 
-inline void memory_free_align( void *mem )
-{
-    PEN_MEM_ALIGN_FREE( mem );
-}
+    inline void memory_free_align( void *mem )
+    {
+        PEN_MEM_ALIGN_FREE( mem );
+    }
 } // namespace pen
 
 // And override global new and delete
