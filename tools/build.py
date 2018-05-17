@@ -7,7 +7,6 @@ import json
 import dependencies
 import time
 import platform
-stats_start = time.time()
 
 
 def get_platform_name():
@@ -23,58 +22,6 @@ def correct_path(path):
     if os.name == "nt":
         return path.replace("/", "\\")
     return path
-
-
-if len(sys.argv) > 1:
-    if "-root_dir" in sys.argv[1]:
-        os.chdir(sys.argv[2])
-
-if os.path.exists("build_config.json"):
-    config = open("build_config.json")
-    build_config = json.loads(config.read())
-else:
-    build_config = dict()
-
-tools_dir = os.path.join(correct_path(build_config["pmtech_dir"]), "tools")
-
-assets_dir = "assets"
-
-action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs"]
-action_descriptions = ["generate projects and workspaces",
-                       "generate shaders and compile binaries",
-                       "make binary mesh and animation files",
-                       "compress textures and generate mips",
-                       "compress and convert audio to platorm format",
-                       "copy fonts to data directory",
-                       "copy json configs to data directory"]
-execute_actions = []
-extra_build_steps = []
-build_steps = []
-
-python_exec = ""
-shader_options = ""
-project_options = ""
-
-platform_name = ""
-ide = ""
-renderer = ""
-data_dir = ""
-toolset = ""
-
-premake_exec = os.path.join(tools_dir, "premake", "premake5")
-if platform.system() == "Linux":
-    premake_exec = os.path.join(tools_dir, "premake", "premake5_linux")
-
-shader_script = os.path.join(tools_dir, "build_shaders.py")
-textures_script = os.path.join(tools_dir, "build_textures.py")
-audio_script = os.path.join(tools_dir, "build_audio.py")
-models_script = os.path.join(tools_dir, "build_models.py")
-
-clean_destinations = False
-
-print("--------------------------------------------------------------------------------")
-print("pmtech build -------------------------------------------------------------------")
-print("--------------------------------------------------------------------------------")
 
 
 def display_help():
@@ -116,6 +63,7 @@ def parse_args(args):
                 else:
                     break
         elif sys.argv[index] == "-all":
+            stats_start = time.time()
             for s in action_strings:
                 execute_actions.append(s)
         elif sys.argv[index] == "-clean":
@@ -135,7 +83,9 @@ def get_platform_info():
     global project_options
     global data_dir
     global toolset
-
+    global extra_build_steps
+    global tools_dir
+    global extra_target_info
     if os.name == "posix":
         if renderer == "":
             renderer = "opengl"
@@ -161,6 +111,7 @@ def get_platform_info():
     extra_target_info += " --pmtech_dir=" + build_config["pmtech_dir"] + "/"
 
     if toolset != "":
+        stats_start = time.time()
         extra_target_info += " --toolset=" + toolset
 
     if platform_name == "ios":
@@ -178,73 +129,6 @@ def get_platform_info():
     data_dir = os.path.join("bin", platform_name, "data")
 
 
-if len(sys.argv) <= 1:
-    print("please enter what you want to build")
-    print("1. code projects")
-    print("2. shaders")
-    print("3. models")
-    print("4. textures")
-    print("5. audio")
-    print("6. fonts")
-    print("7. configs")
-    print("8. all")
-    print("0. show full command line options")
-    input_val = int(input())
-
-    if input_val == 0:
-        display_help()
-
-    add_all = False
-
-    all_value = 8
-    if input_val == all_value:
-        add_all = True
-
-    for index in range(0,all_value-1):
-        if input_val-1 == index or add_all:
-            execute_actions.append(action_strings[index])
-else:
-    parse_args(sys.argv)
-
-get_platform_info()
-
-copy_steps = []
-
-for action in execute_actions:
-    if action == "clean":
-        built_dirs = [os.path.join("..", "pen", "build", platform_name),
-                      os.path.join("..", "put", "build", platform_name),
-                      os.path.join("build", platform_name),
-                      "bin",
-                      "temp"]
-        for bd in built_dirs:
-            if os.path.exists(bd):
-                shutil.rmtree(bd)
-    elif action == "code":
-        build_steps.append(premake_exec + " " + project_options)
-    elif action == "shaders":
-        build_steps.append(python_exec + " " + shader_script + " " + shader_options)
-    elif action == "models":
-        build_steps.append(python_exec + " " + models_script)
-    elif action == "textures":
-        build_steps.append(python_exec + " " + textures_script)
-    elif action == "audio":
-        build_steps.append(python_exec + " " + audio_script)
-    elif action == "fonts" or action == "configs":
-        copy_steps.append(action)
-
-for step in build_steps:
-    subprocess.check_call(step, shell=True)
-
-for step in extra_build_steps:
-    subprocess.check_call(step, shell=True)
-
-if len(copy_steps) > 0:
-    print("--------------------------------------------------------------------------------")
-    print("Copy configs and fonts ---------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
-
-
 def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, files):
     platform_bin = os.path.join("bin", platform_name, "")
     for file in files:
@@ -258,52 +142,171 @@ def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, f
         shutil.copy(src_file, dest_file)
 
 
-for step in copy_steps:
-    source_dirs = [assets_dir, os.path.join(build_config["pmtech_dir"], "assets")]
-    dependency_info = dict()
+if __name__ == "__main__":
+    print("--------------------------------------------------------------------------------")
+    print("pmtech build -------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
 
-    # clear dependencies and create directories
-    for source in source_dirs:
-        src_dir = os.path.join(source, step)
-        dest_dir = os.path.join(data_dir, step)
-        if not os.path.exists(src_dir):
-            continue
-        base_root = ""
-        for root, dirs, files in os.walk(src_dir):
-            if base_root == "":
-                base_root = root
-            dest_sub = dest_dir + root.replace(base_root, "")
-            dependency_info[dest_sub] = dict()
-            dependency_info[dest_sub]["dir"] = dest_sub
-            dependency_info[dest_sub]["files"] = []
-            if not os.path.exists(dest_sub):
-                os.makedirs(dest_sub)
+    stats_start = time.time()
 
-    # iterate over directories and generate dependencies
-    for source in source_dirs:
-        src_dir = os.path.join(source, step)
-        dest_dir = os.path.join(data_dir, step)
-        if not os.path.exists(src_dir):
-            continue
-        base_root = ""
-        for root, dirs, files in os.walk(src_dir):
-            if base_root == "":
-                base_root = root
-            dest_sub = dest_dir + root.replace(base_root, "")
-            copy_dir_and_generate_dependencies(dependency_info, dest_sub, root, files)
+    if len(sys.argv) > 1:
+        if "-root_dir" in sys.argv[1]:
+            os.chdir(sys.argv[2])
 
-    # write out dependencies
-    for dest_depends in dependency_info:
-        dir = dependency_info[dest_depends]["dir"]
-        directory_dependencies = os.path.join(dir, "dependencies.json")
-        output_d = open(directory_dependencies, 'wb+')
-        output_d.write(bytes(json.dumps(dependency_info[dir], indent=4), 'UTF-8'))
-        output_d.close()
+    if os.path.exists("build_config.json"):
+        config = open("build_config.json")
+        build_config = json.loads(config.read())
+    else:
+        build_config = dict()
 
-print("--------------------------------------------------------------------------------")
-stats_end = time.time()
-millis = int((stats_end - stats_start) * 1000)
-print("All Jobs Done (" + str(millis) + "ms)")
+    tools_dir = os.path.join(correct_path(build_config["pmtech_dir"]), "tools")
+
+    assets_dir = "assets"
+
+    action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs"]
+    action_descriptions = ["generate projects and workspaces",
+                           "generate shaders and compile binaries",
+                           "make binary mesh and animation files",
+                           "compress textures and generate mips",
+                           "compress and convert audio to platorm format",
+                           "copy fonts to data directory",
+                           "copy json configs to data directory"]
+    execute_actions = []
+    extra_build_steps = []
+    build_steps = []
+
+    python_exec = ""
+    shader_options = ""
+    project_options = ""
+
+    platform_name = ""
+    ide = ""
+    renderer = ""
+    data_dir = ""
+    toolset = ""
+
+    premake_exec = os.path.join(tools_dir, "premake", "premake5")
+    if platform.system() == "Linux":
+        premake_exec = os.path.join(tools_dir, "premake", "premake5_linux")
+
+    shader_script = os.path.join(tools_dir, "build_shaders.py")
+    textures_script = os.path.join(tools_dir, "build_textures.py")
+    audio_script = os.path.join(tools_dir, "build_audio.py")
+    models_script = os.path.join(tools_dir, "build_models.py")
+
+    clean_destinations = False
+
+    if len(sys.argv) <= 1:
+        print("please enter what you want to build")
+        print("1. code projects")
+        print("2. shaders")
+        print("3. models")
+        print("4. textures")
+        print("5. audio")
+        print("6. fonts")
+        print("7. configs")
+        print("8. all")
+        print("0. show full command line options")
+        input_val = int(input())
+
+        if input_val == 0:
+            display_help()
+
+        add_all = False
+
+        all_value = 8
+        if input_val == all_value:
+            add_all = True
+
+        for index in range(0, all_value - 1):
+            if input_val - 1 == index or add_all:
+                execute_actions.append(action_strings[index])
+    else:
+        parse_args(sys.argv)
+
+    get_platform_info()
+    copy_steps = []
+
+    for action in execute_actions:
+        if action == "clean":
+            built_dirs = [os.path.join("..", "pen", "build", platform_name),
+                          os.path.join("..", "put", "build", platform_name),
+                          os.path.join("build", platform_name),
+                          "bin",
+                          "temp"]
+            for bd in built_dirs:
+                if os.path.exists(bd):
+                    shutil.rmtree(bd)
+        elif action == "code":
+            build_steps.append(premake_exec + " " + project_options)
+        elif action == "shaders":
+            build_steps.append(python_exec + " " + shader_script + " " + shader_options)
+        elif action == "models":
+            build_steps.append(python_exec + " " + models_script)
+        elif action == "textures":
+            build_steps.append(python_exec + " " + textures_script)
+        elif action == "audio":
+            build_steps.append(python_exec + " " + audio_script)
+        elif action == "fonts" or action == "configs":
+            copy_steps.append(action)
+
+    for step in build_steps:
+        subprocess.check_call(step, shell=True)
+
+    for step in extra_build_steps:
+        subprocess.check_call(step, shell=True)
+
+    if len(copy_steps) > 0:
+        print("--------------------------------------------------------------------------------")
+        print("Copy configs and fonts ---------------------------------------------------------")
+        print("--------------------------------------------------------------------------------")
+
+    for step in copy_steps:
+        source_dirs = [assets_dir, os.path.join(build_config["pmtech_dir"], "assets")]
+        dependency_info = dict()
+
+        # clear dependencies and create directories
+        for source in source_dirs:
+            src_dir = os.path.join(source, step)
+            dest_dir = os.path.join(data_dir, step)
+            if not os.path.exists(src_dir):
+                continue
+            base_root = ""
+            for root, dirs, files in os.walk(src_dir):
+                if base_root == "":
+                    base_root = root
+                dest_sub = dest_dir + root.replace(base_root, "")
+                dependency_info[dest_sub] = dict()
+                dependency_info[dest_sub]["dir"] = dest_sub
+                dependency_info[dest_sub]["files"] = []
+                if not os.path.exists(dest_sub):
+                    os.makedirs(dest_sub)
+
+        # iterate over directories and generate dependencies
+        for source in source_dirs:
+            src_dir = os.path.join(source, step)
+            dest_dir = os.path.join(data_dir, step)
+            if not os.path.exists(src_dir):
+                continue
+            base_root = ""
+            for root, dirs, files in os.walk(src_dir):
+                if base_root == "":
+                    base_root = root
+                dest_sub = dest_dir + root.replace(base_root, "")
+                copy_dir_and_generate_dependencies(dependency_info, dest_sub, root, files)
+
+        # write out dependencies
+        for dest_depends in dependency_info:
+            dir = dependency_info[dest_depends]["dir"]
+            directory_dependencies = os.path.join(dir, "dependencies.json")
+            output_d = open(directory_dependencies, 'wb+')
+            output_d.write(bytes(json.dumps(dependency_info[dir], indent=4), 'UTF-8'))
+            output_d.close()
+
+    print("--------------------------------------------------------------------------------")
+    stats_end = time.time()
+    millis = int((stats_end - stats_start) * 1000)
+    print("All Jobs Done (" + str(millis) + "ms)")
 
 
 
