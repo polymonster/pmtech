@@ -1,6 +1,8 @@
 #ifndef _pen_console_h
 #define _pen_console_h
 
+#include "types.h"
+
 #include <assert.h>
 #include <stdarg.h>
 
