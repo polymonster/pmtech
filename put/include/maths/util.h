@@ -203,16 +203,16 @@ inline void sort(T& a, T& b, T& c)
             if (c < b)
             { // a<c<b
                 temp = c;
-                c = b;
-                b = temp;
+                c    = b;
+                b    = temp;
             } // else: a<b<c
         }
         else
         { // c<a<b
             temp = c;
-            c = b;
-            b = a;
-            a = temp;
+            c    = b;
+            b    = a;
+            a    = temp;
         }
     }
     else
@@ -222,22 +222,22 @@ inline void sort(T& a, T& b, T& c)
             if (a < c)
             { // b<a<c
                 temp = b;
-                b = a;
-                a = temp;
+                b    = a;
+                a    = temp;
             }
             else
             { // b<c<a
                 temp = b;
-                b = c;
-                c = a;
-                a = temp;
+                b    = c;
+                c    = a;
+                a    = temp;
             }
         }
         else
         { // c<b<a
             temp = c;
-            c = a;
-            a = temp;
+            c    = a;
+            a    = temp;
         }
     }
 }
@@ -376,7 +376,7 @@ template <class T>
 inline void get_barycentric(T x, int& i, T& f, int i_low, int i_high)
 {
     T s = std::floor(x);
-    i = (int)s;
+    i   = (int)s;
     if (i < i_low)
     {
         i = i_low;
@@ -435,9 +435,9 @@ inline void cubic_interp_weights(T f, T& wneg1, T& w0, T& w1, T& w2)
 {
     T f2(f * f), f3(f2 * f);
     wneg1 = -T(1. / 3) * f + T(1. / 2) * f2 - T(1. / 6) * f3;
-    w0 = 1 - f2 + T(1. / 2) * (f3 - f);
-    w1 = f + T(1. / 2) * (f2 - f3);
-    w2 = T(1. / 6) * (f3 - f);
+    w0    = 1 - f2 + T(1. / 2) * (f3 - f);
+    w1    = f + T(1. / 2) * (f2 - f3);
+    w2    = T(1. / 6) * (f3 - f);
 }
 
 template <class S, class T>

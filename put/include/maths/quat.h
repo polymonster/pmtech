@@ -26,22 +26,22 @@ struct Quaternion
     Quaternion operator=(const vec4f& v) const;
     Quaternion operator-() const;
 
-    Quaternion operator*(const Quaternion& rhs) const;
+    Quaternion  operator*(const Quaternion& rhs) const;
     Quaternion& operator*=(const Quaternion& rhs);
 
     // Computation Functions
     void euler_angles(f32 z_theta, f32 y_theta, f32 x_theta);
     void normalise();
-    f32 dot(const Quaternion& l, const Quaternion& r);
+    f32  dot(const Quaternion& l, const Quaternion& r);
 
     Quaternion lerp(const Quaternion& l, const Quaternion& r, f32 t);
     Quaternion slerp(const Quaternion& l, const Quaternion& r, f32 t);
 
-    void axis_angle(vec3f axis, f32 w);
-    void axis_angle(f32 lx, f32 ly, f32 lz, f32 lw);
-    void axis_angle(vec4f v);
-    void get_matrix(mat4& lmatrix);
-    void from_matrix(mat4 m);
+    void  axis_angle(vec3f axis, f32 w);
+    void  axis_angle(f32 lx, f32 ly, f32 lz, f32 lw);
+    void  axis_angle(vec4f v);
+    void  get_matrix(mat4& lmatrix);
+    void  from_matrix(mat4 m);
     vec3f to_euler();
 };
 
@@ -182,9 +182,9 @@ inline Quaternion Quaternion::slerp(const Quaternion& l, const Quaternion& r, f3
     if (theta < 0.0)
         theta = -theta;
 
-    st = (f32)sinf(theta);
-    sut = (f32)sinf(t * theta);
-    sout = (f32)sinf((1.0f - t) * theta);
+    st     = (f32)sinf(theta);
+    sut    = (f32)sinf(t * theta);
+    sout   = (f32)sinf((1.0f - t) * theta);
     coeff1 = sout / st;
     coeff2 = sut / st;
 
@@ -234,8 +234,8 @@ inline void Quaternion::get_matrix(mat4& lmatrix)
     lmatrix.m[6] = 2.0f * y * z - 2.0f * x * w;
     lmatrix.m[7] = 0.0f;
 
-    lmatrix.m[8] = 2.0f * x * z - 2.0f * y * w;
-    lmatrix.m[9] = 2.0f * y * z + 2.0f * x * w;
+    lmatrix.m[8]  = 2.0f * x * z - 2.0f * y * w;
+    lmatrix.m[9]  = 2.0f * y * z + 2.0f * x * w;
     lmatrix.m[10] = 1.0f - 2.0f * x * x - 2.0f * y * y;
     lmatrix.m[11] = 0.0f;
 
@@ -250,9 +250,9 @@ inline void Quaternion::from_matrix(mat4 m)
     w = sqrt(1.0 + m.m[0] + m.m[5] + m.m[10]) / 2.0;
 
     double w4 = (4.0 * w);
-    x = (m.m[9] - m.m[6]) / w4;
-    y = (m.m[2] - m.m[8]) / w4;
-    z = (m.m[4] - m.m[1]) / w4;
+    x         = (m.m[9] - m.m[6]) / w4;
+    y         = (m.m[2] - m.m[8]) / w4;
+    z         = (m.m[4] - m.m[1]) / w4;
 }
 
 inline vec3f Quaternion::to_euler()
@@ -262,7 +262,7 @@ inline vec3f Quaternion::to_euler()
     // roll (x-axis rotation)
     double sinr = +2.0 * (w * x + y * z);
     double cosr = +1.0 - 2.0 * (x * x + y * y);
-    euler.x = atan2(sinr, cosr);
+    euler.x     = atan2(sinr, cosr);
 
     // pitch (y-axis rotation)
     double sinp = +2.0 * (w * y - z * x);
@@ -274,7 +274,7 @@ inline vec3f Quaternion::to_euler()
     // yaw (z-axis rotation)
     double siny = +2.0 * (w * z + x * y);
     double cosy = +1.0 - 2.0 * (y * y + z * z);
-    euler.z = atan2(siny, cosy);
+    euler.z     = atan2(siny, cosy);
 
     return euler;
 }

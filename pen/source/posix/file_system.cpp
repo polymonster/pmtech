@@ -54,27 +54,27 @@ namespace pen
     {
 #ifndef __linux__
         struct statfs* mounts;
-        int num_mounts = getmntinfo(&mounts, MNT_WAIT);
+        int            num_mounts = getmntinfo(&mounts, MNT_WAIT);
 
-        results.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node) * num_mounts);
+        results.children     = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node) * num_mounts);
         results.num_children = num_mounts;
 
         static const c8* volumes_name = "Volumes";
 
-        u32 len = pen::string_length(volumes_name);
+        u32 len      = pen::string_length(volumes_name);
         results.name = (c8*)pen::memory_alloc(len + 1);
         pen::memory_cpy(results.name, volumes_name, len);
         results.name[len] = '\0';
 
         for (int i = 0; i < num_mounts; ++i)
         {
-            len = pen::string_length(mounts[i].f_mntonname);
+            len                      = pen::string_length(mounts[i].f_mntonname);
             results.children[i].name = (c8*)pen::memory_alloc(len + 1);
 
             pen::memory_cpy(results.children[i].name, mounts[i].f_mntonname, len);
             results.children[i].name[len] = '\0';
 
-            results.children[i].children = nullptr;
+            results.children[i].children     = nullptr;
             results.children[i].num_children = 0;
         }
 #endif
@@ -125,7 +125,7 @@ namespace pen
 
     pen_error filesystem_enum_directory(const c8* directory, fs_tree_node& results, s32 num_wildcards, va_list wildcards)
     {
-        DIR* dir;
+        DIR*           dir;
         struct dirent* ent;
 
         u32 num_items = 0;
@@ -180,7 +180,7 @@ namespace pen
                     }
 
                     u32 len = pen::string_length(ent->d_name);
-                    len = min<u32>(len, 1022);
+                    len     = min<u32>(len, 1022);
 
                     pen::memory_cpy(results.children[i].name, ent->d_name, len);
                     results.children[i].name[len] = '\0';

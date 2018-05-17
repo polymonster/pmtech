@@ -15,8 +15,8 @@ namespace pen
     enum audio_play_state : s32
     {
         NOT_PLAYING = 0,
-        PLAYING = 2,
-        PAUSED = 3
+        PLAYING     = 2,
+        PAUSED      = 3
     };
 
     enum dsp_type : s32
@@ -54,26 +54,26 @@ namespace pen
 
     struct audio_fft_spectrum
     {
-        s32 length;
-        s32 num_channels;
+        s32  length;
+        s32  num_channels;
         f32* spectrum[32];
     };
 
     // Threading
 
     PEN_TRV audio_thread_function(void* params);
-    void audio_consume_command_buffer();
+    void    audio_consume_command_buffer();
 
     // Creation
-    u32 audio_create_stream(const c8* filename);
-    u32 audio_create_sound(const c8* filename);
-    u32 audio_create_channel_for_sound(const u32 sound_index);
-    u32 audio_create_channel_group();
+    u32  audio_create_stream(const c8* filename);
+    u32  audio_create_sound(const c8* filename);
+    u32  audio_create_channel_for_sound(const u32 sound_index);
+    u32  audio_create_channel_group();
     void audio_release_resource(u32 index);
 
     // Binding
     void audio_add_channel_to_group(const u32 channel_index, const u32 group_index);
-    u32 audio_add_dsp_to_group(const u32 group_index, dsp_type type);
+    u32  audio_add_dsp_to_group(const u32 group_index, dsp_type type);
 
     // Manipulation
     void audio_channel_set_position(const u32 channel_index, const u32 position_ms);
@@ -114,7 +114,7 @@ namespace pen
 
         // Binding
         void audio_add_channel_to_group(const u32 channel_index, const u32 group_index);
-        u32 audio_add_dsp_to_group(const u32 group_index, dsp_type type, u32 resource_slot);
+        u32  audio_add_dsp_to_group(const u32 group_index, dsp_type type, u32 resource_slot);
 
         // Manipulation
         void audio_channel_set_position(const u32 channel_index, const u32 position_ms);

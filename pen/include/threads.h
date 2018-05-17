@@ -27,11 +27,11 @@ namespace pen
 
     struct job
     {
-        thread* p_thread = nullptr;
-        semaphore* p_sem_consume = nullptr;
-        semaphore* p_sem_continue = nullptr;
-        semaphore* p_sem_exit = nullptr;
-        semaphore* p_sem_terminated = nullptr;
+        thread*             p_thread              = nullptr;
+        semaphore*          p_sem_consume         = nullptr;
+        semaphore*          p_sem_continue        = nullptr;
+        semaphore*          p_sem_exit            = nullptr;
+        semaphore*          p_sem_terminated      = nullptr;
         completion_callback p_completion_callback = nullptr;
 
         f32 thread_time;
@@ -39,7 +39,7 @@ namespace pen
 
     struct job_thread_params
     {
-        job* job_info;
+        job*  job_info;
         void* user_data;
     };
 
@@ -47,18 +47,18 @@ namespace pen
     {
         THREAD_START_DETACHED = 1,
         THREAD_START_JOINABLE = 2,
-        THREAD_CALL_FUNCTION = 3
+        THREAD_CALL_FUNCTION  = 3
     };
 
     enum default_thread_create_flags
     {
         PEN_CREATE_RENDER_THREAD = 1 << 0,
-        PEN_CREATE_AUDIO_THREAD = 1 << 1,
+        PEN_CREATE_AUDIO_THREAD  = 1 << 1,
     };
 
     struct default_thread_info
     {
-        u32 flags;
+        u32   flags;
         void* render_thread_params;
         void* audio_thread_params;
         void* user_thread_params;
@@ -72,19 +72,19 @@ namespace pen
 
     // Threads
     thread* thread_create(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* thread_params, thread_start_flags flags);
-    void thread_destroy(pen::thread* p_thread);
+    void    thread_destroy(pen::thread* p_thread);
 
     // Mutex
     mutex* thread_mutex_create();
-    void thread_mutex_destroy(mutex* p_mutex);
+    void   thread_mutex_destroy(mutex* p_mutex);
 
     void thread_mutex_lock(mutex* p_mutex);
-    u32 thread_mutex_try_lock(mutex* p_mutex);
+    u32  thread_mutex_try_lock(mutex* p_mutex);
     void thread_mutex_unlock(mutex* p_mutex);
 
     // Semaphore
     semaphore* thread_semaphore_create(u32 initial_count, u32 max_count);
-    void thread_semaphore_destroy(semaphore* p_semaphore);
+    void       thread_semaphore_destroy(semaphore* p_semaphore);
 
     bool thread_semaphore_try_wait(semaphore* p_semaphore);
     bool thread_semaphore_wait(semaphore* p_semaphore);

@@ -39,22 +39,22 @@ void create_scene_objects(ces::entity_scene* scene)
     u32 cubemap_texture = put::load_texture("data/textures/cubemap.dds");
 
     // create material for cubemap
-    material_resource* cubemap_material = new material_resource;
-    cubemap_material->material_name = "volume_material";
-    cubemap_material->shader_name = "pmfx_utility";
-    cubemap_material->id_shader = PEN_HASH("pmfx_utility");
-    cubemap_material->id_technique = PEN_HASH("cubemap");
+    material_resource* cubemap_material            = new material_resource;
+    cubemap_material->material_name                = "volume_material";
+    cubemap_material->shader_name                  = "pmfx_utility";
+    cubemap_material->id_shader                    = PEN_HASH("pmfx_utility");
+    cubemap_material->id_technique                 = PEN_HASH("cubemap");
     cubemap_material->id_sampler_state[SN_ENV_MAP] = PEN_HASH("clamp_linear_sampler_state");
-    cubemap_material->texture_handles[SN_ENV_MAP] = cubemap_texture;
+    cubemap_material->texture_handles[SN_ENV_MAP]  = cubemap_texture;
     add_material_resource(cubemap_material);
 
     geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
 
-    u32 new_prim = get_new_node(scene);
+    u32 new_prim           = get_new_node(scene);
     scene->names[new_prim] = "sphere";
     scene->names[new_prim].appendf("%i", new_prim);
-    scene->transforms[new_prim].rotation = quat();
-    scene->transforms[new_prim].scale = vec3f(10.0f);
+    scene->transforms[new_prim].rotation    = quat();
+    scene->transforms[new_prim].scale       = vec3f(10.0f);
     scene->transforms[new_prim].translation = vec3f::zero();
     scene->entities[new_prim] |= CMP_TRANSFORM;
     scene->parents[new_prim] = new_prim;
@@ -66,8 +66,8 @@ void create_scene_objects(ces::entity_scene* scene)
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job* p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     pen::thread_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
@@ -80,31 +80,31 @@ PEN_TRV pen::user_entry(void* params)
     put::camera_create_perspective(&main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f);
 
     put::scene_controller cc;
-    cc.camera = &main_camera;
+    cc.camera          = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
-    cc.name = "model_viewer_camera";
-    cc.id_name = PEN_HASH(cc.name.c_str());
+    cc.name            = "model_viewer_camera";
+    cc.id_name         = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
     put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;
-    sc.scene = main_scene;
+    sc.scene           = main_scene;
     sc.update_function = &ces::update_model_viewer_scene;
-    sc.name = "main_scene";
-    sc.camera = &main_camera;
-    sc.id_name = PEN_HASH(sc.name.c_str());
+    sc.name            = "main_scene";
+    sc.camera          = &main_camera;
+    sc.id_name         = PEN_HASH(sc.name.c_str());
 
     // create view renderers
     put::scene_view_renderer svr_main;
-    svr_main.name = "ces_render_scene";
-    svr_main.id_name = PEN_HASH(svr_main.name.c_str());
+    svr_main.name            = "ces_render_scene";
+    svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
 
     put::scene_view_renderer svr_editor;
-    svr_editor.name = "ces_render_editor";
-    svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
+    svr_editor.name            = "ces_render_editor";
+    svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
 
     pmfx::register_scene_view_renderer(svr_main);
@@ -117,7 +117,7 @@ PEN_TRV pen::user_entry(void* params)
     create_scene_objects(main_scene);
 
     bool enable_dev_ui = true;
-    f32 frame_time = 0.0f;
+    f32  frame_time    = 0.0f;
 
     while (1)
     {

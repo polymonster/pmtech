@@ -37,9 +37,9 @@ PEN_THREAD_RETURN pen::game_entry(void* params)
     // raster state
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(rasteriser_state_creation_params));
-    rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_NONE;
-    rcp.depth_bias_clamp = 0.0f;
+    rcp.fill_mode               = PEN_FILL_SOLID;
+    rcp.cull_mode               = PEN_CULL_NONE;
+    rcp.depth_bias_clamp        = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
 
     u32 raster_state = pen::defer::renderer_create_rasterizer_state(rcp);
@@ -51,8 +51,8 @@ PEN_THREAD_RETURN pen::game_entry(void* params)
 
     put::shader_program textured_shader = put::loader_load_shader_program("textured");
 
-    pen::texture_creation_params* tex_params = put::loader_load_texture("data\\textures\\test_normal.dds");
-    u32 test_texture = pen::defer::renderer_create_texture2d(*tex_params);
+    pen::texture_creation_params* tex_params   = put::loader_load_texture("data\\textures\\test_normal.dds");
+    u32                           test_texture = pen::defer::renderer_create_texture2d(*tex_params);
 
     put::loader_free_texture(&tex_params);
 
@@ -72,36 +72,36 @@ PEN_THREAD_RETURN pen::game_entry(void* params)
     };
 
     pen::buffer_creation_params bcp;
-    bcp.usage_flags = PEN_USAGE_DEFAULT;
-    bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+    bcp.usage_flags      = PEN_USAGE_DEFAULT;
+    bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
     bcp.cpu_access_flags = 0;
 
     bcp.buffer_size = sizeof(textured_vertex) * 4;
-    bcp.data = (void*)&quad_vertices[0];
+    bcp.data        = (void*)&quad_vertices[0];
 
     u32 quad_vertex_buffer = pen::defer::renderer_create_buffer(bcp);
 
     // create index buffer
     u16 indices[] = {0, 1, 2, 2, 3, 0};
 
-    bcp.usage_flags = PEN_USAGE_DEFAULT;
-    bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+    bcp.usage_flags      = PEN_USAGE_DEFAULT;
+    bcp.bind_flags       = PEN_BIND_INDEX_BUFFER;
     bcp.cpu_access_flags = 0;
-    bcp.buffer_size = sizeof(u16) * 6;
-    bcp.data = (void*)&indices[0];
+    bcp.buffer_size      = sizeof(u16) * 6;
+    bcp.data             = (void*)&indices[0];
 
     u32 quad_index_buffer = pen::defer::renderer_create_buffer(bcp);
 
     // create a sampler object so we can sample a texture
     pen::sampler_creation_params scp;
     pen::memory_zero(&scp, sizeof(pen::sampler_creation_params));
-    scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-    scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.filter          = PEN_FILTER_MIN_MAG_MIP_LINEAR;
+    scp.address_u       = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.address_v       = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.address_w       = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.comparison_func = PEN_COMPARISON_ALWAYS;
-    scp.min_lod = 0.0f;
-    scp.max_lod = 4.0f;
+    scp.min_lod         = 0.0f;
+    scp.max_lod         = 4.0f;
 
     u32 render_target_texture_sampler = defer::renderer_create_sampler(scp);
 

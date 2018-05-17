@@ -10,7 +10,7 @@ namespace pen
     enum resource_types
     {
         MAX_RENDERER_RESOURCES = 10000,
-        MAX_AUDIO_RESOURCES = 100
+        MAX_AUDIO_RESOURCES    = 100
     };
 
     // Structs for user to setup, make sure to define a window_creation_params and a
@@ -18,9 +18,9 @@ namespace pen
 
     struct window_creation_params
     {
-        u32 width;
-        u32 height;
-        u32 sample_count;
+        u32       width;
+        u32       height;
+        u32       sample_count;
         const c8* window_title;
     };
 

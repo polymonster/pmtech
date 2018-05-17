@@ -21,14 +21,14 @@ namespace pen
 
         job* jt = &s_jt[s_num_active_threads++];
 
-        jt->p_sem_continue = thread_semaphore_create(0, 1);
-        jt->p_sem_consume = thread_semaphore_create(0, 1);
-        jt->p_sem_exit = thread_semaphore_create(0, 1);
-        jt->p_sem_terminated = thread_semaphore_create(0, 1);
+        jt->p_sem_continue        = thread_semaphore_create(0, 1);
+        jt->p_sem_consume         = thread_semaphore_create(0, 1);
+        jt->p_sem_exit            = thread_semaphore_create(0, 1);
+        jt->p_sem_terminated      = thread_semaphore_create(0, 1);
         jt->p_completion_callback = cb;
 
         params.user_data = user_data;
-        params.job_info = jt;
+        params.job_info  = jt;
 
         jt->p_thread = thread_create(thread_func, stack_size, (void*)&params, flags);
 

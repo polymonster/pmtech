@@ -34,8 +34,8 @@ namespace pen
 
         // create the thread using posix
         pthread_attr_t attr;
-        int err;
-        int thread_err;
+        int            err;
+        int            thread_err;
 
         err = pthread_attr_init(&attr);
         assert(!err);
@@ -64,7 +64,7 @@ namespace pen
     {
         pen::mutex* new_mutex = (pen::mutex*)pen::memory_alloc(sizeof(pen::mutex));
 
-        int err;
+        int                 err;
         pthread_mutexattr_t mta;
 
         err = pthread_mutexattr_init(&mta);

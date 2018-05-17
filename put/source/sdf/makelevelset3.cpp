@@ -1,6 +1,6 @@
 #include "sdf/makelevelset3.h"
 
-mls_progress g_mls_progress;
+mls_progress             g_mls_progress;
 extern std::atomic<bool> g_cancel_volume_job;
 extern std::atomic<bool> g_cancel_handled;
 
@@ -13,7 +13,7 @@ extern std::atomic<bool> g_cancel_handled;
 // find distance x0 is from segment x1-x2
 static float point_segment_distance(const Vec3f& x0, const Vec3f& x1, const Vec3f& x2)
 {
-    Vec3f dx(x2 - x1);
+    Vec3f  dx(x2 - x1);
     double m2 = mag2(dx);
     // find parameter value of closest point on segment
     float s12 = (float)(dot(x2 - x0, dx) / m2);
@@ -66,7 +66,7 @@ static void check_neighbour(const std::vector<Vec3ui>& tri, const std::vector<Ve
         float d = point_triangle_distance(gx, x[p], x[q], x[r]);
         if (d < phi(i0, j0, k0))
         {
-            phi(i0, j0, k0) = d;
+            phi(i0, j0, k0)         = d;
             closest_tri(i0, j0, k0) = closest_tri(i1, j1, k1);
         }
     }
@@ -177,7 +177,7 @@ void make_level_set3(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x
                      int nj, int nk, Array3f& phi, const int exact_band)
 {
     g_mls_progress.triangles = 0.0f;
-    g_mls_progress.sweeps = 0.0f;
+    g_mls_progress.sweeps    = 0.0f;
 
     phi.resize(ni, nj, nk);
     phi.assign((ni + nj + nk) * dx); // upper bound on distance
@@ -185,7 +185,7 @@ void make_level_set3(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x
     Array3i intersection_count(ni, nj, nk, 0); // intersection_count(i,j,k) is # of tri intersections in (i-1,i]x{j}x{k}
     // we begin by initializing distances near the mesh, and figuring out intersection counts
     Vec3f ijkmin, ijkmax;
-    f32 tri_tick = 1.0f / tri.size();
+    f32   tri_tick = 1.0f / tri.size();
     for (unsigned int t = 0; t < tri.size(); ++t)
     {
         tri_progress;
@@ -215,7 +215,7 @@ void make_level_set3(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x
                     float d = point_triangle_distance(gx, x[p], x[q], x[r]);
                     if (d < phi(i, j, k))
                     {
-                        phi(i, j, k) = d;
+                        phi(i, j, k)         = d;
                         closest_tri(i, j, k) = t;
                     }
                 }
@@ -234,8 +234,8 @@ void make_level_set3(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x
                 double a, b, c;
                 if (point_in_triangle_2d(j, k, fjp, fkp, fjq, fkq, fjr, fkr, a, b, c))
                 {
-                    double fi = a * fip + b * fiq + c * fir; // intersection i coordinate
-                    int i_interval = int(std::ceil(fi));     // intersection is in (i_interval-1,i_interval]
+                    double fi         = a * fip + b * fiq + c * fir; // intersection i coordinate
+                    int    i_interval = int(std::ceil(fi));          // intersection is in (i_interval-1,i_interval]
                     if (i_interval < 0)
                         ++intersection_count(0, j,
                                              k); // we enlarge the first interval to include everything to the -x direction

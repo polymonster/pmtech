@@ -30,7 +30,7 @@ namespace pen
 
     // fixed array.. todo sort this out
     timer* timers = nullptr;
-    int* test;
+    int*   test;
 
     u32 next_free = 0;
 

@@ -34,12 +34,12 @@ namespace physics
     struct rigid_body_entity
     {
         btRigidBody* rigid_body;
-        u32 rigid_body_in_world;
+        u32          rigid_body_in_world;
 
         // for attaching and detaching rbs into compounds
         void* p_attach_user_data;
-        s32 attach_shape_index;
-        u32 call_attach = 0;
+        s32   attach_shape_index;
+        u32   call_attach = 0;
         void (*attach_function)(void* user_data, s32 attach_index);
 
         rigid_body_entity(){};
@@ -48,10 +48,10 @@ namespace physics
 
     struct mutli_body_entity
     {
-        btMultiBody* multi_body;
-        btAlignedObjectArray<btMultiBodyJointMotor*> joint_motors;
+        btMultiBody*                                           multi_body;
+        btAlignedObjectArray<btMultiBodyJointMotor*>           joint_motors;
         btAlignedObjectArray<btMultiBodyJointLimitConstraint*> joint_limits;
-        btAlignedObjectArray<btMultiBodyLinkCollider*> link_colliders;
+        btAlignedObjectArray<btMultiBodyLinkCollider*>         link_colliders;
     };
 
     struct constraint_entity
@@ -59,12 +59,12 @@ namespace physics
         e_physics_constraint type;
 
         union {
-            btTypedConstraint* generic;
-            btHingeConstraint* hinge;
+            btTypedConstraint*       generic;
+            btHingeConstraint*       hinge;
             btGeneric6DofConstraint* dof6;
-            btFixedConstraint* fixed;
+            btFixedConstraint*       fixed;
             btPoint2PointConstraint* point;
-            btMultiBodyPoint2Point* point_multi;
+            btMultiBodyPoint2Point*  point_multi;
         };
     };
 
@@ -79,9 +79,9 @@ namespace physics
         };
 
         btDefaultMotionState* default_motion_state;
-        btCollisionShape* collision_shape;
-        btCompoundShape* compound_shape;
-        u32 num_base_compound_shapes;
+        btCollisionShape*     collision_shape;
+        btCompoundShape*      compound_shape;
+        u32                   num_base_compound_shapes;
 
         u32 group;
         u32 mask;
@@ -94,35 +94,35 @@ namespace physics
     {
         physics_entity_v1()
         {
-            rigid_body = NULL;
-            multi_body = NULL;
+            rigid_body     = NULL;
+            multi_body     = NULL;
             compound_shape = NULL;
-            call_attach = 0;
+            call_attach    = 0;
         }
 
         btRigidBody* rigid_body;
-        u32 rigid_body_in_world;
+        u32          rigid_body_in_world;
 
-        btMultiBody* multi_body;
-        btAlignedObjectArray<btMultiBodyJointMotor*> joint_motors;
+        btMultiBody*                                           multi_body;
+        btAlignedObjectArray<btMultiBodyJointMotor*>           joint_motors;
         btAlignedObjectArray<btMultiBodyJointLimitConstraint*> joint_limits;
-        btAlignedObjectArray<btMultiBodyLinkCollider*> link_colliders;
+        btAlignedObjectArray<btMultiBodyLinkCollider*>         link_colliders;
 
-        btHingeConstraint* hinge_constraint;
+        btHingeConstraint*       hinge_constraint;
         btGeneric6DofConstraint* dof6_constraint;
-        btFixedConstraint* fixed_constraint;
+        btFixedConstraint*       fixed_constraint;
         btPoint2PointConstraint* point_constraint;
-        btMultiBodyPoint2Point* point_constraint_multi;
+        btMultiBodyPoint2Point*  point_constraint_multi;
 
         btDefaultMotionState* default_motion_state;
-        btCollisionShape* collision_shape;
-        btCompoundShape* compound_shape;
-        u32 num_base_compound_shapes;
+        btCollisionShape*     collision_shape;
+        btCompoundShape*      compound_shape;
+        u32                   num_base_compound_shapes;
 
         // for attaching and detaching rbs into compounds
         void* p_attach_user_data;
-        s32 attach_shape_index;
-        u32 call_attach;
+        s32   attach_shape_index;
+        u32   call_attach;
         void (*attach_function)(void* user_data, s32 attach_index);
 
         u32 group;
@@ -132,22 +132,22 @@ namespace physics
     struct bullet_systems
     {
         btDefaultCollisionConfiguration* collision_config;
-        btCollisionDispatcher* dispatcher;
-        btBroadphaseInterface* olp_cache;
+        btCollisionDispatcher*           dispatcher;
+        btBroadphaseInterface*           olp_cache;
 
 #ifdef MULTIBODY_WORLD
         btMultiBodyConstraintSolver* solver;
-        btMultiBodyDynamicsWorld* dynamics_world;
+        btMultiBodyDynamicsWorld*    dynamics_world;
 #else
         btConstraintSolver* solver;
-        btDynamicsWorld* dynamics_world;
+        btDynamicsWorld*    dynamics_world;
 #endif
     };
 
     struct bullet_objects
     {
         physics_entity entities[MAX_PHYSICS_RESOURCES];
-        u32 num_entities;
+        u32            num_entities;
 
         bullet_objects(){};
         ~bullet_objects(){};
@@ -156,29 +156,29 @@ namespace physics
     struct trigger
     {
         btCollisionObject* collision_object;
-        u32 group;
-        u32 mask;
-        u32 hit_flags;
-        u32 entity_index;
+        u32                group;
+        u32                mask;
+        u32                hit_flags;
+        u32                entity_index;
     };
 
     struct detach_callback
     {
         void (*attach_function)(void* user_data, s32 attach_index);
         void* p_attach_user_data;
-        s32 attach_shape_index;
-        u32 call_attach;
+        s32   attach_shape_index;
+        u32   call_attach;
     };
 
     struct readable_data
     {
         readable_data()
         {
-            current_ouput_backbuffer = 0;
+            current_ouput_backbuffer  = 0;
             current_ouput_frontbuffer = 1;
 
             b_consume = 0;
-            b_paused = 0;
+            b_paused  = 0;
         }
 
         a_u32 current_ouput_backbuffer;
@@ -186,10 +186,10 @@ namespace physics
         a_u32 b_consume;
         a_u32 b_paused;
 
-        mat4 output_matrices[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
-        mat4 multi_output_matrices[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];
-        f32 multi_joint_positions[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];
-        u32 output_hit_flags[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
+        mat4                 output_matrices[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
+        mat4                 multi_output_matrices[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];
+        f32                  multi_joint_positions[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];
+        u32                  output_hit_flags[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
         trigger_contact_data output_contact_data[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
     };
 

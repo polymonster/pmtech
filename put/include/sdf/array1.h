@@ -98,23 +98,23 @@ struct Array1
 {
     // STL-friendly typedefs
 
-    typedef T* iterator;
-    typedef const T* const_iterator;
-    typedef unsigned long size_type;
-    typedef long difference_type;
-    typedef T& reference;
-    typedef const T& const_reference;
-    typedef T value_type;
-    typedef T* pointer;
-    typedef const T* const_pointer;
-    typedef std::reverse_iterator<iterator> reverse_iterator;
+    typedef T*                                    iterator;
+    typedef const T*                              const_iterator;
+    typedef unsigned long                         size_type;
+    typedef long                                  difference_type;
+    typedef T&                                    reference;
+    typedef const T&                              const_reference;
+    typedef T                                     value_type;
+    typedef T*                                    pointer;
+    typedef const T*                              const_pointer;
+    typedef std::reverse_iterator<iterator>       reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
     // the actual representation
 
     unsigned long n;
     unsigned long max_n;
-    T* data;
+    T*            data;
 
     // STL vector's interface, with additions, but only valid when used with plain-old-data
 
@@ -136,7 +136,7 @@ struct Array1
         data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n = n_;
+        n     = n_;
         max_n = n_;
     }
 
@@ -150,7 +150,7 @@ struct Array1
         data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n = n_;
+        n     = n_;
         max_n = n_;
         for (unsigned long i = 0; i < n; ++i)
             data[i] = value;
@@ -167,7 +167,7 @@ struct Array1
         data = (T*)std::calloc(max_n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n = n_;
+        n     = n_;
         max_n = max_n_;
         for (unsigned long i = 0; i < n; ++i)
             data[i] = value;
@@ -183,7 +183,7 @@ struct Array1
         data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n = n_;
+        n     = n_;
         max_n = n_;
         assert(data_);
         std::memcpy(data, data_, n * sizeof(T));
@@ -201,7 +201,7 @@ struct Array1
         if (!data)
             throw std::bad_alloc();
         max_n = max_n_;
-        n = n_;
+        n     = n_;
         assert(data_);
         std::memcpy(data, data_, n * sizeof(T));
     }
@@ -214,7 +214,7 @@ struct Array1
         data = (T*)std::malloc(x.n * sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n = x.n;
+        n     = x.n;
         max_n = x.n;
         std::memcpy(data, x.data, n * sizeof(T));
     }
@@ -259,7 +259,7 @@ struct Array1
             if (!new_data)
                 throw std::bad_alloc();
             std::free(data);
-            data = new_data;
+            data  = new_data;
             max_n = x.n;
         }
         n = x.n;
@@ -443,9 +443,9 @@ struct Array1
     void clear(void)
     {
         std::free(data);
-        data = 0;
+        data  = 0;
         max_n = 0;
-        n = 0;
+        n     = 0;
     }
 
     bool empty(void) const
@@ -503,10 +503,10 @@ struct Array1
     void grow(void)
     {
         unsigned long new_size = (max_n * sizeof(T) < ULONG_MAX / 2 ? 2 * max_n + 1 : ULONG_MAX / sizeof(T));
-        T* new_data = (T*)std::realloc(data, new_size * sizeof(T));
+        T*            new_data = (T*)std::realloc(data, new_size * sizeof(T));
         if (!new_data)
             throw std::bad_alloc();
-        data = new_data;
+        data  = new_data;
         max_n = new_size;
     }
 
@@ -564,7 +564,7 @@ struct Array1
         T* new_data = (T*)std::realloc(data, r * sizeof(T));
         if (!new_data)
             throw std::bad_alloc();
-        data = new_data;
+        data  = new_data;
         max_n = r;
     }
 
@@ -613,23 +613,23 @@ struct Array1
             return;
         std::memcpy(new_data, data, n * sizeof(T));
         std::free(data);
-        data = new_data;
+        data  = new_data;
         max_n = n;
     }
 };
 
 // some common arrays
 
-typedef Array1<double> Array1d;
-typedef Array1<float> Array1f;
-typedef Array1<long long> Array1ll;
+typedef Array1<double>             Array1d;
+typedef Array1<float>              Array1f;
+typedef Array1<long long>          Array1ll;
 typedef Array1<unsigned long long> Array1ull;
-typedef Array1<int> Array1i;
-typedef Array1<unsigned int> Array1ui;
-typedef Array1<short> Array1s;
-typedef Array1<unsigned short> Array1us;
-typedef Array1<char> Array1c;
-typedef Array1<unsigned char> Array1uc;
+typedef Array1<int>                Array1i;
+typedef Array1<unsigned int>       Array1ui;
+typedef Array1<short>              Array1s;
+typedef Array1<unsigned short>     Array1us;
+typedef Array1<char>               Array1c;
+typedef Array1<unsigned char>      Array1uc;
 
 //============================================================================
 template <typename T>
@@ -637,23 +637,23 @@ struct WrapArray1
 {
     // STL-friendly typedefs
 
-    typedef T* iterator;
-    typedef const T* const_iterator;
-    typedef unsigned long size_type;
-    typedef long difference_type;
-    typedef T& reference;
-    typedef const T& const_reference;
-    typedef T value_type;
-    typedef T* pointer;
-    typedef const T* const_pointer;
-    typedef std::reverse_iterator<iterator> reverse_iterator;
+    typedef T*                                    iterator;
+    typedef const T*                              const_iterator;
+    typedef unsigned long                         size_type;
+    typedef long                                  difference_type;
+    typedef T&                                    reference;
+    typedef const T&                              const_reference;
+    typedef T                                     value_type;
+    typedef T*                                    pointer;
+    typedef const T*                              const_pointer;
+    typedef std::reverse_iterator<iterator>       reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
     // the actual representation
 
     unsigned long n;
     unsigned long max_n;
-    T* data;
+    T*            data;
 
     // most of STL vector's interface, with a few changes
 
@@ -702,9 +702,9 @@ struct WrapArray1
     {
         assert(n_ <= max_n_);
         assert(data_ || max_n_ == 0);
-        n = n_;
+        n     = n_;
         max_n = max_n_;
-        data = data_;
+        data  = data_;
     }
 
     const T& operator[](unsigned long i) const
@@ -1027,15 +1027,15 @@ struct WrapArray1
 
 // some common arrays
 
-typedef WrapArray1<double> WrapArray1d;
-typedef WrapArray1<float> WrapArray1f;
-typedef WrapArray1<long long> WrapArray1ll;
+typedef WrapArray1<double>             WrapArray1d;
+typedef WrapArray1<float>              WrapArray1f;
+typedef WrapArray1<long long>          WrapArray1ll;
 typedef WrapArray1<unsigned long long> WrapArray1ull;
-typedef WrapArray1<int> WrapArray1i;
-typedef WrapArray1<unsigned int> WrapArray1ui;
-typedef WrapArray1<short> WrapArray1s;
-typedef WrapArray1<unsigned short> WrapArray1us;
-typedef WrapArray1<char> WrapArray1c;
-typedef WrapArray1<unsigned char> WrapArray1uc;
+typedef WrapArray1<int>                WrapArray1i;
+typedef WrapArray1<unsigned int>       WrapArray1ui;
+typedef WrapArray1<short>              WrapArray1s;
+typedef WrapArray1<unsigned short>     WrapArray1us;
+typedef WrapArray1<char>               WrapArray1c;
+typedef WrapArray1<unsigned char>      WrapArray1uc;
 
 #endif

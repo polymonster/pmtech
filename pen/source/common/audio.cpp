@@ -29,7 +29,7 @@ namespace pen
     struct audio_resource_allocation
     {
         void* resource;
-        u32 num_dsp = 0;
+        u32   num_dsp = 0;
 
         audio_resource_type type;
 
@@ -40,16 +40,16 @@ namespace pen
     {
         union {
             audio_channel_state channel_state;
-            audio_group_state group_state;
+            audio_group_state   group_state;
             audio_fft_spectrum* fft_spectrum;
-            audio_eq_state eq_state;
-            f32 gain_value;
+            audio_eq_state      eq_state;
+            f32                 gain_value;
         };
     };
 
-    std::atomic<bool> g_sound_file_info_ready[MAX_AUDIO_RESOURCES];
-    audio_sound_file_info g_sound_file_info[MAX_AUDIO_RESOURCES];
-    resource_state g_resource_states[MAX_AUDIO_RESOURCES][NUM_AUDIO_STATE_BUFFERS];
+    std::atomic<bool>         g_sound_file_info_ready[MAX_AUDIO_RESOURCES];
+    audio_sound_file_info     g_sound_file_info[MAX_AUDIO_RESOURCES];
+    resource_state            g_resource_states[MAX_AUDIO_RESOURCES][NUM_AUDIO_STATE_BUFFERS];
     audio_resource_allocation g_audio_resources[MAX_AUDIO_RESOURCES];
 
     std::atomic<u32> g_current_write_buffer;
@@ -77,7 +77,7 @@ namespace pen
 
         // initialise double buffer
         g_current_write_buffer = 0;
-        g_current_read_buffer = 1;
+        g_current_read_buffer  = 1;
 
         PEN_ASSERT(result == FMOD_OK);
     }
@@ -241,10 +241,10 @@ namespace pen
         }
 
         // swap buffers
-        u32 prev_read = g_current_read_buffer;
+        u32 prev_read  = g_current_read_buffer;
         s32 prev_write = g_current_write_buffer;
 
-        g_current_read_buffer = prev_write;
+        g_current_read_buffer  = prev_write;
         g_current_write_buffer = prev_read;
     }
 
@@ -409,7 +409,7 @@ namespace pen
     void direct::audio_add_channel_to_group(const u32 channel_index, const u32 group_index)
     {
         FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
-        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
+        FMOD::Channel*      p_chan  = (FMOD::Channel*)g_audio_resources[channel_index].resource;
 
         FMOD_RESULT result;
 
@@ -445,7 +445,7 @@ namespace pen
         g_audio_resources[resource_slot].assigned_flag |= 0xff;
 
         audio_resource_type res_type;
-        FMOD_DSP_TYPE fmod_dsp = pen_dsp_to_fmod_type(type, res_type);
+        FMOD_DSP_TYPE       fmod_dsp = pen_dsp_to_fmod_type(type, res_type);
 
         FMOD_RESULT result;
 

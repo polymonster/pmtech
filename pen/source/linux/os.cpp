@@ -23,7 +23,7 @@ namespace pen
 
 // pen required externs
 extern window_creation_params pen_window;
-pen::user_info pen_user_info;
+pen::user_info                pen_user_info;
 
 // glx / gl stuff
 #define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
@@ -34,8 +34,8 @@ pen::user_info pen_user_info;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 GLXContext _gl_context = 0;
-Display* _display;
-Window _window;
+Display*   _display;
+Window     _window;
 
 void pen_make_gl_context_current()
 {
@@ -55,7 +55,7 @@ static int visual_attribs[] = {GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WI
                                None};
 
 static bool ctx_error_occured = false;
-static int ctx_error_handler(Display* dpy, XErrorEvent* ev)
+static int  ctx_error_handler(Display* dpy, XErrorEvent* ev)
 {
     ctx_error_occured = true;
     return 0;
@@ -63,14 +63,14 @@ static int ctx_error_handler(Display* dpy, XErrorEvent* ev)
 
 int main(int argc, char* argv[])
 {
-    Visual* visual;
-    int depth;
+    Visual*              visual;
+    int                  depth;
     XSetWindowAttributes frame_attributes;
-    XEvent event;
+    XEvent               event;
 
     _display = XOpenDisplay(NULL);
-    visual = DefaultVisual(_display, 0);
-    depth = DefaultDepth(_display, 0);
+    visual   = DefaultVisual(_display, 0);
+    depth    = DefaultDepth(_display, 0);
 
     // Check glx version
     s32 glx_major, glx_minor = 0;
@@ -79,11 +79,11 @@ int main(int argc, char* argv[])
     // glx setup
     const char* glxExts = glXQueryExtensionsString(_display, DefaultScreen(_display));
 
-    ctx_error_occured = false;
+    ctx_error_occured                         = false;
     int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctx_error_handler);
 
     // find fb with matching samples
-    s32 fbcount;
+    s32          fbcount;
     GLXFBConfig* fbc = glXChooseFBConfig(_display, DefaultScreen(_display), visual_attribs, &fbcount);
     for (int i = 0; i < fbcount; ++i)
     {
@@ -96,11 +96,11 @@ int main(int argc, char* argv[])
     XVisualInfo* vi = glXGetVisualFromFBConfig(_display, best_fbc);
 
     XSetWindowAttributes swa;
-    Colormap cmap;
-    swa.colormap = cmap = XCreateColormap(_display, RootWindow(_display, vi->screen), vi->visual, AllocNone);
+    Colormap             cmap;
+    swa.colormap = cmap   = XCreateColormap(_display, RootWindow(_display, vi->screen), vi->visual, AllocNone);
     swa.background_pixmap = None;
-    swa.border_pixel = 0;
-    swa.event_mask = StructureNotifyMask;
+    swa.border_pixel      = 0;
+    swa.event_mask        = StructureNotifyMask;
 
     _window = XCreateWindow(_display, RootWindow(_display, vi->screen), 0, 0, pen_window.width, pen_window.height, 0,
                             vi->depth, InputOutput, vi->visual, CWBorderPixel | CWColormap | CWEventMask, &swa);
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     pen_make_gl_context_current();
 
     glewExperimental = true;
-    GLenum err = glewInit();
+    GLenum err       = glewInit();
     if (err != GLEW_OK)
     {
         PEN_PRINTF("Error: glewInit failed: %s\n", glewGetErrorString(err));
@@ -170,7 +170,7 @@ namespace pen
 
     void window_get_size(s32& width, s32& height)
     {
-        width = pen_window.width;
+        width  = pen_window.width;
         height = pen_window.height;
     }
 

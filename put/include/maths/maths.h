@@ -9,23 +9,23 @@
 
 constexpr double M_PI_OVER_180 = 3.1415926535897932384626433832795 / 180.0;
 constexpr double M_180_OVER_PI = 180.0 / 3.1415926535897932384626433832795;
-constexpr double M_TWO_PI = M_PI * 2.0;
+constexpr double M_TWO_PI      = M_PI * 2.0;
 
 namespace maths
 {
     typedef enum
     {
         INTERSECTS = 0,
-        BEHIND = 1,
-        INFRONT = 2,
+        BEHIND     = 1,
+        INFRONT    = 2,
 
     } e_classifications;
 
     // Collection of tests and useful maths functions, see inline implementation below or cpp file for comments
 
     // Angles
-    f32 deg_to_rad(f32 degree_angle);
-    f32 rad_to_deg(f32 radian_angle);
+    f32   deg_to_rad(f32 degree_angle);
+    f32   rad_to_deg(f32 radian_angle);
     vec3f azimuth_altitude_to_xyz(f32 azimuth, f32 altitude);
 
     // Projection
@@ -35,11 +35,11 @@ namespace maths
     vec3f unproject_sc(const vec3f& p, const mat4& view_projection, const vec2i& viewport);
 
     // Plane
-    f32 plane_distance(const vec3f& x0, const vec3f& xN);
-    f32 point_plane_distance(const vec3f& p0, const vec3f& x0, const vec3f& xN);
+    f32   plane_distance(const vec3f& x0, const vec3f& xN);
+    f32   point_plane_distance(const vec3f& p0, const vec3f& x0, const vec3f& xN);
     vec3f ray_plane_intersect(const vec3f& r0, const vec3f& rV, const vec3f& x0, const vec3f& xN);
-    u32 aabb_vs_plane(const vec3f& aabb_min, const vec3f& aabb_max, const vec3f& x0, const vec3f& xN);
-    u32 sphere_vs_plane(const vec3f& s, f32 r, const vec3f& x0, const vec3f& xN);
+    u32   aabb_vs_plane(const vec3f& aabb_min, const vec3f& aabb_max, const vec3f& x0, const vec3f& xN);
+    u32   sphere_vs_plane(const vec3f& s, f32 r, const vec3f& x0, const vec3f& xN);
 
     // Sphere
     bool sphere_vs_sphere(const vec3f& s0, f32 r0, const vec3f& s1, f32 r1);
@@ -48,18 +48,18 @@ namespace maths
     // Line Segment
     float point_segment_distance(const vec3f& x0, const vec3f& x1, const vec3f& x2);
     float point_triangle_distance(const vec3f& x0, const vec3f& x1, const vec3f& x2, const vec3f& x3);
-    bool line_vs_ray(const vec3f& l1, const vec3f& l2, const vec3f& r0, const vec3f& rV, vec3f& ip);
-    bool line_vs_line(const vec3f& l1, const vec3f& l2, const vec3f& s1, const vec3f& s2, vec3f& ip);
+    bool  line_vs_ray(const vec3f& l1, const vec3f& l2, const vec3f& r0, const vec3f& rV, vec3f& ip);
+    bool  line_vs_line(const vec3f& l1, const vec3f& l2, const vec3f& s1, const vec3f& s2, vec3f& ip);
 
     vec3f closest_point_on_obb(const mat4& mat, const vec3f& p);
     vec3f closest_point_on_aabb(const vec3f& s0, const vec3f& aabb_min, const vec3f& aabb_max);
     vec3f closest_point_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p);
-    f32 distance_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p);
+    f32   distance_on_line(const vec3f& l1, const vec3f& l2, const vec3f& p);
     vec3f closest_point_on_ray(const vec3f& r0, const vec3f& rV, const vec3f& p);
 
     // Traingle
     vec3f get_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3);
-    bool point_inside_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3);
+    bool  point_inside_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3);
     vec3f closest_point_on_triangle(const vec3f& p, const vec3f& v1, const vec3f& v2, const vec3f& v3, f32& side);
 
     // Box
@@ -93,7 +93,7 @@ namespace maths
     inline vec3f project_to_sc(const vec3f& p, const mat4& view_projection, const vec2i& viewport)
     {
         vec3f ndc = project_to_ndc(p, view_projection);
-        vec3f sc = ndc * 0.5f + 0.5f;
+        vec3f sc  = ndc * 0.5f + 0.5f;
         sc.xy *= vec2f(viewport.x, viewport.y);
         return sc;
     }
@@ -112,7 +112,7 @@ namespace maths
     inline vec3f unproject_sc(const vec3f& p, const mat4& view_projection, const vec2i& viewport)
     {
         vec2f ndc_xy = (p.xy / (vec2f)viewport) * vec2f(2.0) - vec2f(1.0);
-        vec3f ndc = vec3f(ndc_xy, p.z);
+        vec3f ndc    = vec3f(ndc_xy, p.z);
 
         return unproject_ndc(ndc, view_projection);
     }
@@ -120,10 +120,10 @@ namespace maths
     // Convert azimuth / altitude to vec3f xyz
     inline vec3f azimuth_altitude_to_xyz(f32 azimuth, f32 altitude)
     {
-        f32 z = sin(altitude);
+        f32 z   = sin(altitude);
         f32 hyp = cos(altitude);
-        f32 y = hyp * cos(azimuth);
-        f32 x = hyp * sin(azimuth);
+        f32 y   = hyp * cos(azimuth);
+        f32 x   = hyp * sin(azimuth);
 
         return vec3f(x, z, y);
     }
@@ -155,11 +155,11 @@ namespace maths
     // plane defined by point on plane x0 and normal of plane xN
     inline u32 aabb_vs_plane(const vec3f& aabb_min, const vec3f& aabb_max, const vec3f& x0, const vec3f& xN)
     {
-        vec3f e = (aabb_max - aabb_min) / 2.0f;
+        vec3f e      = (aabb_max - aabb_min) / 2.0f;
         vec3f centre = aabb_min + e;
-        f32 radius = fabs(xN.x * e.x) + fabs(xN.y * e.y) + fabs(xN.z * e.z);
-        f32 pd = plane_distance(x0, xN);
-        f32 d = dot(xN, centre) + pd;
+        f32   radius = fabs(xN.x * e.x) + fabs(xN.y * e.y) + fabs(xN.z * e.z);
+        f32   pd     = plane_distance(x0, xN);
+        f32   d      = dot(xN, centre) + pd;
 
         if (d > radius)
             return INFRONT;
@@ -176,7 +176,7 @@ namespace maths
     inline u32 sphere_vs_plane(const vec3f& s, f32 r, const vec3f& x0, const vec3f& xN)
     {
         f32 pd = plane_distance(x0, xN);
-        f32 d = dot(xN, s) + pd;
+        f32 d  = dot(xN, s) + pd;
 
         if (d > r)
             return INFRONT;
@@ -207,7 +207,7 @@ namespace maths
     inline bool sphere_vs_sphere(const vec3f& s0, f32 r0, const vec3f& s1, f32 r1)
     {
         f32 rr = r0 + r1;
-        f32 d = dist(s0, s1);
+        f32 d  = dist(s0, s1);
 
         if (d < rr)
             return true;
@@ -220,7 +220,7 @@ namespace maths
     inline bool sphere_vs_aabb(const vec3f& s0, f32 r0, const vec3f& aabb_min, const vec3f& aabb_max)
     {
         vec3f cp = closest_point_on_aabb(s0, aabb_min, aabb_max);
-        f32 d = dist(cp, s0);
+        f32   d  = dist(cp, s0);
 
         return d < r0;
     }
@@ -292,7 +292,7 @@ namespace maths
         f32 s = dot(cross(dc, db), cross(da, db)) / mag2(cross(da, db));
         if (s >= 0.0 && s <= 1.0)
         {
-            ip = l1 + da * s;
+            ip    = l1 + da * s;
             f32 t = distance_on_line(s1, s2, ip) / dist(s1, s2);
             if (t >= 0.0f && t <= 1.0f)
                 return true;
@@ -305,7 +305,7 @@ namespace maths
     inline vec3f closest_point_on_ray(const vec3f& r0, const vec3f& rV, const vec3f& p)
     {
         vec3f v1 = p - r0;
-        f32 t = dot(v1, rV);
+        f32   t  = dot(v1, rV);
 
         return r0 + rV * t;
     }
@@ -313,7 +313,7 @@ namespace maths
     // find distance x0 is from segment x1-x2
     inline float point_segment_distance(const vec3f& x0, const vec3f& x1, const vec3f& x2)
     {
-        Vec3f dx(x2 - x1);
+        Vec3f  dx(x2 - x1);
         double m2 = mag2(dx);
         // find parameter value of closest point on segment
         float s12 = (float)(dot(x2 - x0, dx) / m2);
@@ -401,7 +401,7 @@ namespace maths
                       closest_point_on_line(v1, v3, cp)};
 
         f32 ld = dist(p, cl[0]);
-        cp = cl[0];
+        cp     = cl[0];
 
         for (int l = 1; l < 3; ++l)
         {
@@ -452,7 +452,7 @@ namespace maths
         if (tmin > tmax)
             return false;
 
-        t = tmin;
+        t  = tmin;
         ip = r1 + rv * t;
         return true;
     }
@@ -461,8 +461,8 @@ namespace maths
     // mat will transform an aabb centred at 0 with extents -1 to 1 into an obb
     inline bool ray_vs_obb(const mat4& mat, const vec3f& r1, const vec3f& rv, vec3f& ip)
     {
-        mat4 invm = mat::inverse4x4(mat);
-        vec3f tr1 = invm.transform_vector(vec4f(r1, 1.0f)).xyz;
+        mat4  invm = mat::inverse4x4(mat);
+        vec3f tr1  = invm.transform_vector(vec4f(r1, 1.0f)).xyz;
 
         invm.set_translation(vec3f::zero());
         vec3f trv = invm.transform_vector(vec4f(rv, 1.0f)).xyz;
@@ -477,8 +477,8 @@ namespace maths
     // mat will transform an aabb centred at 0 with extents -1 to 1 into an obb
     inline vec3f closest_point_on_obb(const mat4& mat, const vec3f& p)
     {
-        mat4 invm = mat::inverse4x4(mat);
-        vec3f tp = invm.transform_vector(vec4f(p, 1.0f)).xyz;
+        mat4  invm = mat::inverse4x4(mat);
+        vec3f tp   = invm.transform_vector(vec4f(p, 1.0f)).xyz;
 
         vec3f cp = closest_point_on_aabb(tp, -vec3f::one(), vec3f::one());
 
@@ -490,8 +490,8 @@ namespace maths
     // mat will transform an aabb centred at 0 with extents -1 to 1 into an obb
     inline bool point_inside_obb(const mat4& mat, const vec3f& p)
     {
-        mat4 invm = mat::inverse4x4(mat);
-        vec3f tp = invm.transform_vector(vec4f(p, 1.0f)).xyz;
+        mat4  invm = mat::inverse4x4(mat);
+        vec3f tp   = invm.transform_vector(vec4f(p, 1.0f)).xyz;
 
         return point_inside_aabb(-vec3f::one(), vec3f::one(), tp);
     }

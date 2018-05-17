@@ -17,7 +17,7 @@ extern a_u8 g_window_resize;
 struct window_params
 {
     HINSTANCE hinstance;
-    int cmdshow;
+    int       cmdshow;
 };
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
@@ -26,7 +26,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     window_params wp;
-    wp.cmdshow = nCmdShow;
+    wp.cmdshow   = nCmdShow;
     wp.hinstance = hInstance;
 
     if (pen::window_init(((void*)&wp)))
@@ -37,7 +37,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     HWND hwnd = (HWND)pen::window_get_primary_display_handle();
 
     pen::default_thread_info thread_info;
-    thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
+    thread_info.flags                = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
     thread_info.render_thread_params = &hwnd;
 
     pen::thread_create_default_jobs(thread_info);
@@ -78,13 +78,13 @@ namespace pen
     struct window_params
     {
         HINSTANCE hinstance;
-        int cmdshow;
+        int       cmdshow;
     };
 
     //--------------------------------------------------------------------------------------
     // Globals
     //--------------------------------------------------------------------------------------
-    HWND g_hwnd = nullptr;
+    HWND      g_hwnd      = nullptr;
     HINSTANCE g_hinstance = nullptr;
 
     //--------------------------------------------------------------------------------------
@@ -97,18 +97,18 @@ namespace pen
         // Register class
         WNDCLASSEXA wcex;
         ZeroMemory(&wcex, sizeof(WNDCLASSEXA));
-        wcex.cbSize = sizeof(WNDCLASSEXA);
-        wcex.style = CS_HREDRAW | CS_VREDRAW;
-        wcex.lpfnWndProc = WndProc;
-        wcex.cbClsExtra = 0;
-        wcex.cbWndExtra = 0;
-        wcex.hInstance = wp->hinstance;
-        wcex.hIcon = NULL;
-        wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+        wcex.cbSize        = sizeof(WNDCLASSEXA);
+        wcex.style         = CS_HREDRAW | CS_VREDRAW;
+        wcex.lpfnWndProc   = WndProc;
+        wcex.cbClsExtra    = 0;
+        wcex.cbWndExtra    = 0;
+        wcex.hInstance     = wp->hinstance;
+        wcex.hIcon         = NULL;
+        wcex.hCursor       = LoadCursor(nullptr, IDC_ARROW);
         wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-        wcex.lpszMenuName = nullptr;
+        wcex.lpszMenuName  = nullptr;
         wcex.lpszClassName = pen_window.window_title;
-        wcex.hIconSm = NULL;
+        wcex.hIconSm       = NULL;
 
         if (!RegisterClassExA(&wcex))
             return E_FAIL;
@@ -177,7 +177,7 @@ namespace pen
     LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         PAINTSTRUCT ps;
-        HDC hdc;
+        HDC         hdc;
 
         switch (message)
         {
@@ -221,10 +221,10 @@ namespace pen
         case WM_MOUSEWHEEL:
         {
             s16 low_w = (s16)LOWORD(wParam);
-            s16 hi_w = (s16)HIWORD(wParam);
+            s16 hi_w  = (s16)HIWORD(wParam);
 
             s16 low_l = (s16)LOWORD(lParam);
-            s16 hi_l = (s16)HIWORD(lParam);
+            s16 hi_l  = (s16)HIWORD(lParam);
 
             pen::input_set_mouse_wheel((f32)(hi_w / WHEEL_DELTA) * 10.0f);
         }
@@ -239,7 +239,7 @@ namespace pen
 
             if (g_window_resize == 0)
             {
-                pen_window.width = LOWORD(lParam);
+                pen_window.width  = LOWORD(lParam);
                 pen_window.height = HIWORD(lParam);
 
                 g_window_resize = 1;
@@ -261,8 +261,8 @@ namespace pen
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)
     {
-        HWND hw = (HWND)pen::window_get_primary_display_handle();
-        POINT p = {(LONG)client_x, (LONG)client_y};
+        HWND  hw = (HWND)pen::window_get_primary_display_handle();
+        POINT p  = {(LONG)client_x, (LONG)client_y};
 
         ClientToScreen(hw, &p);
         SetCursorPos(p.x, p.y);

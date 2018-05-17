@@ -10,11 +10,11 @@ namespace put
 {
     inline s32 str_find_reverse(const Str& string, const c8* search)
     {
-        s32 len = string.length();
+        s32 len        = string.length();
         s32 search_len = pen::string_length(search);
 
-        s32 i = len - 1;
-        s32 j = search_len - 1;
+        s32 i          = len - 1;
+        s32 j          = search_len - 1;
         s32 find_start = len - 1;
         while (j <= i)
         {
@@ -25,7 +25,7 @@ namespace put
             else
             {
                 find_start = i - 1;
-                j = search_len - 1;
+                j          = search_len - 1;
             }
 
             if (j < 0)
@@ -41,11 +41,11 @@ namespace put
 
     inline s32 str_find(const Str& string, const c8* search, u32 start_pos = 0)
     {
-        s32 len = string.length();
+        s32 len        = string.length();
         s32 search_len = pen::string_length(search);
 
-        s32 i = start_pos;
-        s32 j = 0;
+        s32 i          = start_pos;
+        s32 j          = 0;
         s32 find_start = 0;
         while (search_len - j <= len - i)
         {
@@ -56,7 +56,7 @@ namespace put
             else
             {
                 find_start = i + 1;
-                j = 0;
+                j          = 0;
             }
 
             if (j == search_len)
@@ -89,7 +89,7 @@ namespace put
 
     inline Str str_replace_string(const Str& string, const c8* search, const c8* replace)
     {
-        s32 len = string.length();
+        s32 len        = string.length();
         s32 search_len = pen::string_length(search);
 
         s32 find_start = str_find(string, search);
@@ -98,10 +98,10 @@ namespace put
             return string;
 
         s32 end_start = find_start + search_len;
-        s32 end_len = len - end_start;
+        s32 end_len   = len - end_start;
 
         c8* start_buf = new c8[find_start + 1];
-        c8* end_buf = new c8[end_len + 1];
+        c8* end_buf   = new c8[end_len + 1];
 
         pen::memory_cpy(start_buf, string.c_str(), find_start);
         start_buf[find_start] = '\0';

@@ -24,12 +24,12 @@ pen::window_creation_params pen_window{
 struct typed_texture
 {
     const c8* fromat;
-    u32 handle;
+    u32       handle;
 };
-const c8** k_texture_formats;
-typed_texture* k_textures = nullptr;
-u32 k_num_textures = 0;
-void load_textures()
+const c8**     k_texture_formats;
+typed_texture* k_textures     = nullptr;
+u32            k_num_textures = 0;
+void           load_textures()
 {
     static typed_texture textures[] = {{"rgb8", put::load_texture("data/textures/formats/texfmt_rgb8.dds")},
                                        {"rgba8", put::load_texture("data/textures/formats/texfmt_rgba8.dds")},
@@ -50,7 +50,7 @@ void load_textures()
                                        {"bc1n", put::load_texture("data/textures/formats/texfmt_bc1n.dds")},
                                        {"bc3n", put::load_texture("data/textures/formats/texfmt_bc3n.dds")}};
 
-    k_textures = &textures[0];
+    k_textures     = &textures[0];
     k_num_textures = PEN_ARRAY_SIZE(textures);
 
     k_texture_formats = new const c8*[k_num_textures];
@@ -89,8 +89,8 @@ void texture_formats_ui()
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job* p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     dev_ui::init();

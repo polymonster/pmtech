@@ -33,13 +33,13 @@ struct tweakable_cb
 {
     f32 size_x = 0.0f;
     f32 size_y = 0.0f;
-    f32 time = 0.0f;
-    f32 pad = 0.0f;
+    f32 time   = 0.0f;
+    f32 pad    = 0.0f;
 };
 
 struct cbuf_test
 {
-    float foff[4][4];
+    float        foff[4][4];
     tweakable_cb cb;
 };
 
@@ -67,7 +67,7 @@ struct render_handles
     u32 tweakable_cbuffer;
 
     pen::viewport vp;
-    pen::rect r;
+    pen::rect     r;
 
     void release()
     {
@@ -98,9 +98,9 @@ void init_renderer()
     // raster state
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
-    rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_NONE;
-    rcp.depth_bias_clamp = 0.0f;
+    rcp.fill_mode               = PEN_FILL_SOLID;
+    rcp.cull_mode               = PEN_CULL_NONE;
+    rcp.depth_bias_clamp        = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
 
     k_render_handles.raster_state = pen::renderer_create_rasterizer_state(rcp);
@@ -127,23 +127,23 @@ void init_renderer()
     };
 
     pen::buffer_creation_params bcp;
-    bcp.usage_flags = PEN_USAGE_DEFAULT;
-    bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+    bcp.usage_flags      = PEN_USAGE_DEFAULT;
+    bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
     bcp.cpu_access_flags = 0;
 
     bcp.buffer_size = sizeof(textured_vertex) * 4;
-    bcp.data = (void*)&quad_vertices[0];
+    bcp.data        = (void*)&quad_vertices[0];
 
     k_render_handles.vb = pen::renderer_create_buffer(bcp);
 
     // create index buffer
     u16 indices[] = {0, 1, 2, 2, 3, 0};
 
-    bcp.usage_flags = PEN_USAGE_IMMUTABLE;
-    bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+    bcp.usage_flags      = PEN_USAGE_IMMUTABLE;
+    bcp.bind_flags       = PEN_BIND_INDEX_BUFFER;
     bcp.cpu_access_flags = 0;
-    bcp.buffer_size = sizeof(u16) * 6;
-    bcp.data = (void*)&indices[0];
+    bcp.buffer_size      = sizeof(u16) * 6;
+    bcp.data             = (void*)&indices[0];
 
     k_render_handles.ib = pen::renderer_create_buffer(bcp);
 
@@ -151,55 +151,55 @@ void init_renderer()
     // create a sampler object so we can sample a texture
     pen::sampler_creation_params scp;
     pen::memory_zero(&scp, sizeof(pen::sampler_creation_params));
-    scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-    scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.filter          = PEN_FILTER_MIN_MAG_MIP_LINEAR;
+    scp.address_u       = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.address_v       = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.address_w       = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.comparison_func = PEN_COMPARISON_ALWAYS;
-    scp.min_lod = 0.0f;
-    scp.max_lod = 4.0f;
+    scp.min_lod         = 0.0f;
+    scp.max_lod         = 4.0f;
 
     k_render_handles.sampler_linear_clamp = pen::renderer_create_sampler(scp);
 
-    scp.filter = PEN_FILTER_MIN_MAG_MIP_POINT;
+    scp.filter                           = PEN_FILTER_MIN_MAG_MIP_POINT;
     k_render_handles.sampler_point_clamp = pen::renderer_create_sampler(scp);
 
-    scp.address_u = PEN_TEXTURE_ADDRESS_WRAP;
-    scp.address_v = PEN_TEXTURE_ADDRESS_WRAP;
-    scp.address_w = PEN_TEXTURE_ADDRESS_WRAP;
+    scp.address_u                       = PEN_TEXTURE_ADDRESS_WRAP;
+    scp.address_v                       = PEN_TEXTURE_ADDRESS_WRAP;
+    scp.address_w                       = PEN_TEXTURE_ADDRESS_WRAP;
     k_render_handles.sampler_point_wrap = pen::renderer_create_sampler(scp);
 
-    scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
+    scp.filter                           = PEN_FILTER_MIN_MAG_MIP_LINEAR;
     k_render_handles.sampler_linear_wrap = pen::renderer_create_sampler(scp);
 
     // depth stencil state
     pen::depth_stencil_creation_params depth_stencil_params = {0};
 
     // Depth test parameters
-    depth_stencil_params.depth_enable = true;
+    depth_stencil_params.depth_enable     = true;
     depth_stencil_params.depth_write_mask = 1;
-    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
+    depth_stencil_params.depth_func       = PEN_COMPARISON_ALWAYS;
 
     k_render_handles.ds_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 
     // constant buffer
-    bcp.usage_flags = PEN_USAGE_DYNAMIC;
-    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+    bcp.usage_flags      = PEN_USAGE_DYNAMIC;
+    bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-    bcp.buffer_size = sizeof(float) * 16;
-    bcp.data = (void*)nullptr;
+    bcp.buffer_size      = sizeof(float) * 16;
+    bcp.data             = (void*)nullptr;
 
     k_render_handles.view_cbuffer = pen::renderer_create_buffer(bcp);
 
-    bcp.buffer_size = sizeof(tweakable_cb);
+    bcp.buffer_size                    = sizeof(tweakable_cb);
     k_render_handles.tweakable_cbuffer = pen::renderer_create_buffer(bcp);
 }
 
 struct texture_sampler_mapping
 {
-    u32 texture = 0;
+    u32 texture        = 0;
     s32 sampler_choice = 0;
-    u32 sampler = 0;
+    u32 sampler        = 0;
 };
 static texture_sampler_mapping k_tex_samplers[4];
 
@@ -220,7 +220,7 @@ void show_ui()
     ImGui::Begin("Shader Toy", &open);
 
     static bool browser_open = false;
-    static s32 browser_slot = -1;
+    static s32  browser_slot = -1;
     for (s32 i = 0; i < 4; ++i)
     {
         ImGui::PushID(i);
@@ -247,7 +247,7 @@ void show_ui()
         if (fn && browser_slot >= 0)
         {
             k_tex_samplers[browser_slot].texture = put::load_texture(fn);
-            browser_slot = -1;
+            browser_slot                         = -1;
         }
     }
 
@@ -257,8 +257,8 @@ void show_ui()
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job* p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     init_renderer();
@@ -295,7 +295,7 @@ PEN_TRV pen::user_entry(void* params)
         // tweakbles
         k_tweakables.size_x = 1280.0f;
         k_tweakables.size_y = 720.0f;
-        k_tweakables.time = pen::get_time_ms();
+        k_tweakables.time   = pen::get_time_ms();
 
         pen::renderer_update_buffer(k_render_handles.tweakable_cbuffer, &k_tweakables, sizeof(tweakable_cb), 0);
 

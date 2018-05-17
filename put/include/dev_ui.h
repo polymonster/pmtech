@@ -14,9 +14,9 @@ namespace put
         enum io_capture : u32
         {
             NO_INPUT = 0,
-            MOUSE = 1 << 0,
+            MOUSE    = 1 << 0,
             KEYBOARD = 1 << 1,
-            TEXT = 1 << 2
+            TEXT     = 1 << 2
         };
 
         enum e_file_browser_flags : u32
@@ -29,7 +29,7 @@ namespace put
         {
             CONSOLE_MESSAGE = 0,
             CONSOLE_WARNING = 1,
-            CONSOLE_ERROR = 2
+            CONSOLE_ERROR   = 2
         };
 
         // imgui_renderer
@@ -37,7 +37,7 @@ namespace put
         void shutdown();
         void new_frame();
         void render();
-        u32 want_capture();
+        u32  want_capture();
 
         void util_init();
 
@@ -48,18 +48,18 @@ namespace put
         void console();
 
         // imgui extensions
-        bool state_button(const c8* text, bool state_active);
-        void set_tooltip(const c8* fmt, ...);
+        bool      state_button(const c8* text, bool state_active);
+        void      set_tooltip(const c8* fmt, ...);
         const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes = 0, ...);
 
         // generic program preferences
-        void set_program_preference(const c8* name, f32 val);
-        void set_program_preference(const c8* name, s32 val);
-        void set_program_preference(const c8* name, bool val);
-        void set_program_preference(const c8* name, Str val);
+        void      set_program_preference(const c8* name, f32 val);
+        void      set_program_preference(const c8* name, s32 val);
+        void      set_program_preference(const c8* name, bool val);
+        void      set_program_preference(const c8* name, Str val);
         pen::json get_program_preference(const c8* name);
-        Str get_program_preference_filename(const c8* name);
-        void set_program_preference_filename(const c8* name, Str val);
+        Str       get_program_preference_filename(const c8* name);
+        void      set_program_preference_filename(const c8* name, Str val);
     } // namespace dev_ui
 } // namespace put
 

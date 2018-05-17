@@ -23,5 +23,7 @@ IndentWidth: '4'
 UseTab: Never
 NamespaceIndentation: All
 PointerAlignment: Left
+AlignConsecutiveDeclarations: 'true'
+AlignConsecutiveAssignments: 'true'
 
 ...

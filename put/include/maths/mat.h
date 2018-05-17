@@ -38,18 +38,18 @@ struct Mat
     static Mat<R, C, T> create_identity();
 
     // Operators
-    Mat<R, C, T> operator*(T rhs) const;
+    Mat<R, C, T>  operator*(T rhs) const;
     Mat<R, C, T>& operator*=(T rhs);
-    Mat<R, C, T> operator*(const Mat<R, C, T>& rhs) const;
+    Mat<R, C, T>  operator*(const Mat<R, C, T>& rhs) const;
     Mat<R, C, T>& operator*=(const Mat<R, C, T>& rhs);
-    Vec<C, T> operator*(const Vec<C, T>& rhs) const;
+    Vec<C, T>     operator*(const Vec<C, T>& rhs) const;
 
-    T& operator()(u32 r, u32 c);
+    T&       operator()(u32 r, u32 c);
     const T& operator()(u32 r, u32 c) const;
 
     // Accessors
-    T& at(u32 r, u32 c);
-    const T& at(u32 r, u32 c) const;
+    T&        at(u32 r, u32 c);
+    const T&  at(u32 r, u32 c) const;
     Vec<R, T> get_row(u32 index) const;
     Vec<C, T> get_column(u32 index) const;
     Vec<3, T> get_translation() const;
@@ -71,7 +71,7 @@ struct Mat
     Vec<3, T> transform_vector(const Vec<3, T>& v) const;
 
     Mat<R, C, T> transposed();
-    void transpose();
+    void         transpose();
 };
 
 // Accessor Functions
@@ -144,8 +144,8 @@ inline void Mat<R, C, T>::set_column(u32 index, const Vec<C, T>& col)
 template <u32 R, u32 C, typename T>
 inline void Mat<R, C, T>::set_translation(const Vec<3, T>& t)
 {
-    m[3] = t.x;
-    m[7] = t.y;
+    m[3]  = t.x;
+    m[7]  = t.y;
     m[11] = t.z;
 }
 
@@ -252,7 +252,7 @@ template <u32 R, u32 C, typename T>
 inline Vec<3, T> Mat<R, C, T>::transform_vector(const Vec<3, T>& v, T& w) const
 {
     Vec<4, T> result = Vec<4, T>(v, w);
-    Vec<4, T> v4 = Vec<4, T>(v, w);
+    Vec<4, T> v4     = Vec<4, T>(v, w);
     for (u32 r = 0; r < R; ++r)
     {
         result[r] = dot(v4, get_row(r));
@@ -266,7 +266,7 @@ template <u32 R, u32 C, typename T>
 inline Vec<3, T> Mat<R, C, T>::transform_vector(const Vec<3, T>& v) const
 {
     Vec<4, T> result = Vec<4, T>(v, 1.0);
-    Vec<4, T> v4 = Vec<4, T>(v, 1.0);
+    Vec<4, T> v4     = Vec<4, T>(v, 1.0);
     for (u32 r = 0; r < R; ++r)
     {
         result[r] = dot(v4, get_row(r));
@@ -279,7 +279,7 @@ template <u32 R, u32 C, typename T>
 inline void Mat<R, C, T>::transpose()
 {
     Mat<R, C, T> t = this->transposed();
-    *this = t;
+    *this          = t;
 }
 
 template <u32 R, u32 C, typename T>
@@ -375,8 +375,8 @@ namespace mat
         inverse.m[5] = (m[0] * m[10] - m[2] * m[8]) * one_over_det;
         inverse.m[6] = -(m[0] * m[6] - m[2] * m[4]) * one_over_det;
 
-        inverse.m[8] = (m[4] * m[9] - m[5] * m[8]) * one_over_det;
-        inverse.m[9] = -(m[0] * m[9] - m[1] * m[8]) * one_over_det;
+        inverse.m[8]  = (m[4] * m[9] - m[5] * m[8]) * one_over_det;
+        inverse.m[9]  = -(m[0] * m[9] - m[1] * m[8]) * one_over_det;
         inverse.m[10] = (m[0] * m[5] - m[1] * m[4]) * one_over_det;
 
         return inverse;
@@ -407,14 +407,14 @@ namespace mat
         inverse.m[5] = (m[0] * m[10] - m[2] * m[8]) * one_over_det;
         inverse.m[6] = -(m[0] * m[6] - m[2] * m[4]) * one_over_det;
 
-        inverse.m[8] = (m[4] * m[9] - m[5] * m[8]) * one_over_det;
-        inverse.m[9] = -(m[0] * m[9] - m[1] * m[8]) * one_over_det;
+        inverse.m[8]  = (m[4] * m[9] - m[5] * m[8]) * one_over_det;
+        inverse.m[9]  = -(m[0] * m[9] - m[1] * m[8]) * one_over_det;
         inverse.m[10] = (m[0] * m[5] - m[1] * m[4]) * one_over_det;
 
         // take into account inverse the translation portion (inverse translation portion * inverse rotation)
         Vec<3, T> t(-m[3], -m[7], -m[11]);
-        inverse.m[3] = t.x * inverse.m[0] + t.y * inverse.m[1] + t.z * inverse.m[2];
-        inverse.m[7] = t.x * inverse.m[4] + t.y * inverse.m[5] + t.z * inverse.m[6];
+        inverse.m[3]  = t.x * inverse.m[0] + t.y * inverse.m[1] + t.z * inverse.m[2];
+        inverse.m[7]  = t.x * inverse.m[4] + t.y * inverse.m[5] + t.z * inverse.m[6];
         inverse.m[11] = t.x * inverse.m[8] + t.y * inverse.m[9] + t.z * inverse.m[10];
 
         return inverse;
@@ -456,8 +456,8 @@ namespace mat
         inverse.m[6] = -(m[12] * s5 - m[14] * s2 + m[15] * s1) * one_over_det;
         inverse.m[7] = +(m[8] * s5 - m[10] * s2 + m[11] * s1) * one_over_det;
 
-        inverse.m[8] = +(m[4] * c4 - m[5] * c2 + m[7] * c0) * one_over_det;
-        inverse.m[9] = -(m[0] * c4 - m[1] * c2 + m[3] * c0) * one_over_det;
+        inverse.m[8]  = +(m[4] * c4 - m[5] * c2 + m[7] * c0) * one_over_det;
+        inverse.m[9]  = -(m[0] * c4 - m[1] * c2 + m[3] * c0) * one_over_det;
         inverse.m[10] = +(m[12] * s4 - m[13] * s2 + m[15] * s0) * one_over_det;
         inverse.m[11] = -(m[8] * s4 - m[9] * s2 + m[11] * s0) * one_over_det;
 
@@ -474,16 +474,16 @@ namespace mat
     {
         Mat<4, 4, T> m;
 
-        m.m[0] = 1;
-        m.m[1] = 0;
-        m.m[2] = 0;
-        m.m[3] = t.x;
-        m.m[4] = 0;
-        m.m[5] = 1;
-        m.m[6] = 0;
-        m.m[7] = t.y;
-        m.m[8] = 0;
-        m.m[9] = 0;
+        m.m[0]  = 1;
+        m.m[1]  = 0;
+        m.m[2]  = 0;
+        m.m[3]  = t.x;
+        m.m[4]  = 0;
+        m.m[5]  = 1;
+        m.m[6]  = 0;
+        m.m[7]  = t.y;
+        m.m[8]  = 0;
+        m.m[9]  = 0;
         m.m[10] = 1;
         m.m[11] = t.z;
         m.m[12] = 0;
@@ -504,16 +504,16 @@ namespace mat
         T sin_theta = sin(theta_rad);
         T cos_theta = cos(theta_rad);
 
-        m.m[0] = 1;
-        m.m[1] = 0;
-        m.m[2] = 0;
-        m.m[3] = 0;
-        m.m[4] = 0;
-        m.m[5] = cos_theta;
-        m.m[6] = -sin_theta;
-        m.m[7] = 0;
-        m.m[8] = 0;
-        m.m[9] = sin_theta;
+        m.m[0]  = 1;
+        m.m[1]  = 0;
+        m.m[2]  = 0;
+        m.m[3]  = 0;
+        m.m[4]  = 0;
+        m.m[5]  = cos_theta;
+        m.m[6]  = -sin_theta;
+        m.m[7]  = 0;
+        m.m[8]  = 0;
+        m.m[9]  = sin_theta;
         m.m[10] = cos_theta;
         m.m[11] = 0;
         m.m[12] = 0;
@@ -534,16 +534,16 @@ namespace mat
         T sin_theta = sin(theta_rad);
         T cos_theta = cos(theta_rad);
 
-        m.m[0] = cos_theta;
-        m.m[1] = 0;
-        m.m[2] = sin_theta;
-        m.m[3] = 0;
-        m.m[4] = 0;
-        m.m[5] = 1;
-        m.m[6] = 0;
-        m.m[7] = 0;
-        m.m[8] = -sin_theta;
-        m.m[9] = 0;
+        m.m[0]  = cos_theta;
+        m.m[1]  = 0;
+        m.m[2]  = sin_theta;
+        m.m[3]  = 0;
+        m.m[4]  = 0;
+        m.m[5]  = 1;
+        m.m[6]  = 0;
+        m.m[7]  = 0;
+        m.m[8]  = -sin_theta;
+        m.m[9]  = 0;
         m.m[10] = cos_theta;
         m.m[11] = 0;
         m.m[12] = 0;
@@ -564,16 +564,16 @@ namespace mat
         T sin_theta = sin(theta_rad);
         T cos_theta = cos(theta_rad);
 
-        m.m[0] = cos_theta;
-        m.m[1] = -sin_theta;
-        m.m[2] = 0;
-        m.m[3] = 0;
-        m.m[4] = sin_theta;
-        m.m[5] = cos_theta;
-        m.m[6] = 0.0f;
-        m.m[7] = 0;
-        m.m[8] = 0;
-        m.m[9] = 0;
+        m.m[0]  = cos_theta;
+        m.m[1]  = -sin_theta;
+        m.m[2]  = 0;
+        m.m[3]  = 0;
+        m.m[4]  = sin_theta;
+        m.m[5]  = cos_theta;
+        m.m[6]  = 0.0f;
+        m.m[7]  = 0;
+        m.m[8]  = 0;
+        m.m[9]  = 0;
         m.m[10] = 1;
         m.m[11] = 0;
         m.m[12] = 0;
@@ -589,9 +589,9 @@ namespace mat
     {
         Mat<4, 4, T> m;
 
-        T theta_rad = theta;
-        T sin_theta = sin(theta_rad);
-        T cos_theta = cos(theta_rad);
+        T theta_rad     = theta;
+        T sin_theta     = sin(theta_rad);
+        T cos_theta     = cos(theta_rad);
         T inv_cos_theta = 1 - cos(theta_rad);
 
         m.m[0] = inv_cos_theta * axis.x * axis.x + cos_theta;
@@ -604,8 +604,8 @@ namespace mat
         m.m[6] = inv_cos_theta * axis.y * axis.z - sin_theta * axis.x;
         m.m[7] = 0;
 
-        m.m[8] = inv_cos_theta * axis.x * axis.z - sin_theta * axis.y;
-        m.m[9] = inv_cos_theta * axis.y * axis.z + sin_theta * axis.x;
+        m.m[8]  = inv_cos_theta * axis.x * axis.z - sin_theta * axis.y;
+        m.m[9]  = inv_cos_theta * axis.y * axis.z + sin_theta * axis.x;
         m.m[10] = inv_cos_theta * axis.z * axis.z + cos_theta;
         m.m[11] = 0;
 
@@ -622,16 +622,16 @@ namespace mat
     {
         Mat<4, 4, T> m;
 
-        m.m[0] = s.x;
-        m.m[1] = 0;
-        m.m[2] = 0;
-        m.m[3] = 0;
-        m.m[4] = 0;
-        m.m[5] = s.y;
-        m.m[6] = 0;
-        m.m[7] = 0;
-        m.m[8] = 0;
-        m.m[9] = 0;
+        m.m[0]  = s.x;
+        m.m[1]  = 0;
+        m.m[2]  = 0;
+        m.m[3]  = 0;
+        m.m[4]  = 0;
+        m.m[5]  = s.y;
+        m.m[6]  = 0;
+        m.m[7]  = 0;
+        m.m[8]  = 0;
+        m.m[9]  = 0;
         m.m[10] = s.z;
         m.m[11] = 0;
         m.m[12] = 0;
@@ -649,16 +649,16 @@ namespace mat
 
         static T half = 1 / 2;
 
-        m.m[0] = half;
-        m.m[1] = 0;
-        m.m[2] = 0;
-        m.m[3] = half;
-        m.m[4] = 0;
-        m.m[5] = half;
-        m.m[6] = 0;
-        m.m[7] = half;
-        m.m[8] = 0;
-        m.m[9] = 0;
+        m.m[0]  = half;
+        m.m[1]  = 0;
+        m.m[2]  = 0;
+        m.m[3]  = half;
+        m.m[4]  = 0;
+        m.m[5]  = half;
+        m.m[6]  = 0;
+        m.m[7]  = half;
+        m.m[8]  = 0;
+        m.m[9]  = 0;
         m.m[10] = half;
         m.m[11] = half;
         m.m[12] = 0;
@@ -674,16 +674,16 @@ namespace mat
     {
         Mat<4, 4, T> m;
 
-        m.m[0] = x.x;
-        m.m[1] = y.x;
-        m.m[2] = z.x;
-        m.m[3] = 0.0f;
-        m.m[4] = x.y;
-        m.m[5] = y.y;
-        m.m[6] = z.y;
-        m.m[7] = 0.0f;
-        m.m[8] = x.z;
-        m.m[9] = y.z;
+        m.m[0]  = x.x;
+        m.m[1]  = y.x;
+        m.m[2]  = z.x;
+        m.m[3]  = 0.0f;
+        m.m[4]  = x.y;
+        m.m[5]  = y.y;
+        m.m[6]  = z.y;
+        m.m[7]  = 0.0f;
+        m.m[8]  = x.z;
+        m.m[9]  = y.z;
         m.m[10] = z.z;
         m.m[11] = 0.0f;
         m.m[12] = 0.0f;
@@ -699,16 +699,16 @@ namespace mat
     {
         Mat<4, 4, T> m;
 
-        m.m[0] = ((T)2 * znear) / (right - left);
-        m.m[1] = 0;
-        m.m[2] = (right + left) / (right - left);
-        m.m[3] = 0;
-        m.m[4] = 0;
-        m.m[5] = (2 * znear) / (top - bottom);
-        m.m[6] = (top + bottom) / (top - bottom);
-        m.m[7] = 0;
-        m.m[8] = 0;
-        m.m[9] = 0;
+        m.m[0]  = ((T)2 * znear) / (right - left);
+        m.m[1]  = 0;
+        m.m[2]  = (right + left) / (right - left);
+        m.m[3]  = 0;
+        m.m[4]  = 0;
+        m.m[5]  = (2 * znear) / (top - bottom);
+        m.m[6]  = (top + bottom) / (top - bottom);
+        m.m[7]  = 0;
+        m.m[8]  = 0;
+        m.m[9]  = 0;
         m.m[10] = (-zfar - znear) / (zfar - znear);
         m.m[11] = (-(2 * znear) * zfar) / (zfar - znear);
         m.m[12] = 0;
@@ -733,12 +733,12 @@ namespace mat
 
         Mat<4, 4, T> m = Mat<4, 4, T>::create_identity();
 
-        m.m[0] = (T)2 / (r - l);
-        m.m[5] = (T)2 / (t - b);
+        m.m[0]  = (T)2 / (r - l);
+        m.m[5]  = (T)2 / (t - b);
         m.m[10] = (T)1 / (n - f);
 
-        m.m[3] = (l + r) / (l - r);
-        m.m[7] = (t + b) / (b - t);
+        m.m[3]  = (l + r) / (l - r);
+        m.m[7]  = (t + b) / (b - t);
         m.m[11] = n / (n - f);
 
         return m;

@@ -6,7 +6,7 @@ namespace pen
     typedef struct thread
     {
         HANDLE handle;
-        DWORD id;
+        DWORD  id;
     } thread;
 
     typedef struct mutex

@@ -24,7 +24,7 @@ namespace pen
 
       private:
         static void readUnaligned(const void* _data, uint32_t& _out);
-        void mixTail(const uint8_t*& _data, int& _len);
+        void        mixTail(const uint8_t*& _data, int& _len);
 
         uint32_t m_hash;
         uint32_t m_tail;

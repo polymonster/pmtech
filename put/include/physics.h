@@ -97,21 +97,21 @@ namespace physics
     {
         f32* vertices;
         u32* indices;
-        u32 num_floats;
-        u32 num_indices;
+        u32  num_floats;
+        u32  num_indices;
     };
 
     struct rigid_body_params
     {
-        vec3f position;
-        vec3f dimensions;
-        u32 shape_up_axis;
-        quat rotation;
-        u32 shape;
-        f32 mass;
-        u32 group;
-        u32 mask;
-        mat4 start_matrix;
+        vec3f               position;
+        vec3f               dimensions;
+        u32                 shape_up_axis;
+        quat                rotation;
+        u32                 shape;
+        f32                 mass;
+        u32                 group;
+        u32                 mask;
+        mat4                start_matrix;
         collision_mesh_data mesh_data;
 
         rigid_body_params(){};
@@ -120,31 +120,31 @@ namespace physics
 
     struct compound_rb_params
     {
-        rigid_body_params base;
+        rigid_body_params  base;
         rigid_body_params* rb;
-        u32 num_shapes;
+        u32                num_shapes;
     };
 
     struct multi_body_link
     {
-        rigid_body_params rb;
-        lw_vec3f hinge_axis;
-        lw_vec3f hinge_offset;
-        lw_vec3f hinge_limits;
-        u32 link_type;
-        s32 parent;
-        u32 transform_world_to_local;
-        u32 joint_motor;
-        u32 joint_limit_constraint;
-        u32 compound_index;
+        rigid_body_params  rb;
+        lw_vec3f           hinge_axis;
+        lw_vec3f           hinge_offset;
+        lw_vec3f           hinge_limits;
+        u32                link_type;
+        s32                parent;
+        u32                transform_world_to_local;
+        u32                joint_motor;
+        u32                joint_limit_constraint;
+        u32                compound_index;
         compound_rb_params compound_shape;
     };
 
     struct multi_body_params
     {
         rigid_body_params base;
-        multi_body_link* links;
-        u32 multi_dof;
+        multi_body_link*  links;
+        u32               multi_dof;
 
         u32 num_links;
     };
@@ -184,29 +184,29 @@ namespace physics
     struct add_p2p_constraint_params
     {
         lw_vec3f position;
-        u32 entity_index;
-        s32 link_index;
-        u32 p2p_index;
+        u32      entity_index;
+        s32      link_index;
+        u32      p2p_index;
     };
 
     struct add_box_params
     {
         lw_vec3f dimensions;
         lw_vec3f position;
-        quat rotation;
-        f32 mass;
+        quat     rotation;
+        f32      mass;
     };
 
     struct set_v3_params
     {
-        u32 object_index;
+        u32      object_index;
         lw_vec3f data;
     };
 
     struct set_multi_v3_params
     {
-        u32 multi_index;
-        u32 link_index;
+        u32      multi_index;
+        u32      link_index;
         lw_vec3f data;
     };
 
@@ -218,9 +218,9 @@ namespace physics
 
     struct set_transform_params
     {
-        u32 object_index;
+        u32      object_index;
         lw_vec3f position;
-        quat rotation;
+        quat     rotation;
     };
 
     struct sync_compound_multi_params
@@ -231,7 +231,7 @@ namespace physics
 
     struct set_damping_params
     {
-        u32 object_index;
+        u32      object_index;
         lw_vec3f linear;
         lw_vec3f angular;
     };
@@ -252,9 +252,9 @@ namespace physics
 
     struct trigger_contact_data
     {
-        u32 num;
-        u32 flag[MAX_TRIGGER_CONTACTS];
-        u32 entity[MAX_TRIGGER_CONTACTS];
+        u32   num;
+        u32   flag[MAX_TRIGGER_CONTACTS];
+        u32   entity[MAX_TRIGGER_CONTACTS];
         vec3f normals[MAX_TRIGGER_CONTACTS];
         vec3f pos[MAX_TRIGGER_CONTACTS];
     };
@@ -262,14 +262,14 @@ namespace physics
     struct ray_cast_result
     {
         vec3f point;
-        u32 physics_handle;
+        u32   physics_handle;
     };
 
     struct ray_cast_params
     {
         lw_vec3f start;
         lw_vec3f end;
-        u32 timestamp;
+        u32      timestamp;
         void (*callback)(const ray_cast_result& result);
     };
 
@@ -279,25 +279,25 @@ namespace physics
         u32 resource_slot;
 
         union {
-            add_box_params add_box;
-            set_v3_params set_v3;
-            set_transform_params set_transform;
-            set_float_params set_float;
-            rigid_body_params add_rb;
-            constraint_params add_constained_rb;
-            constraint_params add_constraint_params;
-            multi_body_params add_multi;
-            set_multi_v3_params set_multi_v3;
-            compound_rb_params add_compound_rb;
+            add_box_params             add_box;
+            set_v3_params              set_v3;
+            set_transform_params       set_transform;
+            set_float_params           set_float;
+            rigid_body_params          add_rb;
+            constraint_params          add_constained_rb;
+            constraint_params          add_constraint_params;
+            multi_body_params          add_multi;
+            set_multi_v3_params        set_multi_v3;
+            compound_rb_params         add_compound_rb;
             sync_compound_multi_params sync_compound;
-            sync_rb_params sync_rb;
-            u32 entity_index;
-            set_damping_params set_damping;
-            set_group_params set_group;
-            collision_trigger_data trigger_data;
-            attach_to_compound_params attach_compound;
-            add_p2p_constraint_params add_p2p;
-            ray_cast_params ray_cast;
+            sync_rb_params             sync_rb;
+            u32                        entity_index;
+            set_damping_params         set_damping;
+            set_group_params           set_group;
+            collision_trigger_data     trigger_data;
+            attach_to_compound_params  attach_compound;
+            add_p2p_constraint_params  add_p2p;
+            ray_cast_params            ray_cast;
         };
 
         physics_cmd(){};
@@ -331,8 +331,8 @@ namespace physics
 
     mat4 get_rb_matrix(const u32& entity_index);
     mat4 get_multirb_matrix(const u32& multi_index, const s32& link_index);
-    f32 get_multi_joint_pos(const u32& multi_index, const s32& link_index);
-    u32 get_hit_flags(u32 entity_index);
+    f32  get_multi_joint_pos(const u32& multi_index, const s32& link_index);
+    u32  get_hit_flags(u32 entity_index);
 
     trigger_contact_data* get_trigger_contacts(u32 entity_index);
 

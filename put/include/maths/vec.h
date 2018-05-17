@@ -508,39 +508,39 @@ struct Vec<4, T>
 
 // Abbreviations
 
-typedef Vec<2, double> Vec2d;
-typedef Vec<2, float> Vec2f;
-typedef Vec<2, int> Vec2i;
-typedef Vec<2, unsigned int> Vec2ui;
-typedef Vec<2, short> Vec2s;
+typedef Vec<2, double>         Vec2d;
+typedef Vec<2, float>          Vec2f;
+typedef Vec<2, int>            Vec2i;
+typedef Vec<2, unsigned int>   Vec2ui;
+typedef Vec<2, short>          Vec2s;
 typedef Vec<2, unsigned short> Vec2us;
-typedef Vec<2, char> Vec2c;
-typedef Vec<2, unsigned char> Vec2uc;
+typedef Vec<2, char>           Vec2c;
+typedef Vec<2, unsigned char>  Vec2uc;
 
-typedef Vec<3, double> Vec3d;
-typedef Vec<3, float> Vec3f;
-typedef Vec<3, int> Vec3i;
-typedef Vec<3, unsigned int> Vec3ui;
-typedef Vec<3, short> Vec3s;
+typedef Vec<3, double>         Vec3d;
+typedef Vec<3, float>          Vec3f;
+typedef Vec<3, int>            Vec3i;
+typedef Vec<3, unsigned int>   Vec3ui;
+typedef Vec<3, short>          Vec3s;
 typedef Vec<3, unsigned short> Vec3us;
-typedef Vec<3, char> Vec3c;
-typedef Vec<3, unsigned char> Vec3uc;
+typedef Vec<3, char>           Vec3c;
+typedef Vec<3, unsigned char>  Vec3uc;
 
-typedef Vec<4, double> Vec4d;
-typedef Vec<4, float> Vec4f;
-typedef Vec<4, int> Vec4i;
-typedef Vec<4, unsigned int> Vec4ui;
-typedef Vec<4, short> Vec4s;
+typedef Vec<4, double>         Vec4d;
+typedef Vec<4, float>          Vec4f;
+typedef Vec<4, int>            Vec4i;
+typedef Vec<4, unsigned int>   Vec4ui;
+typedef Vec<4, short>          Vec4s;
 typedef Vec<4, unsigned short> Vec4us;
-typedef Vec<4, char> Vec4c;
-typedef Vec<4, unsigned char> Vec4uc;
+typedef Vec<4, char>           Vec4c;
+typedef Vec<4, unsigned char>  Vec4uc;
 
 typedef Vec2i vec2i;
 typedef Vec2f vec2f;
 
-typedef Vec3f vec3f;
+typedef Vec3f  vec3f;
 typedef Vec3ui vec3ui;
-typedef Vec3f vec3i;
+typedef Vec3f  vec3i;
 
 typedef Vec4f vec4f;
 typedef Vec4i vec4i;
@@ -961,7 +961,7 @@ std::istream& operator>>(std::istream& in, Vec<N, T>& v)
 template <unsigned int N, class T>
 inline bool operator==(const Vec<N, T>& a, const Vec<N, T>& b)
 {
-    bool t = (a.v[0] == b.v[0]);
+    bool         t = (a.v[0] == b.v[0]);
     unsigned int i = 1;
     while (i < N && t)
     {
@@ -974,7 +974,7 @@ inline bool operator==(const Vec<N, T>& a, const Vec<N, T>& b)
 template <unsigned int N, class T>
 inline bool operator!=(const Vec<N, T>& a, const Vec<N, T>& b)
 {
-    bool t = (a.v[0] != b.v[0]);
+    bool         t = (a.v[0] != b.v[0]);
     unsigned int i = 1;
     while (i < N && !t)
     {

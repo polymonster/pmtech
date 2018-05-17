@@ -37,11 +37,11 @@ void renderer_state_init()
     // raster state
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
-    rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_BACK;
-    rcp.depth_bias_clamp = 0.0f;
+    rcp.fill_mode               = PEN_FILL_SOLID;
+    rcp.cull_mode               = PEN_CULL_BACK;
+    rcp.depth_bias_clamp        = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
-    rcp.depth_clip_enable = true;
+    rcp.depth_clip_enable       = true;
 
     raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
 
@@ -49,9 +49,9 @@ void renderer_state_init()
     pen::depth_stencil_creation_params depth_stencil_params = {0};
 
     // Depth test parameters
-    depth_stencil_params.depth_enable = true;
+    depth_stencil_params.depth_enable     = true;
     depth_stencil_params.depth_write_mask = 1;
-    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
+    depth_stencil_params.depth_func       = PEN_COMPARISON_ALWAYS;
 
     default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 }
@@ -61,8 +61,8 @@ void audio_player_update();
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job* p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     renderer_state_init();
@@ -111,23 +111,23 @@ PEN_TRV pen::user_entry(void* params)
 
 enum playback_deck_flags : s32
 {
-    NONE = 0,
-    GROUP_STATE_VALID = 1 << 0,
+    NONE                = 0,
+    GROUP_STATE_VALID   = 1 << 0,
     CHANNEL_STATE_VALID = 1 << 1,
-    FILE_INFO_INVALID = 1 << 3,
-    FILE_INFO_VALID = 1 << 4,
-    PAUSE_FFT_UPDATE = 1 << 5,
-    CUE = 1 << 6,
-    CUE_DOWN = 1 << 7
+    FILE_INFO_INVALID   = 1 << 3,
+    FILE_INFO_VALID     = 1 << 4,
+    PAUSE_FFT_UPDATE    = 1 << 5,
+    CUE                 = 1 << 6,
+    CUE_DOWN            = 1 << 7
 };
 
 f32 pitch_range_options[4] = {8.0f, 16.0f, 50.0f, 100.0f};
 
 const c8* pitch_range_desriptions[4] = {"8%", "16%", "50%", "100%"};
 
-static const u32 k_num_fft_diff_buckets = 5;
-u32 k_fft_diff_ranges[k_num_fft_diff_buckets] = {16, 32, 64, 256, 1024};
-const c8* diff_range_desriptions[k_num_fft_diff_buckets] = {"0-16", "16-32", "32-64", "64-256", "256-1024"};
+static const u32 k_num_fft_diff_buckets                         = 5;
+u32              k_fft_diff_ranges[k_num_fft_diff_buckets]      = {16, 32, 64, 256, 1024};
+const c8*        diff_range_desriptions[k_num_fft_diff_buckets] = {"0-16", "16-32", "32-64", "64-256", "256-1024"};
 
 const c8* diff_range_nicknames[k_num_fft_diff_buckets] = {"KICK", "LOW ", "MID ", "HAT ", "HIGH"};
 
@@ -135,7 +135,7 @@ class beat_grid
 {
   public:
     std::vector<f32> beats[k_num_fft_diff_buckets];
-    f32 average_interval[k_num_fft_diff_buckets];
+    f32              average_interval[k_num_fft_diff_buckets];
 
     void show_window(bool& open)
     {
@@ -147,7 +147,7 @@ class beat_grid
         {
             average_interval[i] = 0.0f;
 
-            f32 prev = 0.0f;
+            f32 prev    = 0.0f;
             u32 counter = 0;
             for (auto& timestamp : beats[i])
             {
@@ -189,22 +189,22 @@ struct spectrum_history_stats
 struct beat
 {
     u32 start = 0;
-    u32 end = 0;
-    f32 val = 0.0f;
+    u32 end   = 0;
+    f32 val   = 0.0f;
 };
 
 class spectrum_analyser
 {
   public:
     pen::audio_fft_spectrum frame_spectrum;
-    u32 spectrum_dsp;
+    u32                     spectrum_dsp;
 
-    static const u32 max_fft_length = 1024;
-    static const u32 num_analysis_buffers = 256;
-    static const u32 new_anlysis_loc = 0;
-    f32 spectrum_history[num_analysis_buffers][max_fft_length];
+    static const u32       max_fft_length       = 1024;
+    static const u32       num_analysis_buffers = 256;
+    static const u32       new_anlysis_loc      = 0;
+    f32                    spectrum_history[num_analysis_buffers][max_fft_length];
     spectrum_history_stats spectrum_stats[max_fft_length];
-    f32 coarse_spectrum_history[num_analysis_buffers][k_num_fft_diff_buckets];
+    f32                    coarse_spectrum_history[num_analysis_buffers][k_num_fft_diff_buckets];
 
     f32 raw_diff[num_analysis_buffers][max_fft_length];
     f32 coarse_diff[k_num_fft_diff_buckets][num_analysis_buffers];
@@ -212,18 +212,18 @@ class spectrum_analyser
     f32 timestamp[num_analysis_buffers];
 
     f32 beat_hueristic[1024];
-    u32 h_pos = 0;
+    u32 h_pos         = 0;
     u32 frame_counter = 0;
 
     s32 h_pos_min[4] = {0, 256, 512, 768};
     s32 h_pos_max[4] = {255, 255, 255, 255};
 
     std::vector<beat> beats;
-    beat new_beat;
+    beat              new_beat;
 
-    s32 current_display_pos = 0;
-    s32 current_display_samples = 256;
-    bool pause_display = false;
+    s32  current_display_pos     = 0;
+    s32  current_display_samples = 256;
+    bool pause_display           = false;
 
     void update(s32 cur_track_pos)
     {
@@ -270,8 +270,8 @@ class spectrum_analyser
             // calculate statistics over time
             for (s32 i = 0; i < max_fft_length; ++i)
             {
-                spectrum_stats[i].min = 1.0f;
-                spectrum_stats[i].max = 0.0f;
+                spectrum_stats[i].min     = 1.0f;
+                spectrum_stats[i].max     = 0.0f;
                 spectrum_stats[i].average = 0.0f;
 
                 for (s32 j = 0; j < num_analysis_buffers; ++j)
@@ -296,7 +296,7 @@ class spectrum_analyser
             }
 
             // calculate change in frequency from frame to frame
-            u32 coarse_buffer = 0;
+            u32 coarse_buffer  = 0;
             f32 coarse_average = 0.0f;
             for (u32 i = 0; i < max_fft_length; ++i)
             {
@@ -327,7 +327,7 @@ class spectrum_analyser
 
                 for (s32 i = num_analysis_buffers - 1; i > 0; --i)
                 {
-                    second_order_diff[b][i] = 0.0f;
+                    second_order_diff[b][i]     = 0.0f;
                     second_order_diff[b][i - 1] = 0.0f;
 
                     if (coarse_diff[b][i - 1] >= coarse_diff[b][i])
@@ -362,9 +362,9 @@ class spectrum_analyser
             }
 
             // quantize peaks into beats
-            f32 cur_score = 0.0f;
+            f32 cur_score  = 0.0f;
             s32 beat_start = -1;
-            s32 cool_down = 0;
+            s32 cool_down  = 0;
 
             for (s32 i = num_analysis_buffers - 1; i > 0; i--)
             {
@@ -372,10 +372,10 @@ class spectrum_analyser
 
                 if (cur_val > 0.01f && beat_start == -1)
                 {
-                    cur_score = cur_val;
+                    cur_score                 = cur_val;
                     beat_hueristic[h_pos + i] = cur_val;
-                    beat_start = i;
-                    cool_down = 4;
+                    beat_start                = i;
+                    cool_down                 = 4;
                 }
                 else
                 {
@@ -399,8 +399,8 @@ class spectrum_analyser
                     else
                     {
                         beat_hueristic[h_pos + i] = 0.0f;
-                        beat_start = -1;
-                        cur_score = 0.0f;
+                        beat_start                = -1;
+                        cur_score                 = 0.0f;
                     }
                 }
 
@@ -424,9 +424,9 @@ class spectrum_analyser
                     beats.insert(beats.begin() + 0, new_beat);
                 }
 
-                new_beat.val = 0.0f;
+                new_beat.val   = 0.0f;
                 new_beat.start = 0;
-                new_beat.end = 0;
+                new_beat.end   = 0;
             }
 
             ++frame_counter;
@@ -545,10 +545,10 @@ class spectrum_analyser
 
             for (s32 i = 0; i < k_num_fft_diff_buckets; ++i)
             {
-                u32 interval = 0;
-                u32 last_beat = 0;
+                u32  interval   = 0;
+                u32  last_beat  = 0;
                 bool first_beat = true;
-                s32 cooldown = 0;
+                s32  cooldown   = 0;
 
                 for (s32 j = num_analysis_buffers - 1; j > 0; --j)
                 {
@@ -597,44 +597,44 @@ class playback_deck
     spectrum_analyser sa;
 
     // audio states
-    pen::audio_channel_state channel_state;
-    pen::audio_fft_spectrum spectrum;
-    pen::audio_group_state group_state;
+    pen::audio_channel_state   channel_state;
+    pen::audio_fft_spectrum    spectrum;
+    pen::audio_group_state     group_state;
     pen::audio_sound_file_info file_info;
 
     // filesystem
-    bool open_file = false;
-    bool open_beat_grid = false;
-    bool open_spectrum_analyser = false;
-    const c8* file = nullptr;
+    bool      open_file              = false;
+    bool      open_beat_grid         = false;
+    bool      open_spectrum_analyser = false;
+    const c8* file                   = nullptr;
 
     u32 cue_pos;
     s32 pitch_range;
 
     // debug info
     s32 fft_num_samples = 64;
-    f32 fft_max = 1.0f;
+    f32 fft_max         = 1.0f;
 
     // analysis
 
     // general fft storage
-    static const s32 num_analysis_buffers = 256;
-    f32 fft_buffers[num_analysis_buffers][2048] = {0};
-    u32 fft_timestamp[num_analysis_buffers] = {0};
+    static const s32 num_analysis_buffers                    = 256;
+    f32              fft_buffers[num_analysis_buffers][2048] = {0};
+    u32              fft_timestamp[num_analysis_buffers]     = {0};
 
     // comparison
     f32 fft_max_vals[2048];
     f32 fft_diff[2048];
 
     // the magic
-    f32 fft_combined_diff[k_num_fft_diff_buckets] = {0.0f};
+    f32 fft_combined_diff[k_num_fft_diff_buckets]  = {0.0f};
     f32 prev_combined_diff[k_num_fft_diff_buckets] = {0.0f};
     f32 fft_combined_history[num_analysis_buffers] = {0.0f};
-    f32 beat_cooldown[k_num_fft_diff_buckets] = {0.0f};
+    f32 beat_cooldown[k_num_fft_diff_buckets]      = {0.0f};
 
     // tracking
     s32 current_analysis_buffer_pos = 0;
-    s32 plot_lines_diff_range = 0;
+    s32 plot_lines_diff_range       = 0;
 
     f32 timestamp = 0.0;
     f32 fame_time = 0.0f;
@@ -642,7 +642,7 @@ class playback_deck
     void ui_control()
     {
         f32 prev_time = timestamp;
-        timestamp = pen::get_time_ms();
+        timestamp     = pen::get_time_ms();
 
         fame_time = timestamp - prev_time;
 
@@ -844,7 +844,7 @@ class mixer_channel
     u32 gain_dsp;
 
     pen::audio_group_state group_state;
-    pen::audio_eq_state eq_state;
+    pen::audio_eq_state    eq_state;
 
     f32 gain;
 
@@ -898,13 +898,13 @@ void audio_player_update()
     {
         for (s32 i = 0; i < num_decks; ++i)
         {
-            decks[i].group_index = pen::audio_create_channel_group();
+            decks[i].group_index          = pen::audio_create_channel_group();
             mixer_channels[i].group_index = decks[i].group_index;
 
             // create sound spectrum dsp
-            decks[i].spectrum_dsp = pen::audio_add_dsp_to_group(decks[i].group_index, pen::DSP_FFT);
+            decks[i].spectrum_dsp               = pen::audio_add_dsp_to_group(decks[i].group_index, pen::DSP_FFT);
             mixer_channels[i].three_band_eq_dsp = pen::audio_add_dsp_to_group(decks[i].group_index, pen::DSP_THREE_BAND_EQ);
-            mixer_channels[i].gain_dsp = pen::audio_add_dsp_to_group(decks[i].group_index, pen::DSP_GAIN);
+            mixer_channels[i].gain_dsp          = pen::audio_add_dsp_to_group(decks[i].group_index, pen::DSP_GAIN);
         }
 
         initialised = true;

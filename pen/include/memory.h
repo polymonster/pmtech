@@ -35,11 +35,11 @@ namespace pen
     void* memory_alloc(u32 size_bytes);
     void* memory_alloc_align(u32 size_bytes, u32 alignment);
     void* memory_realloc(void* mem, u32 size_bytes);
-    void memory_free(void* mem);
-    void memory_free_align(void* mem);
-    void memory_cpy(void* dest, const void* src, u32 size_bytes);
-    void memory_set(void* dest, u8 val, u32 size_bytes);
-    void memory_zero(void* dest, u32 size_bytes);
+    void  memory_free(void* mem);
+    void  memory_free_align(void* mem);
+    void  memory_cpy(void* dest, const void* src, u32 size_bytes);
+    void  memory_set(void* dest, u8 val, u32 size_bytes);
+    void  memory_zero(void* dest, u32 size_bytes);
 
     // ImplementationCHECK_CALL
 
@@ -96,9 +96,9 @@ namespace pen
 void* operator new(std::size_t size, const std::nothrow_t& nothrow_value) THROW_NO_EXCEPT;
 
 void* operator new(size_t n) THROW_BAD_ALLOC;
-void operator delete(void* p)THROW_NO_EXCEPT;
+void  operator delete(void* p)THROW_NO_EXCEPT;
 
 void* operator new[](size_t n) THROW_BAD_ALLOC;
-void operator delete[](void* p) THROW_NO_EXCEPT;
+void  operator delete[](void* p) THROW_NO_EXCEPT;
 
 #endif

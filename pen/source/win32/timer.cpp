@@ -21,10 +21,10 @@ namespace pen
     } timer;
 
     LARGE_INTEGER performance_frequency;
-    f32 ticks_to_ms;
-    f32 ticks_to_us;
-    f32 ticks_to_ns;
-    timer timers[MAX_TIMERS];
+    f32           ticks_to_ms;
+    f32           ticks_to_us;
+    f32           ticks_to_ns;
+    timer         timers[MAX_TIMERS];
 
     u32 next_free = 0;
 

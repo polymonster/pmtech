@@ -37,33 +37,33 @@ namespace put
 
     struct scene_view
     {
-        u32 cb_view = PEN_INVALID_HANDLE;
-        u32 cb_2d_view = PEN_INVALID_HANDLE;
-        u32 render_flags = 0;
-        u32 depth_stencil_state = 0;
-        u32 blend_state_state = 0;
-        u32 raster_state = 0;
-        put::camera* camera = nullptr;
-        pen::viewport* viewport = nullptr;
-        pmfx::shader_handle pmfx_shader = PEN_INVALID_HANDLE;
-        hash_id technique = 0;
-        ces::entity_scene* scene = nullptr;
+        u32                 cb_view             = PEN_INVALID_HANDLE;
+        u32                 cb_2d_view          = PEN_INVALID_HANDLE;
+        u32                 render_flags        = 0;
+        u32                 depth_stencil_state = 0;
+        u32                 blend_state_state   = 0;
+        u32                 raster_state        = 0;
+        put::camera*        camera              = nullptr;
+        pen::viewport*      viewport            = nullptr;
+        pmfx::shader_handle pmfx_shader         = PEN_INVALID_HANDLE;
+        hash_id             technique           = 0;
+        ces::entity_scene*  scene               = nullptr;
     };
 
     struct scene_controller
     {
-        Str name;
-        hash_id id_name = 0;
-        ces::entity_scene* scene = nullptr;
-        put::camera* camera = nullptr;
-        e_update_order order = MAIN_UPDATE;
+        Str                name;
+        hash_id            id_name = 0;
+        ces::entity_scene* scene   = nullptr;
+        put::camera*       camera  = nullptr;
+        e_update_order     order   = MAIN_UPDATE;
 
         void (*update_function)(scene_controller*) = nullptr;
     };
 
     struct scene_view_renderer
     {
-        Str name;
+        Str     name;
         hash_id id_name = 0;
 
         void (*render_function)(const scene_view&) = nullptr;
@@ -78,7 +78,7 @@ namespace put
         {
             hash_id id_name;
             hash_id id_sub_type;
-            Str name;
+            Str     name;
 
             u32 stream_out_shader;
             u32 vertex_shader;
@@ -91,13 +91,13 @@ namespace put
         {
             hash_id id_name;
 
-            s32 width = 0;
-            s32 height = 0;
-            f32 ratio = 0;
+            s32 width    = 0;
+            s32 height   = 0;
+            f32 ratio    = 0;
             s32 num_mips = 0;
-            u32 format = 0;
-            u32 handle = PEN_INVALID_HANDLE;
-            u32 samples = 1;
+            u32 format   = 0;
+            u32 handle   = PEN_INVALID_HANDLE;
+            u32 samples  = 1;
             Str name;
         };
 
@@ -115,8 +115,8 @@ namespace put
         const camera* get_camera(hash_id id_name);
 
         const render_target* get_render_target(hash_id h);
-        void get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
-        void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
+        void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
+        void                 resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
 
         void resize_viewports();
 
@@ -127,14 +127,14 @@ namespace put
         // pmfx shader ------------------------------------------------------------------------------------------
 
         shader_handle load_shader(const c8* pmfx_name);
-        void release_shader(shader_handle handle);
+        void          release_shader(shader_handle handle);
 
         const char** get_shader_list(u32& count);
         const char** get_technique_list(shader_handle handle, u32& count);
 
         void set_technique(shader_handle handle, u32 index);
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
-        u32 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
+        u32  get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
 
         void poll_for_changes();
     } // namespace pmfx

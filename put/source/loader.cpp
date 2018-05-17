@@ -21,8 +21,8 @@ namespace put
 {
     enum texture_type
     {
-        DDS_RGBA = 0x01,
-        DDS_BC = 0x04,
+        DDS_RGBA      = 0x01,
+        DDS_BC        = 0x04,
         DDS_R32_FLOAT = 114
     };
 
@@ -38,36 +38,36 @@ namespace put
     enum ddpf_flags
     {
         DDPF_ALPHAPIXELS = 0x1,
-        DDPF_ALPHA = 0x2,
-        DDPF_FOURCC = 0x4,
-        DDPF_RGB = 0x40,
-        DDPF_YUV = 0x200,
-        DDPF_LUMINANCE = 0x20000
+        DDPF_ALPHA       = 0x2,
+        DDPF_FOURCC      = 0x4,
+        DDPF_RGB         = 0x40,
+        DDPF_YUV         = 0x200,
+        DDPF_LUMINANCE   = 0x20000
     };
 
     enum dds_flags
     {
-        DDS_CAPS = 0x1,
-        DDS_HEIGHT = 0x2,
-        DDS_WIDTH = 0x4,
-        DDS_PITCH = 0x8,
+        DDS_CAPS        = 0x1,
+        DDS_HEIGHT      = 0x2,
+        DDS_WIDTH       = 0x4,
+        DDS_PITCH       = 0x8,
         DDS_PIXELFORMAT = 0x1000,
         DDS_MIPMAPCOUNT = 0x20000,
-        DDS_LINEARSIZE = 0x80000,
-        DDS_DEPTH = 0x8000000,
+        DDS_LINEARSIZE  = 0x80000,
+        DDS_DEPTH       = 0x8000000,
 
         DDSCAPS_COMPLEX = 0x8,
         DDSCAPS_TEXTURE = 0x1000,
-        DDSCAPS_MIPMAP = 0x400000,
+        DDSCAPS_MIPMAP  = 0x400000,
 
-        DDSCAPS2_CUBEMAP = 0x200,
+        DDSCAPS2_CUBEMAP           = 0x200,
         DDSCAPS2_CUBEMAP_POSITIVEX = 0x400,
         DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800,
-        DSCAPS2_CUBEMAP_POSITIVEY = 0x1000,
+        DSCAPS2_CUBEMAP_POSITIVEY  = 0x1000,
         DDSCAPS2_CUBEMAP_NEGATIVEY = 0x2000,
-        DSCAPS2_CUBEMAP_POSITIVEZ = 0x4000,
+        DSCAPS2_CUBEMAP_POSITIVEZ  = 0x4000,
         DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000,
-        DDSCAPS2_VOLUME = 0x200000,
+        DDSCAPS2_VOLUME            = 0x200000,
 
         DDS_CUBEMAP_ALLFACES = (DDSCAPS2_CUBEMAP_POSITIVEX | DDSCAPS2_CUBEMAP_NEGATIVEX | DSCAPS2_CUBEMAP_POSITIVEY |
                                 DDSCAPS2_CUBEMAP_NEGATIVEY | DSCAPS2_CUBEMAP_POSITIVEZ | DDSCAPS2_CUBEMAP_NEGATIVEZ)
@@ -88,38 +88,38 @@ namespace put
 
     struct dds_header
     {
-        u32 magic;
-        u32 size;
-        u32 flags;
-        u32 height;
-        u32 width;
-        u32 pitch_or_linear_size;
-        u32 depth;
-        u32 mip_map_count;
-        u32 reserved[11];
+        u32   magic;
+        u32   size;
+        u32   flags;
+        u32   height;
+        u32   width;
+        u32   pitch_or_linear_size;
+        u32   depth;
+        u32   mip_map_count;
+        u32   reserved[11];
         ddspf pixel_format;
-        u32 caps;
-        u32 caps2;
-        u32 caps3;
-        u32 caps4;
-        u32 reserved2;
+        u32   caps;
+        u32   caps2;
+        u32   caps3;
+        u32   caps4;
+        u32   reserved2;
     };
 
     struct texture_reference
     {
-        hash_id id_name;
-        Str filename;
-        u32 handle;
+        hash_id                      id_name;
+        Str                          filename;
+        u32                          handle;
         pen::texture_creation_params tcp;
     };
     static std::vector<texture_reference> k_texture_references;
 
     struct file_watch
     {
-        hash_id id_name;
-        Str filename;
-        pen::json dependencies;
-        bool invalidated = false;
+        hash_id              id_name;
+        Str                  filename;
+        pen::json            dependencies;
+        bool                 invalidated = false;
         std::vector<hash_id> changes;
 
         void (*build_callback)();
@@ -132,7 +132,7 @@ namespace put
     {
         if (compressed)
         {
-            u32 block_width = max<u32>(1, ((width + 3) / 4));
+            u32 block_width  = max<u32>(1, ((width + 3) / 4));
             u32 block_height = max<u32>(1, ((width + 3) / 4));
             return block_width * block_height * block_size;
         }
@@ -146,7 +146,7 @@ namespace put
         const ddspf& pixel_format = ddsh->pixel_format;
 
         dx10_header_present = false;
-        compressed = false;
+        compressed          = false;
 
         if (pixel_format.four_cc)
         {
@@ -201,7 +201,7 @@ namespace put
     ddspf dds_pixel_format_from_texture_format(u32 fmt)
     {
         ddspf pf = {0};
-        pf.size = 32;
+        pf.size  = 32;
 
         switch (fmt)
         {
@@ -217,8 +217,8 @@ namespace put
     u32 load_texture_internal(const c8* filename, hash_id hh, pen::texture_creation_params& tcp)
     {
         // load a texture file from disk.
-        void* file_data = nullptr;
-        u32 file_data_size = 0;
+        void* file_data      = nullptr;
+        u32   file_data_size = 0;
 
         u32 pen_err = pen::filesystem_read_file_to_buffer(filename, &file_data, file_data_size);
 
@@ -234,38 +234,38 @@ namespace put
 
         bool dx10_header_present;
         bool compressed;
-        u32 block_size;
+        u32  block_size;
 
         u32 format = dds_pixel_format_to_texture_format(ddsh, compressed, block_size, dx10_header_present);
 
         // fill out texture_creation_params
-        tcp.width = ddsh->width;
-        tcp.height = ddsh->height;
-        tcp.format = format;
-        tcp.num_mips = std::max<u32>(ddsh->mip_map_count, 1);
-        tcp.num_arrays = 1;
-        tcp.sample_count = 1;
-        tcp.sample_quality = 0;
-        tcp.usage = PEN_USAGE_DEFAULT;
-        tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
+        tcp.width            = ddsh->width;
+        tcp.height           = ddsh->height;
+        tcp.format           = format;
+        tcp.num_mips         = std::max<u32>(ddsh->mip_map_count, 1);
+        tcp.num_arrays       = 1;
+        tcp.sample_count     = 1;
+        tcp.sample_quality   = 0;
+        tcp.usage            = PEN_USAGE_DEFAULT;
+        tcp.bind_flags       = PEN_BIND_SHADER_RESOURCE;
         tcp.cpu_access_flags = 0;
-        tcp.flags = 0;
-        tcp.block_size = block_size;
+        tcp.flags            = 0;
+        tcp.block_size       = block_size;
         tcp.pixels_per_block = compressed ? 4 : 1;
-        tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
+        tcp.collection_type  = pen::TEXTURE_COLLECTION_NONE;
 
         if (ddsh->caps & DDSCAPS_COMPLEX)
         {
             if (ddsh->caps2 & DDS_CUBEMAP_ALLFACES)
             {
                 tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE;
-                tcp.num_arrays = 6;
+                tcp.num_arrays      = 6;
             }
 
             if (ddsh->caps2 & DDSCAPS2_VOLUME)
             {
                 tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
-                tcp.num_arrays = ddsh->depth;
+                tcp.num_arrays      = ddsh->depth;
             }
         }
 
@@ -281,14 +281,14 @@ namespace put
             // mips
             u32 ext_data_size = 0;
 
-            u32 mip_width = tcp.width >> 1;
+            u32 mip_width  = tcp.width >> 1;
             u32 mip_height = tcp.height >> 1;
 
             for (s32 i = 0; i < tcp.num_mips - 1; ++i)
             {
                 ext_data_size += calc_level_size(mip_width, mip_height, compressed, block_size);
 
-                mip_width = mip_width > 1 ? mip_width >> 1 : 1;
+                mip_width  = mip_width > 1 ? mip_width >> 1 : 1;
                 mip_height = mip_height > 1 ? mip_height >> 1 : 1;
             }
 
@@ -388,12 +388,12 @@ namespace put
         }
 
         // add new
-        file_watch* fw = new file_watch();
-        fw->dependencies = pen::json::load_from_file(fn.c_str());
-        fw->filename = fn;
-        fw->id_name = id_name;
+        file_watch* fw       = new file_watch();
+        fw->dependencies     = pen::json::load_from_file(fn.c_str());
+        fw->filename         = fn;
+        fw->id_name          = id_name;
         fw->hotload_callback = hotload_callback;
-        fw->build_callback = build_callback;
+        fw->build_callback   = build_callback;
 
         k_file_watches.push_back(fw);
     }
@@ -410,26 +410,26 @@ namespace put
                 fw->dependencies = pen::json::load_from_file(fw->filename.c_str());
             }
 
-            bool invalidated = false;
-            pen::json files = fw->dependencies["files"];
-            s32 num_files = files.size();
+            bool      invalidated = false;
+            pen::json files       = fw->dependencies["files"];
+            s32       num_files   = files.size();
             for (s32 i = 0; i < num_files; ++i)
             {
-                pen::json outputs = files[i];
-                s32 num_outputs = outputs.size();
+                pen::json outputs     = files[i];
+                s32       num_outputs = outputs.size();
                 for (s32 j = 0; j < num_outputs; ++j)
                 {
-                    pen::json inputs = outputs[j];
-                    s32 num_inputs = outputs.size();
+                    pen::json inputs     = outputs[j];
+                    s32       num_inputs = outputs.size();
                     for (s32 k = 0; k < num_inputs; ++k)
                     {
                         pen::json input = inputs[k];
 
                         u32 built_ts = input["timestamp"].as_u32();
-                        Str fn = input["name"].as_str();
+                        Str fn       = input["name"].as_str();
                         str_replace_chars(fn, '@', ':');
 
-                        u32 current_ts;
+                        u32       current_ts;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
 
                         if (current_ts > built_ts && err == PEN_ERR_OK)
@@ -478,15 +478,15 @@ namespace put
     {
         // dds header
         dds_header hdr = {0};
-        hdr.magic = 0x20534444;
-        hdr.size = 124;
+        hdr.magic      = 0x20534444;
+        hdr.size       = 124;
         hdr.flags |= (DDS_CAPS | DDS_HEIGHT | DDS_WIDTH | DDS_PIXELFORMAT);
         hdr.caps |= DDSCAPS_TEXTURE;
 
-        hdr.width = info.width;
-        hdr.height = info.height;
-        hdr.mip_map_count = info.num_mips;
-        hdr.depth = 1;
+        hdr.width                = info.width;
+        hdr.height               = info.height;
+        hdr.mip_map_count        = info.num_mips;
+        hdr.depth                = 1;
         hdr.pitch_or_linear_size = (info.width * info.block_size + 7) / 8;
 
         // conditional flags
@@ -515,7 +515,7 @@ namespace put
             int i = 0;
 
         // pixel format
-        ddspf pf = dds_pixel_format_from_texture_format(info.format);
+        ddspf pf         = dds_pixel_format_from_texture_format(info.format);
         hdr.pixel_format = pf;
 
         std::ofstream ofs(filename, std::ofstream::binary);
@@ -537,7 +537,7 @@ namespace put
         add_file_watcher(filename, texture_build, texture_hotload);
 
         pen::texture_creation_params tcp;
-        u32 texture_index = load_texture_internal(filename, hh, tcp);
+        u32                          texture_index = load_texture_internal(filename, hh, tcp);
 
         k_texture_references.push_back({hh, filename, texture_index, tcp});
 

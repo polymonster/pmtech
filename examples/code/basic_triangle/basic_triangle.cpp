@@ -22,8 +22,8 @@ typedef struct vertex
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job* p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     // create clear state
@@ -36,9 +36,9 @@ PEN_TRV pen::user_entry(void* params)
     // raster state
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(rasteriser_state_creation_params));
-    rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_BACK;
-    rcp.depth_bias_clamp = 0.0f;
+    rcp.fill_mode               = PEN_FILL_SOLID;
+    rcp.cull_mode               = PEN_CULL_BACK;
+    rcp.depth_bias_clamp        = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
 
     u32 raster_state = pen::renderer_create_rasterizer_state(rcp);
@@ -74,11 +74,11 @@ PEN_TRV pen::user_entry(void* params)
     }
 
     u32 vertex_shader = pen::renderer_load_shader(vs_slp);
-    u32 pixel_shader = pen::renderer_load_shader(ps_slp);
+    u32 pixel_shader  = pen::renderer_load_shader(ps_slp);
 
     // create input layout
     pen::input_layout_creation_params ilp;
-    ilp.vs_byte_code = vs_slp.byte_code;
+    ilp.vs_byte_code      = vs_slp.byte_code;
     ilp.vs_byte_code_size = vs_slp.byte_code_size;
 
     ilp.num_elements = 1;
@@ -88,12 +88,12 @@ PEN_TRV pen::user_entry(void* params)
     c8 buf[16];
     pen::string_format(&buf[0], 16, "POSITION");
 
-    ilp.input_layout[0].semantic_name = (c8*)&buf[0];
-    ilp.input_layout[0].semantic_index = 0;
-    ilp.input_layout[0].format = PEN_VERTEX_FORMAT_FLOAT4;
-    ilp.input_layout[0].input_slot = 0;
-    ilp.input_layout[0].aligned_byte_offset = 0;
-    ilp.input_layout[0].input_slot_class = PEN_INPUT_PER_VERTEX;
+    ilp.input_layout[0].semantic_name           = (c8*)&buf[0];
+    ilp.input_layout[0].semantic_index          = 0;
+    ilp.input_layout[0].format                  = PEN_VERTEX_FORMAT_FLOAT4;
+    ilp.input_layout[0].input_slot              = 0;
+    ilp.input_layout[0].aligned_byte_offset     = 0;
+    ilp.input_layout[0].input_slot_class        = PEN_INPUT_PER_VERTEX;
     ilp.input_layout[0].instance_data_step_rate = 0;
 
     u32 input_layout = pen::renderer_create_input_layout(ilp);
@@ -106,12 +106,12 @@ PEN_TRV pen::user_entry(void* params)
     vertex vertices[] = {0.0f, 0.5f, 0.5f, 1.0f, 0.5f, -0.5f, 0.5f, 1.0f, -0.5f, -0.5f, 0.5f, 1.0f};
 
     pen::buffer_creation_params bcp;
-    bcp.usage_flags = PEN_USAGE_DEFAULT;
-    bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+    bcp.usage_flags      = PEN_USAGE_DEFAULT;
+    bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
     bcp.cpu_access_flags = 0;
 
     bcp.buffer_size = sizeof(vertex) * 3;
-    bcp.data = (void*)&vertices[0];
+    bcp.data        = (void*)&vertices[0];
 
     u32 vertex_buffer = pen::renderer_create_buffer(bcp);
 

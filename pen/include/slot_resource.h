@@ -16,9 +16,9 @@ namespace pen
 
     struct free_slot_list
     {
-        u32 index;
+        u32             index;
         free_slot_list* next;
-        u32 flags;
+        u32             flags;
     };
 
     struct slot_resources
@@ -67,7 +67,7 @@ namespace pen
         // mark free and add to free list
         resources->slots[slot].flags |= RESOURCE_FREE;
         resources->slots[slot].next = resources->head;
-        resources->head = &resources->slots[slot];
+        resources->head             = &resources->slots[slot];
 
         return true;
     }

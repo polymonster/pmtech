@@ -14,9 +14,9 @@ namespace pen
 
     struct fs_tree_node
     {
-        c8* name = nullptr;
-        fs_tree_node* children = nullptr;
-        u32 num_children = 0;
+        c8*           name         = nullptr;
+        fs_tree_node* children     = nullptr;
+        u32           num_children = 0;
     };
 
     // Read file, check file info
@@ -31,7 +31,7 @@ namespace pen
 
     // Utilities
     const c8** filesystem_get_user_directory(s32& directory_depth);
-    s32 filesystem_exclude_slash_depth();
+    s32        filesystem_exclude_slash_depth();
 } // namespace pen
 
 #endif

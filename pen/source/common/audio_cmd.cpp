@@ -59,17 +59,17 @@ namespace pen
         u32 resource_slot;
 
         union {
-            c8* filename;
-            u32 resource_index;
-            pen::set_valuei set_valuei;
-            pen::set_valuef set_valuef;
+            c8*              filename;
+            u32              resource_index;
+            pen::set_valuei  set_valuei;
+            pen::set_valuef  set_valuef;
             pen::set_value3f set_value3f;
         };
     };
 
     audio_cmd audio_cmd_buffer[MAX_AUDIO_COMMANDS];
-    u32 audio_put_pos = 0;
-    u32 audio_get_pos = 0;
+    u32       audio_put_pos = 0;
+    u32       audio_get_pos = 0;
 
     void audio_exec_command(const audio_cmd& cmd)
     {
@@ -131,7 +131,7 @@ namespace pen
     }
 
     // thread sync
-    pen::job* p_audio_job_thread_info;
+    pen::job*           p_audio_job_thread_info;
     pen::slot_resources k_audio_slot_resources;
 
     void audio_consume_command_buffer()
@@ -143,7 +143,7 @@ namespace pen
     PEN_TRV audio_thread_function(void* params)
     {
         job_thread_params* job_params = (job_thread_params*)params;
-        p_audio_job_thread_info = job_params->job_info;
+        p_audio_job_thread_info       = job_params->job_info;
 
         // create resource slots
         pen::slot_resources_init(&k_audio_slot_resources, MAX_AUDIO_RESOURCES);
@@ -192,10 +192,10 @@ namespace pen
     void create_file_command(const c8* filename, u32 command, u32 resource_slot)
     {
         // allocate filename and copy the buffer and null terminate it
-        u32 filename_length = pen::string_length(filename);
-        audio_cmd_buffer[audio_put_pos].filename = (c8*)pen::memory_alloc(filename_length + 1);
+        u32 filename_length                                       = pen::string_length(filename);
+        audio_cmd_buffer[audio_put_pos].filename                  = (c8*)pen::memory_alloc(filename_length + 1);
         audio_cmd_buffer[audio_put_pos].filename[filename_length] = 0x00;
-        audio_cmd_buffer[audio_put_pos].resource_slot = resource_slot;
+        audio_cmd_buffer[audio_put_pos].resource_slot             = resource_slot;
 
         pen::memory_cpy(audio_cmd_buffer[audio_put_pos].filename, filename, filename_length);
 
@@ -244,9 +244,9 @@ namespace pen
 
         u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
 
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND;
+        audio_cmd_buffer[audio_put_pos].command_index  = CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND;
         audio_cmd_buffer[audio_put_pos].resource_index = sound_index;
-        audio_cmd_buffer[audio_put_pos].resource_slot = res;
+        audio_cmd_buffer[audio_put_pos].resource_slot  = res;
 
         INC_WRAP(audio_put_pos);
 
@@ -255,54 +255,54 @@ namespace pen
 
     void audio_channel_set_position(const u32 channel_index, const u32 position_ms)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_CHANNEL_SET_POSITION;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_CHANNEL_SET_POSITION;
         audio_cmd_buffer[audio_put_pos].set_valuei.resource_index = channel_index;
-        audio_cmd_buffer[audio_put_pos].set_valuei.value = position_ms;
+        audio_cmd_buffer[audio_put_pos].set_valuei.value          = position_ms;
 
         INC_WRAP(audio_put_pos);
     }
 
     void audio_channel_set_frequency(const u32 channel_index, const f32 frequency)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_CHANNEL_SET_FREQUENCY;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_CHANNEL_SET_FREQUENCY;
         audio_cmd_buffer[audio_put_pos].set_valuef.resource_index = channel_index;
-        audio_cmd_buffer[audio_put_pos].set_valuef.value = frequency;
+        audio_cmd_buffer[audio_put_pos].set_valuef.value          = frequency;
 
         INC_WRAP(audio_put_pos);
     }
 
     void audio_group_set_pause(const u32 group_index, const bool val)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_GROUP_SET_PAUSE;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_GROUP_SET_PAUSE;
         audio_cmd_buffer[audio_put_pos].set_valuei.resource_index = group_index;
-        audio_cmd_buffer[audio_put_pos].set_valuei.value = (s32)val;
+        audio_cmd_buffer[audio_put_pos].set_valuei.value          = (s32)val;
 
         INC_WRAP(audio_put_pos);
     }
 
     void audio_group_set_mute(const u32 group_index, const bool val)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_GROUP_SET_MUTE;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_GROUP_SET_MUTE;
         audio_cmd_buffer[audio_put_pos].set_valuei.resource_index = group_index;
-        audio_cmd_buffer[audio_put_pos].set_valuei.value = (s32)val;
+        audio_cmd_buffer[audio_put_pos].set_valuei.value          = (s32)val;
 
         INC_WRAP(audio_put_pos);
     }
 
     void audio_group_set_pitch(const u32 group_index, const f32 pitch)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_GROUP_SET_PITCH;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_GROUP_SET_PITCH;
         audio_cmd_buffer[audio_put_pos].set_valuef.resource_index = group_index;
-        audio_cmd_buffer[audio_put_pos].set_valuef.value = pitch;
+        audio_cmd_buffer[audio_put_pos].set_valuef.value          = pitch;
 
         INC_WRAP(audio_put_pos);
     }
 
     void audio_group_set_volume(const u32 group_index, const f32 volume)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_GROUP_SET_VOLUME;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_GROUP_SET_VOLUME;
         audio_cmd_buffer[audio_put_pos].set_valuef.resource_index = group_index;
-        audio_cmd_buffer[audio_put_pos].set_valuef.value = volume;
+        audio_cmd_buffer[audio_put_pos].set_valuef.value          = volume;
 
         INC_WRAP(audio_put_pos);
     }
@@ -314,9 +314,9 @@ namespace pen
             return;
         }
 
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_ADD_CHANNEL_TO_GROUP;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_ADD_CHANNEL_TO_GROUP;
         audio_cmd_buffer[audio_put_pos].set_valuei.resource_index = channel_index;
-        audio_cmd_buffer[audio_put_pos].set_valuei.value = group_index;
+        audio_cmd_buffer[audio_put_pos].set_valuei.value          = group_index;
 
         INC_WRAP(audio_put_pos);
     }
@@ -326,7 +326,7 @@ namespace pen
         if (!pen::slot_resources_free(&k_audio_slot_resources, index))
             return;
 
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_RELEASE_RESOURCE;
+        audio_cmd_buffer[audio_put_pos].command_index  = CMD_AUDIO_RELEASE_RESOURCE;
         audio_cmd_buffer[audio_put_pos].resource_index = index;
 
         INC_WRAP(audio_put_pos);
@@ -336,10 +336,10 @@ namespace pen
     {
         u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
 
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_ADD_DSP_TO_GROUP;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_ADD_DSP_TO_GROUP;
         audio_cmd_buffer[audio_put_pos].set_valuei.resource_index = group_index;
-        audio_cmd_buffer[audio_put_pos].set_valuei.value = type;
-        audio_cmd_buffer[audio_put_pos].resource_slot = res;
+        audio_cmd_buffer[audio_put_pos].set_valuei.value          = type;
+        audio_cmd_buffer[audio_put_pos].resource_slot             = res;
 
         INC_WRAP(audio_put_pos);
 
@@ -348,27 +348,27 @@ namespace pen
 
     void audio_dsp_set_three_band_eq(const u32 eq_index, const f32 low, const f32 med, const f32 high)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_DSP_SET_THREE_BAND_EQ;
+        audio_cmd_buffer[audio_put_pos].command_index              = CMD_AUDIO_DSP_SET_THREE_BAND_EQ;
         audio_cmd_buffer[audio_put_pos].set_value3f.resource_index = eq_index;
-        audio_cmd_buffer[audio_put_pos].set_value3f.value[0] = low;
-        audio_cmd_buffer[audio_put_pos].set_value3f.value[1] = med;
-        audio_cmd_buffer[audio_put_pos].set_value3f.value[2] = high;
+        audio_cmd_buffer[audio_put_pos].set_value3f.value[0]       = low;
+        audio_cmd_buffer[audio_put_pos].set_value3f.value[1]       = med;
+        audio_cmd_buffer[audio_put_pos].set_value3f.value[2]       = high;
 
         INC_WRAP(audio_put_pos);
     }
 
     void audio_dsp_set_gain(const u32 dsp_index, const f32 gain)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_DSP_SET_GAIN;
+        audio_cmd_buffer[audio_put_pos].command_index             = CMD_AUDIO_DSP_SET_GAIN;
         audio_cmd_buffer[audio_put_pos].set_valuef.resource_index = dsp_index;
-        audio_cmd_buffer[audio_put_pos].set_valuef.value = gain;
+        audio_cmd_buffer[audio_put_pos].set_valuef.value          = gain;
 
         INC_WRAP(audio_put_pos);
     }
 
     void audio_channel_stop(const u32 channel_index)
     {
-        audio_cmd_buffer[audio_put_pos].command_index = CMD_AUDIO_CHANNEL_STOP;
+        audio_cmd_buffer[audio_put_pos].command_index  = CMD_AUDIO_CHANNEL_STOP;
         audio_cmd_buffer[audio_put_pos].resource_index = channel_index;
 
         INC_WRAP(audio_put_pos);

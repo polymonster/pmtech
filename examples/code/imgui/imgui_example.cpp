@@ -36,11 +36,11 @@ void renderer_state_init()
     // raster state
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
-    rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_BACK;
-    rcp.depth_bias_clamp = 0.0f;
+    rcp.fill_mode               = PEN_FILL_SOLID;
+    rcp.cull_mode               = PEN_CULL_BACK;
+    rcp.depth_bias_clamp        = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
-    rcp.depth_clip_enable = true;
+    rcp.depth_clip_enable       = true;
 
     raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
 
@@ -48,9 +48,9 @@ void renderer_state_init()
     pen::depth_stencil_creation_params depth_stencil_params = {0};
 
     // Depth test parameters
-    depth_stencil_params.depth_enable = true;
+    depth_stencil_params.depth_enable     = true;
     depth_stencil_params.depth_write_mask = 1;
-    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
+    depth_stencil_params.depth_func       = PEN_COMPARISON_ALWAYS;
 
     default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 }
@@ -58,8 +58,8 @@ void renderer_state_init()
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job* p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     // init systems
@@ -84,9 +84,9 @@ PEN_TRV pen::user_entry(void* params)
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_clear(clear_state_grey);
 
-        static bool show_test_window = true;
+        static bool show_test_window    = true;
         static bool show_another_window = false;
-        ImVec4 clear_col = ImColor(114, 144, 154);
+        ImVec4      clear_col           = ImColor(114, 144, 154);
 
         // 1. Show a simple window
         // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
