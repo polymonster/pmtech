@@ -22,7 +22,7 @@ namespace put
 
         struct mode_map
         {
-            const c8 *name;
+            const c8* name;
             u32 val;
         };
 
@@ -166,12 +166,12 @@ namespace put
             hash_id technique;
             u32 render_flags;
 
-            ces::entity_scene *scene;
-            put::camera *camera;
+            ces::entity_scene* scene;
+            put::camera* camera;
 
             std::vector<sampler_binding> sampler_bindings;
 
-            std::vector<void (*)(const put::scene_view &)> render_functions;
+            std::vector<void (*)(const put::scene_view&)> render_functions;
         };
 
         enum e_render_state_type : u32
@@ -195,16 +195,16 @@ namespace put
         static std::vector<scene_controller> k_controllers;
         static std::vector<scene_view_renderer> k_scene_view_renderers;
         static std::vector<render_target> k_render_targets;
-        static std::vector<const c8 *> k_render_target_names;
+        static std::vector<const c8*> k_render_target_names;
         static std::vector<render_state> k_render_states;
         static std::vector<sampler_binding> k_sampler_bindings;
 
-        void register_scene_controller(const scene_controller &controller)
+        void register_scene_controller(const scene_controller& controller)
         {
             k_controllers.push_back(controller);
         }
 
-        void register_scene_view_renderer(const scene_view_renderer &svr)
+        void register_scene_view_renderer(const scene_view_renderer& svr)
         {
             k_scene_view_renderers.push_back(svr);
         }
@@ -227,7 +227,7 @@ namespace put
             return num;
         }
 
-        void get_rt_dimensions(s32 rt_w, s32 rt_h, f32 rt_r, f32 &w, f32 &h)
+        void get_rt_dimensions(s32 rt_w, s32 rt_h, f32 rt_r, f32& w, f32& h)
         {
             w = (f32)pen_window.width;
             h = (f32)pen_window.height;
@@ -244,7 +244,7 @@ namespace put
             }
         }
 
-        void get_rt_viewport(s32 rt_w, s32 rt_h, f32 rt_r, const f32 *vp_in, pen::viewport &vp_out)
+        void get_rt_viewport(s32 rt_w, s32 rt_h, f32 rt_r, const f32* vp_in, pen::viewport& vp_out)
         {
             f32 w, h;
             get_rt_dimensions(rt_w, rt_h, rt_r, w, h);
@@ -252,7 +252,7 @@ namespace put
             vp_out = {vp_in[0] * w, vp_in[1] * h, vp_in[2] * w, vp_in[3] * h, 0.0f, 1.0f};
         }
 
-        u32 mode_from_string(const mode_map *map, const c8 *str, u32 default_value)
+        u32 mode_from_string(const mode_map* map, const c8* str, u32 default_value)
         {
             if (!str)
                 return default_value;
@@ -266,7 +266,7 @@ namespace put
             return default_value;
         }
 
-        render_state *get_state_by_name(hash_id id_name)
+        render_state* get_state_by_name(hash_id id_name)
         {
             s32 num = k_render_states.size();
             for (s32 i = 0; i < num; ++i)
@@ -276,7 +276,7 @@ namespace put
             return nullptr;
         }
 
-        render_state *get_state_by_hash(hash_id hash)
+        render_state* get_state_by_hash(hash_id hash)
         {
             s32 num = k_render_states.size();
             for (s32 i = 0; i < num; ++i)
@@ -288,7 +288,7 @@ namespace put
 
         u32 get_render_state_by_name(hash_id id_name)
         {
-            render_state *rs = nullptr;
+            render_state* rs = nullptr;
             rs = get_state_by_name(id_name);
             if (rs)
                 return rs->handle;
@@ -333,7 +333,7 @@ namespace put
             bcp.cpu_access_flags = 0;
 
             bcp.buffer_size = sizeof(textured_vertex) * 4;
-            bcp.data = (void *)&quad_vertices[0];
+            bcp.data = (void*)&quad_vertices[0];
 
             k_geometry.screen_quad_vb = pen::renderer_create_buffer(bcp);
 
@@ -344,12 +344,12 @@ namespace put
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = sizeof(u16) * 6;
-            bcp.data = (void *)&indices[0];
+            bcp.data = (void*)&indices[0];
 
             k_geometry.screen_quad_ib = pen::renderer_create_buffer(bcp);
         }
 
-        void parse_sampler_bindings(pen::json render_config, std::vector<sampler_binding> &bindings)
+        void parse_sampler_bindings(pen::json render_config, std::vector<sampler_binding>& bindings)
         {
             pen::json j_sampler_bindings = render_config["sampler_bindings"];
             s32 num = j_sampler_bindings.size();
@@ -425,7 +425,7 @@ namespace put
                 rs.id_name = PEN_HASH(typed_name.c_str());
                 rs.type = RS_SAMPLER;
 
-                render_state *existing_state = get_state_by_hash(hh);
+                render_state* existing_state = get_state_by_hash(hh);
                 if (existing_state)
                     rs.handle = existing_state->handle;
                 else
@@ -435,7 +435,7 @@ namespace put
             }
         }
 
-        void parse_raster_states(pen::json &render_config)
+        void parse_raster_states(pen::json& render_config)
         {
             pen::json j_raster_states = render_config["raster_states"];
             s32 num = j_raster_states.size();
@@ -470,7 +470,7 @@ namespace put
                 rs.id_name = PEN_HASH(typed_name.c_str());
                 rs.type = RS_RASTERIZER;
 
-                render_state *existing_state = get_state_by_hash(hh);
+                render_state* existing_state = get_state_by_hash(hh);
                 if (existing_state)
                     rs.handle = existing_state->handle;
                 else
@@ -487,7 +487,7 @@ namespace put
         };
         static std::vector<partial_blend_state> k_partial_blend_states;
 
-        void parse_partial_blend_states(pen::json &render_config)
+        void parse_partial_blend_states(pen::json& render_config)
         {
             pen::json j_blend_states = render_config["blend_states"];
             s32 num = j_blend_states.size();
@@ -512,7 +512,7 @@ namespace put
             }
         }
 
-        void parse_stencil_state(pen::json &depth_stencil_state, pen::stencil_op *front, pen::stencil_op *back)
+        void parse_stencil_state(pen::json& depth_stencil_state, pen::stencil_op* front, pen::stencil_op* back)
         {
             pen::stencil_op op;
 
@@ -535,7 +535,7 @@ namespace put
                 pen::memory_cpy(back, &op, sizeof(op));
         }
 
-        void parse_depth_stencil_states(pen::json &render_config)
+        void parse_depth_stencil_states(pen::json& render_config)
         {
             pen::json j_ds_states = render_config["depth_stencil_states"];
             s32 num = j_ds_states.size();
@@ -573,7 +573,7 @@ namespace put
                 rs.id_name = PEN_HASH(typed_name.c_str());
                 rs.type = RS_DEPTH_STENCIL;
 
-                render_state *existing_state = get_state_by_hash(hh);
+                render_state* existing_state = get_state_by_hash(hh);
                 if (existing_state)
                     rs.handle = existing_state->handle;
                 else
@@ -583,7 +583,7 @@ namespace put
             }
         }
 
-        u32 create_blend_state(const c8 *view_name, pen::json &blend_state, pen::json &write_mask, bool alpha_to_coverage)
+        u32 create_blend_state(const c8* view_name, pen::json& blend_state, pen::json& write_mask, bool alpha_to_coverage)
         {
             std::vector<pen::render_target_blend> rtb;
 
@@ -595,7 +595,7 @@ namespace put
                     {
                         hash_id hh = PEN_HASH(blend_state[i].as_cstr());
 
-                        for (auto &b : k_partial_blend_states)
+                        for (auto& b : k_partial_blend_states)
                         {
                             if (hh == b.id_name)
                                 rtb.push_back(b.rtb);
@@ -606,7 +606,7 @@ namespace put
                 {
                     hash_id hh = PEN_HASH(blend_state.as_cstr());
 
-                    for (auto &b : k_partial_blend_states)
+                    for (auto& b : k_partial_blend_states)
                     {
                         if (hh == b.id_name)
                             rtb.push_back(b.rtb);
@@ -676,7 +676,7 @@ namespace put
             rs.id_name = PEN_HASH(typed_name.c_str());
             rs.type = RS_BLEND;
 
-            render_state *existing_state = get_state_by_hash(hh);
+            render_state* existing_state = get_state_by_hash(hh);
             if (existing_state)
                 rs.handle = existing_state->handle;
             else
@@ -687,7 +687,7 @@ namespace put
             return rs.handle;
         }
 
-        void parse_render_targets(pen::json &render_config)
+        void parse_render_targets(pen::json& render_config)
         {
             // add 2 defaults
             render_target main_colour;
@@ -725,7 +725,7 @@ namespace put
                     if (rt_format[f].id_name == id_format)
                     {
                         k_render_targets.push_back(render_target());
-                        render_target &new_info = k_render_targets.back();
+                        render_target& new_info = k_render_targets.back();
                         new_info.ratio = 0;
 
                         new_info.name = r.name();
@@ -804,7 +804,7 @@ namespace put
             }
         }
 
-        const render_target *get_render_target(hash_id h)
+        const render_target* get_render_target(hash_id h)
         {
             u32 num = k_render_targets.size();
             for (u32 i = 0; i < num; ++i)
@@ -818,9 +818,9 @@ namespace put
             return nullptr;
         }
 
-        void resize_render_target(hash_id target, u32 width, u32 height, const c8 *format)
+        void resize_render_target(hash_id target, u32 width, u32 height, const c8* format)
         {
-            render_target *current_target = nullptr;
+            render_target* current_target = nullptr;
             u32 num = k_render_targets.size();
             for (u32 i = 0; i < num; ++i)
             {
@@ -837,7 +837,7 @@ namespace put
             if (format)
             {
                 hash_id id_format = PEN_HASH(format);
-                for (auto &fmt : rt_format)
+                for (auto& fmt : rt_format)
                 {
                     if (fmt.id_name == id_format)
                     {
@@ -850,7 +850,7 @@ namespace put
             }
             else
             {
-                for (auto &fmt : rt_format)
+                for (auto& fmt : rt_format)
                 {
                     if (fmt.format == new_format)
                         break;
@@ -905,7 +905,7 @@ namespace put
                     if (k_views[i].id_render_target[j] == 0)
                         continue;
 
-                    const render_target *rt = get_render_target(k_views[i].id_render_target[j]);
+                    const render_target* rt = get_render_target(k_views[i].id_render_target[j]);
 
                     if (!first)
                     {
@@ -940,12 +940,12 @@ namespace put
             }
         }
 
-        void get_render_target_dimensions(const render_target *rt, f32 &w, f32 &h)
+        void get_render_target_dimensions(const render_target* rt, f32& w, f32& h)
         {
             get_rt_dimensions(rt->width, rt->height, rt->ratio, w, h);
         }
 
-        void parse_clear_colour(pen::json &view, view_params &new_view, s32 num_targets)
+        void parse_clear_colour(pen::json& view, view_params& new_view, s32 num_targets)
         {
             // clear colour
             pen::json clear_colour = view["clear_colour"];
@@ -1035,7 +1035,7 @@ namespace put
             new_view.clear_state = pen::renderer_create_clear_state(cs_info);
         }
 
-        void parse_views(pen::json &render_config)
+        void parse_views(pen::json& render_config)
         {
             pen::json j_views = render_config["views"];
 
@@ -1068,7 +1068,7 @@ namespace put
                         new_view.viewport_correction = false;
 
                     bool found = false;
-                    for (auto &r : k_render_targets)
+                    for (auto& r : k_render_targets)
                     {
                         if (target_hash == r.id_name)
                         {
@@ -1137,7 +1137,7 @@ namespace put
                 }
 
                 // render state
-                render_state *state = nullptr;
+                render_state* state = nullptr;
 
                 // raster
                 Str raster_state = view["raster_state"].as_cstr("default");
@@ -1170,7 +1170,7 @@ namespace put
                     hash_id scene_id = PEN_HASH(scene_str.c_str());
 
                     bool found_scene = false;
-                    for (auto &s : k_controllers)
+                    for (auto& s : k_controllers)
                     {
                         if (s.id_name == scene_id)
                         {
@@ -1197,7 +1197,7 @@ namespace put
                     hash_id camera_id = PEN_HASH(camera_str.c_str());
 
                     bool found_camera = false;
-                    for (auto &c : k_controllers)
+                    for (auto& c : k_controllers)
                     {
                         if (c.id_name == camera_id)
                         {
@@ -1234,7 +1234,7 @@ namespace put
                 for (s32 ii = 0; ii < scene_views.size(); ++ii)
                 {
                     hash_id id = scene_views[ii].as_hash_id();
-                    for (auto &sv : k_scene_view_renderers)
+                    for (auto& sv : k_scene_view_renderers)
                         if (id == sv.id_name)
                             new_view.render_functions.push_back(sv.render_function);
                 }
@@ -1247,9 +1247,9 @@ namespace put
             }
         }
 
-        void load_script_internal(const c8 *filename)
+        void load_script_internal(const c8* filename)
         {
-            void *config_data;
+            void* config_data;
             u32 config_data_size;
 
             pen_error err = pen::filesystem_read_file_to_buffer(filename, &config_data, config_data_size);
@@ -1263,7 +1263,7 @@ namespace put
 
             create_geometry_utilities();
 
-            pen::json render_config = pen::json::load((const c8 *)config_data);
+            pen::json render_config = pen::json::load((const c8*)config_data);
 
             parse_sampler_states(render_config);
             parse_raster_states(render_config);
@@ -1288,15 +1288,15 @@ namespace put
             system(build_cmd.c_str());
         }
 
-        void pmfx_config_hotload(std::vector<hash_id> &dirty)
+        void pmfx_config_hotload(std::vector<hash_id>& dirty)
         {
             release_script_resources();
 
-            for (auto &s : k_script_files)
+            for (auto& s : k_script_files)
                 load_script_internal(s.c_str());
         }
 
-        void init(const c8 *filename)
+        void init(const c8* filename)
         {
             load_script_internal(filename);
 
@@ -1308,7 +1308,7 @@ namespace put
         void release_script_resources()
         {
             // release render states
-            for (auto &rs : k_render_states)
+            for (auto& rs : k_render_states)
             {
                 switch (rs.type)
                 {
@@ -1329,7 +1329,7 @@ namespace put
             k_render_states.clear();
 
             // release render targets
-            for (auto &rt : k_render_targets)
+            for (auto& rt : k_render_targets)
             {
                 if (rt.id_name == ID_MAIN_COLOUR)
                     continue;
@@ -1343,7 +1343,7 @@ namespace put
             k_render_target_names.clear();
 
             // release clear state and clear views
-            for (auto &v : k_views)
+            for (auto& v : k_views)
             {
                 pen::renderer_release_clear_state(v.clear_state);
             }
@@ -1379,13 +1379,13 @@ namespace put
                 bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                 bcp.buffer_size = sizeof(float) * 16;
-                bcp.data = (void *)nullptr;
+                bcp.data = (void*)nullptr;
 
                 cb_2d = pen::renderer_create_buffer(bcp);
             }
 
             int count = 0;
-            for (auto &v : k_views)
+            for (auto& v : k_views)
             {
                 ++count;
                 // viewport and scissor
@@ -1422,7 +1422,7 @@ namespace put
                 }
 
                 // bind samplers
-                for (auto &sb : v.sampler_bindings)
+                for (auto& sb : v.sampler_bindings)
                 {
                     pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
                 }
@@ -1460,7 +1460,7 @@ namespace put
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
             }
 
-            for (auto &rt : k_render_targets)
+            for (auto& rt : k_render_targets)
             {
                 if (rt.samples > 1)
                 {
@@ -1480,12 +1480,12 @@ namespace put
             }
         }
 
-        void render_target_info_ui(const render_target &rt)
+        void render_target_info_ui(const render_target& rt)
         {
             f32 w, h;
             get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
 
-            const c8 *format_str = nullptr;
+            const c8* format_str = nullptr;
             s32 byte_size = 0;
             for (s32 f = 0; f < num_formats; ++f)
             {
@@ -1534,13 +1534,13 @@ namespace put
                     {
                         k_render_target_names.clear();
 
-                        for (auto &rr : k_render_targets)
+                        for (auto& rr : k_render_targets)
                         {
                             k_render_target_names.push_back(rr.name.c_str());
                         }
                     }
 
-                    ImGui::Combo("", &current_render_target, (const c8 *const *)&k_render_target_names[0],
+                    ImGui::Combo("", &current_render_target, (const c8* const*)&k_render_target_names[0],
                                  k_render_target_names.size(), 10);
 
                     static s32 display_ratio = 3;
@@ -1548,7 +1548,7 @@ namespace put
                     display_ratio = std::max<s32>(1, display_ratio);
                     display_ratio = std::min<s32>(4, display_ratio);
 
-                    render_target &rt = k_render_targets[current_render_target];
+                    render_target& rt = k_render_targets[current_render_target];
 
                     f32 w, h;
                     get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
@@ -1559,7 +1559,7 @@ namespace put
                     if (!unsupported_display)
                     {
                         f32 aspect = w / h;
-                        ImGui::Image((void *)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
+                        ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
                     }
 
                     render_target_info_ui(rt);
@@ -1569,9 +1569,9 @@ namespace put
             }
         }
 
-        const camera *get_camera(hash_id id_name)
+        const camera* get_camera(hash_id id_name)
         {
-            for (auto &cam : k_controllers)
+            for (auto& cam : k_controllers)
             {
                 if (cam.id_name == id_name)
                     return cam.camera;

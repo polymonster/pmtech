@@ -22,13 +22,13 @@ using std::min;
 using std::swap;
 
 template <class T>
-inline T sqr(const T &x)
+inline T sqr(const T& x)
 {
     return x * x;
 }
 
 template <class T>
-inline T cube(const T &x)
+inline T cube(const T& x)
 {
     return x * x * x;
 }
@@ -82,7 +82,7 @@ inline T max(T a1, T a2, T a3, T a4, T a5, T a6)
 }
 
 template <class T>
-inline void minmax(T a1, T a2, T &amin, T &amax)
+inline void minmax(T a1, T a2, T& amin, T& amax)
 {
     if (a1 < a2)
     {
@@ -97,7 +97,7 @@ inline void minmax(T a1, T a2, T &amin, T &amax)
 }
 
 template <class T>
-inline void minmax(T a1, T a2, T a3, T &amin, T &amax)
+inline void minmax(T a1, T a2, T a3, T& amin, T& amax)
 {
     if (a1 < a2)
     {
@@ -137,7 +137,7 @@ inline void minmax(T a1, T a2, T a3, T &amin, T &amax)
 }
 
 template <class T>
-inline void minmax(T a1, T a2, T a3, T a4, T &amin, T &amax)
+inline void minmax(T a1, T a2, T a3, T a4, T& amin, T& amax)
 {
     if (a1 < a2)
     {
@@ -168,7 +168,7 @@ inline void minmax(T a1, T a2, T a3, T a4, T &amin, T &amax)
 }
 
 template <class T>
-inline void minmax(T a1, T a2, T a3, T a4, T a5, T &amin, T &amax)
+inline void minmax(T a1, T a2, T a3, T a4, T a5, T& amin, T& amax)
 {
     //@@@ the logic could be shortcircuited a lot!
     amin = min(a1, a2, a3, a4, a5);
@@ -176,7 +176,7 @@ inline void minmax(T a1, T a2, T a3, T a4, T a5, T &amin, T &amax)
 }
 
 template <class T>
-inline void minmax(T a1, T a2, T a3, T a4, T a5, T a6, T &amin, T &amax)
+inline void minmax(T a1, T a2, T a3, T a4, T a5, T a6, T& amin, T& amax)
 {
     //@@@ the logic could be shortcircuited a lot!
     amin = min(a1, a2, a3, a4, a5, a6);
@@ -184,7 +184,7 @@ inline void minmax(T a1, T a2, T a3, T a4, T a5, T a6, T &amin, T &amax)
 }
 
 template <class T>
-inline void update_minmax(T a1, T &amin, T &amax)
+inline void update_minmax(T a1, T& amin, T& amax)
 {
     if (a1 < amin)
         amin = a1;
@@ -193,7 +193,7 @@ inline void update_minmax(T a1, T &amin, T &amax)
 }
 
 template <class T>
-inline void sort(T &a, T &b, T &c)
+inline void sort(T& a, T& b, T& c)
 {
     T temp;
     if (a < b)
@@ -373,7 +373,7 @@ inline int intlog2(int x)
 }
 
 template <class T>
-inline void get_barycentric(T x, int &i, T &f, int i_low, int i_high)
+inline void get_barycentric(T x, int& i, T& f, int i_low, int i_high)
 {
     T s = std::floor(x);
     i = (int)s;
@@ -392,28 +392,28 @@ inline void get_barycentric(T x, int &i, T &f, int i_low, int i_high)
 }
 
 template <class S, class T>
-inline S lerp(const S &value0, const S &value1, T f)
+inline S lerp(const S& value0, const S& value1, T f)
 {
     return (1 - f) * value0 + f * value1;
 }
 
 template <class S, class T>
-inline S bilerp(const S &v00, const S &v10, const S &v01, const S &v11, T fx, T fy)
+inline S bilerp(const S& v00, const S& v10, const S& v01, const S& v11, T fx, T fy)
 {
     return lerp(lerp(v00, v10, fx), lerp(v01, v11, fx), fy);
 }
 
 template <class S, class T>
-inline S trilerp(const S &v000, const S &v100, const S &v010, const S &v110, const S &v001, const S &v101, const S &v011,
-                 const S &v111, T fx, T fy, T fz)
+inline S trilerp(const S& v000, const S& v100, const S& v010, const S& v110, const S& v001, const S& v101, const S& v011,
+                 const S& v111, T fx, T fy, T fz)
 {
     return lerp(bilerp(v000, v100, v010, v110, fx, fy), bilerp(v001, v101, v011, v111, fx, fy), fz);
 }
 
 template <class S, class T>
-inline S quadlerp(const S &v0000, const S &v1000, const S &v0100, const S &v1100, const S &v0010, const S &v1010,
-                  const S &v0110, const S &v1110, const S &v0001, const S &v1001, const S &v0101, const S &v1101,
-                  const S &v0011, const S &v1011, const S &v0111, const S &v1111, T fx, T fy, T fz, T ft)
+inline S quadlerp(const S& v0000, const S& v1000, const S& v0100, const S& v1100, const S& v0010, const S& v1010,
+                  const S& v0110, const S& v1110, const S& v0001, const S& v1001, const S& v0101, const S& v1101,
+                  const S& v0011, const S& v1011, const S& v0111, const S& v1111, T fx, T fy, T fz, T ft)
 {
     return lerp(trilerp(v0000, v1000, v0100, v1100, v0010, v1010, v0110, v1110, fx, fy, fz),
                 trilerp(v0001, v1001, v0101, v1101, v0011, v1011, v0111, v1111, fx, fy, fz), ft);
@@ -421,7 +421,7 @@ inline S quadlerp(const S &v0000, const S &v1000, const S &v0100, const S &v1100
 
 // f should be between 0 and 1, with f=0.5 corresponding to balanced weighting between w0 and w2
 template <class T>
-inline void quadratic_bspline_weights(T f, T &w0, T &w1, T &w2)
+inline void quadratic_bspline_weights(T f, T& w0, T& w1, T& w2)
 {
     w0 = T(0.5) * sqr(f - 1);
     w1 = T(0.75) - sqr(f - T(0.5));
@@ -431,7 +431,7 @@ inline void quadratic_bspline_weights(T f, T &w0, T &w1, T &w2)
 
 // f should be between 0 and 1
 template <class T>
-inline void cubic_interp_weights(T f, T &wneg1, T &w0, T &w1, T &w2)
+inline void cubic_interp_weights(T f, T& wneg1, T& w0, T& w1, T& w2)
 {
     T f2(f * f), f3(f2 * f);
     wneg1 = -T(1. / 3) * f + T(1. / 2) * f2 - T(1. / 6) * f3;
@@ -441,7 +441,7 @@ inline void cubic_interp_weights(T f, T &wneg1, T &w0, T &w1, T &w2)
 }
 
 template <class S, class T>
-inline S cubic_interp(const S &value_neg1, const S &value0, const S &value1, const S &value2, T f)
+inline S cubic_interp(const S& value_neg1, const S& value0, const S& value1, const S& value2, T f)
 {
     T wneg1, w0, w1, w2;
     cubic_interp_weights(f, wneg1, w0, w1, w2);
@@ -449,14 +449,14 @@ inline S cubic_interp(const S &value_neg1, const S &value0, const S &value1, con
 }
 
 template <class T>
-void zero(std::vector<T> &v)
+void zero(std::vector<T>& v)
 {
     for (int i = (int)v.size() - 1; i >= 0; --i)
         v[i] = 0;
 }
 
 template <class T>
-T abs_max(const std::vector<T> &v)
+T abs_max(const std::vector<T>& v)
 {
     T m = 0;
     for (int i = (int)v.size() - 1; i >= 0; --i)
@@ -468,7 +468,7 @@ T abs_max(const std::vector<T> &v)
 }
 
 template <class T>
-bool contains(const std::vector<T> &a, T e)
+bool contains(const std::vector<T>& a, T e)
 {
     for (unsigned int i = 0; i < a.size(); ++i)
         if (a[i] == e)
@@ -477,7 +477,7 @@ bool contains(const std::vector<T> &a, T e)
 }
 
 template <class T>
-void add_unique(std::vector<T> &a, T e)
+void add_unique(std::vector<T>& a, T e)
 {
     for (unsigned int i = 0; i < a.size(); ++i)
         if (a[i] == e)
@@ -486,7 +486,7 @@ void add_unique(std::vector<T> &a, T e)
 }
 
 template <class T>
-void insert(std::vector<T> &a, unsigned int index, T e)
+void insert(std::vector<T>& a, unsigned int index, T e)
 {
     a.push_back(a.back());
     for (unsigned int i = (unsigned int)a.size() - 1; i > index; --i)
@@ -495,7 +495,7 @@ void insert(std::vector<T> &a, unsigned int index, T e)
 }
 
 template <class T>
-void erase(std::vector<T> &a, unsigned int index)
+void erase(std::vector<T>& a, unsigned int index)
 {
     for (unsigned int i = index; i < a.size() - 1; ++i)
         a[i] = a[i + 1];
@@ -503,7 +503,7 @@ void erase(std::vector<T> &a, unsigned int index)
 }
 
 template <class T>
-void erase_swap(std::vector<T> &a, unsigned int index)
+void erase_swap(std::vector<T>& a, unsigned int index)
 {
     for (unsigned int i = index; i < a.size() - 1; ++i)
         swap(a[i], a[i + 1]);
@@ -511,21 +511,21 @@ void erase_swap(std::vector<T> &a, unsigned int index)
 }
 
 template <class T>
-void erase_unordered(std::vector<T> &a, unsigned int index)
+void erase_unordered(std::vector<T>& a, unsigned int index)
 {
     a[index] = a.back();
     a.pop_back();
 }
 
 template <class T>
-void erase_unordered_swap(std::vector<T> &a, unsigned int index)
+void erase_unordered_swap(std::vector<T>& a, unsigned int index)
 {
     swap(a[index], a.back());
     a.pop_back();
 }
 
 template <class T>
-void find_and_erase_unordered(std::vector<T> &a, const T &doomed_element)
+void find_and_erase_unordered(std::vector<T>& a, const T& doomed_element)
 {
     for (unsigned int i = 0; i < a.size(); ++i)
         if (a[i] == doomed_element)
@@ -536,7 +536,7 @@ void find_and_erase_unordered(std::vector<T> &a, const T &doomed_element)
 }
 
 template <class T>
-void replace_once(std::vector<T> &a, const T &old_element, const T &new_element)
+void replace_once(std::vector<T>& a, const T& old_element, const T& new_element)
 {
     for (unsigned int i = 0; i < a.size(); ++i)
         if (a[i] == old_element)
@@ -547,7 +547,7 @@ void replace_once(std::vector<T> &a, const T &old_element, const T &new_element)
 }
 
 template <class T>
-void write_matlab(std::ostream &output, const std::vector<T> &a, const char *variable_name, bool column_vector = true,
+void write_matlab(std::ostream& output, const std::vector<T>& a, const char* variable_name, bool column_vector = true,
                   int significant_digits = 18)
 {
     output << variable_name << "=[";

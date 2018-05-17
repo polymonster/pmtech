@@ -11,7 +11,7 @@ extern std::atomic<bool> g_cancel_handled;
 #define sweep_progress g_mls_progress.sweeps += sweep_tick
 
 // find distance x0 is from segment x1-x2
-static float point_segment_distance(const Vec3f &x0, const Vec3f &x1, const Vec3f &x2)
+static float point_segment_distance(const Vec3f& x0, const Vec3f& x1, const Vec3f& x2)
 {
     Vec3f dx(x2 - x1);
     double m2 = mag2(dx);
@@ -30,7 +30,7 @@ static float point_segment_distance(const Vec3f &x0, const Vec3f &x1, const Vec3
 }
 
 // find distance x0 is from triangle x1-x2-x3
-static float point_triangle_distance(const Vec3f &x0, const Vec3f &x1, const Vec3f &x2, const Vec3f &x3)
+static float point_triangle_distance(const Vec3f& x0, const Vec3f& x1, const Vec3f& x2, const Vec3f& x3)
 {
     // first find barycentric coordinates of closest point on infinite plane
     Vec3f x13(x1 - x3), x23(x2 - x3), x03(x0 - x3);
@@ -56,8 +56,8 @@ static float point_triangle_distance(const Vec3f &x0, const Vec3f &x1, const Vec
     }
 }
 
-static void check_neighbour(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x, Array3f &phi, Array3i &closest_tri,
-                            const Vec3f &gx, int i0, int j0, int k0, int i1, int j1, int k1)
+static void check_neighbour(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x, Array3f& phi, Array3i& closest_tri,
+                            const Vec3f& gx, int i0, int j0, int k0, int i1, int j1, int k1)
 {
     if (closest_tri(i1, j1, k1) >= 0)
     {
@@ -72,8 +72,8 @@ static void check_neighbour(const std::vector<Vec3ui> &tri, const std::vector<Ve
     }
 }
 
-static void sweep(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x, Array3f &phi, Array3i &closest_tri,
-                  const Vec3f &origin, float dx, int di, int dj, int dk)
+static void sweep(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x, Array3f& phi, Array3i& closest_tri,
+                  const Vec3f& origin, float dx, int di, int dj, int dk)
 {
     int i0, i1;
     if (di > 0)
@@ -126,7 +126,7 @@ static void sweep(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x, A
 
 // calculate twice signed area of triangle (0,0)-(x1,y1)-(x2,y2)
 // return an SOS-determined sign (-1, +1, or 0 only if it's a truly degenerate triangle)
-static int orientation(double x1, double y1, double x2, double y2, double &twice_signed_area)
+static int orientation(double x1, double y1, double x2, double y2, double& twice_signed_area)
 {
     twice_signed_area = y1 * x2 - x1 * y2;
     if (twice_signed_area > 0)
@@ -148,7 +148,7 @@ static int orientation(double x1, double y1, double x2, double y2, double &twice
 // robust test of (x0,y0) in the triangle (x1,y1)-(x2,y2)-(x3,y3)
 // if true is returned, the barycentric coordinates are set in a,b,c.
 static bool point_in_triangle_2d(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3,
-                                 double &a, double &b, double &c)
+                                 double& a, double& b, double& c)
 {
     x1 -= x0;
     x2 -= x0;
@@ -173,8 +173,8 @@ static bool point_in_triangle_2d(double x0, double y0, double x1, double y1, dou
     return true;
 }
 
-void make_level_set3(const std::vector<Vec3ui> &tri, const std::vector<Vec3f> &x, const Vec3f &origin, float dx, int ni,
-                     int nj, int nk, Array3f &phi, const int exact_band)
+void make_level_set3(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x, const Vec3f& origin, float dx, int ni,
+                     int nj, int nk, Array3f& phi, const int exact_band)
 {
     g_mls_progress.triangles = 0.0f;
     g_mls_progress.sweeps = 0.0f;

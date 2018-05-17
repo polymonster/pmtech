@@ -125,7 +125,7 @@ namespace put
 
             pmfx::shader_handle pmfx_shader;
             u32 technique;
-            material_resource *resource = nullptr;
+            material_resource* resource = nullptr;
         };
 
         struct cmp_physics
@@ -140,7 +140,7 @@ namespace put
             cmp_physics(){};
             ~cmp_physics(){};
 
-            cmp_physics &operator=(const cmp_physics &other)
+            cmp_physics& operator=(const cmp_physics& other)
             {
                 pen::memory_cpy(this, &other, sizeof(cmp_physics));
                 return *this;
@@ -171,7 +171,7 @@ namespace put
             u32 num_vertices;
             u32 index_type;
             u32 vertex_size;
-            cmp_skin *p_skin;
+            cmp_skin* p_skin;
             hash_id vertex_shader_class;
         };
 
@@ -265,22 +265,22 @@ namespace put
         struct free_node_list
         {
             u32 node;
-            free_node_list *next;
-            free_node_list *prev;
+            free_node_list* next;
+            free_node_list* prev;
         };
 
         template <typename T>
         struct cmp_array
         {
             u32 size = sizeof(T);
-            T *data = nullptr;
+            T* data = nullptr;
 
-            T &operator[](size_t index)
+            T& operator[](size_t index)
             {
                 return data[index];
             }
 
-            const T &operator[](size_t index) const
+            const T& operator[](size_t index) const
             {
                 return data[index];
             }
@@ -289,13 +289,13 @@ namespace put
         struct generic_cmp_array
         {
             u32 size;
-            void *data;
+            void* data;
 
-            void *operator[](size_t index)
+            void* operator[](size_t index)
             {
-                u8 *d = (u8 *)data;
-                u8 *di = &d[index * size];
-                return (void *)(di);
+                u8* d = (u8*)data;
+                u8* di = &d[index * size];
+                return (void*)(di);
             }
         };
 
@@ -341,7 +341,7 @@ namespace put
             // Scene Data
             u32 num_nodes = 0;
             u32 nodes_size = 0;
-            free_node_list *free_list_head = nullptr;
+            free_node_list* free_list_head = nullptr;
             u32 forward_light_buffer = PEN_INVALID_HANDLE;
             u32 sdf_shadow_buffer = PEN_INVALID_HANDLE;
             u32 area_box_light_buffer = PEN_INVALID_HANDLE;
@@ -351,9 +351,9 @@ namespace put
             extents renderable_extents;
 
             // Access to component data in a generic way
-            generic_cmp_array &get_component_array(u32 index)
+            generic_cmp_array& get_component_array(u32 index)
             {
-                generic_cmp_array *begin = (generic_cmp_array *)this;
+                generic_cmp_array* begin = (generic_cmp_array*)this;
                 return begin[index];
             }
         };
@@ -361,8 +361,8 @@ namespace put
         struct entity_scene_instance
         {
             u32 id_name;
-            const c8 *name;
-            entity_scene *scene;
+            const c8* name;
+            entity_scene* scene;
         };
 
         enum e_scene_render_flags
@@ -370,25 +370,25 @@ namespace put
             RENDER_FORWARD_LIT = 1
         };
 
-        entity_scene *create_scene(const c8 *name);
-        void destroy_scene(entity_scene *scene);
+        entity_scene* create_scene(const c8* name);
+        void destroy_scene(entity_scene* scene);
 
-        void render_scene_view(const scene_view &view);
-        void update_scene(entity_scene *scene, f32 dt);
+        void render_scene_view(const scene_view& view);
+        void update_scene(entity_scene* scene, f32 dt);
 
-        void clear_scene(entity_scene *scene);
-        void default_scene(entity_scene *scene);
+        void clear_scene(entity_scene* scene);
+        void default_scene(entity_scene* scene);
 
-        void resize_scene_buffers(entity_scene *scene, s32 size = 1024);
-        void zero_entity_components(entity_scene *scene, u32 node_index);
+        void resize_scene_buffers(entity_scene* scene, s32 size = 1024);
+        void zero_entity_components(entity_scene* scene, u32 node_index);
 
-        void delete_entity(entity_scene *scene, u32 node_index);
-        void delete_entity_first_pass(entity_scene *scene, u32 node_index);
-        void delete_entity_second_pass(entity_scene *scene, u32 node_index);
+        void delete_entity(entity_scene* scene, u32 node_index);
+        void delete_entity_first_pass(entity_scene* scene, u32 node_index);
+        void delete_entity_second_pass(entity_scene* scene, u32 node_index);
 
-        void update_view_flags(entity_scene *scene, bool error);
+        void update_view_flags(entity_scene* scene, bool error);
 
-        void initialise_free_list(entity_scene *scene);
+        void initialise_free_list(entity_scene* scene);
     } // namespace ces
 } // namespace put
 

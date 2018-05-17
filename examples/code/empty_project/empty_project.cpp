@@ -10,13 +10,13 @@ pen::window_creation_params pen_window{
     "empty_project" // window title / process name
 };
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     PEN_PRINTF("User Thread Entry");
 
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     for (;;)

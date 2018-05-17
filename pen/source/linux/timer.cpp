@@ -21,7 +21,7 @@ namespace pen
 
         u32 hit_count;
 
-        const c8 *name;
+        const c8* name;
     };
 
     f32 ticks_to_ms;
@@ -29,8 +29,8 @@ namespace pen
     f32 ticks_to_ns;
 
     // fixed array.. todo sort this out
-    timer *timers = nullptr;
-    int *test;
+    timer* timers = nullptr;
+    int* test;
 
     u32 next_free = 0;
 
@@ -51,7 +51,7 @@ namespace pen
         next_free = 0;
     }
 
-    u32 timer_create(const c8 *name)
+    u32 timer_create(const c8* name)
     {
         timer t;
         t.name = name;

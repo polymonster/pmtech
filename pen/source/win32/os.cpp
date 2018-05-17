@@ -29,7 +29,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     wp.cmdshow = nCmdShow;
     wp.hinstance = hInstance;
 
-    if (pen::window_init(((void *)&wp)))
+    if (pen::window_init(((void*)&wp)))
         return 0;
 
     // initilaise any generic systems
@@ -90,9 +90,9 @@ namespace pen
     //--------------------------------------------------------------------------------------
     // window init
     //--------------------------------------------------------------------------------------
-    u32 window_init(void *params)
+    u32 window_init(void* params)
     {
-        window_params *wp = (window_params *)params;
+        window_params* wp = (window_params*)params;
 
         // Register class
         WNDCLASSEXA wcex;
@@ -254,7 +254,7 @@ namespace pen
         return 0;
     }
 
-    void *window_get_primary_display_handle()
+    void* window_get_primary_display_handle()
     {
         return g_hwnd;
     }

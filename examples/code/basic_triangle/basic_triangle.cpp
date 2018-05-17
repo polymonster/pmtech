@@ -19,11 +19,11 @@ typedef struct vertex
     float x, y, z, w;
 } vertex;
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     // create clear state
@@ -83,12 +83,12 @@ PEN_TRV pen::user_entry(void *params)
 
     ilp.num_elements = 1;
 
-    ilp.input_layout = (pen::input_layout_desc *)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
+    ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
 
     c8 buf[16];
     pen::string_format(&buf[0], 16, "POSITION");
 
-    ilp.input_layout[0].semantic_name = (c8 *)&buf[0];
+    ilp.input_layout[0].semantic_name = (c8*)&buf[0];
     ilp.input_layout[0].semantic_index = 0;
     ilp.input_layout[0].format = PEN_VERTEX_FORMAT_FLOAT4;
     ilp.input_layout[0].input_slot = 0;
@@ -111,7 +111,7 @@ PEN_TRV pen::user_entry(void *params)
     bcp.cpu_access_flags = 0;
 
     bcp.buffer_size = sizeof(vertex) * 3;
-    bcp.data = (void *)&vertices[0];
+    bcp.data = (void*)&vertices[0];
 
     u32 vertex_buffer = pen::renderer_create_buffer(bcp);
 

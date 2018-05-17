@@ -139,8 +139,8 @@ typedef struct
     unsigned char c[4];
 } stb_easy_font_color;
 
-static int stb_easy_font_draw_segs(float x, float y, unsigned char *segs, int num_segs, int vertical, stb_easy_font_color c,
-                                   char *vbuf, int vbuf_size, int offset)
+static int stb_easy_font_draw_segs(float x, float y, unsigned char* segs, int num_segs, int vertical, stb_easy_font_color c,
+                                   char* vbuf, int vbuf_size, int offset)
 {
     int i, j;
     for (i = 0; i < num_segs; ++i)
@@ -152,10 +152,10 @@ static int stb_easy_font_draw_segs(float x, float y, unsigned char *segs, int nu
             float y0 = y + (float)(segs[i] >> 4);
             for (j = 0; j < 4; ++j)
             {
-                *(float *)(vbuf + offset + 0) = x + (j == 1 || j == 2 ? (vertical ? 1 : len) : 0);
-                *(float *)(vbuf + offset + 4) = y0 + (j >= 2 ? (vertical ? len : 1) : 0);
-                *(float *)(vbuf + offset + 8) = 0.f;
-                *(stb_easy_font_color *)(vbuf + offset + 12) = c;
+                *(float*)(vbuf + offset + 0) = x + (j == 1 || j == 2 ? (vertical ? 1 : len) : 0);
+                *(float*)(vbuf + offset + 4) = y0 + (j >= 2 ? (vertical ? len : 1) : 0);
+                *(float*)(vbuf + offset + 8) = 0.f;
+                *(stb_easy_font_color*)(vbuf + offset + 12) = c;
                 offset += 16;
             }
         }
@@ -169,9 +169,9 @@ static void stb_easy_font_spacing(float spacing)
     stb_easy_font_spacing_val = spacing;
 }
 
-static int stb_easy_font_print(float x, float y, char *text, unsigned char color[4], void *vertex_buffer, int vbuf_size)
+static int stb_easy_font_print(float x, float y, char* text, unsigned char color[4], void* vertex_buffer, int vbuf_size)
 {
-    char *vbuf = (char *)vertex_buffer;
+    char* vbuf = (char*)vertex_buffer;
     float start_x = x;
     int offset = 0;
 
@@ -210,7 +210,7 @@ static int stb_easy_font_print(float x, float y, char *text, unsigned char color
     return (unsigned)offset / 64;
 }
 
-static int stb_easy_font_width(char *text)
+static int stb_easy_font_width(char* text)
 {
     float len = 0;
     while (*text)

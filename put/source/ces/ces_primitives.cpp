@@ -18,7 +18,7 @@ namespace put
 
             static const u32 num_verts = (segments + 1) + (segments * 2);
             vertex_model v[num_verts];
-            geometry_resource *p_geometry = new geometry_resource;
+            geometry_resource* p_geometry = new geometry_resource;
 
             vec3f axis = vec3f::unit_y();
             vec3f right = vec3f::unit_x();
@@ -137,7 +137,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
-            bcp.data = (void *)v;
+            bcp.data = (void*)v;
 
             p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -146,7 +146,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = 2 * num_indices;
-            bcp.data = (void *)indices;
+            bcp.data = (void*)indices;
 
             p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
 
@@ -173,7 +173,7 @@ namespace put
 
             static const u32 num_verts = segments * rows;
             vertex_model v[num_verts];
-            geometry_resource *p_geometry = new geometry_resource;
+            geometry_resource* p_geometry = new geometry_resource;
 
             f32 angle = 0.0;
             f32 angle_step = M_TWO_PI / segments;
@@ -269,7 +269,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
-            bcp.data = (void *)v;
+            bcp.data = (void*)v;
 
             p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -278,7 +278,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = 2 * num_indices;
-            bcp.data = (void *)indices;
+            bcp.data = (void*)indices;
 
             p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
 
@@ -307,7 +307,7 @@ namespace put
 
             static const u32 num_verts = segments * rows;
             vertex_model v[num_verts];
-            geometry_resource *p_geometry = new geometry_resource;
+            geometry_resource* p_geometry = new geometry_resource;
 
             f32 angle = 0.0;
             f32 angle_step = M_TWO_PI / segments;
@@ -386,7 +386,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
-            bcp.data = (void *)v;
+            bcp.data = (void*)v;
 
             p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -395,7 +395,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = 2 * num_indices;
-            bcp.data = (void *)indices;
+            bcp.data = (void*)indices;
 
             p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
 
@@ -421,7 +421,7 @@ namespace put
         {
             static const u32 num_verts = 24;
             vertex_model v[num_verts];
-            geometry_resource *p_geometry = new geometry_resource;
+            geometry_resource* p_geometry = new geometry_resource;
 
             // 3 ------ 2
             //|        |
@@ -485,7 +485,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
-            bcp.data = (void *)v;
+            bcp.data = (void*)v;
 
             p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -494,7 +494,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = 2 * num_indices;
-            bcp.data = (void *)indices;
+            bcp.data = (void*)indices;
 
             p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
 
@@ -520,7 +520,7 @@ namespace put
         {
             static const u32 num_verts = 66;
             vertex_model v[num_verts];
-            geometry_resource *p_geometry = new geometry_resource;
+            geometry_resource* p_geometry = new geometry_resource;
 
             vec3f axis = vec3f::unit_y();
             vec3f right = vec3f::unit_x();
@@ -672,7 +672,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
-            bcp.data = (void *)v;
+            bcp.data = (void*)v;
 
             p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -681,7 +681,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size = 2 * num_indices;
-            bcp.data = (void *)indices;
+            bcp.data = (void*)indices;
 
             p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
 
@@ -704,7 +704,7 @@ namespace put
         void create_geometry_primitives()
         {
             // default material
-            material_resource *mr = new material_resource;
+            material_resource* mr = new material_resource;
 
             mr->diffuse_rgb_shininess = vec4f(0.5f, 0.5f, 0.5f, 0.5f);
             mr->specular_rgb_reflect = vec4f(0.5f, 0.5f, 0.5f, 0.5f);

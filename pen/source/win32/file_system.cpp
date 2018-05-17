@@ -10,16 +10,16 @@ namespace pen
 #define WINDOWS_TICK 10000000
 #define SEC_TO_UNIX_EPOCH 11644473600LL
 
-    c8 *swap_slashes(const c8 *filename);
+    c8* swap_slashes(const c8* filename);
 
     u32 win32_time_to_unix_seconds(long long ticks)
     {
         return (u32)(ticks / WINDOWS_TICK - SEC_TO_UNIX_EPOCH);
     }
 
-    pen_error filesystem_getmtime(const c8 *filename, u32 &mtime_out)
+    pen_error filesystem_getmtime(const c8* filename, u32& mtime_out)
     {
-        c8 *corrected_name = swap_slashes(filename);
+        c8* corrected_name = swap_slashes(filename);
 
         OFSTRUCT of_struct;
         HFILE f = OpenFile(corrected_name, &of_struct, OF_READ);
@@ -32,7 +32,7 @@ namespace pen
 
             BOOL res = GetFileTime((HANDLE)(size_t)f, &c, &a, &m);
 
-            long long *wt = (long long *)&m;
+            long long* wt = (long long*)&m;
 
             u32 unix_ts = win32_time_to_unix_seconds(*wt);
 
@@ -46,15 +46,15 @@ namespace pen
         return PEN_ERR_FILE_NOT_FOUND;
     }
 
-    c8 *swap_slashes(const c8 *filename)
+    c8* swap_slashes(const c8* filename)
     {
         // swap "/" for "\\"
-        const char *p_src_char = filename;
+        const char* p_src_char = filename;
 
         u32 str_len = pen::string_length(filename);
-        char *windir_filename = (char *)pen::memory_alloc(str_len + 1);
+        char* windir_filename = (char*)pen::memory_alloc(str_len + 1);
 
-        char *p_dest_char = windir_filename;
+        char* p_dest_char = windir_filename;
 
         while (p_src_char < filename + str_len)
         {
@@ -73,13 +73,13 @@ namespace pen
         return windir_filename;
     }
 
-    pen_error filesystem_read_file_to_buffer(const c8 *filename, void **p_buffer, u32 &buffer_size)
+    pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)
     {
-        c8 *windir_filename = swap_slashes(filename);
+        c8* windir_filename = swap_slashes(filename);
 
         *p_buffer = NULL;
 
-        FILE *p_file = nullptr;
+        FILE* p_file = nullptr;
         fopen_s(&p_file, windir_filename, "rb");
 
         pen::memory_free(windir_filename);
@@ -97,7 +97,7 @@ namespace pen
 
             fread(*p_buffer, 1, buffer_size, p_file);
 
-            ((c8 *)*p_buffer)[size] = '\0';
+            ((c8*)*p_buffer)[size] = '\0';
 
             fclose(p_file);
 
@@ -107,7 +107,7 @@ namespace pen
         return PEN_ERR_FILE_NOT_FOUND;
     }
 
-    pen_error filesystem_enum_volumes(fs_tree_node &tree)
+    pen_error filesystem_enum_volumes(fs_tree_node& tree)
     {
         DWORD drive_bit_mask = GetLogicalDrives();
 
@@ -116,14 +116,14 @@ namespace pen
             return PEN_ERR_FAILED;
         }
 
-        const c8 *volumes_str = "Volumes";
+        const c8* volumes_str = "Volumes";
         u32 volume_strlen = pen::string_length(volumes_str);
 
-        tree.name = (c8 *)pen::memory_alloc(volume_strlen + 1);
+        tree.name = (c8*)pen::memory_alloc(volume_strlen + 1);
         pen::memory_cpy(tree.name, volumes_str, volume_strlen);
         tree.name[volume_strlen] = '\0';
 
-        const c8 *drive_letters = {"ABCDEFGHIJKLMNOPQRSTUVWXYZ"};
+        const c8* drive_letters = {"ABCDEFGHIJKLMNOPQRSTUVWXYZ"};
 
         u32 num_drives = pen::string_length(drive_letters);
 
@@ -140,7 +140,7 @@ namespace pen
         }
 
         tree.num_children = num_used_drives;
-        tree.children = (fs_tree_node *)pen::memory_alloc(sizeof(fs_tree_node) * num_used_drives);
+        tree.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node) * num_used_drives);
 
         bit = 1;
         u32 child = 0;
@@ -148,7 +148,7 @@ namespace pen
         {
             if (drive_bit_mask & bit)
             {
-                tree.children[child].name = (c8 *)pen::memory_alloc(3);
+                tree.children[child].name = (c8*)pen::memory_alloc(3);
 
                 tree.children[child].name[0] = drive_letters[i];
                 tree.children[child].name[1] = ':';
@@ -180,7 +180,7 @@ namespace pen
         {
             for (s32 i = 0; i < num_wildcards; ++i)
             {
-                const char *ft = va_arg(wildcards_consume, const char *);
+                const char* ft = va_arg(wildcards_consume, const char*);
 
                 if (PathMatchSpecExA(ffd.cFileName, ft, PMSF_NORMAL) == S_OK)
                 {
@@ -196,7 +196,7 @@ namespace pen
         return false;
     }
 
-    pen_error filesystem_enum_directory(const c8 *directory, fs_tree_node &results, s32 num_wildcards, ...)
+    pen_error filesystem_enum_directory(const c8* directory, fs_tree_node& results, s32 num_wildcards, ...)
     {
         va_list filetypes;
 
@@ -209,7 +209,7 @@ namespace pen
         return result;
     }
 
-    pen_error filesystem_enum_directory(const c8 *directory, fs_tree_node &tree, s32 num_wildcards, va_list args)
+    pen_error filesystem_enum_directory(const c8* directory, fs_tree_node& tree, s32 num_wildcards, va_list args)
     {
         WIN32_FIND_DATAA ffd;
         HANDLE hFind = INVALID_HANDLE_VALUE;
@@ -222,7 +222,7 @@ namespace pen
         wildcard_dir[dir_len + 1] = '*';
         wildcard_dir[dir_len + 2] = '\0';
 
-        c8 *windir_filename = swap_slashes(wildcard_dir);
+        c8* windir_filename = swap_slashes(wildcard_dir);
 
         u32 total_num = 0;
         hFind = FindFirstFileA(windir_filename, &ffd);
@@ -247,7 +247,7 @@ namespace pen
             return PEN_ERR_FILE_NOT_FOUND;
         }
 
-        tree.children = (fs_tree_node *)pen::memory_alloc(sizeof(fs_tree_node) * total_num);
+        tree.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node) * total_num);
 
         // reiterate and get the file names
         u32 child = 0;
@@ -260,7 +260,7 @@ namespace pen
                 {
                     u32 file_name_len = pen::string_length(ffd.cFileName);
 
-                    tree.children[child].name = (c8 *)pen::memory_alloc(file_name_len + 1);
+                    tree.children[child].name = (c8*)pen::memory_alloc(file_name_len + 1);
                     pen::memory_cpy(tree.children[child].name, ffd.cFileName, file_name_len);
                     tree.children[child].name[file_name_len] = '\0';
 
@@ -277,7 +277,7 @@ namespace pen
         return PEN_ERR_OK;
     }
 
-    pen_error filesystem_enum_free_mem(fs_tree_node &tree)
+    pen_error filesystem_enum_free_mem(fs_tree_node& tree)
     {
         for (u32 i = 0; i < tree.num_children; ++i)
         {
@@ -290,12 +290,12 @@ namespace pen
         return PEN_ERR_OK;
     }
 
-    const c8 **filesystem_get_user_directory(s32 &directory_depth)
+    const c8** filesystem_get_user_directory(s32& directory_depth)
     {
         const u32 max_depth = 4;
         static c8 dirs[max_depth][MAX_PATH];
 
-        static c8 *dir_list[max_depth];
+        static c8* dir_list[max_depth];
 
         c8 path[MAX_PATH];
         if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, path)))
@@ -332,7 +332,7 @@ namespace pen
                 dir_list[i] = &dirs[i][0];
             }
 
-            return (const c8 **)&dir_list[0];
+            return (const c8**)&dir_list[0];
         }
 
         return nullptr;

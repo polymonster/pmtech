@@ -33,8 +33,8 @@ namespace put
         {
             u32 num_frames;
             hash_id target;
-            f32 *times;
-            mat4 *matrices;
+            f32* times;
+            mat4* matrices;
         };
 
         struct animation_resource
@@ -43,7 +43,7 @@ namespace put
             u32 node;
 
             u32 num_channels;
-            animation_channel *channels;
+            animation_channel* channels;
 
             f32 length;
             f32 step;
@@ -89,10 +89,10 @@ namespace put
             vec3f min_extents;
             vec3f max_extents;
 
-            void *cpu_index_buffer;
-            void *cpu_position_buffer;
+            void* cpu_index_buffer;
+            void* cpu_position_buffer;
 
-            cmp_skin *p_skin;
+            cmp_skin* p_skin;
         };
 
         struct vertex_model
@@ -124,32 +124,32 @@ namespace put
             f32 x, y, z, w;
         };
 
-        void save_scene(const c8 *filename, entity_scene *scene);
-        void load_scene(const c8 *filename, entity_scene *scene, bool merge = false);
+        void save_scene(const c8* filename, entity_scene* scene);
+        void load_scene(const c8* filename, entity_scene* scene, bool merge = false);
 
-        s32 load_pmm(const c8 *model_scene_name, entity_scene *scene = nullptr, u32 load_flags = PMM_ALL);
-        anim_handle load_pma(const c8 *model_scene_name);
+        s32 load_pmm(const c8* model_scene_name, entity_scene* scene = nullptr, u32 load_flags = PMM_ALL);
+        anim_handle load_pma(const c8* model_scene_name);
 
-        void instantiate_rigid_body(entity_scene *scene, u32 node_index);
-        void instantiate_constraint(entity_scene *scene, u32 node_index);
-        void instantiate_geometry(geometry_resource *gr, entity_scene *scene, s32 node_index);
-        void instantiate_model_pre_skin(entity_scene *scene, s32 node_index);
-        void instantiate_model_cbuffer(entity_scene *scene, s32 node_index);
-        void instantiate_anim_controller(entity_scene *scene, s32 node_index);
+        void instantiate_rigid_body(entity_scene* scene, u32 node_index);
+        void instantiate_constraint(entity_scene* scene, u32 node_index);
+        void instantiate_geometry(geometry_resource* gr, entity_scene* scene, s32 node_index);
+        void instantiate_model_pre_skin(entity_scene* scene, s32 node_index);
+        void instantiate_model_cbuffer(entity_scene* scene, s32 node_index);
+        void instantiate_anim_controller(entity_scene* scene, s32 node_index);
 
-        void instantiate_material(material_resource *mr, entity_scene *scene, u32 node_index);
+        void instantiate_material(material_resource* mr, entity_scene* scene, u32 node_index);
 
-        void bake_material_handles(entity_scene *scene, u32 node_index);
+        void bake_material_handles(entity_scene* scene, u32 node_index);
         void bake_material_handles();
 
         void create_geometry_primitives();
 
-        void add_geometry_resource(geometry_resource *gr);
-        void add_material_resource(material_resource *mr);
+        void add_geometry_resource(geometry_resource* gr);
+        void add_material_resource(material_resource* mr);
 
-        material_resource *get_material_resource(hash_id hash);
-        animation_resource *get_animation_resource(anim_handle h);
-        geometry_resource *get_geometry_resource(hash_id h);
+        material_resource* get_material_resource(hash_id hash);
+        animation_resource* get_animation_resource(anim_handle h);
+        geometry_resource* get_geometry_resource(hash_id h);
     } // namespace ces
 } // namespace put
 #endif

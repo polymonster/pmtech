@@ -19,19 +19,19 @@
 #define stb_sb_add(a, n) (stb__sbmaybegrow(a, n), stb__sbn(a) += (n), &(a)[stb__sbn(a) - (n)])
 #define stb_sb_last(a) ((a)[stb__sbn(a) - 1])
 
-#define stb__sbraw(a) ((int *)(a)-2)
+#define stb__sbraw(a) ((int*)(a)-2)
 #define stb__sbm(a) stb__sbraw(a)[0]
 #define stb__sbn(a) stb__sbraw(a)[1]
 
 #define stb__sbneedgrow(a, n) ((a) == 0 || stb__sbn(a) + (n) >= stb__sbm(a))
 #define stb__sbmaybegrow(a, n) (stb__sbneedgrow(a, (n)) ? stb__sbgrow(a, n) : 0)
-#define stb__sbgrow(a, n) (*((void **)&(a)) = stb__sbgrowf((a), (n), sizeof(*(a))))
+#define stb__sbgrow(a, n) (*((void**)&(a)) = stb__sbgrowf((a), (n), sizeof(*(a))))
 
 #define sb_clear(v)                                                                                                          \
     stb_sb_free(v);                                                                                                          \
     v = nullptr
 
-static void *stb__sbgrowf(void *arr, int increment, int itemsize)
+static void* stb__sbgrowf(void* arr, int increment, int itemsize)
 {
     int start = stb_sb_count(arr);
     int dbl_cur = arr ? 2 * stb__sbm(arr) : 0;
@@ -39,12 +39,12 @@ static void *stb__sbgrowf(void *arr, int increment, int itemsize)
     int m = dbl_cur > min_needed ? dbl_cur : min_needed;
 
     // stretch buffer and zero mem
-    int *p = nullptr;
+    int* p = nullptr;
     {
         u32 total_size = itemsize * m + sizeof(int) * 2;
-        p = (int *)realloc(arr ? stb__sbraw(arr) : 0, total_size);
+        p = (int*)realloc(arr ? stb__sbraw(arr) : 0, total_size);
 
-        u8 *pp = (u8 *)p;
+        u8* pp = (u8*)p;
         u32 preserve_size = sizeof(int) * 2 + itemsize * start;
         memset(pp + preserve_size, 0x00, total_size - preserve_size);
     }
@@ -61,7 +61,7 @@ static void *stb__sbgrowf(void *arr, int increment, int itemsize)
 #ifdef STRETCHY_BUFFER_OUT_OF_MEMORY
         STRETCHY_BUFFER_OUT_OF_MEMORY;
 #endif
-        return (void *)(2 * sizeof(int)); // try to force a NULL pointer exception later
+        return (void*)(2 * sizeof(int)); // try to force a NULL pointer exception later
     }
 }
 
@@ -70,7 +70,7 @@ static void *stb__sbgrowf(void *arr, int increment, int itemsize)
 template <class T>
 struct pen_stack
 {
-    T *data = nullptr;
+    T* data = nullptr;
     s32 pos = 0;
 
     void clear()

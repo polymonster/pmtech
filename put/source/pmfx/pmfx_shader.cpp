@@ -20,7 +20,7 @@ namespace put
 {
     namespace pmfx
     {
-        const c8 *semantic_names[] = {"SV_POSITION", "POSITION",  "TEXCOORD", "NORMAL",
+        const c8* semantic_names[] = {"SV_POSITION", "POSITION",  "TEXCOORD", "NORMAL",
                                       "TANGENT",     "BITANGENT", "COLOR",    "BLENDINDICES"};
         shader_program null_shader = {0};
 
@@ -31,12 +31,12 @@ namespace put
             bool invalidated = false;
             pen::json info;
             u32 info_timestamp = 0;
-            shader_program *techniques = nullptr;
+            shader_program* techniques = nullptr;
         };
-        pmfx *k_pmfx_list = nullptr;
+        pmfx* k_pmfx_list = nullptr;
 
-        const char **k_shader_names = nullptr;
-        const char ***k_technique_names = nullptr;
+        const char** k_shader_names = nullptr;
+        const char*** k_technique_names = nullptr;
         u32 k_num_shader_names = 0;
 
         void generate_name_lists()
@@ -49,8 +49,8 @@ namespace put
             pen::memory_free(k_technique_names);
 
             u32 num_pmfx = sb_count(k_pmfx_list);
-            k_technique_names = (const char ***)pen::memory_calloc(num_pmfx, sizeof(k_technique_names));
-            k_shader_names = (const char **)pen::memory_calloc(num_pmfx, sizeof(k_shader_names));
+            k_technique_names = (const char***)pen::memory_calloc(num_pmfx, sizeof(k_technique_names));
+            k_shader_names = (const char**)pen::memory_calloc(num_pmfx, sizeof(k_shader_names));
 
             for (u32 i = 0; i < num_pmfx; ++i)
             {
@@ -66,25 +66,25 @@ namespace put
             k_num_shader_names = num_pmfx;
         }
 
-        const char **get_shader_list(u32 &count)
+        const char** get_shader_list(u32& count)
         {
             count = k_num_shader_names;
             return k_shader_names;
         }
 
-        const char **get_technique_list(shader_handle index, u32 &count)
+        const char** get_technique_list(shader_handle index, u32& count)
         {
             count = sb_count(k_technique_names[index]);
             return k_technique_names[index];
         }
 
-        void get_link_params_constants(pen::shader_link_params &link_params, const pen::json &j_info)
+        void get_link_params_constants(pen::shader_link_params& link_params, const pen::json& j_info)
         {
             u32 num_constants = j_info["cbuffers"].size() + j_info["texture_samplers"].size();
             link_params.num_constants = num_constants;
 
             link_params.constants =
-                (pen::constant_layout_desc *)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
+                (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
 
             u32 cc = 0;
             pen::json j_cbuffers = j_info["cbuffers"];
@@ -116,7 +116,7 @@ namespace put
                 Str name_str = sampler["name"].as_str();
                 u32 name_len = name_str.length();
 
-                link_params.constants[cc].name = (c8 *)pen::memory_alloc(name_len + 1);
+                link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len + 1);
 
                 pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len);
 
@@ -139,7 +139,7 @@ namespace put
             }
         }
 
-        void get_input_layout_params(pen::input_layout_creation_params &ilp, pen::json &j_techique)
+        void get_input_layout_params(pen::input_layout_creation_params& ilp, pen::json& j_techique)
         {
             u32 vertex_elements = j_techique["vs_inputs"].size();
             ilp.num_elements = vertex_elements;
@@ -147,11 +147,11 @@ namespace put
             u32 instance_elements = j_techique["instance_inputs"].size();
             ilp.num_elements += instance_elements;
 
-            ilp.input_layout = (pen::input_layout_desc *)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
+            ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
 
             struct layout
             {
-                const c8 *name;
+                const c8* name;
                 input_classification iclass;
                 u32 step_rate;
                 u32 num;
@@ -178,7 +178,7 @@ namespace put
                     static const s32 byte_formats[4] = {PEN_VERTEX_FORMAT_UNORM1, PEN_VERTEX_FORMAT_UNORM2,
                                                         PEN_VERTEX_FORMAT_UNORM2, PEN_VERTEX_FORMAT_UNORM4};
 
-                    const s32 *fomats = float_formats;
+                    const s32* fomats = float_formats;
 
                     if (elements_size == 1)
                         fomats = byte_formats;
@@ -196,13 +196,13 @@ namespace put
             }
         }
 
-        shader_program load_shader_technique(const c8 *fx_filename, pen::json &j_techique, pen::json &j_info)
+        shader_program load_shader_technique(const c8* fx_filename, pen::json& j_techique, pen::json& j_info)
         {
             shader_program program = {0};
 
             Str name = j_techique["name"].as_str();
 
-            static const c8 *k_sub_types[] = {"_skinned", "_instanced"};
+            static const c8* k_sub_types[] = {"_skinned", "_instanced"};
 
             // default sub type
             program.name = name;
@@ -223,10 +223,10 @@ namespace put
                 }
             }
 
-            const c8 *sfp = pen::renderer_get_shader_platform();
+            const c8* sfp = pen::renderer_get_shader_platform();
 
             // vertex shader
-            c8 *vs_file_buf = (c8 *)pen::memory_alloc(256);
+            c8* vs_file_buf = (c8*)pen::memory_alloc(256);
             Str vs_filename_str = j_techique["vs_file"].as_str();
             pen::string_format(vs_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, vs_filename_str.c_str());
 
@@ -252,14 +252,14 @@ namespace put
                 u32 num_vertex_outputs = j_techique["vs_outputs"].size();
 
                 u32 decl_size_bytes = sizeof(pen::stream_out_decl_entry) * num_vertex_outputs;
-                pen::stream_out_decl_entry *so_decl = (pen::stream_out_decl_entry *)pen::memory_alloc(decl_size_bytes);
+                pen::stream_out_decl_entry* so_decl = (pen::stream_out_decl_entry*)pen::memory_alloc(decl_size_bytes);
 
                 pen::shader_link_params slp;
                 slp.stream_out_shader = program.stream_out_shader;
                 slp.pixel_shader = 0;
                 slp.vertex_shader = 0;
 
-                slp.stream_out_names = new c8 *[num_vertex_outputs];
+                slp.stream_out_names = new c8*[num_vertex_outputs];
                 slp.num_stream_out_names = num_vertex_outputs;
 
                 for (u32 vo = 0; vo < num_vertex_outputs; ++vo)
@@ -316,7 +316,7 @@ namespace put
             pen::memory_free(vs_slp.so_decl_entries);
 
             // pixel shader
-            c8 *ps_file_buf = (c8 *)pen::memory_alloc(256);
+            c8* ps_file_buf = (c8*)pen::memory_alloc(256);
             Str ps_filename_str = j_techique["ps_file"].as_str();
 
             pen::string_format(ps_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str());
@@ -366,7 +366,7 @@ namespace put
 
         void set_technique(shader_handle handle, u32 index)
         {
-            auto &t = k_pmfx_list[handle].techniques[index];
+            auto& t = k_pmfx_list[handle].techniques[index];
 
             if (t.stream_out_shader)
             {
@@ -398,7 +398,7 @@ namespace put
             u32 num_techniques = sb_count(k_pmfx_list[handle].techniques);
             for (u32 i = 0; i < num_techniques; ++i)
             {
-                auto &t = k_pmfx_list[handle].techniques[i];
+                auto& t = k_pmfx_list[handle].techniques[i];
 
                 if (t.id_name != id_technique)
                     continue;
@@ -412,7 +412,7 @@ namespace put
             return PEN_INVALID_HANDLE;
         }
 
-        void get_pmfx_info_filename(c8 *file_buf, const c8 *pmfx_filename)
+        void get_pmfx_info_filename(c8* file_buf, const c8* pmfx_filename)
         {
             pen::string_format(file_buf, 256, "data/pmfx/%s/%s/info.json", pen::renderer_get_shader_platform(),
                                pmfx_filename);
@@ -426,7 +426,7 @@ namespace put
 
             for (u32 i = 0; i < num_techniques; ++i)
             {
-                auto &t = k_pmfx_list[handle].techniques[i];
+                auto& t = k_pmfx_list[handle].techniques[i];
 
                 pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
                 pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
@@ -434,7 +434,7 @@ namespace put
             }
         }
 
-        pmfx load_internal(const c8 *filename)
+        pmfx load_internal(const c8* filename)
         {
             // load info file for description
             c8 info_file_buf[256];
@@ -468,7 +468,7 @@ namespace put
             return new_pmfx;
         }
 
-        shader_handle load_shader(const c8 *pmfx_name)
+        shader_handle load_shader(const c8* pmfx_name)
         {
             // return existing
             shader_handle ph = PEN_INVALID_HANDLE;
@@ -491,7 +491,7 @@ namespace put
             // for (auto& p : s_pmfx_list)
             for (u32 i = 0; i < num_pmfx; ++i)
             {
-                auto &p = k_pmfx_list[i];
+                auto& p = k_pmfx_list[i];
                 if (p.filename.length() == 0)
                 {
                     p = new_pmfx;
@@ -565,7 +565,7 @@ namespace put
             // for( auto& pmfx_set : s_pmfx_list )
             for (u32 i = 0; i < num_pmfx; ++i)
             {
-                auto &pmfx_set = k_pmfx_list[i];
+                auto& pmfx_set = k_pmfx_list[i];
 
                 if (pmfx_set.invalidated)
                 {

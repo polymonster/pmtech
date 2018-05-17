@@ -18,7 +18,7 @@ using namespace pen;
 
 namespace pen
 {
-    extern void renderer_init(void *user_data);
+    extern void renderer_init(void* user_data);
 }
 
 // pen required externs
@@ -32,9 +32,9 @@ pen::user_info pen_user_info;
 #define GLX_CONTEXT_PROFILE_MASK_ARB 0x9126
 #define GLX_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
 
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display *, GLXFBConfig, GLXContext, Bool, const int *);
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 GLXContext _gl_context = 0;
-Display *_display;
+Display* _display;
 Window _window;
 
 void pen_make_gl_context_current()
@@ -55,15 +55,15 @@ static int visual_attribs[] = {GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WI
                                None};
 
 static bool ctx_error_occured = false;
-static int ctx_error_handler(Display *dpy, XErrorEvent *ev)
+static int ctx_error_handler(Display* dpy, XErrorEvent* ev)
 {
     ctx_error_occured = true;
     return 0;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    Visual *visual;
+    Visual* visual;
     int depth;
     XSetWindowAttributes frame_attributes;
     XEvent event;
@@ -77,23 +77,23 @@ int main(int argc, char *argv[])
     glXQueryVersion(_display, &glx_major, &glx_minor);
 
     // glx setup
-    const char *glxExts = glXQueryExtensionsString(_display, DefaultScreen(_display));
+    const char* glxExts = glXQueryExtensionsString(_display, DefaultScreen(_display));
 
     ctx_error_occured = false;
-    int (*oldHandler)(Display *, XErrorEvent *) = XSetErrorHandler(&ctx_error_handler);
+    int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctx_error_handler);
 
     // find fb with matching samples
     s32 fbcount;
-    GLXFBConfig *fbc = glXChooseFBConfig(_display, DefaultScreen(_display), visual_attribs, &fbcount);
+    GLXFBConfig* fbc = glXChooseFBConfig(_display, DefaultScreen(_display), visual_attribs, &fbcount);
     for (int i = 0; i < fbcount; ++i)
     {
-        XVisualInfo *vi = glXGetVisualFromFBConfig(_display, fbc[i]);
+        XVisualInfo* vi = glXGetVisualFromFBConfig(_display, fbc[i]);
     }
 
     GLXFBConfig best_fbc = fbc[1];
 
     // Create window
-    XVisualInfo *vi = glXGetVisualFromFBConfig(_display, best_fbc);
+    XVisualInfo* vi = glXGetVisualFromFBConfig(_display, best_fbc);
 
     XSetWindowAttributes swa;
     Colormap cmap;
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     // Create Gl Context
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
     glXCreateContextAttribsARB =
-        (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte *)"glXCreateContextAttribsARB");
+        (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte*)"glXCreateContextAttribsARB");
 
     int context_attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
                              GLX_CONTEXT_MINOR_VERSION_ARB, 1,
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        XNextEvent(_display, (XEvent *)&event);
+        XNextEvent(_display, (XEvent*)&event);
         pen::thread_sleep_ms(16);
     }
 
@@ -158,17 +158,17 @@ int main(int argc, char *argv[])
 
 namespace pen
 {
-    u32 window_init(void *params)
+    u32 window_init(void* params)
     {
         return 0;
     }
 
-    void *window_get_primary_display_handle()
+    void* window_get_primary_display_handle()
     {
-        return (void *)(intptr_t)_window;
+        return (void*)(intptr_t)_window;
     }
 
-    void window_get_size(s32 &width, s32 &height)
+    void window_get_size(s32& width, s32& height)
     {
         width = pen_window.width;
         height = pen_window.height;

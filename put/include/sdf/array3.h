@@ -15,11 +15,11 @@ struct Array3
     typedef typename ArrayT::const_iterator const_iterator;
     typedef typename ArrayT::size_type size_type;
     typedef long difference_type;
-    typedef T &reference;
-    typedef const T &const_reference;
+    typedef T& reference;
+    typedef const T& const_reference;
     typedef T value_type;
-    typedef T *pointer;
-    typedef const T *const_pointer;
+    typedef T* pointer;
+    typedef const T* const_pointer;
     typedef typename ArrayT::reverse_iterator reverse_iterator;
     typedef typename ArrayT::const_reverse_iterator const_reverse_iterator;
 
@@ -46,7 +46,7 @@ struct Array3
         assert(ni_ >= 0 && nj_ >= 0 && nk_ >= 0);
     }
 
-    Array3(int ni_, int nj_, int nk_, ArrayT &a_)
+    Array3(int ni_, int nj_, int nk_, ArrayT& a_)
         : ni(ni_)
         , nj(nj_)
         , nk(nk_)
@@ -55,7 +55,7 @@ struct Array3
         assert(ni_ >= 0 && nj_ >= 0 && nk_ >= 0);
     }
 
-    Array3(int ni_, int nj_, int nk_, const T &value)
+    Array3(int ni_, int nj_, int nk_, const T& value)
         : ni(ni_)
         , nj(nj_)
         , nk(nk_)
@@ -64,7 +64,7 @@ struct Array3
         assert(ni_ >= 0 && nj_ >= 0 && nk_ >= 0);
     }
 
-    Array3(int ni_, int nj_, int nk_, const T &value, size_type max_n_)
+    Array3(int ni_, int nj_, int nk_, const T& value, size_type max_n_)
         : ni(ni_)
         , nj(nj_)
         , nk(nk_)
@@ -73,7 +73,7 @@ struct Array3
         assert(ni_ >= 0 && nj_ >= 0 && nk_ >= 0);
     }
 
-    Array3(int ni_, int nj_, int nk_, T *data_)
+    Array3(int ni_, int nj_, int nk_, T* data_)
         : ni(ni_)
         , nj(nj_)
         , nk(nk_)
@@ -82,7 +82,7 @@ struct Array3
         assert(ni_ >= 0 && nj_ >= 0 && nk_ >= 0);
     }
 
-    Array3(int ni_, int nj_, int nk_, T *data_, size_type max_n_)
+    Array3(int ni_, int nj_, int nk_, T* data_, size_type max_n_)
         : ni(ni_)
         , nj(nj_)
         , nk(nk_)
@@ -98,29 +98,29 @@ struct Array3
 #endif
     }
 
-    const T &operator()(int i, int j, int k) const
+    const T& operator()(int i, int j, int k) const
     {
         assert(i >= 0 && i < ni && j >= 0 && j < nj && k >= 0 && k < nk);
         return a[i + ni * (j + nj * k)];
     }
 
-    T &operator()(int i, int j, int k)
+    T& operator()(int i, int j, int k)
     {
         assert(i >= 0 && i < ni && j >= 0 && j < nj && k >= 0 && k < nk);
         return a[i + ni * (j + nj * k)];
     }
 
-    bool operator==(const Array3<T> &x) const
+    bool operator==(const Array3<T>& x) const
     {
         return ni == x.ni && nj == x.nj && nk == x.nk && a == x.a;
     }
 
-    bool operator!=(const Array3<T> &x) const
+    bool operator!=(const Array3<T>& x) const
     {
         return ni != x.ni || nj != x.nj || nk != x.nk || a != x.a;
     }
 
-    bool operator<(const Array3<T> &x) const
+    bool operator<(const Array3<T>& x) const
     {
         if (ni < x.ni)
             return true;
@@ -137,7 +137,7 @@ struct Array3
         return a < x.a;
     }
 
-    bool operator>(const Array3<T> &x) const
+    bool operator>(const Array3<T>& x) const
     {
         if (ni > x.ni)
             return true;
@@ -154,7 +154,7 @@ struct Array3
         return a > x.a;
     }
 
-    bool operator<=(const Array3<T> &x) const
+    bool operator<=(const Array3<T>& x) const
     {
         if (ni < x.ni)
             return true;
@@ -171,7 +171,7 @@ struct Array3
         return a <= x.a;
     }
 
-    bool operator>=(const Array3<T> &x) const
+    bool operator>=(const Array3<T>& x) const
     {
         if (ni > x.ni)
             return true;
@@ -188,12 +188,12 @@ struct Array3
         return a >= x.a;
     }
 
-    void assign(const T &value)
+    void assign(const T& value)
     {
         a.assign(value);
     }
 
-    void assign(int ni_, int nj_, int nk_, const T &value)
+    void assign(int ni_, int nj_, int nk_, const T& value)
     {
         a.assign(ni_ * nj_ * nk_, value);
         ni = ni_;
@@ -201,7 +201,7 @@ struct Array3
         nk = nk_;
     }
 
-    void assign(int ni_, int nj_, int nk_, const T *copydata)
+    void assign(int ni_, int nj_, int nk_, const T* copydata)
     {
         a.assign(ni_ * nj_ * nk_, copydata);
         ni = ni_;
@@ -209,25 +209,25 @@ struct Array3
         nk = nk_;
     }
 
-    const T &at(int i, int j, int k) const
+    const T& at(int i, int j, int k) const
     {
         assert(i >= 0 && i < ni && j >= 0 && j < nj && k >= 0 && k < nk);
         return a[i + ni * (j + nj * k)];
     }
 
-    T &at(int i, int j, int k)
+    T& at(int i, int j, int k)
     {
         assert(i >= 0 && i < ni && j >= 0 && j < nj && k >= 0 && k < nk);
         return a[i + ni * (j + nj * k)];
     }
 
-    const T &back(void) const
+    const T& back(void) const
     {
         assert(a.size());
         return a.back();
     }
 
-    T &back(void)
+    T& back(void)
     {
         assert(a.size());
         return a.back();
@@ -269,7 +269,7 @@ struct Array3
         return a.end();
     }
 
-    void fill(int ni_, int nj_, int nk_, const T &value)
+    void fill(int ni_, int nj_, int nk_, const T& value)
     {
         a.fill(ni_ * nj_ * nk_, value);
         ni = ni_;
@@ -277,13 +277,13 @@ struct Array3
         nk = nk_;
     }
 
-    const T &front(void) const
+    const T& front(void) const
     {
         assert(a.size());
         return a.front();
     }
 
-    T &front(void)
+    T& front(void)
     {
         assert(a.size());
         return a.front();
@@ -328,7 +328,7 @@ struct Array3
         nk = nk_;
     }
 
-    void resize(int ni_, int nj_, int nk_, const T &value)
+    void resize(int ni_, int nj_, int nk_, const T& value)
     {
         assert(ni_ >= 0 && nj_ >= 0 && nk_ >= 0);
         a.resize(ni_ * nj_ * nk_, value);
@@ -347,7 +347,7 @@ struct Array3
         return a.size();
     }
 
-    void swap(Array3<T> &x)
+    void swap(Array3<T>& x)
     {
         std::swap(ni, x.ni);
         std::swap(nj, x.nj);

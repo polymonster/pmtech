@@ -8,7 +8,7 @@
 
 namespace put
 {
-    inline s32 str_find_reverse(const Str &string, const c8 *search)
+    inline s32 str_find_reverse(const Str& string, const c8* search)
     {
         s32 len = string.length();
         s32 search_len = pen::string_length(search);
@@ -39,7 +39,7 @@ namespace put
         return -1;
     }
 
-    inline s32 str_find(const Str &string, const c8 *search, u32 start_pos = 0)
+    inline s32 str_find(const Str& string, const c8* search, u32 start_pos = 0)
     {
         s32 len = string.length();
         s32 search_len = pen::string_length(search);
@@ -70,11 +70,11 @@ namespace put
         return -1;
     }
 
-    inline Str &str_replace_chars(Str &string, const c8 search, const c8 replace)
+    inline Str& str_replace_chars(Str& string, const c8 search, const c8 replace)
     {
         s32 len = string.length();
 
-        c8 *iter = &string[0];
+        c8* iter = &string[0];
         while (iter && len > 0)
         {
             if (*iter == search)
@@ -87,7 +87,7 @@ namespace put
         return string;
     }
 
-    inline Str str_replace_string(const Str &string, const c8 *search, const c8 *replace)
+    inline Str str_replace_string(const Str& string, const c8* search, const c8* replace)
     {
         s32 len = string.length();
         s32 search_len = pen::string_length(search);
@@ -100,8 +100,8 @@ namespace put
         s32 end_start = find_start + search_len;
         s32 end_len = len - end_start;
 
-        c8 *start_buf = new c8[find_start + 1];
-        c8 *end_buf = new c8[end_len + 1];
+        c8* start_buf = new c8[find_start + 1];
+        c8* end_buf = new c8[end_len + 1];
 
         pen::memory_cpy(start_buf, string.c_str(), find_start);
         start_buf[find_start] = '\0';

@@ -28,11 +28,11 @@ typedef struct textured_vertex
     float u, v;
 } textured_vertex;
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     // create 2 clear states one for the render target and one for the main screen, so we can see the difference
@@ -97,7 +97,7 @@ PEN_TRV pen::user_entry(void *params)
     bcp.cpu_access_flags = 0;
 
     bcp.buffer_size = sizeof(vertex) * 3;
-    bcp.data = (void *)&triangle_vertices[0];
+    bcp.data = (void*)&triangle_vertices[0];
 
     u32 triangle_vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -117,7 +117,7 @@ PEN_TRV pen::user_entry(void *params)
     };
 
     bcp.buffer_size = sizeof(textured_vertex) * 4;
-    bcp.data = (void *)&quad_vertices[0];
+    bcp.data = (void*)&quad_vertices[0];
 
     u32 quad_vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -128,7 +128,7 @@ PEN_TRV pen::user_entry(void *params)
     bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
     bcp.cpu_access_flags = 0;
     bcp.buffer_size = sizeof(u16) * 6;
-    bcp.data = (void *)&indices[0];
+    bcp.data = (void*)&indices[0];
 
     u32 quad_index_buffer = pen::renderer_create_buffer(bcp);
 

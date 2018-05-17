@@ -9,7 +9,7 @@ namespace physics
 {
 #define MAX_TRIGGER_CONTACTS 8
 
-    PEN_TRV physics_thread_main(void *params);
+    PEN_TRV physics_thread_main(void* params);
 
     enum e_physics_cmd : s32
     {
@@ -95,8 +95,8 @@ namespace physics
 
     struct collision_mesh_data
     {
-        f32 *vertices;
-        u32 *indices;
+        f32* vertices;
+        u32* indices;
         u32 num_floats;
         u32 num_indices;
     };
@@ -121,7 +121,7 @@ namespace physics
     struct compound_rb_params
     {
         rigid_body_params base;
-        rigid_body_params *rb;
+        rigid_body_params* rb;
         u32 num_shapes;
     };
 
@@ -143,7 +143,7 @@ namespace physics
     struct multi_body_params
     {
         rigid_body_params base;
-        multi_body_link *links;
+        multi_body_link* links;
         u32 multi_dof;
 
         u32 num_links;
@@ -177,8 +177,8 @@ namespace physics
         u32 compound;
         u32 parent;
         s32 detach_index;
-        void (*function)(void *user_data, s32 attach_index);
-        void *p_user_data;
+        void (*function)(void* user_data, s32 attach_index);
+        void* p_user_data;
     };
 
     struct add_p2p_constraint_params
@@ -270,7 +270,7 @@ namespace physics
         lw_vec3f start;
         lw_vec3f end;
         u32 timestamp;
-        void (*callback)(const ray_cast_result &result);
+        void (*callback)(const ray_cast_result& result);
     };
 
     struct physics_cmd
@@ -307,35 +307,35 @@ namespace physics
     void set_paused(bool val);
     void physics_consume_command_buffer();
 
-    u32 add_rb(const rigid_body_params &rbp);
-    u32 add_ghost_rb(const rigid_body_params &rbp);
-    u32 add_constraint(const constraint_params &crbp);
-    u32 add_multibody(const multi_body_params &mbp);
-    u32 add_compound_rb(const compound_rb_params &crbp);
-    u32 add_compound_shape(const compound_rb_params &crbp);
-    u32 attach_rb_to_compound(const attach_to_compound_params &params);
+    u32 add_rb(const rigid_body_params& rbp);
+    u32 add_ghost_rb(const rigid_body_params& rbp);
+    u32 add_constraint(const constraint_params& crbp);
+    u32 add_multibody(const multi_body_params& mbp);
+    u32 add_compound_rb(const compound_rb_params& crbp);
+    u32 add_compound_shape(const compound_rb_params& crbp);
+    u32 attach_rb_to_compound(const attach_to_compound_params& params);
 
-    void add_to_world(const u32 &entity_index);
-    void remove_from_world(const u32 &entity_index);
-    void cast_ray(const ray_cast_params &rcp);
-    void add_collision_trigger(const collision_trigger_data &trigger_data);
+    void add_to_world(const u32& entity_index);
+    void remove_from_world(const u32& entity_index);
+    void cast_ray(const ray_cast_params& rcp);
+    void add_collision_trigger(const collision_trigger_data& trigger_data);
 
-    void set_v3(const u32 &entity_index, const vec3f &v3, u32 cmd);
-    void set_float(const u32 &entity_index, const f32 &fval, u32 cmd);
-    void set_transform(const u32 &entity_index, const vec3f &position, const quat &quaternion);
-    void set_multi_v3(const u32 &entity_index, const u32 &link_index, const vec3f &v3_data, const u32 &cmd);
-    void set_collision_group(const u32 &entity_index, const u32 &group, const u32 &mask);
+    void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
+    void set_float(const u32& entity_index, const f32& fval, u32 cmd);
+    void set_transform(const u32& entity_index, const vec3f& position, const quat& quaternion);
+    void set_multi_v3(const u32& entity_index, const u32& link_index, const vec3f& v3_data, const u32& cmd);
+    void set_collision_group(const u32& entity_index, const u32& group, const u32& mask);
 
-    void sync_compound_multi(const u32 &compound_index, const u32 &multi_index);
-    void sync_rigid_bodies(const u32 &master, const u32 &slave, const s32 &link_index, u32 cmd);
+    void sync_compound_multi(const u32& compound_index, const u32& multi_index);
+    void sync_rigid_bodies(const u32& master, const u32& slave, const s32& link_index, u32 cmd);
 
-    mat4 get_rb_matrix(const u32 &entity_index);
-    mat4 get_multirb_matrix(const u32 &multi_index, const s32 &link_index);
-    f32 get_multi_joint_pos(const u32 &multi_index, const s32 &link_index);
+    mat4 get_rb_matrix(const u32& entity_index);
+    mat4 get_multirb_matrix(const u32& multi_index, const s32& link_index);
+    f32 get_multi_joint_pos(const u32& multi_index, const s32& link_index);
     u32 get_hit_flags(u32 entity_index);
 
-    trigger_contact_data *get_trigger_contacts(u32 entity_index);
+    trigger_contact_data* get_trigger_contacts(u32 entity_index);
 
-    void release_entity(const u32 &entity_index);
+    void release_entity(const u32& entity_index);
 } // namespace physics
 #endif

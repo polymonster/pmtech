@@ -58,11 +58,11 @@ void renderer_state_init()
 
 void audio_player_update();
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     renderer_state_init();
@@ -123,13 +123,13 @@ enum playback_deck_flags : s32
 
 f32 pitch_range_options[4] = {8.0f, 16.0f, 50.0f, 100.0f};
 
-const c8 *pitch_range_desriptions[4] = {"8%", "16%", "50%", "100%"};
+const c8* pitch_range_desriptions[4] = {"8%", "16%", "50%", "100%"};
 
 static const u32 k_num_fft_diff_buckets = 5;
 u32 k_fft_diff_ranges[k_num_fft_diff_buckets] = {16, 32, 64, 256, 1024};
-const c8 *diff_range_desriptions[k_num_fft_diff_buckets] = {"0-16", "16-32", "32-64", "64-256", "256-1024"};
+const c8* diff_range_desriptions[k_num_fft_diff_buckets] = {"0-16", "16-32", "32-64", "64-256", "256-1024"};
 
-const c8 *diff_range_nicknames[k_num_fft_diff_buckets] = {"KICK", "LOW ", "MID ", "HAT ", "HIGH"};
+const c8* diff_range_nicknames[k_num_fft_diff_buckets] = {"KICK", "LOW ", "MID ", "HAT ", "HIGH"};
 
 class beat_grid
 {
@@ -137,7 +137,7 @@ class beat_grid
     std::vector<f32> beats[k_num_fft_diff_buckets];
     f32 average_interval[k_num_fft_diff_buckets];
 
-    void show_window(bool &open)
+    void show_window(bool& open)
     {
         ImGui::Begin("Beat Grid");
 
@@ -149,7 +149,7 @@ class beat_grid
 
             f32 prev = 0.0f;
             u32 counter = 0;
-            for (auto &timestamp : beats[i])
+            for (auto& timestamp : beats[i])
             {
                 if (counter > 0)
                 {
@@ -536,7 +536,7 @@ class spectrum_analyser
                 }
             }
 
-            ImGui::PlotHistogram("", (f32 *)&bv[0], bv.size(), 0, NULL, 0.0f, 1.0f, ImVec2(530, 100));
+            ImGui::PlotHistogram("", (f32*)&bv[0], bv.size(), 0, NULL, 0.0f, 1.0f, ImVec2(530, 100));
         }
 
         if (ImGui::CollapsingHeader("Intervals"))
@@ -606,7 +606,7 @@ class playback_deck
     bool open_file = false;
     bool open_beat_grid = false;
     bool open_spectrum_analyser = false;
-    const c8 *file = nullptr;
+    const c8* file = nullptr;
 
     u32 cue_pos;
     s32 pitch_range;
@@ -655,7 +655,7 @@ class playback_deck
 
         if (open_file)
         {
-            const c8 *file = put::dev_ui::file_browser(open_file, put::dev_ui::FB_OPEN, 2, "**.mp3", "**.wav");
+            const c8* file = put::dev_ui::file_browser(open_file, put::dev_ui::FB_OPEN, 2, "**.mp3", "**.wav");
 
             if (file != nullptr)
             {
@@ -778,7 +778,7 @@ class playback_deck
         }
 
         // file info valid
-        if (ImGui::SliderInt("Track Pos", (s32 *)&channel_state.position_ms, 0, file_info.length_ms))
+        if (ImGui::SliderInt("Track Pos", (s32*)&channel_state.position_ms, 0, file_info.length_ms))
         {
             pen::audio_channel_set_position(channel_index, channel_state.position_ms);
         }
@@ -828,7 +828,7 @@ class playback_deck
         ImGui::PopID();
     }
 
-    void load_new_file(const c8 *_file)
+    void load_new_file(const c8* _file)
     {
         file = _file;
 

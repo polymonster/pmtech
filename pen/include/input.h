@@ -37,7 +37,7 @@ namespace pen
     void input_set_mouse_pos(f32 x, f32 y);
     void input_set_mouse_wheel(f32 wheel);
 
-    const mouse_state &input_get_mouse_state();
+    const mouse_state& input_get_mouse_state();
     bool input_is_mouse_pressed(u32 button_index);
     bool input_is_mouse_held(u32 button_index);
     bool input_is_mouse_down(u32 button_index);
@@ -50,7 +50,7 @@ namespace pen
 
     bool mouse_coords_valid(u32 x, u32 y);
 
-    const c8 *input_get_key_str(u32 key_index);
+    const c8* input_get_key_str(u32 key_index);
 
     // Special os specific functions
 

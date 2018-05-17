@@ -34,14 +34,14 @@ pen::window_creation_params pen_window{
 
 namespace physics
 {
-    extern PEN_TRV physics_thread_main(void *params);
+    extern PEN_TRV physics_thread_main(void* params);
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     pen::thread_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
@@ -60,7 +60,7 @@ PEN_TRV pen::user_entry(void *params)
     cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
-    put::ces::entity_scene *main_scene;
+    put::ces::entity_scene* main_scene;
     main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 

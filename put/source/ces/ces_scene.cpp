@@ -21,7 +21,7 @@ namespace put
     {
         std::vector<entity_scene_instance> k_scenes;
 
-        void initialise_free_list(entity_scene *scene)
+        void initialise_free_list(entity_scene* scene)
         {
             scene->free_list_head = nullptr;
 
@@ -31,7 +31,7 @@ namespace put
 
                 if (!(scene->entities[i] & CMP_ALLOCATED))
                 {
-                    free_node_list *l = &scene->free_list[i];
+                    free_node_list* l = &scene->free_list[i];
                     l->next = scene->free_list_head;
 
                     if (l->next)
@@ -42,13 +42,13 @@ namespace put
             }
         }
 
-        void resize_scene_buffers(entity_scene *scene, s32 size)
+        void resize_scene_buffers(entity_scene* scene, s32 size)
         {
             u32 new_size = scene->nodes_size + size;
 
             for (u32 i = 0; i < scene->num_components; ++i)
             {
-                generic_cmp_array &cmp = scene->get_component_array(i);
+                generic_cmp_array& cmp = scene->get_component_array(i);
                 u32 alloc_size = cmp.size * new_size;
 
                 if (cmp.data)
@@ -58,7 +58,7 @@ namespace put
 
                     // zero new mem
                     u32 prev_size = scene->nodes_size * cmp.size;
-                    u8 *new_offset = (u8 *)cmp.data + prev_size;
+                    u8* new_offset = (u8*)cmp.data + prev_size;
                     u32 zero_size = alloc_size - prev_size;
                     pen::memory_zero(new_offset, zero_size);
 
@@ -75,7 +75,7 @@ namespace put
             scene->nodes_size = new_size;
         }
 
-        void free_scene_buffers(entity_scene *scene)
+        void free_scene_buffers(entity_scene* scene)
         {
             // Remove entites for sub systems (physics, rendering, etc)
             for (s32 i = 0; i < scene->num_nodes; ++i)
@@ -87,7 +87,7 @@ namespace put
             // Free component array memory
             for (u32 i = 0; i < scene->num_components; ++i)
             {
-                generic_cmp_array &cmp = scene->get_component_array(i);
+                generic_cmp_array& cmp = scene->get_component_array(i);
                 pen::memory_free(cmp.data);
                 cmp.data = nullptr;
             }
@@ -96,17 +96,17 @@ namespace put
             scene->num_nodes = 0;
         }
 
-        void zero_entity_components(entity_scene *scene, u32 node_index)
+        void zero_entity_components(entity_scene* scene, u32 node_index)
         {
             for (u32 i = 0; i < scene->num_components; ++i)
             {
-                generic_cmp_array &cmp = scene->get_component_array(i);
-                u8 *offset = (u8 *)cmp.data + node_index * cmp.size;
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                u8* offset = (u8*)cmp.data + node_index * cmp.size;
                 pen::memory_zero(offset, cmp.size);
             }
         }
 
-        void delete_entity(entity_scene *scene, u32 node_index)
+        void delete_entity(entity_scene* scene, u32 node_index)
         {
             // free allocated stuff
             if (scene->physics_handles[node_index])
@@ -119,7 +119,7 @@ namespace put
             zero_entity_components(scene, node_index);
         }
 
-        void delete_entity_first_pass(entity_scene *scene, u32 node_index)
+        void delete_entity_first_pass(entity_scene* scene, u32 node_index)
         {
             // constraints must be freed or removed before we delete rigidbodies using them
             if (scene->physics_handles[node_index] && (scene->entities[node_index] & CMP_CONSTRAINT))
@@ -141,7 +141,7 @@ namespace put
                 pen::renderer_release_buffer(scene->master_instances[node_index].instance_buffer);
         }
 
-        void delete_entity_second_pass(entity_scene *scene, u32 node_index)
+        void delete_entity_second_pass(entity_scene* scene, u32 node_index)
         {
             // all constraints must be removed by this point.
             if (scene->physics_handles[node_index] && (scene->entities[node_index] & CMP_PHYSICS))
@@ -150,13 +150,13 @@ namespace put
             zero_entity_components(scene, node_index);
         }
 
-        void clear_scene(entity_scene *scene)
+        void clear_scene(entity_scene* scene)
         {
             free_scene_buffers(scene);
             resize_scene_buffers(scene);
         }
 
-        u32 clone_node(entity_scene *scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8 *suffix)
+        u32 clone_node(entity_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
         {
             if (dst == -1)
             {
@@ -168,7 +168,7 @@ namespace put
                     scene->num_nodes = dst + 1;
             }
 
-            entity_scene *p_sn = scene;
+            entity_scene* p_sn = scene;
 
             u32 parent_offset = p_sn->parents[src] - src;
             if (parent == -1)
@@ -240,7 +240,7 @@ namespace put
             return dst;
         }
 
-        entity_scene *create_scene(const c8 *name)
+        entity_scene* create_scene(const c8* name)
         {
             entity_scene_instance new_instance;
             new_instance.name = name;
@@ -283,7 +283,7 @@ namespace put
             return new_instance.scene;
         }
 
-        void destroy_scene(entity_scene *scene)
+        void destroy_scene(entity_scene* scene)
         {
             free_scene_buffers(scene);
 
@@ -292,9 +292,9 @@ namespace put
             // anim
         }
 
-        void render_scene_view(const scene_view &view)
+        void render_scene_view(const scene_view& view)
         {
-            entity_scene *scene = view.scene;
+            entity_scene* scene = view.scene;
 
             if (scene->view_flags & SV_HIDE)
                 return;
@@ -324,10 +324,10 @@ namespace put
                 bool inside = true;
                 for (s32 i = 0; i < 6; ++i)
                 {
-                    frustum &camera_frustum = view.camera->camera_frustum;
+                    frustum& camera_frustum = view.camera->camera_frustum;
 
-                    vec3f &min = scene->bounding_volumes[n].transformed_min_extents;
-                    vec3f &max = scene->bounding_volumes[n].transformed_max_extents;
+                    vec3f& min = scene->bounding_volumes[n].transformed_min_extents;
+                    vec3f& max = scene->bounding_volumes[n].transformed_max_extents;
 
                     vec3f pos = min + (max - min) * 0.5f;
                     f32 radius = scene->bounding_volumes[n].radius;
@@ -349,8 +349,8 @@ namespace put
 
                 draw_count++;
 
-                cmp_geometry *p_geom = &scene->geometries[n];
-                cmp_material *p_mat = &scene->materials[n];
+                cmp_geometry* p_geom = &scene->geometries[n];
+                cmp_material* p_mat = &scene->materials[n];
 
                 if (scene->entities[n] & CMP_SKINNED && !(scene->entities[n] & CMP_SUB_GEOMETRY))
                 {
@@ -452,20 +452,20 @@ namespace put
             }
         }
 
-        void update_animations(entity_scene *scene, f32 dt)
+        void update_animations(entity_scene* scene, f32 dt)
         {
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (scene->entities[n] & CMP_ANIM_CONTROLLER)
                 {
-                    auto &controller = scene->anim_controller[n];
+                    auto& controller = scene->anim_controller[n];
 
                     bool apply_trajectory = false;
                     mat4 trajectory;
 
                     if (is_valid(controller.current_animation))
                     {
-                        auto *anim = get_animation_resource(controller.current_animation);
+                        auto* anim = get_animation_resource(controller.current_animation);
 
                         if (!anim)
                             continue;
@@ -491,7 +491,7 @@ namespace put
                             if (t >= num_frames)
                                 t = 0;
 
-                            mat4 &mat = anim->channels[c].matrices[t];
+                            mat4& mat = anim->channels[c].matrices[t];
 
                             s32 scene_node_index = n + c + joints_offset;
 
@@ -518,7 +518,7 @@ namespace put
             }
         }
 
-        void update_scene(entity_scene *scene, f32 dt)
+        void update_scene(entity_scene* scene, f32 dt)
         {
             if (scene->flags & PAUSE_UPDATE)
             {
@@ -539,7 +539,7 @@ namespace put
                 // controlled transform
                 if (scene->entities[n] & CMP_TRANSFORM)
                 {
-                    cmp_transform &t = scene->transforms[n];
+                    cmp_transform& t = scene->transforms[n];
 
                     // generate matrix from transform
                     mat4 rot_mat;
@@ -569,7 +569,7 @@ namespace put
 
                         scene->local_matrices[n] *= scene->offset_matrices[n];
 
-                        cmp_transform &t = scene->transforms[n];
+                        cmp_transform& t = scene->transforms[n];
 
                         t.translation = scene->local_matrices[n].get_translation();
                         t.rotation.from_matrix(scene->local_matrices[n]);
@@ -602,8 +602,8 @@ namespace put
                 vec3f min = scene->bounding_volumes[n].min_extents;
                 vec3f max = scene->bounding_volumes[n].max_extents - min;
 
-                vec3f &tmin = scene->bounding_volumes[n].transformed_min_extents;
-                vec3f &tmax = scene->bounding_volumes[n].transformed_max_extents;
+                vec3f& tmin = scene->bounding_volumes[n].transformed_min_extents;
+                vec3f& tmax = scene->bounding_volumes[n].transformed_max_extents;
 
                 if (scene->entities[n] & CMP_BONE)
                 {
@@ -622,7 +622,7 @@ namespace put
                     tmin = vec3f::vmin(tmin, p);
                 }
 
-                f32 &trad = scene->bounding_volumes[n].radius;
+                f32& trad = scene->bounding_volumes[n].radius;
                 trad = mag(tmax - tmin) * 0.5f;
 
                 if (!(scene->entities[n] & CMP_GEOMETRY))
@@ -640,11 +640,11 @@ namespace put
                 if (p == n)
                     continue;
 
-                vec3f &parent_tmin = scene->bounding_volumes[p].transformed_min_extents;
-                vec3f &parent_tmax = scene->bounding_volumes[p].transformed_max_extents;
+                vec3f& parent_tmin = scene->bounding_volumes[p].transformed_min_extents;
+                vec3f& parent_tmax = scene->bounding_volumes[p].transformed_max_extents;
 
-                vec3f &tmin = scene->bounding_volumes[n].transformed_min_extents;
-                vec3f &tmax = scene->bounding_volumes[n].transformed_max_extents;
+                vec3f& tmin = scene->bounding_volumes[n].transformed_min_extents;
+                vec3f& tmax = scene->bounding_volumes[n].transformed_max_extents;
 
                 if (scene->entities[p] & CMP_ANIM_CONTROLLER)
                 {
@@ -668,7 +668,7 @@ namespace put
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
 
-                cmp_material &mat = scene->materials[n];
+                cmp_material& mat = scene->materials[n];
                 scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
                 scene->draw_call_data[n].v1 = vec4f((f32)n, mat.diffuse_rgb_shininess.w, mat.specular_rgb_reflect.w, 0.0f);
                 scene->draw_call_data[n].v2 = vec4f(mat.diffuse_rgb_shininess.xyz, 1.0f);
@@ -700,7 +700,7 @@ namespace put
                 if (!(scene->entities[n] & CMP_MASTER_INSTANCE))
                     continue;
 
-                cmp_master_instance &master = scene->master_instances[n];
+                cmp_master_instance& master = scene->master_instances[n];
 
                 u32 instance_data_size = master.num_instances * master.instance_stride;
                 pen::renderer_update_buffer(master.instance_buffer, &scene->draw_call_data[n + 1], instance_data_size);
@@ -724,7 +724,7 @@ namespace put
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
 
-                cmp_light &l = scene->lights[n];
+                cmp_light& l = scene->lights[n];
 
                 if (l.type != LIGHT_TYPE_DIR)
                     continue;
@@ -750,12 +750,12 @@ namespace put
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
 
-                cmp_light &l = scene->lights[n];
+                cmp_light& l = scene->lights[n];
 
                 if (l.type != LIGHT_TYPE_POINT)
                     continue;
 
-                cmp_transform &t = scene->transforms[n];
+                cmp_transform& t = scene->transforms[n];
 
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
                 light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow ? 1.0 : 0.0);
@@ -820,7 +820,7 @@ namespace put
                         continue;
 
                     // update bone cbuffer
-                    cmp_geometry &geom = scene->geometries[n];
+                    cmp_geometry& geom = scene->geometries[n];
                     if (geom.p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
                     {
                         pen::buffer_creation_params bcp;
@@ -842,7 +842,7 @@ namespace put
                     pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
 
                     // bind stream out targets
-                    cmp_pre_skin &pre_skin = scene->pre_skin[n];
+                    cmp_pre_skin& pre_skin = scene->pre_skin[n];
                     pen::renderer_set_stream_out_target(geom.vertex_buffer);
 
                     pen::renderer_set_vertex_buffer(pre_skin.vertex_buffer, 0, pre_skin.vertex_size, 0);
@@ -855,7 +855,7 @@ namespace put
             }
         }
 
-        void save_scene(const c8 *filename, entity_scene *scene)
+        void save_scene(const c8* filename, entity_scene* scene)
         {
             // todo fix down
             //-take subsets of scenes and make into a new scene, to save unity style prefabs
@@ -863,12 +863,12 @@ namespace put
             std::ofstream ofs(filename, std::ofstream::binary);
 
             static s32 version = 3;
-            ofs.write((const c8 *)&version, sizeof(s32));
-            ofs.write((const c8 *)&scene->num_nodes, sizeof(u32));
+            ofs.write((const c8*)&version, sizeof(s32));
+            ofs.write((const c8*)&scene->num_nodes, sizeof(u32));
 
             // user prefs
-            ofs.write((const c8 *)&scene->view_flags, sizeof(u32));
-            ofs.write((const c8 *)&scene->selected_index, sizeof(s32));
+            ofs.write((const c8*)&scene->view_flags, sizeof(u32));
+            ofs.write((const c8*)&scene->selected_index, sizeof(s32));
 
             // names
             for (s32 n = 0; n < scene->num_nodes; ++n)
@@ -879,34 +879,34 @@ namespace put
             }
 
             // simple parts of the scene are just homogeonous chucks of data
-            ofs.write((const c8 *)scene->entities.data, sizeof(a_u64) * scene->num_nodes);
-            ofs.write((const c8 *)scene->parents.data, sizeof(u32) * scene->num_nodes);
-            ofs.write((const c8 *)scene->transforms.data, sizeof(cmp_transform) * scene->num_nodes);
-            ofs.write((const c8 *)scene->local_matrices.data, sizeof(mat4) * scene->num_nodes);
-            ofs.write((const c8 *)scene->world_matrices.data, sizeof(mat4) * scene->num_nodes);
-            ofs.write((const c8 *)scene->offset_matrices.data, sizeof(mat4) * scene->num_nodes);
-            ofs.write((const c8 *)scene->physics_matrices.data, sizeof(mat4) * scene->num_nodes);
-            ofs.write((const c8 *)scene->bounding_volumes.data, sizeof(cmp_bounding_volume) * scene->num_nodes);
-            ofs.write((const c8 *)scene->lights.data, sizeof(cmp_light) * scene->num_nodes);
+            ofs.write((const c8*)scene->entities.data, sizeof(a_u64) * scene->num_nodes);
+            ofs.write((const c8*)scene->parents.data, sizeof(u32) * scene->num_nodes);
+            ofs.write((const c8*)scene->transforms.data, sizeof(cmp_transform) * scene->num_nodes);
+            ofs.write((const c8*)scene->local_matrices.data, sizeof(mat4) * scene->num_nodes);
+            ofs.write((const c8*)scene->world_matrices.data, sizeof(mat4) * scene->num_nodes);
+            ofs.write((const c8*)scene->offset_matrices.data, sizeof(mat4) * scene->num_nodes);
+            ofs.write((const c8*)scene->physics_matrices.data, sizeof(mat4) * scene->num_nodes);
+            ofs.write((const c8*)scene->bounding_volumes.data, sizeof(cmp_bounding_volume) * scene->num_nodes);
+            ofs.write((const c8*)scene->lights.data, sizeof(cmp_light) * scene->num_nodes);
 
             if (version > 1)
-                ofs.write((const c8 *)scene->physics_data.data, sizeof(cmp_physics) * scene->num_nodes);
+                ofs.write((const c8*)scene->physics_data.data, sizeof(cmp_physics) * scene->num_nodes);
 
             // animations need reloading from files
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
                 s32 size = scene->anim_controller[n].handles.size();
 
-                ofs.write((const c8 *)&size, sizeof(s32));
+                ofs.write((const c8*)&size, sizeof(s32));
 
                 for (s32 i = 0; i < size; ++i)
                 {
-                    auto *anim = get_animation_resource(scene->anim_controller[n].handles[i]);
+                    auto* anim = get_animation_resource(scene->anim_controller[n].handles[i]);
 
                     write_parsable_string(anim->name, ofs);
                 }
 
-                ofs.write((const c8 *)&scene->anim_controller[n].joints_offset,
+                ofs.write((const c8*)&scene->anim_controller[n].joints_offset,
                           sizeof(cmp_anim_controller) - sizeof(std::vector<anim_handle>));
             }
 
@@ -917,12 +917,12 @@ namespace put
             {
                 if (scene->entities[n] & CMP_GEOMETRY)
                 {
-                    geometry_resource *gr = get_geometry_resource(scene->id_geometry[n]);
+                    geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
 
                     // has geometry
                     u32 one = 1;
-                    ofs.write((const c8 *)&one, sizeof(u32));
-                    ofs.write((const c8 *)&gr->submesh_index, sizeof(u32));
+                    ofs.write((const c8*)&one, sizeof(u32));
+                    ofs.write((const c8*)&gr->submesh_index, sizeof(u32));
 
                     Str stripped_filename = gr->filename;
                     stripped_filename = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
@@ -933,20 +933,20 @@ namespace put
                 else
                 {
                     u32 zero = 0;
-                    ofs.write((const c8 *)&zero, sizeof(u32));
+                    ofs.write((const c8*)&zero, sizeof(u32));
                 }
             }
 
             // material
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
-                material_resource *mr = get_material_resource(scene->id_material[n]);
+                material_resource* mr = get_material_resource(scene->id_material[n]);
 
                 if (scene->entities[n] & CMP_MATERIAL && mr)
                 {
                     // has geometry
                     u32 one = 1;
-                    ofs.write((const c8 *)&one, sizeof(u32));
+                    ofs.write((const c8*)&one, sizeof(u32));
 
                     Str stripped_filename = mr->filename;
                     stripped_filename = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
@@ -957,14 +957,14 @@ namespace put
                 else
                 {
                     u32 zero = 0;
-                    ofs.write((const c8 *)&zero, sizeof(u32));
+                    ofs.write((const c8*)&zero, sizeof(u32));
                 }
             }
 
             ofs.close();
         }
 
-        void load_scene(const c8 *filename, entity_scene *scene, bool merge)
+        void load_scene(const c8* filename, entity_scene* scene, bool merge)
         {
             scene->flags |= INVALIDATE_SCENE_TREE;
             bool error = false;
@@ -974,8 +974,8 @@ namespace put
 
             s32 version;
             s32 num_nodes = 0;
-            ifs.read((c8 *)&version, sizeof(s32));
-            ifs.read((c8 *)&num_nodes, sizeof(u32));
+            ifs.read((c8*)&version, sizeof(s32));
+            ifs.read((c8*)&num_nodes, sizeof(u32));
 
             u32 zero_offset = 0;
             s32 new_num_nodes = num_nodes;
@@ -997,8 +997,8 @@ namespace put
 
             // user prefs
             u32 scene_view_flags = 0;
-            ifs.read((c8 *)&scene_view_flags, sizeof(u32));
-            ifs.read((c8 *)&scene->selected_index, sizeof(s32));
+            ifs.read((c8*)&scene_view_flags, sizeof(u32));
+            ifs.read((c8*)&scene->selected_index, sizeof(s32));
 
             // names
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
@@ -1014,20 +1014,20 @@ namespace put
             }
 
             // data
-            ifs.read((c8 *)&scene->entities[zero_offset], sizeof(a_u64) * num_nodes);
-            ifs.read((c8 *)&scene->parents[zero_offset], sizeof(u32) * num_nodes);
-            ifs.read((c8 *)&scene->transforms[zero_offset], sizeof(cmp_transform) * num_nodes);
-            ifs.read((c8 *)&scene->local_matrices[zero_offset], sizeof(mat4) * num_nodes);
-            ifs.read((c8 *)&scene->world_matrices[zero_offset], sizeof(mat4) * num_nodes);
-            ifs.read((c8 *)&scene->offset_matrices[zero_offset], sizeof(mat4) * num_nodes);
-            ifs.read((c8 *)&scene->physics_matrices[zero_offset], sizeof(mat4) * num_nodes);
-            ifs.read((c8 *)&scene->bounding_volumes[zero_offset], sizeof(cmp_bounding_volume) * num_nodes);
-            ifs.read((c8 *)&scene->lights[zero_offset], sizeof(cmp_light) * num_nodes);
+            ifs.read((c8*)&scene->entities[zero_offset], sizeof(a_u64) * num_nodes);
+            ifs.read((c8*)&scene->parents[zero_offset], sizeof(u32) * num_nodes);
+            ifs.read((c8*)&scene->transforms[zero_offset], sizeof(cmp_transform) * num_nodes);
+            ifs.read((c8*)&scene->local_matrices[zero_offset], sizeof(mat4) * num_nodes);
+            ifs.read((c8*)&scene->world_matrices[zero_offset], sizeof(mat4) * num_nodes);
+            ifs.read((c8*)&scene->offset_matrices[zero_offset], sizeof(mat4) * num_nodes);
+            ifs.read((c8*)&scene->physics_matrices[zero_offset], sizeof(mat4) * num_nodes);
+            ifs.read((c8*)&scene->bounding_volumes[zero_offset], sizeof(cmp_bounding_volume) * num_nodes);
+            ifs.read((c8*)&scene->lights[zero_offset], sizeof(cmp_light) * num_nodes);
 
             if (version > 1)
             {
                 // version 2 adds physics
-                ifs.read((c8 *)&scene->physics_data[zero_offset], sizeof(cmp_physics) * num_nodes);
+                ifs.read((c8*)&scene->physics_data[zero_offset], sizeof(cmp_physics) * num_nodes);
 
                 for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
                     if (scene->entities[n] & CMP_PHYSICS)
@@ -1050,7 +1050,7 @@ namespace put
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 s32 size;
-                ifs.read((c8 *)&size, sizeof(s32));
+                ifs.read((c8*)&size, sizeof(s32));
 
                 for (s32 i = 0; i < size; ++i)
                 {
@@ -1069,7 +1069,7 @@ namespace put
                     scene->anim_controller[n].handles.push_back(h);
                 }
 
-                ifs.read((c8 *)&scene->anim_controller[n].joints_offset,
+                ifs.read((c8*)&scene->anim_controller[n].joints_offset,
                          sizeof(cmp_anim_controller) - sizeof(std::vector<anim_handle>));
 
                 if (scene->anim_controller[n].current_animation > scene->anim_controller[n].handles.size())
@@ -1080,12 +1080,12 @@ namespace put
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 u32 has = 0;
-                ifs.read((c8 *)&has, sizeof(u32));
+                ifs.read((c8*)&has, sizeof(u32));
 
                 if (scene->entities[n] & CMP_GEOMETRY && has)
                 {
                     u32 submesh;
-                    ifs.read((c8 *)&submesh, sizeof(u32));
+                    ifs.read((c8*)&submesh, sizeof(u32));
 
                     Str filename = project_dir;
                     Str name = read_parsable_string(ifs).c_str();
@@ -1096,7 +1096,7 @@ namespace put
 
                     Str geometry_name = read_parsable_string(ifs);
 
-                    geometry_resource *gr = nullptr;
+                    geometry_resource* gr = nullptr;
 
                     if (name_hash != primitive_id)
                     {
@@ -1142,7 +1142,7 @@ namespace put
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 u32 has = 0;
-                ifs.read((c8 *)&has, sizeof(u32));
+                ifs.read((c8*)&has, sizeof(u32));
 
                 if (scene->entities[n] & CMP_MATERIAL && has)
                 {
@@ -1155,7 +1155,7 @@ namespace put
 
                     Str material_name = read_parsable_string(ifs);
 
-                    material_resource *mr;
+                    material_resource* mr;
 
                     hash_id material_hash;
 

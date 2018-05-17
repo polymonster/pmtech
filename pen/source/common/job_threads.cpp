@@ -9,7 +9,7 @@ namespace pen
     static job s_jt[MAX_THREADS];
     static u32 s_num_active_threads = 0;
 
-    pen::job *thread_create_job(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void *user_data, thread_start_flags flags,
+    pen::job* thread_create_job(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* user_data, thread_start_flags flags,
                                 completion_callback cb)
     {
         if (s_num_active_threads >= MAX_THREADS)
@@ -19,7 +19,7 @@ namespace pen
 
         job_thread_params params;
 
-        job *jt = &s_jt[s_num_active_threads++];
+        job* jt = &s_jt[s_num_active_threads++];
 
         jt->p_sem_continue = thread_semaphore_create(0, 1);
         jt->p_sem_consume = thread_semaphore_create(0, 1);
@@ -30,7 +30,7 @@ namespace pen
         params.user_data = user_data;
         params.job_info = jt;
 
-        jt->p_thread = thread_create(thread_func, stack_size, (void *)&params, flags);
+        jt->p_thread = thread_create(thread_func, stack_size, (void*)&params, flags);
 
         // wait till the thread initialises so any data passed to it is ok.
         pen::thread_semaphore_wait(jt->p_sem_continue);
@@ -38,7 +38,7 @@ namespace pen
         return jt;
     }
 
-    void thread_create_default_jobs(const pen::default_thread_info &info)
+    void thread_create_default_jobs(const pen::default_thread_info& info)
     {
         if (info.flags & PEN_CREATE_RENDER_THREAD)
         {

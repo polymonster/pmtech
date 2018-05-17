@@ -17,14 +17,14 @@ struct Mat
     // Constructors
     Mat(){};
 
-    Mat(f32 *data)
+    Mat(f32* data)
     {
         for (u32 i = 0; i < R * C; ++i)
             m[i] = data[i];
     }
 
     template <size_t R2, size_t C2>
-    Mat(const Mat<R2, C2, T> &other)
+    Mat(const Mat<R2, C2, T>& other)
     {
         for (u32 r = 0; r < R; ++r)
         {
@@ -39,17 +39,17 @@ struct Mat
 
     // Operators
     Mat<R, C, T> operator*(T rhs) const;
-    Mat<R, C, T> &operator*=(T rhs);
-    Mat<R, C, T> operator*(const Mat<R, C, T> &rhs) const;
-    Mat<R, C, T> &operator*=(const Mat<R, C, T> &rhs);
-    Vec<C, T> operator*(const Vec<C, T> &rhs) const;
+    Mat<R, C, T>& operator*=(T rhs);
+    Mat<R, C, T> operator*(const Mat<R, C, T>& rhs) const;
+    Mat<R, C, T>& operator*=(const Mat<R, C, T>& rhs);
+    Vec<C, T> operator*(const Vec<C, T>& rhs) const;
 
-    T &operator()(u32 r, u32 c);
-    const T &operator()(u32 r, u32 c) const;
+    T& operator()(u32 r, u32 c);
+    const T& operator()(u32 r, u32 c) const;
 
     // Accessors
-    T &at(u32 r, u32 c);
-    const T &at(u32 r, u32 c) const;
+    T& at(u32 r, u32 c);
+    const T& at(u32 r, u32 c) const;
     Vec<R, T> get_row(u32 index) const;
     Vec<C, T> get_column(u32 index) const;
     Vec<3, T> get_translation() const;
@@ -57,18 +57,18 @@ struct Mat
     Vec<3, T> get_right() const;
     Vec<3, T> get_fwd() const;
 
-    void set_row(u32 index, const Vec<R, T> &row);
-    void set_column(u32 index, const Vec<C, T> &col);
-    void set_translation(const Vec<3, T> &t);
-    void set_vectors(const Vec<3, T> &right, const Vec<3, T> &up, const Vec<3, T> &at, const Vec<3, T> &pos);
+    void set_row(u32 index, const Vec<R, T>& row);
+    void set_column(u32 index, const Vec<C, T>& col);
+    void set_translation(const Vec<3, T>& t);
+    void set_vectors(const Vec<3, T>& right, const Vec<3, T>& up, const Vec<3, T>& at, const Vec<3, T>& pos);
 
     // Computation
     Mat<R, C, T> multiply(T scalar) const;
-    Mat<R, C, T> multiply(const Mat<R, C, T> &rhs) const;
+    Mat<R, C, T> multiply(const Mat<R, C, T>& rhs) const;
 
-    Vec<4, T> transform_vector(const Vec<4, T> &v) const;
-    Vec<3, T> transform_vector(const Vec<3, T> &v, T &w) const;
-    Vec<3, T> transform_vector(const Vec<3, T> &v) const;
+    Vec<4, T> transform_vector(const Vec<4, T>& v) const;
+    Vec<3, T> transform_vector(const Vec<3, T>& v, T& w) const;
+    Vec<3, T> transform_vector(const Vec<3, T>& v) const;
 
     Mat<R, C, T> transposed();
     void transpose();
@@ -76,13 +76,13 @@ struct Mat
 
 // Accessor Functions
 template <u32 R, u32 C, typename T>
-inline T &Mat<R, C, T>::at(u32 r, u32 c)
+inline T& Mat<R, C, T>::at(u32 r, u32 c)
 {
     return m[r * C + c];
 }
 
 template <u32 R, u32 C, typename T>
-inline const T &Mat<R, C, T>::at(u32 r, u32 c) const
+inline const T& Mat<R, C, T>::at(u32 r, u32 c) const
 {
     return m[r * C + c];
 }
@@ -128,21 +128,21 @@ inline Vec<3, T> Mat<R, C, T>::get_fwd() const
 }
 
 template <u32 R, u32 C, typename T>
-inline void Mat<R, C, T>::set_row(u32 index, const Vec<R, T> &row)
+inline void Mat<R, C, T>::set_row(u32 index, const Vec<R, T>& row)
 {
     int i = index * C;
     pen::memory_cpy(&m[i], &row.v, sizeof(T) * C);
 }
 
 template <u32 R, u32 C, typename T>
-inline void Mat<R, C, T>::set_column(u32 index, const Vec<C, T> &col)
+inline void Mat<R, C, T>::set_column(u32 index, const Vec<C, T>& col)
 {
     for (int r = 0; r < R; ++r)
         at(r, index) = col[r];
 }
 
 template <u32 R, u32 C, typename T>
-inline void Mat<R, C, T>::set_translation(const Vec<3, T> &t)
+inline void Mat<R, C, T>::set_translation(const Vec<3, T>& t)
 {
     m[3] = t.x;
     m[7] = t.y;
@@ -150,7 +150,7 @@ inline void Mat<R, C, T>::set_translation(const Vec<3, T> &t)
 }
 
 template <u32 R, u32 C, typename T>
-void Mat<R, C, T>::set_vectors(const Vec<3, T> &right, const Vec<3, T> &up, const Vec<3, T> &at, const Vec<3, T> &pos)
+void Mat<R, C, T>::set_vectors(const Vec<3, T>& right, const Vec<3, T>& up, const Vec<3, T>& at, const Vec<3, T>& pos)
 {
     set_row(0, Vec<4, T>(right, pos.x));
     set_row(1, Vec<4, T>(up, pos.y));
@@ -159,19 +159,19 @@ void Mat<R, C, T>::set_vectors(const Vec<3, T> &right, const Vec<3, T> &up, cons
 
 // Operators
 template <u32 R, u32 C, typename T>
-inline Vec<C, T> Mat<R, C, T>::operator*(const Vec<C, T> &rhs) const
+inline Vec<C, T> Mat<R, C, T>::operator*(const Vec<C, T>& rhs) const
 {
     return multiply(rhs);
 }
 
 template <u32 R, u32 C, typename T>
-inline Mat<R, C, T> Mat<R, C, T>::operator*(const Mat<R, C, T> &rhs) const
+inline Mat<R, C, T> Mat<R, C, T>::operator*(const Mat<R, C, T>& rhs) const
 {
     return multiply(rhs);
 }
 
 template <u32 R, u32 C, typename T>
-inline Mat<R, C, T> &Mat<R, C, T>::operator*=(const Mat<R, C, T> &rhs)
+inline Mat<R, C, T>& Mat<R, C, T>::operator*=(const Mat<R, C, T>& rhs)
 {
     *this = multiply(rhs);
     return *this;
@@ -184,27 +184,27 @@ inline Mat<R, C, T> Mat<R, C, T>::operator*(T rhs) const
 }
 
 template <u32 R, u32 C, typename T>
-inline Mat<R, C, T> &Mat<R, C, T>::operator*=(T rhs)
+inline Mat<R, C, T>& Mat<R, C, T>::operator*=(T rhs)
 {
     *this = multiply(rhs);
     return *this;
 }
 
 template <u32 R, u32 C, typename T>
-inline T &Mat<R, C, T>::operator()(u32 r, u32 c)
+inline T& Mat<R, C, T>::operator()(u32 r, u32 c)
 {
     return at(r, c);
 }
 
 template <u32 R, u32 C, typename T>
-inline const T &Mat<R, C, T>::operator()(u32 r, u32 c) const
+inline const T& Mat<R, C, T>::operator()(u32 r, u32 c) const
 {
     return at(r, c);
 }
 
 // Computation functions
 template <u32 R, u32 C, typename T>
-inline Mat<R, C, T> Mat<R, C, T>::multiply(const Mat<R, C, T> &rhs) const
+inline Mat<R, C, T> Mat<R, C, T>::multiply(const Mat<R, C, T>& rhs) const
 {
     Mat<R, C, T> result;
 
@@ -212,7 +212,7 @@ inline Mat<R, C, T> Mat<R, C, T>::multiply(const Mat<R, C, T> &rhs) const
     {
         for (size_t c = 0; c < C; ++c)
         {
-            T &element = result.at(r, c);
+            T& element = result.at(r, c);
 
             Vec<R, T> vr = get_row(r);
             Vec<R, T> vc = rhs.get_column(c);
@@ -237,7 +237,7 @@ inline Mat<R, C, T> Mat<R, C, T>::multiply(T scalar) const
 }
 
 template <u32 R, u32 C, typename T>
-inline Vec<4, T> Mat<R, C, T>::transform_vector(const Vec<4, T> &v) const
+inline Vec<4, T> Mat<R, C, T>::transform_vector(const Vec<4, T>& v) const
 {
     Vec<4, T> result;
     for (u32 r = 0; r < R; ++r)
@@ -249,7 +249,7 @@ inline Vec<4, T> Mat<R, C, T>::transform_vector(const Vec<4, T> &v) const
 }
 
 template <u32 R, u32 C, typename T>
-inline Vec<3, T> Mat<R, C, T>::transform_vector(const Vec<3, T> &v, T &w) const
+inline Vec<3, T> Mat<R, C, T>::transform_vector(const Vec<3, T>& v, T& w) const
 {
     Vec<4, T> result = Vec<4, T>(v, w);
     Vec<4, T> v4 = Vec<4, T>(v, w);
@@ -263,7 +263,7 @@ inline Vec<3, T> Mat<R, C, T>::transform_vector(const Vec<3, T> &v, T &w) const
 }
 
 template <u32 R, u32 C, typename T>
-inline Vec<3, T> Mat<R, C, T>::transform_vector(const Vec<3, T> &v) const
+inline Vec<3, T> Mat<R, C, T>::transform_vector(const Vec<3, T>& v) const
 {
     Vec<4, T> result = Vec<4, T>(v, 1.0);
     Vec<4, T> v4 = Vec<4, T>(v, 1.0);
@@ -311,17 +311,17 @@ inline Mat<R, C, T> Mat<R, C, T>::create_identity()
 namespace mat
 {
     template <typename T>
-    inline T compute_determinant(const Mat<2, 2, T> &matrix_)
+    inline T compute_determinant(const Mat<2, 2, T>& matrix_)
     {
-        const T &a = matrix_(0, 0);
-        const T &b = matrix_(0, 1);
-        const T &c = matrix_(1, 0);
-        const T &d = matrix_(1, 1);
+        const T& a = matrix_(0, 0);
+        const T& b = matrix_(0, 1);
+        const T& c = matrix_(1, 0);
+        const T& d = matrix_(1, 1);
         return a * d - b * c;
     }
 
     template <typename T>
-    inline T compute_determinant(const Mat<3, 3, T> &m_)
+    inline T compute_determinant(const Mat<3, 3, T>& m_)
     {
         return m_(0, 0) * (m_(1, 1) * m_(2, 2) - m_(1, 2) * m_(2, 1)) +
                m_(0, 1) * (m_(1, 2) * m_(2, 0) - m_(1, 0) * m_(2, 2)) +
@@ -329,7 +329,7 @@ namespace mat
     }
 
     template <typename T>
-    inline T compute_determinant(const Mat<4, 4, T> &m)
+    inline T compute_determinant(const Mat<4, 4, T>& m)
     {
         T m00 = m(0, 0);
         T m10 = m(1, 0);
@@ -357,9 +357,9 @@ namespace mat
     }
 
     template <typename T>
-    Mat<4, 4, T> inverse3x3(const Mat<4, 4, T> &mat)
+    Mat<4, 4, T> inverse3x3(const Mat<4, 4, T>& mat)
     {
-        const T *m = &mat.m[0];
+        const T* m = &mat.m[0];
 
         // determinant
         T one_over_det = (T)1 / compute_determinant(mat);
@@ -383,9 +383,9 @@ namespace mat
     }
 
     template <typename T>
-    Mat<4, 4, T> inverse3x4(const Mat<4, 4, T> &mat)
+    Mat<4, 4, T> inverse3x4(const Mat<4, 4, T>& mat)
     {
-        const T *m = &mat.m[0];
+        const T* m = &mat.m[0];
 
         // determinant
         // T one_over_det = (T)1 / compute_determinant(mat);
@@ -421,9 +421,9 @@ namespace mat
     }
 
     template <typename T>
-    Mat<4, 4, T> inverse4x4(const Mat<4, 4, T> &mat)
+    Mat<4, 4, T> inverse4x4(const Mat<4, 4, T>& mat)
     {
-        const T *m = &mat.m[0];
+        const T* m = &mat.m[0];
 
         // laplace expansion theorum
         T s0 = ((m[0] * m[5]) - (m[1] * m[4]));
@@ -470,7 +470,7 @@ namespace mat
     }
 
     template <typename T>
-    inline Mat<4, 4, T> create_translation(const Vec<3, T> &t)
+    inline Mat<4, 4, T> create_translation(const Vec<3, T>& t)
     {
         Mat<4, 4, T> m;
 
@@ -585,7 +585,7 @@ namespace mat
     }
 
     template <typename T>
-    inline Mat<4, 4, T> create_rotation(const Vec<3, T> &axis, T theta)
+    inline Mat<4, 4, T> create_rotation(const Vec<3, T>& axis, T theta)
     {
         Mat<4, 4, T> m;
 
@@ -618,7 +618,7 @@ namespace mat
     }
 
     template <typename T>
-    inline Mat<4, 4, T> create_scale(const Vec<3, T> &s)
+    inline Mat<4, 4, T> create_scale(const Vec<3, T>& s)
     {
         Mat<4, 4, T> m;
 
@@ -670,7 +670,7 @@ namespace mat
     }
 
     template <typename T>
-    inline Mat<4, 4, T> create_axis_swap(const Vec<3, T> &x, const Vec<3, T> &y, const Vec<3, T> &z)
+    inline Mat<4, 4, T> create_axis_swap(const Vec<3, T>& x, const Vec<3, T>& y, const Vec<3, T>& z)
     {
         Mat<4, 4, T> m;
 
@@ -722,14 +722,14 @@ namespace mat
     template <typename T>
     inline Mat<4, 4, T> create_orthographic_projection(T left, T right, T bottom, T top, T znear, T zfar)
     {
-        T &l = left;
-        T &r = right;
+        T& l = left;
+        T& r = right;
 
-        T &t = top;
-        T &b = bottom;
+        T& t = top;
+        T& b = bottom;
 
-        T &n = znear;
-        T &f = zfar;
+        T& n = znear;
+        T& f = zfar;
 
         Mat<4, 4, T> m = Mat<4, 4, T>::create_identity();
 

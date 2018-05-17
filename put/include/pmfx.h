@@ -43,22 +43,22 @@ namespace put
         u32 depth_stencil_state = 0;
         u32 blend_state_state = 0;
         u32 raster_state = 0;
-        put::camera *camera = nullptr;
-        pen::viewport *viewport = nullptr;
+        put::camera* camera = nullptr;
+        pen::viewport* viewport = nullptr;
         pmfx::shader_handle pmfx_shader = PEN_INVALID_HANDLE;
         hash_id technique = 0;
-        ces::entity_scene *scene = nullptr;
+        ces::entity_scene* scene = nullptr;
     };
 
     struct scene_controller
     {
         Str name;
         hash_id id_name = 0;
-        ces::entity_scene *scene = nullptr;
-        put::camera *camera = nullptr;
+        ces::entity_scene* scene = nullptr;
+        put::camera* camera = nullptr;
         e_update_order order = MAIN_UPDATE;
 
-        void (*update_function)(scene_controller *) = nullptr;
+        void (*update_function)(scene_controller*) = nullptr;
     };
 
     struct scene_view_renderer
@@ -66,7 +66,7 @@ namespace put
         Str name;
         hash_id id_name = 0;
 
-        void (*render_function)(const scene_view &) = nullptr;
+        void (*render_function)(const scene_view&) = nullptr;
     };
 } // namespace put
 
@@ -103,20 +103,20 @@ namespace put
 
         // pmfx renderer ------------------------------------------------------------------------------------------
 
-        void init(const c8 *filename);
+        void init(const c8* filename);
         void shutdown();
         void release_script_resources();
         void update();
         void render();
 
-        void register_scene_controller(const scene_controller &controller);
-        void register_scene_view_renderer(const scene_view_renderer &svr);
+        void register_scene_controller(const scene_controller& controller);
+        void register_scene_view_renderer(const scene_view_renderer& svr);
 
-        const camera *get_camera(hash_id id_name);
+        const camera* get_camera(hash_id id_name);
 
-        const render_target *get_render_target(hash_id h);
-        void get_render_target_dimensions(const render_target *rt, f32 &w, f32 &h);
-        void resize_render_target(hash_id target, u32 width, u32 height, const c8 *format = nullptr);
+        const render_target* get_render_target(hash_id h);
+        void get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
+        void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
 
         void resize_viewports();
 
@@ -126,11 +126,11 @@ namespace put
 
         // pmfx shader ------------------------------------------------------------------------------------------
 
-        shader_handle load_shader(const c8 *pmfx_name);
+        shader_handle load_shader(const c8* pmfx_name);
         void release_shader(shader_handle handle);
 
-        const char **get_shader_list(u32 &count);
-        const char **get_technique_list(shader_handle handle, u32 &count);
+        const char** get_shader_list(u32& count);
+        const char** get_technique_list(shader_handle handle, u32& count);
 
         void set_technique(shader_handle handle, u32 index);
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type);

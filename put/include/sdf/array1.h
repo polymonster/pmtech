@@ -98,15 +98,15 @@ struct Array1
 {
     // STL-friendly typedefs
 
-    typedef T *iterator;
-    typedef const T *const_iterator;
+    typedef T* iterator;
+    typedef const T* const_iterator;
     typedef unsigned long size_type;
     typedef long difference_type;
-    typedef T &reference;
-    typedef const T &const_reference;
+    typedef T& reference;
+    typedef const T& const_reference;
     typedef T value_type;
-    typedef T *pointer;
-    typedef const T *const_pointer;
+    typedef T* pointer;
+    typedef const T* const_pointer;
     typedef std::reverse_iterator<iterator> reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
@@ -114,7 +114,7 @@ struct Array1
 
     unsigned long n;
     unsigned long max_n;
-    T *data;
+    T* data;
 
     // STL vector's interface, with additions, but only valid when used with plain-old-data
 
@@ -133,21 +133,21 @@ struct Array1
     {
         if (n_ > ULONG_MAX / sizeof(T))
             throw std::bad_alloc();
-        data = (T *)std::calloc(n_, sizeof(T));
+        data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
         n = n_;
         max_n = n_;
     }
 
-    Array1(unsigned long n_, const T &value)
+    Array1(unsigned long n_, const T& value)
         : n(0)
         , max_n(0)
         , data(0)
     {
         if (n_ > ULONG_MAX / sizeof(T))
             throw std::bad_alloc();
-        data = (T *)std::calloc(n_, sizeof(T));
+        data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
         n = n_;
@@ -156,7 +156,7 @@ struct Array1
             data[i] = value;
     }
 
-    Array1(unsigned long n_, const T &value, unsigned long max_n_)
+    Array1(unsigned long n_, const T& value, unsigned long max_n_)
         : n(0)
         , max_n(0)
         , data(0)
@@ -164,7 +164,7 @@ struct Array1
         assert(n_ <= max_n_);
         if (max_n_ > ULONG_MAX / sizeof(T))
             throw std::bad_alloc();
-        data = (T *)std::calloc(max_n_, sizeof(T));
+        data = (T*)std::calloc(max_n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
         n = n_;
@@ -173,14 +173,14 @@ struct Array1
             data[i] = value;
     }
 
-    Array1(unsigned long n_, const T *data_)
+    Array1(unsigned long n_, const T* data_)
         : n(0)
         , max_n(0)
         , data(0)
     {
         if (n_ > ULONG_MAX / sizeof(T))
             throw std::bad_alloc();
-        data = (T *)std::calloc(n_, sizeof(T));
+        data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
         n = n_;
@@ -189,7 +189,7 @@ struct Array1
         std::memcpy(data, data_, n * sizeof(T));
     }
 
-    Array1(unsigned long n_, const T *data_, unsigned long max_n_)
+    Array1(unsigned long n_, const T* data_, unsigned long max_n_)
         : n(0)
         , max_n(0)
         , data(0)
@@ -197,7 +197,7 @@ struct Array1
         assert(n_ <= max_n_);
         if (max_n_ > ULONG_MAX / sizeof(T))
             throw std::bad_alloc();
-        data = (T *)std::calloc(max_n_, sizeof(T));
+        data = (T*)std::calloc(max_n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
         max_n = max_n_;
@@ -206,12 +206,12 @@ struct Array1
         std::memcpy(data, data_, n * sizeof(T));
     }
 
-    Array1(const Array1<T> &x)
+    Array1(const Array1<T>& x)
         : n(0)
         , max_n(0)
         , data(0)
     {
-        data = (T *)std::malloc(x.n * sizeof(T));
+        data = (T*)std::malloc(x.n * sizeof(T));
         if (!data)
             throw std::bad_alloc();
         n = x.n;
@@ -228,34 +228,34 @@ struct Array1
 #endif
     }
 
-    const T &operator[](unsigned long i) const
+    const T& operator[](unsigned long i) const
     {
         return data[i];
     }
 
-    T &operator[](unsigned long i)
+    T& operator[](unsigned long i)
     {
         return data[i];
     }
 
     // these are range-checked (in debug mode) versions of operator[], like at()
-    const T &operator()(unsigned long i) const
+    const T& operator()(unsigned long i) const
     {
         assert(i < n);
         return data[i];
     }
 
-    T &operator()(unsigned long i)
+    T& operator()(unsigned long i)
     {
         assert(i < n);
         return data[i];
     }
 
-    Array1<T> &operator=(const Array1<T> &x)
+    Array1<T>& operator=(const Array1<T>& x)
     {
         if (max_n < x.n)
         {
-            T *new_data = (T *)std::malloc(x.n * sizeof(T));
+            T* new_data = (T*)std::malloc(x.n * sizeof(T));
             if (!new_data)
                 throw std::bad_alloc();
             std::free(data);
@@ -267,7 +267,7 @@ struct Array1
         return *this;
     }
 
-    bool operator==(const Array1<T> &x) const
+    bool operator==(const Array1<T>& x) const
     {
         if (n != x.n)
             return false;
@@ -277,7 +277,7 @@ struct Array1
         return true;
     }
 
-    bool operator!=(const Array1<T> &x) const
+    bool operator!=(const Array1<T>& x) const
     {
         if (n != x.n)
             return true;
@@ -287,7 +287,7 @@ struct Array1
         return false;
     }
 
-    bool operator<(const Array1<T> &x) const
+    bool operator<(const Array1<T>& x) const
     {
         for (unsigned long i = 0; i < n && i < x.n; ++i)
         {
@@ -299,7 +299,7 @@ struct Array1
         return n < x.n;
     }
 
-    bool operator>(const Array1<T> &x) const
+    bool operator>(const Array1<T>& x) const
     {
         for (unsigned long i = 0; i < n && i < x.n; ++i)
         {
@@ -311,7 +311,7 @@ struct Array1
         return n > x.n;
     }
 
-    bool operator<=(const Array1<T> &x) const
+    bool operator<=(const Array1<T>& x) const
     {
         for (unsigned long i = 0; i < n && i < x.n; ++i)
         {
@@ -323,7 +323,7 @@ struct Array1
         return n <= x.n;
     }
 
-    bool operator>=(const Array1<T> &x) const
+    bool operator>=(const Array1<T>& x) const
     {
         for (unsigned long i = 0; i < n && i < x.n; ++i)
         {
@@ -335,7 +335,7 @@ struct Array1
         return n >= x.n;
     }
 
-    void add_unique(const T &value)
+    void add_unique(const T& value)
     {
         for (unsigned long i = 0; i < n; ++i)
             if (data[i] == value)
@@ -345,20 +345,20 @@ struct Array1
         data[n++] = value;
     }
 
-    void assign(const T &value)
+    void assign(const T& value)
     {
         for (unsigned long i = 0; i < n; ++i)
             data[i] = value;
     }
 
-    void assign(unsigned long num, const T &value)
+    void assign(unsigned long num, const T& value)
     {
         fill(num, value);
     }
 
     // note: copydata may not alias this array's data, and this should not be
     // used when T is a full object (which defines its own copying operation)
-    void assign(unsigned long num, const T *copydata)
+    void assign(unsigned long num, const T* copydata)
     {
         assert(num == 0 || copydata);
         if (num > max_n)
@@ -366,7 +366,7 @@ struct Array1
             if (num > ULONG_MAX / sizeof(T))
                 throw std::bad_alloc();
             std::free(data);
-            data = (T *)std::malloc(num * sizeof(T));
+            data = (T*)std::malloc(num * sizeof(T));
             if (!data)
                 throw std::bad_alloc();
             max_n = num;
@@ -401,36 +401,36 @@ struct Array1
         n = i;
     }
 
-    const T &at(unsigned long i) const
+    const T& at(unsigned long i) const
     {
         assert(i < n);
         return data[i];
     }
 
-    T &at(unsigned long i)
+    T& at(unsigned long i)
     {
         assert(i < n);
         return data[i];
     }
 
-    const T &back(void) const
+    const T& back(void) const
     {
         assert(data && n > 0);
         return data[n - 1];
     }
 
-    T &back(void)
+    T& back(void)
     {
         assert(data && n > 0);
         return data[n - 1];
     }
 
-    const T *begin(void) const
+    const T* begin(void) const
     {
         return data;
     }
 
-    T *begin(void)
+    T* begin(void)
     {
         return data;
     }
@@ -453,12 +453,12 @@ struct Array1
         return n == 0;
     }
 
-    const T *end(void) const
+    const T* end(void) const
     {
         return data + n;
     }
 
-    T *end(void)
+    T* end(void)
     {
         return data + n;
     }
@@ -471,14 +471,14 @@ struct Array1
         pop_back();
     }
 
-    void fill(unsigned long num, const T &value)
+    void fill(unsigned long num, const T& value)
     {
         if (num > max_n)
         {
             if (num > ULONG_MAX / sizeof(T))
                 throw std::bad_alloc();
             std::free(data);
-            data = (T *)std::malloc(num * sizeof(T));
+            data = (T*)std::malloc(num * sizeof(T));
             if (!data)
                 throw std::bad_alloc();
             max_n = num;
@@ -488,13 +488,13 @@ struct Array1
             data[i] = value;
     }
 
-    const T &front(void) const
+    const T& front(void) const
     {
         assert(n > 0);
         return *data;
     }
 
-    T &front(void)
+    T& front(void)
     {
         assert(n > 0);
         return *data;
@@ -503,14 +503,14 @@ struct Array1
     void grow(void)
     {
         unsigned long new_size = (max_n * sizeof(T) < ULONG_MAX / 2 ? 2 * max_n + 1 : ULONG_MAX / sizeof(T));
-        T *new_data = (T *)std::realloc(data, new_size * sizeof(T));
+        T* new_data = (T*)std::realloc(data, new_size * sizeof(T));
         if (!new_data)
             throw std::bad_alloc();
         data = new_data;
         max_n = new_size;
     }
 
-    void insert(unsigned long index, const T &entry)
+    void insert(unsigned long index, const T& entry)
     {
         assert(index <= n);
         push_back(back());
@@ -530,7 +530,7 @@ struct Array1
         --n;
     }
 
-    void push_back(const T &value)
+    void push_back(const T& value)
     {
         if (n == max_n)
             grow();
@@ -561,7 +561,7 @@ struct Array1
     {
         if (r > ULONG_MAX / sizeof(T))
             throw std::bad_alloc();
-        T *new_data = (T *)std::realloc(data, r * sizeof(T));
+        T* new_data = (T*)std::realloc(data, r * sizeof(T));
         if (!new_data)
             throw std::bad_alloc();
         data = new_data;
@@ -575,7 +575,7 @@ struct Array1
         n = n_;
     }
 
-    void resize(unsigned long n_, const T &value)
+    void resize(unsigned long n_, const T& value)
     {
         if (n_ > max_n)
             reserve(n_);
@@ -595,7 +595,7 @@ struct Array1
         return n;
     }
 
-    void swap(Array1<T> &x)
+    void swap(Array1<T>& x)
     {
         std::swap(n, x.n);
         std::swap(max_n, x.max_n);
@@ -608,7 +608,7 @@ struct Array1
     {
         if (n == max_n)
             return;
-        T *new_data = (T *)std::malloc(n * sizeof(T));
+        T* new_data = (T*)std::malloc(n * sizeof(T));
         if (!new_data)
             return;
         std::memcpy(new_data, data, n * sizeof(T));
@@ -637,15 +637,15 @@ struct WrapArray1
 {
     // STL-friendly typedefs
 
-    typedef T *iterator;
-    typedef const T *const_iterator;
+    typedef T* iterator;
+    typedef const T* const_iterator;
     typedef unsigned long size_type;
     typedef long difference_type;
-    typedef T &reference;
-    typedef const T &const_reference;
+    typedef T& reference;
+    typedef const T& const_reference;
     typedef T value_type;
-    typedef T *pointer;
-    typedef const T *const_pointer;
+    typedef T* pointer;
+    typedef const T* const_pointer;
     typedef std::reverse_iterator<iterator> reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
@@ -653,7 +653,7 @@ struct WrapArray1
 
     unsigned long n;
     unsigned long max_n;
-    T *data;
+    T* data;
 
     // most of STL vector's interface, with a few changes
 
@@ -664,7 +664,7 @@ struct WrapArray1
     {
     }
 
-    WrapArray1(unsigned long n_, T *data_)
+    WrapArray1(unsigned long n_, T* data_)
         : n(n_)
         , max_n(n_)
         , data(data_)
@@ -672,7 +672,7 @@ struct WrapArray1
         assert(data || max_n == 0);
     }
 
-    WrapArray1(unsigned long n_, T *data_, unsigned long max_n_)
+    WrapArray1(unsigned long n_, T* data_, unsigned long max_n_)
         : n(n_)
         , max_n(max_n_)
         , data(data_)
@@ -684,21 +684,21 @@ struct WrapArray1
     // Allow for simple shallow copies of existing arrays
     // Note that if the underlying arrays change where their data is, the WrapArray may be screwed up
 
-    WrapArray1(Array1<T> &a)
+    WrapArray1(Array1<T>& a)
         : n(a.n)
         , max_n(a.max_n)
         , data(a.data)
     {
     }
 
-    WrapArray1(std::vector<T> &a)
+    WrapArray1(std::vector<T>& a)
         : n(a.size())
         , max_n(a.capacity())
         , data(&a[0])
     {
     }
 
-    void init(unsigned long n_, T *data_, unsigned long max_n_)
+    void init(unsigned long n_, T* data_, unsigned long max_n_)
     {
         assert(n_ <= max_n_);
         assert(data_ || max_n_ == 0);
@@ -707,30 +707,30 @@ struct WrapArray1
         data = data_;
     }
 
-    const T &operator[](unsigned long i) const
+    const T& operator[](unsigned long i) const
     {
         return data[i];
     }
 
-    T &operator[](unsigned long i)
+    T& operator[](unsigned long i)
     {
         return data[i];
     }
 
     // these are range-checked (in debug mode) versions of operator[], like at()
-    const T &operator()(unsigned long i) const
+    const T& operator()(unsigned long i) const
     {
         assert(i < n);
         return data[i];
     }
 
-    T &operator()(unsigned long i)
+    T& operator()(unsigned long i)
     {
         assert(i < n);
         return data[i];
     }
 
-    bool operator==(const WrapArray1<T> &x) const
+    bool operator==(const WrapArray1<T>& x) const
     {
         if (n != x.n)
             return false;
@@ -740,7 +740,7 @@ struct WrapArray1
         return true;
     }
 
-    bool operator!=(const WrapArray1<T> &x) const
+    bool operator!=(const WrapArray1<T>& x) const
     {
         if (n != x.n)
             return true;
@@ -750,7 +750,7 @@ struct WrapArray1
         return false;
     }
 
-    bool operator<(const WrapArray1<T> &x) const
+    bool operator<(const WrapArray1<T>& x) const
     {
         for (unsigned long i = 0; i < n && i < x.n; ++i)
         {
@@ -762,7 +762,7 @@ struct WrapArray1
         return n < x.n;
     }
 
-    bool operator>(const WrapArray1<T> &x) const
+    bool operator>(const WrapArray1<T>& x) const
     {
         for (unsigned long i = 0; i < n && i < x.n; ++i)
         {
@@ -774,7 +774,7 @@ struct WrapArray1
         return n > x.n;
     }
 
-    bool operator<=(const WrapArray1<T> &x) const
+    bool operator<=(const WrapArray1<T>& x) const
     {
         for (unsigned long i = 0; i < n && i < x.n; ++i)
         {
@@ -786,7 +786,7 @@ struct WrapArray1
         return n <= x.n;
     }
 
-    bool operator>=(const WrapArray1<T> &x) const
+    bool operator>=(const WrapArray1<T>& x) const
     {
         for (unsigned long i = 0; i < n && i < x.n; ++i)
         {
@@ -798,7 +798,7 @@ struct WrapArray1
         return n >= x.n;
     }
 
-    void add_unique(const T &value)
+    void add_unique(const T& value)
     {
         for (unsigned long i = 0; i < n; ++i)
             if (data[i] == value)
@@ -807,20 +807,20 @@ struct WrapArray1
         data[n++] = value;
     }
 
-    void assign(const T &value)
+    void assign(const T& value)
     {
         for (unsigned long i = 0; i < n; ++i)
             data[i] = value;
     }
 
-    void assign(unsigned long num, const T &value)
+    void assign(unsigned long num, const T& value)
     {
         fill(num, value);
     }
 
     // note: copydata may not alias this array's data, and this should not be
     // used when T is a full object (which defines its own copying operation)
-    void assign(unsigned long num, const T *copydata)
+    void assign(unsigned long num, const T* copydata)
     {
         assert(num == 0 || copydata);
         assert(num <= max_n);
@@ -853,36 +853,36 @@ struct WrapArray1
         n = i;
     }
 
-    const T &at(unsigned long i) const
+    const T& at(unsigned long i) const
     {
         assert(i < n);
         return data[i];
     }
 
-    T &at(unsigned long i)
+    T& at(unsigned long i)
     {
         assert(i < n);
         return data[i];
     }
 
-    const T &back(void) const
+    const T& back(void) const
     {
         assert(data && n > 0);
         return data[n - 1];
     }
 
-    T &back(void)
+    T& back(void)
     {
         assert(data && n > 0);
         return data[n - 1];
     }
 
-    const T *begin(void) const
+    const T* begin(void) const
     {
         return data;
     }
 
-    T *begin(void)
+    T* begin(void)
     {
         return data;
     }
@@ -902,12 +902,12 @@ struct WrapArray1
         return n == 0;
     }
 
-    const T *end(void) const
+    const T* end(void) const
     {
         return data + n;
     }
 
-    T *end(void)
+    T* end(void)
     {
         return data + n;
     }
@@ -920,7 +920,7 @@ struct WrapArray1
         pop_back();
     }
 
-    void fill(unsigned long num, const T &value)
+    void fill(unsigned long num, const T& value)
     {
         assert(num <= max_n);
         n = num;
@@ -928,19 +928,19 @@ struct WrapArray1
             data[i] = value;
     }
 
-    const T &front(void) const
+    const T& front(void) const
     {
         assert(n > 0);
         return *data;
     }
 
-    T &front(void)
+    T& front(void)
     {
         assert(n > 0);
         return *data;
     }
 
-    void insert(unsigned long index, const T &entry)
+    void insert(unsigned long index, const T& entry)
     {
         assert(index <= n);
         push_back(back());
@@ -960,7 +960,7 @@ struct WrapArray1
         --n;
     }
 
-    void push_back(const T &value)
+    void push_back(const T& value)
     {
         assert(n < max_n);
         data[n++] = value;
@@ -997,7 +997,7 @@ struct WrapArray1
         n = n_;
     }
 
-    void resize(unsigned long n_, const T &value)
+    void resize(unsigned long n_, const T& value)
     {
         assert(n_ <= max_n);
         if (n < n_)
@@ -1017,7 +1017,7 @@ struct WrapArray1
         return n;
     }
 
-    void swap(WrapArray1<T> &x)
+    void swap(WrapArray1<T>& x)
     {
         std::swap(n, x.n);
         std::swap(max_n, x.max_n);

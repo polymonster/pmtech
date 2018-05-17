@@ -20,32 +20,32 @@ struct Quaternion
     };
 
     // Operators
-    Quaternion operator*(const f32 &scale) const;
-    Quaternion operator/(const f32 &scale) const;
-    Quaternion operator+(const Quaternion &q) const;
-    Quaternion operator=(const vec4f &v) const;
+    Quaternion operator*(const f32& scale) const;
+    Quaternion operator/(const f32& scale) const;
+    Quaternion operator+(const Quaternion& q) const;
+    Quaternion operator=(const vec4f& v) const;
     Quaternion operator-() const;
 
-    Quaternion operator*(const Quaternion &rhs) const;
-    Quaternion &operator*=(const Quaternion &rhs);
+    Quaternion operator*(const Quaternion& rhs) const;
+    Quaternion& operator*=(const Quaternion& rhs);
 
     // Computation Functions
     void euler_angles(f32 z_theta, f32 y_theta, f32 x_theta);
     void normalise();
-    f32 dot(const Quaternion &l, const Quaternion &r);
+    f32 dot(const Quaternion& l, const Quaternion& r);
 
-    Quaternion lerp(const Quaternion &l, const Quaternion &r, f32 t);
-    Quaternion slerp(const Quaternion &l, const Quaternion &r, f32 t);
+    Quaternion lerp(const Quaternion& l, const Quaternion& r, f32 t);
+    Quaternion slerp(const Quaternion& l, const Quaternion& r, f32 t);
 
     void axis_angle(vec3f axis, f32 w);
     void axis_angle(f32 lx, f32 ly, f32 lz, f32 lw);
     void axis_angle(vec4f v);
-    void get_matrix(mat4 &lmatrix);
+    void get_matrix(mat4& lmatrix);
     void from_matrix(mat4 m);
     vec3f to_euler();
 };
 
-inline Quaternion Quaternion::operator*(const f32 &scale) const
+inline Quaternion Quaternion::operator*(const f32& scale) const
 {
     Quaternion out_quat;
     out_quat.x = x * scale;
@@ -56,7 +56,7 @@ inline Quaternion Quaternion::operator*(const f32 &scale) const
     return out_quat;
 }
 
-inline Quaternion Quaternion::operator/(const f32 &scale) const
+inline Quaternion Quaternion::operator/(const f32& scale) const
 {
     Quaternion out_quat;
     out_quat.x = x / scale;
@@ -67,7 +67,7 @@ inline Quaternion Quaternion::operator/(const f32 &scale) const
     return out_quat;
 }
 
-inline Quaternion Quaternion::operator+(const Quaternion &q) const
+inline Quaternion Quaternion::operator+(const Quaternion& q) const
 {
     Quaternion out_quat;
 
@@ -79,7 +79,7 @@ inline Quaternion Quaternion::operator+(const Quaternion &q) const
     return out_quat;
 }
 
-inline Quaternion Quaternion::operator=(const vec4f &v) const
+inline Quaternion Quaternion::operator=(const vec4f& v) const
 {
     Quaternion out_quat;
 
@@ -104,7 +104,7 @@ inline Quaternion Quaternion::operator-() const // Unary minus
 }
 
 // non commutative multiply
-inline Quaternion Quaternion::operator*(const Quaternion &rhs) const
+inline Quaternion Quaternion::operator*(const Quaternion& rhs) const
 {
     Quaternion res;
 
@@ -116,7 +116,7 @@ inline Quaternion Quaternion::operator*(const Quaternion &rhs) const
     return res;
 }
 
-inline Quaternion &Quaternion::operator*=(const Quaternion &rhs)
+inline Quaternion& Quaternion::operator*=(const Quaternion& rhs)
 {
     Quaternion res;
 
@@ -158,12 +158,12 @@ inline void Quaternion::normalise()
     z /= mag;
 }
 
-inline f32 Quaternion::dot(const Quaternion &l, const Quaternion &r)
+inline f32 Quaternion::dot(const Quaternion& l, const Quaternion& r)
 {
     return l.x * r.x + l.y * r.y + l.z * r.z + l.w * r.w;
 }
 
-inline Quaternion Quaternion::lerp(const Quaternion &l, const Quaternion &r, f32 t)
+inline Quaternion Quaternion::lerp(const Quaternion& l, const Quaternion& r, f32 t)
 {
     Quaternion lerped = (l * (1.0f - t) + r * t);
     lerped.normalise();
@@ -171,7 +171,7 @@ inline Quaternion Quaternion::lerp(const Quaternion &l, const Quaternion &r, f32
     return lerped;
 }
 
-inline Quaternion Quaternion::slerp(const Quaternion &l, const Quaternion &r, f32 t)
+inline Quaternion Quaternion::slerp(const Quaternion& l, const Quaternion& r, f32 t)
 {
     Quaternion out_quat;
 
@@ -220,7 +220,7 @@ inline void Quaternion::axis_angle(vec4f v)
     axis_angle(v.x, v.y, v.z, v.w);
 }
 
-inline void Quaternion::get_matrix(mat4 &lmatrix)
+inline void Quaternion::get_matrix(mat4& lmatrix)
 {
     normalise();
 

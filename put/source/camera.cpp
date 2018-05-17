@@ -8,7 +8,7 @@ using namespace pen;
 
 namespace put
 {
-    void camera_create_perspective(camera *p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane)
+    void camera_create_perspective(camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane)
     {
         vec2f near_size;
         vec2f far_size;
@@ -30,7 +30,7 @@ namespace put
         p_camera->flags |= CF_INVALIDATED;
     }
 
-    void camera_create_orthographic(camera *p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
+    void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
     {
         p_camera->proj = mat::create_orthographic_projection(left, right, bottom, top, znear, zfar);
 
@@ -38,7 +38,7 @@ namespace put
         p_camera->flags |= CF_ORTHO;
     }
 
-    void camera_update_fly(camera *p_camera, bool has_focus, bool invert_y)
+    void camera_update_fly(camera* p_camera, bool has_focus, bool invert_y)
     {
         mouse_state ms = input_get_mouse_state();
 
@@ -110,7 +110,7 @@ namespace put
         p_camera->flags |= CF_INVALIDATED;
     }
 
-    void update_frustum(camera *p_camera)
+    void update_frustum(camera* p_camera)
     {
         static vec2f ndc_coords[] = {
             vec2f(0.0f, 1.0f),
@@ -131,7 +131,7 @@ namespace put
             p_camera->camera_frustum.corners[1][i] = maths::unproject_sc(vec3f(ndc_coords[i], 1.0f), view_proj, vpi);
         }
 
-        const frustum &f = p_camera->camera_frustum;
+        const frustum& f = p_camera->camera_frustum;
 
         vec3f plane_vectors[] = {
             f.corners[0][0], f.corners[1][0], f.corners[0][2], // left
@@ -155,7 +155,7 @@ namespace put
         }
     }
 
-    void camera_update_modelling(camera *p_camera, bool has_focus, bool invert_y)
+    void camera_update_modelling(camera* p_camera, bool has_focus, bool invert_y)
     {
         mouse_state ms = input_get_mouse_state();
 
@@ -216,12 +216,12 @@ namespace put
         p_camera->flags |= CF_INVALIDATED;
     }
 
-    void camera_update_projection_matrix(camera *p_camera)
+    void camera_update_projection_matrix(camera* p_camera)
     {
         camera_create_perspective(p_camera, p_camera->fov, p_camera->aspect, p_camera->near_plane, p_camera->far_plane);
     }
 
-    void camera_update_shader_constants(camera *p_camera, bool viewport_correction)
+    void camera_update_shader_constants(camera* p_camera, bool viewport_correction)
     {
         if (!(p_camera->flags & CF_ORTHO))
         {

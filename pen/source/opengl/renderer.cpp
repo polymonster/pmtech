@@ -103,13 +103,13 @@ namespace pen
         u64 frame;
         Str name;
     };
-    gpu_perf_result *k_perf_results = nullptr;
+    gpu_perf_result* k_perf_results = nullptr;
 
     struct perf_marker
     {
         u32 query = 0;
         u64 frame = 0;
-        const c8 *name = nullptr;
+        const c8* name = nullptr;
         bool issued = false;
         u32 depth = 0;
         bool pad = false;
@@ -119,7 +119,7 @@ namespace pen
     struct perf_marker_set
     {
         static const u32 num_marker_buffers = 2;
-        perf_marker *markers[num_marker_buffers] = {0};
+        perf_marker* markers[num_marker_buffers] = {0};
         u32 pos[num_marker_buffers] = {0};
 
         u32 buf = 0;
@@ -127,11 +127,11 @@ namespace pen
     };
     static perf_marker_set k_perf;
 
-    void insert_marker(const c8 *name, bool pad = false)
+    void insert_marker(const c8* name, bool pad = false)
     {
-        u32 &buf = k_perf.buf;
-        u32 &pos = k_perf.pos[buf];
-        u32 &depth = k_perf.depth;
+        u32& buf = k_perf.buf;
+        u32& pos = k_perf.pos[buf];
+        u32& depth = k_perf.depth;
 
         if (pos >= sb_count(k_perf.markers[buf]))
         {
@@ -156,9 +156,9 @@ namespace pen
         ++pos;
     }
 
-    void direct::renderer_push_perf_marker(const c8 *name)
+    void direct::renderer_push_perf_marker(const c8* name)
     {
-        u32 &depth = k_perf.depth;
+        u32& depth = k_perf.depth;
 
         if (depth > 0)
         {
@@ -172,7 +172,7 @@ namespace pen
 
     void direct::renderer_pop_perf_marker()
     {
-        u32 &depth = k_perf.depth;
+        u32& depth = k_perf.depth;
         --depth;
 
         CHECK_CALL(glEndQuery(GL_TIME_ELAPSED));
@@ -194,7 +194,7 @@ namespace pen
         u32 complete_count = 0;
         for (u32 i = 0; i < k_perf.pos[bb]; ++i)
         {
-            perf_marker &m = k_perf.markers[bb][i];
+            perf_marker& m = k_perf.markers[bb][i];
             if (m.issued)
             {
                 s32 avail = 0;
@@ -216,7 +216,7 @@ namespace pen
             u32 num_timers = k_perf.pos[bb];
             for (u32 i = 0; i < num_timers; ++i)
             {
-                perf_marker &m = k_perf.markers[bb][i];
+                perf_marker& m = k_perf.markers[bb][i];
 
                 if (!m.issued)
                     continue;
@@ -235,7 +235,7 @@ namespace pen
                 if (m.name)
                 {
                     // release mem that was allocated by the command buffer
-                    memory_free((void *)m.name);
+                    memory_free((void*)m.name);
                     m.name = nullptr;
                 }
 
@@ -244,7 +244,7 @@ namespace pen
                 u32 nest_iter = 0;
                 for (;;)
                 {
-                    perf_marker &n = k_perf.markers[bb][i + nest_iter];
+                    perf_marker& n = k_perf.markers[bb][i + nest_iter];
 
                     if (n.depth < p.depth)
                         break;
@@ -323,7 +323,7 @@ namespace pen
 
     struct input_layout
     {
-        vertex_attribute *attributes;
+        vertex_attribute* attributes;
         GLuint vertex_array_handle = 0;
         GLuint vb_handle = 0;
     };
@@ -352,7 +352,7 @@ namespace pen
         GLuint w, h;
         u32 uid;
 
-        texture_creation_params *tcp;
+        texture_creation_params* tcp;
     };
 
     struct framebuffer
@@ -360,7 +360,7 @@ namespace pen
         hash_id hash;
         GLuint framebuffer;
     };
-    static framebuffer *k_framebuffers;
+    static framebuffer* k_framebuffers;
 
     enum resource_type : s32
     {
@@ -381,14 +381,14 @@ namespace pen
         u8 uniform_block_location[MAX_UNIFORM_BUFFERS];
         u8 texture_location[MAX_SHADER_TEXTURES];
     };
-    static shader_program *k_shader_programs;
+    static shader_program* k_shader_programs;
 
     struct managed_render_target
     {
         texture_creation_params tcp;
         u32 render_target_handle;
     };
-    static managed_render_target *k_managed_render_targets;
+    static managed_render_target* k_managed_render_targets;
 
     struct resource_allocation
     {
@@ -397,15 +397,15 @@ namespace pen
 
         union {
             pen::clear_state_internal clear_state;
-            pen::input_layout *input_layout;
+            pen::input_layout* input_layout;
             pen::raster_state raster_state;
-            pen::depth_stencil_creation_params *depth_stencil;
-            pen::blend_creation_params *blend_state;
+            pen::depth_stencil_creation_params* depth_stencil;
+            pen::blend_creation_params* blend_state;
             GLuint handle;
             pen::texture_info texture;
             pen::render_target render_target;
-            pen::sampler_creation_params *sampler_state;
-            pen::shader_program *shader_program;
+            pen::sampler_creation_params* sampler_state;
+            pen::shader_program* shader_program;
         };
     };
     resource_allocation resource_pool[MAX_RENDERER_RESOURCES];
@@ -441,7 +441,7 @@ namespace pen
 
     context_state g_context;
 
-    void direct::renderer_create_clear_state(const clear_state &cs, u32 resource_slot)
+    void direct::renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
     {
         resource_pool[resource_slot].clear_state.rgba[0] = cs.r;
         resource_pool[resource_slot].clear_state.rgba[1] = cs.g;
@@ -455,7 +455,7 @@ namespace pen
         pen::memory_cpy(&resource_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(pen::mrt_clear) * MAX_MRT);
     }
 
-    u32 link_program_internal(u32 vs, u32 ps, const pen::shader_link_params *params = nullptr)
+    u32 link_program_internal(u32 vs, u32 ps, const pen::shader_link_params* params = nullptr)
     {
         // link the shaders
         GLuint program_id = CHECK_CALL(glCreateProgram());
@@ -483,7 +483,7 @@ namespace pen
             {
                 CHECK_CALL(glAttachShader(program_id, so));
                 CHECK_CALL(glTransformFeedbackVaryings(program_id, params->num_stream_out_names,
-                                                       (const c8 **)params->stream_out_names, GL_INTERLEAVED_ATTRIBS));
+                                                       (const c8**)params->stream_out_names, GL_INTERLEAVED_ATTRIBS));
             }
         }
         else
@@ -505,7 +505,7 @@ namespace pen
 
         if (info_log_length > 0)
         {
-            char *info_log_buf = (char *)pen::memory_alloc(info_log_length + 1);
+            char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]));
             info_log_buf[info_log_length] = '\0';
@@ -541,8 +541,8 @@ namespace pen
 
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
-        resource_allocation &rc = resource_pool[clear_state_index];
-        clear_state_internal &cs = rc.clear_state;
+        resource_allocation& rc = resource_pool[clear_state_index];
+        clear_state_internal& cs = rc.clear_state;
 
         CHECK_CALL(glClearDepth(cs.depth));
         CHECK_CALL(glClearStencil(cs.stencil));
@@ -584,9 +584,9 @@ namespace pen
         u32 num_man_rt = sb_count(k_managed_render_targets);
         for (u32 i = 0; i < num_man_rt; ++i)
         {
-            auto &managed_rt = k_managed_render_targets[i];
+            auto& managed_rt = k_managed_render_targets[i];
 
-            resource_allocation &res = resource_pool[managed_rt.render_target_handle];
+            resource_allocation& res = resource_pool[managed_rt.render_target_handle];
             CHECK_CALL(glDeleteTextures(1, &res.render_target.texture.handle));
 
             if (managed_rt.tcp.sample_count > 1)
@@ -637,9 +637,9 @@ namespace pen
 #endif
     }
 
-    void direct::renderer_load_shader(const pen::shader_load_params &params, u32 resource_slot)
+    void direct::renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
     {
-        resource_allocation &res = resource_pool[resource_slot];
+        resource_allocation& res = resource_pool[resource_slot];
 
         u32 internal_type = params.type;
         if (params.type == PEN_SHADER_TYPE_SO)
@@ -647,7 +647,7 @@ namespace pen
 
         res.handle = CHECK_CALL(glCreateShader(internal_type));
 
-        CHECK_CALL(glShaderSource(res.handle, 1, (const c8 **)&params.byte_code, (s32 *)&params.byte_code_size));
+        CHECK_CALL(glShaderSource(res.handle, 1, (const c8**)&params.byte_code, (s32*)&params.byte_code_size));
         CHECK_CALL(glCompileShader(res.handle));
 
         // Check compilation status
@@ -661,7 +661,7 @@ namespace pen
         {
             PEN_PRINTF("%s", params.byte_code);
 
-            char *info_log_buf = (char *)pen::memory_alloc(info_log_length + 1);
+            char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]));
 
@@ -688,9 +688,9 @@ namespace pen
         }
     }
 
-    void direct::renderer_create_buffer(const buffer_creation_params &params, u32 resource_slot)
+    void direct::renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot)
     {
-        resource_allocation &res = resource_pool[resource_slot];
+        resource_allocation& res = resource_pool[resource_slot];
 
         CHECK_CALL(glGenBuffers(1, &res.handle));
 
@@ -701,12 +701,12 @@ namespace pen
         res.type = params.bind_flags;
     }
 
-    void direct::renderer_link_shader_program(const pen::shader_link_params &params, u32 resource_slot)
+    void direct::renderer_link_shader_program(const pen::shader_link_params& params, u32 resource_slot)
     {
         shader_link_params slp = params;
         u32 program_index = link_program_internal(0, 0, &slp);
 
-        shader_program *linked_program = &k_shader_programs[program_index];
+        shader_program* linked_program = &k_shader_programs[program_index];
 
         GLuint prog = linked_program->program;
         glUseProgram(linked_program->program);
@@ -714,7 +714,7 @@ namespace pen
         // build lookup tables for uniform buffers and texture samplers
         for (u32 i = 0; i < params.num_constants; ++i)
         {
-            constant_layout_desc &constant = params.constants[i];
+            constant_layout_desc& constant = params.constants[i];
             GLint loc;
 
             switch (constant.type)
@@ -760,9 +760,9 @@ namespace pen
     {
     }
 
-    void direct::renderer_create_input_layout(const input_layout_creation_params &params, u32 resource_slot)
+    void direct::renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
     {
-        resource_allocation &res = resource_pool[resource_slot];
+        resource_allocation& res = resource_pool[resource_slot];
 
         res.input_layout = new input_layout;
 
@@ -784,8 +784,8 @@ namespace pen
         }
     }
 
-    void direct::renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32 *strides,
-                                            const u32 *offsets)
+    void direct::renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides,
+                                            const u32* offsets)
     {
         g_current_state.vertex_buffer[0] = buffer_index;
         g_current_state.vertex_buffer_stride[0] = strides[0];
@@ -793,8 +793,8 @@ namespace pen
         g_current_state.num_bound_vertex_buffers = 1;
     }
 
-    void direct::renderer_set_vertex_buffers(u32 *buffer_indices, u32 num_buffers, u32 start_slot, const u32 *strides,
-                                             const u32 *offsets)
+    void direct::renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
+                                             const u32* offsets)
     {
         for (s32 i = 0; i < num_buffers; ++i)
         {
@@ -827,7 +827,7 @@ namespace pen
             g_bound_state.pixel_shader = g_current_state.pixel_shader;
             g_bound_state.stream_out_shader = g_current_state.stream_out_shader;
 
-            shader_program *linked_program = nullptr;
+            shader_program* linked_program = nullptr;
 
             u32 so_handle = resource_pool[g_bound_state.stream_out_shader].handle;
 
@@ -865,7 +865,7 @@ namespace pen
                 g_bound_state.pixel_shader = g_current_state.pixel_shader;
                 g_bound_state.stream_out_shader = g_current_state.stream_out_shader;
 
-                shader_program *linked_program = nullptr;
+                shader_program* linked_program = nullptr;
 
                 auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
                 auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
@@ -897,7 +897,7 @@ namespace pen
 
         g_bound_state.input_layout = g_current_state.input_layout;
 
-        auto *input_res = resource_pool[g_current_state.input_layout].input_layout;
+        auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
         if (input_res->vertex_array_handle == 0)
         {
             CHECK_CALL(glGenVertexArrays(1, &input_res->vertex_array_handle));
@@ -910,12 +910,12 @@ namespace pen
             g_bound_state.vertex_buffer[v] = g_current_state.vertex_buffer[v];
             g_bound_state.vertex_buffer_stride[v] = g_current_state.vertex_buffer_stride[v];
 
-            auto &res = resource_pool[g_bound_state.vertex_buffer[v]].handle;
+            auto& res = resource_pool[g_bound_state.vertex_buffer[v]].handle;
 
             u32 num_attribs = sb_count(input_res->attributes);
             for (u32 a = 0; a < num_attribs; ++a)
             {
-                auto &attribute = input_res->attributes[a];
+                auto& attribute = input_res->attributes[a];
 
                 if (attribute.input_slot != v)
                     continue;
@@ -925,7 +925,7 @@ namespace pen
 
                 CHECK_CALL(glVertexAttribPointer(attribute.location, attribute.num_elements, attribute.type,
                                                  attribute.type == GL_UNSIGNED_BYTE ? true : false,
-                                                 g_bound_state.vertex_buffer_stride[v], (void *)attribute.offset));
+                                                 g_bound_state.vertex_buffer_stride[v], (void*)attribute.offset));
 
                 CHECK_CALL(glVertexAttribDivisor(attribute.location, attribute.step_rate));
             }
@@ -937,7 +937,7 @@ namespace pen
             g_bound_state.raster_state = g_current_state.raster_state;
             g_bound_state.backbuffer_bound = g_current_state.backbuffer_bound;
 
-            auto &rs = resource_pool[g_bound_state.raster_state].raster_state;
+            auto& rs = resource_pool[g_bound_state.raster_state].raster_state;
 
             bool ccw = rs.front_ccw;
             if (!g_current_state.backbuffer_bound)
@@ -1022,7 +1022,7 @@ namespace pen
         GLuint res = resource_pool[g_bound_state.index_buffer].handle;
         CHECK_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res));
 
-        void *offset = (void *)(size_t)(start_index * 2);
+        void* offset = (void*)(size_t)(start_index * 2);
 
         CHECK_CALL(
             glDrawElementsBaseVertex(primitive_topology, index_count, g_bound_state.index_format, offset, base_vertex));
@@ -1038,7 +1038,7 @@ namespace pen
         CHECK_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res));
 
         // todo this needs to check index size 32 or 16 bit
-        void *offset = (void *)(size_t)(start_index * 2);
+        void* offset = (void*)(size_t)(start_index * 2);
 
         CHECK_CALL(glDrawElementsInstancedBaseVertex(primitive_topology, index_count, g_bound_state.index_format, offset,
                                                      instance_count, base_vertex));
@@ -1083,7 +1083,7 @@ namespace pen
         {PEN_TEX_FORMAT_BC3_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_TEXTURE_COMPRESSED}};
     static u32 k_num_tex_maps = sizeof(k_tex_format_map) / sizeof(k_tex_format_map[0]);
 
-    void get_texture_format(u32 pen_format, u32 &sized_format, u32 &format, u32 &type)
+    void get_texture_format(u32 pen_format, u32& sized_format, u32& format, u32& type)
     {
         for (s32 i = 0; i < k_num_tex_maps; ++i)
         {
@@ -1100,14 +1100,14 @@ namespace pen
         PEN_ASSERT(0);
     }
 
-    texture_info create_texture_internal(const texture_creation_params &tcp)
+    texture_info create_texture_internal(const texture_creation_params& tcp)
     {
         u32 sized_format, format, type;
         get_texture_format(tcp.format, sized_format, format, type);
 
         u32 mip_w = tcp.width;
         u32 mip_h = tcp.height;
-        c8 *mip_data = (c8 *)tcp.data;
+        c8* mip_data = (c8*)tcp.data;
 
         bool is_msaa = tcp.sample_count > 1;
 
@@ -1224,9 +1224,9 @@ namespace pen
         return ti;
     }
 
-    void direct::renderer_create_render_target(const texture_creation_params &tcp, u32 resource_slot, bool track)
+    void direct::renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
     {
-        resource_allocation &res = resource_pool[resource_slot];
+        resource_allocation& res = resource_pool[resource_slot];
 
         res.type = RES_RENDER_TARGET;
 
@@ -1269,7 +1269,7 @@ namespace pen
         }
     }
 
-    void direct::renderer_set_targets(const u32 *const colour_targets, u32 num_colour_targets, u32 depth_target,
+    void direct::renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
                                       u32 colour_face, u32 depth_face)
     {
         static GLenum k_draw_buffers[MAX_MRT] = {
@@ -1305,13 +1305,13 @@ namespace pen
 
         if (depth_target != PEN_NULL_DEPTH_BUFFER)
         {
-            resource_allocation &depth_res = resource_pool[depth_target];
+            resource_allocation& depth_res = resource_pool[depth_target];
             hh.add(depth_res.render_target.uid);
         }
 
         for (s32 i = 0; i < num_colour_targets; ++i)
         {
-            resource_allocation &colour_res = resource_pool[colour_targets[i]];
+            resource_allocation& colour_res = resource_pool[colour_targets[i]];
             hh.add(colour_res.render_target.uid);
             hh.add(colour_targets[i]);
 
@@ -1326,7 +1326,7 @@ namespace pen
         u32 num_fb = sb_count(k_framebuffers);
         for (u32 i = 0; i < num_fb; ++i)
         {
-            auto &fb = k_framebuffers[i];
+            auto& fb = k_framebuffers[i];
 
             if (fb.hash == h)
             {
@@ -1344,7 +1344,7 @@ namespace pen
 
         if (depth_target != PEN_NULL_DEPTH_BUFFER)
         {
-            resource_allocation &depth_res = resource_pool[depth_target];
+            resource_allocation& depth_res = resource_pool[depth_target];
 
             if (msaa)
             {
@@ -1360,7 +1360,7 @@ namespace pen
 
         for (s32 i = 0; i < num_colour_targets; ++i)
         {
-            resource_allocation &colour_res = resource_pool[colour_targets[i]];
+            resource_allocation& colour_res = resource_pool[colour_targets[i]];
 
             if (msaa)
             {
@@ -1387,7 +1387,7 @@ namespace pen
     extern resolve_resources g_resolve_resources;
     void direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type)
     {
-        resource_allocation &colour_res = resource_pool[target];
+        resource_allocation& colour_res = resource_pool[target];
 
         hash_id hash[2] = {0, 0};
 
@@ -1402,7 +1402,7 @@ namespace pen
 
         if (colour_res.render_target.texture.handle == 0)
         {
-            texture_creation_params &_tcp = *colour_res.render_target.tcp;
+            texture_creation_params& _tcp = *colour_res.render_target.tcp;
             _tcp.sample_count = 0;
             _tcp.width = w;
             _tcp.height = h;
@@ -1431,7 +1431,7 @@ namespace pen
         u32 num_fb = sb_count(k_framebuffers);
         for (u32 i = 0; i < num_fb; ++i)
         {
-            auto &fb = k_framebuffers[i];
+            auto& fb = k_framebuffers[i];
             for (s32 i = 0; i < 2; ++i)
                 if (fb.hash == hash[i])
                     fbos[i] = fb.framebuffer;
@@ -1490,7 +1490,7 @@ namespace pen
         }
     }
 
-    void direct::renderer_create_texture(const texture_creation_params &tcp, u32 resource_slot)
+    void direct::renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
     {
         resource_pool[resource_slot].type = RES_TEXTURE;
 
@@ -1500,9 +1500,9 @@ namespace pen
         resource_pool[resource_slot].texture = create_texture_internal(tcp);
     }
 
-    void direct::renderer_create_sampler(const sampler_creation_params &scp, u32 resource_slot)
+    void direct::renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
     {
-        resource_pool[resource_slot].sampler_state = (sampler_creation_params *)pen::memory_alloc(sizeof(scp));
+        resource_pool[resource_slot].sampler_state = (sampler_creation_params*)pen::memory_alloc(sizeof(scp));
 
         pen::memory_cpy(resource_pool[resource_slot].sampler_state, &scp, sizeof(scp));
     }
@@ -1512,7 +1512,7 @@ namespace pen
         if (texture_index == 0)
             return;
 
-        resource_allocation &res = resource_pool[texture_index];
+        resource_allocation& res = resource_pool[texture_index];
 
         CHECK_CALL(glActiveTexture(GL_TEXTURE0 + resource_slot));
 
@@ -1543,7 +1543,7 @@ namespace pen
         if (sampler_index == 0)
             return;
 
-        auto *sampler_state = resource_pool[sampler_index].sampler_state;
+        auto* sampler_state = resource_pool[sampler_index].sampler_state;
 
         // handle unmipped textures or textures with missing mips
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip));
@@ -1599,9 +1599,9 @@ namespace pen
         }
     }
 
-    void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params &rscp, u32 resource_slot)
+    void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
     {
-        auto &rs = resource_pool[resource_slot].raster_state;
+        auto& rs = resource_pool[resource_slot].raster_state;
 
         rs = {0};
 
@@ -1625,7 +1625,7 @@ namespace pen
     }
 
     viewport g_current_vp;
-    void direct::renderer_set_viewport(const viewport &vp)
+    void direct::renderer_set_viewport(const viewport& vp)
     {
         g_current_vp = vp;
 
@@ -1633,22 +1633,22 @@ namespace pen
         CHECK_CALL(glDepthRangef(vp.min_depth, vp.max_depth));
     }
 
-    void direct::renderer_set_scissor_rect(const rect &r)
+    void direct::renderer_set_scissor_rect(const rect& r)
     {
         f32 top = g_current_vp.height - r.bottom;
         CHECK_CALL(glScissor(r.left, top, r.right - r.left, r.bottom - r.top));
     }
 
-    void direct::renderer_create_blend_state(const blend_creation_params &bcp, u32 resource_slot)
+    void direct::renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
     {
-        resource_pool[resource_slot].blend_state = (blend_creation_params *)pen::memory_alloc(sizeof(blend_creation_params));
+        resource_pool[resource_slot].blend_state = (blend_creation_params*)pen::memory_alloc(sizeof(blend_creation_params));
 
-        blend_creation_params *blend_state = resource_pool[resource_slot].blend_state;
+        blend_creation_params* blend_state = resource_pool[resource_slot].blend_state;
 
         *blend_state = bcp;
 
         blend_state->render_targets =
-            (render_target_blend *)pen::memory_alloc(sizeof(render_target_blend) * bcp.num_render_targets);
+            (render_target_blend*)pen::memory_alloc(sizeof(render_target_blend) * bcp.num_render_targets);
 
         for (s32 i = 0; i < bcp.num_render_targets; ++i)
         {
@@ -1658,11 +1658,11 @@ namespace pen
 
     void direct::renderer_set_blend_state(u32 blend_state_index)
     {
-        auto *blend_state = resource_pool[blend_state_index].blend_state;
+        auto* blend_state = resource_pool[blend_state_index].blend_state;
 
         for (s32 i = 0; i < blend_state->num_render_targets; ++i)
         {
-            auto &rt_blend = blend_state->render_targets[i];
+            auto& rt_blend = blend_state->render_targets[i];
 
             if (i == 0)
             {
@@ -1692,22 +1692,22 @@ namespace pen
 
     void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
     {
-        resource_allocation &res = resource_pool[buffer_index];
+        resource_allocation& res = resource_pool[buffer_index];
 
         CHECK_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle));
     }
 
-    void direct::renderer_update_buffer(u32 buffer_index, const void *data, u32 data_size, u32 offset)
+    void direct::renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
-        resource_allocation &res = resource_pool[buffer_index];
+        resource_allocation& res = resource_pool[buffer_index];
 
         CHECK_CALL(glBindBuffer(res.type, res.handle));
 
-        void *mapped_data = CHECK_CALL(glMapBuffer(res.type, GL_WRITE_ONLY));
+        void* mapped_data = CHECK_CALL(glMapBuffer(res.type, GL_WRITE_ONLY));
 
         if (mapped_data)
         {
-            c8 *mapped_offset = ((c8 *)mapped_data) + offset;
+            c8* mapped_offset = ((c8*)mapped_data) + offset;
             pen::memory_cpy(mapped_offset, data, data_size);
         }
 
@@ -1716,9 +1716,9 @@ namespace pen
         CHECK_CALL(glBindBuffer(res.type, 0));
     }
 
-    void direct::renderer_read_back_resource(const resource_read_back_params &rrbp)
+    void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
     {
-        resource_allocation &res = resource_pool[rrbp.resource_index];
+        resource_allocation& res = resource_pool[rrbp.resource_index];
 
         GLuint t = res.type;
         if (t == RES_TEXTURE || t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)
@@ -1732,7 +1732,7 @@ namespace pen
 
             CHECK_CALL(glBindTexture(GL_TEXTURE_2D, res.texture.handle));
 
-            void *data = pen::memory_alloc(rrbp.data_size);
+            void* data = pen::memory_alloc(rrbp.data_size);
             CHECK_CALL(glGetTexImage(GL_TEXTURE_2D, 0, format, type, data));
 
             rrbp.call_back_function(data, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
@@ -1742,7 +1742,7 @@ namespace pen
         else if (t == GL_ELEMENT_ARRAY_BUFFER || t == GL_UNIFORM_BUFFER || t == GL_ARRAY_BUFFER)
         {
             CHECK_CALL(glBindBuffer(t, res.handle));
-            void *map = glMapBuffer(t, GL_READ_ONLY);
+            void* map = glMapBuffer(t, GL_READ_ONLY);
 
             rrbp.call_back_function(map, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
 
@@ -1750,16 +1750,16 @@ namespace pen
         }
     }
 
-    void direct::renderer_create_depth_stencil_state(const depth_stencil_creation_params &dscp, u32 resource_slot)
+    void direct::renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
     {
-        resource_pool[resource_slot].depth_stencil = (depth_stencil_creation_params *)pen::memory_alloc(sizeof(dscp));
+        resource_pool[resource_slot].depth_stencil = (depth_stencil_creation_params*)pen::memory_alloc(sizeof(dscp));
 
         pen::memory_cpy(resource_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-        resource_allocation &res = resource_pool[depth_stencil_state];
+        resource_allocation& res = resource_pool[depth_stencil_state];
 
         if (res.depth_stencil->depth_enable)
         {
@@ -1776,7 +1776,7 @@ namespace pen
 
     void direct::renderer_release_shader(u32 shader_index, u32 shader_type)
     {
-        resource_allocation &res = resource_pool[shader_index];
+        resource_allocation& res = resource_pool[shader_index];
         CHECK_CALL(glDeleteShader(res.handle));
 
         res.handle = 0;
@@ -1784,7 +1784,7 @@ namespace pen
 
     void direct::renderer_release_buffer(u32 buffer_index)
     {
-        resource_allocation &res = resource_pool[buffer_index];
+        resource_allocation& res = resource_pool[buffer_index];
         CHECK_CALL(glDeleteBuffers(1, &res.handle));
 
         res.handle = 0;
@@ -1792,7 +1792,7 @@ namespace pen
 
     void direct::renderer_release_texture(u32 texture_index)
     {
-        resource_allocation &res = resource_pool[texture_index];
+        resource_allocation& res = resource_pool[texture_index];
         CHECK_CALL(glDeleteTextures(1, &res.handle));
 
         res.handle = 0;
@@ -1805,7 +1805,7 @@ namespace pen
 
     void direct::renderer_release_blend_state(u32 blend_state)
     {
-        resource_allocation &res = resource_pool[blend_state];
+        resource_allocation& res = resource_pool[blend_state];
 
         if (res.blend_state)
         {
@@ -1822,7 +1822,7 @@ namespace pen
     void direct::renderer_release_render_target(u32 render_target)
     {
         // remove from managed rt
-        managed_render_target *erased = nullptr;
+        managed_render_target* erased = nullptr;
 
         u32 num_man_rt = sb_count(k_managed_render_targets);
         for (s32 i = num_man_rt - 1; i >= 0; --i)
@@ -1836,7 +1836,7 @@ namespace pen
         sb_free(k_managed_render_targets);
         k_managed_render_targets = erased;
 
-        resource_allocation &res = resource_pool[render_target];
+        resource_allocation& res = resource_pool[render_target];
 
         if (res.render_target.texture.handle > 0)
         {
@@ -1853,21 +1853,21 @@ namespace pen
 
     void direct::renderer_release_input_layout(u32 input_layout)
     {
-        resource_allocation &res = resource_pool[input_layout];
+        resource_allocation& res = resource_pool[input_layout];
 
         pen::memory_free(res.input_layout);
     }
 
     void direct::renderer_release_sampler(u32 sampler)
     {
-        resource_allocation &res = resource_pool[sampler];
+        resource_allocation& res = resource_pool[sampler];
 
         pen::memory_free(res.sampler_state);
     }
 
     void direct::renderer_release_depth_stencil_state(u32 depth_stencil_state)
     {
-        resource_allocation &res = resource_pool[depth_stencil_state];
+        resource_allocation& res = resource_pool[depth_stencil_state];
 
         pen::memory_free(res.depth_stencil);
     }
@@ -1878,7 +1878,7 @@ namespace pen
 
     void direct::renderer_release_program(u32 program)
     {
-        resource_allocation &res = resource_pool[program];
+        resource_allocation& res = resource_pool[program];
 
         CHECK_CALL(glDeleteProgram(res.shader_program->program));
     }
@@ -1909,7 +1909,7 @@ namespace pen
         resource_pool[dest] = resource_pool[src];
     }
 
-    u32 direct::renderer_initialise(void *, u32, u32)
+    u32 direct::renderer_initialise(void*, u32, u32)
     {
         // todo renderer caps
         // const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);
@@ -1922,7 +1922,7 @@ namespace pen
         // todo device / stray resource shutdown
     }
 
-    const c8 *renderer_get_shader_platform()
+    const c8* renderer_get_shader_platform()
     {
         return "glsl";
     }

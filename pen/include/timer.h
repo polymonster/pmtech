@@ -10,7 +10,7 @@ namespace pen
 
     void timer_system_intialise();
 
-    u32 timer_create(const c8 *name);
+    u32 timer_create(const c8* name);
     void timer_start(u32 index);
     void timer_stop(u32 index);
     void timer_reset(u32 index);

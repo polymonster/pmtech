@@ -27,22 +27,22 @@ namespace put
 
     namespace ces
     {
-        static std::vector<geometry_resource *> k_geometry_resources;
-        static std::vector<material_resource *> k_material_resources;
+        static std::vector<geometry_resource*> k_geometry_resources;
+        static std::vector<material_resource*> k_material_resources;
 
-        void add_material_resource(material_resource *mr)
+        void add_material_resource(material_resource* mr)
         {
             k_material_resources.push_back(mr);
         }
 
-        void add_geometry_resource(geometry_resource *gr)
+        void add_geometry_resource(geometry_resource* gr)
         {
             k_geometry_resources.push_back(gr);
         }
 
-        geometry_resource *get_geometry_resource(hash_id hash)
+        geometry_resource* get_geometry_resource(hash_id hash)
         {
-            for (auto *g : k_geometry_resources)
+            for (auto* g : k_geometry_resources)
             {
                 if (hash == g->hash)
                 {
@@ -53,9 +53,9 @@ namespace put
             return nullptr;
         }
 
-        void instantiate_constraint(entity_scene *scene, u32 node_index)
+        void instantiate_constraint(entity_scene* scene, u32 node_index)
         {
-            physics::constraint_params &cp = scene->physics_data[node_index].constraint;
+            physics::constraint_params& cp = scene->physics_data[node_index].constraint;
 
             // hinge
             s32 rb = cp.rb_indices[0];
@@ -67,10 +67,10 @@ namespace put
             scene->entities[node_index] |= CMP_CONSTRAINT;
         }
 
-        void instantiate_rigid_body(entity_scene *scene, u32 node_index)
+        void instantiate_rigid_body(entity_scene* scene, u32 node_index)
         {
             u32 s = node_index;
-            physics::rigid_body_params &rb = scene->physics_data[s].rigid_body;
+            physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
 
             vec3f min = scene->bounding_volumes[s].min_extents;
             vec3f max = scene->bounding_volumes[s].max_extents;
@@ -110,9 +110,9 @@ namespace put
             scene->entities[s] |= CMP_PHYSICS;
         }
 
-        void instantiate_geometry(geometry_resource *gr, entity_scene *scene, s32 node_index)
+        void instantiate_geometry(geometry_resource* gr, entity_scene* scene, s32 node_index)
         {
-            cmp_geometry *instance = &scene->geometries[node_index];
+            cmp_geometry* instance = &scene->geometries[node_index];
 
             instance->position_buffer = gr->position_buffer;
             instance->vertex_buffer = gr->vertex_buffer;
@@ -123,7 +123,7 @@ namespace put
             instance->vertex_size = gr->vertex_size;
             instance->p_skin = gr->p_skin;
 
-            cmp_bounding_volume *bv = &scene->bounding_volumes[node_index];
+            cmp_bounding_volume* bv = &scene->bounding_volumes[node_index];
 
             bv->min_extents = gr->min_extents;
             bv->max_extents = gr->max_extents;
@@ -142,7 +142,7 @@ namespace put
                 instance->vertex_shader_class = ID_VERTEX_CLASS_SKINNED;
         }
 
-        void instantiate_model_cbuffer(entity_scene *scene, s32 node_index)
+        void instantiate_model_cbuffer(entity_scene* scene, s32 node_index)
         {
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -154,10 +154,10 @@ namespace put
             scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
         }
 
-        void instantiate_model_pre_skin(entity_scene *scene, s32 node_index)
+        void instantiate_model_pre_skin(entity_scene* scene, s32 node_index)
         {
-            cmp_geometry &geom = scene->geometries[node_index];
-            cmp_pre_skin &pre_skin = scene->pre_skin[node_index];
+            cmp_geometry& geom = scene->geometries[node_index];
+            cmp_pre_skin& pre_skin = scene->pre_skin[node_index];
 
             u32 num_verts = geom.num_vertices;
 
@@ -192,13 +192,13 @@ namespace put
             geom.vertex_shader_class = ID_VERTEX_CLASS_BASIC;
         }
 
-        void instantiate_anim_controller(entity_scene *scene, s32 node_index)
+        void instantiate_anim_controller(entity_scene* scene, s32 node_index)
         {
-            cmp_geometry *geom = &scene->geometries[node_index];
+            cmp_geometry* geom = &scene->geometries[node_index];
 
             if (geom->p_skin)
             {
-                cmp_anim_controller &controller = scene->anim_controller[node_index];
+                cmp_anim_controller& controller = scene->anim_controller[node_index];
 
                 std::vector<s32> joint_indices;
                 build_heirarchy_node_list(scene, node_index, joint_indices);
@@ -226,7 +226,7 @@ namespace put
             }
         }
 
-        void load_geometry_resource(const c8 *filename, const c8 *geometry_name, const c8 *data)
+        void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)
         {
             // generate hash
             pen::hash_murmur hm;
@@ -244,7 +244,7 @@ namespace put
                 }
             }
 
-            u32 *p_reader = (u32 *)data;
+            u32* p_reader = (u32*)data;
             u32 version = *p_reader++;
             u32 num_meshes = *p_reader++;
 
@@ -254,7 +254,7 @@ namespace put
             std::vector<Str> mat_names;
             for (u32 submesh = 0; submesh < num_meshes; ++submesh)
             {
-                mat_names.push_back(read_parsable_string((const u32 **)&p_reader));
+                mat_names.push_back(read_parsable_string((const u32**)&p_reader));
             }
 
             for (u32 submesh = 0; submesh < num_meshes; ++submesh)
@@ -265,7 +265,7 @@ namespace put
                 hm.add(submesh);
                 hash_id sub_hash = hm.end();
 
-                geometry_resource *p_geometry = new geometry_resource;
+                geometry_resource* p_geometry = new geometry_resource;
 
                 p_geometry->p_skin = nullptr;
                 p_geometry->file_hash = file_hash;
@@ -297,7 +297,7 @@ namespace put
                 {
                     vertex_size = sizeof(vertex_model_skinned);
 
-                    p_geometry->p_skin = (cmp_skin *)pen::memory_alloc(sizeof(cmp_skin));
+                    p_geometry->p_skin = (cmp_skin*)pen::memory_alloc(sizeof(cmp_skin));
 
                     pen::memory_cpy(&p_geometry->p_skin->bind_shape_matrix, p_reader, sizeof(mat4));
                     p_reader += 16;
@@ -338,7 +338,7 @@ namespace put
                 bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
                 bcp.cpu_access_flags = 0;
                 bcp.buffer_size = sizeof(vertex_position) * num_pos_verts;
-                bcp.data = (void *)p_reader;
+                bcp.data = (void*)p_reader;
 
                 // keep a cpu copy of position data
                 p_geometry->cpu_position_buffer = pen::memory_alloc(bcp.buffer_size);
@@ -348,7 +348,7 @@ namespace put
                 {
                     for (u32 v = 0; v < num_pos_verts; ++v)
                     {
-                        vertex_position vp = ((vertex_position *)p_geometry->cpu_position_buffer)[v];
+                        vertex_position vp = ((vertex_position*)p_geometry->cpu_position_buffer)[v];
                         dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "Pos: %f, %f, %f", vp.x, vp.y, vp.z);
                     }
                 }
@@ -358,7 +358,7 @@ namespace put
                 p_reader += bcp.buffer_size / sizeof(f32);
 
                 bcp.buffer_size = vertex_size * num_verts;
-                bcp.data = (void *)p_reader;
+                bcp.data = (void*)p_reader;
 
                 p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -368,7 +368,7 @@ namespace put
                 bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
                 bcp.cpu_access_flags = 0;
                 bcp.buffer_size = index_size * num_indices;
-                bcp.data = (void *)p_reader;
+                bcp.data = (void*)p_reader;
 
                 p_geometry->num_indices = num_indices;
                 p_geometry->index_type = index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
@@ -378,7 +378,7 @@ namespace put
                 p_geometry->cpu_index_buffer = pen::memory_alloc(bcp.buffer_size);
                 pen::memory_cpy(p_geometry->cpu_index_buffer, bcp.data, bcp.buffer_size);
 
-                p_reader = (u32 *)((c8 *)p_reader + bcp.buffer_size);
+                p_reader = (u32*)((c8*)p_reader + bcp.buffer_size);
 
                 p_reader += num_collision_floats;
 
@@ -386,9 +386,9 @@ namespace put
             }
         }
 
-        material_resource *get_material_resource(hash_id hash)
+        material_resource* get_material_resource(hash_id hash)
         {
-            for (auto *m : k_material_resources)
+            for (auto* m : k_material_resources)
             {
                 if (m->hash == hash)
                 {
@@ -399,9 +399,9 @@ namespace put
             return nullptr;
         }
 
-        void instantiate_material(material_resource *mr, entity_scene *scene, u32 node_index)
+        void instantiate_material(material_resource* mr, entity_scene* scene, u32 node_index)
         {
-            cmp_material *instance = &scene->materials[node_index];
+            cmp_material* instance = &scene->materials[node_index];
 
             instance->diffuse_rgb_shininess = mr->diffuse_rgb_shininess;
             instance->specular_rgb_reflect = mr->specular_rgb_reflect;
@@ -437,10 +437,10 @@ namespace put
             bake_material_handles(scene, node_index);
         }
 
-        void bake_material_handles(entity_scene *scene, u32 node_index)
+        void bake_material_handles(entity_scene* scene, u32 node_index)
         {
-            cmp_material *material = &scene->materials[node_index];
-            cmp_geometry *geometry = &scene->geometries[node_index];
+            cmp_material* material = &scene->materials[node_index];
+            cmp_geometry* geometry = &scene->geometries[node_index];
 
             if (!material->resource)
                 return;
@@ -457,9 +457,9 @@ namespace put
         extern std::vector<entity_scene_instance> k_scenes;
         void bake_material_handles()
         {
-            for (auto &si : k_scenes)
+            for (auto& si : k_scenes)
             {
-                entity_scene *scene = si.scene;
+                entity_scene* scene = si.scene;
 
                 for (u32 n = 0; n < scene->nodes_size; ++n)
                 {
@@ -469,7 +469,7 @@ namespace put
             }
         }
 
-        void load_material_resource(const c8 *filename, const c8 *material_name, const c8 *data)
+        void load_material_resource(const c8* filename, const c8* material_name, const c8* data)
         {
             pen::hash_murmur hm;
             hm.begin();
@@ -481,14 +481,14 @@ namespace put
                 if (k_material_resources[m]->hash == hash)
                     return;
 
-            const u32 *p_reader = (u32 *)data;
+            const u32* p_reader = (u32*)data;
 
             u32 version = *p_reader++;
 
             if (version < 1)
                 return;
 
-            material_resource *p_mat = new material_resource;
+            material_resource* p_mat = new material_resource;
 
             p_mat->filename = filename;
             p_mat->material_name = material_name;
@@ -538,7 +538,7 @@ namespace put
 
         static std::vector<animation_resource> k_animations;
 
-        animation_resource *get_animation_resource(anim_handle h)
+        animation_resource* get_animation_resource(anim_handle h)
         {
             if (h >= k_animations.size())
                 return nullptr;
@@ -546,7 +546,7 @@ namespace put
             return &k_animations[h];
         }
 
-        anim_handle load_pma(const c8 *filename)
+        anim_handle load_pma(const c8* filename)
         {
             Str pd = put::dev_ui::get_program_preference_filename("project_dir");
 
@@ -564,7 +564,7 @@ namespace put
                 }
             }
 
-            void *anim_file;
+            void* anim_file;
             u32 anim_file_size;
 
             pen_error err = pen::filesystem_read_file_to_buffer(filename, &anim_file, anim_file_size);
@@ -575,7 +575,7 @@ namespace put
                 return PEN_INVALID_HANDLE;
             }
 
-            const u32 *p_u32reader = (u32 *)anim_file;
+            const u32* p_u32reader = (u32*)anim_file;
 
             u32 version = *p_u32reader++;
 
@@ -586,7 +586,7 @@ namespace put
             }
 
             k_animations.push_back(animation_resource());
-            animation_resource &new_animation = k_animations.back();
+            animation_resource& new_animation = k_animations.back();
 
             new_animation.name = stipped_filename;
             new_animation.id_name = filename_hash;
@@ -615,7 +615,7 @@ namespace put
                     if (type > 1)
                         continue;
 
-                    f32 *data = new f32[num_floats];
+                    f32* data = new f32[num_floats];
                     pen::memory_cpy(data, p_u32reader, sizeof(f32) * num_floats);
 
                     p_u32reader += num_floats;
@@ -627,7 +627,7 @@ namespace put
                         new_animation.channels[i].times = data;
                         break;
                     case A_TRANSFORM:
-                        new_animation.channels[i].matrices = (mat4 *)data;
+                        new_animation.channels[i].matrices = (mat4*)data;
                         break;
                     default:
                         break;
@@ -636,7 +636,7 @@ namespace put
 
                 for (s32 t = 0; t < new_animation.channels[i].num_frames; ++t)
                 {
-                    f32 *times = new_animation.channels[i].times;
+                    f32* times = new_animation.channels[i].times;
                     if (t > 0)
                     {
                         f32 interval = times[t] - times[t - 1];
@@ -657,12 +657,12 @@ namespace put
             Str name;
         };
 
-        s32 load_pmm(const c8 *filename, entity_scene *scene, u32 load_flags)
+        s32 load_pmm(const c8* filename, entity_scene* scene, u32 load_flags)
         {
             if (scene)
                 scene->flags |= INVALIDATE_SCENE_TREE;
 
-            void *model_file;
+            void* model_file;
             u32 model_file_size;
 
             pen_error err = pen::filesystem_read_file_to_buffer(filename, &model_file, model_file_size);
@@ -674,7 +674,7 @@ namespace put
                 return PEN_INVALID_HANDLE;
             }
 
-            const u32 *p_u32reader = (u32 *)model_file;
+            const u32* p_u32reader = (u32*)model_file;
 
             //
             u32 num_scene = *p_u32reader++;
@@ -708,9 +708,9 @@ namespace put
                 geometry_names.push_back(name);
             }
 
-            c8 *p_data_start = (c8 *)p_u32reader;
+            c8* p_data_start = (c8*)p_u32reader;
 
-            p_u32reader = (u32 *)p_data_start + scene_offsets[0];
+            p_u32reader = (u32*)p_data_start + scene_offsets[0];
             u32 version = *p_u32reader++;
             u32 num_import_nodes = *p_u32reader++;
 
@@ -725,8 +725,8 @@ namespace put
             {
                 for (u32 m = 0; m < num_materials; ++m)
                 {
-                    u32 *p_mat_data = (u32 *)(p_data_start + material_offsets[m]);
-                    load_material_resource(filename, material_names[m].c_str(), (const c8 *)p_mat_data);
+                    u32* p_mat_data = (u32*)(p_data_start + material_offsets[m]);
+                    load_material_resource(filename, material_names[m].c_str(), (const c8*)p_mat_data);
                 }
             }
 
@@ -734,8 +734,8 @@ namespace put
             {
                 for (u32 g = 0; g < num_geom; ++g)
                 {
-                    u32 *p_geom_data = (u32 *)(p_data_start + geom_offsets[g]);
-                    load_geometry_resource(filename, geometry_names[g].c_str(), (const c8 *)p_geom_data);
+                    u32* p_geom_data = (u32*)(p_data_start + geom_offsets[g]);
+                    load_geometry_resource(filename, geometry_names[g].c_str(), (const c8*)p_geom_data);
                 }
             }
 
@@ -925,7 +925,7 @@ namespace put
                         {
                             inserted_nodes++;
                             clone_node(scene, current_node, dest, current_node, CLONE_INSTANTIATE, vec3f::zero(),
-                                       (const c8 *)node_suffix.c_str());
+                                       (const c8*)node_suffix.c_str());
                             scene->local_matrices[dest] = mat4::create_identity();
 
                             // child geometry which will inherit any skinning from its parent
@@ -942,7 +942,7 @@ namespace put
 
                         scene->id_geometry[dest] = geom_hash;
 
-                        geometry_resource *gr = get_geometry_resource(geom_hash);
+                        geometry_resource* gr = get_geometry_resource(geom_hash);
 
                         if (gr)
                         {
@@ -952,7 +952,7 @@ namespace put
 
                             // find mat name from symbol
                             Str mat_name = "";
-                            for (auto &ms : mesh_material_names)
+                            for (auto& ms : mesh_material_names)
                                 if (ms.symbol == gr->material_id_name)
                                     mat_name = ms.name;
 
@@ -961,7 +961,7 @@ namespace put
                             hm.add(mat_name.c_str(), mat_name.length());
                             hash_id material_hash = hm.end();
 
-                            material_resource *mr = get_material_resource(material_hash);
+                            material_resource* mr = get_material_resource(material_hash);
 
                             if (mr)
                             {
@@ -1013,13 +1013,13 @@ namespace put
             return nodes_start;
         }
 
-        void enumerate_resources(bool *open)
+        void enumerate_resources(bool* open)
         {
             ImGui::Begin("Resource Browser", open);
 
             if (ImGui::CollapsingHeader("Geometry"))
             {
-                for (auto *g : k_geometry_resources)
+                for (auto* g : k_geometry_resources)
                 {
                     ImGui::Text("Source: %s", g->filename.c_str());
                     ImGui::Text("Geometry: %s", g->geometry_name.c_str());
@@ -1035,7 +1035,7 @@ namespace put
 
             if (ImGui::CollapsingHeader("Materials"))
             {
-                for (auto *m : k_material_resources)
+                for (auto* m : k_material_resources)
                 {
                     for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
                     {

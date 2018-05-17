@@ -60,7 +60,7 @@ namespace pen
         mouse_state_.buttons[button_index] = 0;
     }
 
-    const pen::mouse_state &input_get_mouse_state()
+    const pen::mouse_state& input_get_mouse_state()
     {
         return mouse_state_;
     }
@@ -106,7 +106,7 @@ namespace pen
         show_cursor = show;
     }
 
-    const c8 *input_get_key_str(u32 key_index)
+    const c8* input_get_key_str(u32 key_index)
     {
         switch (key_index)
         {

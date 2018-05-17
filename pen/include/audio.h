@@ -56,17 +56,17 @@ namespace pen
     {
         s32 length;
         s32 num_channels;
-        f32 *spectrum[32];
+        f32* spectrum[32];
     };
 
     // Threading
 
-    PEN_TRV audio_thread_function(void *params);
+    PEN_TRV audio_thread_function(void* params);
     void audio_consume_command_buffer();
 
     // Creation
-    u32 audio_create_stream(const c8 *filename);
-    u32 audio_create_sound(const c8 *filename);
+    u32 audio_create_stream(const c8* filename);
+    u32 audio_create_sound(const c8* filename);
     u32 audio_create_channel_for_sound(const u32 sound_index);
     u32 audio_create_channel_group();
     void audio_release_resource(u32 index);
@@ -89,12 +89,12 @@ namespace pen
     void audio_dsp_set_gain(const u32 dsp_index, const f32 gain);
 
     // Accessors
-    pen_error audio_channel_get_state(const u32 channel_index, audio_channel_state *state);
-    pen_error audio_channel_get_sound_file_info(const u32 sound_index, audio_sound_file_info *info);
-    pen_error audio_group_get_state(const u32 group_index, audio_group_state *state);
-    pen_error audio_dsp_get_spectrum(const u32 spectrum_dsp, audio_fft_spectrum *spectrum);
-    pen_error audio_dsp_get_three_band_eq(const u32 eq_dsp, audio_eq_state *eq_state);
-    pen_error audio_dsp_get_gain(const u32 dsp_index, f32 *gain);
+    pen_error audio_channel_get_state(const u32 channel_index, audio_channel_state* state);
+    pen_error audio_channel_get_sound_file_info(const u32 sound_index, audio_sound_file_info* info);
+    pen_error audio_group_get_state(const u32 group_index, audio_group_state* state);
+    pen_error audio_dsp_get_spectrum(const u32 spectrum_dsp, audio_fft_spectrum* spectrum);
+    pen_error audio_dsp_get_three_band_eq(const u32 eq_dsp, audio_eq_state* eq_state);
+    pen_error audio_dsp_get_gain(const u32 dsp_index, f32* gain);
 
     namespace direct
     {
@@ -106,8 +106,8 @@ namespace pen
         void audio_system_update();
 
         // Creation
-        u32 audio_create_stream(const c8 *filename, u32 resource_slot);
-        u32 audio_create_sound(const c8 *filename, u32 resource_slot);
+        u32 audio_create_stream(const c8* filename, u32 resource_slot);
+        u32 audio_create_sound(const c8* filename, u32 resource_slot);
         u32 audio_create_channel_for_sound(u32 sound_index, u32 resource_slot);
         u32 audio_create_channel_group(u32 resource_slot);
         u32 audio_release_resource(u32 index);

@@ -26,11 +26,11 @@ typedef struct textured_vertex
     float u, v;
 } textured_vertex;
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     u32 timer_test = pen::timer_create("test");
@@ -62,7 +62,7 @@ PEN_TRV pen::user_entry(void *params)
     bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
     bcp.buffer_size = sizeof(float) * 16;
-    bcp.data = (void *)nullptr;
+    bcp.data = (void*)nullptr;
 
     u32 cb_2d_view = pen::renderer_create_buffer(bcp);
 

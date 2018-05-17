@@ -29,7 +29,7 @@ pen::window_creation_params pen_window{
 
 namespace physics
 {
-    extern PEN_TRV physics_thread_main(void *params);
+    extern PEN_TRV physics_thread_main(void* params);
 }
 
 void mrt_example_ui()
@@ -42,14 +42,14 @@ void mrt_example_ui()
     int c = 0;
     for (hash_id id : rt_ids)
     {
-        const pmfx::render_target *r = pmfx::get_render_target(id);
+        const pmfx::render_target* r = pmfx::get_render_target(id);
 
         f32 w, h;
         pmfx::get_render_target_dimensions(r, w, h);
 
         ImVec2 size(w / 2.5, h / 2.5);
 
-        ImGui::Image((void *)&r->handle, size);
+        ImGui::Image((void*)&r->handle, size);
 
         if (c == 0)
             ImGui::SameLine();
@@ -60,12 +60,12 @@ void mrt_example_ui()
     ImGui::End();
 }
 
-void create_scene_objects(ces::entity_scene *scene)
+void create_scene_objects(ces::entity_scene* scene)
 {
     clear_scene(scene);
 
-    material_resource *default_material = get_material_resource(PEN_HASH("default_material"));
-    geometry_resource *box_resource = get_geometry_resource(PEN_HASH("cube"));
+    material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+    geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
 
     // add light
     u32 light = get_new_node(scene);
@@ -124,11 +124,11 @@ void create_scene_objects(ces::entity_scene *scene)
     }
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     pen::thread_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
@@ -147,7 +147,7 @@ PEN_TRV pen::user_entry(void *params)
     cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
-    put::ces::entity_scene *main_scene = put::ces::create_scene("main_scene");
+    put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;

@@ -18,7 +18,7 @@ namespace put
 
         static pen::json k_program_preferences;
         static Str k_program_prefs_filename;
-        static app_console *kp_dev_console;
+        static app_console* kp_dev_console;
         bool k_console_open = false;
 
         void load_program_preferences()
@@ -38,7 +38,7 @@ namespace put
             ofs.close();
         }
 
-        void set_last_used_directory(Str &dir)
+        void set_last_used_directory(Str& dir)
         {
             // make a copy of the string to format
             Str formatted = dir;
@@ -70,21 +70,21 @@ namespace put
             save_program_preferences();
         }
 
-        void set_program_preference(const c8 *name, f32 val)
+        void set_program_preference(const c8* name, f32 val)
         {
             Str str_val;
             str_val.appendf("%f", val);
             set_program_preference(name, str_val);
         }
 
-        void set_program_preference(const c8 *name, s32 val)
+        void set_program_preference(const c8* name, s32 val)
         {
             Str str_val;
             str_val.appendf("%i", val);
             set_program_preference(name, str_val);
         }
 
-        void set_program_preference(const c8 *name, bool val)
+        void set_program_preference(const c8* name, bool val)
         {
             Str str_val = "false";
             if (val)
@@ -93,13 +93,13 @@ namespace put
             set_program_preference(name, str_val);
         }
 
-        void set_program_preference(const c8 *name, Str val)
+        void set_program_preference(const c8* name, Str val)
         {
             k_program_preferences.set(name, val);
             save_program_preferences();
         }
 
-        void set_program_preference_filename(const c8 *name, Str val)
+        void set_program_preference_filename(const c8* name, Str val)
         {
             put::str_replace_chars(val, ':', '@');
             k_program_preferences.set(name, val);
@@ -107,12 +107,12 @@ namespace put
             save_program_preferences();
         }
 
-        pen::json get_program_preference(const c8 *name)
+        pen::json get_program_preference(const c8* name)
         {
             return k_program_preferences[name];
         }
 
-        Str get_program_preference_filename(const c8 *name)
+        Str get_program_preference_filename(const c8* name)
         {
             Str temp = k_program_preferences[name].as_str();
             put::str_replace_chars(temp, '@', ':');
@@ -120,10 +120,10 @@ namespace put
             return temp;
         }
 
-        const c8 **get_last_used_directory(s32 &directory_depth)
+        const c8** get_last_used_directory(s32& directory_depth)
         {
             static const s32 max_directory_depth = 32;
-            static c8 *directories[max_directory_depth];
+            static c8* directories[max_directory_depth];
 
             if (k_program_preferences.type() != JSMN_UNDEFINED)
             {
@@ -157,7 +157,7 @@ namespace put
                             if (directories[directory_depth])
                                 pen::memory_free(directories[directory_depth]);
 
-                            directories[directory_depth] = (c8 *)pen::memory_alloc((dir_pos - prev_pos) + 1);
+                            directories[directory_depth] = (c8*)pen::memory_alloc((dir_pos - prev_pos) + 1);
 
                             s32 j = 0;
                             for (s32 i = prev_pos; i < dir_pos; ++i)
@@ -179,19 +179,19 @@ namespace put
                         }
                     }
 
-                    return (const c8 **)directories;
+                    return (const c8**)directories;
                 }
             }
 
             s32 default_depth = 0;
-            const c8 **default_dir = pen::filesystem_get_user_directory(default_depth);
+            const c8** default_dir = pen::filesystem_get_user_directory(default_depth);
 
             directory_depth = default_depth;
 
             return default_dir;
         }
 
-        const c8 *file_browser(bool &dialog_open, u32 flags, s32 num_filetypes, ...)
+        const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes, ...)
         {
             static bool initialise = true;
             static s32 current_depth = 1;
@@ -209,13 +209,13 @@ namespace put
             if (initialise)
             {
                 s32 default_depth = 0;
-                const c8 **default_dir = get_last_used_directory(default_depth);
+                const c8** default_dir = get_last_used_directory(default_depth);
 
                 selected_path = put::dev_ui::get_program_preference_filename("last_used_directory");
 
                 pen::filesystem_enum_volumes(fs_enumeration);
 
-                pen::fs_tree_node *fs_iter = &fs_enumeration;
+                pen::fs_tree_node* fs_iter = &fs_enumeration;
 
                 for (s32 c = 0; c < default_depth; ++c)
                 {
@@ -252,7 +252,7 @@ namespace put
             {
                 ImGui::Text("%s", selected_path.c_str());
 
-                const c8 *return_value = nullptr;
+                const c8* return_value = nullptr;
 
                 ImGuiButtonFlags button_flags = 0;
                 if (selected_path == "")
@@ -284,23 +284,23 @@ namespace put
                         va_list wildcards;
                         va_start(wildcards, num_filetypes);
 
-                        const c8 *ft = va_arg(wildcards, const char *);
+                        const c8* ft = va_arg(wildcards, const char*);
 
                         s32 ext_len = pen::string_length(ft);
 
                         s32 offset = 0;
-                        const c8 *fti = ft + ext_len - 1;
+                        const c8* fti = ft + ext_len - 1;
                         while (*fti-- != '.')
                         {
                             ext_len--;
                             offset++;
                         }
 
-                        const c8 *fts = ft + offset;
+                        const c8* fts = ft + offset;
 
                         s32 filename_len = selected_path_and_file.length();
 
-                        const c8 *fn = &selected_path_and_file.c_str()[filename_len - ext_len];
+                        const c8* fn = &selected_path_and_file.c_str()[filename_len - ext_len];
 
                         if (pen::string_compare(fts, fn) != 0)
                         {
@@ -341,7 +341,7 @@ namespace put
                 ImGui::Columns(std::min<s32>(max_depth, current_depth), "directories");
 
                 ImGui::Separator();
-                pen::fs_tree_node *fs_iter = &fs_enumeration;
+                pen::fs_tree_node* fs_iter = &fs_enumeration;
 
                 for (s32 d = 0; d < current_depth; ++d)
                 {
@@ -441,7 +441,7 @@ namespace put
             return nullptr;
         }
 
-        bool state_button(const c8 *text, bool state_active)
+        bool state_button(const c8* text, bool state_active)
         {
             ImVec4 button_col = (&ImGui::GetStyle())->Colors[ImGuiCol_Button];
 
@@ -465,7 +465,7 @@ namespace put
             return false;
         }
 
-        void set_tooltip(const c8 *fmt, ...)
+        void set_tooltip(const c8* fmt, ...)
         {
             static f32 k_tooltip_timer = 0.0f;
             static const f32 k_delay = 1.0f;
@@ -498,7 +498,7 @@ namespace put
         struct console_item
         {
             u32 level;
-            c8 *message;
+            c8* message;
         };
 
         struct app_console
@@ -506,9 +506,9 @@ namespace put
             char InputBuf[256];
             ImVector<console_item> Items;
             bool ScrollToBottom;
-            ImVector<char *> History;
+            ImVector<char*> History;
             int HistoryPos; // -1: new line, 0..History.Size-1 browsing history.
-            ImVector<const char *> Commands;
+            ImVector<const char*> Commands;
 
             app_console()
             {
@@ -530,7 +530,7 @@ namespace put
             }
 
             // Portable helpers
-            static int Stricmp(const char *str1, const char *str2)
+            static int Stricmp(const char* str1, const char* str2)
             {
                 int d;
                 while ((d = toupper(*str2) - toupper(*str1)) == 0 && *str1)
@@ -540,7 +540,7 @@ namespace put
                 }
                 return d;
             }
-            static int Strnicmp(const char *str1, const char *str2, int n)
+            static int Strnicmp(const char* str1, const char* str2, int n)
             {
                 int d = 0;
                 while (n > 0 && (d = toupper(*str2) - toupper(*str1)) == 0 && *str1)
@@ -551,11 +551,11 @@ namespace put
                 }
                 return d;
             }
-            static char *Strdup(const char *str)
+            static char* Strdup(const char* str)
             {
                 size_t len = strlen(str) + 1;
-                void *buff = malloc(len);
-                return (char *)memcpy(buff, (const void *)str, len);
+                void* buff = malloc(len);
+                return (char*)memcpy(buff, (const void*)str, len);
             }
 
             void ClearLog()
@@ -566,7 +566,7 @@ namespace put
                 ScrollToBottom = true;
             }
 
-            void AddLogV(u32 type, const char *fmt, va_list args)
+            void AddLogV(u32 type, const char* fmt, va_list args)
             {
                 char buf[1024];
                 vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
@@ -575,7 +575,7 @@ namespace put
                 ScrollToBottom = true;
             }
 
-            void Draw(const char *title, bool *p_open)
+            void Draw(const char* title, bool* p_open)
             {
                 ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
                 if (!ImGui::Begin(title, p_open))
@@ -648,9 +648,9 @@ namespace put
                 if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf),
                                      ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion |
                                          ImGuiInputTextFlags_CallbackHistory,
-                                     &TextEditCallbackStub, (void *)this))
+                                     &TextEditCallbackStub, (void*)this))
                 {
-                    char *input_end = InputBuf + strlen(InputBuf);
+                    char* input_end = InputBuf + strlen(InputBuf);
                     while (input_end > InputBuf && input_end[-1] == ' ')
                     {
                         input_end--;
@@ -669,7 +669,7 @@ namespace put
                 ImGui::End();
             }
 
-            void ExecCommand(const char *command_line)
+            void ExecCommand(const char* command_line)
             {
                 /*
                 AddLog("# %s\n", command_line);
@@ -708,14 +708,14 @@ namespace put
                  */
             }
 
-            static int TextEditCallbackStub(ImGuiTextEditCallbackData *data) // In C++11 you are better off using lambdas for
+            static int TextEditCallbackStub(ImGuiTextEditCallbackData* data) // In C++11 you are better off using lambdas for
                                                                              // this sort of forwarding callbacks
             {
-                app_console *console = (app_console *)data->UserData;
+                app_console* console = (app_console*)data->UserData;
                 return console->TextEditCallback(data);
             }
 
-            int TextEditCallback(ImGuiTextEditCallbackData *data)
+            int TextEditCallback(ImGuiTextEditCallbackData* data)
             {
                 // AddLog("cursor: %d, selection: %d-%d", data->CursorPos, data->SelectionStart, data->SelectionEnd);
                 switch (data->EventFlag)
@@ -725,8 +725,8 @@ namespace put
                     // Example of TEXT COMPLETION
 
                     // Locate beginning of current word
-                    const char *word_end = data->Buf + data->CursorPos;
-                    const char *word_start = word_end;
+                    const char* word_end = data->Buf + data->CursorPos;
+                    const char* word_start = word_end;
                     while (word_start > data->Buf)
                     {
                         const char c = word_start[-1];
@@ -736,7 +736,7 @@ namespace put
                     }
 
                     // Build a list of candidates
-                    ImVector<const char *> candidates;
+                    ImVector<const char*> candidates;
                     for (int i = 0; i < Commands.Size; i++)
                         if (Strnicmp(Commands[i], word_start, (int)(word_end - word_start)) == 0)
                             candidates.push_back(Commands[i]);
@@ -830,7 +830,7 @@ namespace put
             k_console_open = val;
         }
 
-        void log(const c8 *fmt, ...)
+        void log(const c8* fmt, ...)
         {
             va_list args;
             va_start(args, fmt);
@@ -838,7 +838,7 @@ namespace put
             va_end(args);
         }
 
-        void log_level(u32 level, const c8 *fmt, ...)
+        void log_level(u32 level, const c8* fmt, ...)
         {
             va_list args;
             va_start(args, fmt);

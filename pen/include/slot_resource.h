@@ -17,17 +17,17 @@ namespace pen
     struct free_slot_list
     {
         u32 index;
-        free_slot_list *next;
+        free_slot_list* next;
         u32 flags;
     };
 
     struct slot_resources
     {
-        free_slot_list *slots;
-        free_slot_list *head;
+        free_slot_list* slots;
+        free_slot_list* head;
     };
 
-    inline void slot_resources_init(slot_resources *resources, u32 num)
+    inline void slot_resources_init(slot_resources* resources, u32 num)
     {
         resources->slots = new free_slot_list[num];
 
@@ -47,7 +47,7 @@ namespace pen
         }
     }
 
-    inline u32 slot_resources_get_next(slot_resources *resources)
+    inline u32 slot_resources_get_next(slot_resources* resources)
     {
         u32 r = resources->head->index;
         resources->head->flags &= ~RESOURCE_FREE;
@@ -58,7 +58,7 @@ namespace pen
         return r;
     }
 
-    inline bool slot_resources_free(slot_resources *resources, const u32 slot)
+    inline bool slot_resources_free(slot_resources* resources, const u32 slot)
     {
         // avoid double free
         if (resources->slots[slot].flags & RESOURCE_FREE)

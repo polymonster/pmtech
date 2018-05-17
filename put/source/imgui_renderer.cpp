@@ -32,8 +32,8 @@ namespace put
             u32 ib_size;
             u32 constant_buffer;
 
-            void *vb_copy_buffer = nullptr;
-            void *ib_copy_buffer = nullptr;
+            void* vb_copy_buffer = nullptr;
+            void* ib_copy_buffer = nullptr;
 
             shader_handle imgui_shader;
         };
@@ -46,14 +46,14 @@ namespace put
 
         void process_input();
 
-        void update_dynamic_buffers(ImDrawData *draw_data);
-        void render(ImDrawData *draw_data);
+        void update_dynamic_buffers(ImDrawData* draw_data);
+        void render(ImDrawData* draw_data);
 
         bool init()
         {
             pen::memory_zero(&g_imgui_rs, sizeof(g_imgui_rs));
 
-            ImGuiIO &io = ImGui::GetIO();
+            ImGuiIO& io = ImGui::GetIO();
             io.KeyMap[ImGuiKey_Tab] = PK_TAB;
             io.KeyMap[ImGuiKey_LeftArrow] = PK_LEFT;
             io.KeyMap[ImGuiKey_RightArrow] = PK_RIGHT;
@@ -85,7 +85,7 @@ namespace put
 
             create_render_states();
 
-            ImGuiStyle &style = ImGui::GetStyle();
+            ImGuiStyle& style = ImGui::GetStyle();
             style.Alpha = 1.0;
             style.ChildWindowRounding = 3;
             style.WindowRounding = 3;
@@ -180,7 +180,7 @@ namespace put
 
         void create_texture_atlas()
         {
-            ImGuiIO &io = ImGui::GetIO();
+            ImGuiIO& io = ImGui::GetIO();
             io.Fonts->AddFontFromFileTTF("data/fonts/cousine-regular.ttf", 14);
 
             ImFontConfig config;
@@ -189,7 +189,7 @@ namespace put
             io.Fonts->AddFontFromFileTTF("data/fonts/fontawesome-webfont.ttf", 13.0f, &config, icon_ranges);
 
             // Build texture atlas
-            unsigned char *pixels;
+            unsigned char* pixels;
             int width, height;
             io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
@@ -214,10 +214,10 @@ namespace put
 
             g_imgui_rs.font_texture = pen::renderer_create_texture(tcp);
 
-            io.Fonts->TexID = (void *)&g_imgui_rs.font_texture;
+            io.Fonts->TexID = (void*)&g_imgui_rs.font_texture;
         }
 
-        void update_dynamic_buffers(ImDrawData *draw_data)
+        void update_dynamic_buffers(ImDrawData* draw_data)
         {
             if (g_imgui_rs.vertex_buffer == 0 || (s32)g_imgui_rs.vb_size < draw_data->TotalVtxCount)
             {
@@ -233,7 +233,7 @@ namespace put
                 bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                 bcp.buffer_size = g_imgui_rs.vb_size * sizeof(ImDrawVert);
-                bcp.data = (void *)nullptr;
+                bcp.data = (void*)nullptr;
 
                 if (g_imgui_rs.vb_copy_buffer == nullptr)
                 {
@@ -262,7 +262,7 @@ namespace put
                 bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                 bcp.buffer_size = g_imgui_rs.ib_size * sizeof(ImDrawIdx);
-                bcp.data = (void *)nullptr;
+                bcp.data = (void*)nullptr;
 
                 if (g_imgui_rs.ib_copy_buffer == nullptr)
                 {
@@ -282,12 +282,12 @@ namespace put
 
             for (int n = 0; n < draw_data->CmdListsCount; n++)
             {
-                ImDrawList *cmd_list = draw_data->CmdLists[n];
+                ImDrawList* cmd_list = draw_data->CmdLists[n];
                 u32 vertex_size = cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
                 u32 index_size = cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
 
-                c8 *vb_mem = (c8 *)g_imgui_rs.vb_copy_buffer;
-                c8 *ib_mem = (c8 *)g_imgui_rs.ib_copy_buffer;
+                c8* vb_mem = (c8*)g_imgui_rs.vb_copy_buffer;
+                c8* ib_mem = (c8*)g_imgui_rs.ib_copy_buffer;
 
                 pen::memory_cpy(&vb_mem[vb_offset], cmd_list->VtxBuffer.Data, vertex_size);
                 pen::memory_cpy(&ib_mem[ib_offset], cmd_list->IdxBuffer.Data, index_size);
@@ -313,7 +313,7 @@ namespace put
             pen::renderer_update_buffer(g_imgui_rs.constant_buffer, mvp, sizeof(mvp), 0);
         }
 
-        void render(ImDrawData *draw_data)
+        void render(ImDrawData* draw_data)
         {
             // set to main viewport
             pen::viewport vp = {0.0f, 0.0f, (f32)ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, 0.0f, 1.0};
@@ -339,17 +339,17 @@ namespace put
             int idx_offset = 0;
             for (int n = 0; n < draw_data->CmdListsCount; n++)
             {
-                const ImDrawList *cmd_list = draw_data->CmdLists[n];
+                const ImDrawList* cmd_list = draw_data->CmdLists[n];
                 for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
                 {
-                    const ImDrawCmd *pcmd = &cmd_list->CmdBuffer[cmd_i];
+                    const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
                     if (pcmd->UserCallback)
                     {
                         pcmd->UserCallback(cmd_list, pcmd);
                     }
                     else
                     {
-                        pen::renderer_set_texture(*(u32 *)pcmd->TextureId, g_imgui_rs.font_sampler_state, 0,
+                        pen::renderer_set_texture(*(u32*)pcmd->TextureId, g_imgui_rs.font_sampler_state, 0,
                                                   PEN_SHADER_TYPE_PS);
 
                         pen::rect r = {pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w};
@@ -397,7 +397,7 @@ namespace put
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             bcp.buffer_size = sizeof(float) * 16;
-            bcp.data = (void *)nullptr;
+            bcp.data = (void*)nullptr;
 
             g_imgui_rs.constant_buffer = pen::renderer_create_buffer(bcp);
 
@@ -433,10 +433,10 @@ namespace put
 
         void process_input()
         {
-            ImGuiIO &io = ImGui::GetIO();
+            ImGuiIO& io = ImGui::GetIO();
 
             // mouse wheel state
-            const pen::mouse_state &ms = pen::input_get_mouse_state();
+            const pen::mouse_state& ms = pen::input_get_mouse_state();
 
             io.MouseDown[0] = ms.buttons[PEN_MOUSE_L];
             io.MouseDown[1] = ms.buttons[PEN_MOUSE_R];
@@ -489,7 +489,7 @@ namespace put
         {
             process_input();
 
-            ImGuiIO &io = ImGui::GetIO();
+            ImGuiIO& io = ImGui::GetIO();
 
             // set delta time
             f32 cur_time = pen::get_time_ms();
@@ -508,7 +508,7 @@ namespace put
 
         u32 want_capture()
         {
-            ImGuiIO &io = ImGui::GetIO();
+            ImGuiIO& io = ImGui::GetIO();
 
             u32 flags = 0;
 

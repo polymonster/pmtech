@@ -26,13 +26,13 @@ namespace
 {
     D3D_DRIVER_TYPE g_driverType = D3D_DRIVER_TYPE_HARDWARE;
     D3D_FEATURE_LEVEL g_featureLevel = D3D_FEATURE_LEVEL_11_0;
-    ID3D11Device *g_device = nullptr;
-    ID3D11Device1 *g_device_1 = nullptr;
-    IDXGISwapChain *g_swap_chain = nullptr;
-    IDXGISwapChain1 *g_swap_chain_1 = nullptr;
-    ID3D11RenderTargetView *g_backbuffer_rtv = nullptr;
-    ID3D11DeviceContext *g_immediate_context = nullptr;
-    ID3D11DeviceContext1 *g_immediate_context_1 = nullptr;
+    ID3D11Device* g_device = nullptr;
+    ID3D11Device1* g_device_1 = nullptr;
+    IDXGISwapChain* g_swap_chain = nullptr;
+    IDXGISwapChain1* g_swap_chain_1 = nullptr;
+    ID3D11RenderTargetView* g_backbuffer_rtv = nullptr;
+    ID3D11DeviceContext* g_immediate_context = nullptr;
+    ID3D11DeviceContext1* g_immediate_context_1 = nullptr;
 
     u64 k_frame = 0;
 } // namespace
@@ -52,15 +52,15 @@ namespace pen
         u32 frame;
         Str name;
     };
-    gpu_perf_result *k_perf_results = nullptr;
+    gpu_perf_result* k_perf_results = nullptr;
 
     struct perf_marker
     {
-        ID3D11Query *begin = nullptr;
-        ID3D11Query *end = nullptr;
+        ID3D11Query* begin = nullptr;
+        ID3D11Query* end = nullptr;
 
         u64 frame = 0;
-        const c8 *name = nullptr;
+        const c8* name = nullptr;
         u32 issued = 0;
         u32 depth = 0;
         u64 result = 0;
@@ -69,7 +69,7 @@ namespace pen
     class index_stack
     {
       public:
-        u32 *indices;
+        u32* indices;
         u32 pos = 0;
 
         void clear()
@@ -101,10 +101,10 @@ namespace pen
     struct perf_marker_set
     {
         static const u32 num_marker_buffers = 3;
-        perf_marker *markers[num_marker_buffers] = {0};
+        perf_marker* markers[num_marker_buffers] = {0};
         u32 pos[num_marker_buffers] = {0};
 
-        ID3D11Query *disjoint_query[num_marker_buffers];
+        ID3D11Query* disjoint_query[num_marker_buffers];
 
         index_stack stack;
 
@@ -113,14 +113,14 @@ namespace pen
     };
     static perf_marker_set k_perf;
 
-    void insert_marker(const c8 *name, bool end = false)
+    void insert_marker(const c8* name, bool end = false)
     {
         if (k_frame == 0)
             return;
 
-        u32 &buf = k_perf.buf;
-        u32 &pos = k_perf.pos[buf];
-        u32 &depth = k_perf.depth;
+        u32& buf = k_perf.buf;
+        u32& pos = k_perf.pos[buf];
+        u32& depth = k_perf.depth;
 
         if (pos >= sb_count(k_perf.markers[buf]))
         {
@@ -162,12 +162,12 @@ namespace pen
         }
     }
 
-    void direct::renderer_push_perf_marker(const c8 *name)
+    void direct::renderer_push_perf_marker(const c8* name)
     {
         if (k_frame == 0)
             return;
 
-        u32 &depth = k_perf.depth;
+        u32& depth = k_perf.depth;
 
         insert_marker(name);
 
@@ -176,7 +176,7 @@ namespace pen
 
     void direct::renderer_pop_perf_marker()
     {
-        u32 &depth = k_perf.depth;
+        u32& depth = k_perf.depth;
         --depth;
 
         insert_marker("end", true);
@@ -215,7 +215,7 @@ namespace pen
                 u32 num_complete = 0;
                 for (u32 i = 0; i < k_perf.pos[bb]; ++i)
                 {
-                    perf_marker &m = k_perf.markers[bb][i];
+                    perf_marker& m = k_perf.markers[bb][i];
                     if (m.issued == 2)
                     {
                         if (!disjoint.Disjoint)
@@ -289,48 +289,48 @@ namespace pen
 
     struct texture2d_internal
     {
-        ID3D11Texture2D *texture = nullptr;
-        ID3D11ShaderResourceView *srv = nullptr;
+        ID3D11Texture2D* texture = nullptr;
+        ID3D11ShaderResourceView* srv = nullptr;
     };
 
     struct texture3d_internal
     {
-        ID3D11Texture3D *texture = nullptr;
-        ID3D11ShaderResourceView *srv = nullptr;
+        ID3D11Texture3D* texture = nullptr;
+        ID3D11ShaderResourceView* srv = nullptr;
     };
 
     struct texture_resource
     {
-        ID3D11Resource *resource = nullptr;
-        ID3D11ShaderResourceView *srv = nullptr;
+        ID3D11Resource* resource = nullptr;
+        ID3D11ShaderResourceView* srv = nullptr;
     };
 
     struct render_target_internal
     {
         texture2d_internal tex;
-        ID3D11RenderTargetView *rt[CUBEMAP_FACES] = {nullptr};
+        ID3D11RenderTargetView* rt[CUBEMAP_FACES] = {nullptr};
 
         texture2d_internal tex_msaa;
-        ID3D11RenderTargetView *rt_msaa[CUBEMAP_FACES] = {nullptr};
+        ID3D11RenderTargetView* rt_msaa[CUBEMAP_FACES] = {nullptr};
 
         texture2d_internal tex_read_back;
 
         DXGI_FORMAT format;
-        texture_creation_params *tcp;
+        texture_creation_params* tcp;
     };
 
     struct depth_stencil_target_internal
     {
         texture2d_internal tex;
-        ID3D11DepthStencilView *ds[CUBEMAP_FACES];
+        ID3D11DepthStencilView* ds[CUBEMAP_FACES];
 
         texture2d_internal tex_msaa;
-        ID3D11DepthStencilView *ds_msaa[CUBEMAP_FACES];
+        ID3D11DepthStencilView* ds_msaa[CUBEMAP_FACES];
 
         texture2d_internal tex_read_back;
 
         DXGI_FORMAT format;
-        texture_creation_params *tcp;
+        texture_creation_params* tcp;
     };
 
     struct shader_program
@@ -351,8 +351,8 @@ namespace pen
 
     struct stream_out_shader
     {
-        ID3D11VertexShader *vs;
-        ID3D11GeometryShader *gs;
+        ID3D11VertexShader* vs;
+        ID3D11GeometryShader* gs;
     };
 
     struct resource_allocation
@@ -360,22 +360,22 @@ namespace pen
         u32 type = 0;
 
         union {
-            clear_state_internal *clear_state;
-            ID3D11VertexShader *vertex_shader;
-            ID3D11InputLayout *input_layout;
-            ID3D11PixelShader *pixel_shader;
-            ID3D11GeometryShader *geometry_shader;
+            clear_state_internal* clear_state;
+            ID3D11VertexShader* vertex_shader;
+            ID3D11InputLayout* input_layout;
+            ID3D11PixelShader* pixel_shader;
+            ID3D11GeometryShader* geometry_shader;
             stream_out_shader stream_out_shader;
-            ID3D11Buffer *generic_buffer;
-            texture_resource *texture_resource;
-            texture2d_internal *texture_2d;
-            texture3d_internal *texture_3d;
-            ID3D11SamplerState *sampler_state;
-            ID3D11RasterizerState *raster_state;
-            ID3D11BlendState *blend_state;
-            ID3D11DepthStencilState *depth_stencil_state;
-            render_target_internal *render_target;
-            depth_stencil_target_internal *depth_target;
+            ID3D11Buffer* generic_buffer;
+            texture_resource* texture_resource;
+            texture2d_internal* texture_2d;
+            texture3d_internal* texture_3d;
+            ID3D11SamplerState* sampler_state;
+            ID3D11RasterizerState* raster_state;
+            ID3D11BlendState* blend_state;
+            ID3D11DepthStencilState* depth_stencil_state;
+            render_target_internal* render_target;
+            depth_stencil_target_internal* depth_target;
             shader_program shader_program;
         };
     };
@@ -392,14 +392,14 @@ namespace pen
         u32 resource_index;
         texture_creation_params tcp;
     };
-    static managed_rt *k_managed_render_targets;
+    static managed_rt* k_managed_render_targets;
 
     context_state g_context;
 
-    void direct::renderer_create_clear_state(const clear_state &cs, u32 resource_slot)
+    void direct::renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
     {
         resource_pool[resource_slot].clear_state =
-            (pen::clear_state_internal *)pen::memory_alloc(sizeof(clear_state_internal));
+            (pen::clear_state_internal*)pen::memory_alloc(sizeof(clear_state_internal));
 
         resource_pool[resource_slot].clear_state->rgba[0] = cs.r;
         resource_pool[resource_slot].clear_state->rgba[1] = cs.g;
@@ -413,7 +413,7 @@ namespace pen
 
         pen::memory_cpy(resource_pool[resource_slot].clear_state->mrt, cs.mrt, sizeof(mrt_clear) * cs.num_colour_targets);
 
-        mrt_clear *mrt = resource_pool[resource_slot].clear_state->mrt;
+        mrt_clear* mrt = resource_pool[resource_slot].clear_state->mrt;
 
         // convert int clears (required on gl) to floats for d3d
         for (s32 i = 0; i < cs.num_colour_targets; ++i)
@@ -434,7 +434,7 @@ namespace pen
     {
         u32 flags = resource_pool[clear_state_index].clear_state->flags;
 
-        clear_state_internal *cs = resource_pool[clear_state_index].clear_state;
+        clear_state_internal* cs = resource_pool[clear_state_index].clear_state;
 
         // clear colour
         if (flags & PEN_CLEAR_COLOUR_BUFFER)
@@ -445,7 +445,7 @@ namespace pen
                 {
                     s32 ct = g_context.active_colour_target[i];
 
-                    ID3D11RenderTargetView *colour_rtv = resource_pool[ct].render_target->rt[colour_face];
+                    ID3D11RenderTargetView* colour_rtv = resource_pool[ct].render_target->rt[colour_face];
 
                     if (resource_pool[ct].render_target->rt_msaa[colour_face])
                         colour_rtv = resource_pool[ct].render_target->rt_msaa[colour_face];
@@ -461,7 +461,7 @@ namespace pen
         {
             s32 ct = g_context.active_colour_target[i];
 
-            ID3D11RenderTargetView *colour_rtv = resource_pool[ct].render_target->rt[colour_face];
+            ID3D11RenderTargetView* colour_rtv = resource_pool[ct].render_target->rt[colour_face];
 
             if (resource_pool[ct].render_target->rt_msaa[colour_face])
                 colour_rtv = resource_pool[ct].render_target->rt_msaa[colour_face];
@@ -479,7 +479,7 @@ namespace pen
 
         if (d3d_flags && g_context.active_depth_target)
         {
-            ID3D11DepthStencilView *dsv = resource_pool[g_context.active_depth_target].depth_target->ds[depth_face];
+            ID3D11DepthStencilView* dsv = resource_pool[g_context.active_depth_target].depth_target->ds[depth_face];
 
             if (resource_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face])
                 dsv = resource_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face];
@@ -536,7 +536,7 @@ namespace pen
             u32 num_man_rt = sb_count(k_managed_render_targets);
             for (u32 i = 0; i < num_man_rt; ++i)
             {
-                auto &rt = k_managed_render_targets[i];
+                auto& rt = k_managed_render_targets[i];
 
                 release_render_target_internal(rt.resource_index);
 
@@ -552,7 +552,7 @@ namespace pen
         renderer_push_perf_marker(nullptr);
     }
 
-    void direct::renderer_load_shader(const pen::shader_load_params &params, u32 resource_slot)
+    void direct::renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
     {
         HRESULT hr = -1;
         u32 handle_out = (u32)-1;
@@ -581,14 +581,14 @@ namespace pen
         }
         else if (params.type == PEN_SHADER_TYPE_SO)
         {
-            stream_out_shader &sos = resource_pool[resource_index].stream_out_shader;
+            stream_out_shader& sos = resource_pool[resource_index].stream_out_shader;
 
             u32 resource_index = resource_slot;
 
             hr = g_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr, &sos.vs);
 
             HRESULT hr = g_device->CreateGeometryShaderWithStreamOutput(
-                params.byte_code, params.byte_code_size, (const D3D11_SO_DECLARATION_ENTRY *)params.so_decl_entries,
+                params.byte_code, params.byte_code_size, (const D3D11_SO_DECLARATION_ENTRY*)params.so_decl_entries,
                 params.so_num_entries, NULL, 0, 0, NULL, &sos.gs);
 
             if (FAILED(hr))
@@ -623,13 +623,13 @@ namespace pen
         }
         else if (shader_type == PEN_SHADER_TYPE_SO)
         {
-            auto &sos = resource_pool[shader_index].stream_out_shader;
+            auto& sos = resource_pool[shader_index].stream_out_shader;
             g_immediate_context->VSSetShader(sos.vs, nullptr, 0);
             g_immediate_context->GSSetShader(sos.gs, nullptr, 0);
             g_immediate_context->PSSetShader(nullptr, nullptr, 0);
 
             // on feature level 10 we cant uses SO_RASTERISER_DISCARD, this prevents the validation layer barking
-            static ID3D11DepthStencilState *dss = nullptr;
+            static ID3D11DepthStencilState* dss = nullptr;
             if (!dss)
             {
                 D3D11_DEPTH_STENCIL_DESC dss_disable = {0};
@@ -643,11 +643,11 @@ namespace pen
         }
     }
 
-    void direct::renderer_link_shader_program(const shader_link_params &params, u32 resource_slot)
+    void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
-        auto &sp = resource_pool[resource_index].shader_program;
+        auto& sp = resource_pool[resource_index].shader_program;
 
         // for now d3d just keeps handles to vs, ps and il..
         // the additional requirements of gl and buffer bindings could provide useful reflection info.
@@ -656,7 +656,7 @@ namespace pen
         sp.vertex_shader = params.vertex_shader;
     }
 
-    void direct::renderer_create_buffer(const buffer_creation_params &params, u32 resource_slot)
+    void direct::renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
@@ -690,12 +690,12 @@ namespace pen
         }
     }
 
-    void direct::renderer_create_input_layout(const input_layout_creation_params &params, u32 resource_slot)
+    void direct::renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
         // Create the input layout
-        HRESULT hr = g_device->CreateInputLayout((D3D11_INPUT_ELEMENT_DESC *)params.input_layout, params.num_elements,
+        HRESULT hr = g_device->CreateInputLayout((D3D11_INPUT_ELEMENT_DESC*)params.input_layout, params.num_elements,
                                                  params.vs_byte_code, params.vs_byte_code_size,
                                                  &resource_pool[resource_index].input_layout);
 
@@ -707,17 +707,17 @@ namespace pen
         }
     }
 
-    void direct::renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32 *strides,
-                                            const u32 *offsets)
+    void direct::renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides,
+                                            const u32* offsets)
     {
         g_immediate_context->IASetVertexBuffers(start_slot, num_buffers, &resource_pool[buffer_index].generic_buffer, strides,
                                                 offsets);
     }
 
-    void direct::renderer_set_vertex_buffers(u32 *buffer_indices, u32 num_buffers, u32 start_slot, const u32 *strides,
-                                             const u32 *offsets)
+    void direct::renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
+                                             const u32* offsets)
     {
-        ID3D11Buffer *buffers[4];
+        ID3D11Buffer* buffers[4];
 
         for (s32 i = 0; i < num_buffers; ++i)
             buffers[i] = resource_pool[buffer_indices[i]].generic_buffer;
@@ -800,14 +800,14 @@ namespace pen
         return 0;
     }
 
-    void renderer_create_render_target_multi(const texture_creation_params &tcp, texture2d_internal *texture_container,
-                                             ID3D11DepthStencilView **dsv, ID3D11RenderTargetView **rtv)
+    void renderer_create_render_target_multi(const texture_creation_params& tcp, texture2d_internal* texture_container,
+                                             ID3D11DepthStencilView** dsv, ID3D11RenderTargetView** rtv)
     {
         HRESULT hr;
 
         // create an empty texture
         D3D11_TEXTURE2D_DESC texture_desc;
-        pen::memory_cpy(&texture_desc, (void *)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+        pen::memory_cpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
         u32 array_size = texture_desc.ArraySize;
         bool texture2dms = texture_desc.SampleDesc.Count > 1;
@@ -907,7 +907,7 @@ namespace pen
         PEN_ASSERT(hr == 0);
     }
 
-    void direct::renderer_create_render_target(const texture_creation_params &tcp, u32 resource_slot, bool track)
+    void direct::renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
     {
         u32 resource_index = resource_slot;
 
@@ -915,7 +915,7 @@ namespace pen
 
         // alloc rt
         resource_pool[resource_index].render_target =
-            (render_target_internal *)pen::memory_alloc(sizeof(render_target_internal));
+            (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
         pen::memory_zero(resource_pool[resource_index].render_target, sizeof(render_target_internal));
 
         // format required for resolve
@@ -943,7 +943,7 @@ namespace pen
             read_back_tcp.usage = D3D11_USAGE_STAGING;
 
             D3D11_TEXTURE2D_DESC texture_desc;
-            pen::memory_cpy(&texture_desc, (void *)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
+            pen::memory_cpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
             HRESULT hr = g_device->CreateTexture2D(&texture_desc, NULL,
                                                    &resource_pool[resource_index].render_target->tex_read_back.texture);
@@ -975,26 +975,26 @@ namespace pen
 
     void direct::renderer_set_resolve_targets(u32 colour_target, u32 depth_target)
     {
-        ID3D11RenderTargetView *colour_rtv[MAX_MRT] = {0};
+        ID3D11RenderTargetView* colour_rtv[MAX_MRT] = {0};
 
         if (colour_target > 0)
             colour_rtv[0] = resource_pool[colour_target].render_target->rt[0];
 
-        ID3D11DepthStencilView *dsv = nullptr;
+        ID3D11DepthStencilView* dsv = nullptr;
         if (depth_target > 0)
             dsv = resource_pool[depth_target].depth_target->ds[0];
 
         g_immediate_context->OMSetRenderTargets(1, colour_rtv, dsv);
     }
 
-    void direct::renderer_set_targets(const u32 *const colour_targets, u32 num_colour_targets, u32 depth_target,
+    void direct::renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
                                       u32 colour_face, u32 depth_face)
     {
         g_context.active_depth_target = depth_target;
         g_context.num_active_colour_targets = num_colour_targets;
 
         u32 num_views = num_colour_targets;
-        ID3D11RenderTargetView *colour_rtv[MAX_MRT] = {0};
+        ID3D11RenderTargetView* colour_rtv[MAX_MRT] = {0};
         for (s32 i = 0; i < num_colour_targets; ++i)
         {
             u32 colour_target = colour_targets[i];
@@ -1009,7 +1009,7 @@ namespace pen
             }
         }
 
-        ID3D11DepthStencilView *dsv = nullptr;
+        ID3D11DepthStencilView* dsv = nullptr;
         if (depth_target != 0)
         {
             if (resource_pool[depth_target].depth_target->ds_msaa[depth_face])
@@ -1021,7 +1021,7 @@ namespace pen
         g_immediate_context->OMSetRenderTargets(num_views, colour_rtv, dsv);
     }
 
-    void direct::renderer_create_texture(const texture_creation_params &tcp, u32 resource_slot)
+    void direct::renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
@@ -1051,7 +1051,7 @@ namespace pen
                                                  tcp.flags};
 
             resource_pool[resource_index].type = RES_TEXTURE_3D;
-            resource_pool[resource_index].texture_3d = (texture3d_internal *)memory_alloc(sizeof(texture3d_internal));
+            resource_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
             hr = g_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture));
             PEN_ASSERT(hr == 0);
         }
@@ -1059,7 +1059,7 @@ namespace pen
         {
             // texture 2d, arrays and cubemaps
             D3D11_TEXTURE2D_DESC texture_desc;
-            pen::memory_cpy(&texture_desc, (void *)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+            pen::memory_cpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
             if (tcp.collection_type == TEXTURE_COLLECTION_CUBE)
             {
@@ -1068,17 +1068,17 @@ namespace pen
             }
 
             resource_pool[resource_index].type = RES_TEXTURE;
-            resource_pool[resource_index].texture_2d = (texture2d_internal *)memory_alloc(sizeof(texture2d_internal));
+            resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
             hr = g_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture));
             PEN_ASSERT(hr == 0);
         }
 
-        texture_resource *tex_res = resource_pool[resource_index].texture_resource;
+        texture_resource* tex_res = resource_pool[resource_index].texture_resource;
 
         // fill with data
         if (tcp.data)
         {
-            u8 *image_data = (u8 *)tcp.data;
+            u8* image_data = (u8*)tcp.data;
 
             // for arrays, slices, faces
             for (s32 a = 0; a < num_arrays; ++a)
@@ -1120,23 +1120,23 @@ namespace pen
         PEN_ASSERT(hr == 0);
     }
 
-    void direct::renderer_create_sampler(const sampler_creation_params &scp, u32 resource_slot)
+    void direct::renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
         HRESULT hr;
-        hr = g_device->CreateSamplerState((D3D11_SAMPLER_DESC *)&scp, &resource_pool[resource_index].sampler_state);
+        hr = g_device->CreateSamplerState((D3D11_SAMPLER_DESC*)&scp, &resource_pool[resource_index].sampler_state);
         PEN_ASSERT(hr == 0);
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
     {
-        ID3D11SamplerState *null_sampler = nullptr;
-        ID3D11ShaderResourceView *null_srv = nullptr;
+        ID3D11SamplerState* null_sampler = nullptr;
+        ID3D11ShaderResourceView* null_srv = nullptr;
 
         if (resource_pool[texture_index].type == RES_RENDER_TARGET && flags & TEXTURE_BIND_MSAA)
         {
-            render_target_internal *rt = resource_pool[texture_index].render_target;
+            render_target_internal* rt = resource_pool[texture_index].render_target;
 
             if (shader_type == PEN_SHADER_TYPE_PS)
             {
@@ -1172,11 +1172,11 @@ namespace pen
         }
     }
 
-    void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params &rscp, u32 resource_slot)
+    void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
-        g_device->CreateRasterizerState((D3D11_RASTERIZER_DESC *)&rscp, &resource_pool[resource_index].raster_state);
+        g_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[resource_index].raster_state);
     }
 
     void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
@@ -1184,12 +1184,12 @@ namespace pen
         g_immediate_context->RSSetState(resource_pool[rasterizer_state_index].raster_state);
     }
 
-    void direct::renderer_set_viewport(const viewport &vp)
+    void direct::renderer_set_viewport(const viewport& vp)
     {
-        g_immediate_context->RSSetViewports(1, (D3D11_VIEWPORT *)&vp);
+        g_immediate_context->RSSetViewports(1, (D3D11_VIEWPORT*)&vp);
     }
 
-    void direct::renderer_create_blend_state(const blend_creation_params &bcp, u32 resource_slot)
+    void direct::renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
@@ -1201,7 +1201,7 @@ namespace pen
 
         for (u32 i = 0; i < bcp.num_render_targets; ++i)
         {
-            pen::memory_cpy(&bd.RenderTarget[i], (void *)&(bcp.render_targets[i]), sizeof(render_target_blend));
+            pen::memory_cpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
         }
 
         g_device->CreateBlendState(&bd, &resource_pool[resource_index].blend_state);
@@ -1224,51 +1224,51 @@ namespace pen
         }
     }
 
-    void direct::renderer_update_buffer(u32 buffer_index, const void *data, u32 data_size, u32 offset)
+    void direct::renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
         D3D11_MAPPED_SUBRESOURCE mapped_res = {0};
 
         g_immediate_context->Map(resource_pool[buffer_index].generic_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 
-        void *p_data = (void *)((size_t)mapped_res.pData + offset);
+        void* p_data = (void*)((size_t)mapped_res.pData + offset);
         memcpy(p_data, data, data_size);
 
         g_immediate_context->Unmap(resource_pool[buffer_index].generic_buffer, 0);
     }
 
-    void direct::renderer_read_back_resource(const resource_read_back_params &rrbp)
+    void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
     {
         D3D11_MAPPED_SUBRESOURCE mapped_res = {0};
 
         if (resource_pool[rrbp.resource_index].type == RES_RENDER_TARGET)
         {
-            render_target_internal *rt = resource_pool[rrbp.resource_index].render_target;
+            render_target_internal* rt = resource_pool[rrbp.resource_index].render_target;
 
             g_immediate_context->CopyResource(rt->tex_read_back.texture, rt->tex.texture);
 
             g_immediate_context->Map(rt->tex_read_back.texture, 0, D3D11_MAP_READ, 0, &mapped_res);
 
-            rrbp.call_back_function((void *)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size);
+            rrbp.call_back_function((void*)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size);
 
             g_immediate_context->Unmap(rt->tex_read_back.texture, 0);
         }
         else if (resource_pool[rrbp.resource_index].type == RES_TEXTURE)
         {
-            texture2d_internal *tex = resource_pool[rrbp.resource_index].texture_2d;
+            texture2d_internal* tex = resource_pool[rrbp.resource_index].texture_2d;
 
             g_immediate_context->Map(tex->texture, 0, D3D11_MAP_READ, 0, &mapped_res);
 
-            rrbp.call_back_function((void *)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size);
+            rrbp.call_back_function((void*)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size);
 
             g_immediate_context->Unmap(tex->texture, 0);
         }
     }
 
-    void direct::renderer_create_depth_stencil_state(const depth_stencil_creation_params &dscp, u32 resource_slot)
+    void direct::renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
-        g_device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC *)&dscp,
+        g_device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC*)&dscp,
                                           &resource_pool[resource_index].depth_stencil_state);
     }
 
@@ -1322,7 +1322,7 @@ namespace pen
         if (remove_managed)
         {
             // remove from managed rt
-            managed_rt *erased = nullptr;
+            managed_rt* erased = nullptr;
 
             u32 num_man_rt = sb_count(k_managed_render_targets);
             for (s32 i = num_man_rt - 1; i >= 0; --i)
@@ -1337,7 +1337,7 @@ namespace pen
             k_managed_render_targets = erased;
         }
 
-        render_target_internal *rt = resource_pool[render_target].render_target;
+        render_target_internal* rt = resource_pool[render_target].render_target;
 
         for (s32 i = 0; i < CUBEMAP_FACES; ++i)
         {
@@ -1415,7 +1415,7 @@ namespace pen
         }
         else
         {
-            ID3D11Buffer *buffers[] = {resource_pool[buffer_index].generic_buffer};
+            ID3D11Buffer* buffers[] = {resource_pool[buffer_index].generic_buffer};
             UINT offsets[] = {0};
 
             g_immediate_context->SOSetTargets(1, buffers, offsets);
@@ -1425,7 +1425,7 @@ namespace pen
     extern resolve_resources g_resolve_resources;
     void direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type)
     {
-        render_target_internal *rti = resource_pool[target].render_target;
+        render_target_internal* rti = resource_pool[target].render_target;
 
         // get dimensions for shader
         f32 w = rti->tcp->width;
@@ -1444,7 +1444,7 @@ namespace pen
             texture_creation_params resolve_tcp = *rti->tcp;
             resolve_tcp.sample_count = 1;
 
-            texture_creation_params &_tcp = resolve_tcp;
+            texture_creation_params& _tcp = resolve_tcp;
             _tcp.width = w;
             _tcp.height = h;
 
@@ -1504,7 +1504,7 @@ namespace pen
         g_immediate_context->DrawAuto();
     }
 
-    void direct::renderer_set_scissor_rect(const rect &r)
+    void direct::renderer_set_scissor_rect(const rect& r)
     {
         const D3D11_RECT rd3d = {(LONG)r.left, (LONG)r.top, (LONG)r.right, (LONG)r.bottom};
         g_immediate_context->RSSetScissorRects(1, &rd3d);
@@ -1545,19 +1545,19 @@ namespace pen
         PEN_ASSERT(dsv == PEN_BACK_BUFFER_DEPTH);
 
         if (!resource_pool[crtv].render_target)
-            resource_pool[crtv].render_target = (render_target_internal *)pen::memory_alloc(sizeof(render_target_internal));
+            resource_pool[crtv].render_target = (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
 
         pen::memory_zero(resource_pool[crtv].render_target, sizeof(render_target_internal));
 
         if (!resource_pool[dsv].depth_target)
             resource_pool[dsv].depth_target =
-                (depth_stencil_target_internal *)pen::memory_alloc(sizeof(depth_stencil_target_internal));
+                (depth_stencil_target_internal*)pen::memory_alloc(sizeof(depth_stencil_target_internal));
 
         pen::memory_zero(resource_pool[dsv].depth_target, sizeof(depth_stencil_target_internal));
 
         // Create a render target view
         HRESULT hr = g_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-                                             reinterpret_cast<void **>(&resource_pool[crtv].render_target->tex.texture));
+                                             reinterpret_cast<void**>(&resource_pool[crtv].render_target->tex.texture));
         if (FAILED(hr))
             return;
 
@@ -1604,11 +1604,11 @@ namespace pen
         g_immediate_context->OMSetRenderTargets(1, &resource_pool[crtv].render_target->rt[0], NULL);
     }
 
-    u32 direct::renderer_initialise(void *params, u32 bb_res, u32 bb_depth_res)
+    u32 direct::renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
     {
         clear_resource_table();
 
-        HWND *hwnd = (HWND *)params;
+        HWND* hwnd = (HWND*)params;
 
         HRESULT hr = S_OK;
 
@@ -1659,17 +1659,17 @@ namespace pen
             return hr;
 
         // Obtain DXGI factory from device (since we used nullptr for pAdapter above)
-        IDXGIFactory1 *dxgiFactory = nullptr;
+        IDXGIFactory1* dxgiFactory = nullptr;
         {
-            IDXGIDevice *dxgiDevice = nullptr;
-            hr = g_device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void **>(&dxgiDevice));
+            IDXGIDevice* dxgiDevice = nullptr;
+            hr = g_device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
             if (SUCCEEDED(hr))
             {
-                IDXGIAdapter *adapter = nullptr;
+                IDXGIAdapter* adapter = nullptr;
                 hr = dxgiDevice->GetAdapter(&adapter);
                 if (SUCCEEDED(hr))
                 {
-                    hr = adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void **>(&dxgiFactory));
+                    hr = adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&dxgiFactory));
                     adapter->Release();
                 }
                 dxgiDevice->Release();
@@ -1679,16 +1679,16 @@ namespace pen
             return hr;
 
         // Create swap chain
-        IDXGIFactory2 *dxgiFactory2 = nullptr;
-        hr = dxgiFactory->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void **>(&dxgiFactory2));
+        IDXGIFactory2* dxgiFactory2 = nullptr;
+        hr = dxgiFactory->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&dxgiFactory2));
         if (dxgiFactory2)
         {
             // DirectX 11.1 or later
-            hr = g_device->QueryInterface(__uuidof(ID3D11Device1), reinterpret_cast<void **>(&g_device_1));
+            hr = g_device->QueryInterface(__uuidof(ID3D11Device1), reinterpret_cast<void**>(&g_device_1));
             if (SUCCEEDED(hr))
             {
                 (void)g_immediate_context->QueryInterface(__uuidof(ID3D11DeviceContext1),
-                                                          reinterpret_cast<void **>(&g_immediate_context_1));
+                                                          reinterpret_cast<void**>(&g_immediate_context_1));
             }
 
             DXGI_SWAP_CHAIN_DESC1 sd;
@@ -1704,7 +1704,7 @@ namespace pen
             hr = dxgiFactory2->CreateSwapChainForHwnd(g_device, *hwnd, &sd, nullptr, nullptr, &g_swap_chain_1);
             if (SUCCEEDED(hr))
             {
-                hr = g_swap_chain_1->QueryInterface(__uuidof(IDXGISwapChain), reinterpret_cast<void **>(&g_swap_chain));
+                hr = g_swap_chain_1->QueryInterface(__uuidof(IDXGISwapChain), reinterpret_cast<void**>(&g_swap_chain));
             }
 
             dxgiFactory2->Release();
@@ -1765,7 +1765,7 @@ namespace pen
             g_device_1->Release();
     }
 
-    const c8 *renderer_get_shader_platform()
+    const c8* renderer_get_shader_platform()
     {
         return "hlsl";
     }

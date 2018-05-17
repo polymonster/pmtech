@@ -132,7 +132,7 @@ void init_renderer()
     bcp.cpu_access_flags = 0;
 
     bcp.buffer_size = sizeof(textured_vertex) * 4;
-    bcp.data = (void *)&quad_vertices[0];
+    bcp.data = (void*)&quad_vertices[0];
 
     k_render_handles.vb = pen::renderer_create_buffer(bcp);
 
@@ -143,7 +143,7 @@ void init_renderer()
     bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
     bcp.cpu_access_flags = 0;
     bcp.buffer_size = sizeof(u16) * 6;
-    bcp.data = (void *)&indices[0];
+    bcp.data = (void*)&indices[0];
 
     k_render_handles.ib = pen::renderer_create_buffer(bcp);
 
@@ -187,7 +187,7 @@ void init_renderer()
     bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
     bcp.buffer_size = sizeof(float) * 16;
-    bcp.data = (void *)nullptr;
+    bcp.data = (void*)nullptr;
 
     k_render_handles.view_cbuffer = pen::renderer_create_buffer(bcp);
 
@@ -203,7 +203,7 @@ struct texture_sampler_mapping
 };
 static texture_sampler_mapping k_tex_samplers[4];
 
-static const c8 *sampler_types[] = {"linear_clamp", "linear_wrap", "point_clamp", "point_wrap"};
+static const c8* sampler_types[] = {"linear_clamp", "linear_wrap", "point_clamp", "point_wrap"};
 
 static u32 sampler_states[4];
 
@@ -225,11 +225,11 @@ void show_ui()
     {
         ImGui::PushID(i);
 
-        ImGui::Combo("Sampler", &k_tex_samplers[i].sampler_choice, (const c8 **)sampler_types, 4);
+        ImGui::Combo("Sampler", &k_tex_samplers[i].sampler_choice, (const c8**)sampler_types, 4);
         k_tex_samplers[i].sampler = sampler_states[k_tex_samplers[i].sampler_choice];
 
         if (k_tex_samplers[i].texture != 0)
-            ImGui::Image((void *)&k_tex_samplers[i].texture, ImVec2(128, 128));
+            ImGui::Image((void*)&k_tex_samplers[i].texture, ImVec2(128, 128));
 
         if (ImGui::Button("Load Image"))
         {
@@ -242,7 +242,7 @@ void show_ui()
 
     if (browser_open)
     {
-        const char *fn = put::dev_ui::file_browser(browser_open, put::dev_ui::FB_OPEN);
+        const char* fn = put::dev_ui::file_browser(browser_open, put::dev_ui::FB_OPEN);
 
         if (fn && browser_slot >= 0)
         {
@@ -254,11 +254,11 @@ void show_ui()
     ImGui::End();
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     init_renderer();

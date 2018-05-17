@@ -55,11 +55,11 @@ void renderer_state_init()
     default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     // init systems
@@ -94,7 +94,7 @@ PEN_TRV pen::user_entry(void *params)
             static float f = 0.0f;
             ImGui::Text("Hello, world!");
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-            ImGui::ColorEdit3("clear color", (float *)&clear_col);
+            ImGui::ColorEdit3("clear color", (float*)&clear_col);
             if (ImGui::Button("Test Window"))
                 show_test_window ^= 1;
             if (ImGui::Button("Another Window"))

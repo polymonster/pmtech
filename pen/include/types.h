@@ -39,7 +39,7 @@ typedef std::atomic<uint64_t> a_u64;
 #ifdef _WIN32
 #define PEN_TRV dword __stdcall
 #else
-#define PEN_TRV void *
+#define PEN_TRV void*
 #endif
 
 #define PEN_THREAD_OK 0

@@ -123,10 +123,10 @@ namespace put
         std::vector<hash_id> changes;
 
         void (*build_callback)();
-        void (*hotload_callback)(std::vector<hash_id> &dirty);
+        void (*hotload_callback)(std::vector<hash_id>& dirty);
     };
 
-    std::vector<file_watch *> k_file_watches;
+    std::vector<file_watch*> k_file_watches;
 
     u32 calc_level_size(u32 width, u32 height, bool compressed, u32 block_size)
     {
@@ -140,10 +140,10 @@ namespace put
         return width * height * block_size;
     }
 
-    u32 dds_pixel_format_to_texture_format(const dds_header *ddsh, bool &compressed, u32 &block_size,
-                                           bool &dx10_header_present)
+    u32 dds_pixel_format_to_texture_format(const dds_header* ddsh, bool& compressed, u32& block_size,
+                                           bool& dx10_header_present)
     {
-        const ddspf &pixel_format = ddsh->pixel_format;
+        const ddspf& pixel_format = ddsh->pixel_format;
 
         dx10_header_present = false;
         compressed = false;
@@ -214,10 +214,10 @@ namespace put
         return pf;
     }
 
-    u32 load_texture_internal(const c8 *filename, hash_id hh, pen::texture_creation_params &tcp)
+    u32 load_texture_internal(const c8* filename, hash_id hh, pen::texture_creation_params& tcp)
     {
         // load a texture file from disk.
-        void *file_data = nullptr;
+        void* file_data = nullptr;
         u32 file_data_size = 0;
 
         u32 pen_err = pen::filesystem_read_file_to_buffer(filename, &file_data, file_data_size);
@@ -230,7 +230,7 @@ namespace put
         }
 
         // parse dds header
-        dds_header *ddsh = (dds_header *)file_data;
+        dds_header* ddsh = (dds_header*)file_data;
 
         bool dx10_header_present;
         bool compressed;
@@ -299,7 +299,7 @@ namespace put
         tcp.data = pen::memory_alloc(tcp.data_size);
 
         // copy texture data into the tcp storage
-        u8 *top_image_start = (u8 *)file_data + sizeof(dds_header);
+        u8* top_image_start = (u8*)file_data + sizeof(dds_header);
         pen::memory_cpy(tcp.data, top_image_start, tcp.data_size);
 
         // free the files contents
@@ -351,11 +351,11 @@ namespace put
         system(build_cmd.c_str());
     }
 
-    void texture_hotload(std::vector<hash_id> &dirty)
+    void texture_hotload(std::vector<hash_id>& dirty)
     {
-        for (auto &d : dirty)
+        for (auto& d : dirty)
         {
-            for (auto &tr : k_texture_references)
+            for (auto& tr : k_texture_references)
             {
                 if (tr.id_name == d)
                 {
@@ -367,7 +367,7 @@ namespace put
         }
     }
 
-    void add_file_watcher(const c8 *filename, void (*build_callback)(), void (*hotload_callback)(std::vector<hash_id> &dirty))
+    void add_file_watcher(const c8* filename, void (*build_callback)(), void (*hotload_callback)(std::vector<hash_id>& dirty))
     {
         Str fn = filename;
 
@@ -379,7 +379,7 @@ namespace put
         hash_id id_name = PEN_HASH(fn.c_str());
 
         // search for existing
-        for (auto *fw : k_file_watches)
+        for (auto* fw : k_file_watches)
         {
             if (id_name == fw->id_name)
             {
@@ -388,7 +388,7 @@ namespace put
         }
 
         // add new
-        file_watch *fw = new file_watch();
+        file_watch* fw = new file_watch();
         fw->dependencies = pen::json::load_from_file(fn.c_str());
         fw->filename = fn;
         fw->id_name = id_name;
@@ -403,7 +403,7 @@ namespace put
         // print build cmd to console first time init
         get_build_cmd();
 
-        for (auto *fw : k_file_watches)
+        for (auto* fw : k_file_watches)
         {
             if (fw->invalidated)
             {
@@ -474,7 +474,7 @@ namespace put
         }
     }
 
-    void save_texture(const c8 *filename, const texture_info &info)
+    void save_texture(const c8* filename, const texture_info& info)
     {
         // dds header
         dds_header hdr = {0};
@@ -520,17 +520,17 @@ namespace put
 
         std::ofstream ofs(filename, std::ofstream::binary);
 
-        ofs.write((const c8 *)&hdr, sizeof(dds_header));
-        ofs.write((const c8 *)info.data, info.data_size);
+        ofs.write((const c8*)&hdr, sizeof(dds_header));
+        ofs.write((const c8*)info.data, info.data_size);
 
         ofs.close();
     }
 
-    u32 load_texture(const c8 *filename)
+    u32 load_texture(const c8* filename)
     {
         // check for existing
         hash_id hh = PEN_HASH(filename);
-        for (auto &t : k_texture_references)
+        for (auto& t : k_texture_references)
             if (t.id_name == hh)
                 return t.handle;
 
@@ -544,9 +544,9 @@ namespace put
         return texture_index;
     }
 
-    void get_texture_info(u32 handle, texture_info &info)
+    void get_texture_info(u32 handle, texture_info& info)
     {
-        for (auto &t : k_texture_references)
+        for (auto& t : k_texture_references)
         {
             if (t.handle == handle)
                 info = t.tcp;

@@ -21,16 +21,16 @@ namespace pen
         u32 width;
         u32 height;
         u32 sample_count;
-        const c8 *window_title;
+        const c8* window_title;
     };
 
     struct user_info
     {
-        const c8 *user_name;
-        const c8 *full_user_name;
+        const c8* user_name;
+        const c8* full_user_name;
     };
 
-    extern PEN_TRV user_entry(void *params);
+    extern PEN_TRV user_entry(void* params);
 } // namespace pen
 
 #endif

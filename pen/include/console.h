@@ -12,7 +12,7 @@
 // and to control and re-direct in the future if required
 
 #define PEN_PRINT_CHAR_LIMIT 1024 * 10
-inline void output_debug(const c8 *format, ...)
+inline void output_debug(const c8* format, ...)
 {
     va_list va;
     va_start(va, format);

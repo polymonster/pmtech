@@ -29,20 +29,20 @@ pen::window_creation_params pen_window{
 
 namespace physics
 {
-    extern PEN_TRV physics_thread_main(void *params);
+    extern PEN_TRV physics_thread_main(void* params);
 }
 
-void create_physics_objects(ces::entity_scene *scene)
+void create_physics_objects(ces::entity_scene* scene)
 {
     clear_scene(scene);
 
-    material_resource *default_material = get_material_resource(PEN_HASH("default_material"));
+    material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
 
-    geometry_resource *box = get_geometry_resource(PEN_HASH("cube"));
-    geometry_resource *cylinder = get_geometry_resource(PEN_HASH("cylinder"));
-    geometry_resource *capsule = get_geometry_resource(PEN_HASH("capsule"));
-    geometry_resource *sphere = get_geometry_resource(PEN_HASH("sphere"));
-    geometry_resource *cone = get_geometry_resource(PEN_HASH("cone"));
+    geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
+    geometry_resource* cylinder = get_geometry_resource(PEN_HASH("cylinder"));
+    geometry_resource* capsule = get_geometry_resource(PEN_HASH("capsule"));
+    geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
+    geometry_resource* cone = get_geometry_resource(PEN_HASH("cone"));
 
     // add light
     u32 light = get_new_node(scene);
@@ -78,11 +78,11 @@ void create_physics_objects(ces::entity_scene *scene)
         vec3f(20.0f, 10.0f, -20.0f),  vec3f(0.0f, 10.0f, 0.0f),
     };
 
-    const c8 *primitive_names[] = {"box", "cylinder", "capsule", "cone", "sphere"};
+    const c8* primitive_names[] = {"box", "cylinder", "capsule", "cone", "sphere"};
 
     u32 primitive_types[] = {physics::BOX, physics::CYLINDER, physics::CAPSULE, physics::CONE, physics::SPHERE};
 
-    geometry_resource *primitive_resources[] = {box, cylinder, capsule, cone, sphere};
+    geometry_resource* primitive_resources[] = {box, cylinder, capsule, cone, sphere};
 
     s32 num_prims = 5;
 
@@ -128,11 +128,11 @@ void create_physics_objects(ces::entity_scene *scene)
     }
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     pen::thread_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
@@ -151,7 +151,7 @@ PEN_TRV pen::user_entry(void *params)
     cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
-    put::ces::entity_scene *main_scene = put::ces::create_scene("main_scene");
+    put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;

@@ -29,17 +29,17 @@ pen::window_creation_params pen_window{
 
 namespace physics
 {
-    extern PEN_TRV physics_thread_main(void *params);
+    extern PEN_TRV physics_thread_main(void* params);
 }
 
-void create_scene_objects(ces::entity_scene *scene)
+void create_scene_objects(ces::entity_scene* scene)
 {
     clear_scene(scene);
 
     u32 cubemap_texture = put::load_texture("data/textures/cubemap.dds");
 
     // create material for cubemap
-    material_resource *cubemap_material = new material_resource;
+    material_resource* cubemap_material = new material_resource;
     cubemap_material->material_name = "volume_material";
     cubemap_material->shader_name = "pmfx_utility";
     cubemap_material->id_shader = PEN_HASH("pmfx_utility");
@@ -48,7 +48,7 @@ void create_scene_objects(ces::entity_scene *scene)
     cubemap_material->texture_handles[SN_ENV_MAP] = cubemap_texture;
     add_material_resource(cubemap_material);
 
-    geometry_resource *sphere = get_geometry_resource(PEN_HASH("sphere"));
+    geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
 
     u32 new_prim = get_new_node(scene);
     scene->names[new_prim] = "sphere";
@@ -63,11 +63,11 @@ void create_scene_objects(ces::entity_scene *scene)
     instantiate_model_cbuffer(scene, new_prim);
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     pen::thread_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
@@ -86,7 +86,7 @@ PEN_TRV pen::user_entry(void *params)
     cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
-    put::ces::entity_scene *main_scene = put::ces::create_scene("main_scene");
+    put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;

@@ -40,15 +40,15 @@ namespace put
             vertex_debug_2d(){};
         };
 
-        shader_program *debug_3d_program;
+        shader_program* debug_3d_program;
 
         u32 vb_3d[VB_NUM];
         u32 line_vert_3d_count = 0;
         u32 tri_vert_3d_count = 0;
 
-        vertex_debug_3d *debug_3d_buffers[VB_NUM] = {0};
-        vertex_debug_3d *debug_3d_verts = debug_3d_buffers[VB_LINES];
-        vertex_debug_3d *debug_3d_tris = debug_3d_buffers[VB_TRIS];
+        vertex_debug_3d* debug_3d_buffers[VB_NUM] = {0};
+        vertex_debug_3d* debug_3d_verts = debug_3d_buffers[VB_LINES];
+        vertex_debug_3d* debug_3d_tris = debug_3d_buffers[VB_TRIS];
 
         u32 vb_2d[VB_NUM];
         u32 tri_vert_2d_count = 0;
@@ -57,9 +57,9 @@ namespace put
         u32 buffer_2d_size_in_verts[VB_NUM] = {0};
         u32 buffer_3d_size_in_verts[VB_NUM] = {0};
 
-        vertex_debug_2d *debug_2d_buffers[VB_NUM] = {0};
-        vertex_debug_2d *debug_2d_verts = debug_2d_buffers[VB_LINES];
-        vertex_debug_2d *debug_2d_tris = debug_2d_buffers[VB_TRIS];
+        vertex_debug_2d* debug_2d_buffers[VB_NUM] = {0};
+        vertex_debug_2d* debug_2d_verts = debug_2d_buffers[VB_LINES];
+        vertex_debug_2d* debug_2d_tris = debug_2d_buffers[VB_TRIS];
 
         shader_handle debug_shader;
 
@@ -82,7 +82,7 @@ namespace put
             if (num_verts < buffer_3d_size_in_verts[buffer_index])
                 return;
 
-            vertex_debug_3d *prev_buffer = debug_3d_buffers[buffer_index];
+            vertex_debug_3d* prev_buffer = debug_3d_buffers[buffer_index];
 
             u32 prev_vb = vb_3d[buffer_index];
             u32 prev_size = sizeof(vertex_debug_3d) * buffer_3d_size_in_verts[buffer_index];
@@ -127,7 +127,7 @@ namespace put
             if (num_verts < buffer_2d_size_in_verts[buffer_index])
                 return;
 
-            vertex_debug_2d *prev_buffer = debug_2d_buffers[buffer_index];
+            vertex_debug_2d* prev_buffer = debug_2d_buffers[buffer_index];
 
             u32 prev_vb = vb_2d[buffer_index];
             u32 prev_size = sizeof(vertex_debug_2d) * buffer_2d_size_in_verts[buffer_index];
@@ -222,7 +222,7 @@ namespace put
             line_vert_2d_count = 0;
         }
 
-        void add_line(const vec3f &start, const vec3f &end, const vec4f &col)
+        void add_line(const vec3f& start, const vec3f& end, const vec4f& col)
         {
             alloc_3d_buffer(line_vert_3d_count + 2, VB_LINES);
 
@@ -235,12 +235,12 @@ namespace put
             line_vert_3d_count += 2;
         }
 
-        void add_circle(const vec3f &axis, const vec3f &centre, f32 radius, const vec4f &col)
+        void add_circle(const vec3f& axis, const vec3f& centre, f32 radius, const vec4f& col)
         {
             add_circle_segment(axis, centre, radius, 0.0f, M_TWO_PI, col);
         }
 
-        void add_circle_segment(const vec3f &axis, const vec3f &centre, f32 radius, f32 min, f32 max, const vec4f &col)
+        void add_circle_segment(const vec3f& axis, const vec3f& centre, f32 radius, f32 min, f32 max, const vec4f& col)
         {
             alloc_3d_buffer(line_vert_3d_count + 24, VB_LINES);
 
@@ -286,7 +286,7 @@ namespace put
             }
         }
 
-        void add_frustum(const vec3f *near_corners, const vec3f *far_corners, const vec4f &col)
+        void add_frustum(const vec3f* near_corners, const vec3f* far_corners, const vec4f& col)
         {
             for (s32 i = 0; i < 4; ++i)
             {
@@ -309,14 +309,14 @@ namespace put
             }
         }
 
-        void add_triangle(const vec3f &v1, const vec3f &v2, const vec3f &v3, const vec4f &col)
+        void add_triangle(const vec3f& v1, const vec3f& v2, const vec3f& v3, const vec4f& col)
         {
             put::dbg::add_line(v1, v2, col);
             put::dbg::add_line(v2, v3, col);
             put::dbg::add_line(v3, v1, col);
         }
 
-        void add_aabb(const vec3f &min, const vec3f &max, const vec4f &col)
+        void add_aabb(const vec3f& min, const vec3f& max, const vec4f& col)
         {
             alloc_3d_buffer(line_vert_3d_count + 24, VB_LINES);
 
@@ -418,7 +418,7 @@ namespace put
             line_vert_3d_count += num_verts;
         }
 
-        void add_obb(const mat4 &matrix, vec4f col)
+        void add_obb(const mat4& matrix, vec4f col)
         {
             u32 start_index = line_vert_3d_count;
             add_aabb(vec3f::one(), -vec3f::one(), col);
@@ -430,7 +430,7 @@ namespace put
             }
         }
 
-        void add_line_transform(const vec3f &start, const vec3f &end, const mat4 *matrix, const vec4f &col)
+        void add_line_transform(const vec3f& start, const vec3f& end, const mat4* matrix, const vec4f& col)
         {
             f32 w = 1.0f;
             vec3f transformed_s = matrix->transform_vector(start, w);
@@ -441,8 +441,8 @@ namespace put
             dbg::add_line(transformed_s, transformed_e, col);
         }
 
-        void add_axis_transform_widget(const mat4 &mat, const f32 size, u32 selected_axis, u32 type, const mat4 &view,
-                                       const mat4 &proj, const vec2i &vp)
+        void add_axis_transform_widget(const mat4& mat, const f32 size, u32 selected_axis, u32 type, const mat4& view,
+                                       const mat4& proj, const vec2i& vp)
         {
             add_coord_space(mat, size, selected_axis);
 
@@ -489,7 +489,7 @@ namespace put
             }
         }
 
-        void add_coord_space(const mat4 &mat, const f32 size, u32 selected)
+        void add_coord_space(const mat4& mat, const f32 size, u32 selected)
         {
             alloc_3d_buffer(line_vert_3d_count + 6, VB_LINES);
 
@@ -516,7 +516,7 @@ namespace put
             }
         }
 
-        void add_point(const vec3f &point, f32 size, const vec4f &col)
+        void add_point(const vec3f& point, f32 size, const vec4f& col)
         {
             alloc_3d_buffer(line_vert_3d_count + 12, VB_LINES);
 
@@ -542,7 +542,7 @@ namespace put
             }
         }
 
-        void add_grid(const vec3f &centre, const vec3f &size, const vec3f &divisions)
+        void add_grid(const vec3f& centre, const vec3f& size, const vec3f& divisions)
         {
             alloc_3d_buffer(line_vert_3d_count + divisions.x * 2 + divisions.z * 2, VB_LINES);
 
@@ -614,7 +614,7 @@ namespace put
             }
         }
 
-        void add_plane(const vec3f &point, const vec3f &normal, f32 size, vec4f colour)
+        void add_plane(const vec3f& point, const vec3f& normal, f32 size, vec4f colour)
         {
             vec3f v = vec3f::unit_y();
 
@@ -638,7 +638,7 @@ namespace put
             dbg::add_line(point, point + normal, colour);
         }
 
-        void add_text_2f(const f32 x, const f32 y, const pen::viewport &vp, const vec4f &colour, const c8 *format, ...)
+        void add_text_2f(const f32 x, const f32 y, const pen::viewport& vp, const vec4f& colour, const c8* format, ...)
         {
             va_list va;
             va_start(va, format);
@@ -653,7 +653,7 @@ namespace put
             u32 num_quads;
             num_quads = stb_easy_font_print(x, y, expanded_buffer, nullptr, buffer, sizeof(buffer));
 
-            f32 *vb = (f32 *)&buffer[0];
+            f32* vb = (f32*)&buffer[0];
 
             u32 start_vertex = tri_vert_2d_count;
 
@@ -708,7 +708,7 @@ namespace put
             }
         }
 
-        void add_line_2f(const vec2f &start, const vec2f &end, const vec4f &colour)
+        void add_line_2f(const vec2f& start, const vec2f& end, const vec4f& colour)
         {
             alloc_2d_buffer(line_vert_2d_count + 2, VB_LINES);
 
@@ -723,12 +723,12 @@ namespace put
             line_vert_2d_count += 2;
         }
 
-        void add_point_2f(const vec2f &pos, const vec4f &colour)
+        void add_point_2f(const vec2f& pos, const vec4f& colour)
         {
             add_quad_2f(pos, vec2f(2.0f, 2.0f), colour);
         }
 
-        void add_tri_2f(const vec2f &p1, const vec2f &p2, const vec2f &p3, const vec4f &colour)
+        void add_tri_2f(const vec2f& p1, const vec2f& p2, const vec2f& p3, const vec4f& colour)
         {
             alloc_2d_buffer(tri_vert_2d_count + 6, VB_TRIS);
 
@@ -747,7 +747,7 @@ namespace put
                 debug_2d_tris[i].col = colour;
         }
 
-        void add_quad_2f(const vec2f &pos, const vec2f &size, const vec4f &colour)
+        void add_quad_2f(const vec2f& pos, const vec2f& size, const vec4f& colour)
         {
             alloc_2d_buffer(tri_vert_2d_count + 6, VB_TRIS);
 

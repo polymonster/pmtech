@@ -10,7 +10,7 @@ namespace put
 
     namespace vgt
     {
-        void init(ces::entity_scene *scene);
+        void init(ces::entity_scene* scene);
 
         void show_dev_ui();
         void post_update();

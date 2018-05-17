@@ -16,7 +16,7 @@ namespace pen
 
         u32 hit_count;
 
-        const c8 *name;
+        const c8* name;
 
     } timer;
 
@@ -39,7 +39,7 @@ namespace pen
         next_free = 0;
     }
 
-    u32 timer_create(const c8 *name)
+    u32 timer_create(const c8* name)
     {
         timers[next_free].name = name;
         PEN_ASSERT(next_free < MAX_TIMERS);

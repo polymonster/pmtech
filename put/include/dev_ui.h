@@ -43,23 +43,23 @@ namespace put
 
         // console
         void show_console(bool val);
-        void log(const c8 *fmt, ...);
-        void log_level(u32 level, const c8 *fmt, ...);
+        void log(const c8* fmt, ...);
+        void log_level(u32 level, const c8* fmt, ...);
         void console();
 
         // imgui extensions
-        bool state_button(const c8 *text, bool state_active);
-        void set_tooltip(const c8 *fmt, ...);
-        const c8 *file_browser(bool &dialog_open, u32 flags, s32 num_filetypes = 0, ...);
+        bool state_button(const c8* text, bool state_active);
+        void set_tooltip(const c8* fmt, ...);
+        const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes = 0, ...);
 
         // generic program preferences
-        void set_program_preference(const c8 *name, f32 val);
-        void set_program_preference(const c8 *name, s32 val);
-        void set_program_preference(const c8 *name, bool val);
-        void set_program_preference(const c8 *name, Str val);
-        pen::json get_program_preference(const c8 *name);
-        Str get_program_preference_filename(const c8 *name);
-        void set_program_preference_filename(const c8 *name, Str val);
+        void set_program_preference(const c8* name, f32 val);
+        void set_program_preference(const c8* name, s32 val);
+        void set_program_preference(const c8* name, bool val);
+        void set_program_preference(const c8* name, Str val);
+        pen::json get_program_preference(const c8* name);
+        Str get_program_preference_filename(const c8* name);
+        void set_program_preference_filename(const c8* name, Str val);
     } // namespace dev_ui
 } // namespace put
 

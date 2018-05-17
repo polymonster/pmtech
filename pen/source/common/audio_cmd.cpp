@@ -59,7 +59,7 @@ namespace pen
         u32 resource_slot;
 
         union {
-            c8 *filename;
+            c8* filename;
             u32 resource_index;
             pen::set_valuei set_valuei;
             pen::set_valuef set_valuef;
@@ -71,7 +71,7 @@ namespace pen
     u32 audio_put_pos = 0;
     u32 audio_get_pos = 0;
 
-    void audio_exec_command(const audio_cmd &cmd)
+    void audio_exec_command(const audio_cmd& cmd)
     {
         switch (cmd.command_index)
         {
@@ -131,7 +131,7 @@ namespace pen
     }
 
     // thread sync
-    pen::job *p_audio_job_thread_info;
+    pen::job* p_audio_job_thread_info;
     pen::slot_resources k_audio_slot_resources;
 
     void audio_consume_command_buffer()
@@ -140,9 +140,9 @@ namespace pen
         pen::thread_semaphore_wait(p_audio_job_thread_info->p_sem_continue);
     }
 
-    PEN_TRV audio_thread_function(void *params)
+    PEN_TRV audio_thread_function(void* params)
     {
-        job_thread_params *job_params = (job_thread_params *)params;
+        job_thread_params* job_params = (job_thread_params*)params;
         p_audio_job_thread_info = job_params->job_info;
 
         // create resource slots
@@ -189,11 +189,11 @@ namespace pen
         return PEN_THREAD_OK;
     }
 
-    void create_file_command(const c8 *filename, u32 command, u32 resource_slot)
+    void create_file_command(const c8* filename, u32 command, u32 resource_slot)
     {
         // allocate filename and copy the buffer and null terminate it
         u32 filename_length = pen::string_length(filename);
-        audio_cmd_buffer[audio_put_pos].filename = (c8 *)pen::memory_alloc(filename_length + 1);
+        audio_cmd_buffer[audio_put_pos].filename = (c8*)pen::memory_alloc(filename_length + 1);
         audio_cmd_buffer[audio_put_pos].filename[filename_length] = 0x00;
         audio_cmd_buffer[audio_put_pos].resource_slot = resource_slot;
 
@@ -205,7 +205,7 @@ namespace pen
         INC_WRAP(audio_put_pos);
     }
 
-    u32 audio_create_stream(const c8 *filename)
+    u32 audio_create_stream(const c8* filename)
     {
         u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
 
@@ -214,7 +214,7 @@ namespace pen
         return res;
     }
 
-    u32 audio_create_sound(const c8 *filename)
+    u32 audio_create_sound(const c8* filename)
     {
         u32 res = pen::slot_resources_get_next(&k_audio_slot_resources);
 

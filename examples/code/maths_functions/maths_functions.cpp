@@ -91,10 +91,10 @@ struct debug_extents
     vec3f max;
 };
 
-material_resource *constant_colour_material = new material_resource;
+material_resource* constant_colour_material = new material_resource;
 
 // Randomise vector in range of extents
-vec3f random_vec_range(const debug_extents &extents)
+vec3f random_vec_range(const debug_extents& extents)
 {
     vec3f range = extents.max - extents.min;
     range *= 100.0f;
@@ -110,7 +110,7 @@ vec3f random_vec_range(const debug_extents &extents)
 }
 
 // Spawn a randomised point within range of extents
-void add_debug_point(const debug_extents &extents, entity_scene *scene, debug_point &point)
+void add_debug_point(const debug_extents& extents, entity_scene* scene, debug_point& point)
 {
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "point";
@@ -123,7 +123,7 @@ void add_debug_point(const debug_extents &extents, entity_scene *scene, debug_po
 }
 
 // Spawn a random plane which starts at a point within extents
-void add_debug_plane(const debug_extents &extents, entity_scene *scene, debug_plane &plane)
+void add_debug_plane(const debug_extents& extents, entity_scene* scene, debug_plane& plane)
 {
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "plane";
@@ -136,7 +136,7 @@ void add_debug_plane(const debug_extents &extents, entity_scene *scene, debug_pl
 }
 
 // Spawn a random ray which contains point within extents
-void add_debug_ray(const debug_extents &extents, entity_scene *scene, debug_ray &ray)
+void add_debug_ray(const debug_extents& extents, entity_scene* scene, debug_ray& ray)
 {
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "ray";
@@ -149,7 +149,7 @@ void add_debug_ray(const debug_extents &extents, entity_scene *scene, debug_ray 
 }
 
 // Spawn a random line which contains both points within extents
-void add_debug_line(const debug_extents &extents, entity_scene *scene, debug_line &line)
+void add_debug_line(const debug_extents& extents, entity_scene* scene, debug_line& line)
 {
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "line";
@@ -162,7 +162,7 @@ void add_debug_line(const debug_extents &extents, entity_scene *scene, debug_lin
 }
 
 // Spawn a random AABB which contains centre within extents and size within extents
-void add_debug_aabb(const debug_extents &extents, entity_scene *scene, debug_aabb &aabb)
+void add_debug_aabb(const debug_extents& extents, entity_scene* scene, debug_aabb& aabb)
 {
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "aabb";
@@ -177,9 +177,9 @@ void add_debug_aabb(const debug_extents &extents, entity_scene *scene, debug_aab
 }
 
 // Add debug sphere with randon radius within range extents and at random position within extents
-void add_debug_sphere(const debug_extents &extents, entity_scene *scene, debug_sphere &sphere)
+void add_debug_sphere(const debug_extents& extents, entity_scene* scene, debug_sphere& sphere)
 {
-    geometry_resource *sphere_res = get_geometry_resource(PEN_HASH("sphere"));
+    geometry_resource* sphere_res = get_geometry_resource(PEN_HASH("sphere"));
 
     vec3f size = fabs(random_vec_range(extents));
 
@@ -202,9 +202,9 @@ void add_debug_sphere(const debug_extents &extents, entity_scene *scene, debug_s
     sphere.node = node;
 }
 
-void add_debug_solid_aabb(const debug_extents &extents, entity_scene *scene, debug_aabb &aabb)
+void add_debug_solid_aabb(const debug_extents& extents, entity_scene* scene, debug_aabb& aabb)
 {
-    geometry_resource *cube_res = get_geometry_resource(PEN_HASH("cube"));
+    geometry_resource* cube_res = get_geometry_resource(PEN_HASH("cube"));
 
     vec3f size = fabs(random_vec_range(extents));
 
@@ -227,7 +227,7 @@ void add_debug_solid_aabb(const debug_extents &extents, entity_scene *scene, deb
     aabb.node = node;
 }
 
-void add_debug_obb(const debug_extents &extents, entity_scene *scene, debug_obb &obb)
+void add_debug_obb(const debug_extents& extents, entity_scene* scene, debug_obb& obb)
 {
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "obb";
@@ -244,9 +244,9 @@ void add_debug_obb(const debug_extents &extents, entity_scene *scene, debug_obb 
     obb.node = node;
 }
 
-void add_debug_solid_obb(const debug_extents &extents, entity_scene *scene, debug_obb &obb)
+void add_debug_solid_obb(const debug_extents& extents, entity_scene* scene, debug_obb& obb)
 {
-    geometry_resource *cube_res = get_geometry_resource(PEN_HASH("cube"));
+    geometry_resource* cube_res = get_geometry_resource(PEN_HASH("cube"));
 
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "obb";
@@ -267,7 +267,7 @@ void add_debug_solid_obb(const debug_extents &extents, entity_scene *scene, debu
     obb.node = node;
 }
 
-void add_debug_triangle(const debug_extents &extents, entity_scene *scene, debug_triangle &tri)
+void add_debug_triangle(const debug_extents& extents, entity_scene* scene, debug_triangle& tri)
 {
     u32 node = ces::get_new_node(scene);
     scene->names[node] = "triangle";
@@ -280,7 +280,7 @@ void add_debug_triangle(const debug_extents &extents, entity_scene *scene, debug
     tri.t2 = random_vec_range(extents);
 }
 
-void test_ray_plane_intersect(entity_scene *scene, bool initialise)
+void test_ray_plane_intersect(entity_scene* scene, bool initialise)
 {
     static debug_plane plane;
     static debug_ray ray;
@@ -307,7 +307,7 @@ void test_ray_plane_intersect(entity_scene *scene, bool initialise)
     dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, vec4f::green());
 }
 
-void test_ray_vs_aabb(entity_scene *scene, bool initialise)
+void test_ray_vs_aabb(entity_scene* scene, bool initialise)
 {
     static debug_aabb aabb;
     static debug_ray ray;
@@ -341,7 +341,7 @@ void test_ray_vs_aabb(entity_scene *scene, bool initialise)
     scene->materials[aabb.node].diffuse_rgb_shininess = col;
 }
 
-void test_ray_vs_obb(entity_scene *scene, bool initialise)
+void test_ray_vs_obb(entity_scene* scene, bool initialise)
 {
     static debug_obb obb;
     static debug_ray ray;
@@ -394,7 +394,7 @@ void test_ray_vs_obb(entity_scene *scene, bool initialise)
     scene->materials[obb.node].diffuse_rgb_shininess = col;
 }
 
-void test_point_plane_distance(entity_scene *scene, bool initialise)
+void test_point_plane_distance(entity_scene* scene, bool initialise)
 {
     static debug_point point;
     static debug_plane plane;
@@ -421,7 +421,7 @@ void test_point_plane_distance(entity_scene *scene, bool initialise)
     dbg::add_plane(plane.point, plane.normal);
 }
 
-const c8 *classifications[]{
+const c8* classifications[]{
     "Intersects",
     "Behind",
     "Infront",
@@ -429,7 +429,7 @@ const c8 *classifications[]{
 
 const vec4f classification_colours[] = {vec4f::red(), vec4f::cyan(), vec4f::green()};
 
-void test_aabb_vs_plane(entity_scene *scene, bool initialise)
+void test_aabb_vs_plane(entity_scene* scene, bool initialise)
 {
     static debug_aabb aabb;
     static debug_plane plane;
@@ -456,7 +456,7 @@ void test_aabb_vs_plane(entity_scene *scene, bool initialise)
     dbg::add_plane(plane.point, plane.normal);
 }
 
-void test_sphere_vs_plane(entity_scene *scene, bool initialise)
+void test_sphere_vs_plane(entity_scene* scene, bool initialise)
 {
     static debug_sphere sphere;
     static debug_plane plane;
@@ -483,7 +483,7 @@ void test_sphere_vs_plane(entity_scene *scene, bool initialise)
     dbg::add_plane(plane.point, plane.normal);
 }
 
-void test_project(entity_scene *scene, bool initialise)
+void test_project(entity_scene* scene, bool initialise)
 {
     static debug_point point;
 
@@ -510,7 +510,7 @@ void test_project(entity_scene *scene, bool initialise)
     dbg::add_point_2f(screen_point.xy, vec4f::green());
 }
 
-void test_point_aabb(entity_scene *scene, bool initialise)
+void test_point_aabb(entity_scene* scene, bool initialise)
 {
     static debug_aabb aabb;
     static debug_point point;
@@ -540,7 +540,7 @@ void test_point_aabb(entity_scene *scene, bool initialise)
     dbg::add_point(cp, 0.3f, vec4f::cyan());
 }
 
-void test_point_obb(entity_scene *scene, bool initialise)
+void test_point_obb(entity_scene* scene, bool initialise)
 {
     static debug_obb obb;
     static debug_point point;
@@ -571,7 +571,7 @@ void test_point_obb(entity_scene *scene, bool initialise)
     dbg::add_point(cp, 0.3f, vec4f::cyan());
 }
 
-void test_point_line(entity_scene *scene, bool initialise)
+void test_point_line(entity_scene* scene, bool initialise)
 {
     static debug_line line;
     static debug_point point;
@@ -602,7 +602,7 @@ void test_point_line(entity_scene *scene, bool initialise)
     dbg::add_point(cp, 0.3f, vec4f::red());
 }
 
-void test_point_ray(entity_scene *scene, bool initialise)
+void test_point_ray(entity_scene* scene, bool initialise)
 {
     static debug_point point;
     static debug_ray ray;
@@ -630,7 +630,7 @@ void test_point_ray(entity_scene *scene, bool initialise)
     dbg::add_point(cp, 0.3f, vec4f::red());
 }
 
-void test_point_triangle(entity_scene *scene, bool initialise)
+void test_point_triangle(entity_scene* scene, bool initialise)
 {
     static debug_triangle tri;
     static debug_point point;
@@ -673,7 +673,7 @@ void test_point_triangle(entity_scene *scene, bool initialise)
     dbg::add_point(cp, 0.3f, col2);
 }
 
-void test_sphere_vs_sphere(entity_scene *scene, bool initialise)
+void test_sphere_vs_sphere(entity_scene* scene, bool initialise)
 {
     static debug_sphere sphere0;
     static debug_sphere sphere1;
@@ -701,7 +701,7 @@ void test_sphere_vs_sphere(entity_scene *scene, bool initialise)
     scene->materials[sphere1.node].diffuse_rgb_shininess = vec4f(col);
 }
 
-void test_sphere_vs_aabb(entity_scene *scene, bool initialise)
+void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
 {
     static debug_aabb aabb;
     static debug_sphere sphere;
@@ -729,7 +729,7 @@ void test_sphere_vs_aabb(entity_scene *scene, bool initialise)
     scene->materials[aabb.node].diffuse_rgb_shininess = vec4f(col);
 }
 
-void test_line_vs_line(entity_scene *scene, bool initialise)
+void test_line_vs_line(entity_scene* scene, bool initialise)
 {
     static debug_line line0;
     static debug_line line1;
@@ -758,7 +758,7 @@ void test_line_vs_line(entity_scene *scene, bool initialise)
     dbg::add_line(line1.l1, line1.l2, col);
 }
 
-const c8 *test_names[]{"Point Plane Distance",
+const c8* test_names[]{"Point Plane Distance",
                        "Ray Plane Intersect",
                        "AABB Plane Classification",
                        "Sphere Plane Classification",
@@ -774,14 +774,14 @@ const c8 *test_names[]{"Point Plane Distance",
                        "Line vs Line",
                        "Point Inside OBB / Closest Point on OBB"};
 
-typedef void (*maths_test_function)(entity_scene *, bool);
+typedef void (*maths_test_function)(entity_scene*, bool);
 
 maths_test_function test_functions[] = {
     test_point_plane_distance, test_ray_plane_intersect, test_aabb_vs_plane, test_sphere_vs_plane, test_project,
     test_point_aabb,           test_point_line,          test_point_ray,     test_point_triangle,  test_sphere_vs_sphere,
     test_sphere_vs_aabb,       test_ray_vs_aabb,         test_ray_vs_obb,    test_line_vs_line,    test_point_obb};
 
-void maths_test_ui(entity_scene *scene)
+void maths_test_ui(entity_scene* scene)
 {
     static s32 test_index = 0;
     static bool initialise = true;
@@ -795,14 +795,14 @@ void maths_test_ui(entity_scene *scene)
 
 namespace physics
 {
-    extern PEN_TRV physics_thread_main(void *params);
+    extern PEN_TRV physics_thread_main(void* params);
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     pen::thread_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
@@ -820,7 +820,7 @@ PEN_TRV pen::user_entry(void *params)
     cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
-    put::ces::entity_scene *main_scene = put::ces::create_scene("main_scene");
+    put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;

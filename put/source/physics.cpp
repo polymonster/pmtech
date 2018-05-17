@@ -8,12 +8,12 @@
 namespace physics
 {
 #define SWAP_BUFFERS(b) b = (b + 1) % NUM_OUTPUT_BUFFERS
-    inline btVector3 from_lw_vec3(const lw_vec3f &v3)
+    inline btVector3 from_lw_vec3(const lw_vec3f& v3)
     {
         return btVector3(v3.x, v3.y, v3.z);
     }
 
-    inline vec3f from_btvector(const btVector3 &bt)
+    inline vec3f from_btvector(const btVector3& bt)
     {
         return vec3f(bt.getX(), bt.getY(), bt.getZ());
     }
@@ -39,7 +39,7 @@ namespace physics
     };
     collision_responsors g_collision_responsors;
 
-    btTransform get_bttransform_from_params(const rigid_body_params &params)
+    btTransform get_bttransform_from_params(const rigid_body_params& params)
     {
         btTransform trans;
         trans.setIdentity();
@@ -52,10 +52,10 @@ namespace physics
         return trans;
     }
 
-    btCollisionShape *create_collision_shape(physics_entity &entity, const rigid_body_params &params,
-                                             const compound_rb_params *p_compound = NULL)
+    btCollisionShape* create_collision_shape(physics_entity& entity, const rigid_body_params& params,
+                                             const compound_rb_params* p_compound = NULL)
     {
-        btCollisionShape *shape = NULL;
+        btCollisionShape* shape = NULL;
 
         switch (params.shape)
         {
@@ -114,10 +114,10 @@ namespace physics
         case physics::MESH:
         {
             u32 num_tris = params.mesh_data.num_indices / 3;
-            btTriangleIndexVertexArray *mesh =
-                new btTriangleIndexVertexArray(num_tris, (s32 *)params.mesh_data.indices, sizeof(u32) * 3,
+            btTriangleIndexVertexArray* mesh =
+                new btTriangleIndexVertexArray(num_tris, (s32*)params.mesh_data.indices, sizeof(u32) * 3,
                                                params.mesh_data.num_floats / 3, params.mesh_data.vertices, sizeof(f32) * 3);
-            btBvhTriangleMeshShape *concave_mesh = new btBvhTriangleMeshShape(mesh, true);
+            btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape(mesh, true);
             shape = concave_mesh;
         }
         break;
@@ -127,11 +127,11 @@ namespace physics
             {
                 u32 num_shapes = p_compound->num_shapes;
 
-                btCompoundShape *compound = new btCompoundShape(true);
+                btCompoundShape* compound = new btCompoundShape(true);
 
                 for (u32 s = 0; s < num_shapes; ++s)
                 {
-                    btCollisionShape *p_sub_shape = create_collision_shape(entity, p_compound->rb[s]);
+                    btCollisionShape* p_sub_shape = create_collision_shape(entity, p_compound->rb[s]);
 
                     btTransform trans = get_bttransform_from_params(p_compound->rb[s]);
 
@@ -156,7 +156,7 @@ namespace physics
         return shape;
     }
 
-    btMultiBody *create_multirb_internal(physics_entity &entity, const multi_body_params &params)
+    btMultiBody* create_multirb_internal(physics_entity& entity, const multi_body_params& params)
     {
 #if 0
 		//init the base	
@@ -361,11 +361,11 @@ namespace physics
         return nullptr;
     }
 
-    btRigidBody *create_rb_internal(physics_entity &entity, const rigid_body_params &params, u32 ghost,
-                                    btCollisionShape *p_existing_shape)
+    btRigidBody* create_rb_internal(physics_entity& entity, const rigid_body_params& params, u32 ghost,
+                                    btCollisionShape* p_existing_shape)
     {
         // create box shape at position and orientation specified in the command
-        btCollisionShape *shape = NULL;
+        btCollisionShape* shape = NULL;
         btTransform shape_transform;
 
         if (p_existing_shape)
@@ -397,12 +397,12 @@ namespace physics
         }
 
         // using motion state is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-        btDefaultMotionState *motion_state = new btDefaultMotionState(shape_transform);
+        btDefaultMotionState* motion_state = new btDefaultMotionState(shape_transform);
         entity.default_motion_state = motion_state;
 
         btRigidBody::btRigidBodyConstructionInfo rb_info(mass, motion_state, shape, local_inertia);
 
-        btRigidBody *body = new btRigidBody(rb_info);
+        btRigidBody* body = new btRigidBody(rb_info);
         body->setContactProcessingThreshold(BT_LARGE_FLOAT);
         body->setActivationState(DISABLE_DEACTIVATION);
 
@@ -451,13 +451,13 @@ namespace physics
 
         for (u32 i = 0; i < k_bullet_objects.num_entities; i++)
         {
-            physics_entity &entity = k_bullet_objects.entities[i];
+            physics_entity& entity = k_bullet_objects.entities[i];
 
             switch (entity.type)
             {
             case ENTITY_RIGID_BODY:
             {
-                btRigidBody *p_rb = entity.rb.rigid_body;
+                btRigidBody* p_rb = entity.rb.rigid_body;
 
                 btTransform rb_transform = p_rb->getWorldTransform();
 
@@ -474,11 +474,11 @@ namespace physics
 
             case ENTITY_MULTI_BODY:
             {
-                btMultiBody *p_multi = k_bullet_objects.entities[i].mb.multi_body;
+                btMultiBody* p_multi = k_bullet_objects.entities[i].mb.multi_body;
 
                 if (p_multi)
                 {
-                    btMultiBodyLinkCollider *p_base_col = p_multi->getBaseCollider();
+                    btMultiBodyLinkCollider* p_base_col = p_multi->getBaseCollider();
 
                     btTransform rb_transform;
 
@@ -561,8 +561,8 @@ namespace physics
 
     struct trigger_callback : public btCollisionWorld::ContactResultCallback
     {
-        btScalar addSingleResult(btManifoldPoint &cp, const btCollisionObjectWrapper *colObj0Wrap, int partId0, int index0,
-                                 const btCollisionObjectWrapper *colObj1Wrap, int partId1, int index1)
+        btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
+                                 const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
         {
             if (k_trigger_contacts[trigger_a].num >= MAX_TRIGGER_CONTACTS)
             {
@@ -647,13 +647,13 @@ namespace physics
         SWAP_BUFFERS(g_readable_data.current_ouput_frontbuffer);
     }
 
-    void add_rb_internal(const rigid_body_params &params, u32 resource_slot, bool ghost)
+    void add_rb_internal(const rigid_body_params& params, u32 resource_slot, bool ghost)
     {
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity &entity = k_bullet_objects.entities[resource_slot];
+        physics_entity& entity = k_bullet_objects.entities[resource_slot];
 
         // add the body to the dynamics world
-        btRigidBody *rb = create_rb_internal(entity, params, ghost);
+        btRigidBody* rb = create_rb_internal(entity, params, ghost);
         rb->setUserIndex(resource_slot);
 
         entity.rb.rigid_body = rb;
@@ -665,13 +665,13 @@ namespace physics
         entity.type = ENTITY_RIGID_BODY;
     }
 
-    void add_compound_rb_internal(const compound_rb_params &params, u32 resource_slot)
+    void add_compound_rb_internal(const compound_rb_params& params, u32 resource_slot)
     {
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity &next_entity = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
-        btCollisionShape *col = create_collision_shape(next_entity, params.base, &params);
-        btCompoundShape *compound = (btCompoundShape *)col;
+        btCollisionShape* col = create_collision_shape(next_entity, params.base, &params);
+        btCompoundShape* compound = (btCompoundShape*)col;
 
         next_entity.compound_shape = compound;
         next_entity.num_base_compound_shapes = params.num_shapes;
@@ -683,21 +683,21 @@ namespace physics
         next_entity.mask = params.base.mask;
     }
 
-    void add_compound_shape_internal(const compound_rb_params &params, u32 resource_slot)
+    void add_compound_shape_internal(const compound_rb_params& params, u32 resource_slot)
     {
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity &next_entity = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
-        btCollisionShape *col = create_collision_shape(next_entity, params.base, &params);
-        btCompoundShape *compound = (btCompoundShape *)col;
+        btCollisionShape* col = create_collision_shape(next_entity, params.base, &params);
+        btCompoundShape* compound = (btCompoundShape*)col;
 
         next_entity.compound_shape = compound;
     }
 
-    void add_dof6_internal(const constraint_params &params, u32 resource_slot, btRigidBody *rb, btRigidBody *fixed_body)
+    void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body)
     {
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity &next_entity = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
         /*
         u32 fixed_con = 1;
@@ -735,7 +735,7 @@ namespace physics
 
         rb->setDamping(params.linear_damping, params.angular_damping);
 
-        btGeneric6DofConstraint *dof6 = nullptr;
+        btGeneric6DofConstraint* dof6 = nullptr;
         if (fixed_body && rb)
             dof6 = new btGeneric6DofConstraint(*fixed_body, *rb, frameInA, frameInB, true);
         else if (rb)
@@ -758,23 +758,23 @@ namespace physics
         next_entity.constraint.dof6 = dof6;
     }
 
-    void add_multibody_internal(const multi_body_params &params, u32 resource_slot)
+    void add_multibody_internal(const multi_body_params& params, u32 resource_slot)
     {
-        physics_entity &next_entity = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
         next_entity.mb.multi_body = create_multirb_internal(next_entity, params);
     }
 
-    void add_hinge_internal(const constraint_params &params, u32 resource_slot)
+    void add_hinge_internal(const constraint_params& params, u32 resource_slot)
     {
         PEN_ASSERT(params.rb_indices[0] > -1);
 
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity &next_entity = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
-        btRigidBody *rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
+        btRigidBody* rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
 
-        btHingeConstraint *hinge = new btHingeConstraint(*rb, btVector3(params.pivot.x, params.pivot.y, params.pivot.z),
+        btHingeConstraint* hinge = new btHingeConstraint(*rb, btVector3(params.pivot.x, params.pivot.y, params.pivot.z),
                                                          btVector3(params.axis.x, params.axis.y, params.axis.z));
         hinge->setLimit(params.lower_limit_rotation.x, params.upper_limit_rotation.x);
 
@@ -784,7 +784,7 @@ namespace physics
         next_entity.constraint.hinge = hinge;
     }
 
-    void add_constraint_internal(const constraint_params &params, u32 resource_slot)
+    void add_constraint_internal(const constraint_params& params, u32 resource_slot)
     {
         k_bullet_objects.entities[resource_slot].type = ENTITY_CONSTRAINT;
 
@@ -807,8 +807,8 @@ namespace physics
 
         case CONSTRAINT_DOF6:
         {
-            btRigidBody *p_rb = nullptr;
-            btRigidBody *p_fixed = nullptr;
+            btRigidBody* p_rb = nullptr;
+            btRigidBody* p_fixed = nullptr;
 
             if (params.rb_indices[0] != -1)
                 p_rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
@@ -828,7 +828,7 @@ namespace physics
         }
     }
 
-    void set_linear_velocity_internal(const set_v3_params &cmd)
+    void set_linear_velocity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
@@ -836,7 +836,7 @@ namespace physics
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
-    void set_angular_velocity_internal(const set_v3_params &cmd)
+    void set_angular_velocity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
@@ -844,7 +844,7 @@ namespace physics
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
-    void set_linear_factor_internal(const set_v3_params &cmd)
+    void set_linear_factor_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
@@ -852,7 +852,7 @@ namespace physics
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
-    void set_angular_factor_internal(const set_v3_params &cmd)
+    void set_angular_factor_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
@@ -860,7 +860,7 @@ namespace physics
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
-    void set_transform_internal(const set_transform_params &cmd)
+    void set_transform_internal(const set_transform_params& cmd)
     {
         btVector3 bt_v3;
         btQuaternion bt_quat;
@@ -872,7 +872,7 @@ namespace physics
         bt_trans.setOrigin(bt_v3);
         bt_trans.setRotation(bt_quat);
 
-        btRigidBody *rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
 
         if (rb)
         {
@@ -881,7 +881,7 @@ namespace physics
         }
     }
 
-    void set_gravity_internal(const set_v3_params &cmd)
+    void set_gravity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
@@ -889,22 +889,22 @@ namespace physics
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate();
     }
 
-    void set_friction_internal(const set_float_params &cmd)
+    void set_friction_internal(const set_float_params& cmd)
     {
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setFriction(cmd.data);
     }
 
-    void set_hinge_motor_internal(const set_v3_params &cmd)
+    void set_hinge_motor_internal(const set_v3_params& cmd)
     {
-        btHingeConstraint *p_hinge = k_bullet_objects.entities[cmd.object_index].constraint.hinge;
+        btHingeConstraint* p_hinge = k_bullet_objects.entities[cmd.object_index].constraint.hinge;
         p_hinge->enableAngularMotor(cmd.data.x == 0.0f ? false : true, cmd.data.y, cmd.data.z);
     }
 
-    void set_button_motor_internal(const set_v3_params &cmd)
+    void set_button_motor_internal(const set_v3_params& cmd)
     {
-        btGeneric6DofConstraint *dof6 = k_bullet_objects.entities[cmd.object_index].constraint.dof6;
+        btGeneric6DofConstraint* dof6 = k_bullet_objects.entities[cmd.object_index].constraint.dof6;
 
-        btTranslationalLimitMotor *motor = dof6->getTranslationalLimitMotor();
+        btTranslationalLimitMotor* motor = dof6->getTranslationalLimitMotor();
         motor->m_enableMotor[1] = cmd.data.x == 0.0f ? false : true;
         motor->m_targetVelocity = btVector3(0.0f, cmd.data.y, 0.0f);
         motor->m_maxMotorForce = btVector3(0.0f, cmd.data.z, 0.0f);
@@ -912,17 +912,17 @@ namespace physics
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
-    void set_multi_joint_motor_internal(const set_multi_v3_params &cmd)
+    void set_multi_joint_motor_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBodyJointMotor *p_joint_motor = k_bullet_objects.entities[cmd.multi_index].mb.joint_motors.at(cmd.link_index);
+        btMultiBodyJointMotor* p_joint_motor = k_bullet_objects.entities[cmd.multi_index].mb.joint_motors.at(cmd.link_index);
 
         p_joint_motor->setVelocityTarget(cmd.data.x);
         p_joint_motor->setMaxAppliedImpulse(cmd.data.y);
     }
 
-    void set_multi_joint_pos_internal(const set_multi_v3_params &cmd)
+    void set_multi_joint_pos_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody *p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
 
         if (1)
         {
@@ -935,30 +935,30 @@ namespace physics
         }
     }
 
-    void set_multi_joint_limit_internal(const set_multi_v3_params &cmd)
+    void set_multi_joint_limit_internal(const set_multi_v3_params& cmd)
     {
     }
 
-    void set_multi_base_velocity_internal(const set_multi_v3_params &cmd)
+    void set_multi_base_velocity_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody *p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
 
         p_multi->setBaseVel(btVector3(cmd.data.x, cmd.data.y, cmd.data.z));
     }
 
-    void set_multi_base_pos_internal(const set_multi_v3_params &cmd)
+    void set_multi_base_pos_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody *p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
 
         p_multi->setBasePos(btVector3(cmd.data.x, cmd.data.y, cmd.data.z));
     }
 
-    void sync_rigid_bodies_internal(const sync_rb_params &cmd)
+    void sync_rigid_bodies_internal(const sync_rb_params& cmd)
     {
         if (k_bullet_objects.entities[cmd.master].type == ENTITY_RIGID_BODY)
         {
-            btRigidBody *p_rb = k_bullet_objects.entities[cmd.master].rb.rigid_body;
-            btRigidBody *p_rb_slave = k_bullet_objects.entities[cmd.slave].rb.rigid_body;
+            btRigidBody* p_rb = k_bullet_objects.entities[cmd.master].rb.rigid_body;
+            btRigidBody* p_rb_slave = k_bullet_objects.entities[cmd.slave].rb.rigid_body;
 
             btTransform master = p_rb->getWorldTransform();
             p_rb_slave->setWorldTransform(master);
@@ -966,26 +966,26 @@ namespace physics
 
         if (k_bullet_objects.entities[cmd.master].type == ENTITY_MULTI_BODY && cmd.link_index != -1)
         {
-            btMultiBody *p_mb = k_bullet_objects.entities[cmd.master].mb.multi_body;
-            btRigidBody *p_rb_slave = k_bullet_objects.entities[cmd.slave].rb.rigid_body;
+            btMultiBody* p_mb = k_bullet_objects.entities[cmd.master].mb.multi_body;
+            btRigidBody* p_rb_slave = k_bullet_objects.entities[cmd.slave].rb.rigid_body;
 
             btTransform master = p_mb->getLink(cmd.link_index).m_collider->getWorldTransform();
             p_rb_slave->setWorldTransform(master);
         }
     }
 
-    void sync_rigid_body_velocity_internal(const sync_rb_params &cmd)
+    void sync_rigid_body_velocity_internal(const sync_rb_params& cmd)
     {
         btVector3 master_vel = k_bullet_objects.entities[cmd.master].rb.rigid_body->getAngularVelocity();
 
         k_bullet_objects.entities[cmd.slave].rb.rigid_body->setAngularVelocity(master_vel);
     }
 
-    void sync_compound_multi_internal(const sync_compound_multi_params &cmd)
+    void sync_compound_multi_internal(const sync_compound_multi_params& cmd)
     {
-        btMultiBody *p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
-        btCompoundShape *p_compound = k_bullet_objects.entities[cmd.compound_index].compound_shape;
-        btRigidBody *p_rb = k_bullet_objects.entities[cmd.compound_index].rb.rigid_body;
+        btMultiBody* p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btCompoundShape* p_compound = k_bullet_objects.entities[cmd.compound_index].compound_shape;
+        btRigidBody* p_rb = k_bullet_objects.entities[cmd.compound_index].rb.rigid_body;
 
         u32 num_base_compound_shapes = k_bullet_objects.entities[cmd.compound_index].num_base_compound_shapes;
 
@@ -1040,12 +1040,12 @@ namespace physics
         }
     }
 
-    void add_p2p_constraint_internal(const add_p2p_constraint_params &cmd, u32 resource_slot)
+    void add_p2p_constraint_internal(const add_p2p_constraint_params& cmd, u32 resource_slot)
     {
-        physics_entity *entity = &k_bullet_objects.entities[resource_slot];
+        physics_entity* entity = &k_bullet_objects.entities[resource_slot];
 
-        btRigidBody *rb = k_bullet_objects.entities[cmd.entity_index].rb.rigid_body;
-        btMultiBody *mb = k_bullet_objects.entities[cmd.entity_index].mb.multi_body;
+        btRigidBody* rb = k_bullet_objects.entities[cmd.entity_index].rb.rigid_body;
+        btMultiBody* mb = k_bullet_objects.entities[cmd.entity_index].mb.multi_body;
 
         btVector3 constrain_pos = btVector3(cmd.position.x, cmd.position.y, cmd.position.z);
 
@@ -1057,7 +1057,7 @@ namespace physics
 
             btVector3 local_pivot = rb->getCenterOfMassTransform().inverse() * constrain_pos;
 
-            btPoint2PointConstraint *p2p = new btPoint2PointConstraint(*rb, local_pivot);
+            btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*rb, local_pivot);
 
             k_bullet_systems.dynamics_world->addConstraint(p2p, true);
 
@@ -1074,8 +1074,8 @@ namespace physics
         {
             btVector3 pivotInA = mb->worldPosToLocal(1, constrain_pos);
 
-            void *mem = pen::memory_alloc_align(sizeof(btMultiBodyPoint2Point), 16);
-            btMultiBodyPoint2Point *p2p = new (mem) btMultiBodyPoint2Point(mb, 1, 0, pivotInA, constrain_pos);
+            void* mem = pen::memory_alloc_align(sizeof(btMultiBodyPoint2Point), 16);
+            btMultiBodyPoint2Point* p2p = new (mem) btMultiBodyPoint2Point(mb, 1, 0, pivotInA, constrain_pos);
 
             p2p->setMaxAppliedImpulse(2);
 
@@ -1086,9 +1086,9 @@ namespace physics
         }
     }
 
-    void set_p2p_constraint_pos_internal(const set_v3_params &cmd)
+    void set_p2p_constraint_pos_internal(const set_v3_params& cmd)
     {
-        physics_entity &pe = k_bullet_objects.entities[cmd.object_index];
+        physics_entity& pe = k_bullet_objects.entities[cmd.object_index];
 
         btVector3 bt_v3;
         pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
@@ -1106,16 +1106,16 @@ namespace physics
         }
     }
 
-    void set_damping_internal(const set_v3_params &cmd)
+    void set_damping_internal(const set_v3_params& cmd)
     {
-        btRigidBody *rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
 
         rb->setDamping(cmd.data.x, cmd.data.y);
     }
 
-    void set_group_internal(const set_group_params &cmd)
+    void set_group_internal(const set_group_params& cmd)
     {
-        btRigidBody *rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
 
         if (rb)
         {
@@ -1124,13 +1124,13 @@ namespace physics
         }
     }
 
-    void add_collision_watcher_internal(const collision_trigger_data &trigger_data)
+    void add_collision_watcher_internal(const collision_trigger_data& trigger_data)
     {
-        physics_entity &pe = k_bullet_objects.entities[trigger_data.entity_index];
+        physics_entity& pe = k_bullet_objects.entities[trigger_data.entity_index];
 
         if (pe.type == ENTITY_RIGID_BODY)
         {
-            k_triggers[k_num_triggers].collision_object = (btCollisionObject *)pe.rb.rigid_body;
+            k_triggers[k_num_triggers].collision_object = (btCollisionObject*)pe.rb.rigid_body;
             k_triggers[k_num_triggers].group = trigger_data.group;
             k_triggers[k_num_triggers].mask = trigger_data.mask;
             k_triggers[k_num_triggers].hit_flags = 0;
@@ -1139,12 +1139,12 @@ namespace physics
         }
     }
 
-    void attach_rb_to_compound_internal(const attach_to_compound_params &params)
+    void attach_rb_to_compound_internal(const attach_to_compound_params& params)
     {
         // todo test this function still works after refactor
 
-        physics_entity &compound = k_bullet_objects.entities[params.compound];
-        physics_entity &pe = k_bullet_objects.entities[params.rb];
+        physics_entity& compound = k_bullet_objects.entities[params.compound];
+        physics_entity& pe = k_bullet_objects.entities[params.rb];
 
         rigid_body_entity rb = pe.rb;
 
@@ -1200,7 +1200,7 @@ namespace physics
         }
         else if (k_bullet_objects.entities[entity_index].type == ENTITY_CONSTRAINT)
         {
-            btTypedConstraint *generic_constraint = k_bullet_objects.entities[entity_index].constraint.generic;
+            btTypedConstraint* generic_constraint = k_bullet_objects.entities[entity_index].constraint.generic;
 
             if (generic_constraint)
                 k_bullet_systems.dynamics_world->removeConstraint(generic_constraint);
@@ -1216,11 +1216,11 @@ namespace physics
 
     void add_to_world_internal(u32 entity_index)
     {
-        physics_entity &pe = k_bullet_objects.entities[entity_index];
+        physics_entity& pe = k_bullet_objects.entities[entity_index];
         k_bullet_systems.dynamics_world->addRigidBody(pe.rb.rigid_body, pe.group, pe.mask);
     }
 
-    void cast_ray_internal(const ray_cast_params &rcp)
+    void cast_ray_internal(const ray_cast_params& rcp)
     {
         btVector3 from = from_lw_vec3(rcp.start);
         btVector3 to = from_lw_vec3(rcp.end);
@@ -1233,7 +1233,7 @@ namespace physics
         if (ray_callback.hasHit())
         {
             pick_pos = ray_callback.m_hitPointWorld;
-            btRigidBody *body = (btRigidBody *)btRigidBody::upcast(ray_callback.m_collisionObject);
+            btRigidBody* body = (btRigidBody*)btRigidBody::upcast(ray_callback.m_collisionObject);
 
             if (body)
                 user_index = body->getUserIndex();

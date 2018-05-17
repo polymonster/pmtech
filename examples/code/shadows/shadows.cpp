@@ -29,15 +29,15 @@ pen::window_creation_params pen_window{
 
 namespace physics
 {
-    extern PEN_TRV physics_thread_main(void *params);
+    extern PEN_TRV physics_thread_main(void* params);
 }
 
-void create_scene_objects(ces::entity_scene *scene)
+void create_scene_objects(ces::entity_scene* scene)
 {
     clear_scene(scene);
 
-    material_resource *default_material = get_material_resource(PEN_HASH("default_material"));
-    geometry_resource *box_resource = get_geometry_resource(PEN_HASH("cube"));
+    material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+    geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
 
     // add light
     u32 light = get_new_node(scene);
@@ -100,7 +100,7 @@ void create_scene_objects(ces::entity_scene *scene)
 u32 cbuffer_shadow = 0;
 frustum g_shadow_frustum;
 
-void debug_render_frustum(const scene_view &view)
+void debug_render_frustum(const scene_view& view)
 {
     /*
     put::dbg::add_aabb(view.scene->renderable_extents.min, view.scene->renderable_extents.max, vec4f::magenta());
@@ -110,7 +110,7 @@ void debug_render_frustum(const scene_view &view)
     */
 }
 
-void get_aabb_corners(vec3f *corners, vec3f min, vec3f max)
+void get_aabb_corners(vec3f* corners, vec3f min, vec3f max)
 {
     static const vec3f offsets[8] = {vec3f::zero(),           vec3f::one(),
 
@@ -127,7 +127,7 @@ void get_aabb_corners(vec3f *corners, vec3f min, vec3f max)
     }
 }
 
-void fit_directional_shadow_to_aabb(put::camera *shadow_cam, vec3f light_dir, vec3f min, vec3f max)
+void fit_directional_shadow_to_aabb(put::camera* shadow_cam, vec3f light_dir, vec3f min, vec3f max)
 {
     // create view matrix
     vec3f right = cross(light_dir, vec3f::unit_y());
@@ -159,7 +159,7 @@ void fit_directional_shadow_to_aabb(put::camera *shadow_cam, vec3f light_dir, ve
     g_shadow_frustum = shadow_cam->camera_frustum;
 }
 
-void update_shadow_frustum(ces::entity_scene *scene, put::camera *shadow_cam)
+void update_shadow_frustum(ces::entity_scene* scene, put::camera* shadow_cam)
 {
     vec3f light_dir = normalised(-scene->lights[0].direction);
 
@@ -182,7 +182,7 @@ void update_shadow_frustum(ces::entity_scene *scene, put::camera *shadow_cam)
     pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));
 }
 
-void shadow_map_update(put::scene_controller *sc)
+void shadow_map_update(put::scene_controller* sc)
 {
     /*
     static hash_id id_shadow_map = PEN_HASH("shadow_map");
@@ -201,11 +201,11 @@ void shadow_map_update(put::scene_controller *sc)
     pen::renderer_set_constant_buffer(cbuffer_shadow, 4, PEN_SHADER_TYPE_PS);
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     pen::thread_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
@@ -233,7 +233,7 @@ PEN_TRV pen::user_entry(void *params)
     shadow_cc.id_name = PEN_HASH(shadow_cc.name.c_str());
 
     // create the main scene and controller
-    put::ces::entity_scene *main_scene = put::ces::create_scene("main_scene");
+    put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;

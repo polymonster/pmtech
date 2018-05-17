@@ -78,11 +78,11 @@ enum primitive_topology : s32
 
 #define PACK_GL_FORMAT(DATA_TYPE, NUM_ELEMENTS) ((NUM_ELEMENTS) | (DATA_TYPE << 4))
 #define UNPACK_FORMAT(PF) PF >> 4
-#define UNPACK_NUM_ELEMENTS(PF) PF &(0x07)
+#define UNPACK_NUM_ELEMENTS(PF) PF&(0x07)
 
 #define PACK_GL_TEXTURE_FORMAT(DATA_TYPE, NUM_ELEMENTS) ((NUM_ELEMENTS) | (DATA_TYPE << 4))
 #define UNPACK_TEXTURE_FORMAT(PF) PF >> 4
-#define UNPACK_DATA_TYPE(PF) PF &(0x07)
+#define UNPACK_DATA_TYPE(PF) PF&(0x07)
 
 enum vertex_format : s32
 {

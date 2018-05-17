@@ -23,11 +23,11 @@ pen::window_creation_params pen_window{
 
 struct typed_texture
 {
-    const c8 *fromat;
+    const c8* fromat;
     u32 handle;
 };
-const c8 **k_texture_formats;
-typed_texture *k_textures = nullptr;
+const c8** k_texture_formats;
+typed_texture* k_textures = nullptr;
 u32 k_num_textures = 0;
 void load_textures()
 {
@@ -53,7 +53,7 @@ void load_textures()
     k_textures = &textures[0];
     k_num_textures = PEN_ARRAY_SIZE(textures);
 
-    k_texture_formats = new const c8 *[k_num_textures];
+    k_texture_formats = new const c8*[k_num_textures];
     for (int i = 0; i < k_num_textures; ++i)
         k_texture_formats[i] = k_textures[i].fromat;
 }
@@ -68,7 +68,7 @@ void texture_formats_ui()
 
     texture_info info;
     get_texture_info(k_textures[current_type].handle, info);
-    ImGui::Image((void *)&k_textures[current_type].handle, ImVec2(info.width, info.height));
+    ImGui::Image((void*)&k_textures[current_type].handle, ImVec2(info.width, info.height));
 
     ImVec2 mip_size = ImVec2(info.width, info.height);
     for (u32 i = 0; i < info.num_mips; ++i)
@@ -80,17 +80,17 @@ void texture_formats_ui()
         mip_size.y = std::max<f32>(mip_size.y, 1.0f);
 
         ImGui::SameLine();
-        ImGui::Image((void *)&k_textures[current_type].handle, mip_size);
+        ImGui::Image((void*)&k_textures[current_type].handle, mip_size);
     }
 
     ImGui::End();
 }
 
-PEN_TRV pen::user_entry(void *params)
+PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params *job_params = (pen::job_thread_params *)params;
-    pen::job *p_thread_info = job_params->job_info;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+    pen::job* p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     dev_ui::init();

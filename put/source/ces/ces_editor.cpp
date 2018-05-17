@@ -43,7 +43,7 @@ namespace put
             u32 x, y;
         };
         static picking_info k_picking_info;
-        u32 *k_selection_list = nullptr;
+        u32* k_selection_list = nullptr;
 
         enum e_select_mode : u32
         {
@@ -75,7 +75,7 @@ namespace put
             CAMERA_FLY = 1
         };
 
-        const c8 *camera_mode_names[] = {"Modelling", "Fly"};
+        const c8* camera_mode_names[] = {"Modelling", "Fly"};
 
         struct model_view_controller
         {
@@ -113,7 +113,7 @@ namespace put
             return pen::input_key(key);
         }
 
-        void update_model_viewer_camera(put::scene_controller *sc)
+        void update_model_viewer_camera(put::scene_controller* sc)
         {
             if (k_model_view_controller.invalidated)
             {
@@ -152,16 +152,16 @@ namespace put
             DD_NUM_FLAGS = 9
         };
 
-        const c8 *dd_names[]{"Hide Scene", "Selected Node", "Grid",    "Matrices",         "Bones",
+        const c8* dd_names[]{"Hide Scene", "Selected Node", "Grid",    "Matrices",         "Bones",
                              "AABB",       "Lights",        "Physics", "Selected Children"};
         static_assert(sizeof(dd_names) / sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
-        static bool *k_dd_bools = nullptr;
+        static bool* k_dd_bools = nullptr;
 
-        void undo(entity_scene *scene);
-        void redo(entity_scene *scene);
-        void update_undo_stack(entity_scene *scene, f32 dt);
+        void undo(entity_scene* scene);
+        void redo(entity_scene* scene);
+        void update_undo_stack(entity_scene* scene, f32 dt);
 
-        void update_view_flags_ui(entity_scene *scene)
+        void update_view_flags_ui(entity_scene* scene)
         {
             if (!k_dd_bools)
             {
@@ -185,7 +185,7 @@ namespace put
             }
         }
 
-        void update_view_flags(entity_scene *scene, bool error)
+        void update_view_flags(entity_scene* scene, bool error)
         {
             if (error)
                 scene->view_flags |= (DD_MATRIX | DD_BONES);
@@ -199,7 +199,7 @@ namespace put
             }
         }
 
-        void view_ui(entity_scene *scene, bool *opened)
+        void view_ui(entity_scene* scene, bool* opened)
         {
             if (ImGui::Begin("View", opened, ImGuiWindowFlags_AlwaysAutoResize))
             {
@@ -223,7 +223,7 @@ namespace put
             update_view_flags_ui(scene);
         }
 
-        void default_scene(entity_scene *scene)
+        void default_scene(entity_scene* scene)
         {
             // add default view flags
             scene->view_flags = 0;
@@ -247,7 +247,7 @@ namespace put
             sb_clear(k_selection_list);
         }
 
-        void editor_init(entity_scene *scene)
+        void editor_init(entity_scene* scene)
         {
             update_view_flags_ui(scene);
 
@@ -286,7 +286,7 @@ namespace put
             delete[] k_dd_bools;
         }
 
-        void instance_selection(entity_scene *scene)
+        void instance_selection(entity_scene* scene)
         {
             s32 selection_size = sb_count(k_selection_list);
 
@@ -316,7 +316,7 @@ namespace put
             dev_console_log("[instance] master instance: %i with %i sub instances", master, selection_size);
         }
 
-        void parent_selection(entity_scene *scene)
+        void parent_selection(entity_scene* scene)
         {
             s32 selection_size = sb_count(k_selection_list);
 
@@ -368,7 +368,7 @@ namespace put
             scene->flags |= INVALIDATE_SCENE_TREE;
         }
 
-        void add_selection(entity_scene *scene, u32 index, u32 select_mode)
+        void add_selection(entity_scene* scene, u32 index, u32 select_mode)
         {
             if (pen::input_is_key_down(PK_CONTROL))
                 select_mode = SELECT_REMOVE;
@@ -396,7 +396,7 @@ namespace put
                     if (k_selection_list[i] == index)
                         existing = i;
 
-                u32 *new_list = nullptr;
+                u32* new_list = nullptr;
                 if (existing != -1 && select_mode == SELECT_REMOVE)
                 {
                     for (u32 i = 0; i < sel_count; ++i)
@@ -420,7 +420,7 @@ namespace put
                 scene->state_flags[index] |= SF_SELECTED;
         }
 
-        void enumerate_selection_ui(const entity_scene *scene, bool *opened)
+        void enumerate_selection_ui(const entity_scene* scene, bool* opened)
         {
             if (ImGui::Begin("Selection List", opened))
             {
@@ -438,14 +438,14 @@ namespace put
             }
         }
 
-        void picking_read_back(void *p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
+        void picking_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
         {
-            k_picking_info.result = *((u32 *)(((u8 *)p_data) + k_picking_info.y * row_pitch + k_picking_info.x * block_size));
+            k_picking_info.result = *((u32*)(((u8*)p_data) + k_picking_info.y * row_pitch + k_picking_info.x * block_size));
 
             k_picking_info.ready = 1;
         }
 
-        void picking_update(entity_scene *scene, const camera *cam)
+        void picking_update(entity_scene* scene, const camera* cam)
         {
             static u32 picking_state = PICKING_READY;
             static u32 picking_result = (-1);
@@ -528,8 +528,8 @@ namespace put
                         bool selected = true;
                         for (s32 i = 0; i < 6; ++i)
                         {
-                            vec3f &min = scene->bounding_volumes[node].transformed_min_extents;
-                            vec3f &max = scene->bounding_volumes[node].transformed_max_extents;
+                            vec3f& min = scene->bounding_volumes[node].transformed_min_extents;
+                            vec3f& max = scene->bounding_volumes[node].transformed_max_extents;
 
                             u32 c = maths::aabb_vs_plane(min, max, p[i], n[i]);
                             if (c == maths::INFRONT)
@@ -604,7 +604,7 @@ namespace put
                 {
                     picking_state = PICKING_SINGLE;
 
-                    const pmfx::render_target *rt = pmfx::get_render_target(ID_PICKING_BUFFER);
+                    const pmfx::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
 
                     if (!rt)
                     {
@@ -674,7 +674,7 @@ namespace put
 
         struct node_state
         {
-            void **components = nullptr;
+            void** components = nullptr;
         };
 
         struct editor_action
@@ -688,9 +688,9 @@ namespace put
 
         static action_stack k_undo_stack;
         static action_stack k_redo_stack;
-        static editor_action *k_editor_nodes = nullptr;
+        static editor_action* k_editor_nodes = nullptr;
 
-        void free_node_state_mem(entity_scene *scene, node_state &ns)
+        void free_node_state_mem(entity_scene* scene, node_state& ns)
         {
             if (!ns.components)
                 return;
@@ -703,10 +703,10 @@ namespace put
             ns.components = nullptr;
         }
 
-        void store_node_state(entity_scene *scene, u32 node_index, e_editor_actions action)
+        void store_node_state(entity_scene* scene, u32 node_index, e_editor_actions action)
         {
             static const f32 undo_push_timer = 33.0f;
-            node_state &ns = k_editor_nodes[node_index].action_state[action];
+            node_state& ns = k_editor_nodes[node_index].action_state[action];
             u32 num = scene->num_components;
 
             if (action == UNDO)
@@ -715,12 +715,12 @@ namespace put
 
             if (action == REDO)
             {
-                node_state &us = k_editor_nodes[node_index].action_state[UNDO];
+                node_state& us = k_editor_nodes[node_index].action_state[UNDO];
 
                 u32 diff = 0;
                 for (u32 i = 0; i < num; ++i)
                 {
-                    generic_cmp_array &cmp = scene->get_component_array(i);
+                    generic_cmp_array& cmp = scene->get_component_array(i);
                     diff += memcmp(cmp[node_index], us.components[i], cmp.size);
                 }
 
@@ -734,7 +734,7 @@ namespace put
                     u32 edit_diff = 0;
                     for (u32 i = 0; i < num; ++i)
                     {
-                        generic_cmp_array &cmp = scene->get_component_array(i);
+                        generic_cmp_array& cmp = scene->get_component_array(i);
                         edit_diff += memcmp(cmp[node_index], ns.components[i], cmp.size);
                     }
 
@@ -749,40 +749,40 @@ namespace put
             if (!ns.components)
             {
                 dev_console_log("%s", "allocing state mem");
-                ns.components = (void **)pen::memory_alloc(num * sizeof(generic_cmp_array));
+                ns.components = (void**)pen::memory_alloc(num * sizeof(generic_cmp_array));
                 pen::memory_zero(ns.components, num * sizeof(generic_cmp_array));
             }
 
             for (u32 i = 0; i < num; ++i)
             {
-                generic_cmp_array &cmp = scene->get_component_array(i);
+                generic_cmp_array& cmp = scene->get_component_array(i);
 
                 if (!ns.components[i])
                     ns.components[i] = pen::memory_alloc(cmp.size);
 
-                void *data = cmp[node_index];
+                void* data = cmp[node_index];
 
                 pen::memory_cpy(ns.components[i], data, cmp.size);
             }
         }
 
-        void restore_node_state(entity_scene *scene, node_state &ns, u32 node_index)
+        void restore_node_state(entity_scene* scene, node_state& ns, u32 node_index)
         {
             u32 num = scene->num_components;
             for (u32 i = 0; i < num; ++i)
             {
-                generic_cmp_array &cmp = scene->get_component_array(i);
+                generic_cmp_array& cmp = scene->get_component_array(i);
 
                 pen::memory_cpy(cmp[node_index], ns.components[i], cmp.size);
             }
 
-            node_state &us = k_editor_nodes[node_index].action_state[UNDO];
-            node_state &rs = k_editor_nodes[node_index].action_state[REDO];
+            node_state& us = k_editor_nodes[node_index].action_state[UNDO];
+            node_state& rs = k_editor_nodes[node_index].action_state[REDO];
             free_node_state_mem(scene, us);
             free_node_state_mem(scene, rs);
         }
 
-        void restore_from_stack(entity_scene *scene, action_stack &stack, action_stack &reverse, e_editor_actions action)
+        void restore_from_stack(entity_scene* scene, action_stack& stack, action_stack& reverse, e_editor_actions action)
         {
             if (stack.size() <= 0)
                 return;
@@ -809,17 +809,17 @@ namespace put
             }
         }
 
-        void undo(entity_scene *scene)
+        void undo(entity_scene* scene)
         {
             restore_from_stack(scene, k_undo_stack, k_redo_stack, UNDO);
         }
 
-        void redo(entity_scene *scene)
+        void redo(entity_scene* scene)
         {
             restore_from_stack(scene, k_redo_stack, k_undo_stack, REDO);
         }
 
-        void update_undo_stack(entity_scene *scene, f32 dt)
+        void update_undo_stack(entity_scene* scene, f32 dt)
         {
             // resize buffers
             if (!k_editor_nodes || sb_count(k_editor_nodes) < scene->nodes_size)
@@ -894,7 +894,7 @@ namespace put
             }
         }
 
-        void settings_ui(bool *opened)
+        void settings_ui(bool* opened)
         {
             static bool set_project_dir = false;
 
@@ -927,7 +927,7 @@ namespace put
 
             if (set_project_dir)
             {
-                const c8 *set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**.");
+                const c8* set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**.");
 
                 if (set_proj)
                 {
@@ -937,7 +937,7 @@ namespace put
             }
         }
 
-        void update_model_viewer_scene(put::scene_controller *sc)
+        void update_model_viewer_scene(put::scene_controller* sc)
         {
             static bool open_scene_browser = false;
             static bool open_merge = false;
@@ -1107,11 +1107,11 @@ namespace put
             }
             dev_ui::set_tooltip("Selection List");
 
-            static const c8 *transform_icons[] = {ICON_FA_MOUSE_POINTER, ICON_FA_ARROWS, ICON_FA_REFRESH, ICON_FA_EXPAND,
+            static const c8* transform_icons[] = {ICON_FA_MOUSE_POINTER, ICON_FA_ARROWS, ICON_FA_REFRESH, ICON_FA_EXPAND,
                                                   ICON_FA_HAND_POINTER_O};
             static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
 
-            static const c8 *transform_tooltip[] = {"Select (Q)", "Translate (W)", "Rotate (E)", "Scale (R)",
+            static const c8* transform_tooltip[] = {"Select (Q)", "Translate (W)", "Rotate (E)", "Scale (R)",
                                                     "Grab Physics (T)"};
             static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
 
@@ -1151,7 +1151,7 @@ namespace put
 
             if (open_open)
             {
-                const c8 *import = put::dev_ui::file_browser(open_open, dev_ui::FB_OPEN, 2, "**.pmm", "**.pms");
+                const c8* import = put::dev_ui::file_browser(open_open, dev_ui::FB_OPEN, 2, "**.pmm", "**.pms");
 
                 if (import)
                 {
@@ -1183,7 +1183,7 @@ namespace put
             {
                 if (ImGui::Begin("Camera", &open_camera_menu))
                 {
-                    ImGui::Combo("Camera Mode", (s32 *)&k_model_view_controller.camera_mode, (const c8 **)&camera_mode_names,
+                    ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names,
                                  2);
 
                     if (ImGui::SliderFloat("FOV", &k_model_view_controller.main_camera.fov, 10, 180))
@@ -1208,7 +1208,7 @@ namespace put
 
             if (open_save)
             {
-                const c8 *save_file = nullptr;
+                const c8* save_file = nullptr;
                 if (open_save_as || k_model_view_controller.current_working_scene.length() == 0)
                 {
                     save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms");
@@ -1290,7 +1290,7 @@ namespace put
                     std::vector<s32> node_index_list;
                     build_heirarchy_node_list(sc->scene, i, node_index_list);
 
-                    for (auto &c : node_index_list)
+                    for (auto& c : node_index_list)
                         if (c > -1)
                             delete_entity(sc->scene, c);
                 }
@@ -1332,36 +1332,36 @@ namespace put
         };
         static physics_preview k_physics_preview;
 
-        void scene_constraint_ui(entity_scene *scene)
+        void scene_constraint_ui(entity_scene* scene)
         {
-            physics::constraint_params &preview_constraint = k_physics_preview.params.constraint;
+            physics::constraint_params& preview_constraint = k_physics_preview.params.constraint;
             s32 constraint_type = preview_constraint.type - 1;
 
             k_physics_preview.params.type = PHYSICS_TYPE_CONSTRAINT;
 
-            ImGui::Combo("Constraint##Physics", (s32 *)&constraint_type, "Six DOF\0Hinge\0Point to Point\0", 7);
+            ImGui::Combo("Constraint##Physics", (s32*)&constraint_type, "Six DOF\0Hinge\0Point to Point\0", 7);
 
             preview_constraint.type = constraint_type + 1;
             if (preview_constraint.type == physics::CONSTRAINT_HINGE)
             {
-                ImGui::InputFloat3("Axis", (f32 *)&preview_constraint.axis);
-                ImGui::InputFloat("Lower Limit Rotation", (f32 *)&preview_constraint.lower_limit_rotation);
-                ImGui::InputFloat("Upper Limit Rotation", (f32 *)&preview_constraint.upper_limit_rotation);
+                ImGui::InputFloat3("Axis", (f32*)&preview_constraint.axis);
+                ImGui::InputFloat("Lower Limit Rotation", (f32*)&preview_constraint.lower_limit_rotation);
+                ImGui::InputFloat("Upper Limit Rotation", (f32*)&preview_constraint.upper_limit_rotation);
             }
             else if (preview_constraint.type == physics::CONSTRAINT_DOF6)
             {
-                ImGui::InputFloat3("Lower Limit Rotation", (f32 *)&preview_constraint.lower_limit_rotation);
-                ImGui::InputFloat3("Upper Limit Rotation", (f32 *)&preview_constraint.upper_limit_rotation);
+                ImGui::InputFloat3("Lower Limit Rotation", (f32*)&preview_constraint.lower_limit_rotation);
+                ImGui::InputFloat3("Upper Limit Rotation", (f32*)&preview_constraint.upper_limit_rotation);
 
-                ImGui::InputFloat3("Lower Limit Translation", (f32 *)&preview_constraint.lower_limit_translation);
-                ImGui::InputFloat3("Upper Limit Translation", (f32 *)&preview_constraint.upper_limit_translation);
+                ImGui::InputFloat3("Lower Limit Translation", (f32*)&preview_constraint.lower_limit_translation);
+                ImGui::InputFloat3("Upper Limit Translation", (f32*)&preview_constraint.upper_limit_translation);
 
-                ImGui::InputFloat("Linear Damping", (f32 *)&preview_constraint.linear_damping);
-                ImGui::InputFloat("Angular Damping", (f32 *)&preview_constraint.angular_damping);
+                ImGui::InputFloat("Linear Damping", (f32*)&preview_constraint.linear_damping);
+                ImGui::InputFloat("Angular Damping", (f32*)&preview_constraint.angular_damping);
             }
 
             std::vector<u32> index_lookup;
-            std::vector<const c8 *> rb_names;
+            std::vector<const c8*> rb_names;
             for (s32 i = 0; i < scene->num_nodes; ++i)
             {
                 if (scene->entities[i] & CMP_PHYSICS)
@@ -1373,7 +1373,7 @@ namespace put
 
             static s32 rb_index = -1;
             if (rb_names.size() > 0)
-                ImGui::Combo("Rigid Body##Constraint", &rb_index, (const c8 *const *)&rb_names[0], rb_names.size());
+                ImGui::Combo("Rigid Body##Constraint", &rb_index, (const c8* const*)&rb_names[0], rb_names.size());
             else
                 ImGui::Text("No rigid bodies to constrain!");
 
@@ -1403,12 +1403,12 @@ namespace put
                 scene->physics_data[k_selection_list[0]].constraint = preview_constraint;
         }
 
-        void scene_rigid_body_ui(entity_scene *scene)
+        void scene_rigid_body_ui(entity_scene* scene)
         {
             u32 collision_shape = k_physics_preview.params.rigid_body.shape - 1;
 
             ImGui::InputFloat("Mass", &k_physics_preview.params.rigid_body.mass);
-            ImGui::Combo("Shape##Physics", (s32 *)&collision_shape,
+            ImGui::Combo("Shape##Physics", (s32*)&collision_shape,
                          "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0", 7);
 
             k_physics_preview.params.rigid_body.shape = collision_shape + 1;
@@ -1446,7 +1446,7 @@ namespace put
             }
         }
 
-        void scene_physics_ui(entity_scene *scene)
+        void scene_physics_ui(entity_scene* scene)
         {
             static s32 physics_type = 0;
             k_physics_preview.active = false;
@@ -1481,7 +1481,7 @@ namespace put
                 scene->physics_data[k_selection_list[0]] = k_physics_preview.params;
         }
 
-        bool scene_geometry_ui(entity_scene *scene)
+        bool scene_geometry_ui(entity_scene* scene)
         {
             bool iv = false;
 
@@ -1500,17 +1500,17 @@ namespace put
                 }
 
                 static s32 primitive_type = -1;
-                ImGui::Combo("Shape##Primitive", (s32 *)&primitive_type, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0", 5);
+                ImGui::Combo("Shape##Primitive", (s32*)&primitive_type, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0", 5);
 
                 if (ImGui::Button("Add Primitive") && primitive_type > -1)
                 {
                     iv = true;
 
-                    geometry_resource *gr = get_geometry_resource(k_primitives[primitive_type]);
+                    geometry_resource* gr = get_geometry_resource(k_primitives[primitive_type]);
 
                     instantiate_geometry(gr, scene, selected_index);
 
-                    material_resource *mr = get_material_resource(PEN_HASH("default_material"));
+                    material_resource* mr = get_material_resource(PEN_HASH("default_material"));
 
                     instantiate_material(mr, scene, selected_index);
 
@@ -1525,7 +1525,7 @@ namespace put
             return iv;
         }
 
-        bool scene_transform_ui(entity_scene *scene)
+        bool scene_transform_ui(entity_scene* scene)
         {
             if (sb_count(k_selection_list) != 1)
                 return false;
@@ -1535,20 +1535,20 @@ namespace put
             if (ImGui::CollapsingHeader("Transform"))
             {
                 bool perform_transform = false;
-                cmp_transform &t = scene->transforms[selected_index];
-                perform_transform |= ImGui::InputFloat3("Translation", (float *)&t.translation);
+                cmp_transform& t = scene->transforms[selected_index];
+                perform_transform |= ImGui::InputFloat3("Translation", (float*)&t.translation);
 
                 vec3f euler = t.rotation.to_euler();
                 euler = euler * (f32)M_PI_OVER_180;
 
-                if (ImGui::InputFloat3("Rotation", (float *)&euler))
+                if (ImGui::InputFloat3("Rotation", (float*)&euler))
                 {
                     euler = euler * (f32)M_180_OVER_PI;
                     t.rotation.euler_angles(euler.z, euler.y, euler.x);
                     perform_transform = true;
                 }
 
-                perform_transform |= ImGui::InputFloat3("Scale", (float *)&t.scale);
+                perform_transform |= ImGui::InputFloat3("Scale", (float*)&t.scale);
 
                 if (perform_transform)
                 {
@@ -1562,7 +1562,7 @@ namespace put
             return false;
         }
 
-        bool scene_material_ui(entity_scene *scene)
+        bool scene_material_ui(entity_scene* scene)
         {
             bool iv = false;
 
@@ -1594,21 +1594,21 @@ namespace put
                             }
                         }
 
-                        auto &mm = scene->materials[selected_index];
+                        auto& mm = scene->materials[selected_index];
 
                         bool cm = false;
 
                         u32 num_shaders;
-                        const c8 **shader_list = pmfx::get_shader_list(num_shaders);
-                        cm |= ImGui::Combo("Shader", (s32 *)&mm.pmfx_shader, shader_list, num_shaders);
+                        const c8** shader_list = pmfx::get_shader_list(num_shaders);
+                        cm |= ImGui::Combo("Shader", (s32*)&mm.pmfx_shader, shader_list, num_shaders);
 
                         u32 num_techniques;
-                        const c8 **technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
-                        cm |= ImGui::Combo("Technique", (s32 *)&mm.technique, technique_list, num_techniques);
+                        const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
+                        cm |= ImGui::Combo("Technique", (s32*)&mm.technique, technique_list, num_techniques);
 
                         if (cm)
                         {
-                            material_resource *mr = new material_resource();
+                            material_resource* mr = new material_resource();
                             *mr = *mm.resource;
 
                             mr->shader_name = shader_list[mm.pmfx_shader];
@@ -1620,10 +1620,10 @@ namespace put
                             scene->materials[selected_index].resource = mr;
                         }
 
-                        iv |= ImGui::SliderFloat("Roughness", (f32 *)&mm.diffuse_rgb_shininess.w, 0.000001, 1.5);
-                        iv |= ImGui::SliderFloat("Reflectity", (f32 *)&mm.specular_rgb_reflect.w, 0.000001, 1.5);
+                        iv |= ImGui::SliderFloat("Roughness", (f32*)&mm.diffuse_rgb_shininess.w, 0.000001, 1.5);
+                        iv |= ImGui::SliderFloat("Reflectity", (f32*)&mm.specular_rgb_reflect.w, 0.000001, 1.5);
 
-                        vec4f &col = mm.diffuse_rgb_shininess;
+                        vec4f& col = mm.diffuse_rgb_shininess;
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f));
 
                         if (ImGui::Button("Colour"))
@@ -1636,12 +1636,12 @@ namespace put
 
             if (colour_picker_open)
             {
-                auto &mm = scene->materials[selected_index];
+                auto& mm = scene->materials[selected_index];
 
                 if (ImGui::Begin("Albedo Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize))
                 {
                     vec3f col = mm.diffuse_rgb_shininess.xyz;
-                    iv |= ImGui::ColorPicker3("Colour", (f32 *)&col);
+                    iv |= ImGui::ColorPicker3("Colour", (f32*)&col);
 
                     mm.diffuse_rgb_shininess.x = col.x;
                     mm.diffuse_rgb_shininess.y = col.y;
@@ -1654,7 +1654,7 @@ namespace put
             return iv;
         }
 
-        void scene_anim_ui(entity_scene *scene)
+        void scene_anim_ui(entity_scene* scene)
         {
             if (sb_count(k_selection_list) != 1)
                 return;
@@ -1667,7 +1667,7 @@ namespace put
 
                 if (ImGui::CollapsingHeader("Animations"))
                 {
-                    auto &controller = scene->anim_controller[selected_index];
+                    auto& controller = scene->anim_controller[selected_index];
 
                     ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
 
@@ -1683,7 +1683,7 @@ namespace put
                     for (s32 ih = 0; ih < num_anims; ++ih)
                     {
                         s32 h = scene->anim_controller[selected_index].handles[ih];
-                        auto *anim = get_animation_resource(h);
+                        auto* anim = get_animation_resource(h);
 
                         bool selected = false;
                         ImGui::Selectable(anim->name.c_str(), &selected);
@@ -1713,12 +1713,12 @@ namespace put
 
                     if (open_anim_import)
                     {
-                        const c8 *anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma");
+                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma");
 
                         if (anim_import)
                         {
                             anim_handle ah = load_pma(anim_import);
-                            auto *anim = get_animation_resource(ah);
+                            auto* anim = get_animation_resource(ah);
 
                             if (is_valid(ah))
                             {
@@ -1776,7 +1776,7 @@ namespace put
             }
         }
 
-        void scene_light_ui(entity_scene *scene)
+        void scene_light_ui(entity_scene* scene)
         {
             if (sb_count(k_selection_list) != 1)
                 return;
@@ -1789,9 +1789,9 @@ namespace put
             {
                 if (scene->entities[selected_index] & CMP_LIGHT)
                 {
-                    cmp_light &snl = scene->lights[selected_index];
+                    cmp_light& snl = scene->lights[selected_index];
 
-                    ImGui::Combo("Type", (s32 *)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box\0",
+                    ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box\0",
                                  4);
 
                     switch (scene->lights[selected_index].type)
@@ -1818,7 +1818,7 @@ namespace put
 
                     snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth, snl.altitude);
 
-                    vec3f &col = scene->lights[selected_index].colour;
+                    vec3f& col = scene->lights[selected_index].colour;
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f));
 
                     if (ImGui::Button("Colour"))
@@ -1845,14 +1845,14 @@ namespace put
             {
                 if (ImGui::Begin("Light Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize))
                 {
-                    ImGui::ColorPicker3("Colour", (f32 *)&scene->lights[selected_index].colour);
+                    ImGui::ColorPicker3("Colour", (f32*)&scene->lights[selected_index].colour);
 
                     ImGui::End();
                 }
             }
         }
 
-        void scene_browser_ui(entity_scene *scene, bool *open)
+        void scene_browser_ui(entity_scene* scene, bool* open)
         {
             if (ImGui::Begin("Scene Browser", open))
             {
@@ -1897,7 +1897,7 @@ namespace put
                 struct scene_num_dump
                 {
                     u32 component;
-                    const c8 *display_name;
+                    const c8* display_name;
                     u32 count;
                 };
 
@@ -1941,7 +1941,7 @@ namespace put
                         ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
 
                         ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
-                        bool node_open = ImGui::TreeNodeEx((void *)(intptr_t)i, node_flags, scene->names[i].c_str(), i);
+                        bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, scene->names[i].c_str(), i);
 
                         if (ImGui::IsItemClicked())
                             add_selection(scene, i);
@@ -2022,7 +2022,7 @@ namespace put
             }
         }
 
-        void apply_transform_to_selection(entity_scene *scene, const vec3f move_axis)
+        void apply_transform_to_selection(entity_scene* scene, const vec3f move_axis)
         {
             if (move_axis == vec3f::zero())
                 return;
@@ -2050,7 +2050,7 @@ namespace put
 
                 store_node_state(scene, i, UNDO);
 
-                cmp_transform &t = scene->transforms[i];
+                cmp_transform& t = scene->transforms[i];
                 if (k_transform_mode == TRANSFORM_TRANSLATE)
                     t.translation += move_axis;
                 if (k_transform_mode == TRANSFORM_SCALE)
@@ -2084,7 +2084,7 @@ namespace put
         };
         physics_pick k_physics_pick_info;
 
-        void physics_pick_callback(const physics::ray_cast_result &result)
+        void physics_pick_callback(const physics::ray_cast_result& result)
         {
             k_physics_pick_info.state = PICKING_COMPLETE;
             k_physics_pick_info.pos = result.point;
@@ -2092,11 +2092,11 @@ namespace put
             k_physics_pick_info.physics_handle = result.physics_handle;
         }
 
-        void transform_widget(const scene_view &view)
+        void transform_widget(const scene_view& view)
         {
             k_select_flags &= ~(WIDGET_SELECTED);
 
-            entity_scene *scene = view.scene;
+            entity_scene* scene = view.scene;
             vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
 
             static vec3f widget_points[4];
@@ -2104,7 +2104,7 @@ namespace put
             static u32 selected_axis = 0;
             static f32 selection_radius = 5.0f;
 
-            const pen::mouse_state &ms = pen::input_get_mouse_state();
+            const pen::mouse_state& ms = pen::input_get_mouse_state();
             vec3f mousev3 = vec3f(ms.x, view.viewport->height - ms.y, 0.0f);
 
             mat4 view_proj = view.camera->proj * view.camera->view;
@@ -2179,8 +2179,8 @@ namespace put
             {
                 u32 s = k_selection_list[i];
 
-                vec3f &_min = scene->bounding_volumes[s].transformed_min_extents;
-                vec3f &_max = scene->bounding_volumes[s].transformed_max_extents;
+                vec3f& _min = scene->bounding_volumes[s].transformed_min_extents;
+                vec3f& _max = scene->bounding_volumes[s].transformed_max_extents;
 
                 min = vec3f::vmin(min, _min);
                 max = vec3f::vmax(max, _max);
@@ -2434,7 +2434,7 @@ namespace put
             }
         }
 
-        void render_constraint(const entity_scene *scene, u32 index, const physics::constraint_params &con)
+        void render_constraint(const entity_scene* scene, u32 index, const physics::constraint_params& con)
         {
             vec3f pos = scene->transforms[index].translation;
             vec3f axis = con.axis;
@@ -2474,9 +2474,9 @@ namespace put
             }
         }
 
-        void render_physics_debug(const scene_view &view)
+        void render_physics_debug(const scene_view& view)
         {
-            entity_scene *scene = view.scene;
+            entity_scene* scene = view.scene;
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
@@ -2495,7 +2495,7 @@ namespace put
                     if (prim == 0)
                         continue;
 
-                    geometry_resource *gr = get_geometry_resource(k_primitives[prim - 1]);
+                    geometry_resource* gr = get_geometry_resource(k_primitives[prim - 1]);
 
                     if (!pmfx::set_technique(view.pmfx_shader, view.technique, 0))
                         continue;
@@ -2518,11 +2518,11 @@ namespace put
             }
         }
 
-        void render_scene_editor(const scene_view &view)
+        void render_scene_editor(const scene_view& view)
         {
             vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
 
-            entity_scene *scene = view.scene;
+            entity_scene* scene = view.scene;
 
             dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
 
@@ -2572,7 +2572,7 @@ namespace put
 
                     if (scene->entities[s] & CMP_LIGHT)
                     {
-                        cmp_light &snl = scene->lights[s];
+                        cmp_light& snl = scene->lights[s];
 
                         if (snl.type == LIGHT_TYPE_DIR)
                         {

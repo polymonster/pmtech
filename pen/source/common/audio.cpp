@@ -12,7 +12,7 @@ namespace pen
 #define NUM_AUDIO_STATE_BUFFERS 2
 #define INVALID_SOUND (u32) - 1
 
-    FMOD::System *g_sound_system;
+    FMOD::System* g_sound_system;
 
     enum audio_resource_type : s32
     {
@@ -28,7 +28,7 @@ namespace pen
 
     struct audio_resource_allocation
     {
-        void *resource;
+        void* resource;
         u32 num_dsp = 0;
 
         audio_resource_type type;
@@ -41,7 +41,7 @@ namespace pen
         union {
             audio_channel_state channel_state;
             audio_group_state group_state;
-            audio_fft_spectrum *fft_spectrum;
+            audio_fft_spectrum* fft_spectrum;
             audio_eq_state eq_state;
             f32 gain_value;
         };
@@ -97,11 +97,11 @@ namespace pen
 
     void update_channel_state(u32 resource_index)
     {
-        audio_resource_allocation &res = g_audio_resources[resource_index];
+        audio_resource_allocation& res = g_audio_resources[resource_index];
 
-        audio_channel_state *state = &g_resource_states[resource_index][g_current_write_buffer].channel_state;
+        audio_channel_state* state = &g_resource_states[resource_index][g_current_write_buffer].channel_state;
 
-        FMOD::Channel *channel = (FMOD::Channel *)res.resource;
+        FMOD::Channel* channel = (FMOD::Channel*)res.resource;
 
         channel->getPosition(&state->position_ms, FMOD_TIMEUNIT_MS);
         channel->getPitch(&state->pitch);
@@ -130,11 +130,11 @@ namespace pen
 
     void update_group_state(u32 resource_index)
     {
-        audio_resource_allocation &res = g_audio_resources[resource_index];
+        audio_resource_allocation& res = g_audio_resources[resource_index];
 
-        audio_group_state *state = &g_resource_states[resource_index][g_current_write_buffer].group_state;
+        audio_group_state* state = &g_resource_states[resource_index][g_current_write_buffer].group_state;
 
-        FMOD::ChannelGroup *channel = (FMOD::ChannelGroup *)res.resource;
+        FMOD::ChannelGroup* channel = (FMOD::ChannelGroup*)res.resource;
 
         channel->getPitch(&state->pitch);
 
@@ -163,20 +163,20 @@ namespace pen
 
     void update_fft(u32 resource_index)
     {
-        audio_resource_allocation &res = g_audio_resources[resource_index];
+        audio_resource_allocation& res = g_audio_resources[resource_index];
 
-        audio_fft_spectrum **fft = &g_resource_states[resource_index][g_current_write_buffer].fft_spectrum;
+        audio_fft_spectrum** fft = &g_resource_states[resource_index][g_current_write_buffer].fft_spectrum;
 
-        FMOD::DSP *fft_dsp = (FMOD::DSP *)res.resource;
+        FMOD::DSP* fft_dsp = (FMOD::DSP*)res.resource;
 
-        FMOD_RESULT result = fft_dsp->getParameterData(FMOD_DSP_FFT_SPECTRUMDATA, (void **)fft, 0, 0, 0);
+        FMOD_RESULT result = fft_dsp->getParameterData(FMOD_DSP_FFT_SPECTRUMDATA, (void**)fft, 0, 0, 0);
 
         PEN_ASSERT(result == FMOD_OK);
     }
 
     void update_three_band_eq(u32 resource_index)
     {
-        FMOD::DSP *eq_dsp = (FMOD::DSP *)g_audio_resources[resource_index].resource;
+        FMOD::DSP* eq_dsp = (FMOD::DSP*)g_audio_resources[resource_index].resource;
 
         eq_dsp->getParameterFloat(FMOD_DSP_THREE_EQ_LOWGAIN,
                                   &g_resource_states[resource_index][g_current_write_buffer].eq_state.low, nullptr, 0);
@@ -188,7 +188,7 @@ namespace pen
 
     void update_gain(u32 resource_index)
     {
-        FMOD::DSP *gain_dsp = (FMOD::DSP *)g_audio_resources[resource_index].resource;
+        FMOD::DSP* gain_dsp = (FMOD::DSP*)g_audio_resources[resource_index].resource;
 
         gain_dsp->getParameterFloat(FMOD_DSP_CHANNELMIX_GAIN_CH0,
                                     &g_resource_states[resource_index][g_current_write_buffer].gain_value, nullptr, 0);
@@ -248,18 +248,18 @@ namespace pen
         g_current_write_buffer = prev_read;
     }
 
-    u32 direct::audio_create_sound(const c8 *filename, u32 resource_slot)
+    u32 direct::audio_create_sound(const c8* filename, u32 resource_slot)
     {
         g_audio_resources[resource_slot].assigned_flag |= 0xff;
         g_audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
 
         FMOD_RESULT result = g_sound_system->createSound(filename, FMOD_DEFAULT, NULL,
-                                                         (FMOD::Sound **)&g_audio_resources[resource_slot].resource);
+                                                         (FMOD::Sound**)&g_audio_resources[resource_slot].resource);
 
         PEN_ASSERT(result == FMOD_OK);
 
         // populate sound info
-        FMOD::Sound *new_sound = (FMOD::Sound *)g_audio_resources[resource_slot].resource;
+        FMOD::Sound* new_sound = (FMOD::Sound*)g_audio_resources[resource_slot].resource;
 
         new_sound->getLength(&g_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
 
@@ -268,13 +268,13 @@ namespace pen
         return resource_slot;
     }
 
-    u32 direct::audio_create_stream(const c8 *filename, u32 resource_slot)
+    u32 direct::audio_create_stream(const c8* filename, u32 resource_slot)
     {
         g_audio_resources[resource_slot].assigned_flag |= 0xff;
         g_audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
 
         FMOD_RESULT result = g_sound_system->createStream(filename, FMOD_LOOP_NORMAL | FMOD_2D, 0,
-                                                          (FMOD::Sound **)&g_audio_resources[resource_slot].resource);
+                                                          (FMOD::Sound**)&g_audio_resources[resource_slot].resource);
 
         PEN_ASSERT(result == FMOD_OK);
 
@@ -288,7 +288,7 @@ namespace pen
 
         FMOD_RESULT result;
 
-        result = g_sound_system->createChannelGroup(NULL, (FMOD::ChannelGroup **)&g_audio_resources[resource_slot].resource);
+        result = g_sound_system->createChannelGroup(NULL, (FMOD::ChannelGroup**)&g_audio_resources[resource_slot].resource);
 
         PEN_ASSERT(result == FMOD_OK);
 
@@ -302,8 +302,8 @@ namespace pen
 
         FMOD_RESULT result;
 
-        result = g_sound_system->playSound((FMOD::Sound *)g_audio_resources[sound_index].resource, 0, false,
-                                           (FMOD::Channel **)&g_audio_resources[resource_slot].resource);
+        result = g_sound_system->playSound((FMOD::Sound*)g_audio_resources[sound_index].resource, 0, false,
+                                           (FMOD::Channel**)&g_audio_resources[resource_slot].resource);
 
         PEN_ASSERT(result == FMOD_OK);
 
@@ -312,49 +312,49 @@ namespace pen
 
     void direct::audio_channel_set_position(const u32 channel_index, const u32 position_ms)
     {
-        FMOD::Channel *p_chan = (FMOD::Channel *)g_audio_resources[channel_index].resource;
+        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
 
         p_chan->setPosition(position_ms, FMOD_TIMEUNIT_MS);
     }
 
     void direct::audio_channel_set_frequency(const u32 channel_index, const f32 frequency)
     {
-        FMOD::Channel *p_chan = (FMOD::Channel *)g_audio_resources[channel_index].resource;
+        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
 
         p_chan->setFrequency(frequency);
     }
 
     void direct::audio_channel_stop(const u32 channel_index)
     {
-        FMOD::Channel *p_chan = (FMOD::Channel *)g_audio_resources[channel_index].resource;
+        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
 
         p_chan->stop();
     }
 
     void direct::audio_group_set_pause(const u32 group_index, const bool val)
     {
-        FMOD::ChannelGroup *p_group = (FMOD::ChannelGroup *)g_audio_resources[group_index].resource;
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
 
         p_group->setPaused(val);
     }
 
     void direct::audio_group_set_mute(const u32 group_index, const bool val)
     {
-        FMOD::ChannelGroup *p_group = (FMOD::ChannelGroup *)g_audio_resources[group_index].resource;
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
 
         p_group->setPaused(val);
     }
 
     void direct::audio_group_set_pitch(const u32 group_index, const f32 pitch)
     {
-        FMOD::ChannelGroup *p_group = (FMOD::ChannelGroup *)g_audio_resources[group_index].resource;
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
 
         p_group->setPitch(pitch);
     }
 
     void direct::audio_group_set_volume(const u32 group_index, const f32 volume)
     {
-        FMOD::ChannelGroup *p_group = (FMOD::ChannelGroup *)g_audio_resources[group_index].resource;
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
 
         p_group->setVolume(volume);
     }
@@ -368,7 +368,7 @@ namespace pen
 
         if (g_audio_resources[index].assigned_flag)
         {
-            void *p_res = g_audio_resources[index].resource;
+            void* p_res = g_audio_resources[index].resource;
 
             switch (g_audio_resources[index].type)
             {
@@ -380,7 +380,7 @@ namespace pen
 
             case AUDIO_RESOURCE_GROUP:
             {
-                ((FMOD::ChannelGroup *)p_res)->release();
+                ((FMOD::ChannelGroup*)p_res)->release();
             }
             break;
 
@@ -388,13 +388,13 @@ namespace pen
             case AUDIO_RESOURCE_DSP_EQ:
             case AUDIO_RESOURCE_DSP_GAIN:
             {
-                ((FMOD::DSP *)p_res)->release();
+                ((FMOD::DSP*)p_res)->release();
             }
             break;
 
             case AUDIO_RESOURCE_SOUND:
             {
-                ((FMOD::Sound *)p_res)->release();
+                ((FMOD::Sound*)p_res)->release();
             }
             break;
 
@@ -408,8 +408,8 @@ namespace pen
 
     void direct::audio_add_channel_to_group(const u32 channel_index, const u32 group_index)
     {
-        FMOD::ChannelGroup *p_group = (FMOD::ChannelGroup *)g_audio_resources[group_index].resource;
-        FMOD::Channel *p_chan = (FMOD::Channel *)g_audio_resources[channel_index].resource;
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
+        FMOD::Channel* p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
 
         FMOD_RESULT result;
 
@@ -418,7 +418,7 @@ namespace pen
         PEN_ASSERT(result == FMOD_OK);
     }
 
-    FMOD_DSP_TYPE pen_dsp_to_fmod_type(dsp_type type, audio_resource_type &resource_type)
+    FMOD_DSP_TYPE pen_dsp_to_fmod_type(dsp_type type, audio_resource_type& resource_type)
     {
         resource_type = AUDIO_RESOURCE_DSP;
 
@@ -449,13 +449,13 @@ namespace pen
 
         FMOD_RESULT result;
 
-        FMOD::DSP **new_dsp = (FMOD::DSP **)&g_audio_resources[resource_slot].resource;
+        FMOD::DSP** new_dsp = (FMOD::DSP**)&g_audio_resources[resource_slot].resource;
 
         result = g_sound_system->createDSPByType(fmod_dsp, new_dsp);
 
         PEN_ASSERT(result == FMOD_OK);
 
-        FMOD::ChannelGroup *p_group = (FMOD::ChannelGroup *)g_audio_resources[group_index].resource;
+        FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
 
         p_group->addDSP(g_audio_resources[group_index].num_dsp++, *new_dsp);
 
@@ -464,7 +464,7 @@ namespace pen
 
     void direct::audio_dsp_set_three_band_eq(const u32 eq_index, const f32 low, const f32 med, const f32 high)
     {
-        FMOD::DSP *eq_dsp = (FMOD::DSP *)g_audio_resources[eq_index].resource;
+        FMOD::DSP* eq_dsp = (FMOD::DSP*)g_audio_resources[eq_index].resource;
 
         eq_dsp->setParameterFloat(0, low);
         eq_dsp->setParameterFloat(1, med);
@@ -473,13 +473,13 @@ namespace pen
 
     void direct::audio_dsp_set_gain(const u32 dsp_index, const f32 gain)
     {
-        FMOD::DSP *gain_dsp = (FMOD::DSP *)g_audio_resources[dsp_index].resource;
+        FMOD::DSP* gain_dsp = (FMOD::DSP*)g_audio_resources[dsp_index].resource;
 
         gain_dsp->setParameterFloat(FMOD_DSP_CHANNELMIX_GAIN_CH0, gain);
         gain_dsp->setParameterFloat(FMOD_DSP_CHANNELMIX_GAIN_CH1, gain);
     }
 
-    pen_error audio_channel_get_state(const u32 channel_index, audio_channel_state *state)
+    pen_error audio_channel_get_state(const u32 channel_index, audio_channel_state* state)
     {
         if (g_audio_resources[channel_index].assigned_flag)
         {
@@ -496,7 +496,7 @@ namespace pen
         return PEN_ERR_NOT_READY;
     }
 
-    pen_error audio_channel_get_sound_file_info(const u32 sound_index, audio_sound_file_info *info)
+    pen_error audio_channel_get_sound_file_info(const u32 sound_index, audio_sound_file_info* info)
     {
         if (g_audio_resources[sound_index].assigned_flag && g_sound_file_info_ready[sound_index])
         {
@@ -513,7 +513,7 @@ namespace pen
         return PEN_ERR_NOT_READY;
     }
 
-    pen_error audio_group_get_state(const u32 group_index, audio_group_state *state)
+    pen_error audio_group_get_state(const u32 group_index, audio_group_state* state)
     {
         if (g_audio_resources[group_index].assigned_flag)
         {
@@ -530,7 +530,7 @@ namespace pen
         return PEN_ERR_NOT_READY;
     }
 
-    pen_error audio_dsp_get_spectrum(const u32 spectrum_dsp, audio_fft_spectrum *spectrum)
+    pen_error audio_dsp_get_spectrum(const u32 spectrum_dsp, audio_fft_spectrum* spectrum)
     {
         if (g_audio_resources[spectrum_dsp].assigned_flag)
         {
@@ -550,7 +550,7 @@ namespace pen
         return PEN_ERR_NOT_READY;
     }
 
-    pen_error audio_dsp_get_three_band_eq(const u32 eq_dsp, audio_eq_state *eq_state)
+    pen_error audio_dsp_get_three_band_eq(const u32 eq_dsp, audio_eq_state* eq_state)
     {
         if (g_audio_resources[eq_dsp].assigned_flag)
         {
@@ -567,7 +567,7 @@ namespace pen
         return PEN_ERR_NOT_READY;
     }
 
-    pen_error audio_dsp_get_gain(const u32 dsp_index, f32 *gain)
+    pen_error audio_dsp_get_gain(const u32 dsp_index, f32* gain)
     {
         if (g_audio_resources[dsp_index].assigned_flag)
         {
