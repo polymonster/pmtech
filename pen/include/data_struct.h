@@ -1,6 +1,8 @@
 #ifndef _pen_data_struct_h
 #define _pen_data_struct_h
 
+#include "memory.h"
+
 // Minimalist data structures to use as alternative to vector
 
 // Stretchy buffer itself akin to vector
@@ -41,11 +43,11 @@ static void* stb__sbgrowf(void* arr, int increment, int itemsize)
     // stretch buffer and zero mem
     int* p = nullptr;
     {
-        u32 total_size = itemsize * m + sizeof(int) * 2;
-        p              = (int*)realloc(arr ? stb__sbraw(arr) : 0, total_size);
+        uint32_t total_size = itemsize * m + sizeof(int) * 2;
+        p = (int*)realloc(arr ? stb__sbraw(arr) : 0, total_size);
 
-        u8* pp            = (u8*)p;
-        u32 preserve_size = sizeof(int) * 2 + itemsize * start;
+        char* pp = (char*)p;
+        uint32_t preserve_size = sizeof(int) * 2 + itemsize * start;
         memset(pp + preserve_size, 0x00, total_size - preserve_size);
     }
 
