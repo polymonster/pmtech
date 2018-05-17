@@ -5,16 +5,16 @@
 #include <OpenGLES/ES3/gl.h>
 #include <OpenGLES/ES3/glext.h>
 
-//for portability with regular gl
-#define GL_FILL 0x00                    //gl fill is the only polygon mode on gles3
-#define GL_LINE 0x00                    //gl line (wireframe) usupported
+// for portability with regular gl
+#define GL_FILL 0x00 // gl fill is the only polygon mode on gles3
+#define GL_LINE 0x00 // gl line (wireframe) usupported
 
-#define glClearDepth glClearDepthf      //gl es has these type suffixes
+#define glClearDepth glClearDepthf // gl es has these type suffixes
 
 #else
 #ifdef __linux__
 #include "GL/glew.h"
-#else //osx
+#else // osx
 #include <OpenGL/gl3.h>
 #include <OpenGL/gl3ext.h>
 #endif
@@ -29,9 +29,9 @@ enum null_values
 
 enum shader_type
 {
-    PEN_SHADER_TYPE_VS          = GL_VERTEX_SHADER,
-    PEN_SHADER_TYPE_PS          = GL_FRAGMENT_SHADER,
-    PEN_SHADER_TYPE_GS          = GL_GEOMETRY_SHADER,
+    PEN_SHADER_TYPE_VS = GL_VERTEX_SHADER,
+    PEN_SHADER_TYPE_PS = GL_FRAGMENT_SHADER,
+    PEN_SHADER_TYPE_GS = GL_GEOMETRY_SHADER,
     PEN_SHADER_TYPE_SO
 };
 
@@ -56,9 +56,9 @@ enum default_targets : s32
 
 enum clear_bits : s32
 {
-    PEN_CLEAR_COLOUR_BUFFER		=   GL_COLOR_BUFFER_BIT,
-    PEN_CLEAR_DEPTH_BUFFER		=   GL_DEPTH_BUFFER_BIT,
-    PEN_CLEAR_STENCIL_BUFFER    =   GL_STENCIL_BUFFER_BIT,
+    PEN_CLEAR_COLOUR_BUFFER = GL_COLOR_BUFFER_BIT,
+    PEN_CLEAR_DEPTH_BUFFER = GL_DEPTH_BUFFER_BIT,
+    PEN_CLEAR_STENCIL_BUFFER = GL_STENCIL_BUFFER_BIT,
 };
 
 enum input_classification : s32
@@ -72,27 +72,27 @@ enum primitive_topology : s32
     PEN_PT_POINTLIST = GL_POINTS,
     PEN_PT_LINELIST = GL_LINES,
     PEN_PT_LINESTRIP = GL_LINE_STRIP,
-    PEN_PT_TRIANGLELIST= GL_TRIANGLES,
+    PEN_PT_TRIANGLELIST = GL_TRIANGLES,
     PEN_PT_TRIANGLESTRIP = GL_TRIANGLE_STRIP
 };
 
-#define PACK_GL_FORMAT( DATA_TYPE, NUM_ELEMENTS ) ((NUM_ELEMENTS) | (DATA_TYPE << 4))
+#define PACK_GL_FORMAT( DATA_TYPE, NUM_ELEMENTS ) ( ( NUM_ELEMENTS ) | ( DATA_TYPE << 4 ) )
 #define UNPACK_FORMAT( PF ) PF >> 4
-#define UNPACK_NUM_ELEMENTS( PF ) PF & (0x07)
+#define UNPACK_NUM_ELEMENTS( PF ) PF &( 0x07 )
 
-#define PACK_GL_TEXTURE_FORMAT( DATA_TYPE, NUM_ELEMENTS ) ((NUM_ELEMENTS) | (DATA_TYPE << 4))
+#define PACK_GL_TEXTURE_FORMAT( DATA_TYPE, NUM_ELEMENTS ) ( ( NUM_ELEMENTS ) | ( DATA_TYPE << 4 ) )
 #define UNPACK_TEXTURE_FORMAT( PF ) PF >> 4
-#define UNPACK_DATA_TYPE( PF ) PF & (0x07)
+#define UNPACK_DATA_TYPE( PF ) PF &( 0x07 )
 
 enum vertex_format : s32
 {
-    PEN_VERTEX_FORMAT_FLOAT1		= PACK_GL_FORMAT( GL_FLOAT, 1 ),
-	PEN_VERTEX_FORMAT_FLOAT2		= PACK_GL_FORMAT( GL_FLOAT, 2 ),
-	PEN_VERTEX_FORMAT_FLOAT3		= PACK_GL_FORMAT( GL_FLOAT, 3 ),
-	PEN_VERTEX_FORMAT_FLOAT4		= PACK_GL_FORMAT( GL_FLOAT, 4 ),
-	PEN_VERTEX_FORMAT_UNORM4		= PACK_GL_FORMAT( GL_UNSIGNED_BYTE, 4 ),
-	PEN_VERTEX_FORMAT_UNORM2		= PACK_GL_FORMAT( GL_UNSIGNED_BYTE, 2 ),
-	PEN_VERTEX_FORMAT_UNORM1		= PACK_GL_FORMAT( GL_UNSIGNED_BYTE, 1 )
+    PEN_VERTEX_FORMAT_FLOAT1 = PACK_GL_FORMAT( GL_FLOAT, 1 ),
+    PEN_VERTEX_FORMAT_FLOAT2 = PACK_GL_FORMAT( GL_FLOAT, 2 ),
+    PEN_VERTEX_FORMAT_FLOAT3 = PACK_GL_FORMAT( GL_FLOAT, 3 ),
+    PEN_VERTEX_FORMAT_FLOAT4 = PACK_GL_FORMAT( GL_FLOAT, 4 ),
+    PEN_VERTEX_FORMAT_UNORM4 = PACK_GL_FORMAT( GL_UNSIGNED_BYTE, 4 ),
+    PEN_VERTEX_FORMAT_UNORM2 = PACK_GL_FORMAT( GL_UNSIGNED_BYTE, 2 ),
+    PEN_VERTEX_FORMAT_UNORM1 = PACK_GL_FORMAT( GL_UNSIGNED_BYTE, 1 )
 };
 
 enum index_buffer_format : s32
@@ -103,20 +103,20 @@ enum index_buffer_format : s32
 
 enum texture_format : s32
 {
-    //integer
+    // integer
     PEN_TEX_FORMAT_BGRA8_UNORM,
     PEN_TEX_FORMAT_RGBA8_UNORM,
     PEN_TEX_FORMAT_D24_UNORM_S8_UINT,
-    
-    //floating point
+
+    // floating point
     PEN_TEX_FORMAT_R32G32B32A32_FLOAT,
     PEN_TEX_FORMAT_R32_FLOAT,
     PEN_TEX_FORMAT_R16G16B16A16_FLOAT,
     PEN_TEX_FORMAT_R16_FLOAT,
     PEN_TEX_FORMAT_R32_UINT,
     PEN_TEX_FORMAT_R8_UNORM,
-    
-    //bc compressed
+
+    // bc compressed
     PEN_TEX_FORMAT_BC1_UNORM,
     PEN_TEX_FORMAT_BC2_UNORM,
     PEN_TEX_FORMAT_BC3_UNORM,
@@ -126,27 +126,27 @@ enum texture_format : s32
 
 enum usage : s32
 {
-    PEN_USAGE_DEFAULT = GL_STATIC_DRAW,                     //gpu read and write, d3d can updatesubresource with usage default
-    PEN_USAGE_IMMUTABLE = GL_STATIC_DRAW,                   //gpu read only
-    PEN_USAGE_DYNAMIC = GL_DYNAMIC_DRAW,                    //dynamic
-    PEN_USAGE_STAGING = GL_DYNAMIC_DRAW,                    //cpu access
+    PEN_USAGE_DEFAULT = GL_STATIC_DRAW,   // gpu read and write, d3d can updatesubresource with usage default
+    PEN_USAGE_IMMUTABLE = GL_STATIC_DRAW, // gpu read only
+    PEN_USAGE_DYNAMIC = GL_DYNAMIC_DRAW,  // dynamic
+    PEN_USAGE_STAGING = GL_DYNAMIC_DRAW,  // cpu access
 };
 
 enum bind_flags : s32
 {
     PEN_BIND_SHADER_RESOURCE = 0,
-    
+
     PEN_BIND_VERTEX_BUFFER = GL_ARRAY_BUFFER,
     PEN_BIND_INDEX_BUFFER = GL_ELEMENT_ARRAY_BUFFER,
     PEN_BIND_CONSTANT_BUFFER = GL_UNIFORM_BUFFER,
     PEN_STREAM_OUT_VERTEX_BUFFER = GL_ARRAY_BUFFER,
     PEN_BIND_RENDER_TARGET = GL_FRAMEBUFFER,
-    
+
     PEN_BIND_DEPTH_STENCIL,
-    
-    //PEN_BIND_UNORDERED_ACCESS = D3D11_BIND_UNORDERED_ACCESS,
-    //PEN_BIND_DECODER = D3D11_BIND_DECODER,
-    //PEN_BIND_VIDEO_ENCODER = D3D11_BIND_VIDEO_ENCODER
+
+    // PEN_BIND_UNORDERED_ACCESS = D3D11_BIND_UNORDERED_ACCESS,
+    // PEN_BIND_DECODER = D3D11_BIND_DECODER,
+    // PEN_BIND_VIDEO_ENCODER = D3D11_BIND_VIDEO_ENCODER
 };
 
 enum cpu_access_flags : s32
@@ -391,7 +391,7 @@ enum sampler_filters : s32
     PEN_FILTER_MAXIMUM_MIN_MAG_LINEAR_MIP_POINT = D3D11_FILTER_MAXIMUM_MIN_MAG_LINEAR_MIP_POINT,
     PEN_FILTER_MAXIMUM_MIN_MAG_MIP_LINEAR = D3D11_FILTER_MAXIMUM_MIN_MAG_MIP_LINEAR,
     PEN_FILTER_MAXIMUM_ANISOTROPIC = D3D11_FILTER_MAXIMUM_ANISOTROPIC
-};                                                              
+};
 
 enum query_marker : s32
 {
