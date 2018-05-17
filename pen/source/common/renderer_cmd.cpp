@@ -6,6 +6,7 @@
 #include "slot_resource.h"
 #include "threads.h"
 #include "timer.h"
+#include "os.h"
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -544,11 +545,16 @@ namespace pen
                 // exit
                 break;
             }
+#else
+            if(!os_update())
+                break;
 #endif
         }
 
+#ifndef __linux__
         thread_semaphore_signal(p_continue_semaphore, 1);
         thread_semaphore_signal(p_job_thread_info->p_sem_terminated, 1);
+#endif
     }
 
     resolve_resources g_resolve_resources;

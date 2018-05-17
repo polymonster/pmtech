@@ -12,6 +12,7 @@ namespace pen
 
     void os_set_cursor_pos(u32 client_x, u32 client_y);
     void os_show_cursor(bool show);
+    bool os_update();
 } // namespace pen
 
 #endif
