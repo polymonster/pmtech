@@ -200,8 +200,8 @@ struct Vec<2, T>
     // temporary
     inline void vfloor()
     {
-        x = (f32)floor((double)x);
-        y = (f32)floor((double)y);
+        x = (float)floor((double)x);
+        y = (float)floor((double)y);
     }
 
     inline static Vec<2, T> vmax(Vec<2, T> a, Vec<2, T> b)
@@ -355,9 +355,9 @@ struct Vec<3, T>
     // temporary
     inline void vfloor()
     {
-        x = (f32)floor((double)x);
-        y = (f32)floor((double)y);
-        z = (f32)floor((double)z);
+        x = (float)floor((double)x);
+        y = (float)floor((double)y);
+        z = (float)floor((double)z);
     }
 
     inline static Vec<3, T> vmax(Vec<3, T> a, Vec<3, T> b)
@@ -548,7 +548,7 @@ typedef Vec4i vec4i;
 // For bullet
 struct lw_vec3f
 {
-    f32 x, y, z;
+    float x, y, z;
 
     inline lw_vec3f& operator=(const vec3f& v)
     {

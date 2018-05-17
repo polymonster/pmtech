@@ -1,5 +1,7 @@
 #pragma once
 
+#include "imgui/imgui.h"
+
 #define ICON_MIN_FA 0xf000
 #define ICON_MAX_FA 0xf2e0
 #define ICON_FA_GLASS u8"\uf000"

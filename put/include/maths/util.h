@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <float.h>
 
 #ifndef M_PI
 const double M_PI = 3.1415926535897932384626433832795;
