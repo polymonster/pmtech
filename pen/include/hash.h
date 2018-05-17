@@ -2,6 +2,7 @@
 #define _hash_h
 
 #include "types.h"
+#include <string.h>
 
 namespace pen
 {

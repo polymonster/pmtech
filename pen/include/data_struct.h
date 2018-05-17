@@ -71,7 +71,7 @@ template <class T>
 struct pen_stack
 {
     T*  data = nullptr;
-    s32 pos  = 0;
+    int pos  = 0;
 
     void clear()
     {
@@ -101,7 +101,7 @@ struct pen_stack
         return data[pos];
     }
 
-    s32 size()
+    int size()
     {
         return pos;
     }
