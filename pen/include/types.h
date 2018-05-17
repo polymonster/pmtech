@@ -60,13 +60,13 @@ using std::swap;
 
 typedef uint32_t peh;
 
-#define PEN_INVALID_HANDLE ( ( u32 )-1 )
-inline bool is_valid( u32 handle )
+#define PEN_INVALID_HANDLE ((u32)-1)
+inline bool is_valid(u32 handle)
 {
     return handle != PEN_INVALID_HANDLE;
 }
 
-inline bool is_invalid( u32 handle )
+inline bool is_invalid(u32 handle)
 {
     return handle == PEN_INVALID_HANDLE;
 }
@@ -85,11 +85,10 @@ enum pen_error
 
 // For making texture formats ('D' 'X' 'T' '1') etc
 
-#define PEN_FOURCC( ch0, ch1, ch2, ch3 )                                                                                     \
-    ( ( ulong )( c8 )( ch0 ) | ( ( ulong )( c8 )( ch1 ) << 8 ) | ( ( ulong )( c8 )( ch2 ) << 16 ) |                          \
-      ( ( ulong )( c8 )( ch3 ) << 24 ) )
+#define PEN_FOURCC(ch0, ch1, ch2, ch3)                                                                                       \
+    ((ulong)(c8)(ch0) | ((ulong)(c8)(ch1) << 8) | ((ulong)(c8)(ch2) << 16) | ((ulong)(c8)(ch3) << 24))
 
-#define PEN_ARRAY_SIZE( A ) ( sizeof( A ) / sizeof( A[ 0 ] ) )
-#define PEN_REQUIRE( A ) // for tests
+#define PEN_ARRAY_SIZE(A) (sizeof(A) / sizeof(A[0]))
+#define PEN_REQUIRE(A) // for tests
 
 #endif //_pen_types_h

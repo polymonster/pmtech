@@ -3,18 +3,18 @@
 
 namespace put
 {
-	namespace ces
-	{
-		struct entity_scene;
-	}
+    namespace ces
+    {
+        struct entity_scene;
+    }
 
-	namespace vgt
-	{
-		void init(ces::entity_scene* scene);
+    namespace vgt
+    {
+        void init(ces::entity_scene *scene);
 
-		void show_dev_ui();
-		void post_update();
-	}
-}
+        void show_dev_ui();
+        void post_update();
+    } // namespace vgt
+} // namespace put
 
 #endif //_volume_generator_h

@@ -30,7 +30,7 @@ namespace pen
         const c8 *full_user_name;
     };
 
-    extern PEN_TRV user_entry( void *params );
+    extern PEN_TRV user_entry(void *params);
 } // namespace pen
 
 #endif

@@ -2,16 +2,16 @@
 #include "ces/ces_resources.h"
 #include "ces/ces_utilities.h"
 
-#include "hash.h"
-#include "pen_string.h"
-#include "dev_ui.h"
-#include "debug_render.h"
-#include "input.h"
 #include "camera.h"
-#include "pmfx.h"
-#include "timer.h"
-#include "str_utilities.h"
+#include "debug_render.h"
+#include "dev_ui.h"
+#include "hash.h"
+#include "input.h"
+#include "pen_string.h"
 #include "physics.h"
+#include "pmfx.h"
+#include "str_utilities.h"
+#include "timer.h"
 
 #include "data_struct.h"
 
@@ -24,19 +24,14 @@ namespace put
 
     namespace ces
     {
-        static hash_id k_primitives[] =
-        {
-            PEN_HASH("cube"),
-            PEN_HASH("cylinder"),
-            PEN_HASH("sphere"),
-            PEN_HASH("capsule"),
-            PEN_HASH("cone"),
+        static hash_id k_primitives[] = {
+            PEN_HASH("cube"), PEN_HASH("cylinder"), PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone"),
         };
 
         struct transform_undo
         {
             cmp_transform state;
-            u32		  node_index;
+            u32 node_index;
         };
 
         static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
@@ -48,7 +43,7 @@ namespace put
             u32 x, y;
         };
         static picking_info k_picking_info;
-        u32* k_selection_list = nullptr;
+        u32 *k_selection_list = nullptr;
 
         enum e_select_mode : u32
         {
@@ -80,21 +75,17 @@ namespace put
             CAMERA_FLY = 1
         };
 
-        const c8* camera_mode_names[] =
-        {
-            "Modelling",
-            "Fly"
-        };
+        const c8 *camera_mode_names[] = {"Modelling", "Fly"};
 
         struct model_view_controller
         {
-            put::camera     main_camera;
-            bool			invalidated = false;
-            bool			invert_y = false;
-            e_camera_mode   camera_mode = CAMERA_MODELLING;
-            f32				grid_cell_size;
-            f32				grid_size;
-            Str				current_working_scene = "";
+            put::camera main_camera;
+            bool invalidated = false;
+            bool invert_y = false;
+            e_camera_mode camera_mode = CAMERA_MODELLING;
+            f32 grid_cell_size;
+            f32 grid_size;
+            Str current_working_scene = "";
         };
         model_view_controller k_model_view_controller;
 
@@ -122,7 +113,7 @@ namespace put
             return pen::input_key(key);
         }
 
-        void update_model_viewer_camera(put::scene_controller* sc)
+        void update_model_viewer_camera(put::scene_controller *sc)
         {
             if (k_model_view_controller.invalidated)
             {
@@ -161,34 +152,24 @@ namespace put
             DD_NUM_FLAGS = 9
         };
 
-        const c8* dd_names[]
-        {
-            "Hide Scene",
-            "Selected Node",
-            "Grid",
-            "Matrices",
-            "Bones",
-            "AABB",
-            "Lights",
-            "Physics",
-            "Selected Children"
-        };
+        const c8 *dd_names[]{"Hide Scene", "Selected Node", "Grid",    "Matrices",         "Bones",
+                             "AABB",       "Lights",        "Physics", "Selected Children"};
         static_assert(sizeof(dd_names) / sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
-        static bool* k_dd_bools = nullptr;
+        static bool *k_dd_bools = nullptr;
 
-        void undo(entity_scene* scene);
-        void redo(entity_scene* scene);
-        void update_undo_stack(entity_scene* scene, f32 dt);
+        void undo(entity_scene *scene);
+        void redo(entity_scene *scene);
+        void update_undo_stack(entity_scene *scene, f32 dt);
 
-        void update_view_flags_ui(entity_scene* scene)
+        void update_view_flags_ui(entity_scene *scene)
         {
             if (!k_dd_bools)
             {
                 k_dd_bools = new bool[DD_NUM_FLAGS];
-                pen::memory_set(k_dd_bools, 0x0, sizeof(bool)*DD_NUM_FLAGS);
+                pen::memory_set(k_dd_bools, 0x0, sizeof(bool) * DD_NUM_FLAGS);
 
-                //set defaults
-                static u32 defaults[] = { DD_NODE, DD_GRID, DD_LIGHTS };
+                // set defaults
+                static u32 defaults[] = {DD_NODE, DD_GRID, DD_LIGHTS};
                 for (s32 i = 1; i < sizeof(defaults) / sizeof(defaults[0]); ++i)
                     k_dd_bools[i] = true;
             }
@@ -204,7 +185,7 @@ namespace put
             }
         }
 
-        void update_view_flags(entity_scene* scene, bool error)
+        void update_view_flags(entity_scene *scene, bool error)
         {
             if (error)
                 scene->view_flags |= (DD_MATRIX | DD_BONES);
@@ -218,7 +199,7 @@ namespace put
             }
         }
 
-        void view_ui(entity_scene* scene, bool* opened)
+        void view_ui(entity_scene *scene, bool *opened)
         {
             if (ImGui::Begin("View", opened, ImGuiWindowFlags_AlwaysAutoResize))
             {
@@ -242,15 +223,15 @@ namespace put
             update_view_flags_ui(scene);
         }
 
-        void default_scene(entity_scene* scene)
+        void default_scene(entity_scene *scene)
         {
-            //add default view flags
+            // add default view flags
             scene->view_flags = 0;
             delete[] k_dd_bools;
             k_dd_bools = nullptr;
             update_view_flags_ui(scene);
 
-            //add light
+            // add light
             u32 light = get_new_node(scene);
             scene->names[light] = "front_light";
             scene->id_name[light] = PEN_HASH("front_light");
@@ -266,7 +247,7 @@ namespace put
             sb_clear(k_selection_list);
         }
 
-        void editor_init(entity_scene* scene)
+        void editor_init(entity_scene *scene)
         {
             update_view_flags_ui(scene);
 
@@ -288,11 +269,11 @@ namespace put
                 default_scene(scene);
             }
 
-            //grid
+            // grid
             k_model_view_controller.grid_cell_size = dev_ui::get_program_preference("grid_cell_size").as_f32(1.0f);
             k_model_view_controller.grid_size = dev_ui::get_program_preference("grid_size").as_f32(100.0f);
 
-            //camera
+            // camera
             k_model_view_controller.main_camera.fov = dev_ui::get_program_preference("camera_fov").as_f32(60.0f);
             k_model_view_controller.main_camera.near_plane = dev_ui::get_program_preference("camera_near").as_f32(0.1f);
             k_model_view_controller.main_camera.far_plane = dev_ui::get_program_preference("camera_far").as_f32(1000.0f);
@@ -305,7 +286,7 @@ namespace put
             delete[] k_dd_bools;
         }
 
-        void instance_selection(entity_scene* scene)
+        void instance_selection(entity_scene *scene)
         {
             s32 selection_size = sb_count(k_selection_list);
 
@@ -331,11 +312,11 @@ namespace put
 
             scene->master_instances[master].instance_buffer = pen::renderer_create_buffer(bcp);
 
-            //todo - must ensure list is contiguous.
+            // todo - must ensure list is contiguous.
             dev_console_log("[instance] master instance: %i with %i sub instances", master, selection_size);
         }
 
-        void parent_selection(entity_scene* scene)
+        void parent_selection(entity_scene *scene)
         {
             s32 selection_size = sb_count(k_selection_list);
 
@@ -344,7 +325,7 @@ namespace put
 
             s32 parent = k_selection_list[0];
 
-            //check contiguity
+            // check contiguity
             bool valid = true;
             s32 last_index = -1;
             for (s32 i = 1; i < selection_size; ++i)
@@ -364,7 +345,7 @@ namespace put
             u32 sel_count = sb_count(k_selection_list);
             if (valid)
             {
-                //list is already contiguous
+                // list is already contiguous
                 dev_console_log("[parent] selection is contiguous %i to %i size %i", parent, last_index, selection_size);
 
                 for (int i = 0; i < sel_count; ++i)
@@ -373,7 +354,7 @@ namespace put
             }
             else
             {
-                //move nodes into a contiguous list with the parent first most
+                // move nodes into a contiguous list with the parent first most
                 dev_console_log("[parent] selection is not contiguous size %i", parent, last_index, selection_size);
 
                 s32 start, end;
@@ -387,7 +368,7 @@ namespace put
             scene->flags |= INVALIDATE_SCENE_TREE;
         }
 
-        void add_selection(entity_scene* scene, u32 index, u32 select_mode)
+        void add_selection(entity_scene *scene, u32 index, u32 select_mode)
         {
             if (pen::input_is_key_down(PK_CONTROL))
                 select_mode = SELECT_REMOVE;
@@ -415,7 +396,7 @@ namespace put
                     if (k_selection_list[i] == index)
                         existing = i;
 
-                u32* new_list = nullptr;
+                u32 *new_list = nullptr;
                 if (existing != -1 && select_mode == SELECT_REMOVE)
                 {
                     for (u32 i = 0; i < sel_count; ++i)
@@ -439,7 +420,7 @@ namespace put
                 scene->state_flags[index] |= SF_SELECTED;
         }
 
-        void enumerate_selection_ui(const entity_scene* scene, bool* opened)
+        void enumerate_selection_ui(const entity_scene *scene, bool *opened)
         {
             if (ImGui::Begin("Selection List", opened))
             {
@@ -457,14 +438,14 @@ namespace put
             }
         }
 
-        void picking_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
+        void picking_read_back(void *p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
         {
-            k_picking_info.result = *((u32*)(((u8*)p_data) + k_picking_info.y * row_pitch + k_picking_info.x * block_size));
+            k_picking_info.result = *((u32 *)(((u8 *)p_data) + k_picking_info.y * row_pitch + k_picking_info.x * block_size));
 
             k_picking_info.ready = 1;
         }
 
-        void picking_update(entity_scene* scene, const camera* cam)
+        void picking_update(entity_scene *scene, const camera *cam)
         {
             static u32 picking_state = PICKING_READY;
             static u32 picking_result = (-1);
@@ -490,24 +471,23 @@ namespace put
             pen::mouse_state ms = pen::input_get_mouse_state();
             f32 corrected_y = pen_window.height - ms.y;
 
-            static s32		drag_timer = 0;
-            static vec2f	drag_start;
-            static vec3f	frustum_points[2][4];
+            static s32 drag_timer = 0;
+            static vec2f drag_start;
+            static vec3f frustum_points[2][4];
 
-            //frustum select
+            // frustum select
             vec3f n[6];
             vec3f p[6];
 
-            vec3f plane_vectors[] =
-            {
-                frustum_points[0][0], frustum_points[1][0], frustum_points[0][2],	//left
-                frustum_points[0][0], frustum_points[0][1],	frustum_points[1][0],	//top
+            vec3f plane_vectors[] = {
+                frustum_points[0][0], frustum_points[1][0], frustum_points[0][2], // left
+                frustum_points[0][0], frustum_points[0][1], frustum_points[1][0], // top
 
-                frustum_points[0][1], frustum_points[0][3], frustum_points[1][1],	//right
-                frustum_points[0][2], frustum_points[1][2], frustum_points[0][3],	//bottom
+                frustum_points[0][1], frustum_points[0][3], frustum_points[1][1], // right
+                frustum_points[0][2], frustum_points[1][2], frustum_points[0][3], // bottom
 
-                frustum_points[0][0], frustum_points[0][2], frustum_points[0][1],	//near
-                frustum_points[1][0], frustum_points[1][1], frustum_points[1][2]	//far
+                frustum_points[0][0], frustum_points[0][2], frustum_points[0][1], // near
+                frustum_points[1][0], frustum_points[1][1], frustum_points[1][2]  // far
             };
 
             for (s32 i = 0; i < 6; ++i)
@@ -527,7 +507,7 @@ namespace put
                     u32 pm = SELECT_NORMAL;
                     if (!pen::input_is_key_down(PK_CONTROL) && !pen::input_is_key_down(PK_SHIFT))
                     {
-                        //unflag current selected
+                        // unflag current selected
                         u32 sls = sb_count(k_selection_list);
                         for (u32 i = 0; i < sls; ++i)
                             scene->state_flags[k_selection_list[i]] &= ~SF_SELECTED;
@@ -548,8 +528,8 @@ namespace put
                         bool selected = true;
                         for (s32 i = 0; i < 6; ++i)
                         {
-                            vec3f& min = scene->bounding_volumes[node].transformed_min_extents;
-                            vec3f& max = scene->bounding_volumes[node].transformed_max_extents;
+                            vec3f &min = scene->bounding_volumes[node].transformed_min_extents;
+                            vec3f &max = scene->bounding_volumes[node].transformed_max_extents;
 
                             u32 c = maths::aabb_vs_plane(min, max, p[i], n[i]);
                             if (c == maths::INFRONT)
@@ -598,14 +578,10 @@ namespace put
                 vec2f c1 = vec2f(cur_mouse.x, drag_start.y);
                 vec2f c2 = vec2f(drag_start.x, cur_mouse.y);
 
-                //frustum selection
-                vec2f source_points[] =
-                {
-                    drag_start, c1,
-                    c2, cur_mouse
-                };
+                // frustum selection
+                vec2f source_points[] = {drag_start, c1, c2, cur_mouse};
 
-                //sort source points 
+                // sort source points
                 vec2f min = vec2f::flt_max();
                 vec2f max = -vec2f::flt_max();
                 for (s32 i = 0; i < 4; ++i)
@@ -628,7 +604,7 @@ namespace put
                 {
                     picking_state = PICKING_SINGLE;
 
-                    const pmfx::render_target* rt = pmfx::get_render_target(ID_PICKING_BUFFER);
+                    const pmfx::render_target *rt = pmfx::get_render_target(ID_PICKING_BUFFER);
 
                     if (!rt)
                     {
@@ -640,18 +616,10 @@ namespace put
                     pmfx::get_render_target_dimensions(rt, w, h);
 
                     u32 pitch = (u32)w * 4;
-                    u32 data_size = (u32)h*pitch;
+                    u32 data_size = (u32)h * pitch;
 
-                    pen::resource_read_back_params rrbp =
-                    {
-                        rt->handle,
-                        rt->format,
-                        pitch,
-                        data_size,
-                        4,
-                        data_size,
-                        &picking_read_back
-                    };
+                    pen::resource_read_back_params rrbp = {rt->handle, rt->format,        pitch, data_size, 4,
+                                                           data_size,  &picking_read_back};
 
                     pen::renderer_read_back_resource(rrbp);
 
@@ -661,38 +629,28 @@ namespace put
                 }
                 else
                 {
-                    //do not perfrom frustum picking if min and max are not square
+                    // do not perfrom frustum picking if min and max are not square
                     bool invalid_quad = min.x == max.x || min.y == max.y;
 
                     if (!invalid_quad)
                     {
                         picking_state = PICKING_MULTI;
 
-                        //todo this should really be passed in, incase we want non window sized viewports
+                        // todo this should really be passed in, incase we want non window sized viewports
                         vec2i vpi = vec2i(pen_window.width, pen_window.height);
 
                         for (s32 i = 0; i < 4; ++i)
                         {
                             mat4 view_proj = cam->proj * cam->view;
-                            frustum_points[0][i] = maths::unproject_sc
-                            (
-                                vec3f(source_points[i], 0.0f),
-                                view_proj,
-                                vpi
-                            );
+                            frustum_points[0][i] = maths::unproject_sc(vec3f(source_points[i], 0.0f), view_proj, vpi);
 
-                            frustum_points[1][i] = maths::unproject_sc
-                            (
-                                vec3f(source_points[i], 1.0f),
-                                view_proj,
-                                vpi
-                            );
+                            frustum_points[1][i] = maths::unproject_sc(vec3f(source_points[i], 1.0f), view_proj, vpi);
                         }
                     }
                 }
             }
 
-            //set child selected
+            // set child selected
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 u32 p = scene->parents[n];
@@ -704,7 +662,7 @@ namespace put
             }
         }
 
-        //undoable / redoable actions
+        // undoable / redoable actions
         enum e_editor_actions
         {
             MACRO_BEGIN = -1,
@@ -716,23 +674,23 @@ namespace put
 
         struct node_state
         {
-            void** components = nullptr;
+            void **components = nullptr;
         };
 
         struct editor_action
         {
-            s32         node_index;
-            node_state  action_state[NUM_ACTIONS];
-            f32         timer = 0.0f;
+            s32 node_index;
+            node_state action_state[NUM_ACTIONS];
+            f32 timer = 0.0f;
         };
 
         typedef pen_stack<editor_action> action_stack;
 
         static action_stack k_undo_stack;
         static action_stack k_redo_stack;
-        static editor_action* k_editor_nodes = nullptr;
+        static editor_action *k_editor_nodes = nullptr;
 
-        void free_node_state_mem(entity_scene* scene, node_state& ns)
+        void free_node_state_mem(entity_scene *scene, node_state &ns)
         {
             if (!ns.components)
                 return;
@@ -745,10 +703,10 @@ namespace put
             ns.components = nullptr;
         }
 
-        void store_node_state(entity_scene* scene, u32 node_index, e_editor_actions action)
+        void store_node_state(entity_scene *scene, u32 node_index, e_editor_actions action)
         {
             static const f32 undo_push_timer = 33.0f;
-            node_state& ns = k_editor_nodes[node_index].action_state[action];
+            node_state &ns = k_editor_nodes[node_index].action_state[action];
             u32 num = scene->num_components;
 
             if (action == UNDO)
@@ -757,12 +715,12 @@ namespace put
 
             if (action == REDO)
             {
-                node_state& us = k_editor_nodes[node_index].action_state[UNDO];
+                node_state &us = k_editor_nodes[node_index].action_state[UNDO];
 
                 u32 diff = 0;
                 for (u32 i = 0; i < num; ++i)
                 {
-                    generic_cmp_array& cmp = scene->get_component_array(i);
+                    generic_cmp_array &cmp = scene->get_component_array(i);
                     diff += memcmp(cmp[node_index], us.components[i], cmp.size);
                 }
 
@@ -776,7 +734,7 @@ namespace put
                     u32 edit_diff = 0;
                     for (u32 i = 0; i < num; ++i)
                     {
-                        generic_cmp_array& cmp = scene->get_component_array(i);
+                        generic_cmp_array &cmp = scene->get_component_array(i);
                         edit_diff += memcmp(cmp[node_index], ns.components[i], cmp.size);
                     }
 
@@ -791,40 +749,40 @@ namespace put
             if (!ns.components)
             {
                 dev_console_log("%s", "allocing state mem");
-                ns.components = (void**)pen::memory_alloc(num * sizeof(generic_cmp_array));
+                ns.components = (void **)pen::memory_alloc(num * sizeof(generic_cmp_array));
                 pen::memory_zero(ns.components, num * sizeof(generic_cmp_array));
             }
 
             for (u32 i = 0; i < num; ++i)
             {
-                generic_cmp_array& cmp = scene->get_component_array(i);
+                generic_cmp_array &cmp = scene->get_component_array(i);
 
                 if (!ns.components[i])
                     ns.components[i] = pen::memory_alloc(cmp.size);
 
-                void* data = cmp[node_index];
+                void *data = cmp[node_index];
 
                 pen::memory_cpy(ns.components[i], data, cmp.size);
             }
         }
 
-        void restore_node_state(entity_scene* scene, node_state& ns, u32 node_index)
+        void restore_node_state(entity_scene *scene, node_state &ns, u32 node_index)
         {
             u32 num = scene->num_components;
             for (u32 i = 0; i < num; ++i)
             {
-                generic_cmp_array& cmp = scene->get_component_array(i);
+                generic_cmp_array &cmp = scene->get_component_array(i);
 
                 pen::memory_cpy(cmp[node_index], ns.components[i], cmp.size);
             }
 
-            node_state& us = k_editor_nodes[node_index].action_state[UNDO];
-            node_state& rs = k_editor_nodes[node_index].action_state[REDO];
+            node_state &us = k_editor_nodes[node_index].action_state[UNDO];
+            node_state &rs = k_editor_nodes[node_index].action_state[REDO];
             free_node_state_mem(scene, us);
             free_node_state_mem(scene, rs);
         }
 
-        void restore_from_stack(entity_scene* scene, action_stack& stack, action_stack& reverse, e_editor_actions action)
+        void restore_from_stack(entity_scene *scene, action_stack &stack, action_stack &reverse, e_editor_actions action)
         {
             if (stack.size() <= 0)
                 return;
@@ -843,27 +801,27 @@ namespace put
 
                     continue;
                 }
-                
-                if(scene->state_flags[ua.node_index] & SF_SELECTED)
+
+                if (scene->state_flags[ua.node_index] & SF_SELECTED)
                     sb_clear(k_selection_list);
-                
+
                 restore_node_state(scene, ua.action_state[action], ua.node_index);
             }
         }
 
-        void undo(entity_scene* scene)
+        void undo(entity_scene *scene)
         {
             restore_from_stack(scene, k_undo_stack, k_redo_stack, UNDO);
         }
 
-        void redo(entity_scene* scene)
+        void redo(entity_scene *scene)
         {
             restore_from_stack(scene, k_redo_stack, k_undo_stack, REDO);
         }
 
-        void update_undo_stack(entity_scene* scene, f32 dt)
+        void update_undo_stack(entity_scene *scene, f32 dt)
         {
-            //resize buffers
+            // resize buffers
             if (!k_editor_nodes || sb_count(k_editor_nodes) < scene->nodes_size)
             {
                 stb__sbgrow(k_editor_nodes, scene->nodes_size);
@@ -906,7 +864,7 @@ namespace put
             if (!first_item)
                 k_undo_stack.push(macro_begin);
 
-            //undo / redo
+            // undo / redo
             static bool debounce_undo = false;
             if (pen::input_undo_pressed())
             {
@@ -936,7 +894,7 @@ namespace put
             }
         }
 
-        void settings_ui(bool* opened)
+        void settings_ui(bool *opened)
         {
             static bool set_project_dir = false;
 
@@ -969,7 +927,7 @@ namespace put
 
             if (set_project_dir)
             {
-                const c8* set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**.");
+                const c8 *set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**.");
 
                 if (set_proj)
                 {
@@ -979,7 +937,7 @@ namespace put
             }
         }
 
-        void update_model_viewer_scene(put::scene_controller* sc)
+        void update_model_viewer_scene(put::scene_controller *sc)
         {
             static bool open_scene_browser = false;
             static bool open_merge = false;
@@ -993,11 +951,10 @@ namespace put
             static bool view_menu = false;
             static bool settings_open = false;
 
-            //auto save
+            // auto save
             bool auto_save = dev_ui::get_program_preference("auto_save").as_bool();
             if (auto_save)
             {
-
             }
 
             ImGui::BeginMainMenuBar();
@@ -1036,7 +993,7 @@ namespace put
                 ImGui::EndMenu();
             }
 
-            //play pause
+            // play pause
             if (sc->scene->flags & PAUSE_UPDATE)
             {
                 if (ImGui::Button(ICON_FA_PLAY))
@@ -1068,7 +1025,7 @@ namespace put
 
             if (shortcut_key(PK_O))
             {
-                //reset physics positions
+                // reset physics positions
                 for (s32 i = 0; i < sc->scene->num_nodes; ++i)
                 {
                     if (sc->scene->entities[i] & CMP_PHYSICS)
@@ -1078,7 +1035,7 @@ namespace put
 
                         physics::set_transform(sc->scene->physics_handles[i], t, q);
 
-                        //reset velocity
+                        // reset velocity
                         physics::set_v3(sc->scene->physics_handles[i], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
                         physics::set_v3(sc->scene->physics_handles[i], vec3f::zero(), physics::CMD_SET_ANGULAR_VELOCITY);
                     }
@@ -1150,30 +1107,15 @@ namespace put
             }
             dev_ui::set_tooltip("Selection List");
 
-            static const c8* transform_icons[] =
-            {
-                ICON_FA_MOUSE_POINTER,
-                ICON_FA_ARROWS,
-                ICON_FA_REFRESH,
-                ICON_FA_EXPAND,
-                ICON_FA_HAND_POINTER_O
-            };
+            static const c8 *transform_icons[] = {ICON_FA_MOUSE_POINTER, ICON_FA_ARROWS, ICON_FA_REFRESH, ICON_FA_EXPAND,
+                                                  ICON_FA_HAND_POINTER_O};
             static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
 
-            static const c8* transform_tooltip[] =
-            {
-                "Select (Q)",
-                "Translate (W)",
-                "Rotate (E)",
-                "Scale (R)",
-                "Grab Physics (T)"
-            };
+            static const c8 *transform_tooltip[] = {"Select (Q)", "Translate (W)", "Rotate (E)", "Scale (R)",
+                                                    "Grab Physics (T)"};
             static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
 
-            static u32 widget_shortcut_key[] =
-            {
-                PK_Q, PK_W, PK_E, PK_R, PK_T
-            };
+            static u32 widget_shortcut_key[] = {PK_Q, PK_W, PK_E, PK_R, PK_T};
             static_assert(PEN_ARRAY_SIZE(widget_shortcut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
 
             for (s32 i = 0; i < num_transform_icons; ++i)
@@ -1209,7 +1151,7 @@ namespace put
 
             if (open_open)
             {
-                const c8* import = put::dev_ui::file_browser(open_open, dev_ui::FB_OPEN, 2, "**.pmm", "**.pms");
+                const c8 *import = put::dev_ui::file_browser(open_open, dev_ui::FB_OPEN, 2, "**.pmm", "**.pms");
 
                 if (import)
                 {
@@ -1241,13 +1183,8 @@ namespace put
             {
                 if (ImGui::Begin("Camera", &open_camera_menu))
                 {
-                    ImGui::Combo
-                    (
-                        "Camera Mode",
-                        (s32*)&k_model_view_controller.camera_mode,
-                        (const c8**)&camera_mode_names,
-                        2
-                    );
+                    ImGui::Combo("Camera Mode", (s32 *)&k_model_view_controller.camera_mode, (const c8 **)&camera_mode_names,
+                                 2);
 
                     if (ImGui::SliderFloat("FOV", &k_model_view_controller.main_camera.fov, 10, 180))
                         dev_ui::set_program_preference("camera_fov", k_model_view_controller.main_camera.fov);
@@ -1271,7 +1208,7 @@ namespace put
 
             if (open_save)
             {
-                const c8* save_file = nullptr;
+                const c8 *save_file = nullptr;
                 if (open_save_as || k_model_view_controller.current_working_scene.length() == 0)
                 {
                     save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms");
@@ -1306,11 +1243,9 @@ namespace put
             if (settings_open)
                 settings_ui(&settings_open);
 
-            //disable selection when we are doing something else
+            // disable selection when we are doing something else
             static bool disable_picking = false;
-            if (pen::input_key(PK_MENU) ||
-                pen::input_key(PK_COMMAND) ||
-                (k_select_flags & WIDGET_SELECTED) ||
+            if (pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND) || (k_select_flags & WIDGET_SELECTED) ||
                 (k_transform_mode == TRANSFORM_PHYSICS))
             {
                 disable_picking = true;
@@ -1321,7 +1256,7 @@ namespace put
                     disable_picking = false;
             }
 
-            //selection / picking
+            // selection / picking
             if (!disable_picking)
             {
                 picking_update(sc->scene, sc->camera);
@@ -1332,7 +1267,7 @@ namespace put
                 enumerate_selection_ui(sc->scene, &selection_list);
             }
 
-            //duplicate
+            // duplicate
             static bool debounce_duplicate = false;
             if (pen::input_key(PK_CONTROL) && shortcut_key(PK_D))
             {
@@ -1344,7 +1279,7 @@ namespace put
                 debounce_duplicate = false;
             }
 
-            //delete
+            // delete
             if (shortcut_key(PK_DELETE) || shortcut_key(PK_BACK))
             {
                 u32 sel_num = sb_count(k_selection_list);
@@ -1355,7 +1290,7 @@ namespace put
                     std::vector<s32> node_index_list;
                     build_heirarchy_node_list(sc->scene, i, node_index_list);
 
-                    for (auto& c : node_index_list)
+                    for (auto &c : node_index_list)
                         if (c > -1)
                             delete_entity(sc->scene, c);
                 }
@@ -1371,7 +1306,7 @@ namespace put
                 view_ui(sc->scene, &view_menu);
             }
 
-            //todo mnove this
+            // todo mnove this
             static u32 timer_index = -1;
             if (timer_index == -1)
             {
@@ -1392,41 +1327,41 @@ namespace put
             bool active = false;
             cmp_physics params;
 
-            physics_preview() {};
-            ~physics_preview() {};
+            physics_preview(){};
+            ~physics_preview(){};
         };
         static physics_preview k_physics_preview;
 
-        void scene_constraint_ui(entity_scene* scene)
+        void scene_constraint_ui(entity_scene *scene)
         {
-            physics::constraint_params& preview_constraint = k_physics_preview.params.constraint;
+            physics::constraint_params &preview_constraint = k_physics_preview.params.constraint;
             s32 constraint_type = preview_constraint.type - 1;
 
             k_physics_preview.params.type = PHYSICS_TYPE_CONSTRAINT;
 
-            ImGui::Combo("Constraint##Physics", (s32*)&constraint_type, "Six DOF\0Hinge\0Point to Point\0", 7);
+            ImGui::Combo("Constraint##Physics", (s32 *)&constraint_type, "Six DOF\0Hinge\0Point to Point\0", 7);
 
             preview_constraint.type = constraint_type + 1;
             if (preview_constraint.type == physics::CONSTRAINT_HINGE)
             {
-                ImGui::InputFloat3("Axis", (f32*)&preview_constraint.axis);
-                ImGui::InputFloat("Lower Limit Rotation", (f32*)&preview_constraint.lower_limit_rotation);
-                ImGui::InputFloat("Upper Limit Rotation", (f32*)&preview_constraint.upper_limit_rotation);
+                ImGui::InputFloat3("Axis", (f32 *)&preview_constraint.axis);
+                ImGui::InputFloat("Lower Limit Rotation", (f32 *)&preview_constraint.lower_limit_rotation);
+                ImGui::InputFloat("Upper Limit Rotation", (f32 *)&preview_constraint.upper_limit_rotation);
             }
             else if (preview_constraint.type == physics::CONSTRAINT_DOF6)
             {
-                ImGui::InputFloat3("Lower Limit Rotation", (f32*)&preview_constraint.lower_limit_rotation);
-                ImGui::InputFloat3("Upper Limit Rotation", (f32*)&preview_constraint.upper_limit_rotation);
+                ImGui::InputFloat3("Lower Limit Rotation", (f32 *)&preview_constraint.lower_limit_rotation);
+                ImGui::InputFloat3("Upper Limit Rotation", (f32 *)&preview_constraint.upper_limit_rotation);
 
-                ImGui::InputFloat3("Lower Limit Translation", (f32*)&preview_constraint.lower_limit_translation);
-                ImGui::InputFloat3("Upper Limit Translation", (f32*)&preview_constraint.upper_limit_translation);
+                ImGui::InputFloat3("Lower Limit Translation", (f32 *)&preview_constraint.lower_limit_translation);
+                ImGui::InputFloat3("Upper Limit Translation", (f32 *)&preview_constraint.upper_limit_translation);
 
-                ImGui::InputFloat("Linear Damping", (f32*)&preview_constraint.linear_damping);
-                ImGui::InputFloat("Angular Damping", (f32*)&preview_constraint.angular_damping);
+                ImGui::InputFloat("Linear Damping", (f32 *)&preview_constraint.linear_damping);
+                ImGui::InputFloat("Angular Damping", (f32 *)&preview_constraint.angular_damping);
             }
 
             std::vector<u32> index_lookup;
-            std::vector<const c8*> rb_names;
+            std::vector<const c8 *> rb_names;
             for (s32 i = 0; i < scene->num_nodes; ++i)
             {
                 if (scene->entities[i] & CMP_PHYSICS)
@@ -1438,7 +1373,7 @@ namespace put
 
             static s32 rb_index = -1;
             if (rb_names.size() > 0)
-                ImGui::Combo("Rigid Body##Constraint", &rb_index, (const c8* const*)&rb_names[0], rb_names.size());
+                ImGui::Combo("Rigid Body##Constraint", &rb_index, (const c8 *const *)&rb_names[0], rb_names.size());
             else
                 ImGui::Text("No rigid bodies to constrain!");
 
@@ -1468,18 +1403,13 @@ namespace put
                 scene->physics_data[k_selection_list[0]].constraint = preview_constraint;
         }
 
-        void scene_rigid_body_ui(entity_scene* scene)
+        void scene_rigid_body_ui(entity_scene *scene)
         {
             u32 collision_shape = k_physics_preview.params.rigid_body.shape - 1;
 
             ImGui::InputFloat("Mass", &k_physics_preview.params.rigid_body.mass);
-            ImGui::Combo
-            (
-                "Shape##Physics",
-                (s32*)&collision_shape,
-                "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0",
-                7
-            );
+            ImGui::Combo("Shape##Physics", (s32 *)&collision_shape,
+                         "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0", 7);
 
             k_physics_preview.params.rigid_body.shape = collision_shape + 1;
 
@@ -1516,7 +1446,7 @@ namespace put
             }
         }
 
-        void scene_physics_ui(entity_scene* scene)
+        void scene_physics_ui(entity_scene *scene)
         {
             static s32 physics_type = 0;
             k_physics_preview.active = false;
@@ -1537,12 +1467,12 @@ namespace put
 
                 if (physics_type == PHYSICS_TYPE_RIGID_BODY)
                 {
-                    //rb
+                    // rb
                     scene_rigid_body_ui(scene);
                 }
                 else if (physics_type == PHYSICS_TYPE_CONSTRAINT)
                 {
-                    //constraint
+                    // constraint
                     scene_constraint_ui(scene);
                 }
             }
@@ -1551,7 +1481,7 @@ namespace put
                 scene->physics_data[k_selection_list[0]] = k_physics_preview.params;
         }
 
-        bool scene_geometry_ui(entity_scene* scene)
+        bool scene_geometry_ui(entity_scene *scene)
         {
             bool iv = false;
 
@@ -1560,7 +1490,7 @@ namespace put
 
             u32 selected_index = k_selection_list[0];
 
-            //geom
+            // geom
             if (ImGui::CollapsingHeader("Geometry"))
             {
                 if (scene->geometry_names[selected_index].c_str())
@@ -1570,17 +1500,17 @@ namespace put
                 }
 
                 static s32 primitive_type = -1;
-                ImGui::Combo("Shape##Primitive", (s32*)&primitive_type, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0", 5);
+                ImGui::Combo("Shape##Primitive", (s32 *)&primitive_type, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0", 5);
 
                 if (ImGui::Button("Add Primitive") && primitive_type > -1)
                 {
                     iv = true;
 
-                    geometry_resource* gr = get_geometry_resource(k_primitives[primitive_type]);
+                    geometry_resource *gr = get_geometry_resource(k_primitives[primitive_type]);
 
                     instantiate_geometry(gr, scene, selected_index);
 
-                    material_resource* mr = get_material_resource(PEN_HASH("default_material"));
+                    material_resource *mr = get_material_resource(PEN_HASH("default_material"));
 
                     instantiate_material(mr, scene, selected_index);
 
@@ -1595,7 +1525,7 @@ namespace put
             return iv;
         }
 
-        bool scene_transform_ui(entity_scene* scene)
+        bool scene_transform_ui(entity_scene *scene)
         {
             if (sb_count(k_selection_list) != 1)
                 return false;
@@ -1605,20 +1535,20 @@ namespace put
             if (ImGui::CollapsingHeader("Transform"))
             {
                 bool perform_transform = false;
-                cmp_transform& t = scene->transforms[selected_index];
-                perform_transform |= ImGui::InputFloat3("Translation", (float*)&t.translation);
+                cmp_transform &t = scene->transforms[selected_index];
+                perform_transform |= ImGui::InputFloat3("Translation", (float *)&t.translation);
 
                 vec3f euler = t.rotation.to_euler();
                 euler = euler * (f32)M_PI_OVER_180;
 
-                if (ImGui::InputFloat3("Rotation", (float*)&euler))
+                if (ImGui::InputFloat3("Rotation", (float *)&euler))
                 {
                     euler = euler * (f32)M_180_OVER_PI;
                     t.rotation.euler_angles(euler.z, euler.y, euler.x);
                     perform_transform = true;
                 }
 
-                perform_transform |= ImGui::InputFloat3("Scale", (float*)&t.scale);
+                perform_transform |= ImGui::InputFloat3("Scale", (float *)&t.scale);
 
                 if (perform_transform)
                 {
@@ -1628,11 +1558,11 @@ namespace put
                 apply_transform_to_selection(scene, vec3f::zero());
             }
 
-            //transforms undos are handled by apply_transform_to_selection
+            // transforms undos are handled by apply_transform_to_selection
             return false;
         }
 
-        bool scene_material_ui(entity_scene* scene)
+        bool scene_material_ui(entity_scene *scene)
         {
             bool iv = false;
 
@@ -1643,7 +1573,7 @@ namespace put
 
             u32 selected_index = k_selection_list[0];
 
-            //material
+            // material
             if (ImGui::CollapsingHeader("Material"))
             {
                 ImGui::Text("%s", scene->material_names[selected_index].c_str());
@@ -1664,36 +1594,36 @@ namespace put
                             }
                         }
 
-                        auto& mm = scene->materials[selected_index];
+                        auto &mm = scene->materials[selected_index];
 
                         bool cm = false;
 
                         u32 num_shaders;
-                        const c8** shader_list = pmfx::get_shader_list(num_shaders);
-                        cm |= ImGui::Combo("Shader", (s32*)&mm.pmfx_shader, shader_list, num_shaders);
+                        const c8 **shader_list = pmfx::get_shader_list(num_shaders);
+                        cm |= ImGui::Combo("Shader", (s32 *)&mm.pmfx_shader, shader_list, num_shaders);
 
                         u32 num_techniques;
-                        const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
-                        cm |= ImGui::Combo("Technique", (s32*)&mm.technique, technique_list, num_techniques);
+                        const c8 **technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
+                        cm |= ImGui::Combo("Technique", (s32 *)&mm.technique, technique_list, num_techniques);
 
                         if (cm)
                         {
-                            material_resource* mr = new material_resource();
+                            material_resource *mr = new material_resource();
                             *mr = *mm.resource;
 
                             mr->shader_name = shader_list[mm.pmfx_shader];
                             mr->id_technique = PEN_HASH(technique_list[mm.technique]);
 
-                            //create a new material resource
+                            // create a new material resource
                             add_material_resource(mr);
 
                             scene->materials[selected_index].resource = mr;
                         }
 
-                        iv |= ImGui::SliderFloat("Roughness", (f32*)&mm.diffuse_rgb_shininess.w, 0.000001, 1.5);
-                        iv |= ImGui::SliderFloat("Reflectity", (f32*)&mm.specular_rgb_reflect.w, 0.000001, 1.5);
+                        iv |= ImGui::SliderFloat("Roughness", (f32 *)&mm.diffuse_rgb_shininess.w, 0.000001, 1.5);
+                        iv |= ImGui::SliderFloat("Reflectity", (f32 *)&mm.specular_rgb_reflect.w, 0.000001, 1.5);
 
-                        vec4f& col = mm.diffuse_rgb_shininess;
+                        vec4f &col = mm.diffuse_rgb_shininess;
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f));
 
                         if (ImGui::Button("Colour"))
@@ -1706,12 +1636,12 @@ namespace put
 
             if (colour_picker_open)
             {
-                auto& mm = scene->materials[selected_index];
+                auto &mm = scene->materials[selected_index];
 
                 if (ImGui::Begin("Albedo Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize))
                 {
                     vec3f col = mm.diffuse_rgb_shininess.xyz;
-                    iv |= ImGui::ColorPicker3("Colour", (f32*)&col);
+                    iv |= ImGui::ColorPicker3("Colour", (f32 *)&col);
 
                     mm.diffuse_rgb_shininess.x = col.x;
                     mm.diffuse_rgb_shininess.y = col.y;
@@ -1724,7 +1654,7 @@ namespace put
             return iv;
         }
 
-        void scene_anim_ui(entity_scene* scene)
+        void scene_anim_ui(entity_scene *scene)
         {
             if (sb_count(k_selection_list) != 1)
                 return;
@@ -1737,7 +1667,7 @@ namespace put
 
                 if (ImGui::CollapsingHeader("Animations"))
                 {
-                    auto& controller = scene->anim_controller[selected_index];
+                    auto &controller = scene->anim_controller[selected_index];
 
                     ImGui::Checkbox("Apply Root Motion", &scene->anim_controller[selected_index].apply_root_motion);
 
@@ -1753,7 +1683,7 @@ namespace put
                     for (s32 ih = 0; ih < num_anims; ++ih)
                     {
                         s32 h = scene->anim_controller[selected_index].handles[ih];
-                        auto* anim = get_animation_resource(h);
+                        auto *anim = get_animation_resource(h);
 
                         bool selected = false;
                         ImGui::Selectable(anim->name.c_str(), &selected);
@@ -1783,21 +1713,21 @@ namespace put
 
                     if (open_anim_import)
                     {
-                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma");
+                        const c8 *anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma");
 
                         if (anim_import)
                         {
                             anim_handle ah = load_pma(anim_import);
-                            auto* anim = get_animation_resource(ah);
+                            auto *anim = get_animation_resource(ah);
 
                             if (is_valid(ah))
                             {
-                                //validate that the anim can fit the rig
+                                // validate that the anim can fit the rig
                                 std::vector<s32> joint_indices;
                                 build_heirarchy_node_list(scene, selected_index, joint_indices);
 
                                 s32 channel_index = 0;
-                                s32 joints_offset = -1; //scene tree has a -1 node
+                                s32 joints_offset = -1; // scene tree has a -1 node
                                 bool compatible = true;
                                 for (s32 jj = 0; jj < joint_indices.size(); ++jj)
                                 {
@@ -1807,9 +1737,8 @@ namespace put
                                     {
                                         if (anim->channels[channel_index].target != scene->id_name[jnode])
                                         {
-                                            dev_console_log_level(
-                                                dev_ui::CONSOLE_ERROR, "%s", "[error] animation - does not fit rig"
-                                            );
+                                            dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s",
+                                                                  "[error] animation - does not fit rig");
 
                                             compatible = false;
                                             break;
@@ -1847,7 +1776,7 @@ namespace put
             }
         }
 
-        void scene_light_ui(entity_scene* scene)
+        void scene_light_ui(entity_scene *scene)
         {
             if (sb_count(k_selection_list) != 1)
                 return;
@@ -1860,9 +1789,10 @@ namespace put
             {
                 if (scene->entities[selected_index] & CMP_LIGHT)
                 {
-                    cmp_light& snl = scene->lights[selected_index];
+                    cmp_light &snl = scene->lights[selected_index];
 
-                    ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box\0", 4);
+                    ImGui::Combo("Type", (s32 *)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box\0",
+                                 4);
 
                     switch (scene->lights[selected_index].type)
                     {
@@ -1877,9 +1807,9 @@ namespace put
                         break;
 
                     case LIGHT_TYPE_SPOT:
-                        //ImGui::SliderAngle( "Azimuth", &scene->lights[selected_index].data.x );
-                        //ImGui::SliderAngle( "Zenith", &scene->lights[selected_index].data.y );
-                        //ImGui::SliderAngle( "Cos Cutoff", &scene->lights[selected_index].data.z );
+                        // ImGui::SliderAngle( "Azimuth", &scene->lights[selected_index].data.x );
+                        // ImGui::SliderAngle( "Zenith", &scene->lights[selected_index].data.y );
+                        // ImGui::SliderAngle( "Cos Cutoff", &scene->lights[selected_index].data.z );
                         break;
 
                     case LIGHT_TYPE_AREA_BOX:
@@ -1888,7 +1818,7 @@ namespace put
 
                     snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth, snl.altitude);
 
-                    vec3f& col = scene->lights[selected_index].colour;
+                    vec3f &col = scene->lights[selected_index].colour;
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f));
 
                     if (ImGui::Button("Colour"))
@@ -1902,7 +1832,7 @@ namespace put
                     {
                         s32 s = selected_index;
 
-                        //todo move to resources
+                        // todo move to resources
                         scene->entities[s] |= CMP_LIGHT;
 
                         scene->bounding_volumes[s].min_extents = -vec3f::one();
@@ -1915,14 +1845,14 @@ namespace put
             {
                 if (ImGui::Begin("Light Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize))
                 {
-                    ImGui::ColorPicker3("Colour", (f32*)&scene->lights[selected_index].colour);
+                    ImGui::ColorPicker3("Colour", (f32 *)&scene->lights[selected_index].colour);
 
                     ImGui::End();
                 }
             }
         }
 
-        void scene_browser_ui(entity_scene* scene, bool* open)
+        void scene_browser_ui(entity_scene *scene, bool *open)
         {
             if (ImGui::Begin("Scene Browser", open))
             {
@@ -1930,9 +1860,9 @@ namespace put
                 {
                     u32 ni = ces::get_next_node(scene);
                     store_node_state(scene, ni, UNDO);
-                    
+
                     u32 nn = ces::get_new_node(scene);
-                    
+
                     scene->entities[nn] |= CMP_ALLOCATED;
 
                     scene->names[nn] = "node_";
@@ -1947,7 +1877,7 @@ namespace put
                     scene->entities[nn] |= CMP_TRANSFORM;
 
                     add_selection(scene, nn);
-                    
+
                     store_node_state(scene, ni, REDO);
                 }
                 put::dev_ui::set_tooltip("Add New Node");
@@ -1967,17 +1897,14 @@ namespace put
                 struct scene_num_dump
                 {
                     u32 component;
-                    const c8* display_name;
+                    const c8 *display_name;
                     u32 count;
                 };
 
-                static scene_num_dump dumps[] =
-                {
-                    { CMP_ALLOCATED, "Allocated", 0 },
-                    { CMP_GEOMETRY, "Geometries", 0 },
-                    { CMP_BONE, "Bones", 0 },
-                    { CMP_ANIM_CONTROLLER, "Anim Controllers", 0 }
-                };
+                static scene_num_dump dumps[] = {{CMP_ALLOCATED, "Allocated", 0},
+                                                 {CMP_GEOMETRY, "Geometries", 0},
+                                                 {CMP_BONE, "Bones", 0},
+                                                 {CMP_ANIM_CONTROLLER, "Anim Controllers", 0}};
 
                 if (ImGui::CollapsingHeader("Scene Info"))
                 {
@@ -2014,7 +1941,7 @@ namespace put
                         ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
 
                         ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
-                        bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, scene->names[i].c_str(), i);
+                        bool node_open = ImGui::TreeNodeEx((void *)(intptr_t)i, node_flags, scene->names[i].c_str(), i);
 
                         if (ImGui::IsItemClicked())
                             add_selection(scene, i);
@@ -2045,7 +1972,7 @@ namespace put
 
                 ImGui::EndChild();
 
-                //node header
+                // node header
                 if (selected_index != -1)
                 {
                     static c8 buf[64];
@@ -2095,7 +2022,7 @@ namespace put
             }
         }
 
-        void apply_transform_to_selection(entity_scene* scene, const vec3f move_axis)
+        void apply_transform_to_selection(entity_scene *scene, const vec3f move_axis)
         {
             if (move_axis == vec3f::zero())
                 return;
@@ -2105,7 +2032,7 @@ namespace put
             {
                 u32 i = k_selection_list[s];
 
-                //only move if parent isnt selected
+                // only move if parent isnt selected
                 s32 parent = scene->parents[i];
                 if (parent != i)
                 {
@@ -2123,7 +2050,7 @@ namespace put
 
                 store_node_state(scene, i, UNDO);
 
-                cmp_transform& t = scene->transforms[i];
+                cmp_transform &t = scene->transforms[i];
                 if (k_transform_mode == TRANSFORM_TRANSLATE)
                     t.translation += move_axis;
                 if (k_transform_mode == TRANSFORM_SCALE)
@@ -2138,7 +2065,7 @@ namespace put
 
                 if (!(scene->entities[i] & CMP_TRANSFORM))
                 {
-                    //save history
+                    // save history
                 }
 
                 scene->entities[i] |= CMP_TRANSFORM;
@@ -2150,14 +2077,14 @@ namespace put
         struct physics_pick
         {
             vec3f pos;
-            a_u8  state = { 0 };
-            bool  grabbed = false;
-            s32   constraint = -1;
-            s32   physics_handle = -1;
+            a_u8 state = {0};
+            bool grabbed = false;
+            s32 constraint = -1;
+            s32 physics_handle = -1;
         };
         physics_pick k_physics_pick_info;
 
-        void physics_pick_callback(const physics::ray_cast_result& result)
+        void physics_pick_callback(const physics::ray_cast_result &result)
         {
             k_physics_pick_info.state = PICKING_COMPLETE;
             k_physics_pick_info.pos = result.point;
@@ -2165,11 +2092,11 @@ namespace put
             k_physics_pick_info.physics_handle = result.physics_handle;
         }
 
-        void transform_widget(const scene_view& view)
+        void transform_widget(const scene_view &view)
         {
             k_select_flags &= ~(WIDGET_SELECTED);
 
-            entity_scene* scene = view.scene;
+            entity_scene *scene = view.scene;
             vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
 
             static vec3f widget_points[4];
@@ -2177,7 +2104,7 @@ namespace put
             static u32 selected_axis = 0;
             static f32 selection_radius = 5.0f;
 
-            const pen::mouse_state& ms = pen::input_get_mouse_state();
+            const pen::mouse_state &ms = pen::input_get_mouse_state();
             vec3f mousev3 = vec3f(ms.x, view.viewport->height - ms.y, 0.0f);
 
             mat4 view_proj = view.camera->proj * view.camera->view;
@@ -2226,12 +2153,8 @@ namespace put
                 {
                     if (ms.buttons[PEN_MOUSE_L])
                     {
-                        vec3f new_pos = maths::ray_plane_intersect
-                        (
-                            r0, vr,
-                            k_physics_pick_info.pos,
-                            view.camera->view.get_fwd()
-                        );
+                        vec3f new_pos =
+                            maths::ray_plane_intersect(r0, vr, k_physics_pick_info.pos, view.camera->view.get_fwd());
 
                         physics::set_v3(k_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS);
                     }
@@ -2256,8 +2179,8 @@ namespace put
             {
                 u32 s = k_selection_list[i];
 
-                vec3f& _min = scene->bounding_volumes[s].transformed_min_extents;
-                vec3f& _max = scene->bounding_volumes[s].transformed_max_extents;
+                vec3f &_min = scene->bounding_volumes[s].transformed_min_extents;
+                vec3f &_max = scene->bounding_volumes[s].transformed_max_extents;
 
                 min = vec3f::vmin(min, _min);
                 max = vec3f::vmax(max, _max);
@@ -2278,7 +2201,7 @@ namespace put
                 view.camera->zoom = extents_mag;
             }
 
-            //distance for consistent-ish size
+            // distance for consistent-ish size
             mat4 res = view.camera->proj * view.camera->view;
 
             f32 w = 1.0;
@@ -2292,15 +2215,10 @@ namespace put
             {
                 float rd = d * 0.75;
 
-                vec3f plane_normals[] =
-                {
-                    vec3f(1.0f, 0.0f, 0.0f),
-                    vec3f(0.0f, 1.0f, 0.0f),
-                    vec3f(0.0f, 0.0f, 1.0f)
-                };
+                vec3f plane_normals[] = {vec3f(1.0f, 0.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f), vec3f(0.0f, 0.0f, 1.0f)};
 
                 vec3f _cp = vec3f::zero();
-                static bool selected[3] = { 0 };
+                static bool selected[3] = {0};
                 for (s32 i = 0; i < 3; ++i)
                 {
                     vec3f cp = maths::ray_plane_intersect(r0, vr, pos, plane_normals[i]);
@@ -2309,8 +2227,7 @@ namespace put
                     {
                         selected[i] = false;
                         f32 dd = mag(cp - pos);
-                        if (dd < rd + rd * 0.05 &&
-                            dd > rd - rd * 0.05)
+                        if (dd < rd + rd * 0.05 && dd > rd - rd * 0.05)
                             selected[i] = true;
                     }
 
@@ -2358,8 +2275,7 @@ namespace put
 
             if (k_transform_mode == TRANSFORM_TRANSLATE || k_transform_mode == TRANSFORM_SCALE)
             {
-                static vec3f unit_axis[] =
-                {
+                static vec3f unit_axis[] = {
                     vec3f::zero(),
                     vec3f::unit_x(),
                     vec3f::unit_y(),
@@ -2368,7 +2284,7 @@ namespace put
 
                 mat4 view_proj = view.camera->proj * view.camera->view;
 
-                //work out major axes
+                // work out major axes
                 vec3f pp[4];
                 for (s32 i = 0; i < 4; ++i)
                 {
@@ -2378,7 +2294,7 @@ namespace put
                     pp[i].z = 0.0f;
                 }
 
-                //work out joint axes
+                // work out joint axes
                 vec3f ppj[6];
                 for (s32 i = 0; i < 3; ++i)
                 {
@@ -2388,20 +2304,10 @@ namespace put
                     if (next_index > 3)
                         next_index = 1;
 
-                    ppj[j_index] = maths::project_to_sc
-                    (
-                        pos + unit_axis[i + 1] * d * 0.3f,
-                        view_proj,
-                        vpi
-                    );
+                    ppj[j_index] = maths::project_to_sc(pos + unit_axis[i + 1] * d * 0.3f, view_proj, vpi);
                     ppj[j_index].z = 0.0f;
 
-                    ppj[j_index + 1] = maths::project_to_sc
-                    (
-                        pos + unit_axis[next_index] * d * 0.3f,
-                        view_proj,
-                        vpi
-                    );
+                    ppj[j_index + 1] = maths::project_to_sc(pos + unit_axis[next_index] * d * 0.3f, view_proj, vpi);
                     ppj[j_index + 1].z = 0.0f;
                 }
 
@@ -2432,7 +2338,7 @@ namespace put
                     }
                 }
 
-                //draw axes
+                // draw axes
                 for (s32 i = 1; i < 4; ++i)
                 {
                     vec4f col = vec4f(unit_axis[i] * 0.7f, 1.0f);
@@ -2461,7 +2367,7 @@ namespace put
                     }
                 }
 
-                //draw joins
+                // draw joins
                 for (s32 i = 0; i < 3; ++i)
                 {
                     u32 j_index = i * 2;
@@ -2479,9 +2385,8 @@ namespace put
                     put::dbg::add_line_2f(ppj[j_index].xy, ppj[j_index + 1].xy, col);
                 }
 
-                //project mouse to planes
-                static vec3f translation_axis[] =
-                {
+                // project mouse to planes
+                static vec3f translation_axis[] = {
                     vec3f::unit_x(),
                     vec3f::unit_y(),
                     vec3f::unit_z(),
@@ -2516,7 +2421,7 @@ namespace put
 
                     move_axis += line_x;
 
-                    //only move in one plane at a time
+                    // only move in one plane at a time
                     break;
                 }
 
@@ -2529,7 +2434,7 @@ namespace put
             }
         }
 
-        void render_constraint(const entity_scene* scene, u32 index, const physics::constraint_params& con)
+        void render_constraint(const entity_scene *scene, u32 index, const physics::constraint_params &con)
         {
             vec3f pos = scene->transforms[index].translation;
             vec3f axis = con.axis;
@@ -2569,9 +2474,9 @@ namespace put
             }
         }
 
-        void render_physics_debug(const scene_view& view)
+        void render_physics_debug(const scene_view &view)
         {
-            entity_scene* scene = view.scene;
+            entity_scene *scene = view.scene;
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
@@ -2590,18 +2495,17 @@ namespace put
                     if (prim == 0)
                         continue;
 
-                    geometry_resource* gr = get_geometry_resource(k_primitives[prim - 1]);
+                    geometry_resource *gr = get_geometry_resource(k_primitives[prim - 1]);
 
                     if (!pmfx::set_technique(view.pmfx_shader, view.technique, 0))
                         continue;
 
-                    //draw
+                    // draw
                     pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
                     pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
                     pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
                     pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
                     pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
-
                 }
 
                 bool preview_con = k_physics_preview.active && k_physics_preview.params.type == PHYSICS_TYPE_CONSTRAINT;
@@ -2614,11 +2518,11 @@ namespace put
             }
         }
 
-        void render_scene_editor(const scene_view& view)
+        void render_scene_editor(const scene_view &view)
         {
             vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
 
-            entity_scene* scene = view.scene;
+            entity_scene *scene = view.scene;
 
             dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
 
@@ -2654,11 +2558,8 @@ namespace put
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
                 {
-                    dbg::add_aabb
-                    (
-                        scene->bounding_volumes[n].transformed_min_extents,
-                        scene->bounding_volumes[n].transformed_max_extents
-                    );
+                    dbg::add_aabb(scene->bounding_volumes[n].transformed_min_extents,
+                                  scene->bounding_volumes[n].transformed_max_extents);
                 }
             }
 
@@ -2671,7 +2572,7 @@ namespace put
 
                     if (scene->entities[s] & CMP_LIGHT)
                     {
-                        cmp_light& snl = scene->lights[s];
+                        cmp_light &snl = scene->lights[s];
 
                         if (snl.type == LIGHT_TYPE_DIR)
                         {
@@ -2686,7 +2587,7 @@ namespace put
                     else
                     {
                         dbg::add_aabb(scene->bounding_volumes[s].transformed_min_extents,
-                            scene->bounding_volumes[s].transformed_max_extents);
+                                      scene->bounding_volumes[s].transformed_max_extents);
                     }
                 }
             }
@@ -2716,12 +2617,8 @@ namespace put
                     }
 
                     if (selected)
-                        dbg::add_aabb
-                        (
-                            scene->bounding_volumes[n].transformed_min_extents,
-                            scene->bounding_volumes[n].transformed_max_extents,
-                            col
-                        );
+                        dbg::add_aabb(scene->bounding_volumes[n].transformed_min_extents,
+                                      scene->bounding_volumes[n].transformed_max_extents, col);
                 }
             }
 
@@ -2761,21 +2658,21 @@ namespace put
 
             put::dbg::render_3d(view.cb_view);
 
-            //no depth test
+            // no depth test
             u32 depth_disabled = pmfx::get_render_state_by_name(PEN_HASH("disabled_depth_stencil_state"));
             u32 fill = pmfx::get_render_state_by_name(PEN_HASH("default_raster_state"));
 
             pen::renderer_set_depth_stencil_state(depth_disabled);
             pen::renderer_set_rasterizer_state(fill);
-            
+
             transform_widget(view);
 
             put::dbg::render_3d(view.cb_view);
 
             put::dbg::render_2d(view.cb_2d_view);
 
-            //reset depth state
+            // reset depth state
             pen::renderer_set_depth_stencil_state(view.depth_stencil_state);
         }
-    }
-}
+    } // namespace ces
+} // namespace put

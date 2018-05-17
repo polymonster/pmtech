@@ -678,12 +678,12 @@
 #define ICON_FA_WPEXPLORER u8"\uf2de"
 #define ICON_FA_MEETUP u8"\uf2e0"
 
-#define ICON_DEBUG( I ) ImGui::Text("%s : %s", I, #I )
+#define ICON_DEBUG(I) ImGui::Text("%s : %s", I, #I)
 
-inline void debug_show_icons( )
+inline void debug_show_icons()
 {
     ImGui::Columns(4);
-    
+
     ICON_DEBUG(ICON_FA_GLASS);
     ICON_DEBUG(ICON_FA_MUSIC);
     ICON_DEBUG(ICON_FA_SEARCH);
@@ -853,7 +853,7 @@ inline void debug_show_icons( )
     ICON_DEBUG(ICON_FA_BRIEFCASE);
     ICON_DEBUG(ICON_FA_ARROWS_ALT);
     ImGui::NextColumn();
-    
+
     ICON_DEBUG(ICON_FA_USERS);
     ICON_DEBUG(ICON_FA_LINK);
     ICON_DEBUG(ICON_FA_CLOUD);
@@ -1023,7 +1023,7 @@ inline void debug_show_icons( )
     ICON_DEBUG(ICON_FA_TUMBLR);
     ICON_DEBUG(ICON_FA_TUMBLR_SQUARE);
     ImGui::NextColumn();
-    
+
     ICON_DEBUG(ICON_FA_LONG_ARROW_DOWN);
     ICON_DEBUG(ICON_FA_LONG_ARROW_UP);
     ICON_DEBUG(ICON_FA_LONG_ARROW_LEFT);
@@ -1193,7 +1193,7 @@ inline void debug_show_icons( )
     ICON_DEBUG(ICON_FA_MARS_DOUBLE);
     ICON_DEBUG(ICON_FA_VENUS_MARS);
     ImGui::NextColumn();
-    
+
     ICON_DEBUG(ICON_FA_MARS_STROKE);
     ICON_DEBUG(ICON_FA_MARS_STROKE_V);
     ICON_DEBUG(ICON_FA_MARS_STROKE_H);
@@ -1365,7 +1365,6 @@ inline void debug_show_icons( )
     ICON_DEBUG(ICON_FA_SUPERPOWERS);
     ICON_DEBUG(ICON_FA_WPEXPLORER);
     ICON_DEBUG(ICON_FA_MEETUP);
-    
-    ImGui::Columns(1);
 
+    ImGui::Columns(1);
 }

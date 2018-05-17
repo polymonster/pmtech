@@ -18,39 +18,39 @@ namespace pen
         f32 x;
         f32 y;
         f32 wheel;
-        u8 buttons[ 3 ];
+        u8 buttons[3];
     };
 
-    void input_set_unicode_key_down( u32 key_index );
-    void input_set_unicode_key_up( u32 key_index );
-    bool input_get_unicode_key( u32 key_index );
+    void input_set_unicode_key_down(u32 key_index);
+    void input_set_unicode_key_up(u32 key_index);
+    bool input_get_unicode_key(u32 key_index);
 
-    void input_set_key_down( u32 key_index );
-    void input_set_key_up( u32 key_index );
+    void input_set_key_down(u32 key_index);
+    void input_set_key_up(u32 key_index);
 
-    bool input_is_key_pressed( u32 key_index );
-    bool input_is_key_held( u32 key_index );
-    bool input_is_key_down( u32 key_index );
+    bool input_is_key_pressed(u32 key_index);
+    bool input_is_key_held(u32 key_index);
+    bool input_is_key_down(u32 key_index);
 
-    void input_set_mouse_down( u32 button_index );
-    void input_set_mouse_up( u32 button_index );
-    void input_set_mouse_pos( f32 x, f32 y );
-    void input_set_mouse_wheel( f32 wheel );
+    void input_set_mouse_down(u32 button_index);
+    void input_set_mouse_up(u32 button_index);
+    void input_set_mouse_pos(f32 x, f32 y);
+    void input_set_mouse_wheel(f32 wheel);
 
     const mouse_state &input_get_mouse_state();
-    bool input_is_mouse_pressed( u32 button_index );
-    bool input_is_mouse_held( u32 button_index );
-    bool input_is_mouse_down( u32 button_index );
+    bool input_is_mouse_pressed(u32 button_index);
+    bool input_is_mouse_held(u32 button_index);
+    bool input_is_mouse_down(u32 button_index);
 
-    bool input_key( u32 key_index );
-    bool input_mouse( u32 button_index );
+    bool input_key(u32 key_index);
+    bool input_mouse(u32 button_index);
 
-    void input_set_cursor_pos( u32 client_x, u32 client_y );
-    void input_show_cursor( bool show );
+    void input_set_cursor_pos(u32 client_x, u32 client_y);
+    void input_show_cursor(bool show);
 
-    bool mouse_coords_valid( u32 x, u32 y );
+    bool mouse_coords_valid(u32 x, u32 y);
 
-    const c8 *input_get_key_str( u32 key_index );
+    const c8 *input_get_key_str(u32 key_index);
 
     // Special os specific functions
 
@@ -58,19 +58,19 @@ namespace pen
     bool input_redo_pressed();
 
     // inline
-    inline bool mouse_coords_valid( u32 x, u32 y )
+    inline bool mouse_coords_valid(u32 x, u32 y)
     {
         return x < pen_window.width && y < pen_window.height;
     }
 
-    inline bool input_key( u32 key_index )
+    inline bool input_key(u32 key_index)
     {
-        return ( pen::input_is_key_pressed( key_index ) || pen::input_is_key_held( key_index ) );
+        return (pen::input_is_key_pressed(key_index) || pen::input_is_key_held(key_index));
     }
 
-    inline bool input_mouse( u32 button_index )
+    inline bool input_mouse(u32 button_index)
     {
-        return ( pen::input_is_mouse_pressed( button_index ) || pen::input_is_mouse_held( button_index ) );
+        return (pen::input_is_mouse_pressed(button_index) || pen::input_is_mouse_held(button_index));
     }
 } // namespace pen
 
