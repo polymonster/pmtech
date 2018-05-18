@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
     Visual*              visual;
     int                  depth;
     XSetWindowAttributes frame_attributes;
-    XEvent               event;
 
     _display = XOpenDisplay(NULL);
     visual   = DefaultVisual(_display, 0);
@@ -75,25 +74,41 @@ int main(int argc, char* argv[])
     // Check glx version
     s32 glx_major, glx_minor = 0;
     glXQueryVersion(_display, &glx_major, &glx_minor);
+    //PEN_PRINTF("glx version %i.%i", glx_major, glx_minor);
 
     // glx setup
     const char* glxExts = glXQueryExtensionsString(_display, DefaultScreen(_display));
+
+    //PEN_PRINTF("%s", glxExts);
 
     ctx_error_occured                         = false;
     int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctx_error_handler);
 
     // find fb with matching samples
     s32          fbcount;
+    s32          chosen_fb = 0;
     GLXFBConfig* fbc = glXChooseFBConfig(_display, DefaultScreen(_display), visual_attribs, &fbcount);
     for (int i = 0; i < fbcount; ++i)
     {
         XVisualInfo* vi = glXGetVisualFromFBConfig(_display, fbc[i]);
+
+        int samp_buf, samples;
+        glXGetFBConfigAttrib( _display, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
+        glXGetFBConfigAttrib( _display, fbc[i], GLX_SAMPLES       , &samples  );
+
+        if(samples == pen_window.sample_count)
+        {
+            chosen_fb = i;
+            break;
+        }
     }
 
-    GLXFBConfig best_fbc = fbc[1];
+    GLXFBConfig best_fbc = fbc[chosen_fb];
 
     // Create window
     XVisualInfo* vi = glXGetVisualFromFBConfig(_display, best_fbc);
+
+    //PEN_PRINTF("visual info %i", vi);
 
     XSetWindowAttributes swa;
     Colormap             cmap;
@@ -106,7 +121,11 @@ int main(int argc, char* argv[])
                             vi->depth, InputOutput, vi->visual, CWBorderPixel | CWColormap | CWEventMask, &swa);
 
     XStoreName(_display, _window, pen_window.window_title);
-    XSelectInput(_display, _window, ExposureMask | StructureNotifyMask);
+    XSelectInput(_display, _window, ExposureMask | 
+                                    StructureNotifyMask | 
+                                    ButtonPressMask | ButtonReleaseMask |
+                                    KeyPressMask | KeyReleaseMask |
+                                    PointerMotionMask | PointerMotionHintMask | ButtonMotionMask | Button1MotionMask | Button2MotionMask | Button3MotionMask );
     XMapWindow(_display, _window);
 
     // Create Gl Context
@@ -116,7 +135,7 @@ int main(int argc, char* argv[])
 
     int context_attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
                              GLX_CONTEXT_MINOR_VERSION_ARB, 1,
-                             GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB};
+                             None};
 
     _gl_context = glXCreateContextAttribsARB(_display, best_fbc, 0, True, context_attribs);
 
@@ -124,7 +143,8 @@ int main(int argc, char* argv[])
 
     if (ctx_error_occured || !_gl_context)
     {
-        PEN_PRINTF("Error: openGL Context Failed to create");
+        PEN_PRINTF("Error: OpenGL 3.1 Context Failed to create");
+        return 1;
     }
 
     // Make current and init glew
@@ -135,29 +155,76 @@ int main(int argc, char* argv[])
     if (err != GLEW_OK)
     {
         PEN_PRINTF("Error: glewInit failed: %s\n", glewGetErrorString(err));
+        return 1;
     }
 
     // initilaise any generic systems
     pen::timer_system_intialise();
 
-    // pen::default_thread_info thread_info;
-    // thread_info.flags = 0;
-
-    // pen::thread_create_default_jobs( thread_info );
-
+    //inits renderer and loops in wait for jobs, calling os update
     renderer_init(nullptr);
 
-    while (1)
-    {
-        XNextEvent(_display, (XEvent*)&event);
-        pen::thread_sleep_ms(16);
-    }
+    //exit, kill other threads and wait
+    pen::thread_terminate_jobs();
 
-    return (0);
+    XDestroyWindow(_display, _window);
+	XCloseDisplay(_display);
+
+    return 0;
 }
 
 namespace pen
 {
+    bool os_update( )
+    {
+        while(XPending(_display) > 0)
+        {
+            XEvent event;
+            XNextEvent(_display, (XEvent*)&event);
+            switch(event.type) 
+            {
+                case Expose:
+                {
+                    XWindowAttributes attribs;
+                    XGetWindowAttributes(_display, _window, &attribs);
+                    pen_window.width = attribs.width;
+                    pen_window.height = attribs.height;
+                }
+                break;
+                case KeyPress:
+                {
+                    static c8 buf[255];
+                    KeySym k;
+                    XLookupString(&event.xkey, buf, 255, &k, 0);
+                    pen::input_set_unicode_key_down(buf[0]);
+                    pen::input_set_key_down(event.xkey.keycode);
+                }
+                break;
+                case KeyRelease:
+                {
+                    static c8 buf[255];
+                    KeySym k;
+                    XLookupString(&event.xkey, buf, 255, &k, 0);
+                    pen::input_set_unicode_key_up(buf[0]);
+                    pen::input_set_key_up(event.xkey.keycode);
+                }
+                break;
+                case ButtonPress:
+                {
+                    // event.xbutton.x, event.xbutton.y
+                }
+                break;
+                case MotionNotify:
+                {
+                    pen::input_set_mouse_pos(event.xmotion.x, event.xmotion.y);
+                }
+                break;
+            }
+        }
+
+        return true;
+    }
+
     u32 window_init(void* params)
     {
         return 0;

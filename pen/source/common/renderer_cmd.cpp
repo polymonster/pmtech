@@ -539,13 +539,11 @@ namespace pen
                 thread_sleep_ms(1);
             }
 
-#ifdef WIN32
             if (thread_semaphore_try_wait(p_job_thread_info->p_sem_exit))
             {
                 // exit
                 break;
             }
-#else
             if(!pen::os_update())
                 break;
 #endif
