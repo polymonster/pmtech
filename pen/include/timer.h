@@ -6,7 +6,11 @@
 namespace pen
 {
     // Barebones high resolution C-Style timer API
-    // Implemented in win32 query performance counter and mach
+    
+    // Implemented in:
+    // query performance counter (win32)
+    // mach (osx, ios)
+    // gettimeofday (linux)
 
     void timer_system_intialise();
 

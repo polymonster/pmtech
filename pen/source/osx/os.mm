@@ -22,6 +22,10 @@ int g_rs = 0;
 pen::user_info pen_user_info;
 extern PEN_TRV pen::user_entry( void* params );
 
+namespace pen
+{
+    void renderer_init(void*);
+}
 namespace
 {
     NSOpenGLView* _gl_view;
@@ -69,7 +73,7 @@ void pen_make_gl_context_current( )
 
 void pen_gl_swap_buffers( )
 {
-    if(g_rs<=0)
+    if(g_rs <= 0)
         [_gl_context flushBuffer];
 }
 
@@ -411,14 +415,29 @@ int main(int argc, char **argv)
     //init systems
     pen::timer_system_intialise();
     
-    //audio, renderer, game
-    pen::default_thread_info thread_info;
-    thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
+    //enters render loop and wait for jobs, will call os_update
+    pen::renderer_init(nullptr);
     
-    //main thread loop
-    bool thread_started = false;
-    while( !pen_terminate_app )
+    //shutdown
+    pen::thread_terminate_jobs();
+}
+
+
+namespace pen
+{
+    bool os_update( )
     {
+        static bool thread_started = false;
+        if(!thread_started)
+        {
+            //audio, user thread etc
+            pen::default_thread_info thread_info;
+            thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD;
+            pen::thread_create_default_jobs( thread_info );
+            thread_started = true;
+        }
+        
+        // Window / event loop
         NSAutoreleasePool * _pool = [[NSAutoreleasePool alloc] init];
         
         [NSApp updateWindows];
@@ -426,11 +445,11 @@ int main(int argc, char **argv)
         while( 1 )
         {
             NSEvent* peek_event = [NSApp
-                        nextEventMatchingMask:NSEventMaskAny
-                        untilDate:[NSDate distantPast] // do not wait for event
-                        inMode:NSDefaultRunLoopMode
-                        dequeue:YES
-                        ];
+                                   nextEventMatchingMask:NSEventMaskAny
+                                   untilDate:[NSDate distantPast] // do not wait for event
+                                   inMode:NSDefaultRunLoopMode
+                                   dequeue:YES
+                                   ];
             
             if( !peek_event )
             {
@@ -455,27 +474,13 @@ int main(int argc, char **argv)
             pen::input_set_mouse_up( PEN_MOUSE_R );
             pen::input_set_mouse_up( PEN_MOUSE_M );
         }
-
-        //sleep a bit
+        
         [_pool drain];
-        pen::thread_sleep_ms( 4 );
-        
-        if(!thread_started)
-        {
-            pen::thread_create_default_jobs( thread_info );
-            thread_started = true;
-        }
-        
         g_rs--;
+        
+        return (!pen_terminate_app);
     }
     
-    //shutdown
-    pen::thread_terminate_jobs();
-}
-
-
-namespace pen
-{
     void os_set_cursor_pos( u32 client_x, u32 client_y )
     {
         

@@ -188,9 +188,6 @@ namespace put
             else if (ms.buttons[PEN_MOUSE_R] && pen::input_key(PK_MENU))
             {
                 // zoom
-                vec3f up    = p_camera->view.get_up();
-                vec3f right = p_camera->view.get_right();
-
                 p_camera->zoom += -mouse_drag.y + mouse_drag.x;
             }
 

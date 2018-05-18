@@ -6,6 +6,7 @@
 #include "slot_resource.h"
 #include "threads.h"
 #include "timer.h"
+#include "os.h"
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -502,7 +503,7 @@ namespace pen
         thread_semaphore_signal(p_continue_semaphore, 1);
 
         // todo ove osx and windows onto the window thread
-#ifdef __linux__
+#ifdef WIN32
         pen::default_thread_info thread_info;
         thread_info.flags = 0;
 
@@ -538,17 +539,22 @@ namespace pen
                 thread_sleep_ms(1);
             }
 
-#ifndef __linux__
+#ifdef WIN32
             if (thread_semaphore_try_wait(p_job_thread_info->p_sem_exit))
             {
                 // exit
                 break;
             }
+#else
+            if(!pen::os_update())
+                break;
 #endif
         }
 
+#ifdef WIN32
         thread_semaphore_signal(p_continue_semaphore, 1);
         thread_semaphore_signal(p_job_thread_info->p_sem_terminated, 1);
+#endif
     }
 
     resolve_resources g_resolve_resources;

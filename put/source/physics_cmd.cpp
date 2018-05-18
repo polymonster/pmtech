@@ -215,9 +215,7 @@ namespace physics
             pen::thread_sleep_ms(16);
 
             if (pen::thread_semaphore_try_wait(p_physics_job_thread_info->p_sem_exit))
-            {
                 break;
-            }
         }
 
         pen::thread_semaphore_signal(p_physics_job_thread_info->p_sem_continue, 1);

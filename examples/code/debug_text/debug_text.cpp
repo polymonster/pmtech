@@ -8,23 +8,24 @@
 #include "threads.h"
 #include "timer.h"
 
-pen::window_creation_params pen_window{
+pen::window_creation_params pen_window
+{
     1280,        // width
     720,         // height
     4,           // MSAA samples
     "debug_text" // window title / process name
 };
 
-typedef struct vertex
+struct vertex
 {
     float x, y, z, w;
-} vertex;
+};
 
-typedef struct textured_vertex
+struct textured_vertex
 {
     float x, y, z, w;
     float u, v;
-} textured_vertex;
+};
 
 PEN_TRV pen::user_entry(void* params)
 {
@@ -106,9 +107,7 @@ PEN_TRV pen::user_entry(void* params)
 
         // msg from the engine we want to terminate
         if (pen::thread_semaphore_try_wait(p_thread_info->p_sem_exit))
-        {
             break;
-        }
     }
 
     // clean up mem here
