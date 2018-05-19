@@ -111,6 +111,12 @@ PEN_TRV pen::user_entry(void* params)
         pmfx::show_dev_ui();
 
         put::vgt::show_dev_ui();
+        
+        const pen::renderer_info& ri = pen::renderer_get_info();
+        ImGui::Text("Api Version: %s", ri.api_version);
+        ImGui::Text("Shader Version: %s", ri.shader_version);
+        ImGui::Text("Renderer: %s", ri.renderer);
+        ImGui::Text("Vendor: %s", ri.vendor);
 
         if (enable_dev_ui)
         {
