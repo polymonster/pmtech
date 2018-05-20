@@ -410,7 +410,7 @@ namespace pen
             blend_creation_params*          blend_state;
             GLuint                          handle;
             texture_info                    texture;
-            render_target                   render_target;
+            pen::render_target              render_target;
             sampler_creation_params*        sampler_state;
             pen::shader_program*            shader_program;
         };
