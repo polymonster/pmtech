@@ -80,8 +80,8 @@ project ( project_name )
 		pmtech_dir .. "pen/lib/" .. platform_dir, 
 		pmtech_dir .. "put/lib/" .. platform_dir,
 				
-		(pmtech_dir .. "pen/third_party/fmod/lib/" .. platform_dir),
-		(pmtech_dir .. "put/bullet/lib/" .. bullet_lib_dir),
+		(pmtech_dir .. "third_party/fmod/lib/" .. platform_dir),
+		(pmtech_dir .. "third_party/bullet/lib/" .. bullet_lib_dir),
 	}
 	
 	includedirs
@@ -91,7 +91,7 @@ project ( project_name )
 		pmtech_dir .. "pen/include/" .. platform_dir,
 		pmtech_dir .. "pen/include/" .. renderer_dir,
 		pmtech_dir .. "put/include/",
-		pmtech_dir .. "pen/third_party/",
+		pmtech_dir .. "third_party/",
 		
 		"include/"
 	}

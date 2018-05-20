@@ -1,14 +1,13 @@
 -- Project	
 project "pen"
-	location ("build\\" .. platform_dir)
+	location ("build/" .. platform_dir)
 	kind "StaticLib"
 	language "C++"
 	
 	files 
 	{
 		"include/*.h",
-		"include/common/**.h",
-		"source/common/**.cpp",
+		"source/*.cpp",
 		 
 		"include/" .. platform_dir .. "/**.h", 
 		"include/" .. renderer_dir .. "/**.h",
@@ -18,7 +17,7 @@ project "pen"
 		"source/" .. platform_dir .. "/**.cpp",
 		"source/" .. platform_dir .. "/**.mm",
 		
-		"third_party/str/*.cpp", 
+		"../third_party/str/*.cpp", 
 	}
 	
 	if platform_dir == "osx" then
@@ -43,27 +42,25 @@ project "pen"
 	includedirs 
 	{
 		"include",
-		"include/common",
-		 
+
 		"include/" .. platform_dir, 
 		"include/" .. renderer_dir,
 		
-		"third_party/fmod/inc",
-		
-		"third_party" 
+		"../third_party/fmod/inc",
+		"../third_party" 
 	}
 			
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain" }
 		symbols "On"
-		targetdir ("lib\\" .. platform_dir)
+		targetdir ("lib/" .. platform_dir)
 		targetname "pen_d"
 		architecture "x64"
  
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
-		targetdir ("lib\\" .. platform_dir)
+		targetdir ("lib/" .. platform_dir)
 		targetname "pen"
 		architecture "x64"

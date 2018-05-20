@@ -4,6 +4,19 @@
 #include "pen.h"
 #include "renderer_definitions.h"
 
+// Renderer Caps
+#define PEN_CAPS_TEXTURE_MULTISAMPLE (1<<0)
+#define PEN_CAPS_DEPTH_CLAMP (1<<1)
+#define PEN_CAPS_GPU_TIMER (1<<2)
+#define PEN_CAPS_COMPUTE (1<<3)
+
+// Texture format caps
+#define PEN_CAPS_TEX_FORMAT_BC1 (1<<31)
+#define PEN_CAPS_TEX_FORMAT_BC2 (1<<30)
+#define PEN_CAPS_TEX_FORMAT_BC3 (1<<29)
+#define PEN_CAPS_TEX_FORMAT_BC4 (1<<28)
+#define PEN_CAPS_TEX_FORMAT_BC5 (1<<27)
+
 namespace pen
 {
     // Simple C-Style generic rendering API wrapper, with a dedicated dispatch thread.
@@ -12,19 +25,6 @@ namespace pen
     // Public API used by the user thread will store function call arguments in a command buffer
     // Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
     // command buffer will be consumed passing arguments to the direct:: functions.
-
-    enum renderer_caps
-    {
-        CAPS_TEXTURE_MULTISAMPLE    = 1<<0,
-        CAPS_DEPTH_CLAMP            = 1<<1,
-        CAPS_GPU_TIMER              = 1<<2,
-        CAPS_COMPUTE                = 1<<3,
-        CAPS_TEX_FORMAT_BC1         = 1<<32,
-        CAPS_TEX_FORMAT_BC2         = 1<<33,
-        CAPS_TEX_FORMAT_BC3         = 1<<34,
-        CAPS_TEX_FORMAT_BC4         = 1<<35,
-        CAPS_TEX_FORMAT_BC5         = 1<<36
-    };
     
     struct renderer_info
     {
@@ -185,7 +185,7 @@ namespace pen
         void* data;
         u32   data_size;
         u32   block_size;
-        u32   pixels_per_block; // pixels in each axis bc is 4x4 blocks so pixels_per_block = 4 not 16
+        u32   pixels_per_block; // pixels per block in each axis bc is 4x4 blocks so pixels_per_block = 4 not 16
         u32   collection_type;
     };
 

@@ -1967,6 +1967,16 @@ namespace pen
         k_renderer_info.renderer = str_gl_renderer.c_str();
         k_renderer_info.vendor = str_gl_vendor.c_str();
         
+#if PEN_GLES3
+        //gles doesnt have caps
+#else
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
+        k_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
+        k_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
+        k_renderer_info.caps |= PEN_CAPS_COMPUTE;
+#endif
         return PEN_ERR_OK;
     }
     
