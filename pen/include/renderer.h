@@ -16,6 +16,8 @@
 #define PEN_CAPS_TEX_FORMAT_BC3 (1<<29)
 #define PEN_CAPS_TEX_FORMAT_BC4 (1<<28)
 #define PEN_CAPS_TEX_FORMAT_BC5 (1<<27)
+#define PEN_CAPS_TEX_FORMAT_BC6 (1<<26)
+#define PEN_CAPS_TEX_FORMAT_BC7 (1<<25)
 
 namespace pen
 {

@@ -66,7 +66,7 @@ namespace pen
 
     // Job
     void thread_create_default_jobs(const default_thread_info& info);
-    void thread_terminate_jobs();
+    bool thread_terminate_jobs();
     job* thread_create_job(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* user_data, thread_start_flags flags,
                            completion_callback cb = nullptr);
 

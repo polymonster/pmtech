@@ -417,11 +417,7 @@ int main(int argc, char **argv)
     
     //enters render loop and wait for jobs, will call os_update
     pen::renderer_init(nullptr);
-    
-    //shutdown
-    pen::thread_terminate_jobs();
 }
-
 
 namespace pen
 {
@@ -478,7 +474,13 @@ namespace pen
         [_pool drain];
         g_rs--;
         
-        return (!pen_terminate_app);
+        if(pen_terminate_app)
+        {
+            if(pen::thread_terminate_jobs())
+                return false;
+        }
+        
+        return true;
     }
     
     void os_set_cursor_pos( u32 client_x, u32 client_y )

@@ -42,6 +42,7 @@ namespace pen
     {
         if (info.flags & PEN_CREATE_RENDER_THREAD)
         {
+            // Render thread is created on the main (window) thread now by default
             thread_create_job(&pen::renderer_thread_function, 1024 * 1024, info.render_thread_params,
                               pen::THREAD_START_DETACHED);
         }
@@ -54,13 +55,22 @@ namespace pen
         thread_create_job(&pen::user_entry, 1024 * 1024, info.user_thread_params, pen::THREAD_START_DETACHED);
     }
 
-    void thread_terminate_jobs()
+    bool thread_terminate_jobs()
     {
         // remove threads in reverse order
         for (s32 i = s_num_active_threads - 1; i > 0; --i)
         {
             pen::thread_semaphore_signal(s_jt[i].p_sem_exit, 1);
-            pen::thread_semaphore_wait(s_jt[i].p_sem_terminated);
+            if(pen::thread_semaphore_try_wait(s_jt[i].p_sem_terminated))
+            {
+                s_num_active_threads--;
+            }
+            else
+            {
+                return false;
+            }
         }
+        
+        return true;
     }
 } // namespace pen

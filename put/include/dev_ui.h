@@ -51,6 +51,7 @@ namespace put
         bool      state_button(const c8* text, bool state_active);
         void      set_tooltip(const c8* fmt, ...);
         const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes = 0, ...);
+        void      show_platform_info( );
 
         // generic program preferences
         void      set_program_preference(const c8* name, f32 val);
