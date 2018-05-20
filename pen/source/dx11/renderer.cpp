@@ -1604,7 +1604,8 @@ namespace pen
         g_immediate_context->OMSetRenderTargets(1, &resource_pool[crtv].render_target->rt[0], NULL);
     }
 
-    u32 direct::renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
+    void caps_init();
+    u32  direct::renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
     {
         clear_resource_table();
 
@@ -1736,6 +1737,8 @@ namespace pen
 
         create_rtvs(bb_res, bb_depth_res, width, height);
 
+        caps_init();
+
         return S_OK;
     }
 
@@ -1763,6 +1766,46 @@ namespace pen
             g_device->Release();
         if (g_device_1)
             g_device_1->Release();
+    }
+
+    static renderer_info k_renderer_info;
+    static Str           str_hlsl_version;
+    static Str           str_d3d_version;
+    static Str           str_d3d_renderer;
+    static Str           str_d3d_vendor;
+
+    void caps_init()
+    {
+        // todo renderer caps
+
+        str_glsl_version = (const c8*)glsl_version;
+        str_gl_version   = (const c8*)gl_version;
+        str_gl_renderer  = (const c8*)gl_renderer;
+        str_gl_vendor    = (const c8*)gl_vendor;
+
+        k_renderer_info.shader_version = str_hlsl_version.c_str();
+        k_renderer_info.api_version    = str_d3d_version.c_str();
+        k_renderer_info.renderer       = str_d3d_renderer.c_str();
+        k_renderer_info.vendor         = str_d3d_vendor.c_str();
+
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC6;
+        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC7;
+
+        k_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
+        k_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
+        k_renderer_info.caps |= PEN_CAPS_COMPUTE;
+
+        return PEN_ERR_OK;
+    }
+
+    const renderer_info& renderer_get_info()
+    {
+        return k_renderer_info;
     }
 
     const c8* renderer_get_shader_platform()

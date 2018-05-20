@@ -4,9 +4,7 @@
 
 namespace pen
 {
-#define MAX_TIMERS 100
-
-    typedef struct timer
+    struct timer
     {
         LARGE_INTEGER last_start;
 
@@ -17,14 +15,13 @@ namespace pen
         u32 hit_count;
 
         const c8* name;
-
-    } timer;
+    };
 
     LARGE_INTEGER performance_frequency;
     f32           ticks_to_ms;
     f32           ticks_to_us;
     f32           ticks_to_ns;
-    timer         timers[MAX_TIMERS];
+    timer*        timers;
 
     u32 next_free = 0;
 
@@ -41,10 +38,14 @@ namespace pen
 
     u32 timer_create(const c8* name)
     {
-        timers[next_free].name = name;
-        PEN_ASSERT(next_free < MAX_TIMERS);
-        timer_start(next_free);
-        return next_free++;
+        u32 index = sb_count(timers);
+
+        timer t;
+        t.name = name;
+
+        sb_push(timers, t);
+
+        return index;
     }
 
     void timer_start(u32 index)

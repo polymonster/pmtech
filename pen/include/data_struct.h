@@ -44,9 +44,9 @@ static void* stb__sbgrowf(void* arr, int increment, int itemsize)
     int* p = nullptr;
     {
         uint32_t total_size = itemsize * m + sizeof(int) * 2;
-        p = (int*)realloc(arr ? stb__sbraw(arr) : 0, total_size);
+        p                   = (int*)realloc(arr ? stb__sbraw(arr) : 0, total_size);
 
-        char* pp = (char*)p;
+        char*    pp            = (char*)p;
         uint32_t preserve_size = sizeof(int) * 2 + itemsize * start;
         memset(pp + preserve_size, 0x00, total_size - preserve_size);
     }

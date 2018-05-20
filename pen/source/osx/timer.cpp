@@ -1,7 +1,7 @@
 #include "timer.h"
-#include "pen_string.h"
-#include "data_struct.h"
 #include "console.h"
+#include "data_struct.h"
+#include "pen_string.h"
 
 #include <mach/mach.h>
 #include <mach/mach_time.h>
@@ -47,11 +47,11 @@ namespace pen
     u32 timer_create(const c8* name)
     {
         int index = sb_count(timers);
-        
+
         timer nt;
         nt.name = name;
         sb_push(timers, nt);
-        
+
         return index;
     }
 

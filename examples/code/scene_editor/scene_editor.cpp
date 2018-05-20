@@ -107,11 +107,11 @@ PEN_TRV pen::user_entry(void* params)
         pmfx::update();
 
         pmfx::render();
-        
+
         pmfx::show_dev_ui();
 
         put::vgt::show_dev_ui();
-        
+
         if (enable_dev_ui)
         {
             put::dev_ui::console();

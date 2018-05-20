@@ -61,7 +61,7 @@ namespace pen
         for (s32 i = s_num_active_threads - 1; i > 0; --i)
         {
             pen::thread_semaphore_signal(s_jt[i].p_sem_exit, 1);
-            if(pen::thread_semaphore_try_wait(s_jt[i].p_sem_terminated))
+            if (pen::thread_semaphore_try_wait(s_jt[i].p_sem_terminated))
             {
                 s_num_active_threads--;
             }
@@ -70,7 +70,7 @@ namespace pen
                 return false;
             }
         }
-        
+
         return true;
     }
 } // namespace pen

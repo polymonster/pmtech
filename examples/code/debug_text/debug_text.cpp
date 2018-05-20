@@ -8,8 +8,7 @@
 #include "threads.h"
 #include "timer.h"
 
-pen::window_creation_params pen_window
-{
+pen::window_creation_params pen_window{
     1280,        // width
     720,         // height
     4,           // MSAA samples

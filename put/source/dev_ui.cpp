@@ -6,8 +6,8 @@
 #include "pen.h"
 #include "pen_json.h"
 #include "pen_string.h"
-#include "str_utilities.h"
 #include "renderer.h"
+#include "str_utilities.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -855,23 +855,23 @@ namespace put
             load_program_preferences();
             kp_dev_console = new app_console();
         }
-        
-        void show_platform_info( )
+
+        void show_platform_info()
         {
             static bool opened = false;
-            if( opened )
+            if (opened)
             {
                 ImGui::Begin("Platform Info", &opened, ImGuiWindowFlags_AlwaysAutoResize);
-            
+
                 const pen::renderer_info& ri = pen::renderer_get_info();
                 ImGui::Text("Graphics Api: %s", ri.api_version);
                 ImGui::Text("Shader Version: %s", ri.shader_version);
                 ImGui::Text("Renderer: %s", ri.renderer);
                 ImGui::Text("Vendor: %s", ri.vendor);
-            
+
                 ImGui::End();
             }
         }
-        
+
     } // namespace dev_ui
 } // namespace put

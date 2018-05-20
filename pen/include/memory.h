@@ -41,7 +41,7 @@ namespace pen
     void  memory_set(void* dest, u8 val, u32 size_bytes);
     void  memory_zero(void* dest, u32 size_bytes);
 
-    // ImplementationCHECK_CALL
+    // Implementation
 
     inline void* memory_alloc(u32 size_bytes)
     {

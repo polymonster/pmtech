@@ -1,12 +1,12 @@
 #include "console.h"
 #include "memory.h"
+#include "os.h"
 #include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "slot_resource.h"
 #include "threads.h"
 #include "timer.h"
-#include "os.h"
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -532,7 +532,7 @@ namespace pen
             }
 
 #ifndef WIN32
-            if(!pen::os_update())
+            if (!pen::os_update())
                 break;
 #else
             if (thread_semaphore_try_wait(p_job_thread_info->p_sem_exit))

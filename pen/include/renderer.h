@@ -5,46 +5,46 @@
 #include "renderer_definitions.h"
 
 // Renderer Caps
-#define PEN_CAPS_TEXTURE_MULTISAMPLE (1<<0)
-#define PEN_CAPS_DEPTH_CLAMP (1<<1)
-#define PEN_CAPS_GPU_TIMER (1<<2)
-#define PEN_CAPS_COMPUTE (1<<3)
+#define PEN_CAPS_TEXTURE_MULTISAMPLE (1 << 0)
+#define PEN_CAPS_DEPTH_CLAMP (1 << 1)
+#define PEN_CAPS_GPU_TIMER (1 << 2)
+#define PEN_CAPS_COMPUTE (1 << 3)
 
 // Texture format caps
-#define PEN_CAPS_TEX_FORMAT_BC1 (1<<31)
-#define PEN_CAPS_TEX_FORMAT_BC2 (1<<30)
-#define PEN_CAPS_TEX_FORMAT_BC3 (1<<29)
-#define PEN_CAPS_TEX_FORMAT_BC4 (1<<28)
-#define PEN_CAPS_TEX_FORMAT_BC5 (1<<27)
-#define PEN_CAPS_TEX_FORMAT_BC6 (1<<26)
-#define PEN_CAPS_TEX_FORMAT_BC7 (1<<25)
+#define PEN_CAPS_TEX_FORMAT_BC1 (1 << 31)
+#define PEN_CAPS_TEX_FORMAT_BC2 (1 << 30)
+#define PEN_CAPS_TEX_FORMAT_BC3 (1 << 29)
+#define PEN_CAPS_TEX_FORMAT_BC4 (1 << 28)
+#define PEN_CAPS_TEX_FORMAT_BC5 (1 << 27)
+#define PEN_CAPS_TEX_FORMAT_BC6 (1 << 26)
+#define PEN_CAPS_TEX_FORMAT_BC7 (1 << 25)
 
 namespace pen
 {
     // Simple C-Style generic rendering API wrapper, with a dedicated dispatch thread.
     // Currently implementations are in Direct3D11 (win32), OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios)
-    
+
     // Public API used by the user thread will store function call arguments in a command buffer
     // Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
     // command buffer will be consumed passing arguments to the direct:: functions.
-    
+
     struct renderer_info
     {
         const c8* api_version;
         const c8* shader_version;
         const c8* renderer;
         const c8* vendor;
-        
+
         u64 caps;
     };
-    
+
     enum special_values
     {
         BACK_BUFFER_RATIO = (u32)-1,
         MAX_MRT           = 8,
         CUBEMAP_FACES     = 6
     };
-    
+
     enum e_clear_types
     {
         CLEAR_F32,
@@ -315,11 +315,11 @@ namespace pen
     };
 
     //
-    
-    PEN_TRV                 renderer_thread_function(void* params);
-    const c8*               renderer_get_shader_platform();
-    bool                    renderer_viewport_vup();
-    const renderer_info&    renderer_get_info();
+
+    PEN_TRV              renderer_thread_function(void* params);
+    const c8*            renderer_get_shader_platform();
+    bool                 renderer_viewport_vup();
+    const renderer_info& renderer_get_info();
 
     // resource management
     void renderer_realloc_resource(u32 i, u32 domain);

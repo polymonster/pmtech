@@ -32,7 +32,7 @@ u32            k_num_textures = 0;
 void           load_textures()
 {
     const pen::renderer_info& ri = pen::renderer_get_info();
-    
+
     bool bc[7];
     bc[0] = ri.caps & PEN_CAPS_TEX_FORMAT_BC1;
     bc[1] = ri.caps & PEN_CAPS_TEX_FORMAT_BC2;
@@ -42,22 +42,22 @@ void           load_textures()
     bc[5] = ri.caps & PEN_CAPS_TEX_FORMAT_BC6;
     bc[6] = ri.caps & PEN_CAPS_TEX_FORMAT_BC7;
 
-    static typed_texture textures[] = {{"rgb8", put::load_texture("data/textures/formats/texfmt_rgb8.dds") },
-                                       {"rgba8", put::load_texture("data/textures/formats/texfmt_rgba8.dds") },
+    static typed_texture textures[] = {{"rgb8", put::load_texture("data/textures/formats/texfmt_rgb8.dds")},
+                                       {"rgba8", put::load_texture("data/textures/formats/texfmt_rgba8.dds")},
 
-                                       {"bc1", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1.dds") : 0 },
-                                       {"bc2", bc[1] ? put::load_texture("data/textures/formats/texfmt_bc2.dds") : 0 },
-                                       {"bc3", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3.dds") : 0 },
+                                       {"bc1", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1.dds") : 0},
+                                       {"bc2", bc[1] ? put::load_texture("data/textures/formats/texfmt_bc2.dds") : 0},
+                                       {"bc3", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3.dds") : 0},
 
-                                       { "bc4", bc[3] ? put::load_texture("data/textures/formats/texfmt_bc4.dds") : 0 },
-                                       { "bc5", bc[4] ? put::load_texture("data/textures/formats/texfmt_bc5.dds") : 0 },
+                                       {"bc4", bc[3] ? put::load_texture("data/textures/formats/texfmt_bc4.dds") : 0},
+                                       {"bc5", bc[4] ? put::load_texture("data/textures/formats/texfmt_bc5.dds") : 0},
 
                                        // incorrect in d3d and visual studio (nvcompress issue?)
-                                       { "bc6", bc[5] ? put::load_texture("data/textures/formats/texfmt_bc6.dds") : 0 },
-                                       { "bc7", bc[6] ? put::load_texture("data/textures/formats/texfmt_bc7.dds") : 0 },
+                                       {"bc6", bc[5] ? put::load_texture("data/textures/formats/texfmt_bc6.dds") : 0},
+                                       {"bc7", bc[6] ? put::load_texture("data/textures/formats/texfmt_bc7.dds") : 0},
 
-                                       {"bc1n", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1n.dds") : 0 },
-                                       {"bc3n", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3n.dds") : 0 }};
+                                       {"bc1n", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1n.dds") : 0},
+                                       {"bc3n", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3n.dds") : 0}};
 
     k_textures     = &textures[0];
     k_num_textures = PEN_ARRAY_SIZE(textures);
@@ -75,21 +75,21 @@ void texture_formats_ui()
     static s32 current_type = 0;
     ImGui::Combo("Format", &current_type, k_texture_formats, k_num_textures);
 
-    if(k_textures[current_type].handle)
+    if (k_textures[current_type].handle)
     {
         texture_info info;
         get_texture_info(k_textures[current_type].handle, info);
         ImGui::Image((void*)&k_textures[current_type].handle, ImVec2(info.width, info.height));
-        
+
         ImVec2 mip_size = ImVec2(info.width, info.height);
         for (u32 i = 0; i < info.num_mips; ++i)
         {
             mip_size.x *= 0.5f;
             mip_size.y *= 0.5f;
-            
+
             mip_size.x = std::max<f32>(mip_size.x, 1.0f);
             mip_size.y = std::max<f32>(mip_size.y, 1.0f);
-            
+
             ImGui::SameLine();
             ImGui::Image((void*)&k_textures[current_type].handle, mip_size);
         }

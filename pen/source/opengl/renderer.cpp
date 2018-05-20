@@ -8,7 +8,6 @@
 #include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
-#include "str/Str.h"
 #include <vector>
 
 #include "console.h"
@@ -290,7 +289,6 @@ namespace pen
 //  COMMON API
 //--------------------------------------------------------------------------------------
 #define MAX_VERTEX_BUFFERS 4
-#define NUM_CUBEMAP_FACES 6
 #define MAX_VERTEX_ATTRIBUTES 16
 #define MAX_UNIFORM_BUFFERS 16
 #define MAX_SHADER_TEXTURES 32
@@ -315,8 +313,8 @@ namespace pen
         u8  stencil;
         u32 flags;
 
-        pen::mrt_clear mrt[MAX_MRT];
-        u32            num_colour_targets;
+        mrt_clear mrt[MAX_MRT];
+        u32       num_colour_targets;
     };
 
     struct vertex_attribute
@@ -405,16 +403,16 @@ namespace pen
         GLuint type;
 
         union {
-            pen::clear_state_internal           clear_state;
-            pen::input_layout*                  input_layout;
-            pen::raster_state                   raster_state;
-            pen::depth_stencil_creation_params* depth_stencil;
-            pen::blend_creation_params*         blend_state;
-            GLuint                              handle;
-            pen::texture_info                   texture;
-            pen::render_target                  render_target;
-            pen::sampler_creation_params*       sampler_state;
-            pen::shader_program*                shader_program;
+            clear_state_internal           clear_state;
+            input_layout*                  input_layout;
+            raster_state                   raster_state;
+            depth_stencil_creation_params* depth_stencil;
+            blend_creation_params*         blend_state;
+            GLuint                         handle;
+            texture_info                   texture;
+            render_target                  render_target;
+            sampler_creation_params*       sampler_state;
+            shader_program*                shader_program;
         };
     };
     resource_allocation resource_pool[MAX_RENDERER_RESOURCES];
@@ -442,7 +440,7 @@ namespace pen
 
     void clear_resource_table()
     {
-        pen::memory_zero(&resource_pool[0], sizeof(resource_allocation) * MAX_RENDERER_RESOURCES);
+        memory_zero(&resource_pool[0], sizeof(resource_allocation) * MAX_RENDERER_RESOURCES);
 
         // reserve resource 0 for NULL binding.
         resource_pool[0].asigned_flag |= 0xff;
@@ -461,10 +459,10 @@ namespace pen
         resource_pool[resource_slot].clear_state.flags   = cs.flags;
 
         resource_pool[resource_slot].clear_state.num_colour_targets = cs.num_colour_targets;
-        pen::memory_cpy(&resource_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(pen::mrt_clear) * MAX_MRT);
+        memory_cpy(&resource_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
     }
 
-    u32 link_program_internal(u32 vs, u32 ps, const pen::shader_link_params* params = nullptr)
+    u32 link_program_internal(u32 vs, u32 ps, const shader_link_params* params = nullptr)
     {
         // link the shaders
         GLuint program_id = CHECK_CALL(glCreateProgram());
@@ -514,13 +512,13 @@ namespace pen
 
         if (info_log_length > 0)
         {
-            char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
+            char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]));
             info_log_buf[info_log_length] = '\0';
 
             output_debug("%s", info_log_buf);
-            pen::memory_free(info_log_buf);
+            memory_free(info_log_buf);
         }
 
         shader_program program;
@@ -571,13 +569,13 @@ namespace pen
 
         for (s32 i = 0; i < cs.num_colour_targets; ++i)
         {
-            if (cs.mrt[i].type == pen::CLEAR_F32)
+            if (cs.mrt[i].type == CLEAR_F32)
             {
                 CHECK_CALL(glClearBufferfv(GL_COLOR, i, cs.mrt[i].f));
                 continue;
             }
 
-            if (cs.mrt[i].type == pen::CLEAR_U32)
+            if (cs.mrt[i].type == CLEAR_U32)
             {
                 CHECK_CALL(glClearBufferuiv(GL_COLOR, i, cs.mrt[i].u));
                 continue;
@@ -646,7 +644,7 @@ namespace pen
 #endif
     }
 
-    void direct::renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
+    void direct::renderer_load_shader(const shader_load_params& params, u32 resource_slot)
     {
         resource_allocation& res = resource_pool[resource_slot];
 
@@ -670,7 +668,7 @@ namespace pen
         {
             PEN_PRINTF("%s", params.byte_code);
 
-            char* info_log_buf = (char*)pen::memory_alloc(info_log_length + 1);
+            char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]));
 
@@ -710,7 +708,7 @@ namespace pen
         res.type = params.bind_flags;
     }
 
-    void direct::renderer_link_shader_program(const pen::shader_link_params& params, u32 resource_slot)
+    void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
     {
         shader_link_params slp           = params;
         u32                program_index = link_program_internal(0, 0, &slp);
@@ -728,7 +726,7 @@ namespace pen
 
             switch (constant.type)
             {
-            case pen::CT_CBUFFER:
+            case CT_CBUFFER:
             {
                 loc = CHECK_CALL(glGetUniformBlockIndex(prog, constant.name));
                 PEN_ASSERT(loc < MAX_UNIFORM_BUFFERS);
@@ -739,10 +737,10 @@ namespace pen
             }
             break;
 
-            case pen::CT_SAMPLER_3D:
-            case pen::CT_SAMPLER_2D:
-            case pen::CT_SAMPLER_2DMS:
-            case pen::CT_SAMPLER_CUBE:
+            case CT_SAMPLER_3D:
+            case CT_SAMPLER_2D:
+            case CT_SAMPLER_2DMS:
+            case CT_SAMPLER_CUBE:
             {
                 loc = CHECK_CALL(glGetUniformLocation(prog, constant.name));
 
@@ -1130,7 +1128,7 @@ namespace pen
         u32 num_slices = 1;
         u32 num_arrays = tcp.num_arrays;
 
-        switch ((pen::texture_collection_type)tcp.collection_type)
+        switch ((texture_collection_type)tcp.collection_type)
         {
         case TEXTURE_COLLECTION_NONE:
             texture_target      = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
@@ -1245,7 +1243,7 @@ namespace pen
 
         texture_creation_params _tcp = tcp;
 
-        res.render_target.uid = (u32)pen::get_time_ms();
+        res.render_target.uid = (u32)get_time_ms();
 
         if (tcp.width == BACK_BUFFER_RATIO)
         {
@@ -1387,13 +1385,12 @@ namespace pen
             else
             {
 #ifdef PEN_GLES3
-                CHECK_CALL(
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D, colour_res.render_target.texture.handle, 0));
+                CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D,
+                                                  colour_res.render_target.texture.handle, 0));
 #else
-                CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER, k_draw_buffers[i],
-                                                colour_res.render_target.texture.handle, 0));
+                CHECK_CALL(
+                    glFramebufferTexture(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0));
 #endif
-                
             }
         }
 
@@ -1488,7 +1485,7 @@ namespace pen
             }
         }
 
-        if (type == pen::RESOLVE_CUSTOM)
+        if (type == RESOLVE_CUSTOM)
         {
             resolve_cbuffer cbuf = {w, h, 0.0f, 0.0f};
 
@@ -1497,7 +1494,7 @@ namespace pen
             direct::renderer_update_buffer(g_resolve_resources.constant_buffer, &cbuf, sizeof(cbuf), 0);
             direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, PEN_SHADER_TYPE_PS);
 
-            pen::viewport vp = {0.0f, 0.0f, w, h, 0.0f, 1.0f};
+            viewport vp = {0.0f, 0.0f, w, h, 0.0f, 1.0f};
             direct::renderer_set_viewport(vp);
 
             u32 stride = 24;
@@ -1505,7 +1502,7 @@ namespace pen
             direct::renderer_set_vertex_buffer(g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
             direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
-            direct::renderer_set_texture(target, 0, 0, PEN_SHADER_TYPE_PS, pen::TEXTURE_BIND_MSAA);
+            direct::renderer_set_texture(target, 0, 0, PEN_SHADER_TYPE_PS, TEXTURE_BIND_MSAA);
 
             direct::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
         }
@@ -1530,9 +1527,9 @@ namespace pen
 
     void direct::renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
     {
-        resource_pool[resource_slot].sampler_state = (sampler_creation_params*)pen::memory_alloc(sizeof(scp));
+        resource_pool[resource_slot].sampler_state = (sampler_creation_params*)memory_alloc(sizeof(scp));
 
-        pen::memory_cpy(resource_pool[resource_slot].sampler_state, &scp, sizeof(scp));
+        memory_cpy(resource_pool[resource_slot].sampler_state, &scp, sizeof(scp));
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
@@ -1671,14 +1668,14 @@ namespace pen
 
     void direct::renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
     {
-        resource_pool[resource_slot].blend_state = (blend_creation_params*)pen::memory_alloc(sizeof(blend_creation_params));
+        resource_pool[resource_slot].blend_state = (blend_creation_params*)memory_alloc(sizeof(blend_creation_params));
 
         blend_creation_params* blend_state = resource_pool[resource_slot].blend_state;
 
         *blend_state = bcp;
 
         blend_state->render_targets =
-            (render_target_blend*)pen::memory_alloc(sizeof(render_target_blend) * bcp.num_render_targets);
+            (render_target_blend*)memory_alloc(sizeof(render_target_blend) * bcp.num_render_targets);
 
         for (s32 i = 0; i < bcp.num_render_targets; ++i)
         {
@@ -1739,7 +1736,7 @@ namespace pen
         if (mapped_data)
         {
             c8* mapped_offset = ((c8*)mapped_data) + offset;
-            pen::memory_cpy(mapped_offset, data, data_size);
+            memory_cpy(mapped_offset, data, data_size);
         }
 
         CHECK_CALL(glUnmapBuffer(res.type));
@@ -1765,12 +1762,12 @@ namespace pen
 
             CHECK_CALL(glBindTexture(GL_TEXTURE_2D, res.texture.handle));
 
-            void* data = pen::memory_alloc(rrbp.data_size);
+            void* data = memory_alloc(rrbp.data_size);
             CHECK_CALL(glGetTexImage(GL_TEXTURE_2D, 0, format, type, data));
 
             rrbp.call_back_function(data, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
 
-            pen::memory_free(data);
+            memory_free(data);
         }
         else if (t == GL_ELEMENT_ARRAY_BUFFER || t == GL_UNIFORM_BUFFER || t == GL_ARRAY_BUFFER)
         {
@@ -1786,9 +1783,9 @@ namespace pen
 
     void direct::renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
     {
-        resource_pool[resource_slot].depth_stencil = (depth_stencil_creation_params*)pen::memory_alloc(sizeof(dscp));
+        resource_pool[resource_slot].depth_stencil = (depth_stencil_creation_params*)memory_alloc(sizeof(dscp));
 
-        pen::memory_cpy(resource_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
+        memory_cpy(resource_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
@@ -1844,10 +1841,10 @@ namespace pen
         if (res.blend_state)
         {
             // clear rtb
-            pen::memory_free(res.blend_state->render_targets);
+            memory_free(res.blend_state->render_targets);
             res.blend_state->render_targets = nullptr;
 
-            pen::memory_free(res.blend_state);
+            memory_free(res.blend_state);
 
             res.blend_state = nullptr;
         }
@@ -1889,21 +1886,21 @@ namespace pen
     {
         resource_allocation& res = resource_pool[input_layout];
 
-        pen::memory_free(res.input_layout);
+        memory_free(res.input_layout);
     }
 
     void direct::renderer_release_sampler(u32 sampler)
     {
         resource_allocation& res = resource_pool[sampler];
 
-        pen::memory_free(res.sampler_state);
+        memory_free(res.sampler_state);
     }
 
     void direct::renderer_release_depth_stencil_state(u32 depth_stencil_state)
     {
         resource_allocation& res = resource_pool[depth_stencil_state];
 
-        pen::memory_free(res.depth_stencil);
+        memory_free(res.depth_stencil);
     }
 
     void direct::renderer_release_clear_state(u32 clear_state)
@@ -1943,32 +1940,32 @@ namespace pen
         resource_pool[dest] = resource_pool[src];
     }
 
-    static pen::renderer_info k_renderer_info;
-    static Str str_glsl_version;
-    static Str str_gl_version;
-    static Str str_gl_renderer;
-    static Str str_gl_vendor;
-    
+    static renderer_info k_renderer_info;
+    static Str           str_glsl_version;
+    static Str           str_gl_version;
+    static Str           str_gl_renderer;
+    static Str           str_gl_vendor;
+
     u32 direct::renderer_initialise(void*, u32, u32)
     {
         // todo renderer caps
         const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
-        const GLubyte* gl_version = glGetString(GL_VERSION);
-        const GLubyte* gl_renderer = glGetString(GL_RENDERER);
-        const GLubyte* gl_vendor = glGetString(GL_VENDOR);
-        
+        const GLubyte* gl_version   = glGetString(GL_VERSION);
+        const GLubyte* gl_renderer  = glGetString(GL_RENDERER);
+        const GLubyte* gl_vendor    = glGetString(GL_VENDOR);
+
         str_glsl_version = (const c8*)glsl_version;
-        str_gl_version = (const c8*)gl_version;
+        str_gl_version   = (const c8*)gl_version;
         str_gl_renderer  = (const c8*)gl_renderer;
-        str_gl_vendor = (const c8*)gl_vendor;
-        
+        str_gl_vendor    = (const c8*)gl_vendor;
+
         k_renderer_info.shader_version = str_glsl_version.c_str();
-        k_renderer_info.api_version = str_gl_version.c_str();
-        k_renderer_info.renderer = str_gl_renderer.c_str();
-        k_renderer_info.vendor = str_gl_vendor.c_str();
-        
-#if PEN_GLES3
-        //gles doesnt have caps
+        k_renderer_info.api_version    = str_gl_version.c_str();
+        k_renderer_info.renderer       = str_gl_renderer.c_str();
+        k_renderer_info.vendor         = str_gl_vendor.c_str();
+
+#ifdef PEN_GLES3
+        // gles doesnt have caps
 #else
         k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
         k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
@@ -1979,8 +1976,8 @@ namespace pen
 #endif
         return PEN_ERR_OK;
     }
-    
-    const pen::renderer_info& renderer_get_info()
+
+    const renderer_info& renderer_get_info()
     {
         return k_renderer_info;
     }

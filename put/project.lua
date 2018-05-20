@@ -11,6 +11,8 @@ project "put"
 	kind "StaticLib"
 	language "C++"
 	
+	if platform_dir == "ios" then defines { PEN_GLES3 } end
+	
 	libdirs
 	{ 
 		"../pen/lib/" .. platform_dir,
