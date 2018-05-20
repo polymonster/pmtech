@@ -8,6 +8,7 @@
 #include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
+#include "str/Str.h"
 #include <vector>
 
 #include "console.h"
@@ -129,6 +130,7 @@ namespace pen
 
     void insert_marker(const c8* name, bool pad = false)
     {
+#ifdef GL_TIME_ELAPSED
         u32& buf   = k_perf.buf;
         u32& pos   = k_perf.pos[buf];
         u32& depth = k_perf.depth;
@@ -154,10 +156,12 @@ namespace pen
         k_perf.markers[buf][pos].name   = name;
 
         ++pos;
+#endif
     }
 
     void direct::renderer_push_perf_marker(const c8* name)
     {
+#ifdef GL_TIME_ELAPSED
         u32& depth = k_perf.depth;
 
         if (depth > 0)
@@ -168,10 +172,12 @@ namespace pen
         insert_marker(name);
 
         ++depth;
+#endif
     }
 
     void direct::renderer_pop_perf_marker()
     {
+#ifdef GL_TIME_ELAPSED
         u32& depth = k_perf.depth;
         --depth;
 
@@ -181,10 +187,12 @@ namespace pen
         {
             insert_marker("pad_marker", true);
         }
+#endif
     }
 
     void gather_perf_markers()
     {
+#ifdef GL_TIME_ELAPSED
         // unbalance push pop in perf markers
         PEN_ASSERT(k_perf.depth == 0);
 
@@ -275,6 +283,7 @@ namespace pen
         }
 
         k_perf.buf = bb;
+#endif
     }
 
 //--------------------------------------------------------------------------------------
@@ -962,6 +971,7 @@ namespace pen
                 CHECK_CALL(glDisable(GL_CULL_FACE));
             }
 
+#ifdef GL_DEPTH_CLAMP
             if (rs.depth_clip_enabled)
             {
                 CHECK_CALL(glDisable(GL_DEPTH_CLAMP));
@@ -970,8 +980,11 @@ namespace pen
             {
                 CHECK_CALL(glEnable(GL_DEPTH_CLAMP));
             }
+#endif
 
+#ifndef PEN_GLES3
             CHECK_CALL(glPolygonMode(GL_FRONT_AND_BACK, rs.polygon_mode));
+#endif
 
             if (rs.scissor_enabled)
             {
@@ -1292,7 +1305,6 @@ namespace pen
 
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
             CHECK_CALL(glDrawBuffer(GL_BACK));
-
             return;
         }
 
@@ -1353,8 +1365,13 @@ namespace pen
             }
             else
             {
+#ifdef PEN_GLES3
+                CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                                  depth_res.render_target.texture.handle, 0));
+#else
                 CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                                                 depth_res.render_target.texture.handle, 0));
+#endif
             }
         }
 
@@ -1369,8 +1386,14 @@ namespace pen
             }
             else
             {
+#ifdef PEN_GLES3
                 CHECK_CALL(
-                    glFramebufferTexture(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0));
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D, colour_res.render_target.texture.handle, 0));
+#else
+                CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER, k_draw_buffers[i],
+                                                colour_res.render_target.texture.handle, 0));
+#endif
+                
             }
         }
 
@@ -1451,8 +1474,13 @@ namespace pen
                 }
                 else
                 {
+#ifdef PEN_GLES3
+                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                                                      colour_res.render_target.texture.handle, 0));
+#else
                     CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                                     colour_res.render_target.texture.handle, 0));
+#endif
                 }
 
                 framebuffer fb = {hash[i], fbos[i]};
@@ -1574,8 +1602,8 @@ namespace pen
         break;
         case PEN_FILTER_POINT:
         {
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_POINT));
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_POINT));
+            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
         }
         break;
         };
@@ -1586,7 +1614,9 @@ namespace pen
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_R, sampler_state->address_w));
 
         // mip control
+#ifdef GL_TEXTURE_LOD_BIAS
         CHECK_CALL(glTexParameterf(target, GL_TEXTURE_LOD_BIAS, sampler_state->mip_lod_bias));
+#endif
 
         if (sampler_state->max_lod > -1.0f)
         {
@@ -1699,6 +1729,7 @@ namespace pen
 
     void direct::renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
+#ifndef PEN_GLES3
         resource_allocation& res = resource_pool[buffer_index];
 
         CHECK_CALL(glBindBuffer(res.type, res.handle));
@@ -1714,10 +1745,12 @@ namespace pen
         CHECK_CALL(glUnmapBuffer(res.type));
 
         CHECK_CALL(glBindBuffer(res.type, 0));
+#endif
     }
 
     void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
     {
+#ifndef PEN_GLES3
         resource_allocation& res = resource_pool[rrbp.resource_index];
 
         GLuint t = res.type;
@@ -1748,6 +1781,7 @@ namespace pen
 
             CHECK_CALL(glUnmapBuffer(t));
         }
+#endif
     }
 
     void direct::renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
@@ -1909,12 +1943,36 @@ namespace pen
         resource_pool[dest] = resource_pool[src];
     }
 
+    static pen::renderer_info k_renderer_info;
+    static Str str_glsl_version;
+    static Str str_gl_version;
+    static Str str_gl_renderer;
+    static Str str_gl_vendor;
+    
     u32 direct::renderer_initialise(void*, u32, u32)
     {
         // todo renderer caps
-        // const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);
-
+        const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
+        const GLubyte* gl_version = glGetString(GL_VERSION);
+        const GLubyte* gl_renderer = glGetString(GL_RENDERER);
+        const GLubyte* gl_vendor = glGetString(GL_VENDOR);
+        
+        str_glsl_version = (const c8*)glsl_version;
+        str_gl_version = (const c8*)gl_version;
+        str_gl_renderer  = (const c8*)gl_renderer;
+        str_gl_vendor = (const c8*)gl_vendor;
+        
+        k_renderer_info.shader_version = str_glsl_version.c_str();
+        k_renderer_info.api_version = str_gl_version.c_str();
+        k_renderer_info.renderer = str_gl_renderer.c_str();
+        k_renderer_info.vendor = str_gl_vendor.c_str();
+        
         return PEN_ERR_OK;
+    }
+    
+    const pen::renderer_info& renderer_get_info()
+    {
+        return k_renderer_info;
     }
 
     void direct::renderer_shutdown()

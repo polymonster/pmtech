@@ -5,16 +5,15 @@
 #include <OpenGLES/ES2/gl.h>
 #include <OpenGLES/ES2/glext.h>
 
-#include "window.h"
+#include "os.h"
 #include "pen.h"
 #include "threads.h"
-//#include "renderer.h"
 
 CAEAGLLayer* _eaglLayer;
 EAGLContext* _gl_context;
 
 extern pen::window_creation_params pen_window;
-extern PEN_THREAD_RETURN pen::game_entry( void* params );
+extern PEN_TRV pen::user_entry( void* params );
 
 void create_context( )
 {

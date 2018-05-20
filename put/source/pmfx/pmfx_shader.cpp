@@ -611,7 +611,7 @@ namespace put
                         // trigger re-compile if files on disk are newer
                         if (err == PEN_ERR_OK && current_ts > shader_ts)
                         {
-                            system(shader_compiler_str.c_str());
+                            PEN_SYSTEM(shader_compiler_str.c_str());
                             pmfx_set.invalidated = true;
                         }
                     }

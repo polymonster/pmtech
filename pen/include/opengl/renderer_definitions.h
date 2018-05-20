@@ -1,15 +1,38 @@
 #ifndef _renderer_definitions_h
 #define _renderer_definitions_h
 
+//#define PEN_GLES3
+
 #ifdef PEN_GLES3
 #include <OpenGLES/ES3/gl.h>
 #include <OpenGLES/ES3/glext.h>
 
 // for portability with regular gl
+
+//mark unsupported features null
 #define GL_FILL 0x00 // gl fill is the only polygon mode on gles3
 #define GL_LINE 0x00 // gl line (wireframe) usupported
+#define GL_GEOMETRY_SHADER 0x00 // gl geometry shader unsupported
+#define GL_TEXTURE_COMPRESSED 0x00 //
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x00
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x00
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x00
+
+//remap unsupported stuff for rough equivalent
+#define GL_CLAMP_TO_BORDER GL_CLAMP_TO_EDGE
+#define GL_SRC1_COLOR GL_SRC_COLOR
+#define GL_ONE_MINUS_SRC1_COLOR GL_ONE_MINUS_SRC_COLOR
+#define GL_SRC1_ALPHA GL_SRC_ALPHA
+#define GL_ONE_MINUS_SRC1_ALPHA GL_ONE_MINUS_SRC_ALPHA
+#define GL_TEXTURE_2D_MULTISAMPLE GL_TEXTURE_2D
 
 #define glClearDepth glClearDepthf // gl es has these type suffixes
+
+//gles does not support base vertex offset assert when b is > 0.. rethink how you are rendering stuff
+#define glDrawElementsBaseVertex(p, i, f, o, b) glDrawElements( p, i, f, o)
+#define glDrawElementsInstancedBaseVertex(p, i, f, o, c, b) glDrawElementsInstanced( p, i, f, o, c)
+#define glDrawBuffer
+#define glTexImage2DMultisample(a1, a2, a3, a4, a5, a6) PEN_ASSERT(0)
 
 #else
 #ifdef __linux__

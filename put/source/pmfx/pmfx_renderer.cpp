@@ -1285,7 +1285,7 @@ namespace put
 
             build_cmd.append(" -actions configs");
 
-            system(build_cmd.c_str());
+            PEN_SYSTEM(build_cmd.c_str());
         }
 
         void pmfx_config_hotload(std::vector<hash_id>& dirty)

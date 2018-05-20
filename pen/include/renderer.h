@@ -6,19 +6,43 @@
 
 namespace pen
 {
-    // Simple C-Style generic rendering API wrapper
-    // Currently implementations in Direct3D11 and OpenGL 3.1+
+    // Simple C-Style generic rendering API wrapper, with a dedicated dispatch thread.
+    // Currently implementations are in Direct3D11 (win32), OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios)
+    
     // Public API used by the user thread will store function call arguments in a command buffer
     // Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
     // command buffer will be consumed passing arguments to the direct:: functions.
 
+    enum renderer_caps
+    {
+        CAPS_TEXTURE_MULTISAMPLE    = 1<<0,
+        CAPS_DEPTH_CLAMP            = 1<<1,
+        CAPS_GPU_TIMER              = 1<<2,
+        CAPS_COMPUTE                = 1<<3,
+        CAPS_TEX_FORMAT_BC1         = 1<<32,
+        CAPS_TEX_FORMAT_BC2         = 1<<33,
+        CAPS_TEX_FORMAT_BC3         = 1<<34,
+        CAPS_TEX_FORMAT_BC4         = 1<<35,
+        CAPS_TEX_FORMAT_BC5         = 1<<36
+    };
+    
+    struct renderer_info
+    {
+        const c8* api_version;
+        const c8* shader_version;
+        const c8* renderer;
+        const c8* vendor;
+        
+        u64 caps;
+    };
+    
     enum special_values
     {
         BACK_BUFFER_RATIO = (u32)-1,
         MAX_MRT           = 8,
         CUBEMAP_FACES     = 6
     };
-
+    
     enum e_clear_types
     {
         CLEAR_F32,
@@ -288,14 +312,12 @@ namespace pen
         float padding_0, padding_1;
     };
 
-    // Threading
-
-    // runs on its own thread - will wait for jobs flagged by semaphone
-    PEN_TRV renderer_thread_function(void* params);
-
-    u32       renderer_create_clear_state(const clear_state& cs);
-    const c8* renderer_get_shader_platform();
-    bool      renderer_viewport_vup();
+    //
+    
+    PEN_TRV                 renderer_thread_function(void* params);
+    const c8*               renderer_get_shader_platform();
+    bool                    renderer_viewport_vup();
+    const renderer_info&    renderer_get_info();
 
     // resource management
     void renderer_realloc_resource(u32 i, u32 domain);
@@ -303,6 +325,7 @@ namespace pen
     // Public API called by user thread
 
     // clears
+    u32  renderer_create_clear_state(const clear_state& cs);
     void renderer_clear(u32 clear_state_index);
     void renderer_clear_cube(u32 clear_state_index, u32 colour_face, u32 depth_face);
 

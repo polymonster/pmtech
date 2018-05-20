@@ -502,14 +502,6 @@ namespace pen
         // this is a dedicated thread which stays for the duration of the program
         thread_semaphore_signal(p_continue_semaphore, 1);
 
-        // todo ove osx and windows onto the window thread
-#ifdef WIN32
-        pen::default_thread_info thread_info;
-        thread_info.flags = 0;
-
-        pen::thread_create_default_jobs(thread_info);
-#endif
-
         for (;;)
         {
             if (thread_semaphore_try_wait(p_consume_semaphore))
@@ -539,12 +531,11 @@ namespace pen
                 thread_sleep_ms(1);
             }
 
-            if (thread_semaphore_try_wait(p_job_thread_info->p_sem_exit))
-            {
-                // exit
-                break;
-            }
+#ifndef WIN32
             if(!pen::os_update())
+                break;
+#else
+            if (thread_semaphore_try_wait(p_job_thread_info->p_sem_exit))
                 break;
 #endif
         }

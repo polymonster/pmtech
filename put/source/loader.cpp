@@ -348,7 +348,7 @@ namespace put
 
         build_cmd.append(" -actions textures");
 
-        system(build_cmd.c_str());
+        PEN_SYSTEM(build_cmd.c_str());
     }
 
     void texture_hotload(std::vector<hash_id>& dirty)
