@@ -1794,8 +1794,6 @@ namespace pen
         k_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
         k_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
         k_renderer_info.caps |= PEN_CAPS_COMPUTE;
-
-        return PEN_ERR_OK;
     }
 
     const renderer_info& renderer_get_info()
