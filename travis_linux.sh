@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-cd put/bullet
+cd third_party/bullet
 ls
 ../../tools/premake/premake5_linux gmake
 cd build/linux

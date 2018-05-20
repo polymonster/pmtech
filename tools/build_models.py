@@ -266,11 +266,23 @@ for root, dirs, files in os.walk(model_dir):
         helpers.output_file = helpers.pmm_file()
 
         base_out_file = os.path.join(out_dir, fnoext)
+        depends_dest = base_out_file.replace(helpers.bin_dir, "")
 
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
         if file.endswith(".obj"):
+            # add dependency to these scripts
+            dependency_inputs = [os.path.join(os.getcwd(), f)]
+            dependency_outputs = [depends_dest + ".pmm"]
+
+            file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
+            dependencies_directory["files"].append(file_info)
+
+            if dependencies.check_up_to_date(dependencies_directory, depends_dest + ".pmm"):
+                print(f + " already up to date")
+                continue
+
             parse_obj.write_geometry(file, root)
             helpers.output_file.write(base_out_file + ".pmm")
         elif file.endswith(".dae"):
@@ -286,8 +298,6 @@ for root, dirs, files in os.walk(model_dir):
             animations = []
             image_list = []
 
-            depends_dest = base_out_file.replace(helpers.bin_dir, "")
-
             # add dependency to these scripts
             dependency_inputs = [os.path.join(os.getcwd(), f)]
             dependency_outputs = [depends_dest + ".pmm", depends_dest + ".pma"]
@@ -300,7 +310,6 @@ for root, dirs, files in os.walk(model_dir):
                           "parse_scene.py"]
 
             for lib_file in models_lib:
-                print(main_file.replace("build_models.py", lib_file))
                 dependency_inputs.append(main_file.replace("build_models.py", lib_file))
 
             file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)

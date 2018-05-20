@@ -36,7 +36,7 @@ elif platform_name == "linux":
 # copy fmod dll / dylib
 print("copying dynamic library to binary dir")
 
-src_file = os.path.join(pmtech_dir, "pen", "third_party", "fmod", "lib", platform_name, dll)
+src_file = os.path.join(pmtech_dir, "third_party", "fmod", "lib", platform_name, dll)
 shutil.copy(src_file, bin_dir)
 
 # copy audio files
