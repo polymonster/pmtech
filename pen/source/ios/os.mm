@@ -2,34 +2,35 @@
 #import <GLKit/GLKit.h>
 #import <QuartzCore/QuartzCore.h>
 
-#include <OpenGLES/ES2/gl.h>
-#include <OpenGLES/ES2/glext.h>
-
 #include "os.h"
 #include "pen.h"
 #include "threads.h"
+#include "renderer.h"
+#include "timer.h"
 
-CAEAGLLayer* _eaglLayer;
-EAGLContext* _gl_context;
+namespace
+{
+    CAEAGLLayer* _eaglLayer;
+    EAGLContext* _gl_context;
+}
+
+namespace pen
+{
+    void renderer_init(void* user_data);
+}
+
+void pen_gl_swap_buffers()
+{
+    //not required gles
+}
+
+void pen_make_gl_context_current()
+{
+    //not required gles
+}
 
 extern pen::window_creation_params pen_window;
 extern PEN_TRV pen::user_entry( void* params );
-
-void create_context( )
-{
-    //EAGLRenderingAPI api = kEAGLRenderingAPIOpenGLES2;
-    //_gl_context = [[EAGLContext alloc] initWithAPI:api];
-}
-
-void pen_make_gl_context_current( )
-{
-    //[_gl_context makeCurrentContext];
-}
-
-void pen_gl_swap_buffers( )
-{
-    //[_gl_context flushBuffer];
-}
 
 @interface gl_app_delegate : UIResponder <UIApplicationDelegate, GLKViewDelegate, GLKViewControllerDelegate>
 
@@ -53,7 +54,7 @@ void pen_gl_swap_buffers( )
     [self.window makeKeyAndVisible];
     
     
-    EAGLContext * context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    EAGLContext * context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
     GLKView *view = [[GLKView alloc] initWithFrame:window_rect];
     view.context = context;
     view.delegate = self;
@@ -69,14 +70,16 @@ void pen_gl_swap_buffers( )
     viewController.preferredFramesPerSecond = 60;
     self.window.rootViewController = viewController;
     
+    pen::timer_system_intialise();
+    
     // Override point for customization after application launch.
     return YES;
 }
 
-- (void)glkView:(GLKView *)view drawInRect:(CGRect)rect {
-    
-    glClearColor(1.0, 0.0, 1.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+- (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
+{
+    // render thread
+    pen::renderer_init(nullptr);
 }
 
 - (void)render:(CADisplayLink*)displayLink {
@@ -111,15 +114,32 @@ void pen_gl_swap_buffers( )
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
 
-
 @end
 
 int main(int argc, char * argv[])
 {
-    NSString* cunt = NSStringFromClass([gl_app_delegate class]);
+    NSString* str = NSStringFromClass([gl_app_delegate class]);
     
     @autoreleasepool
     {
-        return UIApplicationMain(argc, argv, nil, cunt );
+        return UIApplicationMain(argc, argv, nil, str );
+    }
+}
+
+namespace pen
+{
+    bool os_update( )
+    {
+        static bool thread_started = false;
+        if(!thread_started)
+        {
+            //audio, user thread etc
+            pen::default_thread_info thread_info;
+            thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD;
+            pen::thread_create_default_jobs( thread_info );
+            thread_started = true;
+        }
+        
+        return true;
     }
 }

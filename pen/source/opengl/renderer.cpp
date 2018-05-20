@@ -403,16 +403,16 @@ namespace pen
         GLuint type;
 
         union {
-            clear_state_internal           clear_state;
-            input_layout*                  input_layout;
-            raster_state                   raster_state;
-            depth_stencil_creation_params* depth_stencil;
-            blend_creation_params*         blend_state;
-            GLuint                         handle;
-            texture_info                   texture;
-            render_target                  render_target;
-            sampler_creation_params*       sampler_state;
-            shader_program*                shader_program;
+            clear_state_internal            clear_state;
+            pen::input_layout*              input_layout;
+            pen::raster_state               raster_state;
+            depth_stencil_creation_params*  depth_stencil;
+            blend_creation_params*          blend_state;
+            GLuint                          handle;
+            texture_info                    texture;
+            render_target                   render_target;
+            sampler_creation_params*        sampler_state;
+            pen::shader_program*            shader_program;
         };
     };
     resource_allocation resource_pool[MAX_RENDERER_RESOURCES];

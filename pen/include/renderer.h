@@ -187,7 +187,7 @@ namespace pen
         void* data;
         u32   data_size;
         u32   block_size;
-        u32   pixels_per_block; // pixels per block in each axis bc is 4x4 blocks so pixels_per_block = 4 not 16
+        u32   pixels_per_block; // pixels per block in each axis, bc is 4x4 blocks so pixels_per_block = 4 not 16
         u32   collection_type;
     };
 

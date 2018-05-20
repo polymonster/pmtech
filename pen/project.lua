@@ -20,10 +20,11 @@ project "pen"
 		"../third_party/str/*.cpp", 
 	}
 	
-	if platform_dir == "osx" then
+	if platform_dir == "osx" or platform_dir == "ios" then
 	files 
 	{  
-		"source/posix/**.cpp"
+		"source/posix/**.cpp",
+		"source/mach/**.cpp"
 	}
 	end
 
