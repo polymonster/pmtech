@@ -1778,11 +1778,6 @@ namespace pen
     {
         // todo renderer caps
 
-        str_glsl_version = (const c8*)glsl_version;
-        str_gl_version   = (const c8*)gl_version;
-        str_gl_renderer  = (const c8*)gl_renderer;
-        str_gl_vendor    = (const c8*)gl_vendor;
-
         k_renderer_info.shader_version = str_hlsl_version.c_str();
         k_renderer_info.api_version    = str_d3d_version.c_str();
         k_renderer_info.renderer       = str_d3d_renderer.c_str();
