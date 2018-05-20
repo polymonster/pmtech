@@ -7,26 +7,26 @@ if _ACTION == "vs2017" or _ACTION == "vs2015" then
 end
 -- Project	
 project "put"
-	location ("build\\" .. platform_dir)
+	location ("build/" .. platform_dir)
 	kind "StaticLib"
 	language "C++"
 	
 	libdirs
 	{ 
 		"../pen/lib/" .. platform_dir,
-		"../put/bullet/lib/" .. bullet_lib_dir,
+		"../third_party/bullet/lib/" .. bullet_lib_dir,
 	}
 	
 	includedirs
 	{
-		"..\\pen\\include\\",
-		"..\\pen\\include\\common", 
-		"..\\pen\\include\\" .. platform_dir,
-		"..\\pen\\include\\" .. renderer_dir,
+		"../pen/include/",
+		"../pen/include/common", 
+		"../pen/include/" .. platform_dir,
+		"../pen/include/" .. renderer_dir,
 		  
-		"..\\put\\bullet\\src\\",
-		"..\\pen\\third_party\\imgui",
-		"..\\pen\\third_party",
+		"../third_party/bullet/src/",
+		"../third_party/imgui",
+		"../third_party",
 	}
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
@@ -36,11 +36,11 @@ project "put"
 					
 	files 
 	{ 
-		"include\\**.h", 
-		"source\\**.cpp", 
+		"include/**.h", 
+		"source/**.cpp", 
 		
-		"..\\pen\\third_party\\imgui\\*.cpp",
-		"..\\pen\\third_party\\imgui\\*.h",
+		"../third_party/imgui/*.cpp",
+		"../third_party/imgui/*.h",
 	}
 	includedirs { "include" }
 	
