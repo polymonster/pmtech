@@ -47,7 +47,7 @@ end
 function add_ios_files( project_name, root_directory )
 files 
 { 
-	root_directory .. "/" .. project_name .. "/ios_files/**.*"
+	root_directory .. "/build/ios/ios_files/**.*"
 }
 
 excludes 
@@ -107,7 +107,7 @@ project ( project_name )
 	
 	if platform_dir == "win32" then add_win32_links()
 	elseif platform_dir == "osx" then add_osx_links()
-	elseif platform_dir == "ios" then 
+	elseif platform_dir == "ios" then
 		add_ios_links() 
 		add_ios_files( project_name, root_directory )
 	elseif platform_dir == "linux" then add_linux_links()

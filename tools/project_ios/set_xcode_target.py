@@ -1,5 +1,6 @@
 import os
 
+
 def set_xcode_target(xcode_file):
     print("updating " + xcode_file)
     f = open(xcode_file, 'r')
@@ -9,8 +10,10 @@ def set_xcode_target(xcode_file):
     f = open(xcode_file, 'w')
     contents = contents.replace("ARCHS = \"$(NATIVE_ARCH_ACTUAL)\";\n",
                                 "ARCHS = \"$(NATIVE_ARCH_ACTUAL)\";\n SDKROOT = iphoneos10.2;\n")
+
     f.write(contents)
     f.close()
+
 
 for root, dirs, files in os.walk("../"):
     for file in files:
