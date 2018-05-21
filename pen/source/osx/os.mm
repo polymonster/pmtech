@@ -24,7 +24,7 @@ extern PEN_TRV pen::user_entry( void* params );
 
 namespace pen
 {
-    void renderer_init(void*);
+    void renderer_init(void*, bool);
 }
 namespace
 {
@@ -416,7 +416,7 @@ int main(int argc, char **argv)
     pen::timer_system_intialise();
     
     //enters render loop and wait for jobs, will call os_update
-    pen::renderer_init(nullptr);
+    pen::renderer_init(nullptr, true);
 }
 
 namespace pen
@@ -481,6 +481,11 @@ namespace pen
         }
         
         return true;
+    }
+    
+    const c8* os_path_for_resource( const c8* filename )
+    {
+        return filename;
     }
     
     void os_set_cursor_pos( u32 client_x, u32 client_y )

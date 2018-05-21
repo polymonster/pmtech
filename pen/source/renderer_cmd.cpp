@@ -612,7 +612,7 @@ namespace pen
         g_resolve_resources.constant_buffer = renderer_create_buffer(bcp);
     }
 
-    void renderer_init(void* user_data)
+    void renderer_init(void* user_data, bool wait_for_jobs)
     {
         if (!p_consume_semaphore)
             p_consume_semaphore = thread_semaphore_create(0, 1);
@@ -633,7 +633,8 @@ namespace pen
 
         init_resolve_resources();
 
-        //renderer_wait_for_jobs();
+        if(wait_for_jobs)
+            renderer_wait_for_jobs();
     }
 
     PEN_TRV renderer_thread_function(void* params)
@@ -645,7 +646,7 @@ namespace pen
         p_consume_semaphore  = p_job_thread_info->p_sem_consume;
         p_continue_semaphore = p_job_thread_info->p_sem_continue;
 
-        renderer_init(job_params->user_data);
+        renderer_init(job_params->user_data, true);
 
         return PEN_THREAD_OK;
     }
