@@ -1,0 +1,45 @@
+{
+    "files": [
+        {
+            "data/textures/defaults/albedo.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/textures/defaults/albedo.png",
+                    "timestamp": 1520722371.0199492
+                }
+            ]
+        },
+        {
+            "data/textures/defaults/spec.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/textures/defaults/spec.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/defaults/black.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/textures/defaults/black.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/defaults/normal.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/textures/defaults/normal.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/defaults/white.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/textures/defaults/white.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        }
+    ],
+    "dir": "/Users/alex.dixon/dev/pmtech/examples/bin/osx/data/textures/defaults"
+}

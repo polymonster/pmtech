@@ -17,16 +17,17 @@ namespace
 namespace pen
 {
     void renderer_init(void* user_data);
+    bool renderer_dispatch();
 }
 
 void pen_gl_swap_buffers()
 {
-    //not required gles
+    [_gl_context presentRenderbuffer:GL_RENDERBUFFER];
 }
 
 void pen_make_gl_context_current()
 {
-    //not required gles
+    [EAGLContext setCurrentContext:_gl_context];
 }
 
 extern pen::window_creation_params pen_window;
@@ -54,10 +55,13 @@ extern PEN_TRV pen::user_entry( void* params );
     [self.window makeKeyAndVisible];
     
     
-    EAGLContext * context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
+    _gl_context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
     GLKView *view = [[GLKView alloc] initWithFrame:window_rect];
-    view.context = context;
+    view.context = _gl_context;
     view.delegate = self;
+    view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
+    view.drawableStencilFormat = GLKViewDrawableStencilFormat8;
+    
     [self.window addSubview:view];
     
     view.enableSetNeedsDisplay = NO;
@@ -79,7 +83,15 @@ extern PEN_TRV pen::user_entry( void* params );
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
 {
     // render thread
-    pen::renderer_init(nullptr);
+    static bool init = true;
+    if(init)
+    {
+        init = false;
+        pen::renderer_init(nullptr);
+    }
+    
+    pen::renderer_dispatch();
+    pen::os_update();
 }
 
 - (void)render:(CADisplayLink*)displayLink {
@@ -128,6 +140,17 @@ int main(int argc, char * argv[])
 
 namespace pen
 {
+    const c8* os_path_for_resource( const c8* filename )
+    {
+        NSString *ns_filename = [[NSString alloc] initWithUTF8String:filename];
+        
+        NSString* test = [[NSBundle mainBundle] pathForResource: ns_filename ofType: nil];
+        
+        [ns_filename release];
+        
+        return test.UTF8String;
+    }
+    
     bool os_update( )
     {
         static bool thread_started = false;
@@ -139,7 +162,7 @@ namespace pen
             pen::thread_create_default_jobs( thread_info );
             thread_started = true;
         }
-        
+
         return true;
     }
 }

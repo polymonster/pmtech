@@ -1,0 +1,121 @@
+{
+    "files": [
+        {
+            "data/textures/metall_1.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/metall_1.tga",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/metall_2.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/metall_2.tga",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/METALL_3.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/METALL_3.tga",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/MET_12.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/MET_12.tga",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/BlueChecker01.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/BlueChecker01.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/01.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/01.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/02.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/02.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/met_12S.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/met_12S.tga",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/test_normal.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/test_normal.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/met_12N.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/met_12N.tga",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/RedChecker01.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/RedChecker01.png",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/textures/cubemap.dds": [
+                {
+                    "name": "assets/textures/cubemap.cube/posx.jpg",
+                    "timestamp": 1252874280.0
+                },
+                {
+                    "name": "assets/textures/cubemap.cube/negx.jpg",
+                    "timestamp": 1252874336.0
+                },
+                {
+                    "name": "assets/textures/cubemap.cube/posy.jpg",
+                    "timestamp": 1252874320.0
+                },
+                {
+                    "name": "assets/textures/cubemap.cube/negy.jpg",
+                    "timestamp": 1252874308.0
+                },
+                {
+                    "name": "assets/textures/cubemap.cube/posz.jpg",
+                    "timestamp": 1252874268.0
+                },
+                {
+                    "name": "assets/textures/cubemap.cube/negz.jpg",
+                    "timestamp": 1252874290.0
+                }
+            ]
+        }
+    ],
+    "dir": "/Users/alex.dixon/dev/pmtech/examples/bin/osx/data/textures"
+}

@@ -1,0 +1,21 @@
+{
+    "dir": "bin/osx/data/fonts",
+    "files": [
+        {
+            "data/fonts/fontawesome-webfont.ttf": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/fonts/fontawesome-webfont.ttf",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        },
+        {
+            "data/fonts/cousine-regular.ttf": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/fonts/cousine-regular.ttf",
+                    "timestamp": 1514655469.0
+                }
+            ]
+        }
+    ]
+}

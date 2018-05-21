@@ -1,0 +1,97 @@
+{
+    "files": [
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../tools/build_shaders.py",
+            "timestamp": 1526559269.1128702
+        },
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../tools/_shader_macros.h",
+            "timestamp": 1523207421.7553008
+        },
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/shaders/imgui.shp",
+            "timestamp": 1520709419.1020741
+        }
+    ],
+    "techniques": [
+        {
+            "name": "default",
+            "vs_file": "default.vsc",
+            "ps_file": "default.psc",
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 8,
+                    "element_size": 4,
+                    "num_elements": 2,
+                    "offset": 0
+                },
+                {
+                    "name": "tex_coord",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 8,
+                    "element_size": 4,
+                    "num_elements": 2,
+                    "offset": 8
+                },
+                {
+                    "name": "colour",
+                    "semantic_index": 0,
+                    "semantic_id": 6,
+                    "size": 4,
+                    "element_size": 1,
+                    "num_elements": 4,
+                    "offset": 16
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "colour",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "tex_coord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 8,
+                    "element_size": 4,
+                    "num_elements": 2,
+                    "offset": 32
+                }
+            ]
+        }
+    ],
+    "texture_samplers": [
+        {
+            "name": "tex",
+            "data_type": "float4",
+            "fragments": 1,
+            "type": "texture_2d",
+            "location": 0
+        }
+    ],
+    "cbuffers": [
+        {
+            "name": "per_pass_vs",
+            "location": 0
+        }
+    ]
+}

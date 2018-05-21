@@ -27,6 +27,7 @@ a_u8 g_window_resize(0);
 namespace
 {
     static u64 k_frame = 0;
+    GLint      k_bb_fbo = -1;
 
 #define GL_DEBUG_LEVEL 2
 
@@ -88,6 +89,7 @@ namespace
     CHECK_GL_ERROR;
 #else
 #define CHECK_GL_ERROR
+#define CHECK_CALL(C) C
 #endif
 } // namespace
 
@@ -1300,8 +1302,8 @@ namespace pen
         if (use_back_buffer)
         {
             g_current_state.backbuffer_bound = true;
-
-            CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+            
+            CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, k_bb_fbo));
             CHECK_CALL(glDrawBuffer(GL_BACK));
             return;
         }
@@ -1965,8 +1967,15 @@ namespace pen
         k_renderer_info.vendor         = str_gl_vendor.c_str();
 
 #ifdef PEN_GLES3
-        // gles doesnt have caps
+        //gles base fbo is not 0
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &k_bb_fbo);
+        
+        // gles doesnt have caps yet, anything in caps is unsupported
 #else
+        // opengl binds 0 as default
+        k_bb_fbo = 0;
+        
+        // opengl caps
         k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
         k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
         k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC3;

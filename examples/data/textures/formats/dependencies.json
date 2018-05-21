@@ -1,0 +1,101 @@
+{
+    "files": [
+        {
+            "data/textures/formats/texfmt_bc3.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc3.png",
+                    "timestamp": 1519333999.343418
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_bc2.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc2.png",
+                    "timestamp": 1519333999.3430004
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_bc1.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc1.png",
+                    "timestamp": 1519333999.3393824
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_bc5.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc5.png",
+                    "timestamp": 1519333999.345258
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_bc4.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc4.png",
+                    "timestamp": 1519333999.34474
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_bc6.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc6.png",
+                    "timestamp": 1519333999.345914
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_bc7.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc7.png",
+                    "timestamp": 1519333999.3465831
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_bc1n.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc1n.png",
+                    "timestamp": 1519333999.3424983
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_rgba8.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_rgba8.png",
+                    "timestamp": 1519333999.347799
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_bc3n.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_bc3n.png",
+                    "timestamp": 1519333999.3443792
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_lumi.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_lumi.png",
+                    "timestamp": 1519333999.3470552
+                }
+            ]
+        },
+        {
+            "data/textures/formats/texfmt_rgb8.dds": [
+                {
+                    "name": "/Users/alex.dixon/dev/pmtech/examples/assets/textures/formats/texfmt_rgb8.png",
+                    "timestamp": 1519333999.3474257
+                }
+            ]
+        }
+    ],
+    "dir": "/Users/alex.dixon/dev/pmtech/examples/bin/osx/data/textures/formats"
+}

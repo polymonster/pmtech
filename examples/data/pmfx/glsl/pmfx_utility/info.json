@@ -1,0 +1,1501 @@
+{
+    "files": [
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../tools/build_shaders.py",
+            "timestamp": 1526559269.1128702
+        },
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../tools/_shader_macros.h",
+            "timestamp": 1523207421.7553008
+        },
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/shaders/pmfx_utility.shp",
+            "timestamp": 1526134320.045969
+        },
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/shaders/libs/lighting.slib",
+            "timestamp": 1518867539.0913112
+        },
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/shaders/libs/skinning.slib",
+            "timestamp": 1514655469.0
+        },
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/shaders/libs/globals.slib",
+            "timestamp": 1525697470.9259396
+        },
+        {
+            "name": "/Users/alex.dixon/dev/pmtech/examples/../assets/shaders/libs/maths.slib",
+            "timestamp": 1524408705.9852366
+        }
+    ],
+    "techniques": [
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "constant_colour",
+            "ps_file": "constant_colour.psc",
+            "vs_file": "constant_colour.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "diffuse",
+            "ps_file": "diffuse.psc",
+            "vs_file": "diffuse.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "vertex_normals",
+            "ps_file": "vertex_normals.psc",
+            "vs_file": "vertex_normals.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                },
+                {
+                    "name": "blend_indices",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 80
+                },
+                {
+                    "name": "blend_weights",
+                    "semantic_index": 5,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 96
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "diffuse_skinned",
+            "ps_file": "diffuse_skinned.psc",
+            "vs_file": "diffuse_skinned.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "cubemap",
+            "ps_file": "cubemap.psc",
+            "vs_file": "cubemap.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "volume_texture",
+            "ps_file": "volume_texture.psc",
+            "vs_file": "volume_texture.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "volume_sdf",
+            "ps_file": "volume_sdf.psc",
+            "vs_file": "volume_sdf.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "shadow_sdf",
+            "ps_file": "shadow_sdf.psc",
+            "vs_file": "shadow_sdf.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "area_box_light",
+            "ps_file": "area_box_light.psc",
+            "vs_file": "area_box_light.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "index",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                }
+            ],
+            "name": "picking",
+            "ps_file": "picking.psc",
+            "vs_file": "picking.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                },
+                {
+                    "name": "blend_indices",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 80
+                },
+                {
+                    "name": "blend_weights",
+                    "semantic_index": 5,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 96
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "index",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                }
+            ],
+            "name": "picking_skinned",
+            "ps_file": "picking_skinned.psc",
+            "vs_file": "picking_skinned.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [
+                {
+                    "name": "world_matrix_0",
+                    "semantic_index": 6,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_matrix_1",
+                    "semantic_index": 7,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "world_matrix_2",
+                    "semantic_index": 8,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "world_matrix_3",
+                    "semantic_index": 9,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "user_data",
+                    "semantic_index": 10,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                },
+                {
+                    "name": "user_data2",
+                    "semantic_index": 11,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 80
+                }
+            ],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "index",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                }
+            ],
+            "name": "picking_instanced",
+            "ps_file": "picking_instanced.psc",
+            "vs_file": "picking_instanced.vsc"
+        },
+        {
+            "vs_inputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 1,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 48
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 64
+                }
+            ],
+            "instance_inputs": [],
+            "vs_outputs": [
+                {
+                    "name": "position",
+                    "semantic_index": 0,
+                    "semantic_id": 0,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 0
+                },
+                {
+                    "name": "world_pos",
+                    "semantic_index": 0,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 16
+                },
+                {
+                    "name": "normal",
+                    "semantic_index": 1,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 32
+                },
+                {
+                    "name": "tangent",
+                    "semantic_index": 2,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 44
+                },
+                {
+                    "name": "bitangent",
+                    "semantic_index": 3,
+                    "semantic_id": 2,
+                    "size": 12,
+                    "element_size": 4,
+                    "num_elements": 3,
+                    "offset": 56
+                },
+                {
+                    "name": "texcoord",
+                    "semantic_index": 4,
+                    "semantic_id": 2,
+                    "size": 16,
+                    "element_size": 4,
+                    "num_elements": 4,
+                    "offset": 68
+                }
+            ],
+            "name": "volume_raster_albedo",
+            "ps_file": "volume_raster_albedo.psc",
+            "vs_file": "volume_raster_albedo.vsc"
+        }
+    ],
+    "texture_samplers": [
+        {
+            "name": "diffuse_texture",
+            "data_type": "float4",
+            "fragments": 1,
+            "type": "texture_2d",
+            "location": 0
+        },
+        {
+            "name": "normal_texture",
+            "data_type": "float4",
+            "fragments": 1,
+            "type": "texture_2d",
+            "location": 1
+        },
+        {
+            "name": "specular_texture",
+            "data_type": "float4",
+            "fragments": 1,
+            "type": "texture_2d",
+            "location": 2
+        },
+        {
+            "name": "cubemap_texture",
+            "data_type": "float4",
+            "fragments": 1,
+            "type": "texture_cube",
+            "location": 3
+        },
+        {
+            "name": "volume_texture",
+            "data_type": "float4",
+            "fragments": 1,
+            "type": "texture_3d",
+            "location": 4
+        }
+    ],
+    "cbuffers": [
+        {
+            "name": "per_pass_view",
+            "location": 0
+        },
+        {
+            "name": "per_draw_call",
+            "location": 1
+        },
+        {
+            "name": "per_pass_lights",
+            "location": 3
+        },
+        {
+            "name": "per_pass_shadow",
+            "location": 4
+        },
+        {
+            "name": "per_pass_shadow_distance_fields",
+            "location": 5
+        },
+        {
+            "name": "per_pass_area_lights",
+            "location": 6
+        },
+        {
+            "name": "skinning_info",
+            "location": 2
+        }
+    ]
+}
