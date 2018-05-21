@@ -10,13 +10,12 @@
 
 namespace
 {
-    CAEAGLLayer* _eaglLayer;
     EAGLContext* _gl_context;
 }
 
 namespace pen
 {
-    void renderer_init(void* user_data);
+    void renderer_init(void*, bool);
     bool renderer_dispatch();
 }
 
@@ -87,7 +86,7 @@ extern PEN_TRV pen::user_entry( void* params );
     if(init)
     {
         init = false;
-        pen::renderer_init(nullptr);
+        pen::renderer_init(nullptr, false);
     }
     
     pen::renderer_dispatch();

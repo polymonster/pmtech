@@ -5,6 +5,7 @@ import dependencies
 import time
 import json
 import build
+import sys
 
 stats_start = time.time()
 
@@ -103,7 +104,7 @@ print("-------------------------------------------------------------------------
 print("pmtech texture compression and mip map generation ------------------------------")
 print("--------------------------------------------------------------------------------")
 
-platform_name = build.get_platform_name()
+platform_name = build.get_platform_name_args(sys.argv)
 
 config = open("build_config.json")
 build_config = json.loads(config.read())

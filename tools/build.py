@@ -9,6 +9,18 @@ import time
 import platform
 
 
+def get_platform_name_args(args):
+    for i in range(1, len(args)):
+        if "-platform" in args[i]:
+            return args[i + 1]
+    plat = "win32"
+    if os.name == "posix":
+        plat = "osx"
+        if platform.system() == "Linux":
+            plat = "linux"
+    return plat
+
+
 def get_platform_name():
     plat = "win32"
     if os.name == "posix":
@@ -48,6 +60,7 @@ def parse_args(args):
         if sys.argv[index] == "-help":
             display_help()
         if sys.argv[index] == "-platform":
+
             platform_name = sys.argv[index+1]
             index += 1
         if sys.argv[index] == "-ide":
@@ -122,9 +135,12 @@ def get_platform_info():
     project_options = ide + " --renderer=" + renderer + " " + extra_target_info
 
     if renderer == "dx11":
-        shader_options = "hlsl win32"
+        shader_options = "-shader_platform hlsl"
     elif renderer == "opengl":
-        shader_options = "glsl osx"
+        shader_options = "-shader_platform glsl -platform osx"
+
+    if platform_name == "ios":
+        shader_options = "-shader_platform glsl -platform ios"
 
     data_dir = os.path.join("bin", platform_name, "data")
 
@@ -227,6 +243,8 @@ if __name__ == "__main__":
     get_platform_info()
     copy_steps = []
 
+    common_args = " -platform " + platform_name
+
     for action in execute_actions:
         if action == "clean":
             built_dirs = [os.path.join("..", "pen", "build", platform_name),
@@ -242,19 +260,20 @@ if __name__ == "__main__":
         elif action == "shaders":
             build_steps.append(python_exec + " " + shader_script + " " + shader_options)
         elif action == "models":
-            build_steps.append(python_exec + " " + models_script)
+            build_steps.append(python_exec + " " + models_script + common_args)
         elif action == "textures":
-            build_steps.append(python_exec + " " + textures_script)
+            build_steps.append(python_exec + " " + textures_script + common_args)
         elif action == "audio":
-            build_steps.append(python_exec + " " + audio_script)
+            build_steps.append(python_exec + " " + audio_script + common_args)
         elif action == "fonts" or action == "configs":
             copy_steps.append(action)
 
     for step in build_steps:
         subprocess.check_call(step, shell=True)
 
-    for step in extra_build_steps:
-        subprocess.check_call(step, shell=True)
+    if "code" in execute_actions:
+        for step in extra_build_steps:
+            subprocess.check_call(step, shell=True)
 
     if len(copy_steps) > 0:
         print("--------------------------------------------------------------------------------")

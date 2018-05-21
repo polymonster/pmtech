@@ -13,6 +13,7 @@ stats_start = time.time()
 
 root_dir = os.getcwd()
 
+shader_sub_platform = ""
 shader_platform = "hlsl"
 os_platform = build.get_platform_name()
 
@@ -22,8 +23,13 @@ if os_platform == "osx" or os_platform == "linux":
 for i in range(1, len(sys.argv)):
     if "-root_dir" in sys.argv[i]:
         os.chdir(sys.argv[i+1])
-    if "-platform" in sys.argv[i]:
+    if "-shader_platform" in sys.argv[i]:
         shader_platform = sys.argv[i+1]
+    if "-platform" in sys.argv[i]:
+        os_platform = sys.argv[i+1]
+
+if os_platform == "ios":
+    shader_sub_platform = "gles"
 
 root_dir = os.getcwd()
 
@@ -45,7 +51,7 @@ shader_source_dir = os.path.join(root_dir, "assets", "shaders")
 
 pmtech_shaders = os.path.join(pmtech_dir, "assets", "shaders")
 
-shader_build_dir = os.path.join(root_dir,"bin", os_platform, "data", "pmfx", shader_platform)
+shader_build_dir = os.path.join(root_dir, "bin", os_platform, "data", "pmfx", shader_platform)
 
 # create shaders dir
 if not os.path.exists(shader_build_dir):
@@ -452,6 +458,19 @@ def generate_output_assignment(io_elements, local_var, suffix):
     return assign_source
 
 
+def get_preamble():
+    insert = ""
+    if shader_sub_platform == "gles":
+        insert += "#version 300 es\n"
+        insert += "#define GLSL\n"
+        insert += "#define GLES\n"
+        insert += "precision highp float;\n"
+    elif shader_platform == "glsl":
+        insert += "#version 330 core\n"
+        insert += "#define GLSL\n"
+    return insert
+
+
 def generate_glsl(
         source_filename, macros,
         vs_main, ps_main,
@@ -500,8 +519,7 @@ def generate_glsl(
 
     # start making vs shader code
     final_vs_source = "//" + shader_name + " " + technique_name + "\n"
-    final_vs_source += "#version 330 core\n"
-    final_vs_source += "#define GLSL\n"
+    final_vs_source += get_preamble()
     final_vs_source += macros
     final_vs_source += "\n\n"
 
@@ -564,8 +582,7 @@ def generate_glsl(
         ps_outputs, ps_output_semantics = parse_io_struct(ps_output_source)
 
         final_ps_source = "//" + shader_name + " " + technique_name + "\n"
-        final_ps_source += "#version 330 core\n"
-        final_ps_source += "#define GLSL\n"
+        final_ps_source += get_preamble()
         final_ps_source += macros
         final_ps_source += "\n\n"
 
