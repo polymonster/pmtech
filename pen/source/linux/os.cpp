@@ -6,6 +6,7 @@
 #include "pen.h"
 #include "threads.h"
 #include "timer.h"
+#include "types.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +19,7 @@ using namespace pen;
 
 namespace pen
 {
-    extern void renderer_init(void* user_data);
+    extern void renderer_init(void* user_data, bool wait_for_jobs);
 }
 
 // pen required externs
@@ -57,6 +58,7 @@ static int visual_attribs[] = {GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WI
 static bool ctx_error_occured = false;
 static int  ctx_error_handler(Display* dpy, XErrorEvent* ev)
 {
+    PEN_PRINTF("context error %i", ev->error_code);
     ctx_error_occured = true;
     return 0;
 }
@@ -74,12 +76,11 @@ int main(int argc, char* argv[])
     // Check glx version
     s32 glx_major, glx_minor = 0;
     glXQueryVersion(_display, &glx_major, &glx_minor);
-    // PEN_PRINTF("glx version %i.%i", glx_major, glx_minor);
+    //PEN_PRINTF("glx version %i.%i", glx_major, glx_minor);
 
     // glx setup
     const char* glxExts = glXQueryExtensionsString(_display, DefaultScreen(_display));
-
-    // PEN_PRINTF("%s", glxExts);
+    //PEN_PRINTF("%s", glxExts);
 
     ctx_error_occured                         = false;
     int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctx_error_handler);
@@ -122,27 +123,24 @@ int main(int argc, char* argv[])
 
     XStoreName(_display, _window, pen_window.window_title);
     XSelectInput(_display, _window,
-                 ExposureMask | StructureNotifyMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask |
-                     PointerMotionMask | PointerMotionHintMask | ButtonMotionMask | Button1MotionMask | Button2MotionMask |
-                     Button3MotionMask);
-    XMapWindow(_display, _window);
+                 ExposureMask | StructureNotifyMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask );
 
     // Create Gl Context
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
     glXCreateContextAttribsARB =
         (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte*)"glXCreateContextAttribsARB");
 
-    int context_attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 1, None};
+    int context_attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 0, None };
 
     _gl_context = glXCreateContextAttribsARB(_display, best_fbc, 0, True, context_attribs);
-
-    XSync(_display, False);
 
     if (ctx_error_occured || !_gl_context)
     {
         PEN_PRINTF("Error: OpenGL 3.1 Context Failed to create");
         return 1;
     }
+
+    XMapWindow(_display, _window);
 
     // Make current and init glew
     pen_make_gl_context_current();
@@ -159,7 +157,7 @@ int main(int argc, char* argv[])
     pen::timer_system_intialise();
 
     // inits renderer and loops in wait for jobs, calling os update
-    renderer_init(nullptr);
+    renderer_init(nullptr, true);
 
     // exit, kill other threads and wait
     pen::thread_terminate_jobs();
@@ -172,8 +170,23 @@ int main(int argc, char* argv[])
 
 namespace pen
 {
+    const c8* os_path_for_resource(const c8* filename)
+    {
+        return filename;
+    }
+
     bool os_update()
     {
+        static bool init_jobs = false;
+        if(!init_jobs)
+        {
+            //audio, user thread etc
+            pen::default_thread_info thread_info;
+            thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD;
+            pen::thread_create_default_jobs( thread_info );
+            init_jobs = true;
+        }
+
         while (XPending(_display) > 0)
         {
             XEvent event;
@@ -216,6 +229,13 @@ namespace pen
                 pen::input_set_mouse_pos(event.xmotion.x, event.xmotion.y);
             }
             break;
+            }
+
+            static bool pen_terminate_app = false;
+            if(pen_terminate_app)
+            {
+                if(pen::thread_terminate_jobs())
+                    return false;
             }
         }
 
