@@ -10,10 +10,11 @@
 
 extern a_u8 g_window_resize;
 
-//--------------------------------------------------------------------------------------
-// Entry point to the program. Initializes everything and goes into a message processing
-// loop. Idle time is used to render the scene.
-//--------------------------------------------------------------------------------------
+namespace pen
+{
+    void renderer_init(void* data);
+}
+
 struct window_params
 {
     HINSTANCE hinstance;
@@ -36,60 +37,58 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     pen::timer_system_intialise();
     HWND hwnd = (HWND)pen::window_get_primary_display_handle();
 
-    pen::default_thread_info thread_info;
-    thread_info.flags                = pen::PEN_CREATE_AUDIO_THREAD | pen::PEN_CREATE_RENDER_THREAD;
-    thread_info.render_thread_params = &hwnd;
+    pen::renderer_init((void*)&hwnd);
 
-    pen::thread_create_default_jobs(thread_info);
+    return 0;
+}
 
-    // Main message loop
-    MSG msg = {0};
-    while (1)
+extern pen::window_creation_params pen_window;
+namespace pen
+{
+    LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+    bool os_update()
     {
+        static bool init_jobs = true;
+        if (init_jobs)
+        {
+            pen::default_thread_info thread_info;
+            thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD;
+            pen::thread_create_default_jobs(thread_info);
+            init_jobs = false;
+        }
+
+        MSG msg = { 0 };
+
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
 
+        static bool terminate_app = false;
         if (WM_QUIT == msg.message)
+            terminate_app = true;
+
+        if (terminate_app)
         {
-            pen::thread_terminate_jobs();
-            break;
+            if (pen::thread_terminate_jobs())
+                return false;
         }
 
-        Sleep(1);
+        // continue updating
+        return true;
     }
 
-    return (INT)msg.wParam;
-}
-
-extern pen::window_creation_params pen_window;
-namespace pen
-{
-    //--------------------------------------------------------------------------------------
-    // Forward Declarations
-    //-------------------------------------------------------------------------------------
-    LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
-    //--------------------------------------------------------------------------------------
-    // Structs
-    //--------------------------------------------------------------------------------------
     struct window_params
     {
         HINSTANCE hinstance;
         int       cmdshow;
     };
 
-    //--------------------------------------------------------------------------------------
-    // Globals
-    //--------------------------------------------------------------------------------------
     HWND      g_hwnd      = nullptr;
     HINSTANCE g_hinstance = nullptr;
 
-    //--------------------------------------------------------------------------------------
-    // window init
-    //--------------------------------------------------------------------------------------
     u32 window_init(void* params)
     {
         window_params* wp = (window_params*)params;
@@ -151,9 +150,6 @@ namespace pen
         return S_OK;
     }
 
-    //--------------------------------------------------------------------------------------
-    // Called every time the application receives a message
-    //--------------------------------------------------------------------------------------
     void set_unicode_key(u32 key_index, bool down)
     {
         wchar_t buff[10];

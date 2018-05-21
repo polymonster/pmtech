@@ -63,5 +63,5 @@ function script_path()
 end
 
 function windows_sdk_version()
-	return "10.0.14393.0:10.1.0.0"
+	return "10.0.16299.0"
 end

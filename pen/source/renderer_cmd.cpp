@@ -536,19 +536,9 @@ namespace pen
             if (!renderer_dispatch())
                 pen::thread_sleep_us(100);
             
-#ifndef WIN32
             if (!pen::os_update())
                 break;
-#else
-            if (thread_semaphore_try_wait(p_job_thread_info->p_sem_exit))
-                break;
-#endif
         }
-
-#ifdef WIN32
-        thread_semaphore_signal(p_continue_semaphore, 1);
-        thread_semaphore_signal(p_job_thread_info->p_sem_terminated, 1);
-#endif
     }
 
     resolve_resources g_resolve_resources;
