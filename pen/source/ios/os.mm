@@ -139,6 +139,11 @@ int main(int argc, char * argv[])
 
 namespace pen
 {
+    void* window_get_primary_display_handle()
+    {
+        return nullptr;
+    }
+    
     const c8* os_path_for_resource( const c8* filename )
     {
         NSString *ns_filename = [[NSString alloc] initWithUTF8String:filename];

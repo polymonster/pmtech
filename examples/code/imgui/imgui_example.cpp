@@ -137,8 +137,6 @@ PEN_TRV pen::user_entry(void* params)
 
         pen::renderer_consume_cmd_buffer();
 
-        pen::audio_consume_command_buffer();
-
         // msg from the engine we want to terminate
         if (pen::thread_semaphore_try_wait(p_thread_info->p_sem_exit))
         {
