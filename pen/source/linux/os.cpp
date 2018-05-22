@@ -177,6 +177,7 @@ namespace pen
 
     s32 translate_mouse_button(s32 b)
     {
+        static f32 mw = 0.0f;
         switch(b)
         {
             case 1:
@@ -185,6 +186,12 @@ namespace pen
             return 1;
             case 2:
             return 2;
+            case 4:
+                pen::input_set_mouse_wheel(1.0f);
+            break;
+            case 5:
+                pen::input_set_mouse_wheel(-1.0f);
+            break;
         };
 
         return -1;
@@ -192,11 +199,20 @@ namespace pen
 
     u32 translate_key_sym(u32 k)
     {
-        if(k >= XK_KP_Space && k <= XK_KP_9)
-            return k;
+        // numerical keys
+        if(k >= XK_0 && k <= XK_9)
+            return PK_0 + (k - XK_0);
+
+        if(k >= XK_a && k <= XK_z)
+            return PK_A + (k - XK_a);
+
+        if(k >= XK_A && k <= XK_Z)
+            return PK_A + (k - XK_A);
 
         switch(k)
         {
+            // Misc
+            case XK_KP_Space: return PK_SPACE;
             case XK_BackSpace: return PK_BACK;
             case XK_Tab: return PK_TAB;
             case XK_Linefeed: return 0; //?
@@ -215,6 +231,7 @@ namespace pen
             case XK_Prior: return PK_PRIOR;
             case XK_Next: return PK_NEXT;
 
+            // F
             case XK_F1: return PK_F1;
             case XK_F2: return PK_F2;
             case XK_F3: return PK_F3;
@@ -225,9 +242,26 @@ namespace pen
             case XK_F8: return PK_F8;
             case XK_F9: return PK_F9;
             case XK_F10: return PK_F10;
-            
             case XK_F11: return PK_F11;
             case XK_F12: return PK_F12;
+
+            // Modifiers
+            case XK_Shift_L: return PK_SHIFT;
+            case XK_Shift_R: return PK_SHIFT;
+            case XK_Control_L: return PK_CONTROL;
+            case XK_Control_R: return PK_CONTROL;
+            case XK_Caps_Lock: return PK_CAPITAL;
+            case XK_Alt_L: return PK_MENU;
+            case XK_Alt_R: return PK_MENU;
+
+            // Keypad
+            case XK_KP_Equal: return PK_ADD;
+            case XK_KP_Multiply: return PK_MULTIPLY;
+            case XK_KP_Add: return PK_ADD;
+            case XK_KP_Separator: return PK_SEPARATOR;
+            case XK_KP_Subtract: return PK_SUBTRACT;
+            case XK_KP_Decimal: return PK_DECIMAL;
+            case XK_KP_Divide: return PK_DIVIDE;
         };
 
         return 0;
