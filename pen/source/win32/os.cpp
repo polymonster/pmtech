@@ -12,7 +12,7 @@ extern a_u8 g_window_resize;
 
 namespace pen
 {
-    void renderer_init(void* data);
+    void renderer_init(void*, bool);
 }
 
 struct window_params
@@ -37,7 +37,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     pen::timer_system_intialise();
     HWND hwnd = (HWND)pen::window_get_primary_display_handle();
 
-    pen::renderer_init((void*)&hwnd);
+    pen::renderer_init((void*)&hwnd, true);
 
     return 0;
 }
