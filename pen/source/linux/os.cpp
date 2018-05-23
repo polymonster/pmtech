@@ -12,6 +12,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 
@@ -63,6 +67,15 @@ static int  ctx_error_handler(Display* dpy, XErrorEvent* ev)
     return 0;
 }
 
+void users()
+{
+    static struct passwd *pw = getpwuid(getuid());
+    const char *homedir = pw->pw_dir;
+
+    pen_user_info.user_name = &homedir[6];:98
+    PEN_PRINTF(pen_user_info.user_name);
+}
+
 int main(int argc, char* argv[])
 {
     Visual*              visual;
@@ -76,11 +89,9 @@ int main(int argc, char* argv[])
     // Check glx version
     s32 glx_major, glx_minor = 0;
     glXQueryVersion(_display, &glx_major, &glx_minor);
-    //PEN_PRINTF("glx version %i.%i", glx_major, glx_minor);
 
     // glx setup
     const char* glxExts = glXQueryExtensionsString(_display, DefaultScreen(_display));
-    //PEN_PRINTF("%s", glxExts);
 
     ctx_error_occured                         = false;
     int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctx_error_handler);
@@ -108,8 +119,6 @@ int main(int argc, char* argv[])
 
     // Create window
     XVisualInfo* vi = glXGetVisualFromFBConfig(_display, best_fbc);
-
-    // PEN_PRINTF("visual info %i", vi);
 
     XSetWindowAttributes swa;
     Colormap             cmap;
@@ -154,6 +163,7 @@ int main(int argc, char* argv[])
     }
 
     // initilaise any generic systems
+    users();
     pen::timer_system_intialise();
 
     // inits renderer and loops in wait for jobs, calling os update

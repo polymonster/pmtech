@@ -16,7 +16,9 @@ extern pen::user_info pen_user_info;
 
 #ifdef __linux__
 #define get_mtime(s) s.st_mtime
+#define HOME_DIR "home"
 #else
+#define HOME_DIR "Users"
 #define get_mtime(s) s.st_mtimespec.tv_sec
 #endif
 
@@ -233,7 +235,7 @@ namespace pen
         static c8* dir_list[max_dir_depth];
 
         pen::string_format(default_dir[0], 1024, "/");
-        pen::string_format(default_dir[1], 1024, "Users");
+        pen::string_format(default_dir[1], 1024, HOME_DIR);
         pen::string_format(default_dir[2], 1024, "%s", pen_user_info.user_name);
 
         for (s32 i = 0; i < max_dir_depth; ++i)

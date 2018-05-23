@@ -27,8 +27,8 @@ namespace pen
 
     struct user_info
     {
-        const c8* user_name;
-        const c8* full_user_name;
+        const c8* user_name = nullptr;
+        const c8* full_user_name = nullptr;
     };
 
     extern PEN_TRV user_entry(void* params);
