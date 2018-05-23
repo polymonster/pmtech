@@ -72,7 +72,7 @@ void users()
     static struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
 
-    pen_user_info.user_name = &homedir[6];:98
+    pen_user_info.user_name = &homedir[6];
     PEN_PRINTF(pen_user_info.user_name);
 }
 
