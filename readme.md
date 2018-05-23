@@ -3,9 +3,9 @@
 Follow work in progress: 
 [Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
 
-A lightweight C++11 code base with powerful features that can be used for games, 3d and real-time applications.
+A lightweight code base with powerful features that can be used for games, 3d and real-time applications.
 
-The engine (pen) and toolkit (put) are designed with simplicitiy in mind, c-style api's, minimal amounts of code and data-oriented design are the philosophy behind this project. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread.  
+The engine (pen) and toolkit (put) are designed with performance in mind. c-style api's with minimal amounts of data-oriented code is the philosophy behind this project. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread. 
 
 **Cross Platform Support**  
 - Platforms: Windows, MacOS, Linux (wip), iOS (wip).   
