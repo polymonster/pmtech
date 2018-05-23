@@ -11,7 +11,7 @@ namespace pen
 {
     // Simple input API for getting keyboard and mouse presses
     // and character keys for typing.
-    // Implemented with win32 and NS
+    // Implemented with win32, NS and xlib
 
     struct mouse_state
     {
