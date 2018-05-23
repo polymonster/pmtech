@@ -31,7 +31,11 @@ inline void output_debug(const c8* format, ...)
 #endif
 }
 
+#if TARGET_OS_IPHONE
 #define PEN_SYSTEM
+#else
+#endif
+#define PEN_SYSTEM system
 #define PEN_PRINTF output_debug
 #define PEN_ASSERT assert
 #define PEN_ASSERT_MSG(A, M)                                                                                                 \

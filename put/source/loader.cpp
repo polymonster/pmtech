@@ -431,6 +431,8 @@ namespace put
 
                         u32       current_ts;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
+                        
+                        //dev_console_log("%s: %i,%i", fn.c_str(), current_ts, built_ts);
 
                         if (current_ts > built_ts && err == PEN_ERR_OK)
                         {
@@ -510,9 +512,6 @@ namespace put
             hdr.caps2 |= DDSCAPS2_CUBEMAP;
             hdr.caps2 |= DDS_CUBEMAP_ALLFACES;
         }
-
-        if (hdr.caps & DDSCAPS_COMPLEX)
-            int i = 0;
 
         // pixel format
         ddspf pf         = dds_pixel_format_from_texture_format(info.format);

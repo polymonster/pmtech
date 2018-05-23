@@ -1365,7 +1365,7 @@ namespace pen
             }
             else
             {
-#ifdef PEN_GLES3
+#if 1
                 CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
                                                   depth_res.render_target.texture.handle, 0));
 #else
@@ -1386,7 +1386,7 @@ namespace pen
             }
             else
             {
-#ifdef PEN_GLES3
+#if 1
                 CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D,
                                                   colour_res.render_target.texture.handle, 0));
 #else
@@ -1473,7 +1473,7 @@ namespace pen
                 }
                 else
                 {
-#ifdef PEN_GLES3
+#if 1
                     CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                                                       colour_res.render_target.texture.handle, 0));
 #else
