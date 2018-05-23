@@ -10,20 +10,20 @@
 
 namespace pen
 {
-    typedef struct thread
+    struct thread
     {
         pthread_t handle;
-    } thread;
+    };
 
-    typedef struct mutex
+    struct mutex
     {
         pthread_mutex_t handle;
-    } mutex;
+    };
 
-    typedef struct semaphore
+    struct semaphore
     {
         sem_t* handle;
-    } semaphore;
+    };
 
     u32 semaphone_index = 0;
 
@@ -38,17 +38,17 @@ namespace pen
         int            thread_err;
 
         err = pthread_attr_init(&attr);
-        assert(!err);
+        PEN_ASSERT(!err);
 
         err = pthread_attr_setdetachstate(&attr, flags);
-        assert(!err);
+        PEN_ASSERT(!err);
 
         thread_err = pthread_create(&new_thread->handle, &attr, thread_func, thread_params);
 
         err = pthread_attr_destroy(&attr);
-        assert(!err);
+        PEN_ASSERT(!err);
 
-        assert(!thread_err);
+        PEN_ASSERT(!thread_err);
 
         return new_thread;
     }
@@ -102,8 +102,7 @@ namespace pen
     {
         pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc(sizeof(pen::semaphore));
 
-        char name_buf[16];
-
+        c8 name_buf[16];
         pen::string_format(&name_buf[0], 32, "sem%i", semaphone_index++);
 
         sem_unlink(name_buf);
@@ -117,23 +116,20 @@ namespace pen
     void thread_semaphore_destroy(semaphore* p_semaphore)
     {
         sem_close(p_semaphore->handle);
-
         pen::memory_free(p_semaphore);
     }
 
     bool thread_semaphore_wait(semaphore* p_semaphore)
     {
         sem_wait(p_semaphore->handle);
-
+        
         return true;
     }
 
     bool thread_semaphore_try_wait(pen::semaphore* p_semaphore)
     {
         if (sem_trywait(p_semaphore->handle) == 0)
-        {
             return true;
-        }
 
         return false;
     }
