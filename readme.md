@@ -3,7 +3,7 @@
 Follow work in progress: 
 [Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
 
-A lightweight code base with powerful features that can be used for games, 3d and real-time applications.
+A lightweight code base with powerful features that can be used for games and real-time 3d applications.
 
 The engine (pen) and toolkit (put) are designed with performance in mind. c-style api's with minimal amounts of data-oriented code is the philosophy behind this project. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread. 
 
@@ -13,13 +13,13 @@ The engine (pen) and toolkit (put) are designed with performance in mind. c-styl
 - Compilers: vs2015, vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
 **Features**  
-- Platform Agnostic - Renderer, Window, Audio, Memory, Timers, File System, Threads.
+- Data-Oriented Component Entity System - handling mesh rendering, animation and transformation heirarchies.
+- Editor - Scene, lighting, materials, 3D Volume texture generator and more.
+- PMFX - Generic shader language, data driven renderer using JSON config to specify render state, passes and techniques.
 - Asset Loading - Models, Textures, Shaders and hot reloading.
 - Maths - Templated vector and matrix library, collection of intersection and test functions.
 - JSON - Fast minimal json parser for data driven config scripts.
-- PMFX - Generic shader language, data driven renderer using JSON config to specify render state, passes and techniques.
-- Data-Oriented Component Entity System - handling mesh rendering, animation and transformation heirarchies.
-- Editor - Scene, lighting, materials, 3D Volume texture generator and more.
+- Platform Agnostic - Renderer, Window, Audio, Memory, Timers, File System, Threads.
 
 **Tools / Build Scripts**  
 - Models - Convert models, skeletons, scenes and animations to binary format. (Collada, Obj)
