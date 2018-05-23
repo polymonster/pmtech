@@ -8,9 +8,9 @@
 
 #include "file_system.h"
 #include "memory.h"
+#include "os.h"
 #include "pen.h"
 #include "pen_string.h"
-#include "os.h"
 
 extern pen::user_info pen_user_info;
 
@@ -25,7 +25,7 @@ namespace pen
     pen_error filesystem_read_file_to_buffer(const char* filename, void** p_buffer, u32& buffer_size)
     {
         const char* resource_name = os_path_for_resource(filename);
-        
+
         *p_buffer = NULL;
 
         FILE* p_file = fopen(resource_name, "rb");

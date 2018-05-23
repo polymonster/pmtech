@@ -9,9 +9,9 @@ namespace put
     {
         enum e_select_mode : u32
         {
-            SELECT_NORMAL = 0,
-            SELECT_ADD = 1,
-            SELECT_REMOVE = 2,
+            SELECT_NORMAL    = 0,
+            SELECT_ADD       = 1,
+            SELECT_REMOVE    = 2,
             SELECT_ADD_MULTI = 3
         };
 

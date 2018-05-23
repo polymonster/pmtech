@@ -139,7 +139,7 @@ PEN_TRV pen::user_entry(void* params)
 
         // draw
         pen::renderer_draw(3, 0, PEN_PT_TRIANGLELIST);
-        
+
         // present
         pen::renderer_present();
 

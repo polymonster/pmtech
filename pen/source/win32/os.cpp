@@ -58,7 +58,7 @@ namespace pen
             init_jobs = false;
         }
 
-        MSG msg = { 0 };
+        MSG msg = {0};
 
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {

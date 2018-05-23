@@ -1,10 +1,10 @@
 #include "volume_generator.h"
 
 #include "camera.h"
+#include "ces/ces_editor.h"
 #include "ces/ces_resources.h"
 #include "ces/ces_scene.h"
 #include "ces/ces_utilities.h"
-#include "ces/ces_editor.h"
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "pmfx.h"
@@ -89,11 +89,11 @@ namespace put
 
         struct vgt_options
         {
-            s32 volume_dimension = 7;
-            u32 rasterise_axes   = AXIS_ALL_MASK;
-            s32 volume_type      = VOLUME_RASTERISED_TEXELS;
-            s32 capture_data     = 0;
-            bool generate_mips = true;
+            s32  volume_dimension = 7;
+            u32  rasterise_axes   = AXIS_ALL_MASK;
+            s32  volume_type      = VOLUME_RASTERISED_TEXELS;
+            s32  capture_data     = 0;
+            bool generate_mips    = true;
         };
 
         struct vgt_rasteriser_job
@@ -934,7 +934,7 @@ namespace put
                     if (ImGui::CollapsingHeader("Render Target Output"))
                     {
                         static hash_id             id_volume_raster_rt = PEN_HASH("volume_raster");
-                        const pmfx::render_target* volume_rt = pmfx::get_render_target(id_volume_raster_rt);
+                        const pmfx::render_target* volume_rt           = pmfx::get_render_target(id_volume_raster_rt);
                         ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
                     }
 
@@ -1151,8 +1151,8 @@ namespace put
 
                 if (has_volumes)
                 {
-                    static bool save_dialog_open = false;
-                    static const c8* save_location = nullptr;
+                    static bool      save_dialog_open = false;
+                    static const c8* save_location    = nullptr;
 
                     ImGui::Separator();
                     ImGui::Text("Generated Volumes");
@@ -1164,7 +1164,7 @@ namespace put
 
                     for (u32 n = 0; n < k_main_scene->num_nodes; ++n)
                     {
-                        if ( !(k_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME)))
+                        if (!(k_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME)))
                             continue;
 
                         if (ImGui::Selectable(k_main_scene->names[n].c_str()))
@@ -1186,7 +1186,7 @@ namespace put
                         {
                             ces::delete_entity(k_main_scene, n);
 
-                            //todo free tcp mem
+                            // todo free tcp mem
                         }
 
                         ImGui::NextColumn();
@@ -1203,7 +1203,6 @@ namespace put
                         {
                             int i = 0;
                         }
-
                     }
                 }
 

@@ -13,7 +13,7 @@ namespace pen
         MAX_AUDIO_RESOURCES    = 100
     };
 
-    // Structs for user to setup, make sure to define: 
+    // Structs for user to setup, make sure to define:
     // window_creation_params pen_window
     // and user_entry function somwhere and then you are good to go
 
