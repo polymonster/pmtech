@@ -37,8 +37,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(rasteriser_state_creation_params));
     rcp.fill_mode               = PEN_FILL_SOLID;
-    rcp.cull_mode               = PEN_CULL_BACK
-    ;
+    rcp.cull_mode               = PEN_CULL_NONE;
     rcp.depth_bias_clamp        = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
 
@@ -140,7 +139,7 @@ PEN_TRV pen::user_entry(void* params)
 
         // draw
         pen::renderer_draw(3, 0, PEN_PT_TRIANGLELIST);
-        
+
         // present
         pen::renderer_present();
 

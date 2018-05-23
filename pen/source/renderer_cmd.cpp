@@ -503,29 +503,29 @@ namespace pen
         {
             // put_pos might change on the producer thread.
             u32 end_pos = put_pos;
-            
+
             // need more commands
             PEN_ASSERT(commands_this_frame < MAX_COMMANDS);
-            
+
             thread_semaphore_signal(p_continue_semaphore, 1);
-            
+
             // some api's need to set the current context on the caller thread.
             direct::renderer_make_context_current();
-            
+
             while (get_pos != end_pos)
             {
                 exec_cmd(cmd_buffer[get_pos]);
-                
+
                 INC_WRAP(get_pos);
             }
-            
+
             commands_this_frame = 0;
             return true;
         }
-        
+
         return false;
     }
-    
+
     void renderer_wait_for_jobs()
     {
         // this is a dedicated thread which stays for the duration of the program
@@ -535,7 +535,7 @@ namespace pen
         {
             if (!renderer_dispatch())
                 pen::thread_sleep_us(100);
-            
+
             if (!pen::os_update())
                 break;
         }
@@ -623,7 +623,7 @@ namespace pen
 
         init_resolve_resources();
 
-        if(wait_for_jobs)
+        if (wait_for_jobs)
             renderer_wait_for_jobs();
     }
 

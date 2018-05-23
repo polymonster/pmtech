@@ -45,14 +45,6 @@ namespace put
         static picking_info k_picking_info;
         u32*                k_selection_list = nullptr;
 
-        enum e_select_mode : u32
-        {
-            SELECT_NORMAL    = 0,
-            SELECT_ADD       = 1,
-            SELECT_REMOVE    = 2,
-            SELECT_ADD_MULTI = 3
-        };
-
         enum e_picking_state : u32
         {
             PICKING_READY    = 0,

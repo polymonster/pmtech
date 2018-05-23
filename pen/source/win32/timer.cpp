@@ -1,7 +1,7 @@
 #include "timer.h"
 #include "console.h"
-#include "pen_string.h"
 #include "data_struct.h"
+#include "pen_string.h"
 
 namespace pen
 {

@@ -115,7 +115,7 @@ ps_output ps_main_screen_quad_msaa( vs_output_textured input )
 	output.colour += sample_texture_2dms( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 2 );
 	output.colour += sample_texture_2dms( texture_msaa, input.tex_coord.x * 1280, input.tex_coord.y * 720, 3 );		
 	
-	output.colour /= 4;
+	output.colour /= 4.0;
 	
 	return output;
 }

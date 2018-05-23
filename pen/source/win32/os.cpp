@@ -58,7 +58,7 @@ namespace pen
             init_jobs = false;
         }
 
-        MSG msg = { 0 };
+        MSG msg = {0};
 
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
@@ -277,5 +277,10 @@ namespace pen
     bool input_redo_pressed()
     {
         return pen::input_key(PK_CONTROL) && pen::input_key(PK_Y);
+    }
+
+    const c8* os_path_for_resource(const c8* filename)
+    {
+        return filename;
     }
 } // namespace pen

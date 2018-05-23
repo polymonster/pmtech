@@ -3,10 +3,16 @@
 //pmfx custom macros
 #define texture_2d( sampler_name, sampler_index ) uniform sampler2D sampler_name
 #define texture_3d( sampler_name, sampler_index ) uniform sampler3D sampler_name
-#define texture_2dms( type, samples, sampler_name, sampler_index ) uniform sampler2DMS sampler_name
 #define texture_cube( sampler_name, sampler_index )	uniform samplerCube sampler_name
 
+#ifdef GLES
+#define sample_texture_2dms( sampler_name, x, y, fragment ) texture( sampler_name, vec2(0.0, 0.0) )
+#define texture_2dms( type, samples, sampler_name, sampler_index ) uniform sampler2D sampler_name
+#else
 #define sample_texture_2dms( sampler_name, x, y, fragment ) texelFetch( sampler_name, ivec2( x, y ), fragment )
+#define texture_2dms( type, samples, sampler_name, sampler_index ) uniform sampler2DMS sampler_name
+#endif
+
 #define sample_texture( sampler_name, V ) texture( sampler_name, V )
 #define sample_texture_level( sampler_name, V, l ) textureLod( sampler_name, V, l )
 #define sample_texture_grad( sampler_name, V, vddx, vddy ) textureGrad( sampler_name, V, vddx, vddy )

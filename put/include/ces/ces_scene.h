@@ -56,7 +56,8 @@ namespace put
             CMP_MASTER_INSTANCE = (1 << 15),
             CMP_PRE_SKINNED     = (1 << 16),
             CMP_SUB_GEOMETRY    = (1 << 17),
-            CMP_SDF_SHADOW      = (1 << 18)
+            CMP_SDF_SHADOW      = (1 << 18),
+            CMP_VOLUME          = (1 << 19)
         };
 
         enum e_state_flags : u32

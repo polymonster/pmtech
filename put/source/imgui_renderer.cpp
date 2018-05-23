@@ -180,13 +180,15 @@ namespace put
 
         void create_texture_atlas()
         {
-            ImGuiIO& io = ImGui::GetIO();
-            io.Fonts->AddFontFromFileTTF("data/fonts/cousine-regular.ttf", 14);
+            ImGuiIO&  io          = ImGui::GetIO();
+            const c8* cousine_reg = pen::os_path_for_resource("data/fonts/cousine-regular.ttf");
+            io.Fonts->AddFontFromFileTTF(cousine_reg, 14);
 
             ImFontConfig config;
             config.MergeMode                   = true;
             static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-            io.Fonts->AddFontFromFileTTF("data/fonts/fontawesome-webfont.ttf", 13.0f, &config, icon_ranges);
+            const c8*            font_awesome  = pen::os_path_for_resource("data/fonts/fontawesome-webfont.ttf");
+            io.Fonts->AddFontFromFileTTF(font_awesome, 13.0f, &config, icon_ranges);
 
             // Build texture atlas
             unsigned char* pixels;

@@ -1,6 +1,7 @@
 #include "volume_generator.h"
 
 #include "camera.h"
+#include "ces/ces_editor.h"
 #include "ces/ces_resources.h"
 #include "ces/ces_scene.h"
 #include "ces/ces_utilities.h"
@@ -88,10 +89,11 @@ namespace put
 
         struct vgt_options
         {
-            s32 volume_dimension = 7;
-            u32 rasterise_axes   = AXIS_ALL_MASK;
-            s32 volume_type      = VOLUME_RASTERISED_TEXELS;
-            s32 capture_data     = 0;
+            s32  volume_dimension = 7;
+            u32  rasterise_axes   = AXIS_ALL_MASK;
+            s32  volume_type      = VOLUME_RASTERISED_TEXELS;
+            s32  capture_data     = 0;
+            bool generate_mips    = true;
         };
 
         struct vgt_rasteriser_job
@@ -520,7 +522,7 @@ namespace put
             scene->transforms[new_prim].rotation    = quat();
             scene->transforms[new_prim].scale       = scale;
             scene->transforms[new_prim].translation = pos;
-            scene->entities[new_prim] |= CMP_TRANSFORM;
+            scene->entities[new_prim] |= CMP_TRANSFORM | CMP_VOLUME;
             scene->parents[new_prim] = new_prim;
             instantiate_geometry(cube, scene, new_prim);
             instantiate_material(volume_material, scene, new_prim);
@@ -929,9 +931,12 @@ namespace put
                                    ((f32)(k_rasteriser_job.current_axis * k_rasteriser_job.current_slice) + 0.1f);
                     ImGui::ProgressBar(progress);
 
-                    static hash_id             id_volume_raster_rt = PEN_HASH("volume_raster");
-                    const pmfx::render_target* volume_rt           = pmfx::get_render_target(id_volume_raster_rt);
-                    ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
+                    if (ImGui::CollapsingHeader("Render Target Output"))
+                    {
+                        static hash_id             id_volume_raster_rt = PEN_HASH("volume_raster");
+                        const pmfx::render_target* volume_rt           = pmfx::get_render_target(id_volume_raster_rt);
+                        ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
+                    }
 
                     put::dbg::add_aabb(k_rasteriser_job.current_slice_aabb.min, k_rasteriser_job.current_slice_aabb.max,
                                        vec4f::cyan());
@@ -1112,6 +1117,8 @@ namespace put
 
                 ImGui::LabelText("Size", "%.2f(mb)", size_mb);
 
+                ImGui::Checkbox("Generate Mip Maps", &k_options.generate_mips);
+
                 // choose volume data type
                 static const c8* volume_type[] = {"Rasterised Texels", "Signed Distance Field"};
 
@@ -1119,6 +1126,7 @@ namespace put
 
                 ImGui::Separator();
 
+                // Generation Jobs
                 if (g_cancel_volume_job && !g_cancel_handled)
                 {
                     ImGui::Text("%s", "Cancelling Job");
@@ -1132,6 +1140,69 @@ namespace put
                     else if (k_options.volume_type == VOLUME_SIGNED_DISTANCE_FIELD)
                     {
                         sdf_ui();
+                    }
+                }
+
+                // Volumes Generated
+                bool has_volumes = false;
+                for (u32 n = 0; n < k_main_scene->num_nodes; ++n)
+                    if (k_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME))
+                        has_volumes = true;
+
+                if (has_volumes)
+                {
+                    static bool      save_dialog_open = false;
+                    static const c8* save_location    = nullptr;
+
+                    ImGui::Separator();
+                    ImGui::Text("Generated Volumes");
+                    ImGui::Separator();
+
+                    ImGui::BeginGroup();
+
+                    ImGui::Columns(3);
+
+                    for (u32 n = 0; n < k_main_scene->num_nodes; ++n)
+                    {
+                        if (!(k_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME)))
+                            continue;
+
+                        if (ImGui::Selectable(k_main_scene->names[n].c_str()))
+                            ces::add_selection(k_main_scene, n);
+
+                        ImGui::NextColumn();
+
+                        if ((k_main_scene->entities[n] & CMP_SDF_SHADOW))
+                            ImGui::Text("Signed Distance Field");
+                        else
+                            ImGui::Text("Volume Texture");
+
+                        ImGui::NextColumn();
+                        if (ImGui::Button("Save"))
+                            save_dialog_open = true;
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("Delete"))
+                        {
+                            ces::delete_entity(k_main_scene, n);
+
+                            // todo free tcp mem
+                        }
+
+                        ImGui::NextColumn();
+                    }
+
+                    ImGui::Columns(1);
+
+                    ImGui::EndGroup();
+
+                    if (save_dialog_open)
+                    {
+                        save_location = dev_ui::file_browser(save_dialog_open, dev_ui::FB_SAVE);
+                        if (save_location)
+                        {
+                            int i = 0;
+                        }
                     }
                 }
 

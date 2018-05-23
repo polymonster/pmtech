@@ -7,6 +7,14 @@ namespace put
 {
     namespace ces
     {
+        enum e_select_mode : u32
+        {
+            SELECT_NORMAL    = 0,
+            SELECT_ADD       = 1,
+            SELECT_REMOVE    = 2,
+            SELECT_ADD_MULTI = 3
+        };
+
         void editor_init(entity_scene* scene);
         void editor_shutdown();
 
