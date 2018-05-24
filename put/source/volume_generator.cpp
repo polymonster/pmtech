@@ -165,44 +165,44 @@ namespace put
 
             switch (axis)
             {
-            case ZAXIS_POS:
-            {
-                u32 offset_zpos = y * row_pitch + invx * block_size;
-                slice           = (u8*)volume_slices[0][z];
-                return &slice[offset_zpos];
-            }
-            case ZAXIS_NEG:
-            {
-                u32 offset_zneg = y * row_pitch + x * block_size;
-                slice           = (u8*)volume_slices[3][invz];
-                return &slice[offset_zneg];
-            }
-            case YAXIS_POS:
-            {
-                u32 offset_ypos = invz * row_pitch + x * block_size;
-                slice           = (u8*)volume_slices[1][invy];
-                return &slice[offset_ypos];
-            }
-            case YAXIS_NEG:
-            {
-                u32 offset_yneg = z * row_pitch + x * block_size;
-                slice           = (u8*)volume_slices[4][y];
-                return &slice[offset_yneg];
-            }
-            case XAXIS_POS:
-            {
-                u32 offset_xpos = y * row_pitch + z * block_size;
-                slice           = (u8*)volume_slices[2][x];
-                return &slice[offset_xpos];
-            }
-            case XAXIS_NEG:
-            {
-                u32 offset_xneg = y * row_pitch + invz * block_size;
-                slice           = (u8*)volume_slices[5][invx];
-                return &slice[offset_xneg];
-            }
-            default:
-                return nullptr;
+                case ZAXIS_POS:
+                {
+                    u32 offset_zpos = y * row_pitch + invx * block_size;
+                    slice           = (u8*)volume_slices[0][z];
+                    return &slice[offset_zpos];
+                }
+                case ZAXIS_NEG:
+                {
+                    u32 offset_zneg = y * row_pitch + x * block_size;
+                    slice           = (u8*)volume_slices[3][invz];
+                    return &slice[offset_zneg];
+                }
+                case YAXIS_POS:
+                {
+                    u32 offset_ypos = invz * row_pitch + x * block_size;
+                    slice           = (u8*)volume_slices[1][invy];
+                    return &slice[offset_ypos];
+                }
+                case YAXIS_NEG:
+                {
+                    u32 offset_yneg = z * row_pitch + x * block_size;
+                    slice           = (u8*)volume_slices[4][y];
+                    return &slice[offset_yneg];
+                }
+                case XAXIS_POS:
+                {
+                    u32 offset_xpos = y * row_pitch + z * block_size;
+                    slice           = (u8*)volume_slices[2][x];
+                    return &slice[offset_xpos];
+                }
+                case XAXIS_NEG:
+                {
+                    u32 offset_xneg = y * row_pitch + invz * block_size;
+                    slice           = (u8*)volume_slices[5][invx];
+                    return &slice[offset_xneg];
+                }
+                default:
+                    return nullptr;
             }
 
             return nullptr;

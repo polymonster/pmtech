@@ -758,17 +758,17 @@ namespace pen
     {
         switch (tex_format)
         {
-        case DXGI_FORMAT_R16_TYPELESS:
-            return DXGI_FORMAT_D16_UNORM;
+            case DXGI_FORMAT_R16_TYPELESS:
+                return DXGI_FORMAT_D16_UNORM;
 
-        case DXGI_FORMAT_R32_TYPELESS:
-            return DXGI_FORMAT_D32_FLOAT;
+            case DXGI_FORMAT_R32_TYPELESS:
+                return DXGI_FORMAT_D32_FLOAT;
 
-        case DXGI_FORMAT_R24G8_TYPELESS:
-            return DXGI_FORMAT_D24_UNORM_S8_UINT;
+            case DXGI_FORMAT_R24G8_TYPELESS:
+                return DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-        case DXGI_FORMAT_R32G8X24_TYPELESS:
-            return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+            case DXGI_FORMAT_R32G8X24_TYPELESS:
+                return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
         }
 
         // unsupported depth texture type
@@ -781,17 +781,17 @@ namespace pen
     {
         switch (tex_format)
         {
-        case DXGI_FORMAT_R16_TYPELESS:
-            return DXGI_FORMAT_R16_FLOAT;
+            case DXGI_FORMAT_R16_TYPELESS:
+                return DXGI_FORMAT_R16_FLOAT;
 
-        case DXGI_FORMAT_R32_TYPELESS:
-            return DXGI_FORMAT_R32_FLOAT;
+            case DXGI_FORMAT_R32_TYPELESS:
+                return DXGI_FORMAT_R32_FLOAT;
 
-        case DXGI_FORMAT_R24G8_TYPELESS:
-            return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+            case DXGI_FORMAT_R24G8_TYPELESS:
+                return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 
-        case DXGI_FORMAT_R32G8X24_TYPELESS:
-            return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+            case DXGI_FORMAT_R32G8X24_TYPELESS:
+                return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
         }
 
         // unsupported depth texture type
@@ -1514,23 +1514,23 @@ namespace pen
     {
         switch (type)
         {
-        case RESOURCE_TEXTURE:
-            direct::renderer_release_texture(dest);
-            break;
-        case RESOURCE_BUFFER:
-            direct::renderer_release_buffer(dest);
-            break;
-        case RESOURCE_VERTEX_SHADER:
-            direct::renderer_release_shader(dest, PEN_SHADER_TYPE_VS);
-            break;
-        case RESOURCE_PIXEL_SHADER:
-            direct::renderer_release_shader(dest, PEN_SHADER_TYPE_PS);
-            break;
-        case RESOURCE_RENDER_TARGET:
-            direct::renderer_release_render_target(dest);
-            break;
-        default:
-            break;
+            case RESOURCE_TEXTURE:
+                direct::renderer_release_texture(dest);
+                break;
+            case RESOURCE_BUFFER:
+                direct::renderer_release_buffer(dest);
+                break;
+            case RESOURCE_VERTEX_SHADER:
+                direct::renderer_release_shader(dest, PEN_SHADER_TYPE_VS);
+                break;
+            case RESOURCE_PIXEL_SHADER:
+                direct::renderer_release_shader(dest, PEN_SHADER_TYPE_PS);
+                break;
+            case RESOURCE_RENDER_TARGET:
+                direct::renderer_release_render_target(dest);
+                break;
+            default:
+                break;
         }
 
         resource_pool[dest] = resource_pool[src];

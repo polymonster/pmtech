@@ -153,29 +153,29 @@ namespace put
 
             switch (pixel_format.four_cc)
             {
-            case BC1:
-                compressed = true;
-                block_size = 8;
-                return PEN_TEX_FORMAT_BC1_UNORM;
-            case BC2:
-                block_size = 16;
-                compressed = true;
-                return PEN_TEX_FORMAT_BC2_UNORM;
-            case BC3:
-                block_size = 16;
-                compressed = true;
-                return PEN_TEX_FORMAT_BC3_UNORM;
-            case BC4:
-                compressed = true;
-                block_size = 8;
-                return PEN_TEX_FORMAT_BC4_UNORM;
-            case BC5:
-                compressed = true;
-                block_size = 16;
-                return PEN_TEX_FORMAT_BC5_UNORM;
-            case DDS_R32_FLOAT:
-                block_size = 4;
-                return PEN_TEX_FORMAT_R32_FLOAT;
+                case BC1:
+                    compressed = true;
+                    block_size = 8;
+                    return PEN_TEX_FORMAT_BC1_UNORM;
+                case BC2:
+                    block_size = 16;
+                    compressed = true;
+                    return PEN_TEX_FORMAT_BC2_UNORM;
+                case BC3:
+                    block_size = 16;
+                    compressed = true;
+                    return PEN_TEX_FORMAT_BC3_UNORM;
+                case BC4:
+                    compressed = true;
+                    block_size = 8;
+                    return PEN_TEX_FORMAT_BC4_UNORM;
+                case BC5:
+                    compressed = true;
+                    block_size = 16;
+                    return PEN_TEX_FORMAT_BC5_UNORM;
+                case DDS_R32_FLOAT:
+                    block_size = 4;
+                    return PEN_TEX_FORMAT_R32_FLOAT;
             }
         }
         else
@@ -205,10 +205,10 @@ namespace put
 
         switch (fmt)
         {
-        case PEN_TEX_FORMAT_R32_FLOAT:
-            pf.flags |= DDPF_FOURCC;
-            pf.four_cc = DDS_R32_FLOAT;
-            break;
+            case PEN_TEX_FORMAT_R32_FLOAT:
+                pf.flags |= DDPF_FOURCC;
+                pf.four_cc = DDS_R32_FLOAT;
+                break;
         }
 
         return pf;
@@ -431,8 +431,8 @@ namespace put
 
                         u32       current_ts;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
-                        
-                        //dev_console_log("%s: %i,%i", fn.c_str(), current_ts, built_ts);
+
+                        // dev_console_log("%s: %i,%i", fn.c_str(), current_ts, built_ts);
 
                         if (current_ts > built_ts && err == PEN_ERR_OK)
                         {

@@ -1312,18 +1312,18 @@ namespace put
             {
                 switch (rs.type)
                 {
-                case RS_RASTERIZER:
-                    pen::renderer_release_raster_state(rs.handle);
-                    break;
-                case RS_SAMPLER:
-                    pen::renderer_release_sampler(rs.handle);
-                    break;
-                case RS_BLEND:
-                    pen::renderer_release_blend_state(rs.handle);
-                    break;
-                case RS_DEPTH_STENCIL:
-                    pen::renderer_release_depth_stencil_state(rs.handle);
-                    break;
+                    case RS_RASTERIZER:
+                        pen::renderer_release_raster_state(rs.handle);
+                        break;
+                    case RS_SAMPLER:
+                        pen::renderer_release_sampler(rs.handle);
+                        break;
+                    case RS_BLEND:
+                        pen::renderer_release_blend_state(rs.handle);
+                        break;
+                    case RS_DEPTH_STENCIL:
+                        pen::renderer_release_depth_stencil_state(rs.handle);
+                        break;
                 }
             }
             k_render_states.clear();

@@ -122,7 +122,7 @@ namespace pen
     bool thread_semaphore_wait(semaphore* p_semaphore)
     {
         sem_wait(p_semaphore->handle);
-        
+
         return true;
     }
 

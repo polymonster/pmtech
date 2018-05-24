@@ -622,15 +622,15 @@ namespace put
 
                     switch (sematic)
                     {
-                    case A_TIME:
-                        new_animation.channels[i].num_frames = num_floats;
-                        new_animation.channels[i].times      = data;
-                        break;
-                    case A_TRANSFORM:
-                        new_animation.channels[i].matrices = (mat4*)data;
-                        break;
-                    default:
-                        break;
+                        case A_TIME:
+                            new_animation.channels[i].num_frames = num_floats;
+                            new_animation.channels[i].times      = data;
+                            break;
+                        case A_TRANSFORM:
+                            new_animation.channels[i].matrices = (mat4*)data;
+                            break;
+                        default:
+                            break;
                     };
                 }
 
@@ -810,32 +810,32 @@ namespace put
 
                     switch (type)
                     {
-                    case PMM_TRANSLATE:
-                        pen::memory_cpy(&translation, p_u32reader, 12);
-                        p_u32reader += 3;
-                        break;
-                    case PMM_ROTATE:
-                        pen::memory_cpy(&rotations[num_rotations], p_u32reader, 16);
-                        rotations[num_rotations].w = maths::deg_to_rad(rotations[num_rotations].w);
-                        if (rotations[num_rotations].w < zero_rotation_epsilon &&
-                            rotations[num_rotations].w > zero_rotation_epsilon)
-                            rotations[num_rotations].w = 0.0f;
-                        num_rotations++;
-                        p_u32reader += 4;
-                        break;
-                    case PMM_MATRIX:
-                        has_matrix_transform = true;
-                        pen::memory_cpy(&matrix, p_u32reader, 16 * 4);
-                        p_u32reader += 16;
-                        break;
-                    case PMM_IDENTITY:
-                        has_matrix_transform = true;
-                        matrix               = mat4::create_identity();
-                        break;
-                    default:
-                        // unsupported transform type
-                        PEN_ASSERT(0);
-                        break;
+                        case PMM_TRANSLATE:
+                            pen::memory_cpy(&translation, p_u32reader, 12);
+                            p_u32reader += 3;
+                            break;
+                        case PMM_ROTATE:
+                            pen::memory_cpy(&rotations[num_rotations], p_u32reader, 16);
+                            rotations[num_rotations].w = maths::deg_to_rad(rotations[num_rotations].w);
+                            if (rotations[num_rotations].w < zero_rotation_epsilon &&
+                                rotations[num_rotations].w > zero_rotation_epsilon)
+                                rotations[num_rotations].w = 0.0f;
+                            num_rotations++;
+                            p_u32reader += 4;
+                            break;
+                        case PMM_MATRIX:
+                            has_matrix_transform = true;
+                            pen::memory_cpy(&matrix, p_u32reader, 16 * 4);
+                            p_u32reader += 16;
+                            break;
+                        case PMM_IDENTITY:
+                            has_matrix_transform = true;
+                            matrix               = mat4::create_identity();
+                            break;
+                        default:
+                            // unsupported transform type
+                            PEN_ASSERT(0);
+                            break;
                     }
                 }
 

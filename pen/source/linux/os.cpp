@@ -12,9 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <unistd.h>
-#include <sys/types.h>
 #include <pwd.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -69,8 +69,8 @@ static int  ctx_error_handler(Display* dpy, XErrorEvent* ev)
 
 void users()
 {
-    static struct passwd *pw = getpwuid(getuid());
-    const char *homedir = pw->pw_dir;
+    static struct passwd* pw      = getpwuid(getuid());
+    const char*           homedir = pw->pw_dir;
 
     pen_user_info.user_name = &homedir[6];
     PEN_PRINTF(pen_user_info.user_name);
@@ -190,18 +190,18 @@ namespace pen
         static f32 mw = 0.0f;
         switch (b)
         {
-        case 1:
-            return 0;
-        case 3:
-            return 1;
-        case 2:
-            return 2;
-        case 4:
-            pen::input_set_mouse_wheel(1.0f);
-            break;
-        case 5:
-            pen::input_set_mouse_wheel(-1.0f);
-            break;
+            case 1:
+                return 0;
+            case 3:
+                return 1;
+            case 2:
+                return 2;
+            case 4:
+                pen::input_set_mouse_wheel(1.0f);
+                break;
+            case 5:
+                pen::input_set_mouse_wheel(-1.0f);
+                break;
         };
 
         return -1;
@@ -221,101 +221,101 @@ namespace pen
 
         switch (k)
         {
-        // Misc
-        case XK_KP_Space:
-            return PK_SPACE;
-        case XK_BackSpace:
-            return PK_BACK;
-        case XK_Tab:
-            return PK_TAB;
-        case XK_Linefeed:
-            return 0; //?
-        case XK_Clear:
-            return PK_CLEAR;
-        case XK_Return:
-            return PK_RETURN;
-        case XK_Pause:
-            return PK_PAUSE;
-        case XK_Scroll_Lock:
-            return PK_SCROLL;
-        case XK_Sys_Req:
-            return 0; //?
-        case XK_Escape:
-            return PK_ESCAPE;
-        case XK_Delete:
-            return PK_DELETE;
-        case XK_Home:
-            return PK_HOME;
-        case XK_Left:
-            return PK_LEFT;
-        case XK_Up:
-            return PK_UP;
-        case XK_Right:
-            return PK_RIGHT;
-        case XK_Down:
-            return PK_DOWN;
-        case XK_Prior:
-            return PK_PRIOR;
-        case XK_Next:
-            return PK_NEXT;
+            // Misc
+            case XK_KP_Space:
+                return PK_SPACE;
+            case XK_BackSpace:
+                return PK_BACK;
+            case XK_Tab:
+                return PK_TAB;
+            case XK_Linefeed:
+                return 0; //?
+            case XK_Clear:
+                return PK_CLEAR;
+            case XK_Return:
+                return PK_RETURN;
+            case XK_Pause:
+                return PK_PAUSE;
+            case XK_Scroll_Lock:
+                return PK_SCROLL;
+            case XK_Sys_Req:
+                return 0; //?
+            case XK_Escape:
+                return PK_ESCAPE;
+            case XK_Delete:
+                return PK_DELETE;
+            case XK_Home:
+                return PK_HOME;
+            case XK_Left:
+                return PK_LEFT;
+            case XK_Up:
+                return PK_UP;
+            case XK_Right:
+                return PK_RIGHT;
+            case XK_Down:
+                return PK_DOWN;
+            case XK_Prior:
+                return PK_PRIOR;
+            case XK_Next:
+                return PK_NEXT;
 
-        // F
-        case XK_F1:
-            return PK_F1;
-        case XK_F2:
-            return PK_F2;
-        case XK_F3:
-            return PK_F3;
-        case XK_F4:
-            return PK_F4;
-        case XK_F5:
-            return PK_F5;
-        case XK_F6:
-            return PK_F6;
-        case XK_F7:
-            return PK_F7;
-        case XK_F8:
-            return PK_F8;
-        case XK_F9:
-            return PK_F9;
-        case XK_F10:
-            return PK_F10;
-        case XK_F11:
-            return PK_F11;
-        case XK_F12:
-            return PK_F12;
+            // F
+            case XK_F1:
+                return PK_F1;
+            case XK_F2:
+                return PK_F2;
+            case XK_F3:
+                return PK_F3;
+            case XK_F4:
+                return PK_F4;
+            case XK_F5:
+                return PK_F5;
+            case XK_F6:
+                return PK_F6;
+            case XK_F7:
+                return PK_F7;
+            case XK_F8:
+                return PK_F8;
+            case XK_F9:
+                return PK_F9;
+            case XK_F10:
+                return PK_F10;
+            case XK_F11:
+                return PK_F11;
+            case XK_F12:
+                return PK_F12;
 
-        // Modifiers
-        case XK_Shift_L:
-            return PK_SHIFT;
-        case XK_Shift_R:
-            return PK_SHIFT;
-        case XK_Control_L:
-            return PK_CONTROL;
-        case XK_Control_R:
-            return PK_CONTROL;
-        case XK_Caps_Lock:
-            return PK_CAPITAL;
-        case XK_Alt_L:
-            return PK_MENU;
-        case XK_Alt_R:
-            return PK_MENU;
+            // Modifiers
+            case XK_Shift_L:
+                return PK_SHIFT;
+            case XK_Shift_R:
+                return PK_SHIFT;
+            case XK_Control_L:
+                return PK_CONTROL;
+            case XK_Control_R:
+                return PK_CONTROL;
+            case XK_Caps_Lock:
+                return PK_CAPITAL;
+            case XK_Alt_L:
+                return PK_MENU;
+            case XK_Alt_R:
+                return PK_MENU;
 
-        // Keypad
-        case XK_KP_Equal:
-            return PK_ADD;
-        case XK_KP_Multiply:
-            return PK_MULTIPLY;
-        case XK_KP_Add:
-            return PK_ADD;
-        case XK_KP_Separator:
-            return PK_SEPARATOR;
-        case XK_KP_Subtract:
-            return PK_SUBTRACT;
-        case XK_KP_Decimal:
-            return PK_DECIMAL;
-        case XK_KP_Divide:
-            return PK_DIVIDE;
+            // Keypad
+            case XK_KP_Equal:
+                return PK_ADD;
+            case XK_KP_Multiply:
+                return PK_MULTIPLY;
+            case XK_KP_Add:
+                return PK_ADD;
+            case XK_KP_Separator:
+                return PK_SEPARATOR;
+            case XK_KP_Subtract:
+                return PK_SUBTRACT;
+            case XK_KP_Decimal:
+                return PK_DECIMAL;
+            case XK_KP_Divide:
+                return PK_DIVIDE;
         };
 
         return 0;
@@ -339,55 +339,55 @@ namespace pen
             XNextEvent(_display, (XEvent*)&event);
             switch (event.type)
             {
-            case Expose:
-            {
-                XWindowAttributes attribs;
-                XGetWindowAttributes(_display, _window, &attribs);
-                pen_window.width  = attribs.width;
-                pen_window.height = attribs.height;
-            }
-            break;
-            case KeyPress:
-            {
-                static c8 buf[255];
-                KeySym    k;
+                case Expose:
+                {
+                    XWindowAttributes attribs;
+                    XGetWindowAttributes(_display, _window, &attribs);
+                    pen_window.width  = attribs.width;
+                    pen_window.height = attribs.height;
+                }
+                break;
+                case KeyPress:
+                {
+                    static c8 buf[255];
+                    KeySym    k;
 
-                // todo for utf8
-                // Xutf8LookupString(xic, &event.xkey, buf, sizeof(buf) - 1, &keysym, &status);
+                    // todo for utf8
+                    // Xutf8LookupString(xic, &event.xkey, buf, sizeof(buf) - 1, &keysym, &status);
 
-                XLookupString(&event.xkey, buf, 255, &k, 0);
-                pen::input_set_unicode_key_down(buf[0]);
+                    XLookupString(&event.xkey, buf, 255, &k, 0);
+                    pen::input_set_unicode_key_down(buf[0]);
 
-                u32 ks = translate_key_sym(k);
-                pen::input_set_key_down(ks);
-            }
-            break;
-            case KeyRelease:
-            {
-                static c8 buf[255];
-                KeySym    k;
+                    u32 ks = translate_key_sym(k);
+                    pen::input_set_key_down(ks);
+                }
+                break;
+                case KeyRelease:
+                {
+                    static c8 buf[255];
+                    KeySym    k;
 
-                XLookupString(&event.xkey, buf, 255, &k, 0);
-                pen::input_set_unicode_key_up(buf[0]);
+                    XLookupString(&event.xkey, buf, 255, &k, 0);
+                    pen::input_set_unicode_key_up(buf[0]);
 
-                u32 ks = translate_key_sym(k);
-                pen::input_set_key_up(ks);
-            }
-            break;
-            case ButtonPress:
-            {
-                s32 mb = translate_mouse_button(event.xbutton.button);
-                if (mb != -1)
-                    pen::input_set_mouse_down(mb);
-            }
-            break;
-            case ButtonRelease:
-            {
-                s32 mb = translate_mouse_button(event.xbutton.button);
-                if (mb != -1)
-                    pen::input_set_mouse_up(mb);
-            }
-            break;
+                    u32 ks = translate_key_sym(k);
+                    pen::input_set_key_up(ks);
+                }
+                break;
+                case ButtonPress:
+                {
+                    s32 mb = translate_mouse_button(event.xbutton.button);
+                    if (mb != -1)
+                        pen::input_set_mouse_down(mb);
+                }
+                break;
+                case ButtonRelease:
+                {
+                    s32 mb = translate_mouse_button(event.xbutton.button);
+                    if (mb != -1)
+                        pen::input_set_mouse_up(mb);
+                }
+                break;
             }
         }
 

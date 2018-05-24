@@ -25,5 +25,6 @@ NamespaceIndentation: All
 PointerAlignment: Left
 AlignConsecutiveDeclarations: 'true'
 AlignConsecutiveAssignments: 'true'
+IndentCaseLabels: 'true'
 
 ...

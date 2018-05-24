@@ -75,58 +75,59 @@ namespace pen
     {
         switch (cmd.command_index)
         {
-        case CMD_AUDIO_CREATE_STREAM:
-            direct::audio_create_stream(cmd.filename, cmd.resource_slot);
-            pen::memory_free(cmd.filename);
-            break;
-        case CMD_AUDIO_CREATE_SOUND:
-            direct::audio_create_sound(cmd.filename, cmd.resource_slot);
-            pen::memory_free(cmd.filename);
-            break;
-        case CMD_AUDIO_CREATE_GROUP:
-            direct::audio_create_channel_group(cmd.resource_slot);
-            pen::memory_free(cmd.filename);
-            break;
-        case CMD_AUDIO_ADD_CHANNEL_TO_GROUP:
-            direct::audio_add_channel_to_group(cmd.set_valuei.resource_index, cmd.set_valuei.value);
-            break;
-        case CMD_AUDIO_ADD_DSP_TO_GROUP:
-            direct::audio_add_dsp_to_group(cmd.set_valuei.resource_index, (dsp_type)cmd.set_valuei.value, cmd.resource_slot);
-            break;
-        case CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND:
-            direct::audio_create_channel_for_sound(cmd.resource_index, cmd.resource_slot);
-            break;
-        case CMD_AUDIO_CHANNEL_SET_POSITION:
-            direct::audio_channel_set_position(cmd.set_valuei.resource_index, cmd.set_valuei.value);
-            break;
-        case CMD_AUDIO_CHANNEL_SET_FREQUENCY:
-            direct::audio_channel_set_frequency(cmd.resource_index, cmd.set_valuef.value);
-            break;
-        case CMD_AUDIO_CHANNEL_STOP:
-            direct::audio_channel_stop(cmd.resource_index);
-            break;
-        case CMD_AUDIO_GROUP_SET_MUTE:
-            direct::audio_group_set_mute(cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value);
-            break;
-        case CMD_AUDIO_GROUP_SET_PAUSE:
-            direct::audio_group_set_pause(cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value);
-            break;
-        case CMD_AUDIO_GROUP_SET_VOLUME:
-            direct::audio_group_set_volume(cmd.set_valuef.resource_index, cmd.set_valuef.value);
-            break;
-        case CMD_AUDIO_DSP_SET_GAIN:
-            direct::audio_dsp_set_gain(cmd.set_valuef.resource_index, cmd.set_valuef.value);
-            break;
-        case CMD_AUDIO_GROUP_SET_PITCH:
-            direct::audio_group_set_pitch(cmd.set_valuef.resource_index, cmd.set_valuef.value);
-            break;
-        case CMD_AUDIO_RELEASE_RESOURCE:
-            direct::audio_release_resource(cmd.resource_index);
-            break;
-        case CMD_AUDIO_DSP_SET_THREE_BAND_EQ:
-            direct::audio_dsp_set_three_band_eq(cmd.set_value3f.resource_index, cmd.set_value3f.value[0],
-                                                cmd.set_value3f.value[1], cmd.set_value3f.value[2]);
-            break;
+            case CMD_AUDIO_CREATE_STREAM:
+                direct::audio_create_stream(cmd.filename, cmd.resource_slot);
+                pen::memory_free(cmd.filename);
+                break;
+            case CMD_AUDIO_CREATE_SOUND:
+                direct::audio_create_sound(cmd.filename, cmd.resource_slot);
+                pen::memory_free(cmd.filename);
+                break;
+            case CMD_AUDIO_CREATE_GROUP:
+                direct::audio_create_channel_group(cmd.resource_slot);
+                pen::memory_free(cmd.filename);
+                break;
+            case CMD_AUDIO_ADD_CHANNEL_TO_GROUP:
+                direct::audio_add_channel_to_group(cmd.set_valuei.resource_index, cmd.set_valuei.value);
+                break;
+            case CMD_AUDIO_ADD_DSP_TO_GROUP:
+                direct::audio_add_dsp_to_group(cmd.set_valuei.resource_index, (dsp_type)cmd.set_valuei.value,
+                                               cmd.resource_slot);
+                break;
+            case CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND:
+                direct::audio_create_channel_for_sound(cmd.resource_index, cmd.resource_slot);
+                break;
+            case CMD_AUDIO_CHANNEL_SET_POSITION:
+                direct::audio_channel_set_position(cmd.set_valuei.resource_index, cmd.set_valuei.value);
+                break;
+            case CMD_AUDIO_CHANNEL_SET_FREQUENCY:
+                direct::audio_channel_set_frequency(cmd.resource_index, cmd.set_valuef.value);
+                break;
+            case CMD_AUDIO_CHANNEL_STOP:
+                direct::audio_channel_stop(cmd.resource_index);
+                break;
+            case CMD_AUDIO_GROUP_SET_MUTE:
+                direct::audio_group_set_mute(cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value);
+                break;
+            case CMD_AUDIO_GROUP_SET_PAUSE:
+                direct::audio_group_set_pause(cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value);
+                break;
+            case CMD_AUDIO_GROUP_SET_VOLUME:
+                direct::audio_group_set_volume(cmd.set_valuef.resource_index, cmd.set_valuef.value);
+                break;
+            case CMD_AUDIO_DSP_SET_GAIN:
+                direct::audio_dsp_set_gain(cmd.set_valuef.resource_index, cmd.set_valuef.value);
+                break;
+            case CMD_AUDIO_GROUP_SET_PITCH:
+                direct::audio_group_set_pitch(cmd.set_valuef.resource_index, cmd.set_valuef.value);
+                break;
+            case CMD_AUDIO_RELEASE_RESOURCE:
+                direct::audio_release_resource(cmd.resource_index);
+                break;
+            case CMD_AUDIO_DSP_SET_THREE_BAND_EQ:
+                direct::audio_dsp_set_three_band_eq(cmd.set_value3f.resource_index, cmd.set_value3f.value[0],
+                                                    cmd.set_value3f.value[1], cmd.set_value3f.value[2]);
+                break;
         }
     }
 

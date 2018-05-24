@@ -177,74 +177,74 @@ namespace pen
 
         switch (message)
         {
-        case WM_PAINT:
-            hdc = BeginPaint(hWnd, &ps);
-            EndPaint(hWnd, &ps);
-            break;
-
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            break;
-
-        case WM_KEYDOWN:
-        case WM_SYSKEYDOWN:
-            pen::input_set_key_down((u32)wParam);
-            set_unicode_key((u32)wParam, true);
-            break;
-
-        case WM_KEYUP:
-        case WM_SYSKEYUP:
-            pen::input_set_key_up((u32)wParam);
-            set_unicode_key((u32)wParam, false);
-            break;
-
-        case WM_LBUTTONDOWN:
-        case WM_MBUTTONDOWN:
-        case WM_RBUTTONDOWN:
-            pen::input_set_mouse_down((message - 0x201) / 3);
-            break;
-
-        case WM_LBUTTONUP:
-        case WM_MBUTTONUP:
-        case WM_RBUTTONUP:
-            pen::input_set_mouse_up((message - 0x202) / 3);
-            break;
-
-        case WM_MOUSEMOVE:
-            pen::input_set_mouse_pos((f32)LOWORD(lParam), (f32)HIWORD(lParam));
-            break;
-
-        case WM_MOUSEWHEEL:
-        {
-            s16 low_w = (s16)LOWORD(wParam);
-            s16 hi_w  = (s16)HIWORD(wParam);
-
-            s16 low_l = (s16)LOWORD(lParam);
-            s16 hi_l  = (s16)HIWORD(lParam);
-
-            pen::input_set_mouse_wheel((f32)(hi_w / WHEEL_DELTA) * 10.0f);
-        }
-        break;
-
-        case WM_SIZE:
-        {
-            s16 lo = LOWORD(wParam);
-
-            if (lo == SIZE_MINIMIZED)
+            case WM_PAINT:
+                hdc = BeginPaint(hWnd, &ps);
+                EndPaint(hWnd, &ps);
                 break;
 
-            if (g_window_resize == 0)
+            case WM_DESTROY:
+                PostQuitMessage(0);
+                break;
+
+            case WM_KEYDOWN:
+            case WM_SYSKEYDOWN:
+                pen::input_set_key_down((u32)wParam);
+                set_unicode_key((u32)wParam, true);
+                break;
+
+            case WM_KEYUP:
+            case WM_SYSKEYUP:
+                pen::input_set_key_up((u32)wParam);
+                set_unicode_key((u32)wParam, false);
+                break;
+
+            case WM_LBUTTONDOWN:
+            case WM_MBUTTONDOWN:
+            case WM_RBUTTONDOWN:
+                pen::input_set_mouse_down((message - 0x201) / 3);
+                break;
+
+            case WM_LBUTTONUP:
+            case WM_MBUTTONUP:
+            case WM_RBUTTONUP:
+                pen::input_set_mouse_up((message - 0x202) / 3);
+                break;
+
+            case WM_MOUSEMOVE:
+                pen::input_set_mouse_pos((f32)LOWORD(lParam), (f32)HIWORD(lParam));
+                break;
+
+            case WM_MOUSEWHEEL:
             {
-                pen_window.width  = LOWORD(lParam);
-                pen_window.height = HIWORD(lParam);
+                s16 low_w = (s16)LOWORD(wParam);
+                s16 hi_w  = (s16)HIWORD(wParam);
 
-                g_window_resize = 1;
+                s16 low_l = (s16)LOWORD(lParam);
+                s16 hi_l  = (s16)HIWORD(lParam);
+
+                pen::input_set_mouse_wheel((f32)(hi_w / WHEEL_DELTA) * 10.0f);
             }
-        }
-        break;
+            break;
 
-        default:
-            return DefWindowProcA(hWnd, message, wParam, lParam);
+            case WM_SIZE:
+            {
+                s16 lo = LOWORD(wParam);
+
+                if (lo == SIZE_MINIMIZED)
+                    break;
+
+                if (g_window_resize == 0)
+                {
+                    pen_window.width  = LOWORD(lParam);
+                    pen_window.height = HIWORD(lParam);
+
+                    g_window_resize = 1;
+                }
+            }
+            break;
+
+            default:
+                return DefWindowProcA(hWnd, message, wParam, lParam);
         }
 
         return 0;

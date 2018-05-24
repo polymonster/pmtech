@@ -41,28 +41,28 @@ namespace
     {
         switch (err)
         {
-        case GL_INVALID_ENUM:
-            printf("invalid enum\n");
-            GL_ASSERT(0);
-            break;
-        case GL_INVALID_VALUE:
-            printf("gl invalid value\n");
-            GL_ASSERT(0);
-            break;
-        case GL_INVALID_OPERATION:
-            printf("gl invalid operation\n");
-            GL_ASSERT(0);
-            break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            printf("gl invalid frame buffer operation\n");
-            GL_ASSERT(0);
-            break;
-        case GL_OUT_OF_MEMORY:
-            printf("gl out of memory\n");
-            GL_ASSERT(0);
-            break;
-        default:
-            break;
+            case GL_INVALID_ENUM:
+                printf("invalid enum\n");
+                GL_ASSERT(0);
+                break;
+            case GL_INVALID_VALUE:
+                printf("gl invalid value\n");
+                GL_ASSERT(0);
+                break;
+            case GL_INVALID_OPERATION:
+                printf("gl invalid operation\n");
+                GL_ASSERT(0);
+                break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION:
+                printf("gl invalid frame buffer operation\n");
+                GL_ASSERT(0);
+                break;
+            case GL_OUT_OF_MEMORY:
+                printf("gl out of memory\n");
+                GL_ASSERT(0);
+                break;
+            default:
+                break;
         }
     }
 
@@ -728,32 +728,32 @@ namespace pen
 
             switch (constant.type)
             {
-            case CT_CBUFFER:
-            {
-                loc = CHECK_CALL(glGetUniformBlockIndex(prog, constant.name));
-                PEN_ASSERT(loc < MAX_UNIFORM_BUFFERS);
+                case CT_CBUFFER:
+                {
+                    loc = CHECK_CALL(glGetUniformBlockIndex(prog, constant.name));
+                    PEN_ASSERT(loc < MAX_UNIFORM_BUFFERS);
 
-                linked_program->uniform_block_location[constant.location] = loc;
+                    linked_program->uniform_block_location[constant.location] = loc;
 
-                CHECK_CALL(glUniformBlockBinding(prog, loc, constant.location));
-            }
-            break;
-
-            case CT_SAMPLER_3D:
-            case CT_SAMPLER_2D:
-            case CT_SAMPLER_2DMS:
-            case CT_SAMPLER_CUBE:
-            {
-                loc = CHECK_CALL(glGetUniformLocation(prog, constant.name));
-
-                linked_program->texture_location[constant.location] = loc;
-
-                if (loc != -1 && loc != constant.location)
-                    CHECK_CALL(glUniform1i(loc, constant.location));
-            }
-            break;
-            default:
+                    CHECK_CALL(glUniformBlockBinding(prog, loc, constant.location));
+                }
                 break;
+
+                case CT_SAMPLER_3D:
+                case CT_SAMPLER_2D:
+                case CT_SAMPLER_2DMS:
+                case CT_SAMPLER_CUBE:
+                {
+                    loc = CHECK_CALL(glGetUniformLocation(prog, constant.name));
+
+                    linked_program->texture_location[constant.location] = loc;
+
+                    if (loc != -1 && loc != constant.location)
+                        CHECK_CALL(glUniform1i(loc, constant.location));
+                }
+                break;
+                default:
+                    break;
             }
         }
 
@@ -1132,26 +1132,26 @@ namespace pen
 
         switch ((texture_collection_type)tcp.collection_type)
         {
-        case TEXTURE_COLLECTION_NONE:
-            texture_target      = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
-            base_texture_target = texture_target;
-            break;
-        case TEXTURE_COLLECTION_CUBE:
-            is_msaa             = false;
-            texture_target      = GL_TEXTURE_CUBE_MAP;
-            base_texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-            break;
-        case TEXTURE_COLLECTION_VOLUME:
-            is_msaa             = false;
-            num_slices          = tcp.num_arrays;
-            num_arrays          = 1;
-            texture_target      = GL_TEXTURE_3D;
-            base_texture_target = texture_target;
-            break;
-        default:
-            texture_target      = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
-            base_texture_target = texture_target;
-            break;
+            case TEXTURE_COLLECTION_NONE:
+                texture_target      = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+                base_texture_target = texture_target;
+                break;
+            case TEXTURE_COLLECTION_CUBE:
+                is_msaa             = false;
+                texture_target      = GL_TEXTURE_CUBE_MAP;
+                base_texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                break;
+            case TEXTURE_COLLECTION_VOLUME:
+                is_msaa             = false;
+                num_slices          = tcp.num_arrays;
+                num_arrays          = 1;
+                texture_target      = GL_TEXTURE_3D;
+                base_texture_target = texture_target;
+                break;
+            default:
+                texture_target      = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+                base_texture_target = texture_target;
+                break;
         }
 
         u32 mip_d = num_slices;
@@ -1581,30 +1581,30 @@ namespace pen
         // filter
         switch (sampler_state->filter)
         {
-        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
-        {
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-        }
-        break;
-        case PEN_FILTER_MIN_MAG_MIP_POINT:
-        {
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST));
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-        }
-        break;
-        case PEN_FILTER_LINEAR:
-        {
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-        }
-        break;
-        case PEN_FILTER_POINT:
-        {
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-        }
-        break;
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+            {
+                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+            }
+            break;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+            {
+                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST));
+                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+            }
+            break;
+            case PEN_FILTER_LINEAR:
+            {
+                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+            }
+            break;
+            case PEN_FILTER_POINT:
+            {
+                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+            }
+            break;
         };
 
         // address mode
@@ -1920,23 +1920,23 @@ namespace pen
     {
         switch (type)
         {
-        case RESOURCE_TEXTURE:
-            direct::renderer_release_texture(dest);
-            break;
-        case RESOURCE_BUFFER:
-            direct::renderer_release_buffer(dest);
-            break;
-        case RESOURCE_VERTEX_SHADER:
-            direct::renderer_release_shader(dest, PEN_SHADER_TYPE_VS);
-            break;
-        case RESOURCE_PIXEL_SHADER:
-            direct::renderer_release_shader(dest, PEN_SHADER_TYPE_PS);
-            break;
-        case RESOURCE_RENDER_TARGET:
-            direct::renderer_release_render_target(dest);
-            break;
-        default:
-            break;
+            case RESOURCE_TEXTURE:
+                direct::renderer_release_texture(dest);
+                break;
+            case RESOURCE_BUFFER:
+                direct::renderer_release_buffer(dest);
+                break;
+            case RESOURCE_VERTEX_SHADER:
+                direct::renderer_release_shader(dest, PEN_SHADER_TYPE_VS);
+                break;
+            case RESOURCE_PIXEL_SHADER:
+                direct::renderer_release_shader(dest, PEN_SHADER_TYPE_PS);
+                break;
+            case RESOURCE_RENDER_TARGET:
+                direct::renderer_release_render_target(dest);
+                break;
+            default:
+                break;
         }
 
         resource_pool[dest] = resource_pool[src];

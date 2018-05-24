@@ -27,7 +27,7 @@ namespace pen
 
     struct user_info
     {
-        const c8* user_name = nullptr;
+        const c8* user_name      = nullptr;
         const c8* full_user_name = nullptr;
     };
 

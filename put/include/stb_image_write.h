@@ -304,37 +304,37 @@ static void stbiw__writefv(stbi__write_context* s, const char* fmt, va_list v)
     {
         switch (*fmt++)
         {
-        case ' ':
-            break;
-        case '1':
-        {
-            unsigned char x = STBIW_UCHAR(va_arg(v, int));
-            s->func(s->context, &x, 1);
-            break;
-        }
-        case '2':
-        {
-            int           x = va_arg(v, int);
-            unsigned char b[2];
-            b[0] = STBIW_UCHAR(x);
-            b[1] = STBIW_UCHAR(x >> 8);
-            s->func(s->context, b, 2);
-            break;
-        }
-        case '4':
-        {
-            stbiw_uint32  x = va_arg(v, int);
-            unsigned char b[4];
-            b[0] = STBIW_UCHAR(x);
-            b[1] = STBIW_UCHAR(x >> 8);
-            b[2] = STBIW_UCHAR(x >> 16);
-            b[3] = STBIW_UCHAR(x >> 24);
-            s->func(s->context, b, 4);
-            break;
-        }
-        default:
-            STBIW_ASSERT(0);
-            return;
+            case ' ':
+                break;
+            case '1':
+            {
+                unsigned char x = STBIW_UCHAR(va_arg(v, int));
+                s->func(s->context, &x, 1);
+                break;
+            }
+            case '2':
+            {
+                int           x = va_arg(v, int);
+                unsigned char b[2];
+                b[0] = STBIW_UCHAR(x);
+                b[1] = STBIW_UCHAR(x >> 8);
+                s->func(s->context, b, 2);
+                break;
+            }
+            case '4':
+            {
+                stbiw_uint32  x = va_arg(v, int);
+                unsigned char b[4];
+                b[0] = STBIW_UCHAR(x);
+                b[1] = STBIW_UCHAR(x >> 8);
+                b[2] = STBIW_UCHAR(x >> 16);
+                b[3] = STBIW_UCHAR(x >> 24);
+                s->func(s->context, b, 4);
+                break;
+            }
+            default:
+                STBIW_ASSERT(0);
+                return;
         }
     }
 }
@@ -370,26 +370,26 @@ static void stbiw__write_pixel(stbi__write_context* s, int rgb_dir, int comp, in
 
     switch (comp)
     {
-    case 2: // 2 pixels = mono + alpha, alpha is written separately, so same as 1-channel case
-    case 1:
-        if (expand_mono)
-            stbiw__write3(s, d[0], d[0], d[0]); // monochrome bmp
-        else
-            s->func(s->context, d, 1); // monochrome TGA
-        break;
-    case 4:
-        if (!write_alpha)
-        {
-            // composite against pink background
-            for (k = 0; k < 3; ++k)
-                px[k] = bg[k] + ((d[k] - bg[k]) * d[3]) / 255;
-            stbiw__write3(s, px[1 - rgb_dir], px[1], px[1 + rgb_dir]);
+        case 2: // 2 pixels = mono + alpha, alpha is written separately, so same as 1-channel case
+        case 1:
+            if (expand_mono)
+                stbiw__write3(s, d[0], d[0], d[0]); // monochrome bmp
+            else
+                s->func(s->context, d, 1); // monochrome TGA
             break;
-        }
-        /* FALLTHROUGH */
-    case 3:
-        stbiw__write3(s, d[1 - rgb_dir], d[1], d[1 + rgb_dir]);
-        break;
+        case 4:
+            if (!write_alpha)
+            {
+                // composite against pink background
+                for (k = 0; k < 3; ++k)
+                    px[k] = bg[k] + ((d[k] - bg[k]) * d[3]) / 255;
+                stbiw__write3(s, px[1 - rgb_dir], px[1], px[1 + rgb_dir]);
+                break;
+            }
+            /* FALLTHROUGH */
+        case 3:
+            stbiw__write3(s, d[1 - rgb_dir], d[1], d[1 + rgb_dir]);
+            break;
     }
     if (write_alpha > 0)
         s->func(s->context, &d[comp - 1], 1);
@@ -657,15 +657,15 @@ void stbiw__write_hdr_scanline(stbi__write_context* s, int width, int ncomp, uns
         {
             switch (ncomp)
             {
-            case 4: /* fallthrough */
-            case 3:
-                linear[2] = scanline[x * ncomp + 2];
-                linear[1] = scanline[x * ncomp + 1];
-                linear[0] = scanline[x * ncomp + 0];
-                break;
-            default:
-                linear[0] = linear[1] = linear[2] = scanline[x * ncomp + 0];
-                break;
+                case 4: /* fallthrough */
+                case 3:
+                    linear[2] = scanline[x * ncomp + 2];
+                    linear[1] = scanline[x * ncomp + 1];
+                    linear[0] = scanline[x * ncomp + 0];
+                    break;
+                default:
+                    linear[0] = linear[1] = linear[2] = scanline[x * ncomp + 0];
+                    break;
             }
             stbiw__linear_to_rgbe(rgbe, linear);
             s->func(s->context, rgbe, 4);
@@ -679,15 +679,15 @@ void stbiw__write_hdr_scanline(stbi__write_context* s, int width, int ncomp, uns
         {
             switch (ncomp)
             {
-            case 4: /* fallthrough */
-            case 3:
-                linear[2] = scanline[x * ncomp + 2];
-                linear[1] = scanline[x * ncomp + 1];
-                linear[0] = scanline[x * ncomp + 0];
-                break;
-            default:
-                linear[0] = linear[1] = linear[2] = scanline[x * ncomp + 0];
-                break;
+                case 4: /* fallthrough */
+                case 3:
+                    linear[2] = scanline[x * ncomp + 2];
+                    linear[1] = scanline[x * ncomp + 1];
+                    linear[0] = scanline[x * ncomp + 0];
+                    break;
+                default:
+                    linear[0] = linear[1] = linear[2] = scanline[x * ncomp + 0];
+                    break;
             }
             stbiw__linear_to_rgbe(rgbe, linear);
             scratch[x + width * 0] = rgbe[0];
@@ -1102,54 +1102,54 @@ static void stbiw__encode_png_line(unsigned char* pixels, int stride_bytes, int 
     {
         switch (type)
         {
-        case 0:
-            line_buffer[i] = z[i];
-            break;
-        case 1:
-            line_buffer[i] = z[i];
-            break;
-        case 2:
-            line_buffer[i] = z[i] - z[i - signed_stride];
-            break;
-        case 3:
-            line_buffer[i] = z[i] - (z[i - signed_stride] >> 1);
-            break;
-        case 4:
-            line_buffer[i] = (signed char)(z[i] - stbiw__paeth(0, z[i - signed_stride], 0));
-            break;
-        case 5:
-            line_buffer[i] = z[i];
-            break;
-        case 6:
-            line_buffer[i] = z[i];
-            break;
+            case 0:
+                line_buffer[i] = z[i];
+                break;
+            case 1:
+                line_buffer[i] = z[i];
+                break;
+            case 2:
+                line_buffer[i] = z[i] - z[i - signed_stride];
+                break;
+            case 3:
+                line_buffer[i] = z[i] - (z[i - signed_stride] >> 1);
+                break;
+            case 4:
+                line_buffer[i] = (signed char)(z[i] - stbiw__paeth(0, z[i - signed_stride], 0));
+                break;
+            case 5:
+                line_buffer[i] = z[i];
+                break;
+            case 6:
+                line_buffer[i] = z[i];
+                break;
         }
     }
     for (i = n; i < width * n; ++i)
     {
         switch (type)
         {
-        case 0:
-            line_buffer[i] = z[i];
-            break;
-        case 1:
-            line_buffer[i] = z[i] - z[i - n];
-            break;
-        case 2:
-            line_buffer[i] = z[i] - z[i - signed_stride];
-            break;
-        case 3:
-            line_buffer[i] = z[i] - ((z[i - n] + z[i - signed_stride]) >> 1);
-            break;
-        case 4:
-            line_buffer[i] = z[i] - stbiw__paeth(z[i - n], z[i - signed_stride], z[i - signed_stride - n]);
-            break;
-        case 5:
-            line_buffer[i] = z[i] - (z[i - n] >> 1);
-            break;
-        case 6:
-            line_buffer[i] = z[i] - stbiw__paeth(z[i - n], 0, 0);
-            break;
+            case 0:
+                line_buffer[i] = z[i];
+                break;
+            case 1:
+                line_buffer[i] = z[i] - z[i - n];
+                break;
+            case 2:
+                line_buffer[i] = z[i] - z[i - signed_stride];
+                break;
+            case 3:
+                line_buffer[i] = z[i] - ((z[i - n] + z[i - signed_stride]) >> 1);
+                break;
+            case 4:
+                line_buffer[i] = z[i] - stbiw__paeth(z[i - n], z[i - signed_stride], z[i - signed_stride - n]);
+                break;
+            case 5:
+                line_buffer[i] = z[i] - (z[i - n] >> 1);
+                break;
+            case 6:
+                line_buffer[i] = z[i] - stbiw__paeth(z[i - n], 0, 0);
+                break;
         }
     }
 }

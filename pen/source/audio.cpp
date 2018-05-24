@@ -204,38 +204,38 @@ namespace pen
             {
                 switch (g_audio_resources[i].type)
                 {
-                case AUDIO_RESOURCE_CHANNEL:
-                {
-                    update_channel_state(i);
-                }
-                break;
-
-                case AUDIO_RESOURCE_GROUP:
-                {
-                    update_group_state(i);
-                }
-                break;
-
-                case AUDIO_RESOURCE_DSP_FFT:
-                {
-                    update_fft(i);
-                }
-                break;
-
-                case AUDIO_RESOURCE_DSP_EQ:
-                {
-                    update_three_band_eq(i);
-                }
-                break;
-
-                case AUDIO_RESOURCE_DSP_GAIN:
-                {
-                    update_gain(i);
-                }
-                break;
-
-                default:
+                    case AUDIO_RESOURCE_CHANNEL:
+                    {
+                        update_channel_state(i);
+                    }
                     break;
+
+                    case AUDIO_RESOURCE_GROUP:
+                    {
+                        update_group_state(i);
+                    }
+                    break;
+
+                    case AUDIO_RESOURCE_DSP_FFT:
+                    {
+                        update_fft(i);
+                    }
+                    break;
+
+                    case AUDIO_RESOURCE_DSP_EQ:
+                    {
+                        update_three_band_eq(i);
+                    }
+                    break;
+
+                    case AUDIO_RESOURCE_DSP_GAIN:
+                    {
+                        update_gain(i);
+                    }
+                    break;
+
+                    default:
+                        break;
                 }
             }
         }
@@ -372,34 +372,34 @@ namespace pen
 
             switch (g_audio_resources[index].type)
             {
-            case AUDIO_RESOURCE_CHANNEL:
-            {
-                // channels are not releaseable
-            }
-            break;
-
-            case AUDIO_RESOURCE_GROUP:
-            {
-                ((FMOD::ChannelGroup*)p_res)->release();
-            }
-            break;
-
-            case AUDIO_RESOURCE_DSP_FFT:
-            case AUDIO_RESOURCE_DSP_EQ:
-            case AUDIO_RESOURCE_DSP_GAIN:
-            {
-                ((FMOD::DSP*)p_res)->release();
-            }
-            break;
-
-            case AUDIO_RESOURCE_SOUND:
-            {
-                ((FMOD::Sound*)p_res)->release();
-            }
-            break;
-
-            default:
+                case AUDIO_RESOURCE_CHANNEL:
+                {
+                    // channels are not releaseable
+                }
                 break;
+
+                case AUDIO_RESOURCE_GROUP:
+                {
+                    ((FMOD::ChannelGroup*)p_res)->release();
+                }
+                break;
+
+                case AUDIO_RESOURCE_DSP_FFT:
+                case AUDIO_RESOURCE_DSP_EQ:
+                case AUDIO_RESOURCE_DSP_GAIN:
+                {
+                    ((FMOD::DSP*)p_res)->release();
+                }
+                break;
+
+                case AUDIO_RESOURCE_SOUND:
+                {
+                    ((FMOD::Sound*)p_res)->release();
+                }
+                break;
+
+                default:
+                    break;
             }
         }
 
@@ -424,17 +424,17 @@ namespace pen
 
         switch (type)
         {
-        case pen::DSP_FFT:
-            resource_type = AUDIO_RESOURCE_DSP_FFT;
-            return FMOD_DSP_TYPE_FFT;
-        case pen::DSP_THREE_BAND_EQ:
-            resource_type = AUDIO_RESOURCE_DSP_EQ;
-            return FMOD_DSP_TYPE_THREE_EQ;
-        case pen::DSP_GAIN:
-            resource_type = AUDIO_RESOURCE_DSP_GAIN;
-            return FMOD_DSP_TYPE_CHANNELMIX;
-        default:
-            PEN_ERROR;
+            case pen::DSP_FFT:
+                resource_type = AUDIO_RESOURCE_DSP_FFT;
+                return FMOD_DSP_TYPE_FFT;
+            case pen::DSP_THREE_BAND_EQ:
+                resource_type = AUDIO_RESOURCE_DSP_EQ;
+                return FMOD_DSP_TYPE_THREE_EQ;
+            case pen::DSP_GAIN:
+                resource_type = AUDIO_RESOURCE_DSP_GAIN;
+                return FMOD_DSP_TYPE_CHANNELMIX;
+            default:
+                PEN_ERROR;
         }
 
         return FMOD_DSP_TYPE_UNKNOWN;

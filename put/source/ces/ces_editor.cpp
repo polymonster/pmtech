@@ -120,12 +120,12 @@ namespace put
 
             switch (k_model_view_controller.camera_mode)
             {
-            case CAMERA_MODELLING:
-                put::camera_update_modelling(sc->camera, has_focus, k_model_view_controller.invert_y);
-                break;
-            case CAMERA_FLY:
-                put::camera_update_fly(sc->camera, has_focus, k_model_view_controller.invert_y);
-                break;
+                case CAMERA_MODELLING:
+                    put::camera_update_modelling(sc->camera, has_focus, k_model_view_controller.invert_y);
+                    break;
+                case CAMERA_FLY:
+                    put::camera_update_fly(sc->camera, has_focus, k_model_view_controller.invert_y);
+                    break;
             }
         }
 
@@ -1788,24 +1788,24 @@ namespace put
 
                     switch (scene->lights[selected_index].type)
                     {
-                    case LIGHT_TYPE_DIR:
-                        ImGui::SliderAngle("Azimuth", &snl.azimuth);
-                        ImGui::SliderAngle("Altitude", &snl.altitude);
-                        break;
+                        case LIGHT_TYPE_DIR:
+                            ImGui::SliderAngle("Azimuth", &snl.azimuth);
+                            ImGui::SliderAngle("Altitude", &snl.altitude);
+                            break;
 
-                    case LIGHT_TYPE_POINT:
-                        ImGui::SliderFloat("Radius##slider", &snl.radius, 0.0f, 100.0f);
-                        ImGui::InputFloat("Radius##input", &snl.radius);
-                        break;
+                        case LIGHT_TYPE_POINT:
+                            ImGui::SliderFloat("Radius##slider", &snl.radius, 0.0f, 100.0f);
+                            ImGui::InputFloat("Radius##input", &snl.radius);
+                            break;
 
-                    case LIGHT_TYPE_SPOT:
-                        // ImGui::SliderAngle( "Azimuth", &scene->lights[selected_index].data.x );
-                        // ImGui::SliderAngle( "Zenith", &scene->lights[selected_index].data.y );
-                        // ImGui::SliderAngle( "Cos Cutoff", &scene->lights[selected_index].data.z );
-                        break;
+                        case LIGHT_TYPE_SPOT:
+                            // ImGui::SliderAngle( "Azimuth", &scene->lights[selected_index].data.x );
+                            // ImGui::SliderAngle( "Zenith", &scene->lights[selected_index].data.y );
+                            // ImGui::SliderAngle( "Cos Cutoff", &scene->lights[selected_index].data.z );
+                            break;
 
-                    case LIGHT_TYPE_AREA_BOX:
-                        break;
+                        case LIGHT_TYPE_AREA_BOX:
+                            break;
                     }
 
                     snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth, snl.altitude);
@@ -2446,23 +2446,23 @@ namespace put
 
             switch (con.type)
             {
-            case physics::CONSTRAINT_HINGE:
-                put::dbg::add_circle(axis, pos, 0.25f, vec4f::green());
-                put::dbg::add_line(pos - axis, pos + axis, vec4f::green());
-                put::dbg::add_circle_segment(axis, pos, 1.0f, min_rot, max_rot, vec4f::white());
-                break;
+                case physics::CONSTRAINT_HINGE:
+                    put::dbg::add_circle(axis, pos, 0.25f, vec4f::green());
+                    put::dbg::add_line(pos - axis, pos + axis, vec4f::green());
+                    put::dbg::add_circle_segment(axis, pos, 1.0f, min_rot, max_rot, vec4f::white());
+                    break;
 
-            case physics::CONSTRAINT_P2P:
-                put::dbg::add_point(pos, 0.5f, vec4f::magenta());
-                put::dbg::add_line(link_pos, pos, vec4f::magenta());
-                break;
+                case physics::CONSTRAINT_P2P:
+                    put::dbg::add_point(pos, 0.5f, vec4f::magenta());
+                    put::dbg::add_line(link_pos, pos, vec4f::magenta());
+                    break;
 
-            case physics::CONSTRAINT_DOF6:
-                put::dbg::add_circle_segment(vec3f::unit_x(), pos, 0.25f, min_rot_v3.x, max_rot_v3.x, vec4f::white());
-                put::dbg::add_circle_segment(vec3f::unit_y(), pos, 0.25f, min_rot_v3.y, max_rot_v3.y, vec4f::white());
-                put::dbg::add_circle_segment(vec3f::unit_z(), pos, 0.25f, min_rot_v3.z, max_rot_v3.z, vec4f::white());
-                put::dbg::add_aabb(pos + min_pos_v3, pos + max_pos_v3, vec4f::white());
-                break;
+                case physics::CONSTRAINT_DOF6:
+                    put::dbg::add_circle_segment(vec3f::unit_x(), pos, 0.25f, min_rot_v3.x, max_rot_v3.x, vec4f::white());
+                    put::dbg::add_circle_segment(vec3f::unit_y(), pos, 0.25f, min_rot_v3.y, max_rot_v3.y, vec4f::white());
+                    put::dbg::add_circle_segment(vec3f::unit_z(), pos, 0.25f, min_rot_v3.z, max_rot_v3.z, vec4f::white());
+                    put::dbg::add_aabb(pos + min_pos_v3, pos + max_pos_v3, vec4f::white());
+                    break;
             }
         }
 

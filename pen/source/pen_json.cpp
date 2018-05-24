@@ -124,50 +124,50 @@ namespace pen
         {
             switch (type)
             {
-            case JSON_STR:
-                result.str = js;
-                break;
-            case JSON_U32:
-            {
-                c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                result.u    = atoi(tok_str);
-                pen::memory_free(tok_str);
-            }
-            break;
-            case JSON_S32:
-            {
-                c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                result.s    = atol(tok_str);
-                pen::memory_free(tok_str);
-            }
-            break;
-            case JSON_U32_HEX:
-            {
-                c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                result.u    = strtol(tok_str, NULL, 16);
-                pen::memory_free(tok_str);
-                break;
-            }
-            case JSON_F32:
-            {
-                c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                result.f    = (f32)atof(tok_str);
-                pen::memory_free(tok_str);
-            }
-            break;
-            case JSON_BOOL:
-                if (*(js + t->start) == 't')
+                case JSON_STR:
+                    result.str = js;
+                    break;
+                case JSON_U32:
                 {
-                    result.b = true;
-                    return true;
+                    c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
+                    result.u    = atoi(tok_str);
+                    pen::memory_free(tok_str);
                 }
-                else if (*(js + t->start) == 'f')
-                {
-                    result.b = false;
-                    return true;
-                }
-                return false;
                 break;
+                case JSON_S32:
+                {
+                    c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
+                    result.s    = atol(tok_str);
+                    pen::memory_free(tok_str);
+                }
+                break;
+                case JSON_U32_HEX:
+                {
+                    c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
+                    result.u    = strtol(tok_str, NULL, 16);
+                    pen::memory_free(tok_str);
+                    break;
+                }
+                case JSON_F32:
+                {
+                    c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
+                    result.f    = (f32)atof(tok_str);
+                    pen::memory_free(tok_str);
+                }
+                break;
+                case JSON_BOOL:
+                    if (*(js + t->start) == 't')
+                    {
+                        result.b = true;
+                        return true;
+                    }
+                    else if (*(js + t->start) == 'f')
+                    {
+                        result.b = false;
+                        return true;
+                    }
+                    return false;
+                    break;
             }
 
             return true;

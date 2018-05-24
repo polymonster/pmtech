@@ -785,32 +785,32 @@ class playback_deck
 
         switch (group_state.play_state)
         {
-        case pen::PLAYING:
-            ImGui::Text("%s", "Playing");
-            break;
+            case pen::PLAYING:
+                ImGui::Text("%s", "Playing");
+                break;
 
-        case pen::NOT_PLAYING:
-            ImGui::Text("%s", "Not Playing");
-            break;
+            case pen::NOT_PLAYING:
+                ImGui::Text("%s", "Not Playing");
+                break;
 
-        case pen::PAUSED:
-            ImGui::Text("%s", "Paused");
-            break;
+            case pen::PAUSED:
+                ImGui::Text("%s", "Paused");
+                break;
         }
 
         switch (channel_state.play_state)
         {
-        case pen::PLAYING:
-            ImGui::Text("%s", "Channel Playing");
-            break;
+            case pen::PLAYING:
+                ImGui::Text("%s", "Channel Playing");
+                break;
 
-        case pen::NOT_PLAYING:
-            ImGui::Text("%s", "Channel Not Playing");
-            break;
+            case pen::NOT_PLAYING:
+                ImGui::Text("%s", "Channel Not Playing");
+                break;
 
-        case pen::PAUSED:
-            ImGui::Text("%s", "Channel Paused");
-            break;
+            case pen::PAUSED:
+                ImGui::Text("%s", "Channel Paused");
+                break;
         }
 
         ImGui::SameLine();

@@ -59,95 +59,95 @@ namespace physics
 
         switch (params.shape)
         {
-        case physics::BOX:
-            shape = new btBoxShape(
-                btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y), btScalar(params.dimensions.z)));
-            break;
-        case physics::CYLINDER:
-            if (params.shape_up_axis == UP_X)
-            {
-                shape = new btCylinderShapeX(
+            case physics::BOX:
+                shape = new btBoxShape(
                     btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y), btScalar(params.dimensions.z)));
-            }
-            else if (params.shape_up_axis == UP_Z)
-            {
-                shape = new btCylinderShapeZ(
-                    btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y), btScalar(params.dimensions.z)));
-            }
-            else
-            {
-                shape = new btCylinderShape(
-                    btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y), btScalar(params.dimensions.z)));
-            }
-            break;
-        case physics::CAPSULE:
-            if (params.shape_up_axis == UP_X)
-            {
-                shape = new btCapsuleShapeX(btScalar(params.dimensions.y), btScalar(params.dimensions.x));
-            }
-            else if (params.shape_up_axis == UP_Z)
-            {
-                shape = new btCapsuleShapeZ(btScalar(params.dimensions.x), btScalar(params.dimensions.z));
-            }
-            else
-            {
-                shape = new btCapsuleShape(btScalar(params.dimensions.x), btScalar(params.dimensions.y));
-            }
-            break;
-        case physics::CONE:
-            if (params.shape_up_axis == UP_X)
-            {
-                shape = new btConeShapeX(btScalar(params.dimensions.y), btScalar(params.dimensions.x));
-            }
-            else if (params.shape_up_axis == UP_Z)
-            {
-                shape = new btConeShapeZ(btScalar(params.dimensions.x), btScalar(params.dimensions.z));
-            }
-            else
-            {
-                shape = new btConeShape(btScalar(params.dimensions.x), btScalar(params.dimensions.y));
-            }
-            break;
-        case physics::HULL:
-            shape = new btConvexHullShape(params.mesh_data.vertices, params.mesh_data.num_floats / 3, 12);
-            break;
-        case physics::MESH:
-        {
-            u32                         num_tris = params.mesh_data.num_indices / 3;
-            btTriangleIndexVertexArray* mesh =
-                new btTriangleIndexVertexArray(num_tris, (s32*)params.mesh_data.indices, sizeof(u32) * 3,
-                                               params.mesh_data.num_floats / 3, params.mesh_data.vertices, sizeof(f32) * 3);
-            btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape(mesh, true);
-            shape                                = concave_mesh;
-        }
-        break;
-        case physics::COMPOUND:
-        {
-            if (p_compound)
-            {
-                u32 num_shapes = p_compound->num_shapes;
-
-                btCompoundShape* compound = new btCompoundShape(true);
-
-                for (u32 s = 0; s < num_shapes; ++s)
+                break;
+            case physics::CYLINDER:
+                if (params.shape_up_axis == UP_X)
                 {
-                    btCollisionShape* p_sub_shape = create_collision_shape(entity, p_compound->rb[s]);
-
-                    btTransform trans = get_bttransform_from_params(p_compound->rb[s]);
-
-                    compound->addChildShape(trans, p_sub_shape);
+                    shape = new btCylinderShapeX(btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y),
+                                                           btScalar(params.dimensions.z)));
                 }
-
-                shape = compound;
+                else if (params.shape_up_axis == UP_Z)
+                {
+                    shape = new btCylinderShapeZ(btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y),
+                                                           btScalar(params.dimensions.z)));
+                }
+                else
+                {
+                    shape = new btCylinderShape(btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y),
+                                                          btScalar(params.dimensions.z)));
+                }
+                break;
+            case physics::CAPSULE:
+                if (params.shape_up_axis == UP_X)
+                {
+                    shape = new btCapsuleShapeX(btScalar(params.dimensions.y), btScalar(params.dimensions.x));
+                }
+                else if (params.shape_up_axis == UP_Z)
+                {
+                    shape = new btCapsuleShapeZ(btScalar(params.dimensions.x), btScalar(params.dimensions.z));
+                }
+                else
+                {
+                    shape = new btCapsuleShape(btScalar(params.dimensions.x), btScalar(params.dimensions.y));
+                }
+                break;
+            case physics::CONE:
+                if (params.shape_up_axis == UP_X)
+                {
+                    shape = new btConeShapeX(btScalar(params.dimensions.y), btScalar(params.dimensions.x));
+                }
+                else if (params.shape_up_axis == UP_Z)
+                {
+                    shape = new btConeShapeZ(btScalar(params.dimensions.x), btScalar(params.dimensions.z));
+                }
+                else
+                {
+                    shape = new btConeShape(btScalar(params.dimensions.x), btScalar(params.dimensions.y));
+                }
+                break;
+            case physics::HULL:
+                shape = new btConvexHullShape(params.mesh_data.vertices, params.mesh_data.num_floats / 3, 12);
+                break;
+            case physics::MESH:
+            {
+                u32                         num_tris = params.mesh_data.num_indices / 3;
+                btTriangleIndexVertexArray* mesh     = new btTriangleIndexVertexArray(
+                    num_tris, (s32*)params.mesh_data.indices, sizeof(u32) * 3, params.mesh_data.num_floats / 3,
+                    params.mesh_data.vertices, sizeof(f32) * 3);
+                btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape(mesh, true);
+                shape                                = concave_mesh;
             }
-        }
-        break;
-        case physics::SPHERE:
-            shape = new btSphereShape(params.dimensions.x);
             break;
-        default:
-            PEN_ASSERT_MSG(0, "unimplemented physics shape");
+            case physics::COMPOUND:
+            {
+                if (p_compound)
+                {
+                    u32 num_shapes = p_compound->num_shapes;
+
+                    btCompoundShape* compound = new btCompoundShape(true);
+
+                    for (u32 s = 0; s < num_shapes; ++s)
+                    {
+                        btCollisionShape* p_sub_shape = create_collision_shape(entity, p_compound->rb[s]);
+
+                        btTransform trans = get_bttransform_from_params(p_compound->rb[s]);
+
+                        compound->addChildShape(trans, p_sub_shape);
+                    }
+
+                    shape = compound;
+                }
+            }
             break;
+            case physics::SPHERE:
+                shape = new btSphereShape(params.dimensions.x);
+                break;
+            default:
+                PEN_ASSERT_MSG(0, "unimplemented physics shape");
+                break;
         }
 
         if (shape)
@@ -455,61 +455,61 @@ namespace physics
 
             switch (entity.type)
             {
-            case ENTITY_RIGID_BODY:
-            {
-                btRigidBody* p_rb = entity.rb.rigid_body;
-
-                btTransform rb_transform = p_rb->getWorldTransform();
-
-                btScalar _mm[16];
-
-                rb_transform.getOpenGLMatrix(_mm);
-
-                for (s32 m = 0; m < 16; ++m)
-                    g_readable_data.output_matrices[bb][i].m[m] = _mm[m];
-
-                g_readable_data.output_matrices[bb][i] = g_readable_data.output_matrices[bb][i].transposed();
-            }
-            break;
-
-            case ENTITY_MULTI_BODY:
-            {
-                btMultiBody* p_multi = k_bullet_objects.entities[i].mb.multi_body;
-
-                if (p_multi)
+                case ENTITY_RIGID_BODY:
                 {
-                    btMultiBodyLinkCollider* p_base_col = p_multi->getBaseCollider();
+                    btRigidBody* p_rb = entity.rb.rigid_body;
 
-                    btTransform rb_transform;
+                    btTransform rb_transform = p_rb->getWorldTransform();
 
-                    if (p_base_col)
-                    {
-                        rb_transform = p_base_col->getWorldTransform();
-                        rb_transform.getOpenGLMatrix(g_readable_data.multi_output_matrices[bb][i][0].m);
-                    }
+                    btScalar _mm[16];
 
-                    g_readable_data.multi_output_matrices[bb][i][0] =
-                        g_readable_data.multi_output_matrices[bb][i][0].transposed();
+                    rb_transform.getOpenGLMatrix(_mm);
 
-                    for (s32 j = 0; j < p_multi->getNumLinks(); ++j)
-                    {
-                        if (p_multi->getLink(j).m_collider)
-                        {
-                            rb_transform = p_multi->getLink(j).m_collider->getWorldTransform();
-                            rb_transform.getOpenGLMatrix(g_readable_data.multi_output_matrices[bb][i][j + 1].m);
+                    for (s32 m = 0; m < 16; ++m)
+                        g_readable_data.output_matrices[bb][i].m[m] = _mm[m];
 
-                            g_readable_data.multi_output_matrices[bb][i][j + 1] =
-                                g_readable_data.multi_output_matrices[bb][i][j + 1].transposed();
-                        }
-
-                        g_readable_data.multi_joint_positions[bb][i][j + 1] = p_multi->getJointPos(j);
-                    }
+                    g_readable_data.output_matrices[bb][i] = g_readable_data.output_matrices[bb][i].transposed();
                 }
                 break;
-            }
 
-            default:
-                break;
+                case ENTITY_MULTI_BODY:
+                {
+                    btMultiBody* p_multi = k_bullet_objects.entities[i].mb.multi_body;
+
+                    if (p_multi)
+                    {
+                        btMultiBodyLinkCollider* p_base_col = p_multi->getBaseCollider();
+
+                        btTransform rb_transform;
+
+                        if (p_base_col)
+                        {
+                            rb_transform = p_base_col->getWorldTransform();
+                            rb_transform.getOpenGLMatrix(g_readable_data.multi_output_matrices[bb][i][0].m);
+                        }
+
+                        g_readable_data.multi_output_matrices[bb][i][0] =
+                            g_readable_data.multi_output_matrices[bb][i][0].transposed();
+
+                        for (s32 j = 0; j < p_multi->getNumLinks(); ++j)
+                        {
+                            if (p_multi->getLink(j).m_collider)
+                            {
+                                rb_transform = p_multi->getLink(j).m_collider->getWorldTransform();
+                                rb_transform.getOpenGLMatrix(g_readable_data.multi_output_matrices[bb][i][j + 1].m);
+
+                                g_readable_data.multi_output_matrices[bb][i][j + 1] =
+                                    g_readable_data.multi_output_matrices[bb][i][j + 1].transposed();
+                            }
+
+                            g_readable_data.multi_joint_positions[bb][i][j + 1] = p_multi->getJointPos(j);
+                        }
+                    }
+                    break;
+                }
+
+                default:
+                    break;
             }
         }
     }
@@ -790,41 +790,41 @@ namespace physics
 
         switch (params.type)
         {
-        case CONSTRAINT_P2P:
-        {
-            add_p2p_constraint_params p2p;
-            p2p.entity_index = params.rb_indices[0];
-            p2p.position     = params.pivot;
-            add_p2p_constraint_internal(p2p, resource_slot);
-        }
-        break;
-
-        case CONSTRAINT_HINGE:
-        {
-            add_hinge_internal(params, resource_slot);
-        }
-        break;
-
-        case CONSTRAINT_DOF6:
-        {
-            btRigidBody* p_rb    = nullptr;
-            btRigidBody* p_fixed = nullptr;
-
-            if (params.rb_indices[0] != -1)
-                p_rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
-
-            if (params.rb_indices[1] != -1)
-                p_fixed = k_bullet_objects.entities[params.rb_indices[1]].rb.rigid_body;
-
-            PEN_ASSERT(p_rb || p_fixed);
-
-            add_dof6_internal(params, resource_slot, p_rb, p_fixed);
-        }
-        break;
-
-        default:
-            PEN_ASSERT_MSG(0, "unimplemented add constraint");
+            case CONSTRAINT_P2P:
+            {
+                add_p2p_constraint_params p2p;
+                p2p.entity_index = params.rb_indices[0];
+                p2p.position     = params.pivot;
+                add_p2p_constraint_internal(p2p, resource_slot);
+            }
             break;
+
+            case CONSTRAINT_HINGE:
+            {
+                add_hinge_internal(params, resource_slot);
+            }
+            break;
+
+            case CONSTRAINT_DOF6:
+            {
+                btRigidBody* p_rb    = nullptr;
+                btRigidBody* p_fixed = nullptr;
+
+                if (params.rb_indices[0] != -1)
+                    p_rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
+
+                if (params.rb_indices[1] != -1)
+                    p_fixed = k_bullet_objects.entities[params.rb_indices[1]].rb.rigid_body;
+
+                PEN_ASSERT(p_rb || p_fixed);
+
+                add_dof6_internal(params, resource_slot, p_rb, p_fixed);
+            }
+            break;
+
+            default:
+                PEN_ASSERT_MSG(0, "unimplemented add constraint");
+                break;
         }
     }
 
@@ -1095,14 +1095,14 @@ namespace physics
 
         switch (pe.constraint.type)
         {
-        case CONSTRAINT_P2P:
-            pe.constraint.point->setPivotB(bt_v3);
-            break;
-        case CONSTRAINT_P2P_MULTI:
-            pe.constraint.point_multi->setPivotInB(bt_v3);
-            break;
-        default:
-            return;
+            case CONSTRAINT_P2P:
+                pe.constraint.point->setPivotB(bt_v3);
+                break;
+            case CONSTRAINT_P2P_MULTI:
+                pe.constraint.point_multi->setPivotInB(bt_v3);
+                break;
+            default:
+                return;
         }
     }
 

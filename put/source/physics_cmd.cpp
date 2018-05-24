@@ -33,136 +33,136 @@ namespace physics
     {
         switch (cmd.command_index)
         {
-        case CMD_SET_LINEAR_VELOCITY:
-            set_linear_velocity_internal(cmd.set_v3);
-            break;
+            case CMD_SET_LINEAR_VELOCITY:
+                set_linear_velocity_internal(cmd.set_v3);
+                break;
 
-        case CMD_SET_ANGULAR_VELOCITY:
-            set_angular_velocity_internal(cmd.set_v3);
-            break;
+            case CMD_SET_ANGULAR_VELOCITY:
+                set_angular_velocity_internal(cmd.set_v3);
+                break;
 
-        case CMD_SET_LINEAR_FACTOR:
-            set_linear_factor_internal(cmd.set_v3);
-            break;
+            case CMD_SET_LINEAR_FACTOR:
+                set_linear_factor_internal(cmd.set_v3);
+                break;
 
-        case CMD_SET_ANGULAR_FACTOR:
-            set_angular_factor_internal(cmd.set_v3);
-            break;
+            case CMD_SET_ANGULAR_FACTOR:
+                set_angular_factor_internal(cmd.set_v3);
+                break;
 
-        case CMD_SET_TRANSFORM:
-            set_transform_internal(cmd.set_transform);
-            break;
+            case CMD_SET_TRANSFORM:
+                set_transform_internal(cmd.set_transform);
+                break;
 
-        case CMD_ADD_RIGID_BODY:
-            add_rb_internal(cmd.add_rb, cmd.resource_slot);
-            break;
+            case CMD_ADD_RIGID_BODY:
+                add_rb_internal(cmd.add_rb, cmd.resource_slot);
+                break;
 
-        case CMD_ADD_GHOST_RIGID_BODY:
-            add_rb_internal(cmd.add_rb, true);
-            break;
+            case CMD_ADD_GHOST_RIGID_BODY:
+                add_rb_internal(cmd.add_rb, true);
+                break;
 
-        case CMD_SET_GRAVITY:
-            set_gravity_internal(cmd.set_v3);
-            break;
+            case CMD_SET_GRAVITY:
+                set_gravity_internal(cmd.set_v3);
+                break;
 
-        case CMD_ADD_MULTI_BODY:
-            add_multibody_internal(cmd.add_multi, cmd.resource_slot);
-            break;
+            case CMD_ADD_MULTI_BODY:
+                add_multibody_internal(cmd.add_multi, cmd.resource_slot);
+                break;
 
-        case CMD_SET_FRICTION:
-            set_friction_internal(cmd.set_float);
-            break;
+            case CMD_SET_FRICTION:
+                set_friction_internal(cmd.set_float);
+                break;
 
-        case CMD_SET_HINGE_MOTOR:
-            set_hinge_motor_internal(cmd.set_v3);
-            break;
+            case CMD_SET_HINGE_MOTOR:
+                set_hinge_motor_internal(cmd.set_v3);
+                break;
 
-        case CMD_SET_BUTTON_MOTOR:
-            set_button_motor_internal(cmd.set_v3);
-            break;
+            case CMD_SET_BUTTON_MOTOR:
+                set_button_motor_internal(cmd.set_v3);
+                break;
 
-        case CMD_SET_MULTI_JOINT_MOTOR:
-            set_multi_joint_motor_internal(cmd.set_multi_v3);
-            break;
+            case CMD_SET_MULTI_JOINT_MOTOR:
+                set_multi_joint_motor_internal(cmd.set_multi_v3);
+                break;
 
-        case CMD_SET_MULTI_JOINT_POS:
-            set_multi_joint_pos_internal(cmd.set_multi_v3);
-            break;
+            case CMD_SET_MULTI_JOINT_POS:
+                set_multi_joint_pos_internal(cmd.set_multi_v3);
+                break;
 
-        case CMD_SET_MULTI_JOINT_LIMITS:
-            set_multi_joint_limit_internal(cmd.set_multi_v3);
-            break;
+            case CMD_SET_MULTI_JOINT_LIMITS:
+                set_multi_joint_limit_internal(cmd.set_multi_v3);
+                break;
 
-        case CMD_SET_MULTI_BASE_VELOCITY:
-            set_multi_base_velocity_internal(cmd.set_multi_v3);
-            break;
+            case CMD_SET_MULTI_BASE_VELOCITY:
+                set_multi_base_velocity_internal(cmd.set_multi_v3);
+                break;
 
-        case CMD_SET_MULTI_BASE_POS:
-            set_multi_base_pos_internal(cmd.set_multi_v3);
-            break;
+            case CMD_SET_MULTI_BASE_POS:
+                set_multi_base_pos_internal(cmd.set_multi_v3);
+                break;
 
-        case CMD_ADD_COMPOUND_RB:
-            add_compound_rb_internal(cmd.add_compound_rb, cmd.resource_slot);
-            break;
+            case CMD_ADD_COMPOUND_RB:
+                add_compound_rb_internal(cmd.add_compound_rb, cmd.resource_slot);
+                break;
 
-        case CMD_SYNC_COMPOUND_TO_MULTI:
-            sync_compound_multi_internal(cmd.sync_compound);
-            break;
+            case CMD_SYNC_COMPOUND_TO_MULTI:
+                sync_compound_multi_internal(cmd.sync_compound);
+                break;
 
-        case CMD_SYNC_RIGID_BODY_TRANSFORM:
-            sync_rigid_bodies_internal(cmd.sync_rb);
-            break;
+            case CMD_SYNC_RIGID_BODY_TRANSFORM:
+                sync_rigid_bodies_internal(cmd.sync_rb);
+                break;
 
-        case CMD_SYNC_RIGID_BODY_VELOCITY:
-            sync_rigid_body_velocity_internal(cmd.sync_rb);
-            break;
+            case CMD_SYNC_RIGID_BODY_VELOCITY:
+                sync_rigid_body_velocity_internal(cmd.sync_rb);
+                break;
 
-        case CMD_SET_P2P_CONSTRAINT_POS:
-            set_p2p_constraint_pos_internal(cmd.set_v3);
-            break;
+            case CMD_SET_P2P_CONSTRAINT_POS:
+                set_p2p_constraint_pos_internal(cmd.set_v3);
+                break;
 
-        case CMD_SET_DAMPING:
-            set_damping_internal(cmd.set_v3);
-            break;
+            case CMD_SET_DAMPING:
+                set_damping_internal(cmd.set_v3);
+                break;
 
-        case CMD_SET_GROUP:
-            set_group_internal(cmd.set_group);
-            break;
+            case CMD_SET_GROUP:
+                set_group_internal(cmd.set_group);
+                break;
 
-        case CMD_ADD_COMPOUND_SHAPE:
-            add_compound_shape_internal(cmd.add_compound_rb, cmd.resource_slot);
-            break;
+            case CMD_ADD_COMPOUND_SHAPE:
+                add_compound_shape_internal(cmd.add_compound_rb, cmd.resource_slot);
+                break;
 
-        case CMD_ADD_COLLISION_TRIGGER:
-            add_collision_watcher_internal(cmd.trigger_data);
-            break;
+            case CMD_ADD_COLLISION_TRIGGER:
+                add_collision_watcher_internal(cmd.trigger_data);
+                break;
 
-        case CMD_ATTACH_RB_TO_COMPOUND:
-            attach_rb_to_compound_internal(cmd.attach_compound);
-            break;
+            case CMD_ATTACH_RB_TO_COMPOUND:
+                attach_rb_to_compound_internal(cmd.attach_compound);
+                break;
 
-        case CMD_REMOVE_FROM_WORLD:
-            remove_from_world_internal(cmd.entity_index);
-            break;
+            case CMD_REMOVE_FROM_WORLD:
+                remove_from_world_internal(cmd.entity_index);
+                break;
 
-        case CMD_ADD_TO_WORLD:
-            add_to_world_internal(cmd.entity_index);
-            break;
+            case CMD_ADD_TO_WORLD:
+                add_to_world_internal(cmd.entity_index);
+                break;
 
-        case CMD_RELEASE_ENTITY:
-            release_entity_internal(cmd.entity_index);
-            break;
+            case CMD_RELEASE_ENTITY:
+                release_entity_internal(cmd.entity_index);
+                break;
 
-        case CMD_CAST_RAY:
-            cast_ray_internal(cmd.ray_cast);
-            break;
+            case CMD_CAST_RAY:
+                cast_ray_internal(cmd.ray_cast);
+                break;
 
-        case CMD_ADD_CONSTRAINT:
-            add_constraint_internal(cmd.add_constraint_params, cmd.resource_slot);
-            break;
+            case CMD_ADD_CONSTRAINT:
+                add_constraint_internal(cmd.add_constraint_params, cmd.resource_slot);
+                break;
 
-        default:
-            break;
+            default:
+                break;
         }
     }
 
