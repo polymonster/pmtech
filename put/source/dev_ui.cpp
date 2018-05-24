@@ -218,6 +218,18 @@ namespace put
 
                 pen::fs_tree_node* fs_iter = &fs_enumeration;
 
+                if(fs_iter->children == nullptr)
+                {
+                    va_list wildcards;
+                    va_start(wildcards, num_filetypes);
+
+                    pen::filesystem_enum_directory(default_dir[0], fs_enumeration, num_filetypes, wildcards);
+
+                    current_path = "/";
+
+                    va_end(wildcards);
+                }
+
                 for (s32 c = 0; c < default_depth; ++c)
                 {
                     for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
@@ -231,7 +243,7 @@ namespace put
                             va_start(wildcards, num_filetypes);
 
                             pen::filesystem_enum_directory(current_path.c_str(), fs_iter->children[entry], num_filetypes,
-                                                           wildcards);
+                                                        wildcards);
 
                             va_end(wildcards);
 

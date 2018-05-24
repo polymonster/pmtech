@@ -496,7 +496,7 @@ namespace put
             // set delta time
             f32        cur_time  = pen::get_time_ms();
             static f32 prev_time = cur_time;
-            io.DeltaTime         = (cur_time - prev_time) / 1000.0f;
+            io.DeltaTime         = max((cur_time - prev_time) / 1000.0f, 0.0f);
             prev_time            = cur_time;
 
             io.DisplaySize = ImVec2((f32)pen_window.width, (f32)pen_window.height);
