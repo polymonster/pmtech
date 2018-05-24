@@ -5,7 +5,7 @@ Follow work in progress:
 
 A lightweight code base with powerful features that can be used for games and real-time 3d applications.
 
-The engine (pen) and toolkit (put) are designed with performance in mind. c-style api's with minimal amounts of data-oriented code is the philosophy behind this project. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread. 
+The engine (pen) and toolkit (put) are designed with performance in mind. This project focuses on data-oriented code with minimalistic c-style api's. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread. 
 
 **Cross Platform Support**  
 - Platforms: Windows, MacOS, Linux (wip), iOS (wip).   
