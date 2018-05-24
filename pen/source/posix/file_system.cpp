@@ -57,19 +57,19 @@ namespace pen
 
     pen_error filesystem_enum_volumes(fs_tree_node& results)
     {
-#ifndef __linux__
-        struct statfs* mounts;
-        int            num_mounts = getmntinfo(&mounts, MNT_WAIT);
-
-        results.children     = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node) * num_mounts);
-        results.num_children = num_mounts;
-
         static const c8* volumes_name = "Volumes";
 
         u32 len      = pen::string_length(volumes_name);
         results.name = (c8*)pen::memory_alloc(len + 1);
         pen::memory_cpy(results.name, volumes_name, len);
         results.name[len] = '\0';
+
+#ifndef __linux__
+        struct statfs* mounts;
+        int            num_mounts = getmntinfo(&mounts, MNT_WAIT);
+
+        results.children     = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node) * num_mounts);
+        results.num_children = num_mounts;
 
         for (int i = 0; i < num_mounts; ++i)
         {
@@ -82,6 +82,16 @@ namespace pen
             results.children[i].children     = nullptr;
             results.children[i].num_children = 0;
         }
+#else
+        //Stick them at "/" instead
+        results.children     = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node));
+        results.num_children = 1;
+
+        results.children[0].name = (c8*)pen::memory_alloc(2);
+        results.children[0].name[0] = '/';
+        results.children[0].name[1] = '\0';
+        results.children[0].children     = nullptr;
+        results.children[0].num_children = 0;
 #endif
         return PEN_ERR_OK;
     }
