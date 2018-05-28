@@ -212,12 +212,11 @@ namespace put
                 s32        default_depth = 0;
                 const c8** default_dir   = get_last_used_directory(default_depth);
 
-                selected_path = put::dev_ui::get_program_preference_filename("last_used_directory");
+                selected_path = ""; //put::dev_ui::get_program_preference_filename("last_used_directory");
 
                 pen::filesystem_enum_volumes(fs_enumeration);
-
                 pen::fs_tree_node* fs_iter = &fs_enumeration;
-
+                
                 if(fs_iter->children == nullptr)
                 {
                     va_list wildcards;
@@ -226,10 +225,10 @@ namespace put
                     pen::filesystem_enum_directory(default_dir[0], fs_enumeration, num_filetypes, wildcards);
 
                     current_path = "/";
-
+                    
                     va_end(wildcards);
                 }
-
+                
                 for (s32 c = 0; c < default_depth; ++c)
                 {
                     for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
@@ -360,7 +359,9 @@ namespace put
                 {
                     if (d >= base_frame && d < base_frame + max_depth)
                     {
-                        ImGui::Text("%s", fs_iter->name);
+                        if(fs_iter->name)
+                            ImGui::Text("%s", fs_iter->name);
+                        
                         ImGui::NextColumn();
                     }
 

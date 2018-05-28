@@ -43,9 +43,6 @@ PEN_TRV pen::user_entry(void* params)
 
     u32 raster_state = pen::renderer_create_rasterizer_state(rcp);
 
-    // viewport
-    pen::viewport vp = {0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f};
-
     // create shaders
     pen::shader_load_params vs_slp;
     vs_slp.type = PEN_SHADER_TYPE_VS;
@@ -118,6 +115,7 @@ PEN_TRV pen::user_entry(void* params)
     while (1)
     {
         // clear screen
+        pen::viewport vp = {0.0f, 0.0f, (f32)pen_window.width, (f32)pen_window.height, 1.0f};
         pen::renderer_set_viewport(vp);
         pen::renderer_set_rasterizer_state(raster_state);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});

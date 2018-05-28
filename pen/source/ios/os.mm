@@ -73,6 +73,10 @@ extern PEN_TRV pen::user_entry( void* params );
     viewController.preferredFramesPerSecond = 60;
     self.window.rootViewController = viewController;
     
+    CGRect rect = [[UIScreen mainScreen] bounds];
+    pen_window.width = rect.size.width;
+    pen_window.height = rect.size.height;
+    
     pen::timer_system_intialise();
     
     // Override point for customization after application launch.

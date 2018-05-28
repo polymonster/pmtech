@@ -29,7 +29,7 @@ namespace
     static u64 k_frame  = 0;
     GLint      k_bb_fbo = -1;
 
-#define GL_DEBUG_LEVEL 0
+#define GL_DEBUG_LEVEL 2
 
 #if GL_DEBUG_LEVEL > 1
 #define GL_ASSERT(V) PEN_ASSERT(V)
@@ -1728,11 +1728,10 @@ namespace pen
 
     void direct::renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
-#ifndef PEN_GLES3
         resource_allocation& res = resource_pool[buffer_index];
-
         CHECK_CALL(glBindBuffer(res.type, res.handle));
-
+        
+#ifndef PEN_GLES3
         void* mapped_data = CHECK_CALL(glMapBuffer(res.type, GL_WRITE_ONLY));
 
         if (mapped_data)
@@ -1742,9 +1741,10 @@ namespace pen
         }
 
         CHECK_CALL(glUnmapBuffer(res.type));
-
-        CHECK_CALL(glBindBuffer(res.type, 0));
+#else
+        CHECK_CALL(glBufferSubData(res.type, offset, data_size, data));
 #endif
+        CHECK_CALL(glBindBuffer(res.type, 0));
     }
 
     void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
