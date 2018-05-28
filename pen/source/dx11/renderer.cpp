@@ -1102,9 +1102,9 @@ namespace pen
 
                     image_data += depth_pitch;
 
-                    current_width = max<u32>(current_width / 2, 1);
+                    current_width  = max<u32>(current_width / 2, 1);
                     current_height = max<u32>(current_height / 2, 1);
-                    current_depth = max<u32>(current_depth / 2, 1);
+                    current_depth  = max<u32>(current_depth / 2, 1);
                 }
             }
         }

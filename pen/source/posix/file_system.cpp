@@ -83,13 +83,13 @@ namespace pen
             results.children[i].num_children = 0;
         }
 #else
-        //Stick them at "/" instead
+        // Stick them at "/" instead
         results.children     = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node));
         results.num_children = 1;
 
-        results.children[0].name = (c8*)pen::memory_alloc(2);
-        results.children[0].name[0] = '/';
-        results.children[0].name[1] = '\0';
+        results.children[0].name         = (c8*)pen::memory_alloc(2);
+        results.children[0].name[0]      = '/';
+        results.children[0].name[1]      = '\0';
         results.children[0].children     = nullptr;
         results.children[0].num_children = 0;
 #endif

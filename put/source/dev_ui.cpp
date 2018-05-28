@@ -225,14 +225,14 @@ namespace put
                         if (pen::string_compare(fs_iter->children[entry].name, default_dir[c]) == 0)
                         {
                             current_path.append(fs_iter->children[entry].name);
-                            if(fs_iter->children[entry].name[0] != '/')
+                            if (fs_iter->children[entry].name[0] != '/')
                                 current_path.append("/");
 
                             va_list wildcards;
                             va_start(wildcards, num_filetypes);
 
                             pen::filesystem_enum_directory(current_path.c_str(), fs_iter->children[entry], num_filetypes,
-                                                        wildcards);
+                                                           wildcards);
 
                             va_end(wildcards);
 
@@ -246,7 +246,7 @@ namespace put
                         }
                     }
                 }
-                
+
                 initialise = false;
             }
 

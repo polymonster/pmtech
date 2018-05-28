@@ -1,7 +1,6 @@
 #include "volume_generator.h"
 
 #include "camera.h"
-#include "timer.h"
 #include "ces/ces_editor.h"
 #include "ces/ces_resources.h"
 #include "ces/ces_scene.h"
@@ -9,6 +8,7 @@
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "pmfx.h"
+#include "timer.h"
 
 #include "console.h"
 #include "data_struct.h"
@@ -147,7 +147,7 @@ namespace put
         };
         static vgt_sdf_job k_sdf_job;
 
-        static put::camera k_volume_raster_ortho;
+        static put::camera                   k_volume_raster_ortho;
         static pen::texture_creation_params* k_generated_volume_tcp;
 
         u8* get_texel(u32 axis, u32 x, u32 y, u32 z)
@@ -374,13 +374,13 @@ namespace put
 
             return PEN_THREAD_OK;
         }
-        
+
         void generate_mips_r32f_simd(pen::texture_creation_params& tcp)
         {
 #if PEN_SIMD
             // calc num mips
-            u32              num_mips = 1;
-            u32              data_size = 0;
+            u32              num_mips   = 1;
+            u32              data_size  = 0;
             static const u32 block_size = 4;
 
             vec3ui m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
@@ -396,23 +396,23 @@ namespace put
             }
 
             // offsets
-            vec3ui offsets[] = { vec3ui(0, 0, 0), vec3ui(0, 1, 0), vec3ui(0, 0, 1), vec3ui(0, 1, 1) };
+            vec3ui offsets[] = {vec3ui(0, 0, 0), vec3ui(0, 1, 0), vec3ui(0, 0, 1), vec3ui(0, 1, 1)};
 
-            //u8* data = (u8*)pen::memory_alloc_align(data_size, 16);
+            // u8* data = (u8*)pen::memory_alloc_align(data_size, 16);
             u8* data = (u8*)pen::memory_alloc(data_size);
             pen::memory_cpy(data, tcp.data, tcp.data_size);
 
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
             u8* prev_level = (u8*)data;
-            u8* cur_level = prev_level + tcp.data_size;
+            u8* cur_level  = prev_level + tcp.data_size;
 
             __m128 vrecip = _mm_set1_ps(1.0f / 8.0f);
             __m128 r00, r01, r10, r11;
             __m128 d00, d01, d10, d11;
-            
+
             u32 p_offset[4];
-            
+
             for (u32 i = 0; i < num_mips - 1; ++i)
             {
                 u32 p_rp = m.x * block_size; // prev row pitch
@@ -423,10 +423,10 @@ namespace put
 
                 u32 c_rp = m.x * block_size; // cur row pitch
                 u32 c_sp = c_rp * m.y;       // cur slice pitch
-                
-                u32 block_copy_size = std::min<u32>(m.x*4, 16);
-                u32 block_offset = block_copy_size < 16 ? 0 : 16;
-                
+
+                u32 block_copy_size = std::min<u32>(m.x * 4, 16);
+                u32 block_offset    = block_copy_size < 16 ? 0 : 16;
+
                 for (u32 z = 0; z < m.z; ++z)
                 {
                     for (u32 y = 0; y < m.y; ++y)
@@ -434,28 +434,28 @@ namespace put
                         for (u32 x = 0; x < m.x; x += 4)
                         {
                             vec3ui vobase = vec3ui(x * 2, y * 2, z * 2);
-                            vec3ui vo = vobase;
-                            p_offset[0] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
-                            
-                            vo = vobase + offsets[1];
+                            vec3ui vo     = vobase;
+                            p_offset[0]   = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
+
+                            vo          = vobase + offsets[1];
                             p_offset[1] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
-                            
-                            vo = vobase + offsets[2];
+
+                            vo          = vobase + offsets[2];
                             p_offset[2] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
-                            
-                            vo = vobase + offsets[3];
+
+                            vo          = vobase + offsets[3];
                             p_offset[3] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
-                            
+
                             pen::memory_cpy(&r00, &prev_level[p_offset[0]], block_copy_size);
                             pen::memory_cpy(&r01, &prev_level[p_offset[0] + block_offset], block_copy_size);
                             pen::memory_cpy(&r10, &prev_level[p_offset[1]], block_copy_size);
                             pen::memory_cpy(&r11, &prev_level[p_offset[1] + block_offset], block_copy_size);
-                            
+
                             pen::memory_cpy(&d00, &prev_level[p_offset[2]], block_copy_size);
                             pen::memory_cpy(&d01, &prev_level[p_offset[2] + block_offset], block_copy_size);
                             pen::memory_cpy(&d10, &prev_level[p_offset[3]], block_copy_size);
                             pen::memory_cpy(&d11, &prev_level[p_offset[3] + block_offset], block_copy_size);
-                            
+
                             __m128 x0 = _mm_shuffle_ps(r00, r01, _MM_SHUFFLE(2, 0, 2, 0));
                             __m128 x1 = _mm_shuffle_ps(r00, r01, _MM_SHUFFLE(3, 1, 3, 1));
                             __m128 x2 = _mm_shuffle_ps(r10, r11, _MM_SHUFFLE(2, 0, 2, 0));
@@ -464,16 +464,16 @@ namespace put
                             __m128 x5 = _mm_shuffle_ps(d00, d01, _MM_SHUFFLE(3, 1, 3, 1));
                             __m128 x6 = _mm_shuffle_ps(d10, d11, _MM_SHUFFLE(2, 0, 2, 0));
                             __m128 x7 = _mm_shuffle_ps(d10, d11, _MM_SHUFFLE(3, 1, 3, 1));
-                            
+
                             __m128 output = _mm_add_ps(x0, x1);
-                            output = _mm_add_ps(output, x2);
-                            output = _mm_add_ps(output, x3);
-                            output = _mm_add_ps(output, x4);
-                            output = _mm_add_ps(output, x5);
-                            output = _mm_add_ps(output, x6);
-                            output = _mm_add_ps(output, x7);
-                            output = _mm_mul_ps(output, vrecip);
-                            
+                            output        = _mm_add_ps(output, x2);
+                            output        = _mm_add_ps(output, x3);
+                            output        = _mm_add_ps(output, x4);
+                            output        = _mm_add_ps(output, x5);
+                            output        = _mm_add_ps(output, x6);
+                            output        = _mm_add_ps(output, x7);
+                            output        = _mm_mul_ps(output, vrecip);
+
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
                             pen::memory_cpy(&cur_level[c_offset], &output, block_copy_size);
                         }
@@ -484,7 +484,7 @@ namespace put
                 cur_level += c_sp * m.z;
             }
 
-            tcp.num_mips = num_mips;
+            tcp.num_mips  = num_mips;
             tcp.data_size = data_size;
 
             tcp.data = data;
@@ -494,8 +494,8 @@ namespace put
         void generate_mips_r32f(pen::texture_creation_params& tcp)
         {
             // calc num mips
-            u32              num_mips = 1;
-            u32              data_size = 0;
+            u32              num_mips   = 1;
+            u32              data_size  = 0;
             static const u32 block_size = 4;
 
             vec3ui m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
@@ -511,11 +511,11 @@ namespace put
             }
 
             // offsets
-            vec3ui offsets[] = {    vec3ui(0, 0, 0),
+            vec3ui offsets[] = {vec3ui(0, 0, 0),
 
-                                    vec3ui(1, 0, 0), vec3ui(0, 1, 0), vec3ui(1, 1, 0),
+                                vec3ui(1, 0, 0), vec3ui(0, 1, 0), vec3ui(1, 1, 0),
 
-                                    vec3ui(0, 0, 1), vec3ui(1, 0, 1), vec3ui(0, 1, 1), vec3ui(1, 1, 1) };
+                                vec3ui(0, 0, 1), vec3ui(1, 0, 1), vec3ui(0, 1, 1), vec3ui(1, 1, 1)};
 
             u8* data = (u8*)pen::memory_alloc(data_size);
             pen::memory_cpy(data, tcp.data, tcp.data_size);
@@ -523,7 +523,7 @@ namespace put
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
             u8* prev_level = (u8*)data;
-            u8* cur_level = prev_level + tcp.data_size;
+            u8* cur_level  = prev_level + tcp.data_size;
 
             for (u32 i = 0; i < num_mips - 1; ++i)
             {
@@ -566,7 +566,7 @@ namespace put
                 cur_level += c_sp * m.z;
             }
 
-            tcp.num_mips = num_mips;
+            tcp.num_mips  = num_mips;
             tcp.data_size = data_size;
 
             tcp.data = data;
@@ -656,7 +656,8 @@ namespace put
             tcp.data = data;
         }
 
-        u32 create_volume_from_data(u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data, bool generate_mips)
+        u32 create_volume_from_data(u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data,
+                                    bool generate_mips)
         {
             pen::texture_creation_params tcp;
             tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
@@ -682,21 +683,21 @@ namespace put
                 // Mips will create their own copy of mem
                 switch (tex_format)
                 {
-                case PEN_TEX_FORMAT_BGRA8_UNORM:
-                    generate_mips_rgba8(tcp);
-                    break;
-                case PEN_TEX_FORMAT_R32_FLOAT:
-                {
+                    case PEN_TEX_FORMAT_BGRA8_UNORM:
+                        generate_mips_rgba8(tcp);
+                        break;
+                    case PEN_TEX_FORMAT_R32_FLOAT:
+                    {
 #if PEN_SIMD
-                    generate_mips_r32f_simd(tcp);
+                        generate_mips_r32f_simd(tcp);
 #else
-                    generate_mips_r32f(tcp);
+                        generate_mips_r32f(tcp);
 #endif
-                }
+                    }
                     break;
-                default:
-                    PEN_ASSERT(0); //un-implemented mip map gen fucntion
-                    break;
+                    default:
+                        PEN_ASSERT(0); // un-implemented mip map gen fucntion
+                        break;
                 }
             }
             else
@@ -733,7 +734,8 @@ namespace put
 
             // create texture
             u32 volume_texture = create_volume_from_data(volume_dim, k_rasteriser_job.block_size, k_rasteriser_job.data_size,
-                                                         PEN_TEX_FORMAT_BGRA8_UNORM, k_rasteriser_job.volume_data, k_rasteriser_job.options.generate_mips);
+                                                         PEN_TEX_FORMAT_BGRA8_UNORM, k_rasteriser_job.volume_data,
+                                                         k_rasteriser_job.options.generate_mips);
 
             // create material for volume ray trace
             material_resource* volume_material = new material_resource;
@@ -1164,11 +1166,12 @@ namespace put
                 }
                 else
                 {
-                    f32 a = (f32)(k_rasteriser_job.current_axis * k_rasteriser_job.dimension) + k_rasteriser_job.current_slice;
+                    f32 a =
+                        (f32)(k_rasteriser_job.current_axis * k_rasteriser_job.dimension) + k_rasteriser_job.current_slice;
                     f32 total = 6 * k_rasteriser_job.dimension;
 
                     f32 progress = 0.0f;
-                    if( a > 0.0f)
+                    if (a > 0.0f)
                         progress = a / total;
 
                     ImGui::ProgressBar(progress);
@@ -1270,9 +1273,9 @@ namespace put
                 if (k_sdf_job.generate_in_progress == 2)
                 {
                     // create texture
-                    u32 volume_texture =
-                        create_volume_from_data(k_sdf_job.volume_dim, k_sdf_job.block_size, k_sdf_job.data_size,
-                                                k_sdf_job.texture_format, k_sdf_job.volume_data, k_sdf_job.options.generate_mips);
+                    u32 volume_texture = create_volume_from_data(k_sdf_job.volume_dim, k_sdf_job.block_size,
+                                                                 k_sdf_job.data_size, k_sdf_job.texture_format,
+                                                                 k_sdf_job.volume_data, k_sdf_job.options.generate_mips);
 
                     // create material for volume sdf sphere trace
                     material_resource* sdf_material                   = new material_resource;
@@ -1349,7 +1352,7 @@ namespace put
                 ImGui::Begin("Volume Generator", &open_vgt, ImGuiWindowFlags_AlwaysAutoResize);
 
                 // choose volume data type
-                static const c8* volume_type[] = { "Rasterised Texels", "Signed Distance Field" };
+                static const c8* volume_type[] = {"Rasterised Texels", "Signed Distance Field"};
 
                 ImGui::Combo("Type", &k_options.volume_type, volume_type, PEN_ARRAY_SIZE(volume_type));
 

@@ -1730,7 +1730,7 @@ namespace pen
     {
         resource_allocation& res = resource_pool[buffer_index];
         CHECK_CALL(glBindBuffer(res.type, res.handle));
-        
+
 #ifndef PEN_GLES3
         void* mapped_data = CHECK_CALL(glMapBuffer(res.type, GL_WRITE_ONLY));
 
