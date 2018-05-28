@@ -85,16 +85,16 @@ PEN_TRV pen::user_entry(void* params)
         pen::renderer_clear(clear_state);
 
         put::dbg::add_text_2f(10.0f, 10.0f, vp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Debug Text");
-        // put::dbg::add_text_2f(10.0f, 20.0f, vp, vec4f(1.0f, 0.0f, 1.0f, 1.0f), "%s", "Magenta");
-        // put::dbg::add_text_2f(10.0f, 30.0f, vp, vec4f(0.0f, 1.0f, 1.0f, 1.0f), "%s", "Cyan");
-        // put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 0.0f, 1.0f), "%s", "Yellow");
+        put::dbg::add_text_2f(10.0f, 20.0f, vp, vec4f(1.0f, 0.0f, 1.0f, 1.0f), "%s", "Magenta");
+        put::dbg::add_text_2f(10.0f, 30.0f, vp, vec4f(0.0f, 1.0f, 1.0f, 1.0f), "%s", "Cyan");
+        put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 0.0f, 1.0f), "%s", "Yellow");
 
         // create 2d view proj matrix
         float W         = 2.0f / vp.width;
         float H         = 2.0f / vp.height;
         float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
         pen::renderer_update_buffer(cb_2d_view, mvp, sizeof(mvp), 0);
-
+        
         put::dbg::render_2d(cb_2d_view);
 
         // present
@@ -102,8 +102,8 @@ PEN_TRV pen::user_entry(void* params)
 
         pen::renderer_consume_cmd_buffer();
 
-        // f32 time_ms = pen::timer_elapsed_ms(frame_timer);
-        // put::dbg::add_text_2f(10.0f, 50.0f, vp, vec4f(0.0f, 0.0f, 1.0f, 1.0f), "%s%f", "Timer", time_ms);
+        f32 time_ms = pen::timer_elapsed_ms(frame_timer);
+        put::dbg::add_text_2f(10.0f, 50.0f, vp, vec4f(0.0f, 0.0f, 1.0f, 1.0f), "%s%f", "Timer", time_ms);
 
         // msg from the engine we want to terminate
         if (pen::thread_semaphore_try_wait(p_thread_info->p_sem_exit))
