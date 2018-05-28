@@ -18,7 +18,9 @@
 
 #include "sdf/makelevelset3.h"
 
-#if PEN_SIMD 
+#define PEN_SIMD 0
+
+#if PEN_SIMD
 #include <xmmintrin.h>
 #endif
 
@@ -395,12 +397,9 @@ namespace put
             }
 
             // offsets
-            vec3ui offsets[] = { vec3ui(0, 0, 0),
+            vec3ui offsets[] = { vec3ui(0, 0, 0), vec3ui(0, 1, 0), vec3ui(0, 0, 1), vec3ui(0, 1, 1) };
 
-                vec3ui(1, 0, 0), vec3ui(0, 1, 0), vec3ui(1, 1, 0),
-
-                vec3ui(0, 0, 1), vec3ui(1, 0, 1), vec3ui(0, 1, 1), vec3ui(1, 1, 1) };
-
+            //u8* data = (u8*)pen::memory_alloc_align(data_size, 16);
             u8* data = (u8*)pen::memory_alloc(data_size);
             pen::memory_cpy(data, tcp.data, tcp.data_size);
 
@@ -410,7 +409,19 @@ namespace put
             u8* cur_level = prev_level + tcp.data_size;
 
             __m128 vrecip = _mm_set1_ps(1.0f / PEN_ARRAY_SIZE(offsets));
-
+            
+            __m128 r00;
+            __m128 r01;
+            __m128 r10;
+            __m128 r11;
+            
+            __m128 d00;
+            __m128 d01;
+            __m128 d10;
+            __m128 d11;
+            
+            u32 p_offset[4];
+            
             for (u32 i = 0; i < num_mips - 1; ++i)
             {
                 u32 p_rp = m.x * block_size; // prev row pitch
@@ -428,31 +439,49 @@ namespace put
                     {
                         for (u32 x = 0; x < m.x; x += 4)
                         {
-                            __m128 vf = _mm_set1_ps(0.0f);
-
-                            for (u32 o = 0; o < PEN_ARRAY_SIZE(offsets); ++o)
-                            {
-                                f32 ff[4];
-
-                                for (u32 j = 0; j < 4; ++j)
-                                {
-                                    u32 xo = x + j;
-                                    vec3ui vo = vec3ui(xo * 2, y * 2, z * 2) + offsets[o];
-                                    u32 p_offset = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
-
-                                    f32* ft = (f32*)&prev_level[p_offset];
-
-                                    ff[j] = *ft;
-                                }
-
-                                __m128 vfo = _mm_set_ps(ff[0], ff[1], ff[2], ff[3]);
-                                vf = _mm_add_ps(vf, vfo);
-                            }
-
-                            __m128 vfavg = _mm_mul_ps(vf, vrecip);
-
+                            vec3ui vobase = vec3ui(x * 2, y * 2, z * 2);
+                            vec3ui vo = vobase;
+                            p_offset[0] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
+                            
+                            vo = vobase + offsets[1];
+                            p_offset[1] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
+                            
+                            vo = vobase + offsets[2];
+                            p_offset[2] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
+                            
+                            vo = vobase + offsets[3];
+                            p_offset[3] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
+                            
+                            pen::memory_cpy(&r00, &prev_level[p_offset[0]], 16);
+                            pen::memory_cpy(&r01, &prev_level[p_offset[0] + 16], 16);
+                            pen::memory_cpy(&r10, &prev_level[p_offset[1]], 16);
+                            pen::memory_cpy(&r11, &prev_level[p_offset[1] + 16], 16);
+                            
+                            pen::memory_cpy(&d00, &prev_level[p_offset[2]], 16);
+                            pen::memory_cpy(&d01, &prev_level[p_offset[2] + 16], 16);
+                            pen::memory_cpy(&d10, &prev_level[p_offset[3]], 16);
+                            pen::memory_cpy(&d11, &prev_level[p_offset[3] + 16], 16);
+                            
+                            __m128 x0 = _mm_shuffle_ps(r00, r01, _MM_SHUFFLE(2, 0, 2, 0));
+                            __m128 x1 = _mm_shuffle_ps(r00, r01, _MM_SHUFFLE(3, 1, 3, 1));
+                            __m128 x2 = _mm_shuffle_ps(r10, r11, _MM_SHUFFLE(2, 0, 2, 0));
+                            __m128 x3 = _mm_shuffle_ps(r10, r11, _MM_SHUFFLE(3, 1, 3, 1));
+                            __m128 x4 = _mm_shuffle_ps(d00, d01, _MM_SHUFFLE(2, 0, 2, 0));
+                            __m128 x5 = _mm_shuffle_ps(d00, d01, _MM_SHUFFLE(3, 1, 3, 1));
+                            __m128 x6 = _mm_shuffle_ps(d10, d11, _MM_SHUFFLE(2, 0, 2, 0));
+                            __m128 x7 = _mm_shuffle_ps(d10, d11, _MM_SHUFFLE(3, 1, 3, 1));
+                            
+                            __m128 output = _mm_add_ps(x0, x1);
+                            output = _mm_add_ps(output, x2);
+                            output = _mm_add_ps(output, x3);
+                            output = _mm_add_ps(output, x4);
+                            output = _mm_add_ps(output, x5);
+                            output = _mm_add_ps(output, x6);
+                            output = _mm_add_ps(output, x7);
+                            output = _mm_mul_ps(output, vrecip);
+                            
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
-                            pen::memory_cpy(&cur_level[c_offset], &vfavg, sizeof(__m128));
+                            pen::memory_cpy(&cur_level[c_offset], &output, sizeof(__m128));
                         }
                     }
                 }
@@ -664,7 +693,7 @@ namespace put
                     break;
                 case PEN_TEX_FORMAT_R32_FLOAT:
                 {
-#if 0
+#if 1
                     u32 ti = pen::timer_create("mip gen");
 
                     pen::texture_creation_params tcp2 = tcp;
@@ -678,8 +707,9 @@ namespace put
                     f32 simd_t = pen::timer_elapsed_us(ti);
 
                     PEN_PRINTF("scalar %f, simd %f\n", scalar_t, simd_t);
-#endif
+#else
                     generate_mips_r32f(tcp);
+#endif
                 }
                     break;
                 default:
