@@ -54,6 +54,11 @@ namespace pen
         QueryPerformanceCounter(&timers[index].last_start);
     }
 
+    void timer_reset(u32 index)
+    {
+        QueryPerformanceCounter(&timers[index].last_start);
+    }
+
     f32 timer_elapsed_ms(u32 timer_index)
     {
         LARGE_INTEGER end_time;

@@ -1059,7 +1059,7 @@ namespace pen
         {
             // texture 2d, arrays and cubemaps
             D3D11_TEXTURE2D_DESC texture_desc;
-            pen::memory_cpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+            memory_cpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
             if (tcp.collection_type == TEXTURE_COLLECTION_CUBE)
             {
@@ -1102,9 +1102,9 @@ namespace pen
 
                     image_data += depth_pitch;
 
-                    min<u32>(current_width /= 2, 1);
-                    min<u32>(current_height /= 2, 1);
-                    min<u32>(current_depth /= 2, 1);
+                    current_width = max<u32>(current_width / 2, 1);
+                    current_height = max<u32>(current_height / 2, 1);
+                    current_depth = max<u32>(current_depth / 2, 1);
                 }
             }
         }
