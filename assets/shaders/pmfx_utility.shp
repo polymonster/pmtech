@@ -333,8 +333,8 @@ ps_output ps_volume_sdf( vs_output input )
 	{		
 		taken += 1.0/max_samples;
 				
-		//d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
-		d = sample_texture_level(volume_texture, uvw, 1.0).r;
+		d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
+		//d = sample_texture_level(volume_texture, uvw, 2.0).r;
 		
 		uvw += ray_dir.xyz * float3(d / scale);				
 													

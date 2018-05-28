@@ -408,17 +408,9 @@ namespace put
             u8* prev_level = (u8*)data;
             u8* cur_level = prev_level + tcp.data_size;
 
-            __m128 vrecip = _mm_set1_ps(1.0f / PEN_ARRAY_SIZE(offsets));
-            
-            __m128 r00;
-            __m128 r01;
-            __m128 r10;
-            __m128 r11;
-            
-            __m128 d00;
-            __m128 d01;
-            __m128 d10;
-            __m128 d11;
+            __m128 vrecip = _mm_set1_ps(1.0f / 8.0f);
+            __m128 r00, r01, r10, r11;
+            __m128 d00, d01, d10, d11;
             
             u32 p_offset[4];
             
@@ -693,20 +685,8 @@ namespace put
                     break;
                 case PEN_TEX_FORMAT_R32_FLOAT:
                 {
-#if 1
-                    u32 ti = pen::timer_create("mip gen");
-
-                    pen::texture_creation_params tcp2 = tcp;
-
-                    pen::timer_start(ti);
-                    generate_mips_r32f(tcp2);
-                    f32 scalar_t = pen::timer_elapsed_us(ti);
-
-                    pen::timer_start(ti);
+#if PEN_SIMD
                     generate_mips_r32f_simd(tcp);
-                    f32 simd_t = pen::timer_elapsed_us(ti);
-
-                    PEN_PRINTF("scalar %f, simd %f\n", scalar_t, simd_t);
 #else
                     generate_mips_r32f(tcp);
 #endif
