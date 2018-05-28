@@ -212,23 +212,12 @@ namespace put
                 s32        default_depth = 0;
                 const c8** default_dir   = get_last_used_directory(default_depth);
 
-                selected_path = ""; //put::dev_ui::get_program_preference_filename("last_used_directory");
+                selected_path = put::dev_ui::get_program_preference_filename("last_used_directory");
 
                 pen::filesystem_enum_volumes(fs_enumeration);
+
                 pen::fs_tree_node* fs_iter = &fs_enumeration;
-                
-                if(fs_iter->children == nullptr)
-                {
-                    va_list wildcards;
-                    va_start(wildcards, num_filetypes);
 
-                    pen::filesystem_enum_directory(default_dir[0], fs_enumeration, num_filetypes, wildcards);
-
-                    current_path = "/";
-                    
-                    va_end(wildcards);
-                }
-                
                 for (s32 c = 0; c < default_depth; ++c)
                 {
                     for (u32 entry = 0; entry < fs_iter->num_children; ++entry)
@@ -236,7 +225,8 @@ namespace put
                         if (pen::string_compare(fs_iter->children[entry].name, default_dir[c]) == 0)
                         {
                             current_path.append(fs_iter->children[entry].name);
-                            current_path.append("/");
+                            if(fs_iter->children[entry].name[0] != '/')
+                                current_path.append("/");
 
                             va_list wildcards;
                             va_start(wildcards, num_filetypes);
@@ -256,7 +246,7 @@ namespace put
                         }
                     }
                 }
-
+                
                 initialise = false;
             }
 
@@ -359,9 +349,7 @@ namespace put
                 {
                     if (d >= base_frame && d < base_frame + max_depth)
                     {
-                        if(fs_iter->name)
-                            ImGui::Text("%s", fs_iter->name);
-                        
+                        ImGui::Text("%s", fs_iter->name);
                         ImGui::NextColumn();
                     }
 
