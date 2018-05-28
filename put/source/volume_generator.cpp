@@ -19,7 +19,6 @@
 #include "sdf/makelevelset3.h"
 
 #define PEN_SIMD 0
-
 #if PEN_SIMD
 #include <xmmintrin.h>
 #endif
@@ -375,7 +374,7 @@ namespace put
 
             return PEN_THREAD_OK;
         }
-
+        
         void generate_mips_r32f_simd(pen::texture_creation_params& tcp)
         {
 #if PEN_SIMD
@@ -424,7 +423,10 @@ namespace put
 
                 u32 c_rp = m.x * block_size; // cur row pitch
                 u32 c_sp = c_rp * m.y;       // cur slice pitch
-
+                
+                u32 block_copy_size = std::min<u32>(m.x*4, 16);
+                u32 block_offset = block_copy_size < 16 ? 0 : 16;
+                
                 for (u32 z = 0; z < m.z; ++z)
                 {
                     for (u32 y = 0; y < m.y; ++y)
@@ -444,15 +446,15 @@ namespace put
                             vo = vobase + offsets[3];
                             p_offset[3] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
                             
-                            pen::memory_cpy(&r00, &prev_level[p_offset[0]], 16);
-                            pen::memory_cpy(&r01, &prev_level[p_offset[0] + 16], 16);
-                            pen::memory_cpy(&r10, &prev_level[p_offset[1]], 16);
-                            pen::memory_cpy(&r11, &prev_level[p_offset[1] + 16], 16);
+                            pen::memory_cpy(&r00, &prev_level[p_offset[0]], block_copy_size);
+                            pen::memory_cpy(&r01, &prev_level[p_offset[0] + block_offset], block_copy_size);
+                            pen::memory_cpy(&r10, &prev_level[p_offset[1]], block_copy_size);
+                            pen::memory_cpy(&r11, &prev_level[p_offset[1] + block_offset], block_copy_size);
                             
-                            pen::memory_cpy(&d00, &prev_level[p_offset[2]], 16);
-                            pen::memory_cpy(&d01, &prev_level[p_offset[2] + 16], 16);
-                            pen::memory_cpy(&d10, &prev_level[p_offset[3]], 16);
-                            pen::memory_cpy(&d11, &prev_level[p_offset[3] + 16], 16);
+                            pen::memory_cpy(&d00, &prev_level[p_offset[2]], block_copy_size);
+                            pen::memory_cpy(&d01, &prev_level[p_offset[2] + block_offset], block_copy_size);
+                            pen::memory_cpy(&d10, &prev_level[p_offset[3]], block_copy_size);
+                            pen::memory_cpy(&d11, &prev_level[p_offset[3] + block_offset], block_copy_size);
                             
                             __m128 x0 = _mm_shuffle_ps(r00, r01, _MM_SHUFFLE(2, 0, 2, 0));
                             __m128 x1 = _mm_shuffle_ps(r00, r01, _MM_SHUFFLE(3, 1, 3, 1));
@@ -473,7 +475,7 @@ namespace put
                             output = _mm_mul_ps(output, vrecip);
                             
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
-                            pen::memory_cpy(&cur_level[c_offset], &output, sizeof(__m128));
+                            pen::memory_cpy(&cur_level[c_offset], &output, block_copy_size);
                         }
                     }
                 }
