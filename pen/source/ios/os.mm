@@ -13,11 +13,12 @@ namespace
     EAGLContext* _gl_context;
 }
 
+pen::user_info pen_user_info;
+
 namespace pen
 {
     void renderer_init(void*, bool);
     bool renderer_dispatch();
-    user_info pen_user_info;
 }
 
 void pen_gl_swap_buffers()
