@@ -28,6 +28,11 @@ struct vs_output_textured
 	float4 tex_coord : TEXCOORD0;
 };
 
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
 cbuffer per_pass_view : register(b0)
 {
 	float4x4 view_projection_matrix;
@@ -40,9 +45,10 @@ cbuffer per_pass_view_2d : register(b1)
 	float4 	 user_data;
 };
 
-struct ps_output
+declare_texture_samplers
 {
-	float4 colour : SV_Target;
+	texture_2d( texture_0, 0 );
+	texture_2dms( float4, 4, texture_msaa, 1 );
 };
 
 vs_output vs_main_2d( vs_input_2d input )
@@ -70,12 +76,6 @@ vs_output vs_main_3d( vs_input_3d input )
 	
     return output;
 }
-
-declare_texture_samplers
-{
-	texture_2d( texture_0, 0 );
-	texture_2dms( float4, 4, texture_msaa, 1 );
-};
 
 ps_output ps_main( vs_output input )
 {

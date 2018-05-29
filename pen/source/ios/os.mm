@@ -13,6 +13,8 @@ namespace
     EAGLContext* _gl_context;
 }
 
+pen::user_info pen_user_info;
+
 namespace pen
 {
     void renderer_init(void*, bool);
@@ -73,9 +75,9 @@ extern PEN_TRV pen::user_entry( void* params );
     viewController.preferredFramesPerSecond = 60;
     self.window.rootViewController = viewController;
     
-    CGRect rect = [[UIScreen mainScreen] bounds];
-    pen_window.width = rect.size.width;
-    pen_window.height = rect.size.height;
+    // hardcoded for iphone7 right now, as the correct dimension relies on an asset catalog
+    pen_window.width = 750; //window_rect.size.width;
+    pen_window.height = 1334; //window_rect.size.height;
     
     pen::timer_system_intialise();
     
@@ -172,5 +174,15 @@ namespace pen
         }
 
         return true;
+    }
+    
+    bool input_undo_pressed()
+    {
+        return false;
+    }
+    
+    bool input_redo_pressed()
+    {
+        return false;
     }
 }

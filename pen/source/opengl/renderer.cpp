@@ -91,6 +91,13 @@ namespace
 #define CHECK_GL_ERROR
 #define CHECK_CALL(C) C
 #endif
+    
+#ifdef PEN_GLES3
+#define PEN_SET_BASE_VERTEX(BV) g_bound_state.base_vertex = BV
+#else
+#define PEN_BASE_VERTEX(BV) g_bound_state.base_vertex = 0;
+#endif
+
 } // namespace
 
 namespace pen
@@ -432,6 +439,7 @@ namespace pen
         u32  pixel_shader                                  = 0;
         u32  stream_out_shader                             = 0;
         u32  raster_state                                  = 0;
+        u32  base_vertex                                   = 0;
         bool backbuffer_bound                              = false;
         u8   constant_buffer_bindings[MAX_UNIFORM_BUFFERS] = {0};
         u32  index_format                                  = GL_UNSIGNED_SHORT;
@@ -920,7 +928,8 @@ namespace pen
             g_bound_state.vertex_buffer_stride[v] = g_current_state.vertex_buffer_stride[v];
 
             auto& res = resource_pool[g_bound_state.vertex_buffer[v]].handle;
-
+            CHECK_CALL(glBindBuffer(GL_ARRAY_BUFFER, res));
+            
             u32 num_attribs = sb_count(input_res->attributes);
             for (u32 a = 0; a < num_attribs; ++a)
             {
@@ -930,11 +939,14 @@ namespace pen
                     continue;
 
                 CHECK_CALL(glEnableVertexAttribArray(attribute.location));
-                CHECK_CALL(glBindBuffer(GL_ARRAY_BUFFER, res));
+                
+                u32 base_vertex_offset = g_bound_state.vertex_buffer_stride[v] * g_bound_state.base_vertex;
 
-                CHECK_CALL(glVertexAttribPointer(attribute.location, attribute.num_elements, attribute.type,
+                CHECK_CALL(glVertexAttribPointer(attribute.location, attribute.num_elements,
+                                                 attribute.type,
                                                  attribute.type == GL_UNSIGNED_BYTE ? true : false,
-                                                 g_bound_state.vertex_buffer_stride[v], (void*)attribute.offset));
+                                                 g_bound_state.vertex_buffer_stride[v],
+                                                 (void*)(attribute.offset + base_vertex_offset)));
 
                 CHECK_CALL(glVertexAttribDivisor(attribute.location, attribute.step_rate));
             }
@@ -1029,6 +1041,8 @@ namespace pen
 
     void direct::renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
     {
+        PEN_SET_BASE_VERTEX(base_vertex);
+        
         bind_state(primitive_topology);
 
         // bind index buffer -this must always be re-bound
@@ -1040,10 +1054,12 @@ namespace pen
         CHECK_CALL(
             glDrawElementsBaseVertex(primitive_topology, index_count, g_bound_state.index_format, offset, base_vertex));
     }
-
+    
     void direct::renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                                  u32 base_vertex, u32 primitive_topology)
     {
+        PEN_SET_BASE_VERTEX(base_vertex);
+        
         bind_state(primitive_topology);
 
         // bind index buffer -this must always be re-bound
@@ -1365,13 +1381,8 @@ namespace pen
             }
             else
             {
-#if 1
                 CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
                                                   depth_res.render_target.texture.handle, 0));
-#else
-                CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-                                                depth_res.render_target.texture.handle, 0));
-#endif
             }
         }
 
@@ -1386,13 +1397,8 @@ namespace pen
             }
             else
             {
-#if 1
                 CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D,
                                                   colour_res.render_target.texture.handle, 0));
-#else
-                CHECK_CALL(
-                    glFramebufferTexture(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0));
-#endif
             }
         }
 
@@ -1473,13 +1479,8 @@ namespace pen
                 }
                 else
                 {
-#if 1
                     CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                                                       colour_res.render_target.texture.handle, 0));
-#else
-                    CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                                    colour_res.render_target.texture.handle, 0));
-#endif
                 }
 
                 framebuffer fb = {hash[i], fbos[i]};
@@ -1722,7 +1723,6 @@ namespace pen
     void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
     {
         resource_allocation& res = resource_pool[buffer_index];
-
         CHECK_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle));
     }
 
