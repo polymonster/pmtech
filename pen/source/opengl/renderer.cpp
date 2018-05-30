@@ -95,7 +95,7 @@ namespace
 #ifdef PEN_GLES3
 #define PEN_SET_BASE_VERTEX(BV) g_bound_state.base_vertex = BV
 #else
-#define PEN_BASE_VERTEX(BV) g_bound_state.base_vertex = 0;
+#define PEN_SET_BASE_VERTEX(BV) g_bound_state.base_vertex = 0;
 #endif
 
 } // namespace

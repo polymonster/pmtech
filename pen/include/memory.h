@@ -81,7 +81,7 @@ namespace pen
     inline void* memory_alloc_align(u32 size_bytes, u32 alignment)
     {
         void* mem;
-        PEN_MEM_ALIGN_ALLOC(mem, size_bytes, alignment);
+        PEN_MEM_ALIGN_ALLOC(mem, alignment, size_bytes);
 
         return mem;
     }
