@@ -1214,6 +1214,7 @@ namespace put
                 {
                     put::ces::save_scene(save_file, sc->scene);
                     k_model_view_controller.current_working_scene = save_file;
+                    open_save = false;
 
                     dev_ui::set_program_preference_filename("last_loaded_scene", save_file);
                 }

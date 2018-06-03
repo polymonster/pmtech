@@ -738,6 +738,40 @@ namespace pen
         pen::memory_free(m_internal_object);
         m_internal_object = nullptr;
     }
+    
+    void json::set(const c8* name, const c8* val)
+    {
+        Str fmt = val;
+        json::set(name, fmt);
+    }
+    
+    void json::set(const c8* name, const u32 val)
+    {
+        Str fmt;
+        fmt.appendf("%u", val);
+        json::set(name, fmt);
+    }
+    
+    void json::set(const c8* name, const bool val)
+    {
+        Str fmt;
+        fmt.appendf("%i", val);
+        json::set(name, fmt);
+    }
+    
+    void json::set(const c8* name, const s32 val)
+    {
+        Str fmt;
+        fmt.appendf("%u", val);
+        json::set(name, fmt);
+    }
+    
+    void json::set(const c8* name, const f32 val)
+    {
+        Str fmt;
+        fmt.appendf("%f", val);
+        json::set(name, fmt);
+    }
 
     void json::set(const c8* name, const Str val)
     {

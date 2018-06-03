@@ -9,6 +9,7 @@
 #include "dev_ui.h"
 #include "pmfx.h"
 #include "timer.h"
+#include "str_utilities.h"
 
 #include "console.h"
 #include "data_struct.h"
@@ -25,10 +26,12 @@
 #include <tmmintrin.h>
 #endif
 
+#include <fstream>
+
 u8 temp[16];
-#define SIMD_PRINT_u8(V) pen::memory_cpy(temp, &V, 16); \
-                            for(u32 i = 0; i < 16; ++i) \
-                                printf("%i ", (u32)temp[i]); \
+#define SIMD_PRINT_u8(V)    pen::memory_cpy(temp, &V, 16);      \
+                            for(u32 i = 0; i < 16; ++i)         \
+                            printf("%i ", (u32)temp[i]);        \
                             printf("\n");
 
 // Progress / Cancellation
@@ -42,21 +45,6 @@ namespace put
 
     namespace vgt
     {
-        struct triangle
-        {
-            vec3f v[3];
-            vec3f n;
-        };
-
-        struct triangle_octree
-        {
-            triangle*        triangles        = nullptr;
-            triangle*        failed_triangles = nullptr;
-            triangle_octree* children         = nullptr;
-            u32              id               = 0;
-            extents          e;
-        };
-
         static const int k_num_axes = 6;
 
         enum volume_types
@@ -110,6 +98,15 @@ namespace put
             s32  capture_data     = 0;
             bool generate_mips    = true;
         };
+        
+        struct generated_volume
+        {
+            u32 texture;
+            pen::texture_creation_params tcp;
+            u32 scene_node_index;
+            vec3f scale;
+            vec3f pos;
+        };
 
         struct vgt_rasteriser_job
         {
@@ -126,8 +123,8 @@ namespace put
             a_u32       combine_position;
             u32         block_size;
             u32         data_size;
-            u8*         volume_data;
             s32         capture_type = 0;
+            u32         generated_volume_index;
         };
         static vgt_rasteriser_job k_rasteriser_job;
 
@@ -141,7 +138,6 @@ namespace put
         {
             vgt_options     options;
             entity_scene*   scene;
-            triangle_octree tree;
             u32             volume_dim;
             u32             texture_format;
             u32             block_size;
@@ -152,11 +148,16 @@ namespace put
             f32             padding;
             u32             generate_in_progress = 0;
             s32             capture_type         = 0;
+            u32             generated_volume_index;
         };
         static vgt_sdf_job k_sdf_job;
 
-        static put::camera                   k_volume_raster_ortho;
-        static pen::texture_creation_params* k_generated_volume_tcp;
+        static put::camera          k_volume_raster_ortho;
+        static generated_volume*    k_generated_volumes;
+        
+        // Forwards
+        generated_volume create_volume_from_data(u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format,
+                                                 u8* volume_data, bool generate_mips);
 
         u8* get_texel(u32 axis, u32 x, u32 y, u32 z)
         {
@@ -375,9 +376,17 @@ namespace put
                     }
                 }
             }
-
-            rasteriser_job->volume_data = volume_data;
-
+            
+            // create texture
+            generated_volume gv = create_volume_from_data(volume_dim, k_rasteriser_job.block_size, k_rasteriser_job.data_size,
+                                                         PEN_TEX_FORMAT_BGRA8_UNORM, volume_data,
+                                                         k_rasteriser_job.options.generate_mips);
+            
+            pen::memory_free(volume_data); // mem is now owned by gv.tcp
+            
+            sb_push(k_generated_volumes, gv);
+            
+            rasteriser_job->generated_volume_index = sb_count(k_generated_volumes)-1;
             rasteriser_job->combine_in_progress = 2;
 
             return PEN_THREAD_OK;
@@ -815,9 +824,11 @@ namespace put
             tcp.data = data;
         }
 
-        u32 create_volume_from_data(u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data,
+        generated_volume create_volume_from_data(u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format, u8* volume_data,
                                     bool generate_mips)
         {
+            generated_volume gv;
+            
             pen::texture_creation_params tcp;
             tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
 
@@ -845,18 +856,7 @@ namespace put
                     case PEN_TEX_FORMAT_BGRA8_UNORM:
                     {
 #if PEN_SIMD
-                        pen::texture_creation_params tcp2 = tcp;
-                        
-                        u32 ti = pen::timer_create("simd test");
-                        pen::timer_start(ti);
                         generate_mips_rgba8_simd(tcp);
-                        f32 simd = pen::timer_elapsed_us(ti);
-                        
-                        pen::timer_start(ti);
-                        generate_mips_rgba8(tcp2);
-                        f32 scalar = pen::timer_elapsed_us(ti);
-                        
-                        PEN_PRINTF("scalar %f, simd %f", scalar, simd);
                         
 #else
                         generate_mips_rgba8(tcp);
@@ -885,11 +885,11 @@ namespace put
                 tcp.data = pen::memory_alloc(data_size);
                 pen::memory_cpy(tcp.data, volume_data, data_size);
             }
-
-            // Keep around cpu texture data for all volumes to save them to disk later
-            sb_push(k_generated_volume_tcp, tcp);
-
-            return pen::renderer_create_texture(tcp);
+            
+            gv.texture = pen::renderer_create_texture(tcp);
+            gv.tcp = tcp;
+            
+            return gv;
         }
 
         void volume_raster_completed(ces::entity_scene* scene)
@@ -907,13 +907,8 @@ namespace put
                     return;
             }
 
-            u32& volume_dim = k_rasteriser_job.dimension;
-
-            // create texture
-            u32 volume_texture = create_volume_from_data(volume_dim, k_rasteriser_job.block_size, k_rasteriser_job.data_size,
-                                                         PEN_TEX_FORMAT_BGRA8_UNORM, k_rasteriser_job.volume_data,
-                                                         k_rasteriser_job.options.generate_mips);
-
+            generated_volume& gv = k_generated_volumes[k_rasteriser_job.generated_volume_index];
+            
             // create material for volume ray trace
             material_resource* volume_material = new material_resource;
             volume_material->material_name     = "volume_material";
@@ -924,7 +919,7 @@ namespace put
             // volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
             volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
 
-            volume_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
+            volume_material->texture_handles[SN_VOLUME_TEXTURE] = gv.texture;
             add_material_resource(volume_material);
 
             geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
@@ -940,9 +935,15 @@ namespace put
             scene->transforms[new_prim].translation = pos;
             scene->entities[new_prim] |= CMP_TRANSFORM | CMP_VOLUME;
             scene->parents[new_prim] = new_prim;
+            
             instantiate_geometry(cube, scene, new_prim);
             instantiate_material(volume_material, scene, new_prim);
             instantiate_model_cbuffer(scene, new_prim);
+            
+            gv.pos = pos;
+            gv.scale = scale;
+            
+            gv.scene_node_index = new_prim;
 
             // clean up
             for (u32 a = 0; a < 6; ++a)
@@ -952,9 +953,6 @@ namespace put
 
                 pen::memory_free(k_rasteriser_job.volume_slices[a]);
             }
-
-            // save to disk?
-            pen::memory_free(k_rasteriser_job.volume_data);
 
             // completed
             k_rasteriser_job.rasterise_in_progress = false;
@@ -1207,7 +1205,19 @@ namespace put
             {
                 dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s", "[error] no triangles in scene to generate sdf");
             }
+            
+            // create texture
 
+            
+            generated_volume gv = create_volume_from_data(k_sdf_job.volume_dim, k_sdf_job.block_size,
+                                                         k_sdf_job.data_size, k_sdf_job.texture_format,
+                                                         k_sdf_job.volume_data, k_sdf_job.options.generate_mips);
+            
+            pen::memory_free(k_sdf_job.volume_data); // mem is now owned by gv.tcp
+
+            sb_push(k_generated_volumes, gv);
+            sdf_job->generated_volume_index = sb_count(k_generated_volumes)-1;
+            
             if (p_thread_info->p_completion_callback)
                 p_thread_info->p_completion_callback(nullptr);
 
@@ -1449,11 +1459,8 @@ namespace put
 
                 if (k_sdf_job.generate_in_progress == 2)
                 {
-                    // create texture
-                    u32 volume_texture = create_volume_from_data(k_sdf_job.volume_dim, k_sdf_job.block_size,
-                                                                 k_sdf_job.data_size, k_sdf_job.texture_format,
-                                                                 k_sdf_job.volume_data, k_sdf_job.options.generate_mips);
-
+                    generated_volume& gv = k_generated_volumes[k_sdf_job.generated_volume_index];
+                    
                     // create material for volume sdf sphere trace
                     material_resource* sdf_material                   = new material_resource;
                     sdf_material->material_name                       = "volume_sdf_material";
@@ -1461,7 +1468,7 @@ namespace put
                     sdf_material->id_shader                           = PEN_HASH("pmfx_utility");
                     sdf_material->id_technique                        = PEN_HASH("volume_sdf");
                     sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-                    sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = volume_texture;
+                    sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
                     add_material_resource(sdf_material);
 
                     geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
@@ -1481,6 +1488,8 @@ namespace put
                     instantiate_geometry(cube, k_main_scene, new_prim);
                     instantiate_material(sdf_material, k_main_scene, new_prim);
                     instantiate_model_cbuffer(k_main_scene, new_prim);
+                    
+                    gv.scene_node_index = new_prim;
 
                     // add shadow receiver
                     material_resource* sdf_shadow_material                   = new material_resource;
@@ -1489,7 +1498,7 @@ namespace put
                     sdf_shadow_material->id_shader                           = PEN_HASH("pmfx_utility");
                     sdf_shadow_material->id_technique                        = PEN_HASH("shadow_sdf");
                     sdf_shadow_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-                    sdf_shadow_material->texture_handles[SN_VOLUME_TEXTURE]  = volume_texture;
+                    sdf_shadow_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
                     add_material_resource(sdf_shadow_material);
 
                     new_prim                      = get_new_node(k_main_scene);
@@ -1511,96 +1520,6 @@ namespace put
 
         void show_dev_ui()
         {
-            /*
-            uint8_t u0[16] = { 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4 };
-            uint8_t u1[16] = { 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8 };
-            
-            __m128i r0, r1;
-            
-            pen::memory_cpy(&r0, u0, 16);
-            pen::memory_cpy(&r1, u1, 16);
-            
-            uint8_t aumask[16] = { 4, 5, 6, 7, 12, 13, 14, 15, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
-            uint8_t bumask[16] = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 4, 5, 6, 7, 12, 13, 14, 15 };
-            uint8_t cumask[16] = { 0, 1, 2, 3, 8, 9, 10, 11, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
-            uint8_t dumask[16] = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0, 1, 2, 3, 8, 9, 10, 11 };
-            
-            __m128i am, bm, cm, dm;
-            
-            pen::memory_cpy(&am, &aumask, 16);
-            pen::memory_cpy(&bm, &bumask, 16);
-            pen::memory_cpy(&cm, &cumask, 16);
-            pen::memory_cpy(&dm, &dumask, 16);
-            
-            __m128i xa = _mm_shuffle_epi8(r0, am);
-            __m128i xb = _mm_shuffle_epi8(r1, bm);
-            __m128i xc = _mm_shuffle_epi8(r0, cm);
-            __m128i xd = _mm_shuffle_epi8(r1, dm);
-            
-            __m128i xr0 = _mm_add_epi8(xa, xb);
-            __m128i xr1 = _mm_add_epi8(xc, xd);
-            
-            uint8_t res_a[16];
-            pen::memory_cpy(&res_a, &xr0, 16);
-            
-            uint8_t res_b[16];
-            pen::memory_cpy(&res_b, &xr1, 16);
-        
-            for(u32 i = 0; i < 16; ++i)
-                printf("%i ", (u32)res_a[i]);
-            printf("\n");
-            for(u32 i = 0; i < 16; ++i)
-                printf("%i ", (u32)res_b[i]);
-            printf("\n");
-            
-            int a = 0;
-            */
-            
-            /*
-            uint8_t u8r0[16];
-            uint8_t u8r1[16];
-            uint8_t umask[16] = { 4, 5, 6, 7, 12, 13, 14, 15, 8, 9, 10, 11, 12, 13, 14, 15 };
-            
-            for(u32 i = 0; i < 16; ++i)
-                u8r0[i] = i;
-            
-            for(u32 i = 0; i < 16; ++i)
-                u8r1[i] = i + 100;
-            
-            for(u32 i = 0; i < 16; ++i)
-                PEN_PRINTF("%i, ", (u32)u8r0[i]);
-            
-            for(u32 i = 0; i < 16; ++i)
-                PEN_PRINTF("%i, ", (u32)u8r1[i]);
-            
-            __m128i r00, r01;
-            __m128 rf00, rf01;
-            
-            __m128i mask;
-            
-            pen::memory_cpy(&mask, umask, 16);
-            pen::memory_cpy(&r00, u8r0, 16);
-            pen::memory_cpy(&r01, u8r1, 16);
-            
-            __m128i x0 = _mm_shuffle_epi8(r00, mask);
-            */
-            
-            /*
-            rf00 = _mm_castsi128_ps(r00);
-            rf01 = _mm_castsi128_ps(r01);
-            
-            __m128 xf0 = _mm_shuffle_ps(rf00, rf01, _MM_SHUFFLE(2, 0, 2, 0));
-            __m128i x0 = _mm_castps_si128(xf0);
-            
-
-            */
-            
-            //uint8_t u8max[16];
-            //pen::memory_cpy(u8max, &x0, 16);
-            
-            //for(u32 i = 0; i < 16; ++i)
-                //PEN_PRINTF("%i\n", (u32)u8max[i]);
-            
             // main menu option -------------------------------------------------
             ImGui::BeginMainMenuBar();
 
@@ -1663,8 +1582,9 @@ namespace put
 
                 if (has_volumes)
                 {
-                    static bool      save_dialog_open = false;
-                    static const c8* save_location    = nullptr;
+                    static bool      save_dialog_open   = false;
+                    static const c8* save_location      = nullptr;
+                    static s32       save_index         = -1;
 
                     ImGui::Separator();
                     ImGui::Text("Generated Volumes");
@@ -1691,14 +1611,16 @@ namespace put
 
                         ImGui::NextColumn();
                         if (ImGui::Button("Save"))
+                        {
+                            save_index = n;
                             save_dialog_open = true;
+                        }
 
                         ImGui::SameLine();
                         if (ImGui::Button("Delete"))
                         {
                             ces::delete_entity(k_main_scene, n);
-
-                            // todo free tcp mem
+                            ces::add_selection(k_main_scene, n, ces::SELECT_REMOVE);
                         }
 
                         ImGui::NextColumn();
@@ -1708,12 +1630,43 @@ namespace put
 
                     ImGui::EndGroup();
 
-                    if (save_dialog_open)
+                    if (save_dialog_open && save_index != -1)
                     {
                         save_location = dev_ui::file_browser(save_dialog_open, dev_ui::FB_SAVE);
                         if (save_location)
                         {
-                            int i = 0;
+                            for(u32 i = 0; i < sb_count(k_generated_volumes); ++i)
+                            {
+                                if(k_generated_volumes[i].scene_node_index == save_index)
+                                {
+                                    Str basename = str_basename(save_location);
+                                    
+                                    Str dds_file = basename;
+                                    dds_file.appendf(".dds");
+                                    
+                                    save_texture(dds_file.c_str(), k_generated_volumes[i].tcp);
+                                    save_index = -1;
+                                    
+                                    Str json_file = basename;
+                                    json_file.appendf(".pmv");
+                                    
+                                    bool sdf = k_main_scene->entities[save_index] & CMP_SDF_SHADOW;
+                                    const c8* vol_name = sdf ? "signed_distance_field" : "volume_texture";
+                                    
+                                    pen::json j;
+                                    j.set("filename", dds_file);
+                                    j.set("volume_type", vol_name);
+                                    j.set("scale_x", k_generated_volumes[i].scale.x);
+                                    j.set("scale_y", k_generated_volumes[i].scale.y);
+                                    j.set("scale_z", k_generated_volumes[i].scale.z);
+                                    
+                                    std::ofstream ofs(json_file.c_str());
+                                    ofs << j.dumps().c_str();
+                                    ofs.close();
+                                    
+                                    break;
+                                }
+                            }
                         }
                     }
                 }

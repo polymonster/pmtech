@@ -38,6 +38,43 @@ namespace put
 
         return -1;
     }
+    
+    inline Str str_substr( const Str& string, s32 start, s32 end )
+    {
+        Str sub = "";
+        for(s32 i = start; i < end; ++i)
+        {
+            sub.appendf("%c", string[i]);
+        }
+        
+        return sub;
+    }
+    
+    inline bool str_ends_with(const Str& string, const c8* ends)
+    {
+        s32 len = string.length();
+        s32 ii = str_find_reverse(string, ends);
+        
+        if(len - ii == pen::string_length(ends) )
+        {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    inline Str str_basename( const Str& string )
+    {
+        s32 ext = str_find_reverse(string, ".");
+        s32 dir = str_find_reverse(string, "/");
+        
+        if(ext > dir)
+        {
+            return str_substr(string, 0, ext);
+        }
+        
+        return string;
+    }
 
     inline s32 str_find(const Str& string, const c8* search, u32 start_pos = 0)
     {
