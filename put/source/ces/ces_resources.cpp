@@ -385,7 +385,7 @@ namespace put
                 k_geometry_resources.push_back(p_geometry);
             }
         }
-
+        
         material_resource* get_material_resource(hash_id hash)
         {
             for (auto* m : k_material_resources)
@@ -1011,6 +1011,82 @@ namespace put
 
             pen::memory_free(model_file);
             return nodes_start;
+        }
+        
+        struct volume_instance
+        {
+            hash_id id;
+            hash_id id_technique;
+            hash_id id_sampler_state;
+            u32     cmp_flags;
+        };
+        
+        s32 load_pmv(const c8* filename, entity_scene* scene)
+        {
+            pen::json pmv = pen::json::load_from_file(filename);
+            
+            Str volume_texture_filename = pmv["filename"].as_str();
+            u32 volume_texture = put::load_texture(volume_texture_filename.c_str());
+            
+            vec3f scale = vec3f(pmv["scale_x"].as_f32(), pmv["scale_y"].as_f32(), pmv["scale_z"].as_f32());
+            
+            hash_id id_type = pmv["volume_type"].as_hash_id();
+            
+            static volume_instance vi[] =
+            {
+                {
+                    PEN_HASH("volume_texture"),
+                    PEN_HASH("volume_texture"),
+                    PEN_HASH("clamp_point_sampler_state"),
+                    CMP_VOLUME
+                },
+                
+                {
+                    PEN_HASH("signed_distance_field"),
+                    PEN_HASH("volume_sdf"),
+                    PEN_HASH("clamp_linear_sampler_state"),
+                    CMP_SDF_SHADOW
+                }
+            };
+            
+            int i = 0;
+            for( auto& v : vi )
+            {
+                if(v.id == id_type)
+                    break;
+
+                ++i;
+            }
+
+            // create material for volume sdf sphere trace
+            material_resource* material                   = new material_resource;
+            material->material_name                       = "volume_sdf_material";
+            material->shader_name                         = "pmfx_utility";
+            material->id_shader                           = PEN_HASH("pmfx_utility");
+            material->id_technique                        = vi[i].id_technique;
+            material->id_sampler_state[SN_VOLUME_TEXTURE] = vi[i].id_sampler_state;
+            material->texture_handles[SN_VOLUME_TEXTURE]  = volume_texture;
+            add_material_resource(material);
+            
+            geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
+            
+            vec3f pos   = vec3f::zero();
+            
+            u32 v = get_new_node(scene);
+            
+            scene->names[v] = "volume";
+            scene->names[v].appendf("%i", v);
+            scene->transforms[v].rotation = quat();
+            scene->transforms[v].scale = scale;
+            scene->transforms[v].translation = pos;
+            scene->entities[v] |= CMP_TRANSFORM;
+            scene->parents[v] = v;
+            
+            instantiate_geometry(cube, scene, v);
+            instantiate_material(material, scene, v);
+            instantiate_model_cbuffer(scene, v);
+            
+            return v;
         }
 
         void enumerate_resources(bool* open)

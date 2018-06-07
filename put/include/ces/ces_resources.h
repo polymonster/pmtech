@@ -129,6 +129,7 @@ namespace put
 
         s32         load_pmm(const c8* model_scene_name, entity_scene* scene = nullptr, u32 load_flags = PMM_ALL);
         anim_handle load_pma(const c8* model_scene_name);
+        s32         load_pmv(const c8* filename, entity_scene* scene);
 
         void instantiate_rigid_body(entity_scene* scene, u32 node_index);
         void instantiate_constraint(entity_scene* scene, u32 node_index);

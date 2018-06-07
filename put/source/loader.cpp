@@ -209,6 +209,15 @@ namespace put
                 pf.flags |= DDPF_FOURCC;
                 pf.four_cc = DDS_R32_FLOAT;
                 break;
+            case PEN_TEX_FORMAT_BGRA8_UNORM:
+            case PEN_TEX_FORMAT_RGBA8_UNORM:
+                pf.size = 32;
+                pf.a_mask = 0xffffffff;
+                pf.r_mask = 0xffffffff;
+                pf.g_mask = 0xffffffff;
+                pf.b_mask = 0xffffffff;
+                pf.rgb_bit_count = 32;
+                break;
         }
 
         return pf;

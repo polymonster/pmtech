@@ -1143,25 +1143,34 @@ namespace put
 
             if (open_open)
             {
-                const c8* import = put::dev_ui::file_browser(open_open, dev_ui::FB_OPEN, 2, "**.pmm", "**.pms");
+                const c8* import = put::dev_ui::file_browser(open_open, dev_ui::FB_OPEN, 3, "**.pmm", "**.pms", "**.pmv");
 
                 if (import)
                 {
                     u32 len = pen::string_length(import);
-
-                    if (import[len - 1] == 'm')
+                    
+                    char pm = import[len - 1];
+                    switch(pm)
                     {
-                        put::ces::load_pmm(import, sc->scene);
-                    }
-                    else if (import[len - 1] == 's')
-                    {
-                        put::ces::load_scene(import, sc->scene, open_merge);
-
-                        if (!open_merge)
-                            k_model_view_controller.current_working_scene = import;
-
-                        Str fn = import;
-                        dev_ui::set_program_preference_filename("last_loaded_scene", import);
+                        case 'm':
+                            put::ces::load_pmm(import, sc->scene);
+                            break;
+                        case 's':
+                        {
+                            put::ces::load_scene(import, sc->scene, open_merge);
+                            
+                            if (!open_merge)
+                                k_model_view_controller.current_working_scene = import;
+                            
+                            Str fn = import;
+                            dev_ui::set_program_preference_filename("last_loaded_scene", import);
+                        }
+                            break;
+                        case 'v':
+                            put::ces::load_pmv(import, sc->scene);
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
