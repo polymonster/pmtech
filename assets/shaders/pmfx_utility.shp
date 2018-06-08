@@ -253,7 +253,7 @@ ps_output ps_volume_texture( vs_output input )
 	float depth = 1.0;
 	
 	float max_samples = 256.0;
-	
+		
 	float3 ray_dir = normalize(input.world_pos.xyz - camera_view_pos.xyz);
 				
 	//transform ray into volume space
@@ -271,6 +271,7 @@ ps_output ps_volume_texture( vs_output input )
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		output.colour = sample_texture_grad( volume_texture, uvw, vddx, vddy );
+		//output.colour = sample_texture_level( volume_texture, uvw, 2.0 );
 		
 		if(output.colour.a != 0.0)
 			break;
@@ -334,7 +335,7 @@ ps_output ps_volume_sdf( vs_output input )
 		taken += 1.0/max_samples;
 				
 		d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
-		//d = sample_texture_level(volume_texture, uvw, 2.0).r;
+		//d = sample_texture_level(volume_texture, uvw, 0.0).r;
 		
 		uvw += ray_dir.xyz * float3(d / scale) * 0.5;				
 													
@@ -421,7 +422,7 @@ ps_output ps_shadow_sdf( vs_output input )
 		{		
 			float d = sample_texture_level( volume_texture, uvw, 0.0 ).r;
 					
-			uvw += ray_dir.xyz * float3(d, d, d) / scale * 0.9;
+			uvw += ray_dir.xyz * float3(d, d, d) / scale * 0.5;
 			
 			closest = min(d, closest);
 		

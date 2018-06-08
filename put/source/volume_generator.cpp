@@ -920,8 +920,8 @@ namespace put
             volume_material->id_shader         = PEN_HASH("pmfx_utility");
             volume_material->id_technique      = PEN_HASH("volume_texture");
 
-            // volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-            volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
+            volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+            //volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
 
             volume_material->texture_handles[SN_VOLUME_TEXTURE] = gv.texture;
             add_material_resource(volume_material);
@@ -1017,17 +1017,14 @@ namespace put
             static mat4 axis_swaps[] = {mat::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), -vec3f::unit_z()),
                                         mat::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), vec3f::unit_y()),
                                         mat::create_axis_swap(-vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x()),
-
                                         mat::create_axis_swap(vec3f::unit_x(), vec3f::unit_y(), -vec3f::unit_z()),
                                         mat::create_axis_swap(vec3f::unit_x(), -vec3f::unit_z(), vec3f::unit_y()),
                                         mat::create_axis_swap(-vec3f::unit_z(), vec3f::unit_y(), vec3f::unit_x())};
 
             vec3f smin[] = {vec3f(max.x, min.y, min.z), vec3f(min.x, min.z, min.y), vec3f(min.z, min.y, min.x),
-
                             vec3f(min.x, min.y, max.z), vec3f(min.x, max.z, max.y), vec3f(max.z, min.y, max.x)};
 
             vec3f smax[] = {vec3f(min.x, max.y, max.z), vec3f(max.x, max.z, max.y), vec3f(max.z, max.y, max.x),
-
                             vec3f(max.x, max.y, min.z), vec3f(max.x, min.z, min.y), vec3f(min.z, max.y, min.x)};
 
             vec3f mmin = smin[current_axis];
@@ -1462,6 +1459,7 @@ namespace put
                     instantiate_model_cbuffer(k_main_scene, new_prim);
                     
                     gv.scene_node_index = new_prim;
+                    gv.scale = scale;
 
                     // add shadow receiver
                     material_resource* sdf_shadow_material                   = new material_resource;
@@ -1617,8 +1615,7 @@ namespace put
                                     dds_file.appendf(".dds");
                                     
                                     save_texture(dds_file.c_str(), k_generated_volumes[i].tcp);
-                                    save_index = -1;
-                                    
+
                                     Str json_file = basename;
                                     json_file.appendf(".pmv");
                                     
@@ -1635,6 +1632,8 @@ namespace put
                                     std::ofstream ofs(json_file.c_str());
                                     ofs << j.dumps().c_str();
                                     ofs.close();
+                                    
+                                    save_index = -1;
                                     
                                     break;
                                 }
