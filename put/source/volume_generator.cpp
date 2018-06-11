@@ -415,6 +415,8 @@ namespace put
                 m /= vec3ui(2, 2, 2);
                 m = max_union(m, vec3ui::one());
             }
+            
+            data_size += block_size; // final mip
 
             // offsets
             vec3ui offsets[] = {vec3ui(0, 0, 0), vec3ui(0, 1, 0), vec3ui(0, 0, 1), vec3ui(0, 1, 1)};
@@ -493,7 +495,7 @@ namespace put
                             output        = _mm_add_ps(output, x6);
                             output        = _mm_add_ps(output, x7);
                             output        = _mm_mul_ps(output, vrecip);
-
+                            
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
                             pen::memory_cpy(&cur_level[c_offset], &output, block_copy_size);
                         }
@@ -530,6 +532,8 @@ namespace put
                 m /= vec3ui(2, 2, 2);
                 m = max_union(m, vec3ui::one());
             }
+            
+            data_size += block_size; // final mip
             
             // offsets
             vec3ui offsets[] = {vec3ui(0, 0, 0), vec3ui(0, 1, 0), vec3ui(0, 0, 1), vec3ui(0, 1, 1)};
@@ -682,6 +686,8 @@ namespace put
                 m = max_union(m, vec3ui::one());
             }
 
+            data_size += block_size;
+            
             // offsets
             vec3ui offsets[] = {vec3ui(0, 0, 0),
 
@@ -762,7 +768,9 @@ namespace put
                 m /= vec3ui(2, 2, 2);
                 m = max_union(m, vec3ui::one());
             }
-
+            
+            data_size += block_size;
+            
             // offsets
             vec3ui offsets[] = {vec3ui(0, 0, 0),
 
@@ -1323,7 +1331,7 @@ namespace put
                 }
 
                 ImGui::SameLine();
-                ImGui::Combo("", &k_rasteriser_job.capture_type, "Whole Scene\0Selected");
+                ImGui::Combo("", &k_rasteriser_job.capture_type, "Whole Scene\0Selected\0");
             }
             else
             {
@@ -1386,7 +1394,7 @@ namespace put
 
             static s32 sdf_texture_format = 1;
             ImGui::Combo("Capture", &sdf_texture_format, texture_fromat, PEN_ARRAY_SIZE(texture_fromat));
-            ImGui::Checkbox("Signed", &k_sdf_job.trust_sign);
+            ImGui::Checkbox("Signed (use unsigned for non water-tight meshes)", &k_sdf_job.trust_sign);
             ImGui::InputFloat("Padding", &k_sdf_job.padding);
 
             if (!k_sdf_job.generate_in_progress)
@@ -1415,7 +1423,7 @@ namespace put
                 }
 
                 ImGui::SameLine();
-                ImGui::Combo("", &k_sdf_job.capture_type, "Whole Scene\0Selected");
+                ImGui::Combo("", &k_sdf_job.capture_type, "Whole Scene\0Selected\0");
             }
             else
             {

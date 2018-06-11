@@ -411,6 +411,27 @@ namespace put
             else
                 scene->state_flags[index] |= SF_SELECTED;
         }
+        
+        void delete_selection(entity_scene* scene)
+        {
+            u32 sel_num = sb_count(k_selection_list);
+            for (u32 s = 0; s < sel_num; ++s)
+            {
+                u32 i = k_selection_list[s];
+                
+                std::vector<s32> node_index_list;
+                build_heirarchy_node_list(scene, i, node_index_list);
+                
+                for (auto& c : node_index_list)
+                    if (c > -1)
+                        delete_entity(scene, c);
+            }
+            sb_clear(k_selection_list);
+            
+            initialise_free_list(scene);
+            
+            scene->flags |= put::ces::INVALIDATE_SCENE_TREE;
+        }
 
         void enumerate_selection_ui(const entity_scene* scene, bool* opened)
         {
@@ -837,11 +858,10 @@ namespace put
                     {
                         if (first_item)
                         {
+                            k_redo_stack.clear();
                             k_undo_stack.push(macro_end);
                             first_item = false;
                         }
-
-                        dev_console_log("%s", "adding undo");
 
                         k_editor_nodes[i].node_index = i;
                         k_undo_stack.push(k_editor_nodes[i]);
@@ -1283,32 +1303,12 @@ namespace put
 
             // delete
             if (shortcut_key(PK_DELETE) || shortcut_key(PK_BACK))
-            {
-                u32 sel_num = sb_count(k_selection_list);
-                for (u32 s = 0; s < sel_num; ++s)
-                {
-                    u32 i = k_selection_list[s];
-
-                    std::vector<s32> node_index_list;
-                    build_heirarchy_node_list(sc->scene, i, node_index_list);
-
-                    for (auto& c : node_index_list)
-                        if (c > -1)
-                            delete_entity(sc->scene, c);
-                }
-                sb_clear(k_selection_list);
-
-                initialise_free_list(sc->scene);
-
-                sc->scene->flags |= put::ces::INVALIDATE_SCENE_TREE;
-            }
+                delete_selection(sc->scene);
 
             if (view_menu)
-            {
                 view_ui(sc->scene, &view_menu);
-            }
 
-            // todo mnove this
+            // todo move this to main?
             static u32 timer_index = -1;
             if (timer_index == -1)
             {
@@ -1883,7 +1883,14 @@ namespace put
                     store_node_state(scene, ni, REDO);
                 }
                 put::dev_ui::set_tooltip("Add New Node");
-
+                
+                ImGui::SameLine();
+                
+                if (ImGui::Button(ICON_FA_TRASH))
+                    delete_selection(scene);
+                
+                put::dev_ui::set_tooltip("Delete Selection");
+                
                 ImGui::SameLine();
 
                 static bool list_view = false;

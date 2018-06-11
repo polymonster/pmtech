@@ -730,7 +730,7 @@ namespace put
                     continue;
 
                 // current directional light is a point light very far away
-                // with no attenuation.. todo optitise
+                // with no attenuation.. todo optimise
                 vec3f light_pos                     = l.direction * 100000.0f;
                 light_buffer.lights[pos].pos_radius = vec4f(light_pos, 0.0);
                 light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow ? 1.0 : 0.0);

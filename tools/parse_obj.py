@@ -5,6 +5,7 @@ import sys
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 
+
 def grow_extents(v, min, max):
     for i in range(0,3,1):
         if float(v[i]) < min[i]:
@@ -40,8 +41,11 @@ def write_geometry(file, root):
     meshes = []
     cur_mesh = None
     index = 0
+    flip_winding = False
 
     for line in obj_data:
+        if line.find("pmtech_flip_winding") != -1:
+            flip_winding = True
         element = line.split(' ')
         for vv in vertex_info:
             if element[0] == 'v':
@@ -54,9 +58,12 @@ def write_geometry(file, root):
                     vec.append(f)
                 vertex_data[vv[1]].append(vec)
         if element[0] == 'f':
+            face_list = element[1:]
+            if flip_winding:
+                face_list.reverse()
             if not cur_mesh:
                 cur_mesh = (basename, "obj_default", [], [], [], [])
-            for trivert in element[1:]:
+            for trivert in face_list:
                 elem_indices = [0]
                 if trivert.find("//") != -1:
                     velems = trivert.split("//")
@@ -149,9 +156,10 @@ def write_geometry(file, root):
     helpers.output_file.geometry.append(geometry_data)
     helpers.output_file.geometry_sizes.append(data_size)
 
-    scene_data = [struct.pack("i", (int(helpers.version_number))), struct.pack("i", (int(1)))]
+    scene_data = [struct.pack("i", (int(helpers.version_number))),
+                  struct.pack("i", (int(1))),
+                  struct.pack("i", (int(0)))]
 
-    scene_data.append(struct.pack("i", (int(0))))
     helpers.pack_parsable_string(scene_data, basename)
     helpers.pack_parsable_string(scene_data, basename)
 
