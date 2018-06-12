@@ -19,7 +19,7 @@
 
 #include "sdf/makelevelset3.h"
 
-#define PEN_SIMD 1
+#define PEN_SIMD 0
 #if PEN_SIMD
 #include <xmmintrin.h>
 #include <emmintrin.h>
