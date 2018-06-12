@@ -14,7 +14,7 @@
 #elif _WIN32
 #define THROW_BAD_ALLOC
 #define THROW_NO_EXCEPT
-#define PEN_MEM_ALIGN_ALLOC(mem, align, size) mem = _aligned_malloc(align, size)
+#define PEN_MEM_ALIGN_ALLOC(mem, align, size) mem = _aligned_malloc(size, align)
 #define PEN_MEM_ALIGN_FREE _aligned_free
 #else // OSX
 #define PEN_MEM_ALIGN_ALLOC(mem, align, size) posix_memalign(&mem, align, size)

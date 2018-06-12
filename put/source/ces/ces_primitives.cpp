@@ -12,6 +12,23 @@ namespace put
 {
     namespace ces
     {
+        void create_cpu_buffers(geometry_resource* p_geometry, vertex_model* v, u32 num_verts, u16* indices, u32 num_indices)
+        {
+            // Create position and index buffer of primitives
+
+            p_geometry->cpu_position_buffer = pen::memory_alloc(sizeof(vec4f) * num_verts);
+            p_geometry->cpu_index_buffer = pen::memory_alloc(sizeof(u16) * num_indices);
+
+            vec4f* cpu_positions = (vec4f*)p_geometry->cpu_position_buffer;
+            u16* cpu_indices = (u16*)p_geometry->cpu_index_buffer;
+
+            for (u32 i = 0; i < num_verts; ++i)
+                cpu_positions[i] = v[i].pos;
+
+            for (u32 i = 0; i < num_indices; ++i)
+                cpu_indices[i] = indices[i];
+        }
+
         void create_cone_primitive()
         {
             static const s32 segments = 16;
@@ -163,6 +180,7 @@ namespace put
             p_geometry->filename      = "primitive";
             p_geometry->p_skin        = nullptr;
 
+            create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 
@@ -297,6 +315,7 @@ namespace put
             p_geometry->filename      = "primitive";
             p_geometry->p_skin        = nullptr;
 
+            create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 
@@ -414,6 +433,7 @@ namespace put
             p_geometry->filename      = "primitive";
             p_geometry->p_skin        = nullptr;
 
+            create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 
@@ -513,6 +533,7 @@ namespace put
             p_geometry->filename      = "primitive";
             p_geometry->p_skin        = nullptr;
 
+            create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 
@@ -698,6 +719,7 @@ namespace put
             p_geometry->filename      = "primitive";
             p_geometry->p_skin        = nullptr;
 
+            create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 

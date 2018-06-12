@@ -395,7 +395,9 @@ ps_output ps_shadow_sdf( vs_output input )
 							 input.world_pos.xyz,
 							 albedo.rgb);
 		
-		float3 ray_dir = normalize(lights[i].pos_radius.xyz - input.world_pos.xyz);			 
+		float3 ray_dir = normalize(lights[i].pos_radius.xyz - input.world_pos.xyz);
+		float l_length = length(ray_dir);
+		
 		ray_dir = normalize( mul( ray_dir, inv_rot ) );
 		
 		float shad = 1.0;
@@ -412,9 +414,10 @@ ps_output ps_shadow_sdf( vs_output input )
 	
 		float3 ip;
 		bool hit = ray_vs_aabb( emin, emax, tr1, normalize(trv), ip);
-		
 		float3 uvw = ip * 0.5 + 0.5;
-		
+		float3 iwp = mul(float4(ip, 1.0), sdf_shadow.world_matrix).xyz;
+		float bb_length = length(lights[i].pos_radius.xyz - iwp);
+				
 		if(!hit)
 		{
 			output.colour.rgb += light_col;

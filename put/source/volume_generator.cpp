@@ -19,7 +19,7 @@
 
 #include "sdf/makelevelset3.h"
 
-#define PEN_SIMD 0
+#define PEN_SIMD 1
 #if PEN_SIMD
 #include <xmmintrin.h>
 #include <emmintrin.h>
@@ -126,7 +126,7 @@ namespace put
             s32         capture_type = 0;
             u32         generated_volume_index;
         };
-        static vgt_rasteriser_job k_rasteriser_job;
+        static vgt_rasteriser_job s_rasteriser_job;
 
         struct dd
         {
@@ -150,10 +150,10 @@ namespace put
             s32             capture_type         = 0;
             u32             generated_volume_index;
         };
-        static vgt_sdf_job k_sdf_job;
+        static vgt_sdf_job s_sdf_job;
 
-        static put::camera          k_volume_raster_ortho;
-        static generated_volume*    k_generated_volumes;
+        static put::camera          s_volume_raster_ortho;
+        static generated_volume*    s_generated_volumes;
         
         // Forwards
         generated_volume create_volume_from_data(u32 volume_dim, u32 block_size, u32 data_size, u32 tex_format,
@@ -161,8 +161,8 @@ namespace put
 
         u8* get_texel(u32 axis, u32 x, u32 y, u32 z)
         {
-            u32&    volume_dim    = k_rasteriser_job.dimension;
-            void*** volume_slices = k_rasteriser_job.volume_slices;
+            u32&    volume_dim    = s_rasteriser_job.dimension;
+            void*** volume_slices = s_rasteriser_job.volume_slices;
 
             u32 block_size = 4;
             u32 row_pitch  = volume_dim * 4;
@@ -173,7 +173,7 @@ namespace put
 
             u8* slice = nullptr;
 
-            u32 mask = k_rasteriser_job.options.rasterise_axes;
+            u32 mask = s_rasteriser_job.options.rasterise_axes;
 
             if (!(mask & 1 << axis))
                 return nullptr;
@@ -242,16 +242,16 @@ namespace put
                 return;
             }
 
-            s32&    current_slice = k_rasteriser_job.current_slice;
-            s32&    current_axis  = k_rasteriser_job.current_axis;
-            void*** volume_slices = k_rasteriser_job.volume_slices;
+            s32&    current_slice = s_rasteriser_job.current_slice;
+            s32&    current_axis  = s_rasteriser_job.current_axis;
+            void*** volume_slices = s_rasteriser_job.volume_slices;
 
             u32 w = row_pitch / block_size;
             u32 h = depth_pitch / row_pitch;
 
-            if (w != k_rasteriser_job.dimension)
+            if (w != s_rasteriser_job.dimension)
             {
-                u32 dest_row_pitch = k_rasteriser_job.dimension * block_size;
+                u32 dest_row_pitch = s_rasteriser_job.dimension * block_size;
                 u8* src_iter       = (u8*)p_data;
                 u8* dest_iter      = (u8*)volume_slices[current_axis][current_slice];
                 for (u32 y = 0; y < h; ++y)
@@ -382,15 +382,15 @@ namespace put
             }
             
             // create texture
-            generated_volume gv = create_volume_from_data(volume_dim, k_rasteriser_job.block_size, k_rasteriser_job.data_size,
+            generated_volume gv = create_volume_from_data(volume_dim, s_rasteriser_job.block_size, s_rasteriser_job.data_size,
                                                          PEN_TEX_FORMAT_BGRA8_UNORM, volume_data,
-                                                         k_rasteriser_job.options.generate_mips);
+                                                         s_rasteriser_job.options.generate_mips);
             
             pen::memory_free(volume_data); // mem is now owned by gv.tcp
             
-            sb_push(k_generated_volumes, gv);
+            sb_push(s_generated_volumes, gv);
             
-            rasteriser_job->generated_volume_index = sb_count(k_generated_volumes)-1;
+            rasteriser_job->generated_volume_index = sb_count(s_generated_volumes)-1;
             rasteriser_job->combine_in_progress = 2;
 
             return PEN_THREAD_OK;
@@ -646,9 +646,9 @@ namespace put
                             __m128i y0 = _mm_shuffle_epi8(x1, bm);
                             __m128i y1 = _mm_shuffle_epi8(x1, dm);
                             
-                            __m128 vv = _mm_max_epu8(v0, v1);
-                            __m128 yy = _mm_max_epu8(y0, y1);
-                            __m128 output = _mm_max_epu8(vv, yy);
+                            __m128i vv = _mm_max_epu8(v0, v1);
+                            __m128i yy = _mm_max_epu8(y0, y1);
+                            __m128i output = _mm_max_epu8(vv, yy);
                             
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
                             pen::memory_cpy(&cur_level[c_offset], &output, block_copy_size);
@@ -898,7 +898,7 @@ namespace put
                 pen::memory_cpy(tcp.data, volume_data, data_size);
             }
             
-            gv.texture = pen::renderer_create_texture(tcp);
+            gv.texture = PEN_INVALID_HANDLE;
             gv.tcp = tcp;
             
             return gv;
@@ -906,20 +906,23 @@ namespace put
 
         void volume_raster_completed(ces::entity_scene* scene)
         {
-            if (k_rasteriser_job.combine_in_progress == 0)
+            if (s_rasteriser_job.combine_in_progress == 0)
             {
-                k_rasteriser_job.combine_in_progress = 1;
-                pen::thread_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &k_rasteriser_job,
+                s_rasteriser_job.combine_in_progress = 1;
+                pen::thread_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &s_rasteriser_job,
                                        pen::THREAD_START_DETACHED);
                 return;
             }
             else
             {
-                if (k_rasteriser_job.combine_in_progress < 2)
+                if (s_rasteriser_job.combine_in_progress < 2)
                     return;
             }
 
-            generated_volume& gv = k_generated_volumes[k_rasteriser_job.generated_volume_index];
+            generated_volume& gv = s_generated_volumes[s_rasteriser_job.generated_volume_index];
+
+            if(gv.texture == PEN_INVALID_HANDLE)
+                gv.texture = pen::renderer_create_texture(gv.tcp); 
             
             // create material for volume ray trace
             material_resource* volume_material = new material_resource;
@@ -936,8 +939,8 @@ namespace put
 
             geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
-            vec3f scale = (k_rasteriser_job.visible_extents.max - k_rasteriser_job.visible_extents.min) / 2.0f;
-            vec3f pos   = k_rasteriser_job.visible_extents.min + scale;
+            vec3f scale = (s_rasteriser_job.visible_extents.max - s_rasteriser_job.visible_extents.min) / 2.0f;
+            vec3f pos   = s_rasteriser_job.visible_extents.min + scale;
 
             u32 new_prim           = get_new_node(scene);
             scene->names[new_prim] = "volume";
@@ -960,61 +963,61 @@ namespace put
             // clean up
             for (u32 a = 0; a < 6; ++a)
             {
-                for (u32 s = 0; s < k_rasteriser_job.dimension; ++s)
-                    pen::memory_free(k_rasteriser_job.volume_slices[a][s]);
+                for (u32 s = 0; s < s_rasteriser_job.dimension; ++s)
+                    pen::memory_free(s_rasteriser_job.volume_slices[a][s]);
 
-                pen::memory_free(k_rasteriser_job.volume_slices[a]);
+                pen::memory_free(s_rasteriser_job.volume_slices[a]);
             }
 
             // completed
-            k_rasteriser_job.rasterise_in_progress = false;
-            k_rasteriser_job.combine_in_progress   = 0;
+            s_rasteriser_job.rasterise_in_progress = false;
+            s_rasteriser_job.combine_in_progress   = 0;
         }
 
         void volume_rasteriser_update(put::scene_controller* sc)
         {
             if (g_cancel_volume_job)
             {
-                k_rasteriser_job.rasterise_in_progress = 0;
-                if (k_rasteriser_job.current_requested_slice == k_rasteriser_job.current_slice)
+                s_rasteriser_job.rasterise_in_progress = 0;
+                if (s_rasteriser_job.current_requested_slice == s_rasteriser_job.current_slice)
                     g_cancel_handled = true;
             }
 
             // update incremental job
-            if (!k_rasteriser_job.rasterise_in_progress)
+            if (!s_rasteriser_job.rasterise_in_progress)
                 return;
 
-            if (k_rasteriser_job.current_requested_slice == k_rasteriser_job.current_slice)
+            if (s_rasteriser_job.current_requested_slice == s_rasteriser_job.current_slice)
                 return;
 
-            if (k_rasteriser_job.current_slice >= k_rasteriser_job.dimension)
+            if (s_rasteriser_job.current_slice >= s_rasteriser_job.dimension)
             {
-                while (!(k_rasteriser_job.options.rasterise_axes & 1 << (++k_rasteriser_job.current_axis)))
-                    if (k_rasteriser_job.current_axis > 5)
+                while (!(s_rasteriser_job.options.rasterise_axes & 1 << (++s_rasteriser_job.current_axis)))
+                    if (s_rasteriser_job.current_axis > 5)
                         break;
 
-                k_rasteriser_job.current_slice = 0;
+                s_rasteriser_job.current_slice = 0;
             }
 
-            if (k_rasteriser_job.current_axis > 5)
+            if (s_rasteriser_job.current_axis > 5)
             {
                 volume_raster_completed(sc->scene);
                 return;
             }
 
-            if (!(k_rasteriser_job.options.rasterise_axes & 1 << k_rasteriser_job.current_axis))
+            if (!(s_rasteriser_job.options.rasterise_axes & 1 << s_rasteriser_job.current_axis))
             {
-                k_rasteriser_job.current_axis++;
+                s_rasteriser_job.current_axis++;
                 return;
             }
 
-            u32& volume_dim              = k_rasteriser_job.dimension;
-            s32& current_slice           = k_rasteriser_job.current_slice;
-            s32& current_axis            = k_rasteriser_job.current_axis;
-            s32& current_requested_slice = k_rasteriser_job.current_requested_slice;
+            u32& volume_dim              = s_rasteriser_job.dimension;
+            s32& current_slice           = s_rasteriser_job.current_slice;
+            s32& current_axis            = s_rasteriser_job.current_axis;
+            s32& current_requested_slice = s_rasteriser_job.current_requested_slice;
 
-            vec3f min = k_rasteriser_job.visible_extents.min;
-            vec3f max = k_rasteriser_job.visible_extents.max;
+            vec3f min = s_rasteriser_job.visible_extents.min;
+            vec3f max = s_rasteriser_job.visible_extents.max;
 
             vec3f dim           = max - min;
             f32   texel_boarder = component_wise_max(dim) / volume_dim;
@@ -1044,14 +1047,14 @@ namespace put
             mmin.z = near_slice;
             mmax.z = near_slice + slice_thickness;
 
-            put::camera_create_orthographic(&k_volume_raster_ortho, mmin.x, mmax.x, mmin.y, mmax.y, mmin.z, mmax.z);
-            k_volume_raster_ortho.view = axis_swaps[current_axis];
+            put::camera_create_orthographic(&s_volume_raster_ortho, mmin.x, mmax.x, mmin.y, mmax.y, mmin.z, mmax.z);
+            s_volume_raster_ortho.view = axis_swaps[current_axis];
 
-            k_rasteriser_job.current_slice_aabb.min = k_volume_raster_ortho.view.transform_vector(mmin);
-            k_rasteriser_job.current_slice_aabb.max = k_volume_raster_ortho.view.transform_vector(mmax);
+            s_rasteriser_job.current_slice_aabb.min = s_volume_raster_ortho.view.transform_vector(mmin);
+            s_rasteriser_job.current_slice_aabb.max = s_volume_raster_ortho.view.transform_vector(mmax);
 
-            k_rasteriser_job.current_slice_aabb.min.z *= -1;
-            k_rasteriser_job.current_slice_aabb.max.z *= -1;
+            s_rasteriser_job.current_slice_aabb.min.z *= -1;
+            s_rasteriser_job.current_slice_aabb.max.z *= -1;
 
             static hash_id             id_volume_raster = PEN_HASH("volume_raster");
             const pmfx::render_target* rt               = pmfx::get_render_target(id_volume_raster);
@@ -1098,7 +1101,7 @@ namespace put
             {
                 if (sdf_job->scene->entities[n] & CMP_GEOMETRY)
                 {
-                    if (k_sdf_job.capture_type == CAPTURE_SELECTED)
+                    if (s_sdf_job.capture_type == CAPTURE_SELECTED)
                     {
                         if (!(sdf_job->scene->state_flags[n] & SF_SELECTED) &&
                             !(sdf_job->scene->state_flags[n] & SF_CHILD_SELECTED))
@@ -1109,7 +1112,7 @@ namespace put
                     }
                     else
                     {
-                        ve = k_sdf_job.scene->renderable_extents;
+                        ve = s_sdf_job.scene->renderable_extents;
                     }
 
                     geometry_resource* gr = get_geometry_resource(sdf_job->scene->id_geometry[n]);
@@ -1156,13 +1159,13 @@ namespace put
                 }
             }
 
-            k_sdf_job.scene_extents = ve;
+            s_sdf_job.scene_extents = ve;
 
-            vec3f sd = k_sdf_job.scene_extents.max - k_sdf_job.scene_extents.min;
-            k_sdf_job.scene_extents.min -= sd * k_sdf_job.padding;
-            k_sdf_job.scene_extents.max += sd * k_sdf_job.padding;
+            vec3f sd = s_sdf_job.scene_extents.max - s_sdf_job.scene_extents.min;
+            s_sdf_job.scene_extents.min -= sd * s_sdf_job.padding;
+            s_sdf_job.scene_extents.max += sd * s_sdf_job.padding;
 
-            extents scene_extents   = k_sdf_job.scene_extents;
+            extents scene_extents   = s_sdf_job.scene_extents;
             vec3f   scene_dimension = scene_extents.max - scene_extents.min;
 
             sdf_job->volume_data = volume_data;
@@ -1182,7 +1185,7 @@ namespace put
 
                 if (g_cancel_volume_job)
                 {
-                    k_sdf_job.generate_in_progress = false;
+                    s_sdf_job.generate_in_progress = false;
                     g_mls_progress.sweeps          = 0;
                     g_mls_progress.triangles       = 0;
                     pen::memory_free(volume_data);
@@ -1218,14 +1221,14 @@ namespace put
             // create texture
 
             
-            generated_volume gv = create_volume_from_data(k_sdf_job.volume_dim, k_sdf_job.block_size,
-                                                         k_sdf_job.data_size, k_sdf_job.texture_format,
-                                                         k_sdf_job.volume_data, k_sdf_job.options.generate_mips);
+            generated_volume gv = create_volume_from_data(s_sdf_job.volume_dim, s_sdf_job.block_size,
+                                                         s_sdf_job.data_size, s_sdf_job.texture_format,
+                                                         s_sdf_job.volume_data, s_sdf_job.options.generate_mips);
             
-            pen::memory_free(k_sdf_job.volume_data); // mem is now owned by gv.tcp
+            pen::memory_free(s_sdf_job.volume_data); // mem is now owned by gv.tcp
 
-            sb_push(k_generated_volumes, gv);
-            sdf_job->generated_volume_index = sb_count(k_generated_volumes)-1;
+            sb_push(s_generated_volumes, gv);
+            sdf_job->generated_volume_index = sb_count(s_generated_volumes)-1;
             
             if (p_thread_info->p_completion_callback)
                 p_thread_info->p_completion_callback(nullptr);
@@ -1239,7 +1242,7 @@ namespace put
         {
             k_main_scene = scene;
             put::scene_controller cc;
-            cc.camera          = &k_volume_raster_ortho;
+            cc.camera          = &s_volume_raster_ortho;
             cc.update_function = &volume_rasteriser_update;
             cc.name            = "volume_rasteriser_camera";
             cc.id_name         = PEN_HASH(cc.name.c_str());
@@ -1270,13 +1273,13 @@ namespace put
 
             static u32* hidden_entities = nullptr;
 
-            if (!k_rasteriser_job.rasterise_in_progress)
+            if (!s_rasteriser_job.rasterise_in_progress)
             {
                 if (ImGui::Button("Generate"))
                 {
                     g_cancel_volume_job = 0;
 
-                    if (k_rasteriser_job.capture_type == CAPTURE_SELECTED)
+                    if (s_rasteriser_job.capture_type == CAPTURE_SELECTED)
                     {
                         // hide stuff we dont want
                         extents ve = {vec3f(FLT_MAX), vec3f(-FLT_MAX)};
@@ -1299,39 +1302,39 @@ namespace put
                             }
                         }
 
-                        k_rasteriser_job.visible_extents = ve;
+                        s_rasteriser_job.visible_extents = ve;
                     }
                     else
                     {
-                        k_rasteriser_job.visible_extents = k_main_scene->renderable_extents;
+                        s_rasteriser_job.visible_extents = k_main_scene->renderable_extents;
                     }
 
                     // setup new job
-                    k_rasteriser_job.options = k_options;
-                    u32 dim                  = 1 << k_rasteriser_job.options.volume_dimension;
+                    s_rasteriser_job.options = k_options;
+                    u32 dim                  = 1 << s_rasteriser_job.options.volume_dimension;
 
-                    k_rasteriser_job.dimension     = dim;
-                    k_rasteriser_job.current_axis  = 0;
-                    k_rasteriser_job.current_slice = 0;
+                    s_rasteriser_job.dimension     = dim;
+                    s_rasteriser_job.current_axis  = 0;
+                    s_rasteriser_job.current_slice = 0;
 
                     // allocate cpu mem for rasterised slices
                     for (u32 a = 0; a < 6; ++a)
                     {
                         // alloc slices array
-                        k_rasteriser_job.volume_slices[a] =
-                            (void**)pen::memory_alloc(k_rasteriser_job.dimension * sizeof(void**));
+                        s_rasteriser_job.volume_slices[a] =
+                            (void**)pen::memory_alloc(s_rasteriser_job.dimension * sizeof(void**));
 
                         // alloc slices mem
-                        for (u32 s = 0; s < k_rasteriser_job.dimension; ++s)
-                            k_rasteriser_job.volume_slices[a][s] = pen::memory_alloc(pow(k_rasteriser_job.dimension, 2) * 4);
+                        for (u32 s = 0; s < s_rasteriser_job.dimension; ++s)
+                            s_rasteriser_job.volume_slices[a][s] = pen::memory_alloc(pow(s_rasteriser_job.dimension, 2) * 4);
                     }
 
                     // flag to start reasterising
-                    k_rasteriser_job.rasterise_in_progress = true;
+                    s_rasteriser_job.rasterise_in_progress = true;
                 }
 
                 ImGui::SameLine();
-                ImGui::Combo("", &k_rasteriser_job.capture_type, "Whole Scene\0Selected\0");
+                ImGui::Combo("", &s_rasteriser_job.capture_type, "Whole Scene\0Selected\0");
             }
             else
             {
@@ -1342,7 +1345,7 @@ namespace put
 
                 ImGui::SameLine();
 
-                if (k_rasteriser_job.combine_in_progress > 0)
+                if (s_rasteriser_job.combine_in_progress > 0)
                 {
                     if (hidden_entities)
                     {
@@ -1357,14 +1360,14 @@ namespace put
                         sb_clear(hidden_entities);
                     }
 
-                    f32 progress = (f32)k_rasteriser_job.combine_position / (f32)pow(k_rasteriser_job.dimension, 3);
+                    f32 progress = (f32)s_rasteriser_job.combine_position / (f32)pow(s_rasteriser_job.dimension, 3);
                     ImGui::ProgressBar(progress);
                 }
                 else
                 {
                     f32 a =
-                        (f32)(k_rasteriser_job.current_axis * k_rasteriser_job.dimension) + k_rasteriser_job.current_slice;
-                    f32 total = 6 * k_rasteriser_job.dimension;
+                        (f32)(s_rasteriser_job.current_axis * s_rasteriser_job.dimension) + s_rasteriser_job.current_slice;
+                    f32 total = 6 * s_rasteriser_job.dimension;
 
                     f32 progress = 0.0f;
                     if (a > 0.0f)
@@ -1379,7 +1382,7 @@ namespace put
                         ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
                     }
 
-                    put::dbg::add_aabb(k_rasteriser_job.current_slice_aabb.min, k_rasteriser_job.current_slice_aabb.max,
+                    put::dbg::add_aabb(s_rasteriser_job.current_slice_aabb.min, s_rasteriser_job.current_slice_aabb.max,
                                        vec4f::cyan());
                 }
             }
@@ -1394,10 +1397,10 @@ namespace put
 
             static s32 sdf_texture_format = 1;
             ImGui::Combo("Capture", &sdf_texture_format, texture_fromat, PEN_ARRAY_SIZE(texture_fromat));
-            ImGui::Checkbox("Signed (use unsigned for non water-tight meshes)", &k_sdf_job.trust_sign);
-            ImGui::InputFloat("Padding", &k_sdf_job.padding);
+            ImGui::Checkbox("Signed (use unsigned for non water-tight meshes)", &s_sdf_job.trust_sign);
+            ImGui::InputFloat("Padding", &s_sdf_job.padding);
 
-            if (!k_sdf_job.generate_in_progress)
+            if (!s_sdf_job.generate_in_progress)
             {
                 if (ImGui::Button("Generate"))
                 {
@@ -1405,25 +1408,25 @@ namespace put
 
                     if (sdf_texture_format == 0)
                     {
-                        k_sdf_job.block_size     = 1;
-                        k_sdf_job.texture_format = PEN_TEX_FORMAT_R8_UNORM;
+                        s_sdf_job.block_size     = 1;
+                        s_sdf_job.texture_format = PEN_TEX_FORMAT_R8_UNORM;
                     }
                     else
                     {
-                        k_sdf_job.block_size     = 4;
-                        k_sdf_job.texture_format = PEN_TEX_FORMAT_R32_FLOAT;
+                        s_sdf_job.block_size     = 4;
+                        s_sdf_job.texture_format = PEN_TEX_FORMAT_R32_FLOAT;
                     }
 
-                    k_sdf_job.generate_in_progress = 1;
-                    k_sdf_job.scene                = k_main_scene;
-                    k_sdf_job.options              = k_options;
+                    s_sdf_job.generate_in_progress = 1;
+                    s_sdf_job.scene                = k_main_scene;
+                    s_sdf_job.options              = k_options;
 
-                    pen::thread_create_job(sdf_generate, 1024 * 1024 * 1024, &k_sdf_job, pen::THREAD_START_DETACHED);
+                    pen::thread_create_job(sdf_generate, 1024 * 1024 * 1024, &s_sdf_job, pen::THREAD_START_DETACHED);
                     return;
                 }
 
                 ImGui::SameLine();
-                ImGui::Combo("", &k_sdf_job.capture_type, "Whole Scene\0Selected\0");
+                ImGui::Combo("", &s_sdf_job.capture_type, "Whole Scene\0Selected\0");
             }
             else
             {
@@ -1434,9 +1437,12 @@ namespace put
 
                 ImGui::ProgressBar((g_mls_progress.triangles + g_mls_progress.sweeps) * 0.5f, ImVec2(-1, 0));
 
-                if (k_sdf_job.generate_in_progress == 2)
+                if (s_sdf_job.generate_in_progress == 2)
                 {
-                    generated_volume& gv = k_generated_volumes[k_sdf_job.generated_volume_index];
+                    generated_volume& gv = s_generated_volumes[s_sdf_job.generated_volume_index];
+
+                    if (gv.texture == PEN_INVALID_HANDLE)
+                        gv.texture = pen::renderer_create_texture(gv.tcp);
                     
                     // create material for volume sdf sphere trace
                     material_resource* sdf_material                   = new material_resource;
@@ -1450,9 +1456,9 @@ namespace put
 
                     geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
-                    f32 single_scale = component_wise_max((k_sdf_job.scene_extents.max - k_sdf_job.scene_extents.min) / 2.0f);
+                    f32 single_scale = component_wise_max((s_sdf_job.scene_extents.max - s_sdf_job.scene_extents.min) / 2.0f);
                     vec3f scale      = vec3f(single_scale);
-                    vec3f pos        = k_sdf_job.scene_extents.min + scale;
+                    vec3f pos        = s_sdf_job.scene_extents.min + scale;
 
                     u32 new_prim                  = get_new_node(k_main_scene);
                     k_main_scene->names[new_prim] = "volume";
@@ -1491,7 +1497,7 @@ namespace put
                     instantiate_material(sdf_shadow_material, k_main_scene, new_prim);
                     instantiate_model_cbuffer(k_main_scene, new_prim);
 
-                    k_sdf_job.generate_in_progress = 0;
+                    s_sdf_job.generate_in_progress = 0;
                 }
             }
         }
@@ -1613,16 +1619,16 @@ namespace put
                         save_location = dev_ui::file_browser(save_dialog_open, dev_ui::FB_SAVE);
                         if (save_location)
                         {
-                            for(u32 i = 0; i < sb_count(k_generated_volumes); ++i)
+                            for(u32 i = 0; i < sb_count(s_generated_volumes); ++i)
                             {
-                                if(k_generated_volumes[i].scene_node_index == save_index)
+                                if(s_generated_volumes[i].scene_node_index == save_index)
                                 {
                                     Str basename = str_basename(save_location);
                                     
                                     Str dds_file = basename;
                                     dds_file.appendf(".dds");
                                     
-                                    save_texture(dds_file.c_str(), k_generated_volumes[i].tcp);
+                                    save_texture(dds_file.c_str(), s_generated_volumes[i].tcp);
 
                                     Str json_file = basename;
                                     json_file.appendf(".pmv");
@@ -1633,9 +1639,9 @@ namespace put
                                     pen::json j;
                                     j.set("filename", dds_file);
                                     j.set("volume_type", vol_name);
-                                    j.set("scale_x", k_generated_volumes[i].scale.x);
-                                    j.set("scale_y", k_generated_volumes[i].scale.y);
-                                    j.set("scale_z", k_generated_volumes[i].scale.z);
+                                    j.set("scale_x", s_generated_volumes[i].scale.x);
+                                    j.set("scale_y", s_generated_volumes[i].scale.y);
+                                    j.set("scale_z", s_generated_volumes[i].scale.z);
                                     
                                     std::ofstream ofs(json_file.c_str());
                                     ofs << j.dumps().c_str();
