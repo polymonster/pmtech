@@ -368,23 +368,22 @@ ps_output ps_shadow_sdf( vs_output input )
 	ps_output output;
 	
 	output.colour = float4(0.0, 0.0, 0.0, 1.0);
-	
-	float3 albedo = float3( 1.0, 1.0, 1.0 );
+	float3 albedo = float3(1.0, 1.0, 1.0);
 	
 	float max_samples = 64.0;
 	
-	float3 v = input.texcoord.xyz;
-	float3 chebyshev_norm = chebyshev_normalize(v);
-	
 	float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
 	
-	//point on surface ray origin
+	// point on surface ray origin in sdf space
 	float3 r1 = input.world_pos.xyz;
 	float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
-			
+					
+	float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
+	
+	// derivatives for texture grad
 	float3 vddx = ddx( r1 );
 	float3 vddy = ddy( r1 );
-		
+			
 	for( int i = 0; i < light_info.x; ++i )
 	{
 		float3 light_col = float3( 0.0, 0.0, 0.0 );
@@ -402,33 +401,34 @@ ps_output ps_shadow_sdf( vs_output input )
 		
 		float shad = 1.0;
 		float closest = 1.0;
+			
+		// if uvw is in -1 to 1 range we are inside the sdf
+		float3 uvw = tr1;
 		
-		float3 rv = normalize(ray_dir);
-
-		float3 emin = float3(-1.0, -1.0, -1.0);
-		float3 emax = float3(1.0, 1.0, 1.0);
-	
-		//transform into obb
-		float3 trv = mul( rv, inv_rot );
-		float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
-	
-		float3 ip;
-		bool hit = ray_vs_aabb( emin, emax, tr1, normalize(trv), ip);
-		float3 uvw = ip * 0.5 + 0.5;
-		float3 iwp = mul(float4(ip, 1.0), sdf_shadow.world_matrix).xyz;
-		float bb_length = length(lights[i].pos_radius.xyz - iwp);
-				
-		if(!hit)
+		if(abs(uvw.x) >= 1.0 || abs(uvw.y) >= 1.0 || abs(uvw.z) >= 1.0)
 		{
-			output.colour.rgb += light_col;
-			continue;
+			float3 emin = float3(-1.0, -1.0, -1.0);
+			float3 emax = float3(1.0, 1.0, 1.0);
+	
+			// ray cast intersection for shadow projection
+			float3 ip;
+			bool hit = ray_vs_aabb( emin, emax, tr1, ray_dir, ip);
+			uvw = ip;
+			
+			if(!hit)
+			{
+				output.colour.rgb += light_col;
+				continue;
+			}
 		}
-
+		
+		uvw = uvw * 0.5 + 0.5; // into texcoord space
+		
 		for( int s = 0; s < int(max_samples); ++s )
 		{		
-			float d = sample_texture_level( volume_texture, uvw, 0.0 ).r;
+			float d = sample_texture_grad( volume_texture, uvw, ddx, ddy ).r;
 					
-			uvw += ray_dir.xyz * float3(d, d, d) / scale * 0.5;
+			uvw += ray_dir.xyz * float3(d, d, d) / scale;
 			
 			closest = min(d, closest);
 		

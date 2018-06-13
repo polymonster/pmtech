@@ -119,6 +119,7 @@ project ( project_name )
 		(root_directory .. "code/" .. source_directory .. "/**.c"),
 		(root_directory .. "code/" .. source_directory .. "/**.h"),
 		(root_directory .. "code/" .. source_directory .. "/**.m"),
+		(root_directory .. "code/" .. source_directory .. "/**.mm")
 	}
 		 
 	configuration "Debug"
