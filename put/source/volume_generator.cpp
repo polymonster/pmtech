@@ -43,7 +43,7 @@ namespace put
 {
     using namespace ces;
 
-    namespace vgt
+    namespace
     {
         static const int k_num_axes = 6;
 
@@ -144,6 +144,7 @@ namespace put
             u32             data_size;
             u8*             volume_data;
             extents         scene_extents;
+            vec3f           scene_centre;
             bool            trust_sign = true;
             f32             padding;
             u32             generate_in_progress = 0;
@@ -179,9 +180,6 @@ namespace put
                 return nullptr;
 
             swap(y, invy);
-            
-            //if(y == 0 || invy == 0 || x == 0 || invx == 0 || z == 0 || invz == 0)
-                //return nullptr;
 
             switch (axis)
             {
@@ -891,7 +889,7 @@ namespace put
             }
             else
             {
-                // take a copy of volume data to keep inside k_generated_volume_tcp
+                // take a copy of volume data to keep inside s_generated_volumes
                 // so it can be saved out later
 
                 tcp.data = pen::memory_alloc(data_size);
@@ -1149,10 +1147,10 @@ namespace put
                         else
                         {
                             u16* indices = (u16*)gr->cpu_index_buffer;
-                            u16  i0, i1, i2;
-                            i0 = index_offset + indices[i + 0];
-                            i1 = index_offset + indices[i + 1];
-                            i2 = index_offset + indices[i + 2];
+                            u32  i0, i1, i2;
+                            i0 = index_offset + (u32)indices[i + 0];
+                            i1 = index_offset + (u32)indices[i + 1];
+                            i2 = index_offset + (u32)indices[i + 2];
                             triangles.push_back(vec3ui(i0, i1, i2));
                         }
                     }
@@ -1177,6 +1175,7 @@ namespace put
                 f32 dx = component_wise_max(scene_dimension) / (f32)volume_dim;
 
                 vec3f centre = scene_extents.min + ((scene_extents.max - scene_extents.min) / 2.0f);
+                sdf_job->scene_centre = centre;
 
                 vec3f grid_origin = centre - vec3f(component_wise_max(scene_dimension) / 2.0f);
 
@@ -1237,21 +1236,8 @@ namespace put
             return PEN_THREAD_OK;
         }
 
-        static ces::entity_scene* k_main_scene;
-        void                      init(ces::entity_scene* scene)
-        {
-            k_main_scene = scene;
-            put::scene_controller cc;
-            cc.camera          = &s_volume_raster_ortho;
-            cc.update_function = &volume_rasteriser_update;
-            cc.name            = "volume_rasteriser_camera";
-            cc.id_name         = PEN_HASH(cc.name.c_str());
-            cc.scene           = scene;
-
-            pmfx::register_scene_controller(cc);
-        }
-
-        static vgt_options k_options;
+        ces::entity_scene* s_main_scene;
+        vgt_options s_options;
 
         void rasterise_ui()
         {
@@ -1261,7 +1247,7 @@ namespace put
 
             for (u32 a = 0; a < k_num_axes; a++)
             {
-                ImGui::CheckboxFlags(axis_names[a], &k_options.rasterise_axes, 1 << a);
+                ImGui::CheckboxFlags(axis_names[a], &s_options.rasterise_axes, 1 << a);
 
                 if (a < k_num_axes - 1)
                     ImGui::SameLine();
@@ -1269,7 +1255,7 @@ namespace put
 
             static const c8* capture_data_names[] = {"Albedo", "Normals", "Baked Lighting", "Occupancy", "Custom"};
 
-            ImGui::Combo("Capture", &k_options.capture_data, capture_data_names, PEN_ARRAY_SIZE(capture_data_names));
+            ImGui::Combo("Capture", &s_options.capture_data, capture_data_names, PEN_ARRAY_SIZE(capture_data_names));
 
             static u32* hidden_entities = nullptr;
 
@@ -1284,21 +1270,21 @@ namespace put
                         // hide stuff we dont want
                         extents ve = {vec3f(FLT_MAX), vec3f(-FLT_MAX)};
 
-                        for (u32 n = 0; n < k_main_scene->num_nodes; ++n)
+                        for (u32 n = 0; n < s_main_scene->num_nodes; ++n)
                         {
-                            if (k_main_scene->state_flags[n] & SF_HIDDEN)
+                            if (s_main_scene->state_flags[n] & SF_HIDDEN)
                                 continue;
 
-                            if (!(k_main_scene->state_flags[n] & SF_SELECTED) &&
-                                !(k_main_scene->state_flags[n] & SF_CHILD_SELECTED))
+                            if (!(s_main_scene->state_flags[n] & SF_SELECTED) &&
+                                !(s_main_scene->state_flags[n] & SF_CHILD_SELECTED))
                             {
-                                k_main_scene->state_flags[n] |= SF_HIDDEN;
+                                s_main_scene->state_flags[n] |= SF_HIDDEN;
                                 sb_push(hidden_entities, n);
                             }
                             else
                             {
-                                ve.min = min_union(ve.min, k_main_scene->bounding_volumes[n].transformed_min_extents);
-                                ve.max = max_union(ve.max, k_main_scene->bounding_volumes[n].transformed_max_extents);
+                                ve.min = min_union(ve.min, s_main_scene->bounding_volumes[n].transformed_min_extents);
+                                ve.max = max_union(ve.max, s_main_scene->bounding_volumes[n].transformed_max_extents);
                             }
                         }
 
@@ -1306,11 +1292,11 @@ namespace put
                     }
                     else
                     {
-                        s_rasteriser_job.visible_extents = k_main_scene->renderable_extents;
+                        s_rasteriser_job.visible_extents = s_main_scene->renderable_extents;
                     }
 
                     // setup new job
-                    s_rasteriser_job.options = k_options;
+                    s_rasteriser_job.options = s_options;
                     u32 dim                  = 1 << s_rasteriser_job.options.volume_dimension;
 
                     s_rasteriser_job.dimension     = dim;
@@ -1354,7 +1340,7 @@ namespace put
                         for (u32 i = 0; i < c; ++i)
                         {
                             u32 n = hidden_entities[i];
-                            k_main_scene->state_flags[n] &= ~SF_HIDDEN;
+                            s_main_scene->state_flags[n] &= ~SF_HIDDEN;
                         }
 
                         sb_clear(hidden_entities);
@@ -1418,8 +1404,8 @@ namespace put
                     }
 
                     s_sdf_job.generate_in_progress = 1;
-                    s_sdf_job.scene                = k_main_scene;
-                    s_sdf_job.options              = k_options;
+                    s_sdf_job.scene                = s_main_scene;
+                    s_sdf_job.options              = s_options;
 
                     pen::thread_create_job(sdf_generate, 1024 * 1024 * 1024, &s_sdf_job, pen::THREAD_START_DETACHED);
                     return;
@@ -1458,19 +1444,19 @@ namespace put
 
                     f32 single_scale = component_wise_max((s_sdf_job.scene_extents.max - s_sdf_job.scene_extents.min) / 2.0f);
                     vec3f scale      = vec3f(single_scale);
-                    vec3f pos        = s_sdf_job.scene_extents.min + scale;
+                    vec3f pos        = s_sdf_job.scene_centre;
 
-                    u32 new_prim                  = get_new_node(k_main_scene);
-                    k_main_scene->names[new_prim] = "volume";
-                    k_main_scene->names[new_prim].appendf("%i", new_prim);
-                    k_main_scene->transforms[new_prim].rotation    = quat();
-                    k_main_scene->transforms[new_prim].scale       = scale;
-                    k_main_scene->transforms[new_prim].translation = pos;
-                    k_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
-                    k_main_scene->parents[new_prim] = new_prim;
-                    instantiate_geometry(cube, k_main_scene, new_prim);
-                    instantiate_material(sdf_material, k_main_scene, new_prim);
-                    instantiate_model_cbuffer(k_main_scene, new_prim);
+                    u32 new_prim                  = get_new_node(s_main_scene);
+                    s_main_scene->names[new_prim] = "volume";
+                    s_main_scene->names[new_prim].appendf("%i", new_prim);
+                    s_main_scene->transforms[new_prim].rotation    = quat();
+                    s_main_scene->transforms[new_prim].scale       = scale;
+                    s_main_scene->transforms[new_prim].translation = pos;
+                    s_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
+                    s_main_scene->parents[new_prim] = new_prim;
+                    instantiate_geometry(cube, s_main_scene, new_prim);
+                    instantiate_material(sdf_material, s_main_scene, new_prim);
+                    instantiate_model_cbuffer(s_main_scene, new_prim);
                     
                     gv.scene_node_index = new_prim;
                     gv.scale = scale;
@@ -1485,21 +1471,38 @@ namespace put
                     sdf_shadow_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
                     add_material_resource(sdf_shadow_material);
 
-                    new_prim                      = get_new_node(k_main_scene);
-                    k_main_scene->names[new_prim] = "volume_receiever";
-                    k_main_scene->names[new_prim].appendf("%i", new_prim);
-                    k_main_scene->transforms[new_prim].rotation    = quat();
-                    k_main_scene->transforms[new_prim].scale       = vec3f(10, 1, 10);
-                    k_main_scene->transforms[new_prim].translation = vec3f(0, -1, 0);
-                    k_main_scene->entities[new_prim] |= CMP_TRANSFORM;
-                    k_main_scene->parents[new_prim] = new_prim;
-                    instantiate_geometry(cube, k_main_scene, new_prim);
-                    instantiate_material(sdf_shadow_material, k_main_scene, new_prim);
-                    instantiate_model_cbuffer(k_main_scene, new_prim);
+                    new_prim                      = get_new_node(s_main_scene);
+                    s_main_scene->names[new_prim] = "volume_receiever";
+                    s_main_scene->names[new_prim].appendf("%i", new_prim);
+                    s_main_scene->transforms[new_prim].rotation    = quat();
+                    s_main_scene->transforms[new_prim].scale       = vec3f(10, 1, 10);
+                    s_main_scene->transforms[new_prim].translation = vec3f(0, -1, 0);
+                    s_main_scene->entities[new_prim] |= CMP_TRANSFORM;
+                    s_main_scene->parents[new_prim] = new_prim;
+                    instantiate_geometry(cube, s_main_scene, new_prim);
+                    instantiate_material(sdf_shadow_material, s_main_scene, new_prim);
+                    instantiate_model_cbuffer(s_main_scene, new_prim);
 
                     s_sdf_job.generate_in_progress = 0;
                 }
             }
+        }
+
+    } // namespace
+
+    namespace vgt
+    {
+        void init(ces::entity_scene* scene)
+        {
+            s_main_scene = scene;
+            put::scene_controller cc;
+            cc.camera = &s_volume_raster_ortho;
+            cc.update_function = &volume_rasteriser_update;
+            cc.name = "volume_rasteriser_camera";
+            cc.id_name = PEN_HASH(cc.name.c_str());
+            cc.scene = scene;
+
+            pmfx::register_scene_controller(cc);
         }
 
         void show_dev_ui()
@@ -1522,22 +1525,22 @@ namespace put
                 ImGui::Begin("Volume Generator", &open_vgt, ImGuiWindowFlags_AlwaysAutoResize);
 
                 // choose volume data type
-                static const c8* volume_type[] = {"Rasterised Texels", "Signed Distance Field"};
+                static const c8* volume_type[] = { "Rasterised Texels", "Signed Distance Field" };
 
-                ImGui::Combo("Type", &k_options.volume_type, volume_type, PEN_ARRAY_SIZE(volume_type));
+                ImGui::Combo("Type", &s_options.volume_type, volume_type, PEN_ARRAY_SIZE(volume_type));
 
                 // choose resolution
-                static const c8* dimensions[] = {"1", "2", "4", "8", "16", "32", "64", "128", "256", "512"};
+                static const c8* dimensions[] = { "1", "2", "4", "8", "16", "32", "64", "128", "256", "512" };
 
-                ImGui::Combo("Resolution", &k_options.volume_dimension, dimensions, PEN_ARRAY_SIZE(dimensions));
+                ImGui::Combo("Resolution", &s_options.volume_dimension, dimensions, PEN_ARRAY_SIZE(dimensions));
 
                 ImGui::SameLine();
 
-                float size_mb = (pow(1 << k_options.volume_dimension, 3) * 4) / 1024 / 1024;
+                float size_mb = (pow(1 << s_options.volume_dimension, 3) * 4) / 1024 / 1024;
 
                 ImGui::LabelText("Size", "%.2f(mb)", size_mb);
 
-                ImGui::Checkbox("Generate Mip Maps", &k_options.generate_mips);
+                ImGui::Checkbox("Generate Mip Maps", &s_options.generate_mips);
 
                 ImGui::Separator();
 
@@ -1548,11 +1551,11 @@ namespace put
                 }
                 else
                 {
-                    if (k_options.volume_type == VOLUME_RASTERISED_TEXELS)
+                    if (s_options.volume_type == VOLUME_RASTERISED_TEXELS)
                     {
                         rasterise_ui();
                     }
-                    else if (k_options.volume_type == VOLUME_SIGNED_DISTANCE_FIELD)
+                    else if (s_options.volume_type == VOLUME_SIGNED_DISTANCE_FIELD)
                     {
                         sdf_ui();
                     }
@@ -1560,15 +1563,15 @@ namespace put
 
                 // Volumes Generated
                 bool has_volumes = false;
-                for (u32 n = 0; n < k_main_scene->num_nodes; ++n)
-                    if (k_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME))
+                for (u32 n = 0; n < s_main_scene->num_nodes; ++n)
+                    if (s_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME))
                         has_volumes = true;
 
                 if (has_volumes)
                 {
-                    static bool      save_dialog_open   = false;
-                    static const c8* save_location      = nullptr;
-                    static s32       save_index         = -1;
+                    static bool      save_dialog_open = false;
+                    static const c8* save_location = nullptr;
+                    static s32       save_index = -1;
 
                     ImGui::Separator();
                     ImGui::Text("Generated Volumes");
@@ -1578,17 +1581,17 @@ namespace put
 
                     ImGui::Columns(3);
 
-                    for (u32 n = 0; n < k_main_scene->num_nodes; ++n)
+                    for (u32 n = 0; n < s_main_scene->num_nodes; ++n)
                     {
-                        if (!(k_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME)))
+                        if (!(s_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME)))
                             continue;
 
-                        if (ImGui::Selectable(k_main_scene->names[n].c_str()))
-                            ces::add_selection(k_main_scene, n);
+                        if (ImGui::Selectable(s_main_scene->names[n].c_str()))
+                            ces::add_selection(s_main_scene, n);
 
                         ImGui::NextColumn();
 
-                        if ((k_main_scene->entities[n] & CMP_SDF_SHADOW))
+                        if ((s_main_scene->entities[n] & CMP_SDF_SHADOW))
                             ImGui::Text("Signed Distance Field");
                         else
                             ImGui::Text("Volume Texture");
@@ -1603,8 +1606,8 @@ namespace put
                         ImGui::SameLine();
                         if (ImGui::Button("Delete"))
                         {
-                            ces::delete_entity(k_main_scene, n);
-                            ces::add_selection(k_main_scene, n, ces::SELECT_REMOVE);
+                            ces::delete_entity(s_main_scene, n);
+                            ces::add_selection(s_main_scene, n, ces::SELECT_REMOVE);
                         }
 
                         ImGui::NextColumn();
@@ -1619,36 +1622,36 @@ namespace put
                         save_location = dev_ui::file_browser(save_dialog_open, dev_ui::FB_SAVE);
                         if (save_location)
                         {
-                            for(u32 i = 0; i < sb_count(s_generated_volumes); ++i)
+                            for (u32 i = 0; i < sb_count(s_generated_volumes); ++i)
                             {
-                                if(s_generated_volumes[i].scene_node_index == save_index)
+                                if (s_generated_volumes[i].scene_node_index == save_index)
                                 {
                                     Str basename = str_basename(save_location);
-                                    
+
                                     Str dds_file = basename;
                                     dds_file.appendf(".dds");
-                                    
+
                                     save_texture(dds_file.c_str(), s_generated_volumes[i].tcp);
 
                                     Str json_file = basename;
                                     json_file.appendf(".pmv");
-                                    
-                                    bool sdf = k_main_scene->entities[save_index] & CMP_SDF_SHADOW;
+
+                                    bool sdf = s_main_scene->entities[save_index] & CMP_SDF_SHADOW;
                                     const c8* vol_name = sdf ? "signed_distance_field" : "volume_texture";
-                                    
+
                                     pen::json j;
                                     j.set("filename", dds_file);
                                     j.set("volume_type", vol_name);
                                     j.set("scale_x", s_generated_volumes[i].scale.x);
                                     j.set("scale_y", s_generated_volumes[i].scale.y);
                                     j.set("scale_z", s_generated_volumes[i].scale.z);
-                                    
+
                                     std::ofstream ofs(json_file.c_str());
                                     ofs << j.dumps().c_str();
                                     ofs.close();
-                                    
+
                                     save_index = -1;
-                                    
+
                                     break;
                                 }
                             }
@@ -1662,11 +1665,11 @@ namespace put
 
         void post_update()
         {
-            static u32     dim                 = 128;
+            static u32     dim = 128;
             static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
             static hash_id id_volume_raster_ds = PEN_HASH("volume_raster_ds");
 
-            u32 cur_dim = 1 << k_options.volume_dimension;
+            u32 cur_dim = 1 << s_options.volume_dimension;
 
             // resize targets
             if (cur_dim != dim)
@@ -1680,5 +1683,5 @@ namespace put
                 pen::renderer_consume_cmd_buffer();
             }
         }
-    } // namespace vgt
+    }
 } // namespace put

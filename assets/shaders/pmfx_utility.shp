@@ -426,9 +426,9 @@ ps_output ps_shadow_sdf( vs_output input )
 		
 		for( int s = 0; s < int(max_samples); ++s )
 		{		
-			float d = sample_texture_grad( volume_texture, uvw, ddx, ddy ).r;
+			float d = sample_texture_level( volume_texture, uvw, 0.0 ).r;
 					
-			uvw += ray_dir.xyz * float3(d, d, d) / scale;
+			uvw += ray_dir.xyz * float3(d, d, d) / scale * 0.5;
 			
 			closest = min(d, closest);
 		
