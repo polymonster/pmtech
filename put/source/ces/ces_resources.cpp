@@ -27,22 +27,22 @@ namespace put
 
     namespace ces
     {
-        static std::vector<geometry_resource*> k_geometry_resources;
-        static std::vector<material_resource*> k_material_resources;
+        static std::vector<geometry_resource*> s_geometry_resources;
+        static std::vector<material_resource*> s_material_resources;
 
         void add_material_resource(material_resource* mr)
         {
-            k_material_resources.push_back(mr);
+            s_material_resources.push_back(mr);
         }
 
         void add_geometry_resource(geometry_resource* gr)
         {
-            k_geometry_resources.push_back(gr);
+            s_geometry_resources.push_back(gr);
         }
 
         geometry_resource* get_geometry_resource(hash_id hash)
         {
-            for (auto* g : k_geometry_resources)
+            for (auto* g : s_geometry_resources)
             {
                 if (hash == g->hash)
                 {
@@ -236,9 +236,9 @@ namespace put
             hash_id file_hash = hm.end();
 
             // check for existing
-            for (s32 g = 0; g < k_geometry_resources.size(); ++g)
+            for (s32 g = 0; g < s_geometry_resources.size(); ++g)
             {
-                if (file_hash == k_geometry_resources[g]->file_hash)
+                if (file_hash == s_geometry_resources[g]->file_hash)
                 {
                     return;
                 }
@@ -382,13 +382,13 @@ namespace put
 
                 p_reader += num_collision_floats;
 
-                k_geometry_resources.push_back(p_geometry);
+                s_geometry_resources.push_back(p_geometry);
             }
         }
         
         material_resource* get_material_resource(hash_id hash)
         {
-            for (auto* m : k_material_resources)
+            for (auto* m : s_material_resources)
             {
                 if (m->hash == hash)
                 {
@@ -477,8 +477,8 @@ namespace put
             hm.add(material_name, pen::string_length(material_name));
             hash_id hash = hm.end();
 
-            for (s32 m = 0; m < k_material_resources.size(); ++m)
-                if (k_material_resources[m]->hash == hash)
+            for (s32 m = 0; m < s_material_resources.size(); ++m)
+                if (s_material_resources[m]->hash == hash)
                     return;
 
             const u32* p_reader = (u32*)data;
@@ -531,7 +531,7 @@ namespace put
                 p_mat->texture_handles[map_type] = put::load_texture(texture_name.c_str());
             }
 
-            k_material_resources.push_back(p_mat);
+            s_material_resources.push_back(p_mat);
 
             return;
         }
@@ -1094,7 +1094,7 @@ namespace put
 
             if (ImGui::CollapsingHeader("Geometry"))
             {
-                for (auto* g : k_geometry_resources)
+                for (auto* g : s_geometry_resources)
                 {
                     ImGui::Text("Source: %s", g->filename.c_str());
                     ImGui::Text("Geometry: %s", g->geometry_name.c_str());
@@ -1110,7 +1110,7 @@ namespace put
 
             if (ImGui::CollapsingHeader("Materials"))
             {
-                for (auto* m : k_material_resources)
+                for (auto* m : s_material_resources)
                 {
                     for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
                     {

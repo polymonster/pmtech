@@ -24,17 +24,17 @@ a_u8                               g_window_resize(0);
 //--------------------------------------------------------------------------------------
 namespace
 {
-    D3D_DRIVER_TYPE         g_driverType          = D3D_DRIVER_TYPE_HARDWARE;
-    D3D_FEATURE_LEVEL       g_featureLevel        = D3D_FEATURE_LEVEL_11_0;
-    ID3D11Device*           g_device              = nullptr;
-    ID3D11Device1*          g_device_1            = nullptr;
-    IDXGISwapChain*         g_swap_chain          = nullptr;
-    IDXGISwapChain1*        g_swap_chain_1        = nullptr;
-    ID3D11RenderTargetView* g_backbuffer_rtv      = nullptr;
-    ID3D11DeviceContext*    g_immediate_context   = nullptr;
-    ID3D11DeviceContext1*   g_immediate_context_1 = nullptr;
+    D3D_DRIVER_TYPE         s_driverType          = D3D_DRIVER_TYPE_HARDWARE;
+    D3D_FEATURE_LEVEL       s_featureLevel        = D3D_FEATURE_LEVEL_11_0;
+    ID3D11Device*           s_device              = nullptr;
+    ID3D11Device1*          s_device_1            = nullptr;
+    IDXGISwapChain*         s_swap_chain          = nullptr;
+    IDXGISwapChain1*        s_swap_chain_1        = nullptr;
+    ID3D11RenderTargetView* s_backbuffer_rtv      = nullptr;
+    ID3D11DeviceContext*    s_immediate_context   = nullptr;
+    ID3D11DeviceContext1*   s_immediate_context_1 = nullptr;
 
-    u64 k_frame = 0;
+    u64 s_frame = 0;
 } // namespace
 
 namespace pen
@@ -115,7 +115,7 @@ namespace pen
 
     void insert_marker(const c8* name, bool end = false)
     {
-        if (k_frame == 0)
+        if (s_frame == 0)
             return;
 
         u32& buf   = k_perf.buf;
@@ -128,8 +128,8 @@ namespace pen
             perf_marker m;
 
             static D3D11_QUERY_DESC desc = {(D3D11_QUERY)PEN_QUERY_TIMESTAMP, 0};
-            g_device->CreateQuery(&desc, &m.begin);
-            g_device->CreateQuery(&desc, &m.end);
+            s_device->CreateQuery(&desc, &m.begin);
+            s_device->CreateQuery(&desc, &m.end);
 
             sb_push(k_perf.markers[buf], m);
         }
@@ -140,7 +140,7 @@ namespace pen
 
             PEN_ASSERT(k_perf.markers[buf][pop_pos].issued == 1);
 
-            g_immediate_context->End(k_perf.markers[buf][pop_pos].end);
+            s_immediate_context->End(k_perf.markers[buf][pop_pos].end);
             k_perf.markers[buf][pop_pos].issued++;
         }
         else
@@ -153,9 +153,9 @@ namespace pen
 
             k_perf.markers[buf][pos].name  = name;
             k_perf.markers[buf][pos].depth = depth;
-            k_perf.markers[buf][pos].frame = k_frame;
+            k_perf.markers[buf][pos].frame = s_frame;
 
-            g_immediate_context->End(k_perf.markers[buf][pos].begin);
+            s_immediate_context->End(k_perf.markers[buf][pos].begin);
             k_perf.markers[buf][pos].issued++;
 
             ++pos;
@@ -164,7 +164,7 @@ namespace pen
 
     void direct::renderer_push_perf_marker(const c8* name)
     {
-        if (k_frame == 0)
+        if (s_frame == 0)
             return;
 
         u32& depth = k_perf.depth;
@@ -184,28 +184,28 @@ namespace pen
 
     void gather_perf_markers()
     {
-        if (k_frame == 0)
+        if (s_frame == 0)
         {
             // first frame initialise disjoint queries
             for (u32 i = 0; i < perf_marker_set::num_marker_buffers; ++i)
             {
                 static D3D11_QUERY_DESC desc = {(D3D11_QUERY)PEN_QUERY_TIMESTAMP_DISJOINT, 0};
-                g_device->CreateQuery(&desc, &k_perf.disjoint_query[i]);
+                s_device->CreateQuery(&desc, &k_perf.disjoint_query[i]);
             }
 
-            g_immediate_context->Begin(k_perf.disjoint_query[k_perf.buf]);
+            s_immediate_context->Begin(k_perf.disjoint_query[k_perf.buf]);
 
             return;
         }
 
-        g_immediate_context->End(k_perf.disjoint_query[k_perf.buf]);
+        s_immediate_context->End(k_perf.disjoint_query[k_perf.buf]);
 
         // read previous buffers
         for (u32 bb = 0; bb < perf_marker_set::num_marker_buffers; ++bb)
         {
             D3D10_QUERY_DATA_TIMESTAMP_DISJOINT disjoint;
             bool                                frame_ready = false;
-            if (g_immediate_context->GetData(k_perf.disjoint_query[bb], &disjoint, sizeof(disjoint), 0) != S_FALSE)
+            if (s_immediate_context->GetData(k_perf.disjoint_query[bb], &disjoint, sizeof(disjoint), 0) != S_FALSE)
             {
                 frame_ready = true;
             }
@@ -223,10 +223,10 @@ namespace pen
                             UINT64  ts_begin;
                             UINT64  ts_end;
                             HRESULT hr = 0;
-                            hr         = g_immediate_context->GetData(m.begin, &ts_begin, sizeof(UINT64), 0);
+                            hr         = s_immediate_context->GetData(m.begin, &ts_begin, sizeof(UINT64), 0);
                             if (hr == S_OK)
                             {
-                                hr = g_immediate_context->GetData(m.end, &ts_end, sizeof(UINT64), 0);
+                                hr = s_immediate_context->GetData(m.end, &ts_end, sizeof(UINT64), 0);
                                 if (hr == S_OK)
                                 {
                                     UINT64 res = (ts_end - ts_begin);
@@ -252,7 +252,7 @@ namespace pen
 
         // swap buffers
         k_perf.buf = (k_perf.buf + 1) % k_perf.num_marker_buffers;
-        g_immediate_context->Begin(k_perf.disjoint_query[k_perf.buf]);
+        s_immediate_context->Begin(k_perf.disjoint_query[k_perf.buf]);
     }
 
     //--------------------------------------------------------------------------------------
@@ -450,7 +450,7 @@ namespace pen
                     if (resource_pool[ct].render_target->rt_msaa[colour_face])
                         colour_rtv = resource_pool[ct].render_target->rt_msaa[colour_face];
 
-                    g_immediate_context->ClearRenderTargetView(colour_rtv,
+                    s_immediate_context->ClearRenderTargetView(colour_rtv,
                                                                &resource_pool[clear_state_index].clear_state->rgba[0]);
                 }
             }
@@ -466,7 +466,7 @@ namespace pen
             if (resource_pool[ct].render_target->rt_msaa[colour_face])
                 colour_rtv = resource_pool[ct].render_target->rt_msaa[colour_face];
 
-            g_immediate_context->ClearRenderTargetView(colour_rtv, cs->mrt[i].f);
+            s_immediate_context->ClearRenderTargetView(colour_rtv, cs->mrt[i].f);
         }
 
         u32 d3d_flags = 0;
@@ -485,7 +485,7 @@ namespace pen
                 dsv = resource_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face];
 
             // clear depth
-            g_immediate_context->ClearDepthStencilView(dsv, d3d_flags, resource_pool[clear_state_index].clear_state->depth,
+            s_immediate_context->ClearDepthStencilView(dsv, d3d_flags, resource_pool[clear_state_index].clear_state->depth,
                                                        stencil_val);
         }
     }
@@ -496,16 +496,16 @@ namespace pen
     void direct::renderer_present()
     {
         // Just present
-        g_swap_chain->Present(0, 0);
+        s_swap_chain->Present(0, 0);
 
-        if (k_frame > 0)
+        if (s_frame > 0)
             renderer_pop_perf_marker();
 
         gather_perf_markers();
 
         if (g_window_resize == 1)
         {
-            g_immediate_context->OMSetRenderTargets(0, 0, 0);
+            s_immediate_context->OMSetRenderTargets(0, 0, 0);
 
             // Release all outstanding references to the swap chain's buffers.
             resource_pool[g_context.backbuffer_depth].depth_target->ds[0]->Release();
@@ -517,7 +517,7 @@ namespace pen
             uint32_t w = pen_window.width;
             uint32_t h = pen_window.height;
 
-            g_swap_chain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
+            s_swap_chain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 
             create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
 
@@ -547,7 +547,7 @@ namespace pen
             k_resize_counter = 0;
         }
 
-        k_frame++;
+        s_frame++;
 
         renderer_push_perf_marker(nullptr);
     }
@@ -562,7 +562,7 @@ namespace pen
         if (params.type == PEN_SHADER_TYPE_VS)
         {
             // Create a vertex shader
-            hr = g_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr,
+            hr = s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr,
                                               &resource_pool[resource_index].vertex_shader);
         }
         else if (params.type == PEN_SHADER_TYPE_PS)
@@ -570,7 +570,7 @@ namespace pen
             // Create a pixel shader
             if (params.byte_code)
             {
-                hr = g_device->CreatePixelShader(params.byte_code, params.byte_code_size, nullptr,
+                hr = s_device->CreatePixelShader(params.byte_code, params.byte_code_size, nullptr,
                                                  &resource_pool[resource_index].pixel_shader);
             }
             else
@@ -585,9 +585,9 @@ namespace pen
 
             u32 resource_index = resource_slot;
 
-            hr = g_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr, &sos.vs);
+            hr = s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr, &sos.vs);
 
-            HRESULT hr = g_device->CreateGeometryShaderWithStreamOutput(
+            HRESULT hr = s_device->CreateGeometryShaderWithStreamOutput(
                 params.byte_code, params.byte_code_size, (const D3D11_SO_DECLARATION_ENTRY*)params.so_decl_entries,
                 params.so_num_entries, NULL, 0, 0, NULL, &sos.gs);
 
@@ -610,23 +610,23 @@ namespace pen
     {
         if (shader_type == PEN_SHADER_TYPE_VS)
         {
-            g_immediate_context->VSSetShader(resource_pool[shader_index].vertex_shader, nullptr, 0);
-            g_immediate_context->GSSetShader(nullptr, nullptr, 0);
+            s_immediate_context->VSSetShader(resource_pool[shader_index].vertex_shader, nullptr, 0);
+            s_immediate_context->GSSetShader(nullptr, nullptr, 0);
         }
         else if (shader_type == PEN_SHADER_TYPE_PS)
         {
-            g_immediate_context->PSSetShader(resource_pool[shader_index].pixel_shader, nullptr, 0);
+            s_immediate_context->PSSetShader(resource_pool[shader_index].pixel_shader, nullptr, 0);
         }
         else if (shader_type == PEN_SHADER_TYPE_GS)
         {
-            g_immediate_context->GSSetShader(resource_pool[shader_index].geometry_shader, nullptr, 0);
+            s_immediate_context->GSSetShader(resource_pool[shader_index].geometry_shader, nullptr, 0);
         }
         else if (shader_type == PEN_SHADER_TYPE_SO)
         {
             auto& sos = resource_pool[shader_index].stream_out_shader;
-            g_immediate_context->VSSetShader(sos.vs, nullptr, 0);
-            g_immediate_context->GSSetShader(sos.gs, nullptr, 0);
-            g_immediate_context->PSSetShader(nullptr, nullptr, 0);
+            s_immediate_context->VSSetShader(sos.vs, nullptr, 0);
+            s_immediate_context->GSSetShader(sos.gs, nullptr, 0);
+            s_immediate_context->PSSetShader(nullptr, nullptr, 0);
 
             // on feature level 10 we cant uses SO_RASTERISER_DISCARD, this prevents the validation layer barking
             static ID3D11DepthStencilState* dss = nullptr;
@@ -636,10 +636,10 @@ namespace pen
                 dss_disable.DepthEnable              = 0;
                 dss_disable.StencilEnable            = 0;
 
-                g_device->CreateDepthStencilState(&dss_disable, &dss);
+                s_device->CreateDepthStencilState(&dss_disable, &dss);
             }
 
-            g_immediate_context->OMSetDepthStencilState(dss, 0);
+            s_immediate_context->OMSetDepthStencilState(dss, 0);
         }
     }
 
@@ -677,11 +677,11 @@ namespace pen
 
             initial_data.pSysMem = params.data;
 
-            hr = g_device->CreateBuffer(&bd, &initial_data, &resource_pool[resource_index].generic_buffer);
+            hr = s_device->CreateBuffer(&bd, &initial_data, &resource_pool[resource_index].generic_buffer);
         }
         else
         {
-            hr = g_device->CreateBuffer(&bd, nullptr, &resource_pool[resource_index].generic_buffer);
+            hr = s_device->CreateBuffer(&bd, nullptr, &resource_pool[resource_index].generic_buffer);
         }
 
         if (FAILED(hr))
@@ -695,7 +695,7 @@ namespace pen
         u32 resource_index = resource_slot;
 
         // Create the input layout
-        HRESULT hr = g_device->CreateInputLayout((D3D11_INPUT_ELEMENT_DESC*)params.input_layout, params.num_elements,
+        HRESULT hr = s_device->CreateInputLayout((D3D11_INPUT_ELEMENT_DESC*)params.input_layout, params.num_elements,
                                                  params.vs_byte_code, params.vs_byte_code_size,
                                                  &resource_pool[resource_index].input_layout);
 
@@ -710,7 +710,7 @@ namespace pen
     void direct::renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides,
                                             const u32* offsets)
     {
-        g_immediate_context->IASetVertexBuffers(start_slot, num_buffers, &resource_pool[buffer_index].generic_buffer, strides,
+        s_immediate_context->IASetVertexBuffers(start_slot, num_buffers, &resource_pool[buffer_index].generic_buffer, strides,
                                                 offsets);
     }
 
@@ -722,36 +722,36 @@ namespace pen
         for (s32 i = 0; i < num_buffers; ++i)
             buffers[i] = resource_pool[buffer_indices[i]].generic_buffer;
 
-        g_immediate_context->IASetVertexBuffers(start_slot, num_buffers, buffers, strides, offsets);
+        s_immediate_context->IASetVertexBuffers(start_slot, num_buffers, buffers, strides, offsets);
     }
 
     void direct::renderer_set_input_layout(u32 layout_index)
     {
-        g_immediate_context->IASetInputLayout(resource_pool[layout_index].input_layout);
+        s_immediate_context->IASetInputLayout(resource_pool[layout_index].input_layout);
     }
 
     void direct::renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
     {
-        g_immediate_context->IASetIndexBuffer(resource_pool[buffer_index].generic_buffer, (DXGI_FORMAT)format, offset);
+        s_immediate_context->IASetIndexBuffer(resource_pool[buffer_index].generic_buffer, (DXGI_FORMAT)format, offset);
     }
 
     void direct::renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
     {
-        g_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
-        g_immediate_context->Draw(vertex_count, start_vertex);
+        s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
+        s_immediate_context->Draw(vertex_count, start_vertex);
     }
 
     void direct::renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
     {
-        g_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
-        g_immediate_context->DrawIndexed(index_count, start_index, base_vertex);
+        s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
+        s_immediate_context->DrawIndexed(index_count, start_index, base_vertex);
     }
 
     void direct::renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                                  u32 base_vertex, u32 primitive_topology)
     {
-        g_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
-        g_immediate_context->DrawIndexedInstanced(index_count, instance_count, start_index, base_vertex, start_instance);
+        s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
+        s_immediate_context->DrawIndexedInstanced(index_count, instance_count, start_index, base_vertex, start_instance);
     }
 
     u32 depth_texture_format_to_dsv_format(u32 tex_format)
@@ -818,7 +818,7 @@ namespace pen
             PEN_ASSERT(0);
         }
 
-        hr = g_device->CreateTexture2D(&texture_desc, NULL, &texture_container->texture);
+        hr = s_device->CreateTexture2D(&texture_desc, NULL, &texture_container->texture);
         PEN_ASSERT(hr == 0);
 
         D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
@@ -841,7 +841,7 @@ namespace pen
                 dsv_desc.ViewDimension      = texture2dms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
                 dsv_desc.Texture2D.MipSlice = 0;
 
-                g_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[0]);
+                s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[0]);
                 PEN_ASSERT(hr == 0);
             }
             else
@@ -852,7 +852,7 @@ namespace pen
                     dsv_desc.Texture2DArray.FirstArraySlice = a;
                     dsv_desc.Texture2DArray.MipSlice        = 0;
                     dsv_desc.Texture2DArray.ArraySize       = 1;
-                    g_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[a]);
+                    s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[a]);
                     PEN_ASSERT(hr == 0);
                 }
             }
@@ -875,7 +875,7 @@ namespace pen
                 rtv_desc.ViewDimension      = texture2dms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
                 rtv_desc.Texture2D.MipSlice = 0;
 
-                hr = g_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[0]);
+                hr = s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[0]);
                 PEN_ASSERT(hr == 0);
             }
             else
@@ -886,7 +886,7 @@ namespace pen
                     rtv_desc.Texture2DArray.FirstArraySlice = a;
                     rtv_desc.Texture2DArray.MipSlice        = 0;
                     rtv_desc.Texture2DArray.ArraySize       = 1;
-                    hr = g_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[a]);
+                    hr = s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[a]);
                     PEN_ASSERT(hr == 0);
                 }
             }
@@ -903,7 +903,7 @@ namespace pen
             PEN_ASSERT(0);
         }
 
-        hr = g_device->CreateShaderResourceView(texture_container->texture, &resource_view_desc, &texture_container->srv);
+        hr = s_device->CreateShaderResourceView(texture_container->texture, &resource_view_desc, &texture_container->srv);
         PEN_ASSERT(hr == 0);
     }
 
@@ -945,7 +945,7 @@ namespace pen
             D3D11_TEXTURE2D_DESC texture_desc;
             pen::memory_cpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
-            HRESULT hr = g_device->CreateTexture2D(&texture_desc, NULL,
+            HRESULT hr = s_device->CreateTexture2D(&texture_desc, NULL,
                                                    &resource_pool[resource_index].render_target->tex_read_back.texture);
             PEN_ASSERT(hr == 0);
 
@@ -984,7 +984,7 @@ namespace pen
         if (depth_target > 0)
             dsv = resource_pool[depth_target].depth_target->ds[0];
 
-        g_immediate_context->OMSetRenderTargets(1, colour_rtv, dsv);
+        s_immediate_context->OMSetRenderTargets(1, colour_rtv, dsv);
     }
 
     void direct::renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
@@ -1018,7 +1018,7 @@ namespace pen
                 dsv = resource_pool[depth_target].depth_target->ds[depth_face];
         }
 
-        g_immediate_context->OMSetRenderTargets(num_views, colour_rtv, dsv);
+        s_immediate_context->OMSetRenderTargets(num_views, colour_rtv, dsv);
     }
 
     void direct::renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
@@ -1052,7 +1052,7 @@ namespace pen
 
             resource_pool[resource_index].type       = RES_TEXTURE_3D;
             resource_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
-            hr = g_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture));
+            hr = s_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture));
             PEN_ASSERT(hr == 0);
         }
         else
@@ -1069,7 +1069,7 @@ namespace pen
 
             resource_pool[resource_index].type       = RES_TEXTURE;
             resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
-            hr = g_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture));
+            hr = s_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture));
             PEN_ASSERT(hr == 0);
         }
 
@@ -1097,7 +1097,7 @@ namespace pen
 
                     u32 sub = D3D11CalcSubresource(i, a, tcp.num_mips);
 
-                    g_immediate_context->UpdateSubresource(tex_res->resource, sub, nullptr, image_data, row_pitch,
+                    s_immediate_context->UpdateSubresource(tex_res->resource, sub, nullptr, image_data, row_pitch,
                                                            slice_pitch);
 
                     image_data += depth_pitch;
@@ -1116,7 +1116,7 @@ namespace pen
         resource_view_desc.Texture2D.MipLevels       = -1;
         resource_view_desc.Texture2D.MostDetailedMip = 0;
 
-        hr = g_device->CreateShaderResourceView(tex_res->resource, &resource_view_desc, &tex_res->srv);
+        hr = s_device->CreateShaderResourceView(tex_res->resource, &resource_view_desc, &tex_res->srv);
         PEN_ASSERT(hr == 0);
     }
 
@@ -1125,7 +1125,7 @@ namespace pen
         u32 resource_index = resource_slot;
 
         HRESULT hr;
-        hr = g_device->CreateSamplerState((D3D11_SAMPLER_DESC*)&scp, &resource_pool[resource_index].sampler_state);
+        hr = s_device->CreateSamplerState((D3D11_SAMPLER_DESC*)&scp, &resource_pool[resource_index].sampler_state);
         PEN_ASSERT(hr == 0);
     }
 
@@ -1140,16 +1140,16 @@ namespace pen
 
             if (shader_type == PEN_SHADER_TYPE_PS)
             {
-                g_immediate_context->PSSetSamplers(
+                s_immediate_context->PSSetSamplers(
                     resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-                g_immediate_context->PSSetShaderResources(resource_slot, 1,
+                s_immediate_context->PSSetShaderResources(resource_slot, 1,
                                                           texture_index == 0 ? &null_srv : &rt->tex_msaa.srv);
             }
             else if (shader_type == PEN_SHADER_TYPE_VS)
             {
-                g_immediate_context->VSSetSamplers(
+                s_immediate_context->VSSetSamplers(
                     resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-                g_immediate_context->VSSetShaderResources(resource_slot, 1,
+                s_immediate_context->VSSetShaderResources(resource_slot, 1,
                                                           texture_index == 0 ? &null_srv : &rt->tex_msaa.srv);
             }
         }
@@ -1157,16 +1157,16 @@ namespace pen
         {
             if (shader_type == PEN_SHADER_TYPE_PS)
             {
-                g_immediate_context->PSSetSamplers(
+                s_immediate_context->PSSetSamplers(
                     resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-                g_immediate_context->PSSetShaderResources(
+                s_immediate_context->PSSetShaderResources(
                     resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_resource->srv);
             }
             else if (shader_type == PEN_SHADER_TYPE_VS)
             {
-                g_immediate_context->VSSetSamplers(
+                s_immediate_context->VSSetSamplers(
                     resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-                g_immediate_context->VSSetShaderResources(
+                s_immediate_context->VSSetShaderResources(
                     resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_resource->srv);
             }
         }
@@ -1176,17 +1176,17 @@ namespace pen
     {
         u32 resource_index = resource_slot;
 
-        g_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[resource_index].raster_state);
+        s_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[resource_index].raster_state);
     }
 
     void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
     {
-        g_immediate_context->RSSetState(resource_pool[rasterizer_state_index].raster_state);
+        s_immediate_context->RSSetState(resource_pool[rasterizer_state_index].raster_state);
     }
 
     void direct::renderer_set_viewport(const viewport& vp)
     {
-        g_immediate_context->RSSetViewports(1, (D3D11_VIEWPORT*)&vp);
+        s_immediate_context->RSSetViewports(1, (D3D11_VIEWPORT*)&vp);
     }
 
     void direct::renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
@@ -1204,23 +1204,23 @@ namespace pen
             pen::memory_cpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
         }
 
-        g_device->CreateBlendState(&bd, &resource_pool[resource_index].blend_state);
+        s_device->CreateBlendState(&bd, &resource_pool[resource_index].blend_state);
     }
 
     void direct::renderer_set_blend_state(u32 blend_state_index)
     {
-        g_immediate_context->OMSetBlendState(resource_pool[blend_state_index].blend_state, NULL, 0xffffffff);
+        s_immediate_context->OMSetBlendState(resource_pool[blend_state_index].blend_state, NULL, 0xffffffff);
     }
 
     void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
     {
         if (shader_type == PEN_SHADER_TYPE_PS)
         {
-            g_immediate_context->PSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
+            s_immediate_context->PSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
         }
         else if (shader_type == PEN_SHADER_TYPE_VS)
         {
-            g_immediate_context->VSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
+            s_immediate_context->VSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
         }
     }
 
@@ -1228,12 +1228,12 @@ namespace pen
     {
         D3D11_MAPPED_SUBRESOURCE mapped_res = {0};
 
-        g_immediate_context->Map(resource_pool[buffer_index].generic_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+        s_immediate_context->Map(resource_pool[buffer_index].generic_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 
         void* p_data = (void*)((size_t)mapped_res.pData + offset);
         memcpy(p_data, data, data_size);
 
-        g_immediate_context->Unmap(resource_pool[buffer_index].generic_buffer, 0);
+        s_immediate_context->Unmap(resource_pool[buffer_index].generic_buffer, 0);
     }
 
     void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
@@ -1244,23 +1244,23 @@ namespace pen
         {
             render_target_internal* rt = resource_pool[rrbp.resource_index].render_target;
 
-            g_immediate_context->CopyResource(rt->tex_read_back.texture, rt->tex.texture);
+            s_immediate_context->CopyResource(rt->tex_read_back.texture, rt->tex.texture);
 
-            g_immediate_context->Map(rt->tex_read_back.texture, 0, D3D11_MAP_READ, 0, &mapped_res);
+            s_immediate_context->Map(rt->tex_read_back.texture, 0, D3D11_MAP_READ, 0, &mapped_res);
 
             rrbp.call_back_function((void*)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size);
 
-            g_immediate_context->Unmap(rt->tex_read_back.texture, 0);
+            s_immediate_context->Unmap(rt->tex_read_back.texture, 0);
         }
         else if (resource_pool[rrbp.resource_index].type == RES_TEXTURE)
         {
             texture2d_internal* tex = resource_pool[rrbp.resource_index].texture_2d;
 
-            g_immediate_context->Map(tex->texture, 0, D3D11_MAP_READ, 0, &mapped_res);
+            s_immediate_context->Map(tex->texture, 0, D3D11_MAP_READ, 0, &mapped_res);
 
             rrbp.call_back_function((void*)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size);
 
-            g_immediate_context->Unmap(tex->texture, 0);
+            s_immediate_context->Unmap(tex->texture, 0);
         }
     }
 
@@ -1268,13 +1268,13 @@ namespace pen
     {
         u32 resource_index = resource_slot;
 
-        g_device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC*)&dscp,
+        s_device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC*)&dscp,
                                           &resource_pool[resource_index].depth_stencil_state);
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-        g_immediate_context->OMSetDepthStencilState(resource_pool[depth_stencil_state].depth_stencil_state, 0xffffffff);
+        s_immediate_context->OMSetDepthStencilState(resource_pool[depth_stencil_state].depth_stencil_state, 0xffffffff);
     }
 
     void direct::renderer_release_shader(u32 shader_index, u32 shader_type)
@@ -1411,14 +1411,14 @@ namespace pen
     {
         if (buffer_index == 0)
         {
-            g_immediate_context->SOSetTargets(0, NULL, 0);
+            s_immediate_context->SOSetTargets(0, NULL, 0);
         }
         else
         {
             ID3D11Buffer* buffers[] = {resource_pool[buffer_index].generic_buffer};
             UINT          offsets[] = {0};
 
-            g_immediate_context->SOSetTargets(1, buffers, offsets);
+            s_immediate_context->SOSetTargets(1, buffers, offsets);
         }
     }
 
@@ -1494,20 +1494,20 @@ namespace pen
                 return;
             }
 
-            g_immediate_context->ResolveSubresource(rti->tex.texture, 0, rti->tex_msaa.texture, 0, rti->format);
+            s_immediate_context->ResolveSubresource(rti->tex.texture, 0, rti->tex_msaa.texture, 0, rti->format);
         }
     }
 
     void direct::renderer_draw_auto()
     {
-        g_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)PEN_PT_POINTLIST);
-        g_immediate_context->DrawAuto();
+        s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)PEN_PT_POINTLIST);
+        s_immediate_context->DrawAuto();
     }
 
     void direct::renderer_set_scissor_rect(const rect& r)
     {
         const D3D11_RECT rd3d = {(LONG)r.left, (LONG)r.top, (LONG)r.right, (LONG)r.bottom};
-        g_immediate_context->RSSetScissorRects(1, &rd3d);
+        s_immediate_context->RSSetScissorRects(1, &rd3d);
     }
 
     void direct::renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
@@ -1556,12 +1556,12 @@ namespace pen
         pen::memory_zero(resource_pool[dsv].depth_target, sizeof(depth_stencil_target_internal));
 
         // Create a render target view
-        HRESULT hr = g_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D),
+        HRESULT hr = s_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D),
                                              reinterpret_cast<void**>(&resource_pool[crtv].render_target->tex.texture));
         if (FAILED(hr))
             return;
 
-        hr = g_device->CreateRenderTargetView(resource_pool[crtv].render_target->tex.texture, nullptr,
+        hr = s_device->CreateRenderTargetView(resource_pool[crtv].render_target->tex.texture, nullptr,
                                               &resource_pool[crtv].render_target->rt[0]);
         if (FAILED(hr))
             return;
@@ -1586,7 +1586,7 @@ namespace pen
         descDepth.BindFlags          = D3D11_BIND_DEPTH_STENCIL;
         descDepth.CPUAccessFlags     = 0;
         descDepth.MiscFlags          = 0;
-        hr = g_device->CreateTexture2D(&descDepth, nullptr, &resource_pool[dsv].depth_target->tex.texture);
+        hr = s_device->CreateTexture2D(&descDepth, nullptr, &resource_pool[dsv].depth_target->tex.texture);
         if (FAILED(hr))
             return;
 
@@ -1596,12 +1596,12 @@ namespace pen
         descDSV.Format        = descDepth.Format;
         descDSV.ViewDimension = pen_window.sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
         descDSV.Texture2D.MipSlice = 0;
-        hr                         = g_device->CreateDepthStencilView(resource_pool[dsv].depth_target->tex.texture, &descDSV,
+        hr                         = s_device->CreateDepthStencilView(resource_pool[dsv].depth_target->tex.texture, &descDSV,
                                               &resource_pool[dsv].depth_target->ds[0]);
         if (FAILED(hr))
             return;
 
-        g_immediate_context->OMSetRenderTargets(1, &resource_pool[crtv].render_target->rt[0], NULL);
+        s_immediate_context->OMSetRenderTargets(1, &resource_pool[crtv].render_target->rt[0], NULL);
     }
 
     void caps_init();
@@ -1641,16 +1641,16 @@ namespace pen
 
         for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++)
         {
-            g_driverType = driverTypes[driverTypeIndex];
-            hr = D3D11CreateDevice(nullptr, g_driverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
-                                   D3D11_SDK_VERSION, &g_device, &g_featureLevel, &g_immediate_context);
+            s_driverType = driverTypes[driverTypeIndex];
+            hr = D3D11CreateDevice(nullptr, s_driverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
+                                   D3D11_SDK_VERSION, &s_device, &s_featureLevel, &s_immediate_context);
 
             if (hr == E_INVALIDARG)
             {
                 // DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we need to retry without it
-                hr = D3D11CreateDevice(nullptr, g_driverType, nullptr, createDeviceFlags, &featureLevels[1],
-                                       numFeatureLevels - 1, D3D11_SDK_VERSION, &g_device, &g_featureLevel,
-                                       &g_immediate_context);
+                hr = D3D11CreateDevice(nullptr, s_driverType, nullptr, createDeviceFlags, &featureLevels[1],
+                                       numFeatureLevels - 1, D3D11_SDK_VERSION, &s_device, &s_featureLevel,
+                                       &s_immediate_context);
             }
 
             if (SUCCEEDED(hr))
@@ -1663,7 +1663,7 @@ namespace pen
         IDXGIFactory1* dxgiFactory = nullptr;
         {
             IDXGIDevice* dxgiDevice = nullptr;
-            hr                      = g_device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
+            hr                      = s_device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
             if (SUCCEEDED(hr))
             {
                 IDXGIAdapter* adapter = nullptr;
@@ -1685,11 +1685,11 @@ namespace pen
         if (dxgiFactory2)
         {
             // DirectX 11.1 or later
-            hr = g_device->QueryInterface(__uuidof(ID3D11Device1), reinterpret_cast<void**>(&g_device_1));
+            hr = s_device->QueryInterface(__uuidof(ID3D11Device1), reinterpret_cast<void**>(&s_device_1));
             if (SUCCEEDED(hr))
             {
-                (void)g_immediate_context->QueryInterface(__uuidof(ID3D11DeviceContext1),
-                                                          reinterpret_cast<void**>(&g_immediate_context_1));
+                (void)s_immediate_context->QueryInterface(__uuidof(ID3D11DeviceContext1),
+                                                          reinterpret_cast<void**>(&s_immediate_context_1));
             }
 
             DXGI_SWAP_CHAIN_DESC1 sd;
@@ -1702,10 +1702,10 @@ namespace pen
             sd.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
             sd.BufferCount        = 1;
 
-            hr = dxgiFactory2->CreateSwapChainForHwnd(g_device, *hwnd, &sd, nullptr, nullptr, &g_swap_chain_1);
+            hr = dxgiFactory2->CreateSwapChainForHwnd(s_device, *hwnd, &sd, nullptr, nullptr, &s_swap_chain_1);
             if (SUCCEEDED(hr))
             {
-                hr = g_swap_chain_1->QueryInterface(__uuidof(IDXGISwapChain), reinterpret_cast<void**>(&g_swap_chain));
+                hr = s_swap_chain_1->QueryInterface(__uuidof(IDXGISwapChain), reinterpret_cast<void**>(&s_swap_chain));
             }
 
             dxgiFactory2->Release();
@@ -1727,7 +1727,7 @@ namespace pen
             sd.SampleDesc.Quality                 = 0;
             sd.Windowed                           = TRUE;
 
-            hr = dxgiFactory->CreateSwapChain(g_device, &sd, &g_swap_chain);
+            hr = dxgiFactory->CreateSwapChain(s_device, &sd, &s_swap_chain);
         }
 
         dxgiFactory->Release();
@@ -1747,25 +1747,25 @@ namespace pen
     //--------------------------------------------------------------------------------------
     void renderer_destroy()
     {
-        if (g_immediate_context)
-            g_immediate_context->ClearState();
-        if (g_backbuffer_rtv)
-            g_backbuffer_rtv->Release();
+        if (s_immediate_context)
+            s_immediate_context->ClearState();
+        if (s_backbuffer_rtv)
+            s_backbuffer_rtv->Release();
 
-        if (g_swap_chain)
-            g_swap_chain->Release();
-        if (g_swap_chain_1)
-            g_swap_chain_1->Release();
+        if (s_swap_chain)
+            s_swap_chain->Release();
+        if (s_swap_chain_1)
+            s_swap_chain_1->Release();
 
-        if (g_immediate_context)
-            g_immediate_context->Release();
-        if (g_immediate_context_1)
-            g_immediate_context_1->Release();
+        if (s_immediate_context)
+            s_immediate_context->Release();
+        if (s_immediate_context_1)
+            s_immediate_context_1->Release();
 
-        if (g_device)
-            g_device->Release();
-        if (g_device_1)
-            g_device_1->Release();
+        if (s_device)
+            s_device->Release();
+        if (s_device_1)
+            s_device_1->Release();
     }
 
     static renderer_info k_renderer_info;

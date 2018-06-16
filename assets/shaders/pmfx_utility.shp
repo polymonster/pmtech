@@ -375,7 +375,7 @@ ps_output ps_shadow_sdf( vs_output input )
 	float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
 	
 	// point on surface ray origin in sdf space
-	float3 r1 = input.world_pos.xyz;
+	float3 r1 = input.world_pos.xyz + input.normal.xyz * 0.07; // offset slightly by normal to avoid self-shdow
 	float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
 					
 	float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
@@ -427,7 +427,7 @@ ps_output ps_shadow_sdf( vs_output input )
 		for( int s = 0; s < int(max_samples); ++s )
 		{		
 			float d = sample_texture_level( volume_texture, uvw, 0.0 ).r;
-					
+								
 			uvw += ray_dir.xyz * float3(d, d, d) / scale * 0.5;
 			
 			closest = min(d, closest);
@@ -438,7 +438,7 @@ ps_output ps_shadow_sdf( vs_output input )
 				shad = max( d, 0.0 );
 				break;
 			}
-
+			
 			if(uvw.x >= 1.0 || uvw.x < 0.0)
 				break;
 		

@@ -15,6 +15,9 @@
 
 using namespace put;
 
+extern u32 g_vol_test;
+extern u32 g_vol_ss;
+
 namespace put
 {
     namespace ces
@@ -434,6 +437,12 @@ namespace put
                             pen::renderer_set_texture(p_mat->texture_handles[t], p_mat->sampler_states[t], t,
                                                       PEN_SHADER_TYPE_PS);
                         }
+                    }
+
+                    if (is_valid(g_vol_test))
+                    {
+                        pen::renderer_set_texture(g_vol_test, g_vol_ss, SN_VOLUME_TEXTURE,
+                            PEN_SHADER_TYPE_PS);
                     }
                 }
 

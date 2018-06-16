@@ -19,6 +19,9 @@
 
 #include "sdf/makelevelset3.h"
 
+u32 g_vol_test = PEN_INVALID_HANDLE;
+u32 g_vol_ss = PEN_INVALID_HANDLE;
+
 #define PEN_SIMD 0
 #if PEN_SIMD
 #include <xmmintrin.h>
@@ -1429,6 +1432,13 @@ namespace put
 
                     if (gv.texture == PEN_INVALID_HANDLE)
                         gv.texture = pen::renderer_create_texture(gv.tcp);
+
+                    geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
+
+                    u32 ss = pmfx::get_render_state_by_name(PEN_HASH("clamp_linear_sampler_state"));
+
+                    g_vol_test = gv.texture;
+                    g_vol_ss = ss;
                     
                     // create material for volume sdf sphere trace
                     material_resource* sdf_material                   = new material_resource;
@@ -1436,11 +1446,9 @@ namespace put
                     sdf_material->shader_name                         = "pmfx_utility";
                     sdf_material->id_shader                           = PEN_HASH("pmfx_utility");
                     sdf_material->id_technique                        = PEN_HASH("volume_sdf");
-                    sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-                    sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
+                    //sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+                    //sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
                     add_material_resource(sdf_material);
-
-                    geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
                     f32 single_scale = component_wise_max((s_sdf_job.scene_extents.max - s_sdf_job.scene_extents.min) / 2.0f);
                     vec3f scale      = vec3f(single_scale);
@@ -1467,11 +1475,11 @@ namespace put
                     sdf_shadow_material->shader_name                         = "pmfx_utility";
                     sdf_shadow_material->id_shader                           = PEN_HASH("pmfx_utility");
                     sdf_shadow_material->id_technique                        = PEN_HASH("shadow_sdf");
-                    sdf_shadow_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-                    sdf_shadow_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
+                    //sdf_shadow_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+                    //sdf_shadow_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
                     add_material_resource(sdf_shadow_material);
 
-                    new_prim                      = get_new_node(s_main_scene);
+                    new_prim                    = get_new_node(s_main_scene);
                     s_main_scene->names[new_prim] = "volume_receiever";
                     s_main_scene->names[new_prim].appendf("%i", new_prim);
                     s_main_scene->transforms[new_prim].rotation    = quat();
