@@ -383,8 +383,13 @@ ps_output ps_shadow_sdf( vs_output input )
 	// derivatives for texture grad
 	float3 vddx = ddx( r1 );
 	float3 vddy = ddy( r1 );
+	
+	float3 v1;
 			
-	for( int i = 0; i < light_info.x; ++i )
+	//for( int i = 0; i < light_info.x; ++i )
+	int point_start = int(light_info.x);
+	int point_end =  int(light_info.x) + int(light_info.y);
+	for( int i = point_start; i < point_end; ++i )
 	{
 		float3 light_col = float3( 0.0, 0.0, 0.0 );
 					
@@ -393,6 +398,12 @@ ps_output ps_shadow_sdf( vs_output input )
 							 input.normal.xyz,
 							 input.world_pos.xyz,
 							 albedo.rgb);
+							 
+		if(length(light_col) <= 0.0)
+			continue;
+		
+		float atten = point_light_attenuation(lights[i].pos_radius , input.world_pos.xyz);
+		light_col *= atten;
 		
 		float3 ray_dir = normalize(lights[i].pos_radius.xyz - input.world_pos.xyz);
 		float l_length = length(ray_dir);
@@ -422,16 +433,22 @@ ps_output ps_shadow_sdf( vs_output input )
 			}
 		}
 		
+		float3 light_uvw = mul( float4(lights[i].pos_radius.xyz, 1.0), sdf_shadow.world_matrix_inv ).xyz * 0.5 + 0.5;
+
 		uvw = uvw * 0.5 + 0.5; // into texcoord space
 		
-		for( int s = 0; s < int(max_samples); ++s )
-		{		
-			float d = sample_texture_level( volume_texture, uvw, 0.0 ).r;
-								
-			uvw += ray_dir.xyz * float3(d, d, d) / scale * 0.5;
-			
-			closest = min(d, closest);
+		v1 = normalize(light_uvw - uvw);
 		
+		for( int s = 0; s < int(max_samples); ++s )
+		{			
+			float d = sample_texture_level( volume_texture, uvw, 0.0 ).r;
+			closest = min(d, closest);
+			
+			ray_dir = normalize(light_uvw - uvw);
+			float3 step = ray_dir.xyz * float3(d, d, d) / scale * 0.5;
+										
+			uvw += step;
+			
 			if( d <= 0.0 )
 			{			
 				closest = 0;
@@ -449,8 +466,15 @@ ps_output ps_shadow_sdf( vs_output input )
 				break;
 		}
 		
-		light_col *= smoothstep( 0.0, 0.1, closest);
+		light_col *= smoothstep( 0.0, 0.2, closest);
+		
 		output.colour.rgb += light_col;
+		
+		//float3 v2 = normalize(light_uvw - uvw);
+		
+		//float dp = dot(v1, v2);
+		
+		//output.colour.rgb = float3(dp, dp, dp);
 	}
 				
 	return output;

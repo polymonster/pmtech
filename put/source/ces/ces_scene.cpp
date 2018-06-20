@@ -107,6 +107,9 @@ namespace put
                 u8*                offset = (u8*)cmp.data + node_index * cmp.size;
                 pen::memory_zero(offset, cmp.size);
             }
+
+            // Annoyingly nodeindex == parent is used to determine if a node is not a child
+            scene->parents[node_index] = node_index;
         }
 
         void delete_entity(entity_scene* scene, u32 node_index)
