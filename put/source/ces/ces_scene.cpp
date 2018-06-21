@@ -742,10 +742,10 @@ namespace put
                     continue;
 
                 // current directional light is a point light very far away
-                // with no attenuation.. todo optimise
+                // with no attenuation..
                 vec3f light_pos                     = l.direction * 100000.0f;
                 light_buffer.lights[pos].pos_radius = vec4f(light_pos, 0.0);
-                light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow ? 1.0 : 0.0);
+                light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
 
                 ++num_directions_lights;
                 ++num_lights;
@@ -770,7 +770,7 @@ namespace put
                 cmp_transform& t = scene->transforms[n];
 
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
-                light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow ? 1.0 : 0.0);
+                light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
 
                 ++num_point_lights;
                 ++num_lights;
@@ -779,6 +779,31 @@ namespace put
 
             // spot lights
             s32 num_spot_lights = 0;
+            for (s32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (num_lights >= MAX_FORWARD_LIGHTS)
+                    break;
+
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+
+                cmp_light& l = scene->lights[n];
+
+                if (l.type != LIGHT_TYPE_SPOT)
+                    continue;
+
+                cmp_transform& t = scene->transforms[n];
+
+                vec3f dir = scene->world_matrices[n].get_fwd();
+
+                light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.spot_falloff);
+                light_buffer.lights[pos].dir_cutoff = vec4f(dir, l.cos_cutoff);
+                light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+
+                ++num_spot_lights;
+                ++num_lights;
+                ++pos;
+            }
 
             // info for loops
             light_buffer.info = vec4f(num_directions_lights, num_point_lights, num_spot_lights, 0.0f);

@@ -22,6 +22,7 @@ cbuffer per_draw_call : register(b1)
 struct forward_light
 {
 	float4 pos_radius;
+	float4 dir_cutoff;
 	float4 colour;
 };
 

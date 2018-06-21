@@ -213,13 +213,15 @@ namespace put
             u32   type;
             vec3f colour;
 
-            float radius;
-            float azimuth;
-            float altitude;
+            f32 radius = 10.0f;
+            f32 spot_falloff = 0.05f;
+            f32 cos_cutoff = -M_PI/4.0f;
+            f32 azimuth;
+            f32 altitude;
 
             vec3f direction;
 
-            bool shadow = false;
+            bool shadow_map = false;
         };
 
         struct cmp_transform
@@ -232,6 +234,7 @@ namespace put
         struct forward_light
         {
             vec4f pos_radius;
+            vec4f dir_cutoff;
             vec4f colour;
         };
 

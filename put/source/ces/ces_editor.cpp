@@ -1793,7 +1793,7 @@ namespace put
                 {
                     cmp_light& snl = scene->lights[selected_index];
 
-                    ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box\0",
+                    ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box (wip)\0",
                                  4);
 
                     switch (scene->lights[selected_index].type)
@@ -1809,9 +1809,8 @@ namespace put
                             break;
 
                         case LIGHT_TYPE_SPOT:
-                            // ImGui::SliderAngle( "Azimuth", &scene->lights[selected_index].data.x );
-                            // ImGui::SliderAngle( "Zenith", &scene->lights[selected_index].data.y );
-                            // ImGui::SliderAngle( "Cos Cutoff", &scene->lights[selected_index].data.z );
+                            ImGui::SliderAngle("Cos Cutoff", &snl.cos_cutoff, -60.0f, -22.0f);
+                            ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01);
                             break;
 
                         case LIGHT_TYPE_AREA_BOX:
@@ -2187,6 +2186,12 @@ namespace put
             for (u32 i = 0; i < sel_num; ++i)
             {
                 u32 s = k_selection_list[i];
+
+                if (scene->entities[s] & CMP_LIGHT)
+                {
+                    pos += scene->transforms[s].translation;
+                    continue;
+                }
 
                 vec3f& _min = scene->bounding_volumes[s].transformed_min_extents;
                 vec3f& _max = scene->bounding_volumes[s].transformed_max_extents;
@@ -2586,6 +2591,14 @@ namespace put
                         if (snl.type == LIGHT_TYPE_DIR)
                         {
                             dbg::add_line(vec3f::zero(), snl.direction * 10000.0f, vec4f(snl.colour, 1.0f));
+                        }
+
+                        if (snl.type == LIGHT_TYPE_SPOT)
+                        {
+                            vec3f dir = scene->world_matrices[s].get_fwd();
+                            vec3f pos = scene->world_matrices[s].get_translation();
+
+                            dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
                         }
 
                         if (snl.type == LIGHT_TYPE_AREA_BOX)

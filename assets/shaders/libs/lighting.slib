@@ -176,6 +176,19 @@ float point_light_attenuation(
 	return attenuation;
 }
 
+float spot_light_attenuation(
+	float4 light_pos_radius,
+	float4 light_dir_cutoff,
+	float3 world_pos)
+{
+	float3 vl = normalize(light_pos_radius.xyz - world_pos.xyz);
+	float3 sd = light_dir_cutoff.xyz;
+	
+	float dp = dot(vl, sd);
+
+	return smoothstep(light_dir_cutoff.w + light_pos_radius.w, light_dir_cutoff.w, dp);
+}
+
 float point_light_attenuation_cutoff(
 	float4 light_pos_radius,
 	float3 world_pos)

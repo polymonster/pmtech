@@ -326,6 +326,41 @@ ps_output ps_forward_lit( vs_output input )
 		
 		lit_colour += light_col;
 	}
+	
+	//for spot lights
+	int spot_start = point_end;
+	int spot_end =  int(light_info.y) + int(light_info.z);
+	for( int i = spot_start; i < spot_end; ++i )
+	{
+		float3 light_col = float3( 0.0, 0.0, 0.0 );
+		
+		light_col += cook_torrence( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			camera_view_pos.xyz,
+			albedo.rgb,
+			specular_sample.rgb,
+			single_roughness,
+			reflectivity
+		);	
+		
+		light_col += oren_nayar( 
+			lights[i].pos_radius, 
+			lights[i].colour.rgb,
+			n,
+			input.world_pos.xyz,
+			camera_view_pos.xyz,
+			single_roughness,
+			albedo.rgb
+		);		
+			
+		float a = spot_light_attenuation( lights[i].pos_radius, lights[i].dir_cutoff, input.world_pos.xyz );	
+		light_col *= a;
+		
+		lit_colour += light_col;
+	}
 
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;

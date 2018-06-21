@@ -466,15 +466,9 @@ ps_output ps_shadow_sdf( vs_output input )
 				break;
 		}
 		
-		light_col *= smoothstep( 0.0, 0.2, closest);
+		light_col *= smoothstep( 0.0, 0.1, closest);
 		
 		output.colour.rgb += light_col;
-		
-		//float3 v2 = normalize(light_uvw - uvw);
-		
-		//float dp = dot(v1, v2);
-		
-		//output.colour.rgb = float3(dp, dp, dp);
 	}
 				
 	return output;
