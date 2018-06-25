@@ -872,7 +872,10 @@ namespace put
                         for (u32 x = 0; x < tcp.width; ++x)
                         {
                             u32 i = z * tcp.height + y * tcp.width + x;
-                            new_data[i] = float_to_half(float_data[i]);
+
+                            //new_data[i] = float_to_half(float_data[i]);
+
+                            new_data[i] = float_to_half(0.0f);
                         }
                     }
                 }
