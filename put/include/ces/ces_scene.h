@@ -87,6 +87,12 @@ namespace put
             SN_NUM_TEXTURES
         };
 
+        enum e_scene_global_textures
+        {
+            SHADOW_MAP_UNIT = 15,
+            SDF_SHADOW_UNIT = 14
+        };
+
         enum e_physics_type
         {
             PHYSICS_TYPE_RIGID_BODY = 0,
@@ -121,7 +127,7 @@ namespace put
         {
             s32   texture_handles[SN_NUM_TEXTURES] = {0};
             u32   sampler_states[SN_NUM_TEXTURES]  = {0};
-            vec4f diffuse_rgb_shininess            = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+            vec4f diffuse_rgb_roughness            = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
             vec4f specular_rgb_reflect             = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
 
             pmfx::shader_handle pmfx_shader;

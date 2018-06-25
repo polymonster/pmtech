@@ -22,6 +22,8 @@ float3 lambert(
 	float n_dot_l = max( dot( n, l ), 0.0 );
 	
 	float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
+
+	//float3 lit_colour = n_dot_l * albedo.rgb;
 	
 	return lit_colour;
 }

@@ -78,6 +78,8 @@ declare_texture_samplers
 	
 	texture_cube( cubemap_texture, 3 );
 	texture_3d( volume_texture, 4 );
+	
+	texture_3d( sdf_volume, 14 );
 };
 
 // Vertex Shaders -----------------------------------------------------------------------------------------------------------
@@ -271,7 +273,6 @@ ps_output ps_volume_texture( vs_output input )
 	for( int s = 0; s < int(max_samples); ++s )
 	{		
 		output.colour = sample_texture_grad( volume_texture, uvw, vddx, vddy );
-		//output.colour = sample_texture_level( volume_texture, uvw, 2.0 );
 		
 		if(output.colour.a != 0.0)
 			break;
@@ -370,12 +371,12 @@ ps_output ps_shadow_sdf( vs_output input )
 	output.colour = float4(0.0, 0.0, 0.0, 1.0);
 	float3 albedo = float3(1.0, 1.0, 1.0);
 	
-	float max_samples = 64.0;
+	float max_samples = 128.0;
 	
 	float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
 	
 	// point on surface ray origin in sdf space
-	float3 r1 = input.world_pos.xyz + input.normal.xyz * 0.07; // offset slightly by normal to avoid self-shdow
+	float3 r1 = input.world_pos.xyz + input.normal.xyz * 0.3; // offset slightly by normal to avoid self-shdow
 	float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
 					
 	float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
@@ -389,6 +390,7 @@ ps_output ps_shadow_sdf( vs_output input )
 	//for( int i = 0; i < light_info.x; ++i )
 	int point_start = int(light_info.x);
 	int point_end =  int(light_info.x) + int(light_info.y);
+		
 	for( int i = point_start; i < point_end; ++i )
 	{
 		float3 light_col = float3( 0.0, 0.0, 0.0 );
@@ -441,18 +443,17 @@ ps_output ps_shadow_sdf( vs_output input )
 		
 		for( int s = 0; s < int(max_samples); ++s )
 		{			
-			float d = sample_texture_level( volume_texture, uvw, 0.0 ).r;
+			float d = sample_texture_level( sdf_volume, uvw, 0.0 ).r;
 			closest = min(d, closest);
 			
 			ray_dir = normalize(light_uvw - uvw);
-			float3 step = ray_dir.xyz * float3(d, d, d) / scale * 0.5;
+			float3 step = ray_dir.xyz * float3(d, d, d) / scale * 0.7;
 										
 			uvw += step;
 			
 			if( d <= 0.0 )
 			{			
-				closest = 0;
-				shad = max( d, 0.0 );
+				closest = max( d, 0.0 );
 				break;
 			}
 			

@@ -403,7 +403,7 @@ namespace put
         {
             cmp_material* instance = &scene->materials[node_index];
 
-            instance->diffuse_rgb_shininess = mr->diffuse_rgb_shininess;
+            instance->diffuse_rgb_roughness = mr->diffuse_rgb_shininess;
             instance->specular_rgb_reflect  = mr->specular_rgb_reflect;
 
             pen::memory_cpy(instance->texture_handles, mr->texture_handles, sizeof(u32) * SN_NUM_TEXTURES);

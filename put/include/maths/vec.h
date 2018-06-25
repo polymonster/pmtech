@@ -670,13 +670,13 @@ Vec<N, T> operator/(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
 }
 
 template <unsigned int N, class T>
-Vec<N, T> operator==(Vec<N, T>& lhs, const Vec<N, T>& rhs)
+bool operator==(Vec<N, T>& lhs, const Vec<N, T>& rhs)
 {
     return (equals(lhs, rhs));
 }
 
 template <unsigned int N, class T>
-Vec<N, T> operator!=(Vec<N, T>& lhs, const Vec<N, T>& rhs)
+bool operator!=(Vec<N, T>& lhs, const Vec<N, T>& rhs)
 {
     return (!equals(lhs, rhs));
 }

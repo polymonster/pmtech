@@ -107,25 +107,17 @@ vs_output vs_main_skinned( vs_input_skinned input )
 
 	float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
 	
+	output.tangent = input.tangent.xyz;
+	output.bitangent = input.bitangent.xyz;
+	output.normal = input.normal.xyz;
+	
+	skin_tbn(output.tangent, output.bitangent, output.normal, input.blend_weights, input.blend_indices);
+	
 	output.position = mul( sp, vp_matrix );
 	output.world_pos = sp;
-	
-	float3x3 world_rot_mat = to_3x3(world_matrix);
-	world_rot_mat[0] = normalize(world_rot_mat[0]);
-	world_rot_mat[1] = normalize(world_rot_mat[1]);
-	world_rot_mat[2] = normalize(world_rot_mat[2]);
-	
-	float3x3 rotation_matrix = mul( world_rot_mat, to_3x3(view_matrix) );
-	float3x3 ws_rotation_matrix = world_rot_mat;
-	
-	rotation_matrix = ws_rotation_matrix;
-	
-	output.normal = mul( input.normal.xyz, rotation_matrix );
-	output.tangent = mul( input.tangent.xyz, rotation_matrix );
-	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
-	
-	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
-		input.texcoord.z, 1.0f - input.texcoord.w );
+		
+	output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
+							 input.texcoord.z, 1.0 - input.texcoord.w );
 		
 	output.colour = user_data2;
 	
@@ -364,7 +356,7 @@ ps_output ps_forward_lit( vs_output input )
 
 	output.colour.rgb = lit_colour.rgb;
 	output.colour.a = albedo.a;
-		
+			
     return output;
 }
 

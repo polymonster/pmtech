@@ -19,9 +19,6 @@
 
 #include "sdf/makelevelset3.h"
 
-u32 g_vol_test = PEN_INVALID_HANDLE;
-u32 g_vol_ss = PEN_INVALID_HANDLE;
-
 #define PEN_SIMD 0
 #if PEN_SIMD
 #include <xmmintrin.h>
@@ -861,6 +858,31 @@ namespace put
             tcp.data             = volume_data;
             tcp.data_size        = data_size;
 
+            if (tex_format == PEN_TEX_FORMAT_R16_FLOAT)
+            {
+                u32 new_data_size = tcp.width * tcp.height * tcp.num_arrays * sizeof(f16);
+
+                f16* new_data = (f16*)pen::memory_alloc(new_data_size);
+                f32* float_data = (f32*)tcp.data;
+
+                for (u32 z = 0; z < tcp.num_arrays; ++z)
+                {
+                    for (u32 y = 0; y < tcp.height; ++y)
+                    {
+                        for (u32 x = 0; x < tcp.width; ++x)
+                        {
+                            u32 i = z * tcp.height + y * tcp.width + x;
+                            new_data[i] = float_to_half(float_data[i]);
+                        }
+                    }
+                }
+
+                tcp.data = (void*)&new_data[0];
+                tcp.block_size = 2; //f16
+                tcp.data_size = new_data_size;
+                generate_mips = false;
+            }
+
             if (generate_mips)
             {
                 // Mips will create their own copy of mem
@@ -1380,7 +1402,7 @@ namespace put
         void sdf_ui()
         {
             static const c8* texture_fromat[] = {
-                "8bit",
+                "16bit Floating Point",
                 "32bit Floating Point",
             };
 
@@ -1397,8 +1419,8 @@ namespace put
 
                     if (sdf_texture_format == 0)
                     {
-                        s_sdf_job.block_size     = 1;
-                        s_sdf_job.texture_format = PEN_TEX_FORMAT_R8_UNORM;
+                        s_sdf_job.block_size     = 4; // first generate a 32 bit float one, and compress later
+                        s_sdf_job.texture_format = PEN_TEX_FORMAT_R16_FLOAT;
                     }
                     else
                     {
@@ -1436,9 +1458,6 @@ namespace put
                     geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
                     u32 ss = pmfx::get_render_state_by_name(PEN_HASH("clamp_linear_sampler_state"));
-
-                    g_vol_test = gv.texture;
-                    g_vol_ss = ss;
                     
                     // create material for volume sdf sphere trace
                     material_resource* sdf_material                   = new material_resource;
@@ -1446,8 +1465,8 @@ namespace put
                     sdf_material->shader_name                         = "pmfx_utility";
                     sdf_material->id_shader                           = PEN_HASH("pmfx_utility");
                     sdf_material->id_technique                        = PEN_HASH("volume_sdf");
-                    //sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-                    //sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
+                    sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = ss;
+                    sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
                     add_material_resource(sdf_material);
 
                     f32 single_scale = component_wise_max((s_sdf_job.scene_extents.max - s_sdf_job.scene_extents.min) / 2.0f);
@@ -1462,7 +1481,9 @@ namespace put
                     s_main_scene->transforms[new_prim].translation = pos;
                     s_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
                     s_main_scene->parents[new_prim] = new_prim;
-                    instantiate_geometry(cube, s_main_scene, new_prim);
+
+                    //instantiate_geometry(cube, s_main_scene, new_prim);
+
                     instantiate_material(sdf_material, s_main_scene, new_prim);
                     instantiate_model_cbuffer(s_main_scene, new_prim);
                     
@@ -1475,8 +1496,6 @@ namespace put
                     sdf_shadow_material->shader_name                         = "pmfx_utility";
                     sdf_shadow_material->id_shader                           = PEN_HASH("pmfx_utility");
                     sdf_shadow_material->id_technique                        = PEN_HASH("shadow_sdf");
-                    //sdf_shadow_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-                    //sdf_shadow_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
                     add_material_resource(sdf_shadow_material);
 
                     new_prim                    = get_new_node(s_main_scene);

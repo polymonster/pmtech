@@ -338,7 +338,7 @@ void test_ray_vs_aabb(entity_scene* scene, bool initialise)
     if (intersect)
         dbg::add_point(ip, 0.5f, vec4f::white());
 
-    scene->materials[aabb.node].diffuse_rgb_shininess = col;
+    scene->materials[aabb.node].diffuse_rgb_roughness = col;
 }
 
 void test_ray_vs_obb(entity_scene* scene, bool initialise)
@@ -391,7 +391,7 @@ void test_ray_vs_obb(entity_scene* scene, bool initialise)
     if (intersect)
         dbg::add_point(ip, 0.5f, vec4f::white());
 
-    scene->materials[obb.node].diffuse_rgb_shininess = col;
+    scene->materials[obb.node].diffuse_rgb_roughness = col;
 }
 
 void test_point_plane_distance(entity_scene* scene, bool initialise)
@@ -478,7 +478,7 @@ void test_sphere_vs_plane(entity_scene* scene, bool initialise)
     // debug output
     ImGui::Text("Classification %s", classifications[c]);
 
-    scene->materials[sphere.node].diffuse_rgb_shininess = vec4f(classification_colours[c]);
+    scene->materials[sphere.node].diffuse_rgb_roughness = vec4f(classification_colours[c]);
 
     dbg::add_plane(plane.point, plane.normal);
 }
@@ -697,8 +697,8 @@ void test_sphere_vs_sphere(entity_scene* scene, bool initialise)
     if (i)
         col = vec4f::red();
 
-    scene->materials[sphere0.node].diffuse_rgb_shininess = vec4f(col);
-    scene->materials[sphere1.node].diffuse_rgb_shininess = vec4f(col);
+    scene->materials[sphere0.node].diffuse_rgb_roughness = vec4f(col);
+    scene->materials[sphere1.node].diffuse_rgb_roughness = vec4f(col);
 }
 
 void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
@@ -725,8 +725,8 @@ void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
     if (i)
         col = vec4f::red();
 
-    scene->materials[sphere.node].diffuse_rgb_shininess = vec4f(col);
-    scene->materials[aabb.node].diffuse_rgb_shininess   = vec4f(col);
+    scene->materials[sphere.node].diffuse_rgb_roughness = vec4f(col);
+    scene->materials[aabb.node].diffuse_rgb_roughness   = vec4f(col);
 }
 
 void test_line_vs_line(entity_scene* scene, bool initialise)

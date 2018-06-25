@@ -308,9 +308,24 @@ namespace put
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
 
-            // forward lights
             if (view.render_flags & RENDER_FORWARD_LIT)
+            {
+                // forward lights
                 pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
+            }
+
+            //sdf shadows
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, PEN_SHADER_TYPE_PS);
+
+                if (scene->entities[n] & CMP_SDF_SHADOW)
+                {
+                    cmp_material& mat = scene->materials[n];
+                    pen::renderer_set_texture(mat.texture_handles[SN_VOLUME_TEXTURE],
+                        mat.sampler_states[SN_VOLUME_TEXTURE], SDF_SHADOW_UNIT, PEN_SHADER_TYPE_PS);
+                }
+            }
 
             s32 draw_count = 0;
             s32 cull_count = 0;
@@ -440,12 +455,6 @@ namespace put
                             pen::renderer_set_texture(p_mat->texture_handles[t], p_mat->sampler_states[t], t,
                                                       PEN_SHADER_TYPE_PS);
                         }
-                    }
-
-                    if (is_valid(g_vol_test))
-                    {
-                        pen::renderer_set_texture(g_vol_test, g_vol_ss, SN_VOLUME_TEXTURE,
-                            PEN_SHADER_TYPE_PS);
                     }
                 }
 
@@ -682,8 +691,8 @@ namespace put
 
                 cmp_material& mat                     = scene->materials[n];
                 scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
-                scene->draw_call_data[n].v1 = vec4f((f32)n, mat.diffuse_rgb_shininess.w, mat.specular_rgb_reflect.w, 0.0f);
-                scene->draw_call_data[n].v2 = vec4f(mat.diffuse_rgb_shininess.xyz, 1.0f);
+                scene->draw_call_data[n].v1 = vec4f((f32)n, mat.diffuse_rgb_roughness.w, mat.specular_rgb_reflect.w, 0.0f);
+                scene->draw_call_data[n].v2 = vec4f(mat.diffuse_rgb_roughness.xyz, 1.0f);
 
                 if (!scene->cbuffer[n])
                     continue;
