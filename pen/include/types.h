@@ -94,7 +94,7 @@ enum pen_error
 
 inline f16 float_to_half(f32 f)
 {
-    union Bits
+    union bits
     {
         float f;
         int32_t si;
@@ -102,7 +102,7 @@ inline f16 float_to_half(f32 f)
     };
 
     static int const shift = 13;
-    static int const shiftSign = 16;
+    static int const shift_sign = 16;
 
     static int32_t const infN = 0x7F800000; // flt32 infinity
     static int32_t const maxN = 0x477FE000; // max flt16 normal as a flt32
@@ -121,11 +121,11 @@ inline f16 float_to_half(f32 f)
     static int32_t const maxD = infC - maxC - 1;
     static int32_t const minD = minC - subC - 1;
 
-    Bits v, s;
+    bits v, s;
     v.f = f;
     uint32_t sign = v.si & signN;
     v.si ^= sign;
-    sign >>= shiftSign; // logical shift
+    sign >>= shift_sign; // logical shift
     s.si = mulN;
     s.si = s.f * v.f; // correct subnormals
     v.si ^= (s.si ^ v.si) & -(minN > v.si);

@@ -29,7 +29,50 @@ struct typed_texture
 const c8**     k_texture_formats;
 typed_texture* k_textures     = nullptr;
 u32            k_num_textures = 0;
-void           load_textures()
+
+template <typename T>
+u32 create_float_texture(u32 w, u32 h, texture_format fmt, T r, T g, T b, T a)
+{
+    pen::texture_creation_params tcp;
+    tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
+
+    u32 data_size = w * h * 4 * sizeof(T);
+
+    tcp.width = w;
+    tcp.height = h;
+    tcp.format = fmt;
+    tcp.num_mips = 1;
+    tcp.num_arrays = 1;
+    tcp.sample_count = 1;
+    tcp.sample_quality = 0;
+    tcp.usage = PEN_USAGE_DEFAULT;
+    tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
+    tcp.cpu_access_flags = 0;
+    tcp.flags = 0;
+    tcp.block_size = 4;
+    tcp.pixels_per_block = 1;
+    tcp.data = pen::memory_alloc(data_size);
+    tcp.data_size = data_size;
+
+    T* fdata = (T*)tcp.data;
+
+    for (u32 y = 0; y < h; ++y)
+    {
+        for (u32 x = 0; x < w; ++x)
+        {
+            u32 i = y * w * 4 + x * 4;
+
+            fdata[i + 0] = r;
+            fdata[i + 1] = g;
+            fdata[i + 2] = b;
+            fdata[i + 3] = a;
+        }
+    }
+
+    return pen::renderer_create_texture(tcp);
+}
+
+void load_textures()
 {
     const pen::renderer_info& ri = pen::renderer_get_info();
 
@@ -42,22 +85,30 @@ void           load_textures()
     bc[5] = ri.caps & PEN_CAPS_TEX_FORMAT_BC6;
     bc[6] = ri.caps & PEN_CAPS_TEX_FORMAT_BC7;
 
-    static typed_texture textures[] = {{"rgb8", put::load_texture("data/textures/formats/texfmt_rgb8.dds")},
-                                       {"rgba8", put::load_texture("data/textures/formats/texfmt_rgba8.dds")},
+    f16 h0 = float_to_half(0.0f);
+    f16 h1 = float_to_half(1.0f);
 
-                                       {"bc1", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1.dds") : 0},
-                                       {"bc2", bc[1] ? put::load_texture("data/textures/formats/texfmt_bc2.dds") : 0},
-                                       {"bc3", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3.dds") : 0},
+    static typed_texture textures[] = {
+        {"rgb8", put::load_texture("data/textures/formats/texfmt_rgb8.dds")},
+        {"rgba8", put::load_texture("data/textures/formats/texfmt_rgba8.dds")},
 
-                                       {"bc4", bc[3] ? put::load_texture("data/textures/formats/texfmt_bc4.dds") : 0},
-                                       {"bc5", bc[4] ? put::load_texture("data/textures/formats/texfmt_bc5.dds") : 0},
+        {"bc1", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1.dds") : 0},
+        {"bc2", bc[1] ? put::load_texture("data/textures/formats/texfmt_bc2.dds") : 0},
+        {"bc3", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3.dds") : 0},
 
-                                       // incorrect in d3d and visual studio (nvcompress issue?)
-                                       {"bc6", bc[5] ? put::load_texture("data/textures/formats/texfmt_bc6.dds") : 0},
-                                       {"bc7", bc[6] ? put::load_texture("data/textures/formats/texfmt_bc7.dds") : 0},
+        {"bc4", bc[3] ? put::load_texture("data/textures/formats/texfmt_bc4.dds") : 0},
+        {"bc5", bc[4] ? put::load_texture("data/textures/formats/texfmt_bc5.dds") : 0},
 
-                                       {"bc1n", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1n.dds") : 0},
-                                       {"bc3n", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3n.dds") : 0}};
+        // incorrect in d3d and visual studio (nvcompress issue?)
+        {"bc6", bc[5] ? put::load_texture("data/textures/formats/texfmt_bc6.dds") : 0},
+        {"bc7", bc[6] ? put::load_texture("data/textures/formats/texfmt_bc7.dds") : 0},
+
+        {"bc1n", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1n.dds") : 0},
+        {"bc3n", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3n.dds") : 0},
+
+        {"r32f", create_float_texture<f32>(64, 64, PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 1.0f, 0.0f, 1.0f, 1.0f ) },
+        {"r16f", create_float_texture<f16>(64, 64, PEN_TEX_FORMAT_R16G16B16A16_FLOAT, h0, h1, h0, h1 ) }
+    };
 
     k_textures     = &textures[0];
     k_num_textures = PEN_ARRAY_SIZE(textures);

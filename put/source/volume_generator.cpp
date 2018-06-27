@@ -860,30 +860,23 @@ namespace put
 
             if (tex_format == PEN_TEX_FORMAT_R16_FLOAT)
             {
-                u32 new_data_size = tcp.width * tcp.height * tcp.num_arrays * sizeof(f16);
+                tcp.block_size = 2;
+                u32 new_data_size = tcp.width * tcp.height * tcp.num_arrays * tcp.block_size;
 
                 f16* new_data = (f16*)pen::memory_alloc(new_data_size);
-                f32* float_data = (f32*)tcp.data;
+                f32* float_data = (f32*)volume_data;
 
-                for (u32 z = 0; z < tcp.num_arrays; ++z)
-                {
-                    for (u32 y = 0; y < tcp.height; ++y)
-                    {
-                        for (u32 x = 0; x < tcp.width; ++x)
-                        {
-                            u32 i = z * tcp.height + y * tcp.width + x;
+                for (u32 i = 0; i < tcp.width * tcp.height * tcp.num_arrays; ++i)
+                    new_data[i] = float_to_half(float_data[i]);
 
-                            //new_data[i] = float_to_half(float_data[i]);
-
-                            new_data[i] = float_to_half(0.0f);
-                        }
-                    }
-                }
-
-                tcp.data = (void*)&new_data[0];
-                tcp.block_size = 2; //f16
+                tcp.data = new_data;
+                tcp.format = PEN_TEX_FORMAT_R16_FLOAT;
                 tcp.data_size = new_data_size;
-                generate_mips = false;
+
+                gv.texture = PEN_INVALID_HANDLE;
+                gv.tcp = tcp;
+
+                return gv;
             }
 
             if (generate_mips)
@@ -1485,7 +1478,7 @@ namespace put
                     s_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
                     s_main_scene->parents[new_prim] = new_prim;
 
-                    //instantiate_geometry(cube, s_main_scene, new_prim);
+                    instantiate_geometry(cube, s_main_scene, new_prim);
 
                     instantiate_material(sdf_material, s_main_scene, new_prim);
                     instantiate_model_cbuffer(s_main_scene, new_prim);

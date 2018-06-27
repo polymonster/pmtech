@@ -107,53 +107,54 @@ void animate_lights(entity_scene* scene, f32 dt)
         if (scene->lights[n].type == LIGHT_TYPE_DIR)
             continue;
 
-        if (vel_index == 0)
+        switch (vel_index)
         {
-            f32 tx = sin(t);
-            scene->transforms[n].translation = vec3f(tx * 20.0f, 2.0f, 15.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
+            case 0:
+            {
+                f32 tx = sin(t);
+                scene->transforms[n].translation = vec3f(tx * 20.0f, 2.0f, 15.0f);
+                scene->entities[n] |= CMP_TRANSFORM;
+            }
+                break;
+            case 1:
+            {
+                f32 tz = cos(t);
+                scene->transforms[n].translation = vec3f(15.0f, 3.0f, tz * 20.0f);
+                scene->entities[n] |= CMP_TRANSFORM;
+            }
+                break;
+            case 2:
+            {
+                f32 tz = cos(t);
+                scene->transforms[n].translation = vec3f(15.0f, 3.0f, tz * 20.0f);
+                scene->entities[n] |= CMP_TRANSFORM;
+            }
+                break;
+            case 3:
+            {
+                f32 tx = sin(t*0.5);
+                f32 tz = cos(t*0.5);
+                scene->transforms[n].translation = vec3f(tx * 40.0f, 1.0f, tz * 30.0f);
+                scene->entities[n] |= CMP_TRANSFORM;
+            }
+                break;
+            case 4:
+            {
+                f32 tx = cos(t*0.25);
+                f32 tz = sin(t*0.25);
+                scene->transforms[n].translation = vec3f(tx * 30.0f, 6.0f, tz * 30.0f);
+                scene->entities[n] |= CMP_TRANSFORM;
+            }
+                break;
+            case 5:
+            {
+                f32 tx = cos(t*0.25);
+                f32 tz = sin(t*0.25);
+                scene->transforms[n].translation = vec3f(tx * 2.0f, 12.0f, tz * 2.0f);
+                scene->entities[n] |= CMP_TRANSFORM;
+            }
+            break;
         }
-
-        if (vel_index == 1)
-        {
-            f32 tz = cos(t);
-            scene->transforms[n].translation = vec3f(15.0f, 3.0f, tz * 20.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
-        }
-
-        if (vel_index == 2)
-        {
-            f32 tx = sin(t*0.5);
-            f32 tz = cos(t*0.5);
-            scene->transforms[n].translation = vec3f(tx * 40.0f, 1.0f, tz * 30.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
-        }
-
-        if (vel_index == 3)
-        {
-            f32 tx = cos(t*0.25);
-            f32 tz = sin(t*0.25);
-            scene->transforms[n].translation = vec3f(tx * 30.0f, 6.0f, tz * 30.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
-        }
-
-        /*
-        vec3f t = scene->world_matrices[n].get_translation();
-        if (!maths::point_inside_aabb(e.min, e.max, t))
-        {
-            vec3f cp = maths::closest_point_on_aabb(t, e.min, e.max);
-
-            scene->transforms[n].translation = cp;
-
-            vec3f v = normalised(cp - t);
-
-            s_velocities[vel_index] = v + random_vel(-0.5f, 0.5f);
-        }
-
-        scene->transforms[n].translation += s_velocities[vel_index] * dt * 0.01f;
-        scene->entities[n] |= CMP_TRANSFORM;
-        */
-
 
         ++vel_index;
     }
