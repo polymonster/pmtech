@@ -129,6 +129,8 @@ print("processing directory: " + texture_dir)
 
 source_dirs = [texture_dir, built_in_texture_dir]
 
+dependencies.delete_orphaned_files(build_dir, platform_data_dir)
+
 dependency_info = dict()
 for source in source_dirs:
     for root, dirs, files in os.walk(source):

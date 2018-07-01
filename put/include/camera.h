@@ -56,6 +56,7 @@ namespace put
     void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
 
     void camera_update_projection_matrix(camera* p_camera);
+    void camera_update_frustum(camera* p_camera);
 
     void camera_update_modelling(camera* p_camera, bool has_focus = true, bool invert_y = false);
     void camera_update_fly(camera* p_camera, bool has_focus = true, bool invert_y = false);

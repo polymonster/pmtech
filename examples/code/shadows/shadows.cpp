@@ -46,7 +46,7 @@ void create_scene_objects(ces::entity_scene* scene)
     scene->lights[light].colour          = vec3f::one();
     scene->lights[light].direction       = vec3f::one();
     scene->lights[light].type            = LIGHT_TYPE_DIR;
-    scene->lights[light].shadow_map          = true;
+    scene->lights[light].shadow_map      = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation    = quat();
     scene->transforms[light].scale       = vec3f::one();
@@ -102,12 +102,10 @@ frustum g_shadow_frustum;
 
 void debug_render_frustum(const scene_view& view)
 {
-    /*
     put::dbg::add_aabb(view.scene->renderable_extents.min, view.scene->renderable_extents.max, vec4f::magenta());
     put::dbg::render_3d(view.cb_view);
 
     put::dbg::add_frustum(g_shadow_frustum.corners[0], g_shadow_frustum.corners[1]);
-    */
 }
 
 void get_aabb_corners(vec3f* corners, vec3f min, vec3f max)
@@ -155,7 +153,7 @@ void fit_directional_shadow_to_aabb(put::camera* shadow_cam, vec3f light_dir, ve
     shadow_cam->view = shadow_view;
     shadow_cam->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmin.z, cmax.z);
     shadow_cam->flags |= CF_INVALIDATED;
-
+    
     g_shadow_frustum = shadow_cam->camera_frustum;
 }
 
@@ -178,24 +176,14 @@ void update_shadow_frustum(ces::entity_scene* scene, put::camera* shadow_cam)
     }
 
     mat4 shadow_vp = shadow_cam->proj * shadow_cam->view;
+    
+    camera_update_frustum(shadow_cam);
 
     pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));
 }
 
 void shadow_map_update(put::scene_controller* sc)
 {
-    /*
-    static hash_id id_shadow_map = PEN_HASH("shadow_map");
-    static hash_id id_wrap_linear = PEN_HASH("wrap_linear");
-
-    u32 shadow_map = pmfx::get_render_target(id_shadow_map)->handle;
-    u32 ss = pmfx::get_render_state_by_name(id_wrap_linear);
-
-    pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
-    */
-
-    // pen::renderer_set_texture(shadow_map, ss, 15, PEN_SHADER_TYPE_PS);
-
     // unbind
     pen::renderer_set_texture(0, 0, 15, PEN_SHADER_TYPE_PS);
     pen::renderer_set_constant_buffer(cbuffer_shadow, 4, PEN_SHADER_TYPE_PS);

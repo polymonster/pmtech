@@ -37,128 +37,6 @@ namespace physics
     extern PEN_TRV physics_thread_main(void* params);
 }
 
-vec3f random_vel(f32 min, f32 max)
-{
-    f32 x = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
-    f32 y = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
-    f32 z = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
-    
-    return vec3f(x, y, z);
-}
-
-void animate_lights(entity_scene* scene, f32 dt)
-{
-    if (scene->flags & PAUSE_UPDATE)
-        return;
-
-    extents e = scene->renderable_extents;
-    e.min -= vec3f(10.0f, 2.0f, 10.0f);
-    e.max += vec3f(10.0f, 10.0f, 10.0f);
-
-    static f32 t = 0.0f;
-    t += dt * 0.001f;
-
-    static vec3f s_velocities[MAX_FORWARD_LIGHTS];
-    static bool s_initialise = true;
-    if (s_initialise)
-    {
-        s_initialise = false;
-        srand(pen::get_time_us());
-
-        for (u32 i = 0; i < MAX_FORWARD_LIGHTS; ++i)
-            s_velocities[i] = random_vel(-1.0f, 1.0f);
-
-        /*
-        u32 vt = put::load_texture("C:/Users/alj/Desktop/vol512.dds");
-
-        // create material for volume sdf sphere trace
-        material_resource* sdf_material = new material_resource;
-        sdf_material->material_name = "volume_sdf_material";
-        sdf_material->shader_name = "pmfx_utility";
-        sdf_material->id_shader = PEN_HASH("pmfx_utility");
-        sdf_material->id_technique = PEN_HASH("volume_sdf");
-        sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-        sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = vt;
-        add_material_resource(sdf_material);
-
-        f32 single_scale = 20.4f;
-        vec3f scale = vec3f(single_scale);
-
-        u32 new_prim = get_new_node(scene);
-        scene->names[new_prim] = "volume";
-        scene->names[new_prim].appendf("%i", new_prim);
-        scene->transforms[new_prim].rotation = quat();
-        scene->transforms[new_prim].scale = scale;
-        scene->transforms[new_prim].translation = vec3f::zero();
-        scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
-        scene->parents[new_prim] = new_prim;
-        instantiate_material(sdf_material, scene, new_prim);
-        instantiate_model_cbuffer(scene, new_prim);
-        */
-    }
-
-    u32 vel_index = 0;
-
-    for (u32 n = 0; n < scene->num_nodes; ++n)
-    {
-        if (!(scene->entities[n] & CMP_LIGHT))
-            continue;
-
-        if (scene->lights[n].type == LIGHT_TYPE_DIR)
-            continue;
-
-        if (vel_index == 0)
-        {
-            f32 tx = sin(t);
-            scene->transforms[n].translation = vec3f(tx * 20.0f, 2.0f, 15.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
-        }
-
-        if (vel_index == 1)
-        {
-            f32 tz = cos(t);
-            scene->transforms[n].translation = vec3f(15.0f, 3.0f, tz * 20.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
-        }
-
-        if (vel_index == 2)
-        {
-            f32 tx = sin(t*0.5);
-            f32 tz = cos(t*0.5);
-            scene->transforms[n].translation = vec3f(tx * 40.0f, 1.0f, tz * 30.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
-        }
-
-        if (vel_index == 3)
-        {
-            f32 tx = cos(t*0.25);
-            f32 tz = sin(t*0.25);
-            scene->transforms[n].translation = vec3f(tx * 30.0f, 6.0f, tz * 30.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
-        }
-
-        /*
-        vec3f t = scene->world_matrices[n].get_translation();
-        if (!maths::point_inside_aabb(e.min, e.max, t))
-        {
-            vec3f cp = maths::closest_point_on_aabb(t, e.min, e.max);
-
-            scene->transforms[n].translation = cp;
-
-            vec3f v = normalised(cp - t);
-
-            s_velocities[vel_index] = v + random_vel(-0.5f, 0.5f);
-        }
-
-        scene->transforms[n].translation += s_velocities[vel_index] * dt * 0.01f;
-        scene->entities[n] |= CMP_TRANSFORM;
-        */
-
-
-        ++vel_index;
-    }
-}
-
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -227,14 +105,13 @@ PEN_TRV pen::user_entry(void* params)
         put::dev_ui::new_frame();
 
         pmfx::update();
-        animate_lights(main_scene, frame_time);
-
+        
         pmfx::render();
 
         pmfx::show_dev_ui();
 
         put::vgt::show_dev_ui();
-
+        
         if (enable_dev_ui)
         {
             put::dev_ui::console();

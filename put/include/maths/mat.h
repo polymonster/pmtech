@@ -155,6 +155,7 @@ void Mat<R, C, T>::set_vectors(const Vec<3, T>& right, const Vec<3, T>& up, cons
     set_row(0, Vec<4, T>(right, pos.x));
     set_row(1, Vec<4, T>(up, pos.y));
     set_row(2, Vec<4, T>(at, pos.z));
+    set_row(3, Vec<4, T>(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 // Operators

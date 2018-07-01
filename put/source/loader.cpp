@@ -438,10 +438,10 @@ namespace put
                         Str fn       = input["name"].as_str();
                         str_replace_chars(fn, '@', ':');
 
-                        u32       current_ts;
+                        u32       current_ts = 0;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
 
-                        // dev_console_log("%s: %i,%i", fn.c_str(), current_ts, built_ts);
+                        //dev_console_log("%s: %i,%i", fn.c_str(), current_ts, built_ts);
 
                         if (current_ts > built_ts && err == PEN_ERR_OK)
                         {

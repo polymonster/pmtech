@@ -5,6 +5,26 @@ default_settings = dict()
 default_settings["textures_dir"] = "assets/textures/"
 default_settings["models_dir"] = "assets/mesh/"
 
+
+def delete_orphaned_files(build_dir, platform_data_dir):
+    for root, dir, files in os.walk(build_dir):
+        for file in files:
+            dest_file = os.path.join(root, file)
+            if dest_file.find("dependencies.json") != -1:
+                depends_file = open(dest_file, "r")
+                depends_json = json.loads(depends_file.read())
+                depends_file.close()
+                for file_dependencies in depends_json["files"]:
+                    for key in file_dependencies.keys():
+                        for dependency_info in file_dependencies[key]:
+                            if not os.path.exists(dependency_info["name"]):
+                                del_path = os.path.join(platform_data_dir, key)
+                                if os.path.exists(del_path):
+                                    os.remove(os.path.join(platform_data_dir, key))
+                                    print("deleting " + key + " source file no longer exists")
+                                    break
+
+
 def get_build_config_setting(dir_name):
     if os.path.exists("build_config.json"):
         build_config_file = open("build_config.json", "r")
@@ -42,15 +62,18 @@ def get_export_config(filename):
     # print(json.dumps(export_info, indent=4, separators=(',', ': ')))
     return export_info
 
+
 def unstrict_json_safe_filename(file):
     file = file.replace("\\", '/')
     file = file.replace(":", "@")
     return file
 
+
 def sanitize_filename(filename):
     sanitized_name = filename.replace("@", ":")
     sanitized_name = sanitized_name.replace('/', os.sep)
     return sanitized_name
+
 
 def create_info(file):
     file = sanitize_filename(file)

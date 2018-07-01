@@ -110,7 +110,7 @@ namespace put
         p_camera->flags |= CF_INVALIDATED;
     }
 
-    void update_frustum(camera* p_camera)
+    void camera_update_frustum(camera* p_camera)
     {
         static vec2f ndc_coords[] = {
             vec2f(0.0f, 1.0f),
@@ -125,9 +125,7 @@ namespace put
 
         for (s32 i = 0; i < 4; ++i)
         {
-            p_camera->camera_frustum.corners[0][i] = maths::unproject_sc(vec3f(ndc_coords[i], -1.0f), view_proj, vpi
-
-            );
+            p_camera->camera_frustum.corners[0][i] = maths::unproject_sc(vec3f(ndc_coords[i], -1.0f), view_proj, vpi);
             p_camera->camera_frustum.corners[1][i] = maths::unproject_sc(vec3f(ndc_coords[i], 1.0f), view_proj, vpi);
         }
 
@@ -230,7 +228,7 @@ namespace put
             }
         }
 
-        update_frustum(p_camera);
+        camera_update_frustum(p_camera);
 
         if (viewport_correction && !(p_camera->flags & CF_VP_CORRECTED))
         {
