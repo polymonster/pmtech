@@ -178,6 +178,25 @@ namespace put
 
             entity_scene* p_sn = scene;
 
+            // copy components
+            for (u32 i = 0; i < scene->num_components; ++i)
+            {
+                generic_cmp_array& cmp = p_sn->get_component_array(i);
+                pen::memory_cpy(cmp[dst], cmp[src], cmp.size);
+            }
+
+            // assign
+            p_sn->names[dst] = Str();
+            p_sn->geometry_names[dst] = Str();
+            p_sn->material_names[dst] = Str();
+
+            p_sn->names[dst] = p_sn->names[src].c_str();
+            p_sn->names[dst].append(suffix);
+
+            p_sn->geometry_names[dst] = p_sn->geometry_names[src].c_str();
+            p_sn->material_names[dst] = p_sn->material_names[src].c_str();
+
+            // fixup
             u32 parent_offset = p_sn->parents[src] - src;
             if (parent == -1)
             {
@@ -187,48 +206,14 @@ namespace put
             {
                 p_sn->parents[dst] = parent;
             }
-
-            pen::memory_cpy(&p_sn->entities[dst], &p_sn->entities[src], sizeof(a_u64));
-
-            // ids
-            p_sn->id_name[dst]     = p_sn->id_name[src];
-            p_sn->id_geometry[dst] = p_sn->id_geometry[src];
-            p_sn->id_material[dst] = p_sn->id_material[src];
-
-            // componenets
-            p_sn->transforms[dst]       = p_sn->transforms[src];
-            p_sn->local_matrices[dst]   = p_sn->local_matrices[src];
-            p_sn->world_matrices[dst]   = p_sn->world_matrices[src];
-            p_sn->offset_matrices[dst]  = p_sn->offset_matrices[src];
-            p_sn->physics_matrices[dst] = p_sn->physics_matrices[src];
-            p_sn->bounding_volumes[dst] = p_sn->bounding_volumes[src];
-            p_sn->lights[dst]           = p_sn->lights[src];
-            p_sn->physics_data[dst]     = p_sn->physics_data[src];
-            p_sn->geometries[dst]       = p_sn->geometries[src];
-            p_sn->materials[dst]        = p_sn->materials[src];
-            p_sn->anim_controller[dst]  = p_sn->anim_controller[src];
-            p_sn->physics_data[dst].rigid_body.position += offset;
-            p_sn->draw_call_data[dst] = p_sn->draw_call_data[src];
-
-            vec3f right       = p_sn->local_matrices[dst].get_right();
-            vec3f up          = p_sn->local_matrices[dst].get_up();
-            vec3f fwd         = p_sn->local_matrices[dst].get_fwd();
+          
             vec3f translation = p_sn->local_matrices[dst].get_translation();
-
-            p_sn->local_matrices[dst].set_vectors(right, up, fwd, translation + offset);
-
-            p_sn->names[dst]          = Str();
-            p_sn->geometry_names[dst] = Str();
-            p_sn->material_names[dst] = Str();
-
-            p_sn->names[dst] = p_sn->names[src].c_str();
-            p_sn->names[dst].append(suffix);
-            p_sn->geometry_names[dst] = p_sn->geometry_names[src].c_str();
-            p_sn->material_names[dst] = p_sn->material_names[src].c_str();
+            p_sn->local_matrices[dst].set_translation(translation + offset);
 
             if (flags == CLONE_INSTANTIATE)
             {
                 // todo, clone / instantiate constraint
+
                 if (p_sn->physics_handles[src])
                     instantiate_rigid_body(scene, dst);
 
@@ -240,7 +225,6 @@ namespace put
                 p_sn->cbuffer[dst]         = p_sn->cbuffer[src];
                 p_sn->physics_handles[dst] = p_sn->physics_handles[src];
 
-                p_sn->entities[dst] |= CMP_TRANSFORM;
                 zero_entity_components(scene, src);
             }
 
