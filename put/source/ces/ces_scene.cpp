@@ -13,6 +13,8 @@
 #include "ces/ces_scene.h"
 #include "ces/ces_utilities.h"
 
+#include "console.h"
+
 using namespace put;
 
 extern u32 g_vol_test;
@@ -192,7 +194,6 @@ namespace put
             p_sn->id_name[dst]     = p_sn->id_name[src];
             p_sn->id_geometry[dst] = p_sn->id_geometry[src];
             p_sn->id_material[dst] = p_sn->id_material[src];
-            p_sn->id_resource[dst] = p_sn->id_resource[src];
 
             // componenets
             p_sn->transforms[dst]       = p_sn->transforms[src];
@@ -901,20 +902,40 @@ namespace put
             }
         }
 
+        struct scene_header
+        {
+            s32 header_size = sizeof(*this);
+            s32 version = 4;
+            u32 num_nodes = 0;
+            s32 num_components = 0;
+            s32 reserved_1[28] = { 0 };
+            u32 view_flags = 0;
+            s32 selected_index = 0;
+            s32 reserved_2[30] = { 0 };
+        };
+
         void save_scene(const c8* filename, entity_scene* scene)
         {
-            // todo fix down
-            //-take subsets of scenes and make into a new scene, to save unity style prefabs
+            Str project_dir = dev_ui::get_program_preference_filename("project_dir");
 
             std::ofstream ofs(filename, std::ofstream::binary);
 
-            static s32 version = 3;
-            ofs.write((const c8*)&version, sizeof(s32));
-            ofs.write((const c8*)&scene->num_nodes, sizeof(u32));
+            // header
+            scene_header sh;
+            sh.num_nodes = scene->num_nodes;
+            sh.view_flags = scene->view_flags;
+            sh.selected_index = scene->selected_index;
+            sh.num_components = scene->num_components;
+            ofs.write((const c8*)&sh, sizeof(scene_header));
 
-            // user prefs
-            ofs.write((const c8*)&scene->view_flags, sizeof(u32));
-            ofs.write((const c8*)&scene->selected_index, sizeof(s32));
+            // write all components
+            for (u32 i = 0; i < scene->num_components; ++i)
+            {
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                ofs.write((const c8*)cmp.data, cmp.size * scene->num_nodes);
+            }
+
+            // specialisations
 
             // names
             for (s32 n = 0; n < scene->num_nodes; ++n)
@@ -924,21 +945,24 @@ namespace put
                 write_parsable_string(scene->material_names[n], ofs);
             }
 
-            // simple parts of the scene are just homogeonous chucks of data
-            ofs.write((const c8*)scene->entities.data, sizeof(a_u64) * scene->num_nodes);
-            ofs.write((const c8*)scene->parents.data, sizeof(u32) * scene->num_nodes);
-            ofs.write((const c8*)scene->transforms.data, sizeof(cmp_transform) * scene->num_nodes);
-            ofs.write((const c8*)scene->local_matrices.data, sizeof(mat4) * scene->num_nodes);
-            ofs.write((const c8*)scene->world_matrices.data, sizeof(mat4) * scene->num_nodes);
-            ofs.write((const c8*)scene->offset_matrices.data, sizeof(mat4) * scene->num_nodes);
-            ofs.write((const c8*)scene->physics_matrices.data, sizeof(mat4) * scene->num_nodes);
-            ofs.write((const c8*)scene->bounding_volumes.data, sizeof(cmp_bounding_volume) * scene->num_nodes);
-            ofs.write((const c8*)scene->lights.data, sizeof(cmp_light) * scene->num_nodes);
+            // geometry
+            for (s32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (scene->entities[n] & CMP_GEOMETRY)
+                {
+                    geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
 
-            if (version > 1)
-                ofs.write((const c8*)scene->physics_data.data, sizeof(cmp_physics) * scene->num_nodes);
+                    ofs.write((const c8*)&gr->submesh_index, sizeof(u32));
 
-            // animations need reloading from files
+                    Str stripped_filename = gr->filename;
+                    stripped_filename = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
+
+                    write_parsable_string(stripped_filename.c_str(), ofs);
+                    write_parsable_string(gr->geometry_name, ofs);
+                }
+            }
+
+            // animations
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
                 s32 size = scene->anim_controller[n].handles.size();
@@ -951,38 +975,9 @@ namespace put
 
                     write_parsable_string(anim->name, ofs);
                 }
-
-                ofs.write((const c8*)&scene->anim_controller[n].joints_offset,
-                          sizeof(cmp_anim_controller) - sizeof(std::vector<anim_handle>));
             }
 
-            Str project_dir = dev_ui::get_program_preference_filename("project_dir");
-
-            // geometry
-            for (s32 n = 0; n < scene->num_nodes; ++n)
-            {
-                if (scene->entities[n] & CMP_GEOMETRY)
-                {
-                    geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
-
-                    // has geometry
-                    u32 one = 1;
-                    ofs.write((const c8*)&one, sizeof(u32));
-                    ofs.write((const c8*)&gr->submesh_index, sizeof(u32));
-
-                    Str stripped_filename = gr->filename;
-                    stripped_filename     = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
-
-                    write_parsable_string(stripped_filename.c_str(), ofs);
-                    write_parsable_string(gr->geometry_name, ofs);
-                }
-                else
-                {
-                    u32 zero = 0;
-                    ofs.write((const c8*)&zero, sizeof(u32));
-                }
-            }
-
+#if 0
             // material
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -1006,6 +1001,7 @@ namespace put
                     ofs.write((const c8*)&zero, sizeof(u32));
                 }
             }
+#endif
 
             ofs.close();
         }
@@ -1018,10 +1014,16 @@ namespace put
 
             std::ifstream ifs(filename, std::ofstream::binary);
 
-            s32 version;
-            s32 num_nodes = 0;
-            ifs.read((c8*)&version, sizeof(s32));
-            ifs.read((c8*)&num_nodes, sizeof(u32));
+            // header
+            scene_header sh;
+            ifs.read((c8*)&sh, sizeof(scene_header));
+
+            // unpack header
+            s32 version = sh.version;
+            s32 num_nodes = sh.num_nodes;
+
+            scene->selected_index = sh.selected_index;
+            s32 scene_view_flags = sh.view_flags;
 
             u32 zero_offset   = 0;
             s32 new_num_nodes = num_nodes;
@@ -1041,101 +1043,41 @@ namespace put
 
             scene->num_nodes = new_num_nodes;
 
-            // user prefs
-            u32 scene_view_flags = 0;
-            ifs.read((c8*)&scene_view_flags, sizeof(u32));
-            ifs.read((c8*)&scene->selected_index, sizeof(s32));
-
-            // names
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            // read all components
+            for (u32 i = 0; i < scene->num_components; ++i)
             {
-                scene->names[n]          = read_parsable_string(ifs);
-                scene->geometry_names[n] = read_parsable_string(ifs);
-                scene->material_names[n] = read_parsable_string(ifs);
-
-                // generate hashes
-                scene->id_name[n]     = PEN_HASH(scene->names[n].c_str());
-                scene->id_geometry[n] = PEN_HASH(scene->geometry_names[n].c_str());
-                scene->id_material[n] = PEN_HASH(scene->material_names[n].c_str());
-            }
-
-            // data
-            ifs.read((c8*)&scene->entities[zero_offset], sizeof(a_u64) * num_nodes);
-            ifs.read((c8*)&scene->parents[zero_offset], sizeof(u32) * num_nodes);
-            ifs.read((c8*)&scene->transforms[zero_offset], sizeof(cmp_transform) * num_nodes);
-            ifs.read((c8*)&scene->local_matrices[zero_offset], sizeof(mat4) * num_nodes);
-            ifs.read((c8*)&scene->world_matrices[zero_offset], sizeof(mat4) * num_nodes);
-            ifs.read((c8*)&scene->offset_matrices[zero_offset], sizeof(mat4) * num_nodes);
-            ifs.read((c8*)&scene->physics_matrices[zero_offset], sizeof(mat4) * num_nodes);
-            ifs.read((c8*)&scene->bounding_volumes[zero_offset], sizeof(cmp_bounding_volume) * num_nodes);
-            ifs.read((c8*)&scene->lights[zero_offset], sizeof(cmp_light) * num_nodes);
-
-            if (version > 1)
-            {
-                // version 2 adds physics
-                ifs.read((c8*)&scene->physics_data[zero_offset], sizeof(cmp_physics) * num_nodes);
-
-                for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
-                    if (scene->entities[n] & CMP_PHYSICS)
-                        instantiate_rigid_body(scene, n);
-
-                // version 3 adds constraints
-                if (version > 2)
-                {
-                    for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
-                        if (scene->entities[n] & CMP_CONSTRAINT)
-                            instantiate_constraint(scene, n);
-                }
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                ifs.read((c8*)cmp.data, cmp.size * num_nodes);
             }
 
             // fixup parents for scene import / merge
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
                 scene->parents[n] += zero_offset;
 
-            // animations
+            // read specialisations
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                s32 size;
-                ifs.read((c8*)&size, sizeof(s32));
+                //memset to zero
+                memset(&scene->names[n], 0x0, sizeof(Str));
+                memset(&scene->geometry_names[n], 0x0, sizeof(Str));
+                memset(&scene->material_names[n], 0x0, sizeof(Str));
 
-                for (s32 i = 0; i < size; ++i)
-                {
-                    Str anim_name = project_dir;
-                    anim_name.append(read_parsable_string(ifs).c_str());
-
-                    anim_handle h = load_pma(anim_name.c_str());
-
-                    if (!is_valid(h))
-                    {
-                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] animation - cannot find pma file: %s",
-                                          anim_name.c_str());
-                        error = true;
-                    }
-
-                    scene->anim_controller[n].handles.push_back(h);
-                }
-
-                ifs.read((c8*)&scene->anim_controller[n].joints_offset,
-                         sizeof(cmp_anim_controller) - sizeof(std::vector<anim_handle>));
-
-                if (scene->anim_controller[n].current_animation > scene->anim_controller[n].handles.size())
-                    scene->anim_controller[n].current_animation = PEN_INVALID_HANDLE;
+                scene->names[n] = read_parsable_string(ifs);
+                scene->geometry_names[n] = read_parsable_string(ifs);
+                scene->material_names[n] = read_parsable_string(ifs);
             }
 
             // geometry
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                u32 has = 0;
-                ifs.read((c8*)&has, sizeof(u32));
-
-                if (scene->entities[n] & CMP_GEOMETRY && has)
+                if (scene->entities[n] & CMP_GEOMETRY)
                 {
                     u32 submesh;
                     ifs.read((c8*)&submesh, sizeof(u32));
 
-                    Str            filename     = project_dir;
-                    Str            name         = read_parsable_string(ifs).c_str();
-                    hash_id        name_hash    = PEN_HASH(name.c_str());
+                    Str            filename = project_dir;
+                    Str            name = read_parsable_string(ifs).c_str();
+                    hash_id        name_hash = PEN_HASH(name.c_str());
                     static hash_id primitive_id = PEN_HASH("primitive");
 
                     filename.append(name.c_str());
@@ -1177,13 +1119,63 @@ namespace put
                     else
                     {
                         dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] geometry - cannot find pmm file: %s",
-                                          filename.c_str());
+                            filename.c_str());
+
                         scene->entities[n] &= ~CMP_GEOMETRY;
                         error = true;
                     }
                 }
             }
 
+            // instantiate physics
+            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                if (scene->entities[n] & CMP_PHYSICS)
+                    instantiate_rigid_body(scene, n);
+
+            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                if (scene->entities[n] & CMP_CONSTRAINT)
+                    instantiate_constraint(scene, n);
+
+            // animations
+            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            {
+                s32 size;
+                ifs.read((c8*)&size, sizeof(s32));
+
+                scene->anim_controller[n].handles = std::vector<anim_handle>();
+
+                for (s32 i = 0; i < size; ++i)
+                {
+                    Str anim_name = project_dir;
+                    anim_name.append(read_parsable_string(ifs).c_str());
+
+                    anim_handle h = load_pma(anim_name.c_str());
+
+                    if (!is_valid(h))
+                    {
+                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] animation - cannot find pma file: %s",
+                            anim_name.c_str());
+                        error = true;
+                    }
+
+                    scene->anim_controller[n].handles.push_back(h);
+                }
+
+                if (scene->anim_controller[n].current_animation > scene->anim_controller[n].handles.size())
+                    scene->anim_controller[n].current_animation = PEN_INVALID_HANDLE;
+            }
+
+            // materials
+            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            {
+                if (scene->entities[n] & CMP_MATERIAL)
+                {
+                    static hash_id id_default = PEN_HASH("default_material");
+                    material_resource* mr = get_material_resource(id_default);
+                    instantiate_material(mr, scene, n);
+                }
+            }
+#if 0
             // materials
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
@@ -1241,6 +1233,7 @@ namespace put
                     }
                 }
             }
+#endif
 
             if (!merge)
             {

@@ -322,7 +322,6 @@ namespace put
             cmp_array<hash_id>             id_name;
             cmp_array<hash_id>             id_geometry;
             cmp_array<hash_id>             id_material;
-            cmp_array<hash_id>             id_resource;
             cmp_array<Str>                 names;
             cmp_array<Str>                 geometry_names;
             cmp_array<Str>                 material_names;
