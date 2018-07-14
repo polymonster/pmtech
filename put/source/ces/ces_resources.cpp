@@ -403,9 +403,6 @@ namespace put
         {
             cmp_material* instance = &scene->materials[node_index];
 
-            instance->diffuse_rgb_roughness = mr->diffuse_rgb_shininess;
-            instance->specular_rgb_reflect  = mr->specular_rgb_reflect;
-
             pen::memory_cpy(instance->texture_handles, mr->texture_handles, sizeof(u32) * SN_NUM_TEXTURES);
 
             scene->id_material[node_index]    = mr->hash;
@@ -432,26 +429,30 @@ namespace put
                     mr->id_sampler_state[i] = id_default_sampler_state;
             }
 
-            instance->resource = mr;
+            scene->material_resources[node_index] = *mr;
 
             bake_material_handles(scene, node_index);
         }
 
         void bake_material_handles(entity_scene* scene, u32 node_index)
         {
+            material_resource* resource = &scene->material_resources[node_index];
             cmp_material* material = &scene->materials[node_index];
             cmp_geometry* geometry = &scene->geometries[node_index];
 
-            if (!material->resource)
+            if (!resource)
                 return;
 
-            material->pmfx_shader = pmfx::load_shader(material->resource->shader_name.c_str());
+            material->pmfx_shader = pmfx::load_shader(resource->shader_name.c_str());
 
-            material->technique = pmfx::get_technique_index(material->pmfx_shader, material->resource->id_technique,
+            if (!is_valid(material->pmfx_shader))
+                return;
+
+            material->technique = pmfx::get_technique_index(material->pmfx_shader, resource->id_technique,
                                                             geometry->vertex_shader_class);
 
             for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
-                material->sampler_states[i] = pmfx::get_render_state_by_name(material->resource->id_sampler_state[i]);
+                material->sampler_states[i] = pmfx::get_render_state_by_name(resource->id_sampler_state[i]);
         }
 
         extern std::vector<entity_scene_instance> k_scenes;

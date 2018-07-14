@@ -1582,8 +1582,9 @@ namespace put
             // multi parameters
             s32 shader = mm.pmfx_shader;
             s32 technique = mm.technique;
-            vec4f diff_rough = mm.diffuse_rgb_roughness;
-            vec4f spec_reflect = mm.specular_rgb_reflect;
+
+            vec4f diff_rough = vec4f(0.0f); // mm.diffuse_rgb_roughness;
+            vec4f spec_reflect = vec4f(0.0f); // mm.specular_rgb_reflect;
 
             // set parameters if all are shared, if not set to invalid
             for (u32 i = 1; i < num_selected; ++i)
@@ -1632,6 +1633,7 @@ namespace put
 
                         if (cm)
                         {
+#if 0
                             for (s32 i = num_selected - 1; i >= 0; --i)
                             {
                                 material_resource* mr = new material_resource();
@@ -1645,6 +1647,7 @@ namespace put
 
                                 scene->materials[k_selection_list[i]].resource = mr;
                             }
+#endif
                         }
 
                         iv |= ImGui::SliderFloat("Roughness", (f32*)&diff_rough, 0.000001, 1.5);
@@ -1689,11 +1692,13 @@ namespace put
                 if (technique != mm.technique && technique != PEN_INVALID_HANDLE)
                     m2.technique = technique;
 
+#if 0
                 if (diff_rough != mm.diffuse_rgb_roughness)
                     m2.diffuse_rgb_roughness = diff_rough;
 
                 if (spec_reflect != mm.specular_rgb_reflect)
                     m2.specular_rgb_reflect = spec_reflect;
+#endif
             }
 
             return iv;

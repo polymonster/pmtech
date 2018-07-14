@@ -338,7 +338,7 @@ void test_ray_vs_aabb(entity_scene* scene, bool initialise)
     if (intersect)
         dbg::add_point(ip, 0.5f, vec4f::white());
 
-    scene->materials[aabb.node].diffuse_rgb_roughness = col;
+    scene->draw_call_data[aabb.node].v2 = col;
 }
 
 void test_ray_vs_obb(entity_scene* scene, bool initialise)
@@ -391,7 +391,7 @@ void test_ray_vs_obb(entity_scene* scene, bool initialise)
     if (intersect)
         dbg::add_point(ip, 0.5f, vec4f::white());
 
-    scene->materials[obb.node].diffuse_rgb_roughness = col;
+    scene->draw_call_data[obb.node].v2 = col;
 }
 
 void test_point_plane_distance(entity_scene* scene, bool initialise)
@@ -478,7 +478,7 @@ void test_sphere_vs_plane(entity_scene* scene, bool initialise)
     // debug output
     ImGui::Text("Classification %s", classifications[c]);
 
-    scene->materials[sphere.node].diffuse_rgb_roughness = vec4f(classification_colours[c]);
+    scene->draw_call_data[sphere.node].v2 = vec4f(classification_colours[c]);
 
     dbg::add_plane(plane.point, plane.normal);
 }
@@ -697,8 +697,8 @@ void test_sphere_vs_sphere(entity_scene* scene, bool initialise)
     if (i)
         col = vec4f::red();
 
-    scene->materials[sphere0.node].diffuse_rgb_roughness = vec4f(col);
-    scene->materials[sphere1.node].diffuse_rgb_roughness = vec4f(col);
+    scene->draw_call_data[sphere0.node].v2 = vec4f(col);
+    scene->draw_call_data[sphere1.node].v2 = vec4f(col);
 }
 
 void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
@@ -725,8 +725,8 @@ void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
     if (i)
         col = vec4f::red();
 
-    scene->materials[sphere.node].diffuse_rgb_roughness = vec4f(col);
-    scene->materials[aabb.node].diffuse_rgb_roughness   = vec4f(col);
+    scene->draw_call_data[sphere.node].v2 = vec4f(col);
+    scene->draw_call_data[aabb.node].v2 = vec4f(col);
 }
 
 void test_line_vs_line(entity_scene* scene, bool initialise)

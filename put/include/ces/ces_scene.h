@@ -15,13 +15,10 @@
 namespace put
 {
     struct scene_view;
-
     typedef s32 anim_handle;
 
     namespace ces
     {
-        struct material_resource;
-
         enum e_scene_view_flags : u32
         {
             SV_NONE     = 0,
@@ -87,6 +84,15 @@ namespace put
             SN_NUM_TEXTURES
         };
 
+        enum e_scene_node_cb
+        {
+            SN_CB1,
+            SN_CB2,
+            SN_CB3,
+
+            SN_NUM_CB
+        };
+
         enum e_scene_global_textures
         {
             SHADOW_MAP_UNIT = 15,
@@ -106,12 +112,27 @@ namespace put
             MAX_SDF_SHADOWS    = 1
         };
 
+        struct material_resource
+        {
+            Str     filename;
+            Str     material_name;
+            hash_id hash;
+
+            s32   texture_handles[SN_NUM_TEXTURES] = { 0 };
+            vec4f diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+            vec4f specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+
+            Str     shader_name;
+            hash_id id_shader = 0;
+            hash_id id_technique = 0;
+            hash_id id_sampler_state[SN_NUM_TEXTURES] = { 0 };
+        };
+
         struct cmp_draw_call
         {
-            mat4  world_matrix;
-            vec4f v1; // generic data ie colour
-            vec4f v2; // generic data ie roughness, shininess,
-
+            mat4 world_matrix;
+            vec4f v1; // generic data 1
+            vec4f v2; // generic data 2
             mat4 world_matrix_inv_transpose;
         };
 
@@ -125,14 +146,27 @@ namespace put
 
         struct cmp_material
         {
-            s32   texture_handles[SN_NUM_TEXTURES] = {0};
-            u32   sampler_states[SN_NUM_TEXTURES]  = {0};
-            vec4f diffuse_rgb_roughness            = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-            vec4f specular_rgb_reflect             = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+            s32   texture_handles[SN_NUM_TEXTURES]  = {0};
+            u32   sampler_states[SN_NUM_TEXTURES]   = {0};
+            u32   constant_buffers[SN_NUM_CB]       = {0};
 
             pmfx::shader_handle pmfx_shader;
             u32                 technique;
-            material_resource*  resource = nullptr;
+        };
+
+        struct cmp_material_data_1
+        {
+            f32 data[16];
+        };
+
+        struct cmp_material_data_2
+        {
+            f32 data[32];
+        };
+
+        struct cmp_material_data_3
+        {
+            f32 data[64];
         };
 
         struct cmp_physics
@@ -336,13 +370,18 @@ namespace put
             cmp_array<u32>                 physics_handles;
             cmp_array<cmp_master_instance> master_instances;
             cmp_array<cmp_geometry>        geometries;
-            cmp_array<cmp_material>        materials;
             cmp_array<cmp_pre_skin>        pre_skin;
             cmp_array<cmp_physics>         physics_data;
             cmp_array<cmp_anim_controller> anim_controller;
             cmp_array<u32>                 cbuffer;
             cmp_array<cmp_draw_call>       draw_call_data;
             cmp_array<free_node_list>      free_list;
+
+            cmp_array<cmp_material>        materials;
+            cmp_array<cmp_material_data_1> material_data_1;
+            cmp_array<cmp_material_data_2> material_data_2;
+            cmp_array<cmp_material_data_3> material_data_3;
+            cmp_array<material_resource>   material_resources;
 
             // Ensure num_components is the next to calc size
             u32 num_components;

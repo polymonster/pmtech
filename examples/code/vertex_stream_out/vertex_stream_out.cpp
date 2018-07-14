@@ -105,6 +105,7 @@ void create_physics_objects(ces::entity_scene* scene)
 
     scene->geometries[master_node] = scene->geometries[skinned_char];
     scene->materials[master_node]  = scene->materials[skinned_char];
+    scene->material_resources[master_node] = scene->material_resources[skinned_char];
     scene->cbuffer[master_node]    = scene->cbuffer[skinned_char];
 
     s32 num = 20;
@@ -137,7 +138,7 @@ void create_physics_objects(ces::entity_scene* scene)
             scene->entities[new_prim] |= CMP_SUB_INSTANCE;
 
             ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
-            scene->materials[new_prim].diffuse_rgb_roughness = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
+            scene->draw_call_data[new_prim].v2 = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
 
             cur_pos.x += spacing;
         }

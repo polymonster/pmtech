@@ -665,19 +665,16 @@ namespace put
                 }
             }
 
-            // todo - per draw call data is quite basic, might be a need in the future for more cutsom
-            // sets of data for draw calls
-
             // update draw call data
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
 
-                cmp_material& mat                     = scene->materials[n];
                 scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
-                scene->draw_call_data[n].v1 = vec4f((f32)n, mat.diffuse_rgb_roughness.w, mat.specular_rgb_reflect.w, 0.0f);
-                scene->draw_call_data[n].v2 = vec4f(mat.diffuse_rgb_roughness.xyz, 1.0f);
+
+                // store node index in v1.x
+                scene->draw_call_data[n].v1.x = (f32)n;
 
                 if (!scene->cbuffer[n])
                     continue;
@@ -690,7 +687,7 @@ namespace put
                     scene->draw_call_data[n].world_matrix = mat4::create_identity();
 
                 mat4 invt = scene->world_matrices[n];
-                // invt.set_translation(vec3f(0.0f, 0.0f, 0.0f));
+
                 invt = invt.transposed();
                 invt = mat::inverse4x4(invt);
 

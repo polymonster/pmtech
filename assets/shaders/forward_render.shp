@@ -119,7 +119,7 @@ vs_output vs_main_skinned( vs_input_skinned input )
 	output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
 							 input.texcoord.z, 1.0 - input.texcoord.w );
 		
-	output.colour = user_data2;
+	output.colour = float4(1.0, 1.0, 1.0, 1.0);
 	
     return output;
 }
@@ -165,7 +165,7 @@ vs_output vs_main( vs_input input )
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
 		input.texcoord.z, 1.0f - input.texcoord.w );
 		
-	output.colour = user_data2;
+	output.colour = float4(1.0, 1.0, 1.0, 1.0);
 		
     return output;
 }
@@ -235,8 +235,8 @@ ps_output ps_forward_lit( vs_output input )
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 		
 	//todo these need to be passed from vs for instancing
-	float single_roughness = saturate(user_data.y); 
 	float reflectivity = saturate(user_data.z);
+	float single_roughness = saturate(user_data.y); 
 	
 	//for directional lights
 	for( int i = 0; i < light_info.x; ++i )
@@ -406,7 +406,14 @@ pmfx:
 	"forward_lit":
 	{
 		"vs": "vs_main",
-		"ps": "ps_forward_lit"
+		"ps": "ps_forward_lit",
+		
+		"constants":
+		{
+			"albedo": { "type": "colour" },
+			"roughness": { "type": "float", "widget": "slider", "range": [0, 1] },
+			"reflectivity": { "type": "float", "widget": "slider", "range": [0, 1] }
+		}
 	},
 	
 	"forward_lit_instanced":

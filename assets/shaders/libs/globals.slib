@@ -11,10 +11,9 @@ cbuffer per_pass_view : register(b0)
 
 cbuffer per_draw_call : register(b1)
 {
-	float4x4 world_matrix;
-	float4   user_data; 	//x = id, y roughness, z reflectivity
-	float4   user_data2; 	//rgba colour
-	
+	float4x4 world_matrix;	
+	float4   user_data; 	//x = id, yzw = reserved
+	float4   user_data2; 	//instance colour
 	float4x4 world_matrix_inv_transpose;
 };
 

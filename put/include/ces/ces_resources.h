@@ -51,22 +51,6 @@ namespace put
             Str name;
         };
 
-        struct material_resource
-        {
-            Str     filename;
-            Str     material_name;
-            hash_id hash;
-
-            s32   texture_handles[SN_NUM_TEXTURES] = {0};
-            vec4f diffuse_rgb_shininess            = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-            vec4f specular_rgb_reflect             = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-
-            Str     shader_name;
-            hash_id id_shader                         = 0;
-            hash_id id_technique                      = 0;
-            hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
-        };
-
         struct geometry_resource
         {
             hash_id file_hash;
