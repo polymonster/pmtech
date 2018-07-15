@@ -371,6 +371,7 @@ namespace put
             pen::memory_free(link_params.constants);
 
             // generate technique constants meta data
+            program.constants = nullptr;
             u32 num_technique_constants = j_techique["constants"].size();
             for (u32 i = 0; i < num_technique_constants; ++i)
             {

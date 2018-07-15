@@ -107,7 +107,7 @@ namespace put
             u32 program_index;
             u32 technique_constant_size; //bytes
 
-            technique_constant* constants = nullptr;
+            technique_constant* constants;
         };
 
         struct render_target
