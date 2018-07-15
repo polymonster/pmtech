@@ -805,7 +805,8 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
 
     # per technique cb
     global technique_cb_str
-    constant_buffers += technique_cb_str
+    if technique_cb_str != "":
+        constant_buffers.append(technique_cb_str)
 
     # texture samplers
     texture_samplers_source = find_texture_samplers(shader_file_text)
