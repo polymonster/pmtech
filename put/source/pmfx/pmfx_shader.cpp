@@ -373,6 +373,12 @@ namespace put
             // generate technique constants meta data
             program.constants = nullptr;
             u32 num_technique_constants = j_techique["constants"].size();
+            program.technique_constant_size = j_techique["constants_size_bytes"].as_u32(0);
+
+            if (program.technique_constant_size > 0)
+                program.constant_defaults = (f32*)pen::memory_alloc(program.technique_constant_size);
+
+            u32 constant_offset = 0;
             for (u32 i = 0; i < num_technique_constants; ++i)
             {
                 pen::json jc = j_techique["constants"][i];
@@ -396,11 +402,41 @@ namespace put
                 tc.cb_offset = jc["offset"].as_u32();
                 tc.num_elements = jc["num_elements"].as_u32();
 
+                if (tc.num_elements > 1)
+                {
+                    //initialise defaults to 0
+                    for (u32 d = 0; d < tc.num_elements; ++d)
+                        program.constant_defaults[constant_offset + d] = 0.0f;
+
+                    // set from json
+                    u32 nd = jc["default"].size();
+                    for (u32 d = 0; d < nd; ++d)
+                        program.constant_defaults[constant_offset + d] = jc["default"][i].as_f32(0.0f);
+                }
+                else
+                {
+                    // intialise from json
+                    program.constant_defaults[constant_offset] = jc["default"].as_f32(0.0f);
+                }
+
+                constant_offset += tc.num_elements;
+
                 sb_push(program.constants, tc);
             }
-            program.technique_constant_size = j_techique["constants_size_bytes"].as_u32(0);
+            
 
             return program;
+        }
+
+        void initialise_constant_defaults(shader_handle handle, u32 index, f32* data)
+        {
+            if (handle >= sb_count(k_pmfx_list))
+                return;
+
+            if (index >= sb_count(k_pmfx_list[handle].techniques))
+                return;
+
+            memcpy(data, k_pmfx_list[handle].techniques[index].constant_defaults, k_pmfx_list[handle].techniques[index].technique_constant_size);
         }
 
         technique_constant* get_technique_constants(shader_handle handle, u32 index)

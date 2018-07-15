@@ -107,6 +107,7 @@ namespace put
             u32 program_index;
             u32 technique_constant_size; //bytes
 
+            f32* constant_defaults;
             technique_constant* constants;
         };
 
@@ -159,6 +160,7 @@ namespace put
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
         u32  get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
 
+        void initialise_constant_defaults(shader_handle handle, u32 index, f32* data);
         technique_constant* get_technique_constants(shader_handle handle, u32 index);
         u32 get_technique_cbuffer_size(shader_handle handle, u32 index);
 

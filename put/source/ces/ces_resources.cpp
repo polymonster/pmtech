@@ -480,6 +480,9 @@ namespace put
                 material->sampler_states[i] = pmfx::get_render_state_by_name(resource->id_sampler_state[i]);
 
             s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->pmfx_shader, material->technique);
+
+            pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique, scene->material_data[node_index].data);
+
             instantiate_material_cbuffer(scene, node_index, cbuffer_size);
         }
 
