@@ -406,6 +406,13 @@ namespace put
                         }
                         continue;
                     }
+
+                    u32 mcb = scene->materials[n].material_cbuffer;
+                    if (is_valid(mcb))
+                    {
+                        pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_VS);
+                        pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_PS);
+                    }
                 }
 
                 // set cbs
@@ -693,8 +700,14 @@ namespace put
 
                 scene->draw_call_data[n].world_matrix_inv_transpose = invt;
 
+                // todo mark dirty?
+
                 // per node cbuffer
                 pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
+
+                // per node material cbuffer
+                if(is_valid(scene->materials[n].material_cbuffer))
+                    pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0], scene->materials[n].material_cbuffer_size);
             }
 
             // update instance buffers

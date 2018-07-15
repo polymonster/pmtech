@@ -74,6 +74,26 @@ namespace put
 {
     namespace pmfx
     {
+        enum e_constant_widget
+        {
+            CW_SLIDER,
+            CW_INPUT,
+            CW_COLOUR,
+
+            CW_NUM
+        };
+
+        struct technique_constant
+        {
+            Str                 name;
+            u32                 widget = CW_SLIDER;
+            f32                 min = 0.0f;
+            f32                 max = 1.0f;
+            f32                 step = 0.01f;
+            u32                 cb_offset = 0;
+            u32                 num_elements = 0;
+        };
+
         struct shader_program
         {
             hash_id id_name;
@@ -85,6 +105,9 @@ namespace put
             u32 pixel_shader;
             u32 input_layout;
             u32 program_index;
+            u32 technique_constant_size; //bytes
+
+            technique_constant* constants = nullptr;
         };
 
         struct render_target
@@ -135,6 +158,9 @@ namespace put
         void set_technique(shader_handle handle, u32 index);
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
         u32  get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
+
+        technique_constant* get_technique_constants(shader_handle handle, u32 index);
+        u32 get_technique_cbuffer_size(shader_handle handle, u32 index);
 
         void poll_for_changes();
     } // namespace pmfx

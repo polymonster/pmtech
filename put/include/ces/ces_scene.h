@@ -148,25 +148,16 @@ namespace put
         {
             s32   texture_handles[SN_NUM_TEXTURES]  = {0};
             u32   sampler_states[SN_NUM_TEXTURES]   = {0};
-            u32   constant_buffers[SN_NUM_CB]       = {0};
+            u32   material_cbuffer = PEN_INVALID_HANDLE;
+            u32   material_cbuffer_size = 0;
 
             pmfx::shader_handle pmfx_shader;
             u32                 technique;
         };
 
-        struct cmp_material_data_1
+        struct cmp_material_data
         {
-            f32 data[16];
-        };
-
-        struct cmp_material_data_2
-        {
-            f32 data[32];
-        };
-
-        struct cmp_material_data_3
-        {
-            f32 data[64];
+            f32 data[64] = { 0 };
         };
 
         struct cmp_physics
@@ -378,9 +369,7 @@ namespace put
             cmp_array<free_node_list>      free_list;
 
             cmp_array<cmp_material>        materials;
-            cmp_array<cmp_material_data_1> material_data_1;
-            cmp_array<cmp_material_data_2> material_data_2;
-            cmp_array<cmp_material_data_3> material_data_3;
+            cmp_array<cmp_material_data>   material_data;
             cmp_array<material_resource>   material_resources;
 
             // Ensure num_components is the next to calc size

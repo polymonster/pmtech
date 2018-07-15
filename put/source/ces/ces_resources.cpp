@@ -142,6 +142,31 @@ namespace put
                 instance->vertex_shader_class = ID_VERTEX_CLASS_SKINNED;
         }
 
+        void instantiate_material_cbuffer(entity_scene* scene, s32 node_index, s32 size)
+        {
+            if (is_valid(scene->materials[node_index].material_cbuffer))
+            {
+                if (size == scene->materials[node_index].material_cbuffer_size)
+                    return;
+
+                pen::renderer_release_buffer(scene->materials[node_index].material_cbuffer);
+            }
+
+            if (size == 0)
+                return;
+
+            scene->materials[node_index].material_cbuffer_size = size;
+
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = scene->materials[node_index].material_cbuffer_size;
+            bcp.data = nullptr;
+
+            scene->materials[node_index].material_cbuffer = pen::renderer_create_buffer(bcp);
+        }
+
         void instantiate_model_cbuffer(entity_scene* scene, s32 node_index)
         {
             pen::buffer_creation_params bcp;
@@ -453,6 +478,9 @@ namespace put
 
             for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                 material->sampler_states[i] = pmfx::get_render_state_by_name(resource->id_sampler_state[i]);
+
+            s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->pmfx_shader, material->technique);
+            instantiate_material_cbuffer(scene, node_index, cbuffer_size);
         }
 
         extern std::vector<entity_scene_instance> k_scenes;

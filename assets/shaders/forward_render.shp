@@ -165,7 +165,7 @@ vs_output vs_main( vs_input input )
 	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
 		input.texcoord.z, 1.0f - input.texcoord.w );
 		
-	output.colour = float4(1.0, 1.0, 1.0, 1.0);
+	output.colour = m_albedo;
 		
     return output;
 }
@@ -410,46 +410,48 @@ pmfx:
 		
 		"constants":
 		{
-			"albedo": { "type": "colour" },
-			"roughness": { "type": "float", "widget": "slider", "range": [0, 1] },
-			"reflectivity": { "type": "float", "widget": "slider", "range": [0, 1] }
+			"albedo": { "type": "float4", "widget": "colour" },
+			"roughness": { "type": "float", "widget": "slider", "min": 0, "max": 1 },
+			"reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1 }
 		}
 	},
 	
 	"forward_lit_instanced":
 	{
 		"vs": "vs_main_instanced",
-		"ps": "ps_forward_lit"
+		"ps": "ps_forward_lit",
+		
+		"inherit_constants": ["forward_lit"]
 	},
 	
 	"forward_lit_skinned":
 	{
 		"vs": "vs_main_skinned",
-		"ps": "ps_forward_lit"
-	},
-	
-	"constant_colour":
-	{
-		"vs": "vs_main",
-		"ps": "ps_constant_colour"
-	},
-	
-	"zonly":
-	{
-		"vs": "vs_main_zonly",
-		"ps": "ps_null"
+		"ps": "ps_forward_lit",
+		
+		"inherit_constants": ["forward_lit"]
 	},
 	
 	"gbuffer":
 	{
 		"vs": "vs_main",
-		"ps": "ps_gbuffer"
+		"ps": "ps_gbuffer",
+		
+		"inherit_constants": ["forward_lit"]
 	},
 	
 	"gbuffer_skinned":
 	{
 		"vs": "vs_main_skinned",
-		"ps": "ps_gbuffer"
+		"ps": "ps_gbuffer",
+		
+		"inherit_constants": ["forward_lit"]
+	},
+		
+	"zonly":
+	{
+		"vs": "vs_main_zonly",
+		"ps": "ps_null"
 	}
 }
 

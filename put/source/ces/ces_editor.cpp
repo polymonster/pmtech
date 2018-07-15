@@ -1583,9 +1583,6 @@ namespace put
             s32 shader = mm.pmfx_shader;
             s32 technique = mm.technique;
 
-            vec4f diff_rough = vec4f(0.0f); // mm.diffuse_rgb_roughness;
-            vec4f spec_reflect = vec4f(0.0f); // mm.specular_rgb_reflect;
-
             // set parameters if all are shared, if not set to invalid
             for (u32 i = 1; i < num_selected; ++i)
             {
@@ -1601,6 +1598,8 @@ namespace put
             // material
             if (ImGui::CollapsingHeader("Material"))
             {
+                cmp_material_data mat = scene->material_data[selected_index];
+
                 ImGui::Text("%s", scene->material_names[selected_index].c_str());
 
                 if (scene->material_names[selected_index].c_str())
@@ -1631,74 +1630,45 @@ namespace put
                         const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
                         cm |= ImGui::Combo("Technique", (s32*)&technique, technique_list, num_techniques);
 
-                        if (cm)
+                        pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
+
+                        if (tc)
                         {
-#if 0
-                            for (s32 i = num_selected - 1; i >= 0; --i)
+                            u32 num_constants = sb_count(tc);
+                            for (u32 i = 0; i < num_constants; ++i)
                             {
-                                material_resource* mr = new material_resource();
-                                *mr = *scene->materials[k_selection_list[i]].resource;
+                                float* f = &mat.data[tc[i].cb_offset];
 
-                                mr->shader_name = shader_list[mm.pmfx_shader];
-                                mr->id_technique = PEN_HASH(technique_list[mm.technique]);
-
-                                // create a new material resource
-                                add_material_resource(mr);
-
-                                scene->materials[k_selection_list[i]].resource = mr;
+                                switch (tc[i].widget)
+                                {
+                                case pmfx::CW_INPUT:
+                                    ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
+                                    break;
+                                case pmfx::CW_SLIDER:
+                                    ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f", 1.0f);
+                                    break;
+                                case pmfx::CW_COLOUR:
+                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(f[0], f[1], f[2], 1.0f));
+                                    if (ImGui::CollapsingHeader(tc[i].name.c_str()))
+                                    {
+                                        if (tc[i].num_elements == 3)
+                                        {
+                                            ImGui::ColorPicker3(tc[i].name.c_str(), f);
+                                        }
+                                        else
+                                        {
+                                            ImGui::ColorPicker4(tc[i].name.c_str(), f);
+                                        }
+                                    }
+                                    ImGui::PopStyleColor();
+                                    break;
+                                }
                             }
-#endif
                         }
-
-                        iv |= ImGui::SliderFloat("Roughness", (f32*)&diff_rough, 0.000001, 1.5);
-                        iv |= ImGui::SliderFloat("Reflectity", (f32*)&spec_reflect, 0.000001, 1.5);
-
-                        vec4f& col = diff_rough;
-                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col.x, col.y, col.z, 1.0f));
-
-                        if (ImGui::Button("Colour"))
-                            colour_picker_open = true;
-
-                        ImGui::PopStyleColor();
                     }
                 }
-            }
 
-            if (colour_picker_open)
-            {
-                auto& mm = scene->materials[selected_index];
-
-                if (ImGui::Begin("Albedo Colour", &colour_picker_open, ImGuiWindowFlags_AlwaysAutoResize))
-                {
-                    vec3f col = diff_rough.xyz;
-                    iv |= ImGui::ColorPicker3("Colour", (f32*)&col);
-
-                    diff_rough.x = col.x;
-                    diff_rough.y = col.y;
-                    diff_rough.z = col.z;
-
-                    ImGui::End();
-                }
-            }
-
-            // Apply changes to selection
-            for (s32 i = num_selected-1; i >= 0; --i)
-            {
-                cmp_material& m2 = scene->materials[k_selection_list[i]];
-
-                if (shader != mm.pmfx_shader && shader != PEN_INVALID_HANDLE)
-                    m2.pmfx_shader = shader;
-
-                if (technique != mm.technique && technique != PEN_INVALID_HANDLE)
-                    m2.technique = technique;
-
-#if 0
-                if (diff_rough != mm.diffuse_rgb_roughness)
-                    m2.diffuse_rgb_roughness = diff_rough;
-
-                if (spec_reflect != mm.specular_rgb_reflect)
-                    m2.specular_rgb_reflect = spec_reflect;
-#endif
+                scene->material_data[selected_index] = mat;
             }
 
             return iv;

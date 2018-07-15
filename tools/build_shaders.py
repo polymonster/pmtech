@@ -803,6 +803,10 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     # constant / uniform buffers
     constant_buffers = find_constant_buffers(shader_file_text)
 
+    # per technique cb
+    global technique_cb_str
+    constant_buffers += technique_cb_str
+
     # texture samplers
     texture_samplers_source = find_texture_samplers(shader_file_text)
 
@@ -865,10 +869,78 @@ def shader_compile_v1():
                 create_vsc_psc(file_and_path, "vs_main", "ps_main", "default")
 
 
+constant_info = [["float", 1], ["float2", 2], ["float3", 3], ["float4", 4], ["float4x4", 16]]
+technique_cb_str = ""
+
+
+def generate_technique_constant_buffers(pmfx_block, technique_name):
+    global technique_cb_str
+    technique_cb_str = ""
+    offset = 0
+
+    technique = pmfx_block[technique_name]
+    technique_constants = [technique]
+
+    # find inherited constants
+    if "inherit_constants" in technique.keys():
+        for inherit in technique["inherit_constants"]:
+            technique_constants.append(pmfx_block[inherit])
+
+    # find all constants
+    shader_constant = []
+    shader_struct = []
+    pmfx_constants = dict()
+
+    for tc in technique_constants:
+        if "constants" in tc.keys():
+            for const in tc["constants"]:
+                for ci in constant_info:
+                    if ci[0] == tc["constants"][const]["type"]:
+                        pmfx_constants[const] = tc["constants"][const]
+                        pmfx_constants[const]["offset"] = offset
+                        pmfx_constants[const]["num_elements"] = ci[1]
+                        shader_constant.append("\t" + tc["constants"][const]["type"] + " " + "m_" + const + ";\n")
+                        shader_struct.append("\t" + tc["constants"][const]["type"] + " " + "m_" + const + ";\n")
+                        offset += ci[1]
+                        break
+
+    if offset == 0:
+        return technique, ""
+
+    # we must pad to 16 bytes alignment
+    diff = (offset*4) % 16
+    pad = diff / 4
+    if pad != 0:
+        shader_constant.append("\t" + constant_info[int(pad)][0] + " " + "m_padding" + ";\n")
+        shader_struct.append("\t" + constant_info[int(pad)][0] + " " + "m_padding" + ";\n")
+
+    offset += pad
+
+    cb_str = "cbuffer material_data : register(b7)\n"
+    cb_str += "{\n"
+    for sc in shader_constant:
+        cb_str += sc
+    cb_str += "};\n"
+
+    c_struct = "struct " + technique_name + "\n"
+    c_struct += "{\n"
+    for ss in shader_struct:
+        c_struct += ss
+    c_struct += "};\n\n"
+
+    # set for inserting into shader
+    technique_cb_str = cb_str
+
+    technique["constants"] = pmfx_constants
+    technique["constants_size_bytes"] = int(offset * 4)
+    return technique, c_struct
+
+
 def parse_pmfx(filename, root):
     file_and_path = os.path.join(root, filename)
     needs_building, shader_file_text, included_files = create_shader_set(file_and_path, root)
     if needs_building:
+        shader_c_struct = ""
         pmfx_loc = shader_file_text.find("pmfx:")
         json_loc = shader_file_text.find("{", pmfx_loc)
         techniques = []
@@ -878,6 +950,9 @@ def parse_pmfx(filename, root):
             pmfx_end = enclose_brackets(shader_file_text[pmfx_loc:])
             pmfx_block = json.loads(shader_file_text[json_loc:pmfx_end+json_loc])
             for technique in pmfx_block:
+                c_stuct = ""
+                pmfx_block[technique], c_stuct = generate_technique_constant_buffers(pmfx_block, technique)
+                shader_c_struct += c_stuct
                 ps_name = ""
                 if "ps" in pmfx_block[technique].keys():
                     ps_name = pmfx_block[technique]["ps"]
@@ -902,6 +977,16 @@ def parse_pmfx(filename, root):
             default_technique["vs_outputs"] =\
                 create_vsc_psc(file_and_path, shader_file_text, "vs_main", "ps_main", "default")
             techniques.append(default_technique)
+
+        # write out header file of c_structs for accessing materials in code
+        if shader_c_struct != "":
+            h_filename = filename.replace(".shp", ".h")
+            if not os.path.exists("shader_structs"):
+                os.mkdir("shader_structs")
+            h_filename = os.path.join("shader_structs", h_filename)
+            h_file = open(h_filename, "w+")
+            h_file.write(shader_c_struct)
+            h_file.close()
 
         generate_shader_info(
             file_and_path,
