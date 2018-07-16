@@ -970,7 +970,7 @@ namespace put
                 s32 size = 0;
                 
                 if(scene->anim_controller[n].handles)
-                    sb_count(scene->anim_controller[n].handles);
+                    size = sb_count(scene->anim_controller[n].handles);
 
                 ofs.write((const c8*)&size, sizeof(s32));
 
