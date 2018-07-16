@@ -730,7 +730,6 @@ namespace put
 
             mr->diffuse_rgb_shininess = vec4f(0.5f, 0.5f, 0.5f, 0.5f);
             mr->specular_rgb_reflect  = vec4f(0.5f, 0.5f, 0.5f, 0.5f);
-            mr->filename              = "default_material";
             mr->material_name         = "default_material";
             mr->hash                  = PEN_HASH("default_material");
 

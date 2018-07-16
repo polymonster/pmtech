@@ -46,6 +46,7 @@ namespace put
 
         const char**  k_shader_names     = nullptr;
         const char*** k_technique_names  = nullptr;
+
         u32           k_num_shader_names = 0;
 
         void generate_name_lists()
@@ -75,16 +76,37 @@ namespace put
             k_num_shader_names = num_pmfx;
         }
 
-        const char** get_shader_list(u32& count)
+        const c8** get_shader_list(u32& count)
         {
             count = k_num_shader_names;
             return k_shader_names;
         }
 
-        const char** get_technique_list(shader_handle index, u32& count)
+        const c8** get_technique_list(shader_handle index, u32& count)
         {
             count = sb_count(k_technique_names[index]);
             return k_technique_names[index];
+        }
+
+        const c8* get_shader_name(shader_handle handle)
+        {
+            if (handle >= sb_count(k_pmfx_list))
+                return nullptr;
+
+            return k_pmfx_list[handle].filename.c_str();
+        }
+
+        const c8* get_technique_name(shader_handle handle, hash_id id_technique)
+        {
+            if (handle >= sb_count(k_pmfx_list))
+                return nullptr;
+    
+            u32 nt = sb_count(k_pmfx_list[handle].techniques);
+            for (u32 i = 0; i < nt; ++i)
+                if (k_pmfx_list[handle].techniques[i].id_name == id_technique)
+                    return k_pmfx_list[handle].techniques[i].name.c_str();
+
+            return nullptr;
         }
 
         void get_link_params_constants(pen::shader_link_params& link_params, const pen::json& j_info)

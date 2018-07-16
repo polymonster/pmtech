@@ -59,9 +59,10 @@ namespace put
 
         enum e_state_flags : u32
         {
-            SF_SELECTED       = (1 << 0),
-            SF_CHILD_SELECTED = (1 << 1),
-            SF_HIDDEN         = (1 << 2)
+            SF_SELECTED         = (1 << 0),
+            SF_CHILD_SELECTED   = (1 << 1),
+            SF_HIDDEN           = (1 << 2),
+            SF_MATERIAL_INITIALISED  = (1 << 3)
         };
 
         enum e_light_types : u32
@@ -114,15 +115,14 @@ namespace put
 
         struct material_resource
         {
-            Str     filename;
             Str     material_name;
+            Str     shader_name;
             hash_id hash;
 
-            s32   texture_handles[SN_NUM_TEXTURES] = { 0 };
-            vec4f diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-            vec4f specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+            s32     texture_handles[SN_NUM_TEXTURES] = { 0 };
+            vec4f   diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
+            vec4f   specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
 
-            Str     shader_name;
             hash_id id_shader = 0;
             hash_id id_technique = 0;
             hash_id id_sampler_state[SN_NUM_TEXTURES] = { 0 };
@@ -230,7 +230,7 @@ namespace put
                 PLAY    = 1
             };
 
-            std::vector<anim_handle> handles;
+            anim_handle*             handles = nullptr;
             s32                      joints_offset;
             anim_handle              current_animation;
             f32                      current_time;

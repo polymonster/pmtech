@@ -153,8 +153,11 @@ namespace put
         shader_handle load_shader(const c8* pmfx_name);
         void          release_shader(shader_handle handle);
 
-        const char** get_shader_list(u32& count);
-        const char** get_technique_list(shader_handle handle, u32& count);
+        const c8** get_shader_list(u32& count);
+        const c8** get_technique_list(shader_handle handle, u32& count);
+
+        const c8* get_shader_name(shader_handle handle);
+        const c8* get_technique_name(shader_handle handle, hash_id id_technique);
 
         void set_technique(shader_handle handle, u32 index);
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type);

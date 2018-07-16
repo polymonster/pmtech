@@ -1699,7 +1699,7 @@ namespace put
                         scene->local_matrices[selected_index].create_identity();
                     }
 
-                    s32 num_anims = scene->anim_controller[selected_index].handles.size();
+                    s32 num_anims = sb_count(scene->anim_controller[selected_index].handles);
                     for (s32 ih = 0; ih < num_anims; ++ih)
                     {
                         s32   h    = scene->anim_controller[selected_index].handles[ih];
@@ -1779,13 +1779,13 @@ namespace put
 
                                     bool exists = false;
 
-                                    s32 size = controller.handles.size();
+                                    s32 size = sb_count(controller.handles);
                                     for (s32 h = 0; h < size; ++h)
                                         if (h == ah)
                                             exists = true;
 
                                     if (!exists)
-                                        scene->anim_controller[selected_index].handles.push_back(ah);
+                                        sb_push(scene->anim_controller[selected_index].handles, ah);
                                 }
                             }
                         }

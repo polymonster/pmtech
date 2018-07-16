@@ -8,6 +8,7 @@
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
+#include "data_struct.h"
 
 #include "ces/ces_resources.h"
 #include "ces/ces_scene.h"
@@ -219,6 +220,13 @@ namespace put
 
                 if (p_sn->entities[dst] & CMP_GEOMETRY)
                     instantiate_model_cbuffer(scene, dst);
+
+                if (p_sn->entities[dst] & CMP_MATERIAL)
+                {
+                    p_sn->materials[dst].material_cbuffer = PEN_INVALID_HANDLE;
+                    instantiate_material_cbuffer(scene, dst, p_sn->materials[dst].material_cbuffer_size);
+                }
+
             }
             else if (flags == CLONE_MOVE)
             {
@@ -393,6 +401,14 @@ namespace put
                     u32 technique = p_mat->technique;
 
                     pmfx::set_technique(shader, technique);
+
+                    // set material cbs
+                    u32 mcb = scene->materials[n].material_cbuffer;
+                    if (is_valid(mcb))
+                    {
+                        pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_VS);
+                        pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_PS);
+                    }
                 }
                 else
                 {
@@ -406,16 +422,8 @@ namespace put
                         }
                         continue;
                     }
-
-                    u32 mcb = scene->materials[n].material_cbuffer;
-                    if (is_valid(mcb))
-                    {
-                        pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_VS);
-                        pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_PS);
-                    }
                 }
 
-                // set cbs
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
 
@@ -922,14 +930,14 @@ namespace put
             sh.num_components = scene->num_components;
             ofs.write((const c8*)&sh, sizeof(scene_header));
 
-            // write all components
+            // write basic components
             for (u32 i = 0; i < scene->num_components; ++i)
             {
                 generic_cmp_array& cmp = scene->get_component_array(i);
                 ofs.write((const c8*)cmp.data, cmp.size * scene->num_nodes);
             }
 
-            // specialisations
+            // specialisations ------------------------------------------------------------------------------
 
             // names
             for (s32 n = 0; n < scene->num_nodes; ++n)
@@ -942,60 +950,53 @@ namespace put
             // geometry
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
-                if (scene->entities[n] & CMP_GEOMETRY)
-                {
-                    geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
+                if (!(scene->entities[n] & CMP_GEOMETRY))
+                    continue;
 
-                    ofs.write((const c8*)&gr->submesh_index, sizeof(u32));
+                geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
 
-                    Str stripped_filename = gr->filename;
-                    stripped_filename = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
+                ofs.write((const c8*)&gr->submesh_index, sizeof(u32));
 
-                    write_parsable_string(stripped_filename.c_str(), ofs);
-                    write_parsable_string(gr->geometry_name, ofs);
-                }
+                Str stripped_filename = gr->filename;
+                stripped_filename = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
+
+                write_parsable_string(stripped_filename.c_str(), ofs);
+                write_parsable_string(gr->geometry_name, ofs);
             }
 
             // animations
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
-                s32 size = scene->anim_controller[n].handles.size();
+                s32 size = 0;
+                
+                if(scene->anim_controller[n].handles)
+                    sb_count(scene->anim_controller[n].handles);
 
                 ofs.write((const c8*)&size, sizeof(s32));
 
                 for (s32 i = 0; i < size; ++i)
                 {
                     auto* anim = get_animation_resource(scene->anim_controller[n].handles[i]);
-
                     write_parsable_string(anim->name, ofs);
                 }
             }
 
-#if 0
             // material
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
-                material_resource* mr = get_material_resource(scene->id_material[n]);
+                if (!(scene->entities[n] & CMP_MATERIAL))
+                    continue;
 
-                if (scene->entities[n] & CMP_MATERIAL && mr)
-                {
-                    // has geometry
-                    u32 one = 1;
-                    ofs.write((const c8*)&one, sizeof(u32));
+                cmp_material& mat = scene->materials[n];
+                material_resource& mat_res = scene->material_resources[n];
 
-                    Str stripped_filename = mr->filename;
-                    stripped_filename     = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
+                const char* shader_name = pmfx::get_shader_name(mat.pmfx_shader);
+                const char* technique_name = pmfx::get_technique_name(mat.pmfx_shader, mat_res.id_technique);
 
-                    write_parsable_string(stripped_filename.c_str(), ofs);
-                    write_parsable_string(mr->material_name, ofs);
-                }
-                else
-                {
-                    u32 zero = 0;
-                    ofs.write((const c8*)&zero, sizeof(u32));
-                }
+                write_parsable_string(mat_res.material_name, ofs);
+                write_parsable_string(shader_name, ofs);
+                write_parsable_string(technique_name, ofs);
             }
-#endif
 
             ofs.close();
         }
@@ -1135,8 +1136,7 @@ namespace put
             {
                 s32 size;
                 ifs.read((c8*)&size, sizeof(s32));
-
-                scene->anim_controller[n].handles = std::vector<anim_handle>();
+                scene->anim_controller[n].handles = nullptr;
 
                 for (s32 i = 0; i < size; ++i)
                 {
@@ -1152,82 +1152,39 @@ namespace put
                         error = true;
                     }
 
-                    scene->anim_controller[n].handles.push_back(h);
+                    sb_push(scene->anim_controller[n].handles, h);
                 }
 
-                if (scene->anim_controller[n].current_animation > scene->anim_controller[n].handles.size())
+                if (scene->anim_controller[n].current_animation > sb_count(scene->anim_controller[n].handles))
                     scene->anim_controller[n].current_animation = PEN_INVALID_HANDLE;
             }
 
             // materials
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                if (scene->entities[n] & CMP_MATERIAL)
-                {
-                    static hash_id id_default = PEN_HASH("default_material");
-                    material_resource* mr = get_material_resource(id_default);
-                    instantiate_material(mr, scene, n);
-                }
+                if (!(scene->entities[n] & CMP_MATERIAL))
+                    continue;
+
+                cmp_material& mat = scene->materials[n];
+                material_resource& mat_res = scene->material_resources[n];
+                cmp_geometry& geom = scene->geometries[n];
+
+                // Invalidate stuff we need to recreate
+                memset(&mat_res.material_name, 0x0, sizeof(Str));
+                memset(&mat_res.shader_name, 0x0, sizeof(Str));
+                mat.material_cbuffer = PEN_INVALID_HANDLE;
+
+                Str material_name = read_parsable_string(ifs);
+                Str shader = read_parsable_string(ifs);
+                Str technique = read_parsable_string(ifs);
+
+                mat_res.material_name = material_name;
+                mat_res.id_shader = PEN_HASH(shader.c_str());
+                mat_res.id_technique = PEN_HASH(technique.c_str());
+                mat_res.shader_name = shader;
             }
-#if 0
-            // materials
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
-            {
-                u32 has = 0;
-                ifs.read((c8*)&has, sizeof(u32));
 
-                if (scene->entities[n] & CMP_MATERIAL && has)
-                {
-                    Str     filename  = project_dir;
-                    Str     name      = read_parsable_string(ifs).c_str();
-                    hash_id name_hash = PEN_HASH(name.c_str());
-                    filename.append(name.c_str());
-
-                    static hash_id default_id = PEN_HASH("default_material");
-
-                    Str material_name = read_parsable_string(ifs);
-
-                    material_resource* mr;
-
-                    hash_id material_hash;
-
-                    if (name_hash != default_id)
-                    {
-                        load_pmm(filename.c_str(), nullptr, PMM_MATERIAL);
-
-                        pen::hash_murmur hm;
-                        hm.begin();
-                        hm.add(filename.c_str(), filename.length());
-                        hm.add(material_name.c_str(), material_name.length());
-                        material_hash = hm.end();
-
-                        mr = get_material_resource(material_hash);
-                    }
-                    else
-                    {
-                        static hash_id default_material_hash = PEN_HASH("default_material");
-                        material_hash                        = default_material_hash;
-
-                        mr = get_material_resource(default_material_hash);
-                    }
-
-                    if (mr)
-                    {
-                        scene->material_names[n] = material_name;
-                        scene->id_material[n]    = material_hash;
-
-                        instantiate_material(mr, scene, n);
-                    }
-                    else
-                    {
-                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] material - cannot find pmm file: %s",
-                                          filename.c_str());
-                        scene->entities[n] &= ~CMP_MATERIAL;
-                        error = true;
-                    }
-                }
-            }
-#endif
+            bake_material_handles();
 
             if (!merge)
             {

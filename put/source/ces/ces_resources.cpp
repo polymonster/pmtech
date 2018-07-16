@@ -464,6 +464,7 @@ namespace put
             material_resource* resource = &scene->material_resources[node_index];
             cmp_material* material = &scene->materials[node_index];
             cmp_geometry* geometry = &scene->geometries[node_index];
+            
 
             if (!resource)
                 return;
@@ -481,13 +482,18 @@ namespace put
 
             s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->pmfx_shader, material->technique);
 
-            pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique, scene->material_data[node_index].data);
-
+            if (!(scene->state_flags[node_index] & SF_MATERIAL_INITIALISED))
+            {
+                pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique, scene->material_data[node_index].data);
+                scene->state_flags[node_index] |= SF_MATERIAL_INITIALISED;
+            }
+        
             instantiate_material_cbuffer(scene, node_index, cbuffer_size);
         }
 
         extern std::vector<entity_scene_instance> k_scenes;
-        void                                      bake_material_handles()
+
+        void bake_material_handles()
         {
             for (auto& si : k_scenes)
             {
@@ -522,7 +528,6 @@ namespace put
 
             material_resource* p_mat = new material_resource;
 
-            p_mat->filename      = filename;
             p_mat->material_name = material_name;
             p_mat->hash          = hash;
 
