@@ -93,7 +93,7 @@ project ( project_name )
 		pmtech_dir .. "put/include/",
 		pmtech_dir .. "third_party/",
 		
-		"include/"
+		"include/",
 	}
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
@@ -105,8 +105,10 @@ project ( project_name )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
 	debugdir ( root_directory .. "/bin/" .. platform_dir)
 	
-	if platform_dir == "win32" then add_win32_links()
-	elseif platform_dir == "osx" then add_osx_links()
+	if platform_dir == "win32" then 
+		add_win32_links()
+	elseif platform_dir == "osx" then
+		add_osx_links()
 	elseif platform_dir == "ios" then
 		add_ios_links() 
 		add_ios_files( project_name, root_directory )

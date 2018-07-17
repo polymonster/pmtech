@@ -216,7 +216,7 @@ float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
 ps_output ps_forward_lit( vs_output input ) 
 {	
 	ps_output output;
-		
+			
 	float4 albedo = sample_texture( diffuse_texture, input.texcoord.xy );
 		
 	float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
@@ -236,7 +236,10 @@ ps_output ps_forward_lit( vs_output input )
 		
 	//todo these need to be passed from vs for instancing
 	float reflectivity = saturate(user_data.z);
-	float single_roughness = saturate(user_data.y); 
+	float roughness = saturate(user_data.y); 
+	
+	roughness = m_roughness;
+	reflectivity = m_reflectivity;
 	
 	//for directional lights
 	for( int i = 0; i < light_info.x; ++i )
@@ -251,7 +254,7 @@ ps_output ps_forward_lit( vs_output input )
 			camera_view_pos.xyz,
 			albedo.rgb,
 			specular_sample.rgb,
-			single_roughness,
+			roughness,
 			reflectivity
 		);	
 		
@@ -261,7 +264,7 @@ ps_output ps_forward_lit( vs_output input )
 			n,
 			input.world_pos.xyz,
 			camera_view_pos.xyz,
-			single_roughness,
+			roughness,
 			albedo.rgb
 		);		
 		
@@ -299,7 +302,7 @@ ps_output ps_forward_lit( vs_output input )
 			camera_view_pos.xyz,
 			albedo.rgb,
 			specular_sample.rgb,
-			single_roughness,
+			roughness,
 			reflectivity
 		);	
 		
@@ -309,7 +312,7 @@ ps_output ps_forward_lit( vs_output input )
 			n,
 			input.world_pos.xyz,
 			camera_view_pos.xyz,
-			single_roughness,
+			roughness,
 			albedo.rgb
 		);		
 			
@@ -334,7 +337,7 @@ ps_output ps_forward_lit( vs_output input )
 			camera_view_pos.xyz,
 			albedo.rgb,
 			specular_sample.rgb,
-			single_roughness,
+			roughness,
 			reflectivity
 		);	
 		
@@ -344,7 +347,7 @@ ps_output ps_forward_lit( vs_output input )
 			n,
 			input.world_pos.xyz,
 			camera_view_pos.xyz,
-			single_roughness,
+			roughness,
 			albedo.rgb
 		);		
 			

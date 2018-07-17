@@ -54,7 +54,8 @@ elseif _ACTION == "xcode4" then
 		renderer_dir = "opengl"
 	end
 else
-
+	-- use force inline
+	build_cmd = "/Ob1"
 end
 
 function script_path()

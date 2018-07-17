@@ -16,6 +16,7 @@
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
+#include "console.h"
 
 using namespace put;
 using namespace ces;
@@ -129,11 +130,26 @@ void animate_instances(entity_scene* scene)
     quat q;
     q.euler_angles(0.01f, 0.01f, 0.01f);
 
+    static u32 timer = pen::timer_create("perf");
+
+    pen::timer_reset(timer);
+    for (s32 i = 2; i < scene->num_nodes; ++i)
+    {
+        scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
+        scene->entities.data[i] |= CMP_TRANSFORM;
+    }
+    f32 array_cost = pen::timer_elapsed_ms(timer);
+
+    pen::timer_reset(timer);
     for (s32 i = 2; i < scene->num_nodes; ++i)
     {
         scene->transforms[i].rotation = scene->transforms[i].rotation * q;
         scene->entities[i] |= CMP_TRANSFORM;
     }
+    f32 operator_cost = pen::timer_elapsed_ms(timer);
+
+    PEN_PRINTF("operator: %f, array: %f\n", operator_cost, array_cost);
+    int a = 0;
 }
 
 PEN_TRV pen::user_entry(void* params)

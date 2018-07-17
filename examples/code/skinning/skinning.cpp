@@ -16,6 +16,7 @@
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
+#include "data_struct.h"
 
 #include "console.h"
 
@@ -81,7 +82,7 @@ void create_physics_objects(ces::entity_scene* scene)
 
     // load an animation
     anim_handle ah = load_pma("data/models/characters/testcharacter/anims/testcharacter_idle.pma");
-    scene->anim_controller[skinned_char].handles.push_back(ah);
+    sb_push(scene->anim_controller[skinned_char].handles, ah);
 
     scene->anim_controller[skinned_char].current_frame     = 0;
     scene->anim_controller[skinned_char].current_time      = 1.0f;

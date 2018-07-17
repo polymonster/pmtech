@@ -34,4 +34,11 @@ namespace pen
     extern PEN_TRV user_entry(void* params);
 } // namespace pen
 
+// compiler
+#ifdef _MSC_VER
+#define pen_inline  __forceinline
+#else 
+#define pen_inline __attribute__(always_inline)
+#endif
+
 #endif

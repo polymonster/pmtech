@@ -115,17 +115,18 @@ namespace put
 
         struct material_resource
         {
-            Str     material_name;
-            Str     shader_name;
             hash_id hash;
 
-            s32     texture_handles[SN_NUM_TEXTURES] = { 0 };
+            Str     material_name;
+            Str     shader_name;
+            
             vec4f   diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
             vec4f   specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
 
             hash_id id_shader = 0;
             hash_id id_technique = 0;
             hash_id id_sampler_state[SN_NUM_TEXTURES] = { 0 };
+            s32     texture_handles[SN_NUM_TEXTURES] = { 0 };
         };
 
         struct cmp_draw_call
@@ -310,12 +311,12 @@ namespace put
             u32 size = sizeof(T);
             T*  data = nullptr;
 
-            T& operator[](size_t index)
+            pen_inline T& operator[](size_t index)
             {
                 return data[index];
             }
 
-            const T& operator[](size_t index) const
+            pen_inline const T& operator[](size_t index) const
             {
                 return data[index];
             }
@@ -326,7 +327,7 @@ namespace put
             u32   size;
             void* data;
 
-            void* operator[](size_t index)
+            __forceinline void* operator[](size_t index)
             {
                 u8* d  = (u8*)data;
                 u8* di = &d[index * size];
