@@ -38,7 +38,7 @@ namespace pen
 #ifdef _MSC_VER
 #define pen_inline  __forceinline
 #else 
-#define pen_inline __attribute__(always_inline)
+#define pen_inline __attribute__((always_inline))
 #endif
 
 #endif
