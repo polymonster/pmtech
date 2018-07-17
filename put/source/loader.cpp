@@ -552,6 +552,15 @@ namespace put
         return texture_index;
     }
 
+    Str get_texture_filename(u32 handle)
+    {
+        for (auto& t : k_texture_references)
+            if (t.handle == handle)
+                return t.filename;
+
+        return "";
+    }
+
     void get_texture_info(u32 handle, texture_info& info)
     {
         for (auto& t : k_texture_references)

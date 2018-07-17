@@ -18,6 +18,7 @@ namespace put
     u32  load_texture(const c8* filename);
     void save_texture(const c8* filename, const texture_info& tcp);
     void get_texture_info(u32 handle, texture_info& info);
+    Str  get_texture_filename(u32 handle);
 
     // Hot loading
     Str  get_build_cmd();

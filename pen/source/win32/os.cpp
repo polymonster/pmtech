@@ -23,6 +23,9 @@ struct window_params
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
+    char szFileName[MAX_PATH];
+    GetModuleFileNameA(hInstance, szFileName, MAX_PATH);
+
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 

@@ -187,9 +187,10 @@ namespace put
             }
 
             // assign
-            p_sn->names[dst] = Str();
-            p_sn->geometry_names[dst] = Str();
-            p_sn->material_names[dst] = Str();
+            Str blank;
+            pen::memory_cpy(&p_sn->names[dst], &blank, sizeof(Str));
+            pen::memory_cpy(&p_sn->material_names[dst], &blank, sizeof(Str));
+            pen::memory_cpy(&p_sn->material_names[dst], &blank, sizeof(Str));
 
             p_sn->names[dst] = p_sn->names[src].c_str();
             p_sn->names[dst].append(suffix);
@@ -910,11 +911,54 @@ namespace put
             s32 version = 4;
             u32 num_nodes = 0;
             s32 num_components = 0;
-            s32 reserved_1[28] = { 0 };
+            s32 num_lookup_strings = 0;
+            s32 reserved_1[27] = { 0 };
             u32 view_flags = 0;
             s32 selected_index = 0;
             s32 reserved_2[30] = { 0 };
         };
+
+        struct lookup_string
+        {
+            Str name;
+            hash_id id;
+        };
+        static lookup_string* s_lookup_strings = nullptr;
+
+        void write_lookup_string(Str string, std::ofstream& ofs)
+        {
+            hash_id id = PEN_HASH(string.c_str());
+            ofs.write((const c8*)&id, sizeof(hash_id));
+
+            u32 num_strings = sb_count(s_lookup_strings);
+            for (u32 i = 0; i < num_strings; ++i)
+            {
+                if (id == s_lookup_strings[i].id)
+                {
+                    return;
+                }
+            }
+
+            lookup_string ls = { string, id };
+            sb_push(s_lookup_strings, ls);
+        }
+
+        Str read_lookup_string(std::ifstream& ifs)
+        {
+            hash_id id;
+            ifs.read((c8*)&id, sizeof(hash_id));
+
+            u32 num_strings = sb_count(s_lookup_strings);
+            for (u32 i = 0; i < num_strings; ++i)
+            {
+                if (s_lookup_strings[i].id == id)
+                {
+                    return s_lookup_strings[i].name;
+                }
+            }
+
+            return "";
+        }
 
         void save_scene(const c8* filename, entity_scene* scene)
         {
@@ -922,13 +966,7 @@ namespace put
 
             std::ofstream ofs(filename, std::ofstream::binary);
 
-            // header
-            scene_header sh;
-            sh.num_nodes = scene->num_nodes;
-            sh.view_flags = scene->view_flags;
-            sh.selected_index = scene->selected_index;
-            sh.num_components = scene->num_components;
-            ofs.write((const c8*)&sh, sizeof(scene_header));
+            sb_free(s_lookup_strings);
 
             // write basic components
             for (u32 i = 0; i < scene->num_components; ++i)
@@ -993,11 +1031,48 @@ namespace put
                 const char* shader_name = pmfx::get_shader_name(mat.pmfx_shader);
                 const char* technique_name = pmfx::get_technique_name(mat.pmfx_shader, mat_res.id_technique);
 
-                write_parsable_string(mat_res.material_name, ofs);
-                write_parsable_string(shader_name, ofs);
-                write_parsable_string(technique_name, ofs);
+                write_lookup_string(mat_res.material_name, ofs);
+                write_lookup_string(shader_name, ofs);
+                write_lookup_string(technique_name, ofs);
+
+                for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
+                    write_lookup_string(put::get_texture_filename(mat.texture_handles[i]), ofs);
             }
 
+            ofs.close();
+
+            std::ifstream infile(filename, std::ifstream::binary);
+
+            // get size of file
+            infile.seekg(0, infile.end);
+            u32 scene_data_size = infile.tellg();
+            infile.seekg(0);
+
+            // allocate memory for file content
+            c8* scene_data = new c8[scene_data_size];
+
+            // read content of infile
+            infile.read(scene_data, scene_data_size);
+
+            ofs = std::ofstream(filename, std::ofstream::binary);
+
+            // header
+            scene_header sh;
+            sh.num_nodes = scene->num_nodes;
+            sh.view_flags = scene->view_flags;
+            sh.selected_index = scene->selected_index;
+            sh.num_components = scene->num_components;
+            sh.num_lookup_strings = sb_count(s_lookup_strings);
+            ofs.write((const c8*)&sh, sizeof(scene_header));
+
+            for (u32 l = 0; l < sh.num_lookup_strings; ++l)
+            {
+                write_parsable_string(s_lookup_strings[l].name, ofs);
+                ofs.write((const c8*)&s_lookup_strings[l].id, sizeof(hash_id));
+            }
+
+            // write scene data
+            ofs.write(scene_data, scene_data_size);
             ofs.close();
         }
 
@@ -1037,6 +1112,17 @@ namespace put
                 resize_scene_buffers(scene, num_nodes);
 
             scene->num_nodes = new_num_nodes;
+
+            // read string lookups
+            sb_free(s_lookup_strings);
+            for (u32 n = 0; n < sh.num_lookup_strings; ++n)
+            {
+                lookup_string ls; 
+                ls.name = read_parsable_string(ifs);
+                ifs.read((c8*)&ls.id, sizeof(hash_id));
+
+                sb_push(s_lookup_strings, ls);
+            }
 
             // read all components
             for (u32 i = 0; i < scene->num_components; ++i)
@@ -1174,9 +1260,15 @@ namespace put
                 memset(&mat_res.shader_name, 0x0, sizeof(Str));
                 mat.material_cbuffer = PEN_INVALID_HANDLE;
 
-                Str material_name = read_parsable_string(ifs);
-                Str shader = read_parsable_string(ifs);
-                Str technique = read_parsable_string(ifs);
+                Str material_name = read_lookup_string(ifs);
+                Str shader = read_lookup_string(ifs);
+                Str technique = read_lookup_string(ifs);
+
+                for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
+                {
+                    mat_res.texture_handles[i] = put::load_texture(read_lookup_string(ifs).c_str());
+                    mat.texture_handles[i] = mat_res.texture_handles[i];
+                }
 
                 mat_res.material_name = material_name;
                 mat_res.id_shader = PEN_HASH(shader.c_str());

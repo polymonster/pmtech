@@ -485,6 +485,9 @@ namespace put
 
         void set_technique(shader_handle handle, u32 index)
         {
+            if (index >= sb_count(k_pmfx_list[handle].techniques))
+                return;
+
             auto& t = k_pmfx_list[handle].techniques[index];
 
             if (t.stream_out_shader)
