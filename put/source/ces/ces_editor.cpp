@@ -43,7 +43,7 @@ namespace put
             u32  x, y;
         };
         static picking_info k_picking_info;
-        u32*                k_selection_list = nullptr;
+        u32*                s_selection_list = nullptr;
 
         enum e_picking_state : u32
         {
@@ -236,7 +236,7 @@ namespace put
             scene->entities[light] |= CMP_LIGHT;
             scene->entities[light] |= CMP_TRANSFORM;
 
-            sb_clear(k_selection_list);
+            sb_clear(s_selection_list);
         }
 
         void editor_init(entity_scene* scene)
@@ -280,12 +280,12 @@ namespace put
 
         void instance_selection(entity_scene* scene)
         {
-            s32 selection_size = sb_count(k_selection_list);
+            s32 selection_size = sb_count(s_selection_list);
 
             if (selection_size <= 1)
                 return;
 
-            s32 master = k_selection_list[0];
+            s32 master = s_selection_list[0];
 
             if (scene->entities[master] & CMP_MASTER_INSTANCE)
                 return;
@@ -310,38 +310,38 @@ namespace put
 
         void parent_selection(entity_scene* scene)
         {
-            s32 selection_size = sb_count(k_selection_list);
+            s32 selection_size = sb_count(s_selection_list);
 
             if (selection_size <= 1)
                 return;
 
-            s32 parent = k_selection_list[0];
+            s32 parent = s_selection_list[0];
 
             // check contiguity
             bool valid      = true;
             s32  last_index = -1;
             for (s32 i = 1; i < selection_size; ++i)
             {
-                if (k_selection_list[i] < parent)
+                if (s_selection_list[i] < parent)
                 {
                     valid = false;
                     break;
                 }
 
-                last_index = std::max<s32>(k_selection_list[i], last_index);
+                last_index = std::max<s32>(s_selection_list[i], last_index);
             }
 
             if (last_index > parent + selection_size)
                 valid = false;
 
-            u32 sel_count = sb_count(k_selection_list);
+            u32 sel_count = sb_count(s_selection_list);
             if (valid)
             {
                 // list is already contiguous
                 dev_console_log("[parent] selection is contiguous %i to %i size %i", parent, last_index, selection_size);
 
                 for (int i = 0; i < sel_count; ++i)
-                    if (scene->parents[i] == k_selection_list[i])
+                    if (scene->parents[i] == s_selection_list[i])
                         set_node_parent(scene, parent, i);
             }
             else
@@ -354,7 +354,7 @@ namespace put
 
                 s32 nn = start;
                 for (int i = 0; i < sel_count; ++i)
-                    clone_node(scene, k_selection_list[i], nn++, start, CLONE_MOVE, vec3f::zero(), "");
+                    clone_node(scene, s_selection_list[i], nn++, start, CLONE_MOVE, vec3f::zero(), "");
             }
 
             scene->flags |= INVALIDATE_SCENE_TREE;
@@ -369,23 +369,23 @@ namespace put
 
             bool valid = index < scene->num_nodes;
 
-            u32 sel_count = sb_count(k_selection_list);
+            u32 sel_count = sb_count(s_selection_list);
 
             if (select_mode == SELECT_NORMAL)
             {
                 for (int i = 0; i < sel_count; ++i)
-                    scene->state_flags[k_selection_list[i]] &= ~SF_SELECTED;
+                    scene->state_flags[s_selection_list[i]] &= ~SF_SELECTED;
 
-                sb_clear(k_selection_list);
+                sb_clear(s_selection_list);
 
                 if (valid)
-                    sb_push(k_selection_list, index);
+                    sb_push(s_selection_list, index);
             }
             else if (valid)
             {
                 s32 existing = -1;
                 for (s32 i = 0; i < sel_count; ++i)
-                    if (k_selection_list[i] == index)
+                    if (s_selection_list[i] == index)
                         existing = i;
 
                 u32* new_list = nullptr;
@@ -393,14 +393,14 @@ namespace put
                 {
                     for (u32 i = 0; i < sel_count; ++i)
                         if (i != existing)
-                            sb_push(new_list, k_selection_list[i]);
+                            sb_push(new_list, s_selection_list[i]);
 
-                    sb_free(k_selection_list);
-                    k_selection_list = new_list;
+                    sb_free(s_selection_list);
+                    s_selection_list = new_list;
                 }
 
                 if (existing == -1 && select_mode == SELECT_ADD)
-                    sb_push(k_selection_list, index);
+                    sb_push(s_selection_list, index);
             }
 
             if (!valid)
@@ -414,10 +414,10 @@ namespace put
         
         void delete_selection(entity_scene* scene)
         {
-            u32 sel_num = sb_count(k_selection_list);
+            u32 sel_num = sb_count(s_selection_list);
             for (u32 s = 0; s < sel_num; ++s)
             {
-                u32 i = k_selection_list[s];
+                u32 i = s_selection_list[s];
                 
                 std::vector<s32> node_index_list;
                 build_heirarchy_node_list(scene, i, node_index_list);
@@ -426,7 +426,7 @@ namespace put
                     if (c > -1)
                         delete_entity(scene, c);
             }
-            sb_clear(k_selection_list);
+            sb_clear(s_selection_list);
             
             initialise_free_list(scene);
             
@@ -439,10 +439,10 @@ namespace put
             {
                 ImGui::Text("Picking Result: %u", k_picking_info.result);
 
-                u32 sel_count = sb_count(k_selection_list);
+                u32 sel_count = sb_count(s_selection_list);
                 for (s32 i = 0; i < sel_count; ++i)
                 {
-                    s32 ii = k_selection_list[i];
+                    s32 ii = s_selection_list[i];
 
                     ImGui::Text("%s", scene->names[ii].c_str());
                 }
@@ -521,11 +521,11 @@ namespace put
                     if (!pen::input_is_key_down(PK_CONTROL) && !pen::input_is_key_down(PK_SHIFT))
                     {
                         // unflag current selected
-                        u32 sls = sb_count(k_selection_list);
+                        u32 sls = sb_count(s_selection_list);
                         for (u32 i = 0; i < sls; ++i)
-                            scene->state_flags[k_selection_list[i]] &= ~SF_SELECTED;
+                            scene->state_flags[s_selection_list[i]] &= ~SF_SELECTED;
 
-                        sb_clear(k_selection_list);
+                        sb_clear(s_selection_list);
 
                         pm = SELECT_ADD;
                     }
@@ -558,23 +558,23 @@ namespace put
                         }
                     }
 
-                    sb_clear(k_selection_list);
-                    stb__sbgrow(k_selection_list, scene->num_nodes);
+                    sb_clear(s_selection_list);
+                    stb__sbgrow(s_selection_list, scene->num_nodes);
 
                     s32 pos = 0;
                     for (s32 node = 0; node < scene->num_nodes; ++node)
                     {
                         if (scene->state_flags[node] &= SF_SELECTED)
-                            k_selection_list[pos++] = node;
+                            s_selection_list[pos++] = node;
                     }
 
-                    stb__sbm(k_selection_list) = scene->num_nodes;
-                    stb__sbn(k_selection_list) = pos;
+                    stb__sbm(s_selection_list) = scene->num_nodes;
+                    stb__sbn(s_selection_list) = pos;
 
-                    u32 sls = sb_count(k_selection_list);
+                    u32 sls = sb_count(s_selection_list);
                     for (u32 i = 0; i < sls; ++i)
                     {
-                        dev_console_log("selected index %i", k_selection_list[i]);
+                        dev_console_log("selected index %i", s_selection_list[i]);
                     }
 
                     picking_state = PICKING_READY;
@@ -816,7 +816,7 @@ namespace put
                 }
 
                 if (scene->state_flags[ua.node_index] & SF_SELECTED)
-                    sb_clear(k_selection_list);
+                    sb_clear(s_selection_list);
 
                 restore_node_state(scene, ua.action_state[action], ua.node_index);
             }
@@ -1107,7 +1107,7 @@ namespace put
 
             if (ImGui::Button(ICON_FA_FILES_O))
             {
-                clone_selection_hierarchical(sc->scene, &k_selection_list, "_cloned");
+                clone_selection_hierarchical(sc->scene, &s_selection_list, "_cloned");
             }
             dev_ui::set_tooltip("Duplicate");
 
@@ -1297,7 +1297,7 @@ namespace put
             }
             else if (debounce_duplicate)
             {
-                clone_selection_hierarchical(sc->scene, &k_selection_list, "_cloned");
+                clone_selection_hierarchical(sc->scene, &s_selection_list, "_cloned");
                 debounce_duplicate = false;
             }
 
@@ -1386,10 +1386,10 @@ namespace put
 
                 if (ImGui::Button("Add"))
                 {
-                    u32 sel_num = sb_count(k_selection_list);
+                    u32 sel_num = sb_count(s_selection_list);
                     for (u32 s = 0; s < sel_num; ++s)
                     {
-                        u32 i = k_selection_list[s];
+                        u32 i = s_selection_list[s];
 
                         if (scene->entities[i] & CMP_CONSTRAINT)
                             continue;
@@ -1401,8 +1401,8 @@ namespace put
                 }
             }
 
-            if (sb_count(k_selection_list) == 1)
-                scene->physics_data[k_selection_list[0]].constraint = preview_constraint;
+            if (sb_count(s_selection_list) == 1)
+                scene->physics_data[s_selection_list[0]].constraint = preview_constraint;
         }
 
         void scene_rigid_body_ui(entity_scene* scene)
@@ -1416,10 +1416,10 @@ namespace put
             k_physics_preview.params.rigid_body.shape = collision_shape + 1;
 
             Str button_text = "Set Start Transform";
-            u32 sel_num     = sb_count(k_selection_list);
+            u32 sel_num     = sb_count(s_selection_list);
             for (u32 s = 0; s < sel_num; ++s)
             {
-                u32 i = k_selection_list[s];
+                u32 i = s_selection_list[s];
 
                 if (!(scene->entities[i] & CMP_PHYSICS))
                 {
@@ -1432,7 +1432,7 @@ namespace put
             {
                 for (u32 s = 0; s < sel_num; ++s)
                 {
-                    u32 i                             = k_selection_list[s];
+                    u32 i                             = s_selection_list[s];
                     scene->physics_data[i].rigid_body = k_physics_preview.params.rigid_body;
 
                     scene->physics_data[i].rigid_body.position = scene->transforms[i].translation;
@@ -1453,9 +1453,9 @@ namespace put
             static s32 physics_type  = 0;
             k_physics_preview.active = false;
 
-            if (sb_count(k_selection_list) == 1)
+            if (sb_count(s_selection_list) == 1)
             {
-                k_physics_preview.params = scene->physics_data[k_selection_list[0]];
+                k_physics_preview.params = scene->physics_data[s_selection_list[0]];
                 physics_type             = k_physics_preview.params.type;
             }
 
@@ -1479,18 +1479,18 @@ namespace put
                 }
             }
 
-            if (sb_count(k_selection_list) == 1)
-                scene->physics_data[k_selection_list[0]] = k_physics_preview.params;
+            if (sb_count(s_selection_list) == 1)
+                scene->physics_data[s_selection_list[0]] = k_physics_preview.params;
         }
 
         bool scene_geometry_ui(entity_scene* scene)
         {
             bool iv = false;
 
-            if (sb_count(k_selection_list) != 1)
+            if (sb_count(s_selection_list) != 1)
                 return iv;
 
-            u32 selected_index = k_selection_list[0];
+            u32 selected_index = s_selection_list[0];
 
             // geom
             if (ImGui::CollapsingHeader("Geometry"))
@@ -1529,10 +1529,10 @@ namespace put
 
         bool scene_transform_ui(entity_scene* scene)
         {
-            if (sb_count(k_selection_list) != 1)
+            if (sb_count(s_selection_list) != 1)
                 return false;
 
-            u32 selected_index = k_selection_list[0];
+            u32 selected_index = s_selection_list[0];
 
             if (ImGui::CollapsingHeader("Transform"))
             {
@@ -1568,13 +1568,11 @@ namespace put
         {
             bool iv = false;
 
-            static bool colour_picker_open = false;
-
-            u32 num_selected = sb_count(k_selection_list);
+            u32 num_selected = sb_count(s_selection_list);
             if (num_selected <= 0)
                 return false;
 
-            u32 selected_index = k_selection_list[0];
+            u32 selected_index = s_selection_list[0];
 
             // master mat
             cmp_material& mm = scene->materials[selected_index];
@@ -1586,7 +1584,7 @@ namespace put
             // set parameters if all are shared, if not set to invalid
             for (u32 i = 1; i < num_selected; ++i)
             {
-                cmp_material& m2 = scene->materials[k_selection_list[i]];
+                cmp_material& m2 = scene->materials[s_selection_list[i]];
 
                 if (shader != m2.pmfx_shader)
                     shader = PEN_INVALID_HANDLE;
@@ -1602,73 +1600,100 @@ namespace put
 
                 ImGui::Text("%s", scene->material_names[selected_index].c_str());
 
-                if (scene->material_names[selected_index].c_str())
+                if (scene->entities[s_selection_list[0]] & CMP_MATERIAL)
                 {
-                    if (scene->entities[k_selection_list[0]] & CMP_MATERIAL)
+                    u32 count = 0;
+                    for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
                     {
-                        u32 count = 0;
-                        for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
+                        if (scene->materials[selected_index].texture_handles[t] > 0)
                         {
-                            if (scene->materials[selected_index].texture_handles[t] > 0)
-                            {
-                                if (count++ > 0)
-                                    ImGui::SameLine();
+                            if (count++ > 0)
+                                ImGui::SameLine();
 
-                                ImGui::Image(&scene->materials[selected_index].texture_handles[t], ImVec2(64, 64));
+                            ImGui::Image(&scene->materials[selected_index].texture_handles[t], ImVec2(64, 64));
+                        }
+                    }
+
+                    auto& mm = scene->materials[selected_index];
+                    bool cm = false;
+
+                    u32        num_shaders;
+                    const c8** shader_list = pmfx::get_shader_list(num_shaders);
+                    cm |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
+
+                    u32        num_techniques;
+                    const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
+                    cm |= ImGui::Combo("Technique", (s32*)&technique, technique_list, num_techniques);
+
+                    // apply shader changes
+                    if (cm)
+                    {
+                        for (u32 i = 0; i < num_selected; ++i)
+                        {
+                            scene->materials[s_selection_list[i]].pmfx_shader = shader;
+                            scene->materials[s_selection_list[i]].technique = technique;
+                        }
+                    }
+
+                    pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
+
+                    if (tc)
+                    {
+                        u32 num_constants = sb_count(tc);
+                        for (u32 i = 0; i < num_constants; ++i)
+                        {
+                            float* f = &mat.data[tc[i].cb_offset];
+
+                            switch (tc[i].widget)
+                            {
+                            case pmfx::CW_INPUT:
+                                ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
+                                break;
+                            case pmfx::CW_SLIDER:
+                                ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f", 1.0f);
+                                break;
+                            case pmfx::CW_COLOUR:
+                                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(f[0], f[1], f[2], 1.0f));
+                                if (ImGui::CollapsingHeader(tc[i].name.c_str()))
+                                {
+                                    if (tc[i].num_elements == 3)
+                                    {
+                                        ImGui::ColorPicker3(tc[i].name.c_str(), f);
+                                    }
+                                    else
+                                    {
+                                        ImGui::ColorPicker4(tc[i].name.c_str(), f);
+                                    }
+                                }
+                                ImGui::PopStyleColor();
+                                break;
                             }
                         }
 
-                        auto& mm = scene->materials[selected_index];
+                        // apply technique constant changes
+                        cmp_material_data pre_edit = scene->material_data[selected_index];
 
-                        bool cm = false;
-
-                        u32        num_shaders;
-                        const c8** shader_list = pmfx::get_shader_list(num_shaders);
-                        cm |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
-
-                        u32        num_techniques;
-                        const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
-                        cm |= ImGui::Combo("Technique", (s32*)&technique, technique_list, num_techniques);
-
-                        pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
-
-                        if (tc)
+                        for (u32 i = 0; i < num_selected; ++i)
                         {
-                            u32 num_constants = sb_count(tc);
-                            for (u32 i = 0; i < num_constants; ++i)
-                            {
-                                float* f = &mat.data[tc[i].cb_offset];
+                            u32 si = s_selection_list[i];
 
-                                switch (tc[i].widget)
-                                {
-                                case pmfx::CW_INPUT:
-                                    ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
-                                    break;
-                                case pmfx::CW_SLIDER:
-                                    ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f", 1.0f);
-                                    break;
-                                case pmfx::CW_COLOUR:
-                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(f[0], f[1], f[2], 1.0f));
-                                    if (ImGui::CollapsingHeader(tc[i].name.c_str()))
-                                    {
-                                        if (tc[i].num_elements == 3)
-                                        {
-                                            ImGui::ColorPicker3(tc[i].name.c_str(), f);
-                                        }
-                                        else
-                                        {
-                                            ImGui::ColorPicker4(tc[i].name.c_str(), f);
-                                        }
-                                    }
-                                    ImGui::PopStyleColor();
-                                    break;
-                                }
+                            for (u32 c = 0; c < num_constants; ++c)
+                            {
+                                u32 cb_offset = tc[c].cb_offset;
+                                u32 tc_size = sizeof(f32) * tc[c].num_elements;
+
+                                f32* f1 = &mat.data[cb_offset];
+                                f32* f2 = &pre_edit.data[cb_offset];
+
+                                if (memcmp(f1, f2, tc_size) == 0)
+                                    continue;
+
+                                f32* f3 = &scene->material_data[si].data[cb_offset];
+                                memcpy(f3, f1, tc_size);
                             }
                         }
                     }
                 }
-
-                scene->material_data[selected_index] = mat;
             }
 
             return iv;
@@ -1676,10 +1701,10 @@ namespace put
 
         void scene_anim_ui(entity_scene* scene)
         {
-            if (sb_count(k_selection_list) != 1)
+            if (sb_count(s_selection_list) != 1)
                 return;
 
-            u32 selected_index = k_selection_list[0];
+            u32 selected_index = s_selection_list[0];
 
             if (scene->geometries[selected_index].p_skin)
             {
@@ -1798,10 +1823,10 @@ namespace put
 
         void scene_light_ui(entity_scene* scene)
         {
-            if (sb_count(k_selection_list) != 1)
+            if (sb_count(s_selection_list) != 1)
                 return;
 
-            u32 selected_index = k_selection_list[0];
+            u32 selected_index = s_selection_list[0];
 
             static bool colour_picker_open = false;
 
@@ -1935,7 +1960,7 @@ namespace put
                 if (ImGui::CollapsingHeader("Scene Info"))
                 {
                     ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
-                    ImGui::Text("Selected: %i", (s32)sb_count(k_selection_list));
+                    ImGui::Text("Selected: %i", (s32)sb_count(s_selection_list));
 
                     for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
                         dumps[i].count = 0;
@@ -1952,8 +1977,8 @@ namespace put
                 ImGui::BeginChild("Entities", ImVec2(0, 300), true);
 
                 s32 selected_index = -1;
-                if (sb_count(k_selection_list) == 1)
-                    selected_index = k_selection_list[0];
+                if (sb_count(s_selection_list) == 1)
+                    selected_index = s_selection_list[0];
 
                 if (list_view)
                 {
@@ -2024,9 +2049,9 @@ namespace put
                 scene_transform_ui(scene);
 
                 // Undoable actions
-                if (sb_count(k_selection_list) == 1)
+                if (sb_count(s_selection_list) == 1)
                 {
-                    store_node_state(scene, k_selection_list[0], UNDO);
+                    store_node_state(scene, s_selection_list[0], UNDO);
                 }
 
                 scene_physics_ui(scene);
@@ -2039,9 +2064,9 @@ namespace put
 
                 scene_material_ui(scene);
 
-                if (sb_count(k_selection_list) == 1)
+                if (sb_count(s_selection_list) == 1)
                 {
-                    store_node_state(scene, k_selection_list[0], REDO);
+                    store_node_state(scene, s_selection_list[0], REDO);
                 }
 
                 ImGui::End();
@@ -2053,10 +2078,10 @@ namespace put
             if (move_axis == vec3f::zero())
                 return;
 
-            u32 sel_num = sb_count(k_selection_list);
+            u32 sel_num = sb_count(s_selection_list);
             for (u32 s = 0; s < sel_num; ++s)
             {
-                u32 i = k_selection_list[s];
+                u32 i = s_selection_list[s];
 
                 // only move if parent isnt selected
                 s32 parent = scene->parents[i];
@@ -2064,7 +2089,7 @@ namespace put
                 {
                     bool found = false;
                     for (u32 t = 0; t < sel_num; ++t)
-                        if (k_selection_list[t] == parent)
+                        if (s_selection_list[t] == parent)
                         {
                             found = true;
                             break;
@@ -2193,17 +2218,17 @@ namespace put
                 }
             }
 
-            if (sb_count(k_selection_list) == 0)
+            if (sb_count(s_selection_list) == 0)
                 return;
 
             vec3f pos = vec3f::zero();
             vec3f min = vec3f::flt_max();
             vec3f max = -vec3f::flt_max();
 
-            u32 sel_num = sb_count(k_selection_list);
+            u32 sel_num = sb_count(s_selection_list);
             for (u32 i = 0; i < sel_num; ++i)
             {
-                u32 s = k_selection_list[i];
+                u32 s = s_selection_list[i];
 
                 if (scene->entities[s] & CMP_LIGHT)
                 {
@@ -2222,7 +2247,7 @@ namespace put
 
             f32 extents_mag = mag(max - min);
 
-            pos /= (f32)sb_count(k_selection_list);
+            pos /= (f32)sb_count(s_selection_list);
 
             mat4 widget;
             widget.set_vectors(vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z(), pos);
@@ -2597,10 +2622,10 @@ namespace put
 
             if (scene->view_flags & DD_NODE)
             {
-                u32 sel_num = sb_count(k_selection_list);
+                u32 sel_num = sb_count(s_selection_list);
                 for (u32 i = 0; i < sel_num; ++i)
                 {
-                    u32 s = k_selection_list[i];
+                    u32 s = s_selection_list[i];
 
                     if (scene->entities[s] & CMP_LIGHT)
                     {

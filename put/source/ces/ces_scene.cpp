@@ -1074,6 +1074,13 @@ namespace put
             sh.num_lookup_strings = sb_count(s_lookup_strings);
             ofs.write((const c8*)&sh, sizeof(scene_header));
 
+            // component sizes
+            for (u32 c = 0; c < sh.num_components; ++c)
+            {
+                ofs.write((const c8*)&scene->get_component_array(c).size, sizeof(u32));
+            }
+
+            // string lookups
             for (u32 l = 0; l < sh.num_lookup_strings; ++l)
             {
                 write_parsable_string(s_lookup_strings[l].name.c_str(), ofs);
@@ -1122,6 +1129,15 @@ namespace put
 
             scene->num_nodes = new_num_nodes;
 
+            // read component sizes
+            u32* component_sizes = nullptr;
+            for (u32 i = 0; i < sh.num_components; ++i)
+            {
+                u32 size;
+                ifs.read((c8*)&size, sizeof(u32));
+                sb_push(component_sizes, size);
+            }
+
             // read string lookups
             sb_free(s_lookup_strings);
             s_lookup_strings = nullptr;
@@ -1136,10 +1152,23 @@ namespace put
             }
 
             // read all components
-            for (u32 i = 0; i < scene->num_components; ++i)
+            for (u32 i = 0; i < sh.num_components; ++i)
             {
                 generic_cmp_array& cmp = scene->get_component_array(i);
-                ifs.read((c8*)cmp.data, cmp.size * num_nodes);
+                if (cmp.size == component_sizes[i])
+                {
+                    // read whole array
+                    ifs.read((c8*)cmp.data, cmp.size * num_nodes);
+                }
+                else
+                {
+                    // read in previous version
+                    u32 offset = 0;
+                    for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                    {
+                        ifs.read((c8*)cmp.data + offset, component_sizes[i]);
+                    }
+                }
             }
 
             // fixup parents for scene import / merge
@@ -1149,7 +1178,6 @@ namespace put
             // read specialisations
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                //memset to zero
                 pen::memory_set(&scene->names[n], 0x0, sizeof(Str));
                 pen::memory_set(&scene->geometry_names[n], 0x0, sizeof(Str));
                 pen::memory_set(&scene->material_names[n], 0x0, sizeof(Str));
@@ -1196,7 +1224,6 @@ namespace put
                     else
                     {
                         hash_id geom_hash = PEN_HASH(geometry_name.c_str());
-
                         gr = get_geometry_resource(geom_hash);
                     }
 
@@ -1277,7 +1304,15 @@ namespace put
 
                 for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                 {
-                    mat_res.texture_handles[i] = put::load_texture(read_lookup_string(ifs).c_str());
+                    Str texture_name = read_lookup_string(ifs);
+
+                    if (texture_name == "")
+                    {
+                        mat_res.texture_handles[i] = PEN_INVALID_HANDLE;
+                        continue;
+                    }
+
+                    mat_res.texture_handles[i] = put::load_texture(texture_name.c_str());
                     mat.texture_handles[i] = mat_res.texture_handles[i];
                 }
 
