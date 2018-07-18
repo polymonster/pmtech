@@ -532,19 +532,19 @@ namespace put
             p_mat->hash          = hash;
 
             // diffuse
-            pen::memory_cpy(&p_mat->diffuse_rgb_shininess, p_reader, sizeof(vec4f));
+            pen::memory_cpy(&p_mat->data[0], p_reader, sizeof(vec4f));
             p_reader += 4;
 
             // specular
-            pen::memory_cpy(&p_mat->specular_rgb_reflect, p_reader, sizeof(vec4f));
+            pen::memory_cpy(&p_mat->data[4], p_reader, sizeof(vec4f));
             p_reader += 4;
 
             // shininess
-            pen::memory_cpy(&p_mat->diffuse_rgb_shininess.w, p_reader, sizeof(f32));
+            pen::memory_cpy(&p_mat->data[3], p_reader, sizeof(f32));
             p_reader++;
 
             // reflectivity
-            pen::memory_cpy(&p_mat->specular_rgb_reflect.w, p_reader, sizeof(f32));
+            pen::memory_cpy(&p_mat->data[7], p_reader, sizeof(f32));
             p_reader++;
 
             u32 num_maps = *p_reader++;

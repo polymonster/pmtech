@@ -132,7 +132,7 @@ void animate_instances(entity_scene* scene)
 
     static u32 timer = pen::timer_create("perf");
 
-    pen::timer_reset(timer);
+    pen::timer_start(timer);
     for (s32 i = 2; i < scene->num_nodes; ++i)
     {
         scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
@@ -140,7 +140,7 @@ void animate_instances(entity_scene* scene)
     }
     f32 array_cost = pen::timer_elapsed_ms(timer);
 
-    pen::timer_reset(timer);
+    pen::timer_start(timer);
     for (s32 i = 2; i < scene->num_nodes; ++i)
     {
         scene->transforms[i].rotation = scene->transforms[i].rotation * q;

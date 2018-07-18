@@ -116,13 +116,9 @@ namespace put
         struct material_resource
         {
             hash_id hash;
-
             Str     material_name;
             Str     shader_name;
-            
-            vec4f   diffuse_rgb_shininess = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-            vec4f   specular_rgb_reflect = vec4f(1.0f, 1.0f, 1.0f, 0.5f);
-
+            f32     data[64];
             hash_id id_shader = 0;
             hash_id id_technique = 0;
             hash_id id_sampler_state[SN_NUM_TEXTURES] = { 0 };
@@ -389,7 +385,7 @@ namespace put
             extents         renderable_extents;
 
             // Access to component data in a generic way
-            generic_cmp_array& get_component_array(u32 index)
+            pen_inline generic_cmp_array& get_component_array(u32 index)
             {
                 generic_cmp_array* begin = (generic_cmp_array*)this;
                 return begin[index];
