@@ -31,7 +31,8 @@ $RECYCLE.BIN/
 examples/*ios_files*
 **__pycache__**
 *.pyc
-**.idea/ 
+**.idea/
+tools/venv 
 
 # Thumbnails
 ._*

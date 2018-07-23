@@ -1,6 +1,7 @@
 #include "libs/lighting.slib"
 #include "libs/skinning.slib"
 #include "libs/globals.slib"
+#include "libs/sdf.slib"
 
 struct vs_output
 {
@@ -85,6 +86,7 @@ declare_texture_samplers
 	texture_2d( normal_texture, 1 );
 	texture_2d( specular_texture, 2 );	
 	
+	texture_3d( sdf_volume, 14 );
 	texture_2d( shadowmap_texture, 15 );
 };
 
@@ -231,7 +233,7 @@ ps_output ps_forward_lit( vs_output input )
 		normal_sample );
 		
 	albedo *= input.colour;
-	
+		
 	float3 lit_colour = float3( 0.0, 0.0, 0.0 );
 		
 	//todo these need to be passed from vs for instancing
@@ -240,6 +242,26 @@ ps_output ps_forward_lit( vs_output input )
 	
 	roughness = m_roughness;
 	reflectivity = m_reflectivity;
+	
+	n = input.normal;
+	albedo = input.colour;
+	
+	if:(SDF_SHADOW)
+	{				
+		float max_samples = 128.0;
+	
+		float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
+		
+		// point on surface ray origin in sdf space
+		float3 r1 = input.world_pos.xyz + input.normal.xyz * 0.3; // offset slightly by normal to avoid self-shdow
+		float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
+						
+		float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
+		
+		// derivatives for texture grad
+		float3 vddx = ddx( r1 );
+		float3 vddy = ddy( r1 );
+	}
 	
 	//for directional lights
 	for( int i = 0; i < light_info.x; ++i )
@@ -267,6 +289,12 @@ ps_output ps_forward_lit( vs_output input )
 			roughness,
 			albedo.rgb
 		);		
+		
+		if:(SDF_SHADOW)
+		{
+			float s = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
+			light_col *= smoothstep( 0.0, 0.1, s);
+		}
 		
 		if( lights[i].colour.a == 0.0 )
 		{
@@ -319,6 +347,12 @@ ps_output ps_forward_lit( vs_output input )
 		float a = point_light_attenuation( lights[i].pos_radius, input.world_pos.xyz );	
 		light_col *= a;
 		
+		if:(SDF_SHADOW)
+		{
+			float s = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
+			light_col *= smoothstep( 0.0, 0.1, s);
+		}
+		
 		lit_colour += light_col;
 	}
 	
@@ -353,6 +387,12 @@ ps_output ps_forward_lit( vs_output input )
 			
 		float a = spot_light_attenuation( lights[i].pos_radius, lights[i].dir_cutoff, input.world_pos.xyz );	
 		light_col *= a;
+		
+		if:(SDF_SHADOW)
+		{
+			float s = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
+			light_col *= smoothstep( 0.0, 0.1, s);
+		}
 		
 		lit_colour += light_col;
 	}
@@ -417,6 +457,15 @@ pmfx:
 			"roughness": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
 			"reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 }
 		}
+	},
+	
+	"forward_lit_sdf_shadow":
+	{
+		"vs": "vs_main",
+		"ps": "ps_forward_lit",
+		"defines": ["SDF_SHADOW"],
+		
+		"inherit_constants": ["forward_lit"]
 	},
 	
 	"forward_lit_instanced":

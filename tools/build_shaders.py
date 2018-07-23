@@ -688,7 +688,7 @@ def add_files_recursive(filename, root):
     included_file.close()
     shader_source = clean_spaces(shader_source)
     include_list = find_includes(shader_source)
-    for slib in include_list:
+    for slib in reversed(include_list):
         included_source, sub_includes = add_files_recursive(slib, root)
         shader_source = included_source + "\n" + shader_source
         include_list = include_list + sub_includes
@@ -742,6 +742,51 @@ def create_shader_set(filename, root):
     return True, shader_file_text, included_files
 
 
+def replace_conditional_blocks(source):
+    pos = 0
+    while True:
+        pos = source.find("if:", pos)
+        if pos == -1:
+            break
+        conditions_start = source.find("(", pos)
+        body_start = source.find("{", conditions_start) + 1
+        conditions = source[conditions_start:body_start - 1]
+        delimiters = [" ", "(", ")", "&", "|"]
+        token = ""
+        defined = ""
+        for char in conditions:
+            if char in delimiters:
+                if char == " ":
+                    continue
+                if token != "":
+                    defined += "defined("
+                    defined += token
+                    defined += ")"
+                defined += char
+                token = ""
+            else:
+                token += char
+        i = body_start
+        stack_size = 1
+        while True:
+            if source[i] == "{":
+                stack_size += 1
+            if source[i] == "}":
+                stack_size -= 1
+            if stack_size == 0:
+                break
+            i += 1
+
+        conditional_block = "#if "
+        conditional_block += defined + "\n"
+        conditional_block += source[body_start:i]
+        conditional_block += "#endif"
+
+        source = source.replace(source[pos:i+1], conditional_block)
+        pos = i
+    return source
+
+
 def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name):
     print("converting: " + os.path.splitext(filename)[0] + " " + technique_name)
 
@@ -779,6 +824,10 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
 
     vs_source = macros_text + "\n\n"
     ps_source = macros_text + "\n\n"
+
+    global technique_defines
+    vs_source += technique_defines
+    ps_source += technique_defines
 
     vs_output_struct_name = vs_main[0:vs_main.find(" ")].strip()
     ps_output_struct_name = ps_main[0:ps_main.find(" ")].strip()
@@ -825,6 +874,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     vs_source += texture_samplers_source
     vs_source += vs_functions
     vs_source += vs_main
+    vs_source = replace_conditional_blocks(vs_source)
 
     # pixel shader
     for s in struct_list:
@@ -839,6 +889,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     if ps_main != "":
         ps_source += ps_functions
         ps_source += ps_main
+        ps_source = replace_conditional_blocks(ps_source)
 
     if shader_platform == "hlsl":
         compile_hlsl(vs_source, filename, "vs_4_0", ".vs", vs_name, technique_name)
@@ -937,6 +988,14 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
     return technique, c_struct
 
 
+def generate_defines(pmfx_block, technique_name):
+    global technique_defines
+    technique_defines = ""
+    if "defines" in pmfx_block[technique_name].keys():
+        for d in pmfx_block[technique_name]["defines"]:
+            technique_defines += "#define " + d + " 1\n"
+
+
 def parse_pmfx(filename, root):
     file_and_path = os.path.join(root, filename)
     needs_building, shader_file_text, included_files = create_shader_set(file_and_path, root)
@@ -953,6 +1012,7 @@ def parse_pmfx(filename, root):
             for technique in pmfx_block:
                 c_stuct = ""
                 pmfx_block[technique], c_stuct = generate_technique_constant_buffers(pmfx_block, technique)
+                generate_defines(pmfx_block, technique)
                 shader_c_struct += c_stuct
                 ps_name = ""
                 if "ps" in pmfx_block[technique].keys():

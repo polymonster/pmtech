@@ -1489,9 +1489,9 @@ namespace put
                     // add shadow receiver
                     material_resource* sdf_shadow_material                   = new material_resource;
                     sdf_shadow_material->material_name                       = "shadow_sdf_material";
-                    sdf_shadow_material->shader_name                         = "pmfx_utility";
-                    sdf_shadow_material->id_shader                           = PEN_HASH("pmfx_utility");
-                    sdf_shadow_material->id_technique                        = PEN_HASH("shadow_sdf");
+                    sdf_shadow_material->shader_name                         = "forward_render";
+                    sdf_shadow_material->id_shader                           = PEN_HASH(sdf_shadow_material->shader_name);
+                    sdf_shadow_material->id_technique                        = PEN_HASH("forward_lit_sdf_shadow");
                     add_material_resource(sdf_shadow_material);
 
                     new_prim                    = get_new_node(s_main_scene);
