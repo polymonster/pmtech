@@ -1478,10 +1478,11 @@ namespace put
                     s_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
                     s_main_scene->parents[new_prim] = new_prim;
 
-                    instantiate_geometry(cube, s_main_scene, new_prim);
+                    //instantiate_geometry(cube, s_main_scene, new_prim);
 
                     instantiate_material(sdf_material, s_main_scene, new_prim);
-                    instantiate_model_cbuffer(s_main_scene, new_prim);
+
+                    //instantiate_model_cbuffer(s_main_scene, new_prim);
                     
                     gv.scene_node_index = new_prim;
                     gv.scale = scale;

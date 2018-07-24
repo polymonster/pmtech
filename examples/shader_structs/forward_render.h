@@ -11,7 +11,8 @@ struct forward_lit_sdf_shadow
 	float4 m_albedo;
 	float m_roughness;
 	float m_reflectivity;
-	float3 m_padding;
+	float m_surface_offset;
+	float2 m_padding;
 };
 
 struct forward_lit_instanced

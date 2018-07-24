@@ -253,7 +253,7 @@ ps_output ps_forward_lit( vs_output input )
 		float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
 		
 		// point on surface ray origin in sdf space
-		float3 r1 = input.world_pos.xyz + input.normal.xyz * 0.3; // offset slightly by normal to avoid self-shdow
+		float3 r1 = input.world_pos.xyz + input.normal.xyz * m_surface_offset; // offset slightly by normal to avoid self-shdow
 		float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
 						
 		float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
@@ -465,7 +465,13 @@ pmfx:
 		"ps": "ps_forward_lit",
 		"defines": ["SDF_SHADOW"],
 		
-		"inherit_constants": ["forward_lit"]
+		"constants":
+		{
+			"albedo": { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
+			"roughness": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
+			"reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
+			"surface_offset": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 }
+		}
 	},
 	
 	"forward_lit_instanced":

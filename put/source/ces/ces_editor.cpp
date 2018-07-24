@@ -1453,7 +1453,12 @@ namespace put
             static s32 physics_type  = 0;
             k_physics_preview.active = false;
 
-            if (sb_count(s_selection_list) == 1)
+            u32 num_selected = sb_count(s_selection_list);
+
+            if (num_selected == 0)
+                return;
+
+            if (num_selected == 1)
             {
                 k_physics_preview.params = scene->physics_data[s_selection_list[0]];
                 physics_type             = k_physics_preview.params.type;

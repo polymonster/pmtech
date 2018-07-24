@@ -5,7 +5,7 @@ import re
 import sys
 import json
 import dependencies
-import helpers
+import math
 import time
 import build
 
@@ -636,6 +636,7 @@ def generate_glsl(
 
 
 def find_includes(file_text):
+    global added_includes
     include_list = []
     start = 0
     while 1:
@@ -646,7 +647,10 @@ def find_includes(file_text):
         end = file_text.find("\"", start)
         if start == -1 or end == -1:
             break
-        include_list.append(file_text[start:end])
+        include_name = file_text[start:end]
+        if include_name not in added_includes:
+            include_list.append(include_name)
+            added_includes.append(include_name)
     return include_list
 
 
@@ -725,6 +729,8 @@ def check_dependencies(filename, included_files):
 
 
 def create_shader_set(filename, root):
+    global added_includes
+    added_includes = []
     shader_file_text, included_files = add_files_recursive(filename, root)
     up_to_date = check_dependencies(filename, included_files)
 
@@ -960,8 +966,9 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
         return technique, ""
 
     # we must pad to 16 bytes alignment
-    diff = (offset*4) % 16
-    pad = diff / 4
+    diff = offset / 4
+    next = math.floor(diff) + 1
+    pad = (next - diff) * 4
     if pad != 0:
         shader_constant.append("\t" + constant_info[int(pad)][0] + " " + "m_padding" + ";\n")
         shader_struct.append("\t" + constant_info[int(pad)][0] + " " + "m_padding" + ";\n")
