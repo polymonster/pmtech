@@ -332,10 +332,13 @@ namespace put
             {
                 pen::memory_free(volume_data);
                 g_cancel_handled = true;
+
+                pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
+                pen::thread_semaphore_signal(p_thread_info->p_sem_terminated, 1);
                 return PEN_THREAD_OK;
             }
 
-            // with the 3d texture now initialised, dilate colour edges so we can used bilinear
+            // with the 3d texture now initialised, dilate colour edges so we can use bilinear
             u32 bs = rasteriser_job->block_size;
             u32 rp = row_pitch;
             u32 sp = slice_pitch;
@@ -391,6 +394,8 @@ namespace put
             rasteriser_job->generated_volume_index = sb_count(s_generated_volumes)-1;
             rasteriser_job->combine_in_progress = 2;
 
+            pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
+            pen::thread_semaphore_signal(p_thread_info->p_sem_terminated, 1);
             return PEN_THREAD_OK;
         }
 
@@ -1210,6 +1215,9 @@ namespace put
                     g_mls_progress.triangles       = 0;
                     pen::memory_free(volume_data);
                     g_cancel_handled = true;
+
+                    pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
+                    pen::thread_semaphore_signal(p_thread_info->p_sem_terminated, 1);
                     return PEN_THREAD_OK;
                 }
 
@@ -1254,6 +1262,9 @@ namespace put
                 p_thread_info->p_completion_callback(nullptr);
 
             sdf_job->generate_in_progress = 2;
+
+            pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
+            pen::thread_semaphore_signal(p_thread_info->p_sem_terminated, 1);
             return PEN_THREAD_OK;
         }
 
