@@ -1854,6 +1854,9 @@ namespace put
 
                     ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box (wip)\0",
                                  4);
+                    
+                    if(snl.azimuth == 0.0f && snl.altitude == 0.0f)
+                        maths::xyz_to_azimuth_altitude(snl.direction, snl.azimuth, snl.altitude);
 
                     switch (scene->lights[selected_index].type)
                     {
@@ -2639,6 +2642,7 @@ namespace put
                 }
             }
 
+            // Selected Node
             if (scene->view_flags & DD_NODE)
             {
                 u32 sel_num = sb_count(s_selection_list);
@@ -2650,22 +2654,36 @@ namespace put
                     {
                         cmp_light& snl = scene->lights[s];
 
-                        if (snl.type == LIGHT_TYPE_DIR)
+                        switch(snl.type)
                         {
-                            dbg::add_line(vec3f::zero(), snl.direction * 10000.0f, vec4f(snl.colour, 1.0f));
-                        }
-
-                        if (snl.type == LIGHT_TYPE_SPOT)
-                        {
-                            vec3f dir = scene->world_matrices[s].get_fwd();
-                            vec3f pos = scene->world_matrices[s].get_translation();
-
-                            dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
-                        }
-
-                        if (snl.type == LIGHT_TYPE_AREA_BOX)
-                        {
-                            dbg::add_obb(scene->world_matrices[s], vec4f(snl.colour, 1.0f));
+                            case LIGHT_TYPE_DIR:
+                            {
+                                dbg::add_line(vec3f::zero(), snl.direction * 10000.0f, vec4f(snl.colour, 1.0f));
+                            }
+                                break;
+                            case LIGHT_TYPE_SPOT:
+                            {
+                                vec3f dir = scene->world_matrices[s].get_fwd();
+                                vec3f pos = scene->world_matrices[s].get_translation();
+                                
+                                dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
+                            }
+                                break;
+                            case LIGHT_TYPE_AREA_BOX:
+                            {
+                                dbg::add_obb(scene->world_matrices[s], vec4f(snl.colour, 1.0f));
+                            }
+                                break;
+                            case LIGHT_TYPE_POINT:
+                            {
+                                vec3f p = scene->world_matrices[s].get_translation();
+                                
+                                p = maths::project_to_sc(p, view_proj, vpi);
+                                
+                                if (p.z > 0.0f)
+                                    put::dbg::add_quad_2f(p.xy, vec2f(5.0f, 5.0f), vec4f(scene->lights[s].colour, 1.0f));
+                            }
+                                break;
                         }
                     }
                     else

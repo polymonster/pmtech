@@ -27,6 +27,7 @@ namespace maths
     f32   deg_to_rad(f32 degree_angle);
     f32   rad_to_deg(f32 radian_angle);
     vec3f azimuth_altitude_to_xyz(f32 azimuth, f32 altitude);
+    void  xyz_to_azimuth_altitude(vec3f v, f32& azimuth, f32& altitude);
 
     // Projection
     vec3f project_to_ndc(const vec3f& p, const mat4& view_projection);
@@ -126,6 +127,13 @@ namespace maths
         f32 x   = hyp * sin(azimuth);
 
         return vec3f(x, z, y);
+    }
+    
+    // Convert vector xyz to azimuth, altitude
+    inline void xyz_to_azimuth_altitude(vec3f v, f32& azimuth, f32& altitude)
+    {
+        azimuth = atan2(v.y, v.x);
+        altitude = atan2(v.z, sqrt(v.x * v.x+ v.y * v.y));
     }
 
     // Get distance to plane x defined by point on plane x0 and normal of plane xN
