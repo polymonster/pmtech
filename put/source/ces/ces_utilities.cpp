@@ -207,7 +207,7 @@ namespace put
             {
                 bool leaf = child.children.size() == 0;
 
-                bool               selected   = scene->state_flags[child.node_index];
+                bool               selected   = scene->state_flags[child.node_index] & SF_SELECTED;
                 ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
 
                 if (leaf)

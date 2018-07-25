@@ -191,6 +191,10 @@ def generate_shader_info(
         buffer_desc = {"name": buffer_name, "location": int(buffer_reg)}
         shader_info["cbuffers"].append(buffer_desc)
 
+    # material cbuffer for those which need it
+    buffer_desc = {"name": "material_data", "location": int(7)}
+    shader_info["cbuffers"].append(buffer_desc)
+
     output_info = open(info_filename, 'wb+')
     output_info.write(bytes(json.dumps(shader_info, indent=4),'UTF-8'))
     output_info.close()
@@ -571,6 +575,7 @@ def generate_glsl(
     final_vs_source += "}\n"
 
     final_vs_source = replace_io_tokens(final_vs_source)
+    final_vs_source = replace_conditional_blocks(final_vs_source)
 
     vs_fn = os.path.join(shader_build_dir, shader_name, technique_name + ".vsc")
     vs_file = open(vs_fn, "w")
@@ -628,6 +633,7 @@ def generate_glsl(
         final_ps_source += "}\n"
 
         final_ps_source = replace_io_tokens(final_ps_source)
+        final_ps_source = replace_conditional_blocks(final_ps_source)
 
         ps_fn = os.path.join(shader_build_dir, shader_name, technique_name + ".psc")
         ps_file = open(ps_fn, "w")
@@ -828,12 +834,11 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     if ps_main != "":
         ps_functions = find_used_functions(ps_main, function_list)
 
+    global technique_defines
+    macros_text += technique_defines
+
     vs_source = macros_text + "\n\n"
     ps_source = macros_text + "\n\n"
-
-    global technique_defines
-    vs_source += technique_defines
-    ps_source += technique_defines
 
     vs_output_struct_name = vs_main[0:vs_main.find(" ")].strip()
     ps_output_struct_name = ps_main[0:ps_main.find(" ")].strip()
@@ -1036,6 +1041,11 @@ def parse_pmfx(filename, root):
                 pmfx_block[technique]["vs_file"] = technique + ".vsc"
                 techniques.append(pmfx_block[technique])
         else:
+            # globals to insert into shaders
+            global technique_defines
+            technique_defines = ""
+            global technique_cb_str
+            technique_cb_str = ""
             default_technique = dict()
             default_technique["name"] = "default"
             default_technique["vs_file"] = "default.vsc"

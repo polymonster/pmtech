@@ -359,6 +359,20 @@ namespace put
 
             scene->flags |= INVALIDATE_SCENE_TREE;
         }
+        
+        void clear_selection(entity_scene* scene)
+        {
+            u32 sel_count = sb_count(s_selection_list);
+            
+            for (u32 i = 0; i < sel_count; ++i)
+            {
+                u32 si = s_selection_list[i];
+                scene->state_flags[si] &= ~SF_SELECTED;
+            }
+            
+            sb_clear(s_selection_list);
+            scene->flags |= INVALIDATE_SCENE_TREE;
+        }
 
         void add_selection(entity_scene* scene, u32 index, u32 select_mode)
         {
@@ -373,10 +387,7 @@ namespace put
 
             if (select_mode == SELECT_NORMAL)
             {
-                for (int i = 0; i < sel_count; ++i)
-                    scene->state_flags[s_selection_list[i]] &= ~SF_SELECTED;
-
-                sb_clear(s_selection_list);
+                clear_selection(scene);
 
                 if (valid)
                     sb_push(s_selection_list, index);
@@ -2150,6 +2161,9 @@ namespace put
 
         void transform_widget(const scene_view& view)
         {
+            if(pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND))
+                return;
+            
             k_select_flags &= ~(WIDGET_SELECTED);
 
             entity_scene* scene = view.scene;
@@ -2174,7 +2188,7 @@ namespace put
                 {
                     if (k_physics_pick_info.state == PICKING_READY)
                     {
-                        if (ms.buttons[PEN_MOUSE_L] && !pen::input_key(PK_MENU))
+                        if (ms.buttons[PEN_MOUSE_L])
                         {
                             k_physics_pick_info.state = PICKING_SINGLE;
 
