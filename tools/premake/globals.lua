@@ -28,9 +28,9 @@ end
 
 if _ACTION == "gmake" then
 	if platform_dir == "linux" then
-		build_cmd = "-std=c++11 -always-inline"
+		build_cmd = "-std=c++11"
 	else
-		build_cmd = "-std=c++11 -stdlib=libc++ -always-inline"
+		build_cmd = "-std=c++11 -stdlib=libc++"
 		link_cmd = "-stdlib=libc++"
 	end
 	
@@ -42,10 +42,10 @@ elseif _ACTION == "xcode4" then
 	end
 
 	if platform_dir == "ios" then
-		build_cmd = "-std=c++11 -stdlib=libc++ -always-inline"
+		build_cmd = "-std=c++11 -stdlib=libc++"
 		link_cmd = "-stdlib=libc++"
 	else
-		build_cmd = "-std=c++11 -stdlib=libc++ -always-inline"
+		build_cmd = "-std=c++11 -stdlib=libc++"
 		link_cmd = "-stdlib=libc++ -mmacosx-version-min=10.8"
 	end
 	
