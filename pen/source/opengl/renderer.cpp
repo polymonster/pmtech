@@ -284,7 +284,7 @@ namespace pen
                 desc.append(" : ");
                 desc.appendf("%llu", p.elapsed);
 
-                // PEN_PRINTF("%s", desc.c_str());
+                // PEN_LOG("%s", desc.c_str());
             }
 
             k_perf.pos[bb] = 0;

@@ -62,7 +62,7 @@ static int visual_attribs[] = {GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WI
 static bool ctx_error_occured = false;
 static int  ctx_error_handler(Display* dpy, XErrorEvent* ev)
 {
-    PEN_PRINTF("context error %i", ev->error_code);
+    PEN_LOG("context error %i", ev->error_code);
     ctx_error_occured = true;
     return 0;
 }
@@ -73,7 +73,7 @@ void users()
     const char*           homedir = pw->pw_dir;
 
     pen_user_info.user_name = &homedir[6];
-    PEN_PRINTF(pen_user_info.user_name);
+    PEN_LOG(pen_user_info.user_name);
 }
 
 int main(int argc, char* argv[])
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
     if (ctx_error_occured || !_gl_context)
     {
-        PEN_PRINTF("Error: OpenGL 3.1 Context Failed to create");
+        PEN_LOG("Error: OpenGL 3.1 Context Failed to create");
         return 1;
     }
 
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
     GLenum err       = glewInit();
     if (err != GLEW_OK)
     {
-        PEN_PRINTF("Error: glewInit failed: %s\n", glewGetErrorString(err));
+        PEN_LOG("Error: glewInit failed: %s\n", glewGetErrorString(err));
         return 1;
     }
 
