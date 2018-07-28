@@ -307,12 +307,12 @@ namespace put
             u32 size = sizeof(T);
             T*  data = nullptr;
 
-            pen_inline T& operator[](size_t index)
+            pen_inline T& operator[](size_t index) always_inline
             {
                 return data[index];
             }
 
-            pen_inline const T& operator[](size_t index) const
+            pen_inline const T& operator[](size_t index) always_inline const
             {
                 return data[index];
             }

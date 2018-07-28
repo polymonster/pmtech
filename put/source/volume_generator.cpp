@@ -1489,34 +1489,12 @@ namespace put
                     s_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
                     s_main_scene->parents[new_prim] = new_prim;
 
-                    //instantiate_geometry(cube, s_main_scene, new_prim);
-
+                    instantiate_geometry(cube, s_main_scene, new_prim);
                     instantiate_material(sdf_material, s_main_scene, new_prim);
-
-                    //instantiate_model_cbuffer(s_main_scene, new_prim);
+                    instantiate_model_cbuffer(s_main_scene, new_prim);
                     
                     gv.scene_node_index = new_prim;
                     gv.scale = scale;
-
-                    // add shadow receiver
-                    material_resource* sdf_shadow_material                   = new material_resource;
-                    sdf_shadow_material->material_name                       = "shadow_sdf_material";
-                    sdf_shadow_material->shader_name                         = "forward_render";
-                    sdf_shadow_material->id_shader                           = PEN_HASH(sdf_shadow_material->shader_name);
-                    sdf_shadow_material->id_technique                        = PEN_HASH("forward_lit_sdf_shadow");
-                    add_material_resource(sdf_shadow_material);
-
-                    new_prim                    = get_new_node(s_main_scene);
-                    s_main_scene->names[new_prim] = "volume_receiever";
-                    s_main_scene->names[new_prim].appendf("%i", new_prim);
-                    s_main_scene->transforms[new_prim].rotation    = quat();
-                    s_main_scene->transforms[new_prim].scale       = vec3f(10, 1, 10);
-                    s_main_scene->transforms[new_prim].translation = vec3f(0, -1, 0);
-                    s_main_scene->entities[new_prim] |= CMP_TRANSFORM;
-                    s_main_scene->parents[new_prim] = new_prim;
-                    instantiate_geometry(cube, s_main_scene, new_prim);
-                    instantiate_material(sdf_shadow_material, s_main_scene, new_prim);
-                    instantiate_model_cbuffer(s_main_scene, new_prim);
 
                     s_sdf_job.generate_in_progress = 0;
                 }
