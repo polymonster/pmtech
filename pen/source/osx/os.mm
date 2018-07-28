@@ -641,7 +641,7 @@ namespace pen
     for(u32 i = 0; i < files.count; ++i)
     {
         NSString *newString = [files objectAtIndex:i];
-        PEN_PRINTF("%s", newString.UTF8String);
+        PEN_LOG("%s", newString.UTF8String);
     }
     
     return NO;

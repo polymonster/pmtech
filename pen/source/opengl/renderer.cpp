@@ -284,7 +284,7 @@ namespace pen
                 desc.append(" : ");
                 desc.appendf("%llu", p.elapsed);
 
-                // PEN_PRINTF("%s", desc.c_str());
+                // PEN_LOG("%s", desc.c_str());
             }
 
             k_perf.pos[bb] = 0;
@@ -676,13 +676,13 @@ namespace pen
 
         if (info_log_length > 0)
         {
-            PEN_PRINTF("%s", params.byte_code);
+            PEN_LOG("%s", params.byte_code);
 
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]));
 
-            PEN_PRINTF(info_log_buf);
+            PEN_LOG(info_log_buf);
         }
     }
 
@@ -1125,7 +1125,7 @@ namespace pen
             }
         }
 
-        PEN_PRINTF("unimplemented / unsupported texture format");
+        PEN_LOG("unimplemented / unsupported texture format");
         PEN_ASSERT(0);
     }
 
