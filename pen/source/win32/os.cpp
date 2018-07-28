@@ -35,7 +35,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
     //remove exe
     u32 dir = pen::str_find_reverse(working_directory, "/");
-    working_directory = pen::str_substr(working_directory, 0, dir);
+    working_directory = pen::str_substr(working_directory, 0, dir+1);
 
     pen_user_info.working_directory = working_directory.c_str();
 
