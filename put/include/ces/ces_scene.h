@@ -59,10 +59,11 @@ namespace put
 
         enum e_state_flags : u32
         {
-            SF_SELECTED         = (1 << 0),
-            SF_CHILD_SELECTED   = (1 << 1),
-            SF_HIDDEN           = (1 << 2),
-            SF_MATERIAL_INITIALISED  = (1 << 3)
+            SF_SELECTED             = (1 << 0),
+            SF_CHILD_SELECTED       = (1 << 1),
+            SF_HIDDEN               = (1 << 2),
+            SF_MATERIAL_INITIALISED = (1 << 3),
+            SF_NO_SHADOW            = (1 << 4)
         };
 
         enum e_light_types : u32
@@ -259,6 +260,13 @@ namespace put
             vec3f scale       = vec3f::one();
         };
 
+
+        struct cmp_shadow
+        {
+            u32 texture_handle; // texture handle for sdf
+            u32 sampler_state; 
+        };
+
         struct forward_light
         {
             vec4f pos_radius;
@@ -307,12 +315,12 @@ namespace put
             u32 size = sizeof(T);
             T*  data = nullptr;
 
-            pen_inline T& operator[](size_t index) always_inline
+            pen_inline T& operator[](size_t index)
             {
                 return data[index];
             }
 
-            pen_inline const T& operator[](size_t index) always_inline const
+            pen_inline const T& operator[](size_t index) const
             {
                 return data[index];
             }
@@ -364,10 +372,10 @@ namespace put
             cmp_array<u32>                 cbuffer;
             cmp_array<cmp_draw_call>       draw_call_data;
             cmp_array<free_node_list>      free_list;
-
             cmp_array<cmp_material>        materials;
             cmp_array<cmp_material_data>   material_data;
             cmp_array<material_resource>   material_resources;
+            cmp_array<cmp_shadow>          shadows;
 
             // Ensure num_components is the next to calc size
             u32 num_components;

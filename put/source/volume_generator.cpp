@@ -956,8 +956,6 @@ namespace put
             volume_material->id_technique      = PEN_HASH("volume_texture");
 
             volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-            //volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point_sampler_state");
-
             volume_material->texture_handles[SN_VOLUME_TEXTURE] = gv.texture;
             add_material_resource(volume_material);
 
@@ -1639,7 +1637,7 @@ namespace put
                             {
                                 if (s_generated_volumes[i].scene_node_index == save_index)
                                 {
-                                    Str basename = str_basename(save_location);
+                                    Str basename = pen::str_remove_ext(save_location);
 
                                     Str dds_file = basename;
                                     dds_file.appendf(".dds");
@@ -1653,7 +1651,7 @@ namespace put
                                     const c8* vol_name = sdf ? "signed_distance_field" : "volume_texture";
 
                                     pen::json j;
-                                    j.set("filename", dds_file);
+                                    j.set_filename("filename", dds_file.c_str());
                                     j.set("volume_type", vol_name);
                                     j.set("scale_x", s_generated_volumes[i].scale.x);
                                     j.set("scale_y", s_generated_volumes[i].scale.y);

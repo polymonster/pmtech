@@ -8,8 +8,11 @@
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
+#include "console.h"
 
 extern pen::window_creation_params pen_window;
+
+using namespace pen;
 
 namespace put
 {
@@ -44,8 +47,7 @@ namespace put
             // make a copy of the string to format
             Str formatted = dir;
 
-            str_replace_chars(formatted, '\\', '/');
-            str_replace_chars(formatted, ':', '@');
+            formatted = str_replace_chars(formatted, '\\', '/');
 
             // strip the file
             s32 last_dir = str_find_reverse(formatted, "/");
@@ -66,7 +68,7 @@ namespace put
             }
             final.append("\"");
 
-            k_program_preferences.set("last_used_directory", final);
+            k_program_preferences.set_filename("last_used_directory", final);
 
             save_program_preferences();
         }
@@ -102,7 +104,7 @@ namespace put
 
         void set_program_preference_filename(const c8* name, Str val)
         {
-            put::str_replace_chars(val, ':', '@');
+            val = pen::str_replace_chars(val, ':', '@');
             k_program_preferences.set(name, val);
 
             save_program_preferences();
@@ -116,7 +118,7 @@ namespace put
         Str get_program_preference_filename(const c8* name)
         {
             Str temp = k_program_preferences[name].as_str();
-            put::str_replace_chars(temp, '@', ':');
+            temp = pen::str_replace_chars(temp, '@', ':');
 
             return temp;
         }
@@ -132,8 +134,7 @@ namespace put
 
                 if (last_dir.type() != JSMN_UNDEFINED)
                 {
-                    Str path = last_dir.as_str();
-                    path     = str_replace_chars(path, '@', ':');
+                    Str path = last_dir.as_filename();
 
                     s32 dir_pos     = 0;
                     directory_depth = 0;

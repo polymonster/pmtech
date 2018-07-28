@@ -148,7 +148,7 @@ void animate_instances(entity_scene* scene)
     }
     f32 operator_cost = pen::timer_elapsed_ms(timer);
 
-    PEN_PRINTF("operator: %f, array: %f\n", operator_cost, array_cost);
+    PEN_LOG("operator: %f, array: %f\n", operator_cost, array_cost);
 }
 
 PEN_TRV pen::user_entry(void* params)

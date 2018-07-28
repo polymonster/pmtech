@@ -142,6 +142,26 @@ namespace put
                 instance->vertex_shader_class = ID_VERTEX_CLASS_SKINNED;
         }
 
+        void destroy_geometry(entity_scene* scene, u32 node_index)
+        {
+            scene->entities[node_index] &= ~CMP_GEOMETRY;
+            scene->entities[node_index] &= ~CMP_MATERIAL;
+
+            // zero cmp geom
+            pen::memory_zero(&scene->geometries[node_index], sizeof(cmp_geometry));
+
+            // release cbuffer
+            pen::renderer_release_buffer(scene->cbuffer[node_index]);
+            scene->cbuffer[node_index] = PEN_INVALID_HANDLE;
+            scene->geometry_names[node_index] = "";
+
+            // release matrial cbuffer
+            if(is_valid(scene->materials[node_index].material_cbuffer))
+                pen::renderer_release_buffer(scene->materials[node_index].material_cbuffer);
+
+            scene->materials[node_index].material_cbuffer = PEN_INVALID_HANDLE;
+        }
+
         void instantiate_material_cbuffer(entity_scene* scene, s32 node_index, s32 size)
         {
             if (is_valid(scene->materials[node_index].material_cbuffer))
@@ -249,6 +269,30 @@ namespace put
 
                 scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
             }
+        }
+
+        void instantiate_sdf_shadow(const c8* pmv_filename, entity_scene* scene, u32 node_index)
+        {
+            pen::json pmv = pen::json::load_from_file(pmv_filename);
+
+            Str volume_texture_filename = pmv["filename"].as_str();
+            u32 volume_texture = put::load_texture(volume_texture_filename.c_str());
+
+            vec3f scale = vec3f(pmv["scale_x"].as_f32(), pmv["scale_y"].as_f32(), pmv["scale_z"].as_f32());
+
+            hash_id id_type = pmv["volume_type"].as_hash_id();
+
+            static hash_id id_sdf = PEN_HASH("signed_distance_field");
+            static hash_id id_ss_cl = PEN_HASH("clamp_linear_sampler_state");
+            if (id_type != id_sdf)
+            {
+                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[shadow] %s is not a signed distance field texture", volume_texture_filename.c_str());
+                return;
+            }
+             
+            scene->transforms[node_index].scale = scale;
+            scene->shadows[node_index].texture_handle = volume_texture;
+            scene->shadows[node_index].sampler_state = pmfx::get_render_state_by_name(id_ss_cl);
         }
 
         void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)
@@ -587,7 +631,7 @@ namespace put
         {
             Str pd = put::dev_ui::get_program_preference_filename("project_dir");
 
-            Str stipped_filename = put::str_replace_string(filename, pd.c_str(), "");
+            Str stipped_filename = pen::str_replace_string(filename, pd.c_str(), "");
 
             hash_id filename_hash = PEN_HASH(stipped_filename.c_str());
 

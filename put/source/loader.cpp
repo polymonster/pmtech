@@ -334,7 +334,7 @@ namespace put
                 pmtech_dir.append(j_build_config["pmtech_dir"].as_cstr());
                 pmtech_dir.append(PEN_DIR);
 
-                put::str_replace_chars(pmtech_dir, '/', PEN_DIR);
+                pmtech_dir = pen::str_replace_chars(pmtech_dir, '/', PEN_DIR);
 
                 build_tool_str.append(PEN_PYTHON3);
                 build_tool_str.append(pmtech_dir.c_str());
@@ -381,7 +381,7 @@ namespace put
         Str fn = filename;
 
         // replace filename with dependencies.json
-        u32 loc = put::str_find_reverse(fn, "/");
+        u32 loc = pen::str_find_reverse(fn, "/");
 
         fn.appendf_from(loc + 2, "%s", "dependencies.json");
 
@@ -435,8 +435,7 @@ namespace put
                         pen::json input = inputs[k];
 
                         u32 built_ts = input["timestamp"].as_u32();
-                        Str fn       = input["name"].as_str();
-                        str_replace_chars(fn, '@', ':');
+                        Str fn       = input["name"].as_filename();
 
                         u32       current_ts = 0;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);

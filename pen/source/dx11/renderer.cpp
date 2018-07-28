@@ -231,7 +231,7 @@ namespace pen
                                 {
                                     UINT64 res = (ts_end - ts_begin);
 
-                                    // PEN_PRINTF("%s : %llu\n", m.name, res);
+                                    // PEN_LOG("%s : %llu\n", m.name, res);
 
                                     m.issued = 0;
 
@@ -1461,7 +1461,7 @@ namespace pen
 
         if (!rti->tex_msaa.texture)
         {
-            PEN_PRINTF("[error] renderer : render target %i is not an msaa target\n", target);
+            PEN_LOG("[error] renderer : render target %i is not an msaa target\n", target);
             return;
         }
 
@@ -1490,7 +1490,7 @@ namespace pen
         {
             if (rti->format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
             {
-                PEN_PRINTF("[error] renderer : render target %i cannot be resolved as it is a depth target\n", target);
+                PEN_LOG("[error] renderer : render target %i cannot be resolved as it is a depth target\n", target);
                 return;
             }
 

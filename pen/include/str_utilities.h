@@ -6,7 +6,7 @@
 #include "pen_string.h"
 #include "str/Str.h"
 
-namespace put
+namespace pen
 {
     inline s32 str_find_reverse(const Str& string, const c8* search)
     {
@@ -30,7 +30,7 @@ namespace put
 
             if (j < 0)
             {
-                return find_start - search_len;
+                return i; // find_start - search_len;
             }
 
             --i;
@@ -63,7 +63,7 @@ namespace put
         return false;
     }
     
-    inline Str str_basename( const Str& string )
+    inline Str str_remove_ext( const Str& string )
     {
         s32 ext = str_find_reverse(string, ".");
         s32 dir = str_find_reverse(string, "/");
@@ -107,11 +107,12 @@ namespace put
         return -1;
     }
 
-    inline Str& str_replace_chars(Str& string, const c8 search, const c8 replace)
+    inline Str str_replace_chars(const Str& string, const c8 search, const c8 replace)
     {
         s32 len = string.length();
 
-        c8* iter = &string[0];
+        Str r = string;
+        c8* iter = &r[0];
         while (iter && len > 0)
         {
             if (*iter == search)
@@ -121,7 +122,7 @@ namespace put
             --len;
         }
 
-        return string;
+        return r;
     }
 
     inline Str str_replace_string(const Str& string, const c8* search, const c8* replace)

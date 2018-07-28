@@ -243,9 +243,9 @@ namespace put
             for (s32 i = 0; i < PEN_ARRAY_SIZE(k_sub_types); ++i)
             {
                 // override subtype
-                if (put::str_find(name, k_sub_types[i]) != -1)
+                if (pen::str_find(name, k_sub_types[i]) != -1)
                 {
-                    Str name_base = put::str_replace_string(name, k_sub_types[i], "");
+                    Str name_base = pen::str_replace_string(name, k_sub_types[i], "");
 
                     program.id_name     = PEN_HASH(name_base.c_str());
                     program.id_sub_type = PEN_HASH(k_sub_types[i]);
@@ -663,7 +663,7 @@ namespace put
                     pmtech_dir.append(j_build_config["pmtech_dir"].as_cstr());
                     pmtech_dir.append(PEN_DIR);
 
-                    put::str_replace_chars(pmtech_dir, '/', PEN_DIR);
+                    pmtech_dir = pen::str_replace_chars(pmtech_dir, '/', PEN_DIR);
 
                     shader_compiler_str.append(PEN_PYTHON3);
                     shader_compiler_str.append(pmtech_dir.c_str());

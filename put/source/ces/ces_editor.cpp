@@ -1511,11 +1511,22 @@ namespace put
             // geom
             if (ImGui::CollapsingHeader("Geometry"))
             {
-                if (scene->geometry_names[selected_index].c_str())
+                if (scene->entities[selected_index] & CMP_GEOMETRY)
                 {
+                    ImGui::PushID("geom");
+
+                    if (ImGui::Button(ICON_FA_TRASH))
+                        destroy_geometry(scene, selected_index);
+                    ImGui::SameLine();
+
                     ImGui::Text("Geometry Name: %s", scene->geometry_names[selected_index].c_str());
+
+                    put::dev_ui::set_tooltip("Delete Geometry");
+                    ImGui::PopID();
+
                     return iv;
                 }
+
 
                 static s32 primitive_type = -1;
                 ImGui::Combo("Shape##Primitive", (s32*)&primitive_type, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0", 5);
@@ -1915,6 +1926,64 @@ namespace put
             }
         }
 
+        void scene_shadow_ui(entity_scene* scene)
+        {
+            if (sb_count(s_selection_list) != 1)
+                return;
+
+            static bool s_file_browser_open = false;
+
+            u32 si = s_selection_list[0];
+
+            enum e_caster_type
+            {
+                CAST_NONE,
+                CAST_GEOMETRY,
+                CAST_SDF
+            };
+
+            if (ImGui::CollapsingHeader("Shadow"))
+            {
+                s32 caster_type = 0;
+                if (scene->entities[si] & CMP_SDF_SHADOW)
+                    caster_type = 2;
+
+                if (scene->entities[si] & CMP_GEOMETRY)
+                    caster_type = 1;
+
+                if (scene->state_flags[si] & SF_NO_SHADOW)
+                    caster_type = 0;
+
+                if (ImGui::Combo("Shadow Caster", &caster_type, "None\0Geometry\0Signed Distance Field\0"))
+                {
+                    if (caster_type == 0)
+                        scene->state_flags[si] |= SF_NO_SHADOW;
+
+                    if (caster_type > 0)
+                        scene->state_flags[si] &= SF_NO_SHADOW;
+
+                    if (caster_type == 2)
+                        scene->entities[si] |= CMP_SDF_SHADOW;
+                }
+
+                if (caster_type == CAST_SDF)
+                {
+                    if (ImGui::Button("..."))
+                    {
+                        s_file_browser_open = true;
+                    }
+
+                    if (s_file_browser_open)
+                    {
+                        const c8* file = dev_ui::file_browser(s_file_browser_open, dev_ui::FB_OPEN, 1, "**.pmv");
+
+                        if (file)
+                            instantiate_sdf_shadow(file, scene, si);
+                    }
+                }
+            }
+        }
+
         void scene_browser_ui(entity_scene* scene, bool* open)
         {
             if (ImGui::Begin("Scene Browser", open))
@@ -2079,9 +2148,11 @@ namespace put
 
                 scene_anim_ui(scene);
 
+                scene_material_ui(scene);
+
                 scene_light_ui(scene);
 
-                scene_material_ui(scene);
+                scene_shadow_ui(scene);
 
                 if (sb_count(s_selection_list) == 1)
                 {
@@ -2251,12 +2322,6 @@ namespace put
             for (u32 i = 0; i < sel_num; ++i)
             {
                 u32 s = s_selection_list[i];
-
-                if (scene->entities[s] & CMP_LIGHT)
-                {
-                    pos += scene->transforms[s].translation;
-                    continue;
-                }
 
                 vec3f& _min = scene->bounding_volumes[s].transformed_min_extents;
                 vec3f& _max = scene->bounding_volumes[s].transformed_max_extents;

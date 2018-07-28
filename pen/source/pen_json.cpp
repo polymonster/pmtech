@@ -4,6 +4,7 @@
 #include "file_system.h"
 #include "memory.h"
 #include "pen_string.h"
+#include "str_utilities.h"
 
 namespace pen
 {
@@ -346,7 +347,7 @@ namespace pen
             jo.num_tokens = jsmn_parse(&p, jo.data, jo.size, jo.tokens, token_count);
             if (jo.num_tokens < JSMN_ERROR_NOMEM)
             {
-                PEN_PRINTF("Failed to parse JSON: %d\n", jo.num_tokens);
+                PEN_LOG("Failed to parse JSON: %d\n", jo.num_tokens);
                 break;
             }
             else if (jo.num_tokens == JSMN_ERROR_NOMEM)
@@ -798,4 +799,22 @@ namespace pen
             *this = json_set;
         }
     }
+
+    void json::set_filename(const c8* name, const Str& filename)
+    {
+        Str fn = str_replace_chars(filename, ':', '@');
+        fn = str_replace_chars(fn, '\\', '/');
+
+        set(name, fn.c_str());
+    }
+
+    Str json::as_filename(const c8* default_value)
+    {
+        Str fn = as_str(default_value); 
+        fn = str_replace_chars(fn, '@', ':');
+        fn = str_replace_chars(fn, '\\', '/');
+
+        return fn;
+    }
+
 } // namespace pen

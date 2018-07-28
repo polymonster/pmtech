@@ -13,14 +13,22 @@
 // Wrapper around assert and print for portability
 // and to control and re-direct in the future if required
 
-#define PEN_PRINT_CHAR_LIMIT 1024 * 10
 inline void output_debug(const c8* format, ...)
 {
     va_list va;
     va_start(va, format);
 
-    static c8 buf[PEN_PRINT_CHAR_LIMIT];
-    vsnprintf(buf, PEN_PRINT_CHAR_LIMIT, format, va);
+    static u32 s_buffer_size = 1024;
+    static c8* buf = new c8[s_buffer_size];
+
+    u32 n = vsnprintf(buf, s_buffer_size, format, va);
+    if (n > s_buffer_size)
+    {
+        s_buffer_size = n * 2;
+        delete buf;
+        buf = new c8[s_buffer_size];
+        vsnprintf(buf, s_buffer_size, format, va);
+    }
 
     va_end(va);
 
@@ -36,7 +44,7 @@ inline void output_debug(const c8* format, ...)
 #else
 #define PEN_SYSTEM system
 #endif
-#define PEN_PRINTF output_debug
+#define PEN_LOG output_debug
 #define PEN_ASSERT assert
 #define PEN_ASSERT_MSG(A, M)                                                                                                 \
     assert(A);                                                                                                               \

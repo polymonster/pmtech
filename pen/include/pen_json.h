@@ -20,13 +20,26 @@ namespace pen
     // As Type:
     // u32 value = member.as_u32();
     //
-    // Arrays (json can be an object or an array)
+    // json can be an object or an array
+    // query it with:
+    // j.get_type() == JSMN_ARRAY or JSMN_OBJECT
+    //
+    // Arrays: 
     // u32 num_array_elements = j.size()
     // for(u32 i = 0; i < num_array_elements; ++i)
     //        value = j[i].as_bool;
     //
+    // Iterate Members:
+    // u32 num_members = j.size()
+    // for(u32 i = 0; i < num_members; ++i)
+    //        printf(j[0].name); // print member name
+    //
     // Print:
     // printf(j.dumps().c_str())
+
+    // To use unstrict json without the need for quotes around keys and string values
+    // care must be taken with filenames, colons (:) need to be stripped from filenames (ie C:\windows) 
+    // use set_filename which will replace : with @ (ie C:@windows) 
 
     // Combine will combine members of j1 and j2 on an object by object basis
 
@@ -66,6 +79,7 @@ namespace pen
         f32       as_f32(f32 default_value = 0.0f);
         u8        as_u8_hex(u8 default_value = 0);
         u32       as_u32_hex(u32 default_value = 0);
+        Str       as_filename(const c8* default_value = nullptr);
 
         void set(const c8* name, const c8* val);
         void set(const c8* name, const Str val);
@@ -73,7 +87,7 @@ namespace pen
         void set(const c8* name, const s32 val);
         void set(const c8* name, const f32 val);
         void set(const c8* name, const bool val);
-        void set(const c8* name, const json& val);
+        void set_filename(const c8* name, const Str& filename);
 
       private:
         json_object* m_internal_object;

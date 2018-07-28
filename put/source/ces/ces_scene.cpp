@@ -315,9 +315,8 @@ namespace put
 
                 if (scene->entities[n] & CMP_SDF_SHADOW)
                 {
-                    cmp_material& mat = scene->materials[n];
-                    pen::renderer_set_texture(mat.texture_handles[SN_VOLUME_TEXTURE],
-                        mat.sampler_states[SN_VOLUME_TEXTURE], SDF_SHADOW_UNIT, PEN_SHADER_TYPE_PS);
+                    cmp_shadow& shadow = scene->shadows[n];
+                    pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT, PEN_SHADER_TYPE_PS);
                 }
             }
 
@@ -1005,7 +1004,7 @@ namespace put
                 ofs.write((const c8*)&gr->submesh_index, sizeof(u32));
 
                 Str stripped_filename = gr->filename;
-                stripped_filename = put::str_replace_string(stripped_filename, project_dir.c_str(), "");
+                stripped_filename = pen::str_replace_string(stripped_filename, project_dir.c_str(), "");
 
                 write_lookup_string(stripped_filename.c_str(), ofs);
                 write_lookup_string(gr->geometry_name.c_str(), ofs);

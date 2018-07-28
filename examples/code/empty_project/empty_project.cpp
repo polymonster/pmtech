@@ -12,7 +12,7 @@ pen::window_creation_params pen_window{
 
 PEN_TRV pen::user_entry(void* params)
 {
-    PEN_PRINTF("User Thread Entry");
+    PEN_LOG("User Thread Entry");
 
     // unpack the params passed to the thread and signal to the engine it ok to proceed
     pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
@@ -21,7 +21,7 @@ PEN_TRV pen::user_entry(void* params)
 
     for (;;)
     {
-        PEN_PRINTF("User Thread Update");
+        PEN_LOG("User Thread Update");
 
         pen::thread_sleep_us(16000);
 
