@@ -59,7 +59,7 @@ namespace put
         void      set_program_preference(const c8* name, bool val);
         void      set_program_preference(const c8* name, Str val);
         pen::json get_program_preference(const c8* name);
-        Str       get_program_preference_filename(const c8* name);
+        Str       get_program_preference_filename(const c8* name, const c8* default_value = nullptr);
         void      set_program_preference_filename(const c8* name, Str val);
     } // namespace dev_ui
 } // namespace put

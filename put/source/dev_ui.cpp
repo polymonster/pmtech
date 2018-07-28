@@ -115,11 +115,9 @@ namespace put
             return k_program_preferences[name];
         }
 
-        Str get_program_preference_filename(const c8* name)
+        Str get_program_preference_filename(const c8* name, const c8* default_value)
         {
-            Str temp = k_program_preferences[name].as_str();
-            temp = pen::str_replace_chars(temp, '@', ':');
-
+            Str temp = k_program_preferences[name].as_filename(default_value);
             return temp;
         }
 

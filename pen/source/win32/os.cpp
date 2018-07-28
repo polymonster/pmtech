@@ -8,7 +8,10 @@
 #include "threads.h"
 #include "timer.h"
 
+#include "str_utilities.h"
+
 extern a_u8 g_window_resize;
+pen::user_info pen_user_info;
 
 namespace pen
 {
@@ -23,8 +26,18 @@ struct window_params
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
-    char szFileName[MAX_PATH];
-    GetModuleFileNameA(hInstance, szFileName, MAX_PATH);
+    // get working directory name
+    char module_filename[MAX_PATH];
+    GetModuleFileNameA(hInstance, module_filename, MAX_PATH);
+
+    static Str working_directory = module_filename;
+    working_directory = pen::str_normalise_filepath(working_directory);
+
+    //remove exe
+    u32 dir = pen::str_find_reverse(working_directory, "/");
+    working_directory = pen::str_substr(working_directory, 0, dir);
+
+    pen_user_info.working_directory = working_directory.c_str();
 
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);

@@ -4,18 +4,22 @@
 #include "memory.h"
 #include "pen.h"
 #include "pen_string.h"
+#include "console.h"
 #include "str/Str.h"
 
 namespace pen
 {
-    inline s32 str_find_reverse(const Str& string, const c8* search)
+    inline s32 str_find_reverse(const Str& string, const c8* search, s32 start_pos = -1)
     {
         s32 len        = string.length();
         s32 search_len = pen::string_length(search);
 
-        s32 i          = len - 1;
+        if (start_pos == -1)
+            start_pos += len;
+
+        s32 i          = start_pos;
         s32 j          = search_len - 1;
-        s32 find_start = len - 1;
+        s32 find_start = start_pos;
         while (j <= i)
         {
             if (string[i] == search[j])
@@ -155,6 +159,29 @@ namespace pen
         delete[] end_buf;
 
         return result;
+    }
+
+    inline Str str_normalise_filepath(const Str& filepath)
+    {
+        Str f = str_replace_chars(filepath, '\\', '/');
+
+        for (;;)
+        {
+            u32 dir = str_find(f, "..", 0);
+            if (dir == -1)
+                break;
+
+            u32 back_dir = str_find_reverse(f, "/", dir - 2);
+
+            //remove the back dir and the ..
+            Str a = str_substr(f, 0, back_dir);
+            Str b = str_substr(f, dir + 2, f.length());
+
+            f = a;
+            f.append(b.c_str());
+        }
+
+        return f;
     }
 } // namespace put
 

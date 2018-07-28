@@ -18,8 +18,7 @@
 
 using namespace put;
 
-extern u32 g_vol_test;
-extern u32 g_vol_ss;
+extern pen::user_info pen_user_info;
 
 namespace put
 {
@@ -969,7 +968,7 @@ namespace put
 
         void save_scene(const c8* filename, entity_scene* scene)
         {
-            Str project_dir = dev_ui::get_program_preference_filename("project_dir");
+            Str project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
 
             std::ofstream ofs(filename, std::ofstream::binary);
 
@@ -1095,7 +1094,7 @@ namespace put
         {
             scene->flags |= INVALIDATE_SCENE_TREE;
             bool error       = false;
-            Str  project_dir = dev_ui::get_program_preference_filename("project_dir");
+            Str  project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
 
             std::ifstream ifs(filename, std::ofstream::binary);
 
