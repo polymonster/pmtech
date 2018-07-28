@@ -13,6 +13,9 @@
 #include "input.h"
 #include "console.h"
 
+#include "str/Str.h"
+#include "str_utilities.h"
+
 //global stuff for window graphics api sync
 extern pen::window_creation_params pen_window;
 extern a_u8 g_window_resize;
@@ -367,6 +370,21 @@ void __main_update( )
 
 int main(int argc, char **argv)
 {
+    // get working dir
+    Str working_dir = argv[0];
+    working_dir = pen::str_normalise_filepath(working_dir);
+    
+    //strip exe and go back 2 \contents\macos\exe
+    for(u32 i = 0, pos = 0; i < 4; ++i)
+    {
+        pos = pen::str_find_reverse(working_dir, "/", pos-1);
+
+        if(i == 3)
+            working_dir = pen::str_substr(working_dir, 0, pos+1);
+    }
+
+    pen_user_info.working_directory = working_dir.c_str();
+    
     //window creation
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
     NSLog(@"NSApp=%@", NSApp);
@@ -397,10 +415,8 @@ int main(int argc, char **argv)
     
     id wd = [window_delegate shared_delegate];
     [_window setDelegate:wd];
-    
     [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
     [_window setAcceptsMouseMovedEvents:YES];
-    
     [_window center];
     
     [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]] ;

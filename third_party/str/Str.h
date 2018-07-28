@@ -338,6 +338,7 @@ public:                                                                         
 #pragma clang diagnostic ignored "-Wunused-private-field"         // warning : private field 'local_buf' is not used
 #endif
 
+#if 0 // conflicting with macos StrXX definitions
 // Declaring types for common sizes here
 STR_DEFINETYPE(Str16, 16)
 STR_DEFINETYPE(Str32, 32)
@@ -353,6 +354,7 @@ STR_DEFINETYPE_F(Str64, Str64f)
 STR_DEFINETYPE_F(Str128, Str128f)
 STR_DEFINETYPE_F(Str256, Str256f)
 STR_DEFINETYPE_F(Str512, Str512f)
+#endif
 
 #ifdef __clang__
 #pragma clang diagnostic pop
