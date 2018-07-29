@@ -7,10 +7,8 @@ A lightweight code base with powerful features that can be used for games and re
 
 The engine (pen) and toolkit (put) are designed with performance in mind. This project focuses on data-oriented code with minimalistic c-style api's. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread.
 
-Signed Distance Field Shadows Demo. 
 ![sdf shadow](https://polymonster.github.io/assets/gifs/sdf-shadow.gif)
-
-Take a look at more [demos](https://polymonster.github.io/demos.html)
+more [demos...](https://polymonster.github.io/demos.html)
 
 **Cross Platform Support**  
 - Platforms: Windows, MacOS, Linux, iOS (wip).   
