@@ -102,10 +102,12 @@ frustum g_shadow_frustum;
 
 void debug_render_frustum(const scene_view& view)
 {
+#if 0
     put::dbg::add_aabb(view.scene->renderable_extents.min, view.scene->renderable_extents.max, vec4f::magenta());
     put::dbg::render_3d(view.cb_view);
 
     put::dbg::add_frustum(g_shadow_frustum.corners[0], g_shadow_frustum.corners[1]);
+#endif
 }
 
 void get_aabb_corners(vec3f* corners, vec3f min, vec3f max)
