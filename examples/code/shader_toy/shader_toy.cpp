@@ -279,7 +279,7 @@ PEN_TRV pen::user_entry(void* params)
         k_render_handles.vp.x = 0;
         k_render_handles.vp.y = 0;
         k_render_handles.vp.width = pen_window.width;
-        k_render_handles.vp.width = pen_window.height;
+        k_render_handles.vp.height = pen_window.height;
         
         
         // update cbuffers

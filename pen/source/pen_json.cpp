@@ -414,7 +414,7 @@ namespace pen
         new_json.m_internal_object->name = nullptr;
 
         create_json_object(*new_json.m_internal_object);
-
+        
         return new_json;
     }
 

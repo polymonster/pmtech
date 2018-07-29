@@ -1,0 +1,44 @@
+{
+	render_targets:
+	{
+		post_process_source:
+		{
+			size: equal,
+			format: rgba
+		},
+		
+		post_process_depth:
+		{
+			size: equal,
+			format: d24s8
+		},
+	},
+	
+	post_process_views:
+	{
+		blit:
+		{
+			clear_colour:[0.5, 0.0, 0.5, 1.0],
+			clear_depth: 1.0,
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: default,
+			depth_stencil_state: default,
+			shader: "post_process"
+			technique: "blit"
+		},
+	},
+	
+	post_process_chain: 
+	[
+		{ 
+			view: blit, 
+			targets: [main_colour] 
+			sampler_bindings:
+			[
+				{ texture: test, unit: 0, state: wrap_linear, shader: ps },
+			]
+		}
+	]
+}

@@ -8,6 +8,7 @@
 #include "pen_json.h"
 #include "pen_string.h"
 #include "pmfx.h"
+#include "str_utilities.h"
 
 #include "console.h"
 
@@ -192,6 +193,7 @@ namespace
         e_render_state_type type;
     };
 
+    std::vector<view_params>         s_post_process_views;
     std::vector<view_params>         s_views;
     std::vector<scene_controller>    s_controllers;
     std::vector<scene_view_renderer> s_scene_view_renderers;
@@ -1041,10 +1043,10 @@ namespace put
             new_view.clear_state = pen::renderer_create_clear_state(cs_info);
         }
 
-        void parse_views(pen::json& render_config)
+        void parse_views(pen::json& render_config, const c8* type, std::vector<view_params>& view_array)
         {
-            pen::json j_views = render_config["views"];
-
+            pen::json j_views = render_config[type];
+            
             s32 num = j_views.size();
 
             for (s32 i = 0; i < num; ++i)
@@ -1249,12 +1251,14 @@ namespace put
                 parse_sampler_bindings(view, new_view.sampler_bindings);
 
                 if (valid)
-                    s_views.push_back(new_view);
+                    view_array.push_back(new_view);
             }
         }
 
         void load_script_internal(const c8* filename)
         {
+            create_geometry_utilities();
+            
             void* config_data;
             u32   config_data_size;
 
@@ -1266,18 +1270,38 @@ namespace put
                 pen::memory_free(config_data);
                 PEN_ERROR;
             }
-
-            create_geometry_utilities();
-
+            
+            // load render config
             pen::json render_config = pen::json::load((const c8*)config_data);
+            
+            // add includes
+            u32 num_includes = render_config["include"].size();
+            for(u32 i = 0; i < num_includes; ++i)
+            {
+                Str include_filename = render_config["include"][i].as_str();
+                
+                Str config_path = (const c8*)config_data;
+                config_path = pen::str_normalise_filepath(filename);
+                
+                u32 last_dir = pen::str_find_reverse(config_path, "/");
+                Str include_dir = pen::str_substr(config_path, 0, last_dir+1);
+                
+                include_dir.append(include_filename.c_str());
+                
+                pen::json include_json = pen::json::load_from_file(include_dir.c_str());
+                
+                render_config = pen::json::combine(render_config, include_json);
+            }
 
+            // parse info
             parse_sampler_states(render_config);
             parse_raster_states(render_config);
             parse_depth_stencil_states(render_config);
             parse_partial_blend_states(render_config);
             parse_render_targets(render_config);
 
-            parse_views(render_config);
+            parse_views(render_config, "views", s_views);
+            parse_views(render_config, "post_process_views", s_post_process_views);
 
             // rebake material handles
             ces::bake_material_handles();
@@ -1374,8 +1398,13 @@ namespace put
                     if (s_controllers[i].order == u)
                         s_controllers[i].update_function(&s_controllers[i]);
         }
-
-        void render()
+        
+        void fullscreen_quad()
+        {
+            
+        }
+        
+        void render_view(view_params& v)
         {
             static u32 cb_2d = 0;
             if (cb_2d == 0)
@@ -1386,75 +1415,80 @@ namespace put
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                 bcp.buffer_size      = sizeof(float) * 16;
                 bcp.data             = (void*)nullptr;
-
+                
                 cb_2d = pen::renderer_create_buffer(bcp);
             }
+            
+            // viewport and scissor
+            pen::viewport vp = {0};
+            get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
+            
+            // target
+            pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
+            pen::renderer_set_viewport(vp);
+            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
+            
+            pen::renderer_clear(v.clear_state);
+            
+            if (!v.camera)
+                return;
+            
+            if (!v.scene)
+                return;
+            
+            // create 2d view proj matrix
+            float W         = 2.0f / vp.width;
+            float H         = 2.0f / vp.height;
+            float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
+            pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
+            
+            // generate 3d view proj matrix
+            put::camera_update_shader_constants(v.camera, v.viewport_correction);
+            
+            // unbind samplers
+            for (s32 i = 0; i < 16; ++i)
+            {
+                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+            }
+            
+            // bind view samplers
+            for (auto& sb : v.sampler_bindings)
+            {
+                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
+            }
+            
+            // render state
+            pen::renderer_set_rasterizer_state(v.raster_state);
+            pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
+            pen::renderer_set_blend_state(v.blend_state);
+            
+            // build view info
+            scene_view sv;
+            sv.scene               = v.scene;
+            sv.cb_view             = v.camera->cbuffer;
+            sv.render_flags        = v.render_flags;
+            sv.technique           = v.technique;
+            sv.raster_state        = v.raster_state;
+            sv.depth_stencil_state = v.depth_stencil_state;
+            sv.blend_state_state   = v.blend_state;
+            sv.camera              = v.camera;
+            sv.viewport            = &vp;
+            sv.cb_2d_view          = cb_2d;
+            sv.pmfx_shader         = v.pmfx_shader;
+            
+            // render passes
+            for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
+                v.render_functions[rf](sv);
+        }
 
+        void render()
+        {
             int count = 0;
             for (auto& v : s_views)
             {
                 ++count;
-                // viewport and scissor
-                pen::viewport vp = {0};
-                get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
-
-                // target
-                pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
-                pen::renderer_set_viewport(vp);
-                pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-
-                pen::renderer_clear(v.clear_state);
-
-                if (!v.camera)
-                    continue;
-
-                if (!v.scene)
-                    continue;
-
-                // create 2d view proj matrix
-                float W         = 2.0f / vp.width;
-                float H         = 2.0f / vp.height;
-                float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
-                pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
-
-                // generate 3d view proj matrix
-                put::camera_update_shader_constants(v.camera, v.viewport_correction);
-
-                // unbind samplers
-                for (s32 i = 0; i < 16; ++i)
-                {
-                    pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
-                    pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
-                }
-
-                // bind view samplers
-                for (auto& sb : v.sampler_bindings)
-                {
-                    pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
-                }
-
-                // render state
-                pen::renderer_set_rasterizer_state(v.raster_state);
-                pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
-                pen::renderer_set_blend_state(v.blend_state);
-
-                // build view info
-                scene_view sv;
-                sv.scene               = v.scene;
-                sv.cb_view             = v.camera->cbuffer;
-                sv.render_flags        = v.render_flags;
-                sv.technique           = v.technique;
-                sv.raster_state        = v.raster_state;
-                sv.depth_stencil_state = v.depth_stencil_state;
-                sv.blend_state_state   = v.blend_state;
-                sv.camera              = v.camera;
-                sv.viewport            = &vp;
-                sv.cb_2d_view          = cb_2d;
-                sv.pmfx_shader         = v.pmfx_shader;
-
-                // render passes
-                for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
-                    v.render_functions[rf](sv);
+                render_view(v);
             }
 
             // resolve
@@ -1484,6 +1518,18 @@ namespace put
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
             }
+            
+            // post process chain
+            /*
+            for (auto& v : s_post_process_views)
+            {
+                ++count;
+                
+                //v.render_targets[0] = get_render_target(PEN_HASH("main_colour"))->handle;
+                
+                render_view(v);
+            }
+            */
         }
 
         void render_target_info_ui(const render_target& rt)
