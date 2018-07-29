@@ -286,7 +286,8 @@ namespace put
             static hash_id id_ss_cl = PEN_HASH("clamp_linear_sampler_state");
             if (id_type != id_sdf)
             {
-                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[shadow] %s is not a signed distance field texture", volume_texture_filename.c_str());
+                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[shadow] %s is not a signed distance field texture",
+                                      volume_texture_filename.c_str());
                 return;
             }
              
@@ -528,7 +529,9 @@ namespace put
 
             if (!(scene->state_flags[node_index] & SF_MATERIAL_INITIALISED))
             {
-                pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique, scene->material_data[node_index].data);
+                pmfx::initialise_constant_defaults(material->pmfx_shader,
+                                                   material->technique, scene->material_data[node_index].data);
+                
                 scene->state_flags[node_index] |= SF_MATERIAL_INITIALISED;
             }
         

@@ -535,7 +535,7 @@ namespace put
                         u32 sls = sb_count(s_selection_list);
                         for (u32 i = 0; i < sls; ++i)
                             scene->state_flags[s_selection_list[i]] &= ~SF_SELECTED;
-
+                        
                         sb_clear(s_selection_list);
 
                         pm = SELECT_ADD;
@@ -575,7 +575,7 @@ namespace put
                     s32 pos = 0;
                     for (s32 node = 0; node < scene->num_nodes; ++node)
                     {
-                        if (scene->state_flags[node] &= SF_SELECTED)
+                        if (scene->state_flags[node] & SF_SELECTED)
                             s_selection_list[pos++] = node;
                     }
 
@@ -1655,10 +1655,15 @@ namespace put
                     // apply shader changes
                     if (cm)
                     {
+                        hash_id id_technique = PEN_HASH(technique_list[technique]);
+                        
                         for (u32 i = 0; i < num_selected; ++i)
                         {
-                            scene->materials[s_selection_list[i]].pmfx_shader = shader;
-                            scene->materials[s_selection_list[i]].technique = technique;
+                            u32 si = s_selection_list[i];
+                            scene->materials[si].pmfx_shader = shader;
+                            scene->materials[si].technique = technique;
+                            
+                            scene->material_resources[si].id_technique = id_technique;
                         }
                     }
 

@@ -315,7 +315,9 @@ namespace put
                 if (scene->entities[n] & CMP_SDF_SHADOW)
                 {
                     cmp_shadow& shadow = scene->shadows[n];
-                    pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT, PEN_SHADER_TYPE_PS);
+                    
+                    if(is_valid(shadow.texture_handle))
+                        pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT, PEN_SHADER_TYPE_PS);
                 }
             }
 
@@ -539,7 +541,7 @@ namespace put
         }
 
         void update_scene(entity_scene* scene, f32 dt)
-        {
+        {            
             if (scene->flags & PAUSE_UPDATE)
             {
                 physics::set_paused(1);
@@ -1031,6 +1033,11 @@ namespace put
             {
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
+                
+                if(scene->state_flags[n] & SF_MATERIAL_INITIALISED)
+                {
+                    u32 a = 0;
+                }
 
                 cmp_material& mat = scene->materials[n];
                 material_resource& mat_res = scene->material_resources[n];
@@ -1045,7 +1052,17 @@ namespace put
                 for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                     write_lookup_string(put::get_texture_filename(mat.texture_handles[i]).c_str(), ofs);
             }
-
+            
+            // shadow
+            for (s32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_SDF_SHADOW))
+                    continue;
+                
+                cmp_shadow& shadow = scene->shadows[n];
+                write_lookup_string(put::get_texture_filename(shadow.texture_handle).c_str(), ofs);
+            }
+            
             ofs.close();
 
             std::ifstream infile(filename, std::ifstream::binary);
@@ -1289,7 +1306,6 @@ namespace put
 
                 cmp_material& mat = scene->materials[n];
                 material_resource& mat_res = scene->material_resources[n];
-                cmp_geometry& geom = scene->geometries[n];
 
                 // Invalidate stuff we need to recreate
                 pen::memory_set(&mat_res.material_name, 0x0, sizeof(Str));
@@ -1319,7 +1335,19 @@ namespace put
                 mat_res.id_technique = PEN_HASH(technique.c_str());
                 mat_res.shader_name = shader;
             }
-
+            
+            // sdf shadow
+            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_SDF_SHADOW))
+                    continue;
+                
+                Str sdf_shadow_volume_file = read_lookup_string(ifs);
+                sdf_shadow_volume_file = pen::str_replace_string(sdf_shadow_volume_file, ".dds", ".pmv");
+                
+                instantiate_sdf_shadow(sdf_shadow_volume_file.c_str(), scene, n);
+            }
+            
             bake_material_handles();
 
             if (!merge)
