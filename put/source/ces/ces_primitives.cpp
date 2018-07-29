@@ -17,10 +17,10 @@ namespace put
             // Create position and index buffer of primitives
 
             p_geometry->cpu_position_buffer = pen::memory_alloc(sizeof(vec4f) * num_verts);
-            p_geometry->cpu_index_buffer = pen::memory_alloc(sizeof(u16) * num_indices);
+            p_geometry->cpu_index_buffer    = pen::memory_alloc(sizeof(u16) * num_indices);
 
             vec4f* cpu_positions = (vec4f*)p_geometry->cpu_position_buffer;
-            u16* cpu_indices = (u16*)p_geometry->cpu_index_buffer;
+            u16*   cpu_indices   = (u16*)p_geometry->cpu_index_buffer;
 
             for (u32 i = 0; i < num_verts; ++i)
                 cpu_positions[i] = v[i].pos;
@@ -733,8 +733,8 @@ namespace put
             pen::memory_cpy(&mr->data[0], &f, sizeof(vec4f));
             pen::memory_cpy(&mr->data[4], &f, sizeof(vec4f));
 
-            mr->material_name         = "default_material";
-            mr->hash                  = PEN_HASH("default_material");
+            mr->material_name = "default_material";
+            mr->hash          = PEN_HASH("default_material");
 
             static const u32 default_maps[] = {put::load_texture("data/textures/defaults/albedo.dds"),
                                                put::load_texture("data/textures/defaults/normal.dds"),

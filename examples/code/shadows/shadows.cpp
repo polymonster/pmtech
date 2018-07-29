@@ -155,7 +155,7 @@ void fit_directional_shadow_to_aabb(put::camera* shadow_cam, vec3f light_dir, ve
     shadow_cam->view = shadow_view;
     shadow_cam->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmin.z, cmax.z);
     shadow_cam->flags |= CF_INVALIDATED;
-    
+
     g_shadow_frustum = shadow_cam->camera_frustum;
 }
 
@@ -178,7 +178,7 @@ void update_shadow_frustum(ces::entity_scene* scene, put::camera* shadow_cam)
     }
 
     mat4 shadow_vp = shadow_cam->proj * shadow_cam->view;
-    
+
     camera_update_frustum(shadow_cam);
 
     pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));

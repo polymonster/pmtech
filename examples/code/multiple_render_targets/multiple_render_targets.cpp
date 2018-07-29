@@ -74,7 +74,7 @@ void create_scene_objects(ces::entity_scene* scene)
     scene->lights[light].colour          = vec3f::one();
     scene->lights[light].direction       = vec3f::one();
     scene->lights[light].type            = LIGHT_TYPE_DIR;
-    scene->lights[light].shadow_map          = true;
+    scene->lights[light].shadow_map      = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation    = quat();
     scene->transforms[light].scale       = vec3f::one();

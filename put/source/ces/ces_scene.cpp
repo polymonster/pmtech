@@ -1,6 +1,7 @@
 #include <fstream>
 #include <functional>
 
+#include "data_struct.h"
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "file_system.h"
@@ -8,7 +9,6 @@
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
-#include "data_struct.h"
 
 #include "ces/ces_resources.h"
 #include "ces/ces_scene.h"
@@ -207,7 +207,7 @@ namespace put
             {
                 p_sn->parents[dst] = parent;
             }
-          
+
             vec3f translation = p_sn->local_matrices[dst].get_translation();
             p_sn->local_matrices[dst].set_translation(translation + offset);
 
@@ -226,7 +226,6 @@ namespace put
                     p_sn->materials[dst].material_cbuffer = PEN_INVALID_HANDLE;
                     instantiate_material_cbuffer(scene, dst, p_sn->materials[dst].material_cbuffer_size);
                 }
-
             }
             else if (flags == CLONE_MOVE)
             {
@@ -307,7 +306,7 @@ namespace put
                 pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
             }
 
-            //sdf shadows
+            // sdf shadows
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, PEN_SHADER_TYPE_PS);
@@ -315,9 +314,10 @@ namespace put
                 if (scene->entities[n] & CMP_SDF_SHADOW)
                 {
                     cmp_shadow& shadow = scene->shadows[n];
-                    
-                    if(is_valid(shadow.texture_handle))
-                        pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT, PEN_SHADER_TYPE_PS);
+
+                    if (is_valid(shadow.texture_handle))
+                        pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT,
+                                                  PEN_SHADER_TYPE_PS);
                 }
             }
 
@@ -715,8 +715,9 @@ namespace put
                 pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
 
                 // per node material cbuffer
-                if(is_valid(scene->materials[n].material_cbuffer))
-                    pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0], scene->materials[n].material_cbuffer_size);
+                if (is_valid(scene->materials[n].material_cbuffer))
+                    pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0],
+                                                scene->materials[n].material_cbuffer_size);
             }
 
             // update instance buffers
@@ -811,7 +812,7 @@ namespace put
 
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.spot_falloff);
                 light_buffer.lights[pos].dir_cutoff = vec4f(dir, l.cos_cutoff);
-                light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+                light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
 
                 ++num_spot_lights;
                 ++num_lights;
@@ -907,20 +908,20 @@ namespace put
 
         struct scene_header
         {
-            s32 header_size = sizeof(*this);
-            s32 version = 4;
-            u32 num_nodes = 0;
-            s32 num_components = 0;
+            s32 header_size        = sizeof(*this);
+            s32 version            = 4;
+            u32 num_nodes          = 0;
+            s32 num_components     = 0;
             s32 num_lookup_strings = 0;
-            s32 reserved_1[27] = { 0 };
-            u32 view_flags = 0;
-            s32 selected_index = 0;
-            s32 reserved_2[30] = { 0 };
+            s32 reserved_1[27]     = {0};
+            u32 view_flags         = 0;
+            s32 selected_index     = 0;
+            s32 reserved_2[30]     = {0};
         };
 
         struct lookup_string
         {
-            Str name;
+            Str     name;
             hash_id id;
         };
         static lookup_string* s_lookup_strings = nullptr;
@@ -928,14 +929,14 @@ namespace put
         void write_lookup_string(const char* string, std::ofstream& ofs, const c8* strip_project_dir = nullptr)
         {
             hash_id id = 0;
-            
+
             Str stripped = string;
-            if(strip_project_dir)
+            if (strip_project_dir)
             {
                 stripped = pen::str_replace_string(stripped, strip_project_dir, "");
-                string = stripped.c_str();
+                string   = stripped.c_str();
             }
-            
+
             if (!string)
             {
                 ofs.write((const c8*)&id, sizeof(hash_id));
@@ -954,7 +955,7 @@ namespace put
                 }
             }
 
-            lookup_string ls = { string, id };
+            lookup_string ls = {string, id};
             sb_push(s_lookup_strings, ls);
         }
 
@@ -1019,8 +1020,8 @@ namespace put
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
                 s32 size = 0;
-                
-                if(scene->anim_controller[n].handles)
+
+                if (scene->anim_controller[n].handles)
                     size = sb_count(scene->anim_controller[n].handles);
 
                 ofs.write((const c8*)&size, sizeof(s32));
@@ -1038,10 +1039,10 @@ namespace put
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
 
-                cmp_material& mat = scene->materials[n];
+                cmp_material&      mat     = scene->materials[n];
                 material_resource& mat_res = scene->material_resources[n];
 
-                const char* shader_name = pmfx::get_shader_name(mat.pmfx_shader);
+                const char* shader_name    = pmfx::get_shader_name(mat.pmfx_shader);
                 const char* technique_name = pmfx::get_technique_name(mat.pmfx_shader, mat_res.id_technique);
 
                 write_lookup_string(mat_res.material_name.c_str(), ofs);
@@ -1051,18 +1052,18 @@ namespace put
                 for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                     write_lookup_string(put::get_texture_filename(mat.texture_handles[i]).c_str(), ofs, project_dir.c_str());
             }
-            
+
             // shadow
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_SDF_SHADOW))
                     continue;
-                
+
                 cmp_shadow& shadow = scene->shadows[n];
-                
+
                 write_lookup_string(put::get_texture_filename(shadow.texture_handle).c_str(), ofs, project_dir.c_str());
             }
-            
+
             ofs.close();
 
             std::ifstream infile(filename, std::ifstream::binary);
@@ -1082,10 +1083,10 @@ namespace put
 
             // header
             scene_header sh;
-            sh.num_nodes = scene->num_nodes;
-            sh.view_flags = scene->view_flags;
-            sh.selected_index = scene->selected_index;
-            sh.num_components = scene->num_components;
+            sh.num_nodes          = scene->num_nodes;
+            sh.view_flags         = scene->view_flags;
+            sh.selected_index     = scene->selected_index;
+            sh.num_components     = scene->num_components;
             sh.num_lookup_strings = sb_count(s_lookup_strings);
             ofs.write((const c8*)&sh, sizeof(scene_header));
 
@@ -1112,7 +1113,7 @@ namespace put
             scene->flags |= INVALIDATE_SCENE_TREE;
             bool error       = false;
             Str  project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
-            
+
             std::ifstream ifs(filename, std::ofstream::binary);
 
             // header
@@ -1120,11 +1121,11 @@ namespace put
             ifs.read((c8*)&sh, sizeof(scene_header));
 
             // unpack header
-            s32 version = sh.version;
+            s32 version   = sh.version;
             s32 num_nodes = sh.num_nodes;
 
             scene->selected_index = sh.selected_index;
-            s32 scene_view_flags = sh.view_flags;
+            s32 scene_view_flags  = sh.view_flags;
 
             u32 zero_offset   = 0;
             s32 new_num_nodes = num_nodes;
@@ -1159,7 +1160,7 @@ namespace put
 
             for (u32 n = 0; n < sh.num_lookup_strings; ++n)
             {
-                lookup_string ls; 
+                lookup_string ls;
                 ls.name = read_parsable_string(ifs);
                 ifs.read((c8*)&ls.id, sizeof(hash_id));
 
@@ -1197,7 +1198,7 @@ namespace put
                 pen::memory_set(&scene->geometry_names[n], 0x0, sizeof(Str));
                 pen::memory_set(&scene->material_names[n], 0x0, sizeof(Str));
 
-                scene->names[n] = read_lookup_string(ifs);
+                scene->names[n]          = read_lookup_string(ifs);
                 scene->geometry_names[n] = read_lookup_string(ifs);
                 scene->material_names[n] = read_lookup_string(ifs);
             }
@@ -1210,11 +1211,11 @@ namespace put
                     u32 submesh;
                     ifs.read((c8*)&submesh, sizeof(u32));
 
-                    Str filename = project_dir;
-                    Str name = read_lookup_string(ifs).c_str();
+                    Str filename      = project_dir;
+                    Str name          = read_lookup_string(ifs).c_str();
                     Str geometry_name = read_lookup_string(ifs);
 
-                    hash_id        name_hash = PEN_HASH(name.c_str());
+                    hash_id        name_hash    = PEN_HASH(name.c_str());
                     static hash_id primitive_id = PEN_HASH("primitive");
 
                     filename.append(name.c_str());
@@ -1240,7 +1241,7 @@ namespace put
                     else
                     {
                         hash_id geom_hash = PEN_HASH(geometry_name.c_str());
-                        gr = get_geometry_resource(geom_hash);
+                        gr                = get_geometry_resource(geom_hash);
                     }
 
                     if (gr)
@@ -1254,7 +1255,7 @@ namespace put
                     else
                     {
                         dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] geometry - cannot find pmm file: %s",
-                            filename.c_str());
+                                          filename.c_str());
 
                         scene->entities[n] &= ~CMP_GEOMETRY;
                         error = true;
@@ -1288,7 +1289,7 @@ namespace put
                     if (!is_valid(h))
                     {
                         dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] animation - cannot find pma file: %s",
-                            anim_name.c_str());
+                                          anim_name.c_str());
                         error = true;
                     }
 
@@ -1305,7 +1306,7 @@ namespace put
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
 
-                cmp_material& mat = scene->materials[n];
+                cmp_material&      mat     = scene->materials[n];
                 material_resource& mat_res = scene->material_resources[n];
 
                 // Invalidate stuff we need to recreate
@@ -1314,9 +1315,9 @@ namespace put
                 mat.material_cbuffer = PEN_INVALID_HANDLE;
 
                 Str material_name = read_lookup_string(ifs);
-                Str shader = read_lookup_string(ifs);
-                Str technique = read_lookup_string(ifs);
-                
+                Str shader        = read_lookup_string(ifs);
+                Str technique     = read_lookup_string(ifs);
+
                 for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                 {
                     Str texture_name = read_lookup_string(ifs);
@@ -1329,28 +1330,28 @@ namespace put
 
                     dev_console_log("[scene load] %s", texture_name.c_str());
                     mat_res.texture_handles[i] = put::load_texture(texture_name.c_str());
-                    mat.texture_handles[i] = mat_res.texture_handles[i];
+                    mat.texture_handles[i]     = mat_res.texture_handles[i];
                 }
 
                 mat_res.material_name = material_name;
-                mat_res.id_shader = PEN_HASH(shader.c_str());
-                mat_res.id_technique = PEN_HASH(technique.c_str());
-                mat_res.shader_name = shader;
+                mat_res.id_shader     = PEN_HASH(shader.c_str());
+                mat_res.id_technique  = PEN_HASH(technique.c_str());
+                mat_res.shader_name   = shader;
             }
-            
+
             // sdf shadow
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_SDF_SHADOW))
                     continue;
-                
+
                 Str sdf_shadow_volume_file = read_lookup_string(ifs);
-                sdf_shadow_volume_file = pen::str_replace_string(sdf_shadow_volume_file, ".dds", ".pmv");
-                
+                sdf_shadow_volume_file     = pen::str_replace_string(sdf_shadow_volume_file, ".dds", ".pmv");
+
                 dev_console_log("[scene load] %s", sdf_shadow_volume_file.c_str());
                 instantiate_sdf_shadow(sdf_shadow_volume_file.c_str(), scene, n);
             }
-            
+
             bake_material_handles();
 
             if (!merge)

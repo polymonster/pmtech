@@ -1,10 +1,10 @@
 #ifndef _str_utilities_h
 #define _str_utilities_h
 
+#include "console.h"
 #include "memory.h"
 #include "pen.h"
 #include "pen_string.h"
-#include "console.h"
 #include "str/Str.h"
 
 namespace pen
@@ -42,41 +42,41 @@ namespace pen
 
         return -1;
     }
-    
-    inline Str str_substr( const Str& string, s32 start, s32 end )
+
+    inline Str str_substr(const Str& string, s32 start, s32 end)
     {
         Str sub = "";
-        for(s32 i = start; i < end; ++i)
+        for (s32 i = start; i < end; ++i)
         {
             sub.appendf("%c", string[i]);
         }
-        
+
         return sub;
     }
-    
+
     inline bool str_ends_with(const Str& string, const c8* ends)
     {
         s32 len = string.length();
-        s32 ii = str_find_reverse(string, ends);
-        
-        if(len - ii == pen::string_length(ends) )
+        s32 ii  = str_find_reverse(string, ends);
+
+        if (len - ii == pen::string_length(ends))
         {
             return true;
         }
-        
+
         return false;
     }
-    
-    inline Str str_remove_ext( const Str& string )
+
+    inline Str str_remove_ext(const Str& string)
     {
         s32 ext = str_find_reverse(string, ".");
         s32 dir = str_find_reverse(string, "/");
-        
-        if(ext > dir)
+
+        if (ext > dir)
         {
             return str_substr(string, 0, ext);
         }
-        
+
         return string;
     }
 
@@ -115,7 +115,7 @@ namespace pen
     {
         s32 len = string.length();
 
-        Str r = string;
+        Str r    = string;
         c8* iter = &r[0];
         while (iter && len > 0)
         {
@@ -173,7 +173,7 @@ namespace pen
 
             u32 back_dir = str_find_reverse(f, "/", dir - 2);
 
-            //remove the back dir and the ..
+            // remove the back dir and the ..
             Str a = str_substr(f, 0, back_dir);
             Str b = str_substr(f, dir + 2, f.length());
 
@@ -183,6 +183,6 @@ namespace pen
 
         return f;
     }
-} // namespace put
+} // namespace pen
 
 #endif

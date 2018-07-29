@@ -109,14 +109,14 @@ namespace put
 
             scene->entities[s] |= CMP_PHYSICS;
         }
-        
+
         void destroy_physics(entity_scene* scene, s32 node_index)
         {
-            if(!(scene->entities[node_index] & CMP_PHYSICS))
+            if (!(scene->entities[node_index] & CMP_PHYSICS))
                 return;
-            
+
             scene->entities[node_index] &= ~CMP_PHYSICS;
-            
+
             physics::release_entity(scene->physics_handles[node_index]);
             scene->physics_handles[node_index] = PEN_INVALID_HANDLE;
         }
@@ -155,9 +155,9 @@ namespace put
 
         void destroy_geometry(entity_scene* scene, u32 node_index)
         {
-            if(!(scene->entities[node_index] & CMP_GEOMETRY))
+            if (!(scene->entities[node_index] & CMP_GEOMETRY))
                 return;
-            
+
             scene->entities[node_index] &= ~CMP_GEOMETRY;
             scene->entities[node_index] &= ~CMP_MATERIAL;
 
@@ -166,11 +166,11 @@ namespace put
 
             // release cbuffer
             pen::renderer_release_buffer(scene->cbuffer[node_index]);
-            scene->cbuffer[node_index] = PEN_INVALID_HANDLE;
+            scene->cbuffer[node_index]        = PEN_INVALID_HANDLE;
             scene->geometry_names[node_index] = "";
 
             // release matrial cbuffer
-            if(is_valid(scene->materials[node_index].material_cbuffer))
+            if (is_valid(scene->materials[node_index].material_cbuffer))
                 pen::renderer_release_buffer(scene->materials[node_index].material_cbuffer);
 
             scene->materials[node_index].material_cbuffer = PEN_INVALID_HANDLE;
@@ -192,11 +192,11 @@ namespace put
             scene->materials[node_index].material_cbuffer_size = size;
 
             pen::buffer_creation_params bcp;
-            bcp.usage_flags = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size = scene->materials[node_index].material_cbuffer_size;
-            bcp.data = nullptr;
+            bcp.buffer_size      = scene->materials[node_index].material_cbuffer_size;
+            bcp.data             = nullptr;
 
             scene->materials[node_index].material_cbuffer = pen::renderer_create_buffer(bcp);
         }
@@ -290,13 +290,13 @@ namespace put
             pen::json pmv = pen::json::load_from_file(pmv_filename);
 
             Str volume_texture_filename = pmv["filename"].as_str();
-            u32 volume_texture = put::load_texture(volume_texture_filename.c_str());
+            u32 volume_texture          = put::load_texture(volume_texture_filename.c_str());
 
             vec3f scale = vec3f(pmv["scale_x"].as_f32(), pmv["scale_y"].as_f32(), pmv["scale_z"].as_f32());
 
             hash_id id_type = pmv["volume_type"].as_hash_id();
 
-            static hash_id id_sdf = PEN_HASH("signed_distance_field");
+            static hash_id id_sdf   = PEN_HASH("signed_distance_field");
             static hash_id id_ss_cl = PEN_HASH("clamp_linear_sampler_state");
             if (id_type != id_sdf)
             {
@@ -304,10 +304,10 @@ namespace put
                                       volume_texture_filename.c_str());
                 return;
             }
-             
-            scene->transforms[node_index].scale = scale;
+
+            scene->transforms[node_index].scale       = scale;
             scene->shadows[node_index].texture_handle = volume_texture;
-            scene->shadows[node_index].sampler_state = pmfx::get_render_state_by_name(id_ss_cl);
+            scene->shadows[node_index].sampler_state  = pmfx::get_render_state_by_name(id_ss_cl);
         }
 
         void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)
@@ -469,7 +469,7 @@ namespace put
                 s_geometry_resources.push_back(p_geometry);
             }
         }
-        
+
         material_resource* get_material_resource(hash_id hash)
         {
             for (auto* m : s_material_resources)
@@ -521,9 +521,8 @@ namespace put
         void bake_material_handles(entity_scene* scene, u32 node_index)
         {
             material_resource* resource = &scene->material_resources[node_index];
-            cmp_material* material = &scene->materials[node_index];
-            cmp_geometry* geometry = &scene->geometries[node_index];
-            
+            cmp_material*      material = &scene->materials[node_index];
+            cmp_geometry*      geometry = &scene->geometries[node_index];
 
             if (!resource)
                 return;
@@ -533,8 +532,8 @@ namespace put
             if (!is_valid(material->pmfx_shader))
                 return;
 
-            material->technique = pmfx::get_technique_index(material->pmfx_shader, resource->id_technique,
-                                                            geometry->vertex_shader_class);
+            material->technique =
+                pmfx::get_technique_index(material->pmfx_shader, resource->id_technique, geometry->vertex_shader_class);
 
             for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                 material->sampler_states[i] = pmfx::get_render_state_by_name(resource->id_sampler_state[i]);
@@ -543,12 +542,12 @@ namespace put
 
             if (!(scene->state_flags[node_index] & SF_MATERIAL_INITIALISED))
             {
-                pmfx::initialise_constant_defaults(material->pmfx_shader,
-                                                   material->technique, scene->material_data[node_index].data);
-                
+                pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique,
+                                                   scene->material_data[node_index].data);
+
                 scene->state_flags[node_index] |= SF_MATERIAL_INITIALISED;
             }
-        
+
             instantiate_material_cbuffer(scene, node_index, cbuffer_size);
         }
 
@@ -1109,7 +1108,7 @@ namespace put
             pen::memory_free(model_file);
             return nodes_start;
         }
-        
+
         struct volume_instance
         {
             hash_id id;
@@ -1117,39 +1116,28 @@ namespace put
             hash_id id_sampler_state;
             u32     cmp_flags;
         };
-        
+
         s32 load_pmv(const c8* filename, entity_scene* scene)
         {
             pen::json pmv = pen::json::load_from_file(filename);
-            
+
             Str volume_texture_filename = pmv["filename"].as_str();
-            u32 volume_texture = put::load_texture(volume_texture_filename.c_str());
-            
+            u32 volume_texture          = put::load_texture(volume_texture_filename.c_str());
+
             vec3f scale = vec3f(pmv["scale_x"].as_f32(), pmv["scale_y"].as_f32(), pmv["scale_z"].as_f32());
-            
+
             hash_id id_type = pmv["volume_type"].as_hash_id();
-            
-            static volume_instance vi[] =
-            {
-                {
-                    PEN_HASH("volume_texture"),
-                    PEN_HASH("volume_texture"),
-                    PEN_HASH("clamp_point_sampler_state"),
-                    CMP_VOLUME
-                },
-                
-                {
-                    PEN_HASH("signed_distance_field"),
-                    PEN_HASH("volume_sdf"),
-                    PEN_HASH("clamp_linear_sampler_state"),
-                    CMP_SDF_SHADOW
-                }
-            };
-            
+
+            static volume_instance vi[] = {
+                {PEN_HASH("volume_texture"), PEN_HASH("volume_texture"), PEN_HASH("clamp_point_sampler_state"), CMP_VOLUME},
+
+                {PEN_HASH("signed_distance_field"), PEN_HASH("volume_sdf"), PEN_HASH("clamp_linear_sampler_state"),
+                 CMP_SDF_SHADOW}};
+
             int i = 0;
-            for( auto& v : vi )
+            for (auto& v : vi)
             {
-                if(v.id == id_type)
+                if (v.id == id_type)
                     break;
 
                 ++i;
@@ -1164,25 +1152,25 @@ namespace put
             material->id_sampler_state[SN_VOLUME_TEXTURE] = vi[i].id_sampler_state;
             material->texture_handles[SN_VOLUME_TEXTURE]  = volume_texture;
             add_material_resource(material);
-            
+
             geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
-            
-            vec3f pos   = vec3f::zero();
-            
+
+            vec3f pos = vec3f::zero();
+
             u32 v = get_new_node(scene);
-            
+
             scene->names[v] = "volume";
             scene->names[v].appendf("%i", v);
-            scene->transforms[v].rotation = quat();
-            scene->transforms[v].scale = scale;
+            scene->transforms[v].rotation    = quat();
+            scene->transforms[v].scale       = scale;
             scene->transforms[v].translation = pos;
             scene->entities[v] |= CMP_TRANSFORM;
             scene->parents[v] = v;
-            
+
             instantiate_geometry(cube, scene, v);
             instantiate_material(material, scene, v);
             instantiate_model_cbuffer(scene, v);
-            
+
             return v;
         }
 

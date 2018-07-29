@@ -20,7 +20,7 @@ using namespace pmfx;
 namespace
 {
     static hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
-    static hash_id ID_MAIN_DEPTH = PEN_HASH("main_depth");
+    static hash_id ID_MAIN_DEPTH  = PEN_HASH("main_depth");
 
     struct mode_map
     {
@@ -28,81 +28,80 @@ namespace
         u32       val;
     };
 
-    const mode_map k_cull_mode_map[] = { "none",  PEN_CULL_NONE,  "back",  PEN_CULL_BACK,
-        "front", PEN_CULL_FRONT, nullptr, 0 };
+    const mode_map k_cull_mode_map[] = {"none", PEN_CULL_NONE, "back", PEN_CULL_BACK, "front", PEN_CULL_FRONT, nullptr, 0};
 
-    const mode_map k_fill_mode_map[] = { "solid", PEN_FILL_SOLID, "wireframe", PEN_FILL_WIREFRAME, nullptr, 0 };
+    const mode_map k_fill_mode_map[] = {"solid", PEN_FILL_SOLID, "wireframe", PEN_FILL_WIREFRAME, nullptr, 0};
 
     const mode_map k_comparison_mode_map[] = {
         "never",      PEN_COMPARISON_NEVER,      "less",          PEN_COMPARISON_LESS,
         "less_equal", PEN_COMPARISON_LESS_EQUAL, "greater",       PEN_COMPARISON_GREATER,
         "not_equal",  PEN_COMPARISON_NOT_EQUAL,  "greater_equal", PEN_COMPARISON_GREATER_EQUAL,
-        "always",     PEN_COMPARISON_ALWAYS,     nullptr,         0 };
+        "always",     PEN_COMPARISON_ALWAYS,     nullptr,         0};
 
     const mode_map k_stencil_mode_map[] = {
         "keep",     PEN_STENCIL_OP_KEEP,     "replace", PEN_STENCIL_OP_REPLACE, "incr",     PEN_STENCIL_OP_INCR,
         "incr_sat", PEN_STENCIL_OP_INCR_SAT, "decr",    PEN_STENCIL_OP_DECR,    "decr_sat", PEN_STENCIL_OP_DECR_SAT,
-        "zero",     PEN_STENCIL_OP_ZERO,     "invert",  PEN_STENCIL_OP_INVERT,  nullptr,    0 };
+        "zero",     PEN_STENCIL_OP_ZERO,     "invert",  PEN_STENCIL_OP_INVERT,  nullptr,    0};
 
     const mode_map k_filter_mode_map[] = {
-        "linear", PEN_FILTER_MIN_MAG_MIP_LINEAR, "point", PEN_FILTER_MIN_MAG_MIP_POINT, nullptr, 0 };
+        "linear", PEN_FILTER_MIN_MAG_MIP_LINEAR, "point", PEN_FILTER_MIN_MAG_MIP_POINT, nullptr, 0};
 
     const mode_map k_address_mode_map[] = {
         "wrap",        PEN_TEXTURE_ADDRESS_WRAP,        "clamp",  PEN_TEXTURE_ADDRESS_CLAMP,
         "border",      PEN_TEXTURE_ADDRESS_BORDER,      "mirror", PEN_TEXTURE_ADDRESS_MIRROR,
-        "mirror_once", PEN_TEXTURE_ADDRESS_MIRROR_ONCE, nullptr,  0 };
+        "mirror_once", PEN_TEXTURE_ADDRESS_MIRROR_ONCE, nullptr,  0};
 
-    const mode_map k_blend_mode_map[] = { "zero",
-        PEN_BLEND_ZERO,
-        "one",
-        PEN_BLEND_ONE,
-        "src_colour",
-        PEN_BLEND_SRC_COLOR,
-        "inv_src_colour",
-        PEN_BLEND_INV_SRC_COLOR,
-        "src_alpha",
-        PEN_BLEND_SRC_ALPHA,
-        "inv_src_alpha",
-        PEN_BLEND_INV_SRC_ALPHA,
-        "dest_alpha",
-        PEN_BLEND_DEST_ALPHA,
-        "inv_dest_alpha",
-        PEN_BLEND_INV_DEST_ALPHA,
-        "dest_colour",
-        PEN_BLEND_DEST_COLOR,
-        "inv_dest_colour",
-        PEN_BLEND_INV_DEST_COLOR,
-        "src_alpha_sat",
-        PEN_BLEND_SRC_ALPHA_SAT,
-        "blend_factor",
-        PEN_BLEND_BLEND_FACTOR,
-        "inv_blend_factor",
-        PEN_BLEND_INV_BLEND_FACTOR,
-        "src1_colour",
-        PEN_BLEND_SRC1_COLOR,
-        "inv_src1_colour",
-        PEN_BLEND_INV_SRC1_COLOR,
-        "src1_aplha",
-        PEN_BLEND_SRC1_ALPHA,
-        "inv_src1_alpha",
-        PEN_BLEND_INV_SRC1_ALPHA,
-        nullptr,
-        0 };
+    const mode_map k_blend_mode_map[] = {"zero",
+                                         PEN_BLEND_ZERO,
+                                         "one",
+                                         PEN_BLEND_ONE,
+                                         "src_colour",
+                                         PEN_BLEND_SRC_COLOR,
+                                         "inv_src_colour",
+                                         PEN_BLEND_INV_SRC_COLOR,
+                                         "src_alpha",
+                                         PEN_BLEND_SRC_ALPHA,
+                                         "inv_src_alpha",
+                                         PEN_BLEND_INV_SRC_ALPHA,
+                                         "dest_alpha",
+                                         PEN_BLEND_DEST_ALPHA,
+                                         "inv_dest_alpha",
+                                         PEN_BLEND_INV_DEST_ALPHA,
+                                         "dest_colour",
+                                         PEN_BLEND_DEST_COLOR,
+                                         "inv_dest_colour",
+                                         PEN_BLEND_INV_DEST_COLOR,
+                                         "src_alpha_sat",
+                                         PEN_BLEND_SRC_ALPHA_SAT,
+                                         "blend_factor",
+                                         PEN_BLEND_BLEND_FACTOR,
+                                         "inv_blend_factor",
+                                         PEN_BLEND_INV_BLEND_FACTOR,
+                                         "src1_colour",
+                                         PEN_BLEND_SRC1_COLOR,
+                                         "inv_src1_colour",
+                                         PEN_BLEND_INV_SRC1_COLOR,
+                                         "src1_aplha",
+                                         PEN_BLEND_SRC1_ALPHA,
+                                         "inv_src1_alpha",
+                                         PEN_BLEND_INV_SRC1_ALPHA,
+                                         nullptr,
+                                         0};
 
-    const mode_map k_blend_op_mode_map[] = { "belnd_op_add",
-        PEN_BLEND_OP_ADD,
-        "belnd_op_add",
-        PEN_BLEND_OP_ADD,
-        "belnd_op_subtract",
-        PEN_BLEND_OP_SUBTRACT,
-        "belnd_op_rev_sbtract",
-        PEN_BLEND_OP_REV_SUBTRACT,
-        "belnd_op_min",
-        PEN_BLEND_OP_MIN,
-        "belnd_op_max",
-        PEN_BLEND_OP_MAX,
-        nullptr,
-        0 };
+    const mode_map k_blend_op_mode_map[] = {"belnd_op_add",
+                                            PEN_BLEND_OP_ADD,
+                                            "belnd_op_add",
+                                            PEN_BLEND_OP_ADD,
+                                            "belnd_op_subtract",
+                                            PEN_BLEND_OP_SUBTRACT,
+                                            "belnd_op_rev_sbtract",
+                                            PEN_BLEND_OP_REV_SUBTRACT,
+                                            "belnd_op_min",
+                                            PEN_BLEND_OP_MIN,
+                                            "belnd_op_max",
+                                            PEN_BLEND_OP_MAX,
+                                            nullptr,
+                                            0};
 
     struct format_info
     {
@@ -114,22 +113,22 @@ namespace
     };
 
     format_info rt_format[] = {
-        { "rgba8", PEN_HASH("rgba8"), PEN_TEX_FORMAT_RGBA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
-        { "bgra8", PEN_HASH("bgra8"), PEN_TEX_FORMAT_BGRA8_UNORM, 32, PEN_BIND_RENDER_TARGET },
-        { "rgba32f", PEN_HASH("rgba32f"), PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 32 * 4, PEN_BIND_RENDER_TARGET },
-        { "rgba16f", PEN_HASH("rgba16f"), PEN_TEX_FORMAT_R16G16B16A16_FLOAT, 16 * 4, PEN_BIND_RENDER_TARGET },
-        { "r32f", PEN_HASH("r32f"), PEN_TEX_FORMAT_R32_FLOAT, 32, PEN_BIND_RENDER_TARGET },
-        { "r16f", PEN_HASH("r16f"), PEN_TEX_FORMAT_R16_FLOAT, 16, PEN_BIND_RENDER_TARGET },
-        { "r32u", PEN_HASH("r32u"), PEN_TEX_FORMAT_R32_UINT, 32, PEN_BIND_RENDER_TARGET },
-        { "d24s8", PEN_HASH("d24s8"), PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL } };
+        {"rgba8", PEN_HASH("rgba8"), PEN_TEX_FORMAT_RGBA8_UNORM, 32, PEN_BIND_RENDER_TARGET},
+        {"bgra8", PEN_HASH("bgra8"), PEN_TEX_FORMAT_BGRA8_UNORM, 32, PEN_BIND_RENDER_TARGET},
+        {"rgba32f", PEN_HASH("rgba32f"), PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 32 * 4, PEN_BIND_RENDER_TARGET},
+        {"rgba16f", PEN_HASH("rgba16f"), PEN_TEX_FORMAT_R16G16B16A16_FLOAT, 16 * 4, PEN_BIND_RENDER_TARGET},
+        {"r32f", PEN_HASH("r32f"), PEN_TEX_FORMAT_R32_FLOAT, 32, PEN_BIND_RENDER_TARGET},
+        {"r16f", PEN_HASH("r16f"), PEN_TEX_FORMAT_R16_FLOAT, 16, PEN_BIND_RENDER_TARGET},
+        {"r32u", PEN_HASH("r32u"), PEN_TEX_FORMAT_R32_UINT, 32, PEN_BIND_RENDER_TARGET},
+        {"d24s8", PEN_HASH("d24s8"), PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL}};
     s32 num_formats = PEN_ARRAY_SIZE(rt_format);
 
-    Str rt_ratio[] = { "none", "equal", "half", "quater",
-        "eighth"
-        "sixteenth" };
+    Str rt_ratio[] = {"none", "equal", "half", "quater",
+                      "eighth"
+                      "sixteenth"};
     s32 num_ratios = PEN_ARRAY_SIZE(rt_ratio);
 
-    mode_map render_flags_map[] = { "forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0 };
+    mode_map render_flags_map[] = {"forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0};
 
     struct sampler_binding
     {
@@ -148,21 +147,21 @@ namespace
         s32 rt_width, rt_height;
         f32 rt_ratio;
 
-        u32     render_targets[pen::MAX_MRT] = { 0 };
-        hash_id id_render_target[pen::MAX_MRT] = { 0 };
-        u32     num_colour_targets = 0;
+        u32     render_targets[pen::MAX_MRT]   = {0};
+        hash_id id_render_target[pen::MAX_MRT] = {0};
+        u32     num_colour_targets             = 0;
 
-        u32     depth_target = 0;
+        u32     depth_target    = 0;
         hash_id id_depth_target = 0;
 
         bool viewport_correction = true;
 
-        f32 viewport[4] = { 0 };
+        f32 viewport[4] = {0};
 
-        u32 clear_state = 0;
-        u32 raster_state = 0;
+        u32 clear_state         = 0;
+        u32 raster_state        = 0;
         u32 depth_stencil_state = 0;
-        u32 blend_state = 0;
+        u32 blend_state         = 0;
 
         shader_handle pmfx_shader;
         hash_id       technique;
@@ -173,7 +172,7 @@ namespace
 
         std::vector<sampler_binding> sampler_bindings;
 
-        std::vector<void(*)(const put::scene_view&)> render_functions;
+        std::vector<void (*)(const put::scene_view&)> render_functions;
     };
 
     enum e_render_state_type : u32
@@ -214,7 +213,7 @@ namespace
         u32 screen_quad_ib;
     };
     geometry_utility s_geometry;
-}
+} // namespace
 
 namespace put
 {
@@ -1046,7 +1045,7 @@ namespace put
         void parse_views(pen::json& render_config, const c8* type, std::vector<view_params>& view_array)
         {
             pen::json j_views = render_config[type];
-            
+
             s32 num = j_views.size();
 
             for (s32 i = 0; i < num; ++i)
@@ -1258,7 +1257,7 @@ namespace put
         void load_script_internal(const c8* filename)
         {
             create_geometry_utilities();
-            
+
             void* config_data;
             u32   config_data_size;
 
@@ -1270,26 +1269,26 @@ namespace put
                 pen::memory_free(config_data);
                 PEN_ERROR;
             }
-            
+
             // load render config
             pen::json render_config = pen::json::load((const c8*)config_data);
-            
+
             // add includes
             u32 num_includes = render_config["include"].size();
-            for(u32 i = 0; i < num_includes; ++i)
+            for (u32 i = 0; i < num_includes; ++i)
             {
                 Str include_filename = render_config["include"][i].as_str();
-                
+
                 Str config_path = (const c8*)config_data;
-                config_path = pen::str_normalise_filepath(filename);
-                
-                u32 last_dir = pen::str_find_reverse(config_path, "/");
-                Str include_dir = pen::str_substr(config_path, 0, last_dir+1);
-                
+                config_path     = pen::str_normalise_filepath(filename);
+
+                u32 last_dir    = pen::str_find_reverse(config_path, "/");
+                Str include_dir = pen::str_substr(config_path, 0, last_dir + 1);
+
                 include_dir.append(include_filename.c_str());
-                
+
                 pen::json include_json = pen::json::load_from_file(include_dir.c_str());
-                
+
                 render_config = pen::json::combine(render_config, include_json);
             }
 
@@ -1398,12 +1397,11 @@ namespace put
                     if (s_controllers[i].order == u)
                         s_controllers[i].update_function(&s_controllers[i]);
         }
-        
+
         void fullscreen_quad()
         {
-            
         }
-        
+
         void render_view(view_params& v)
         {
             static u32 cb_2d = 0;
@@ -1415,54 +1413,54 @@ namespace put
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                 bcp.buffer_size      = sizeof(float) * 16;
                 bcp.data             = (void*)nullptr;
-                
+
                 cb_2d = pen::renderer_create_buffer(bcp);
             }
-            
+
             // viewport and scissor
             pen::viewport vp = {0};
             get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
-            
+
             // target
             pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-            
+
             pen::renderer_clear(v.clear_state);
-            
+
             if (!v.camera)
                 return;
-            
+
             if (!v.scene)
                 return;
-            
+
             // create 2d view proj matrix
             float W         = 2.0f / vp.width;
             float H         = 2.0f / vp.height;
             float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
-            
+
             // generate 3d view proj matrix
             put::camera_update_shader_constants(v.camera, v.viewport_correction);
-            
+
             // unbind samplers
             for (s32 i = 0; i < 16; ++i)
             {
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
             }
-            
+
             // bind view samplers
             for (auto& sb : v.sampler_bindings)
             {
                 pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
             }
-            
+
             // render state
             pen::renderer_set_rasterizer_state(v.raster_state);
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
             pen::renderer_set_blend_state(v.blend_state);
-            
+
             // build view info
             scene_view sv;
             sv.scene               = v.scene;
@@ -1476,7 +1474,7 @@ namespace put
             sv.viewport            = &vp;
             sv.cb_2d_view          = cb_2d;
             sv.pmfx_shader         = v.pmfx_shader;
-            
+
             // render passes
             for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                 v.render_functions[rf](sv);
@@ -1518,15 +1516,15 @@ namespace put
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
             }
-            
+
             // post process chain
             /*
             for (auto& v : s_post_process_views)
             {
                 ++count;
-                
+
                 //v.render_targets[0] = get_render_target(PEN_HASH("main_colour"))->handle;
-                
+
                 render_view(v);
             }
             */

@@ -38,21 +38,21 @@ u32 create_float_texture(u32 w, u32 h, texture_format fmt, T r, T g, T b, T a)
 
     u32 data_size = w * h * 4 * sizeof(T);
 
-    tcp.width = w;
-    tcp.height = h;
-    tcp.format = fmt;
-    tcp.num_mips = 1;
-    tcp.num_arrays = 1;
-    tcp.sample_count = 1;
-    tcp.sample_quality = 0;
-    tcp.usage = PEN_USAGE_DEFAULT;
-    tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
+    tcp.width            = w;
+    tcp.height           = h;
+    tcp.format           = fmt;
+    tcp.num_mips         = 1;
+    tcp.num_arrays       = 1;
+    tcp.sample_count     = 1;
+    tcp.sample_quality   = 0;
+    tcp.usage            = PEN_USAGE_DEFAULT;
+    tcp.bind_flags       = PEN_BIND_SHADER_RESOURCE;
     tcp.cpu_access_flags = 0;
-    tcp.flags = 0;
-    tcp.block_size = 4;
+    tcp.flags            = 0;
+    tcp.block_size       = 4;
     tcp.pixels_per_block = 1;
-    tcp.data = pen::memory_alloc(data_size);
-    tcp.data_size = data_size;
+    tcp.data             = pen::memory_alloc(data_size);
+    tcp.data_size        = data_size;
 
     T* fdata = (T*)tcp.data;
 
@@ -106,9 +106,8 @@ void load_textures()
         {"bc1n", bc[0] ? put::load_texture("data/textures/formats/texfmt_bc1n.dds") : 0},
         {"bc3n", bc[2] ? put::load_texture("data/textures/formats/texfmt_bc3n.dds") : 0},
 
-        {"r32f", create_float_texture<f32>(64, 64, PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 1.0f, 0.0f, 1.0f, 1.0f ) },
-        {"r16f", create_float_texture<f16>(64, 64, PEN_TEX_FORMAT_R16G16B16A16_FLOAT, h0, h1, h0, h1 ) }
-    };
+        {"r32f", create_float_texture<f32>(64, 64, PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 1.0f, 0.0f, 1.0f, 1.0f)},
+        {"r16f", create_float_texture<f16>(64, 64, PEN_TEX_FORMAT_R16G16B16A16_FLOAT, h0, h1, h0, h1)}};
 
     k_textures     = &textures[0];
     k_num_textures = PEN_ARRAY_SIZE(textures);

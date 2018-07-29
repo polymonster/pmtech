@@ -19,7 +19,7 @@ inline void output_debug(const c8* format, ...)
     va_start(va, format);
 
     static u32 s_buffer_size = 1024;
-    static c8* buf = new c8[s_buffer_size];
+    static c8* buf           = new c8[s_buffer_size];
 
     u32 n = vsnprintf(buf, s_buffer_size, format, va);
     if (n > s_buffer_size)

@@ -414,7 +414,7 @@ namespace pen
         new_json.m_internal_object->name = nullptr;
 
         create_json_object(*new_json.m_internal_object);
-        
+
         return new_json;
     }
 
@@ -739,34 +739,34 @@ namespace pen
         pen::memory_free(m_internal_object);
         m_internal_object = nullptr;
     }
-    
+
     void json::set(const c8* name, const c8* val)
     {
         Str fmt = val;
         json::set(name, fmt);
     }
-    
+
     void json::set(const c8* name, const u32 val)
     {
         Str fmt;
         fmt.appendf("%u", val);
         json::set(name, fmt);
     }
-    
+
     void json::set(const c8* name, const bool val)
     {
         Str fmt;
         fmt.appendf("%i", val);
         json::set(name, fmt);
     }
-    
+
     void json::set(const c8* name, const s32 val)
     {
         Str fmt;
         fmt.appendf("%u", val);
         json::set(name, fmt);
     }
-    
+
     void json::set(const c8* name, const f32 val)
     {
         Str fmt;
@@ -803,7 +803,7 @@ namespace pen
     void json::set_filename(const c8* name, const Str& filename)
     {
         Str fn = str_replace_chars(filename, ':', '@');
-        fn = str_replace_chars(fn, '\\', '/');
+        fn     = str_replace_chars(fn, '\\', '/');
 
         set(name, fn.c_str());
     }
@@ -811,8 +811,8 @@ namespace pen
     Str json::as_filename(const c8* default_value)
     {
         Str fn = as_str(default_value);
-        fn = str_replace_chars(fn, '@', ':');
-        fn = str_replace_chars(fn, '\\', '/');
+        fn     = str_replace_chars(fn, '@', ':');
+        fn     = str_replace_chars(fn, '\\', '/');
 
         return fn;
     }

@@ -24,7 +24,7 @@ namespace pen
     // query it with:
     // j.get_type() == JSMN_ARRAY or JSMN_OBJECT
     //
-    // Arrays: 
+    // Arrays:
     // u32 num_array_elements = j.size()
     // for(u32 i = 0; i < num_array_elements; ++i)
     //        value = j[i].as_bool;
@@ -38,8 +38,8 @@ namespace pen
     // printf(j.dumps().c_str())
 
     // To use unstrict json without the need for quotes around keys and string values
-    // care must be taken with filenames, colons (:) need to be stripped from filenames (ie C:\windows) 
-    // use set_filename which will replace : with @ (ie C:@windows) 
+    // care must be taken with filenames, colons (:) need to be stripped from filenames (ie C:\windows)
+    // use set_filename which will replace : with @ (ie C:@windows)
 
     // Combine will combine members of j1 and j2 on an object by object basis
 

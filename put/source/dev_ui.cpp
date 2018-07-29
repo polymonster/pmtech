@@ -1,5 +1,6 @@
 #include <fstream>
 
+#include "console.h"
 #include "dev_ui.h"
 #include "file_system.h"
 #include "memory.h"
@@ -8,7 +9,6 @@
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
-#include "console.h"
 
 extern pen::window_creation_params pen_window;
 

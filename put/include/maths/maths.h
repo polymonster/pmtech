@@ -128,12 +128,12 @@ namespace maths
 
         return vec3f(x, z, y);
     }
-    
+
     // Convert vector xyz to azimuth, altitude
     inline void xyz_to_azimuth_altitude(vec3f v, f32& azimuth, f32& altitude)
     {
-        azimuth = atan2(v.y, v.x);
-        altitude = atan2(v.z, sqrt(v.x * v.x+ v.y * v.y));
+        azimuth  = atan2(v.y, v.x);
+        altitude = atan2(v.z, sqrt(v.x * v.x + v.y * v.y));
     }
 
     // Get distance to plane x defined by point on plane x0 and normal of plane xN

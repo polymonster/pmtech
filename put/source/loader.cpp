@@ -211,11 +211,11 @@ namespace put
                 break;
             case PEN_TEX_FORMAT_BGRA8_UNORM:
             case PEN_TEX_FORMAT_RGBA8_UNORM:
-                pf.size = 32;
-                pf.a_mask = 0xffffffff;
-                pf.r_mask = 0xffffffff;
-                pf.g_mask = 0xffffffff;
-                pf.b_mask = 0xffffffff;
+                pf.size          = 32;
+                pf.a_mask        = 0xffffffff;
+                pf.r_mask        = 0xffffffff;
+                pf.g_mask        = 0xffffffff;
+                pf.b_mask        = 0xffffffff;
                 pf.rgb_bit_count = 32;
                 break;
         }
@@ -438,9 +438,9 @@ namespace put
                         Str fn       = input["name"].as_filename();
 
                         u32       current_ts = 0;
-                        pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
+                        pen_error err        = pen::filesystem_getmtime(fn.c_str(), current_ts);
 
-                        //dev_console_log("%s: %i,%i", fn.c_str(), current_ts, built_ts);
+                        // dev_console_log("%s: %i,%i", fn.c_str(), current_ts, built_ts);
 
                         if (current_ts > built_ts && err == PEN_ERR_OK)
                         {

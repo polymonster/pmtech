@@ -3,6 +3,7 @@
 #include "ces/ces_resources.h"
 #include "ces/ces_scene.h"
 #include "ces/ces_utilities.h"
+#include "data_struct.h"
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "file_system.h"
@@ -16,7 +17,6 @@
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "data_struct.h"
 
 #include "console.h"
 

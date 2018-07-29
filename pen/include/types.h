@@ -24,8 +24,8 @@ typedef unsigned char u8;
 typedef wchar_t c16;
 typedef char    c8;
 
-typedef float  f32;
-typedef double f64;
+typedef float    f32;
+typedef double   f64;
 typedef uint16_t f16;
 
 typedef unsigned long ulong;
@@ -94,19 +94,18 @@ enum pen_error
 
 inline f16 float_to_half(f32 f)
 {
-    union bits
-    {
-        float f;
-        int32_t si;
+    union bits {
+        float    f;
+        int32_t  si;
         uint32_t ui;
     };
 
-    static int const shift = 13;
+    static int const shift      = 13;
     static int const shift_sign = 16;
 
-    static int32_t const infN = 0x7F800000; // flt32 infinity
-    static int32_t const maxN = 0x477FE000; // max flt16 normal as a flt32
-    static int32_t const minN = 0x38800000; // min flt16 normal as a flt32
+    static int32_t const infN  = 0x7F800000; // flt32 infinity
+    static int32_t const maxN  = 0x477FE000; // max flt16 normal as a flt32
+    static int32_t const minN  = 0x38800000; // min flt16 normal as a flt32
     static int32_t const signN = 0x80000000; // flt32 sign bit
 
     static int32_t const infC = infN >> shift;
@@ -122,7 +121,7 @@ inline f16 float_to_half(f32 f)
     static int32_t const minD = minC - subC - 1;
 
     bits v, s;
-    v.f = f;
+    v.f           = f;
     uint32_t sign = v.si & signN;
     v.si ^= sign;
     sign >>= shift_sign; // logical shift

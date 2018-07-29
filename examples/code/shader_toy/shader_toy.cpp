@@ -276,12 +276,11 @@ PEN_TRV pen::user_entry(void* params)
 
         pen::renderer_set_rasterizer_state(k_render_handles.raster_state);
 
-        k_render_handles.vp.x = 0;
-        k_render_handles.vp.y = 0;
-        k_render_handles.vp.width = pen_window.width;
+        k_render_handles.vp.x      = 0;
+        k_render_handles.vp.y      = 0;
+        k_render_handles.vp.width  = pen_window.width;
         k_render_handles.vp.height = pen_window.height;
-        
-        
+
         // update cbuffers
         // view
         float L = 0.0f;

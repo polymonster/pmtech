@@ -94,7 +94,7 @@ PEN_TRV pen::user_entry(void* params)
         float H         = 2.0f / vp.height;
         float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
         pen::renderer_update_buffer(cb_2d_view, mvp, sizeof(mvp), 0);
-        
+
         put::dbg::render_2d(cb_2d_view);
 
         // present

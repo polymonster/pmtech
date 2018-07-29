@@ -359,17 +359,17 @@ namespace put
 
             scene->flags |= INVALIDATE_SCENE_TREE;
         }
-        
+
         void clear_selection(entity_scene* scene)
         {
             u32 sel_count = sb_count(s_selection_list);
-            
+
             for (u32 i = 0; i < sel_count; ++i)
             {
                 u32 si = s_selection_list[i];
                 scene->state_flags[si] &= ~SF_SELECTED;
             }
-            
+
             sb_clear(s_selection_list);
             scene->flags |= INVALIDATE_SCENE_TREE;
         }
@@ -422,25 +422,25 @@ namespace put
             else
                 scene->state_flags[index] |= SF_SELECTED;
         }
-        
+
         void delete_selection(entity_scene* scene)
         {
             u32 sel_num = sb_count(s_selection_list);
             for (u32 s = 0; s < sel_num; ++s)
             {
                 u32 i = s_selection_list[s];
-                
+
                 std::vector<s32> node_index_list;
                 build_heirarchy_node_list(scene, i, node_index_list);
-                
+
                 for (auto& c : node_index_list)
                     if (c > -1)
                         delete_entity(scene, c);
             }
             sb_clear(s_selection_list);
-            
+
             initialise_free_list(scene);
-            
+
             scene->flags |= put::ces::INVALIDATE_SCENE_TREE;
         }
 
@@ -535,7 +535,7 @@ namespace put
                         u32 sls = sb_count(s_selection_list);
                         for (u32 i = 0; i < sls; ++i)
                             scene->state_flags[s_selection_list[i]] &= ~SF_SELECTED;
-                        
+
                         sb_clear(s_selection_list);
 
                         pm = SELECT_ADD;
@@ -1179,9 +1179,9 @@ namespace put
                 if (import)
                 {
                     u32 len = pen::string_length(import);
-                    
+
                     char pm = import[len - 1];
-                    switch(pm)
+                    switch (pm)
                     {
                         case 'm':
                             put::ces::load_pmm(import, sc->scene);
@@ -1189,14 +1189,14 @@ namespace put
                         case 's':
                         {
                             put::ces::load_scene(import, sc->scene, open_merge);
-                            
+
                             if (!open_merge)
                                 k_model_view_controller.current_working_scene = import;
-                            
+
                             Str fn = import;
                             dev_ui::set_program_preference_filename("last_loaded_scene", import);
                         }
-                            break;
+                        break;
                         case 'v':
                             put::ces::load_pmv(import, sc->scene);
                             break;
@@ -1254,7 +1254,7 @@ namespace put
                 {
                     put::ces::save_scene(save_file, sc->scene);
                     k_model_view_controller.current_working_scene = save_file;
-                    open_save = false;
+                    open_save                                     = false;
 
                     dev_ui::set_program_preference_filename("last_loaded_scene", save_file);
                 }
@@ -1428,7 +1428,7 @@ namespace put
 
             Str button_text = "Set Start Transform";
 
-            u32 sel_num     = sb_count(s_selection_list);
+            u32 sel_num = sb_count(s_selection_list);
             for (u32 s = 0; s < sel_num; ++s)
             {
                 u32 i = s_selection_list[s];
@@ -1439,7 +1439,7 @@ namespace put
                     break;
                 }
             }
-            
+
             if (ImGui::Button(button_text.c_str()))
             {
                 for (u32 s = 0; s < sel_num; ++s)
@@ -1479,42 +1479,42 @@ namespace put
             if (ImGui::CollapsingHeader("Physics"))
             {
                 k_physics_preview.active = true;
-                
+
                 // Delete selection if all have physics
                 bool del_button = true;
-                u32 sel_num     = sb_count(s_selection_list);
+                u32  sel_num    = sb_count(s_selection_list);
                 for (u32 s = 0; s < sel_num; ++s)
                 {
                     u32 i = s_selection_list[s];
-                    
+
                     if (!(scene->entities[i] & CMP_PHYSICS))
                     {
                         del_button = false;
                         break;
                     }
                 }
-                
-                if(del_button)
+
+                if (del_button)
                 {
                     ImGui::PushID("physics");
-                    
-                    if(ImGui::Button(ICON_FA_TRASH))
+
+                    if (ImGui::Button(ICON_FA_TRASH))
                     {
                         for (u32 s = 0; s < sel_num; ++s)
                         {
                             u32 si = s_selection_list[s];
-                            
+
                             destroy_physics(scene, si);
                         }
                     }
-                    
+
                     ImGui::PopID();
                 }
 
                 ImGui::Combo("Type##Physics", &physics_type, "Rigid Body\0Constraint\0");
 
                 k_physics_preview.params.type = physics_type;
-                
+
                 if (physics_type == PHYSICS_TYPE_RIGID_BODY)
                 {
                     // rb
@@ -1558,7 +1558,6 @@ namespace put
 
                     return iv;
                 }
-
 
                 static s32 primitive_type = -1;
                 ImGui::Combo("Shape##Primitive", (s32*)&primitive_type, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0", 5);
@@ -1637,7 +1636,7 @@ namespace put
             cmp_material& mm = scene->materials[selected_index];
 
             // multi parameters
-            s32 shader = mm.pmfx_shader;
+            s32 shader    = mm.pmfx_shader;
             s32 technique = mm.technique;
 
             // set parameters if all are shared, if not set to invalid
@@ -1674,7 +1673,7 @@ namespace put
                     }
 
                     auto& mm = scene->materials[selected_index];
-                    bool cm = false;
+                    bool  cm = false;
 
                     u32        num_shaders;
                     const c8** shader_list = pmfx::get_shader_list(num_shaders);
@@ -1688,13 +1687,13 @@ namespace put
                     if (cm)
                     {
                         hash_id id_technique = PEN_HASH(technique_list[technique]);
-                        
+
                         for (u32 i = 0; i < num_selected; ++i)
                         {
-                            u32 si = s_selection_list[i];
+                            u32 si                           = s_selection_list[i];
                             scene->materials[si].pmfx_shader = shader;
-                            scene->materials[si].technique = technique;
-                            
+                            scene->materials[si].technique   = technique;
+
                             scene->material_resources[si].id_technique = id_technique;
                         }
                     }
@@ -1710,27 +1709,28 @@ namespace put
 
                             switch (tc[i].widget)
                             {
-                            case pmfx::CW_INPUT:
-                                ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
-                                break;
-                            case pmfx::CW_SLIDER:
-                                ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f", 1.0f);
-                                break;
-                            case pmfx::CW_COLOUR:
-                                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(f[0], f[1], f[2], 1.0f));
-                                if (ImGui::CollapsingHeader(tc[i].name.c_str()))
-                                {
-                                    if (tc[i].num_elements == 3)
+                                case pmfx::CW_INPUT:
+                                    ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
+                                    break;
+                                case pmfx::CW_SLIDER:
+                                    ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max,
+                                                        "%.3f", 1.0f);
+                                    break;
+                                case pmfx::CW_COLOUR:
+                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(f[0], f[1], f[2], 1.0f));
+                                    if (ImGui::CollapsingHeader(tc[i].name.c_str()))
                                     {
-                                        ImGui::ColorPicker3(tc[i].name.c_str(), f);
+                                        if (tc[i].num_elements == 3)
+                                        {
+                                            ImGui::ColorPicker3(tc[i].name.c_str(), f);
+                                        }
+                                        else
+                                        {
+                                            ImGui::ColorPicker4(tc[i].name.c_str(), f);
+                                        }
                                     }
-                                    else
-                                    {
-                                        ImGui::ColorPicker4(tc[i].name.c_str(), f);
-                                    }
-                                }
-                                ImGui::PopStyleColor();
-                                break;
+                                    ImGui::PopStyleColor();
+                                    break;
                             }
                         }
 
@@ -1744,7 +1744,7 @@ namespace put
                             for (u32 c = 0; c < num_constants; ++c)
                             {
                                 u32 cb_offset = tc[c].cb_offset;
-                                u32 tc_size = sizeof(f32) * tc[c].num_elements;
+                                u32 tc_size   = sizeof(f32) * tc[c].num_elements;
 
                                 f32* f1 = &mat.data[cb_offset];
                                 f32* f2 = &pre_edit.data[cb_offset];
@@ -1900,10 +1900,10 @@ namespace put
                 {
                     cmp_light& snl = scene->lights[selected_index];
 
-                    bool changed = ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box (wip)\0",
-                                 4);
-                    
-                    if(snl.azimuth == 0.0f && snl.altitude == 0.0f)
+                    bool changed = ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type,
+                                                "Directional\0Point\0Spot\0Area Box (wip)\0", 4);
+
+                    if (snl.azimuth == 0.0f && snl.altitude == 0.0f)
                         maths::xyz_to_azimuth_altitude(snl.direction, snl.azimuth, snl.altitude);
 
                     switch (scene->lights[selected_index].type)
@@ -1936,14 +1936,14 @@ namespace put
                         colour_picker_open = true;
 
                     ImGui::PopStyleColor();
-                    
-                    if(changed)
+
+                    if (changed)
                     {
                         s32 s = selected_index;
-                        
+
                         scene->bounding_volumes[s].min_extents = -vec3f::one();
                         scene->bounding_volumes[s].max_extents = vec3f::one();
-                        
+
                         scene->world_matrices[s] = mat4::create_identity();
                     }
                 }
@@ -1958,7 +1958,7 @@ namespace put
 
                         scene->bounding_volumes[s].min_extents = -vec3f::one();
                         scene->bounding_volumes[s].max_extents = vec3f::one();
-                        
+
                         scene->world_matrices[s] = mat4::create_identity();
                     }
                 }
@@ -2062,14 +2062,14 @@ namespace put
                     store_node_state(scene, ni, REDO);
                 }
                 put::dev_ui::set_tooltip("Add New Node");
-                
+
                 ImGui::SameLine();
-                
+
                 if (ImGui::Button(ICON_FA_TRASH))
                     delete_selection(scene);
-                
+
                 put::dev_ui::set_tooltip("Delete Selection");
-                
+
                 ImGui::SameLine();
 
                 static bool list_view = false;
@@ -2284,9 +2284,9 @@ namespace put
 
         void transform_widget(const scene_view& view)
         {
-            if(pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND))
+            if (pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND))
                 return;
-            
+
             k_select_flags &= ~(WIDGET_SELECTED);
 
             entity_scene* scene = view.scene;
@@ -2768,39 +2768,39 @@ namespace put
                     {
                         cmp_light& snl = scene->lights[s];
 
-                        switch(snl.type)
+                        switch (snl.type)
                         {
                             case LIGHT_TYPE_DIR:
                             {
                                 dbg::add_line(vec3f::zero(), snl.direction * 10000.0f, vec4f(snl.colour, 1.0f));
                             }
-                                break;
+                            break;
                             case LIGHT_TYPE_SPOT:
                             {
                                 vec3f dir = scene->world_matrices[s].get_fwd();
                                 vec3f pos = scene->world_matrices[s].get_translation();
-                                
+
                                 dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
                             }
-                                break;
+                            break;
                             case LIGHT_TYPE_AREA_BOX:
                             {
                                 dbg::add_obb(scene->world_matrices[s], vec4f(snl.colour, 1.0f));
                             }
-                                break;
+                            break;
                             case LIGHT_TYPE_POINT:
                             {
                                 vec3f p = scene->world_matrices[s].get_translation();
-                                
+
                                 p = maths::project_to_sc(p, view_proj, vpi);
-                                
+
                                 if (p.z > 0.0f)
                                     put::dbg::add_quad_2f(p.xy, vec2f(5.0f, 5.0f), vec4f(scene->lights[s].colour, 1.0f));
                             }
-                                break;
+                            break;
                         }
                     }
-                    
+
                     dbg::add_aabb(scene->bounding_volumes[s].transformed_min_extents,
                                   scene->bounding_volumes[s].transformed_max_extents);
                 }

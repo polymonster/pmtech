@@ -188,9 +188,9 @@ namespace put
             static hash_id ID_DEBUG_3D = PEN_HASH("debug_3d");
 
             pmfx::set_technique(debug_shader, ID_DEBUG_3D, 0);
-            pen::renderer_set_constant_buffer(cb_3d_view, 1, PEN_SHADER_TYPE_VS); //gles on ios will crash if not set
+            pen::renderer_set_constant_buffer(cb_3d_view, 1, PEN_SHADER_TYPE_VS); // gles on ios will crash if not set
             pen::renderer_set_constant_buffer(cb_3d_view, 0, PEN_SHADER_TYPE_VS);
-            
+
             pen::renderer_set_vertex_buffer(vb_3d[VB_TRIS], 0, sizeof(vertex_debug_3d), 0);
             pen::renderer_draw(tri_vert_3d_count, 0, PEN_PT_TRIANGLELIST);
 
@@ -203,7 +203,7 @@ namespace put
         }
 
         void render_2d(u32 cb_2d_view)
-        {            
+        {
             pen::renderer_update_buffer(vb_2d[VB_TRIS], &debug_2d_tris[0], sizeof(vertex_debug_2d) * tri_vert_2d_count);
             pen::renderer_update_buffer(vb_2d[VB_LINES], &debug_2d_verts[0], sizeof(vertex_debug_2d) * line_vert_2d_count);
 
@@ -211,7 +211,7 @@ namespace put
 
             pmfx::set_technique(debug_shader, ID_DEBUG_2D, 0);
             pen::renderer_set_constant_buffer(cb_2d_view, 1, PEN_SHADER_TYPE_VS);
-            pen::renderer_set_constant_buffer(cb_2d_view, 0, PEN_SHADER_TYPE_VS); //gles on ios will crash if not set
+            pen::renderer_set_constant_buffer(cb_2d_view, 0, PEN_SHADER_TYPE_VS); // gles on ios will crash if not set
 
             pen::renderer_set_vertex_buffer(vb_2d[VB_TRIS], 0, sizeof(vertex_debug_2d), 0);
             pen::renderer_draw(tri_vert_2d_count, 0, PEN_PT_TRIANGLELIST);

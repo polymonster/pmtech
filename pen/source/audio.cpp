@@ -450,7 +450,7 @@ namespace pen
         FMOD_RESULT result;
 
         g_audio_resources[resource_slot].type = res_type;
-        
+
         FMOD::DSP** new_dsp = (FMOD::DSP**)&g_audio_resources[resource_slot].resource;
 
         result = g_sound_system->createDSPByType(fmod_dsp, new_dsp);

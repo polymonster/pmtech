@@ -726,7 +726,7 @@ void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
         col = vec4f::red();
 
     scene->draw_call_data[sphere.node].v2 = vec4f(col);
-    scene->draw_call_data[aabb.node].v2 = vec4f(col);
+    scene->draw_call_data[aabb.node].v2   = vec4f(col);
 }
 
 void test_line_vs_line(entity_scene* scene, bool initialise)

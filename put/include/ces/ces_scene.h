@@ -120,18 +120,18 @@ namespace put
             Str     material_name;
             Str     shader_name;
             f32     data[64];
-            hash_id id_shader = 0;
-            hash_id id_technique = 0;
-            hash_id id_sampler_state[SN_NUM_TEXTURES] = { 0 };
-            s32     texture_handles[SN_NUM_TEXTURES] = { 0 };
+            hash_id id_shader                         = 0;
+            hash_id id_technique                      = 0;
+            hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
+            s32     texture_handles[SN_NUM_TEXTURES]  = {0};
         };
 
         struct cmp_draw_call
         {
-            mat4 world_matrix;
+            mat4  world_matrix;
             vec4f v1; // generic data 1
             vec4f v2; // generic data 2
-            mat4 world_matrix_inv_transpose;
+            mat4  world_matrix_inv_transpose;
         };
 
         struct cmp_skin
@@ -144,10 +144,10 @@ namespace put
 
         struct cmp_material
         {
-            s32   texture_handles[SN_NUM_TEXTURES]  = {0};
-            u32   sampler_states[SN_NUM_TEXTURES]   = {0};
-            u32   material_cbuffer = PEN_INVALID_HANDLE;
-            u32   material_cbuffer_size = 0;
+            s32 texture_handles[SN_NUM_TEXTURES] = {0};
+            u32 sampler_states[SN_NUM_TEXTURES]  = {0};
+            u32 material_cbuffer                 = PEN_INVALID_HANDLE;
+            u32 material_cbuffer_size            = 0;
 
             pmfx::shader_handle pmfx_shader;
             u32                 technique;
@@ -155,7 +155,7 @@ namespace put
 
         struct cmp_material_data
         {
-            f32 data[64] = { 0 };
+            f32 data[64] = {0};
         };
 
         struct cmp_physics
@@ -228,13 +228,13 @@ namespace put
                 PLAY    = 1
             };
 
-            anim_handle*             handles = nullptr;
-            s32                      joints_offset;
-            anim_handle              current_animation;
-            f32                      current_time;
-            s32                      current_frame     = 0;
-            u8                       play_flags        = STOPPED;
-            bool                     apply_root_motion = true;
+            anim_handle* handles = nullptr;
+            s32          joints_offset;
+            anim_handle  current_animation;
+            f32          current_time;
+            s32          current_frame     = 0;
+            u8           play_flags        = STOPPED;
+            bool         apply_root_motion = true;
         };
 
         struct cmp_light
@@ -242,9 +242,9 @@ namespace put
             u32   type;
             vec3f colour;
 
-            f32 radius = 10.0f;
+            f32 radius       = 10.0f;
             f32 spot_falloff = 0.05f;
-            f32 cos_cutoff = -M_PI/4.0f;
+            f32 cos_cutoff   = -M_PI / 4.0f;
             f32 azimuth;
             f32 altitude;
 
@@ -260,11 +260,10 @@ namespace put
             vec3f scale       = vec3f::one();
         };
 
-
         struct cmp_shadow
         {
             u32 texture_handle; // texture handle for sdf
-            u32 sampler_state; 
+            u32 sampler_state;
         };
 
         struct forward_light

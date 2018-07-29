@@ -21,15 +21,10 @@ namespace put
     namespace pmfx
     {
         const c8*      semantic_names[] = {"SV_POSITION", "POSITION",  "TEXCOORD", "NORMAL",
-                                            "TANGENT",     "BITANGENT", "COLOR",    "BLENDINDICES"};
+                                      "TANGENT",     "BITANGENT", "COLOR",    "BLENDINDICES"};
         shader_program null_shader      = {0};
 
-        hash_id id_widgets[] =
-        {
-            PEN_HASH("slider"),
-            PEN_HASH("input"),
-            PEN_HASH("colour")
-        };
+        hash_id id_widgets[] = {PEN_HASH("slider"), PEN_HASH("input"), PEN_HASH("colour")};
         static_assert(PEN_ARRAY_SIZE(id_widgets) == CW_NUM, "mismatched array size");
 
         struct pmfx
@@ -40,14 +35,13 @@ namespace put
             pen::json       info;
             u32             info_timestamp = 0;
             shader_program* techniques     = nullptr;
-
         };
         pmfx* k_pmfx_list = nullptr;
 
-        const char**  k_shader_names     = nullptr;
-        const char*** k_technique_names  = nullptr;
+        const char**  k_shader_names    = nullptr;
+        const char*** k_technique_names = nullptr;
 
-        u32           k_num_shader_names = 0;
+        u32 k_num_shader_names = 0;
 
         void generate_name_lists()
         {
@@ -100,7 +94,7 @@ namespace put
         {
             if (handle >= sb_count(k_pmfx_list))
                 return nullptr;
-    
+
             u32 nt = sb_count(k_pmfx_list[handle].techniques);
             for (u32 i = 0; i < nt; ++i)
                 if (k_pmfx_list[handle].techniques[i].id_name == id_technique)
@@ -393,8 +387,8 @@ namespace put
             pen::memory_free(link_params.constants);
 
             // generate technique constants meta data
-            program.constants = nullptr;
-            u32 num_technique_constants = j_techique["constants"].size();
+            program.constants               = nullptr;
+            u32 num_technique_constants     = j_techique["constants"].size();
             program.technique_constant_size = j_techique["constants_size_bytes"].as_u32(0);
 
             if (program.technique_constant_size > 0)
@@ -418,15 +412,15 @@ namespace put
                     }
                 }
 
-                tc.min = jc["min"].as_f32(tc.min);
-                tc.max = jc["max"].as_f32(tc.max);
-                tc.step = jc["step"].as_f32(tc.step);
-                tc.cb_offset = jc["offset"].as_u32();
+                tc.min          = jc["min"].as_f32(tc.min);
+                tc.max          = jc["max"].as_f32(tc.max);
+                tc.step         = jc["step"].as_f32(tc.step);
+                tc.cb_offset    = jc["offset"].as_u32();
                 tc.num_elements = jc["num_elements"].as_u32();
 
                 if (tc.num_elements > 1)
                 {
-                    //initialise defaults to 0
+                    // initialise defaults to 0
                     for (u32 d = 0; d < tc.num_elements; ++d)
                         program.constant_defaults[constant_offset + d] = 0.0f;
 
@@ -445,7 +439,6 @@ namespace put
 
                 sb_push(program.constants, tc);
             }
-            
 
             return program;
         }
@@ -458,7 +451,8 @@ namespace put
             if (index >= sb_count(k_pmfx_list[handle].techniques))
                 return;
 
-            memcpy(data, k_pmfx_list[handle].techniques[index].constant_defaults, k_pmfx_list[handle].techniques[index].technique_constant_size);
+            memcpy(data, k_pmfx_list[handle].techniques[index].constant_defaults,
+                   k_pmfx_list[handle].techniques[index].technique_constant_size);
         }
 
         technique_constant* get_technique_constants(shader_handle handle, u32 index)

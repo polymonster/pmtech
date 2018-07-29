@@ -4,6 +4,7 @@
 #include "ces/ces_scene.h"
 #include "ces/ces_utilities.h"
 #include "console.h"
+#include "data_struct.h"
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "file_system.h"
@@ -17,7 +18,6 @@
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "data_struct.h"
 
 using namespace put;
 using namespace ces;
@@ -104,10 +104,10 @@ void create_physics_objects(ces::entity_scene* scene)
 
     scene->entities[master_node] |= (CMP_TRANSFORM | CMP_GEOMETRY | CMP_MATERIAL);
 
-    scene->geometries[master_node] = scene->geometries[skinned_char];
-    scene->materials[master_node]  = scene->materials[skinned_char];
+    scene->geometries[master_node]         = scene->geometries[skinned_char];
+    scene->materials[master_node]          = scene->materials[skinned_char];
     scene->material_resources[master_node] = scene->material_resources[skinned_char];
-    scene->cbuffer[master_node]    = scene->cbuffer[skinned_char];
+    scene->cbuffer[master_node]            = scene->cbuffer[skinned_char];
 
     s32 num = 20;
 

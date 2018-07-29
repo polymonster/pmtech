@@ -91,7 +91,7 @@ namespace
 #define CHECK_GL_ERROR
 #define CHECK_CALL(C) C
 #endif
-    
+
 #ifdef PEN_GLES3
 #define PEN_SET_BASE_VERTEX(BV) g_bound_state.base_vertex = BV
 #else
@@ -929,7 +929,7 @@ namespace pen
 
             auto& res = resource_pool[g_bound_state.vertex_buffer[v]].handle;
             CHECK_CALL(glBindBuffer(GL_ARRAY_BUFFER, res));
-            
+
             u32 num_attribs = sb_count(input_res->attributes);
             for (u32 a = 0; a < num_attribs; ++a)
             {
@@ -939,11 +939,10 @@ namespace pen
                     continue;
 
                 CHECK_CALL(glEnableVertexAttribArray(attribute.location));
-                
+
                 u32 base_vertex_offset = g_bound_state.vertex_buffer_stride[v] * g_bound_state.base_vertex;
 
-                CHECK_CALL(glVertexAttribPointer(attribute.location, attribute.num_elements,
-                                                 attribute.type,
+                CHECK_CALL(glVertexAttribPointer(attribute.location, attribute.num_elements, attribute.type,
                                                  attribute.type == GL_UNSIGNED_BYTE ? true : false,
                                                  g_bound_state.vertex_buffer_stride[v],
                                                  (void*)(attribute.offset + base_vertex_offset)));
@@ -1042,7 +1041,7 @@ namespace pen
     void direct::renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
     {
         PEN_SET_BASE_VERTEX(base_vertex);
-        
+
         bind_state(primitive_topology);
 
         // bind index buffer -this must always be re-bound
@@ -1054,12 +1053,12 @@ namespace pen
         CHECK_CALL(
             glDrawElementsBaseVertex(primitive_topology, index_count, g_bound_state.index_format, offset, base_vertex));
     }
-    
+
     void direct::renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                                  u32 base_vertex, u32 primitive_topology)
     {
         PEN_SET_BASE_VERTEX(base_vertex);
-        
+
         bind_state(primitive_topology);
 
         // bind index buffer -this must always be re-bound

@@ -42,7 +42,7 @@ vec3f random_vel(f32 min, f32 max)
     f32 x = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
     f32 y = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
     f32 z = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
-    
+
     return vec3f(x, y, z);
 }
 
@@ -59,7 +59,7 @@ void animate_lights(entity_scene* scene, f32 dt)
     t += dt * 0.001f;
 
     static vec3f s_velocities[MAX_FORWARD_LIGHTS];
-    static bool s_initialise = true;
+    static bool  s_initialise = true;
     if (s_initialise)
     {
         s_initialise = false;
@@ -81,30 +81,30 @@ void animate_lights(entity_scene* scene, f32 dt)
 
         if (vel_index == 0)
         {
-            f32 tx = sin(t);
+            f32 tx                           = sin(t);
             scene->transforms[n].translation = vec3f(tx * -20.0f, 4.0f, 15.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
 
         if (vel_index == 1)
         {
-            f32 tz = cos(t);
+            f32 tz                           = cos(t);
             scene->transforms[n].translation = vec3f(-15.0f, 3.0f, tz * 20.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
 
         if (vel_index == 2)
         {
-            f32 tx = sin(t*0.5);
-            f32 tz = cos(t*0.5);
+            f32 tx                           = sin(t * 0.5);
+            f32 tz                           = cos(t * 0.5);
             scene->transforms[n].translation = vec3f(tx * 40.0f, 1.0f, tz * 30.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
 
         if (vel_index == 3)
         {
-            f32 tx = cos(t*0.25);
-            f32 tz = sin(t*0.25);
+            f32 tx                           = cos(t * 0.25);
+            f32 tz                           = sin(t * 0.25);
             scene->transforms[n].translation = vec3f(tx * 30.0f, 6.0f, tz * 30.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
@@ -172,8 +172,8 @@ PEN_TRV pen::user_entry(void* params)
     bool enable_dev_ui = true;
 
     f32 frame_time = 0.0f;
-    
-    //load scene
+
+    // load scene
     put::ces::load_scene("data/scene/sdf-scene.pms", main_scene);
 
     while (1)
