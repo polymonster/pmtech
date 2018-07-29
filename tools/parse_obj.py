@@ -80,11 +80,13 @@ def write_geometry(file, root):
                 elem_index = 0
                 for vi in velems:
                     ii = elem_indices[elem_index]
-                    vertex[ii] = vertex_data[ii][int(vi)-1]
-                    for vf in vertex_data[ii][int(vi)-1]:
-                        if elem_index == 0:
-                            cur_mesh[pb].append(float(vf))
-                            cur_mesh[cb].append(float(vf))
+                    li = int(vi)-1
+                    if(li < len(vertex_data[ii])):
+                        vertex[ii] = vertex_data[ii][li]
+                        for vf in vertex_data[ii][int(vi)-1]:
+                            if elem_index == 0:
+                                cur_mesh[pb].append(float(vf))
+                                cur_mesh[cb].append(float(vf))
                     elem_index += 1
                 for v in vertex:
                     for f in v:
@@ -97,18 +99,23 @@ def write_geometry(file, root):
             cur_mesh = (element[1], "", [], [], [], [])
             index = 0
         if element[0] == 'usemtl':
-            cur_mesh[mat_name] = element[0]
+            if not cur_mesh:
+                cur_mesh = (basename, element[0], [], [], [], [])
+            else:
+                cur_mesh[mat_name] = element[0]
 
     if cur_mesh:
         meshes.append(cur_mesh)
 
     geometry_data = [struct.pack("i", (int(helpers.version_number))),
-                     struct.pack("i", (int(1)))]
+                     struct.pack("i", (int(len(meshes))))]
 
     for m in meshes:
+        print(m[0])
         helpers.pack_parsable_string(geometry_data, m[0])
 
     data_size = len(geometry_data) * 4
+
     for mesh in meshes:
         mesh_data = []
 
@@ -157,21 +164,21 @@ def write_geometry(file, root):
     helpers.output_file.geometry_sizes.append(data_size)
 
     scene_data = [struct.pack("i", (int(helpers.version_number))),
-                  struct.pack("i", (int(1))),
-                  struct.pack("i", (int(0)))]
+                  struct.pack("i", (int(len(meshes))))]
 
-    helpers.pack_parsable_string(scene_data, basename)
-    helpers.pack_parsable_string(scene_data, basename)
+    for m in meshes:
+        scene_data.append(struct.pack("i", (int(0)))) # node type
+        helpers.pack_parsable_string(scene_data, basename)
+        helpers.pack_parsable_string(scene_data, m[0])
+        scene_data.append(struct.pack("i", int(1))) # num sub meshes
 
-    scene_data.append(struct.pack("i", (int(len(meshes)))))
-    for mesh in meshes:
-        helpers.pack_parsable_string(scene_data, mesh[mat_name])
-        helpers.pack_parsable_string(scene_data, mesh[mat_name])
+        # material name / symbol
+        helpers.pack_parsable_string(scene_data, m[mat_name])
+        helpers.pack_parsable_string(scene_data, m[mat_name])
 
-    scene_data.append(struct.pack("i", (int(0))))
-
-    scene_data.append(struct.pack("i", (int(1))))
-    scene_data.append(struct.pack("i", (int(3))))
+        scene_data.append(struct.pack("i", (int(0)))) # parent
+        scene_data.append(struct.pack("i", (int(1)))) # transform count
+        scene_data.append(struct.pack("i", (int(3)))) # transform type
 
     helpers.output_file.scene.append(scene_data)
 

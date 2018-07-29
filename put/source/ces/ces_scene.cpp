@@ -541,7 +541,7 @@ namespace put
         }
 
         void update_scene(entity_scene* scene, f32 dt)
-        {            
+        {
             if (scene->flags & PAUSE_UPDATE)
             {
                 physics::set_paused(1);
@@ -1033,11 +1033,6 @@ namespace put
             {
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
-                
-                if(scene->state_flags[n] & SF_MATERIAL_INITIALISED)
-                {
-                    u32 a = 0;
-                }
 
                 cmp_material& mat = scene->materials[n];
                 material_resource& mat_res = scene->material_resources[n];
