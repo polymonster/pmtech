@@ -53,7 +53,7 @@ def process_single_file(f):
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
 
-    if f.endswith(".dds"):
+    if f.endswith(".dds") or f.endswith(".pmv"):
         print("copying " + f)
         shutil.copy(src_file, dest_file)
     else:
@@ -117,7 +117,7 @@ build_dir = os.path.join(os.getcwd(), "bin", platform_name, "data", "textures")
 current_directory = os.path.join(os.getcwd(), "")
 platform_data_dir = os.path.join("bin", platform_name, "")
 
-supported_formats = [".png", ".jpg", ".tif", ".bmp", ".tga", ".cube"]
+supported_formats = [".png", ".jpg", ".tif", ".bmp", ".tga", ".cube", ".dds", ".pmv"]
 container_formats = [".cube", ".volume", ".array"]
 built_in_texture_dir = os.path.join(os.getcwd(), pmtech_dir, "assets", "textures")
 

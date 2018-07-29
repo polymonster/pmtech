@@ -109,6 +109,17 @@ namespace put
 
             scene->entities[s] |= CMP_PHYSICS;
         }
+        
+        void destroy_physics(entity_scene* scene, s32 node_index)
+        {
+            if(!(scene->entities[node_index] & CMP_PHYSICS))
+                return;
+            
+            scene->entities[node_index] &= ~CMP_PHYSICS;
+            
+            physics::release_entity(scene->physics_handles[node_index]);
+            scene->physics_handles[node_index] = PEN_INVALID_HANDLE;
+        }
 
         void instantiate_geometry(geometry_resource* gr, entity_scene* scene, s32 node_index)
         {
@@ -144,6 +155,9 @@ namespace put
 
         void destroy_geometry(entity_scene* scene, u32 node_index)
         {
+            if(!(scene->entities[node_index] & CMP_GEOMETRY))
+                return;
+            
             scene->entities[node_index] &= ~CMP_GEOMETRY;
             scene->entities[node_index] &= ~CMP_MATERIAL;
 

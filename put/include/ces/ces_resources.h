@@ -126,6 +126,7 @@ namespace put
         void instantiate_sdf_shadow(const c8* pmv_filename, entity_scene* scene, u32 node_index);
 
         void destroy_geometry(entity_scene* scene, u32 node_index);
+        void destroy_physics(entity_scene* scene, s32 node_index);
 
         void bake_material_handles(entity_scene* scene, u32 node_index);
         void bake_material_handles();

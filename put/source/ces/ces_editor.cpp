@@ -1427,6 +1427,7 @@ namespace put
             k_physics_preview.params.rigid_body.shape = collision_shape + 1;
 
             Str button_text = "Set Start Transform";
+
             u32 sel_num     = sb_count(s_selection_list);
             for (u32 s = 0; s < sel_num; ++s)
             {
@@ -1438,7 +1439,7 @@ namespace put
                     break;
                 }
             }
-
+            
             if (ImGui::Button(button_text.c_str()))
             {
                 for (u32 s = 0; s < sel_num; ++s)
@@ -1478,11 +1479,42 @@ namespace put
             if (ImGui::CollapsingHeader("Physics"))
             {
                 k_physics_preview.active = true;
+                
+                // Delete selection if all have physics
+                bool del_button = true;
+                u32 sel_num     = sb_count(s_selection_list);
+                for (u32 s = 0; s < sel_num; ++s)
+                {
+                    u32 i = s_selection_list[s];
+                    
+                    if (!(scene->entities[i] & CMP_PHYSICS))
+                    {
+                        del_button = false;
+                        break;
+                    }
+                }
+                
+                if(del_button)
+                {
+                    ImGui::PushID("physics");
+                    
+                    if(ImGui::Button(ICON_FA_TRASH))
+                    {
+                        for (u32 s = 0; s < sel_num; ++s)
+                        {
+                            u32 si = s_selection_list[s];
+                            
+                            destroy_physics(scene, si);
+                        }
+                    }
+                    
+                    ImGui::PopID();
+                }
 
                 ImGui::Combo("Type##Physics", &physics_type, "Rigid Body\0Constraint\0");
 
                 k_physics_preview.params.type = physics_type;
-
+                
                 if (physics_type == PHYSICS_TYPE_RIGID_BODY)
                 {
                     // rb
@@ -1868,7 +1900,7 @@ namespace put
                 {
                     cmp_light& snl = scene->lights[selected_index];
 
-                    ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box (wip)\0",
+                    bool changed = ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type, "Directional\0Point\0Spot\0Area Box (wip)\0",
                                  4);
                     
                     if(snl.azimuth == 0.0f && snl.altitude == 0.0f)
@@ -1904,6 +1936,16 @@ namespace put
                         colour_picker_open = true;
 
                     ImGui::PopStyleColor();
+                    
+                    if(changed)
+                    {
+                        s32 s = selected_index;
+                        
+                        scene->bounding_volumes[s].min_extents = -vec3f::one();
+                        scene->bounding_volumes[s].max_extents = vec3f::one();
+                        
+                        scene->world_matrices[s] = mat4::create_identity();
+                    }
                 }
                 else
                 {
@@ -1916,6 +1958,8 @@ namespace put
 
                         scene->bounding_volumes[s].min_extents = -vec3f::one();
                         scene->bounding_volumes[s].max_extents = vec3f::one();
+                        
+                        scene->world_matrices[s] = mat4::create_identity();
                     }
                 }
             }
@@ -2756,11 +2800,9 @@ namespace put
                                 break;
                         }
                     }
-                    else
-                    {
-                        dbg::add_aabb(scene->bounding_volumes[s].transformed_min_extents,
-                                      scene->bounding_volumes[s].transformed_max_extents);
-                    }
+                    
+                    dbg::add_aabb(scene->bounding_volumes[s].transformed_min_extents,
+                                  scene->bounding_volumes[s].transformed_max_extents);
                 }
             }
 

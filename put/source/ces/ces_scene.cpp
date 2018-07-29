@@ -117,10 +117,10 @@ namespace put
         void delete_entity(entity_scene* scene, u32 node_index)
         {
             // free allocated stuff
-            if (scene->physics_handles[node_index])
+            if (is_valid(scene->physics_handles[node_index]))
                 physics::release_entity(scene->physics_handles[node_index]);
 
-            if (scene->cbuffer[node_index])
+            if (is_valid(scene->cbuffer[node_index]))
                 pen::renderer_release_buffer(scene->cbuffer[node_index]);
 
             // zero
@@ -130,10 +130,10 @@ namespace put
         void delete_entity_first_pass(entity_scene* scene, u32 node_index)
         {
             // constraints must be freed or removed before we delete rigidbodies using them
-            if (scene->physics_handles[node_index] && (scene->entities[node_index] & CMP_CONSTRAINT))
+            if (is_valid(scene->physics_handles[node_index]) && (scene->entities[node_index] & CMP_CONSTRAINT))
                 physics::release_entity(scene->physics_handles[node_index]);
 
-            if (scene->cbuffer[node_index])
+            if (is_valid(scene->cbuffer[node_index]))
                 pen::renderer_release_buffer(scene->cbuffer[node_index]);
 
             if (scene->entities[node_index] & CMP_PRE_SKINNED)
@@ -925,10 +925,17 @@ namespace put
         };
         static lookup_string* s_lookup_strings = nullptr;
 
-        void write_lookup_string(const char* string, std::ofstream& ofs)
+        void write_lookup_string(const char* string, std::ofstream& ofs, const c8* strip_project_dir = nullptr)
         {
             hash_id id = 0;
-
+            
+            Str stripped = string;
+            if(strip_project_dir)
+            {
+                stripped = pen::str_replace_string(stripped, strip_project_dir, "");
+                string = stripped.c_str();
+            }
+            
             if (!string)
             {
                 ofs.write((const c8*)&id, sizeof(hash_id));
@@ -1004,11 +1011,8 @@ namespace put
 
                 ofs.write((const c8*)&gr->submesh_index, sizeof(u32));
 
-                Str stripped_filename = gr->filename;
-                stripped_filename = pen::str_replace_string(stripped_filename, project_dir.c_str(), "");
-
-                write_lookup_string(stripped_filename.c_str(), ofs);
-                write_lookup_string(gr->geometry_name.c_str(), ofs);
+                write_lookup_string(gr->filename.c_str(), ofs, project_dir.c_str());
+                write_lookup_string(gr->geometry_name.c_str(), ofs, project_dir.c_str());
             }
 
             // animations
@@ -1045,7 +1049,7 @@ namespace put
                 write_lookup_string(technique_name, ofs);
 
                 for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
-                    write_lookup_string(put::get_texture_filename(mat.texture_handles[i]).c_str(), ofs);
+                    write_lookup_string(put::get_texture_filename(mat.texture_handles[i]).c_str(), ofs, project_dir.c_str());
             }
             
             // shadow
@@ -1055,7 +1059,8 @@ namespace put
                     continue;
                 
                 cmp_shadow& shadow = scene->shadows[n];
-                write_lookup_string(put::get_texture_filename(shadow.texture_handle).c_str(), ofs);
+                
+                write_lookup_string(put::get_texture_filename(shadow.texture_handle).c_str(), ofs, project_dir.c_str());
             }
             
             ofs.close();
@@ -1107,7 +1112,7 @@ namespace put
             scene->flags |= INVALIDATE_SCENE_TREE;
             bool error       = false;
             Str  project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
-
+            
             std::ifstream ifs(filename, std::ofstream::binary);
 
             // header
@@ -1218,6 +1223,7 @@ namespace put
 
                     if (name_hash != primitive_id)
                     {
+                        dev_console_log("[scene load] %s", name.c_str());
                         load_pmm(filename.c_str(), nullptr, PMM_GEOMETRY);
 
                         pen::hash_murmur hm;
@@ -1310,7 +1316,7 @@ namespace put
                 Str material_name = read_lookup_string(ifs);
                 Str shader = read_lookup_string(ifs);
                 Str technique = read_lookup_string(ifs);
-
+                
                 for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                 {
                     Str texture_name = read_lookup_string(ifs);
@@ -1321,6 +1327,7 @@ namespace put
                         continue;
                     }
 
+                    dev_console_log("[scene load] %s", texture_name.c_str());
                     mat_res.texture_handles[i] = put::load_texture(texture_name.c_str());
                     mat.texture_handles[i] = mat_res.texture_handles[i];
                 }
@@ -1340,6 +1347,7 @@ namespace put
                 Str sdf_shadow_volume_file = read_lookup_string(ifs);
                 sdf_shadow_volume_file = pen::str_replace_string(sdf_shadow_volume_file, ".dds", ".pmv");
                 
+                dev_console_log("[scene load] %s", sdf_shadow_volume_file.c_str());
                 instantiate_sdf_shadow(sdf_shadow_volume_file.c_str(), scene, n);
             }
             

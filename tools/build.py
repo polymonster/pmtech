@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
     assets_dir = "assets"
 
-    action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs"]
+    action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs", "scene"]
     action_descriptions = ["generate projects and workspaces",
                            "generate shaders and compile binaries",
                            "make binary mesh and animation files",
@@ -265,7 +265,7 @@ if __name__ == "__main__":
             build_steps.append(python_exec + " " + textures_script + common_args)
         elif action == "audio":
             build_steps.append(python_exec + " " + audio_script + common_args)
-        elif action == "fonts" or action == "configs":
+        elif action == "fonts" or action == "configs" or action == "scene":
             copy_steps.append(action)
 
     for step in build_steps:
@@ -277,7 +277,7 @@ if __name__ == "__main__":
 
     if len(copy_steps) > 0:
         print("--------------------------------------------------------------------------------")
-        print("Copy configs and fonts ---------------------------------------------------------")
+        print("Copy data ----------------------------------------------------------------------")
         print("--------------------------------------------------------------------------------")
 
     for step in copy_steps:

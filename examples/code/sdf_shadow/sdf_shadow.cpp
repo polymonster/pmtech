@@ -67,34 +67,6 @@ void animate_lights(entity_scene* scene, f32 dt)
 
         for (u32 i = 0; i < MAX_FORWARD_LIGHTS; ++i)
             s_velocities[i] = random_vel(-1.0f, 1.0f);
-
-        /*
-        u32 vt = put::load_texture("C:/Users/alj/Desktop/vol512.dds");
-
-        // create material for volume sdf sphere trace
-        material_resource* sdf_material = new material_resource;
-        sdf_material->material_name = "volume_sdf_material";
-        sdf_material->shader_name = "pmfx_utility";
-        sdf_material->id_shader = PEN_HASH("pmfx_utility");
-        sdf_material->id_technique = PEN_HASH("volume_sdf");
-        sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
-        sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = vt;
-        add_material_resource(sdf_material);
-
-        f32 single_scale = 20.4f;
-        vec3f scale = vec3f(single_scale);
-
-        u32 new_prim = get_new_node(scene);
-        scene->names[new_prim] = "volume";
-        scene->names[new_prim].appendf("%i", new_prim);
-        scene->transforms[new_prim].rotation = quat();
-        scene->transforms[new_prim].scale = scale;
-        scene->transforms[new_prim].translation = vec3f::zero();
-        scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
-        scene->parents[new_prim] = new_prim;
-        instantiate_material(sdf_material, scene, new_prim);
-        instantiate_model_cbuffer(scene, new_prim);
-        */
     }
 
     u32 vel_index = 0;
@@ -136,24 +108,6 @@ void animate_lights(entity_scene* scene, f32 dt)
             scene->transforms[n].translation = vec3f(tx * 30.0f, 6.0f, tz * 30.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
-
-        /*
-        vec3f t = scene->world_matrices[n].get_translation();
-        if (!maths::point_inside_aabb(e.min, e.max, t))
-        {
-            vec3f cp = maths::closest_point_on_aabb(t, e.min, e.max);
-
-            scene->transforms[n].translation = cp;
-
-            vec3f v = normalised(cp - t);
-
-            s_velocities[vel_index] = v + random_vel(-0.5f, 0.5f);
-        }
-
-        scene->transforms[n].translation += s_velocities[vel_index] * dt * 0.01f;
-        scene->entities[n] |= CMP_TRANSFORM;
-        */
-
 
         ++vel_index;
     }
@@ -218,6 +172,9 @@ PEN_TRV pen::user_entry(void* params)
     bool enable_dev_ui = true;
 
     f32 frame_time = 0.0f;
+    
+    //load scene
+    put::ces::load_scene("data/models/sdf-scene.pms", main_scene);
 
     while (1)
     {

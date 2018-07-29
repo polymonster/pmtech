@@ -810,7 +810,7 @@ namespace pen
 
     Str json::as_filename(const c8* default_value)
     {
-        Str fn = as_str(default_value); 
+        Str fn = as_str(default_value);
         fn = str_replace_chars(fn, '@', ':');
         fn = str_replace_chars(fn, '\\', '/');
 
