@@ -22,6 +22,7 @@ def delete_orphaned_files(build_dir, platform_data_dir):
                                 if os.path.exists(del_path):
                                     os.remove(os.path.join(platform_data_dir, key))
                                     print("deleting " + key + " source file no longer exists")
+                                    print(del_path)
                                     break
 
 

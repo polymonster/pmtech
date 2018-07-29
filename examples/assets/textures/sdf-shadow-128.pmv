@@ -1,6 +1,6 @@
 
 {
-	filename: /Users/alex.dixon/dev/pmtech/examples/bin/osx/data/textures/sdf-shadow-128.dds,
+	filename: data/textures/sdf-shadow-128.dds,
 	volume_type: signed_distance_field,
 	scale_x: 13.200000,
 	scale_y: 13.200000,

@@ -24,7 +24,12 @@ def get_output_name(source_dir, file):
     if fext not in supported_formats:
         supported = False
     fnoext = fnoext.replace(source_dir, build_dir)
-    dds_filename = fnoext + ".dds"
+    out_ext = ".dds"
+    if fext == ".pmv":
+        out_ext = ".pmv"
+
+    dds_filename = fnoext + out_ext
+
     dest_file = os.path.join(dest_dir, dds_filename)
     return supported, dest_file
 
@@ -32,6 +37,7 @@ def get_output_name(source_dir, file):
 def process_single_file(f):
     src_file = os.path.join(root, f)
     supported, dest_file = get_output_name(source, src_file)
+
     if not supported:
         return
 
@@ -55,6 +61,7 @@ def process_single_file(f):
 
     if f.endswith(".dds") or f.endswith(".pmv"):
         print("copying " + f)
+        # print(src_file + " to " + dest_file)
         shutil.copy(src_file, dest_file)
     else:
         export_options_string = options_from_export(export_info, src_file)
@@ -129,7 +136,7 @@ print("processing directory: " + texture_dir)
 
 source_dirs = [texture_dir, built_in_texture_dir]
 
-dependencies.delete_orphaned_files(build_dir, platform_data_dir)
+# dependencies.delete_orphaned_files(build_dir, platform_data_dir)
 
 dependency_info = dict()
 for source in source_dirs:

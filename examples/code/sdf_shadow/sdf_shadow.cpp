@@ -82,14 +82,14 @@ void animate_lights(entity_scene* scene, f32 dt)
         if (vel_index == 0)
         {
             f32 tx = sin(t);
-            scene->transforms[n].translation = vec3f(tx * 20.0f, 2.0f, 15.0f);
+            scene->transforms[n].translation = vec3f(tx * -20.0f, 4.0f, 15.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
 
         if (vel_index == 1)
         {
             f32 tz = cos(t);
-            scene->transforms[n].translation = vec3f(15.0f, 3.0f, tz * 20.0f);
+            scene->transforms[n].translation = vec3f(-15.0f, 3.0f, tz * 20.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
 
@@ -174,7 +174,7 @@ PEN_TRV pen::user_entry(void* params)
     f32 frame_time = 0.0f;
     
     //load scene
-    put::ces::load_scene("data/models/sdf-scene.pms", main_scene);
+    put::ces::load_scene("data/scene/sdf-scene.pms", main_scene);
 
     while (1)
     {
