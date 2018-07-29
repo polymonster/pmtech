@@ -10,7 +10,7 @@ The engine (pen) and toolkit (put) are designed with performance in mind. This p
 Signed Distance Field Shadows Demo
 ![sdf shadow](assets/gifs/sdf-shadow.gif)
 
-Take a look at more demos [here](https://polymonster.github.io/demos.html)
+Take a look at more [demos](https://polymonster.github.io/demos.html)
 
 **Cross Platform Support**  
 - Platforms: Windows, MacOS, Linux, iOS (wip).   
@@ -33,7 +33,7 @@ Take a look at more demos [here](https://polymonster.github.io/demos.html)
 - PMFX - shader reflection info and agnostic hlsl / glsl shaders
 - Shader Compiler - offline shader compilation.
 
-Read in more detail about pmtech's features ![here](https://polymonster.github.io/index.html)
+Read in more detail about pmtech's [features](https://polymonster.github.io/index.html)
 
 **Thirdparty Stuff**  
 - [Jsmn](https://github.com/zserge/jsmn)
@@ -44,4 +44,4 @@ Read in more detail about pmtech's features ![here](https://polymonster.github.i
 
 **Getting started** 
 
-Take a look at getting started quick guide ![here](https://polymonster.github.io/index.html#getting-started)
+Take a look at getting started quick [guide](https://polymonster.github.io/index.html#getting-started)
