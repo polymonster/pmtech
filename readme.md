@@ -10,7 +10,7 @@ The engine (pen) and toolkit (put) are designed with performance in mind. This p
 ![sdf shadow](https://polymonster.github.io/assets/gifs/sdf-shadow.gif)
 more [demos...](https://polymonster.github.io/demos.html)
 
-**Cross Platform Support**  
+**Platform support**  
 - Platforms: Windows, MacOS, Linux, iOS (wip).   
 - Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+.   
 - Compilers: vs2015, vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
@@ -24,7 +24,7 @@ more [demos...](https://polymonster.github.io/demos.html)
 - JSON - Fast minimal json parser for data driven config scripts.
 - Platform Agnostic - Renderer, Window, Audio, Memory, Timers, File System, Threads.
 
-**Tools / Build Scripts**  
+**Tools**  
 - Models - Convert models, skeletons, scenes and animations to binary format. (Collada, Obj)
 - Textures - Compression, conversion, mip-map generation and assembly using NVTT.
 - Premake5 - All projects are configured using premake and are IDE agnostic.
@@ -33,13 +33,13 @@ more [demos...](https://polymonster.github.io/demos.html)
 
 Read in more detail about pmtech's [features](https://polymonster.github.io/index.html)
 
-**Thirdparty Stuff**  
+**Getting started** 
+
+Take a look at getting started quick [guide](https://polymonster.github.io/index.html#getting-started)
+
+**Shoutout to thirdparty stuff!**  
 - [Jsmn](https://github.com/zserge/jsmn)
 - [Premake](https://github.com/premake/premake-core)
 - [Bullet](https://github.com/bulletphysics/bullet3)
 - [ImGui](https://github.com/ocornut/imgui)
 - [NVTT](https://github.com/castano/nvidia-texture-tools)
-
-**Getting started** 
-
-Take a look at getting started quick [guide](https://polymonster.github.io/index.html#getting-started)
