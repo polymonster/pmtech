@@ -1,0 +1,45 @@
+struct vs_output
+{
+	float4 position		: SV_POSITION;
+	float4 texcoord		: TEXCOORD0;
+};
+
+struct vs_input
+{
+	float4 position	 	: POSITION;
+	float4 texcoord	 	: TEXCOORD0;
+};
+
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
+vs_output vs_ndc_quad( vs_input input )
+{
+	vs_output output;
+
+	output.position = input.position;
+	output.texcoord = input.texcoord;
+		
+	return output;
+}
+
+ps_output ps_constant_colour( vs_output input ) 
+{
+	ps_output output;
+	
+	output.colour = float4( input.texcoord.x, input.texcoord.y, 0.0, 1.0 );
+	
+	return output;
+}
+
+pmfx:
+{	
+	"blit":
+	{
+		"vs": "vs_ndc_quad",
+		"ps": "ps_constant_colour"
+	}
+}
+

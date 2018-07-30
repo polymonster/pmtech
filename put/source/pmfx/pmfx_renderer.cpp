@@ -192,7 +192,7 @@ namespace
         e_render_state_type type;
     };
 
-    std::vector<view_params>         s_post_process_views;
+    std::vector<view_params>         s_post_process_passes;
     std::vector<view_params>         s_views;
     std::vector<scene_controller>    s_controllers;
     std::vector<scene_view_renderer> s_scene_view_renderers;
@@ -288,7 +288,7 @@ namespace put
 
         render_state* get_state_by_name(hash_id id_name)
         {
-            s32 num = s_render_states.size();
+            size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
                 if (s_render_states[i].id_name == id_name)
                     return &s_render_states[i];
@@ -298,7 +298,7 @@ namespace put
 
         render_state* get_state_by_hash(hash_id hash)
         {
-            s32 num = s_render_states.size();
+            size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
                 if (s_render_states[i].hash == hash)
                     return &s_render_states[i];
@@ -462,11 +462,6 @@ namespace put
                 rcp.scissor_enable          = state["scissor_enable"].as_bool(false) ? 1 : 0;
                 rcp.multisample             = state["multisample"].as_bool(true) ? 1 : 0;
                 rcp.aa_lines                = state["aa_lines"].as_bool(false) ? 1 : 0;
-
-                if (!rcp.depth_clip_enable)
-                {
-                    int a = 0;
-                }
 
                 hash_id hh = PEN_HASH(rcp);
 
@@ -641,15 +636,15 @@ namespace put
                 masks.push_back(0x0F);
 
             bool multi_blend = rtb.size() > 1 || write_mask.size() > 1;
-            u32  num_rt      = std::max<u32>(rtb.size(), write_mask.size());
+            size_t  num_rt      = std::max<size_t>(rtb.size(), write_mask.size());
 
             // splat
-            s32 rtb_start = rtb.size();
+            size_t rtb_start = rtb.size();
             rtb.resize(num_rt);
             for (s32 i = rtb_start; i < num_rt; ++i)
                 rtb[i] = rtb[i - 1];
 
-            s32 mask_start = masks.size();
+            size_t mask_start = masks.size();
             masks.resize(num_rt);
             for (s32 i = mask_start; i < num_rt; ++i)
                 masks[i] = masks[i - 1];
@@ -813,7 +808,7 @@ namespace put
 
         const render_target* get_render_target(hash_id h)
         {
-            u32 num = s_render_targets.size();
+            size_t num = s_render_targets.size();
             for (u32 i = 0; i < num; ++i)
             {
                 if (s_render_targets[i].id_name == h)
@@ -828,7 +823,7 @@ namespace put
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format)
         {
             render_target* current_target = nullptr;
-            u32            num            = s_render_targets.size();
+            size_t         num            = s_render_targets.size();
             for (u32 i = 0; i < num; ++i)
             {
                 if (s_render_targets[i].id_name == target)
@@ -898,7 +893,7 @@ namespace put
 
         void resize_viewports()
         {
-            s32 num = s_views.size();
+            size_t num = s_views.size();
             for (s32 i = 0; i < num; ++i)
             {
                 s32 target_w;
@@ -1045,9 +1040,8 @@ namespace put
         void parse_views(pen::json& render_config, const c8* type, std::vector<view_params>& view_array)
         {
             pen::json j_views = render_config[type];
-
+            
             s32 num = j_views.size();
-
             for (s32 i = 0; i < num; ++i)
             {
                 bool valid = true;
@@ -1056,9 +1050,24 @@ namespace put
 
                 pen::json view = j_views[i];
 
-                new_view.name = j_views[i].name();
+                new_view.name = view.name();
 
-                new_view.id_name = PEN_HASH(j_views[i].name());
+                new_view.id_name = PEN_HASH(view.name());
+                
+                // inherit and combine
+                Str ihv = view["inherit"].as_str();
+                
+                for(;;)
+                {
+                    if(ihv == "")
+                        break;
+                    
+                    pen::json inherit_view = render_config["post_process_views"][ihv.c_str()];
+                    
+                    view = pen::json::combine(view, inherit_view);
+                    
+                    ihv = inherit_view["inherit"].as_str();
+                }
 
                 // render targets
                 pen::json targets = view["target"];
@@ -1166,7 +1175,7 @@ namespace put
                 pen::json blend_state       = view["blend_state"];
 
                 new_view.blend_state =
-                    create_blend_state(j_views[i].name().c_str(), blend_state, colour_write_mask, alpha_to_coverage);
+                    create_blend_state(view.name().c_str(), blend_state, colour_write_mask, alpha_to_coverage);
 
                 // scene
                 Str scene_str = view["scene"].as_str();
@@ -1227,6 +1236,13 @@ namespace put
                 new_view.technique = PEN_HASH(technique_str.c_str());
 
                 new_view.pmfx_shader = pmfx::load_shader(view["pmfx_shader"].as_cstr());
+                
+                if(view["pmfx_shader"].as_cstr() && !is_valid(new_view.pmfx_shader))
+                {
+                    dev_console_log_level(dev_ui::CONSOLE_ERROR,
+                                    "[error] render controller: missing shader %s", view["pmfx_shader"].as_cstr());
+                    valid = false;
+                }
 
                 // render flags
                 pen::json render_flags = view["render_flags"];
@@ -1300,7 +1316,7 @@ namespace put
             parse_render_targets(render_config);
 
             parse_views(render_config, "views", s_views);
-            parse_views(render_config, "post_process_views", s_post_process_views);
+            parse_views(render_config, "post_process_passes", s_post_process_passes);
 
             // rebake material handles
             ces::bake_material_handles();
@@ -1390,16 +1406,26 @@ namespace put
 
         void update()
         {
-            u32 num_controllers = s_controllers.size();
-
+            size_t num_controllers = s_controllers.size();
             for (u32 u = 0; u < put::UPDATES_NUM; ++u)
                 for (u32 i = 0; i < num_controllers; ++i)
                     if (s_controllers[i].order == u)
                         s_controllers[i].update_function(&s_controllers[i]);
         }
 
-        void fullscreen_quad()
+        void fullscreen_quad(const scene_view& sv)
         {
+            static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
+            
+            if(!is_valid(sv.pmfx_shader))
+                return;
+            
+            pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
+            pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
+            
+            pmfx::set_technique(sv.pmfx_shader, sv.technique, 0);
+            
+            pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
         void render_view(view_params& v)
@@ -1428,20 +1454,11 @@ namespace put
 
             pen::renderer_clear(v.clear_state);
 
-            if (!v.camera)
-                return;
-
-            if (!v.scene)
-                return;
-
             // create 2d view proj matrix
             float W         = 2.0f / vp.width;
             float H         = 2.0f / vp.height;
             float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
-
-            // generate 3d view proj matrix
-            put::camera_update_shader_constants(v.camera, v.viewport_correction);
 
             // unbind samplers
             for (s32 i = 0; i < 16; ++i)
@@ -1464,7 +1481,14 @@ namespace put
             // build view info
             scene_view sv;
             sv.scene               = v.scene;
-            sv.cb_view             = v.camera->cbuffer;
+            
+            // generate 3d view proj matrix
+            if (v.camera)
+            {
+                put::camera_update_shader_constants(v.camera, v.viewport_correction);
+                sv.cb_view             = v.camera->cbuffer;
+            }
+            
             sv.render_flags        = v.render_flags;
             sv.technique           = v.technique;
             sv.raster_state        = v.raster_state;
@@ -1518,16 +1542,17 @@ namespace put
             }
 
             // post process chain
-            /*
-            for (auto& v : s_post_process_views)
+#if 0
+            for (auto& v : s_post_process_passes)
             {
                 ++count;
 
-                //v.render_targets[0] = get_render_target(PEN_HASH("main_colour"))->handle;
-
+                v.render_functions.clear();
+                v.render_functions.push_back(&fullscreen_quad);
+                
                 render_view(v);
             }
-            */
+#endif
         }
 
         void render_target_info_ui(const render_target& rt)
@@ -1591,7 +1616,7 @@ namespace put
                     }
 
                     ImGui::Combo("", &current_render_target, (const c8* const*)&s_render_target_names[0],
-                                 s_render_target_names.size(), 10);
+                                 (s32)s_render_target_names.size(), 10);
 
                     static s32 display_ratio = 3;
                     ImGui::InputInt("Buffer Size", &display_ratio);

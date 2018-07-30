@@ -25,20 +25,16 @@
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			raster_state: default,
 			depth_stencil_state: default,
-			shader: "post_process"
+			pmfx_shader: "post_process",
 			technique: "blit"
 		},
 	},
 	
-	post_process_chain: 
+	post_process_passes: 
 	[
 		{ 
-			view: blit, 
-			targets: [main_colour] 
-			sampler_bindings:
-			[
-				{ texture: test, unit: 0, state: wrap_linear, shader: ps },
-			]
+			inherit: blit, 
+			target: [main_colour]
 		}
 	]
 }
