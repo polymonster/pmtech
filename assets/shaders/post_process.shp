@@ -15,22 +15,37 @@ struct ps_output
 	float4 colour : SV_Target;
 };
 
+declare_texture_samplers
+{
+	texture_2d( src_texture_0, 0 );
+	texture_2d( src_texture_1, 1 );
+	texture_2d( src_texture_2, 2 );
+	texture_2d( src_texture_3, 3 );
+};
+
+cbuffer per_view : register(b0)
+{
+	float4 viewport_correction;
+};
+
 vs_output vs_ndc_quad( vs_input input )
 {
 	vs_output output;
 
 	output.position = input.position;
 	output.texcoord = input.texcoord;
-		
+	
+	output.texcoord.y = output.texcoord.y * viewport_correction.x + viewport_correction.y;
+
 	return output;
 }
 
-ps_output ps_constant_colour( vs_output input ) 
+ps_output ps_blit( vs_output input ) 
 {
 	ps_output output;
 	
-	output.colour = float4( input.texcoord.x, input.texcoord.y, 0.0, 1.0 );
-	
+	output.colour = sample_texture( src_texture_0, input.texcoord.xy );
+		
 	return output;
 }
 
@@ -39,7 +54,7 @@ pmfx:
 	"blit":
 	{
 		"vs": "vs_ndc_quad",
-		"ps": "ps_constant_colour"
+		"ps": "ps_blit"
 	}
 }
 

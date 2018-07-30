@@ -22,12 +22,19 @@ inline void output_debug(const c8* format, ...)
     static c8* buf           = new c8[s_buffer_size];
 
     u32 n = vsnprintf(buf, s_buffer_size, format, va);
+    va_end(va);
+    
     if (n > s_buffer_size)
     {
+        va_start(va, format);
+        
         s_buffer_size = n * 2;
-        delete buf;
+        delete[] buf;
         buf = new c8[s_buffer_size];
+        
         vsnprintf(buf, s_buffer_size, format, va);
+        
+        va_end(va);
     }
 
     va_end(va);

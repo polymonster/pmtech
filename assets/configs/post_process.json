@@ -34,7 +34,11 @@
 	[
 		{ 
 			inherit: blit, 
-			target: [main_colour]
+			target: [main_colour],
+			sampler_bindings:
+			[
+				{ texture: post_process_colour, unit: 0, state: wrap_linear, shader: ps },
+			],
 		}
 	]
 }

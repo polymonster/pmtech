@@ -5,7 +5,7 @@
 
 namespace pen
 {
-    // Barebones high resolution C-Style timer API
+    // Barebones high resolution c-style timer api.
 
     // Implemented in:
     // query performance counter (win32)

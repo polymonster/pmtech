@@ -9,7 +9,7 @@ extern pen::window_creation_params pen_window;
 
 namespace pen
 {
-    // Simple input API for getting keyboard and mouse presses
+    // Simple input api for getting keyboard and mouse presses
     // and character keys for typing.
     // Implemented with win32, NS and xlib
 

@@ -144,6 +144,18 @@
 			size: [128,128],
 			format: d24s8,
 		},
+		
+		post_process_colour:
+		{
+			size: equal,
+			format: rgba8
+		},
+		
+		post_process_depth:
+		{
+			size: equal,
+			format: d24s8
+		}
 	},
 			
 	views:

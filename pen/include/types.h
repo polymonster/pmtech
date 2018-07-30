@@ -8,9 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-// Almost all files will include this
 // Define small types for extra cuteness
-
 typedef int32_t  s32;
 typedef uint32_t u32;
 typedef int16_t  s16;
@@ -36,17 +34,14 @@ typedef std::atomic<uint32_t> a_u32;
 typedef std::atomic<uint64_t> a_u64;
 
 // Thread return value just for win32 portability
-
 #ifdef _WIN32
 #define PEN_TRV dword __stdcall
 #else
 #define PEN_TRV void*
 #endif
-
 #define PEN_THREAD_OK 0
 
 // Use min max and swap everywhere and undef windows
-
 #ifdef WIN32
 #undef min
 #undef max
@@ -56,9 +51,7 @@ using std::max;
 using std::min;
 using std::swap;
 
-// Use small generic handles for all resource types
-// Auido, Renderer etc
-
+// Use small generic handles for resource types
 typedef uint32_t peh;
 
 #define PEN_INVALID_HANDLE ((u32)-1)
@@ -73,7 +66,6 @@ inline bool is_invalid(u32 handle)
 }
 
 // Generic erors for the few cases erors are handled :)
-
 enum pen_error
 {
     PEN_ERR_OK             = 0,
@@ -83,7 +75,6 @@ enum pen_error
 };
 
 // Minimal amount of macros that are handy to have evrywhere
-
 // For making texture formats ('D' 'X' 'T' '1') etc
 
 #define PEN_FOURCC(ch0, ch1, ch2, ch3)                                                                                       \

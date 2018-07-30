@@ -1056,7 +1056,6 @@ namespace put
                 
                 // inherit and combine
                 Str ihv = view["inherit"].as_str();
-                
                 for(;;)
                 {
                     if(ihv == "")
@@ -1412,13 +1411,45 @@ namespace put
                     if (s_controllers[i].order == u)
                         s_controllers[i].update_function(&s_controllers[i]);
         }
+        
+        struct post_process_per_view
+        {
+            vec4f viewport_correction;
+        };
 
         void fullscreen_quad(const scene_view& sv)
         {
             static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
             
+            static u32 cbuffer_per_view = PEN_INVALID_HANDLE;
+            if(!is_valid(cbuffer_per_view))
+            {
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags      = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size      = sizeof(post_process_per_view);
+                bcp.data             = nullptr;
+                
+                cbuffer_per_view = pen::renderer_create_buffer(bcp);
+                
+                post_process_per_view pppv;
+                
+                //scale and bias to adjust texture coordinates of render targets
+                // x = scale, y = bias
+                pppv.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+                if(pen::renderer_viewport_vup())
+                {
+                    pppv.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
+                }
+                
+                pen::renderer_update_buffer(cbuffer_per_view, &pppv, sizeof(pppv));
+            }
+
             if(!is_valid(sv.pmfx_shader))
                 return;
+            
+            pen::renderer_set_constant_buffer(cbuffer_per_view, 0, PEN_SHADER_TYPE_VS);
             
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
@@ -1541,8 +1572,8 @@ namespace put
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
             }
 
-            // post process chain
 #if 0
+            // post process chain
             for (auto& v : s_post_process_passes)
             {
                 ++count;
