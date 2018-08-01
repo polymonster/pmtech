@@ -383,7 +383,7 @@ namespace put
         // replace filename with dependencies.json
         u32 loc = pen::str_find_reverse(fn, "/");
 
-        fn.appendf_from(loc + 2, "%s", "dependencies.json");
+        fn.appendf_from(loc + 1, "%s", "dependencies.json");
 
         hash_id id_name = PEN_HASH(fn.c_str());
 

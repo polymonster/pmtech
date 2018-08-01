@@ -1147,6 +1147,10 @@ namespace pen
 
     void renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
+        if(depth_stencil_state == 62)
+        {
+            int a = 0;
+        }
         cmd_buffer[put_pos].command_index = CMD_SET_DEPTH_STENCIL_STATE;
 
         cmd_buffer[put_pos].command_data_index = depth_stencil_state;

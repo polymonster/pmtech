@@ -110,6 +110,20 @@ namespace put
             f32*                constant_defaults;
             technique_constant* constants;
         };
+        
+        enum rt_flags
+        {
+            RT_AUX = 1<<1,
+            RT_AUX_USED = 1<<2,
+            RT_WRITE_ONLY = 1<<3
+        };
+        
+        enum e_rt_mode
+        {
+            VRT_READ,
+            VRT_WRITE,
+            VRT_NUM
+        };
 
         struct render_target
         {
@@ -123,6 +137,8 @@ namespace put
             u32 handle   = PEN_INVALID_HANDLE;
             u32 samples  = 1;
             Str name;
+            u32 flags = 0;
+            u32 pp = VRT_READ;
         };
 
         // pmfx renderer ------------------------------------------------------------------------------------------

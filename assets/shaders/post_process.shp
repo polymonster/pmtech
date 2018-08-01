@@ -46,7 +46,9 @@ ps_output ps_blit( vs_output input )
 	
 	output.colour = sample_texture( src_texture_0, input.texcoord.xy );
 		
-	return output;
+	//return output;
+	
+	return float4(input.texcoord.x, input.texcoord.y, 0.0, 1.0);
 }
 
 pmfx:
