@@ -153,12 +153,14 @@
 		post_process_colour:
 		{
 			size: equal,
+			samples: 4,
 			format: rgba8
 		},
 		
 		post_process_depth:
 		{
 			size: equal,
+			samples: 4,
 			format: d24s8
 		}
 	},
@@ -167,7 +169,7 @@
 	{
 		main_view:
 		{
-			target:[main_colour, main_depth],
+			target:[post_process_colour, post_process_depth],
 			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			clear_depth: 1.0,
 			colour_write_mask: 0xf,
@@ -179,6 +181,7 @@
 			camera: model_viewer_camera,
 			scene_views:["ces_render_scene"],
 			render_flags:["forward_lit"],
+			post_process: true,
 			
 			sampler_bindings:
 			[

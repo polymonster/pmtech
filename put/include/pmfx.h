@@ -48,6 +48,7 @@ namespace put
         pmfx::shader_handle pmfx_shader         = PEN_INVALID_HANDLE;
         hash_id             technique           = 0;
         ces::entity_scene*  scene               = nullptr;
+        bool                viewport_correction = false;
     };
 
     struct scene_controller

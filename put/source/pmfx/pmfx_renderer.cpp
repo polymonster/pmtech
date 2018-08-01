@@ -166,6 +166,7 @@ namespace
         hash_id id_depth_target = 0;
 
         bool viewport_correction = true;
+        bool post_process = true; //todo make this id to select post process
 
         f32 viewport[4] = {0};
 
@@ -724,8 +725,8 @@ namespace put
             main_depth.format   = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
             main_depth.handle   = PEN_BACK_BUFFER_DEPTH;
             main_depth.num_mips = 1;
-            main_colour.pp      = VRT_WRITE;
-            main_colour.flags   = RT_WRITE_ONLY;
+            main_depth.pp       = VRT_WRITE;
+            main_depth.flags    = RT_WRITE_ONLY;
 
             s_render_targets.push_back(main_depth);
             s_render_target_tcp.push_back(texture_creation_params());
@@ -1097,6 +1098,9 @@ namespace put
                 s32 num_targets = targets.size();
 
                 s32 cur_rt = 0;
+                
+                new_view.depth_target = PEN_INVALID_HANDLE;
+                
                 for (s32 t = 0; t < num_targets; ++t)
                 {
                     Str     target_str  = targets[t].as_str();
@@ -1115,8 +1119,6 @@ namespace put
                             s32 w  = r.width;
                             s32 h  = r.height;
                             s32 rr = r.ratio;
-
-                            new_view.id_render_target[cur_rt] = target_hash;
 
                             if (cur_rt == 0)
                             {
@@ -1138,9 +1140,15 @@ namespace put
                             }
 
                             if (r.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
+                            {
                                 new_view.depth_target = r.handle;
+                                new_view.id_depth_target = target_hash;
+                            }
                             else
+                            {
+                                new_view.id_render_target[cur_rt] = target_hash;
                                 new_view.render_targets[cur_rt++] = r.handle;
+                            }
 
                             new_view.num_colour_targets = cur_rt;
 
@@ -1286,6 +1294,9 @@ namespace put
 
                 // sampler bindings
                 parse_sampler_bindings(view, new_view.sampler_bindings);
+                
+                // post process
+                new_view.post_process = view["post_process"].as_bool(false);
 
                 if (valid)
                     view_array.push_back(new_view);
@@ -1325,6 +1336,7 @@ namespace put
                 vrt.id = id;
                 vrt.rt_index[VRT_READ] = PEN_INVALID_HANDLE;
                 vrt.rt_index[VRT_WRITE] = PEN_INVALID_HANDLE;
+                vrt.swap = false;
                 
                 u32 pp = s_render_targets[rt_index].pp;
                 
@@ -1458,7 +1470,7 @@ namespace put
             
             void bake_post_process_targets()
             {
-                // find render target aliases and generate ping pongs
+                // find render target aliases and generate automatic ping pongs
                 
                 // first create virtual rt for each unique target / texture
                 for(auto& v : s_post_process_passes)
@@ -1467,7 +1479,7 @@ namespace put
                         add_virtual_target(v.id_render_target[i]);
                     
                     if(is_valid(v.depth_target))
-                        add_virtual_target(v.depth_target);
+                        add_virtual_target(v.id_depth_target);
                     
                     for(auto& sb : v.sampler_bindings)
                         add_virtual_target(sb.id_texture);
@@ -1479,8 +1491,8 @@ namespace put
                     for(u32 i = 0; i < p.num_colour_targets; ++i)
                         p.render_targets[i] = get_virtual_target(p.id_render_target[i], VRT_WRITE);
                     
-                    if(is_valid(p.depth_target) && p.depth_target != 0)
-                        p.depth_target = get_virtual_target(p.depth_target, VRT_WRITE);
+                    if(is_valid(p.depth_target))
+                        p.depth_target = get_virtual_target(p.id_depth_target, VRT_WRITE);
                     else
                         p.depth_target = PEN_NULL_DEPTH_BUFFER;
                     
@@ -1619,6 +1631,9 @@ namespace put
                 pen::renderer_release_clear_state(v.clear_state);
             }
             s_views.clear();
+            s_post_process_passes.clear();
+            
+            s_virtual_rt.clear();
         }
 
         void shutdown()
@@ -1660,21 +1675,22 @@ namespace put
                 
                 cbuffer_per_view = pen::renderer_create_buffer(bcp);
                 
-                post_process_per_view pppv;
-                
-                //scale and bias to adjust texture coordinates of render targets
-                // x = scale, y = bias
-                pppv.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
-                if(pen::renderer_viewport_vup())
-                {
-                    pppv.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
-                }
-                
-                pen::renderer_update_buffer(cbuffer_per_view, &pppv, sizeof(pppv));
+
             }
 
             if(!is_valid(sv.pmfx_shader))
                 return;
+            
+            //scale and bias to adjust texture coordinates of render targets
+            // x = scale, y = bias
+            post_process_per_view pppv;
+            pppv.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+            if(!sv.viewport_correction)
+            {
+                pppv.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
+            }
+            
+            pen::renderer_update_buffer(cbuffer_per_view, &pppv, sizeof(pppv));
             
             pen::renderer_set_constant_buffer(cbuffer_per_view, 0, PEN_SHADER_TYPE_VS);
             
@@ -1754,6 +1770,7 @@ namespace put
             sv.blend_state_state   = v.blend_state;
             sv.camera              = v.camera;
             sv.viewport            = &vp;
+            sv.viewport_correction = v.viewport_correction;
             sv.cb_2d_view          = cb_2d;
             sv.pmfx_shader         = v.pmfx_shader;
 
@@ -1803,23 +1820,22 @@ namespace put
             {
                 ++count;
                 render_view(v);
-            }
-
-            resolve_targets(false);
-
-#if 0
-            // post process chain
-            for (auto& v : s_post_process_passes)
-            {
-                ++count;
-
-                v.render_functions.clear();
-                v.render_functions.push_back(&fullscreen_quad);
+                resolve_targets(false);
                 
-                render_view(v);
+                if(v.post_process)
+                {
+                    for (auto& v : s_post_process_passes)
+                    {
+                        ++count;
+                        
+                        v.render_functions.clear();
+                        v.render_functions.push_back(&fullscreen_quad);
+                        
+                        render_view(v);
+                    }
+                }
             }
-#endif
-            
+
             resolve_targets(true);
         }
 
