@@ -34,6 +34,17 @@ cbuffer per_view : register(b0)
 	float4 viewport_correction;
 };
 
+cbuffer src_info : register(b1)
+{
+	float2 inv_texel_size[8];
+};
+
+cbuffer filter_kernel : register(b2)
+{
+	float4	filter_info; //xy = mask / direction, z = num samples, w = unused
+	float4 	filter_offset_weight[16];
+};
+
 vs_output vs_ndc_quad( vs_input input )
 {
 	vs_output output;
@@ -70,10 +81,31 @@ ps_output ps_high_pass( vs_output input )
 	
 	output.colour = sample_texture( src_texture_0, input.texcoord.xy );
 	
-	//float lum = dot( float3(0.299, 0.587, 0.114), output.colour.rgb);
-	//output.colour.rgb = float3(lum, lum, lum);
-		
+	float lum = dot( float3(0.2126, 0.7152, 0.0722), output.colour.rgb);
+	
+	if(lum < 0.5)
+		output.colour *= float4(0.0, 0.0, 0.0, 1.0);
+			
 	return output;
+}
+
+ps_output ps_filter( vs_output input ) 
+{
+	ps_output output;
+
+	float2 inv_texel = float2(1.0/1920.0, 1.0/1080.0);
+	
+	output.colour = float4(0.0, 0.0, 0.0, 1.0);
+	for(int i = 0; i < filter_info.z; ++i)
+	{
+		float2 offset = filter_offset_weight[i].x * inv_texel; 
+		float w = filter_offset_weight[i].y;
+				
+		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset * 1.0) * w;
+	}
+		
+	output.colour.a = 1.0;
+	return output.colour;
 }
 
 pmfx:
@@ -93,7 +125,20 @@ pmfx:
 	"high_pass":
 	{
 		"vs": "vs_ndc_quad",
-		"ps": "ps_high_pass"
+		"ps": "ps_high_pass",
+		
+		"constants":
+		{
+			"threshold": { 
+				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+			}
+		}
+	},
+	
+	"filter":
+	{
+		"vs": "vs_ndc_quad",
+		"ps": "ps_filter"
 	}
 }
 

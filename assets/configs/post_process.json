@@ -9,11 +9,36 @@
 		},
 	},
 	
+	filter_kernels:
+	{
+		gauss_5_1:
+		{
+			weights: [0.06136, 0.24477, 0.38774, 0.24477, 0.06136],
+			offsets: [-2.0, -1.0, 0.0, 1.0, 2.0]
+		},
+		
+		gauss_7_1:
+		{
+			weights: [0.00598, 0.060626, 0.241843, 0.383103, 0.241843, 0.060626, 0.00598],
+			offsets: [-3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0]
+		},
+		
+		gauss_9_1:
+		{
+			weights: [
+				0.000229, 0.005977, 0.060598, 
+				0.241732, 0.382928, 0.241732, 
+				0.060598, 0.005977, 0.000229
+			],
+			
+			offsets: [-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0]
+		},
+	},
+	
 	post_process_views:
 	{
 		blit:
 		{
-			clear_colour:[0.5, 0.0, 0.5, 1.0],
 			colour_write_mask: 0xf,
 			blend_state: disabled,
 			viewport: [0.0, 0.0, 1.0, 1.0],
@@ -37,7 +62,7 @@
 		
 		high_pass:
 		{
-			clear_colour:[0.5, 0.0, 0.5, 1.0],
+			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			colour_write_mask: 0xf,
 			blend_state: disabled,
 			viewport: [0.0, 0.0, 1.0, 1.0],
@@ -45,6 +70,18 @@
 			depth_stencil_state: disabled,
 			pmfx_shader: post_process,
 			technique: high_pass
+		},
+		
+		filter:
+		{
+			clear_colour:[0.5, 0.5, 0.5, 1.0],
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: post_process,
+			depth_stencil_state: disabled,
+			pmfx_shader: post_process,
+			technique: filter
 		},
 	},
 	
@@ -56,16 +93,30 @@
 			sampler_bindings:
 			[
 				{ texture: post_process_depth, unit: 0, state: wrap_linear, shader: ps },
-			],
+			]
 		},
 		
+		
 		{ 
-			inherit: high_pass,
+			inherit: filter,
 			target: [pp_output_full],
 			sampler_bindings:
 			[
 				{ texture: post_process_colour, unit: 0, state: wrap_linear, shader: ps },
 			],
+			filter_kernel: gauss_9_1,
+			filter_direction: horizontal
+		},
+		
+		{ 
+			inherit: filter,
+			target: [pp_output_full],
+			sampler_bindings:
+			[
+				{ texture: post_process_colour, unit: 0, state: wrap_linear, shader: ps },
+			],
+			filter_kernel: gauss_9_1,
+			filter_direction: vertical
 		},
 		
 		{ 
@@ -74,7 +125,7 @@
 			sampler_bindings:
 			[
 				{ texture: pp_output_full, unit: 0, state: wrap_linear, shader: ps },
-			],
+			]
 		},
 	]
 }

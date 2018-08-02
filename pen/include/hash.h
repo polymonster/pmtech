@@ -46,6 +46,7 @@ namespace pen
 } // namespace pen
 
 #define PEN_HASH(V) pen::hashMurmur2A(V)
+#define PEN_HASH_STR(V) pen::hashMurmur2A(V.c_str())
 
 #include "hash.inl"
 

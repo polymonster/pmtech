@@ -20,6 +20,7 @@ using namespace pen;
 
 namespace
 {
+    // clang-format off
     static hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
     static hash_id ID_MAIN_DEPTH  = PEN_HASH("main_depth");
 
@@ -52,57 +53,24 @@ namespace
         "border",      PEN_TEXTURE_ADDRESS_BORDER,      "mirror", PEN_TEXTURE_ADDRESS_MIRROR,
         "mirror_once", PEN_TEXTURE_ADDRESS_MIRROR_ONCE, nullptr,  0};
 
-    const mode_map k_blend_mode_map[] = {"zero",
-                                         PEN_BLEND_ZERO,
-                                         "one",
-                                         PEN_BLEND_ONE,
-                                         "src_colour",
-                                         PEN_BLEND_SRC_COLOR,
-                                         "inv_src_colour",
-                                         PEN_BLEND_INV_SRC_COLOR,
-                                         "src_alpha",
-                                         PEN_BLEND_SRC_ALPHA,
-                                         "inv_src_alpha",
-                                         PEN_BLEND_INV_SRC_ALPHA,
-                                         "dest_alpha",
-                                         PEN_BLEND_DEST_ALPHA,
-                                         "inv_dest_alpha",
-                                         PEN_BLEND_INV_DEST_ALPHA,
-                                         "dest_colour",
-                                         PEN_BLEND_DEST_COLOR,
-                                         "inv_dest_colour",
-                                         PEN_BLEND_INV_DEST_COLOR,
-                                         "src_alpha_sat",
-                                         PEN_BLEND_SRC_ALPHA_SAT,
-                                         "blend_factor",
-                                         PEN_BLEND_BLEND_FACTOR,
-                                         "inv_blend_factor",
-                                         PEN_BLEND_INV_BLEND_FACTOR,
-                                         "src1_colour",
-                                         PEN_BLEND_SRC1_COLOR,
-                                         "inv_src1_colour",
-                                         PEN_BLEND_INV_SRC1_COLOR,
-                                         "src1_aplha",
-                                         PEN_BLEND_SRC1_ALPHA,
-                                         "inv_src1_alpha",
-                                         PEN_BLEND_INV_SRC1_ALPHA,
-                                         nullptr,
-                                         0};
+    const mode_map k_blend_mode_map[] = {
+        "zero",             PEN_BLEND_ZERO,             "one",              PEN_BLEND_ONE,
+        "src_colour",       PEN_BLEND_SRC_COLOR,         "inv_src_colour",  PEN_BLEND_INV_SRC_COLOR,
+        "src_alpha",        PEN_BLEND_SRC_ALPHA,        "inv_src_alpha",    PEN_BLEND_INV_SRC_ALPHA,
+        "dest_alpha",       PEN_BLEND_DEST_ALPHA,       "inv_dest_alpha",   PEN_BLEND_INV_DEST_ALPHA,
+        "dest_colour",      PEN_BLEND_DEST_COLOR,       "inv_dest_colour",  PEN_BLEND_INV_DEST_COLOR,
+        "src_alpha_sat",    PEN_BLEND_SRC_ALPHA_SAT,    "blend_factor",     PEN_BLEND_BLEND_FACTOR,
+        "inv_blend_factor", PEN_BLEND_INV_BLEND_FACTOR, "src1_colour",      PEN_BLEND_SRC1_COLOR,
+        "inv_src1_colour",  PEN_BLEND_INV_SRC1_COLOR,   "src1_aplha",       PEN_BLEND_SRC1_ALPHA,
+        "inv_src1_alpha",   PEN_BLEND_INV_SRC1_ALPHA,   nullptr, 0
+    };
 
-    const mode_map k_blend_op_mode_map[] = {"belnd_op_add",
-                                            PEN_BLEND_OP_ADD,
-                                            "belnd_op_add",
-                                            PEN_BLEND_OP_ADD,
-                                            "belnd_op_subtract",
-                                            PEN_BLEND_OP_SUBTRACT,
-                                            "belnd_op_rev_sbtract",
-                                            PEN_BLEND_OP_REV_SUBTRACT,
-                                            "belnd_op_min",
-                                            PEN_BLEND_OP_MIN,
-                                            "belnd_op_max",
-                                            PEN_BLEND_OP_MAX,
-                                            nullptr,
-                                            0};
+    const mode_map k_blend_op_mode_map[] = {
+        "belnd_op_add", PEN_BLEND_OP_ADD,           "belnd_op_add",         PEN_BLEND_OP_ADD,
+        "belnd_op_subtract", PEN_BLEND_OP_SUBTRACT, "belnd_op_rev_sbtract", PEN_BLEND_OP_REV_SUBTRACT,
+        "belnd_op_min", PEN_BLEND_OP_MIN,           "belnd_op_max",         PEN_BLEND_OP_MAX,
+        nullptr, 0
+    };
 
     struct format_info
     {
@@ -112,7 +80,7 @@ namespace
         u32        block_size;
         bind_flags flags;
     };
-
+    
     format_info rt_format[] = {
         {"rgba8", PEN_HASH("rgba8"), PEN_TEX_FORMAT_RGBA8_UNORM, 32, PEN_BIND_RENDER_TARGET},
         {"bgra8", PEN_HASH("bgra8"), PEN_TEX_FORMAT_BGRA8_UNORM, 32, PEN_BIND_RENDER_TARGET},
@@ -124,12 +92,11 @@ namespace
         {"d24s8", PEN_HASH("d24s8"), PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL}};
     s32 num_formats = PEN_ARRAY_SIZE(rt_format);
 
-    Str rt_ratio[] = {"none", "equal", "half", "quater",
-                      "eighth"
-                      "sixteenth"};
+    Str rt_ratio[] = {"none", "equal", "half", "quater", "eighth", "sixteenth"};
     s32 num_ratios = PEN_ARRAY_SIZE(rt_ratio);
 
     mode_map render_flags_map[] = {"forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0};
+    // clang-format on
 
     struct sampler_binding
     {
@@ -144,36 +111,31 @@ namespace
     {
         Str     name;
         hash_id id_name;
-
+        hash_id id_render_target[pen::MAX_MRT] = { 0 };
+        hash_id id_depth_target = 0;
+        hash_id id_filter = 0;
+        
         s32 rt_width, rt_height;
         f32 rt_ratio;
-
-        u32     render_targets[pen::MAX_MRT]   = {
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE
+        
+        u32 render_targets[pen::MAX_MRT] = {
+            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE
         };
         
-        hash_id id_render_target[pen::MAX_MRT] = {0};
-        u32     num_colour_targets             = 0;
-
-        u32     depth_target    = PEN_NULL_DEPTH_BUFFER;
-        hash_id id_depth_target = 0;
-
-        bool viewport_correction = true;
-        bool post_process = true; //todo make this id to select post process
+        u32 depth_target = PEN_NULL_DEPTH_BUFFER;
 
         f32 viewport[4] = {0};
 
+        u32 num_colour_targets  = 0;
         u32 clear_state         = 0;
         u32 raster_state        = 0;
         u32 depth_stencil_state = 0;
         u32 blend_state         = 0;
+        u32 cbuffer_filter      = PEN_INVALID_HANDLE;
+        u32 cbuffer_technique   = PEN_INVALID_HANDLE;
 
         shader_handle pmfx_shader;
         hash_id       technique;
@@ -185,6 +147,9 @@ namespace
         std::vector<sampler_binding> sampler_bindings;
 
         std::vector<void (*)(const put::scene_view&)> render_functions;
+        
+        bool viewport_correction = true; // todo put this into flags?
+        bool post_process = true; //todo make this id to select post process
     };
 
     enum e_render_state_type : u32
@@ -203,6 +168,16 @@ namespace
 
         e_render_state_type type;
     };
+    
+    struct filter_kernel
+    {
+        hash_id id_name;
+        Str     name;
+        
+        // cbuffer friendly data
+        vec4f   info; // xy = direction, z = num samples, w = pad
+        vec4f   offset_weight[16]; //x = offset, y = weight;
+    };
 
     std::vector<view_params>                s_post_process_passes;
     std::vector<view_params>                s_views;
@@ -213,6 +188,7 @@ namespace
     std::vector<const c8*>                  s_render_target_names;
     std::vector<render_state>               s_render_states;
     std::vector<sampler_binding>            s_sampler_bindings;
+    std::vector<filter_kernel>              s_filter_kernels;
 
     struct textured_vertex
     {
@@ -594,7 +570,38 @@ namespace put
                 else
                     rs.handle = pen::renderer_create_depth_stencil_state(dscp);
 
+                dev_console_log("[pmfx] add dss : %i", rs.handle);
+                
                 s_render_states.push_back(rs);
+            }
+        }
+        
+        void parse_filters(pen::json& render_config)
+        {
+            pen::json j_filters = render_config["filter_kernels"];
+            s32       num       = j_filters.size();
+            for (s32 i = 0; i < num; ++i)
+            {
+                pen::json jfk = j_filters[i];
+                
+                filter_kernel fk;
+                fk.name = j_filters[i].name();
+                fk.id_name = PEN_HASH(fk.name.c_str());
+                
+                u32 num_samples = jfk["weights"].size();
+                u32 _num_samples = jfk["offsets"].size();
+                PEN_ASSERT(num_samples == _num_samples);
+                
+                for(u32 s = 0; s < num_samples; ++s)
+                {
+                    f32 w = jfk["weights"][s].as_f32();
+                    f32 o = jfk["offsets"][s].as_f32();
+                    
+                    fk.offset_weight[s] = vec4f(o, w, 0.0f, 0.0f);
+                }
+                
+                fk.info.z = num_samples;
+                s_filter_kernels.push_back(fk);
             }
         }
 
@@ -1061,7 +1068,7 @@ namespace put
             new_view.clear_state = pen::renderer_create_clear_state(cs_info);
         }
 
-        void parse_views(pen::json& render_config, const c8* type, std::vector<view_params>& view_array)
+        void parse_views(pen::json& render_config, const c8* type, const c8* inherit_views, std::vector<view_params>& view_array)
         {
             pen::json j_views = render_config[type];
             
@@ -1085,7 +1092,9 @@ namespace put
                     if(ihv == "")
                         break;
                     
-                    pen::json inherit_view = render_config["post_process_views"][ihv.c_str()];
+                    new_view.name = ihv.c_str();
+                    
+                    pen::json inherit_view = render_config[inherit_views][ihv.c_str()];
                     
                     view = pen::json::combine(view, inherit_view);
                     
@@ -1295,8 +1304,64 @@ namespace put
                 // sampler bindings
                 parse_sampler_bindings(view, new_view.sampler_bindings);
                 
-                // post process
+                // post process flag.. todo change this to id, id of post process to perform on the output
+                // of this view.
                 new_view.post_process = view["post_process"].as_bool(false);
+        
+                // filter id for post process passes
+                Str fk = view["filter_kernel"].as_str();
+                
+                if(!(fk == ""))
+                {
+                    new_view.id_filter = view["filter_kernel"].as_hash_id();
+                    
+                    // create filter for cbuffer
+                    struct dir_preset {
+                        hash_id id;
+                        vec2f   dir;
+                    };
+                    
+                    static dir_preset presets[] = {
+                        { PEN_HASH("horizontal"), vec2f(1.0, 0.0) },
+                        { PEN_HASH("vertical"), vec2f(0.0, 1.0) }
+                    };
+                    
+                    vec2f vdir = vec2f::zero();
+                    
+                    if(view["filter_direction"].size() == 2)
+                    {
+                        for(u32 i = 0; i < 2; ++i)
+                            vdir[i] = view["filter_direction"][i].as_f32();
+                    }
+                    else
+                    {
+                        hash_id id_dir = view["filter_direction"].as_hash_id();
+                        for(auto& p : presets)
+                            if(p.id == id_dir)
+                                vdir = p.dir;
+                    }
+                    
+                    filter_kernel fk;
+                    for(auto& f : s_filter_kernels)
+                        if(f.id_name == new_view.id_filter)
+                            fk = f;
+                    
+                    fk.info.x = vdir.x;
+                    fk.info.y = vdir.y;
+                    
+                    // create the cbuffer itself
+                    static const u32 filter_cbuffer_size = sizeof(fk.offset_weight); //+ sizeof(fk.info);
+                    pen::buffer_creation_params bcp;
+                    bcp.usage_flags      = PEN_USAGE_DYNAMIC;
+                    bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+                    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                    bcp.buffer_size      = filter_cbuffer_size;
+                    bcp.data             = nullptr;
+                    
+                    new_view.cbuffer_filter = pen::renderer_create_buffer(bcp);
+                    
+                    pen::renderer_update_buffer(new_view.cbuffer_filter, &fk.info, filter_cbuffer_size);
+                }
 
                 if (valid)
                     view_array.push_back(new_view);
@@ -1502,6 +1567,8 @@ namespace put
                     // swap buffers
                     virtual_rt_swap_buffers();
                     
+                    
+                    
                     ++pass_counter;
                 }
             }
@@ -1550,10 +1617,11 @@ namespace put
             parse_raster_states(render_config);
             parse_depth_stencil_states(render_config);
             parse_partial_blend_states(render_config);
+            parse_filters(render_config);
             parse_render_targets(render_config);
-
-            parse_views(render_config, "views", s_views);
-            parse_views(render_config, "post_process_passes", s_post_process_passes);
+            parse_views(render_config, "views", "views", s_views);
+            parse_views(render_config, "post_process_passes", "post_process_views", s_post_process_passes);
+            
             bake_post_process_targets();
 
             // rebake material handles
@@ -1674,8 +1742,6 @@ namespace put
                 bcp.data             = nullptr;
                 
                 cbuffer_per_view = pen::renderer_create_buffer(bcp);
-                
-
             }
 
             if(!is_valid(sv.pmfx_shader))
@@ -1762,6 +1828,10 @@ namespace put
                 put::camera_update_shader_constants(v.camera, v.viewport_correction);
                 sv.cb_view             = v.camera->cbuffer;
             }
+            
+            // bind any per view cbuffers
+            if(is_valid(v.cbuffer_filter))
+                pen::renderer_set_constant_buffer(v.cbuffer_filter, 2, PEN_SHADER_TYPE_PS);
             
             sv.render_flags        = v.render_flags;
             sv.technique           = v.technique;
