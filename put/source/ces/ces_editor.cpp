@@ -1699,59 +1699,29 @@ namespace put
                     }
 
                     pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
-
-                    if (tc)
+                    
+                    if(tc)
                     {
+                        pmfx::show_technique_ui(shader, technique, &mat.data[0]);
+                        
                         u32 num_constants = sb_count(tc);
-                        for (u32 i = 0; i < num_constants; ++i)
-                        {
-                            float* f = &mat.data[tc[i].cb_offset];
-
-                            switch (tc[i].widget)
-                            {
-                                case pmfx::CW_INPUT:
-                                    ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
-                                    break;
-                                case pmfx::CW_SLIDER:
-                                    ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max,
-                                                        "%.3f", 1.0f);
-                                    break;
-                                case pmfx::CW_COLOUR:
-                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(f[0], f[1], f[2], 1.0f));
-                                    if (ImGui::CollapsingHeader(tc[i].name.c_str()))
-                                    {
-                                        if (tc[i].num_elements == 3)
-                                        {
-                                            ImGui::ColorPicker3(tc[i].name.c_str(), f);
-                                        }
-                                        else
-                                        {
-                                            ImGui::ColorPicker4(tc[i].name.c_str(), f);
-                                        }
-                                    }
-                                    ImGui::PopStyleColor();
-                                    break;
-                            }
-                        }
-
-                        // apply technique constant changes
                         cmp_material_data pre_edit = scene->material_data[selected_index];
-
+                        
                         for (u32 i = 0; i < num_selected; ++i)
                         {
                             u32 si = s_selection_list[i];
-
+                            
                             for (u32 c = 0; c < num_constants; ++c)
                             {
                                 u32 cb_offset = tc[c].cb_offset;
                                 u32 tc_size   = sizeof(f32) * tc[c].num_elements;
-
+                                
                                 f32* f1 = &mat.data[cb_offset];
                                 f32* f2 = &pre_edit.data[cb_offset];
-
+                                
                                 if (memcmp(f1, f2, tc_size) == 0)
                                     continue;
-
+                                
                                 f32* f3 = &scene->material_data[si].data[cb_offset];
                                 memcpy(f3, f1, tc_size);
                             }

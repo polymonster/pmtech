@@ -40,7 +40,12 @@
 		
 		gauss_7_1:
 		{
-			weights: [0.00598, 0.060626, 0.241843, 0.383103, 0.241843, 0.060626, 0.00598],
+			weights: [
+				0.00598, 0.060626, 
+				0.241843, 0.383103, 
+				0.241843, 0.060626, 0.00598
+			],
+			
 			offsets: [-3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0]
 		},
 		
@@ -200,14 +205,86 @@
 		},
 		
 		{ 
+			inherit: downsample_2x2,
+			target: [pp_output_quarter],
+			sampler_bindings:
+			[
+				{ texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+			],
+		},
+		
+		{ 
+			inherit: filter,
+			target: [pp_output_quarter],
+			sampler_bindings:
+			[
+				{ texture: pp_output_quarter, unit: 0, state: clamp_linear, shader: ps },
+			],
+			filter_kernel: gauss_9_1,
+			filter_direction: horizontal
+		},
+		
+		{ 
+			inherit: filter,
+			target: [pp_output_quarter],
+			sampler_bindings:
+			[
+				{ texture: pp_output_quarter, unit: 0, state: clamp_linear, shader: ps },
+			],
+			filter_kernel: gauss_9_1,
+			filter_direction: vertical
+		},
+		
+		{ 
 			inherit: bloom_upsample,
+			target: [pp_output_full],
+			sampler_bindings:
+			[
+				{ texture: post_process_colour, unit: 0, state: clamp_linear, shader: ps },
+				{ texture: pp_output_full, unit: 1, state: clamp_linear, shader: ps },
+				{ texture: pp_output_half, unit: 2, state: clamp_linear, shader: ps },
+				{ texture: pp_output_quarter, unit: 3, state: clamp_linear, shader: ps },
+			],
+		},
+		
+		{ 
+			inherit: downsample_2x2,
+			target: [pp_output_half],
+			sampler_bindings:
+			[
+				{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+			],
+		},
+		
+		{ 
+			inherit: filter,
+			target: [pp_output_half],
+			sampler_bindings:
+			[
+				{ texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+			],
+			filter_kernel: gauss_9_1,
+			filter_direction: horizontal
+		},
+		
+		{ 
+			inherit: filter,
+			target: [pp_output_half],
+			sampler_bindings:
+			[
+				{ texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+			],
+			filter_kernel: gauss_9_1,
+			filter_direction: vertical
+		},
+		
+		{ 
+			inherit: blit,
 			target: [main_colour],
 			sampler_bindings:
 			[
 				{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
-				{ texture: pp_output_half, unit: 1, state: clamp_linear, shader: ps },
-				{ texture: post_process_colour, unit: 2, state: clamp_linear, shader: ps },
-			],
+			]
 		},
 	]
 }

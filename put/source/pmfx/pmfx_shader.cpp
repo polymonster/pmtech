@@ -736,5 +736,65 @@ namespace put
                 current_counter++;
             }
         }
+        
+        void show_technique_ui(shader_handle shader, u32 technique_index, f32* material_data)
+        {
+            technique_constant* tc = get_technique_constants(shader, technique_index);
+            
+            if (!tc)
+                return;
+            
+            static bool colour_edit[64] = { 0 };
+            u32 num_constants = sb_count(tc);
+            for (u32 i = 0; i < num_constants; ++i)
+            {
+                f32* f = &material_data[tc[i].cb_offset];
+                
+                switch (tc[i].widget)
+                {
+                    case CW_INPUT:
+                        ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
+                        break;
+                    case CW_SLIDER:
+                        ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max,
+                                            "%.3f", 1.0f);
+                        break;
+                    case CW_COLOUR:
+                        
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                                              ImVec4(f[0] * 0.5f, f[1] * 0.5f, f[2] * 0.5f, 1.0f));
+                        ImGui::PushStyleColor(ImGuiCol_Button,
+                                              ImVec4(f[0], f[1], f[2], 1.0f));
+                        
+                        if(ImGui::Button(tc[i].name.c_str()))
+                        {
+                            colour_edit[i] = true;
+                        }
+                        
+                        if(colour_edit[i])
+                        {
+                            ImGui::PushID("col_window");
+                            
+                            ImGui::Begin(tc[i].name.c_str(), &colour_edit[i]);
+                            
+                            if (tc[i].num_elements == 3)
+                            {
+                                ImGui::ColorPicker3(tc[i].name.c_str(), f);
+                            }
+                            else
+                            {
+                                ImGui::ColorPicker4(tc[i].name.c_str(), f);
+                            }
+                            
+                            ImGui::End();
+                            
+                            ImGui::PopID();
+                        }
+                        
+                        ImGui::PopStyleColor(2);
+                        break;
+                }
+            }
+        }
     } // namespace pmfx
 } // namespace put

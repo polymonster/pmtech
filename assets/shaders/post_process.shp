@@ -27,6 +27,10 @@ declare_texture_samplers
 	texture_2d( src_texture_1, 1 );
 	texture_2d( src_texture_2, 2 );
 	texture_2d( src_texture_3, 3 );
+	texture_2d( src_texture_4, 4 );
+	texture_2d( src_texture_5, 5 );
+	texture_2d( src_texture_6, 6 );
+	texture_2d( src_texture_7, 7 );
 };
 
 cbuffer per_view : register(b0)
@@ -98,7 +102,7 @@ ps_output ps_filter( vs_output input )
 	output.colour = float4(0.0, 0.0, 0.0, 1.0);
 	for(int i = 0; i < filter_info.z; ++i)
 	{
-		float2 offset = filter_offset_weight[i].x * inv_texel * filter_info.xy; 
+		float2 offset = (filter_offset_weight[i].x + 0.5) * inv_texel * filter_info.xy; 
 		float w = filter_offset_weight[i].y;
 				
 		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset) * w;
@@ -136,10 +140,15 @@ ps_output ps_bloom_upsample( vs_output input )
 	ps_output output;
 
 	float2 tc = input.texcoord.xy;
-	output.colour = sample_texture( src_texture_0, tc) * 0.5;
-	output.colour += sample_texture( src_texture_1, tc) * 0.5;
+	output.colour = sample_texture( src_texture_0, tc); // source
 	
-	output.colour += sample_texture( src_texture_2, tc);
+	float4 bloom = float4(0.0, 0.0, 0.0, 0.0);
+	bloom += sample_texture( src_texture_1, tc); // full
+	bloom += sample_texture( src_texture_2, tc); // half
+	bloom += sample_texture( src_texture_3, tc); // quarter
+	bloom *= 0.333333;
+	
+	output.colour += bloom;
 	
 	return output;
 }

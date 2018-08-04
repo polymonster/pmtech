@@ -1,7 +1,7 @@
 #ifndef _pmfx_h
 #define _pmfx_h
 
-#include "pen.h"
+#include "types.h"
 #include "str/Str.h"
 
 namespace pen
@@ -178,6 +178,8 @@ namespace put
         u32                 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
         technique_constant* get_technique_constants(shader_handle handle, u32 index);
         u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
+        
+        void show_technique_ui(shader_handle shader, u32 technique_index, f32* data);
 
         void poll_for_changes();
     } // namespace pmfx

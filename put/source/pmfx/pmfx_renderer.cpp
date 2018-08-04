@@ -1462,7 +1462,7 @@ namespace put
                     if (match)
                     {
                         s_render_targets[i].flags |= RT_AUX_USED;
-                        return s_render_targets[i].handle;
+                        return i;
                     }
                 }
 
@@ -1800,6 +1800,9 @@ namespace put
             get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
 
             // target
+            if(v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
+                return;
+            
             pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
@@ -2030,20 +2033,20 @@ namespace put
                                 for (u32 i = 0; i < v.num_colour_targets; ++i)
                                 {
                                     const render_target* rt = get_render_target(v.id_render_target[i]);
-                                    ImGui::Text("colour target %i: %s", i, rt->name.c_str());
+                                    ImGui::Text("colour target %i: %s (%i)", i, rt->name.c_str(), v.render_targets[i]);
                                 }
 
                                 if (is_valid(v.depth_target))
                                 {
                                     const render_target* rt = get_render_target(v.id_depth_target);
-                                    ImGui::Text("depth target: %s", rt->name.c_str());
+                                    ImGui::Text("depth target: %s (%i)", rt->name.c_str(), v.depth_target);
                                 }
 
                                 int isb = 0;
                                 for (auto& sb : v.sampler_bindings)
                                 {
                                     const render_target* rt = get_render_target(sb.id_texture);
-                                    ImGui::Text("input sampler %i: %s", isb, rt->name.c_str());
+                                    ImGui::Text("input sampler %i: %s (%i)", isb, rt->name.c_str(), sb.handle);
                                     ++isb;
                                 }
 
