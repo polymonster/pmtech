@@ -101,7 +101,7 @@ ps_output ps_filter( vs_output input )
 		float2 offset = filter_offset_weight[i].x * inv_texel * filter_info.xy; 
 		float w = filter_offset_weight[i].y;
 				
-		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset * 2) * w;
+		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset) * w;
 	}
 		
 	output.colour.a = 1.0;
@@ -136,10 +136,10 @@ ps_output ps_bloom_upsample( vs_output input )
 	ps_output output;
 
 	float2 tc = input.texcoord.xy;
-	output.colour = sample_texture( src_texture_0, tc);
-	
+	output.colour = sample_texture( src_texture_0, tc) * 0.5;
 	output.colour += sample_texture( src_texture_1, tc) * 0.5;
-	output.colour += sample_texture( src_texture_2, tc) * 0.5;
+	
+	output.colour += sample_texture( src_texture_2, tc);
 	
 	return output.colour;
 }
