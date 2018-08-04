@@ -17,7 +17,7 @@ struct ps_output
 
 struct ps_output_depth
 {
-	float4 colour : SV_Target;
+	//float4 colour : SV_Target;
 	float depth : SV_Depth;
 };
 
@@ -73,7 +73,7 @@ ps_output_depth ps_blit_depth( vs_output input )
 {
 	ps_output_depth output;
 	
-	output.colour = float4(0.0, 0.0, 0.0, 0.0);
+	//output.colour = float4(0.0, 0.0, 0.0, 0.0);
 	output.depth = sample_texture( src_texture_0, input.texcoord.xy ).r;
 	
 	return output;

@@ -121,7 +121,7 @@ namespace
         u32 render_targets[pen::MAX_MRT] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
                                             PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
 
-        u32 depth_target = PEN_NULL_DEPTH_BUFFER;
+        u32 depth_target = PEN_INVALID_HANDLE;
 
         f32 viewport[4] = {0};
 
@@ -1360,7 +1360,7 @@ namespace put
                     fk.info.y = vdir.y;
 
                     // create the cbuffer itself
-                    static const u32            filter_cbuffer_size = sizeof(fk.offset_weight); //+ sizeof(fk.info);
+                    static const u32            filter_cbuffer_size = sizeof(fk.offset_weight) + sizeof(fk.info);
                     pen::buffer_creation_params bcp;
                     bcp.usage_flags      = PEN_USAGE_DYNAMIC;
                     bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
@@ -1802,6 +1802,13 @@ namespace put
             // target
             if(v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
                 return;
+
+            // unbind samplers to stop d3d debug layer moaning
+            for (s32 i = 0; i < 16; ++i)
+            {
+                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+            }
             
             pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
             pen::renderer_set_viewport(vp);
@@ -1814,13 +1821,6 @@ namespace put
             float H         = 2.0f / vp.height;
             float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
-
-            // unbind samplers
-            for (s32 i = 0; i < 16; ++i)
-            {
-                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
-                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
-            }
 
             // bind view samplers
             for (auto& sb : v.sampler_bindings)
@@ -1884,7 +1884,7 @@ namespace put
 
             for (auto& rt : s_render_targets)
             {
-                if ((rt.flags & RT_AUX) != aux)
+                if (!(rt.flags & RT_AUX) && aux)
                     continue;
 
                 if (rt.samples > 1)
@@ -2036,7 +2036,7 @@ namespace put
                                     ImGui::Text("colour target %i: %s (%i)", i, rt->name.c_str(), v.render_targets[i]);
                                 }
 
-                                if (is_valid(v.depth_target))
+                                if (is_valid(v.depth_target) && v.depth_target)
                                 {
                                     const render_target* rt = get_render_target(v.id_depth_target);
                                     ImGui::Text("depth target: %s (%i)", rt->name.c_str(), v.depth_target);
