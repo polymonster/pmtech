@@ -656,8 +656,11 @@ namespace put
             }
 
             // reverse iterate over scene and expand parents extents by children
-            for (s32 n = scene->num_nodes; n > 0; --n)
+            for (s32 n = scene->num_nodes-1; n > 0; --n)
             {
+                if (!(scene->entities[n] & CMP_ALLOCATED))
+                    continue;
+
                 u32 p = scene->parents[n];
                 if (p == n)
                     continue;

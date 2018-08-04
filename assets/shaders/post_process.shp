@@ -105,7 +105,7 @@ ps_output ps_filter( vs_output input )
 	}
 		
 	output.colour.a = 1.0;
-	return output.colour;
+	return output;
 }
 
 ps_output ps_downsample_2x2( vs_output input ) 
@@ -128,7 +128,7 @@ ps_output ps_downsample_2x2( vs_output input )
 	output.colour += sample_texture( src_texture_0, tc + offset[3]);
 	output.colour *= 0.25;
 
-	return output.colour;
+	return output;
 }
 
 ps_output ps_bloom_upsample( vs_output input ) 
@@ -141,7 +141,7 @@ ps_output ps_bloom_upsample( vs_output input )
 	
 	output.colour += sample_texture( src_texture_2, tc);
 	
-	return output.colour;
+	return output;
 }
 
 pmfx:

@@ -1125,6 +1125,7 @@ namespace put
                     Str     target_str  = targets[t].as_str();
                     hash_id target_hash = PEN_HASH(target_str.c_str());
 
+                    new_view.viewport_correction = pen::renderer_viewport_vup();
                     if (target_hash == ID_MAIN_COLOUR || target_hash == ID_MAIN_DEPTH)
                         new_view.viewport_correction = false;
 
