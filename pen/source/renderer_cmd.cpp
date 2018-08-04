@@ -1147,7 +1147,7 @@ namespace pen
 
     void renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-        if(depth_stencil_state == 62)
+        if (depth_stencil_state == 62)
         {
             int a = 0;
         }

@@ -111,14 +111,14 @@ namespace put
             f32*                constant_defaults;
             technique_constant* constants;
         };
-        
+
         enum rt_flags
         {
-            RT_AUX = 1<<1,
-            RT_AUX_USED = 1<<2,
-            RT_WRITE_ONLY = 1<<3
+            RT_AUX        = 1 << 1,
+            RT_AUX_USED   = 1 << 2,
+            RT_WRITE_ONLY = 1 << 3
         };
-        
+
         enum e_rt_mode
         {
             VRT_READ,
@@ -139,7 +139,7 @@ namespace put
             u32 samples  = 1;
             Str name;
             u32 flags = 0;
-            u32 pp = VRT_READ;
+            u32 pp    = VRT_READ;
         };
 
         // pmfx renderer ------------------------------------------------------------------------------------------
@@ -153,15 +153,13 @@ namespace put
         void register_scene_controller(const scene_controller& controller);
         void register_scene_view_renderer(const scene_view_renderer& svr);
 
-        const camera* get_camera(hash_id id_name);
-
+        const camera*        get_camera(hash_id id_name);
         const render_target* get_render_target(hash_id h);
         void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
-        void                 resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
+        u32                  get_render_state_by_name(hash_id id_name);
 
+        void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
         void resize_viewports();
-
-        u32 get_render_state_by_name(hash_id id_name);
 
         void show_dev_ui();
 
@@ -170,17 +168,16 @@ namespace put
         shader_handle load_shader(const c8* pmfx_name);
         void          release_shader(shader_handle handle);
 
-        const c8** get_shader_list(u32& count);
-        const c8** get_technique_list(shader_handle handle, u32& count);
-
-        const c8* get_shader_name(shader_handle handle);
-        const c8* get_technique_name(shader_handle handle, hash_id id_technique);
-
         void set_technique(shader_handle handle, u32 index);
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
-        u32  get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
 
-        void                initialise_constant_defaults(shader_handle handle, u32 index, f32* data);
+        void initialise_constant_defaults(shader_handle handle, u32 index, f32* data);
+
+        const c8**          get_shader_list(u32& count);
+        const c8**          get_technique_list(shader_handle handle, u32& count);
+        const c8*           get_shader_name(shader_handle handle);
+        const c8*           get_technique_name(shader_handle handle, hash_id id_technique);
+        u32                 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
         technique_constant* get_technique_constants(shader_handle handle, u32 index);
         u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
 

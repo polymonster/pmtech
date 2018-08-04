@@ -92,7 +92,7 @@ namespace
         {"d24s8", PEN_HASH("d24s8"), PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL}};
     s32 num_formats = PEN_ARRAY_SIZE(rt_format);
 
-    Str rt_ratio[] = {"none", "equal", "half", "quater", "eighth", "sixteenth"};
+    Str rt_ratio[] = {"none", "equal", "half", "quarter", "eighth", "sixteenth"};
     s32 num_ratios = PEN_ARRAY_SIZE(rt_ratio);
 
     mode_map render_flags_map[] = {"forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0};
@@ -111,20 +111,16 @@ namespace
     {
         Str     name;
         hash_id id_name;
-        hash_id id_render_target[pen::MAX_MRT] = { 0 };
-        hash_id id_depth_target = 0;
-        hash_id id_filter = 0;
-        
+        hash_id id_render_target[pen::MAX_MRT] = {0};
+        hash_id id_depth_target                = 0;
+        hash_id id_filter                      = 0;
+
         s32 rt_width, rt_height;
         f32 rt_ratio;
-        
-        u32 render_targets[pen::MAX_MRT] = {
-            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE
-        };
-        
+
+        u32 render_targets[pen::MAX_MRT] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+                                            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
+
         u32 depth_target = PEN_NULL_DEPTH_BUFFER;
 
         f32 viewport[4] = {0};
@@ -147,9 +143,9 @@ namespace
         std::vector<sampler_binding> sampler_bindings;
 
         std::vector<void (*)(const put::scene_view&)> render_functions;
-        
+
         bool viewport_correction = true; // todo put this into flags?
-        bool post_process = true; //todo make this id to select post process
+        bool post_process        = true; // todo make this id to select post process
     };
 
     enum e_render_state_type : u32
@@ -168,27 +164,27 @@ namespace
 
         e_render_state_type type;
     };
-    
+
     struct filter_kernel
     {
         hash_id id_name;
         Str     name;
-        
+
         // cbuffer friendly data
-        vec4f   info; // xy = direction, z = num samples, w = pad
-        vec4f   offset_weight[16]; //x = offset, y = weight;
+        vec4f info;              // xy = direction, z = num samples, w = pad
+        vec4f offset_weight[16]; // x = offset, y = weight;
     };
 
-    std::vector<view_params>                s_post_process_passes;
-    std::vector<view_params>                s_views;
-    std::vector<scene_controller>           s_controllers;
-    std::vector<scene_view_renderer>        s_scene_view_renderers;
-    std::vector<render_target>              s_render_targets;
-    std::vector<texture_creation_params>    s_render_target_tcp;
-    std::vector<const c8*>                  s_render_target_names;
-    std::vector<render_state>               s_render_states;
-    std::vector<sampler_binding>            s_sampler_bindings;
-    std::vector<filter_kernel>              s_filter_kernels;
+    std::vector<view_params>             s_post_process_passes;
+    std::vector<view_params>             s_views;
+    std::vector<scene_controller>        s_controllers;
+    std::vector<scene_view_renderer>     s_scene_view_renderers;
+    std::vector<render_target>           s_render_targets;
+    std::vector<texture_creation_params> s_render_target_tcp;
+    std::vector<const c8*>               s_render_target_names;
+    std::vector<render_state>            s_render_states;
+    std::vector<sampler_binding>         s_sampler_bindings;
+    std::vector<filter_kernel>           s_filter_kernels;
 
     struct textured_vertex
     {
@@ -243,8 +239,8 @@ namespace put
 
             if (rt_r != 0)
             {
-                w *= (f32)rt_r;
-                h *= (f32)rt_r;
+                w /= (f32)rt_r;
+                h /= (f32)rt_r;
             }
             else
             {
@@ -571,11 +567,11 @@ namespace put
                     rs.handle = pen::renderer_create_depth_stencil_state(dscp);
 
                 dev_console_log("[pmfx] add dss : %i", rs.handle);
-                
+
                 s_render_states.push_back(rs);
             }
         }
-        
+
         void parse_filters(pen::json& render_config)
         {
             pen::json j_filters = render_config["filter_kernels"];
@@ -583,23 +579,23 @@ namespace put
             for (s32 i = 0; i < num; ++i)
             {
                 pen::json jfk = j_filters[i];
-                
+
                 filter_kernel fk;
-                fk.name = j_filters[i].name();
+                fk.name    = j_filters[i].name();
                 fk.id_name = PEN_HASH(fk.name.c_str());
-                
-                u32 num_samples = jfk["weights"].size();
+
+                u32 num_samples  = jfk["weights"].size();
                 u32 _num_samples = jfk["offsets"].size();
                 PEN_ASSERT(num_samples == _num_samples);
-                
-                for(u32 s = 0; s < num_samples; ++s)
+
+                for (u32 s = 0; s < num_samples; ++s)
                 {
                     f32 w = jfk["weights"][s].as_f32();
                     f32 o = jfk["offsets"][s].as_f32();
-                    
+
                     fk.offset_weight[s] = vec4f(o, w, 0.0f, 0.0f);
                 }
-                
+
                 fk.info.z = num_samples;
                 s_filter_kernels.push_back(fk);
             }
@@ -655,8 +651,8 @@ namespace put
             if (masks.size() == 0)
                 masks.push_back(0x0F);
 
-            bool multi_blend = rtb.size() > 1 || write_mask.size() > 1;
-            size_t  num_rt      = std::max<size_t>(rtb.size(), write_mask.size());
+            bool   multi_blend = rtb.size() > 1 || write_mask.size() > 1;
+            size_t num_rt      = std::max<size_t>(rtb.size(), write_mask.size());
 
             // splat
             size_t rtb_start = rtb.size();
@@ -754,10 +750,10 @@ namespace put
                     {
                         s_render_targets.push_back(render_target());
                         render_target& new_info = s_render_targets.back();
-                        
+
                         s_render_target_tcp.push_back(texture_creation_params());
                         pen::texture_creation_params& tcp = s_render_target_tcp.back();
-                        
+
                         new_info.ratio   = 0;
                         new_info.name    = r.name();
                         new_info.id_name = PEN_HASH(r.name().c_str());
@@ -782,15 +778,14 @@ namespace put
                                 {
                                     new_info.width  = pen::BACK_BUFFER_RATIO;
                                     new_info.height = rr;
-
-                                    new_info.ratio = 1.0f / (f32)rr;
+                                    new_info.ratio  = rr;
                                     break;
                                 }
                         }
 
                         new_info.num_mips = 1;
                         new_info.format   = rt_format[f].format;
-                        
+
                         tcp.data             = nullptr;
                         tcp.width            = new_info.width;
                         tcp.height           = new_info.height;
@@ -820,9 +815,9 @@ namespace put
                         if (r["cpu_write"].as_bool(false))
                             tcp.cpu_access_flags |= PEN_CPU_ACCESS_WRITE;
 
-                        if( r["pp"].as_str() == "write")
+                        if (r["pp"].as_str() == "write")
                             new_info.pp = VRT_WRITE;
-                        
+
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
 
                         // msaa
@@ -1068,10 +1063,11 @@ namespace put
             new_view.clear_state = pen::renderer_create_clear_state(cs_info);
         }
 
-        void parse_views(pen::json& render_config, const c8* type, const c8* inherit_views, std::vector<view_params>& view_array)
+        void parse_views(pen::json& render_config, const c8* type, const c8* inherit_views,
+                         std::vector<view_params>& view_array)
         {
             pen::json j_views = render_config[type];
-            
+
             s32 num = j_views.size();
             for (s32 i = 0; i < num; ++i)
             {
@@ -1084,20 +1080,20 @@ namespace put
                 new_view.name = view.name();
 
                 new_view.id_name = PEN_HASH(view.name());
-                
+
                 // inherit and combine
                 Str ihv = view["inherit"].as_str();
-                for(;;)
+                for (;;)
                 {
-                    if(ihv == "")
+                    if (ihv == "")
                         break;
-                    
+
                     new_view.name = ihv.c_str();
-                    
+
                     pen::json inherit_view = render_config[inherit_views][ihv.c_str()];
-                    
+
                     view = pen::json::combine(view, inherit_view);
-                    
+
                     ihv = inherit_view["inherit"].as_str();
                 }
 
@@ -1107,9 +1103,9 @@ namespace put
                 s32 num_targets = targets.size();
 
                 s32 cur_rt = 0;
-                
+
                 new_view.depth_target = PEN_INVALID_HANDLE;
-                
+
                 for (s32 t = 0; t < num_targets; ++t)
                 {
                     Str     target_str  = targets[t].as_str();
@@ -1150,7 +1146,7 @@ namespace put
 
                             if (r.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
                             {
-                                new_view.depth_target = r.handle;
+                                new_view.depth_target    = r.handle;
                                 new_view.id_depth_target = target_hash;
                             }
                             else
@@ -1274,12 +1270,17 @@ namespace put
                 Str technique_str  = view["technique"].as_str();
                 new_view.technique = PEN_HASH(technique_str.c_str());
 
-                new_view.pmfx_shader = pmfx::load_shader(view["pmfx_shader"].as_cstr());
-                
-                if(view["pmfx_shader"].as_cstr() && !is_valid(new_view.pmfx_shader))
+                if (technique_str == "bloom_upsample")
                 {
-                    dev_console_log_level(dev_ui::CONSOLE_ERROR,
-                                    "[error] render controller: missing shader %s", view["pmfx_shader"].as_cstr());
+                    int a = 0;
+                }
+
+                new_view.pmfx_shader = pmfx::load_shader(view["pmfx_shader"].as_cstr());
+
+                if (view["pmfx_shader"].as_cstr() && !is_valid(new_view.pmfx_shader))
+                {
+                    dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: missing shader %s",
+                                          view["pmfx_shader"].as_cstr());
                     valid = false;
                 }
 
@@ -1303,63 +1304,62 @@ namespace put
 
                 // sampler bindings
                 parse_sampler_bindings(view, new_view.sampler_bindings);
-                
+
                 // post process flag.. todo change this to id, id of post process to perform on the output
                 // of this view.
                 new_view.post_process = view["post_process"].as_bool(false);
-        
+
                 // filter id for post process passes
                 Str fk = view["filter_kernel"].as_str();
-                
-                if(!(fk == ""))
+
+                if (!(fk == ""))
                 {
                     new_view.id_filter = view["filter_kernel"].as_hash_id();
-                    
+
                     // create filter for cbuffer
-                    struct dir_preset {
+                    struct dir_preset
+                    {
                         hash_id id;
                         vec2f   dir;
                     };
-                    
-                    static dir_preset presets[] = {
-                        { PEN_HASH("horizontal"), vec2f(1.0, 0.0) },
-                        { PEN_HASH("vertical"), vec2f(0.0, 1.0) }
-                    };
-                    
+
+                    static dir_preset presets[] = {{PEN_HASH("horizontal"), vec2f(1.0, 0.0)},
+                                                   {PEN_HASH("vertical"), vec2f(0.0, 1.0)}};
+
                     vec2f vdir = vec2f::zero();
-                    
-                    if(view["filter_direction"].size() == 2)
+
+                    if (view["filter_direction"].size() == 2)
                     {
-                        for(u32 i = 0; i < 2; ++i)
+                        for (u32 i = 0; i < 2; ++i)
                             vdir[i] = view["filter_direction"][i].as_f32();
                     }
                     else
                     {
                         hash_id id_dir = view["filter_direction"].as_hash_id();
-                        for(auto& p : presets)
-                            if(p.id == id_dir)
+                        for (auto& p : presets)
+                            if (p.id == id_dir)
                                 vdir = p.dir;
                     }
-                    
+
                     filter_kernel fk;
-                    for(auto& f : s_filter_kernels)
-                        if(f.id_name == new_view.id_filter)
+                    for (auto& f : s_filter_kernels)
+                        if (f.id_name == new_view.id_filter)
                             fk = f;
-                    
+
                     fk.info.x = vdir.x;
                     fk.info.y = vdir.y;
-                    
+
                     // create the cbuffer itself
-                    static const u32 filter_cbuffer_size = sizeof(fk.offset_weight); //+ sizeof(fk.info);
+                    static const u32            filter_cbuffer_size = sizeof(fk.offset_weight); //+ sizeof(fk.info);
                     pen::buffer_creation_params bcp;
                     bcp.usage_flags      = PEN_USAGE_DYNAMIC;
                     bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
                     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                     bcp.buffer_size      = filter_cbuffer_size;
                     bcp.data             = nullptr;
-                    
+
                     new_view.cbuffer_filter = pen::renderer_create_buffer(bcp);
-                    
+
                     pen::renderer_update_buffer(new_view.cbuffer_filter, &fk.info, filter_cbuffer_size);
                 }
 
@@ -1367,80 +1367,80 @@ namespace put
                     view_array.push_back(new_view);
             }
         }
-        
+
         namespace
-        {            
+        {
             struct virtual_rt
             {
-                hash_id id = 0;
-                u32 rt_index[VRT_NUM] = { 0 };
-                bool swap;
+                hash_id id                = 0;
+                u32     rt_index[VRT_NUM] = {0};
+                bool    swap;
             };
             std::vector<virtual_rt> s_virtual_rt;
-            
+
             void add_virtual_target(hash_id id)
             {
                 // check existing
-                for(auto& vrt : s_virtual_rt)
-                    if(vrt.id == id)
+                for (auto& vrt : s_virtual_rt)
+                    if (vrt.id == id)
                         return;
-                
+
                 // find rt
                 u32 rt_index;
-                for(u32 i = 0; i < s_render_targets.size(); ++i)
+                for (u32 i = 0; i < s_render_targets.size(); ++i)
                 {
-                    if(s_render_targets[i].id_name == id)
+                    if (s_render_targets[i].id_name == id)
                     {
                         rt_index = i;
                         break;
                     }
                 }
-                
+
                 // add new
                 virtual_rt vrt;
-                vrt.id = id;
-                vrt.rt_index[VRT_READ] = PEN_INVALID_HANDLE;
+                vrt.id                  = id;
+                vrt.rt_index[VRT_READ]  = PEN_INVALID_HANDLE;
                 vrt.rt_index[VRT_WRITE] = PEN_INVALID_HANDLE;
-                vrt.swap = false;
-                
+                vrt.swap                = false;
+
                 u32 pp = s_render_targets[rt_index].pp;
-                
+
                 vrt.rt_index[pp] = rt_index;
 
                 s_virtual_rt.push_back(vrt);
             }
-            
+
             u32 get_aux_buffer(hash_id id)
             {
                 s32 rt_index = -1;
-                for(u32 i = 0; i < s_render_targets.size(); ++i)
+                for (u32 i = 0; i < s_render_targets.size(); ++i)
                 {
-                    if(id == s_render_targets[i].id_name)
+                    if (id == s_render_targets[i].id_name)
                     {
                         rt_index = i;
                         break;
                     }
                 }
-                
-                if(rt_index == -1)
+
+                if (rt_index == -1)
                 {
                     dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s",
                                           "[error] missing render target when baking post processes");
-                    
+
                     return PEN_INVALID_HANDLE;
                 }
-                
+
                 render_target* rt = &s_render_targets[rt_index];
-                        
+
                 // find a suitable size / format aux buffer
-                for(u32 i = 0; i < s_render_targets.size(); ++i)
+                for (u32 i = 0; i < s_render_targets.size(); ++i)
                 {
-                    if(!(s_render_targets[i].flags & RT_AUX))
+                    if (!(s_render_targets[i].flags & RT_AUX))
                         continue;
-                    
-                    if(s_render_targets[i].flags & RT_AUX_USED)
+
+                    if (s_render_targets[i].flags & RT_AUX_USED)
                         continue;
-                    
+
                     bool match = true;
                     match &= rt->width == s_render_targets[i].width;
                     match &= rt->height == s_render_targets[i].height;
@@ -1448,131 +1448,129 @@ namespace put
                     match &= rt->num_mips == s_render_targets[i].num_mips;
                     match &= rt->format == s_render_targets[i].format;
                     match &= rt->samples == s_render_targets[i].samples;
-                    
-                    if(match)
+
+                    if (match)
                     {
                         s_render_targets[i].flags |= RT_AUX_USED;
                         return s_render_targets[i].handle;
                     }
                 }
-                
+
                 // create an aux copy from the original rt
                 render_target aux_rt = *rt;
                 aux_rt.flags |= RT_AUX;
                 aux_rt.flags |= RT_AUX_USED;
                 aux_rt.handle = pen::renderer_create_render_target(s_render_target_tcp[rt_index]);
-                aux_rt.name = rt->name;
+                aux_rt.name   = rt->name;
                 aux_rt.name.append("_aux");
                 s_render_targets.push_back(aux_rt);
                 return s_render_targets.size() - 1;
             }
-            
+
             u32 get_virtual_target(hash_id id, e_rt_mode mode)
             {
                 u32 result = PEN_INVALID_HANDLE;
-                
-                for(auto& vrt : s_virtual_rt)
+
+                for (auto& vrt : s_virtual_rt)
                 {
-                    if(vrt.id == id)
+                    if (vrt.id == id)
                     {
                         u32 rt_index = vrt.rt_index[mode];
-                        
-                        if(is_valid(rt_index))
+
+                        if (is_valid(rt_index))
                         {
                             result = s_render_targets[rt_index].handle;
                         }
-                        else if(mode == VRT_WRITE)
+                        else if (mode == VRT_WRITE)
                         {
-                            rt_index = get_aux_buffer(id);
+                            rt_index           = get_aux_buffer(id);
                             vrt.rt_index[mode] = rt_index;
-                            result = s_render_targets[rt_index].handle;
+                            result             = s_render_targets[rt_index].handle;
                         }
-                        
-                        if(mode == VRT_WRITE)
+
+                        if (mode == VRT_WRITE)
                             vrt.swap = true;
-                        
+
                         break;
                     }
                 }
-                
+
                 PEN_ASSERT(result != PEN_INVALID_HANDLE);
-                
+
                 return result;
             }
-            
+
             void virtual_rt_swap_buffers()
             {
-                for(auto& vrt : s_virtual_rt)
+                for (auto& vrt : s_virtual_rt)
                 {
-                    if(vrt.swap)
+                    if (vrt.swap)
                     {
                         u32 wrt = vrt.rt_index[VRT_WRITE];
-                        if(is_valid(wrt))
+                        if (is_valid(wrt))
                         {
-                            if(s_render_targets[wrt].flags & RT_WRITE_ONLY)
+                            if (s_render_targets[wrt].flags & RT_WRITE_ONLY)
                                 continue;
                         }
-                        
+
                         std::swap(vrt.rt_index[VRT_WRITE], vrt.rt_index[VRT_READ]);
-                        
+
                         // remark aux buffer usable
                         wrt = vrt.rt_index[VRT_WRITE];
-                        
-                        if(is_valid(wrt))
+
+                        if (is_valid(wrt))
                         {
                             render_target& rt = s_render_targets[wrt];
-                            if(rt.flags & RT_AUX)
+                            if (rt.flags & RT_AUX)
                             {
                                 rt.flags &= ~RT_AUX_USED;
                                 vrt.rt_index[VRT_WRITE] = PEN_INVALID_HANDLE;
                             }
                         }
-                        
+
                         vrt.swap = false;
                     }
                 }
             }
-            
+
             void bake_post_process_targets()
             {
                 // find render target aliases and generate automatic ping pongs
-                
+
                 // first create virtual rt for each unique target / texture
-                for(auto& v : s_post_process_passes)
+                for (auto& v : s_post_process_passes)
                 {
-                    for(u32 i = 0; i < v.num_colour_targets; ++i)
+                    for (u32 i = 0; i < v.num_colour_targets; ++i)
                         add_virtual_target(v.id_render_target[i]);
-                    
-                    if(is_valid(v.depth_target))
+
+                    if (is_valid(v.depth_target))
                         add_virtual_target(v.id_depth_target);
-                    
-                    for(auto& sb : v.sampler_bindings)
+
+                    for (auto& sb : v.sampler_bindings)
                         add_virtual_target(sb.id_texture);
                 }
-                
+
                 u32 pass_counter = 0;
-                for(auto& p : s_post_process_passes)
+                for (auto& p : s_post_process_passes)
                 {
-                    for(u32 i = 0; i < p.num_colour_targets; ++i)
+                    for (u32 i = 0; i < p.num_colour_targets; ++i)
                         p.render_targets[i] = get_virtual_target(p.id_render_target[i], VRT_WRITE);
-                    
-                    if(is_valid(p.depth_target))
+
+                    if (is_valid(p.depth_target))
                         p.depth_target = get_virtual_target(p.id_depth_target, VRT_WRITE);
                     else
                         p.depth_target = PEN_NULL_DEPTH_BUFFER;
-                    
-                    for(auto& sb : p.sampler_bindings)
+
+                    for (auto& sb : p.sampler_bindings)
                         sb.handle = get_virtual_target(sb.id_texture, VRT_READ);
-                    
+
                     // swap buffers
                     virtual_rt_swap_buffers();
-                    
-                    
-                    
+
                     ++pass_counter;
                 }
             }
-        }
+        } // namespace
 
         void load_script_internal(const c8* filename)
         {
@@ -1621,7 +1619,7 @@ namespace put
             parse_render_targets(render_config);
             parse_views(render_config, "views", "views", s_views);
             parse_views(render_config, "post_process_passes", "post_process_views", s_post_process_passes);
-            
+
             bake_post_process_targets();
 
             // rebake material handles
@@ -1700,7 +1698,7 @@ namespace put
             }
             s_views.clear();
             s_post_process_passes.clear();
-            
+
             s_virtual_rt.clear();
         }
 
@@ -1721,7 +1719,7 @@ namespace put
                     if (s_controllers[i].order == u)
                         s_controllers[i].update_function(&s_controllers[i]);
         }
-        
+
         struct post_process_per_view
         {
             vec4f viewport_correction;
@@ -1730,9 +1728,9 @@ namespace put
         void fullscreen_quad(const scene_view& sv)
         {
             static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
-            
+
             static u32 cbuffer_per_view = PEN_INVALID_HANDLE;
-            if(!is_valid(cbuffer_per_view))
+            if (!is_valid(cbuffer_per_view))
             {
                 pen::buffer_creation_params bcp;
                 bcp.usage_flags      = PEN_USAGE_DYNAMIC;
@@ -1740,31 +1738,33 @@ namespace put
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                 bcp.buffer_size      = sizeof(post_process_per_view);
                 bcp.data             = nullptr;
-                
+
                 cbuffer_per_view = pen::renderer_create_buffer(bcp);
             }
 
-            if(!is_valid(sv.pmfx_shader))
+            if (!is_valid(sv.pmfx_shader))
                 return;
-            
-            //scale and bias to adjust texture coordinates of render targets
+
+            // scale and bias to adjust texture coordinates of render targets
             // x = scale, y = bias
             post_process_per_view pppv;
             pppv.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
-            if(!sv.viewport_correction)
+            if (!sv.viewport_correction)
             {
                 pppv.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
             }
-            
+
             pen::renderer_update_buffer(cbuffer_per_view, &pppv, sizeof(pppv));
-            
             pen::renderer_set_constant_buffer(cbuffer_per_view, 0, PEN_SHADER_TYPE_VS);
-            
+
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
-            
-            pmfx::set_technique(sv.pmfx_shader, sv.technique, 0);
-            
+
+            if (!pmfx::set_technique(sv.pmfx_shader, sv.technique, 0))
+            {
+                int a = 0;
+            }
+
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
@@ -1820,19 +1820,19 @@ namespace put
 
             // build view info
             scene_view sv;
-            sv.scene               = v.scene;
-            
+            sv.scene = v.scene;
+
             // generate 3d view proj matrix
             if (v.camera)
             {
                 put::camera_update_shader_constants(v.camera, v.viewport_correction);
-                sv.cb_view             = v.camera->cbuffer;
+                sv.cb_view = v.camera->cbuffer;
             }
-            
+
             // bind any per view cbuffers
-            if(is_valid(v.cbuffer_filter))
+            if (is_valid(v.cbuffer_filter))
                 pen::renderer_set_constant_buffer(v.cbuffer_filter, 2, PEN_SHADER_TYPE_PS);
-            
+
             sv.render_flags        = v.render_flags;
             sv.technique           = v.technique;
             sv.raster_state        = v.raster_state;
@@ -1848,34 +1848,34 @@ namespace put
             for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                 v.render_functions[rf](sv);
         }
-        
+
         void resolve_targets(bool aux)
         {
             // resolve
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-            
+
             for (s32 i = 0; i < 8; ++i)
             {
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
             }
-            
+
             for (auto& rt : s_render_targets)
             {
-                if((rt.flags & RT_AUX) != aux)
+                if ((rt.flags & RT_AUX) != aux)
                     continue;
-                
+
                 if (rt.samples > 1)
                 {
                     static shader_handle pmfx_resolve = pmfx::load_shader("msaa_resolve");
                     pmfx::set_technique(pmfx_resolve, PEN_HASH("average_4x"), 0);
-                    
+
                     pen::renderer_resolve_target(rt.handle, pen::RESOLVE_CUSTOM);
                 }
             }
-            
+
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-            
+
             for (s32 i = 0; i < 16; ++i)
             {
                 pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
@@ -1891,16 +1891,16 @@ namespace put
                 ++count;
                 render_view(v);
                 resolve_targets(false);
-                
-                if(v.post_process)
+
+                if (v.post_process)
                 {
                     for (auto& v : s_post_process_passes)
                     {
                         ++count;
-                        
+
                         v.render_functions.clear();
                         v.render_functions.push_back(&fullscreen_quad);
-                        
+
                         render_view(v);
                     }
                 }
@@ -1957,41 +1957,81 @@ namespace put
 
             if (open_renderer)
             {
-                if (ImGui::Begin("Render Targets", &open_renderer, ImGuiWindowFlags_AlwaysAutoResize))
+                if (ImGui::Begin("Pmfx", &open_renderer, ImGuiWindowFlags_AlwaysAutoResize))
                 {
-                    if (s_render_target_names.size() != s_render_targets.size())
+                    if (ImGui::CollapsingHeader("Render Targets"))
                     {
-                        s_render_target_names.clear();
-
-                        for (auto& rr : s_render_targets)
+                        if (s_render_target_names.size() != s_render_targets.size())
                         {
-                            s_render_target_names.push_back(rr.name.c_str());
+                            s_render_target_names.clear();
+
+                            for (auto& rr : s_render_targets)
+                            {
+                                s_render_target_names.push_back(rr.name.c_str());
+                            }
+                        }
+
+                        ImGui::Combo("", &current_render_target, (const c8* const*)&s_render_target_names[0],
+                                     (s32)s_render_target_names.size(), 10);
+
+                        static s32 display_ratio = 3;
+                        ImGui::InputInt("Buffer Size", &display_ratio);
+                        display_ratio = std::max<s32>(1, display_ratio);
+                        display_ratio = std::min<s32>(4, display_ratio);
+
+                        render_target& rt = s_render_targets[current_render_target];
+
+                        f32 w, h;
+                        get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
+
+                        bool unsupported_display = rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH;
+                        unsupported_display |= rt.format == PEN_TEX_FORMAT_R32_UINT;
+
+                        if (!unsupported_display)
+                        {
+                            f32 aspect = w / h;
+                            ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
+                        }
+
+                        render_target_info_ui(rt);
+                    }
+
+                    const c8* view_passes[] = {"Views", "Post Processing"};
+
+                    std::vector<view_params>* view_arrays[] = {&s_views, &s_post_process_passes};
+
+                    for (u32 x = 0; x < PEN_ARRAY_SIZE(view_passes); ++x)
+                    {
+                        if (ImGui::CollapsingHeader(view_passes[x]))
+                        {
+                            for (auto& v : *view_arrays[x])
+                            {
+                                ImGui::Text("%s", v.name.c_str());
+
+                                for (u32 i = 0; i < v.num_colour_targets; ++i)
+                                {
+                                    const render_target* rt = get_render_target(v.id_render_target[i]);
+                                    ImGui::Text("colour target %i: %s", i, rt->name.c_str());
+                                }
+
+                                if (is_valid(v.depth_target))
+                                {
+                                    const render_target* rt = get_render_target(v.id_depth_target);
+                                    ImGui::Text("depth target: %s", rt->name.c_str());
+                                }
+
+                                int isb = 0;
+                                for (auto& sb : v.sampler_bindings)
+                                {
+                                    const render_target* rt = get_render_target(sb.id_texture);
+                                    ImGui::Text("input sampler %i: %s", isb, rt->name.c_str());
+                                    ++isb;
+                                }
+
+                                ImGui::Separator();
+                            }
                         }
                     }
-
-                    ImGui::Combo("", &current_render_target, (const c8* const*)&s_render_target_names[0],
-                                 (s32)s_render_target_names.size(), 10);
-
-                    static s32 display_ratio = 3;
-                    ImGui::InputInt("Buffer Size", &display_ratio);
-                    display_ratio = std::max<s32>(1, display_ratio);
-                    display_ratio = std::min<s32>(4, display_ratio);
-
-                    render_target& rt = s_render_targets[current_render_target];
-
-                    f32 w, h;
-                    get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
-
-                    bool unsupported_display = rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH;
-                    unsupported_display |= rt.format == PEN_TEX_FORMAT_R32_UINT;
-
-                    if (!unsupported_display)
-                    {
-                        f32 aspect = w / h;
-                        ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
-                    }
-
-                    render_target_info_ui(rt);
 
                     ImGui::End();
                 }

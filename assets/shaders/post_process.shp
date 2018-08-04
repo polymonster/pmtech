@@ -83,7 +83,7 @@ ps_output ps_high_pass( vs_output input )
 	
 	float lum = dot( float3(0.2126, 0.7152, 0.0722), output.colour.rgb);
 	
-	if(lum < 0.5)
+	if(lum < 0.7)
 		output.colour *= float4(0.0, 0.0, 0.0, 1.0);
 			
 	return output;
@@ -98,13 +98,47 @@ ps_output ps_filter( vs_output input )
 	output.colour = float4(0.0, 0.0, 0.0, 1.0);
 	for(int i = 0; i < filter_info.z; ++i)
 	{
-		float2 offset = filter_offset_weight[i].x * inv_texel; 
+		float2 offset = filter_offset_weight[i].x * inv_texel * filter_info.xy; 
 		float w = filter_offset_weight[i].y;
 				
-		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset * 1.0) * w;
+		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset) * w;
 	}
 		
 	output.colour.a = 1.0;
+	return output.colour;
+}
+
+ps_output ps_downsample_2x2( vs_output input ) 
+{
+	ps_output output;
+
+	float2 inv_texel = float2(1.0/1920.0, 1.0/1080.0);
+	float2 offset[4];
+	offset[0] = float2(0.0, 0.0) * inv_texel;
+	offset[1] = float2(1.0, 0.0) * inv_texel;
+	offset[2] = float2(1.0, 1.0) * inv_texel;
+	offset[3] = float2(0.0, 1.0) * inv_texel;
+	
+	float2 tc = input.texcoord.xy;
+	output.colour = float4(0.0, 0.0, 0.0, 1.0);
+	output.colour += sample_texture( src_texture_0, tc + offset[0]);
+	output.colour += sample_texture( src_texture_0, tc + offset[1]);
+	output.colour += sample_texture( src_texture_0, tc + offset[2]);
+	output.colour += sample_texture( src_texture_0, tc + offset[3]);
+	output.colour *= 0.25;
+
+	return output.colour;
+}
+
+ps_output ps_bloom_upsample( vs_output input ) 
+{
+	ps_output output;
+
+	float2 tc = input.texcoord.xy;
+	output.colour = sample_texture( src_texture_0, tc);
+	output.colour += sample_texture( src_texture_1, tc);
+	output.colour += sample_texture( src_texture_2, tc);
+	
 	return output.colour;
 }
 
@@ -139,6 +173,18 @@ pmfx:
 	{
 		"vs": "vs_ndc_quad",
 		"ps": "ps_filter"
+	},
+	
+	"downsample_2x2":
+	{
+		"vs": "vs_ndc_quad",
+		"ps": "ps_downsample_2x2"
+	},
+	
+	"bloom_upsample":
+	{
+		"vs": "vs_ndc_quad",
+		"ps": "ps_bloom_upsample"
 	}
 }
 

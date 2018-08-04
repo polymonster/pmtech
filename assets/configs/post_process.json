@@ -7,6 +7,27 @@
 			format: rgba8,
 			pp: write
 		},
+		
+		pp_output_half:
+		{
+			size: half,
+			format: rgba8,
+			pp: write
+		},
+		
+		pp_output_quarter:
+		{
+			size: quarter,
+			format: rgba8,
+			pp: write
+		},
+		
+		pp_output_eighth:
+		{
+			size: eighth,
+			format: rgba8,
+			pp: write
+		},
 	},
 	
 	filter_kernels:
@@ -62,7 +83,6 @@
 		
 		high_pass:
 		{
-			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			colour_write_mask: 0xf,
 			blend_state: disabled,
 			viewport: [0.0, 0.0, 1.0, 1.0],
@@ -74,7 +94,6 @@
 		
 		filter:
 		{
-			clear_colour:[0.5, 0.5, 0.5, 1.0],
 			colour_write_mask: 0xf,
 			blend_state: disabled,
 			viewport: [0.0, 0.0, 1.0, 1.0],
@@ -82,6 +101,28 @@
 			depth_stencil_state: disabled,
 			pmfx_shader: post_process,
 			technique: filter
+		},
+		
+		downsample_2x2:
+		{
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: post_process,
+			depth_stencil_state: disabled,
+			pmfx_shader: post_process,
+			technique: downsample_2x2
+		},
+		
+		bloom_upsample:
+		{
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: post_process,
+			depth_stencil_state: disabled,
+			pmfx_shader: post_process,
+			technique: bloom_upsample
 		},
 	},
 	
@@ -92,17 +133,25 @@
 			target: [main_depth],
 			sampler_bindings:
 			[
-				{ texture: post_process_depth, unit: 0, state: wrap_linear, shader: ps },
+				{ texture: post_process_depth, unit: 0, state: clamp_linear, shader: ps },
 			]
 		},
 		
+		{ 
+			inherit: high_pass,
+			target: [pp_output_full],
+			sampler_bindings:
+			[
+				{ texture: post_process_colour, unit: 0, state: clamp_linear, shader: ps },
+			],
+		},
 		
 		{ 
 			inherit: filter,
 			target: [pp_output_full],
 			sampler_bindings:
 			[
-				{ texture: post_process_colour, unit: 0, state: wrap_linear, shader: ps },
+				{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
 			],
 			filter_kernel: gauss_9_1,
 			filter_direction: horizontal
@@ -113,19 +162,52 @@
 			target: [pp_output_full],
 			sampler_bindings:
 			[
-				{ texture: post_process_colour, unit: 0, state: wrap_linear, shader: ps },
+				{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
 			],
 			filter_kernel: gauss_9_1,
 			filter_direction: vertical
 		},
 		
 		{ 
-			inherit: blit, 
+			inherit: downsample_2x2,
+			target: [pp_output_half],
+			sampler_bindings:
+			[
+				{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+			],
+		},
+		
+		{ 
+			inherit: filter,
+			target: [pp_output_half],
+			sampler_bindings:
+			[
+				{ texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+			],
+			filter_kernel: gauss_9_1,
+			filter_direction: horizontal
+		},
+		
+		{ 
+			inherit: filter,
+			target: [pp_output_half],
+			sampler_bindings:
+			[
+				{ texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+			],
+			filter_kernel: gauss_9_1,
+			filter_direction: vertical
+		},
+		
+		{ 
+			inherit: bloom_upsample,
 			target: [main_colour],
 			sampler_bindings:
 			[
-				{ texture: pp_output_full, unit: 0, state: wrap_linear, shader: ps },
-			]
+				{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+				{ texture: pp_output_half, unit: 1, state: clamp_linear, shader: ps },
+				{ texture: post_process_colour, unit: 2, state: clamp_linear, shader: ps },
+			],
 		},
 	]
 }

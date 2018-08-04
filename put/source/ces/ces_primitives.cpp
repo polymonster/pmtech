@@ -28,26 +28,21 @@ namespace put
             for (u32 i = 0; i < num_indices; ++i)
                 cpu_indices[i] = indices[i];
         }
-        
+
         void create_fulscreen_quad()
         {
-            static const u32 num_verts = 4;
+            static const u32 num_verts   = 4;
             static const u32 num_indices = 6;
-            
+
             geometry_resource* p_geometry = new geometry_resource;
-            
-            vertex_2d v[num_verts] = {
-                vec4f(-1.0f, -1.0f, 0.0f, 1.0f), vec4f(0.0f, 0.0f, 0.0f, 0.0f),
-                vec4f(-1.0f,  1.0f, 0.0f, 1.0f), vec4f(0.0f, 1.0f, 0.0f, 0.0f),
-                vec4f( 1.0f,  1.0f, 0.0f, 1.0f), vec4f(1.0f, 1.0f, 0.0f, 0.0f),
-                vec4f( 1.0f, -1.0f, 0.0f, 1.0f), vec4f(1.0f, 0.0f, 0.0f, 0.0f)
-            };
-            
-            u16 indices[num_indices] = {
-                0, 1, 2,
-                2, 3, 0
-            };
-            
+
+            vertex_2d v[num_verts] = {vec4f(-1.0f, -1.0f, 0.0f, 1.0f), vec4f(0.0f, 0.0f, 0.0f, 0.0f),
+                                      vec4f(-1.0f, 1.0f, 0.0f, 1.0f),  vec4f(0.0f, 1.0f, 0.0f, 0.0f),
+                                      vec4f(1.0f, 1.0f, 0.0f, 1.0f),   vec4f(1.0f, 1.0f, 0.0f, 0.0f),
+                                      vec4f(1.0f, -1.0f, 0.0f, 1.0f),  vec4f(1.0f, 0.0f, 0.0f, 0.0f)};
+
+            u16 indices[num_indices] = {0, 1, 2, 2, 3, 0};
+
             // VB
             pen::buffer_creation_params bcp;
             bcp.usage_flags      = PEN_USAGE_DEFAULT;
@@ -55,18 +50,18 @@ namespace put
             bcp.cpu_access_flags = 0;
             bcp.buffer_size      = sizeof(vertex_2d) * num_verts;
             bcp.data             = (void*)v;
-            
+
             p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
-            
+
             // IB
             bcp.usage_flags      = PEN_USAGE_DEFAULT;
             bcp.bind_flags       = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
             bcp.buffer_size      = 2 * num_indices;
             bcp.data             = (void*)indices;
-            
+
             p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
-            
+
             // info
             p_geometry->num_indices   = num_indices;
             p_geometry->num_vertices  = num_verts;
@@ -82,7 +77,7 @@ namespace put
 
             add_geometry_resource(p_geometry);
         }
-        
+
         void create_cone_primitive()
         {
             static const s32 segments = 16;

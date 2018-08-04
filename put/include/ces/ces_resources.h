@@ -78,7 +78,7 @@ namespace put
 
             cmp_skin* p_skin;
         };
-        
+
         struct vertex_2d
         {
             vec4f pos;
