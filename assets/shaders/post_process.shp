@@ -34,7 +34,7 @@ cbuffer per_view : register(b0)
 	float4 viewport_correction;
 };
 
-cbuffer src_info : register(b1)
+cbuffer src_info : register(b10)
 {
 	float2 inv_texel_size[8];
 };
@@ -93,7 +93,7 @@ ps_output ps_filter( vs_output input )
 {
 	ps_output output;
 
-	float2 inv_texel = float2(1.0/1920.0, 1.0/1080.0);
+	float2 inv_texel = inv_texel_size[0];
 	
 	output.colour = float4(0.0, 0.0, 0.0, 1.0);
 	for(int i = 0; i < filter_info.z; ++i)
@@ -101,7 +101,7 @@ ps_output ps_filter( vs_output input )
 		float2 offset = filter_offset_weight[i].x * inv_texel * filter_info.xy; 
 		float w = filter_offset_weight[i].y;
 				
-		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset) * w;
+		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset * 2) * w;
 	}
 		
 	output.colour.a = 1.0;
@@ -112,7 +112,8 @@ ps_output ps_downsample_2x2( vs_output input )
 {
 	ps_output output;
 
-	float2 inv_texel = float2(1.0/1920.0, 1.0/1080.0);
+	float2 inv_texel = inv_texel_size[0];
+	
 	float2 offset[4];
 	offset[0] = float2(0.0, 0.0) * inv_texel;
 	offset[1] = float2(1.0, 0.0) * inv_texel;
@@ -136,8 +137,9 @@ ps_output ps_bloom_upsample( vs_output input )
 
 	float2 tc = input.texcoord.xy;
 	output.colour = sample_texture( src_texture_0, tc);
-	output.colour += sample_texture( src_texture_1, tc);
-	output.colour += sample_texture( src_texture_2, tc);
+	
+	output.colour += sample_texture( src_texture_1, tc) * 0.5;
+	output.colour += sample_texture( src_texture_2, tc) * 0.5;
 	
 	return output.colour;
 }

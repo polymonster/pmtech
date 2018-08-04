@@ -82,14 +82,14 @@ namespace
     };
     
     format_info rt_format[] = {
-        {"rgba8", PEN_HASH("rgba8"), PEN_TEX_FORMAT_RGBA8_UNORM, 32, PEN_BIND_RENDER_TARGET},
-        {"bgra8", PEN_HASH("bgra8"), PEN_TEX_FORMAT_BGRA8_UNORM, 32, PEN_BIND_RENDER_TARGET},
-        {"rgba32f", PEN_HASH("rgba32f"), PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 32 * 4, PEN_BIND_RENDER_TARGET},
-        {"rgba16f", PEN_HASH("rgba16f"), PEN_TEX_FORMAT_R16G16B16A16_FLOAT, 16 * 4, PEN_BIND_RENDER_TARGET},
-        {"r32f", PEN_HASH("r32f"), PEN_TEX_FORMAT_R32_FLOAT, 32, PEN_BIND_RENDER_TARGET},
-        {"r16f", PEN_HASH("r16f"), PEN_TEX_FORMAT_R16_FLOAT, 16, PEN_BIND_RENDER_TARGET},
-        {"r32u", PEN_HASH("r32u"), PEN_TEX_FORMAT_R32_UINT, 32, PEN_BIND_RENDER_TARGET},
-        {"d24s8", PEN_HASH("d24s8"), PEN_TEX_FORMAT_D24_UNORM_S8_UINT, 32, PEN_BIND_DEPTH_STENCIL}};
+        {"rgba8",   PEN_HASH("rgba8"),      PEN_TEX_FORMAT_RGBA8_UNORM,         32,     PEN_BIND_RENDER_TARGET},
+        {"bgra8",   PEN_HASH("bgra8"),      PEN_TEX_FORMAT_BGRA8_UNORM,         32,     PEN_BIND_RENDER_TARGET},
+        {"rgba32f", PEN_HASH("rgba32f"),    PEN_TEX_FORMAT_R32G32B32A32_FLOAT,  32 * 4, PEN_BIND_RENDER_TARGET},
+        {"rgba16f", PEN_HASH("rgba16f"),    PEN_TEX_FORMAT_R16G16B16A16_FLOAT,  16 * 4, PEN_BIND_RENDER_TARGET},
+        {"r32f",    PEN_HASH("r32f"),       PEN_TEX_FORMAT_R32_FLOAT,           32,     PEN_BIND_RENDER_TARGET},
+        {"r16f",    PEN_HASH("r16f"),       PEN_TEX_FORMAT_R16_FLOAT,           16,     PEN_BIND_RENDER_TARGET},
+        {"r32u",    PEN_HASH("r32u"),       PEN_TEX_FORMAT_R32_UINT,            32,     PEN_BIND_RENDER_TARGET},
+        {"d24s8",   PEN_HASH("d24s8"),      PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL}};
     s32 num_formats = PEN_ARRAY_SIZE(rt_format);
 
     Str rt_ratio[] = {"none", "equal", "half", "quarter", "eighth", "sixteenth"};
@@ -141,6 +141,7 @@ namespace
         put::camera*       camera;
 
         std::vector<sampler_binding> sampler_bindings;
+        vec4f* sampler_info;
 
         std::vector<void (*)(const put::scene_view&)> render_functions;
 
@@ -341,10 +342,15 @@ namespace put
             s_geometry.screen_quad_ib = pen::renderer_create_buffer(bcp);
         }
 
-        void parse_sampler_bindings(pen::json render_config, std::vector<sampler_binding>& bindings)
+        void parse_sampler_bindings(pen::json render_config, view_params& vp)
         {
+            std::vector<sampler_binding>& bindings = vp.sampler_bindings;
             pen::json j_sampler_bindings = render_config["sampler_bindings"];
             s32       num                = j_sampler_bindings.size();
+            
+            if( num > 0 )
+                vp.sampler_info = new vec4f[num];
+            
             for (s32 i = 0; i < num; ++i)
             {
                 pen::json binding = j_sampler_bindings[i];
@@ -353,8 +359,9 @@ namespace put
 
                 // texture id and handle from render targets.. todo add global textures
                 sb.id_texture = binding["texture"].as_hash_id();
-                sb.handle     = get_render_target(sb.id_texture)->handle;
-
+                const render_target* rt = get_render_target(sb.id_texture);
+                sb.handle = rt->handle;
+                
                 // sampler state from name
                 Str ss = binding["state"].as_str();
                 ss.append("_sampler_state");
@@ -369,6 +376,13 @@ namespace put
                 if (st == "vs")
                     sb.shader_type = PEN_SHADER_TYPE_VS;
 
+                // sample info for sampling in shader
+                f32 w, h;
+                get_render_target_dimensions(rt, w, h);
+                
+                vp.sampler_info[i].x = 1.0f / w;
+                vp.sampler_info[i].y = 1.0f / h;
+                
                 bindings.push_back(sb);
             }
         }
@@ -1270,11 +1284,6 @@ namespace put
                 Str technique_str  = view["technique"].as_str();
                 new_view.technique = PEN_HASH(technique_str.c_str());
 
-                if (technique_str == "bloom_upsample")
-                {
-                    int a = 0;
-                }
-
                 new_view.pmfx_shader = pmfx::load_shader(view["pmfx_shader"].as_cstr());
 
                 if (view["pmfx_shader"].as_cstr() && !is_valid(new_view.pmfx_shader))
@@ -1303,7 +1312,7 @@ namespace put
                 }
 
                 // sampler bindings
-                parse_sampler_bindings(view, new_view.sampler_bindings);
+                parse_sampler_bindings(view, new_view);
 
                 // post process flag.. todo change this to id, id of post process to perform on the output
                 // of this view.
@@ -1761,17 +1770,16 @@ namespace put
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
 
             if (!pmfx::set_technique(sv.pmfx_shader, sv.technique, 0))
-            {
-                int a = 0;
-            }
+                PEN_ASSERT(0);
 
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
         void render_view(view_params& v)
         {
-            static u32 cb_2d = 0;
-            if (cb_2d == 0)
+            static u32 cb_2d = PEN_INVALID_HANDLE;
+            static u32 cb_sampler_info = PEN_INVALID_HANDLE;
+            if (!is_valid(cb_2d))
             {
                 pen::buffer_creation_params bcp;
                 bcp.usage_flags      = PEN_USAGE_DYNAMIC;
@@ -1781,6 +1789,9 @@ namespace put
                 bcp.data             = (void*)nullptr;
 
                 cb_2d = pen::renderer_create_buffer(bcp);
+                
+                bcp.buffer_size = sizeof(vec4f) * 16; //16 samplers worth, x= 1.0 / width, y = 1.0/height
+                cb_sampler_info = pen::renderer_create_buffer(bcp);
             }
 
             // viewport and scissor
@@ -1812,7 +1823,14 @@ namespace put
             {
                 pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
             }
-
+            
+            u32 num_samplers = v.sampler_bindings.size();
+            if(num_samplers > 0)
+            {
+                pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers*sizeof(vec4f));
+                pen::renderer_set_constant_buffer(cb_sampler_info, 10, PEN_SHADER_TYPE_PS);
+            }
+            
             // render state
             pen::renderer_set_rasterizer_state(v.raster_state);
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);

@@ -149,19 +149,17 @@ namespace put
         void release_script_resources();
         void update();
         void render();
-
+        void show_dev_ui();
+        
         void register_scene_controller(const scene_controller& controller);
         void register_scene_view_renderer(const scene_view_renderer& svr);
-
+        void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
+        void resize_viewports();
+        
         const camera*        get_camera(hash_id id_name);
         const render_target* get_render_target(hash_id h);
         void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
         u32                  get_render_state_by_name(hash_id id_name);
-
-        void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
-        void resize_viewports();
-
-        void show_dev_ui();
 
         // pmfx shader ------------------------------------------------------------------------------------------
 
