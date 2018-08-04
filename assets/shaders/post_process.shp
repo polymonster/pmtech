@@ -17,7 +17,6 @@ struct ps_output
 
 struct ps_output_depth
 {
-	//float4 colour : SV_Target;
 	float depth : SV_Depth;
 };
 
