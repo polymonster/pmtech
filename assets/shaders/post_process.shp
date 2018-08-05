@@ -1,3 +1,6 @@
+#include "libs/globals.slib"
+
+// io structs
 struct vs_output
 {
 	float4 position		: SV_POSITION;
@@ -20,6 +23,18 @@ struct ps_output_depth
 	float depth : SV_Depth;
 };
 
+cbuffer src_info : register(b10)
+{
+	float2 inv_texel_size[8];
+};
+
+cbuffer filter_kernel : register(b2)
+{
+	float4	filter_info; //xy = mask / direction, z = num samples, w = unused
+	float4 	filter_offset_weight[16];
+};
+
+// samplers
 declare_texture_samplers
 {
 	texture_2d( src_texture_0, 0 );
@@ -32,22 +47,22 @@ declare_texture_samplers
 	texture_2d( src_texture_7, 7 );
 };
 
-cbuffer per_view : register(b0)
+// utility functions
+float calc_gaussian_weight(int sample_dist, float sigma)
 {
-	float4 viewport_correction;
-};
+	float g = 1.0f / sqrt(2.0f * 3.14159 * sigma * sigma);
+	return (g * exp(-(sample_dist * sample_dist) / (2 * sigma * sigma)));
+}
 
-cbuffer src_info : register(b10)
+float dof_blur_factor(in float depth) 
 {
-	float2 inv_texel_size[8];
-};
+    float f0 = 1.0f - saturate((depth - m_near_focus_start) / max(m_near_focus_end - m_near_focus_start, 0.01f));
+    float f1 = saturate((depth - far_focus_start) / max(far_focus_end - far_focus_start, 0.01f));
+    float blur = saturate(f0 + f1);
+    return blur;
+}
 
-cbuffer filter_kernel : register(b2)
-{
-	float4	filter_info; //xy = mask / direction, z = num samples, w = unused
-	float4 	filter_offset_weight[16];
-};
-
+// vs / ps
 vs_output vs_ndc_quad( vs_input input )
 {
 	vs_output output;
@@ -56,7 +71,7 @@ vs_output vs_ndc_quad( vs_input input )
 	output.texcoord = input.texcoord;
 	
 	output.texcoord.y = output.texcoord.y * viewport_correction.x + viewport_correction.y;
-
+	
 	return output;
 }
 
@@ -65,6 +80,7 @@ ps_output ps_blit( vs_output input )
 	ps_output output;
 	
 	output.colour = sample_texture( src_texture_0, input.texcoord.xy );
+	
 	return output;
 }
 
@@ -72,7 +88,6 @@ ps_output_depth ps_blit_depth( vs_output input )
 {
 	ps_output_depth output;
 	
-	//output.colour = float4(0.0, 0.0, 0.0, 0.0);
 	output.depth = sample_texture( src_texture_0, input.texcoord.xy ).r;
 	
 	return output;
@@ -86,7 +101,7 @@ ps_output ps_high_pass( vs_output input )
 	
 	float lum = dot( float3(0.2126, 0.7152, 0.0722), output.colour.rgb);
 	
-	if(lum < 0.7)
+	if(lum < m_threshold)
 		output.colour *= float4(0.0, 0.0, 0.0, 1.0);
 			
 	return output;
@@ -152,6 +167,32 @@ ps_output ps_bloom_upsample( vs_output input )
 	return output;
 }
 
+ps_output ps_depth_of_field( vs_output input )
+{
+	ps_output output;
+
+	float2 tc = input.texcoord.xy;
+	float z = sample_texture( src_texture_0, tc).r;			// depth
+	float4 focus_colour = sample_texture( src_texture_1, tc); 	// source
+	float4 blur_colour  = sample_texture( src_texture_2, tc); 	// blurred
+
+	// convert to linear depth
+	float n = 0.01; //camera_view_pos.w;
+	float f = 100; //camera_view_dir.w;
+
+	float ez  = (2 * n * f) / (f + n - z * (f - n));
+	float lz  = (ez - n) / (f - n);
+	
+	// coc?
+	float d = 1.0 - saturate(abs(lz - 0.7));
+	
+	output.colour = lerp(focus_colour, blur_colour, d);
+	
+	//output.colour = float4(d, d, d, 1.0);
+	
+	return output;
+}
+
 pmfx:
 {	
 	"blit":
@@ -195,6 +236,31 @@ pmfx:
 	{
 		"vs": "vs_ndc_quad",
 		"ps": "ps_bloom_upsample"
+	},
+	
+	"depth_of_field":
+	{
+		"vs": "vs_ndc_quad",
+		"ps": "ps_depth_of_field",
+		
+		"constants":
+		{
+			"near_focus_start": { 
+				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+			},
+			
+			"near_focus_end": { 
+				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+			},
+			
+			"far_focus_start": { 
+				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+			},
+			
+			"far_focus_end": { 
+				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+			}
+		}
 	}
 }
 

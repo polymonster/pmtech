@@ -83,6 +83,20 @@ namespace put
 
             CW_NUM
         };
+        
+        enum e_constant_buffer_locations
+        {
+            CB_PER_PASS_VIEW = 0,
+            CB_PER_DRAW_CALL = 1,
+            CB_FILTER_KERNEL = 2,
+            CB_PER_PASS_LIGHTS = 3,
+            CB_PER_PASS_SHADOW = 4,
+            CB_PER_PASS_SDF_SHADOW = 5,
+            CB_PER_PASS_AREA_LIGHTS = 6,
+            CB_MATERIAL_CONSTANTS = 7,
+            CB_SAMPLER_INFO = 10,
+            CB_POST_PROCESS_INFO = 3
+        };
 
         struct technique_constant
         {

@@ -132,6 +132,8 @@ namespace
         u32 blend_state         = 0;
         u32 cbuffer_filter      = PEN_INVALID_HANDLE;
         u32 cbuffer_technique   = PEN_INVALID_HANDLE;
+        
+        ces::cmp_material_data technique_constants;
 
         shader_handle pmfx_shader;
         hash_id       technique;
@@ -1369,8 +1371,24 @@ namespace put
                     bcp.data             = nullptr;
 
                     new_view.cbuffer_filter = pen::renderer_create_buffer(bcp);
-
+                    
                     pen::renderer_update_buffer(new_view.cbuffer_filter, &fk.info, filter_cbuffer_size);
+                }
+                
+                if(is_valid(new_view.pmfx_shader))
+                {
+                    u32 ti = get_technique_index(new_view.pmfx_shader, new_view.technique, 0);
+                    if(get_technique_constants(new_view.pmfx_shader, ti))
+                    {
+                        pen::buffer_creation_params bcp;
+                        bcp.usage_flags      = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                        bcp.buffer_size      = sizeof(ces::cmp_material_data);
+                        bcp.data             = nullptr;
+                        
+                        new_view.cbuffer_technique = pen::renderer_create_buffer(bcp);
+                    }
                 }
 
                 if (valid)
@@ -1563,6 +1581,8 @@ namespace put
                 u32 pass_counter = 0;
                 for (auto& p : s_post_process_passes)
                 {
+                    p.viewport_correction = !p.viewport_correction;
+                    
                     for (u32 i = 0; i < p.num_colour_targets; ++i)
                         p.render_targets[i] = get_virtual_target(p.id_render_target[i], VRT_WRITE);
 
@@ -1573,6 +1593,9 @@ namespace put
 
                     for (auto& sb : p.sampler_bindings)
                         sb.handle = get_virtual_target(sb.id_texture, VRT_READ);
+                    
+                    // material for pass
+                    pmfx::initialise_constant_defaults(p.pmfx_shader, p.technique, p.technique_constants.data);
 
                     // swap buffers
                     virtual_rt_swap_buffers();
@@ -1739,34 +1762,11 @@ namespace put
         {
             static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
-            static u32 cbuffer_per_view = PEN_INVALID_HANDLE;
-            if (!is_valid(cbuffer_per_view))
-            {
-                pen::buffer_creation_params bcp;
-                bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-                bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
-                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size      = sizeof(post_process_per_view);
-                bcp.data             = nullptr;
-
-                cbuffer_per_view = pen::renderer_create_buffer(bcp);
-            }
-
             if (!is_valid(sv.pmfx_shader))
                 return;
-
-            // scale and bias to adjust texture coordinates of render targets
-            // x = scale, y = bias
-            post_process_per_view pppv;
-            pppv.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
-            if (!sv.viewport_correction)
-            {
-                pppv.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
-            }
-
-            pen::renderer_update_buffer(cbuffer_per_view, &pppv, sizeof(pppv));
-            pen::renderer_set_constant_buffer(cbuffer_per_view, 0, PEN_SHADER_TYPE_VS);
-
+            
+            pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, PEN_SHADER_TYPE_VS);
+            
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
 
@@ -1832,7 +1832,7 @@ namespace put
             if(num_samplers > 0)
             {
                 pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers*sizeof(vec4f));
-                pen::renderer_set_constant_buffer(cb_sampler_info, 10, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, PEN_SHADER_TYPE_PS);
             }
             
             // render state
@@ -1852,8 +1852,16 @@ namespace put
             }
 
             // bind any per view cbuffers
+            
+            // filters
             if (is_valid(v.cbuffer_filter))
-                pen::renderer_set_constant_buffer(v.cbuffer_filter, 2, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(v.cbuffer_filter, CB_FILTER_KERNEL, PEN_SHADER_TYPE_PS);
+            
+            if (is_valid(v.cbuffer_technique))
+            {
+                pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data, sizeof(ces::cmp_material_data));
+                pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, PEN_SHADER_TYPE_PS);
+            }
 
             sv.render_flags        = v.render_flags;
             sv.technique           = v.technique;
@@ -2048,6 +2056,12 @@ namespace put
                                     const render_target* rt = get_render_target(sb.id_texture);
                                     ImGui::Text("input sampler %i: %s (%i)", isb, rt->name.c_str(), sb.handle);
                                     ++isb;
+                                }
+                                
+                                if(x == 1)
+                                {
+                                    u32 ti = get_technique_index(v.pmfx_shader, v.technique, 0);
+                                    show_technique_ui(v.pmfx_shader, ti, &v.technique_constants.data[0]);
                                 }
 
                                 ImGui::Separator();

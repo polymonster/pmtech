@@ -254,7 +254,7 @@ namespace put
             p_camera->cbuffer = pen::renderer_create_buffer(bcp);
         }
 
-        if (p_camera->flags & CF_INVALIDATED)
+        //if (p_camera->flags & CF_INVALIDATED)
         {
             camera_cbuffer wvp;
 
@@ -263,16 +263,18 @@ namespace put
             if (viewport_correction && pen::renderer_viewport_vup())
             {
                 wvp.view_projection = scale * (p_camera->proj * p_camera->view);
+                wvp.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
             }
             else
             {
                 wvp.view_projection = p_camera->proj * p_camera->view;
+                wvp.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
             }
 
             mat4 inv_view           = mat::inverse3x4(p_camera->view);
             wvp.view_matrix         = p_camera->view;
-            wvp.view_position       = vec4f(inv_view.get_translation(), 0.0);
-            wvp.view_direction      = vec4f(inv_view.get_fwd(), 0.0);
+            wvp.view_position       = vec4f(inv_view.get_translation(), p_camera->near_plane);
+            wvp.view_direction      = vec4f(inv_view.get_fwd(), p_camera->far_plane);
             wvp.view_matrix_inverse = inv_view;
 
             pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));

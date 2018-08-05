@@ -22,8 +22,6 @@ float3 lambert(
 	float n_dot_l = max( dot( n, l ), 0.0 );
 	
 	float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
-
-	//float3 lit_colour = n_dot_l * albedo.rgb;
 	
 	return lit_colour;
 }
@@ -65,13 +63,13 @@ float3 blinn(
 	float spec_strength
 )
 {	
-	//lambert
+	// lambert
 	float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
 	float n_dot_l = max( dot( n, l ), 0.0 );
 	
 	float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
 	
-	//phong
+	// blinn
 	float3  v_view = normalize( (view_pos.xyz - world_pos.xyz) );
 	float3  hv = normalize( v_view + l );
 	
@@ -202,8 +200,8 @@ float point_light_attenuation_cutoff(
 	float cutoff = 0.1;
 		
     // scale and bias attenuation such that:
-    //   attenuation == 0 at extent of max influence
-    //   attenuation == 1 when d == 0
+    // attenuation == 0 at extent of max influence
+    // attenuation == 1 when d == 0
     attenuation = (attenuation - cutoff) / (1.0 - cutoff);
     attenuation = max(attenuation, 0.0);
     
