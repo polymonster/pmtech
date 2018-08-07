@@ -164,6 +164,12 @@ namespace put
         prev_mpos                  = current_mouse;
 
         f32 mouse_y_inv = invert_y ? -1.0f : 1.0f;
+        
+        // zoom
+        f32        mwheel      = (f32)ms.wheel;
+        static f32 prev_mwheel = mwheel;
+        f32        zoom        = mwheel - prev_mwheel;
+        prev_mwheel            = mwheel;
 
         if (has_focus)
         {
@@ -190,10 +196,6 @@ namespace put
             }
 
             // zoom
-            f32        mwheel      = (f32)ms.wheel;
-            static f32 prev_mwheel = mwheel;
-            f32        zoom        = mwheel - prev_mwheel;
-            prev_mwheel            = mwheel;
             p_camera->zoom += zoom;
 
             p_camera->zoom = fmax(p_camera->zoom, 1.0f);

@@ -599,17 +599,53 @@ namespace put
                 filter_kernel fk;
                 fk.name    = j_filters[i].name();
                 fk.id_name = PEN_HASH(fk.name.c_str());
+                
+                // weights / offsets
+                pen::json jweights = jfk["weights"];
+                pen::json joffsets = jfk["offsets"];
+                pen::json joffsets_xy = jfk["offsets_xy"];
 
-                u32 num_samples  = jfk["weights"].size();
-                u32 _num_samples = jfk["offsets"].size();
-                PEN_ASSERT(num_samples == _num_samples);
-
-                for (u32 s = 0; s < num_samples; ++s)
+                u32 num_xy  = joffsets_xy.size();
+                u32 num_w  = jweights.size();
+                u32 num_o = joffsets.size();
+                
+                u32 num_samples = 0;
+                
+                if(num_xy > 0)
                 {
-                    f32 w = jfk["weights"][s].as_f32();
-                    f32 o = jfk["offsets"][s].as_f32();
-
-                    fk.offset_weight[s] = vec4f(o, w, 0.0f, 0.0f);
+                    //offsets xy
+                    for (u32 s = 0; s < num_xy; s+=2)
+                    {
+                        f32 x = joffsets_xy[s].as_f32();
+                        f32 y = joffsets_xy[s+1].as_f32();
+                        
+                        fk.offset_weight[num_samples] = vec4f(x, y, 0.0f, 0.0f);
+                        num_samples++;
+                    }
+                    
+                    for (u32 s = 0; s < num_w; ++s)
+                    {
+                        f32 w = jweights[s].as_f32();
+                        fk.offset_weight[s].z = w;
+                    }
+                }
+                else
+                {
+                    // offsets weights
+                    num_samples = std::max<u32>(num_w, num_o);
+                    for (u32 s = 0; s < num_samples; ++s)
+                    {
+                        f32 w = 0.0f;
+                        f32 o = 0.0f;
+                        
+                        if(s < num_w)
+                            w = jweights[s].as_f32();
+                        
+                        if(s < num_o)
+                            o = joffsets[s].as_f32();
+                        
+                        fk.offset_weight[s] = vec4f(o, w, 0.0f, 0.0f);
+                    }
                 }
 
                 fk.info.z = num_samples;
@@ -1079,11 +1115,9 @@ namespace put
             new_view.clear_state = pen::renderer_create_clear_state(cs_info);
         }
 
-        void parse_views(pen::json& render_config, const c8* type, const c8* inherit_views,
+        void parse_views(pen::json& j_views, pen::json& all_views,
                          std::vector<view_params>& view_array)
         {
-            pen::json j_views = render_config[type];
-
             s32 num = j_views.size();
             for (s32 i = 0; i < num; ++i)
             {
@@ -1106,7 +1140,7 @@ namespace put
 
                     new_view.name = ihv.c_str();
 
-                    pen::json inherit_view = render_config[inherit_views][ihv.c_str()];
+                    pen::json inherit_view = all_views[ihv.c_str()];
 
                     view = pen::json::combine(view, inherit_view);
 
@@ -1255,7 +1289,7 @@ namespace put
                         valid = false;
                     }
                 }
-
+                
                 // camera
                 Str camera_str = view["camera"].as_str();
 
@@ -1650,9 +1684,20 @@ namespace put
             parse_partial_blend_states(render_config);
             parse_filters(render_config);
             parse_render_targets(render_config);
-            parse_views(render_config, "views", "views", s_views);
-            parse_views(render_config, "post_process_passes", "post_process_views", s_post_process_passes);
-
+            
+            pen::json j_views = render_config["views"];
+            parse_views(j_views, j_views, s_views);
+            
+            // parse post process info
+            pen::json pp = render_config["post_processes"];
+            pen::json pp_passes = render_config["post_process_passes"];
+            u32 num_pp = pp_passes.size();
+            for(u32 i = 0; i < num_pp; ++i)
+            {
+                pen::json ppv = pp[pp_passes[i].as_cstr()];
+                parse_views( ppv, j_views, s_post_process_passes);
+            }
+            
             bake_post_process_targets();
 
             // rebake material handles

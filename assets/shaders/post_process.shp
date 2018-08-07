@@ -57,7 +57,7 @@ float calc_gaussian_weight(int sample_dist, float sigma)
 float dof_blur_factor(in float depth) 
 {
     float f0 = 1.0f - saturate((depth - m_near_focus_start) / max(m_near_focus_end - m_near_focus_start, 0.01f));
-    float f1 = saturate((depth - far_focus_start) / max(far_focus_end - far_focus_start, 0.01f));
+    float f1 = saturate((depth - m_far_focus_start) / max(m_far_focus_end - m_far_focus_start, 0.01f));
     float blur = saturate(f0 + f1);
     return blur;
 }
@@ -172,24 +172,23 @@ ps_output ps_depth_of_field( vs_output input )
 	ps_output output;
 
 	float2 tc = input.texcoord.xy;
-	float z = sample_texture( src_texture_0, tc).r;			// depth
+	float z = sample_texture( src_texture_0, tc).r;				// depth
 	float4 focus_colour = sample_texture( src_texture_1, tc); 	// source
 	float4 blur_colour  = sample_texture( src_texture_2, tc); 	// blurred
 
 	// convert to linear depth
-	float n = 0.01; //camera_view_pos.w;
-	float f = 100; //camera_view_dir.w;
+	float n = camera_view_pos.w;
+	float f = camera_view_dir.w;
 
 	float ez  = (2 * n * f) / (f + n - z * (f - n));
 	float lz  = (ez - n) / (f - n);
 	
-	// coc?
-	float d = 1.0 - saturate(abs(lz - 0.7));
+	float d = dof_blur_factor(lz);
 	
 	output.colour = lerp(focus_colour, blur_colour, d);
 	
 	//output.colour = float4(d, d, d, 1.0);
-	
+		
 	return output;
 }
 
