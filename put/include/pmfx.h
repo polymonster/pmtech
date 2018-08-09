@@ -151,9 +151,10 @@ namespace put
             u32 format   = 0;
             u32 handle   = PEN_INVALID_HANDLE;
             u32 samples  = 1;
-            Str name;
-            u32 flags = 0;
-            u32 pp    = VRT_READ;
+            Str name     = "";
+            u32 flags    = 0;
+            u32 pp       = VRT_READ;
+            u32 pp_read  = PEN_INVALID_HANDLE;
         };
 
         // pmfx renderer ------------------------------------------------------------------------------------------

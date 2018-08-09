@@ -867,8 +867,24 @@ namespace put
                         if (r["cpu_write"].as_bool(false))
                             tcp.cpu_access_flags |= PEN_CPU_ACCESS_WRITE;
 
-                        if (r["pp"].as_str() == "write")
+                        static hash_id id_write = PEN_HASH("write");
+                        if (r["pp"].as_hash_id() == id_write)
+                        {
                             new_info.pp = VRT_WRITE;
+                            new_info.flags |= RT_AUX;
+                        }
+                        
+                        hash_id idr = r["init_read"].as_hash_id();
+                        u32 hr = 0;
+                        for(auto& rt : s_render_targets)
+                        {
+                            if(rt.id_name == idr)
+                            {
+                                new_info.pp_read = hr;
+                                break;
+                            }
+                            ++hr;
+                        }
 
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
 
@@ -1435,7 +1451,8 @@ namespace put
             struct virtual_rt
             {
                 hash_id id                = 0;
-                u32     rt_index[VRT_NUM] = {0};
+                u32     rt_index[VRT_NUM] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
+                u32     rt_read = PEN_INVALID_HANDLE;
                 bool    swap;
             };
             std::vector<virtual_rt> s_virtual_rt;
@@ -1466,9 +1483,20 @@ namespace put
                 vrt.swap                = false;
 
                 u32 pp = s_render_targets[rt_index].pp;
-
+                
+                // flag aux in use
+                if(s_render_targets[rt_index].flags & RT_AUX)
+                   s_render_targets[rt_index].flags |= RT_AUX_USED;
+                
                 vrt.rt_index[pp] = rt_index;
-
+                
+                // first read from a scene view render target
+                u32 ppr = s_render_targets[rt_index].pp_read;
+                if(is_valid(ppr) && pp == VRT_WRITE)
+                {
+                    vrt.rt_index[VRT_READ] = ppr;
+                }
+                
                 s_virtual_rt.push_back(vrt);
             }
 
@@ -1577,22 +1605,27 @@ namespace put
 
                         std::swap(vrt.rt_index[VRT_WRITE], vrt.rt_index[VRT_READ]);
 
-                        // remark aux buffer usable
+                        // remark aux buffer usable or remove a read only rt from the write slot
                         wrt = vrt.rt_index[VRT_WRITE];
 
                         if (is_valid(wrt))
                         {
                             render_target& rt = s_render_targets[wrt];
-                            if (rt.flags & RT_AUX)
-                            {
-                                rt.flags &= ~RT_AUX_USED;
-                                vrt.rt_index[VRT_WRITE] = PEN_INVALID_HANDLE;
-                            }
+                            
+                            rt.flags &= ~RT_AUX_USED;
+                            vrt.rt_index[VRT_WRITE] = PEN_INVALID_HANDLE;
                         }
 
                         vrt.swap = false;
                     }
                 }
+            }
+            
+            void virtual_rt_reset()
+            {
+                // start any virtual rt with appropriate read only buffers in the read slot
+                for (auto& vrt : s_virtual_rt)
+                    vrt.rt_index[VRT_READ] = vrt.rt_read;
             }
 
             void bake_post_process_targets()
@@ -1960,19 +1993,17 @@ namespace put
 
         void render()
         {
-            int count = 0;
             for (auto& v : s_views)
             {
-                ++count;
                 render_view(v);
                 resolve_targets(false);
 
                 if (v.post_process)
                 {
+                    virtual_rt_reset();
+                    
                     for (auto& v : s_post_process_passes)
                     {
-                        ++count;
-
                         v.render_functions.clear();
                         v.render_functions.push_back(&fullscreen_quad);
 

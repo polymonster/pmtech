@@ -5,7 +5,8 @@
 		{
 			size: equal,
 			format: rgba8,
-			pp: write
+			pp: write,
+			init_read: post_process_colour
 		},
 		
 		pp_output_half:
@@ -358,6 +359,6 @@
 	},
 	
 	post_process_passes: [
-		blit_depth, bloom, depth_of_field, blit_post_process
+		blit_depth, blit_post_process
 	]
 }
