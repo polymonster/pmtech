@@ -178,6 +178,10 @@ namespace
         vec4f offset_weight[16]; // x = offset, y = weight;
     };
 
+    bool                                 s_user_edited_chain = false;
+    std::vector<Str>                     s_post_process_chain;
+    
+    std::vector<Str>                     s_post_process_names;
     std::vector<view_params>             s_post_process_passes;
     std::vector<view_params>             s_views;
     std::vector<scene_controller>        s_controllers;
@@ -1723,11 +1727,20 @@ namespace put
             
             // parse post process info
             pen::json pp = render_config["post_processes"];
-            pen::json pp_passes = render_config["post_process_passes"];
-            u32 num_pp = pp_passes.size();
-            for(u32 i = 0; i < num_pp; ++i)
+            for(u32 i = 0; i < pp.size(); ++i)
+                s_post_process_names.push_back(pp[i].name());
+            
+            if(!s_user_edited_chain)
             {
-                pen::json ppv = pp[pp_passes[i].as_cstr()];
+                pen::json pp_passes = render_config["post_process_passes"];
+                u32 num_pp = pp_passes.size();
+                for(u32 i = 0; i < num_pp; ++i)
+                    s_post_process_chain.push_back(pp_passes[i].as_str());
+            }
+            
+            for(auto& ppc : s_post_process_chain)
+            {
+                pen::json ppv = pp[ppc.c_str()];
                 parse_views( ppv, j_views, s_post_process_passes);
             }
             
@@ -1809,6 +1822,7 @@ namespace put
             }
             s_views.clear();
             s_post_process_passes.clear();
+            s_post_process_names.clear();
 
             s_virtual_rt.clear();
         }
@@ -2045,6 +2059,31 @@ namespace put
 
             ImGui::Text("Size: %f (mb)", (f32)image_size / 1024.0f / 1024.0f);
         }
+        
+        void view_info_ui(const view_params& v)
+        {
+            ImGui::Text("%s", v.name.c_str());
+            
+            for (u32 i = 0; i < v.num_colour_targets; ++i)
+            {
+                const render_target* rt = get_render_target(v.id_render_target[i]);
+                ImGui::Text("colour target %i: %s (%i)", i, rt->name.c_str(), v.render_targets[i]);
+            }
+            
+            if (is_valid(v.depth_target) && v.depth_target)
+            {
+                const render_target* rt = get_render_target(v.id_depth_target);
+                ImGui::Text("depth target: %s (%i)", rt->name.c_str(), v.depth_target);
+            }
+            
+            int isb = 0;
+            for (auto& sb : v.sampler_bindings)
+            {
+                const render_target* rt = get_render_target(sb.id_texture);
+                ImGui::Text("input sampler %i: %s (%i)", isb, rt->name.c_str(), sb.handle);
+                ++isb;
+            }
+        }
 
         void show_dev_ui()
         {
@@ -2063,7 +2102,7 @@ namespace put
 
             if (open_renderer)
             {
-                if (ImGui::Begin("Pmfx", &open_renderer, ImGuiWindowFlags_AlwaysAutoResize))
+                if (ImGui::Begin("Pmfx", &open_renderer))
                 {
                     if (ImGui::CollapsingHeader("Render Targets"))
                     {
@@ -2102,9 +2141,9 @@ namespace put
                         render_target_info_ui(rt);
                     }
 
-                    const c8* view_passes[] = {"Views", "Post Processing"};
+                    const c8* view_passes[] = {"Views"};
 
-                    std::vector<view_params>* view_arrays[] = {&s_views, &s_post_process_passes};
+                    std::vector<view_params>* view_arrays[] = {&s_views};
 
                     for (u32 x = 0; x < PEN_ARRAY_SIZE(view_passes); ++x)
                     {
@@ -2112,39 +2151,87 @@ namespace put
                         {
                             for (auto& v : *view_arrays[x])
                             {
-                                ImGui::Text("%s", v.name.c_str());
-
-                                for (u32 i = 0; i < v.num_colour_targets; ++i)
-                                {
-                                    const render_target* rt = get_render_target(v.id_render_target[i]);
-                                    ImGui::Text("colour target %i: %s (%i)", i, rt->name.c_str(), v.render_targets[i]);
-                                }
-
-                                if (is_valid(v.depth_target) && v.depth_target)
-                                {
-                                    const render_target* rt = get_render_target(v.id_depth_target);
-                                    ImGui::Text("depth target: %s (%i)", rt->name.c_str(), v.depth_target);
-                                }
-
-                                int isb = 0;
-                                for (auto& sb : v.sampler_bindings)
-                                {
-                                    const render_target* rt = get_render_target(sb.id_texture);
-                                    ImGui::Text("input sampler %i: %s (%i)", isb, rt->name.c_str(), sb.handle);
-                                    ++isb;
-                                }
-                                
-                                if(x == 1)
-                                {
-                                    u32 ti = get_technique_index(v.pmfx_shader, v.technique, 0);
-                                    show_technique_ui(v.pmfx_shader, ti, &v.technique_constants.data[0]);
-                                }
-
+                                view_info_ui(v);
                                 ImGui::Separator();
                             }
                         }
                     }
-
+                    
+                    if( ImGui::CollapsingHeader("Post Processing") )
+                    {
+                        static s32 s_selected_chain_pp = 0;
+                        static s32 s_selected_process = 0;
+                        
+                        static std::vector<c8*> chain_items;
+                        static std::vector<c8*> process_items;
+                        
+                        chain_items.clear();
+                        for(auto& pp : s_post_process_passes)
+                            chain_items.push_back(pp.name.c_str());
+                        
+                        process_items.clear();
+                        for(auto& pp : s_post_process_names)
+                            process_items.push_back(pp.c_str());
+                        
+                        ImGui::Columns(2);
+                        
+                        ImGui::SetColumnWidth(0, 500);
+                        ImGui::SetColumnOffset(1, 300);
+                        ImGui::SetColumnWidth(1, 300);
+                        
+                        // Toolbar
+                        ImGui::Button(ICON_FA_ARROW_UP);
+                        dev_ui::set_tooltip("Move selected post process up");
+                        
+                        ImGui::SameLine();
+                        ImGui::Button(ICON_FA_ARROW_DOWN);
+                        dev_ui::set_tooltip("Move selected post process down");
+                        
+                        ImGui::SameLine();
+                        ImGui::Button(ICON_FA_TRASH);
+                        dev_ui::set_tooltip("Remove selected post process");
+                        
+                        ImGui::Text("Post Process Chain");
+                        dev_ui::set_tooltip("A chain of post processes executed top to bottom");
+                        
+                        // List box
+                        ImGui::PushID("Post Process Chain");
+                        ImGui::ListBox("", &s_selected_chain_pp, &chain_items[0], chain_items.size());
+                        ImGui::PopID();
+                        
+                        ImGui::NextColumn();
+                        
+                        if( ImGui::Button(ICON_FA_ARROW_LEFT) )
+                            s_post_process_chain.push_back(process_items[s_selected_process]);
+                        dev_ui::set_tooltip("Add selected post process to chain");
+                        
+                        ImGui::Text("Post Processes");
+                        dev_ui::set_tooltip("A view or collections of post process views make up a post process");
+                        
+                        ImGui::PushID("Post Processes");
+                        ImGui::ListBox("", &s_selected_process, &process_items[0], process_items.size());
+                        ImGui::PopID();
+                        
+                        ImGui::Columns(1);
+                        
+                        ImGui::Separator();
+                        
+                        ImGui::Text("Parameters");
+                        
+                        for(auto& pp : s_post_process_passes)
+                        {
+                            u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
+                            show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0]);
+                        }
+                        
+                        ImGui::Separator();
+                        
+                        ImGui::Text("Selected Input / Output");
+                        
+                        const view_params& selected_chain_pp = s_post_process_passes[s_selected_chain_pp];
+                        view_info_ui(selected_chain_pp);
+                    }
+                    
                     ImGui::End();
                 }
             }
