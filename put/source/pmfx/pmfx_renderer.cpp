@@ -2161,34 +2161,56 @@ namespace put
                     {
                         static s32 s_selected_chain_pp = 0;
                         static s32 s_selected_process = 0;
+                        static s32 s_selected_view = 0;
                         
                         static std::vector<c8*> chain_items;
                         static std::vector<c8*> process_items;
+                        static std::vector<c8*> pass_items;
+                        
+                        bool invalidated = false;
                         
                         chain_items.clear();
-                        for(auto& pp : s_post_process_passes)
-                            chain_items.push_back(pp.name.c_str());
+                        for(auto& pp : s_post_process_chain)
+                            chain_items.push_back(pp.c_str());
                         
                         process_items.clear();
                         for(auto& pp : s_post_process_names)
                             process_items.push_back(pp.c_str());
                         
+                        pass_items.clear();
+                        for(auto& pp : s_post_process_passes)
+                            pass_items.push_back(pp.name.c_str());
+                        
                         ImGui::Columns(2);
                         
-                        ImGui::SetColumnWidth(0, 500);
+                        ImGui::SetColumnWidth(0, 300);
                         ImGui::SetColumnOffset(1, 300);
-                        ImGui::SetColumnWidth(1, 300);
+                        ImGui::SetColumnWidth(1, 500);
                         
                         // Toolbar
-                        ImGui::Button(ICON_FA_ARROW_UP);
+                        if( ImGui::Button(ICON_FA_ARROW_UP) && s_selected_chain_pp > 0)
+                        {
+                            invalidated = true;
+                            std::swap(s_post_process_chain[s_selected_chain_pp],
+                                      s_post_process_chain[s_selected_chain_pp-1]);
+                        }
                         dev_ui::set_tooltip("Move selected post process up");
                         
                         ImGui::SameLine();
-                        ImGui::Button(ICON_FA_ARROW_DOWN);
+                        if( ImGui::Button(ICON_FA_ARROW_DOWN) && s_selected_chain_pp < s_post_process_chain.size()-1)
+                        {
+                            invalidated = true;
+                            std::swap(s_post_process_chain[s_selected_chain_pp],
+                                      s_post_process_chain[s_selected_chain_pp-1]);
+                        }
                         dev_ui::set_tooltip("Move selected post process down");
                         
                         ImGui::SameLine();
-                        ImGui::Button(ICON_FA_TRASH);
+                        if( ImGui::Button(ICON_FA_TRASH) )
+                        {
+                            invalidated = true;
+                            s_post_process_chain.erase(s_post_process_chain.begin() + s_selected_chain_pp);
+                        }
                         dev_ui::set_tooltip("Remove selected post process");
                         
                         ImGui::Text("Post Process Chain");
@@ -2202,8 +2224,14 @@ namespace put
                         ImGui::NextColumn();
                         
                         if( ImGui::Button(ICON_FA_ARROW_LEFT) )
-                            s_post_process_chain.push_back(process_items[s_selected_process]);
-                        dev_ui::set_tooltip("Add selected post process to chain");
+                        {
+                            invalidated = true;
+                            
+                            s_post_process_chain.insert(s_post_process_chain.begin() +  s_selected_chain_pp,
+                                                        process_items[s_selected_process]);
+                        }
+                        
+                        dev_ui::set_tooltip("Insert selected post process to chain");
                         
                         ImGui::Text("Post Processes");
                         dev_ui::set_tooltip("A view or collections of post process views make up a post process");
@@ -2221,15 +2249,48 @@ namespace put
                         for(auto& pp : s_post_process_passes)
                         {
                             u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
-                            show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0]);
+                            
+                            if(has_technique_constants(pp.pmfx_shader, ti))
+                            {
+                                ImGui::Separator();
+                                ImGui::Text("%s", pp.name.c_str());
+                                
+                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0]);
+                            }
                         }
                         
                         ImGui::Separator();
                         
-                        ImGui::Text("Selected Input / Output");
-                        
-                        const view_params& selected_chain_pp = s_post_process_passes[s_selected_chain_pp];
-                        view_info_ui(selected_chain_pp);
+                        if( ImGui::CollapsingHeader("Passes"))
+                        {
+                            ImGui::Columns(2);
+                            
+                            ImGui::SetColumnWidth(0, 300);
+                            ImGui::SetColumnOffset(1, 300);
+                            ImGui::SetColumnWidth(1, 500);
+                            
+                            ImGui::PushID("Passes_");
+                            ImGui::ListBox("", &s_selected_view, &pass_items[0], pass_items.size());
+                            ImGui::PopID();
+                            
+                            ImGui::NextColumn();
+                            
+                            ImGui::Text("Input / Output");
+                            
+                            const view_params& selected_chain_pp = s_post_process_passes[s_selected_view];
+                            view_info_ui(selected_chain_pp);
+                            
+                            ImGui::Columns(1);
+                            
+                            ImGui::Separator();
+                        }
+
+                        if(invalidated)
+                        {
+                            s_user_edited_chain = true;
+                            std::vector<hash_id> dirty; // unused
+                            pmfx_config_hotload(dirty);
+                        }
                     }
                     
                     ImGui::End();

@@ -737,6 +737,11 @@ namespace put
             }
         }
         
+        bool has_technique_constants(shader_handle shader, u32 technique_index)
+        {
+            return get_technique_constants(shader, technique_index);
+        }
+        
         void show_technique_ui(shader_handle shader, u32 technique_index, f32* material_data)
         {
             technique_constant* tc = get_technique_constants(shader, technique_index);

@@ -1,6 +1,6 @@
 #include "memory.h"
 
-// C++ standard says these must be in cpp file no inline in header.
+// C++ standard says these must be in cpp file and not inline in header ;_;
 
 using namespace pen;
 

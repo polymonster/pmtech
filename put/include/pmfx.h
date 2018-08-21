@@ -195,7 +195,8 @@ namespace put
         u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
         
         void show_technique_ui(shader_handle shader, u32 technique_index, f32* data);
-
+        bool has_technique_constants(shader_handle shader, u32 technique_index);
+        
         void poll_for_changes();
     } // namespace pmfx
 } // namespace put

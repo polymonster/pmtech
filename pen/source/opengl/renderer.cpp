@@ -1881,6 +1881,7 @@ namespace pen
         }
 
         delete res.render_target.tcp;
+        res.render_target.tcp = nullptr;
     }
 
     void direct::renderer_release_input_layout(u32 input_layout)
