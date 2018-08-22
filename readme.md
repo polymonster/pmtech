@@ -5,10 +5,9 @@ Follow work in progress:
 
 A lightweight code base with powerful features that can be used for games and real-time 3D applications. The engine (pen) and toolkit (put) are designed with performance and simplicity in mind. This project focuses on data-oriented code with minimalistic c-style api's. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread... [more info](https://polymonster.github.io/articles.html)  
 
-There are examples included of how to use the api's, set up projects and data:
+There are examples included of how to use the api's, set up projects and data, [view them here...](https://polymonster.github.io/index.html)
 
 ![sdf shadow](https://polymonster.github.io/assets/gifs/sdf-shadow.gif)
-more [demos...](https://polymonster.github.io/index.html)
 
 **Platform support**  
 - Platforms: Windows, MacOS, Linux, iOS (wip).   
