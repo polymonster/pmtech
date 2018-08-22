@@ -2181,18 +2181,63 @@ namespace put
                         for(auto& pp : s_post_process_passes)
                             pass_items.push_back(pp.name.c_str());
                         
+                        // Main Toolbar
+                        static bool s_save_dialog_open = false;
+                        if(ImGui::Button(ICON_FA_FLOPPY_O))
+                            s_save_dialog_open = true;
+                        
+                        dev_ui::set_tooltip("Save post process preset");
+                        ImGui::SameLine();
+                        
+                        static bool s_load_dialog_open = false;
+                        if(ImGui::Button(ICON_FA_FOLDER_OPEN_O))
+                            s_load_dialog_open = true;
+                        
+                        dev_ui::set_tooltip("Load post process preset");
+                        ImGui::Separator();
+                        
+                        if(s_save_dialog_open)
+                        {
+                            const c8* res = dev_ui::file_browser(s_save_dialog_open, dev_ui::FB_SAVE);
+                            if(res)
+                            {
+                                // perform save
+                                
+                                pen::json j_chain;
+                                j_chain.set_array("chain", &s_post_process_chain[0], s_post_process_chain.size());
+                                
+                                pen::json j_test;
+                                u32 ii[5] = { 1, 2, 3, 4, 5 };
+                                j_test.set_array("poop", (const u32*)&ii[0], (u32)5);
+                                
+                                PEN_LOG(j_test.dumps().c_str());
+                            }
+                        }
+                        
+                        if(s_load_dialog_open)
+                        {
+                            const c8* res = dev_ui::file_browser(s_load_dialog_open, dev_ui::FB_OPEN);
+                            if(res)
+                            {
+                                // perform load
+                            }
+                        }
+                        
                         ImGui::Columns(2);
                         
                         ImGui::SetColumnWidth(0, 300);
                         ImGui::SetColumnOffset(1, 300);
                         ImGui::SetColumnWidth(1, 500);
                         
-                        // Toolbar
+                        // Edit Toolbar
                         if( ImGui::Button(ICON_FA_ARROW_UP) && s_selected_chain_pp > 0)
                         {
                             invalidated = true;
-                            std::swap(s_post_process_chain[s_selected_chain_pp],
-                                      s_post_process_chain[s_selected_chain_pp-1]);
+                            Str tmp = s_post_process_chain[s_selected_chain_pp];
+                            s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp-1].c_str();
+                            s_post_process_chain[s_selected_chain_pp-1] = tmp.c_str();
+                            
+                            s_selected_chain_pp--;
                         }
                         dev_ui::set_tooltip("Move selected post process up");
                         
@@ -2200,8 +2245,11 @@ namespace put
                         if( ImGui::Button(ICON_FA_ARROW_DOWN) && s_selected_chain_pp < s_post_process_chain.size()-1)
                         {
                             invalidated = true;
-                            std::swap(s_post_process_chain[s_selected_chain_pp],
-                                      s_post_process_chain[s_selected_chain_pp-1]);
+                            Str tmp = s_post_process_chain[s_selected_chain_pp];
+                            s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp+1].c_str();
+                            s_post_process_chain[s_selected_chain_pp+1] = tmp.c_str();
+                            
+                            s_selected_chain_pp++;
                         }
                         dev_ui::set_tooltip("Move selected post process down");
                         

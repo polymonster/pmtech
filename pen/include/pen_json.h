@@ -48,6 +48,13 @@ namespace pen
     // back upwards once you have written to a value (leaf).
 
     struct json_object;
+    
+    // functions
+    Str to_str(const c8* val);
+    Str to_str(const u32 val);
+    Str to_str(const s32 val);
+    Str to_str(const f32 val);
+    Str to_str(const bool val);
 
     class json
     {
@@ -81,18 +88,81 @@ namespace pen
         u32       as_u32_hex(u32 default_value = 0);
         Str       as_filename(const c8* default_value = nullptr);
 
-        void set(const c8* name, const c8* val);
+        // master set, all others convert to str
         void set(const c8* name, const Str val);
+        void set_array(const c8* name, const Str* val, u32 count);
+        
+        // todo: move these to templated functions
+        void set(const c8* name, const c8* val);
         void set(const c8* name, const u32 val);
         void set(const c8* name, const s32 val);
         void set(const c8* name, const f32 val);
         void set(const c8* name, const bool val);
         void set_filename(const c8* name, const Str& filename);
-
+        
+        // template member function implementations
+        template<class T>
+        inline void set_array(const c8* name, const T* val, u32 count)
+        {
+            Str* array = new Str[count];
+            for(u32 i = 0; i < count; ++i)
+                array[i] = to_str((T)val[i]);
+            
+            set_array(name, array, count);
+            delete[] array;
+        }
+        
       private:
         json_object* m_internal_object;
         void         copy(json* dst, const json& other);
     };
+    
+    // inline functions
+    inline Str to_str(const c8* val)
+    {
+        Str fmt;
+        fmt.appendf("%u", val);
+        return fmt;
+    }
+    
+    inline Str to_str(const u32 val)
+    {
+        Str fmt;
+        fmt.appendf("%u", val);
+        return fmt;
+    }
+    
+    inline Str to_str(const s32 val)
+    {
+        Str fmt;
+        fmt.appendf("%i", val);
+        return fmt;
+    }
+    
+    inline Str to_str(const bool val)
+    {
+        Str fmt;
+        if(val)
+            fmt.appendf("true");
+        else
+            fmt.appendf("false");
+        return fmt;
+    }
+    
+    inline Str to_str(const f32 val)
+    {
+        Str fmt;
+        fmt.appendf("%f", val);
+        return fmt;
+    }
+    
+    inline Str to_str(const c8* name, const f32 val)
+    {
+        Str fmt;
+        fmt.appendf("%f", val);
+        return fmt;
+    }
+    
 } // namespace pen
 
 #endif
