@@ -1,6 +1,10 @@
 #ifndef _thread_h
 #define _thread_h
 
+// Minimalist C-Style thread wrapper API
+// Includes functions to create jobs, threads, mutex and semaphore
+// Implementations currently in posix and win32
+
 #include "pen.h"
 
 #if _WIN32
@@ -12,10 +16,6 @@
 
 namespace pen
 {
-    // Minimalist C-Style thread wrapper API
-    // Includes functions to create jobs, threads, mutex and semaphore
-    // Implementations currently in posix and win32
-
     struct thread;
     struct mutex;
     struct semaphore;

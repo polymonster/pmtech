@@ -1,8 +1,8 @@
 #ifndef _pmfx_h
 #define _pmfx_h
 
-#include "types.h"
 #include "str/Str.h"
+#include "types.h"
 
 namespace pen
 {
@@ -83,19 +83,19 @@ namespace put
 
             CW_NUM
         };
-        
+
         enum e_constant_buffer_locations
         {
-            CB_PER_PASS_VIEW = 0,
-            CB_PER_DRAW_CALL = 1,
-            CB_FILTER_KERNEL = 2,
-            CB_PER_PASS_LIGHTS = 3,
-            CB_PER_PASS_SHADOW = 4,
-            CB_PER_PASS_SDF_SHADOW = 5,
+            CB_PER_PASS_VIEW        = 0,
+            CB_PER_DRAW_CALL        = 1,
+            CB_FILTER_KERNEL        = 2,
+            CB_PER_PASS_LIGHTS      = 3,
+            CB_PER_PASS_SHADOW      = 4,
+            CB_PER_PASS_SDF_SHADOW  = 5,
             CB_PER_PASS_AREA_LIGHTS = 6,
-            CB_MATERIAL_CONSTANTS = 7,
-            CB_SAMPLER_INFO = 10,
-            CB_POST_PROCESS_INFO = 3
+            CB_MATERIAL_CONSTANTS   = 7,
+            CB_SAMPLER_INFO         = 10,
+            CB_POST_PROCESS_INFO    = 3
         };
 
         struct technique_constant
@@ -165,12 +165,12 @@ namespace put
         void update();
         void render();
         void show_dev_ui();
-        
+
         void register_scene_controller(const scene_controller& controller);
         void register_scene_view_renderer(const scene_view_renderer& svr);
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
         void resize_viewports();
-        
+
         const camera*        get_camera(hash_id id_name);
         const render_target* get_render_target(hash_id h);
         void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
@@ -193,10 +193,10 @@ namespace put
         u32                 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
         technique_constant* get_technique_constants(shader_handle handle, u32 index);
         u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
-        
+
         void show_technique_ui(shader_handle shader, u32 technique_index, f32* data);
         bool has_technique_constants(shader_handle shader, u32 technique_index);
-        
+
         void poll_for_changes();
     } // namespace pmfx
 } // namespace put

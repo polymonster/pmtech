@@ -3,7 +3,7 @@
 
 #include "memory.h"
 
-// Minimalist data structures to use as alternative to vector
+// Minimalist data structures to use as bloat free alternative to vector et al.
 
 // Stretchy buffer itself akin to vector
 

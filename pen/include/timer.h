@@ -7,7 +7,7 @@ namespace pen
 {
     // Barebones high resolution c-style timer api.
 
-    // Implemented in:
+    // Implemented using:
     // query performance counter (win32)
     // mach (osx, ios)
     // gettimeofday (linux)

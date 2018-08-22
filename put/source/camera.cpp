@@ -164,7 +164,7 @@ namespace put
         prev_mpos                  = current_mouse;
 
         f32 mouse_y_inv = invert_y ? -1.0f : 1.0f;
-        
+
         // zoom
         f32        mwheel      = (f32)ms.wheel;
         static f32 prev_mwheel = mwheel;
@@ -256,7 +256,7 @@ namespace put
             p_camera->cbuffer = pen::renderer_create_buffer(bcp);
         }
 
-        //if (p_camera->flags & CF_INVALIDATED)
+        // if (p_camera->flags & CF_INVALIDATED)
         {
             camera_cbuffer wvp;
 
@@ -264,12 +264,12 @@ namespace put
 
             if (viewport_correction && pen::renderer_viewport_vup())
             {
-                wvp.view_projection = scale * (p_camera->proj * p_camera->view);
+                wvp.view_projection     = scale * (p_camera->proj * p_camera->view);
                 wvp.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
             }
             else
             {
-                wvp.view_projection = p_camera->proj * p_camera->view;
+                wvp.view_projection     = p_camera->proj * p_camera->view;
                 wvp.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
             }
 

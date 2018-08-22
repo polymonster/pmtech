@@ -647,9 +647,9 @@ namespace pen
     hash_id json::as_hash_id(hash_id default_value)
     {
         const c8* cstr = as_cstr();
-        if(!cstr)
+        if (!cstr)
             return 0;
-        
+
         return PEN_HASH(cstr);
     }
 
@@ -743,13 +743,13 @@ namespace pen
         pen::memory_free(m_internal_object);
         m_internal_object = nullptr;
     }
-    
+
     void json::set(const c8* name, const json& val)
     {
         Str fmt = val.dumps();
         set(name, fmt);
     }
-    
+
     void json::set(const c8* name, const c8* val)
     {
         Str fmt = val;
@@ -809,36 +809,36 @@ namespace pen
             *this = json_set;
         }
     }
-        
+
     /*
     void set_array(const c8* name, const c8** val, u32 count)
     {
 
     }
     */
-    
+
     /*
     void set_array(const c8* name, const u32* val, u32 count)
     {
-        
+
     }
-    
+
     void set_array(const c8* name, const s32* val, u32 count)
     {
-        
+
     }
-    
+
     void set_array(const c8* name, const f32* val, u32 count)
     {
-        
+
     }
-    
+
     void set_array(const c8* name, const bool* val, u32 count)
     {
-        
+
     }
     */
-    
+
     void json::set_array(const c8* name, const Str* val, u32 count)
     {
         Str new_json_object = "{";
@@ -846,24 +846,24 @@ namespace pen
         new_json_object.append(name);
         JSON_NAME(new_json_object);
         new_json_object.append(": [");
-        
-        for(u32 i = 0; i < count; ++i)
+
+        for (u32 i = 0; i < count; ++i)
         {
             new_json_object.append(val[i].c_str());
-            if(count-1 == i)
+            if (count - 1 == i)
                 new_json_object.append("]");
             else
                 new_json_object.append(", ");
         }
-        
+
         new_json_object.append("}");
-        
+
         pen::json json_set = pen::json::load(new_json_object.c_str());
-        
+
         if (m_internal_object)
         {
             pen::json combined = combine(*this, json_set);
-            
+
             // free mem and copy combined
             this->~json();
             *this = combined;

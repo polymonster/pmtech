@@ -9,8 +9,11 @@
 namespace pen
 {
     // C++ wrapper API for JSMN
-    // Provides operators to access JSON objects and arrays and get retreive typed values, examples:
-    //
+    // Provides operators to access JSON objects and arrays and get retreive typed values
+    // json file is kept in a char buffer and jsmn tokens are used to iterate
+    // this api does not use any vectors or maps to store the json data
+
+    // Examples:
     // Load:
     // json j = load_from_file("filename");
     //
@@ -39,7 +42,7 @@ namespace pen
 
     // To use unstrict json without the need for quotes around keys and string values
     // care must be taken with filenames, colons (:) need to be stripped from filenames (ie C:\windows)
-    // use set_filename which will replace : with @ (ie C:@windows)
+    // use set_filename and as filen which will replace : with @ (ie C:@windows) or the inverse.
 
     // Combine will combine members of j1 and j2 on an object by object basis
 
@@ -47,9 +50,9 @@ namespace pen
     // you will need to create copies of the objects and then manually recursively write the objects
     // back upwards once you have written to a value (leaf).
 
-    struct  json_object;
-    class   json;
-    
+    struct json_object;
+    class json;
+
     // functions
     Str to_str(const c8* val);
     Str to_str(const u32 val);
@@ -93,7 +96,7 @@ namespace pen
         // master set, all others convert to str
         void set(const c8* name, const Str val);
         void set_array(const c8* name, const Str* val, u32 count);
-        
+
         // todo: move these to templated functions
         void set(const c8* name, const json& val);
         void set(const c8* name, const c8* val);
@@ -102,24 +105,24 @@ namespace pen
         void set(const c8* name, const f32 val);
         void set(const c8* name, const bool val);
         void set_filename(const c8* name, const Str& filename);
-        
+
         // template member function implementations
-        template<class T>
+        template <class T>
         inline void set_array(const c8* name, const T* val, u32 count)
         {
             Str* array = new Str[count];
-            for(u32 i = 0; i < count; ++i)
+            for (u32 i = 0; i < count; ++i)
                 array[i] = to_str((T)val[i]);
-            
+
             set_array(name, array, count);
             delete[] array;
         }
-        
+
       private:
         json_object* m_internal_object;
         void         copy(json* dst, const json& other);
     };
-    
+
     // inline functions
     inline Str to_str(const c8* val)
     {
@@ -127,50 +130,50 @@ namespace pen
         fmt.appendf("%u", val);
         return fmt;
     }
-    
+
     inline Str to_str(const u32 val)
     {
         Str fmt;
         fmt.appendf("%u", val);
         return fmt;
     }
-    
+
     inline Str to_str(const s32 val)
     {
         Str fmt;
         fmt.appendf("%i", val);
         return fmt;
     }
-    
+
     inline Str to_str(const bool val)
     {
         Str fmt;
-        if(val)
+        if (val)
             fmt.appendf("true");
         else
             fmt.appendf("false");
         return fmt;
     }
-    
+
     inline Str to_str(const f32 val)
     {
         Str fmt;
         fmt.appendf("%f", val);
         return fmt;
     }
-    
+
     inline Str to_str(const c8* name, const f32 val)
     {
         Str fmt;
         fmt.appendf("%f", val);
         return fmt;
     }
-    
+
     inline Str to_str(const c8* name, const json& val)
     {
         return val.dumps();
     }
-    
+
 } // namespace pen
 
 #endif
