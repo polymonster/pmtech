@@ -47,7 +47,8 @@ namespace pen
     // you will need to create copies of the objects and then manually recursively write the objects
     // back upwards once you have written to a value (leaf).
 
-    struct json_object;
+    struct  json_object;
+    class   json;
     
     // functions
     Str to_str(const c8* val);
@@ -55,6 +56,7 @@ namespace pen
     Str to_str(const s32 val);
     Str to_str(const f32 val);
     Str to_str(const bool val);
+    Str to_str(const json& val);
 
     class json
     {
@@ -67,9 +69,9 @@ namespace pen
         static json load(const c8* json_str);
         static json combine(const json& j1, const json& j2, s32 indent = 0);
 
-        Str        dumps();
-        Str        name();
-        jsmntype_t type();
+        Str        dumps() const;
+        Str        name() const;
+        jsmntype_t type() const;
         u32        size() const;
 
         json  operator[](const c8* name) const;
@@ -93,6 +95,7 @@ namespace pen
         void set_array(const c8* name, const Str* val, u32 count);
         
         // todo: move these to templated functions
+        void set(const c8* name, const json& val);
         void set(const c8* name, const c8* val);
         void set(const c8* name, const u32 val);
         void set(const c8* name, const s32 val);
@@ -161,6 +164,11 @@ namespace pen
         Str fmt;
         fmt.appendf("%f", val);
         return fmt;
+    }
+    
+    inline Str to_str(const c8* name, const json& val)
+    {
+        return val.dumps();
     }
     
 } // namespace pen

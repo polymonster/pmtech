@@ -2202,6 +2202,7 @@ namespace put
                             if(res)
                             {
                                 // perform save
+                                pen::json j_pp;
                                 
                                 pen::json j_chain;
                                 j_chain.set_array("chain", &s_post_process_chain[0], s_post_process_chain.size());
@@ -2210,7 +2211,10 @@ namespace put
                                 u32 ii[5] = { 1, 2, 3, 4, 5 };
                                 j_test.set_array("poop", (const u32*)&ii[0], (u32)5);
                                 
-                                PEN_LOG(j_test.dumps().c_str());
+                                j_pp.set("chain", j_chain);
+                                j_pp.set("poop", j_test);
+                                
+                                PEN_LOG(j_pp.dumps().c_str());
                             }
                         }
                         

@@ -90,7 +90,7 @@ namespace pen
         json_object get_object_by_name(const c8* name);
         json_object get_object_by_index(const u32 index);
 
-        Str get_name();
+        Str get_name() const;
     };
 
     union json_value {
@@ -317,7 +317,7 @@ namespace pen
         return jv.object;
     }
 
-    Str json_object::get_name()
+    Str json_object::get_name() const
     {
         return Str(this->name);
     }
@@ -707,19 +707,19 @@ namespace pen
         return default_value;
     }
 
-    Str json::dumps()
+    Str json::dumps() const
     {
         Str t;
         _dump(t, m_internal_object->data, m_internal_object->tokens, m_internal_object->num_tokens, 0);
         return t;
     }
 
-    Str json::name()
+    Str json::name() const
     {
         return m_internal_object->get_name();
     }
 
-    jsmntype_t json::type()
+    jsmntype_t json::type() const
     {
         if (!m_internal_object)
             return JSMN_UNDEFINED;
@@ -744,38 +744,44 @@ namespace pen
         m_internal_object = nullptr;
     }
     
+    void json::set(const c8* name, const json& val)
+    {
+        Str fmt = val.dumps();
+        set(name, fmt);
+    }
+    
     void json::set(const c8* name, const c8* val)
     {
         Str fmt = val;
-        json::set(name, fmt);
+        set(name, fmt);
     }
 
     void json::set(const c8* name, const u32 val)
     {
         Str fmt;
         fmt.appendf("%u", val);
-        json::set(name, fmt);
+        set(name, fmt);
     }
 
     void json::set(const c8* name, const bool val)
     {
         Str fmt;
         fmt.appendf("%i", val);
-        json::set(name, fmt);
+        set(name, fmt);
     }
 
     void json::set(const c8* name, const s32 val)
     {
         Str fmt;
         fmt.appendf("%i", val);
-        json::set(name, fmt);
+        set(name, fmt);
     }
 
     void json::set(const c8* name, const f32 val)
     {
         Str fmt;
         fmt.appendf("%f", val);
-        json::set(name, fmt);
+        set(name, fmt);
     }
 
     void json::set(const c8* name, const Str val)
