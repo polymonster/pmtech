@@ -234,10 +234,19 @@ namespace pen
         mtime_out = get_mtime(stat_res);
 
         return PEN_ERR_OK;
+        
+    }
+    
+    const c8* filesystem_get_user_directory()
+    {
+        static c8 default_dir[1024];
+        pen::string_format(default_dir, 1024, "/%s/%s/", HOME_DIR, pen_user_info.user_name);
+        return &default_dir[0];
     }
 
     const c8** filesystem_get_user_directory(s32& directory_depth)
     {
+        // returns array of dirs
         static const u32 max_dir_depth = 3;
 
         static c8 default_dir[max_dir_depth][1024];

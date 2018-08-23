@@ -9,8 +9,10 @@
 #include "pen_string.h"
 #include "pmfx.h"
 #include "str_utilities.h"
-
+#include "data_struct.h"
 #include "console.h"
+
+#include <fstream>
 
 extern pen::window_creation_params pen_window;
 
@@ -2083,6 +2085,37 @@ namespace put
                 ++isb;
             }
         }
+        
+        void generate_post_process_config( json& j_pp )
+        {
+            j_pp.set_array("chain", &s_post_process_chain[0], s_post_process_chain.size());
+            
+            pen::json j_pp_parameters;
+            
+            for (auto& pp : s_post_process_passes)
+            {
+                
+                u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
+                technique_constant* tc = get_technique_constants(pp.pmfx_shader, ti);
+                
+                if(!tc)
+                    continue;
+                
+                pen::json j_technique;
+                
+                u32 num_constants = sb_count(tc);
+                for (u32 i = 0; i < num_constants; ++i)
+                {
+                    u32 cb_offset = tc[i].cb_offset;
+                    j_technique.set_array(tc[i].name.c_str(),
+                                          &pp.technique_constants.data[cb_offset], tc[i].num_elements);
+                }
+                
+                j_pp_parameters.set(pp.name.c_str(), j_technique);
+            }
+            
+            j_pp.set("parameters", j_pp_parameters);
+        }
 
         void show_dev_ui()
         {
@@ -2200,20 +2233,16 @@ namespace put
                             const c8* res = dev_ui::file_browser(s_save_dialog_open, dev_ui::FB_SAVE);
                             if (res)
                             {
-                                // perform save
-                                pen::json j_pp;
-
-                                pen::json j_chain;
-                                j_chain.set_array("chain", &s_post_process_chain[0], s_post_process_chain.size());
-
-                                pen::json j_test;
-                                u32       ii[5] = {1, 2, 3, 4, 5};
-                                j_test.set_array("poop", (const u32*)&ii[0], (u32)5);
-
-                                j_pp.set("chain", j_chain);
-                                j_pp.set("poop", j_test);
-
-                                PEN_LOG(j_pp.dumps().c_str());
+                                json j_pp;
+                                generate_post_process_config(j_pp);
+                                
+                                Str basename = pen::str_remove_ext(res);
+                                basename.append(".json");
+                                
+                                std::ofstream ofs(basename.c_str());
+                                ofs << j_pp.dumps().c_str();
+                                ofs.close();
+                                
                             }
                         }
 

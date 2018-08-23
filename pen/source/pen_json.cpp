@@ -516,10 +516,6 @@ namespace pen
                 json_string.append(j2[i].name().c_str());
                 JSON_NAME(json_string);
 
-                pen::json jjjj = j2[i];
-
-                Str ssss = jjjj.as_str();
-
                 json_string.append(": ");
                 json_string.append(j2[i].m_internal_object->data);
                 json_string.append(",\n");
@@ -529,13 +525,13 @@ namespace pen
         json_string.append("}");
         json_string.append('\0');
 
-        json test = json::load(json_string.c_str());
+        json res = json::load(json_string.c_str());
 
         delete[] j1_action;
         delete[] j2_action;
         delete[] combine_index;
 
-        return test;
+        return res;
     }
 
     u32 json::size() const
@@ -744,46 +740,6 @@ namespace pen
         m_internal_object = nullptr;
     }
 
-    void json::set(const c8* name, const json& val)
-    {
-        Str fmt = val.dumps();
-        set(name, fmt);
-    }
-
-    void json::set(const c8* name, const c8* val)
-    {
-        Str fmt = val;
-        set(name, fmt);
-    }
-
-    void json::set(const c8* name, const u32 val)
-    {
-        Str fmt;
-        fmt.appendf("%u", val);
-        set(name, fmt);
-    }
-
-    void json::set(const c8* name, const bool val)
-    {
-        Str fmt;
-        fmt.appendf("%i", val);
-        set(name, fmt);
-    }
-
-    void json::set(const c8* name, const s32 val)
-    {
-        Str fmt;
-        fmt.appendf("%i", val);
-        set(name, fmt);
-    }
-
-    void json::set(const c8* name, const f32 val)
-    {
-        Str fmt;
-        fmt.appendf("%f", val);
-        set(name, fmt);
-    }
-
     void json::set(const c8* name, const Str val)
     {
         Str new_json_object = "{";
@@ -809,35 +765,6 @@ namespace pen
             *this = json_set;
         }
     }
-
-    /*
-    void set_array(const c8* name, const c8** val, u32 count)
-    {
-
-    }
-    */
-
-    /*
-    void set_array(const c8* name, const u32* val, u32 count)
-    {
-
-    }
-
-    void set_array(const c8* name, const s32* val, u32 count)
-    {
-
-    }
-
-    void set_array(const c8* name, const f32* val, u32 count)
-    {
-
-    }
-
-    void set_array(const c8* name, const bool* val, u32 count)
-    {
-
-    }
-    */
 
     void json::set_array(const c8* name, const Str* val, u32 count)
     {
@@ -879,7 +806,7 @@ namespace pen
         Str fn = str_replace_chars(filename, ':', '@');
         fn     = str_replace_chars(fn, '\\', '/');
 
-        set(name, fn.c_str());
+        set(name, fn);
     }
 
     Str json::as_filename(const c8* default_value)

@@ -326,6 +326,15 @@ namespace put
                     dialog_open = false;
                 }
 
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_HOME))
+                {
+                    // set to home
+                    initialise = true;
+                    Str home = pen::filesystem_get_user_directory();
+                    set_last_used_directory(home);
+                }
+                
                 ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
 
                 static s32 base_frame = current_depth - 4;

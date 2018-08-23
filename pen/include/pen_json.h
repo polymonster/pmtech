@@ -93,20 +93,19 @@ namespace pen
         u32       as_u32_hex(u32 default_value = 0);
         Str       as_filename(const c8* default_value = nullptr);
 
-        // master set, all others convert to str
+        // set master functions
         void set(const c8* name, const Str val);
         void set_array(const c8* name, const Str* val, u32 count);
-
-        // todo: move these to templated functions
-        void set(const c8* name, const json& val);
-        void set(const c8* name, const c8* val);
-        void set(const c8* name, const u32 val);
-        void set(const c8* name, const s32 val);
-        void set(const c8* name, const f32 val);
-        void set(const c8* name, const bool val);
         void set_filename(const c8* name, const Str& filename);
-
-        // template member function implementations
+        
+        // set templated functions
+        template <class T>
+        inline void set(const c8* name, const T val)
+        {
+            Str fmt = to_str((T)val);
+            set(name, fmt);
+        }
+        
         template <class T>
         inline void set_array(const c8* name, const T* val, u32 count)
         {
@@ -162,14 +161,7 @@ namespace pen
         return fmt;
     }
 
-    inline Str to_str(const c8* name, const f32 val)
-    {
-        Str fmt;
-        fmt.appendf("%f", val);
-        return fmt;
-    }
-
-    inline Str to_str(const c8* name, const json& val)
+    inline Str to_str(const json& val)
     {
         return val.dumps();
     }

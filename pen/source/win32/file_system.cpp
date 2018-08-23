@@ -289,6 +289,15 @@ namespace pen
 
         return PEN_ERR_OK;
     }
+    
+    const c8* filesystem_get_user_directory()
+    {
+        static c8 path[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, path)))
+            return &path[0];
+        
+        return nullptr;
+    }
 
     const c8** filesystem_get_user_directory(s32& directory_depth)
     {
