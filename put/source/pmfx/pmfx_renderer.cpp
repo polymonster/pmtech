@@ -32,32 +32,51 @@ namespace
         u32       val;
     };
 
-    const mode_map k_cull_mode_map[] = {"none", PEN_CULL_NONE, "back", PEN_CULL_BACK, "front", PEN_CULL_FRONT, nullptr, 0};
+    const mode_map k_cull_mode_map[] = {
+        "none",     PEN_CULL_NONE,
+        "back",     PEN_CULL_BACK,
+        "front",    PEN_CULL_FRONT,
+        nullptr, 0
+    };
 
-    const mode_map k_fill_mode_map[] = {"solid", PEN_FILL_SOLID, "wireframe", PEN_FILL_WIREFRAME, nullptr, 0};
+    const mode_map k_fill_mode_map[] = {
+        "solid",        PEN_FILL_SOLID,
+        "wireframe",    PEN_FILL_WIREFRAME,
+        nullptr, 0
+    };
 
     const mode_map k_comparison_mode_map[] = {
-        "never",      PEN_COMPARISON_NEVER,      "less",          PEN_COMPARISON_LESS,
-        "less_equal", PEN_COMPARISON_LESS_EQUAL, "greater",       PEN_COMPARISON_GREATER,
-        "not_equal",  PEN_COMPARISON_NOT_EQUAL,  "greater_equal", PEN_COMPARISON_GREATER_EQUAL,
-        "always",     PEN_COMPARISON_ALWAYS,     nullptr,         0};
+        "never",            PEN_COMPARISON_NEVER,
+        "less",             PEN_COMPARISON_LESS,
+        "less_equal",       PEN_COMPARISON_LESS_EQUAL,
+        "greater",          PEN_COMPARISON_GREATER,
+        "not_equal",        PEN_COMPARISON_NOT_EQUAL,
+        "greater_equal",    PEN_COMPARISON_GREATER_EQUAL,
+        "always",           PEN_COMPARISON_ALWAYS,
+        nullptr,            0
+    };
 
     const mode_map k_stencil_mode_map[] = {
         "keep",     PEN_STENCIL_OP_KEEP,     "replace", PEN_STENCIL_OP_REPLACE, "incr",     PEN_STENCIL_OP_INCR,
         "incr_sat", PEN_STENCIL_OP_INCR_SAT, "decr",    PEN_STENCIL_OP_DECR,    "decr_sat", PEN_STENCIL_OP_DECR_SAT,
-        "zero",     PEN_STENCIL_OP_ZERO,     "invert",  PEN_STENCIL_OP_INVERT,  nullptr,    0};
+        "zero",     PEN_STENCIL_OP_ZERO,     "invert",  PEN_STENCIL_OP_INVERT,  nullptr,    0
+    };
 
     const mode_map k_filter_mode_map[] = {
-        "linear", PEN_FILTER_MIN_MAG_MIP_LINEAR, "point", PEN_FILTER_MIN_MAG_MIP_POINT, nullptr, 0};
+        "linear", PEN_FILTER_MIN_MAG_MIP_LINEAR,
+        "point", PEN_FILTER_MIN_MAG_MIP_POINT,
+        nullptr, 0
+    };
 
     const mode_map k_address_mode_map[] = {
         "wrap",        PEN_TEXTURE_ADDRESS_WRAP,        "clamp",  PEN_TEXTURE_ADDRESS_CLAMP,
         "border",      PEN_TEXTURE_ADDRESS_BORDER,      "mirror", PEN_TEXTURE_ADDRESS_MIRROR,
-        "mirror_once", PEN_TEXTURE_ADDRESS_MIRROR_ONCE, nullptr,  0};
+        "mirror_once", PEN_TEXTURE_ADDRESS_MIRROR_ONCE, nullptr,  0
+    };
 
     const mode_map k_blend_mode_map[] = {
         "zero",             PEN_BLEND_ZERO,             "one",              PEN_BLEND_ONE,
-        "src_colour",       PEN_BLEND_SRC_COLOR,         "inv_src_colour",  PEN_BLEND_INV_SRC_COLOR,
+        "src_colour",       PEN_BLEND_SRC_COLOR,        "inv_src_colour",   PEN_BLEND_INV_SRC_COLOR,
         "src_alpha",        PEN_BLEND_SRC_ALPHA,        "inv_src_alpha",    PEN_BLEND_INV_SRC_ALPHA,
         "dest_alpha",       PEN_BLEND_DEST_ALPHA,       "inv_dest_alpha",   PEN_BLEND_INV_DEST_ALPHA,
         "dest_colour",      PEN_BLEND_DEST_COLOR,       "inv_dest_colour",  PEN_BLEND_INV_DEST_COLOR,
@@ -68,9 +87,9 @@ namespace
     };
 
     const mode_map k_blend_op_mode_map[] = {
-        "belnd_op_add", PEN_BLEND_OP_ADD,           "belnd_op_add",         PEN_BLEND_OP_ADD,
-        "belnd_op_subtract", PEN_BLEND_OP_SUBTRACT, "belnd_op_rev_sbtract", PEN_BLEND_OP_REV_SUBTRACT,
-        "belnd_op_min", PEN_BLEND_OP_MIN,           "belnd_op_max",         PEN_BLEND_OP_MAX,
+        "belnd_op_add",         PEN_BLEND_OP_ADD,           "belnd_op_add",         PEN_BLEND_OP_ADD,
+        "belnd_op_subtract",    PEN_BLEND_OP_SUBTRACT,      "belnd_op_rev_sbtract", PEN_BLEND_OP_REV_SUBTRACT,
+        "belnd_op_min",         PEN_BLEND_OP_MIN,           "belnd_op_max",         PEN_BLEND_OP_MAX,
         nullptr, 0
     };
 
