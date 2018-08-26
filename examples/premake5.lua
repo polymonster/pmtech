@@ -1,3 +1,5 @@
+require "android_studio"
+
 dofile "../tools/premake/options.lua"
 dofile "../tools/premake/globals.lua"
 dofile "../tools/premake/app_template.lua"
