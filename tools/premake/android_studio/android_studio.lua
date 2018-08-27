@@ -17,18 +17,38 @@
 		valid_tools     = {
 			cc = { "clang" },
 		},
+		
+		onStart = function()
+			print("Starting android studio generation")
+		end,
+
+		onWorkspace = function(wks)
+			printf("Generating android studio workspace '%s'", wks.name)
+		end,
+
+		onProject = function(prj)
+			printf("Generating android studio project '%s'", prj.name)
+		end,
+
+		execute = function()
+			print("Executing android studio action")
+		end,
+
+		onEnd = function()
+			print("Android studio generation complete")
+		end
 	}
 	
-	function workspace(wks)
+	function m.workspace(wks)
 		print("oh hai workspace")	
 	end
 	
-	function project(base, prj)
+	function m.project(base, prj)
 		print(base)
 		print("oh hai project")	
 	end
 	
-	print("The android studio module has loaded!")
+	print("Premake: loaded module android-studio")
 
 -- Return module interface
 	return m
