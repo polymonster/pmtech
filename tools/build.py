@@ -43,8 +43,8 @@ def display_help():
     print("\t-actions <action, ...>")
     for i in range(0, len(action_strings)):
         print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
-    print("\t-platform <osx, win32, ios, linux>")
-    print("\t-ide <xcode4, vs2015, v2017, gmake>")
+    print("\t-platform <osx, win32, ios, linux, android>")
+    print("\t-ide <xcode4, vs2015, v2017, gmake, android-studio>")
     print("\t-clean <clean build, bin and temp dirs>")
     print("\t-renderer <dx11, opengl>")
     print("\t-toolset <gcc, clang, msc>")
@@ -99,7 +99,12 @@ def get_platform_info():
     global extra_build_steps
     global tools_dir
     global extra_target_info
-    if os.name == "posix":
+
+    # platform / renderer auto setup
+    if ide == "android-studio":
+        renderer = "opengl"
+        platform_name = "android"
+    elif os.name == "posix":
         if renderer == "":
             renderer = "opengl"
         if platform.system() == "Linux":
