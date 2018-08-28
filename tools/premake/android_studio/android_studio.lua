@@ -98,7 +98,7 @@
 		p.push('model {')
 		p.push('android {')
 		
-		-- todo: set sdk values from premake
+		-- todo: pass these values from premake.lua
 		p.w('compileSdkVersion = 25')
         p.w('buildToolsVersion = "25.0.3"')
         
@@ -109,19 +109,66 @@
         p.w('versionName = "1.0"')
         
         p.pop('}') -- defaultConfig.with 
-        p.pop('}') -- android
         
-        p.push('android.ndk {')
+        p.push('ndk {')
         p.x('moduleName = "%s"', prj.name)
         p.w('stl = "gnustl_static"')
         p.w('platformVersion = "25"')
+
+        p.pop('}') -- ndk
         
-        -- todo cpp flags        
-		-- cppFlags.addAll(["-std=c++11", "-Wall", "-frtti", "-fexceptions", "-nostdlib", "-fno-short-enums", "-ffunction-sections", "-fdata-sections"])
-		
-        p.pop('}') -- android.ndk
+        p.push('buildType {')
+        for cfg in project.eachconfig(prj) do
+        	p.push(cfg.name .. ' {')
+        	-- src
+        	--[[
+        	for _, file in ipairs(cfg.files) do
+				print(file)
+			end
+			--]]
+        				
+        	-- cpp flags
+        	for _, cppflag in ipairs(cfg.buildoptions) do
+        		p.x('cppFlags.add("%s")', cppflag)
+			end
+			
+			-- include directories
+			for _, incdir in ipairs(cfg.includedirs) do
+				print(incdir)
+				testname = path.join(incdir, pch)
+				if os.isfile(testname) then
+					pch = project.getrelative(cfg.project, testname)
+					p.x('cppFlags.add("-I%s")', pch)
+					break
+				end
+			end
+			
+			-- ld flags
+			for _, ldflag in ipairs(cfg.linkoptions) do
+				p.x('ldFlags.add("%s")', ldflag)
+			end
+			
+			-- lib directories
+			for _, libdir in ipairs(cfg.libdirs) do
+				p.x('ldFlags.add("-L%s")', libdir)
+			end
+			
+			-- defines
+			for _, define in ipairs(cfg.defines) do
+				p.x('ldFlags.add("-D%s")', define)
+			end
+			
+        	p.pop('}')
+		end
+        p.pop('}') -- buildType
         
+        p.pop('}') -- android
 		p.pop('}') -- model
+		
+		-- todo: pass these from premake.lua
+		p.push('dependencies {')
+		p.w('com.android.support:support-v4:23.0.0')
+		p.pop('}')
 		
 		--[[
 		for key,value in pairs(prj) do
@@ -190,14 +237,7 @@
 		for _, dep in ipairs(project.getdependencies(prj, "dependOnly")) do
 			p.w('Dep = "%s"', dep.name)
 		end
-		
-		-- todo
-		-- cpp flags
-		-- "-I" include dirs
-		-- ld flags
-		-- "-L" lib dirs
-		-- ld libs
-		
+				
 		-- todo
 		-- add to premake "links" 
 		-- "atomic", "android", "OpenSLES", 
