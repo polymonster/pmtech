@@ -15,11 +15,10 @@
 		trigger     = "android-studio",
 		shortname   = "Android Studio",
 		description = "Generate Android Studio Gradle Files",
-
+		
 		toolset  	= "clang",
 
 		-- The capabilities of this action
-
 		valid_kinds = { 
 			"ConsoleApp", 
 			"WindowedApp", 
@@ -29,32 +28,20 @@
 			"Utility", 
 			"None" 
 		},
-		valid_languages = { "C", "C++" },
+		valid_languages = { "C", "C++", "Java" },
 		valid_tools = {
 			cc = { "clang" },
 		},
 				
 		-- function overloads
-		onStart = function()
-			print("Starting android studio generation")
-		end,
-
 		onWorkspace = function(wks)
-			p.generate(wks, "build.gradle", m.generate_workspace)
 			p.generate(wks, "settings.gradle", m.generate_workspace_settings)
+			p.generate(wks, "build.gradle", m.generate_workspace)
 		end,
 
 		onProject = function(prj)
-			p.generate(prj, prj.name .. "/build.gradle", m.generate_project)
 			p.generate(prj, prj.name .. "/src/main/AndroidManifest.xml", m.generate_manifest)
-		end,
-
-		execute = function()
-			print("Executing android studio action")
-		end,
-
-		onEnd = function()
-			print("Android studio generation complete")
+			p.generate(prj, prj.name .. "/build.gradle", m.generate_project)
 		end
 	}
 	
@@ -106,25 +93,7 @@
 		p.w('android:versionCode="1"')
 		p.w('android:versionName="1.0" >')
 		p.w('<uses-sdk android:minSdkVersion="19" />')
-		
-		-- if no manifest is specified for the app project:
-		-- autogenerate one so at least we can try to compile and link
-		if prj.kind == "WindowedApp" then
-			p.push('<application')
-			p.w('android:allowBackup="true"')
-			p.x('android:label="%s" />', prj.name)
-			p.push('<activity')
-			p.w('android:name="com.main.activity"')
-			p.w('android:label="main_activity"')
-			p.w('android:configChanges="orientation|screenSize">')
-			p.push('<intent-filter>')
-			p.w('<action android:name="android.intent.action.MAIN" />')
-			p.w('<category android:name="android.intent.category.LAUNCHER" />')
-			p.pop('</intent-filter>')
-			p.pop('</activity>')
-		else
-			p.pop('<application/>')
-		end
+		p.pop('<application/>')
 		p.pop('</manifest>')
 	end
 	
