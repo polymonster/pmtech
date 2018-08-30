@@ -141,6 +141,7 @@ project ( project_name )
 	}
 	
 	setup_platform()
+	setup_bullet()
 		 
 	configuration "Debug"
 		defines { "DEBUG" }
