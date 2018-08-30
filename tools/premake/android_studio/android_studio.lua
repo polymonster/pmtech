@@ -15,7 +15,7 @@
 		shortname   = "Android Studio",
 		description = "Generate Android Studio Gradle Files",
 
-		toolset  = "clang",
+		toolset  	= "clang",
 
 		-- The capabilities of this action
 
@@ -39,12 +39,12 @@
 		end,
 
 		onWorkspace = function(wks)
-			p.generate(wks, ".gradle", m.generate_workspace)
+			p.generate(wks, "build.gradle", m.generate_workspace)
 			p.generate(wks, "settings.gradle", m.generate_workspace_settings)
 		end,
 
 		onProject = function(prj)
-			p.generate(prj, prj.name .. "/" .. prj.name .. ".gradle", m.generate_project)
+			p.generate(prj, prj.name .. "/build.gradle", m.generate_project)
 		end,
 
 		execute = function()
@@ -64,7 +64,8 @@
 		p.w('jcenter()')
 		p.pop('}')
 		p.push('dependencies {')
-		p.w('com.android.tools.build:gradle:2.3.2')    
+		--p.w("classpath 'com.android.tools.build:gradle-experimental:0.9.3'")    
+		p.w("classpath 'com.android.tools.build:gradle-experimental:0.7.3'")  
 		p.pop('}')
 		p.pop('}')
 		
@@ -78,7 +79,7 @@
 	function m.generate_workspace_settings(wks)
 		for prj in workspace.eachproject(wks) do
 			p.x('include ":%s"', prj.name)
-			p.x('project(":%s").projectDir = file("%s")', prj.name, prj.location)
+			p.x('project(":%s").projectDir = file("%s/%s")', prj.name, prj.location, prj.name)
 		end
 	end
 	
@@ -117,16 +118,12 @@
 
         p.pop('}') -- ndk
         
-        p.push('buildType {')
+        p.push('buildTypes {')
         for cfg in project.eachconfig(prj) do
         	p.push(cfg.name .. ' {')
-        	-- src
-        	--[[
-        	for _, file in ipairs(cfg.files) do
-				print(file)
-			end
-			--]]
-        				
+								
+			p.push('ndk {')
+			
         	-- cpp flags
         	for _, cppflag in ipairs(cfg.buildoptions) do
         		p.x('cppFlags.add("%s")', cppflag)
@@ -158,69 +155,75 @@
 				p.x('ldFlags.add("-D%s")', define)
 			end
 			
-        	p.pop('}')
+			p.pop('}') -- ndk
+        	p.pop('}') -- cfg.name
 		end
+		
         p.pop('}') -- buildType
-        
+		
+		-- source files from premake
+		p.push('sources {')
+		for cfg in project.eachconfig(prj) do
+        	p.push(cfg.name .. ' {')
+			
+			-- c/cpp/h files
+			p.push('jni {')
+			p.push('source {')
+			for _, file in ipairs(cfg.files) do
+				if os.isfile(file) then
+					if string.find(file, ".cpp") or string.find(file, ".h") or string.find(file, ".c") then
+						p.x('includes.add("%s")', file)
+					end
+				end
+			end
+			p.pop('}') -- source
+			p.pop('}') -- jni
+			
+			-- java files
+			p.push('java {')
+			p.push('source {')
+			for _, file in ipairs(cfg.files) do
+				if os.isfile(file) then
+					if string.find(file, ".java") then
+						p.x('includes.add("%s")', file)
+					end
+				end
+			end
+			p.pop('}') -- source
+			p.pop('}') -- java
+			
+			-- res files
+			p.push('res {')
+			p.push('source {')
+			p.w("srcDirs = ['res']")
+			p.pop('}') -- source
+			p.pop('}') -- res
+			
+			-- manifest files
+			p.push('manifest {')
+			p.push('source {')
+			p.w("srcDirs = ['.']")
+			p.pop('}') -- source
+			p.pop('}') -- manifest
+					
+			p.pop('}') -- cfg.name
+		end
+		p.pop('}') -- sources				
         p.pop('}') -- android
+		
+		p.push('android.lintOptions {')
+		p.w("abortOnError = false")
+		p.pop('}')
+		
 		p.pop('}') -- model
 		
 		-- todo: pass these from premake.lua
 		p.push('dependencies {')
-		p.w('com.android.support:support-v4:23.0.0')
+		p.w("compile 'com.android.support:support-v4:23.0.0'")
 		p.pop('}')
 		
-		--[[
-		for key,value in pairs(prj) do
-   	 		print("found member " .. key);
-		end
-		
-		p.push('project = {')
-		p.x('name = "%s",', prj.name)
-		p.w('uuid = "%s",', prj.uuid)
-		p.w('kind = "%s"', prj.kind)
-		p.pop('}')
-		
-		for cfg in project.eachconfig(prj) do
-			print(cfg.name)
-			for _, incdir in ipairs(cfg.includedirs) do
-				print(incdir)
-				testname = path.join(incdir, pch)
-				if os.isfile(testname) then
-					pch = project.getrelative(cfg.project, testname)
-					-- p.w('Include Dirs = "%s"', node.name)
-					break
-				end
-			end
-			for _, libdir in ipairs(cfg.libdirs) do
-			print(libdir)
-			end
-			for _, file in ipairs(cfg.files) do
-			print(file)
-			end
-			for _, define in ipairs(cfg.defines) do
-			print(define)
-			end
-			for _, cppflag in ipairs(cfg.buildoptions) do
-			print(cppflag)
-			end
-			for _, ldflag in ipairs(cfg.linkoptions) do
-			print(ldflag)
-			end
-		end
-		
-		local tr = project.getsourcetree(prj, nil , false)
-		tr.project = prj
-		
-		-- todo configs.. (debug / release etc)
-		
-		-- src tree / filters ?? or use raw file list above
-		tree.traverse(tr, {
-			onnode = function(node)
-				p.w('File = "%s"', node.name)
-			end
-		})
-		
+		--[[		
+
 		-- frameworks
 		tr.frameworks = tree.new("Frameworks")
 		for cfg in project.eachconfig(prj) do
