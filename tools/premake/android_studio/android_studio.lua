@@ -9,16 +9,16 @@
 	local config = p.config
 	local fileconfig = p.fileconfig
 	local tree = p.tree
+	local src_dirs = {}
 
 	newaction {
 		trigger     = "android-studio",
 		shortname   = "Android Studio",
 		description = "Generate Android Studio Gradle Files",
-
+		
 		toolset  	= "clang",
 
 		-- The capabilities of this action
-
 		valid_kinds = { 
 			"ConsoleApp", 
 			"WindowedApp", 
@@ -28,31 +28,20 @@
 			"Utility", 
 			"None" 
 		},
-		valid_languages = { "C", "C++" },
-		valid_tools     = {
+		valid_languages = { "C", "C++", "Java" },
+		valid_tools = {
 			cc = { "clang" },
 		},
 				
 		-- function overloads
-		onStart = function()
-			print("Starting android studio generation")
-		end,
-
 		onWorkspace = function(wks)
-			p.generate(wks, "build.gradle", m.generate_workspace)
 			p.generate(wks, "settings.gradle", m.generate_workspace_settings)
+			p.generate(wks, "build.gradle", m.generate_workspace)
 		end,
 
 		onProject = function(prj)
+			p.generate(prj, prj.name .. "/src/main/AndroidManifest.xml", m.generate_manifest)
 			p.generate(prj, prj.name .. "/build.gradle", m.generate_project)
-		end,
-
-		execute = function()
-			print("Executing android studio action")
-		end,
-
-		onEnd = function()
-			print("Android studio generation complete")
 		end
 	}
 	
@@ -64,7 +53,6 @@
 		p.w('jcenter()')
 		p.pop('}')
 		p.push('dependencies {')
-		--p.w("classpath 'com.android.tools.build:gradle-experimental:0.9.3'")    
 		p.w("classpath 'com.android.tools.build:gradle-experimental:0.7.3'")  
 		p.pop('}')
 		p.pop('}')
@@ -93,6 +81,22 @@
 		end
 	end
 	
+	function get_dir(file)
+		return string.match(file, ".*/")
+	end
+	
+	function m.generate_manifest(prj)
+		-- auto generate stub android manifest for libraries
+		p.w('<?xml version="1.0" encoding="utf-8"?>')
+		p.push('<manifest xmlns:android="http://schemas.android.com/apk/res/android"')
+		p.x('package="lib.%s"', prj.name)
+		p.w('android:versionCode="1"')
+		p.w('android:versionName="1.0" >')
+		p.w('<uses-sdk android:minSdkVersion="19" />')
+		p.pop('<application/>')
+		p.pop('</manifest>')
+	end
+	
 	function m.generate_project(prj)
 		p.x("apply plugin: '%s'", get_android_program_kind(prj.kind))
 	
@@ -114,13 +118,13 @@
         p.push('ndk {')
         p.x('moduleName = "%s"', prj.name)
         p.w('stl = "gnustl_static"')
-        p.w('platformVersion = "25"')
+        p.w('platformVersion = "19"')
 
         p.pop('}') -- ndk
         
         p.push('buildTypes {')
         for cfg in project.eachconfig(prj) do
-        	p.push(cfg.name .. ' {')
+        	p.push(string.lower(cfg.name) .. ' {')
 								
 			p.push('ndk {')
 			
@@ -131,13 +135,7 @@
 			
 			-- include directories
 			for _, incdir in ipairs(cfg.includedirs) do
-				print(incdir)
-				testname = path.join(incdir, pch)
-				if os.isfile(testname) then
-					pch = project.getrelative(cfg.project, testname)
-					p.x('cppFlags.add("-I%s")', pch)
-					break
-				end
+				p.x('cppFlags.add("-I%s")', incdir)	
 			end
 			
 			-- ld flags
@@ -155,30 +153,41 @@
 				p.x('ldFlags.add("-D%s")', define)
 			end
 			
+			-- links
+			for _, link in ipairs(config.getlinks(cfg, "system", "fullpath")) do
+				p.x('ldLibs.add("%s")', link)
+			end
+						
 			p.pop('}') -- ndk
         	p.pop('}') -- cfg.name
 		end
 		
         p.pop('}') -- buildType
-		
+				
 		-- source files from premake
 		p.push('sources {')
 		for cfg in project.eachconfig(prj) do
-        	p.push(cfg.name .. ' {')
+        	p.push(string.lower(cfg.name) .. ' {')
+			
+			-- get srcDirs because gradle experimental with jni does not support adding single files :(
+			dir_list = nil
+			for _, file in ipairs(cfg.files) do
+				if os.isfile(file) then
+					new_dir = get_dir(file)
+					if dir_list == nil then dir_list = ""
+					else dir_list = (dir_list .. ', ') 
+					end
+					dir_list = (dir_list .. '"' .. new_dir .. '"')
+				end
+			end
 			
 			-- c/cpp/h files
 			p.push('jni {')
 			p.push('source {')
-			for _, file in ipairs(cfg.files) do
-				if os.isfile(file) then
-					if string.find(file, ".cpp") or string.find(file, ".h") or string.find(file, ".c") then
-						p.x('includes.add("%s")', file)
-					end
-				end
-			end
+			p.x('srcDirs = [%s]', dir_list)
 			p.pop('}') -- source
 			p.pop('}') -- jni
-			
+						
 			-- java files
 			p.push('java {')
 			p.push('source {')
@@ -217,35 +226,16 @@
 		
 		p.pop('}') -- model
 		
-		-- todo: pass these from premake.lua
 		p.push('dependencies {')
+		-- todo: pass these from premake.lua
 		p.w("compile 'com.android.support:support-v4:23.0.0'")
-		p.pop('}')
-		
-		--[[		
-
-		-- frameworks
-		tr.frameworks = tree.new("Frameworks")
-		for cfg in project.eachconfig(prj) do
-			for _, link in ipairs(config.getlinks(cfg, "system", "fullpath")) do
-				p.w('Link = "%s"', link)
-			end
-		end
-		
-		-- projects / dependencies
-		tr.projects = tree.new("Projects")
-		for _, dep in ipairs(project.getdependencies(prj, "linkOnly")) do
-			p.w('Dep = "%s"', dep.name)
-		end
 		for _, dep in ipairs(project.getdependencies(prj, "dependOnly")) do
-			p.w('Dep = "%s"', dep.name)
+			p.x("compile project(':%s')", dep.name)
 		end
-				
-		-- todo
-		-- add to premake "links" 
-		-- "atomic", "android", "OpenSLES", 
-		-- "z", "GLESv1_CM", "GLESv2", "GLESv3", "log"
-		--]]
+		for _, dep in ipairs(project.getdependencies(prj, "linkOnly")) do
+			p.x("compile project(':%s')", dep.name)
+		end
+		p.pop('}')
 	end
 	
 	print("Premake: loaded module android-studio")
