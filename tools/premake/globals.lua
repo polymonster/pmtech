@@ -53,7 +53,9 @@ elseif _ACTION == "xcode4" then
 		print(	"renderer " .. renderer_dir .. " is not supported on platform " .. platform_dir .. " setting to opengl" )
 		renderer_dir = "opengl"
 	end
-else
+elseif _ACTION == "android-studio" then 
+	build_cmd = { "-std=c++11" }
+elseif _ACTION == "vs2017" then 
 	-- use force inline
 	build_cmd = "/Ob1"
 end

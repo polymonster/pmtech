@@ -56,24 +56,55 @@ excludes
 }
 end
 
-bullet_lib = "bullet_monolithic"
-bullet_lib_debug = "bullet_monolithic_d"
-bullet_lib_dir = "osx"
+function setup_bullet()
+	bullet_lib = "bullet_monolithic"
+	bullet_lib_debug = "bullet_monolithic_d"
+	bullet_lib_dir = "osx"
 
-if platform_dir == "linux" then
-	bullet_lib_dir = "linux"
+	if platform_dir == "linux" then
+		bullet_lib_dir = "linux"
+	end
+
+	if _ACTION == "vs2017" or _ACTION == "vs2015" then
+		bullet_lib_dir = _ACTION
+		bullet_lib = (bullet_lib .. "_x64")
+		bullet_lib_debug = (bullet_lib_debug .. "_x64")
+	end
 end
 
-if _ACTION == "vs2017" or _ACTION == "vs2015" then
-	bullet_lib_dir = _ACTION
-	bullet_lib = (bullet_lib .. "_x64")
-	bullet_lib_debug = (bullet_lib_debug .. "_x64")
+function setup_android()
+	files
+	{
+		pmtech_dir .. "pen/template/android/manifest/**.*",
+		pmtech_dir .. "pen/template/android/activity/**.*"
+	}
+end
+
+function setup_platform()
+	if _ACTION == "vs2017" or _ACTION == "vs2015" then
+		systemversion(windows_sdk_version())
+		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
+	end
+			
+	if platform_dir == "win32" then 
+		add_win32_links()
+	elseif platform_dir == "osx" then
+		add_osx_links()
+	elseif platform_dir == "ios" then
+		add_ios_links() 
+		add_ios_files( project_name, root_directory )
+	elseif platform_dir == "linux" then 
+		add_linux_links()
+	elseif platform_dir == "android" then 
+		setup_android()
+	end
 end
 
 function create_app( project_name, source_directory, root_directory )
 project ( project_name )
 	kind "WindowedApp"
 	language "C++"
+	dependson { "pen", "put" }
 	
 	libdirs
 	{ 
@@ -96,25 +127,10 @@ project ( project_name )
 		"include/",
 	}
 	
-	if _ACTION == "vs2017" or _ACTION == "vs2015" then
-		systemversion(windows_sdk_version())
-		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
-	end
-			
 	location ( root_directory .. "/build/" .. platform_dir )
 	targetdir ( root_directory .. "/bin/" .. platform_dir )
 	debugdir ( root_directory .. "/bin/" .. platform_dir)
-	
-	if platform_dir == "win32" then 
-		add_win32_links()
-	elseif platform_dir == "osx" then
-		add_osx_links()
-	elseif platform_dir == "ios" then
-		add_ios_links() 
-		add_ios_files( project_name, root_directory )
-	elseif platform_dir == "linux" then add_linux_links()
-	end
-	
+		
 	files 
 	{ 
 		(root_directory .. "code/" .. source_directory .. "/**.cpp"),
@@ -123,6 +139,9 @@ project ( project_name )
 		(root_directory .. "code/" .. source_directory .. "/**.m"),
 		(root_directory .. "code/" .. source_directory .. "/**.mm")
 	}
+	
+	setup_platform()
+	setup_bullet()
 		 
 	configuration "Debug"
 		defines { "DEBUG" }
