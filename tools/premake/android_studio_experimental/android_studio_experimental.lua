@@ -48,6 +48,13 @@
 	
 	p.api.register 
 	{
+		name = "gradleversion",
+		scope = "workspace",
+		kind = "string"
+	}
+	
+	p.api.register 
+	{
 		name = "androiddependencies",
 		scope = "config",
 		kind = "list:string"
@@ -69,7 +76,7 @@
 	
 	p.api.register 
 	{
-		name = "androidminapilevel",
+		name = "androidminsdkversion",
 		scope = "config",
 		kind = "string"
 	}
@@ -80,16 +87,23 @@
 		p.push('buildscript {')
 		p.push('repositories {')
 		p.w('jcenter()')
-		p.pop('}')
+		p.w('google()')
+		p.pop('}') -- repositories
 		p.push('dependencies {')
-		p.w("classpath 'com.android.tools.build:gradle-experimental:0.7.3'")  
-		p.pop('}')
-		p.pop('}')
+		
+		if wks.gradleversion then
+			p.x("classpath '%s'", wks.gradleversion)
+		else
+			p.w("classpath 'com.android.tools.build:gradle-experimental:0.7.3'")
+		end  
+		
+		p.pop('}') -- dependencies
+		p.pop('}') -- build scripts
 		
 		p.push('allprojects {')
 		p.push('repositories {')
 		p.w('jcenter()')
-		p.push('flatDir {')
+		p.w('google()')
 		
 		-- add lib dirs from linking .aar or .jar files
 		dir_list = nil
@@ -106,11 +120,14 @@
 			end
 		end
 		
-		p.x('dirs %s', dir_list)
+		if dir_list then
+			p.push('flatDir {')
+			p.x('dirs %s', dir_list)
+			p.pop('}') -- flat dir
+		end
 		
-		p.pop('}')
-		p.pop('}')
-		p.pop('}')
+		p.pop('}') -- repositories
+		p.pop('}') -- all projects
 	end
 	
 	function m.generate_workspace_settings(wks)
@@ -121,13 +138,17 @@
 	end
 	
 	function get_android_program_kind(premake_kind)
-		if premake_kind == "WindowedApp" then 
-			return "com.android.model.application"
-		elseif premake_kind == "ConsoleApp" then
-			return "com.android.model.application"
-		elseif premake_kind == "StaticLib" then
-			return "com.android.model.library"
-		end
+		local premake_to_android_kind =
+		{
+			["WindowedApp"] = "com.android.application",
+			["ConsoleApp"] = "com.android.application",
+			["StaticLib"] = "com.android.library",
+			["SharedLib"] = "com.android.library",
+		}
+		return premake_to_android_kind[premake_kind]
+	end
+		
+	function get_cmake_program_kind(premake_kind)
 	end
 	
 	function get_dir(file)
@@ -192,15 +213,11 @@
 		end
 				
 		if dir_list then 
-			p.push((category .. ' {'))
-			p.push('source {')
-			p.x('srcDirs = [%s]', dir_list)
-			p.pop('}') -- source
-			p.pop('}') -- category
+			p.x((category .. '.srcDirs += [%s]'), dir_list)
 		end
 	end
 	
-	function m.generate_project(prj)
+	function generate_gradle_cpp()
 		p.x("apply plugin: '%s'", get_android_program_kind(prj.kind))
 	
 		p.push('model {')
@@ -244,7 +261,9 @@
 
         p.pop('}') -- ndk
         
-        p.push('buildTypes {')
+        
+		-- gradle config for experimental 0.7.3 with c++ support
+	    p.push('buildTypes {')
         for cfg in project.eachconfig(prj) do
         	p.push(string.lower(cfg.name) .. ' {')
 														
@@ -301,7 +320,8 @@
 					
 			p.pop('}') -- cfg.name
 		end
-		p.pop('}') -- sources				
+		p.pop('}') -- sources
+						
         p.pop('}') -- android
 		
 		-- lint options to avoid abort on error
@@ -340,6 +360,140 @@
 		end
 		
 		p.pop('}')
+	end
+	
+	function generate_cmake(prj)
+		-- todo
+		p.push('buildTypes {')
+        for cfg in project.eachconfig(prj) do
+        	p.push(string.lower(cfg.name) .. ' {')
+														
+			p.push('ndk {')
+					
+        	-- cpp flags
+        	for _, cppflag in ipairs(cfg.buildoptions) do
+        		p.x('cppFlags.add("%s")', cppflag)
+			end
+			
+			-- include directories
+			for _, incdir in ipairs(cfg.includedirs) do
+				p.x('cppFlags.add("-I%s")', incdir)	
+			end
+			
+			-- ld flags
+			for _, ldflag in ipairs(cfg.linkoptions) do
+				p.x('ldFlags.add("%s")', ldflag)
+			end
+			
+			-- lib directories
+			for _, libdir in ipairs(cfg.libdirs) do
+				p.x('ldFlags.add("-L%s")', libdir)
+			end
+			
+			-- defines
+			for _, define in ipairs(cfg.defines) do
+				p.x('ldFlags.add("-D%s")', define)
+			end
+			
+			-- links
+			for _, link in ipairs(config.getlinks(cfg, "system", "fullpath")) do
+				p.x('ldLibs.add("%s")', link)
+			end
+						
+			p.pop('}') -- ndk
+        	p.pop('}') -- cfg.name
+		end
+		
+        p.pop('}') -- buildType
+	end
+	
+	function m.generate_project(prj)
+		-- gradle config for gradle 4+
+		print(get_android_program_kind(prj.kind))
+		p.x("apply plugin: '%s'", get_android_program_kind(prj.kind))
+		
+		p.push('android {')
+		
+		-- sdk / ndk etc
+		for cfg in project.eachconfig(prj) do
+			-- set defaults
+			if cfg.androidsdkversion == nil then
+				cfg.androidsdkversion = "25"
+			end
+			if cfg.androidminsdkversion == nil then
+				cfg.androidminsdkversion = "19"
+			end		
+			p.x('compileSdkVersion %s', cfg.androidsdkversion)
+			p.push('defaultConfig {')
+			p.x('minSdkVersion %s', cfg.androidminsdkversion)
+			p.x('targetSdkVersion %s', cfg.androidsdkversion)
+			p.w('versionCode 1')
+			p.w('versionName "1.0"')
+			p.pop('}') -- defaultConfig.with 
+			break
+		end
+				
+		p.push('buildTypes {')
+        for cfg in project.eachconfig(prj) do
+        	p.push(string.lower(cfg.name) .. ' {')
+        	p.pop('}') -- cfg.name
+        end
+        p.pop('}') -- build types
+        	
+		-- cmake
+		p.push('externalNativeBuild {')
+		p.push('cmake {')
+		p.w('path "CMakeLists.txt"')
+		p.pop('}') -- cmake
+		p.pop('}') -- externalNativeBuild
+		
+		-- java and resource files
+		p.push('sourceSets {')
+		for cfg in project.eachconfig(prj) do
+        	p.push(string.lower(cfg.name) .. ' {')
+			m.add_sources(cfg, 'java', {'.java'}, {})
+			m.add_sources(cfg, 'res', {'.png', '.xml'}, {"AndroidManifest.xml"}, "/res/")
+			p.pop('}') -- cfg.name
+		end
+		p.pop('}') -- sources
+		
+		-- lint options to avoid abort on error
+		p.push('lintOptions {')
+		p.w("abortOnError = false")
+		p.pop('}')
+		
+		p.pop('}') -- android
+				
+		-- project dependencies, java links, etc
+		p.push('dependencies {')
+		
+		-- aar link.. jar too?
+		for cfg in project.eachconfig(prj) do
+			for _, link in ipairs(config.getlinks(cfg, "system", "fullpath")) do
+				ext = path.getextension(link)
+				if ext == ".aar" then
+					p.x("compile (name:'%s', ext:'%s')", path.getbasename(link), ext:sub(2, 4))
+				end
+			end
+			break
+		end
+		
+		-- android dependencies
+		for cfg in project.eachconfig(prj) do
+			if cfg.androiddependencies then
+				for _, dep in ipairs(cfg.androiddependencies) do
+					p.x("compile '%s'", dep)
+				end
+			end
+			break
+		end
+		
+		-- project compile links
+		for _, dep in ipairs(project.getdependencies(prj, "dependOnly")) do
+			p.x("compile project(':%s')", dep.name)
+		end
+		
+		p.pop('}') -- dependencies
 	end
 	
 	print("Premake: loaded module android-studio")
