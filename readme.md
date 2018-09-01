@@ -33,7 +33,7 @@ There are examples included of how to use the api's, set up projects and data, v
 
 **Getting started** 
 
-Take a look at getting started quick [guide](https://polymonster.github.io/index.html#getting-started)
+Take a look at getting started quick [guide](https://polymonster.github.io/articles.html#getting-started)
 
 **Shoutout to thirdparty stuff!**  
 - [Jsmn](https://github.com/zserge/jsmn)
