@@ -10,13 +10,14 @@ There are examples included of how to use the api's, set up projects and data, v
 ![sdf shadow](https://polymonster.github.io/assets/gifs/sdf-shadow.gif)
 
 **Platform support**  
-- Platforms: Windows, MacOS, Linux, iOS (wip).   
+- Platforms: Windows, MacOS, Linux, iOS, Android (wip).   
 - Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+.   
 - Compilers: vs2015, vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
 **Features**  
 - Data-Oriented Component Entity System - handling mesh rendering, animation and transformation heirarchies.
-- Editor - Scene, lighting, materials, 3D Volume texture generator and more.
+- Scene Editor - Create scenes, import models add lighting, materials.
+- 3D Volume Generator - Generate 3D signed distance field and volume textures for advanced rendering effects.
 - PMFX - Generic shader language, data driven renderer using JSON config to specify render state, passes and techniques.
 - Asset Loading - Models, Textures, Shaders and hot reloading.
 - Maths - Templated vector and matrix library, collection of intersection and test functions.
