@@ -1,4 +1,4 @@
-function add_osx_links()
+local function add_osx_links()
 links 
 { 
 	"Cocoa.framework",
@@ -9,7 +9,7 @@ links
 }
 end
 
-function add_linux_links()
+local function add_linux_links()
 links 
 { 
 	"pthread",
@@ -21,7 +21,7 @@ links
 }
 end
 
-function add_win32_links()
+local function add_win32_links()
 links 
 { 
 	"d3d11.lib", 
@@ -33,7 +33,7 @@ links
 }
 end
 
-function add_ios_links()
+local function add_ios_links()
 links 
 { 
 	"OpenGLES.framework",
@@ -44,7 +44,7 @@ links
 }
 end
 
-function add_ios_files( project_name, root_directory )
+local function add_ios_files( project_name, root_directory )
 files 
 { 
 	root_directory .. "/build/ios/ios_files/**.*"
@@ -56,7 +56,7 @@ excludes
 }
 end
 
-function setup_bullet()
+local function setup_bullet()
 	bullet_lib = "bullet_monolithic"
 	bullet_lib_debug = "bullet_monolithic_d"
 	bullet_lib_dir = "osx"
@@ -72,7 +72,7 @@ function setup_bullet()
 	end
 end
 
-function setup_android()
+local function setup_android()
 	files
 	{
 		pmtech_dir .. "pen/template/android/manifest/**.*",
@@ -80,13 +80,10 @@ function setup_android()
 	}
 end
 
-function setup_platform()
-	if _ACTION == "vs2017" or _ACTION == "vs2015" then
+local function setup_platform()
+	if platform_dir == "win32" then
 		systemversion(windows_sdk_version())
-		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
-	end
-			
-	if platform_dir == "win32" then 
+		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" } 
 		add_win32_links()
 	elseif platform_dir == "osx" then
 		add_osx_links()
