@@ -53,7 +53,7 @@ project "pen"
 	kind "StaticLib"
 	language "C++"
 	
-	if platform_dir == "android" then
+	if platform_dir ~= "android" then
 		files 
 		{
 			"include/*.h",
