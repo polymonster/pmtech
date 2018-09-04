@@ -1,0 +1,4 @@
+#Sat Sep 01 11:46:53 BST 2018
+base.0=/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/build/intermediates/transforms/dexMerger/debug/143
+path.0=classes.dex
+renamed.0=classes.dex

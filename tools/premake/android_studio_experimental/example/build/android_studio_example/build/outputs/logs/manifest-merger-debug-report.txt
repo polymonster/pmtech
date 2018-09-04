@@ -1,0 +1,59 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:2:1-20:12
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:2:1-20:12
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:2:1-20:12
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:2:1-20:12
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:2:1-20:12
+	package
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:3:5-29
+	android:versionName
+		INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:2:1-20:12
+		INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+	android:versionCode
+		INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:2:1-20:12
+		INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:2:11-69
+	android:installLocation
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:4:5-45
+application
+ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:6:5-19:19
+	android:label
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:8:9-47
+	android:allowBackup
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:7:9-35
+activity#com.as.example.main_activity
+ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:10:9-18:20
+	android:label
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:12:13-42
+	android:configChanges
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:13:13-59
+	android:name
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:11:13-56
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:14:13-17:29
+action#android.intent.action.MAIN
+ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:15:17-69
+	android:name
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:15:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:16:17-77
+	android:name
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml:16:27-74
+uses-sdk
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+		INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+		ADDED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml
+		INJECTED from /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/AndroidManifest.xml

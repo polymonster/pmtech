@@ -1,0 +1,7 @@
+cmake_minimum_required (VERSION 2.6)
+project (android_studio_example)
+add_library(android_studio_example SHARED  /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp)
+target_include_directories(android_studio_example PUBLIC  /Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/h)
+target_compile_options(android_studio_example PUBLIC  -std=c++11)
+target_link_libraries(android_studio_example  --no-undefined log)
+target_compile_definitions(android_studio_example PUBLIC  DEBUG)

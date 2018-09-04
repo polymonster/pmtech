@@ -1,0 +1,3 @@
+/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/edit_cache.dir
+/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/rebuild_cache.dir
+/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/android_studio_example.dir

@@ -1,0 +1,19 @@
+#Sat Sep 01 11:46:53 BST 2018
+path.1=classes.dex
+path.0=classes.dex
+renamed.5=classes6.dex
+renamed.4=classes5.dex
+renamed.3=classes4.dex
+renamed.2=classes3.dex
+renamed.1=classes2.dex
+renamed.0=classes.dex
+base.5=/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/build/intermediates/transforms/dexMerger/debug/149
+base.4=/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/build/intermediates/transforms/dexMerger/debug/146
+base.3=/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/build/intermediates/transforms/dexMerger/debug/148
+base.2=/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/build/intermediates/transforms/dexMerger/debug/145
+base.1=/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/build/intermediates/transforms/dexMerger/debug/150
+base.0=/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/build/intermediates/transforms/dexMerger/debug/147
+path.5=classes.dex
+path.4=classes.dex
+path.3=classes.dex
+path.2=classes.dex

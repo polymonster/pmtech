@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="3"><dataSet config="main"><source path="/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/main/assets"/><source path="/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/build/generated/assets/shaders/debug"/></dataSet><dataSet config="debug"><source path="/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/build/android_studio_example/src/debug/assets"/></dataSet></merger>

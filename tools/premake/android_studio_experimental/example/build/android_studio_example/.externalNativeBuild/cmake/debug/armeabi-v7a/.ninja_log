@@ -1,0 +1,17 @@
+# ninja log v5
+0	62	0	CMakeFiles/android_studio_example.dir/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp.o	befd85c24aa18a4e
+63	105	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libandroid_studio_example.so	8ca4f69959a6980f
+0	63	0	CMakeFiles/android_studio_example.dir/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp.o	befd85c24aa18a4e
+63	130	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libandroid_studio_example.so	8ca4f69959a6980f
+0	63	0	CMakeFiles/android_studio_example.dir/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp.o	befd85c24aa18a4e
+63	119	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libandroid_studio_example.so	8ca4f69959a6980f
+1	60	0	CMakeFiles/android_studio_example.dir/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp.o	befd85c24aa18a4e
+60	114	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libandroid_studio_example.so	8ca4f69959a6980f
+1	68	0	CMakeFiles/android_studio_example.dir/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp.o	befd85c24aa18a4e
+68	133	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libandroid_studio_example.so	8ca4f69959a6980f
+0	57	0	CMakeFiles/android_studio_example.dir/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp.o	befd85c24aa18a4e
+57	123	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libandroid_studio_example.so	8ca4f69959a6980f
+0	64	0	CMakeFiles/android_studio_example.dir/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp.o	befd85c24aa18a4e
+64	118	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libandroid_studio_example.so	591cf09525d1fb91
+0	73	0	CMakeFiles/android_studio_example.dir/Users/alex.dixon/dev/pmtech/tools/premake/android_studio_experimental/example/cpp/main.cpp.o	97426f25c59ef587
+73	140	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libandroid_studio_example.so	f997b7976e0c019f
