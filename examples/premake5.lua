@@ -1,4 +1,6 @@
-require "android_studio"
+if _ACTION == "android-studio" then
+	require "android_studio"
+end
 
 dofile "../tools/premake/options.lua"
 dofile "../tools/premake/globals.lua"
