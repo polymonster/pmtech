@@ -210,6 +210,11 @@ if __name__ == "__main__":
     if platform.system() == "Linux":
         premake_exec = os.path.join(tools_dir, "premake", "premake5_linux")
 
+    # add premake modules
+    android_studio = os.path.join(tools_dir, "premake", "premake-android-studio")
+    premake_exec += " --scripts="
+    premake_exec += android_studio
+
     shader_script = os.path.join(tools_dir, "build_shaders.py")
     textures_script = os.path.join(tools_dir, "build_textures.py")
     audio_script = os.path.join(tools_dir, "build_audio.py")

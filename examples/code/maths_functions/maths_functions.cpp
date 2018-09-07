@@ -784,9 +784,32 @@ maths_test_function test_functions[] = {
 void maths_test_ui(entity_scene* scene)
 {
     static s32  test_index = 0;
+    
+    static bool animate = false;
     static bool initialise = true;
+    
     if (ImGui::Combo("Test", &test_index, test_names, PEN_ARRAY_SIZE(test_names)))
         initialise = true;
+    
+    ImGui::Checkbox("Animate", &animate);
+    
+    if(animate)
+    {
+        static f32 swap_timer = 0.0f;
+        static u32 at = pen::timer_create("math_anim_timer");
+        swap_timer += pen::timer_elapsed_ms(at);
+        pen::timer_start(at);
+        
+        if(swap_timer > 500.0f)
+        {
+            initialise = true;
+            swap_timer = 0.0f;
+            test_index++;
+        }
+        
+        if(test_index >= PEN_ARRAY_SIZE(test_names))
+            test_index = 0;
+    }
 
     test_functions[test_index](scene, initialise);
 
