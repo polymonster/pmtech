@@ -714,6 +714,11 @@ namespace pen
     {
         return m_internal_object->get_name();
     }
+    
+    Str json::key() const
+    {
+        return m_internal_object->get_name();
+    }
 
     jsmntype_t json::type() const
     {

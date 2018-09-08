@@ -2349,7 +2349,7 @@ namespace put
                         {
                             u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
 
-                            if (has_technique_constants(pp.pmfx_shader, ti))
+                            if (has_technique_params(pp.pmfx_shader, ti))
                             {
                                 ImGui::Separator();
                                 ImGui::Text("%s", pp.name.c_str());

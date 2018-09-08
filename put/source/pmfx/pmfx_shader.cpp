@@ -385,6 +385,27 @@ namespace put
             program.program_index = pen::renderer_link_shader_program(link_params);
 
             pen::memory_free(link_params.constants);
+            
+            // generate technique textures meta data
+            program.textures                = nullptr;
+            u32 num_technique_textues       = j_techique["textures"].size();
+            
+            for (u32 i = 0; i < num_technique_textues; ++i)
+            {
+                pen::json jt = j_techique["textures"][i];
+                
+                technique_texture tt;
+                
+                tt.name = jt.name();
+                tt.sampler_state_name = jt["sampler_state"].as_str();
+                tt.unit = jt["unit"].as_u32();
+                tt.type_name = jt["type"].as_str();
+                tt.default_name = jt["default"].as_str();
+                tt.filename = tt.default_name;
+                tt.handle = put::load_texture(tt.filename.c_str());
+                
+                sb_push(program.textures, tt);
+            }
 
             // generate technique constants meta data
             program.constants               = nullptr;
@@ -464,6 +485,17 @@ namespace put
                 return nullptr;
 
             return k_pmfx_list[handle].techniques[index].constants;
+        }
+        
+        technique_texture* get_technique_textures(shader_handle handle, u32 index)
+        {
+            if (handle >= sb_count(k_pmfx_list))
+                return nullptr;
+            
+            if (index >= sb_count(k_pmfx_list[handle].techniques))
+                return nullptr;
+            
+            return k_pmfx_list[handle].techniques[index].textures;
         }
 
         u32 get_technique_cbuffer_size(shader_handle handle, u32 index)
@@ -741,20 +773,30 @@ namespace put
         {
             return get_technique_constants(shader, technique_index);
         }
-
-        void show_technique_ui(shader_handle shader, u32 technique_index, f32* material_data)
+        
+        bool has_technique_textures(shader_handle shader, u32 technique_index)
+        {
+            return get_technique_textures(shader, technique_index);
+        }
+        
+        bool has_technique_params(shader_handle shader, u32 technique_index)
+        {
+            return get_technique_constants(shader, technique_index) || get_technique_textures(shader, technique_index);
+        }
+        
+        void constant_ui(shader_handle shader, u32 technique_index, f32* material_data)
         {
             technique_constant* tc = get_technique_constants(shader, technique_index);
-
+            
             if (!tc)
                 return;
-
+            
             static bool colour_edit[64] = {0};
             u32         num_constants   = sb_count(tc);
             for (u32 i = 0; i < num_constants; ++i)
             {
                 f32* f = &material_data[tc[i].cb_offset];
-
+                
                 switch (tc[i].widget)
                 {
                     case CW_INPUT:
@@ -764,21 +806,21 @@ namespace put
                         ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f", 1.0f);
                         break;
                     case CW_COLOUR:
-
+                        
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(f[0] * 0.5f, f[1] * 0.5f, f[2] * 0.5f, 1.0f));
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(f[0], f[1], f[2], 1.0f));
-
+                        
                         if (ImGui::Button(tc[i].name.c_str()))
                         {
                             colour_edit[i] = true;
                         }
-
+                        
                         if (colour_edit[i])
                         {
                             ImGui::PushID("col_window");
-
+                            
                             ImGui::Begin(tc[i].name.c_str(), &colour_edit[i]);
-
+                            
                             if (tc[i].num_elements == 3)
                             {
                                 ImGui::ColorPicker3(tc[i].name.c_str(), f);
@@ -787,16 +829,62 @@ namespace put
                             {
                                 ImGui::ColorPicker4(tc[i].name.c_str(), f);
                             }
-
+                            
                             ImGui::End();
-
+                            
                             ImGui::PopID();
                         }
-
+                        
                         ImGui::PopStyleColor(2);
                         break;
                 }
             }
+        }
+        
+        void texture_ui(shader_handle shader, u32 technique_index)
+        {
+            technique_texture* tt = get_technique_textures(shader, technique_index);
+            
+            if (!tt)
+                return;
+            
+            u32 num_textures = sb_count(tt);
+            
+            ImGui::Columns(num_textures);
+            
+            static bool open_fb = false;
+            
+            for(u32 i = 0; i < num_textures; ++i)
+            {
+                technique_texture& t = tt[i];
+                
+                ImGui::Text("unit: %i [%s]", t.unit, t.name.c_str());
+                if( ImGui::ImageButton((void*)&t.handle, ImVec2(64, 64)) )
+                {
+                    open_fb = true;
+                }
+                
+                ImGui::Text("file: %s", t.filename.c_str());
+                
+                ImGui::NextColumn();
+            }
+            
+            if(open_fb)
+            {
+                const c8* fn = dev_ui::file_browser(open_fb, dev_ui::FB_OPEN);
+                if(fn)
+                {
+                    int a = 0;
+                }
+            }
+            
+            ImGui::Columns(1);
+        }
+
+        void show_technique_ui(shader_handle shader, u32 technique_index, f32* material_data)
+        {
+            constant_ui(shader, technique_index, material_data);
+            texture_ui(shader, technique_index);
         }
     } // namespace pmfx
 } // namespace put

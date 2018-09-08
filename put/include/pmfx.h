@@ -108,6 +108,19 @@ namespace put
             u32 cb_offset    = 0;
             u32 num_elements = 0;
         };
+        
+        struct technique_texture
+        {
+            Str name;
+            Str sampler_state_name;
+            Str type_name;
+            Str default_name;
+            Str filename;
+            
+            u32 handle;
+            u32 unit;
+            u32 sampler_state;
+        };
 
         struct shader_program
         {
@@ -124,6 +137,7 @@ namespace put
 
             f32*                constant_defaults;
             technique_constant* constants;
+            technique_texture*  textures;
         };
 
         enum rt_flags
@@ -196,6 +210,8 @@ namespace put
 
         void show_technique_ui(shader_handle shader, u32 technique_index, f32* data);
         bool has_technique_constants(shader_handle shader, u32 technique_index);
+        bool has_technique_textures(shader_handle shader, u32 technique_index);
+        bool has_technique_params(shader_handle shader, u32 technique_index);
 
         void poll_for_changes();
     } // namespace pmfx

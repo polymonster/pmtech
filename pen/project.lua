@@ -53,30 +53,25 @@ project "pen"
 	kind "StaticLib"
 	language "C++"
 	
-	if platform_dir ~= "android" then
-		files 
-		{
-			"include/*.h",
-			"source/*.cpp",
-		 
-			"include/" .. platform_dir .. "/**.h", 
-			"include/" .. renderer_dir .. "/**.h",
-		
-			"source/" .. renderer_dir .. "/**.cpp",
-		
-			"source/" .. platform_dir .. "/**.cpp",
-			"source/" .. platform_dir .. "/**.mm",
-		
-			"../third_party/str/*.cpp", 
-		}
-		setup_platform()
-	else
-		files 
-		{
-			"source/" .. platform_dir .. "/**.cpp",
-		}
-	end
+	setup_env()
+	setup_platform() 
 	
+    files 
+    {
+        "include/*.h",
+        "source/*.cpp",
+     
+        "include/" .. platform_dir .. "/**.h", 
+        "include/" .. renderer_dir .. "/**.h",
+    
+        "source/" .. renderer_dir .. "/**.cpp",
+    
+        "source/" .. platform_dir .. "/**.cpp",
+        "source/" .. platform_dir .. "/**.mm",
+    
+        "../third_party/str/*.cpp", 
+    }
+
 	includedirs 
 	{
 		"include",

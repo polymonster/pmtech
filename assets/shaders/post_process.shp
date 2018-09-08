@@ -192,6 +192,39 @@ ps_output ps_depth_of_field( vs_output input )
 	return output;
 }
 
+ps_output ps_colour_lut( vs_output input )
+{
+    ps_output output;
+    
+    float2 tc = input.texcoord.xy;
+    float4 input_colour = sample_texture(src_texture_0, tc); 
+    
+    float input_b = input_colour.b * 63.0;
+
+    float2 quad_1;
+    quad_1.y = floor(floor(input_b) / 8.0);
+    quad_1.x = floor(input_b) - (quad_1.y * 8.0);
+
+    float2 quad_2;
+    quad_2.y = floor(ceil(input_b) / 8.0);
+    quad_2.x = ceil(input_b) - (quad_2.y * 8.0);
+
+    float2 tc_1;
+    tc_1.x = (quad_1.x * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.r);
+    tc_1.y = (quad_1.y * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.g);
+
+    float2 tc_2;
+    tc_2.x = (quad_2.x * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.r);
+    tc_2.y = (quad_2.y * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.g);
+
+    float4 remapped_1 = sample_texture(lookup_texture, tc_1);
+    float4 remapped_2 = sample_texture(lookup_texture, tc_2);
+
+    output.colour = lerp(remapped_1, remapped_2, fract(input_b));    
+
+    return output;
+}
+
 pmfx:
 {	
 	"blit":
@@ -204,6 +237,42 @@ pmfx:
 	{
 		"vs": "vs_ndc_quad",
 		"ps": "ps_blit_depth"
+	},
+	
+	"colour_lut":
+	{
+		"vs": "vs_ndc_quad",
+		"ps": "ps_colour_lut",
+		
+		"textures": 
+		{
+		    "lookup_texture":
+		    {
+		        "type": "texture_2d",
+		        "unit": 8,
+		        "shader": "ps",
+		        "sampler": "clamp_linear",
+		        "default": "data/textures/luts/identity.dds"
+		    },
+		    
+		    "test":
+		    {
+		        "type": "texture_2d",
+		        "unit": 9,
+		        "shader": "ps",
+		        "sampler": "clamp_linear",
+		        "default": "data/textures/defaults/normal.dds"
+		    },
+		    
+		    "another":
+		    {
+		        "type": "texture_2d",
+		        "unit": 10,
+		        "shader": "ps",
+		        "sampler": "clamp_linear",
+		        "default": "data/textures/defaults/spec.dds"
+		    }
+		}
 	},
 	
 	"high_pass":

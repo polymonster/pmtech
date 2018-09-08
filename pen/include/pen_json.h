@@ -73,7 +73,8 @@ namespace pen
         static json combine(const json& j1, const json& j2, s32 indent = 0);
 
         Str        dumps() const;
-        Str        name() const;
+        Str        key() const;
+        Str        name() const; // same as key
         jsmntype_t type() const;
         u32        size() const;
 

@@ -109,6 +109,17 @@
 			technique: blit_depth
 		},
 		
+		colour_lut:
+		{
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: post_process,
+			depth_stencil_state: disabled,
+			pmfx_shader: post_process,
+			technique: colour_lut
+		},
+		
 		high_pass:
 		{
 			colour_write_mask: 0xf,
@@ -332,6 +343,18 @@
 				],
 			}
 		],
+		
+		colour_lut: [
+			{ 
+				inherit: colour_lut,
+				target: [pp_output_full],
+				camera: model_viewer_camera,
+				sampler_bindings:
+				[
+					{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+				]
+			}
+		]
 		
 		blit_depth: [
 			{ 

@@ -249,6 +249,7 @@ namespace put
                 initialise = false;
             }
 
+            ImGui::SetNextWindowSize(ImVec2(800, 450), ImGuiCond_FirstUseEver);
             if (ImGui::Begin("File Browser", &dialog_open))
             {
                 ImGui::Text("%s", selected_path.c_str());
