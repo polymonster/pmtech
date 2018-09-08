@@ -1,14 +1,11 @@
-function add_gnu_make_links()
-	if _ACTION == "gmake" then
+function add_pmtech_links()
+	configuration "Debug"
+		links { "pen_d", "put_d" }
+
+	configuration "Release"
+		links { "pen", "put" }
 	
-		configuration "Debug"
-			links { "pen_d", "put_d" }
-	
-		configuration "Release"
-			links { "pen", "put" }
-		
-		configuration {}
-	end
+	configuration {}
 end
 
 local function add_osx_links()
@@ -20,7 +17,7 @@ local function add_osx_links()
 		"iconv",
 		"fmod"
 	}
-	add_gnu_make_links()
+	add_pmtech_links()
 end
 
 local function add_linux_links()
@@ -33,11 +30,11 @@ local function add_linux_links()
 		"X11",
 		"fmod"
 	}
-	add_gnu_make_links()
+	add_pmtech_links()
 end
 
 local function add_win32_links()
-links 
+	links 
 	{ 
 		"d3d11.lib", 
 		"dxguid.lib", 
@@ -46,6 +43,7 @@ links
 		"fmod64_vc.lib",
 		"Shlwapi.lib"	
 	}
+	add_pmtech_links()
 end
 
 local function add_ios_links()
