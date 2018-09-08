@@ -4,7 +4,7 @@ import os.path
 import sys
 import shutil
 import json
-import dependencies
+import build_scripts.dependencies as dependencies
 import time
 import platform
 
@@ -134,8 +134,8 @@ def get_platform_info():
 
     if platform_name == "ios":
         extra_target_info = "--xcode_target=ios"
-        extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "copy_files.py"))
-        extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "set_xcode_target.py"))
+        # extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "copy_files.py"))
+        # extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "set_xcode_target.py"))
 
     project_options = ide + " --renderer=" + renderer + " " + extra_target_info
 
@@ -215,10 +215,10 @@ if __name__ == "__main__":
     premake_exec += " --scripts="
     premake_exec += android_studio
 
-    shader_script = os.path.join(tools_dir, "build_shaders.py")
-    textures_script = os.path.join(tools_dir, "build_textures.py")
-    audio_script = os.path.join(tools_dir, "build_audio.py")
-    models_script = os.path.join(tools_dir, "build_models.py")
+    shader_script = os.path.join(tools_dir, "build_scripts", "build_shaders.py")
+    textures_script = os.path.join(tools_dir, "build_scripts", "build_textures.py")
+    audio_script = os.path.join(tools_dir, "build_scripts", "build_audio.py")
+    models_script = os.path.join(tools_dir, "build_scripts", "build_models.py")
 
     clean_destinations = False
 

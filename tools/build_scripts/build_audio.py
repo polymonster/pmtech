@@ -1,10 +1,8 @@
-import os
 import os.path
 import shutil
 import json
-import helpers
 import time
-import build
+import util
 stats_start = time.time()
 
 print("--------------------------------------------------------------------------------")
@@ -14,9 +12,9 @@ print("-------------------------------------------------------------------------
 config = open("build_config.json")
 build_config = json.loads(config.read())
 
-pmtech_dir = build.correct_path(build_config["pmtech_dir"])
+pmtech_dir = util.correct_path(build_config["pmtech_dir"])
 
-platform_name = build.get_platform_name()
+platform_name = util.get_platform_name()
 print(platform_name)
 
 audio_dir = os.path.join(os.getcwd(), "assets", "audio")

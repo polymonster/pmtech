@@ -1,15 +1,17 @@
 import os
 import xml.etree.ElementTree as ET
 import struct
-import parse_meshes
-import parse_materials
-import parse_animations
-import helpers
 import json
 import dependencies
 import time
-import parse_obj
-import build
+import util
+
+import models.helpers as helpers
+import models.parse_meshes as parse_meshes
+import models.parse_materials as parse_materials
+import models.parse_animations as parse_animations
+import models.parse_obj as parse_obj
+
 stats_start = time.time()
 
 
@@ -22,7 +24,7 @@ root_dir = os.getcwd()
 config = open("build_config.json")
 build_config = json.loads(config.read())
 
-model_dir = build.correct_path(build_config["models_dir"])
+model_dir = util.correct_path(build_config["models_dir"])
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 transform_types = ["translate", "rotate", "matrix"]
@@ -310,7 +312,7 @@ for root, dirs, files in os.walk(model_dir):
                           "parse_scene.py"]
 
             for lib_file in models_lib:
-                dependency_inputs.append(main_file.replace("build_models.py", lib_file))
+                dependency_inputs.append(main_file.replace("build_models.py", os.path.join("models", lib_file)))
 
             file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
 

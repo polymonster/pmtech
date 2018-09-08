@@ -4,10 +4,10 @@ import os.path
 import re
 import sys
 import json
-import dependencies
 import math
 import time
-import build
+import dependencies
+import util
 
 stats_start = time.time()
 
@@ -15,7 +15,7 @@ root_dir = os.getcwd()
 
 shader_sub_platform = ""
 shader_platform = "hlsl"
-os_platform = build.get_platform_name()
+os_platform = util.get_platform_name()
 
 if os_platform == "osx" or os_platform == "linux":
     shader_platform = "glsl"
@@ -35,13 +35,13 @@ root_dir = os.getcwd()
 
 config = open("build_config.json")
 build_config = json.loads(config.read())
-pmtech_dir = build.correct_path(build_config["pmtech_dir"])
+pmtech_dir = util.correct_path(build_config["pmtech_dir"])
 
 tools_dir = os.path.join(pmtech_dir, "tools")
 compiler_dir = os.path.join(pmtech_dir, "tools", "bin", "fxc")
 temp_dir = os.path.join(root_dir, "temp")
 
-this_file = os.path.join(tools_dir, "build_shaders.py")
+this_file = os.path.join(tools_dir, "build_scripts", "build_shaders.py")
 macros_file = os.path.join(tools_dir, "_shader_macros.h")
 
 if not os.path.exists(temp_dir):
@@ -388,6 +388,8 @@ def find_generic_functions(shader_text):
 
 
 def find_texture_samplers(shader_text):
+    global technique_texture
+
     start = shader_text.find("declare_texture_samplers")
     if start == -1:
         return "\n"
@@ -395,6 +397,13 @@ def find_texture_samplers(shader_text):
     end = shader_text.find("};", start)
     texture_sampler_text = shader_text[start:end] + "\n"
     texture_sampler_text = texture_sampler_text.replace("\t", "")
+
+    # add technique textures
+    for alias in technique_texture:
+        texture_sampler_text += str(alias[0]) + "( " + str(alias[1]) + ", " + str(alias[2]) + " );\n"
+
+    texture_sampler_text += "\n"
+
     return texture_sampler_text
 
 
@@ -720,6 +729,8 @@ def check_dependencies(filename, included_files):
         for prev_built_with_file in info["files"]:
             sanitized_name = dependencies.sanitize_filename(prev_built_with_file["name"])
             if sanitized_name in file_list:
+                if not os.path.exists(sanitized_name):
+                    return False
                 if prev_built_with_file["timestamp"] < os.path.getmtime(sanitized_name):
                     info_file.close()
                     print(os.path.basename(sanitized_name) + " is out of date")
@@ -932,6 +943,24 @@ def shader_compile_v1():
                 create_vsc_psc(file_and_path, "vs_main", "ps_main", "default")
 
 
+technique_texture = []
+
+
+def generate_technique_texture_variables(pmfx_block, technique_name):
+    global technique_texture
+    technique_texture = []
+
+    technique = pmfx_block[technique_name]
+    if "textures" not in technique.keys():
+        return
+
+    textures = technique["textures"]
+    for t in textures.keys():
+        technique_texture.append((textures[t]["type"], t, textures[t]["unit"]))
+
+    return
+
+
 constant_info = [["float", 1], ["float2", 2], ["float3", 3], ["float4", 4], ["float4x4", 16]]
 technique_cb_str = ""
 
@@ -1026,6 +1055,7 @@ def parse_pmfx(filename, root):
                 pmfx_block[technique], c_stuct = generate_technique_constant_buffers(pmfx_block, technique)
                 generate_defines(pmfx_block, technique)
                 shader_c_struct += c_stuct
+                generate_technique_texture_variables(pmfx_block, technique)
                 ps_name = ""
                 if "ps" in pmfx_block[technique].keys():
                     ps_name = pmfx_block[technique]["ps"]

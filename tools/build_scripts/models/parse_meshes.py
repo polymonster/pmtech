@@ -1,9 +1,7 @@
-import helpers
-import os
+import models.helpers as helpers
 import struct
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
-
 
 class skin_controller:
     bind_shape_matrix = []

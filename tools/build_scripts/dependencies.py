@@ -108,9 +108,11 @@ def check_up_to_date(dependencies, dest_file):
         for key in d.keys():
             dependecy_file = sanitize_filename(key)
             if dest_file == dependecy_file:
-                file_exists = True
                 for i in d[key]:
+                    file_exists = True
                     sanitized = sanitize_filename(i["name"])
+                    if not os.path.exists(sanitized):
+                        return False
                     if i["timestamp"] < os.path.getmtime(sanitized):
                         return False
 

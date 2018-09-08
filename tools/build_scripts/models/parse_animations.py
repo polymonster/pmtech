@@ -1,5 +1,5 @@
 import struct
-import helpers
+import models.helpers as helpers
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 

@@ -44,16 +44,52 @@ links
 }
 end
 
-local function add_ios_files( project_name, root_directory )
+local function add_ios_files(project_name, root_directory)
 files 
 { 
-	root_directory .. "/build/ios/ios_files/**.*"
+	(pmtech_dir .. "/template/ios/**.*"),
+	"data/**.*"
 }
 
 excludes 
 { 
-	root_directory .. "/" .. project_name .. "**.DS_Store"
+	("**.DS_Store")
 }
+
+xcodebuildresources
+{
+	".dds", ".json", ".pmm", ".pms"
+}
+end
+
+local function setup_android()
+	files
+	{
+		pmtech_dir .. "pen/template/android/manifest/**.*",
+		pmtech_dir .. "pen/template/android/activity/**.*"
+	}
+	
+	androidabis
+	{
+		"armeabi-v7a", "x86"
+	}
+end
+
+local function setup_platform(project_name, root_directory)
+	if platform_dir == "win32" then
+		systemversion(windows_sdk_version())
+		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" } 
+		add_win32_links()
+	elseif platform_dir == "osx" then
+		add_osx_links()
+	elseif platform_dir == "ios" then
+		add_ios_links() 
+		add_ios_files(project_name, root_directory)
+	elseif platform_dir == "linux" then 
+		add_linux_links()
+	elseif platform_dir == "android" then 
+		setup_android()
+	end
 end
 
 local function setup_bullet()
@@ -70,48 +106,39 @@ local function setup_bullet()
 		bullet_lib = (bullet_lib .. "_x64")
 		bullet_lib_debug = (bullet_lib_debug .. "_x64")
 	end
+	
+	libdirs
+	{
+		(pmtech_dir .. "third_party/bullet/lib/" .. bullet_lib_dir)
+	}
+	
+	configuration "Debug"
+		links { bullet_lib_debug }
+	
+	configuration "Release"
+		links { bullet_lib }
+	
+	configuration {}
 end
 
-local function setup_android()
-	files
+local function setup_fmod()
+	libdirs
 	{
-		pmtech_dir .. "pen/template/android/manifest/**.*",
-		pmtech_dir .. "pen/template/android/activity/**.*"
+		(pmtech_dir .. "third_party/fmod/lib/" .. platform_dir)
 	}
 end
 
-local function setup_platform()
-	if platform_dir == "win32" then
-		systemversion(windows_sdk_version())
-		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" } 
-		add_win32_links()
-	elseif platform_dir == "osx" then
-		add_osx_links()
-	elseif platform_dir == "ios" then
-		add_ios_links() 
-		add_ios_files( project_name, root_directory )
-	elseif platform_dir == "linux" then 
-		add_linux_links()
-	elseif platform_dir == "android" then 
-		setup_android()
-	end
+function setup_modules()
+	setup_bullet()
+	setup_fmod()
 end
 
-function create_app( project_name, source_directory, root_directory )
+function create_app(project_name, source_directory, root_directory)
 project ( project_name )
 	kind "WindowedApp"
 	language "C++"
 	dependson { "pen", "put" }
-	
-	libdirs
-	{ 
-		pmtech_dir .. "pen/lib/" .. platform_dir, 
-		pmtech_dir .. "put/lib/" .. platform_dir,
-				
-		(pmtech_dir .. "third_party/fmod/lib/" .. platform_dir),
-		(pmtech_dir .. "third_party/bullet/lib/" .. bullet_lib_dir),
-	}
-	
+		
 	includedirs
 	{
 		pmtech_dir .. "pen/include",
@@ -123,10 +150,6 @@ project ( project_name )
 		
 		"include/",
 	}
-	
-	location ( root_directory .. "/build/" .. platform_dir )
-	targetdir ( root_directory .. "/bin/" .. platform_dir )
-	debugdir ( root_directory .. "/bin/" .. platform_dir)
 		
 	files 
 	{ 
@@ -137,22 +160,31 @@ project ( project_name )
 		(root_directory .. "code/" .. source_directory .. "/**.mm")
 	}
 	
-	setup_platform()
-	setup_bullet()
-		 
+	libdirs
+	{ 
+		pmtech_dir .. "pen/lib/" .. platform_dir, 
+		pmtech_dir .. "put/lib/" .. platform_dir,
+	}
+	
+	setup_env()
+	setup_platform(project_name, root_directory)
+	setup_modules()
+	
+	location (root_directory .. "/build/" .. platform_dir)
+	targetdir (root_directory .. "/bin/" .. platform_dir)
+	debugdir (root_directory .. "/bin/" .. platform_dir)
+	
 	configuration "Debug"
 		defines { "DEBUG" }
 		flags { "WinMain" }
 		symbols "On"
 		targetname (project_name .. "_d")
-		links { "put", "pen", bullet_lib_debug }
 		architecture "x64"
   
 	configuration "Release"
 		defines { "NDEBUG" }
 		flags { "WinMain", "OptimizeSpeed" }
 		targetname (project_name)
-		links { "put", "pen", bullet_lib }
 		architecture "x64"
 		
 end

@@ -1,6 +1,9 @@
+import sys
+sys.path.append("..")
+
 import struct
 import os
-import build
+import util as util
 
 version_number = 1
 anim_version_number = 1
@@ -8,7 +11,7 @@ current_filename = ""
 author = ""
 log_level = "verbose"
 
-platform = build.get_platform_name()
+platform = util.get_platform_name()
 build_dir = os.path.join(os.getcwd(), "bin", platform, "data", "models")
 
 
