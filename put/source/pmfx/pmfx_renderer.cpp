@@ -1696,8 +1696,6 @@ namespace put
                 u32 pass_counter = 0;
                 for (auto& p : s_post_process_passes)
                 {
-                    p.viewport_correction = !p.viewport_correction;
-
                     for (u32 i = 0; i < p.num_colour_targets; ++i)
                         p.render_targets[i] = get_virtual_target(p.id_render_target[i], VRT_WRITE);
 
