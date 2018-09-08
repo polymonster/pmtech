@@ -48,7 +48,7 @@ local function add_ios_files(project_name, root_directory)
 files 
 { 
 	(pmtech_dir .. "/template/ios/**.*"),
-	"data/**.*"
+	"bin/ios/data"
 }
 
 excludes 
@@ -58,15 +58,15 @@ excludes
 
 xcodebuildresources
 {
-	".dds", ".json", ".pmm", ".pms"
+	"bin/ios/data"
 }
 end
 
 local function setup_android()
 	files
 	{
-		pmtech_dir .. "pen/template/android/manifest/**.*",
-		pmtech_dir .. "pen/template/android/activity/**.*"
+		pmtech_dir .. "/template/android/manifest/**.*",
+		pmtech_dir .. "/template/android/activity/**.*"
 	}
 	
 	androidabis
