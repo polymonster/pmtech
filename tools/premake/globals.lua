@@ -46,12 +46,13 @@ function setup_from_action()
             build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
         end
-    
     elseif _ACTION == "xcode4" then 
         platform_dir = "osx" 
+        
         if not renderer_dir then
             renderer_dir = "opengl"
         end
+        
         if _OPTIONS["xcode_target"] then
             platform_dir = _OPTIONS["xcode_target"]
         end
@@ -65,7 +66,8 @@ function setup_from_action()
         end
     elseif _ACTION == "android-studio" then 
         build_cmd = { "-std=c++11" }
-    elseif _ACTION == "vs2017" then 
+    elseif _ACTION == "vs2017" then
+        platform_dir = "win32" 
         build_cmd = "/Ob1" -- use force inline
     end
     
