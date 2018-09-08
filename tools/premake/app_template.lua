@@ -1,9 +1,9 @@
 function add_pmtech_links()
 	configuration "Debug"
-		links { "pen_d", "put_d" }
+		links { "put_d", "pen_d" }
 
 	configuration "Release"
-		links { "pen", "put" }
+		links {  "put", "pen" }
 	
 	configuration {}
 end
@@ -21,6 +21,7 @@ local function add_osx_links()
 end
 
 local function add_linux_links()
+	add_pmtech_links()
 	links 
 	{ 
 		"pthread",
@@ -30,7 +31,6 @@ local function add_linux_links()
 		"X11",
 		"fmod"
 	}
-	add_pmtech_links()
 end
 
 local function add_win32_links()
