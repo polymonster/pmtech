@@ -35,6 +35,7 @@
 
 #define lerp mix
 #define modf mod
+#define frac fract
 
 #define mul( A, B ) (A * B)
 #define mul_tbn( A, B ) (B * A)

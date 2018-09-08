@@ -36,10 +36,10 @@ namespace put
 
             geometry_resource* p_geometry = new geometry_resource;
 
-            vertex_2d v[num_verts] = {vec4f(-1.0f, -1.0f, 0.0f, 1.0f), vec4f(0.0f, 0.0f, 0.0f, 0.0f),
-                                      vec4f(-1.0f, 1.0f, 0.0f, 1.0f),  vec4f(0.0f, 1.0f, 0.0f, 0.0f),
-                                      vec4f(1.0f, 1.0f, 0.0f, 1.0f),   vec4f(1.0f, 1.0f, 0.0f, 0.0f),
-                                      vec4f(1.0f, -1.0f, 0.0f, 1.0f),  vec4f(1.0f, 0.0f, 0.0f, 0.0f)};
+            vertex_2d v[num_verts] = {vec4f(-1.0f, -1.0f, 0.0f, 1.0f), vec4f(0.0f, 1.0f, 0.0f, 0.0f),
+                                      vec4f(-1.0f, 1.0f, 0.0f, 1.0f),  vec4f(0.0f, 0.0f, 0.0f, 0.0f),
+                                      vec4f(1.0f, 1.0f, 0.0f, 1.0f),   vec4f(1.0f, 0.0f, 0.0f, 0.0f),
+                                      vec4f(1.0f, -1.0f, 0.0f, 1.0f),  vec4f(1.0f, 1.0f, 0.0f, 0.0f)};
 
             u16 indices[num_indices] = {0, 1, 2, 2, 3, 0};
 

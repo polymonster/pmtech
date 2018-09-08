@@ -217,10 +217,10 @@ ps_output ps_colour_lut( vs_output input )
     tc_2.x = (quad_2.x * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.r);
     tc_2.y = (quad_2.y * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.g);
 
-    float4 remapped_1 = sample_texture(lookup_texture, tc_1);
-    float4 remapped_2 = sample_texture(lookup_texture, tc_2);
+    float4 remapped_1 = sample_texture_level(lookup_texture, tc_1, 0.0);
+    float4 remapped_2 = sample_texture_level(lookup_texture, tc_2, 0.0);
 
-    output.colour = lerp(remapped_1, remapped_2, fract(input_b));   
+    output.colour = lerp(remapped_1, remapped_2, frac(input_b));   
         
     return output;
 }

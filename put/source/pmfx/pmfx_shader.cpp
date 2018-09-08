@@ -875,6 +875,7 @@ namespace put
             ImGui::Columns(num_textures);
             
             static bool open_fb = false;
+            static s32 select_index = -1;
             
             for(u32 i = 0; i < num_textures; ++i)
             {
@@ -883,7 +884,11 @@ namespace put
                 ImGui::Text("unit: %i [%s]", t.unit, t.name.c_str());
                 if( ImGui::ImageButton((void*)&t.handle, ImVec2(64, 64)) )
                 {
-                    open_fb = true;
+                    if (select_index == -1)
+                    {
+                        open_fb = true;
+                        select_index = i;
+                    }
                 }
                 
                 ImGui::Text("file: %s", t.filename.c_str());
@@ -896,7 +901,10 @@ namespace put
                 const c8* fn = dev_ui::file_browser(open_fb, dev_ui::FB_OPEN);
                 if(fn)
                 {
-                    int a = 0;
+                    tt[select_index].name = fn;
+                    tt[select_index].handle = put::load_texture(fn);
+
+                    select_index = -1;
                 }
             }
             

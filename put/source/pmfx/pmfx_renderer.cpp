@@ -1469,6 +1469,8 @@ namespace put
                     {
                         technique_texture* tt = get_technique_textures(new_view.pmfx_shader, ti);
                         
+                        static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
+
                         u32 num_tt = sb_count(tt);
                         for(u32 i = 0; i < num_tt; ++i)
                         {
@@ -1476,8 +1478,9 @@ namespace put
                             sb.handle = tt[i].handle;
                             sb.sampler_unit = tt[i].unit;
                             sb.shader_type = PEN_SHADER_TYPE_PS;
+                            sb.sampler_state = get_render_state_by_name(id_default_sampler_state);
                             sb.input_texture = true;
-                            
+
                             new_view.sampler_bindings.push_back(sb);
                         }
                     }
