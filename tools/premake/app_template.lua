@@ -1,3 +1,17 @@
+function add_gnu_make_links()
+if _ACTION == "gmake"
+	
+	configuration "Debug"
+		links { "pen_d", "put_d" }
+	
+	configuration "Release"
+		links { "pen", "put" }
+		
+	configuration {}
+end
+end
+
+
 local function add_osx_links()
 links 
 { 
@@ -7,6 +21,7 @@ links
 	"iconv",
 	"fmod"
 }
+add_gnu_make_links()
 end
 
 local function add_linux_links()
@@ -19,6 +34,7 @@ links
 	"X11",
 	"fmod"
 }
+add_gnu_make_links()
 end
 
 local function add_win32_links()
