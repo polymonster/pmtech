@@ -220,8 +220,8 @@ ps_output ps_colour_lut( vs_output input )
     float4 remapped_1 = sample_texture(lookup_texture, tc_1);
     float4 remapped_2 = sample_texture(lookup_texture, tc_2);
 
-    output.colour = lerp(remapped_1, remapped_2, fract(input_b));    
-
+    output.colour = lerp(remapped_1, remapped_2, fract(input_b));   
+        
     return output;
 }
 
@@ -244,7 +244,7 @@ pmfx:
 		"vs": "vs_ndc_quad",
 		"ps": "ps_colour_lut",
 		
-		"textures": 
+		"texture_samplers": 
 		{
 		    "lookup_texture":
 		    {
@@ -253,24 +253,6 @@ pmfx:
 		        "shader": "ps",
 		        "sampler": "clamp_linear",
 		        "default": "data/textures/luts/identity.dds"
-		    },
-		    
-		    "test":
-		    {
-		        "type": "texture_2d",
-		        "unit": 9,
-		        "shader": "ps",
-		        "sampler": "clamp_linear",
-		        "default": "data/textures/defaults/normal.dds"
-		    },
-		    
-		    "another":
-		    {
-		        "type": "texture_2d",
-		        "unit": 10,
-		        "shader": "ps",
-		        "sampler": "clamp_linear",
-		        "default": "data/textures/defaults/spec.dds"
 		    }
 		}
 	},

@@ -1538,7 +1538,7 @@ namespace pen
     {
         if (texture_index == 0)
             return;
-
+        
         resource_allocation& res = resource_pool[texture_index];
 
         CHECK_CALL(glActiveTexture(GL_TEXTURE0 + resource_slot));

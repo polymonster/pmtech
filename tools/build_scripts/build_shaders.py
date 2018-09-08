@@ -174,7 +174,7 @@ def generate_shader_info(
             "data_type": data_type,
             "fragments": fragments,
             "type": tex_type,
-            "location": int(texture_samplers_split[offset+2])
+            "unit": int(texture_samplers_split[offset+2])
         }
         i = offset+3
         shader_info["texture_samplers"].append(sampler_desc)
@@ -951,10 +951,10 @@ def generate_technique_texture_variables(pmfx_block, technique_name):
     technique_texture = []
 
     technique = pmfx_block[technique_name]
-    if "textures" not in technique.keys():
+    if "texture_samplers" not in technique.keys():
         return
 
-    textures = technique["textures"]
+    textures = technique["texture_samplers"]
     for t in textures.keys():
         technique_texture.append((textures[t]["type"], t, textures[t]["unit"]))
 

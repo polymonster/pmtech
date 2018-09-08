@@ -120,6 +120,7 @@ namespace put
             u32 handle;
             u32 unit;
             u32 sampler_state;
+            u32 shader_type;
         };
 
         struct shader_program
@@ -171,7 +172,7 @@ namespace put
             u32 pp_read  = PEN_INVALID_HANDLE;
         };
 
-        // pmfx renderer ------------------------------------------------------------------------------------------
+        // pmfx renderer ---------------------------------------------------------------------------------------------------
 
         void init(const c8* filename);
         void shutdown();
@@ -190,7 +191,7 @@ namespace put
         void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
         u32                  get_render_state_by_name(hash_id id_name);
 
-        // pmfx shader ------------------------------------------------------------------------------------------
+        // pmfx shader -----------------------------------------------------------------------------------------------------
 
         shader_handle load_shader(const c8* pmfx_name);
         void          release_shader(shader_handle handle);
@@ -207,6 +208,7 @@ namespace put
         u32                 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
         technique_constant* get_technique_constants(shader_handle handle, u32 index);
         u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
+        technique_texture*  get_technique_textures(shader_handle handle, u32 index);
 
         void show_technique_ui(shader_handle shader, u32 technique_index, f32* data);
         bool has_technique_constants(shader_handle shader, u32 technique_index);

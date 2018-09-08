@@ -126,6 +126,7 @@ namespace
         u32     sampler_unit;
         u32     sampler_state;
         u32     shader_type;
+        bool    input_texture = false;
     };
 
     struct view_params
@@ -1452,7 +1453,7 @@ namespace put
                 if (is_valid(new_view.pmfx_shader))
                 {
                     u32 ti = get_technique_index(new_view.pmfx_shader, new_view.technique, 0);
-                    if (get_technique_constants(new_view.pmfx_shader, ti))
+                    if (has_technique_constants(new_view.pmfx_shader, ti))
                     {
                         pen::buffer_creation_params bcp;
                         bcp.usage_flags      = PEN_USAGE_DYNAMIC;
@@ -1462,6 +1463,23 @@ namespace put
                         bcp.data             = nullptr;
 
                         new_view.cbuffer_technique = pen::renderer_create_buffer(bcp);
+                    }
+                    
+                    if(has_technique_textures(new_view.pmfx_shader, ti))
+                    {
+                        technique_texture* tt = get_technique_textures(new_view.pmfx_shader, ti);
+                        
+                        u32 num_tt = sb_count(tt);
+                        for(u32 i = 0; i < num_tt; ++i)
+                        {
+                            sampler_binding sb;
+                            sb.handle = tt[i].handle;
+                            sb.sampler_unit = tt[i].unit;
+                            sb.shader_type = PEN_SHADER_TYPE_PS;
+                            sb.input_texture = true;
+                            
+                            new_view.sampler_bindings.push_back(sb);
+                        }
                     }
                 }
 
@@ -1666,7 +1684,10 @@ namespace put
                         add_virtual_target(v.id_depth_target);
 
                     for (auto& sb : v.sampler_bindings)
-                        add_virtual_target(sb.id_texture);
+                    {
+                        if(!sb.input_texture)
+                            add_virtual_target(sb.id_texture);
+                    }
                 }
 
                 u32 pass_counter = 0;
@@ -1683,7 +1704,10 @@ namespace put
                         p.depth_target = PEN_NULL_DEPTH_BUFFER;
 
                     for (auto& sb : p.sampler_bindings)
-                        sb.handle = get_virtual_target(sb.id_texture, VRT_READ);
+                    {
+                        if(!sb.input_texture)
+                            sb.handle = get_virtual_target(sb.id_texture, VRT_READ);
+                    }
 
                     // material for pass
                     pmfx::initialise_constant_defaults(p.pmfx_shader, p.technique, p.technique_constants.data);

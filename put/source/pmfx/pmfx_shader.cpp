@@ -103,14 +103,22 @@ namespace put
             return nullptr;
         }
 
-        void get_link_params_constants(pen::shader_link_params& link_params, const pen::json& j_info)
+        void get_link_params_constants(pen::shader_link_params& link_params,
+                                       const pen::json& j_info,
+                                       const pen::json& j_technique)
         {
-            u32 num_constants         = j_info["cbuffers"].size() + j_info["texture_samplers"].size();
+            u32 num_constants         = j_info["cbuffers"].size() +
+                                        j_info["texture_samplers"].size() +
+                                        j_technique["texture_samplers"].size();
+            
             link_params.num_constants = num_constants;
 
             link_params.constants =
                 (pen::constant_layout_desc*)pen::memory_alloc(sizeof(pen::constant_layout_desc) * num_constants);
 
+            // per pmfx constants
+            // .. per technique constants go into: material_data(7), todo rename to techhnique_data
+            
             u32       cc         = 0;
             pen::json j_cbuffers = j_info["cbuffers"];
             for (s32 i = 0; i < j_cbuffers.size(); ++i)
@@ -132,35 +140,49 @@ namespace put
 
                 cc++;
             }
+            
+            static Str sampler_type_names[] = {"texture_2d", "texture_3d", "texture_cube", "texture_2dms"};
 
-            pen::json j_samplers = j_info["texture_samplers"];
-            for (s32 i = 0; i < j_samplers.size(); ++i)
+            // per pmfx textures [0]
+            // per technique texture samplers [1]
+            pen::json j_samplers_[2];
+            
+            j_samplers_[0] = j_info["texture_samplers"];
+            j_samplers_[1] = j_technique["texture_samplers"];
+            
+            for(u32 s = 0; s < 2; ++s)
             {
-                pen::json sampler = j_samplers[i];
-
-                Str name_str = sampler["name"].as_str();
-                u32 name_len = name_str.length();
-
-                link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len + 1);
-
-                pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len);
-
-                link_params.constants[cc].name[name_len] = '\0';
-
-                link_params.constants[cc].location = sampler["location"].as_u32();
-
-                static Str sampler_type_names[] = {"texture_2d", "texture_3d", "texture_cube", "texture_2dms"};
-
-                for (u32 i = 0; i < 4; ++i)
+                const pen::json& j_samplers = j_samplers_[s];
+                
+                for (s32 i = 0; i < j_samplers.size(); ++i)
                 {
-                    if (sampler["type"].as_str() == sampler_type_names[i])
+                    pen::json sampler = j_samplers[i];
+                    
+                    Str name_str = sampler["name"].as_str();
+                    if(!sampler["name"].as_cstr())
+                        name_str = sampler.key();
+                    
+                    u32 name_len = name_str.length();
+                    
+                    link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len + 1);
+                    
+                    pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len);
+                    
+                    link_params.constants[cc].name[name_len] = '\0';
+                    
+                    link_params.constants[cc].location = sampler["unit"].as_u32();
+                    
+                    for (u32 i = 0; i < 4; ++i)
                     {
-                        link_params.constants[cc].type = (pen::constant_type)i;
-                        break;
+                        if (sampler["type"].as_str() == sampler_type_names[i])
+                        {
+                            link_params.constants[cc].type = (pen::constant_type)i;
+                            break;
+                        }
                     }
+                    
+                    cc++;
                 }
-
-                cc++;
             }
         }
 
@@ -316,7 +338,7 @@ namespace put
 
                 pen::memory_free(vs_slp.so_decl_entries);
 
-                get_link_params_constants(slp, j_info);
+                get_link_params_constants(slp, j_info, j_techique);
 
                 slp.stream_out_shader = program.stream_out_shader;
                 slp.vertex_shader     = 0;
@@ -380,7 +402,7 @@ namespace put
             link_params.stream_out_shader = 0;
             link_params.stream_out_names  = nullptr;
 
-            get_link_params_constants(link_params, j_info);
+            get_link_params_constants(link_params, j_info, j_techique);
 
             program.program_index = pen::renderer_link_shader_program(link_params);
 
@@ -388,11 +410,11 @@ namespace put
             
             // generate technique textures meta data
             program.textures                = nullptr;
-            u32 num_technique_textues       = j_techique["textures"].size();
+            u32 num_technique_textues       = j_techique["texture_samplers"].size();
             
             for (u32 i = 0; i < num_technique_textues; ++i)
             {
-                pen::json jt = j_techique["textures"][i];
+                pen::json jt = j_techique["texture_samplers"][i];
                 
                 technique_texture tt;
                 
