@@ -1,5 +1,5 @@
 function add_gnu_make_links()
-if _ACTION == "gmake"
+if _ACTION == "gmake" then
 	
 	configuration "Debug"
 		links { "pen_d", "put_d" }
