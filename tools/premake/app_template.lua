@@ -116,8 +116,8 @@ local function setup_bullet()
 
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
 		bullet_lib_dir = _ACTION
-		bullet_lib = (bullet_lib .. "_x64")
-		bullet_lib_debug = (bullet_lib_debug .. "_x64")
+		bullet_lib = (bullet_lib)
+		bullet_lib_debug = (bullet_lib_debug)
 	end
 	
 	libdirs
