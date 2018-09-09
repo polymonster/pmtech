@@ -11,7 +11,7 @@
 #include "str_utilities.h"
 #include "data_struct.h"
 #include "console.h"
-#include "ces_editor.h"
+#include "ces/ces_editor.h"
 
 #include <fstream>
 
