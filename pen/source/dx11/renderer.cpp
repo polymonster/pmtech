@@ -37,6 +37,28 @@ namespace
     u64 s_frame = 0;
 } // namespace
 
+#define D3D_DEBUG_LEVEL 1
+
+#if D3D_DEBUG_LEVEL > 0
+#include <comdef.h>
+void check_d3d_error(HRESULT hr)
+{
+    if (FAILED(hr))
+    {
+        _com_error err(hr);
+        LPCTSTR errMsg = err.ErrorMessage();
+        printf("d3d device error: %ls\n", errMsg);
+    }
+
+#if D3D_DEBUG_LEVEL > 1
+    PEN_ASSERT(hr == 0);
+#endif
+}
+#define CHECK_CALL( C ) { HRESULT ghr = C; check_d3d_error(ghr); }
+#else
+#define CHECK_CALL( C ) C
+#endif
+
 namespace pen
 {
     void create_rtvs(u32 crtv, u32 dsv, uint32_t w, uint32_t h);
@@ -128,8 +150,8 @@ namespace pen
             perf_marker m;
 
             static D3D11_QUERY_DESC desc = {(D3D11_QUERY)PEN_QUERY_TIMESTAMP, 0};
-            s_device->CreateQuery(&desc, &m.begin);
-            s_device->CreateQuery(&desc, &m.end);
+            CHECK_CALL(s_device->CreateQuery(&desc, &m.begin));
+            CHECK_CALL(s_device->CreateQuery(&desc, &m.end));
 
             sb_push(k_perf.markers[buf], m);
         }
@@ -190,7 +212,7 @@ namespace pen
             for (u32 i = 0; i < perf_marker_set::num_marker_buffers; ++i)
             {
                 static D3D11_QUERY_DESC desc = {(D3D11_QUERY)PEN_QUERY_TIMESTAMP_DISJOINT, 0};
-                s_device->CreateQuery(&desc, &k_perf.disjoint_query[i]);
+                CHECK_CALL(s_device->CreateQuery(&desc, &k_perf.disjoint_query[i]));
             }
 
             s_immediate_context->Begin(k_perf.disjoint_query[k_perf.buf]);
@@ -411,7 +433,7 @@ namespace pen
 
         resource_pool[resource_slot].clear_state->num_colour_targets = cs.num_colour_targets;
 
-        pen::memory_cpy(resource_pool[resource_slot].clear_state->mrt, cs.mrt, sizeof(mrt_clear) * cs.num_colour_targets);
+        memcpy(resource_pool[resource_slot].clear_state->mrt, cs.mrt, sizeof(mrt_clear) * cs.num_colour_targets);
 
         mrt_clear* mrt = resource_pool[resource_slot].clear_state->mrt;
 
@@ -562,16 +584,16 @@ namespace pen
         if (params.type == PEN_SHADER_TYPE_VS)
         {
             // Create a vertex shader
-            hr = s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr,
-                                              &resource_pool[resource_index].vertex_shader);
+            CHECK_CALL(s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr,
+                                              &resource_pool[resource_index].vertex_shader));
         }
         else if (params.type == PEN_SHADER_TYPE_PS)
         {
             // Create a pixel shader
             if (params.byte_code)
             {
-                hr = s_device->CreatePixelShader(params.byte_code, params.byte_code_size, nullptr,
-                                                 &resource_pool[resource_index].pixel_shader);
+                CHECK_CALL(s_device->CreatePixelShader(params.byte_code, params.byte_code_size, nullptr,
+                                                 &resource_pool[resource_index].pixel_shader));
             }
             else
             {
@@ -585,24 +607,11 @@ namespace pen
 
             u32 resource_index = resource_slot;
 
-            hr = s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr, &sos.vs);
+            CHECK_CALL(s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr, &sos.vs));
 
-            HRESULT hr = s_device->CreateGeometryShaderWithStreamOutput(
+            CHECK_CALL(s_device->CreateGeometryShaderWithStreamOutput(
                 params.byte_code, params.byte_code_size, (const D3D11_SO_DECLARATION_ENTRY*)params.so_decl_entries,
-                params.so_num_entries, NULL, 0, 0, NULL, &sos.gs);
-
-            if (FAILED(hr))
-            {
-                PEN_ASSERT(0);
-            }
-        }
-
-        if (FAILED(hr))
-        {
-            // shader has failed to create
-            PEN_ASSERT(0);
-
-            resource_index = (u32)-1;
+                params.so_num_entries, NULL, 0, 0, NULL, &sos.gs));
         }
     }
 
@@ -636,7 +645,7 @@ namespace pen
                 dss_disable.DepthEnable              = 0;
                 dss_disable.StencilEnable            = 0;
 
-                s_device->CreateDepthStencilState(&dss_disable, &dss);
+                CHECK_CALL(s_device->CreateDepthStencilState(&dss_disable, &dss));
             }
 
             s_immediate_context->OMSetDepthStencilState(dss, 0);
@@ -668,8 +677,6 @@ namespace pen
         bd.BindFlags      = (D3D11_BIND_FLAG)params.bind_flags;
         bd.CPUAccessFlags = params.cpu_access_flags;
 
-        HRESULT hr;
-
         if (params.data)
         {
             D3D11_SUBRESOURCE_DATA initial_data;
@@ -677,16 +684,11 @@ namespace pen
 
             initial_data.pSysMem = params.data;
 
-            hr = s_device->CreateBuffer(&bd, &initial_data, &resource_pool[resource_index].generic_buffer);
+            CHECK_CALL(s_device->CreateBuffer(&bd, &initial_data, &resource_pool[resource_index].generic_buffer));
         }
         else
         {
-            hr = s_device->CreateBuffer(&bd, nullptr, &resource_pool[resource_index].generic_buffer);
-        }
-
-        if (FAILED(hr))
-        {
-            PEN_ASSERT(0);
+            CHECK_CALL(s_device->CreateBuffer(&bd, nullptr, &resource_pool[resource_index].generic_buffer));
         }
     }
 
@@ -695,16 +697,9 @@ namespace pen
         u32 resource_index = resource_slot;
 
         // Create the input layout
-        HRESULT hr = s_device->CreateInputLayout((D3D11_INPUT_ELEMENT_DESC*)params.input_layout, params.num_elements,
-                                                 params.vs_byte_code, params.vs_byte_code_size,
-                                                 &resource_pool[resource_index].input_layout);
-
-        if (FAILED(hr))
-        {
-            resource_index = (u32)-1;
-
-            PEN_ASSERT(0);
-        }
+        CHECK_CALL(s_device->CreateInputLayout((D3D11_INPUT_ELEMENT_DESC*)params.input_layout, params.num_elements,
+            params.vs_byte_code, params.vs_byte_code_size,
+            &resource_pool[resource_index].input_layout));
     }
 
     void direct::renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides,
@@ -803,11 +798,9 @@ namespace pen
     void renderer_create_render_target_multi(const texture_creation_params& tcp, texture2d_internal* texture_container,
                                              ID3D11DepthStencilView** dsv, ID3D11RenderTargetView** rtv)
     {
-        HRESULT hr;
-
         // create an empty texture
         D3D11_TEXTURE2D_DESC texture_desc;
-        pen::memory_cpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+        memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
         u32  array_size  = texture_desc.ArraySize;
         bool texture2dms = texture_desc.SampleDesc.Count > 1;
@@ -818,8 +811,7 @@ namespace pen
             PEN_ASSERT(0);
         }
 
-        hr = s_device->CreateTexture2D(&texture_desc, NULL, &texture_container->texture);
-        PEN_ASSERT(hr == 0);
+        CHECK_CALL(s_device->CreateTexture2D(&texture_desc, NULL, &texture_container->texture));
 
         D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
 
@@ -841,8 +833,7 @@ namespace pen
                 dsv_desc.ViewDimension      = texture2dms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
                 dsv_desc.Texture2D.MipSlice = 0;
 
-                s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[0]);
-                PEN_ASSERT(hr == 0);
+                CHECK_CALL(s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[0]));
             }
             else
             {
@@ -852,8 +843,8 @@ namespace pen
                     dsv_desc.Texture2DArray.FirstArraySlice = a;
                     dsv_desc.Texture2DArray.MipSlice        = 0;
                     dsv_desc.Texture2DArray.ArraySize       = 1;
-                    s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[a]);
-                    PEN_ASSERT(hr == 0);
+
+                    CHECK_CALL(s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[a]));
                 }
             }
 
@@ -875,8 +866,7 @@ namespace pen
                 rtv_desc.ViewDimension      = texture2dms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
                 rtv_desc.Texture2D.MipSlice = 0;
 
-                hr = s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[0]);
-                PEN_ASSERT(hr == 0);
+                CHECK_CALL(s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[0]));
             }
             else
             {
@@ -886,8 +876,7 @@ namespace pen
                     rtv_desc.Texture2DArray.FirstArraySlice = a;
                     rtv_desc.Texture2DArray.MipSlice        = 0;
                     rtv_desc.Texture2DArray.ArraySize       = 1;
-                    hr = s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[a]);
-                    PEN_ASSERT(hr == 0);
+                    CHECK_CALL(s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[a]));
                 }
             }
 
@@ -903,8 +892,7 @@ namespace pen
             PEN_ASSERT(0);
         }
 
-        hr = s_device->CreateShaderResourceView(texture_container->texture, &resource_view_desc, &texture_container->srv);
-        PEN_ASSERT(hr == 0);
+        CHECK_CALL(s_device->CreateShaderResourceView(texture_container->texture, &resource_view_desc, &texture_container->srv));
     }
 
     void direct::renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
@@ -943,11 +931,10 @@ namespace pen
             read_back_tcp.usage                   = D3D11_USAGE_STAGING;
 
             D3D11_TEXTURE2D_DESC texture_desc;
-            pen::memory_cpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
+            memcpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
-            HRESULT hr = s_device->CreateTexture2D(&texture_desc, NULL,
-                                                   &resource_pool[resource_index].render_target->tex_read_back.texture);
-            PEN_ASSERT(hr == 0);
+            CHECK_CALL(s_device->CreateTexture2D(&texture_desc, NULL,
+                &resource_pool[resource_index].render_target->tex_read_back.texture));
 
             _tcp.cpu_access_flags = 0;
         }
@@ -1025,8 +1012,6 @@ namespace pen
     {
         u32 resource_index = resource_slot;
 
-        HRESULT hr;
-
         D3D_SRV_DIMENSION view_dimension = D3D10_SRV_DIMENSION_TEXTURE2D;
 
         u32 num_slices = 1;
@@ -1052,14 +1037,13 @@ namespace pen
 
             resource_pool[resource_index].type       = RES_TEXTURE_3D;
             resource_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
-            hr = s_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture));
-            PEN_ASSERT(hr == 0);
+            CHECK_CALL(s_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture)));
         }
         else
         {
             // texture 2d, arrays and cubemaps
             D3D11_TEXTURE2D_DESC texture_desc;
-            memory_cpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+            memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
             if (tcp.collection_type == TEXTURE_COLLECTION_CUBE)
             {
@@ -1069,8 +1053,7 @@ namespace pen
 
             resource_pool[resource_index].type       = RES_TEXTURE;
             resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
-            hr = s_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture));
-            PEN_ASSERT(hr == 0);
+            CHECK_CALL(s_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture)));
         }
 
         texture_resource* tex_res = resource_pool[resource_index].texture_resource;
@@ -1116,17 +1099,14 @@ namespace pen
         resource_view_desc.Texture2D.MipLevels       = -1;
         resource_view_desc.Texture2D.MostDetailedMip = 0;
 
-        hr = s_device->CreateShaderResourceView(tex_res->resource, &resource_view_desc, &tex_res->srv);
-        PEN_ASSERT(hr == 0);
+        CHECK_CALL(s_device->CreateShaderResourceView(tex_res->resource, &resource_view_desc, &tex_res->srv));
     }
 
     void direct::renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
     {
         u32 resource_index = resource_slot;
 
-        HRESULT hr;
-        hr = s_device->CreateSamplerState((D3D11_SAMPLER_DESC*)&scp, &resource_pool[resource_index].sampler_state);
-        PEN_ASSERT(hr == 0);
+        CHECK_CALL(s_device->CreateSamplerState((D3D11_SAMPLER_DESC*)&scp, &resource_pool[resource_index].sampler_state));
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
@@ -1176,7 +1156,7 @@ namespace pen
     {
         u32 resource_index = resource_slot;
 
-        s_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[resource_index].raster_state);
+        CHECK_CALL(s_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[resource_index].raster_state));
     }
 
     void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
@@ -1201,10 +1181,10 @@ namespace pen
 
         for (u32 i = 0; i < bcp.num_render_targets; ++i)
         {
-            pen::memory_cpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
+            memcpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
         }
 
-        s_device->CreateBlendState(&bd, &resource_pool[resource_index].blend_state);
+        CHECK_CALL(s_device->CreateBlendState(&bd, &resource_pool[resource_index].blend_state));
     }
 
     void direct::renderer_set_blend_state(u32 blend_state_index)
@@ -1268,8 +1248,8 @@ namespace pen
     {
         u32 resource_index = resource_slot;
 
-        s_device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC*)&dscp,
-                                          &resource_pool[resource_index].depth_stencil_state);
+        CHECK_CALL(s_device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC*)&dscp,
+            &resource_pool[resource_index].depth_stencil_state));
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
@@ -1556,15 +1536,11 @@ namespace pen
         pen::memory_zero(resource_pool[dsv].depth_target, sizeof(depth_stencil_target_internal));
 
         // Create a render target view
-        HRESULT hr = s_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-                                             reinterpret_cast<void**>(&resource_pool[crtv].render_target->tex.texture));
-        if (FAILED(hr))
-            return;
+        CHECK_CALL(s_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D),
+            reinterpret_cast<void**>(&resource_pool[crtv].render_target->tex.texture)));
 
-        hr = s_device->CreateRenderTargetView(resource_pool[crtv].render_target->tex.texture, nullptr,
-                                              &resource_pool[crtv].render_target->rt[0]);
-        if (FAILED(hr))
-            return;
+        CHECK_CALL(s_device->CreateRenderTargetView(resource_pool[crtv].render_target->tex.texture, nullptr,
+            &resource_pool[crtv].render_target->rt[0]));
 
         g_context.active_depth_target       = PEN_BACK_BUFFER_DEPTH;
         g_context.active_colour_target[0]   = PEN_BACK_BUFFER_COLOUR;
@@ -1586,9 +1562,8 @@ namespace pen
         descDepth.BindFlags          = D3D11_BIND_DEPTH_STENCIL;
         descDepth.CPUAccessFlags     = 0;
         descDepth.MiscFlags          = 0;
-        hr = s_device->CreateTexture2D(&descDepth, nullptr, &resource_pool[dsv].depth_target->tex.texture);
-        if (FAILED(hr))
-            return;
+
+        CHECK_CALL(s_device->CreateTexture2D(&descDepth, nullptr, &resource_pool[dsv].depth_target->tex.texture));
 
         // Create the depth stencil view
         D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
@@ -1596,10 +1571,8 @@ namespace pen
         descDSV.Format        = descDepth.Format;
         descDSV.ViewDimension = pen_window.sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
         descDSV.Texture2D.MipSlice = 0;
-        hr                         = s_device->CreateDepthStencilView(resource_pool[dsv].depth_target->tex.texture, &descDSV,
-                                              &resource_pool[dsv].depth_target->ds[0]);
-        if (FAILED(hr))
-            return;
+        CHECK_CALL(s_device->CreateDepthStencilView(resource_pool[dsv].depth_target->tex.texture, &descDSV,
+            &resource_pool[dsv].depth_target->ds[0]));
 
         s_immediate_context->OMSetRenderTargets(1, &resource_pool[crtv].render_target->rt[0], NULL);
     }

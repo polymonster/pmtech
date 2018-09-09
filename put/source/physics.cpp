@@ -46,7 +46,7 @@ namespace physics
         trans.setOrigin(btVector3(btScalar(params.position.x), btScalar(params.position.y), btScalar(params.position.z)));
 
         btQuaternion bt_quat;
-        pen::memory_cpy(&bt_quat, &params.rotation, sizeof(quat));
+        memcpy(&bt_quat, &params.rotation, sizeof(quat));
         trans.setRotation(bt_quat);
 
         return trans;
@@ -174,7 +174,7 @@ namespace physics
 		btMultiBody *p_multibody = new btMultiBody( params.num_links, params.base.mass, baseInertiaDiag, params.base.mass == 0.0f ? true : false, canSleep, params.multi_dof == 1 );
 
 		btQuaternion bt_quat;
-		pen::memory_cpy( &bt_quat, &params.base.rotation, sizeof(quat) );
+		memcpy( &bt_quat, &params.base.rotation, sizeof(quat) );
 
 		btVector3 base_pos = btVector3( params.base.position.x, params.base.position.y, params.base.position.z );
 		p_multibody->setBasePos( base_pos );
@@ -250,7 +250,7 @@ namespace physics
 			btVector3 parentComToCurrentPivot = parentComToCurrentCom - currentPivotToCurrentCom;	    //par body's COM to cur body's PIV offset
 
 			btQuaternion link_quat;
-			pen::memory_cpy( &link_quat, &params.links[i].rb.rotation, sizeof(quat) );
+			memcpy( &link_quat, &params.links[i].rb.rotation, sizeof(quat) );
 
 			btQuaternion parent_to_this_quat = link_quat.inverse( );
 
@@ -382,7 +382,7 @@ namespace physics
             btVector3(btScalar(params.position.x), btScalar(params.position.y), btScalar(params.position.z)));
 
         btQuaternion bt_quat;
-        pen::memory_cpy(&bt_quat, &params.rotation, sizeof(quat));
+        memcpy(&bt_quat, &params.rotation, sizeof(quat));
         shape_transform.setRotation(bt_quat);
 
         // create rigid body
@@ -831,7 +831,7 @@ namespace physics
     void set_linear_velocity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
-        pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
+        memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setLinearVelocity(bt_v3);
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
@@ -839,7 +839,7 @@ namespace physics
     void set_angular_velocity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
-        pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
+        memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setAngularVelocity(bt_v3);
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
@@ -847,7 +847,7 @@ namespace physics
     void set_linear_factor_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
-        pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
+        memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setLinearFactor(bt_v3);
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
@@ -855,7 +855,7 @@ namespace physics
     void set_angular_factor_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
-        pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
+        memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setAngularFactor(bt_v3);
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
@@ -865,8 +865,8 @@ namespace physics
         btVector3    bt_v3;
         btQuaternion bt_quat;
 
-        pen::memory_cpy(&bt_v3, &cmd.position, sizeof(vec3f));
-        pen::memory_cpy(&bt_quat, &cmd.rotation, sizeof(quat));
+        memcpy(&bt_v3, &cmd.position, sizeof(vec3f));
+        memcpy(&bt_quat, &cmd.rotation, sizeof(quat));
 
         btTransform bt_trans;
         bt_trans.setOrigin(bt_v3);
@@ -884,7 +884,7 @@ namespace physics
     void set_gravity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
-        pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
+        memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setGravity(bt_v3);
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate();
     }
@@ -1091,7 +1091,7 @@ namespace physics
         physics_entity& pe = k_bullet_objects.entities[cmd.object_index];
 
         btVector3 bt_v3;
-        pen::memory_cpy(&bt_v3, &cmd.data, sizeof(vec3f));
+        memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
 
         switch (pe.constraint.type)
         {

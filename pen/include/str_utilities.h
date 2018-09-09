@@ -145,10 +145,10 @@ namespace pen
         c8* start_buf = new c8[find_start + 1];
         c8* end_buf   = new c8[end_len + 1];
 
-        pen::memory_cpy(start_buf, string.c_str(), find_start);
+        memcpy(start_buf, string.c_str(), find_start);
         start_buf[find_start] = '\0';
 
-        pen::memory_cpy(end_buf, string.c_str() + end_start, end_len);
+        memcpy(end_buf, string.c_str() + end_start, end_len);
         end_buf[end_len] = '\0';
 
         Str result = start_buf;

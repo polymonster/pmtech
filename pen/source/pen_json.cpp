@@ -436,8 +436,8 @@ namespace pen
 
         s32* combine_index = new s32[s1];
 
-        pen::memory_set(j1_action, 0, sizeof(combine_action) * s1);
-        pen::memory_set(j2_action, 0, sizeof(combine_action) * s2);
+        memset(j1_action, 0, sizeof(combine_action) * s1);
+        memset(j2_action, 0, sizeof(combine_action) * s2);
 
         Str json_string = "{\n";
         Str indent_str  = "\t";
@@ -587,7 +587,7 @@ namespace pen
 
         u32 num_tokens                 = other.m_internal_object->num_tokens;
         dst->m_internal_object->tokens = new jsmntok_t[num_tokens];
-        pen::memory_cpy(dst->m_internal_object->tokens, other.m_internal_object->tokens, sizeof(jsmntok_t) * num_tokens);
+        memcpy(dst->m_internal_object->tokens, other.m_internal_object->tokens, sizeof(jsmntok_t) * num_tokens);
 
         // deep copy take ownership of mem
         if (other.m_internal_object->data)
@@ -595,7 +595,7 @@ namespace pen
             s32 data_size = string_length(other.m_internal_object->data);
 
             dst->m_internal_object->data = (c8*)memory_alloc(data_size + 1);
-            pen::memory_cpy(dst->m_internal_object->data, other.m_internal_object->data, data_size);
+            memcpy(dst->m_internal_object->data, other.m_internal_object->data, data_size);
             dst->m_internal_object->data[data_size] = '\0';
         }
 
@@ -606,7 +606,7 @@ namespace pen
             m_internal_object->name            = (c8*)memory_alloc(name_size + 1);
             m_internal_object->name[name_size] = '\0';
 
-            pen::memory_cpy(m_internal_object->name, other.m_internal_object->name, name_size);
+            memcpy(m_internal_object->name, other.m_internal_object->name, name_size);
         }
     }
 

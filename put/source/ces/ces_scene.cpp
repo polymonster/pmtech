@@ -182,14 +182,14 @@ namespace put
             for (u32 i = 0; i < scene->num_components; ++i)
             {
                 generic_cmp_array& cmp = p_sn->get_component_array(i);
-                pen::memory_cpy(cmp[dst], cmp[src], cmp.size);
+                memcpy(cmp[dst], cmp[src], cmp.size);
             }
 
             // assign
             Str blank;
-            pen::memory_cpy(&p_sn->names[dst], &blank, sizeof(Str));
-            pen::memory_cpy(&p_sn->material_names[dst], &blank, sizeof(Str));
-            pen::memory_cpy(&p_sn->material_names[dst], &blank, sizeof(Str));
+            memcpy(&p_sn->names[dst], &blank, sizeof(Str));
+            memcpy(&p_sn->material_names[dst], &blank, sizeof(Str));
+            memcpy(&p_sn->material_names[dst], &blank, sizeof(Str));
 
             p_sn->names[dst] = p_sn->names[src].c_str();
             p_sn->names[dst].append(suffix);
@@ -1197,9 +1197,9 @@ namespace put
             // read specialisations
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                pen::memory_set(&scene->names[n], 0x0, sizeof(Str));
-                pen::memory_set(&scene->geometry_names[n], 0x0, sizeof(Str));
-                pen::memory_set(&scene->material_names[n], 0x0, sizeof(Str));
+                memset(&scene->names[n], 0x0, sizeof(Str));
+                memset(&scene->geometry_names[n], 0x0, sizeof(Str));
+                memset(&scene->material_names[n], 0x0, sizeof(Str));
 
                 scene->names[n]          = read_lookup_string(ifs);
                 scene->geometry_names[n] = read_lookup_string(ifs);
@@ -1313,8 +1313,8 @@ namespace put
                 material_resource& mat_res = scene->material_resources[n];
 
                 // Invalidate stuff we need to recreate
-                pen::memory_set(&mat_res.material_name, 0x0, sizeof(Str));
-                pen::memory_set(&mat_res.shader_name, 0x0, sizeof(Str));
+                memset(&mat_res.material_name, 0x0, sizeof(Str));
+                memset(&mat_res.shader_name, 0x0, sizeof(Str));
                 mat.material_cbuffer = PEN_INVALID_HANDLE;
 
                 Str material_name = read_lookup_string(ifs);

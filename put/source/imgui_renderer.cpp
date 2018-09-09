@@ -291,8 +291,8 @@ namespace put
                 c8* vb_mem = (c8*)g_imgui_rs.vb_copy_buffer;
                 c8* ib_mem = (c8*)g_imgui_rs.ib_copy_buffer;
 
-                pen::memory_cpy(&vb_mem[vb_offset], cmd_list->VtxBuffer.Data, vertex_size);
-                pen::memory_cpy(&ib_mem[ib_offset], cmd_list->IdxBuffer.Data, index_size);
+                memcpy(&vb_mem[vb_offset], cmd_list->VtxBuffer.Data, vertex_size);
+                memcpy(&ib_mem[ib_offset], cmd_list->IdxBuffer.Data, index_size);
 
                 vb_offset += vertex_size;
                 ib_offset += index_size;

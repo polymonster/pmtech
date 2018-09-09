@@ -228,7 +228,7 @@ namespace physics
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd)
     {
         cmd_buffer[put_pos].command_index = cmd;
-        pen::memory_cpy(&cmd_buffer[put_pos].set_v3.data, &v3, sizeof(vec3f));
+        memcpy(&cmd_buffer[put_pos].set_v3.data, &v3, sizeof(vec3f));
         cmd_buffer[put_pos].set_v3.object_index = entity_index;
 
         INC_WRAP(put_pos);
@@ -237,7 +237,7 @@ namespace physics
     void set_float(const u32& entity_index, const f32& fval, u32 cmd)
     {
         cmd_buffer[put_pos].command_index = cmd;
-        pen::memory_cpy(&cmd_buffer[put_pos].set_float.data, &fval, sizeof(f32));
+        memcpy(&cmd_buffer[put_pos].set_float.data, &fval, sizeof(f32));
         cmd_buffer[put_pos].set_float.object_index = entity_index;
 
         INC_WRAP(put_pos);
@@ -246,8 +246,8 @@ namespace physics
     void set_transform(const u32& entity_index, const vec3f& position, const quat& quaternion)
     {
         cmd_buffer[put_pos].command_index = CMD_SET_TRANSFORM;
-        pen::memory_cpy(&cmd_buffer[put_pos].set_transform.position, &position, sizeof(vec3f));
-        pen::memory_cpy(&cmd_buffer[put_pos].set_transform.rotation, &quaternion, sizeof(quat));
+        memcpy(&cmd_buffer[put_pos].set_transform.position, &position, sizeof(vec3f));
+        memcpy(&cmd_buffer[put_pos].set_transform.rotation, &quaternion, sizeof(quat));
         cmd_buffer[put_pos].set_transform.object_index = entity_index;
 
         INC_WRAP(put_pos);
@@ -328,7 +328,7 @@ namespace physics
     {
         cmd_buffer[put_pos].command_index = cmd;
 
-        pen::memory_cpy(&cmd_buffer[put_pos].set_multi_v3.data, &v3_data, sizeof(vec3f));
+        memcpy(&cmd_buffer[put_pos].set_multi_v3.data, &v3_data, sizeof(vec3f));
         cmd_buffer[put_pos].set_multi_v3.multi_index = object_index;
         cmd_buffer[put_pos].set_multi_v3.link_index  = link_index;
 

@@ -558,10 +558,10 @@ namespace put
                 mode_from_string(k_comparison_mode_map, depth_stencil_state["stencil_func"].as_cstr(), PEN_COMPARISON_ALWAYS);
 
             if (front)
-                pen::memory_cpy(front, &op, sizeof(op));
+                memcpy(front, &op, sizeof(op));
 
             if (back)
-                pen::memory_cpy(back, &op, sizeof(op));
+                memcpy(back, &op, sizeof(op));
         }
 
         void parse_depth_stencil_states(pen::json& render_config)
@@ -1465,9 +1465,9 @@ namespace put
                         new_view.cbuffer_technique = pen::renderer_create_buffer(bcp);
                     }
                     
-                    if(has_technique_textures(new_view.pmfx_shader, ti))
+                    if(has_technique_samplers(new_view.pmfx_shader, ti))
                     {
-                        technique_texture* tt = get_technique_textures(new_view.pmfx_shader, ti);
+                        technique_sampler* tt = get_technique_samplers(new_view.pmfx_shader, ti);
                         
                         static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
 

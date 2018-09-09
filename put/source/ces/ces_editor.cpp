@@ -158,7 +158,7 @@ namespace put
             if (!k_dd_bools)
             {
                 k_dd_bools = new bool[DD_NUM_FLAGS];
-                pen::memory_set(k_dd_bools, 0x0, sizeof(bool) * DD_NUM_FLAGS);
+                memset(k_dd_bools, 0x0, sizeof(bool) * DD_NUM_FLAGS);
 
                 // set defaults
                 static u32 defaults[] = {DD_NODE, DD_GRID, DD_LIGHTS};
@@ -786,7 +786,7 @@ namespace put
 
                 void* data = cmp[node_index];
 
-                pen::memory_cpy(ns.components[i], data, cmp.size);
+                memcpy(ns.components[i], data, cmp.size);
             }
         }
 
@@ -797,7 +797,7 @@ namespace put
             {
                 generic_cmp_array& cmp = scene->get_component_array(i);
 
-                pen::memory_cpy(cmp[node_index], ns.components[i], cmp.size);
+                memcpy(cmp[node_index], ns.components[i], cmp.size);
             }
 
             node_state& us = k_editor_nodes[node_index].action_state[UNDO];
@@ -2135,7 +2135,7 @@ namespace put
                 {
                     static c8 buf[64];
                     u32       end_pos = std::min<u32>(scene->names[selected_index].length(), 64);
-                    pen::memory_cpy(buf, scene->names[selected_index].c_str(), end_pos);
+                    memcpy(buf, scene->names[selected_index].c_str(), end_pos);
                     buf[end_pos] = '\0';
 
                     if (ImGui::InputText("", buf, 64))

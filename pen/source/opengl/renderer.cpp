@@ -469,7 +469,7 @@ namespace pen
         resource_pool[resource_slot].clear_state.flags   = cs.flags;
 
         resource_pool[resource_slot].clear_state.num_colour_targets = cs.num_colour_targets;
-        memory_cpy(&resource_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
+        memcpy(&resource_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
     }
 
     u32 link_program_internal(u32 vs, u32 ps, const shader_link_params* params = nullptr)
@@ -1531,7 +1531,7 @@ namespace pen
     {
         resource_pool[resource_slot].sampler_state = (sampler_creation_params*)memory_alloc(sizeof(scp));
 
-        memory_cpy(resource_pool[resource_slot].sampler_state, &scp, sizeof(scp));
+        memcpy(resource_pool[resource_slot].sampler_state, &scp, sizeof(scp));
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
@@ -1736,7 +1736,7 @@ namespace pen
         if (mapped_data)
         {
             c8* mapped_offset = ((c8*)mapped_data) + offset;
-            memory_cpy(mapped_offset, data, data_size);
+            memcpy(mapped_offset, data, data_size);
         }
 
         CHECK_CALL(glUnmapBuffer(res.type));
@@ -1786,7 +1786,7 @@ namespace pen
     {
         resource_pool[resource_slot].depth_stencil = (depth_stencil_creation_params*)memory_alloc(sizeof(dscp));
 
-        memory_cpy(resource_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
+        memcpy(resource_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)

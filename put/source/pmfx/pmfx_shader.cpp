@@ -130,7 +130,7 @@ namespace put
 
                 link_params.constants[cc].name = new c8[name_len + 1];
 
-                pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len);
+                memcpy(link_params.constants[cc].name, name_str.c_str(), name_len);
 
                 link_params.constants[cc].name[name_len] = '\0';
 
@@ -166,7 +166,7 @@ namespace put
                     
                     link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len + 1);
                     
-                    pen::memory_cpy(link_params.constants[cc].name, name_str.c_str(), name_len);
+                    memcpy(link_params.constants[cc].name, name_str.c_str(), name_len);
                     
                     link_params.constants[cc].name[name_len] = '\0';
                     
@@ -325,7 +325,7 @@ namespace put
 
                     u32 name_len             = gl_name.length();
                     slp.stream_out_names[vo] = new c8[name_len + 1];
-                    pen::memory_cpy(slp.stream_out_names[vo], gl_name.c_str(), name_len);
+                    memcpy(slp.stream_out_names[vo], gl_name.c_str(), name_len);
                     slp.stream_out_names[vo][name_len] = '\0';
                 }
 
@@ -416,7 +416,7 @@ namespace put
             {
                 pen::json jt = j_techique["texture_samplers"][i];
                 
-                technique_texture tt;
+                technique_sampler tt;
                 
                 tt.name = jt.name();
                 tt.sampler_state_name = jt["sampler_state"].as_str();
@@ -509,7 +509,7 @@ namespace put
             return k_pmfx_list[handle].techniques[index].constants;
         }
         
-        technique_texture* get_technique_textures(shader_handle handle, u32 index)
+        technique_sampler* get_technique_samplers(shader_handle handle, u32 index)
         {
             if (handle >= sb_count(k_pmfx_list))
                 return nullptr;
@@ -796,14 +796,14 @@ namespace put
             return get_technique_constants(shader, technique_index);
         }
         
-        bool has_technique_textures(shader_handle shader, u32 technique_index)
+        bool has_technique_samplers(shader_handle shader, u32 technique_index)
         {
-            return get_technique_textures(shader, technique_index);
+            return get_technique_samplers(shader, technique_index);
         }
         
         bool has_technique_params(shader_handle shader, u32 technique_index)
         {
-            return get_technique_constants(shader, technique_index) || get_technique_textures(shader, technique_index);
+            return get_technique_constants(shader, technique_index) || get_technique_samplers(shader, technique_index);
         }
         
         void constant_ui(shader_handle shader, u32 technique_index, f32* material_data)
@@ -865,7 +865,7 @@ namespace put
         
         void texture_ui(shader_handle shader, u32 technique_index)
         {
-            technique_texture* tt = get_technique_textures(shader, technique_index);
+            technique_sampler* tt = get_technique_samplers(shader, technique_index);
             
             if (!tt)
                 return;
@@ -879,7 +879,7 @@ namespace put
             
             for(u32 i = 0; i < num_textures; ++i)
             {
-                technique_texture& t = tt[i];
+                technique_sampler& t = tt[i];
                 
                 ImGui::Text("unit: %i [%s]", t.unit, t.name.c_str());
                 if( ImGui::ImageButton((void*)&t.handle, ImVec2(64, 64)) )

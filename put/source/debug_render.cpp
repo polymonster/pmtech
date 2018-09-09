@@ -103,7 +103,7 @@ namespace put
 
             if (prev_buffer)
             {
-                pen::memory_cpy(debug_3d_buffers[buffer_index], debug_3d_verts, prev_size);
+                memcpy(debug_3d_buffers[buffer_index], debug_3d_verts, prev_size);
                 delete prev_buffer;
 
                 pen::renderer_release_buffer(prev_vb);
@@ -148,7 +148,7 @@ namespace put
 
             if (prev_buffer)
             {
-                pen::memory_cpy(debug_2d_buffers[buffer_index], debug_2d_verts, prev_size);
+                memcpy(debug_2d_buffers[buffer_index], debug_2d_verts, prev_size);
 
                 delete prev_buffer;
 

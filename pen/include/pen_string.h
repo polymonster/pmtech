@@ -32,7 +32,7 @@ namespace pen
     {
         u32 padded_length = length + 1;
         c8* new_string    = (c8*)malloc(padded_length);
-        pen::memory_cpy(new_string, src, length);
+        memcpy(new_string, src, length);
         new_string[length] = '\0';
 
         return new_string;

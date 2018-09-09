@@ -242,8 +242,8 @@ class spectrum_analyser
             // shift the history along.
             for (s32 i = num_analysis_buffers - 1; i > 0; --i)
             {
-                pen::memory_cpy(&spectrum_history[i][0], &spectrum_history[i - 1][0], sizeof(f32) * max_fft_length);
-                pen::memory_cpy(&raw_diff[i][0], &raw_diff[i - 1][0], sizeof(f32) * max_fft_length);
+                memcpy(&spectrum_history[i][0], &spectrum_history[i - 1][0], sizeof(f32) * max_fft_length);
+                memcpy(&raw_diff[i][0], &raw_diff[i - 1][0], sizeof(f32) * max_fft_length);
 
                 timestamp[i] = timestamp[i - 1];
             }

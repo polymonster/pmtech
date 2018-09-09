@@ -198,7 +198,7 @@ namespace pen
         audio_cmd_buffer[audio_put_pos].filename[filename_length] = 0x00;
         audio_cmd_buffer[audio_put_pos].resource_slot             = resource_slot;
 
-        pen::memory_cpy(audio_cmd_buffer[audio_put_pos].filename, filename, filename_length);
+        memcpy(audio_cmd_buffer[audio_put_pos].filename, filename, filename_length);
 
         // set command (create stream or sound)
         audio_cmd_buffer[audio_put_pos].command_index = command;

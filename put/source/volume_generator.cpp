@@ -30,7 +30,7 @@
 
 u8 temp[16];
 #define SIMD_PRINT_u8(V)                                                                                                     \
-    pen::memory_cpy(temp, &V, 16);                                                                                           \
+    memcpy(temp, &V, 16);                                                                                           \
     for (u32 i = 0; i < 16; ++i)                                                                                             \
         printf("%i ", (u32)temp[i]);                                                                                         \
     printf("\n");
@@ -255,14 +255,14 @@ namespace put
                 u8* dest_iter      = (u8*)volume_slices[current_axis][current_slice];
                 for (u32 y = 0; y < h; ++y)
                 {
-                    pen::memory_cpy(dest_iter, src_iter, dest_row_pitch);
+                    memcpy(dest_iter, src_iter, dest_row_pitch);
                     src_iter += row_pitch;
                     dest_iter += dest_row_pitch;
                 }
             }
             else
             {
-                pen::memory_cpy(volume_slices[current_axis][current_slice], p_data, depth_pitch);
+                memcpy(volume_slices[current_axis][current_slice], p_data, depth_pitch);
             }
 
             current_slice++;
@@ -375,7 +375,7 @@ namespace put
                                 if (volume_data[noffset + 3] > 0)
                                 {
                                     // copy rgb to dilate
-                                    pen::memory_cpy(&volume_data[offset + 0], &volume_data[noffset + 0], 3);
+                                    memcpy(&volume_data[offset + 0], &volume_data[noffset + 0], 3);
                                 }
                             }
                         }
@@ -426,7 +426,7 @@ namespace put
             vec3ui offsets[] = {vec3ui(0, 0, 0), vec3ui(0, 1, 0), vec3ui(0, 0, 1), vec3ui(0, 1, 1)};
 
             u8* data = (u8*)pen::memory_alloc_align(data_size, 16);
-            pen::memory_cpy(data, tcp.data, tcp.data_size);
+            memcpy(data, tcp.data, tcp.data_size);
 
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
@@ -472,15 +472,15 @@ namespace put
                             vo          = vobase + offsets[3];
                             p_offset[3] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
-                            pen::memory_cpy(&r00, &prev_level[p_offset[0]], block_copy_size);
-                            pen::memory_cpy(&r01, &prev_level[p_offset[0] + block_offset], block_copy_size);
-                            pen::memory_cpy(&r10, &prev_level[p_offset[1]], block_copy_size);
-                            pen::memory_cpy(&r11, &prev_level[p_offset[1] + block_offset], block_copy_size);
+                            memcpy(&r00, &prev_level[p_offset[0]], block_copy_size);
+                            memcpy(&r01, &prev_level[p_offset[0] + block_offset], block_copy_size);
+                            memcpy(&r10, &prev_level[p_offset[1]], block_copy_size);
+                            memcpy(&r11, &prev_level[p_offset[1] + block_offset], block_copy_size);
 
-                            pen::memory_cpy(&d00, &prev_level[p_offset[2]], block_copy_size);
-                            pen::memory_cpy(&d01, &prev_level[p_offset[2] + block_offset], block_copy_size);
-                            pen::memory_cpy(&d10, &prev_level[p_offset[3]], block_copy_size);
-                            pen::memory_cpy(&d11, &prev_level[p_offset[3] + block_offset], block_copy_size);
+                            memcpy(&d00, &prev_level[p_offset[2]], block_copy_size);
+                            memcpy(&d01, &prev_level[p_offset[2] + block_offset], block_copy_size);
+                            memcpy(&d10, &prev_level[p_offset[3]], block_copy_size);
+                            memcpy(&d11, &prev_level[p_offset[3] + block_offset], block_copy_size);
 
                             __m128 x0 = _mm_shuffle_ps(r00, r01, _MM_SHUFFLE(2, 0, 2, 0));
                             __m128 x1 = _mm_shuffle_ps(r00, r01, _MM_SHUFFLE(3, 1, 3, 1));
@@ -501,7 +501,7 @@ namespace put
                             output        = _mm_mul_ps(output, vrecip);
 
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
-                            pen::memory_cpy(&cur_level[c_offset], &output, block_copy_size);
+                            memcpy(&cur_level[c_offset], &output, block_copy_size);
                         }
                     }
                 }
@@ -543,7 +543,7 @@ namespace put
             vec3ui offsets[] = {vec3ui(0, 0, 0), vec3ui(0, 1, 0), vec3ui(0, 0, 1), vec3ui(0, 1, 1)};
 
             u8* data = (u8*)pen::memory_alloc(data_size);
-            pen::memory_cpy(data, tcp.data, tcp.data_size);
+            memcpy(data, tcp.data, tcp.data_size);
 
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
@@ -586,10 +586,10 @@ namespace put
 
             __m128i am, bm, cm, dm;
 
-            pen::memory_cpy(&am, &aumask, 16);
-            pen::memory_cpy(&bm, &bumask, 16);
-            pen::memory_cpy(&cm, &cumask, 16);
-            pen::memory_cpy(&dm, &dumask, 16);
+            memcpy(&am, &aumask, 16);
+            memcpy(&bm, &bumask, 16);
+            memcpy(&cm, &cumask, 16);
+            memcpy(&dm, &dumask, 16);
 
             for (u32 i = 0; i < num_mips - 1; ++i)
             {
@@ -624,15 +624,15 @@ namespace put
                             vo          = vobase + offsets[3];
                             p_offset[3] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
-                            pen::memory_cpy(&r00, &prev_level[p_offset[0]], block_copy_size);
-                            pen::memory_cpy(&r01, &prev_level[p_offset[0] + block_offset], block_copy_size);
-                            pen::memory_cpy(&r10, &prev_level[p_offset[1]], block_copy_size);
-                            pen::memory_cpy(&r11, &prev_level[p_offset[1] + block_offset], block_copy_size);
+                            memcpy(&r00, &prev_level[p_offset[0]], block_copy_size);
+                            memcpy(&r01, &prev_level[p_offset[0] + block_offset], block_copy_size);
+                            memcpy(&r10, &prev_level[p_offset[1]], block_copy_size);
+                            memcpy(&r11, &prev_level[p_offset[1] + block_offset], block_copy_size);
 
-                            pen::memory_cpy(&d00, &prev_level[p_offset[2]], block_copy_size);
-                            pen::memory_cpy(&d01, &prev_level[p_offset[2] + block_offset], block_copy_size);
-                            pen::memory_cpy(&d10, &prev_level[p_offset[3]], block_copy_size);
-                            pen::memory_cpy(&d11, &prev_level[p_offset[3] + block_offset], block_copy_size);
+                            memcpy(&d00, &prev_level[p_offset[2]], block_copy_size);
+                            memcpy(&d01, &prev_level[p_offset[2] + block_offset], block_copy_size);
+                            memcpy(&d10, &prev_level[p_offset[3]], block_copy_size);
+                            memcpy(&d11, &prev_level[p_offset[3] + block_offset], block_copy_size);
 
                             // max of 4x4 rgba block
                             __m128i x0 = _mm_max_epu8(r00, r10);
@@ -654,7 +654,7 @@ namespace put
                             __m128i output = _mm_max_epu8(vv, yy);
 
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
-                            pen::memory_cpy(&cur_level[c_offset], &output, block_copy_size);
+                            memcpy(&cur_level[c_offset], &output, block_copy_size);
                         }
                     }
                 }
@@ -699,7 +699,7 @@ namespace put
                                 vec3ui(0, 0, 1), vec3ui(1, 0, 1), vec3ui(0, 1, 1), vec3ui(1, 1, 1)};
 
             u8* data = (u8*)pen::memory_alloc(data_size);
-            pen::memory_cpy(data, tcp.data, tcp.data_size);
+            memcpy(data, tcp.data, tcp.data_size);
 
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
@@ -738,7 +738,7 @@ namespace put
                             }
 
                             texel /= PEN_ARRAY_SIZE(offsets);
-                            pen::memory_cpy(&cur_level[c_offset], &texel, sizeof(f32));
+                            memcpy(&cur_level[c_offset], &texel, sizeof(f32));
                         }
                     }
                 }
@@ -782,7 +782,7 @@ namespace put
                                 vec3ui(0, 0, 1), vec3ui(1, 0, 1), vec3ui(0, 1, 1), vec3ui(1, 1, 1)};
 
             u8* data = (u8*)pen::memory_alloc(data_size);
-            pen::memory_cpy(data, tcp.data, tcp.data_size);
+            memcpy(data, tcp.data, tcp.data_size);
 
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
@@ -919,7 +919,7 @@ namespace put
                 // so it can be saved out later
 
                 tcp.data = pen::memory_alloc(data_size);
-                pen::memory_cpy(tcp.data, volume_data, data_size);
+                memcpy(tcp.data, volume_data, data_size);
             }
 
             gv.texture = PEN_INVALID_HANDLE;

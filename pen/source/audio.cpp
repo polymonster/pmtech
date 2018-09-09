@@ -68,9 +68,9 @@ namespace pen
         pen::memory_zero(g_audio_resources, sizeof(g_audio_resources));
 
         // set resources to 0
-        pen::memory_set(g_resource_states, 0, sizeof(g_resource_states));
-        pen::memory_set(g_audio_resources, 0, sizeof(g_audio_resources));
-        pen::memory_set(g_sound_file_info_ready, 0, sizeof(g_sound_file_info_ready));
+        memset(g_resource_states, 0, sizeof(g_resource_states));
+        memset(g_audio_resources, 0, sizeof(g_audio_resources));
+        memset(g_sound_file_info_ready, 0, sizeof(g_sound_file_info_ready));
 
         // reserve index 0 to use as null object
         g_audio_resources[0].assigned_flag = 0xff;

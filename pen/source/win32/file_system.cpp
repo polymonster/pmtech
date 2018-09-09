@@ -120,7 +120,7 @@ namespace pen
         u32       volume_strlen = pen::string_length(volumes_str);
 
         tree.name = (c8*)pen::memory_alloc(volume_strlen + 1);
-        pen::memory_cpy(tree.name, volumes_str, volume_strlen);
+        memcpy(tree.name, volumes_str, volume_strlen);
         tree.name[volume_strlen] = '\0';
 
         const c8* drive_letters = {"ABCDEFGHIJKLMNOPQRSTUVWXYZ"};
@@ -217,7 +217,7 @@ namespace pen
         // need to make add a wildcard to the dirctory
         u32       dir_len = pen::string_length(directory);
         static c8 wildcard_dir[1024];
-        pen::memory_cpy(wildcard_dir, directory, dir_len);
+        memcpy(wildcard_dir, directory, dir_len);
         wildcard_dir[dir_len]     = '\\';
         wildcard_dir[dir_len + 1] = '*';
         wildcard_dir[dir_len + 2] = '\0';
@@ -261,7 +261,7 @@ namespace pen
                     u32 file_name_len = pen::string_length(ffd.cFileName);
 
                     tree.children[child].name = (c8*)pen::memory_alloc(file_name_len + 1);
-                    pen::memory_cpy(tree.children[child].name, ffd.cFileName, file_name_len);
+                    memcpy(tree.children[child].name, ffd.cFileName, file_name_len);
                     tree.children[child].name[file_name_len] = '\0';
 
                     tree.children[child].num_children = 0;
@@ -325,7 +325,7 @@ namespace pen
                     if (last_char)
                         sub_dir_len++;
 
-                    pen::memory_cpy(dirs[cur_depth], &path[cur_pos], sub_dir_len);
+                    memcpy(dirs[cur_depth], &path[cur_pos], sub_dir_len);
 
                     dirs[cur_depth][sub_dir_len] = '\0';
 

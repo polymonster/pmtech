@@ -109,7 +109,7 @@ namespace put
             u32 num_elements = 0;
         };
         
-        struct technique_texture
+        struct technique_sampler
         {
             Str name;
             Str sampler_state_name;
@@ -138,7 +138,7 @@ namespace put
 
             f32*                constant_defaults;
             technique_constant* constants;
-            technique_texture*  textures;
+            technique_sampler*  textures;
         };
 
         enum rt_flags
@@ -208,11 +208,11 @@ namespace put
         u32                 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
         technique_constant* get_technique_constants(shader_handle handle, u32 index);
         u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
-        technique_texture*  get_technique_textures(shader_handle handle, u32 index);
+        technique_sampler*  get_technique_samplers(shader_handle handle, u32 index);
 
         void show_technique_ui(shader_handle shader, u32 technique_index, f32* data);
         bool has_technique_constants(shader_handle shader, u32 technique_index);
-        bool has_technique_textures(shader_handle shader, u32 technique_index);
+        bool has_technique_samplers(shader_handle shader, u32 technique_index);
         bool has_technique_params(shader_handle shader, u32 technique_index);
 
         void poll_for_changes();

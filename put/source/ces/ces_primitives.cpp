@@ -779,8 +779,8 @@ namespace put
 
             // albedo rgb roughness, spec rgb reflectiviy
             vec4f f = vec4f(0.5f, 0.5f, 0.5f, 0.5f);
-            pen::memory_cpy(&mr->data[0], &f, sizeof(vec4f));
-            pen::memory_cpy(&mr->data[4], &f, sizeof(vec4f));
+            memcpy(&mr->data[0], &f, sizeof(vec4f));
+            memcpy(&mr->data[4], &f, sizeof(vec4f));
 
             mr->material_name = "default_material";
             mr->hash          = PEN_HASH("default_material");

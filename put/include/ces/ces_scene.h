@@ -172,7 +172,7 @@ namespace put
 
             cmp_physics& operator=(const cmp_physics& other)
             {
-                pen::memory_cpy(this, &other, sizeof(cmp_physics));
+                memcpy(this, &other, sizeof(cmp_physics));
                 return *this;
             }
         };

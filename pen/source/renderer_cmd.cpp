@@ -613,7 +613,7 @@ namespace pen
             p_continue_semaphore = thread_semaphore_create(0, 1);
 
         // clear command buffer
-        memory_set(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
+        memset(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
 
         slot_resources_init(&k_renderer_slot_resources, MAX_RENDERER_RESOURCES);
 
@@ -688,7 +688,7 @@ namespace pen
         if (params.byte_code)
         {
             cmd_buffer[put_pos].shader_load.byte_code = memory_alloc(params.byte_code_size);
-            memory_cpy(cmd_buffer[put_pos].shader_load.byte_code, params.byte_code, params.byte_code_size);
+            memcpy(cmd_buffer[put_pos].shader_load.byte_code, params.byte_code, params.byte_code_size);
         }
 
         cmd_buffer[put_pos].shader_load.so_decl_entries = nullptr;
@@ -699,7 +699,7 @@ namespace pen
             u32 entries_size                                = sizeof(stream_out_decl_entry) * params.so_num_entries;
             cmd_buffer[put_pos].shader_load.so_decl_entries = (stream_out_decl_entry*)memory_alloc(entries_size);
 
-            memory_cpy(cmd_buffer[put_pos].shader_load.so_decl_entries, params.so_decl_entries, entries_size);
+            memcpy(cmd_buffer[put_pos].shader_load.so_decl_entries, params.so_decl_entries, entries_size);
         }
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
@@ -729,7 +729,7 @@ namespace pen
             u32 len   = string_length(params.constants[i].name);
             c[i].name = (c8*)memory_alloc(len + 1);
 
-            memory_cpy(c[i].name, params.constants[i].name, len);
+            memcpy(c[i].name, params.constants[i].name, len);
             c[i].name[len] = '\0';
         }
 
@@ -745,7 +745,7 @@ namespace pen
                 u32 len = string_length(params.stream_out_names[i]);
                 so[i]   = (c8*)memory_alloc(len + 1);
 
-                memory_cpy(so[i], params.stream_out_names[i], len);
+                memcpy(so[i], params.stream_out_names[i], len);
                 so[i][len] = '\0';
             }
         }
@@ -782,13 +782,13 @@ namespace pen
 
         // copy buffer
         cmd_buffer[put_pos].create_input_layout.vs_byte_code = memory_alloc(params.vs_byte_code_size);
-        memory_cpy(cmd_buffer[put_pos].create_input_layout.vs_byte_code, params.vs_byte_code, params.vs_byte_code_size);
+        memcpy(cmd_buffer[put_pos].create_input_layout.vs_byte_code, params.vs_byte_code, params.vs_byte_code_size);
 
         // copy array
         u32 input_layouts_size                               = sizeof(input_layout_desc) * params.num_elements;
         cmd_buffer[put_pos].create_input_layout.input_layout = (input_layout_desc*)memory_alloc(input_layouts_size);
 
-        memory_cpy(cmd_buffer[put_pos].create_input_layout.input_layout, params.input_layout, input_layouts_size);
+        memcpy(cmd_buffer[put_pos].create_input_layout.input_layout, params.input_layout, input_layouts_size);
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
@@ -811,13 +811,13 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index = CMD_CREATE_BUFFER;
 
-        memory_cpy(&cmd_buffer[put_pos].create_buffer, (void*)&params, sizeof(buffer_creation_params));
+        memcpy(&cmd_buffer[put_pos].create_buffer, (void*)&params, sizeof(buffer_creation_params));
 
         if (params.data)
         {
             // make a copy of the buffers data
             cmd_buffer[put_pos].create_buffer.data = memory_alloc(params.buffer_size);
-            memory_cpy(cmd_buffer[put_pos].create_buffer.data, params.data, params.buffer_size);
+            memcpy(cmd_buffer[put_pos].create_buffer.data, params.data, params.buffer_size);
         }
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
@@ -904,7 +904,7 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index = CMD_CREATE_RENDER_TARGET;
 
-        memory_cpy(&cmd_buffer[put_pos].create_render_target, (void*)&tcp, sizeof(texture_creation_params));
+        memcpy(&cmd_buffer[put_pos].create_render_target, (void*)&tcp, sizeof(texture_creation_params));
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
@@ -929,13 +929,13 @@ namespace pen
 
         cmd_buffer[put_pos].command_index = CMD_CREATE_TEXTURE;
 
-        memory_cpy(&cmd_buffer[put_pos].create_texture, (void*)&tcp, sizeof(texture_creation_params));
+        memcpy(&cmd_buffer[put_pos].create_texture, (void*)&tcp, sizeof(texture_creation_params));
 
         cmd_buffer[put_pos].create_texture.data = memory_alloc(tcp.data_size);
 
         if (tcp.data)
         {
-            memory_cpy(cmd_buffer[put_pos].create_texture.data, tcp.data, tcp.data_size);
+            memcpy(cmd_buffer[put_pos].create_texture.data, tcp.data, tcp.data_size);
         }
         else
         {
@@ -991,7 +991,7 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index = CMD_CREATE_SAMPLER;
 
-        memory_cpy(&cmd_buffer[put_pos].create_sampler, (void*)&scp, sizeof(sampler_creation_params));
+        memcpy(&cmd_buffer[put_pos].create_sampler, (void*)&scp, sizeof(sampler_creation_params));
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
@@ -1018,7 +1018,7 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index = CMD_CREATE_RASTER_STATE;
 
-        memory_cpy(&cmd_buffer[put_pos].create_raster_state, (void*)&rscp, sizeof(rasteriser_state_creation_params));
+        memcpy(&cmd_buffer[put_pos].create_raster_state, (void*)&rscp, sizeof(rasteriser_state_creation_params));
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
@@ -1041,7 +1041,7 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index = CMD_SET_VIEWPORT;
 
-        memory_cpy(&cmd_buffer[put_pos].set_viewport, (void*)&vp, sizeof(viewport));
+        memcpy(&cmd_buffer[put_pos].set_viewport, (void*)&vp, sizeof(viewport));
 
         INC_WRAP(put_pos);
     }
@@ -1050,7 +1050,7 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index = CMD_SET_SCISSOR_RECT;
 
-        memory_cpy(&cmd_buffer[put_pos].set_rect, (void*)&r, sizeof(rect));
+        memcpy(&cmd_buffer[put_pos].set_rect, (void*)&r, sizeof(rect));
 
         INC_WRAP(put_pos);
     }
@@ -1071,14 +1071,14 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index = CMD_CREATE_BLEND_STATE;
 
-        memory_cpy(&cmd_buffer[put_pos].create_blend_state, (void*)&bcp, sizeof(blend_creation_params));
+        memcpy(&cmd_buffer[put_pos].create_blend_state, (void*)&bcp, sizeof(blend_creation_params));
 
         // alloc and copy the render targets blend modes. to save space in the cmd buffer
         u32   render_target_modes_size                        = sizeof(render_target_blend) * bcp.num_render_targets;
         void* mem                                             = memory_alloc(render_target_modes_size);
         cmd_buffer[put_pos].create_blend_state.render_targets = (render_target_blend*)mem;
 
-        memory_cpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets,
+        memcpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets,
                    render_target_modes_size);
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
@@ -1123,7 +1123,7 @@ namespace pen
         cmd_buffer[put_pos].update_buffer.data_size    = data_size;
         cmd_buffer[put_pos].update_buffer.offset       = offset;
         cmd_buffer[put_pos].update_buffer.data         = memory_alloc(data_size);
-        memory_cpy(cmd_buffer[put_pos].update_buffer.data, data, data_size);
+        memcpy(cmd_buffer[put_pos].update_buffer.data, data, data_size);
 
         INC_WRAP(put_pos);
     }
@@ -1135,7 +1135,7 @@ namespace pen
         cmd_buffer[put_pos].p_create_depth_stencil_state =
             (depth_stencil_creation_params*)memory_alloc(sizeof(depth_stencil_creation_params));
 
-        memory_cpy(cmd_buffer[put_pos].p_create_depth_stencil_state, &dscp, sizeof(depth_stencil_creation_params));
+        memcpy(cmd_buffer[put_pos].p_create_depth_stencil_state, &dscp, sizeof(depth_stencil_creation_params));
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
@@ -1162,7 +1162,7 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index          = CMD_SET_TARGETS;
         cmd_buffer[put_pos].set_targets.num_colour = num_colour_targets;
-        memory_cpy(&cmd_buffer[put_pos].set_targets.colour, colour_targets, num_colour_targets * sizeof(u32));
+        memcpy(&cmd_buffer[put_pos].set_targets.colour, colour_targets, num_colour_targets * sizeof(u32));
         cmd_buffer[put_pos].set_targets.depth = depth_target;
 
         INC_WRAP(put_pos);
@@ -1336,7 +1336,7 @@ namespace pen
         // make copy of string to be able to use temporaries
         u32 len                  = string_length(name);
         cmd_buffer[put_pos].name = (c8*)memory_alloc(len);
-        memory_cpy(cmd_buffer[put_pos].name, name, len);
+        memcpy(cmd_buffer[put_pos].name, name, len);
         cmd_buffer[put_pos].name[len] = '\0';
 
         INC_WRAP(put_pos);

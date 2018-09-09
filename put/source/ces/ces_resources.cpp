@@ -360,10 +360,10 @@ namespace put
                 p_geometry->material_id_name = PEN_HASH(mat_names[submesh].c_str());
                 p_geometry->submesh_index    = submesh;
 
-                pen::memory_cpy(&p_geometry->min_extents, p_reader, sizeof(vec3f));
+                memcpy(&p_geometry->min_extents, p_reader, sizeof(vec3f));
                 p_reader += 3;
 
-                pen::memory_cpy(&p_geometry->max_extents, p_reader, sizeof(vec3f));
+                memcpy(&p_geometry->max_extents, p_reader, sizeof(vec3f));
                 p_reader += 3;
 
                 // vb and ib
@@ -383,7 +383,7 @@ namespace put
 
                     p_geometry->p_skin = (cmp_skin*)pen::memory_alloc(sizeof(cmp_skin));
 
-                    pen::memory_cpy(&p_geometry->p_skin->bind_shape_matrix, p_reader, sizeof(mat4));
+                    memcpy(&p_geometry->p_skin->bind_shape_matrix, p_reader, sizeof(mat4));
                     p_reader += 16;
 
                     // Conversion from max to lhs - this needs to go into the build pipeline
@@ -396,7 +396,7 @@ namespace put
                     p_geometry->p_skin->bind_shape_matrix = final_bind;
 
                     u32 num_ijb_floats = *p_reader++;
-                    pen::memory_cpy(&p_geometry->p_skin->joint_bind_matrices[0], p_reader, sizeof(f32) * num_ijb_floats);
+                    memcpy(&p_geometry->p_skin->joint_bind_matrices[0], p_reader, sizeof(f32) * num_ijb_floats);
                     p_reader += num_ijb_floats;
 
                     p_geometry->p_skin->num_joints = num_ijb_floats / 16;
@@ -426,7 +426,7 @@ namespace put
 
                 // keep a cpu copy of position data
                 p_geometry->cpu_position_buffer = pen::memory_alloc(bcp.buffer_size);
-                pen::memory_cpy(p_geometry->cpu_position_buffer, bcp.data, bcp.buffer_size);
+                memcpy(p_geometry->cpu_position_buffer, bcp.data, bcp.buffer_size);
 
                 if (p_geometry->min_extents.x == -1.0f)
                 {
@@ -460,7 +460,7 @@ namespace put
 
                 // keep a cpu copy of index data
                 p_geometry->cpu_index_buffer = pen::memory_alloc(bcp.buffer_size);
-                pen::memory_cpy(p_geometry->cpu_index_buffer, bcp.data, bcp.buffer_size);
+                memcpy(p_geometry->cpu_index_buffer, bcp.data, bcp.buffer_size);
 
                 p_reader = (u32*)((c8*)p_reader + bcp.buffer_size);
 
@@ -487,7 +487,7 @@ namespace put
         {
             cmp_material* instance = &scene->materials[node_index];
 
-            pen::memory_cpy(instance->texture_handles, mr->texture_handles, sizeof(u32) * SN_NUM_TEXTURES);
+            memcpy(instance->texture_handles, mr->texture_handles, sizeof(u32) * SN_NUM_TEXTURES);
 
             scene->id_material[node_index]    = mr->hash;
             scene->material_names[node_index] = mr->material_name;
@@ -592,19 +592,19 @@ namespace put
             p_mat->hash          = hash;
 
             // diffuse
-            pen::memory_cpy(&p_mat->data[0], p_reader, sizeof(vec4f));
+            memcpy(&p_mat->data[0], p_reader, sizeof(vec4f));
             p_reader += 4;
 
             // specular
-            pen::memory_cpy(&p_mat->data[4], p_reader, sizeof(vec4f));
+            memcpy(&p_mat->data[4], p_reader, sizeof(vec4f));
             p_reader += 4;
 
             // shininess
-            pen::memory_cpy(&p_mat->data[3], p_reader, sizeof(f32));
+            memcpy(&p_mat->data[3], p_reader, sizeof(f32));
             p_reader++;
 
             // reflectivity
-            pen::memory_cpy(&p_mat->data[7], p_reader, sizeof(f32));
+            memcpy(&p_mat->data[7], p_reader, sizeof(f32));
             p_reader++;
 
             u32 num_maps = *p_reader++;
@@ -713,7 +713,7 @@ namespace put
                         continue;
 
                     f32* data = new f32[num_floats];
-                    pen::memory_cpy(data, p_u32reader, sizeof(f32) * num_floats);
+                    memcpy(data, p_u32reader, sizeof(f32) * num_floats);
 
                     p_u32reader += num_floats;
 
@@ -908,11 +908,11 @@ namespace put
                     switch (type)
                     {
                         case PMM_TRANSLATE:
-                            pen::memory_cpy(&translation, p_u32reader, 12);
+                            memcpy(&translation, p_u32reader, 12);
                             p_u32reader += 3;
                             break;
                         case PMM_ROTATE:
-                            pen::memory_cpy(&rotations[num_rotations], p_u32reader, 16);
+                            memcpy(&rotations[num_rotations], p_u32reader, 16);
                             rotations[num_rotations].w = maths::deg_to_rad(rotations[num_rotations].w);
                             if (rotations[num_rotations].w < zero_rotation_epsilon &&
                                 rotations[num_rotations].w > zero_rotation_epsilon)
@@ -922,7 +922,7 @@ namespace put
                             break;
                         case PMM_MATRIX:
                             has_matrix_transform = true;
-                            pen::memory_cpy(&matrix, p_u32reader, 16 * 4);
+                            memcpy(&matrix, p_u32reader, 16 * 4);
                             p_u32reader += 16;
                             break;
                         case PMM_IDENTITY:

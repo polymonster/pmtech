@@ -41,7 +41,7 @@ namespace pen
 
     void string_format(c8* dest, u32 buffer_size, const c8* format, ...)
     {
-        // pen::memory_set( dest, 0x0, buffer_size );
+        // memset( dest, 0x0, buffer_size );
 
         va_list va;
         va_start(va, format);
@@ -53,7 +53,7 @@ namespace pen
 
     void string_format_wide(c16* dest, u32 buffer_size, const c16* format, ...)
     {
-        // pen::memory_set( dest, 0x0, buffer_size * 2 );
+        // memset( dest, 0x0, buffer_size * 2 );
 
         va_list va;
         va_start(va, format);

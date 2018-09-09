@@ -61,7 +61,7 @@ namespace pen
 
         u32 len      = pen::string_length(volumes_name);
         results.name = (c8*)pen::memory_alloc(len + 1);
-        pen::memory_cpy(results.name, volumes_name, len);
+        pen::memcpy(results.name, volumes_name, len);
         results.name[len] = '\0';
 
 #ifndef __linux__
@@ -76,7 +76,7 @@ namespace pen
             len                      = pen::string_length(mounts[i].f_mntonname);
             results.children[i].name = (c8*)pen::memory_alloc(len + 1);
 
-            pen::memory_cpy(results.children[i].name, mounts[i].f_mntonname, len);
+            pen::memcpy(results.children[i].name, mounts[i].f_mntonname, len);
             results.children[i].name[len] = '\0';
 
             results.children[i].children     = nullptr;
@@ -197,7 +197,7 @@ namespace pen
                     u32 len = pen::string_length(ent->d_name);
                     len     = min<u32>(len, 1022);
 
-                    pen::memory_cpy(results.children[i].name, ent->d_name, len);
+                    pen::memcpy(results.children[i].name, ent->d_name, len);
                     results.children[i].name[len] = '\0';
 
                     results.children[i].num_children = 0;

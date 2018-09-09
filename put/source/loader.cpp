@@ -309,7 +309,7 @@ namespace put
 
         // copy texture data into the tcp storage
         u8* top_image_start = (u8*)file_data + sizeof(dds_header);
-        pen::memory_cpy(tcp.data, top_image_start, tcp.data_size);
+        memcpy(tcp.data, top_image_start, tcp.data_size);
 
         // free the files contents
         pen::memory_free(file_data);
