@@ -33,7 +33,9 @@ project "bullet_monolithic"
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
 		systemversion("8.1:10.1")
 	end
-		
+	
+	setup_env()
+	
 	files 
 	{ 
 		"src\\Bullet3Collision\\**.*",
