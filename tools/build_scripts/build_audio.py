@@ -19,23 +19,10 @@ print(platform_name)
 
 audio_dir = os.path.join(os.getcwd(), "assets", "audio")
 build_dir = os.path.join(os.getcwd(), "bin", platform_name, "data", "audio")
-bin_dir = os.path.join(os.getcwd(), "bin", platform_name)
 
 # make directories
 if not os.path.exists(build_dir):
     os.makedirs(build_dir)
-
-dll = "fmod64.dll"
-if platform_name == "osx":
-    dll = "libfmod.dylib"
-elif platform_name == "linux":
-    dll = "libfmod.so"
-
-# copy fmod dll / dylib
-print("copying dynamic library to binary dir")
-
-src_file = os.path.join(pmtech_dir, "third_party", "fmod", "lib", platform_name, dll)
-shutil.copy(src_file, bin_dir)
 
 # copy audio files
 if os.path.exists(audio_dir):

@@ -186,19 +186,27 @@ function create_app(project_name, source_directory, root_directory)
 		location (root_directory .. "/build/" .. platform_dir)
 		targetdir (root_directory .. "/bin/" .. platform_dir)
 		debugdir (root_directory .. "/bin/" .. platform_dir)
-	
+			
 		configuration "Debug"
 			defines { "DEBUG" }
 			flags { "WinMain" }
 			symbols "On"
 			targetname (project_name .. "_d")
 			architecture "x64"
-  
+			postbuildcommands 
+			{
+  				("{COPY} " .. shared_libs_dir .. " %{cfg.targetdir}")
+			}
+			
 		configuration "Release"
 			defines { "NDEBUG" }
 			flags { "WinMain", "OptimizeSpeed" }
 			targetname (project_name)
 			architecture "x64"
+			postbuildcommands 
+			{
+  				("{COPY} " .. shared_libs_dir .. " %{cfg.targetdir}")
+			}
 		
 end
 

@@ -5,6 +5,7 @@ build_cmd = ""
 link_cmd = ""
 renderer_dir = ""
 sdk_version = ""
+shared_libs_dir = ""
 pmtech_dir = "../"
 
 function setup_from_options()
@@ -71,6 +72,7 @@ function setup_from_action()
         build_cmd = "/Ob1" -- use force inline
     end
     
+    shared_libs_dir = (pmtech_dir .. '"../../third_party/shared_libs/' .. platform_dir .. '/"')
     platform = platform_dir
 end
 
