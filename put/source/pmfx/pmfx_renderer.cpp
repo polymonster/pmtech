@@ -1690,18 +1690,18 @@ namespace put
                 for (auto& p : s_post_process_passes)
                 {
                     u32 ti = get_technique_index(p.pmfx_shader, p.technique, 0);
-                    if(has_technique_textures(p.pmfx_shader, ti))
+                    if(has_technique_samplers(p.pmfx_shader, ti))
                     {
-                        technique_texture* tt = get_technique_textures(p.pmfx_shader, ti);
+                        technique_sampler* ts = get_technique_samplers(p.pmfx_shader, ti);
                         
                         static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
                         
-                        u32 num_tt = sb_count(tt);
+                        u32 num_tt = sb_count(ts);
                         for(u32 i = 0; i < num_tt; ++i)
                         {
                             sampler_binding sb;
-                            sb.handle = tt[i].handle;
-                            sb.sampler_unit = tt[i].unit;
+                            sb.handle = ts[i].handle;
+                            sb.sampler_unit = ts[i].unit;
                             sb.shader_type = PEN_SHADER_TYPE_PS;
                             sb.sampler_state = get_render_state_by_name(id_default_sampler_state);
                             
@@ -2158,12 +2158,12 @@ namespace put
                     }
                 }
                 
-                technique_texture* tt = get_technique_textures(pp.pmfx_shader, ti);
-                if(tt)
+                technique_sampler* ts = get_technique_samplers(pp.pmfx_shader, ti);
+                if(ts)
                 {
                     pen::json j_textures;
                     
-                    u32 num_textures = sb_count(tt);
+                    u32 num_textures = sb_count(ts);
                     for (u32 i = 0; i < num_textures; ++i)
                     {
                         sampler_binding sb = pp.technique_samplers.sb[i];
@@ -2174,7 +2174,7 @@ namespace put
                         j_texture.set("filename", fn);
                         j_texture.set("sampler_state", "default");
                         
-                        j_textures.set(tt[i].name.c_str(), j_texture);
+                        j_textures.set(ts[i].name.c_str(), j_texture);
                     }
                     
                     j_technique.set("textures", j_textures);
