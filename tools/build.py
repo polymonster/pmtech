@@ -181,10 +181,13 @@ if __name__ == "__main__":
 
     shell_build = ["linux", "osx", "ios"]
 
+    third_party_folder = os.path.join(build_config["pmtech_dir"], "third_party")
+
     third_party_build = ""
     if util.get_platform_name() in shell_build:
-        third_party_folder = os.path.join(build_config["pmtech_dir"], "third_party", )
         third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
+    #else:
+    #    third_party_build += "cd " + third_party_folder + "; build_libs.bat"
 
     premake_exec = os.path.join(tools_dir, "premake", "premake5")
     if platform.system() == "Linux":

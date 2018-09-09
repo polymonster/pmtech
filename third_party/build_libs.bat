@@ -1,4 +1,8 @@
 :: third party build for win32
+:: pushd .
+:: cd /D "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build"
+:: call vcvarsall.bat x86_amd64
+:: popd
 
 :: bullet
 cd bullet

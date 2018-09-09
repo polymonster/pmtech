@@ -65,14 +65,16 @@ function setup_from_action()
             build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++ -mmacosx-version-min=10.8"
         end
+		shared_libs_dir = (pmtech_dir .. '"../../third_party/shared_libs/' .. platform_dir .. '/"')
     elseif _ACTION == "android-studio" then 
         build_cmd = { "-std=c++11" }
     elseif _ACTION == "vs2017" then
         platform_dir = "win32" 
         build_cmd = "/Ob1" -- use force inline
+		shared_libs_dir = (pmtech_dir .. '"../../third_party/shared_libs/' .. platform_dir )
     end
     
-    shared_libs_dir = (pmtech_dir .. '"../../third_party/shared_libs/' .. platform_dir .. '/"')
+    
     platform = platform_dir
 end
 
