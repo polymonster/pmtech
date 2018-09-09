@@ -8,3 +8,4 @@ cd bullet
 cd build/$1
 make config=debug
 make config=release
+cd ../../..
