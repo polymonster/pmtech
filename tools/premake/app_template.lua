@@ -196,15 +196,15 @@ function create_app(project_name, source_directory, root_directory)
 			pmtech_dir .. "pen/lib/" .. platform_dir, 
 			pmtech_dir .. "put/lib/" .. platform_dir,
 		}
+		
+		location (root_directory .. "/build/" .. platform_dir)
+		targetdir (root_directory .. "/bin/" .. platform_dir)
+		debugdir (root_directory .. "/bin/" .. platform_dir)
 	
 		setup_env()
 		setup_platform()
 		setup_modules()
 	
-		location (root_directory .. "/build/" .. platform_dir)
-		targetdir (root_directory .. "/bin/" .. platform_dir)
-		debugdir (root_directory .. "/bin/" .. platform_dir)
-			
 		configuration "Debug"
 			defines { "DEBUG" }
 			flags { "WinMain" }
