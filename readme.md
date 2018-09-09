@@ -41,3 +41,4 @@ Take a look at getting started quick [guide](https://polymonster.github.io/artic
 - [Bullet](https://github.com/bulletphysics/bullet3)
 - [ImGui](https://github.com/ocornut/imgui)
 - [NVTT](https://github.com/castano/nvidia-texture-tools)
+
