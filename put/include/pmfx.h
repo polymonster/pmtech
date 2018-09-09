@@ -34,6 +34,11 @@ namespace put
 
         UPDATES_NUM
     };
+    
+    enum e_render_constants
+    {
+        MAX_TECHNIQUE_SAMPLER_BINDINGS = 8
+    };
 
     struct scene_view
     {
@@ -69,6 +74,28 @@ namespace put
 
         void (*render_function)(const scene_view&) = nullptr;
     };
+    
+    struct technique_constant_data
+    {
+        f32 data[64] = {0};
+    };
+    
+    struct sampler_binding
+    {
+        hash_id id_texture;
+        u32     handle;
+        u32     sampler_unit;
+        u32     sampler_state;
+        u32     shader_type;
+    };
+    
+    struct sampler_set
+    {
+        // 8 generic samplers for draw calls, can bind to any slots.. if more are required use a second set.
+        // global samplers (shadow map, render targets etc, will still be bound in addition to these)
+        sampler_binding sb[MAX_TECHNIQUE_SAMPLER_BINDINGS] = {0};
+    };
+
 } // namespace put
 
 namespace put
@@ -210,7 +237,7 @@ namespace put
         u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
         technique_sampler*  get_technique_samplers(shader_handle handle, u32 index);
 
-        void show_technique_ui(shader_handle shader, u32 technique_index, f32* data);
+        bool show_technique_ui(shader_handle shader, u32 technique_index, f32* data, sampler_set& samplers);
         bool has_technique_constants(shader_handle shader, u32 technique_index);
         bool has_technique_samplers(shader_handle shader, u32 technique_index);
         bool has_technique_params(shader_handle shader, u32 technique_index);

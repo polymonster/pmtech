@@ -16,33 +16,51 @@
 #include "pen_string.h"
 #include "renderer.h"
 
+using namespace put;
+using namespace pmfx;
+using namespace ces;
+
+namespace
+{
+    // clang-format off
+    const c8* semantic_names[] = {
+        "SV_POSITION",
+        "POSITION",
+        "TEXCOORD",
+        "NORMAL",
+        "TANGENT",
+        "BITANGENT",
+        "COLOR",
+        "BLENDINDICES"
+    };
+    // clang-format on
+    
+    shader_program null_shader      = {0};
+    
+    hash_id id_widgets[] = {PEN_HASH("slider"), PEN_HASH("input"), PEN_HASH("colour")};
+    static_assert(PEN_ARRAY_SIZE(id_widgets) == CW_NUM, "mismatched array size");
+    
+    struct pmfx_shader
+    {
+        hash_id         id_filename = 0;
+        Str             filename    = nullptr;
+        bool            invalidated = false;
+        pen::json       info;
+        u32             info_timestamp = 0;
+        shader_program* techniques     = nullptr;
+    };
+    pmfx_shader* k_pmfx_list = nullptr;
+    
+    const char**  k_shader_names    = nullptr;
+    const char*** k_technique_names = nullptr;
+    
+    u32 k_num_shader_names = 0;
+}
+
 namespace put
 {
     namespace pmfx
     {
-        const c8*      semantic_names[] = {"SV_POSITION", "POSITION",  "TEXCOORD", "NORMAL",
-                                      "TANGENT",     "BITANGENT", "COLOR",    "BLENDINDICES"};
-        shader_program null_shader      = {0};
-
-        hash_id id_widgets[] = {PEN_HASH("slider"), PEN_HASH("input"), PEN_HASH("colour")};
-        static_assert(PEN_ARRAY_SIZE(id_widgets) == CW_NUM, "mismatched array size");
-
-        struct pmfx
-        {
-            hash_id         id_filename = 0;
-            Str             filename    = nullptr;
-            bool            invalidated = false;
-            pen::json       info;
-            u32             info_timestamp = 0;
-            shader_program* techniques     = nullptr;
-        };
-        pmfx* k_pmfx_list = nullptr;
-
-        const char**  k_shader_names    = nullptr;
-        const char*** k_technique_names = nullptr;
-
-        u32 k_num_shader_names = 0;
-
         void generate_name_lists()
         {
             pen::memory_free(k_shader_names);
@@ -604,14 +622,14 @@ namespace put
             }
         }
 
-        pmfx load_internal(const c8* filename)
+        pmfx_shader load_internal(const c8* filename)
         {
             // load info file for description
             c8 info_file_buf[256];
             get_pmfx_info_filename(info_file_buf, filename);
 
             // read shader info json
-            pmfx new_pmfx;
+            pmfx_shader new_pmfx;
 
             new_pmfx.filename    = filename;
             new_pmfx.id_filename = PEN_HASH(filename);
@@ -655,7 +673,7 @@ namespace put
                 else
                     ph++;
 
-            pmfx new_pmfx = load_internal(pmfx_name);
+            pmfx_shader new_pmfx = load_internal(pmfx_name);
 
             ph = 0;
             // for (auto& p : s_pmfx_list)
@@ -750,7 +768,7 @@ namespace put
                     if (err == PEN_ERR_OK && current_ts > pmfx_set.info_timestamp)
                     {
                         // load new one
-                        pmfx pmfx_new = load_internal(pmfx_set.filename.c_str());
+                        pmfx_shader pmfx_new = load_internal(pmfx_set.filename.c_str());
 
                         // release existing
                         release_shader(current_counter);
@@ -806,12 +824,14 @@ namespace put
             return get_technique_constants(shader, technique_index) || get_technique_samplers(shader, technique_index);
         }
         
-        void constant_ui(shader_handle shader, u32 technique_index, f32* material_data)
+        bool constant_ui(shader_handle shader, u32 technique_index, f32* material_data)
         {
             technique_constant* tc = get_technique_constants(shader, technique_index);
             
+            bool rv = false;
+            
             if (!tc)
-                return;
+                return rv;
             
             static bool colour_edit[64] = {0};
             u32         num_constants   = sb_count(tc);
@@ -822,10 +842,10 @@ namespace put
                 switch (tc[i].widget)
                 {
                     case CW_INPUT:
-                        ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
+                        rv |= ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
                         break;
                     case CW_SLIDER:
-                        ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f", 1.0f);
+                        rv |= ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f", 1.0f);
                         break;
                     case CW_COLOUR:
                         
@@ -835,6 +855,7 @@ namespace put
                         if (ImGui::Button(tc[i].name.c_str()))
                         {
                             colour_edit[i] = true;
+                            rv = true;
                         }
                         
                         if (colour_edit[i])
@@ -845,11 +866,11 @@ namespace put
                             
                             if (tc[i].num_elements == 3)
                             {
-                                ImGui::ColorPicker3(tc[i].name.c_str(), f);
+                                rv |= ImGui::ColorPicker3(tc[i].name.c_str(), f);
                             }
                             else
                             {
-                                ImGui::ColorPicker4(tc[i].name.c_str(), f);
+                                rv |= ImGui::ColorPicker4(tc[i].name.c_str(), f);
                             }
                             
                             ImGui::End();
@@ -861,14 +882,18 @@ namespace put
                         break;
                 }
             }
+            
+            return rv;
         }
         
-        void texture_ui(shader_handle shader, u32 technique_index)
+        bool texture_ui(shader_handle shader, u32 technique_index, cmp_samplers& samplers)
         {
             technique_sampler* tt = get_technique_samplers(shader, technique_index);
             
+            bool rv = false;
+            
             if (!tt)
-                return;
+                return false;
             
             u32 num_textures = sb_count(tt);
             
@@ -882,7 +907,7 @@ namespace put
                 technique_sampler& t = tt[i];
                 
                 ImGui::Text("unit: %i [%s]", t.unit, t.name.c_str());
-                if( ImGui::ImageButton((void*)&t.handle, ImVec2(64, 64)) )
+                if( ImGui::ImageButton((void*)&samplers.sb[i].handle, ImVec2(64, 64)) )
                 {
                     if (select_index == -1)
                     {
@@ -891,7 +916,7 @@ namespace put
                     }
                 }
                 
-                ImGui::Text("file: %s", t.filename.c_str());
+                ImGui::Text("file: %s", put::get_texture_filename(samplers.sb[i].handle).c_str());
                 
                 ImGui::NextColumn();
             }
@@ -901,20 +926,28 @@ namespace put
                 const c8* fn = dev_ui::file_browser(open_fb, dev_ui::FB_OPEN);
                 if(fn)
                 {
-                    tt[select_index].name = fn;
-                    tt[select_index].handle = put::load_texture(fn);
+                    samplers.sb[select_index].handle = put::load_texture(fn);
 
                     select_index = -1;
+                    
+                    rv = true;
                 }
             }
             
             ImGui::Columns(1);
+            return rv;
         }
 
-        void show_technique_ui(shader_handle shader, u32 technique_index, f32* material_data)
+        bool show_technique_ui(shader_handle shader,
+                               u32 technique_index,
+                               f32* material_data,
+                               cmp_samplers& samplers)
         {
-            constant_ui(shader, technique_index, material_data);
-            texture_ui(shader, technique_index);
+            bool rv = false;
+            rv |= constant_ui(shader, technique_index, material_data);
+            rv |= texture_ui(shader, technique_index, samplers);
+            
+            return rv;
         }
     } // namespace pmfx
 } // namespace put

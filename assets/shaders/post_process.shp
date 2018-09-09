@@ -70,7 +70,7 @@ vs_output vs_ndc_quad( vs_input input )
 	output.position = input.position;
 	output.texcoord = input.texcoord;
 	
-	output.texcoord.y = output.texcoord.y * viewport_correction.x + viewport_correction.y;
+	output.position.y = output.position.y * viewport_correction.x;
 	
 	return output;
 }
@@ -220,8 +220,8 @@ ps_output ps_colour_lut( vs_output input )
     float4 remapped_1 = sample_texture_level(lookup_texture, tc_1, 0.0);
     float4 remapped_2 = sample_texture_level(lookup_texture, tc_2, 0.0);
 
-    output.colour = lerp(remapped_1, remapped_2, frac(input_b));   
-        
+    output.colour = lerp(remapped_1, remapped_2, frac(input_b));  
+            
     return output;
 }
 
