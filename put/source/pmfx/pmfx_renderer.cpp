@@ -19,6 +19,7 @@ extern pen::window_creation_params pen_window;
 using namespace put;
 using namespace pmfx;
 using namespace pen;
+using namespace ces;
 
 namespace
 {
@@ -119,16 +120,6 @@ namespace
     mode_map render_flags_map[] = {"forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0};
     // clang-format on
 
-    struct sampler_binding
-    {
-        hash_id id_texture;
-        u32     handle;
-        u32     sampler_unit;
-        u32     sampler_state;
-        u32     shader_type;
-        bool    input_texture = false;
-    };
-
     struct view_params
     {
         Str     name;
@@ -155,8 +146,9 @@ namespace
         u32 cbuffer_filter      = PEN_INVALID_HANDLE;
         u32 cbuffer_technique   = PEN_INVALID_HANDLE;
 
-        ces::cmp_material_data technique_constants;
-
+        technique_constant_data technique_constants;
+        sampler_set             technique_samplers;
+        
         shader_handle pmfx_shader;
         hash_id       technique;
         u32           render_flags;
@@ -1459,30 +1451,10 @@ namespace put
                         bcp.usage_flags      = PEN_USAGE_DYNAMIC;
                         bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
                         bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                        bcp.buffer_size      = sizeof(ces::cmp_material_data);
+                        bcp.buffer_size      = sizeof(technique_constant_data);
                         bcp.data             = nullptr;
 
                         new_view.cbuffer_technique = pen::renderer_create_buffer(bcp);
-                    }
-                    
-                    if(has_technique_textures(new_view.pmfx_shader, ti))
-                    {
-                        technique_texture* tt = get_technique_textures(new_view.pmfx_shader, ti);
-                        
-                        static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
-
-                        u32 num_tt = sb_count(tt);
-                        for(u32 i = 0; i < num_tt; ++i)
-                        {
-                            sampler_binding sb;
-                            sb.handle = tt[i].handle;
-                            sb.sampler_unit = tt[i].unit;
-                            sb.shader_type = PEN_SHADER_TYPE_PS;
-                            sb.sampler_state = get_render_state_by_name(id_default_sampler_state);
-                            sb.input_texture = true;
-
-                            new_view.sampler_bindings.push_back(sb);
-                        }
                     }
                 }
 
@@ -1687,10 +1659,7 @@ namespace put
                         add_virtual_target(v.id_depth_target);
 
                     for (auto& sb : v.sampler_bindings)
-                    {
-                        if(!sb.input_texture)
-                            add_virtual_target(sb.id_texture);
-                    }
+                        add_virtual_target(sb.id_texture);
                 }
 
                 u32 pass_counter = 0;
@@ -1705,10 +1674,7 @@ namespace put
                         p.depth_target = PEN_NULL_DEPTH_BUFFER;
 
                     for (auto& sb : p.sampler_bindings)
-                    {
-                        if(!sb.input_texture)
-                            sb.handle = get_virtual_target(sb.id_texture, VRT_READ);
-                    }
+                        sb.handle = get_virtual_target(sb.id_texture, VRT_READ);
 
                     // material for pass
                     pmfx::initialise_constant_defaults(p.pmfx_shader, p.technique, p.technique_constants.data);
@@ -1717,6 +1683,30 @@ namespace put
                     virtual_rt_swap_buffers();
 
                     ++pass_counter;
+                }
+                
+                // get technique sampler bindings
+                for (auto& p : s_post_process_passes)
+                {
+                    u32 ti = get_technique_index(p.pmfx_shader, p.technique, 0);
+                    if(has_technique_textures(p.pmfx_shader, ti))
+                    {
+                        technique_texture* tt = get_technique_textures(p.pmfx_shader, ti);
+                        
+                        static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
+                        
+                        u32 num_tt = sb_count(tt);
+                        for(u32 i = 0; i < num_tt; ++i)
+                        {
+                            sampler_binding sb;
+                            sb.handle = tt[i].handle;
+                            sb.sampler_unit = tt[i].unit;
+                            sb.shader_type = PEN_SHADER_TYPE_PS;
+                            sb.sampler_state = get_render_state_by_name(id_default_sampler_state);
+                            
+                            p.technique_samplers.sb[i] = sb;
+                        }
+                    }
                 }
             }
         } // namespace
@@ -1959,9 +1949,19 @@ namespace put
             float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
 
-            // bind view samplers
+            // bind view samplers.. render targets, global textures
             for (auto& sb : v.sampler_bindings)
             {
+                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
+            }
+            
+            // bind technique samplers
+            for(u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+            {
+                auto& sb = v.technique_samplers.sb[i];
+                if(sb.handle == 0)
+                    continue;
+                
                 pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
             }
 
@@ -1996,7 +1996,7 @@ namespace put
 
             if (is_valid(v.cbuffer_technique))
             {
-                pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data, sizeof(ces::cmp_material_data));
+                pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data, sizeof(technique_constant_data));
                 pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, PEN_SHADER_TYPE_PS);
             }
 
@@ -2138,7 +2138,6 @@ namespace put
             
             for (auto& pp : s_post_process_passes)
             {
-                
                 u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
                 technique_constant* tc = get_technique_constants(pp.pmfx_shader, ti);
                 
@@ -2377,9 +2376,9 @@ namespace put
                             if (has_technique_params(pp.pmfx_shader, ti))
                             {
                                 ImGui::Separator();
-                                ImGui::Text("%s", pp.name.c_str());
+                                ImGui::Text("Technique: %s", pp.name.c_str());
 
-                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0]);
+                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0], pp.technique_samplers);
                             }
                         }
 

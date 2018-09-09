@@ -912,7 +912,7 @@ namespace put
         struct scene_header
         {
             s32 header_size        = sizeof(*this);
-            s32 version            = 4;
+            s32 version            = 5;
             u32 num_nodes          = 0;
             s32 num_components     = 0;
             s32 num_lookup_strings = 0;

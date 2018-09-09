@@ -1655,6 +1655,7 @@ namespace put
             if (ImGui::CollapsingHeader("Material"))
             {
                 cmp_material_data mat = scene->material_data[selected_index];
+                cmp_samplers samp = scene->samplers[selected_index];
 
                 ImGui::Text("%s", scene->material_names[selected_index].c_str());
 
@@ -1702,7 +1703,7 @@ namespace put
 
                     if (tc)
                     {
-                        pmfx::show_technique_ui(shader, technique, &mat.data[0]);
+                        pmfx::show_technique_ui(shader, technique, &mat.data[0], samp);
 
                         u32               num_constants = sb_count(tc);
                         cmp_material_data pre_edit      = scene->material_data[selected_index];

@@ -54,7 +54,8 @@ namespace put
             CMP_PRE_SKINNED     = (1 << 16),
             CMP_SUB_GEOMETRY    = (1 << 17),
             CMP_SDF_SHADOW      = (1 << 18),
-            CMP_VOLUME          = (1 << 19)
+            CMP_VOLUME          = (1 << 19),
+            CMP_SAMPLERS        = (1 << 20)
         };
 
         enum e_state_flags : u32
@@ -125,7 +126,7 @@ namespace put
             hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
             s32     texture_handles[SN_NUM_TEXTURES]  = {0};
         };
-
+        
         struct cmp_draw_call
         {
             mat4  world_matrix;
@@ -144,7 +145,7 @@ namespace put
 
         struct cmp_material
         {
-            s32 texture_handles[SN_NUM_TEXTURES] = {0};
+            s32 texture_handles[SN_NUM_TEXTURES] = {0}; // this is now depracated in favour of sampler sets / cmp_samplers
             u32 sampler_states[SN_NUM_TEXTURES]  = {0};
             u32 material_cbuffer                 = PEN_INVALID_HANDLE;
             u32 material_cbuffer_size            = 0;
@@ -153,11 +154,10 @@ namespace put
             u32                 technique;
         };
 
-        struct cmp_material_data
-        {
-            f32 data[64] = {0};
-        };
-
+        // from pmfx
+        typedef technique_constant_data cmp_material_data;  // upto 64 floats of data stored in material cbuffer
+        typedef sampler_set             cmp_samplers;       // 8 samplers which can bind to any slots
+        
         struct cmp_physics
         {
             s32 type;
@@ -345,7 +345,7 @@ namespace put
                 num_components = (((size_t)&num_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
             };
 
-            // Components
+            // Components version 4
             cmp_array<u64>                 entities;
             cmp_array<u64>                 state_flags;
             cmp_array<hash_id>             id_name;
@@ -375,6 +375,7 @@ namespace put
             cmp_array<cmp_material_data>   material_data;
             cmp_array<material_resource>   material_resources;
             cmp_array<cmp_shadow>          shadows;
+            cmp_array<cmp_samplers>        samplers; // version 5
 
             // Ensure num_components is the next to calc size
             u32 num_components;
