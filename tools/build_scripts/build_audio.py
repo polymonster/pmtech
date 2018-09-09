@@ -28,7 +28,6 @@ if not os.path.exists(build_dir):
 if os.path.exists(audio_dir):
     print("copying audio to data dir")
     for f in os.listdir(audio_dir):
-        print(src_file)
         src_file = os.path.join(audio_dir,f)
         shutil.copy(src_file, build_dir)
 

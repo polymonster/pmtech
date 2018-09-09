@@ -7,34 +7,7 @@ import json
 import build_scripts.dependencies as dependencies
 import time
 import platform
-
-
-def get_platform_name_args(args):
-    for i in range(1, len(args)):
-        if "-platform" in args[i]:
-            return args[i + 1]
-    plat = "win32"
-    if os.name == "posix":
-        plat = "osx"
-        if platform.system() == "Linux":
-            plat = "linux"
-    return plat
-
-
-def get_platform_name():
-    plat = "win32"
-    if os.name == "posix":
-        plat = "osx"
-        if platform.system() == "Linux":
-            plat = "linux"
-    return plat
-
-
-def correct_path(path):
-    if os.name == "nt":
-        return path.replace("/", "\\")
-    return path
-
+import build_scripts.util as util
 
 def display_help():
     print("run with no arguments for prompted input")
@@ -180,7 +153,7 @@ if __name__ == "__main__":
     else:
         build_config = dict()
 
-    tools_dir = os.path.join(correct_path(build_config["pmtech_dir"]), "tools")
+    tools_dir = os.path.join(util.correct_path(build_config["pmtech_dir"]), "tools")
 
     assets_dir = "assets"
 
@@ -205,6 +178,13 @@ if __name__ == "__main__":
     renderer = ""
     data_dir = ""
     toolset = ""
+
+    shell_build = ["linux", "osx", "ios"]
+
+    third_party_build = ""
+    if util.get_platform_name() in shell_build:
+        third_party_folder = os.path.join(build_config["pmtech_dir"], "third_party", )
+        third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
 
     premake_exec = os.path.join(tools_dir, "premake", "premake5")
     if platform.system() == "Linux":
@@ -266,6 +246,7 @@ if __name__ == "__main__":
                 if os.path.exists(bd):
                     shutil.rmtree(bd)
         elif action == "code":
+            build_steps.append(third_party_build)
             build_steps.append(premake_exec + " " + project_options)
         elif action == "shaders":
             build_steps.append(python_exec + " " + shader_script + " " + shader_options)
