@@ -1,4 +1,4 @@
-function add_pmtech_links()
+local function add_pmtech_links()
 	configuration "Debug"
 		links { "put_d", "pen_d" }
 
@@ -8,7 +8,23 @@ function add_pmtech_links()
 	configuration {}
 end
 
-local function add_osx_links()
+local function copy_shared_libs()
+	configuration "Debug"
+		postbuildcommands 
+		{
+			("{COPY} " .. shared_libs_dir .. " %{cfg.targetdir}")
+		}
+		
+	configuration "Release"
+		postbuildcommands 
+		{
+			("{COPY} " .. shared_libs_dir .. " %{cfg.targetdir}")
+		}
+	
+	configuration {}
+end
+
+local function setup_osx()
 	links 
 	{ 
 		"Cocoa.framework",
@@ -18,9 +34,11 @@ local function add_osx_links()
 		"fmod"
 	}
 	add_pmtech_links()
+	copy_shared_libs()
 end
 
-local function add_linux_links()
+local function setup_linux()
+	--linux must be linked in order
 	add_pmtech_links()
 	links 
 	{ 
@@ -33,7 +51,7 @@ local function add_linux_links()
 	}
 end
 
-local function add_win32_links()
+local function setup_win32()
 	links 
 	{ 
 		"d3d11.lib", 
@@ -44,9 +62,14 @@ local function add_win32_links()
 		"Shlwapi.lib"	
 	}
 	add_pmtech_links()
+	
+	systemversion(windows_sdk_version())
+	disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
+
+	copy_shared_libs()
 end
 
-local function add_ios_links()
+local function setup_ios()
 	links 
 	{ 
 		"OpenGLES.framework",
@@ -55,9 +78,7 @@ local function add_ios_links()
 		"GLKit.framework",
 		"QuartzCore.framework",
 	}
-end
-
-local function add_ios_files(project_name, root_directory)
+	
 	files 
 	{ 
 		(pmtech_dir .. "/template/ios/**.*"),
@@ -88,18 +109,15 @@ local function setup_android()
 	}
 end
 
-local function setup_platform(project_name, root_directory)
+local function setup_platform()
 	if platform_dir == "win32" then
-		systemversion(windows_sdk_version())
-		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" } 
-		add_win32_links()
+		setup_win32()
 	elseif platform_dir == "osx" then
-		add_osx_links()
+		setup_osx()
 	elseif platform_dir == "ios" then
-		add_ios_links() 
-		add_ios_files(project_name, root_directory)
+		setup_ios()
 	elseif platform_dir == "linux" then 
-		add_linux_links()
+		setup_linux()
 	elseif platform_dir == "android" then 
 		setup_android()
 	end
@@ -180,7 +198,7 @@ function create_app(project_name, source_directory, root_directory)
 		}
 	
 		setup_env()
-		setup_platform(project_name, root_directory)
+		setup_platform()
 		setup_modules()
 	
 		location (root_directory .. "/build/" .. platform_dir)
@@ -193,20 +211,12 @@ function create_app(project_name, source_directory, root_directory)
 			symbols "On"
 			targetname (project_name .. "_d")
 			architecture "x64"
-			postbuildcommands 
-			{
-  				("{COPY} " .. shared_libs_dir .. " %{cfg.targetdir}")
-			}
 			
 		configuration "Release"
 			defines { "NDEBUG" }
 			flags { "WinMain", "OptimizeSpeed" }
 			targetname (project_name)
 			architecture "x64"
-			postbuildcommands 
-			{
-  				("{COPY} " .. shared_libs_dir .. " %{cfg.targetdir}")
-			}
 		
 end
 
