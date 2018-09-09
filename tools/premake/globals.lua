@@ -41,12 +41,14 @@ end
 
 function setup_from_action()
     if _ACTION == "gmake" then
+    
         if platform_dir == "linux" then
             build_cmd = "-std=c++11"
         else
             build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
         end
+        
     elseif _ACTION == "xcode4" then 
         platform_dir = "osx" 
         
@@ -65,17 +67,21 @@ function setup_from_action()
             build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++ -mmacosx-version-min=10.8"
         end
-		shared_libs_dir = ( pmtech_dir .. '../../third_party/shared_libs/' .. platform_dir .. '/' )
+        
     elseif _ACTION == "android-studio" then 
         build_cmd = { "-std=c++11" }
     elseif _ACTION == "vs2017" then
         platform_dir = "win32" 
         build_cmd = "/Ob1" -- use force inline
-		shared_libs_dir = (pmtech_dir .. '../../third_party/shared_libs/' .. platform_dir)
     end
     
-    
     platform = platform_dir
+    
+    if platform == "win32" then
+        shared_libs_dir = (pmtech_dir .. '../../third_party/shared_libs/' .. platform_dir)
+    elseif platform == "osx"  then
+        shared_libs_dir = ( '"' .. pmtech_dir .. '../../third_party/shared_libs/' .. platform_dir .. '/"' )
+    end
 end
 
 function setup_env_ios()
