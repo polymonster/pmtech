@@ -1,4 +1,6 @@
-platform_dir = "linux"
+dofile("../../tools/premake/options.lua")
+dofile("../../tools/premake/globals.lua")
+
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
 	platform_dir = _ACTION
 end
