@@ -11,6 +11,7 @@
 #include "str_utilities.h"
 #include "data_struct.h"
 #include "console.h"
+#include "ces_editor.h"
 
 #include <fstream>
 
@@ -2139,19 +2140,44 @@ namespace put
             for (auto& pp : s_post_process_passes)
             {
                 u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
-                technique_constant* tc = get_technique_constants(pp.pmfx_shader, ti);
                 
-                if(!tc)
+                if(!has_technique_params(pp.pmfx_shader, ti))
                     continue;
                 
                 pen::json j_technique;
                 
-                u32 num_constants = sb_count(tc);
-                for (u32 i = 0; i < num_constants; ++i)
+                technique_constant* tc = get_technique_constants(pp.pmfx_shader, ti);
+                if(tc)
                 {
-                    u32 cb_offset = tc[i].cb_offset;
-                    j_technique.set_array(tc[i].name.c_str(),
-                                          &pp.technique_constants.data[cb_offset], tc[i].num_elements);
+                    u32 num_constants = sb_count(tc);
+                    for (u32 i = 0; i < num_constants; ++i)
+                    {
+                        u32 cb_offset = tc[i].cb_offset;
+                        j_technique.set_array(tc[i].name.c_str(),
+                                              &pp.technique_constants.data[cb_offset], tc[i].num_elements);
+                    }
+                }
+                
+                technique_texture* tt = get_technique_textures(pp.pmfx_shader, ti);
+                if(tt)
+                {
+                    pen::json j_textures;
+                    
+                    u32 num_textures = sb_count(tt);
+                    for (u32 i = 0; i < num_textures; ++i)
+                    {
+                        sampler_binding sb = pp.technique_samplers.sb[i];
+                        
+                        Str fn = put::ces::strip_project_dir(put::get_texture_filename(sb.handle));
+                        
+                        pen::json j_texture;
+                        j_texture.set("filename", fn);
+                        j_texture.set("sampler_state", "default");
+                        
+                        j_textures.set(tt[i].name.c_str(), j_texture);
+                    }
+                    
+                    j_technique.set("textures", j_textures);
                 }
                 
                 j_pp_parameters.set(pp.name.c_str(), j_technique);
@@ -2280,7 +2306,7 @@ namespace put
                                 generate_post_process_config(j_pp);
                                 
                                 Str basename = pen::str_remove_ext(res);
-                                basename.append(".json");
+                                basename.append(".yaml");
                                 
                                 std::ofstream ofs(basename.c_str());
                                 ofs << j_pp.dumps().c_str();

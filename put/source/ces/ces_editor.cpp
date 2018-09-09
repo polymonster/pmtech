@@ -15,6 +15,8 @@
 
 #include "data_struct.h"
 
+extern pen::user_info pen_user_info;
+
 namespace put
 {
     namespace dev_ui
@@ -2858,6 +2860,13 @@ namespace put
 
             // reset depth state
             pen::renderer_set_depth_stencil_state(view.depth_stencil_state);
+        }
+        
+        Str strip_project_dir(const Str& filename)
+        {
+            Str project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
+            Str stripped = pen::str_replace_string(filename, project_dir.c_str(), "");
+            return stripped;
         }
     } // namespace ces
 } // namespace put

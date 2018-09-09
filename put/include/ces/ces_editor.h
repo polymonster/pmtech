@@ -29,6 +29,9 @@ namespace put
         void apply_transform_to_selection(entity_scene* scene, const vec3f move_axis);
 
         void render_scene_editor(const scene_view& view);
+        
+        Str strip_project_dir(const Str& filename);
+        
     } // namespace ces
 } // namespace put
 
