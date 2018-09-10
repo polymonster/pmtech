@@ -195,7 +195,7 @@
 			camera: model_viewer_camera,
 			scene_views: ["ces_render_scene"],
 			render_flags: ["forward_lit"],
-			post_process_name: default,
+			post_process: default,
 			
 			sampler_bindings:
 			[

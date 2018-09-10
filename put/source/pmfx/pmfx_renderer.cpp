@@ -1407,9 +1407,7 @@ namespace put
                 // sampler bindings
                 parse_sampler_bindings(view, new_view);
 
-                // post process flag.. todo change this to id, id of post process to perform on the output
-                // of this view.
-                new_view.post_process_name = view["post_process_name"].as_cstr();
+                new_view.post_process_name = view["post_process"].as_cstr();
                 if (!new_view.post_process_name.empty())
                 {
                     new_view.has_post_process = true;
@@ -1418,7 +1416,7 @@ namespace put
                 // filter id for post process passes
                 Str fk = view["filter_kernel"].as_str();
 
-                if (!(fk == ""))
+                if (!new_view.post_process_name.empty())
                 {
                     new_view.id_filter = view["filter_kernel"].as_hash_id();
 

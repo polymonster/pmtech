@@ -202,7 +202,10 @@ namespace pen
                 }
                 else if (jsoneq(js, t, search_name) == 0)
                 {
-                    ep.get_next = true;
+                    // todo fix
+                    const c8* colon = pen::sub_string(js + t->end, 1);
+                    if(colon[0] == ':')
+                        ep.get_next = true;
                 }
             }
             return 1;
