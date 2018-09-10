@@ -25,8 +25,8 @@ using namespace ces;
 namespace
 {
     // clang-format off
-    static hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
-    static hash_id ID_MAIN_DEPTH  = PEN_HASH("main_depth");
+    hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
+    hash_id ID_MAIN_DEPTH  = PEN_HASH("main_depth");
 
     struct mode_map
     {
@@ -112,13 +112,21 @@ namespace
         {"r32f",    PEN_HASH("r32f"),       PEN_TEX_FORMAT_R32_FLOAT,           32,     PEN_BIND_RENDER_TARGET},
         {"r16f",    PEN_HASH("r16f"),       PEN_TEX_FORMAT_R16_FLOAT,           16,     PEN_BIND_RENDER_TARGET},
         {"r32u",    PEN_HASH("r32u"),       PEN_TEX_FORMAT_R32_UINT,            32,     PEN_BIND_RENDER_TARGET},
-        {"d24s8",   PEN_HASH("d24s8"),      PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL}};
-    s32 num_formats = PEN_ARRAY_SIZE(rt_format);
+        {"d24s8",   PEN_HASH("d24s8"),      PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL}
+    };
 
-    Str rt_ratio[] = {"none", "equal", "half", "quarter", "eighth", "sixteenth"};
-    s32 num_ratios = PEN_ARRAY_SIZE(rt_ratio);
-
-    mode_map render_flags_map[] = {"forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0};
+    Str rt_ratio[] = {
+        "none",
+        "equal",
+        "half",
+        "quarter",
+        "eighth",
+        "sixteenth"
+    };
+    
+    mode_map render_flags_map[] = {
+        "forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0
+    };
     // clang-format on
 
     struct view_params
@@ -128,17 +136,31 @@ namespace
         hash_id id_render_target[pen::MAX_MRT] = {0};
         hash_id id_depth_target                = 0;
         hash_id id_filter                      = 0;
+        
+        // draw / update
+        ces::entity_scene* scene;
+        put::camera*       camera;
+        
+        std::vector<void (*)(const put::scene_view&)> render_functions;
 
-        s32 rt_width, rt_height;
-        f32 rt_ratio;
-
-        u32 render_targets[pen::MAX_MRT] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
-                                            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
+        // targets
+        u32 render_targets[pen::MAX_MRT] = {
+            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE
+        };
 
         u32 depth_target = PEN_INVALID_HANDLE;
 
+        // viewport
+        s32 rt_width;
+        s32 rt_height;
+        f32 rt_ratio;
+
         f32 viewport[4] = {0};
 
+        // render state
         u32 num_colour_targets  = 0;
         u32 clear_state         = 0;
         u32 raster_state        = 0;
@@ -146,21 +168,21 @@ namespace
         u32 blend_state         = 0;
         u32 cbuffer_filter      = PEN_INVALID_HANDLE;
         u32 cbuffer_technique   = PEN_INVALID_HANDLE;
-
-        technique_constant_data technique_constants;
-        sampler_set             technique_samplers;
         
+        // shader and technique
         shader_handle pmfx_shader;
         hash_id       technique;
         u32           render_flags;
-
-        ces::entity_scene* scene;
-        put::camera*       camera;
-
+        
+        technique_constant_data technique_constants;
+        sampler_set             technique_samplers;
+        
         std::vector<sampler_binding> sampler_bindings;
         vec4f*                       sampler_info;
-
-        std::vector<void (*)(const put::scene_view&)> render_functions;
+        
+        // post process
+        Str                          post_process_name;
+        std::vector<view_params>     post_process_chain;
 
         bool viewport_correction = true; // todo put this into flags?
         bool post_process        = true; // todo make this id to select post process
@@ -192,10 +214,21 @@ namespace
         vec4f info;              // xy = direction, z = num samples, w = pad
         vec4f offset_weight[16]; // x = offset, y = weight;
     };
+    
+    struct textured_vertex
+    {
+        float x, y, z, w;
+        float u, v;
+    };
+    
+    struct geometry_utility
+    {
+        u32 screen_quad_vb;
+        u32 screen_quad_ib;
+    };
 
-    bool             s_user_edited_chain = false;
-    std::vector<Str> s_post_process_chain;
-
+    bool                                 s_user_edited_chain = false;
+    std::vector<Str>                     s_post_process_chain;
     std::vector<Str>                     s_post_process_names;
     std::vector<view_params>             s_post_process_passes;
     std::vector<view_params>             s_views;
@@ -207,19 +240,7 @@ namespace
     std::vector<render_state>            s_render_states;
     std::vector<sampler_binding>         s_sampler_bindings;
     std::vector<filter_kernel>           s_filter_kernels;
-
-    struct textured_vertex
-    {
-        float x, y, z, w;
-        float u, v;
-    };
-
-    struct geometry_utility
-    {
-        u32 screen_quad_vb;
-        u32 screen_quad_ib;
-    };
-    geometry_utility s_geometry;
+    geometry_utility                     s_geometry;
 } // namespace
 
 namespace put
@@ -815,7 +836,7 @@ namespace put
 
                 hash_id id_format = r["format"].as_hash_id();
 
-                for (s32 f = 0; f < num_formats; ++f)
+                for (s32 f = 0; f < PEN_ARRAY_SIZE(rt_format); ++f)
                 {
                     if (rt_format[f].id_name == id_format)
                     {
@@ -844,7 +865,7 @@ namespace put
 
                             Str ratio_str = size.as_str();
 
-                            for (s32 rr = 0; rr < num_ratios; ++rr)
+                            for (s32 rr = 0; rr < PEN_ARRAY_SIZE(rt_ratio); ++rr)
                                 if (rt_ratio[rr] == ratio_str)
                                 {
                                     new_info.width  = pen::BACK_BUFFER_RATIO;
@@ -1387,7 +1408,7 @@ namespace put
 
                 // post process flag.. todo change this to id, id of post process to perform on the output
                 // of this view.
-                new_view.post_process = view["post_process"].as_bool(false);
+                new_view.post_process_name = view["post_process"].as_str();
 
                 // filter id for post process passes
                 Str fk = view["filter_kernel"].as_str();
@@ -1919,7 +1940,7 @@ namespace put
 
                 cb_2d = pen::renderer_create_buffer(bcp);
 
-                bcp.buffer_size = sizeof(vec4f) * 16; // 16 samplers worth, x= 1.0 / width, y = 1.0/height
+                bcp.buffer_size = sizeof(vec4f) * 16; // 16 samplers worth, x = 1.0 / width, y = 1.0 / height
                 cb_sampler_info = pen::renderer_create_buffer(bcp);
             }
 
@@ -2019,7 +2040,7 @@ namespace put
 
         void resolve_targets(bool aux)
         {
-            // resolve
+            // resolve.. todo only resolve if we have rendered
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
             for (s32 i = 0; i < 8; ++i)
@@ -2058,7 +2079,7 @@ namespace put
                 render_view(v);
                 resolve_targets(false);
 
-                if (v.post_process)
+                if (!v.post_process_name.empty())
                 {
                     virtual_rt_reset();
 
@@ -2082,7 +2103,7 @@ namespace put
 
             const c8* format_str = nullptr;
             s32       byte_size  = 0;
-            for (s32 f = 0; f < num_formats; ++f)
+            for (s32 f = 0; f < PEN_ARRAY_SIZE(rt_format); ++f)
             {
                 if (rt_format[f].format == rt.format)
                 {
@@ -2311,7 +2332,6 @@ namespace put
                                 std::ofstream ofs(basename.c_str());
                                 ofs << j_pp.dumps().c_str();
                                 ofs.close();
-                                
                             }
                         }
 
