@@ -201,7 +201,7 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
 
-    pmfx::init("data/configs/basic_renderer.json");
+    pmfx::init("data/configs/basic_renderer.yaml");
 
     create_instanced_objects(main_scene);
 

@@ -257,7 +257,7 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_controller(cc);
     pmfx::register_scene_controller(shadow_cc);
 
-    pmfx::init("data/configs/shadows.json");
+    pmfx::init("data/configs/shadows.yaml");
 
     create_scene_objects(main_scene);
 

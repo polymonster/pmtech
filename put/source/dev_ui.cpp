@@ -28,7 +28,7 @@ namespace put
         void load_program_preferences()
         {
             k_program_prefs_filename = pen_window.window_title;
-            k_program_prefs_filename.append("_prefs.json");
+            k_program_prefs_filename.append("_prefs.yaml");
 
             k_program_preferences = pen::json::load_from_file(k_program_prefs_filename.c_str());
         }

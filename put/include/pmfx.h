@@ -172,7 +172,8 @@ namespace put
         {
             RT_AUX        = 1 << 1,
             RT_AUX_USED   = 1 << 2,
-            RT_WRITE_ONLY = 1 << 3
+            RT_WRITE_ONLY = 1 << 3,
+            RT_RESOLVE    = 1 << 4
         };
 
         enum e_rt_mode
