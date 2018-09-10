@@ -181,6 +181,7 @@ namespace
         vec4f*                       sampler_info;
         
         // post process
+        bool                         has_post_process = false;
         Str                          post_process_name;
         std::vector<view_params>     post_process_chain;
 
@@ -1408,7 +1409,11 @@ namespace put
 
                 // post process flag.. todo change this to id, id of post process to perform on the output
                 // of this view.
-                new_view.post_process_name = view["post_process"].as_str();
+                new_view.post_process_name = view["post_process_name"].as_cstr();
+                if (!new_view.post_process_name.empty())
+                {
+                    new_view.has_post_process = true;
+                }
 
                 // filter id for post process passes
                 Str fk = view["filter_kernel"].as_str();
@@ -2079,7 +2084,7 @@ namespace put
                 render_view(v);
                 resolve_targets(false);
 
-                if (!v.post_process_name.empty())
+                if(v.has_post_process)
                 {
                     virtual_rt_reset();
 
