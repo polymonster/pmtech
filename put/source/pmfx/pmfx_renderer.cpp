@@ -186,7 +186,6 @@ namespace
         std::vector<view_params>     post_process_chain;
 
         bool viewport_correction = true; // todo put this into flags?
-        bool post_process        = true; // todo make this id to select post process
     };
 
     enum e_render_state_type : u32
@@ -1416,7 +1415,7 @@ namespace put
                 // filter id for post process passes
                 Str fk = view["filter_kernel"].as_str();
 
-                if (!new_view.post_process_name.empty())
+                if (!fk.empty())
                 {
                     new_view.id_filter = view["filter_kernel"].as_hash_id();
 
@@ -1790,6 +1789,27 @@ namespace put
             for (u32 i = 0; i < pp.size(); ++i)
                 s_post_process_names.push_back(pp[i].name());
 
+            // per view post processes
+            for (auto& v : s_views)
+            {
+                if (v.has_post_process)
+                {
+                    if (!s_user_edited_chain)
+                    {
+                        s_post_process_chain.clear();
+
+                        pen::json pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
+
+                        pen::json pp_chain = pp_set["chain"];
+                        u32       num_pp = pp_chain.size();
+
+                        for (u32 i = 0; i < num_pp; ++i)
+                            s_post_process_chain.push_back(pp_chain[i].as_str());
+                    }
+                }
+            }
+
+            /*
             if (!s_user_edited_chain)
             {
                 pen::json pp_passes = render_config["post_process_passes"];
@@ -1797,6 +1817,7 @@ namespace put
                 for (u32 i = 0; i < num_pp; ++i)
                     s_post_process_chain.push_back(pp_passes[i].as_str());
             }
+            */
 
             for (auto& ppc : s_post_process_chain)
             {
@@ -2093,6 +2114,7 @@ namespace put
 
                         render_view(v);
                     }
+
                 }
             }
 
@@ -2382,6 +2404,7 @@ namespace put
                         {
                             invalidated = true;
                             s_post_process_chain.erase(s_post_process_chain.begin() + s_selected_chain_pp);
+                            s_selected_view = -1;
                         }
                         dev_ui::set_tooltip("Remove selected post process");
 
@@ -2433,30 +2456,33 @@ namespace put
 
                         ImGui::Separator();
 
-                        if (ImGui::CollapsingHeader("Passes"))
+                        if (s_selected_view != -1)
                         {
-                            ImGui::Columns(2);
+                            if (ImGui::CollapsingHeader("Passes"))
+                            {
+                                ImGui::Columns(2);
 
-                            ImGui::SetColumnWidth(0, 300);
-                            ImGui::SetColumnOffset(1, 300);
-                            ImGui::SetColumnWidth(1, 500);
+                                ImGui::SetColumnWidth(0, 300);
+                                ImGui::SetColumnOffset(1, 300);
+                                ImGui::SetColumnWidth(1, 500);
 
-                            ImGui::PushID("Passes_");
-                            ImGui::ListBox("", &s_selected_view, &pass_items[0], pass_items.size());
-                            ImGui::PopID();
+                                ImGui::PushID("Passes_");
+                                ImGui::ListBox("", &s_selected_view, &pass_items[0], pass_items.size());
+                                ImGui::PopID();
 
-                            ImGui::NextColumn();
+                                ImGui::NextColumn();
 
-                            ImGui::Text("Input / Output");
+                                ImGui::Text("Input / Output");
 
-                            const view_params& selected_chain_pp = s_post_process_passes[s_selected_view];
-                            view_info_ui(selected_chain_pp);
+                                const view_params& selected_chain_pp = s_post_process_passes[s_selected_view];
+                                view_info_ui(selected_chain_pp);
 
-                            ImGui::Columns(1);
+                                ImGui::Columns(1);
 
-                            ImGui::Separator();
+                                ImGui::Separator();
+                            }
                         }
-
+                        
                         if (invalidated)
                         {
                             s_user_edited_chain = true;

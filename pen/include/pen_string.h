@@ -37,6 +37,13 @@ namespace pen
 
         return new_string;
     }
+
+    inline void sub_string(const c8* src, c8* buf, u32 length)
+    {
+        u32 padded_length = length + 1;
+        memcpy(buf, src, length);
+        buf[length] = '\0';
+    }
 } // namespace pen
 
 #endif

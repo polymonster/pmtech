@@ -405,11 +405,17 @@
 			}
 		]
 	},
-	
-	post_process_passes: [ blit_depth, blit_post_process ]
-		
-	post_process_chains:
+			
+	post_process_sets:
 	{
-	    default: [ blit_colour_depth ]
+	    blit_only: 
+		{ 
+			chain: [ blit_colour_depth ]
+		},
+		
+		editor_default: 
+		{ 
+			chain: [ blit_depth, blit_post_process ]
+		}
 	}
 }
