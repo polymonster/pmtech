@@ -129,6 +129,13 @@ namespace
     };
     // clang-format on
 
+    enum e_post_process_flags
+    {
+        PP_NONE = 0,
+        PP_ENABLED = (1<<0),
+        PP_EDITED = (1<<1)
+    };
+
     struct view_params
     {
         Str     name;
@@ -181,9 +188,10 @@ namespace
         vec4f*                       sampler_info;
         
         // post process
-        bool                         has_post_process = false;
+        u32                          post_process_flags = PP_NONE;
         Str                          post_process_name;
-        std::vector<view_params>     post_process_chain;
+        std::vector<Str>             post_process_chain;
+        std::vector<view_params>     post_process_views;
 
         bool viewport_correction = true; // todo put this into flags?
     };
@@ -227,10 +235,8 @@ namespace
         u32 screen_quad_ib;
     };
 
-    bool                                 s_user_edited_chain = false;
-    std::vector<Str>                     s_post_process_chain;
+    bool                                 s_user_edited_pp = false;
     std::vector<Str>                     s_post_process_names;
-    std::vector<view_params>             s_post_process_passes;
     std::vector<view_params>             s_views;
     std::vector<scene_controller>        s_controllers;
     std::vector<scene_view_renderer>     s_scene_view_renderers;
@@ -1171,7 +1177,7 @@ namespace put
             new_view.clear_state = pen::renderer_create_clear_state(cs_info);
         }
 
-        void parse_views(pen::json& j_views, pen::json& all_views, std::vector<view_params>& view_array)
+        void parse_views(pen::json& j_views, const pen::json& all_views, std::vector<view_params>& view_array)
         {
             s32 num = j_views.size();
             for (s32 i = 0; i < num; ++i)
@@ -1408,9 +1414,7 @@ namespace put
 
                 new_view.post_process_name = view["post_process"].as_cstr();
                 if (!new_view.post_process_name.empty())
-                {
-                    new_view.has_post_process = true;
-                }
+                    new_view.post_process_flags |= PP_ENABLED;
 
                 // filter id for post process passes
                 Str fk = view["filter_kernel"].as_str();
@@ -1669,12 +1673,12 @@ namespace put
                     vrt.rt_index[VRT_READ] = vrt.rt_read;
             }
 
-            void bake_post_process_targets()
+            void bake_post_process_targets(std::vector<view_params>& pp_views)
             {
                 // find render target aliases and generate automatic ping pongs
 
                 // first create virtual rt for each unique target / texture
-                for (auto& v : s_post_process_passes)
+                for (auto& v : pp_views)
                 {
                     for (u32 i = 0; i < v.num_colour_targets; ++i)
                         add_virtual_target(v.id_render_target[i]);
@@ -1687,7 +1691,7 @@ namespace put
                 }
 
                 u32 pass_counter = 0;
-                for (auto& p : s_post_process_passes)
+                for (auto& p : pp_views)
                 {
                     for (u32 i = 0; i < p.num_colour_targets; ++i)
                         p.render_targets[i] = get_virtual_target(p.id_render_target[i], VRT_WRITE);
@@ -1710,7 +1714,7 @@ namespace put
                 }
                 
                 // get technique sampler bindings
-                for (auto& p : s_post_process_passes)
+                for (auto& p : pp_views)
                 {
                     u32 ti = get_technique_index(p.pmfx_shader, p.technique, 0);
                     if(has_technique_samplers(p.pmfx_shader, ti))
@@ -1734,6 +1738,31 @@ namespace put
                 }
             }
         } // namespace
+
+        void load_post_process(const pen::json& render_config, 
+                               const pen::json& pp_config, const pen::json& j_views, view_params& v)
+        {
+            if ( s_user_edited_pp )
+            {
+                v.post_process_chain.clear();
+
+                pen::json pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
+
+                pen::json pp_chain = pp_set["chain"];
+                u32       num_pp = pp_chain.size();
+
+                for (u32 i = 0; i < num_pp; ++i)
+                    v.post_process_chain.push_back(pp_chain[i].as_str());
+            }
+
+            for (auto& ppc : v.post_process_chain)
+            {
+                pen::json ppv = pp_config[ppc.c_str()];
+                parse_views(ppv, j_views, v.post_process_views);
+            }
+
+            bake_post_process_targets(v.post_process_views);
+        }
 
         void load_script_internal(const c8* filename)
         {
@@ -1785,47 +1814,14 @@ namespace put
             parse_views(j_views, j_views, s_views);
 
             // parse post process info
-            pen::json pp = render_config["post_processes"];
-            for (u32 i = 0; i < pp.size(); ++i)
-                s_post_process_names.push_back(pp[i].name());
+            pen::json pp_config = render_config["post_processes"];
+            for (u32 i = 0; i < pp_config.size(); ++i)
+                s_post_process_names.push_back(pp_config[i].name());
 
             // per view post processes
             for (auto& v : s_views)
-            {
-                if (v.has_post_process)
-                {
-                    if (!s_user_edited_chain)
-                    {
-                        s_post_process_chain.clear();
-
-                        pen::json pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
-
-                        pen::json pp_chain = pp_set["chain"];
-                        u32       num_pp = pp_chain.size();
-
-                        for (u32 i = 0; i < num_pp; ++i)
-                            s_post_process_chain.push_back(pp_chain[i].as_str());
-                    }
-                }
-            }
-
-            /*
-            if (!s_user_edited_chain)
-            {
-                pen::json pp_passes = render_config["post_process_passes"];
-                u32       num_pp    = pp_passes.size();
-                for (u32 i = 0; i < num_pp; ++i)
-                    s_post_process_chain.push_back(pp_passes[i].as_str());
-            }
-            */
-
-            for (auto& ppc : s_post_process_chain)
-            {
-                pen::json ppv = pp[ppc.c_str()];
-                parse_views(ppv, j_views, s_post_process_passes);
-            }
-
-            bake_post_process_targets();
+                if (v.post_process_flags & PP_ENABLED)
+                    load_post_process(render_config, pp_config, j_views, v);
 
             // rebake material handles
             ces::bake_material_handles();
@@ -1902,7 +1898,6 @@ namespace put
                 pen::renderer_release_clear_state(v.clear_state);
             }
             s_views.clear();
-            s_post_process_passes.clear();
             s_post_process_names.clear();
 
             s_virtual_rt.clear();
@@ -2103,11 +2098,11 @@ namespace put
                 render_view(v);
                 resolve_targets(false);
 
-                if(v.has_post_process)
+                if(v.post_process_flags & PP_ENABLED)
                 {
                     virtual_rt_reset();
 
-                    for (auto& v : s_post_process_passes)
+                    for (auto& v : v.post_process_views)
                     {
                         v.render_functions.clear();
                         v.render_functions.push_back(&fullscreen_quad);
@@ -2179,6 +2174,7 @@ namespace put
         
         void generate_post_process_config( json& j_pp )
         {
+#if 0
             j_pp.set_array("chain", &s_post_process_chain[0], s_post_process_chain.size());
             
             pen::json j_pp_parameters;
@@ -2230,6 +2226,7 @@ namespace put
             }
             
             j_pp.set("parameters", j_pp_parameters);
+#endif
         }
 
         void show_dev_ui()
@@ -2306,24 +2303,49 @@ namespace put
 
                     if (ImGui::CollapsingHeader("Post Processing"))
                     {
+                        static s32 s_selected_input_view = 0;
                         static s32 s_selected_chain_pp = 0;
                         static s32 s_selected_process  = 0;
-                        static s32 s_selected_view     = 0;
+                        static s32 s_selected_pp_view  = 0;
 
+                        static std::vector<c8*> view_items;
                         static std::vector<c8*> chain_items;
                         static std::vector<c8*> process_items;
                         static std::vector<c8*> pass_items;
 
                         bool invalidated = false;
 
-                        chain_items.clear();
-                        for (auto& pp : s_post_process_chain)
-                            chain_items.push_back(pp.c_str());
+                        // input views which has post processing
+                        view_items.clear();
+                        for (auto& v : s_views)
+                            if(v.post_process_flags & PP_ENABLED)
+                                view_items.push_back(v.name.c_str());
 
+                        if (view_items.size() == 0)
+                        {
+                            ImGui::Text("No views have 'post_process' set\n");
+                            return;
+                        }
+                        else
+                        {
+                            ImGui::Combo("Input View", &s_selected_input_view, &view_items[0], view_items.size());
+                        }
+
+                        std::vector<Str>&           s_post_process_chain  = s_views[s_selected_input_view].post_process_chain;
+                        std::vector<view_params>&   s_post_process_passes = s_views[s_selected_input_view].post_process_views;
+                        view_params&                edit_view             = s_views[s_selected_input_view];
+
+                        // all available post processes from config (ie bloom, dof, colour_lut)
                         process_items.clear();
                         for (auto& pp : s_post_process_names)
                             process_items.push_back(pp.c_str());
 
+                        // selected input view post process chain
+                        chain_items.clear();
+                        for (auto& pp : s_post_process_chain)
+                            chain_items.push_back(pp.c_str());
+
+                        // selected input view, view passes which make up the post process chain
                         pass_items.clear();
                         for (auto& pp : s_post_process_passes)
                             pass_items.push_back(pp.name.c_str());
@@ -2404,7 +2426,7 @@ namespace put
                         {
                             invalidated = true;
                             s_post_process_chain.erase(s_post_process_chain.begin() + s_selected_chain_pp);
-                            s_selected_view = -1;
+                            s_selected_pp_view = -1;
                         }
                         dev_ui::set_tooltip("Remove selected post process");
 
@@ -2456,7 +2478,7 @@ namespace put
 
                         ImGui::Separator();
 
-                        if (s_selected_view != -1)
+                        if (s_selected_pp_view != -1)
                         {
                             if (ImGui::CollapsingHeader("Passes"))
                             {
@@ -2467,14 +2489,14 @@ namespace put
                                 ImGui::SetColumnWidth(1, 500);
 
                                 ImGui::PushID("Passes_");
-                                ImGui::ListBox("", &s_selected_view, &pass_items[0], pass_items.size());
+                                ImGui::ListBox("", &s_selected_pp_view, &pass_items[0], pass_items.size());
                                 ImGui::PopID();
 
                                 ImGui::NextColumn();
 
                                 ImGui::Text("Input / Output");
 
-                                const view_params& selected_chain_pp = s_post_process_passes[s_selected_view];
+                                const view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
                                 view_info_ui(selected_chain_pp);
 
                                 ImGui::Columns(1);
@@ -2485,7 +2507,7 @@ namespace put
                         
                         if (invalidated)
                         {
-                            s_user_edited_chain = true;
+                            s_user_edited_pp = true; // todo: fix
                             std::vector<hash_id> dirty; // unused
                             pmfx_config_hotload(dirty);
                         }
