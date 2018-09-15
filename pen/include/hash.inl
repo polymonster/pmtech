@@ -156,5 +156,9 @@ namespace pen
     {
         return hashMurmur2A(_data, strlen(_data));
     }
-
+    
+    inline uint32_t hashMurmur2A(const Str& s)
+    {
+        return hashMurmur2A(s.c_str());
+    }
 } // namespace pen

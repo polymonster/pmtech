@@ -2,7 +2,8 @@
 #define _hash_h
 
 #include "types.h"
-#include <string.h>
+#include "str/Str.h"
+//#include <string.h>
 
 namespace pen
 {
@@ -37,16 +38,18 @@ namespace pen
 
     template <typename Ty>
     uint32_t hashMurmur2A(const Ty& _data);
+    
+    template <>
+    uint32_t hashMurmur2A(const Str& s);
 
     uint32_t hashMurmur2A(const char* _data);
 
     uint32_t hashMurmur2A(char* _data);
-
+    
     typedef HashMurmur2A hash_murmur;
 } // namespace pen
 
 #define PEN_HASH(V) pen::hashMurmur2A(V)
-#define PEN_HASH_STR(V) pen::hashMurmur2A(V.c_str())
 
 #include "hash.inl"
 

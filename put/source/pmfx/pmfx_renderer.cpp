@@ -139,7 +139,9 @@ namespace
     struct view_params
     {
         Str     name;
+        Str     group;
         hash_id id_name;
+        hash_id id_group;
         hash_id id_render_target[pen::MAX_MRT] = {0};
         hash_id id_depth_target                = 0;
         hash_id id_filter                      = 0;
@@ -195,6 +197,13 @@ namespace
 
         bool viewport_correction = true; // todo put this into flags?
     };
+    
+    struct edited_post_process
+    {
+        hash_id id_name;
+        std::vector<Str> chain;
+        std::vector<view_params> views;
+    };
 
     enum e_render_state_type : u32
     {
@@ -235,7 +244,6 @@ namespace
         u32 screen_quad_ib;
     };
 
-    bool                                 s_user_edited_pp = false;
     std::vector<Str>                     s_post_process_names;
     std::vector<view_params>             s_views;
     std::vector<scene_controller>        s_controllers;
@@ -247,6 +255,7 @@ namespace
     std::vector<sampler_binding>         s_sampler_bindings;
     std::vector<filter_kernel>           s_filter_kernels;
     geometry_utility                     s_geometry;
+    std::vector<edited_post_process>     s_edited_post_processes;
 } // namespace
 
 namespace put
@@ -1177,7 +1186,8 @@ namespace put
             new_view.clear_state = pen::renderer_create_clear_state(cs_info);
         }
 
-        void parse_views(pen::json& j_views, const pen::json& all_views, std::vector<view_params>& view_array)
+        void parse_views(pen::json& j_views, const pen::json& all_views, std::vector<view_params>& view_array,
+                         const char* group = nullptr)
         {
             s32 num = j_views.size();
             for (s32 i = 0; i < num; ++i)
@@ -1189,8 +1199,13 @@ namespace put
                 pen::json view = j_views[i];
 
                 new_view.name = view.name();
-
                 new_view.id_name = PEN_HASH(view.name());
+                
+                if(group)
+                {
+                    new_view.id_group = PEN_HASH(group);
+                    new_view.group = group;
+                }
 
                 // inherit and combine
                 Str ihv = view["inherit"].as_str();
@@ -1200,6 +1215,7 @@ namespace put
                         break;
 
                     new_view.name = ihv.c_str();
+                    new_view.id_name = PEN_HASH(new_view.name);
 
                     pen::json inherit_view = all_views[ihv.c_str()];
 
@@ -1738,27 +1754,64 @@ namespace put
                 }
             }
         } // namespace
+        
+        bool load_edited_post_process(const pen::json& render_config,
+                                      const pen::json& pp_config, const pen::json& j_views, view_params& v)
+        {
+            for(auto& epp : s_edited_post_processes)
+            {
+                v.post_process_chain = epp.chain;
+                
+                for (auto& ppc : v.post_process_chain)
+                {
+                    pen::json ppv = pp_config[ppc.c_str()];
+                    parse_views(ppv, j_views, v.post_process_views, ppc.c_str());
+                }
+                
+                bake_post_process_targets(v.post_process_views);
+                
+                // find edited settings
+                for(auto& ev : epp.views)
+                {
+                    for(auto& pv : v.post_process_views)
+                    {
+                        if(pv.id_group != ev.id_group)
+                            continue;
+                        
+                        if(pv.id_name != ev.id_name)
+                            continue;
+                        
+                        // found group / view matching
+                        pv.technique_samplers = ev.technique_samplers;
+                        pv.technique_constants = ev.technique_constants;
+                        
+                        break;
+                    }
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
 
         void load_post_process(const pen::json& render_config, 
                                const pen::json& pp_config, const pen::json& j_views, view_params& v)
         {
-            if ( s_user_edited_pp )
-            {
-                v.post_process_chain.clear();
+            v.post_process_chain.clear();
 
-                pen::json pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
+            pen::json pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
 
-                pen::json pp_chain = pp_set["chain"];
-                u32       num_pp = pp_chain.size();
+            pen::json pp_chain = pp_set["chain"];
+            u32       num_pp = pp_chain.size();
 
-                for (u32 i = 0; i < num_pp; ++i)
-                    v.post_process_chain.push_back(pp_chain[i].as_str());
-            }
+            for (u32 i = 0; i < num_pp; ++i)
+                v.post_process_chain.push_back(pp_chain[i].as_str());
 
             for (auto& ppc : v.post_process_chain)
             {
                 pen::json ppv = pp_config[ppc.c_str()];
-                parse_views(ppv, j_views, v.post_process_views);
+                parse_views(ppv, j_views, v.post_process_views, ppc.c_str());
             }
 
             bake_post_process_targets(v.post_process_views);
@@ -1820,8 +1873,13 @@ namespace put
 
             // per view post processes
             for (auto& v : s_views)
+            {
                 if (v.post_process_flags & PP_ENABLED)
-                    load_post_process(render_config, pp_config, j_views, v);
+                {
+                    if(!load_edited_post_process(render_config, pp_config, j_views, v))
+                        load_post_process(render_config, pp_config, j_views, v);
+                }
+            }
 
             // rebake material handles
             ces::bake_material_handles();
@@ -1837,13 +1895,18 @@ namespace put
 
             PEN_SYSTEM(build_cmd.c_str());
         }
+        
+        void pmfx_config_hotload()
+        {
+            release_script_resources();
+            
+            for (auto& s : k_script_files)
+                load_script_internal(s.c_str());
+        }
 
         void pmfx_config_hotload(std::vector<hash_id>& dirty)
         {
-            release_script_resources();
-
-            for (auto& s : k_script_files)
-                load_script_internal(s.c_str());
+            pmfx_config_hotload();
         }
 
         void init(const c8* filename)
@@ -2172,14 +2235,14 @@ namespace put
             }
         }
         
-        void generate_post_process_config( json& j_pp )
+        void generate_post_process_config(json& j_pp,
+                                          const std::vector<Str>& pp_chain, const std::vector<view_params>& pp_views)
         {
-#if 0
-            j_pp.set_array("chain", &s_post_process_chain[0], s_post_process_chain.size());
+            j_pp.set_array("chain", &pp_chain[0], pp_chain.size());
             
             pen::json j_pp_parameters;
             
-            for (auto& pp : s_post_process_passes)
+            for (auto& pp : pp_views)
             {
                 u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
                 
@@ -2226,7 +2289,25 @@ namespace put
             }
             
             j_pp.set("parameters", j_pp_parameters);
-#endif
+        }
+        
+        void set_post_process_edited(view_params& input_view)
+        {
+            for(auto& epp : s_edited_post_processes)
+            {
+                if(epp.id_name == input_view.id_name)
+                {
+                    epp.chain = input_view.post_process_chain;
+                    epp.views = input_view.post_process_views;
+                    return;
+                }
+            }
+            
+            // add new
+            s_edited_post_processes.push_back(edited_post_process());
+            s_edited_post_processes.back().id_name = input_view.id_name;
+            s_edited_post_processes.back().chain = input_view.post_process_chain;
+            s_edited_post_processes.back().views = input_view.post_process_views;
         }
 
         void show_dev_ui()
@@ -2371,7 +2452,7 @@ namespace put
                             if (res)
                             {
                                 json j_pp;
-                                generate_post_process_config(j_pp);
+                                generate_post_process_config(j_pp, s_post_process_chain, s_post_process_passes);
                                 
                                 Str basename = pen::str_remove_ext(res);
                                 basename.append(".yaml");
@@ -2459,57 +2540,58 @@ namespace put
 
                         ImGui::Columns(1);
 
-                        ImGui::Separator();
-
-                        ImGui::Text("Parameters");
-
-                        for (auto& pp : s_post_process_passes)
-                        {
-                            u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
-
-                            if (has_technique_params(pp.pmfx_shader, ti))
-                            {
-                                ImGui::Separator();
-                                ImGui::Text("Technique: %s", pp.name.c_str());
-
-                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0], pp.technique_samplers);
-                            }
-                        }
-
-                        ImGui::Separator();
-
-                        if (s_selected_pp_view != -1)
-                        {
-                            if (ImGui::CollapsingHeader("Passes"))
-                            {
-                                ImGui::Columns(2);
-
-                                ImGui::SetColumnWidth(0, 300);
-                                ImGui::SetColumnOffset(1, 300);
-                                ImGui::SetColumnWidth(1, 500);
-
-                                ImGui::PushID("Passes_");
-                                ImGui::ListBox("", &s_selected_pp_view, &pass_items[0], pass_items.size());
-                                ImGui::PopID();
-
-                                ImGui::NextColumn();
-
-                                ImGui::Text("Input / Output");
-
-                                const view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
-                                view_info_ui(selected_chain_pp);
-
-                                ImGui::Columns(1);
-
-                                ImGui::Separator();
-                            }
-                        }
-                        
                         if (invalidated)
                         {
-                            s_user_edited_pp = true; // todo: fix
-                            std::vector<hash_id> dirty; // unused
-                            pmfx_config_hotload(dirty);
+                            set_post_process_edited(edit_view);
+                            pmfx_config_hotload();
+                        }
+                        else
+                        {
+                            ImGui::Separator();
+                            
+                            ImGui::Text("Parameters");
+                            
+                            for (auto& pp : s_post_process_passes)
+                            {
+                                u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
+                                
+                                if (has_technique_params(pp.pmfx_shader, ti))
+                                {
+                                    ImGui::Separator();
+                                    ImGui::Text("Technique: %s", pp.name.c_str());
+                                    
+                                    show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0], pp.technique_samplers);
+                                }
+                            }
+                            
+                            ImGui::Separator();
+                            
+                            if (s_selected_pp_view != -1)
+                            {
+                                if (ImGui::CollapsingHeader("Passes"))
+                                {
+                                    ImGui::Columns(2);
+                                    
+                                    ImGui::SetColumnWidth(0, 300);
+                                    ImGui::SetColumnOffset(1, 300);
+                                    ImGui::SetColumnWidth(1, 500);
+                                    
+                                    ImGui::PushID("Passes_");
+                                    ImGui::ListBox("", &s_selected_pp_view, &pass_items[0], pass_items.size());
+                                    ImGui::PopID();
+                                    
+                                    ImGui::NextColumn();
+                                    
+                                    ImGui::Text("Input / Output");
+                                    
+                                    const view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
+                                    view_info_ui(selected_chain_pp);
+                                    
+                                    ImGui::Columns(1);
+                                    
+                                    ImGui::Separator();
+                                }
+                            }
                         }
                     }
 
