@@ -437,6 +437,7 @@ namespace put
                 technique_sampler tt;
                 
                 tt.name = jt.name();
+                tt.id_name = PEN_HASH(tt.name);
                 tt.sampler_state_name = jt["sampler_state"].as_str();
                 tt.unit = jt["unit"].as_u32();
                 tt.type_name = jt["type"].as_str();
@@ -462,6 +463,7 @@ namespace put
 
                 technique_constant tc;
                 tc.name = jc.name();
+                tc.id_name = PEN_HASH(tc.name);
 
                 hash_id widget = jc["widget"].as_hash_id(PEN_HASH("input"));
                 for (u32 j = 0; j < CW_NUM; ++j)
@@ -527,6 +529,21 @@ namespace put
             return k_pmfx_list[handle].techniques[index].constants;
         }
         
+        technique_constant* get_technique_constant(hash_id id_constant, shader_handle handle, u32 technique_index)
+        {
+            technique_constant* tc = get_technique_constants(handle, technique_index);
+            
+            for(u32 i = 0; i < sb_count(tc); ++i)
+            {
+                if(tc[i].id_name == id_constant)
+                {
+                    return &tc[i];
+                }
+            }
+            
+            return nullptr;
+        }
+        
         technique_sampler* get_technique_samplers(shader_handle handle, u32 index)
         {
             if (handle >= sb_count(k_pmfx_list))
@@ -536,6 +553,21 @@ namespace put
                 return nullptr;
             
             return k_pmfx_list[handle].techniques[index].textures;
+        }
+        
+        technique_sampler* get_technique_sampler(hash_id id_sampler, shader_handle handle, u32 index)
+        {
+            technique_sampler* ts = get_technique_samplers(handle, index);
+            
+            for(u32 i = 0; i < sb_count(ts); ++i)
+            {
+                if(ts[i].id_name == id_sampler)
+                {
+                    return &ts[i];
+                }
+            }
+            
+            return nullptr;
         }
 
         u32 get_technique_cbuffer_size(shader_handle handle, u32 index)

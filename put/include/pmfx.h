@@ -51,7 +51,7 @@ namespace put
         put::camera*        camera              = nullptr;
         pen::viewport*      viewport            = nullptr;
         pmfx::shader_handle pmfx_shader         = PEN_INVALID_HANDLE;
-        hash_id             technique           = 0;
+        hash_id             technique           = 0; //todo rename to id_technique
         ces::entity_scene*  scene               = nullptr;
         bool                viewport_correction = false;
     };
@@ -128,6 +128,7 @@ namespace put
         struct technique_constant
         {
             Str name;
+            hash_id id_name;
             u32 widget       = CW_SLIDER;
             f32 min          = 0.0f;
             f32 max          = 1.0f;
@@ -139,6 +140,7 @@ namespace put
         struct technique_sampler
         {
             Str name;
+            hash_id id_name;
             Str sampler_state_name;
             Str type_name;
             Str default_name;
@@ -235,8 +237,10 @@ namespace put
         const c8*           get_technique_name(shader_handle handle, hash_id id_technique);
         u32                 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
         technique_constant* get_technique_constants(shader_handle handle, u32 index);
+        technique_constant* get_technique_constant(hash_id id_constant, shader_handle handle, u32 technique_index);
         u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
         technique_sampler*  get_technique_samplers(shader_handle handle, u32 index);
+        technique_sampler*  get_technique_sampler(hash_id id_sampler, shader_handle handle, u32 index);
 
         bool show_technique_ui(shader_handle shader, u32 technique_index, f32* data, sampler_set& samplers);
         bool has_technique_constants(shader_handle shader, u32 technique_index);

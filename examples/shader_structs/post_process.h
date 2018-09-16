@@ -6,10 +6,10 @@ struct high_pass
 
 struct depth_of_field
 {
-	float m_near_focus_start;
-	float m_near_focus_end;
-	float m_far_focus_start;
-	float m_far_focus_end;
+	float m_focus_centre;
+	float m_centre_range;
+	float m_focus_width;
+	float m_width_range;
 	float4x4 m_padding;
 };
 

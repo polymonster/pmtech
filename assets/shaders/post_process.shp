@@ -199,12 +199,18 @@ ps_output ps_depth_of_field( vs_output input )
 	float ez  = (2 * n * f) / (f + n - z * (f - n));
 	float lz  = (ez - n) / (f - n);
 	
-	float d = dof_blur_factor(lz);
+	float centre_scale = m_centre_range / (f-n);
+	float width_scale = m_width_range / (f-n);
 	
-	output.colour = lerp(focus_colour, blur_colour, d);
-	
-	//output.colour = float4(d, d, d, 1.0);
+	float fw = m_focus_width * width_scale;
 		
+	float d = (abs(lz - m_focus_centre * centre_scale));
+	float r = saturate(smoothstep(d, -fw, fw));
+	
+	output.colour = lerp(focus_colour, blur_colour, r);
+	
+	//output.colour = float4(r, r, r, 1.0);
+	
 	return output;
 }
 
@@ -317,20 +323,20 @@ pmfx:
 		
 		"constants":
 		{
-			"near_focus_start": { 
+			"focus_centre": { 
 				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
 			},
-			
-			"near_focus_end": { 
-				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+					
+			"centre_range": { 
+				"type": "float", "widget": "input", "default": 100
 			},
 			
-			"far_focus_start": { 
+			"focus_width": { 
 				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
 			},
-			
-			"far_focus_end": { 
-				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+
+			"width_range": { 
+				"type": "float", "widget": "input", "default": 20
 			}
 		}
 	}

@@ -180,7 +180,7 @@ namespace
         
         // shader and technique
         shader_handle pmfx_shader;
-        hash_id       technique;
+        hash_id       technique; // todo rename to id_technique
         u32           render_flags;
         
         technique_constant_data technique_constants;
@@ -1799,8 +1799,17 @@ namespace put
                                const pen::json& pp_config, const pen::json& j_views, view_params& v)
         {
             v.post_process_chain.clear();
-
-            pen::json pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
+            
+            pen::json pp_set;
+            if( str_ends_with(v.post_process_name.c_str(), ".yaml") )
+            {
+                pp_set = pen::json::load_from_file(v.post_process_name.c_str());
+            }
+            else
+            {
+                //look in embedded post_process_sets
+                pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
+            }
 
             pen::json pp_chain = pp_set["chain"];
             u32       num_pp = pp_chain.size();
@@ -1815,6 +1824,67 @@ namespace put
             }
 
             bake_post_process_targets(v.post_process_views);
+            
+            // load constants and samplers from data
+            pen::json params = pp_set["parameters"];
+            u32 num_params = params.size();
+            for(u32 i = 0; i < num_params; ++i)
+            {
+                for(auto& pv : v.post_process_views)
+                {
+                    pen::json tech_params = params[i];
+                    if(pv.id_name == PEN_HASH(tech_params.key()))
+                    {
+                        u32 ti = get_technique_index(pv.pmfx_shader, pv.technique, 0);
+                        
+                        u32 num_c = tech_params.size();
+                        for(u32 c = 0; c < num_c; ++c)
+                        {
+                            pen::json tp = tech_params[c];
+                            
+                            hash_id id_c = PEN_HASH(tp.key());
+                            static const hash_id id_textures = PEN_HASH("textures");
+                            
+                            if(id_c == id_textures)
+                            {
+                                u32 num_samplers = tp.size();
+                                for(u32 s = 0; s < num_samplers; ++s)
+                                {
+                                    pen::json j_sampler = tp[s];
+                                    
+                                    hash_id id_s = PEN_HASH(j_sampler.key());
+                                    technique_sampler* ts = get_technique_sampler(id_s, pv.pmfx_shader, ti);
+                                    
+                                    if(!ts)
+                                        continue;
+                                    
+                                    sampler_binding& sb = pv.technique_samplers.sb[s];
+                                    
+                                    sb.sampler_unit = ts->unit;
+                                    sb.handle = put::load_texture(j_sampler["filename"].as_cstr());
+                                    sb.sampler_state = j_sampler["filename"].as_u32();
+                                    sb.id_texture = PEN_HASH(j_sampler["filename"].as_cstr());
+                                    sb.shader_type = ts->shader_type;
+                                }
+                            }
+                            else
+                            {
+                                technique_constant* tc = get_technique_constant(id_c, pv.pmfx_shader, ti);
+                                
+                                if(!tc)
+                                    continue;
+                                
+                                PEN_ASSERT(tc->num_elements == tp.size());
+                                
+                                for(u32 e = 0; e < tc->num_elements; ++e)
+                                    pv.technique_constants.data[tc->cb_offset + e] = tp[e].as_f32();
+                            }
+                        }
+                        
+                        break;
+                    }
+                }
+            }
         }
 
         void load_script_internal(const c8* filename)
@@ -2172,7 +2242,6 @@ namespace put
 
                         render_view(v);
                     }
-
                 }
             }
 
@@ -2566,22 +2635,22 @@ namespace put
                             
                             ImGui::Separator();
                             
-                            if (s_selected_pp_view != -1)
+                            if (ImGui::CollapsingHeader("Passes"))
                             {
-                                if (ImGui::CollapsingHeader("Passes"))
+                                ImGui::Columns(2);
+                                
+                                ImGui::SetColumnWidth(0, 300);
+                                ImGui::SetColumnOffset(1, 300);
+                                ImGui::SetColumnWidth(1, 500);
+                                
+                                ImGui::PushID("Passes_");
+                                ImGui::ListBox("", &s_selected_pp_view, &pass_items[0], pass_items.size());
+                                ImGui::PopID();
+                                
+                                ImGui::NextColumn();
+                                
+                                if(s_selected_pp_view != -1)
                                 {
-                                    ImGui::Columns(2);
-                                    
-                                    ImGui::SetColumnWidth(0, 300);
-                                    ImGui::SetColumnOffset(1, 300);
-                                    ImGui::SetColumnWidth(1, 500);
-                                    
-                                    ImGui::PushID("Passes_");
-                                    ImGui::ListBox("", &s_selected_pp_view, &pass_items[0], pass_items.size());
-                                    ImGui::PopID();
-                                    
-                                    ImGui::NextColumn();
-                                    
                                     ImGui::Text("Input / Output");
                                     
                                     const view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
