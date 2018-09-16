@@ -238,7 +238,7 @@ namespace pen
             {
                 if(!s_show_hidden)
                 {
-                    if((data.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)
+                    if((ffd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)
                         continue;
                 }
                 
