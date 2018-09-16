@@ -194,6 +194,11 @@ namespace
         Str                          post_process_name;
         std::vector<Str>             post_process_chain;
         std::vector<view_params>     post_process_views;
+        
+        // for debug
+        bool stash_output = false;
+        u32  stashed_output_rt = PEN_INVALID_HANDLE;
+        f32  stashed_rt_aspect = 0.0f;
 
         bool viewport_correction = true; // todo put this into flags?
     };
@@ -2076,7 +2081,7 @@ namespace put
 
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
-
+        
         void render_view(view_params& v)
         {
             static u32 cb_2d           = PEN_INVALID_HANDLE;
@@ -2188,6 +2193,82 @@ namespace put
             // render passes
             for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                 v.render_functions[rf](sv);
+            
+            if(v.stash_output && v.render_targets[0] != PEN_INVALID_HANDLE)
+            {
+                struct stash_rt
+                {
+                    u32 handle;
+                    f32 width;
+                    f32 height;
+                    f32 aspect;
+                };
+                
+                static std::vector<stash_rt> s_stash_rt;
+                
+                if(v.stashed_output_rt == PEN_INVALID_HANDLE)
+                {
+                    for(auto& r : s_stash_rt)
+                    {
+                        if(r.width == vp.width && r.height == vp.height)
+                        {
+                            v.stashed_output_rt = r.handle;
+                            v.stashed_rt_aspect = r.aspect;
+                        }
+                        
+                        break;
+                    }
+                    
+                    if(v.stashed_output_rt == PEN_INVALID_HANDLE)
+                    {
+                        pen::texture_creation_params tcp;
+                        tcp.data             = nullptr;
+                        tcp.width            = vp.width;
+                        tcp.height           = vp.height;
+                        tcp.format           = PEN_TEX_FORMAT_RGBA8_UNORM;
+                        tcp.pixels_per_block = 1;
+                        tcp.block_size       = 4;
+                        tcp.usage            = PEN_USAGE_DEFAULT;
+                        tcp.flags            = 0;
+                        tcp.num_mips         = 1;
+                        tcp.num_arrays       = 1;
+                        tcp.sample_count     = 1;
+                        tcp.cpu_access_flags = PEN_CPU_ACCESS_READ;
+                        tcp.sample_quality   = 0;
+                        tcp.bind_flags       = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
+                        tcp.collection_type  = pen::TEXTURE_COLLECTION_NONE;
+                        u32 h = pen::renderer_create_render_target(tcp);
+                        
+                        v.stashed_output_rt = h;
+                        v.stashed_rt_aspect = vp.width/vp.height;
+                        s_stash_rt.push_back({h, vp.width, vp.height, v.stashed_rt_aspect});
+                    }
+                }
+                
+                //render
+                static shader_handle pp_shader = pmfx::load_shader("post_process");
+                static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
+                
+                pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
+                pen::renderer_set_viewport(vp);
+                pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
+                
+                static hash_id id_wlss = PEN_HASH("wrap_linear_sampler_state");
+                u32 wlss = get_render_state_by_name(id_wlss);
+                
+                pen::renderer_set_texture(v.render_targets[0], wlss, 0, PEN_SHADER_TYPE_PS);
+
+                pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
+                pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
+                
+                static hash_id id_technique = PEN_HASH("blit");
+                if (!pmfx::set_technique(pp_shader, id_technique, 0))
+                    PEN_ASSERT(0);
+                
+                pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                
+                v.stash_output = false;
+            }
         }
 
         void resolve_targets(bool aux)
@@ -2537,7 +2618,7 @@ namespace put
                             const c8* res = dev_ui::file_browser(s_load_dialog_open, dev_ui::FB_OPEN);
                             if (res)
                             {
-                                // perform load
+                                // perform load: todo
                             }
                         }
 
@@ -2653,8 +2734,16 @@ namespace put
                                 {
                                     ImGui::Text("Input / Output");
                                     
-                                    const view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
+                                    view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
                                     view_info_ui(selected_chain_pp);
+                                    
+                                    selected_chain_pp.stash_output = true;
+                                    
+                                    if(selected_chain_pp.stashed_output_rt != PEN_INVALID_HANDLE)
+                                    {
+                                        f32 aspect = selected_chain_pp.stashed_rt_aspect;
+                                        ImGui::Image(&selected_chain_pp.stashed_output_rt, ImVec2(128.0f * aspect, 128.0f));
+                                    }
                                     
                                     ImGui::Columns(1);
                                     
