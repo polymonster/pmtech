@@ -336,6 +336,15 @@ namespace put
                     set_last_used_directory(home);
                 }
                 
+                ImGui::SameLine();
+                if (ImGui::Button("."))
+                {
+                    pen::filesystem_toggle_hidden_files();
+                    set_last_used_directory(selected_path);
+                    initialise = true;
+                }
+                dev_ui::set_tooltip("Toggle show hidden files");
+                
                 ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
 
                 static s32 base_frame = current_depth - 4;

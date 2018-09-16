@@ -96,8 +96,22 @@ namespace pen
         return PEN_ERR_OK;
     }
 
+    static bool s_show_hidden = false;
+    void filesystem_toggle_hidden_files()
+    {
+        s_show_hidden = !s_show_hidden;
+    }
+    
     bool match_file(struct dirent* ent, s32 num_wildcards, va_list wildcards)
     {
+        if(!s_show_hidden)
+        {
+            if(ent->d_name[0] == '.')
+            {
+                return false;
+            }
+        }
+        
         if (num_wildcards <= 0)
         {
             return true;

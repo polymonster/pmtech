@@ -196,7 +196,7 @@ namespace
         u32 num = next->start - t->end;
 
         static c8 buf[64];
-        pen::sub_string(js + t->end, buf, std::max<u32>(num, 64));
+        pen::sub_string(js + t->end, buf, std::min<u32>(num, 63));
 
         for(u32 i = 0; i <= num; ++i)
             if (buf[i] == ':')

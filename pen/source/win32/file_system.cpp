@@ -11,6 +11,12 @@ namespace pen
 #define SEC_TO_UNIX_EPOCH 11644473600LL
 
     c8* swap_slashes(const c8* filename);
+    
+    static bool s_show_hidden = false;
+    void filesystem_toggle_hidden_files()
+    {
+        s_show_hidden = !s_show_hidden;
+    }
 
     u32 win32_time_to_unix_seconds(long long ticks)
     {
@@ -230,6 +236,12 @@ namespace pen
         {
             if (hFind != INVALID_HANDLE_VALUE)
             {
+                if(!s_show_hidden)
+                {
+                    if((data.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)
+                        continue;
+                }
+                
                 if (match_file(ffd, num_wildcards, args))
                 {
                     ++total_num;
