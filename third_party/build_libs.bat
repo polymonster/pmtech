@@ -1,10 +1,16 @@
 :: third party build for win32
-:: pushd .
-:: cd /D "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build"
-:: call vcvarsall.bat x86_amd64
-:: popd
+
+:: build machines running from dev prompt dont bnee vcvarsall
+IF [%1] == [] GOTO build
+
+pushd .
+cd /D %1
+call vcvarsall.bat x86_amd64
+popd
+
 
 :: bullet
+:build
 cd bullet
 ..\..\tools\premake\premake5.exe vs2017 --platform_dir="win32"
 cd build/vs2017
