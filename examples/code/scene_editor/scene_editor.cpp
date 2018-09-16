@@ -26,10 +26,10 @@ using namespace put;
 using namespace put::ces;
 
 pen::window_creation_params pen_window{
-    1280,          // width
-    720,           // height
-    4,             // MSAA samples
-    "scene_editor" // window title / process name
+    1280,           // width
+    720,            // height
+    4,              // MSAA samples
+    "pmtech editor" // window title / process name
 };
 
 namespace physics

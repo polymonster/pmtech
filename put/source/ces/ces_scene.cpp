@@ -402,14 +402,6 @@ namespace put
                     u32 technique = p_mat->technique;
 
                     pmfx::set_technique(shader, technique);
-
-                    // set material cbs
-                    u32 mcb = scene->materials[n].material_cbuffer;
-                    if (is_valid(mcb))
-                    {
-                        pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_VS);
-                        pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_PS);
-                    }
                 }
                 else
                 {
@@ -423,6 +415,14 @@ namespace put
                         }
                         continue;
                     }
+                }
+                
+                // set material cbs
+                u32 mcb = scene->materials[n].material_cbuffer;
+                if (is_valid(mcb))
+                {
+                    pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_VS);
+                    pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_PS);
                 }
 
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
