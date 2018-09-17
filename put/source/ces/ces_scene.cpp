@@ -289,6 +289,59 @@ namespace put
             // geom
             // anim
         }
+        
+        void render_light_volumes(const scene_view& view)
+        {
+            entity_scene* scene = view.scene;
+            
+            if (scene->view_flags & SV_HIDE)
+                return;
+            
+            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
+            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
+
+            static hash_id id_volume[] =
+            {
+                PEN_HASH("full_screen_quad"),
+                PEN_HASH("sphere"),
+                PEN_HASH("cone")
+            };
+            
+            static hash_id id_technique = PEN_HASH("constant_colour");
+            
+            static pmfx::shader_handle shader = pmfx::load_shader("pmfx_utility");
+            
+            geometry_resource* volume[PEN_ARRAY_SIZE(id_volume)];
+            for(u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
+                volume[i] = get_geometry_resource(id_volume[i]);
+            
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if(!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                geometry_resource* vol = volume[scene->lights[n].type];
+                
+                pmfx::set_technique(shader, id_technique, 0);
+                
+                if(!is_valid(scene->cbuffer[n]) || !scene->cbuffer[n])
+                    instantiate_model_cbuffer(scene, n);
+                
+                cmp_draw_call dc;
+                dc.world_matrix = scene->world_matrices[n];
+                dc.world_matrix_inv_transpose = mat::inverse4x4(dc.world_matrix);
+                dc.v1 = vec4f::magenta();
+                dc.v2 = vec4f::magenta();
+                
+                pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
+                
+                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
+                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
+                pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
+                pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+            }
+        }
 
         void render_scene_view(const scene_view& view)
         {
@@ -300,11 +353,9 @@ namespace put
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
 
+            // fwd lights
             if (view.render_flags & RENDER_FORWARD_LIT)
-            {
-                // forward lights
                 pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
-            }
 
             // sdf shadows
             for (u32 n = 0; n < scene->num_nodes; ++n)
@@ -367,6 +418,7 @@ namespace put
                 cmp_geometry* p_geom = &scene->geometries[n];
                 cmp_material* p_mat  = &scene->materials[n];
 
+                // update skin
                 if (scene->entities[n] & CMP_SKINNED && !(scene->entities[n] & CMP_SUB_GEOMETRY))
                 {
                     if (p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)

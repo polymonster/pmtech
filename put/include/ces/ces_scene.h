@@ -415,8 +415,10 @@ namespace put
         entity_scene* create_scene(const c8* name);
         void          destroy_scene(entity_scene* scene);
 
-        void render_scene_view(const scene_view& view);
         void update_scene(entity_scene* scene, f32 dt);
+        
+        void render_scene_view(const scene_view& view);
+        void render_light_volumes(const scene_view& view);
 
         void clear_scene(entity_scene* scene);
         void default_scene(entity_scene* scene);

@@ -76,12 +76,18 @@ PEN_TRV pen::user_entry(void* params)
     svr_main.name            = "ces_render_scene";
     svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
+    
+    put::scene_view_renderer svr_light_volumes;
+    svr_light_volumes.name            = "ces_render_light_volumes";
+    svr_light_volumes.id_name         = PEN_HASH(svr_light_volumes.name.c_str());
+    svr_light_volumes.render_function = &ces::render_light_volumes;
 
     put::scene_view_renderer svr_editor;
     svr_editor.name            = "ces_render_editor";
     svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
 
+    pmfx::register_scene_view_renderer(svr_light_volumes);
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
 

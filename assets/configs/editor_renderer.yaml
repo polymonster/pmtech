@@ -178,6 +178,22 @@
 			format: d24s8
 		}
 	},
+	
+	test_views:
+	{
+	    deferred_lights_view:
+		{
+		    target: [main_colour, main_depth],
+		    colour_write_mask: 0xf,
+		    blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: default,
+			depth_stencil_state: default,
+			scene: main_scene,
+			camera: model_viewer_camera,
+			scene_views: ["ces_render_light_volumes"]
+		},
+	},
 			
 	views:
 	{
@@ -202,7 +218,7 @@
 				{ texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
 			],
 		},
-		
+				
 		editor_view:
 		{
 			target: [main_colour, main_depth],
