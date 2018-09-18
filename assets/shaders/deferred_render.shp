@@ -1,0 +1,82 @@
+#include "libs/lighting.slib"
+#include "libs/globals.slib"
+
+struct vs_output
+{
+	float4 position         : SV_POSITION;
+	float4 screen_coord     : TEXCOORD1;
+};
+
+struct vs_input
+{
+	float4 position	 	: POSITION;
+	float4 normal	 	: TEXCOORD0;
+	float4 texcoord	 	: TEXCOORD1;
+	float4 tangent	 	: TEXCOORD2;
+	float4 bitangent	: TEXCOORD3;
+};
+
+struct ps_output
+{
+	float4 colour : SV_Target;
+};
+
+declare_texture_samplers
+{
+	texture_2d( gbuffer_albedo, 0 );
+	texture_2d( gbuffer_normals, 1 );
+	texture_2d( gbuffer_world_pos, 2 );	
+	texture_2d( gbuffer_depth, 3 );
+};
+
+vs_output vs_2d(vs_input input)
+{
+	vs_output output;
+	
+	float x = input.position.x;
+	float y = input.position.y;
+	
+	output.position = input.position;
+	output.screen_coord = float4(x * 0.5 + 0.5, -y * 0.5 + 0.5, 0.0, 0.0);
+	
+    return output;
+}
+
+vs_output vs_3d(vs_input input)
+{
+	vs_output output;
+	
+	float4x4 wvp = mul(world_matrix, vp_matrix);
+	output.position = mul(input.position, wvp);
+	
+    return output;
+}
+
+ps_output ps_point_light(vs_output input)
+{
+	ps_output output;
+	
+	float2 tc = float2(input.screen_coord.x, input.screen_coord.y);
+	
+	output.colour = sample_texture(gbuffer_albedo, tc);
+	output.colour = sample_texture(gbuffer_normals, tc);
+	//output.colour = sample_texture(gbuffer_world_pos, tc);
+	
+	return output;
+}
+
+pmfx:
+{
+    "directional_light":
+    {
+        "vs": "vs_2d",
+        "ps": "ps_point_light"
+    },
+    
+    "point_light":
+    {
+        "vs": "vs_3d",
+        "ps": "ps_point_light"
+    }
+}
+

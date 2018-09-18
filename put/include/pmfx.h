@@ -151,6 +151,12 @@ namespace put
             u32 sampler_state;
             u32 shader_type;
         };
+        
+        // sub types of shader for differing vs / ps combos
+        static const c8* k_sub_types[] = {
+            "_skinned",
+            "_instanced",
+        };
 
         struct shader_program
         {

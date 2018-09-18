@@ -78,6 +78,7 @@ struct ps_output_multi
 {
 	float4 albedo : SV_Target0;
 	float4 normal : SV_Target1;
+	float4 world_pos : SV_Target2;
 };
 
 declare_texture_samplers
@@ -406,14 +407,14 @@ ps_output ps_constant_colour( vs_output input )
 	output.colour = float4( 1.0, 1.0, 1.0, 1.0 );
 	
 	return output;
-	
 }
 
 ps_output_multi ps_gbuffer( vs_output input ) 
 {	
 	ps_output_multi output;
 	
-	float4 albedo = sample_texture( diffuse_texture, input.texcoord.xy );
+	float4 albedo = sample_texture(diffuse_texture, input.texcoord.xy);
+	
 	float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
 	normal_sample = normal_sample * 2.0 - 1.0;
 	
@@ -423,8 +424,9 @@ ps_output_multi ps_gbuffer( vs_output input )
 		input.normal, 
 		normal_sample );
 	
-	output.albedo = albedo;
-	output.normal = float4( n, 1.0 );
+	output.albedo = float4(albedo.rgb, 1.0);
+	output.normal = float4(n, 1.0);
+	output.world_pos = float4(input.world_pos.xyz, 1.0);
 	
     return output;
 }

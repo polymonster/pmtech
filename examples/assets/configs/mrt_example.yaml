@@ -166,7 +166,7 @@
 			technique: gbuffer,
 			scene: main_scene,
 			camera: model_viewer_camera,
-			scene_views:["ces_render_scene"]
+			scene_views: ["ces_render_scene"]
 		},
 	},
 }

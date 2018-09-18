@@ -267,8 +267,6 @@ namespace put
 
             Str name = j_techique["name"].as_str();
 
-            static const c8* k_sub_types[] = {"_skinned", "_instanced"};
-
             // default sub type
             program.name        = name;
             program.id_name     = PEN_HASH(name.c_str());

@@ -307,9 +307,14 @@ namespace put
                 PEN_HASH("cone")
             };
             
-            static hash_id id_technique = PEN_HASH("constant_colour");
+            static hash_id id_technique[] =
+            {
+                PEN_HASH("directional_light"),
+                PEN_HASH("point_light"),
+                PEN_HASH("spot_light")
+            };
             
-            static pmfx::shader_handle shader = pmfx::load_shader("pmfx_utility");
+            static pmfx::shader_handle shader = pmfx::load_shader("deferred_render");
             
             geometry_resource* volume[PEN_ARRAY_SIZE(id_volume)];
             for(u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
@@ -320,9 +325,10 @@ namespace put
                 if(!(scene->entities[n] & CMP_LIGHT))
                     continue;
                 
-                geometry_resource* vol = volume[scene->lights[n].type];
+                u32 t = scene->lights[n].type;
+                geometry_resource* vol = volume[t];
                 
-                pmfx::set_technique(shader, id_technique, 0);
+                pmfx::set_technique(shader, id_technique[t], 0);
                 
                 if(!is_valid(scene->cbuffer[n]) || !scene->cbuffer[n])
                     instantiate_model_cbuffer(scene, n);
