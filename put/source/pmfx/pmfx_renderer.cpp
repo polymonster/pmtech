@@ -251,6 +251,7 @@ namespace
 
     std::vector<Str>                     s_post_process_names;
     std::vector<view_params>             s_views;
+    std::vector<Str>                     s_view_chain;
     std::vector<scene_controller>        s_controllers;
     std::vector<scene_view_renderer>     s_scene_view_renderers;
     std::vector<render_target>           s_render_targets;
@@ -1937,9 +1938,31 @@ namespace put
             parse_partial_blend_states(render_config);
             parse_filters(render_config);
             parse_render_targets(render_config);
-
+            
             pen::json j_views = render_config["views"];
-            parse_views(j_views, j_views, s_views);
+            pen::json j_view_chain = render_config["view_set"];
+            u32 num_views_chain = j_view_chain.size();
+            if(num_views_chain > 0)
+            {
+                // views from "view_set"
+                pen::json view_set;
+                
+                for(u32 i = 0; i < num_views_chain; ++i)
+                {
+                    Str vs = j_view_chain[i].as_str();
+                    s_view_chain.push_back(vs);
+                    
+                    pen::json v = j_views[vs.c_str()];
+                    view_set.set(vs.c_str(), v);
+                }
+                
+                parse_views(view_set, j_views, s_views);
+            }
+            else
+            {
+                // array of views from "views" members
+                parse_views(j_views, j_views, s_views);
+            }
 
             // parse post process info
             pen::json pp_config = render_config["post_processes"];
@@ -2014,30 +2037,31 @@ namespace put
                         break;
                 }
             }
-            s_render_states.clear();
-
+            
             // release render targets
             for (auto& rt : s_render_targets)
             {
                 if (rt.id_name == ID_MAIN_COLOUR)
                     continue;
-
+                
                 if (rt.id_name == ID_MAIN_DEPTH)
                     continue;
-
+                
                 pen::renderer_release_render_target(rt.handle);
             }
-            s_render_targets.clear();
-            s_render_target_names.clear();
-
+            
             // release clear state and clear views
             for (auto& v : s_views)
             {
                 pen::renderer_release_clear_state(v.clear_state);
             }
+            
+            s_render_states.clear();
+            s_render_targets.clear();
+            s_render_target_names.clear();
+            s_view_chain.clear();
             s_views.clear();
             s_post_process_names.clear();
-
             s_virtual_rt.clear();
         }
 
