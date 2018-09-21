@@ -1807,7 +1807,7 @@ namespace put
             v.post_process_chain.clear();
             
             pen::json pp_set;
-            if( str_ends_with(v.post_process_name.c_str(), ".yaml") )
+            if( str_ends_with(v.post_process_name.c_str(), ".jsn") )
             {
                 pp_set = pen::json::load_from_file(v.post_process_name.c_str());
             }
@@ -2629,7 +2629,7 @@ namespace put
                                 generate_post_process_config(j_pp, s_post_process_chain, s_post_process_passes);
                                 
                                 Str basename = pen::str_remove_ext(res);
-                                basename.append(".yaml");
+                                basename.append(".jsn");
                                 
                                 std::ofstream ofs(basename.c_str());
                                 ofs << j_pp.dumps().c_str();

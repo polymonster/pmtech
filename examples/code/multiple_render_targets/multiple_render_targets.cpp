@@ -174,7 +174,7 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
 
-    pmfx::init("data/configs/mrt_example.yaml");
+    pmfx::init("data/configs/mrt_example.jsn");
 
     create_scene_objects(main_scene);
 

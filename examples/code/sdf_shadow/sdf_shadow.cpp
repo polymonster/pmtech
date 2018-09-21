@@ -167,7 +167,7 @@ PEN_TRV pen::user_entry(void* params)
     // volume rasteriser tool
     put::vgt::init(main_scene);
 
-    pmfx::init("data/configs/editor_renderer.yaml");
+    pmfx::init("data/configs/editor_renderer.jsn");
 
     bool enable_dev_ui = true;
 

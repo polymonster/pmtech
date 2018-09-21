@@ -25,7 +25,8 @@
 using namespace put;
 using namespace put::ces;
 
-pen::window_creation_params pen_window{
+pen::window_creation_params pen_window
+{
     1280,           // width
     720,            // height
     4,              // MSAA samples
@@ -97,7 +98,7 @@ PEN_TRV pen::user_entry(void* params)
     // volume rasteriser tool
     put::vgt::init(main_scene);
 
-    pmfx::init("data/configs/editor_renderer.yaml");
+    pmfx::init("data/configs/editor_renderer.jsn");
 
     bool enable_dev_ui = true;
 

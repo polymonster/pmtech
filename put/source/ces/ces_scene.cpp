@@ -336,8 +336,26 @@ namespace put
                 cmp_draw_call dc;
                 dc.world_matrix = scene->world_matrices[n];
                 dc.world_matrix_inv_transpose = mat::inverse4x4(dc.world_matrix);
-                dc.v1 = vec4f::magenta();
-                dc.v2 = vec4f::magenta();
+                
+                vec3f pos = dc.world_matrix.get_translation();
+                
+                switch(t)
+                {
+                    case LIGHT_TYPE_DIR:
+                        dc.v1 = vec4f(scene->lights[n].direction, 0.0f);
+                        dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
+                        break;
+                    case LIGHT_TYPE_POINT:
+                        dc.v1 = vec4f(pos, 0.0f);
+                        dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
+                        break;
+                    case LIGHT_TYPE_SPOT:
+                        dc.v1 = vec4f(pos, scene->lights[n].cos_cutoff);
+                        dc.v2 = vec4f(scene->lights[n].colour, scene->lights[n].spot_falloff);
+                        break;
+                    default:
+                        continue;
+                }
                 
                 pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
                 
@@ -1182,7 +1200,7 @@ namespace put
             ifs.read((c8*)&sh, sizeof(scene_header));
 
             // unpack header
-            s32 version   = sh.version;
+            // s32 version   = sh.version;
             s32 num_nodes = sh.num_nodes;
 
             scene->selected_index = sh.selected_index;
