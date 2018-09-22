@@ -346,7 +346,8 @@ namespace put
                         dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
                         break;
                     case LIGHT_TYPE_POINT:
-                        dc.v1 = vec4f(pos, 0.0f);
+                        dc.world_matrix *= mat::create_scale(vec3f(scene->lights[n].radius));
+                        dc.v1 = vec4f(pos,scene->lights[n].radius);
                         dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
                         break;
                     case LIGHT_TYPE_SPOT:

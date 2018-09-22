@@ -127,6 +127,11 @@
 		post_process:
 		{
 			cull_mode: none
+		},
+		
+		no_cull:
+		{
+			cull_mode: none
 		}
 	},
 	
@@ -344,10 +349,15 @@
                 { texture: gbuffer_albedo, unit: 0, state: wrap_linear, shader: ps },
                 { texture: gbuffer_normals, unit: 1, state: wrap_linear, shader: ps },
                 { texture: gbuffer_world_pos, unit: 2, state: wrap_linear, shader: ps },
-                { texture: gbuffer_depth, unit: 3, state: wrap_linear, shader: ps },
+                { texture: gbuffer_depth, unit: 4, state: wrap_linear, shader: ps }
             ],
 		},
 	},
 	
-	view_set: [ main_view, editor_view, picking_view, volume_rasteriser ]
+	view_set: [ 
+	    main_view, 
+	    editor_view, 
+        picking_view, 
+        volume_rasteriser 
+	]
 }

@@ -251,7 +251,7 @@ namespace
 
     std::vector<Str>                     s_post_process_names;
     std::vector<view_params>             s_views;
-    std::vector<Str>                     s_view_chain;
+    std::vector<Str>                     s_view_set;
     std::vector<scene_controller>        s_controllers;
     std::vector<scene_view_renderer>     s_scene_view_renderers;
     std::vector<render_target>           s_render_targets;
@@ -1940,8 +1940,8 @@ namespace put
             parse_render_targets(render_config);
             
             pen::json j_views = render_config["views"];
-            pen::json j_view_chain = render_config["view_set"];
-            u32 num_views_chain = j_view_chain.size();
+            pen::json j_view_set = render_config["view_set"];
+            u32 num_views_chain = j_view_set.size();
             if(num_views_chain > 0)
             {
                 // views from "view_set"
@@ -1949,8 +1949,8 @@ namespace put
                 
                 for(u32 i = 0; i < num_views_chain; ++i)
                 {
-                    Str vs = j_view_chain[i].as_str();
-                    s_view_chain.push_back(vs);
+                    Str vs = j_view_set[i].as_str();
+                    s_view_set.push_back(vs);
                     
                     pen::json v = j_views[vs.c_str()];
                     view_set.set(vs.c_str(), v);
@@ -2059,7 +2059,7 @@ namespace put
             s_render_states.clear();
             s_render_targets.clear();
             s_render_target_names.clear();
-            s_view_chain.clear();
+            s_view_set.clear();
             s_views.clear();
             s_post_process_names.clear();
             s_virtual_rt.clear();
