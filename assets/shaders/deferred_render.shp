@@ -4,7 +4,9 @@
 struct vs_output
 {
 	float4 position         : SV_POSITION;
-	float4 screen_coord     : TEXCOORD1;
+	float4 screen_coord     : TEXCOORD0;
+	float4 light_pos_radius : TEXCOORD1;
+	float4 light_colour     : TEXCOORD2;
 };
 
 struct vs_input
@@ -29,7 +31,7 @@ declare_texture_samplers
 	texture_2d( gbuffer_depth, 3 );
 };
 
-vs_output vs_2d(vs_input input)
+vs_output vs_directional_light(vs_input input)
 {
 	vs_output output;
 	
@@ -37,7 +39,16 @@ vs_output vs_2d(vs_input input)
 	float y = input.position.y;
 	
 	output.position = input.position;
+	
+	// todo y invert
 	output.screen_coord = float4(x * 0.5 + 0.5, -y * 0.5 + 0.5, 0.0, 0.0);
+	
+	output.light_colour = user_data2;
+	output.light_pos_radius = user_data;
+	
+	output.light_pos_radius.xyz = output.light_pos_radius.xyz * 10000.0f;
+	
+	
 	
     return output;
 }
@@ -65,12 +76,44 @@ ps_output ps_point_light(vs_output input)
 	return output;
 }
 
+ps_output ps_directional_light(vs_output input)
+{
+	ps_output output;
+	
+	float2 tc = float2(input.screen_coord.x, input.screen_coord.y);
+	
+	float4 g_albedo = sample_texture(gbuffer_albedo, tc);
+	float4 g_normals = sample_texture(gbuffer_normals, tc);
+	float4 g_world_pos = sample_texture(gbuffer_world_pos, tc);
+	
+	float3 albedo = g_albedo.rgb;
+	float3 n = g_normals.rgb;
+	float3 world_pos = g_world_pos.rgb;
+	
+	float l = dot(n, normalize(input.light_pos_radius.xyz));
+	
+	float3 light_col =  cook_torrence(  input.light_pos_radius,
+	                                    input.light_colour.rgb,
+                                        n,
+                                        world_pos,
+                                        camera_view_pos.xyz,
+                                        albedo,
+                                        float3(0.5, 0.5, 0.5),
+                                        0.2,
+                                        0.5);
+                  
+	output.colour.rgb = light_col * albedo * 2;
+	output.colour.a = g_albedo.a;
+	
+	return output;
+}
+
 pmfx:
 {
     "directional_light":
     {
-        "vs": "vs_2d",
-        "ps": "ps_point_light"
+        "vs": "vs_directional_light",
+        "ps": "ps_directional_light"
     },
     
     "point_light":

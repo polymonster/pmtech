@@ -678,7 +678,7 @@ namespace pen
 
         if (info_log_length > 0)
         {
-            PEN_LOG("%s", params.byte_code);
+            //PEN_LOG("%s", params.byte_code);
 
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
@@ -721,7 +721,7 @@ namespace pen
     }
 
     void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
-    {        
+    {
         shader_link_params slp           = params;
         u32                program_index = link_program_internal(0, 0, &slp);
 

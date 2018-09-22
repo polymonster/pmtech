@@ -12,7 +12,6 @@ import util
 # setup paths and platforms
 stats_start = time.time()
 
-root_dir = os.getcwd()
 shader_sub_platform = ""
 shader_platform = "hlsl"
 os_platform = util.get_platform_name()
@@ -32,6 +31,7 @@ for i in range(1, len(sys.argv)):
 if os_platform == "ios":
     shader_sub_platform = "gles"
 
+root_dir = os.getcwd()
 config = open("build_config.json")
 build_config = json.loads(config.read())
 pmtech_dir = util.correct_path(build_config["pmtech_dir"])

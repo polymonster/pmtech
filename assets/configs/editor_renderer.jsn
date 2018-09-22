@@ -294,23 +294,23 @@
 		gbuffer_view:
 	    {
 	    	target: [gbuffer_albedo, gbuffer_normals, gbuffer_world_pos, gbuffer_depth],
-			clear_colour: [1.0, 1.0, 1.0, 1.0],			
+			clear_colour: [0.0, 0.0, 0.0, 0.0],			
 			clear_depth: 1.0,
 			clear:
 			{
 				gbuffer_albedo:
 				{
-					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
+					clear_colour_f:[0.0, 0.0, 0.0, 0.0]
 				},
 				
 				gbuffer_normals:
 				{
-					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
+					clear_colour_f:[0.0, 0.0, 0.0, 0.0]
 				},
 				
 				gbuffer_world_pos:
 				{
-					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
+					clear_colour_f:[0.0, 0.0, 0.0, 0.0]
 				}
 			},
 			viewport: [0.0, 0.0, 1.0, 1.0],
@@ -327,11 +327,13 @@
 		deferred_lights_view:
 		{
 		    target: [main_colour],
+		    clear_colour: [0.0, 0.0, 0.0, 0.0],			
+			clear_depth: 1.0,
 		    colour_write_mask: 0xf,
-		    blend_state: disabled,
+		    blend_state: additive,
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			raster_state: default,
-			depth_stencil_state: default,
+			depth_stencil_state: "depth_always",
 			shader: deferred_render,
 			scene: main_scene,
 			camera: model_viewer_camera,
@@ -341,11 +343,11 @@
             [
                 { texture: gbuffer_albedo, unit: 0, state: wrap_linear, shader: ps },
                 { texture: gbuffer_normals, unit: 1, state: wrap_linear, shader: ps },
-                { texture: gbuffer_world_pos, unit: 1, state: wrap_linear, shader: ps },
-                { texture: gbuffer_depth, unit: 2, state: wrap_linear, shader: ps },
+                { texture: gbuffer_world_pos, unit: 2, state: wrap_linear, shader: ps },
+                { texture: gbuffer_depth, unit: 3, state: wrap_linear, shader: ps },
             ],
 		},
 	},
 	
-	view_set: [ main_view, editor_view, picking_view, volume_rasteriser, gbuffer_view, deferred_lights_view ]
+	view_set: [ main_view, editor_view, picking_view, volume_rasteriser ]
 }
