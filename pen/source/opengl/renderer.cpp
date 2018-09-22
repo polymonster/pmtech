@@ -1,3 +1,5 @@
+#define GL_SILENCE_DEPRECATION
+
 #include <stdlib.h>
 
 #include "hash.h"
@@ -719,7 +721,7 @@ namespace pen
     }
 
     void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
-    {
+    {        
         shader_link_params slp           = params;
         u32                program_index = link_program_internal(0, 0, &slp);
 

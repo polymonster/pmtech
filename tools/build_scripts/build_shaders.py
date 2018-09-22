@@ -9,13 +9,14 @@ import time
 import dependencies
 import util
 
+# setup paths and platforms
 stats_start = time.time()
 
 root_dir = os.getcwd()
-
 shader_sub_platform = ""
 shader_platform = "hlsl"
 os_platform = util.get_platform_name()
+system_platform = os_platform
 
 if os_platform == "osx" or os_platform == "linux":
     shader_platform = "glsl"
@@ -31,31 +32,31 @@ for i in range(1, len(sys.argv)):
 if os_platform == "ios":
     shader_sub_platform = "gles"
 
-root_dir = os.getcwd()
-
 config = open("build_config.json")
 build_config = json.loads(config.read())
 pmtech_dir = util.correct_path(build_config["pmtech_dir"])
-
 tools_dir = os.path.join(pmtech_dir, "tools")
-compiler_dir = os.path.join(pmtech_dir, "tools", "bin", "fxc")
-temp_dir = os.path.join(root_dir, "temp")
 
+if system_platform == "win32":
+    compiler_dir = os.path.join(pmtech_dir, "tools", "bin", "fxc")
+elif system_platform == "osx":
+    compiler_dir = os.path.join(pmtech_dir, "tools", "bin", "glsl")
+else:
+    compiler_dir = ""
+
+temp_dir = os.path.join(root_dir, "temp")
 this_file = os.path.join(tools_dir, "build_scripts", "build_shaders.py")
 macros_file = os.path.join(tools_dir, "_shader_macros.h")
+shader_source_dir = os.path.join(root_dir, "assets", "shaders")
+pmtech_shaders = os.path.join(pmtech_dir, "assets", "shaders")
+shader_build_dir = os.path.join(root_dir, "bin", os_platform, "data", "pmfx", shader_platform)
+
+# create dirs
+if not os.path.exists(shader_build_dir):
+    os.makedirs(shader_build_dir)
 
 if not os.path.exists(temp_dir):
     os.mkdir(temp_dir)
-
-shader_source_dir = os.path.join(root_dir, "assets", "shaders")
-
-pmtech_shaders = os.path.join(pmtech_dir, "assets", "shaders")
-
-shader_build_dir = os.path.join(root_dir, "bin", os_platform, "data", "pmfx", shader_platform)
-
-# create shaders dir
-if not os.path.exists(shader_build_dir):
-    os.makedirs(shader_build_dir)
 
 print("--------------------------------------------------------------------------------")
 print("pmfx shader compilation --------------------------------------------------------")
@@ -241,7 +242,6 @@ def replace_io_tokens(text):
     split = text.split(' ')
     split_replace = []
     for token in split:
-        replaced = False
         for i in range(0, len(token_io)):
             if token_io[i] in token:
                 last_char = len(token_io[i])
@@ -254,11 +254,9 @@ def replace_io_tokens(text):
                     c = t[last_char]
                     if c in token_post_delimiters:
                         token = token.replace(token_io[i], token_io_replace[i])
-                        replaced = True
                         continue
                 elif l == last_char:
                     token = token.replace(token_io[i], token_io_replace[i])
-                    replaced = True
                     continue
         split_replace.append(token)
 
@@ -591,6 +589,12 @@ def generate_glsl(
     vs_file.write(final_vs_source)
     vs_file.close()
 
+    vs_fn_opt = vs_fn.replace(".vsc", ".vso")
+    if compiler_dir != "":
+        compiler_exe = os.path.join(compiler_dir, system_platform, "glslopt")
+        cmd = compiler_exe + " -v " + vs_fn + " " + vs_fn_opt
+        subprocess.call(cmd, shell=True)
+
     # start making ps shader code
     if ps_main != "":
         ps_outputs, ps_output_semantics = parse_io_struct(ps_output_source)
@@ -648,6 +652,13 @@ def generate_glsl(
         ps_file = open(ps_fn, "w")
         ps_file.write(final_ps_source)
         ps_file.close()
+
+        # optimise and check compile errors
+        ps_fn_opt = ps_fn.replace(".psc", ".pso")
+        if compiler_dir != "":
+            compiler_exe = os.path.join(compiler_dir, system_platform, "glslopt")
+            cmd = compiler_exe + " -f " + ps_fn + " " + ps_fn_opt
+            subprocess.call(cmd, shell=True)
 
 
 def find_includes(file_text):
