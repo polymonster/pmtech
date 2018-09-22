@@ -206,76 +206,7 @@
 		    format: rgba32f
 		}
 	},
-	
-	view_test:
-	{
-	    post_process:
-		{
-		    target: [post_process_colour, post_process_depth],
-		    colour_write_mask: 0xf,
-		    blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: default,
-			depth_stencil_state: default,
-			camera: model_viewer_camera,
-		},
 		
-		gbuffer_view:
-	    {
-	    	target: [gbuffer_albedo, gbuffer_normals, gbuffer_world_pos, gbuffer_depth],
-			clear_colour: [1.0, 1.0, 1.0, 1.0],			
-			clear_depth: 1.0,
-			clear:
-			{
-				gbuffer_albedo:
-				{
-					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
-				},
-				
-				gbuffer_normals:
-				{
-					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
-				},
-				
-				gbuffer_world_pos:
-				{
-					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
-				}
-			},
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			blend_state: disabled,
-			raster_state: default,
-			depth_stencil_state: default,
-			pmfx_shader: forward_render,
-			technique: gbuffer,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			scene_views: ["ces_render_scene"]
-	    },
-	     
-		deferred_lights_view:
-		{
-		    target: [main_colour],
-		    colour_write_mask: 0xf,
-		    blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: default,
-			depth_stencil_state: default,
-			shader: deferred_render,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			scene_views: ["ces_render_light_volumes"],
-			
-			sampler_bindings:
-            [
-                { texture: gbuffer_albedo, unit: 0, state: wrap_linear, shader: ps },
-                { texture: gbuffer_normals, unit: 1, state: wrap_linear, shader: ps },
-                { texture: gbuffer_world_pos, unit: 1, state: wrap_linear, shader: ps },
-                { texture: gbuffer_depth, unit: 2, state: wrap_linear, shader: ps },
-            ],
-		},
-	}
-	
 	views:
 	{
 		main_view:
@@ -359,7 +290,62 @@
 				{ texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
 			],
 		},
+				
+		gbuffer_view:
+	    {
+	    	target: [gbuffer_albedo, gbuffer_normals, gbuffer_world_pos, gbuffer_depth],
+			clear_colour: [1.0, 1.0, 1.0, 1.0],			
+			clear_depth: 1.0,
+			clear:
+			{
+				gbuffer_albedo:
+				{
+					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
+				},
+				
+				gbuffer_normals:
+				{
+					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
+				},
+				
+				gbuffer_world_pos:
+				{
+					clear_colour_f:[0.0, 0.0, 0.0, 1.0]
+				}
+			},
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			blend_state: disabled,
+			raster_state: default,
+			depth_stencil_state: default,
+			pmfx_shader: forward_render,
+			technique: gbuffer,
+			scene: main_scene,
+			camera: model_viewer_camera,
+			scene_views: ["ces_render_scene"]
+	    },
+	     
+		deferred_lights_view:
+		{
+		    target: [main_colour],
+		    colour_write_mask: 0xf,
+		    blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: default,
+			depth_stencil_state: default,
+			shader: deferred_render,
+			scene: main_scene,
+			camera: model_viewer_camera,
+			scene_views: ["ces_render_light_volumes"],
+			
+			sampler_bindings:
+            [
+                { texture: gbuffer_albedo, unit: 0, state: wrap_linear, shader: ps },
+                { texture: gbuffer_normals, unit: 1, state: wrap_linear, shader: ps },
+                { texture: gbuffer_world_pos, unit: 1, state: wrap_linear, shader: ps },
+                { texture: gbuffer_depth, unit: 2, state: wrap_linear, shader: ps },
+            ],
+		},
 	},
 	
-	view_set: [ main_view, editor_view, picking_view, volume_rasteriser ]
+	view_set: [ main_view, editor_view, picking_view, volume_rasteriser, gbuffer_view, deferred_lights_view ]
 }
