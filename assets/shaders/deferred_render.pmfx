@@ -46,7 +46,7 @@ vs_output vs_directional_light(vs_input input)
 	output.light_colour = user_data2;
 	output.light_pos_radius = user_data;
 	
-	output.light_pos_radius.xyz = output.light_pos_radius.xyz * 10000.0f;
+	output.light_pos_radius.xyz = output.light_pos_radius.xyz * 10000.0;
 		
     return output;
 }
