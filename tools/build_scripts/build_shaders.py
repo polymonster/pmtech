@@ -142,8 +142,6 @@ def generate_shader_info(
     shader_info = dict()
     shader_info["files"] = []
 
-    included_files.insert(0, base_filename)
-
     _this_file = os.path.join(root_dir, this_file)
     _macros_file = os.path.join(root_dir, macros_file)
 
@@ -151,8 +149,9 @@ def generate_shader_info(
     shader_info["files"].append(dependencies.create_info(_this_file))
     shader_info["files"].append(dependencies.create_info(_macros_file))
 
+    included_files.insert(0, os.path.join(dir_path, base_filename))
     for ifile in included_files:
-        full_name = os.path.join(root_dir, dir_path, ifile)
+        full_name = os.path.join(root_dir, ifile)
         shader_info["files"].append(dependencies.create_info(full_name))
 
     shader_info["techniques"] = techniques
@@ -661,7 +660,7 @@ def generate_glsl(
             subprocess.call(cmd, shell=True)
 
 
-def find_includes(file_text):
+def find_includes(file_text, root):
     global added_includes
     include_list = []
     start = 0
@@ -674,9 +673,10 @@ def find_includes(file_text):
         if start == -1 or end == -1:
             break
         include_name = file_text[start:end]
-        if include_name not in added_includes:
-            include_list.append(include_name)
-            added_includes.append(include_name)
+        include_path = os.path.join(root, include_name)
+        if include_path not in added_includes:
+            include_list.append(include_path)
+            added_includes.append(include_path)
     return include_list
 
 
@@ -717,9 +717,10 @@ def add_files_recursive(filename, root):
     shader_source = included_file.read()
     included_file.close()
     shader_source = clean_spaces(shader_source)
-    include_list = find_includes(shader_source)
+    sub_root = os.path.dirname(file_path)
+    include_list = find_includes(shader_source, sub_root)
     for slib in reversed(include_list):
-        included_source, sub_includes = add_files_recursive(slib, root)
+        included_source, sub_includes = add_files_recursive(slib, sub_root)
         shader_source = included_source + "\n" + shader_source
         include_list = include_list + sub_includes
     return shader_source, include_list
@@ -733,7 +734,7 @@ def check_dependencies(filename, included_files):
     file_list.append(dependencies.sanitize_filename(os.path.join(root_dir, macros_file)))
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
     for f in included_files:
-        file_list.append(dependencies.sanitize_filename(os.path.join(root_dir, dir_path, f)))
+        file_list.append(dependencies.sanitize_filename(os.path.join(root_dir, f)))
     if os.path.exists(info_filename):
         info_file = open(info_filename, "r")
         info = json.loads(info_file.read())
@@ -948,7 +949,7 @@ def shader_compile_v1():
     print("compile shaders v1")
     for root, dirs, files in os.walk(shader_source_dir):
         for file in files:
-            if file.endswith(".shp"):
+            if file.endswith(".pmfx"):
                 file_and_path = os.path.join(root, file)
                 create_shader_set(file_and_path, root)
                 create_vsc_psc(file_and_path, "vs_main", "ps_main", "default")
@@ -1049,11 +1050,15 @@ def generate_defines(pmfx_block, technique_name):
 
 
 def parse_pmfx(filename, root):
+    print(filename)
     file_and_path = os.path.join(root, filename)
     needs_building, shader_file_text, included_files = create_shader_set(file_and_path, root)
     if needs_building:
         shader_c_struct = ""
         pmfx_loc = shader_file_text.find("pmfx:")
+        if pmfx_loc == -1:
+            if find_main(shader_file_text, "vs_main") == "":
+                return
         json_loc = shader_file_text.find("{", pmfx_loc)
         techniques = []
         constant_buffers = find_constant_buffers(shader_file_text)
@@ -1099,7 +1104,7 @@ def parse_pmfx(filename, root):
 
         # write out header file of c_structs for accessing materials in code
         if shader_c_struct != "":
-            h_filename = filename.replace(".shp", ".h")
+            h_filename = filename.replace(".pmfx", ".h")
             if not os.path.exists("shader_structs"):
                 os.mkdir("shader_structs")
             h_filename = os.path.join("shader_structs", h_filename)
@@ -1121,7 +1126,7 @@ def shader_compile_pmfx():
     for source_dir in source_list:
         for root, dirs, files in os.walk(source_dir):
             for file in files:
-                if file.endswith(".shp"):
+                if file.endswith(".pmfx"):
                     file_and_path = os.path.join(root, file)
                     parse_pmfx(file, root)
 

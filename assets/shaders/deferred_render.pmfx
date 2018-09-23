@@ -1,5 +1,5 @@
-#include "libs/lighting.slib"
-#include "libs/globals.slib"
+#include "libs/lighting.pmfx"
+#include "libs/globals.pmfx"
 
 struct vs_output
 {

@@ -1,8 +1,8 @@
-#include "libs/lighting.slib"
-#include "libs/skinning.slib"
-#include "libs/globals.slib"
-#include "libs/maths.slib"
-#include "libs/sdf.slib"
+#include "libs/lighting.pmfx"
+#include "libs/skinning.pmfx"
+#include "libs/globals.pmfx"
+#include "libs/maths.pmfx"
+#include "libs/sdf.pmfx"
 
 // Structs -----------------------------------------------------------------------------------------------------------
 

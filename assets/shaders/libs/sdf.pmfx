@@ -1,4 +1,4 @@
-#include "libs/maths.slib"
+#include "maths.pmfx"
 
 float sdf_shadow_trace(float max_samples, float3 light_pos, float3 world_pos, float3 scale, float3 ray_origin, float4x4 inv_mat, float3x3 inv_rot)
 {
