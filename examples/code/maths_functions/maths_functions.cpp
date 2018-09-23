@@ -729,6 +729,41 @@ void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
     scene->draw_call_data[aabb.node].v2   = vec4f(col);
 }
 
+void test_point_sphere(entity_scene* scene, bool initialise)
+{
+    static debug_point  point;
+    static debug_sphere sphere;
+    
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_point(e, scene, point);
+        add_debug_sphere(e, scene, sphere);
+    }
+    
+    bool i = maths::point_inside_sphere(sphere.pos, sphere.radius, point.point);
+    vec3f cp = maths::closest_point_on_sphere(sphere.pos, sphere.radius, point.point);
+    
+    // debug output
+    vec4f col = vec4f::green();
+    vec4f col2 = vec4f::white();
+    if (i)
+        col = vec4f::red();
+    
+    dbg::add_point(cp, 0.3f, col2);
+    dbg::add_line(cp, point.point, col2);
+    
+    dbg::add_point(point.point, 0.4f, col);
+    
+    scene->draw_call_data[sphere.node].v2 = vec4f(col);
+}
+
+
 void test_line_vs_line(entity_scene* scene, bool initialise)
 {
     static debug_line line0;
@@ -769,6 +804,7 @@ const c8* test_names[]{"Point Plane Distance",
                        "Point Inside Triangle / Point Triangle Distance / Closest Point on Triangle / Get Normal",
                        "Sphere vs Sphere",
                        "Sphere vs AABB",
+                       "Point inside Sphere",
                        "Ray vs AABB",
                        "Ray vs OBB",
                        "Line vs Line",
@@ -779,7 +815,8 @@ typedef void (*maths_test_function)(entity_scene*, bool);
 maths_test_function test_functions[] = {
     test_point_plane_distance, test_ray_plane_intersect, test_aabb_vs_plane, test_sphere_vs_plane, test_project,
     test_point_aabb,           test_point_line,          test_point_ray,     test_point_triangle,  test_sphere_vs_sphere,
-    test_sphere_vs_aabb,       test_ray_vs_aabb,         test_ray_vs_obb,    test_line_vs_line,    test_point_obb};
+    test_sphere_vs_aabb,       test_point_sphere,        test_ray_vs_aabb,         test_ray_vs_obb,    test_line_vs_line,
+    test_point_obb};
 
 void maths_test_ui(entity_scene* scene)
 {

@@ -358,6 +358,6 @@
 	    main_view, 
 	    editor_view, 
         picking_view, 
-        volume_rasteriser 
+        volume_rasteriser
 	]
 }

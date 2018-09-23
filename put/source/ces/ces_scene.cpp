@@ -320,6 +320,9 @@ namespace put
             for(u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
                 volume[i] = get_geometry_resource(id_volume[i]);
             
+            static hash_id id_cull_front = PEN_HASH("front_face_cull_raster_state");
+            u32 cull_front = pmfx::get_render_state_by_name(id_cull_front);
+            
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if(!(scene->entities[n] & CMP_LIGHT))
@@ -339,6 +342,8 @@ namespace put
                 
                 vec3f pos = dc.world_matrix.get_translation();
                 
+                bool flip_cullmode = false;
+                
                 switch(t)
                 {
                     case LIGHT_TYPE_DIR:
@@ -347,8 +352,12 @@ namespace put
                         break;
                     case LIGHT_TYPE_POINT:
                         dc.world_matrix *= mat::create_scale(vec3f(scene->lights[n].radius));
-                        dc.v1 = vec4f(pos,scene->lights[n].radius);
+                        dc.v1 = vec4f(pos, scene->lights[n].radius);
                         dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
+                        
+                        if(maths::point_inside_sphere( pos, scene->lights[n].radius, view.camera->pos ))
+                            flip_cullmode = true;
+                        
                         break;
                     case LIGHT_TYPE_SPOT:
                         dc.v1 = vec4f(pos, scene->lights[n].cos_cutoff);
@@ -358,13 +367,19 @@ namespace put
                         continue;
                 }
                 
-                pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
+                // flip cull mode if we are inside the light volume
+                if( flip_cullmode )
+                    pen::renderer_set_rasterizer_state(cull_front);
                 
+                pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
                 pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
                 pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
                 pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                
+                if( flip_cullmode )
+                    pen::renderer_set_rasterizer_state(view.raster_state);
             }
         }
 
