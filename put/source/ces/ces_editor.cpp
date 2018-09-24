@@ -2639,7 +2639,7 @@ namespace put
                     break;
             }
         }
-
+        
         void render_physics_debug(const scene_view& view)
         {
             entity_scene* scene = view.scene;
@@ -2750,9 +2750,10 @@ namespace put
                             break;
                             case LIGHT_TYPE_SPOT:
                             {
-                                vec3f dir = scene->world_matrices[s].get_fwd();
+                                vec3f dir = -scene->world_matrices[s].get_up();
                                 vec3f pos = scene->world_matrices[s].get_translation();
 
+                                dbg::add_coord_space(scene->world_matrices[s], 20.0f);
                                 dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
                             }
                             break;

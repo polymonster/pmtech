@@ -78,7 +78,7 @@ namespace put
             add_geometry_resource(p_geometry);
         }
 
-        void create_cone_primitive()
+        void create_cone_primitive(Str name, float top, float bottom)
         {
             static const s32 segments = 16;
 
@@ -118,9 +118,9 @@ namespace put
 
             vec3f bottom_points[segments];
             for (s32 i = 0; i < segments; ++i)
-                bottom_points[i] = points[i] - vec3f(0.0f, 0.5f, 0.0f);
+                bottom_points[i] = points[i] + vec3f(0.0f, bottom, 0.0f);
 
-            vec3f top_point = vec3f(0.0, 0.5f, 0.0f);
+            vec3f top_point = vec3f(0.0, top, 0.0f);
 
             // bottom face
             for (s32 i = 0; i < segments; ++i)
@@ -134,7 +134,7 @@ namespace put
 
             // bottom middle
             s32 bm          = segments;
-            v[bm].pos       = vec4f(0.0f, -0.5f, 0.0f, 1.0f);
+            v[bm].pos       = vec4f(0.0f, bottom, 0.0f, 1.0f);
             v[bm].normal    = vec4f(0.0f, -1.0f, 0.0f, 1.0f);
             v[bm].tangent   = vec4f(1.0f, 0.0f, 0.0f, 1.0f);
             v[bm].bitangent = vec4f(0.0f, 0.0f, 1.0f, 1.0f);
@@ -221,10 +221,10 @@ namespace put
             p_geometry->num_vertices  = num_verts;
             p_geometry->vertex_size   = sizeof(vertex_model);
             p_geometry->index_type    = PEN_FORMAT_R16_UINT;
-            p_geometry->min_extents   = -vec3f(1.0f, 0.5f, 1.0f);
-            p_geometry->max_extents   = vec3f(1.0f, 0.5f, 1.0f);
-            p_geometry->geometry_name = "cone";
-            p_geometry->hash          = PEN_HASH("cone");
+            p_geometry->min_extents   = vec3f(-1.0f, bottom, -1.0f);
+            p_geometry->max_extents   = vec3f(1.0f, top, 1.0f);
+            p_geometry->geometry_name = name;
+            p_geometry->hash          = PEN_HASH(name);
             p_geometry->file_hash     = PEN_HASH("primitive");
             p_geometry->filename      = "primitive";
             p_geometry->p_skin        = nullptr;
@@ -800,7 +800,8 @@ namespace put
             create_cylinder_primitive();
             create_sphere_primitive();
             create_capsule_primitive();
-            create_cone_primitive();
+            create_cone_primitive("cone", 0.0f, -2.0f);
+            create_cone_primitive("physics_cone", 0.5f, -0.5f);
             create_fulscreen_quad();
         }
     } // namespace ces

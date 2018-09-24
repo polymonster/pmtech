@@ -42,7 +42,7 @@ void create_physics_objects(ces::entity_scene* scene)
     geometry_resource* cylinder = get_geometry_resource(PEN_HASH("cylinder"));
     geometry_resource* capsule  = get_geometry_resource(PEN_HASH("capsule"));
     geometry_resource* sphere   = get_geometry_resource(PEN_HASH("sphere"));
-    geometry_resource* cone     = get_geometry_resource(PEN_HASH("cone"));
+    geometry_resource* cone     = get_geometry_resource(PEN_HASH("physics_cone"));
 
     // add light
     u32 light                            = get_new_node(scene);
