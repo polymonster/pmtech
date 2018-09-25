@@ -1879,6 +1879,8 @@ namespace put
                     if (snl.azimuth == 0.0f && snl.altitude == 0.0f)
                         maths::xyz_to_azimuth_altitude(snl.direction, snl.azimuth, snl.altitude);
 
+                    bool edited = false;
+                    
                     switch (scene->lights[selected_index].type)
                     {
                         case LIGHT_TYPE_DIR:
@@ -1892,8 +1894,20 @@ namespace put
                             break;
 
                         case LIGHT_TYPE_SPOT:
-                            ImGui::SliderAngle("Cos Cutoff", &snl.cos_cutoff, -60.0f, -22.0f);
-                            ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01);
+                            edited |= ImGui::SliderAngle("Cos Cutoff", &snl.cos_cutoff, 0.0f, 180.0f);
+                            edited |= ImGui::SliderFloat("Range", &snl.radius, 0.0f, 100.0f);
+                            edited |= ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01f);
+                            
+                            if(edited)
+                            {
+                                //construct scale matrix
+                                f32 len = snl.radius;
+                                f32 radius = snl.cos_cutoff * 2.0f * len;
+                                
+                                scene->transforms[selected_index].scale = vec3f(radius, len, radius);
+                                scene->entities[selected_index] |= CMP_TRANSFORM;
+                            }
+                            
                             break;
 
                         case LIGHT_TYPE_AREA_BOX:
@@ -2716,7 +2730,7 @@ namespace put
             {
                 for (u32 n = 0; n < scene->num_nodes; ++n)
                 {
-                    put::dbg::add_coord_space(scene->world_matrices[n], 0.5f);
+                    put::dbg::add_coord_space(scene->world_matrices[n], 2.0f);
                 }
             }
 
@@ -2750,10 +2764,9 @@ namespace put
                             break;
                             case LIGHT_TYPE_SPOT:
                             {
-                                vec3f dir = -scene->world_matrices[s].get_up();
+                                vec3f dir = -scene->world_matrices[s].get_column(1).xyz;
                                 vec3f pos = scene->world_matrices[s].get_translation();
 
-                                dbg::add_coord_space(scene->world_matrices[s], 20.0f);
                                 dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
                             }
                             break;
