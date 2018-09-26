@@ -1894,15 +1894,17 @@ namespace put
                             break;
 
                         case LIGHT_TYPE_SPOT:
-                            edited |= ImGui::SliderAngle("Cos Cutoff", &snl.cos_cutoff, 0.0f, 180.0f);
+                            edited |= ImGui::SliderFloat("Cos Cutoff", &snl.cos_cutoff, 0.0f, 1.0f);
                             edited |= ImGui::SliderFloat("Range", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01f);
                             
                             if(edited)
                             {
+                                f32 l = lerp(0.0f, 100.0f, snl.cos_cutoff);
+                                
                                 //construct scale matrix
                                 f32 len = snl.radius;
-                                f32 radius = snl.cos_cutoff * 2.0f * len;
+                                f32 radius = snl.cos_cutoff * l * len;
                                 
                                 scene->transforms[selected_index].scale = vec3f(radius, len, radius);
                                 scene->entities[selected_index] |= CMP_TRANSFORM;

@@ -903,8 +903,8 @@ namespace put
 
                 cmp_transform& t = scene->transforms[n];
 
-                vec3f dir = scene->world_matrices[n].get_fwd();
-
+                vec3f dir = -scene->world_matrices[n].get_column(1).xyz;
+                
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.spot_falloff);
                 light_buffer.lights[pos].dir_cutoff = vec4f(dir, l.cos_cutoff);
                 light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
