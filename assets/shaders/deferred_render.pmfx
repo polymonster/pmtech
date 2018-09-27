@@ -139,6 +139,13 @@ pmfx:
         "vs": "vs_point_light",
         "ps": "ps_light",
         "defines": ["POINT_LIGHT"]
+    },
+    
+    "spot_light":
+    {
+        "vs": "vs_point_light",
+        "ps": "ps_light",
+        "defines": ["POINT_LIGHT"]
     }
 }
 

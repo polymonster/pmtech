@@ -386,6 +386,8 @@ ps_output ps_forward_lit( vs_output input )
 		float a = spot_light_attenuation( lights[i].pos_radius, lights[i].dir_cutoff, input.world_pos.xyz );	
 		light_col *= a;
 		
+		light_col = float3(a, a, a);
+		
 		if:(SDF_SHADOW)
 		{
 			float s = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);

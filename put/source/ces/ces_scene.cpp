@@ -333,9 +333,6 @@ namespace put
                 
                 pmfx::set_technique(shader, id_technique[t], 0);
                 
-                if(!is_valid(scene->cbuffer[n]) || !scene->cbuffer[n])
-                    instantiate_model_cbuffer(scene, n);
-                
                 cmp_draw_call dc;
                 dc.world_matrix = scene->world_matrices[n];
                 dc.world_matrix_inv_transpose = mat::inverse4x4(dc.world_matrix);
@@ -903,7 +900,7 @@ namespace put
 
                 cmp_transform& t = scene->transforms[n];
 
-                vec3f dir = -scene->world_matrices[n].get_column(1).xyz;
+                vec3f dir = normalized(-scene->world_matrices[n].get_column(1).xyz);
                 
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.spot_falloff);
                 light_buffer.lights[pos].dir_cutoff = vec4f(dir, l.cos_cutoff);

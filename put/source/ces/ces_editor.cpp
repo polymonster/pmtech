@@ -237,7 +237,7 @@ namespace put
             scene->transforms[light].scale       = vec3f::one();
             scene->entities[light] |= CMP_LIGHT;
             scene->entities[light] |= CMP_TRANSFORM;
-
+            
             sb_clear(s_selection_list);
         }
 
@@ -1898,17 +1898,28 @@ namespace put
                             edited |= ImGui::SliderFloat("Range", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01f);
                             
-                            if(edited)
+                            /*
+                            //if(edited)
                             {
-                                f32 l = lerp(0.0f, 100.0f, snl.cos_cutoff);
+                                vec3f vl = -scene->world_matrices[selected_index].get_column(1).xyz;
+                                vec3f vr =  scene->world_matrices[selected_index].get_column(0).xyz;
+                                vec3f vc = lerp(vl, vr, snl.cos_cutoff);
+                                
+                                vec3f ip;
+                                bool i = maths::line_vs_ray(-vl, vc * FLT_MAX, vec3f::zero(), vr, ip);
+                                
+                                f32 scale = mag(ip);
                                 
                                 //construct scale matrix
-                                f32 len = snl.radius;
-                                f32 radius = snl.cos_cutoff * l * len;
+                                f32 len = 1.0; //snl.radius;
+                                f32 radius = scale * len;
+                                
+                                //dbg::add_line(-vl, vc * FLT_MAX, vec4f::magenta());
                                 
                                 scene->transforms[selected_index].scale = vec3f(radius, len, radius);
                                 scene->entities[selected_index] |= CMP_TRANSFORM;
                             }
+                            */
                             
                             break;
 
@@ -1949,6 +1960,9 @@ namespace put
                         scene->bounding_volumes[s].max_extents = vec3f::one();
 
                         scene->world_matrices[s] = mat4::create_identity();
+                        
+                        // cbuffer for rendering light volume, for debug/editor or for deferred
+                        instantiate_model_cbuffer(scene, s);
                     }
                 }
             }
@@ -2656,6 +2670,58 @@ namespace put
             }
         }
         
+        void render_light_debug(const scene_view& view)
+        {
+            entity_scene* scene = view.scene;
+            
+            if (scene->view_flags & SV_HIDE)
+                return;
+            
+            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
+            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
+            
+            static const hash_id id_volume[] =
+            {
+                PEN_HASH("full_screen_quad"),
+                PEN_HASH("sphere"),
+                PEN_HASH("cone")
+            };
+            
+            static const hash_id id_technique = PEN_HASH("constant_colour");
+            static const pmfx::shader_handle shader = pmfx::load_shader("pmfx_utility");
+            
+            geometry_resource* volume[PEN_ARRAY_SIZE(id_volume)];
+            for(u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
+                volume[i] = get_geometry_resource(id_volume[i]);
+            
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if(!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                u32 t = scene->lights[n].type;
+                
+                if(t == LIGHT_TYPE_DIR)
+                    continue;
+                
+                geometry_resource* vol = volume[t];
+                
+                pmfx::set_technique(shader, id_technique, 0);
+                
+                cmp_draw_call dc;
+                dc.world_matrix = scene->world_matrices[n];
+                dc.world_matrix_inv_transpose = mat4::create_identity();
+                dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
+
+                pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
+                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
+                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
+                pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
+                pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+            }
+        }
+        
         void render_physics_debug(const scene_view& view)
         {
             entity_scene* scene = view.scene;
@@ -2709,6 +2775,8 @@ namespace put
             dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
 
             render_physics_debug(view);
+            
+            render_light_debug(view);
 
             mat4 view_proj = view.camera->proj * view.camera->view;
 
@@ -2766,10 +2834,37 @@ namespace put
                             break;
                             case LIGHT_TYPE_SPOT:
                             {
-                                vec3f dir = -scene->world_matrices[s].get_column(1).xyz;
+                                //vec3f dir = -scene->world_matrices[s].get_column(1).xyz;
                                 vec3f pos = scene->world_matrices[s].get_translation();
 
-                                dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
+                                //dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
+                                
+                                vec3f vl = normalised(-scene->world_matrices[s].get_column(1).xyz);
+                                
+                                vec3f vr = normalised(scene->world_matrices[s].get_column(0).xyz);
+                                vec3f vc = normalised(lerp(vl, vr, snl.cos_cutoff));
+                                
+                                f32 theta = acos(1.0f - snl.cos_cutoff);
+                                
+                                mat4 rot = mat::create_rotation(normalised(scene->world_matrices[s].get_column(0).xyz), theta);
+                                
+                                vec3f rv = rot.transform_vector(vl);
+                                
+                                //dbg::add_line(pos, pos + vl, vec4f::green());
+                                //dbg::add_line(pos, pos + vc * 100.0f, vec4f::magenta());
+                                //dbg::add_line(pos, rv, vec4f::cyan());
+                                
+                                vec3f p = maths::ray_plane_intersect(pos, rv, pos + vl, -vl);
+                                f32   scale = dist(pos + vl, p);
+                                
+                                //f32 dp = 1.0 - dot(rv, vl);
+                                //PEN_LOG("DP %f\n", dp);
+                                
+                                f32 len = std::max<f32>(snl.radius, 1.0f);
+                                f32 ss = len * scale;
+                                
+                                scene->transforms[s].scale = vec3f(ss, len, ss);
+                                scene->entities[s] |= CMP_TRANSFORM;
                             }
                             break;
                             case LIGHT_TYPE_AREA_BOX:
