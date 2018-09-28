@@ -800,7 +800,7 @@ namespace put
             create_cylinder_primitive();
             create_sphere_primitive();
             create_capsule_primitive();
-            create_cone_primitive("cone", 0.0f, -2.0f);
+            create_cone_primitive("cone", 0.0f, -1.0f);
             create_cone_primitive("physics_cone", 0.5f, -0.5f);
             create_fulscreen_quad();
         }

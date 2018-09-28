@@ -1891,6 +1891,14 @@ namespace put
                         case LIGHT_TYPE_POINT:
                             ImGui::SliderFloat("Radius##slider", &snl.radius, 0.0f, 100.0f);
                             ImGui::InputFloat("Radius##input", &snl.radius);
+                            
+                            if(edited)
+                            {
+                                f32 rad = std::max<f32>(snl.radius, 1.0f);
+                                scene->transforms[selected_index].scale = vec3f(rad, rad, rad);
+                                scene->entities[selected_index] |= CMP_TRANSFORM;
+                            }
+
                             break;
 
                         case LIGHT_TYPE_SPOT:
@@ -1898,28 +1906,27 @@ namespace put
                             edited |= ImGui::SliderFloat("Range", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01f);
                             
-                            /*
-                            //if(edited)
+                            if(edited)
                             {
-                                vec3f vl = -scene->world_matrices[selected_index].get_column(1).xyz;
-                                vec3f vr =  scene->world_matrices[selected_index].get_column(0).xyz;
-                                vec3f vc = lerp(vl, vr, snl.cos_cutoff);
+                                vec3f pos = scene->world_matrices[selected_index].get_translation();
+                                vec3f vl = normalised(-scene->world_matrices[selected_index].get_column(1).xyz);
                                 
-                                vec3f ip;
-                                bool i = maths::line_vs_ray(-vl, vc * FLT_MAX, vec3f::zero(), vr, ip);
+                                f32 angle = acos(1.0f - snl.cos_cutoff);
                                 
-                                f32 scale = mag(ip);
+                                mat4 rot = mat::create_rotation(vec3f::unit_z(), angle);
                                 
-                                //construct scale matrix
-                                f32 len = 1.0; //snl.radius;
-                                f32 radius = scale * len;
+                                vec3f vh = rot.transform_vector(vl);
                                 
-                                //dbg::add_line(-vl, vc * FLT_MAX, vec4f::magenta());
+                                f32 lo = tan(angle);
+                                f32 lh = sqrt(1 + lo * lo);
+                                f32 range = snl.radius;
                                 
-                                scene->transforms[selected_index].scale = vec3f(radius, len, radius);
+                                dbg::add_line(pos, pos + vl, vec4f::magenta());
+                                dbg::add_line(pos, pos + vh * lh, vec4f::cyan());
+                                
+                                scene->transforms[selected_index].scale = vec3f(lo * range, range, lo * range);
                                 scene->entities[selected_index] |= CMP_TRANSFORM;
                             }
-                            */
                             
                             break;
 
@@ -2824,7 +2831,7 @@ namespace put
                     if (scene->entities[s] & CMP_LIGHT)
                     {
                         cmp_light& snl = scene->lights[s];
-
+                        
                         switch (snl.type)
                         {
                             case LIGHT_TYPE_DIR:
@@ -2832,50 +2839,18 @@ namespace put
                                 dbg::add_line(vec3f::zero(), snl.direction * 10000.0f, vec4f(snl.colour, 1.0f));
                             }
                             break;
-                            case LIGHT_TYPE_SPOT:
-                            {
-                                //vec3f dir = -scene->world_matrices[s].get_column(1).xyz;
-                                vec3f pos = scene->world_matrices[s].get_translation();
-
-                                //dbg::add_line(pos, pos + dir * 100.0f, vec4f(snl.colour, 1.0f));
-                                
-                                vec3f vl = normalised(-scene->world_matrices[s].get_column(1).xyz);
-                                
-                                vec3f vr = normalised(scene->world_matrices[s].get_column(0).xyz);
-                                vec3f vc = normalised(lerp(vl, vr, snl.cos_cutoff));
-                                
-                                f32 theta = acos(1.0f - snl.cos_cutoff);
-                                
-                                mat4 rot = mat::create_rotation(normalised(scene->world_matrices[s].get_column(0).xyz), theta);
-                                
-                                vec3f rv = rot.transform_vector(vl);
-                                
-                                //dbg::add_line(pos, pos + vl, vec4f::green());
-                                //dbg::add_line(pos, pos + vc * 100.0f, vec4f::magenta());
-                                //dbg::add_line(pos, rv, vec4f::cyan());
-                                
-                                vec3f p = maths::ray_plane_intersect(pos, rv, pos + vl, -vl);
-                                f32   scale = dist(pos + vl, p);
-                                
-                                //f32 dp = 1.0 - dot(rv, vl);
-                                //PEN_LOG("DP %f\n", dp);
-                                
-                                f32 len = std::max<f32>(snl.radius, 1.0f);
-                                f32 ss = len * scale;
-                                
-                                scene->transforms[s].scale = vec3f(ss, len, ss);
-                                scene->entities[s] |= CMP_TRANSFORM;
-                            }
-                            break;
+                            
                             case LIGHT_TYPE_AREA_BOX:
                             {
                                 dbg::add_obb(scene->world_matrices[s], vec4f(snl.colour, 1.0f));
                             }
                             break;
+                                
+                            case LIGHT_TYPE_SPOT:
                             case LIGHT_TYPE_POINT:
                             {
                                 vec3f p = scene->world_matrices[s].get_translation();
-
+                                
                                 p = maths::project_to_sc(p, view_proj, vpi);
 
                                 if (p.z > 0.0f)
