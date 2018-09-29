@@ -146,7 +146,8 @@ ps_output ps_light(vs_output input)
 	{
 	    light_col *= spot_light_attenuation(input.light_pos_radius, 
 	                                        input.light_dir_cutoff,
-	                                        input.light_data.x, world_pos);
+	                                        input.light_data.x, 
+	                                        world_pos);
 	}
                   
 	output.colour.rgb = light_col;

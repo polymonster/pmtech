@@ -362,7 +362,7 @@ namespace put
                         break;
                     case LIGHT_TYPE_SPOT:
                         ld.pos_radius = vec4f(pos, scene->lights[n].radius);
-                        ld.dir_cutoff = vec4f(scene->lights[n].direction, scene->lights[n].cos_cutoff);
+                        ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
                         ld.colour = vec4f(scene->lights[n].colour, 0.0f);
                         ld.data = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
                         

@@ -139,8 +139,13 @@
 		}
 	},
 	
-	view_set: [
-	    main_view, 
+	def_view_set: [
+		gbuffer_view,
+	    deferred_lights_view,
+	],
+	
+	view_set: [ 
+        main_view,
 	    editor_view, 
         picking_view, 
         volume_rasteriser
