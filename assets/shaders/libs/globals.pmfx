@@ -19,16 +19,17 @@ cbuffer per_draw_call : register(b1)
 };
 
 //lighting buffers
-struct forward_light
+struct light_data
 {
-	float4 pos_radius;
-	float4 dir_cutoff;
+	float4 pos_radius; // radius = spot length and point radius
+	float4 dir_cutoff; // spot light dir and cos cutoff
 	float4 colour;
+	float4 data;       // x = spot light falloff, yzw reserved.
 };
 
 cbuffer per_pass_lights : register(b3)
 {
-	forward_light lights[8];
+	light_data    lights[8];
 	float4 		  light_info;
 };
 

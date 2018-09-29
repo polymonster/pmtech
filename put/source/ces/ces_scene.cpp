@@ -335,34 +335,44 @@ namespace put
                 
                 cmp_draw_call dc;
                 dc.world_matrix = scene->world_matrices[n];
-                dc.world_matrix_inv_transpose = mat::inverse4x4(dc.world_matrix);
                 
                 vec3f pos = dc.world_matrix.get_translation();
                 
                 bool flip_cullmode = false;
                 
+                light_data ld = { };
+                
                 switch(t)
                 {
                     case LIGHT_TYPE_DIR:
-                        dc.v1 = vec4f(scene->lights[n].direction, 0.0f);
-                        dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
+                        ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
+                        ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
+                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
                         break;
                     case LIGHT_TYPE_POINT:
                         dc.world_matrix *= mat::create_scale(vec3f(scene->lights[n].radius));
-                        dc.v1 = vec4f(pos, scene->lights[n].radius);
-                        dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
+                        
+                        ld.pos_radius = vec4f(pos, scene->lights[n].radius);
+                        ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
+                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
                         
                         if(maths::point_inside_sphere( pos, scene->lights[n].radius, view.camera->pos ))
                             flip_cullmode = true;
                         
                         break;
                     case LIGHT_TYPE_SPOT:
-                        dc.v1 = vec4f(pos, scene->lights[n].cos_cutoff);
-                        dc.v2 = vec4f(scene->lights[n].colour, scene->lights[n].spot_falloff);
+                        ld.pos_radius = vec4f(pos, scene->lights[n].radius);
+                        ld.dir_cutoff = vec4f(scene->lights[n].direction, scene->lights[n].cos_cutoff);
+                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                        ld.data = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
+                        
                         break;
                     default:
                         continue;
                 }
+                
+                // pack light data into world_matrix_inv_transpose
+                memcpy(&dc.world_matrix_inv_transpose, &ld, sizeof(mat4));
                 
                 // flip cull mode if we are inside the light volume
                 if( flip_cullmode )
@@ -902,9 +912,10 @@ namespace put
 
                 vec3f dir = normalized(-scene->world_matrices[n].get_column(1).xyz);
                 
-                light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.spot_falloff);
+                light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
                 light_buffer.lights[pos].dir_cutoff = vec4f(dir, l.cos_cutoff);
                 light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+                light_buffer.lights[pos].data       = vec4f(l.spot_falloff, 0.0f, 0.0f, 0.0f);
 
                 ++num_spot_lights;
                 ++num_lights;
@@ -1445,6 +1456,15 @@ namespace put
             }
 
             bake_material_handles();
+            
+            //light geom
+            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                instantiate_model_cbuffer(scene, n);
+            }
 
             if (!merge)
             {

@@ -6,7 +6,9 @@ struct vs_output
 	float4 position         : SV_POSITION;
 	float4 screen_coord     : TEXCOORD0;
 	float4 light_pos_radius : TEXCOORD1;
-	float4 light_colour     : TEXCOORD2;
+	float4 light_dir_cutoff : TEXCOORD2;
+	float4 light_colour     : TEXCOORD3;
+	float4 light_data       : TEXCOORD4;
 };
 
 struct vs_input
@@ -31,6 +33,15 @@ declare_texture_samplers
 	texture_2d( gbuffer_depth, 4 );
 };
 
+void unpack_light_data(inout vs_output output)
+{
+	float4x4 ld = world_matrix_inv_transpose;
+	output.light_pos_radius = ld[0];
+	output.light_dir_cutoff = ld[1];
+	output.light_colour = ld[2];
+	output.light_data = ld[3];
+}
+
 vs_output vs_directional_light(vs_input input)
 {
 	vs_output output;
@@ -43,10 +54,7 @@ vs_output vs_directional_light(vs_input input)
 	// todo y invert
 	output.screen_coord = float4(x * 0.5 + 0.5, -y * 0.5 + 0.5, 0.0, 0.0);
 	
-	output.light_colour = user_data2;
-	output.light_pos_radius = user_data;
-	
-	output.light_pos_radius.xyz = output.light_pos_radius.xyz * 10000.0;
+	unpack_light_data(output);
 		
     return output;
 }
@@ -61,11 +69,26 @@ vs_output vs_point_light(vs_input input)
 	// todo y invert
 	output.screen_coord = output.position;
 	
-	output.light_pos_radius = user_data;
-	output.light_colour = user_data2;
+	unpack_light_data(output);
 	
     return output;
 }
+
+vs_output vs_spot_light(vs_input input)
+{
+	vs_output output;
+	
+	float4x4 wvp = mul(world_matrix, vp_matrix);
+	output.position = mul(input.position, wvp);
+
+	// todo y invert
+	output.screen_coord = output.position;
+	
+	unpack_light_data(output);
+
+    return output;
+}
+
 
 ps_output ps_light(vs_output input)
 {
@@ -73,7 +96,7 @@ ps_output ps_light(vs_output input)
 	
 	float2 sc = input.screen_coord.xy;
 	
-	if:(POINT_LIGHT)
+	if:(POINT_LIGHT || SPOT_LIGHT)
 	{
 		float x = input.screen_coord.x / input.screen_coord.w;
 	    float y = input.screen_coord.y / input.screen_coord.w;
@@ -117,9 +140,14 @@ ps_output ps_light(vs_output input)
 	if:(POINT_LIGHT)
 	{
 	    light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
-	    
-	    //light_col.xy = input.screen_coord.xy;
 	}	
+	
+	if:(SPOT_LIGHT)
+	{
+	    light_col *= spot_light_attenuation(input.light_pos_radius, 
+	                                        input.light_dir_cutoff,
+	                                        input.light_data.x, world_pos);
+	}
                   
 	output.colour.rgb = light_col;
 	
@@ -143,9 +171,9 @@ pmfx:
     
     "spot_light":
     {
-        "vs": "vs_point_light",
+        "vs": "vs_spot_light",
         "ps": "ps_light",
-        "defines": ["POINT_LIGHT"]
+        "defines": ["SPOT_LIGHT"]
     }
 }
 

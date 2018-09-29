@@ -383,7 +383,10 @@ ps_output ps_forward_lit( vs_output input )
 			albedo.rgb
 		);		
 			
-		float a = spot_light_attenuation( lights[i].pos_radius, lights[i].dir_cutoff, input.world_pos.xyz );	
+		float a = spot_light_attenuation(lights[i].pos_radius, 
+		                                 lights[i].dir_cutoff,
+		                                 lights[i].data.x, // falloff 
+		                                 input.world_pos.xyz );	
 		light_col *= a;
 		
 		if:(SDF_SHADOW)

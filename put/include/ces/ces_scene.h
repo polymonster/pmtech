@@ -266,16 +266,17 @@ namespace put
             u32 sampler_state;
         };
 
-        struct forward_light
+        struct light_data
         {
-            vec4f pos_radius;
-            vec4f dir_cutoff;
-            vec4f colour;
+            vec4f pos_radius; // radius = point radius and spot length
+            vec4f dir_cutoff; // spot dir and cos cutoff
+            vec4f colour;     // w = boolean cast shadow
+            vec4f data;       // x = spot falloff, yzw reserved
         };
 
         struct forward_light_buffer
         {
-            forward_light lights[MAX_FORWARD_LIGHTS];
+            light_data    lights[MAX_FORWARD_LIGHTS];
             vec4f         info;
         };
 

@@ -1906,7 +1906,8 @@ namespace put
             {
                 // failed load file
                 pen::memory_free(config_data);
-                PEN_ERROR;
+                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - failed to open %s'", filename);
+                return;
             }
 
             // load render config
@@ -1953,6 +1954,12 @@ namespace put
                     s_view_set.push_back(vs);
                     
                     pen::json v = j_views[vs.c_str()];
+                    if(v.type() == JSMN_UNDEFINED)
+                    {
+                        dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - view '%s' not found", vs.c_str());
+                        return;
+                    }
+                    
                     view_set.set(vs.c_str(), v);
                 }
                 

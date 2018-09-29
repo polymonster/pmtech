@@ -179,6 +179,7 @@ float point_light_attenuation(
 float spot_light_attenuation(
 	float4 light_pos_radius,
 	float4 light_dir_cutoff,
+	float  falloff,
 	float3 world_pos)
 {
     float co = light_dir_cutoff.w;
@@ -188,7 +189,7 @@ float spot_light_attenuation(
 	
 	float dp = (1.0 - dot(vl, sd));
 
-	return smoothstep(co, co - light_pos_radius.w, dp);
+	return smoothstep(co, co - falloff, dp);
 }
 
 float point_light_attenuation_cutoff(
