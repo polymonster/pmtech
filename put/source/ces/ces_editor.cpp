@@ -2819,7 +2819,7 @@ namespace put
                 static f32 r = scene->transforms[0].scale.x;
                 static f32 h = scene->transforms[0].scale.y;
                 
-                vec3f cv = normalised(scene->world_matrices[0].get_column(1).xyz);
+                vec3f cv = normalised(-scene->world_matrices[0].get_column(1).xyz);
                 vec3f cp = scene->world_matrices[0].get_translation();
                 
                 if(scene->num_nodes > 1)
