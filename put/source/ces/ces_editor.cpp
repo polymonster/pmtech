@@ -1879,7 +1879,7 @@ namespace put
                     if (snl.azimuth == 0.0f && snl.altitude == 0.0f)
                         maths::xyz_to_azimuth_altitude(snl.direction, snl.azimuth, snl.altitude);
 
-                    bool edited = false;
+                    bool edited = changed;
                     
                     switch (scene->lights[selected_index].type)
                     {
@@ -1889,11 +1889,14 @@ namespace put
                             break;
 
                         case LIGHT_TYPE_POINT:
-                            ImGui::SliderFloat("Radius##slider", &snl.radius, 0.0f, 100.0f);
-                            ImGui::InputFloat("Radius##input", &snl.radius);
+                            edited |= ImGui::SliderFloat("Radius##slider", &snl.radius, 0.0f, 100.0f);
+                            edited |= ImGui::InputFloat("Radius##input", &snl.radius);
                             
                             if(edited)
                             {
+                                scene->bounding_volumes[selected_index].min_extents = -vec3f::one();
+                                scene->bounding_volumes[selected_index].max_extents = vec3f::one();
+                                
                                 f32 rad = std::max<f32>(snl.radius, 1.0f);
                                 scene->transforms[selected_index].scale = vec3f(rad, rad, rad);
                                 scene->entities[selected_index] |= CMP_TRANSFORM;
@@ -1908,6 +1911,9 @@ namespace put
                             
                             if(edited)
                             {
+                                scene->bounding_volumes[selected_index].min_extents = -vec3f::one();
+                                scene->bounding_volumes[selected_index].max_extents = vec3f(1.0f, 0.0f, 1.0f);
+                                
                                 vec3f pos = scene->world_matrices[selected_index].get_translation();
                                 vec3f vl = normalised(-scene->world_matrices[selected_index].get_column(1).xyz);
                                 
@@ -1947,10 +1953,6 @@ namespace put
                     if (changed)
                     {
                         s32 s = selected_index;
-
-                        scene->bounding_volumes[s].min_extents = -vec3f::one();
-                        scene->bounding_volumes[s].max_extents = vec3f::one();
-
                         scene->world_matrices[s] = mat4::create_identity();
                     }
                 }
@@ -2679,6 +2681,11 @@ namespace put
         
         void render_light_debug(const scene_view& view)
         {
+            bool selected_only = !(view.scene->view_flags & DD_LIGHTS);
+            
+            vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
+            mat4 view_proj = view.camera->proj * view.camera->view;
+            
             entity_scene* scene = view.scene;
             
             if (scene->view_flags & SV_HIDE)
@@ -2706,26 +2713,56 @@ namespace put
                 if(!(scene->entities[n] & CMP_LIGHT))
                     continue;
                 
-                u32 t = scene->lights[n].type;
+                if(selected_only && !(scene->state_flags[n] & SF_SELECTED))
+                        continue;
                 
-                if(t == LIGHT_TYPE_DIR)
-                    continue;
+                // quad point at pos for all types
+                vec3f p = scene->world_matrices[n].get_translation();
                 
-                geometry_resource* vol = volume[t];
+                p = maths::project_to_sc(p, view_proj, vpi);
                 
-                pmfx::set_technique(shader, id_technique, 0);
+                if (p.z > 0.0f)
+                    put::dbg::add_quad_2f(p.xy, vec2f(5.0f, 5.0f), vec4f(scene->lights[n].colour, 1.0f));
                 
-                cmp_draw_call dc;
-                dc.world_matrix = scene->world_matrices[n];
-                dc.world_matrix_inv_transpose = mat4::create_identity();
-                dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
-
-                pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
-                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
-                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
-                pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
-                pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
-                pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                cmp_light& snl = scene->lights[n];
+                
+                switch (snl.type)
+                {
+                    case LIGHT_TYPE_DIR:
+                    {
+                        // line only
+                        dbg::add_line(vec3f::zero(), scene->lights[n].direction * 10000.0f, vec4f(scene->lights[n].colour, 1.0f));
+                        continue;
+                    }
+                    break;
+                        
+                    case LIGHT_TYPE_AREA_BOX:
+                    {
+                        dbg::add_obb(scene->world_matrices[n], vec4f(snl.colour, 1.0f));
+                    }
+                    break;
+                        
+                    case LIGHT_TYPE_SPOT:
+                    case LIGHT_TYPE_POINT:
+                    {
+                        geometry_resource* vol = volume[snl.type];
+                        
+                        pmfx::set_technique(shader, id_technique, 0);
+                        
+                        cmp_draw_call dc;
+                        dc.world_matrix = scene->world_matrices[n];
+                        dc.world_matrix_inv_transpose = mat4::create_identity();
+                        dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
+                        
+                        pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
+                        pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
+                        pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
+                        pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
+                        pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
+                        pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                    }
+                    break;
+                }
             }
         }
         
@@ -2775,33 +2812,34 @@ namespace put
 
         void render_scene_editor(const scene_view& view)
         {
-            vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
-
             entity_scene* scene = view.scene;
+            
+            if(scene->num_nodes > 0)
+            {
+                static f32 r = scene->transforms[0].scale.x;
+                static f32 h = scene->transforms[0].scale.y;
+                
+                vec3f cv = normalised(scene->world_matrices[0].get_column(1).xyz);
+                vec3f cp = scene->world_matrices[0].get_translation();
+                
+                if(scene->num_nodes > 1)
+                {
+                    vec3f p = scene->world_matrices[1].get_translation();
+                    
+                    if( maths::point_inside_cone(p, cp, cv, h, r) )
+                    {
+                        dbg::add_point(p, 0.2f, vec4f::magenta());
+                    }
+                    else
+                    {
+                        dbg::add_point(p, 0.2f, vec4f::green());
+                    }
+                }
+            }
 
             dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
 
             render_physics_debug(view);
-            
-            render_light_debug(view);
-
-            mat4 view_proj = view.camera->proj * view.camera->view;
-
-            if (scene->view_flags & DD_LIGHTS)
-            {
-                for (u32 n = 0; n < scene->num_nodes; ++n)
-                {
-                    if (scene->entities[n] & CMP_LIGHT)
-                    {
-                        vec3f p = scene->world_matrices[n].get_translation();
-
-                        p = maths::project_to_sc(p, view_proj, vpi);
-
-                        if (p.z > 0.0f)
-                            put::dbg::add_quad_2f(p.xy, vec2f(5.0f, 5.0f), vec4f(scene->lights[n].colour, 1.0f));
-                    }
-                }
-            }
 
             if (scene->view_flags & DD_MATRIX)
             {
@@ -2819,6 +2857,9 @@ namespace put
                                   scene->bounding_volumes[n].transformed_max_extents);
                 }
             }
+            
+            // all lights or selected only
+            render_light_debug(view);
 
             // Selected Node
             if (scene->view_flags & DD_NODE)
@@ -2827,38 +2868,6 @@ namespace put
                 for (u32 i = 0; i < sel_num; ++i)
                 {
                     u32 s = s_selection_list[i];
-
-                    if (scene->entities[s] & CMP_LIGHT)
-                    {
-                        cmp_light& snl = scene->lights[s];
-                        
-                        switch (snl.type)
-                        {
-                            case LIGHT_TYPE_DIR:
-                            {
-                                dbg::add_line(vec3f::zero(), snl.direction * 10000.0f, vec4f(snl.colour, 1.0f));
-                            }
-                            break;
-                            
-                            case LIGHT_TYPE_AREA_BOX:
-                            {
-                                dbg::add_obb(scene->world_matrices[s], vec4f(snl.colour, 1.0f));
-                            }
-                            break;
-                                
-                            case LIGHT_TYPE_SPOT:
-                            case LIGHT_TYPE_POINT:
-                            {
-                                vec3f p = scene->world_matrices[s].get_translation();
-                                
-                                p = maths::project_to_sc(p, view_proj, vpi);
-
-                                if (p.z > 0.0f)
-                                    put::dbg::add_quad_2f(p.xy, vec2f(5.0f, 5.0f), vec4f(scene->lights[s].colour, 1.0f));
-                            }
-                            break;
-                        }
-                    }
 
                     dbg::add_aabb(scene->bounding_volumes[s].transformed_min_extents,
                                   scene->bounding_volumes[s].transformed_max_extents);
