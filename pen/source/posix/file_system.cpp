@@ -97,21 +97,21 @@ namespace pen
     }
 
     static bool s_show_hidden = false;
-    void filesystem_toggle_hidden_files()
+    void        filesystem_toggle_hidden_files()
     {
         s_show_hidden = !s_show_hidden;
     }
-    
+
     bool match_file(struct dirent* ent, s32 num_wildcards, va_list wildcards)
     {
-        if(!s_show_hidden)
+        if (!s_show_hidden)
         {
-            if(ent->d_name[0] == '.')
+            if (ent->d_name[0] == '.')
             {
                 return false;
             }
         }
-        
+
         if (num_wildcards <= 0)
         {
             return true;
@@ -248,9 +248,8 @@ namespace pen
         mtime_out = get_mtime(stat_res);
 
         return PEN_ERR_OK;
-        
     }
-    
+
     const c8* filesystem_get_user_directory()
     {
         static c8 default_dir[1024];

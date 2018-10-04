@@ -98,7 +98,7 @@ namespace pen
         void set(const c8* name, const Str val);
         void set_array(const c8* name, const Str* val, u32 count);
         void set_filename(const c8* name, const Str& filename);
-        
+
         // set templated functions
         template <class T>
         inline void set(const c8* name, const T val)
@@ -106,7 +106,7 @@ namespace pen
             Str fmt = to_str((T)val);
             set(name, fmt);
         }
-        
+
         template <class T>
         inline void set_array(const c8* name, const T* val, u32 count)
         {

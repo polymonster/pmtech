@@ -11,9 +11,9 @@ namespace pen
 #define SEC_TO_UNIX_EPOCH 11644473600LL
 
     c8* swap_slashes(const c8* filename);
-    
+
     static bool s_show_hidden = false;
-    void filesystem_toggle_hidden_files()
+    void        filesystem_toggle_hidden_files()
     {
         s_show_hidden = !s_show_hidden;
     }
@@ -236,12 +236,12 @@ namespace pen
         {
             if (hFind != INVALID_HANDLE_VALUE)
             {
-                if(!s_show_hidden)
+                if (!s_show_hidden)
                 {
-                    if((ffd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)
+                    if ((ffd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)
                         continue;
                 }
-                
+
                 if (match_file(ffd, num_wildcards, args))
                 {
                     ++total_num;
@@ -301,13 +301,13 @@ namespace pen
 
         return PEN_ERR_OK;
     }
-    
+
     const c8* filesystem_get_user_directory()
     {
         static c8 path[MAX_PATH];
         if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, path)))
             return &path[0];
-        
+
         return nullptr;
     }
 

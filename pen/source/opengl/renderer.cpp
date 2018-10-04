@@ -678,7 +678,7 @@ namespace pen
 
         if (info_log_length > 0)
         {
-            //PEN_LOG("%s", params.byte_code);
+            // PEN_LOG("%s", params.byte_code);
 
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
@@ -1540,7 +1540,7 @@ namespace pen
     {
         if (texture_index == 0)
             return;
-        
+
         resource_allocation& res = resource_pool[texture_index];
 
         CHECK_CALL(glActiveTexture(GL_TEXTURE0 + resource_slot));

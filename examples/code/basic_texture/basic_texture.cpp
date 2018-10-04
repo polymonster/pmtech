@@ -1,13 +1,13 @@
 #include "file_system.h"
 #include "loader.h"
 #include "memory.h"
+#include "os.h"
 #include "pen.h"
 #include "pen_string.h"
 #include "pmfx.h"
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
-#include "os.h"
 
 using namespace put;
 
@@ -35,7 +35,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
-    
+
     // create 2 clear states one for the render target and one for the main screen, so we can see the difference
     static pen::clear_state cs = {
         0.0f, 0.0, 1.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER,

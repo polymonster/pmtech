@@ -502,8 +502,8 @@ namespace put
                 debug_3d_verts[line_vert_3d_count].pos = vec4f(pos, 1.0f);
 
                 debug_3d_verts[line_vert_3d_count + 1].pos.xyz = pos + mat.get_column(i).xyz * size;
-                debug_3d_verts[line_vert_3d_count + 1].pos.w = 1.0f;
-                
+                debug_3d_verts[line_vert_3d_count + 1].pos.w   = 1.0f;
+
                 for (u32 j = 0; j < 2; ++j)
                 {
                     debug_3d_verts[line_vert_3d_count + j].col.r = i == 0 || (1 << i) & selected ? 1.0f : 0.0f;

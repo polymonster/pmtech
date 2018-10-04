@@ -25,8 +25,7 @@
 using namespace put;
 using namespace put::ces;
 
-pen::window_creation_params pen_window
-{
+pen::window_creation_params pen_window{
     1280,           // width
     720,            // height
     4,              // MSAA samples
@@ -77,7 +76,7 @@ PEN_TRV pen::user_entry(void* params)
     svr_main.name            = "ces_render_scene";
     svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
-    
+
     put::scene_view_renderer svr_light_volumes;
     svr_light_volumes.name            = "ces_render_light_volumes";
     svr_light_volumes.id_name         = PEN_HASH(svr_light_volumes.name.c_str());

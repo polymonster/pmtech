@@ -46,7 +46,7 @@ void check_d3d_error(HRESULT hr)
     if (FAILED(hr))
     {
         _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
+        LPCTSTR    errMsg = err.ErrorMessage();
         printf("d3d device error: %ls\n", errMsg);
     }
 
@@ -54,9 +54,13 @@ void check_d3d_error(HRESULT hr)
     PEN_ASSERT(hr == 0);
 #endif
 }
-#define CHECK_CALL( C ) { HRESULT ghr = C; check_d3d_error(ghr); }
+#define CHECK_CALL(C)                                                                                                        \
+    {                                                                                                                        \
+        HRESULT ghr = C;                                                                                                     \
+        check_d3d_error(ghr);                                                                                                \
+    }
 #else
-#define CHECK_CALL( C ) C
+#define CHECK_CALL(C) C
 #endif
 
 namespace pen
@@ -585,7 +589,7 @@ namespace pen
         {
             // Create a vertex shader
             CHECK_CALL(s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr,
-                                              &resource_pool[resource_index].vertex_shader));
+                                                    &resource_pool[resource_index].vertex_shader));
         }
         else if (params.type == PEN_SHADER_TYPE_PS)
         {
@@ -593,7 +597,7 @@ namespace pen
             if (params.byte_code)
             {
                 CHECK_CALL(s_device->CreatePixelShader(params.byte_code, params.byte_code_size, nullptr,
-                                                 &resource_pool[resource_index].pixel_shader));
+                                                       &resource_pool[resource_index].pixel_shader));
             }
             else
             {
@@ -698,8 +702,8 @@ namespace pen
 
         // Create the input layout
         CHECK_CALL(s_device->CreateInputLayout((D3D11_INPUT_ELEMENT_DESC*)params.input_layout, params.num_elements,
-            params.vs_byte_code, params.vs_byte_code_size,
-            &resource_pool[resource_index].input_layout));
+                                               params.vs_byte_code, params.vs_byte_code_size,
+                                               &resource_pool[resource_index].input_layout));
     }
 
     void direct::renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides,
@@ -892,7 +896,8 @@ namespace pen
             PEN_ASSERT(0);
         }
 
-        CHECK_CALL(s_device->CreateShaderResourceView(texture_container->texture, &resource_view_desc, &texture_container->srv));
+        CHECK_CALL(
+            s_device->CreateShaderResourceView(texture_container->texture, &resource_view_desc, &texture_container->srv));
     }
 
     void direct::renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
@@ -934,7 +939,7 @@ namespace pen
             memcpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
             CHECK_CALL(s_device->CreateTexture2D(&texture_desc, NULL,
-                &resource_pool[resource_index].render_target->tex_read_back.texture));
+                                                 &resource_pool[resource_index].render_target->tex_read_back.texture));
 
             _tcp.cpu_access_flags = 0;
         }
@@ -1037,7 +1042,8 @@ namespace pen
 
             resource_pool[resource_index].type       = RES_TEXTURE_3D;
             resource_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
-            CHECK_CALL(s_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture)));
+            CHECK_CALL(
+                s_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture)));
         }
         else
         {
@@ -1053,7 +1059,8 @@ namespace pen
 
             resource_pool[resource_index].type       = RES_TEXTURE;
             resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
-            CHECK_CALL(s_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture)));
+            CHECK_CALL(
+                s_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture)));
         }
 
         texture_resource* tex_res = resource_pool[resource_index].texture_resource;
@@ -1156,7 +1163,8 @@ namespace pen
     {
         u32 resource_index = resource_slot;
 
-        CHECK_CALL(s_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[resource_index].raster_state));
+        CHECK_CALL(
+            s_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &resource_pool[resource_index].raster_state));
     }
 
     void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
@@ -1249,7 +1257,7 @@ namespace pen
         u32 resource_index = resource_slot;
 
         CHECK_CALL(s_device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC*)&dscp,
-            &resource_pool[resource_index].depth_stencil_state));
+                                                     &resource_pool[resource_index].depth_stencil_state));
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
@@ -1537,10 +1545,10 @@ namespace pen
 
         // Create a render target view
         CHECK_CALL(s_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-            reinterpret_cast<void**>(&resource_pool[crtv].render_target->tex.texture)));
+                                           reinterpret_cast<void**>(&resource_pool[crtv].render_target->tex.texture)));
 
         CHECK_CALL(s_device->CreateRenderTargetView(resource_pool[crtv].render_target->tex.texture, nullptr,
-            &resource_pool[crtv].render_target->rt[0]));
+                                                    &resource_pool[crtv].render_target->rt[0]));
 
         g_context.active_depth_target       = PEN_BACK_BUFFER_DEPTH;
         g_context.active_colour_target[0]   = PEN_BACK_BUFFER_COLOUR;
@@ -1572,7 +1580,7 @@ namespace pen
         descDSV.ViewDimension = pen_window.sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
         descDSV.Texture2D.MipSlice = 0;
         CHECK_CALL(s_device->CreateDepthStencilView(resource_pool[dsv].depth_target->tex.texture, &descDSV,
-            &resource_pool[dsv].depth_target->ds[0]));
+                                                    &resource_pool[dsv].depth_target->ds[0]));
 
         s_immediate_context->OMSetRenderTargets(1, &resource_pool[crtv].render_target->rt[0], NULL);
     }

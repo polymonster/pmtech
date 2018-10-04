@@ -332,10 +332,10 @@ namespace put
                 {
                     // set to home
                     initialise = true;
-                    Str home = pen::filesystem_get_user_directory();
+                    Str home   = pen::filesystem_get_user_directory();
                     set_last_used_directory(home);
                 }
-                
+
                 ImGui::SameLine();
                 if (ImGui::Button("."))
                 {
@@ -344,7 +344,7 @@ namespace put
                     initialise = true;
                 }
                 dev_ui::set_tooltip("Toggle show hidden files");
-                
+
                 ImGui::BeginChild("scrolling", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
 
                 static s32 base_frame = current_depth - 4;

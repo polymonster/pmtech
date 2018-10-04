@@ -289,103 +289,93 @@ namespace put
             // geom
             // anim
         }
-        
+
         void render_light_volumes(const scene_view& view)
         {
             entity_scene* scene = view.scene;
-            
+
             if (scene->view_flags & SV_HIDE)
                 return;
-            
+
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
             pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
 
-            static hash_id id_volume[] =
-            {
-                PEN_HASH("full_screen_quad"),
-                PEN_HASH("sphere"),
-                PEN_HASH("cone")
-            };
-            
-            static hash_id id_technique[] =
-            {
-                PEN_HASH("directional_light"),
-                PEN_HASH("point_light"),
-                PEN_HASH("spot_light")
-            };
-            
+            static hash_id id_volume[] = {PEN_HASH("full_screen_quad"), PEN_HASH("sphere"), PEN_HASH("cone")};
+
+            static hash_id id_technique[] = {PEN_HASH("directional_light"), PEN_HASH("point_light"), PEN_HASH("spot_light")};
+
             static pmfx::shader_handle shader = pmfx::load_shader("deferred_render");
-            
+
             geometry_resource* volume[PEN_ARRAY_SIZE(id_volume)];
-            for(u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
+            for (u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
                 volume[i] = get_geometry_resource(id_volume[i]);
-            
+
             static hash_id id_cull_front = PEN_HASH("front_face_cull_raster_state");
-            u32 cull_front = pmfx::get_render_state_by_name(id_cull_front);
-            
+            u32            cull_front    = pmfx::get_render_state_by_name(id_cull_front);
+
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
-                if(!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
-                
-                u32 t = scene->lights[n].type;
+
+                u32                t   = scene->lights[n].type;
                 geometry_resource* vol = volume[t];
-                
+
                 pmfx::set_technique(shader, id_technique[t], 0);
-                
+
                 cmp_draw_call dc;
                 dc.world_matrix = scene->world_matrices[n];
-                
+
                 vec3f pos = dc.world_matrix.get_translation();
-                
+
                 bool flip_cullmode = false;
-                
-                light_data ld = { };
-                
-                switch(t)
+
+                light_data ld = {};
+
+                switch (t)
                 {
                     case LIGHT_TYPE_DIR:
                         ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
                         ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
-                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                        ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
                         break;
                     case LIGHT_TYPE_POINT:
                         dc.world_matrix *= mat::create_scale(vec3f(scene->lights[n].radius));
-                        
+
                         ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                         ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
-                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
-                        
-                        if(maths::point_inside_sphere( pos, scene->lights[n].radius, view.camera->pos ))
+                        ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
+
+                        if (maths::point_inside_sphere(pos, scene->lights[n].radius, view.camera->pos))
                             flip_cullmode = true;
-                        
+
                         break;
                     case LIGHT_TYPE_SPOT:
                         ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                         ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
-                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
-                        ld.data = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
-                        
+                        ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
+                        ld.data       = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
+
                         break;
                     default:
                         continue;
                 }
-                
+
                 // pack light data into world_matrix_inv_transpose
                 memcpy(&dc.world_matrix_inv_transpose, &ld, sizeof(mat4));
-                
+
                 // flip cull mode if we are inside the light volume
-                if( flip_cullmode )
+                if (flip_cullmode)
                     pen::renderer_set_rasterizer_state(cull_front);
-                
+
                 pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
                 pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
                 pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
                 pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
-                
-                if( flip_cullmode )
+
+                if (flip_cullmode)
                     pen::renderer_set_rasterizer_state(view.raster_state);
             }
         }
@@ -515,7 +505,7 @@ namespace put
                         continue;
                     }
                 }
-                
+
                 // set material cbs
                 u32 mcb = scene->materials[n].material_cbuffer;
                 if (is_valid(mcb))
@@ -911,7 +901,7 @@ namespace put
                 cmp_transform& t = scene->transforms[n];
 
                 vec3f dir = normalized(-scene->world_matrices[n].get_column(1).xyz);
-                
+
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
                 light_buffer.lights[pos].dir_cutoff = vec4f(dir, l.cos_cutoff);
                 light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
@@ -1456,13 +1446,13 @@ namespace put
             }
 
             bake_material_handles();
-            
-            //light geom
+
+            // light geom
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
-                
+
                 instantiate_model_cbuffer(scene, n);
             }
 

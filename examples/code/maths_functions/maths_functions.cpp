@@ -733,36 +733,35 @@ void test_point_sphere(entity_scene* scene, bool initialise)
 {
     static debug_point  point;
     static debug_sphere sphere;
-    
+
     static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
-    
+
     bool randomise = ImGui::Button("Randomise");
-    
+
     if (initialise || randomise)
     {
         ces::clear_scene(scene);
-        
+
         add_debug_point(e, scene, point);
         add_debug_sphere(e, scene, sphere);
     }
-    
-    bool i = maths::point_inside_sphere(sphere.pos, sphere.radius, point.point);
+
+    bool  i  = maths::point_inside_sphere(sphere.pos, sphere.radius, point.point);
     vec3f cp = maths::closest_point_on_sphere(sphere.pos, sphere.radius, point.point);
-    
+
     // debug output
-    vec4f col = vec4f::green();
+    vec4f col  = vec4f::green();
     vec4f col2 = vec4f::white();
     if (i)
         col = vec4f::red();
-    
+
     dbg::add_point(cp, 0.3f, col2);
     dbg::add_line(cp, point.point, col2);
-    
+
     dbg::add_point(point.point, 0.4f, col);
-    
+
     scene->draw_call_data[sphere.node].v2 = vec4f(col);
 }
-
 
 void test_line_vs_line(entity_scene* scene, bool initialise)
 {
@@ -812,39 +811,50 @@ const c8* test_names[]{"Point Plane Distance",
 
 typedef void (*maths_test_function)(entity_scene*, bool);
 
-maths_test_function test_functions[] = {
-    test_point_plane_distance, test_ray_plane_intersect, test_aabb_vs_plane, test_sphere_vs_plane, test_project,
-    test_point_aabb,           test_point_line,          test_point_ray,     test_point_triangle,  test_sphere_vs_sphere,
-    test_sphere_vs_aabb,       test_point_sphere,        test_ray_vs_aabb,         test_ray_vs_obb,    test_line_vs_line,
-    test_point_obb};
+maths_test_function test_functions[] = {test_point_plane_distance,
+                                        test_ray_plane_intersect,
+                                        test_aabb_vs_plane,
+                                        test_sphere_vs_plane,
+                                        test_project,
+                                        test_point_aabb,
+                                        test_point_line,
+                                        test_point_ray,
+                                        test_point_triangle,
+                                        test_sphere_vs_sphere,
+                                        test_sphere_vs_aabb,
+                                        test_point_sphere,
+                                        test_ray_vs_aabb,
+                                        test_ray_vs_obb,
+                                        test_line_vs_line,
+                                        test_point_obb};
 
 void maths_test_ui(entity_scene* scene)
 {
-    static s32  test_index = 0;
-    
-    static bool animate = false;
+    static s32 test_index = 0;
+
+    static bool animate    = false;
     static bool initialise = true;
-    
+
     if (ImGui::Combo("Test", &test_index, test_names, PEN_ARRAY_SIZE(test_names)))
         initialise = true;
-    
+
     ImGui::Checkbox("Animate", &animate);
-    
-    if(animate)
+
+    if (animate)
     {
         static f32 swap_timer = 0.0f;
-        static u32 at = pen::timer_create("math_anim_timer");
+        static u32 at         = pen::timer_create("math_anim_timer");
         swap_timer += pen::timer_elapsed_ms(at);
         pen::timer_start(at);
-        
-        if(swap_timer > 500.0f)
+
+        if (swap_timer > 500.0f)
         {
             initialise = true;
             swap_timer = 0.0f;
             test_index++;
         }
-        
-        if(test_index >= PEN_ARRAY_SIZE(test_names))
+
+        if (test_index >= PEN_ARRAY_SIZE(test_names))
             test_index = 0;
     }
 

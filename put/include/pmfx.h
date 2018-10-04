@@ -34,7 +34,7 @@ namespace put
 
         UPDATES_NUM
     };
-    
+
     enum e_render_constants
     {
         MAX_TECHNIQUE_SAMPLER_BINDINGS = 8
@@ -51,7 +51,7 @@ namespace put
         put::camera*        camera              = nullptr;
         pen::viewport*      viewport            = nullptr;
         pmfx::shader_handle pmfx_shader         = PEN_INVALID_HANDLE;
-        hash_id             technique           = 0; //todo rename to id_technique
+        hash_id             technique           = 0; // todo rename to id_technique
         ces::entity_scene*  scene               = nullptr;
         bool                viewport_correction = false;
     };
@@ -74,12 +74,12 @@ namespace put
 
         void (*render_function)(const scene_view&) = nullptr;
     };
-    
+
     struct technique_constant_data
     {
         f32 data[64] = {0};
     };
-    
+
     struct sampler_binding
     {
         hash_id id_texture;
@@ -88,7 +88,7 @@ namespace put
         u32     sampler_state;
         u32     shader_type;
     };
-    
+
     struct sampler_set
     {
         // 8 generic samplers for draw calls, can bind to any slots.. if more are required use a second set.
@@ -127,31 +127,31 @@ namespace put
 
         struct technique_constant
         {
-            Str name;
+            Str     name;
             hash_id id_name;
-            u32 widget       = CW_SLIDER;
-            f32 min          = 0.0f;
-            f32 max          = 1.0f;
-            f32 step         = 0.01f;
-            u32 cb_offset    = 0;
-            u32 num_elements = 0;
+            u32     widget       = CW_SLIDER;
+            f32     min          = 0.0f;
+            f32     max          = 1.0f;
+            f32     step         = 0.01f;
+            u32     cb_offset    = 0;
+            u32     num_elements = 0;
         };
-        
+
         struct technique_sampler
         {
-            Str name;
+            Str     name;
             hash_id id_name;
-            Str sampler_state_name;
-            Str type_name;
-            Str default_name;
-            Str filename;
-            
+            Str     sampler_state_name;
+            Str     type_name;
+            Str     default_name;
+            Str     filename;
+
             u32 handle;
             u32 unit;
             u32 sampler_state;
             u32 shader_type;
         };
-        
+
         // sub types of shader for differing vs / ps combos
         static const c8* k_sub_types[] = {
             "_skinned",

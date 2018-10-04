@@ -1004,7 +1004,7 @@ namespace pen
     void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
     {
         PEN_ASSERT(texture_index < 1000);
-        
+
         cmd_buffer[put_pos].command_index = CMD_SET_TEXTURE;
 
         cmd_buffer[put_pos].set_texture.texture_index = texture_index;
@@ -1080,8 +1080,7 @@ namespace pen
         void* mem                                             = memory_alloc(render_target_modes_size);
         cmd_buffer[put_pos].create_blend_state.render_targets = (render_target_blend*)mem;
 
-        memcpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets,
-                   render_target_modes_size);
+        memcpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
 
         u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;

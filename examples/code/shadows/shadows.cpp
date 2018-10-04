@@ -34,9 +34,9 @@ namespace physics
 
 struct forward_lit_material
 {
-    vec4f   albedo;
-    f32     roughness;
-    f32     reflectivity;
+    vec4f albedo;
+    f32   roughness;
+    f32   reflectivity;
 };
 
 void create_scene_objects(ces::entity_scene* scene)
@@ -72,11 +72,11 @@ void create_scene_objects(ces::entity_scene* scene)
     instantiate_geometry(box_resource, scene, ground);
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
-    
+
     forward_lit_material* m = (forward_lit_material*)&scene->material_data[ground].data[0];
-    m->albedo = vec4f::one() * 0.7f;
-    m->roughness = 1.0f;
-    m->reflectivity = 0.0f;
+    m->albedo               = vec4f::one() * 0.7f;
+    m->roughness            = 1.0f;
+    m->reflectivity         = 0.0f;
 
     // add some pillars for shadow casters
     f32   num_pillar_rows = 5;
@@ -100,12 +100,12 @@ void create_scene_objects(ces::entity_scene* scene)
             instantiate_geometry(box_resource, scene, pillar);
             instantiate_material(default_material, scene, pillar);
             instantiate_model_cbuffer(scene, pillar);
-            
+
             forward_lit_material* m = (forward_lit_material*)&scene->material_data[pillar].data[0];
-            m->albedo = vec4f::one() * 0.7f;
-            m->roughness = 1.0f;
-            m->reflectivity = 0.0f;
-            
+            m->albedo               = vec4f::one() * 0.7f;
+            m->roughness            = 1.0f;
+            m->reflectivity         = 0.0f;
+
             pos.z += d / 2;
         }
 

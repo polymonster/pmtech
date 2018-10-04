@@ -126,7 +126,7 @@ namespace put
             hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
             s32     texture_handles[SN_NUM_TEXTURES]  = {0};
         };
-        
+
         struct cmp_draw_call
         {
             mat4  world_matrix;
@@ -155,9 +155,9 @@ namespace put
         };
 
         // from pmfx
-        typedef technique_constant_data cmp_material_data;  // upto 64 floats of data stored in material cbuffer
-        typedef sampler_set             cmp_samplers;       // 8 samplers which can bind to any slots
-        
+        typedef technique_constant_data cmp_material_data; // upto 64 floats of data stored in material cbuffer
+        typedef sampler_set             cmp_samplers;      // 8 samplers which can bind to any slots
+
         struct cmp_physics
         {
             s32 type;
@@ -276,8 +276,8 @@ namespace put
 
         struct forward_light_buffer
         {
-            light_data    lights[MAX_FORWARD_LIGHTS];
-            vec4f         info;
+            light_data lights[MAX_FORWARD_LIGHTS];
+            vec4f      info;
         };
 
         struct distance_field_shadow
@@ -417,7 +417,7 @@ namespace put
         void          destroy_scene(entity_scene* scene);
 
         void update_scene(entity_scene* scene, f32 dt);
-        
+
         void render_scene_view(const scene_view& view);
         void render_light_volumes(const scene_view& view);
 

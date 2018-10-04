@@ -30,7 +30,7 @@
 
 u8 temp[16];
 #define SIMD_PRINT_u8(V)                                                                                                     \
-    memcpy(temp, &V, 16);                                                                                           \
+    memcpy(temp, &V, 16);                                                                                                    \
     for (u32 i = 0; i < 16; ++i)                                                                                             \
         printf("%i ", (u32)temp[i]);                                                                                         \
     printf("\n");
