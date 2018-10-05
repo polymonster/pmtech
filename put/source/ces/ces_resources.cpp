@@ -995,9 +995,9 @@ namespace put
                     scene->transforms[current_node].translation = matrix.get_translation();
                     scene->transforms[current_node].rotation.from_matrix(matrix);
 
-                    f32 sx = mag(matrix.get_right());
-                    f32 sy = mag(matrix.get_up());
-                    f32 sz = mag(matrix.get_fwd());
+                    f32 sx = mag(matrix.get_row(0).xyz);
+                    f32 sy = mag(matrix.get_row(1).xyz);
+                    f32 sz = mag(matrix.get_row(2).xyz);
 
                     scene->transforms[current_node].scale = vec3f(sx, sy, sz);
                 }

@@ -237,6 +237,7 @@ namespace put
             scene->transforms[light].scale       = vec3f::one();
             scene->entities[light] |= CMP_LIGHT;
             scene->entities[light] |= CMP_TRANSFORM;
+            instantiate_model_cbuffer(scene, light);
 
             sb_clear(s_selection_list);
         }
@@ -1586,6 +1587,89 @@ namespace put
 
             return iv;
         }
+        
+        void scene_options_ui(entity_scene* scene)
+        {
+            if (sb_count(s_selection_list) <= 0)
+                return;
+            
+            bool visible = true;
+            
+            u32 num_selected = sb_count(s_selection_list);
+            
+            for(u32 i = 0; i < num_selected; ++i)
+            {
+                u32 s = s_selection_list[i];
+                if(scene->state_flags[s] & SF_HIDDEN)
+                    visible = false;
+            }
+            
+            if(ImGui::Checkbox("Visible", &visible))
+            {
+                for(u32 i = 0; i < num_selected; ++i)
+                {
+                    u32 s = s_selection_list[i];
+                    if(!visible)
+                    {
+                         scene->state_flags[s] |= SF_HIDDEN;
+                    }
+                    else
+                    {
+                        scene->state_flags[s] &= ~SF_HIDDEN;
+                    }
+                }
+            }
+        }
+        
+        void scene_components_ui(entity_scene* scene)
+        {
+            if (sb_count(s_selection_list) != 1)
+                return;
+            
+            u32 selected_index = s_selection_list[0];
+            
+            const c8* component_flag_names[] =
+            {
+                "Allocated",
+                "Geometry",
+                "Physics",
+                "Physics Multi Body",
+                "Material",
+                "Hand",
+                "Skinned",
+                "Bone",
+                "Dynamic",
+                "Animation Controller",
+                "Animation Trajectory",
+                "Light",
+                "Transform",
+                "Constraint",
+                "Sub Instance",
+                "Master Instance",
+                "Pre Skinned",
+                "Sub Geometry",
+                "Signed Distance Field Shadow",
+                "Volume",
+                "Samplers"
+            };
+            
+            if (ImGui::CollapsingHeader("Components"))
+            {
+                Str components = "";
+                for(u32 i = 0; i < PEN_ARRAY_SIZE(component_flag_names); ++i)
+                {
+                    if(scene->entities[selected_index] & (1<<i))
+                    {
+                        if(i > 0)
+                            components.append(" | ");
+                        
+                        components.append(component_flag_names[i]);
+                    }
+                }
+                
+                ImGui::TextWrapped("%s", components.c_str());
+            }
+        }
 
         bool scene_transform_ui(entity_scene* scene)
         {
@@ -2193,16 +2277,17 @@ namespace put
                     if (parent_index != selected_index)
                         ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
                 }
-
-                // Transform undo's are handled by the transform selection function
-                scene_transform_ui(scene);
-
+                
                 // Undoable actions
                 if (sb_count(s_selection_list) == 1)
-                {
                     store_node_state(scene, s_selection_list[0], UNDO);
-                }
-
+                
+                scene_options_ui(scene);
+                
+                scene_components_ui(scene);
+                
+                scene_transform_ui(scene);
+                
                 scene_physics_ui(scene);
 
                 scene_geometry_ui(scene);
@@ -2216,9 +2301,7 @@ namespace put
                 scene_shadow_ui(scene);
 
                 if (sb_count(s_selection_list) == 1)
-                {
                     store_node_state(scene, s_selection_list[0], REDO);
-                }
 
                 ImGui::End();
             }
@@ -2263,11 +2346,6 @@ namespace put
                     q.euler_angles(move_axis.z, move_axis.y, move_axis.x);
 
                     t.rotation = q * t.rotation;
-                }
-
-                if (!(scene->entities[i] & CMP_TRANSFORM))
-                {
-                    // save history
                 }
 
                 scene->entities[i] |= CMP_TRANSFORM;
@@ -2359,7 +2437,7 @@ namespace put
                     if (ms.buttons[PEN_MOUSE_L])
                     {
                         vec3f new_pos =
-                            maths::ray_plane_intersect(r0, vr, k_physics_pick_info.pos, view.camera->view.get_fwd());
+                            maths::ray_plane_intersect(r0, vr, k_physics_pick_info.pos, view.camera->view.get_row(2).xyz);
 
                         physics::set_v3(k_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS);
                     }
@@ -2610,10 +2688,10 @@ namespace put
                     if (!(selected_axis & 1 << (i + 1)))
                         continue;
 
-                    vec3f plane_normal = cross(translation_axis[i], view.camera->view.get_up());
+                    vec3f plane_normal = cross(translation_axis[i], view.camera->view.get_row(1).xyz);
 
                     if (i == 1)
-                        plane_normal = cross(translation_axis[i], view.camera->view.get_right());
+                        plane_normal = cross(translation_axis[i], view.camera->view.get_row(0).xyz);
 
                     axis_pos[i] = maths::ray_plane_intersect(r0, vr, widget_points[0], plane_normal);
 
@@ -2844,6 +2922,46 @@ namespace put
 
                     dbg::add_aabb(scene->bounding_volumes[s].transformed_min_extents,
                                   scene->bounding_volumes[s].transformed_max_extents);
+                    
+                    if(scene->id_geometry[s] != 0)
+                    {
+                        geometry_resource* gr = get_geometry_resource(scene->id_geometry[s]);
+                        
+                        static s32 trii = 0;
+                        ImGui::InputInt("Debug Triangle", &trii);
+                        
+                        s32 index_offset = trii * 3;
+                        
+                        s32 tri_indices[3] = { };
+                        
+                        if(gr->index_type == PEN_FORMAT_R16_UINT)
+                        {
+                            u16* indices = (u16*)gr->cpu_index_buffer;
+                            for(u32 i = 0; i < 3; ++i)
+                                tri_indices[i] = indices[index_offset + i];
+                        }
+                        else
+                        {
+                            u32* indices = (u32*)gr->cpu_index_buffer;
+                            for(u32 i = 0; i < 3; ++i)
+                                tri_indices[i] = indices[index_offset + i];
+                        }
+                        
+                        
+                        u8* bb = (u8*)gr->cpu_position_buffer;
+                        
+                        vec3f positions[3] = {};
+                        for(u32 i = 0; i < 3; ++i)
+                        {
+                            memcpy(&positions[i], &bb[gr->vertex_size * tri_indices[i]], sizeof(vec3f));
+                        }
+                        
+                        for(u32 i = 0; i < 3; ++i)
+                        {
+                            u32 x = (i + 1) % 3;
+                            dbg::add_line(positions[i], positions[x], vec4f::cyan());
+                        }
+                    }
                 }
             }
 

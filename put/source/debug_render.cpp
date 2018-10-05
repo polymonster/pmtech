@@ -450,7 +450,7 @@ namespace put
 
             vec3f p = mat.get_translation();
 
-            static vec3f axis[4] = {vec3f::zero(), mat.get_right(), mat.get_up(), mat.get_fwd()};
+            static vec3f axis[4] = {vec3f::zero(), mat.get_row(0).xyz, mat.get_row(1).xyz, mat.get_row(2).xyz};
 
             static vec4f colours[4] = {vec4f::one(), vec4f::red(), vec4f::green(), vec4f::blue()};
 

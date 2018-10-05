@@ -81,22 +81,22 @@ namespace put
 
             if (pen::input_key(PK_W))
             {
-                p_camera->pos -= p_camera->view.get_fwd() * speed;
+                p_camera->pos -= p_camera->view.get_row(2).xyz * speed;
             }
 
             if (pen::input_key(PK_A))
             {
-                p_camera->pos -= p_camera->view.get_right() * speed;
+                p_camera->pos -= p_camera->view.get_row(0).xyz * speed;
             }
 
             if (pen::input_key(PK_S))
             {
-                p_camera->pos += p_camera->view.get_fwd() * speed;
+                p_camera->pos += p_camera->view.get_row(2).xyz * speed;
             }
 
             if (pen::input_key(PK_D))
             {
-                p_camera->pos += p_camera->view.get_right() * speed;
+                p_camera->pos += p_camera->view.get_row(0).xyz * speed;
             }
         }
 
@@ -170,7 +170,7 @@ namespace put
         static f32 prev_mwheel = mwheel;
         f32        zoom        = mwheel - prev_mwheel;
         prev_mwheel            = mwheel;
-
+        
         if (has_focus)
         {
             if (ms.buttons[PEN_MOUSE_L] && pen::input_key(PK_MENU))
@@ -183,8 +183,8 @@ namespace put
                      ((ms.buttons[PEN_MOUSE_L] && pen::input_key(PK_COMMAND))))
             {
                 // pan
-                vec3f up    = p_camera->view.get_up();
-                vec3f right = p_camera->view.get_right();
+                vec3f up    = p_camera->view.get_row(1).xyz;
+                vec3f right = p_camera->view.get_row(0).xyz;
 
                 p_camera->focus += up * mouse_drag.y * mouse_y_inv * 0.5f;
                 p_camera->focus += right * mouse_drag.x * 0.5f;
@@ -276,7 +276,7 @@ namespace put
             mat4 inv_view           = mat::inverse3x4(p_camera->view);
             wvp.view_matrix         = p_camera->view;
             wvp.view_position       = vec4f(inv_view.get_translation(), p_camera->near_plane);
-            wvp.view_direction      = vec4f(inv_view.get_fwd(), p_camera->far_plane);
+            wvp.view_direction      = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
             wvp.view_matrix_inverse = inv_view;
 
             pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
