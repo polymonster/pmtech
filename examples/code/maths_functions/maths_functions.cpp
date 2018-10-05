@@ -72,6 +72,11 @@ struct debug_obb
     u32 node;
 };
 
+struct debug_cone
+{
+    u32 node;
+};
+
 struct debug_sphere
 {
     u32   node;
@@ -264,6 +269,29 @@ void add_debug_solid_obb(const debug_extents& extents, entity_scene* scene, debu
     instantiate_material(constant_colour_material, scene, node);
     instantiate_model_cbuffer(scene, node);
 
+    obb.node = node;
+}
+
+void add_debug_solid_cone(const debug_extents& extents, entity_scene* scene, debug_cone& obb)
+{
+    geometry_resource* cone_res = get_geometry_resource(PEN_HASH("cone"));
+    
+    u32 node                            = ces::get_new_node(scene);
+    scene->names[node]                  = "cone";
+    scene->transforms[node].translation = random_vec_range(extents);
+    
+    vec3f rr = random_vec_range(extents);
+    
+    scene->transforms[node].rotation.euler_angles(rr.x, rr.y, rr.z);
+    
+    scene->transforms[node].scale = vec3f(fabs(rr.x), fabs(rr.y), fabs(rr.x));
+    scene->entities[node] |= CMP_TRANSFORM;
+    scene->parents[node] = node;
+    
+    instantiate_geometry(cone_res, scene, node);
+    instantiate_material(constant_colour_material, scene, node);
+    instantiate_model_cbuffer(scene, node);
+    
     obb.node = node;
 }
 
@@ -503,7 +531,7 @@ void test_project(entity_scene* scene, bool initialise)
     mat4  view_proj    = main_camera.proj * main_camera.view;
     vec3f screen_point = maths::project_to_sc(point.point, view_proj, vp);
 
-    vec3f unproj = maths::unproject_sc(screen_point, view_proj, vp);
+    // vec3f unproj = maths::unproject_sc(screen_point, view_proj, vp);
 
     dbg::add_point(point.point, 0.5f, vec4f::magenta());
     dbg::add_point(point.point, 1.0f, vec4f::cyan());
@@ -729,6 +757,34 @@ void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
     scene->draw_call_data[aabb.node].v2   = vec4f(col);
 }
 
+void test_aabb_vs_aabb(entity_scene* scene, bool initialise)
+{
+    static debug_aabb aabb0;
+    static debug_aabb aabb1;
+    
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_solid_aabb(e, scene, aabb0);
+        add_debug_solid_aabb(e, scene, aabb1);
+    }
+    
+    bool i = maths::aabb_vs_aabb(aabb0.min, aabb0.max, aabb1.min, aabb1.max);
+    
+    // debug output
+    vec4f col = vec4f::green();
+    if (i)
+        col = vec4f::red();
+    
+    scene->draw_call_data[aabb0.node].v2 = vec4f(col);
+    scene->draw_call_data[aabb1.node].v2 = vec4f(col);
+}
+
 void test_point_sphere(entity_scene* scene, bool initialise)
 {
     static debug_point  point;
@@ -763,6 +819,43 @@ void test_point_sphere(entity_scene* scene, bool initialise)
     scene->draw_call_data[sphere.node].v2 = vec4f(col);
 }
 
+void test_point_cone(entity_scene* scene, bool initialise)
+{
+    static debug_point  point;
+    static debug_cone   cone;
+    
+    static debug_extents e = {vec3f(-5.0, -5.0, -10.0), vec3f(5.0, 5.0, 5.0)};
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ces::clear_scene(scene);
+        
+        add_debug_point(e, scene, point);
+        add_debug_solid_cone(e, scene, cone);
+    }
+    
+    f32 r = scene->transforms[cone.node].scale.x;
+    f32 h = scene->transforms[cone.node].scale.y;
+    
+    vec3f cv = normalised(-scene->world_matrices[cone.node].get_column(1).xyz);
+    vec3f cp = scene->world_matrices[cone.node].get_translation();
+    
+    bool  i  = maths::point_inside_cone(point.point, cp, cv, h, r);
+    
+    // debug output
+    vec4f col  = vec4f::green();
+    if (i)
+        col = vec4f::red();
+    
+    dbg::add_point(point.point, 0.4f, col);
+    
+    scene->draw_call_data[cone.node].v2 = vec4f(col);
+}
+
+
+
 void test_line_vs_line(entity_scene* scene, bool initialise)
 {
     static debug_line line0;
@@ -792,41 +885,53 @@ void test_line_vs_line(entity_scene* scene, bool initialise)
     dbg::add_line(line1.l1, line1.l2, col);
 }
 
-const c8* test_names[]{"Point Plane Distance",
-                       "Ray Plane Intersect",
-                       "AABB Plane Classification",
-                       "Sphere Plane Classification",
-                       "Project / Unproject",
-                       "Point Inside AABB / Closest Point on AABB",
-                       "Closest Point on Line / Point Segment Distance",
-                       "Closest Point on Ray",
-                       "Point Inside Triangle / Point Triangle Distance / Closest Point on Triangle / Get Normal",
-                       "Sphere vs Sphere",
-                       "Sphere vs AABB",
-                       "Point inside Sphere",
-                       "Ray vs AABB",
-                       "Ray vs OBB",
-                       "Line vs Line",
-                       "Point Inside OBB / Closest Point on OBB"};
-
 typedef void (*maths_test_function)(entity_scene*, bool);
 
-maths_test_function test_functions[] = {test_point_plane_distance,
-                                        test_ray_plane_intersect,
-                                        test_aabb_vs_plane,
-                                        test_sphere_vs_plane,
-                                        test_project,
-                                        test_point_aabb,
-                                        test_point_line,
-                                        test_point_ray,
-                                        test_point_triangle,
-                                        test_sphere_vs_sphere,
-                                        test_sphere_vs_aabb,
-                                        test_point_sphere,
-                                        test_ray_vs_aabb,
-                                        test_ray_vs_obb,
-                                        test_line_vs_line,
-                                        test_point_obb};
+// clang-format off
+const c8* test_names[]{
+    "Point Plane Distance",
+    "Ray Plane Intersect",
+    "AABB Plane Classification",
+    "Sphere Plane Classification",
+    "Project / Unproject",
+    "Point Inside AABB / Closest Point on AABB",
+    "Closest Point on Line / Point Segment Distance",
+    "Closest Point on Ray",
+    "Point Inside Triangle / Point Triangle Distance / Closest Point on Triangle / Get Normal",
+    "Sphere vs Sphere",
+    "Sphere vs AABB",
+    "AABB vs AABB",
+    "Point inside Sphere",
+    "Ray vs AABB",
+    "Ray vs OBB",
+    "Line vs Line",
+    "Point Inside OBB / Closest Point on OBB",
+    "Point Inside Cone"
+};
+
+maths_test_function test_functions[] = {
+    test_point_plane_distance,
+    test_ray_plane_intersect,
+    test_aabb_vs_plane,
+    test_sphere_vs_plane,
+    test_project,
+    test_point_aabb,
+    test_point_line,
+    test_point_ray,
+    test_point_triangle,
+    test_sphere_vs_sphere,
+    test_sphere_vs_aabb,
+    test_aabb_vs_aabb,
+    test_point_sphere,
+    test_ray_vs_aabb,
+    test_ray_vs_obb,
+    test_line_vs_line,
+    test_point_obb,
+    test_point_cone
+};
+// clang-format on
+
+static_assert(PEN_ARRAY_SIZE(test_functions) == PEN_ARRAY_SIZE(test_names), "array size mismatch");
 
 void maths_test_ui(entity_scene* scene)
 {

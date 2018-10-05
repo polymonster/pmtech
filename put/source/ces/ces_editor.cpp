@@ -2810,29 +2810,6 @@ namespace put
         {
             entity_scene* scene = view.scene;
 
-            if (scene->num_nodes > 0)
-            {
-                static f32 r = scene->transforms[0].scale.x;
-                static f32 h = scene->transforms[0].scale.y;
-
-                vec3f cv = normalised(-scene->world_matrices[0].get_column(1).xyz);
-                vec3f cp = scene->world_matrices[0].get_translation();
-
-                if (scene->num_nodes > 1)
-                {
-                    vec3f p = scene->world_matrices[1].get_translation();
-
-                    if (maths::point_inside_cone(p, cp, cv, h, r))
-                    {
-                        dbg::add_point(p, 0.2f, vec4f::magenta());
-                    }
-                    else
-                    {
-                        dbg::add_point(p, 0.2f, vec4f::green());
-                    }
-                }
-            }
-
             dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
 
             render_physics_debug(view);
