@@ -2,8 +2,51 @@ import models.helpers as helpers
 import os
 import struct
 import sys
+import math
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
+
+
+def calc_normals(vb):
+    print("Generating Normals")
+    # without vector math library to reduce dependencies
+    x = 0
+    y = 1
+    z = 2
+    num_vb_floats = 20
+    for tri in range(0, len(vb), num_vb_floats*3):
+        p = []
+        for vert in range(0, 3):
+            vi = tri + num_vb_floats * vert
+            p.append([vb[vi + 0], vb[vi + 1], vb[vi + 2]])
+
+        # edges
+        v1 = [p[1][x] - p[0][x], p[1][y] - p[0][y], p[1][z] - p[0][z]]
+        v2 = [p[2][x] - p[0][x], p[2][y] - p[0][y], p[2][z] - p[0][z]]
+
+        # normalise vectors
+        v1_mag = math.sqrt(v1[x] * v1[x] + v1[y] * v1[y] + v1[z] * v1[z])
+        v2_mag = math.sqrt(v2[x] * v2[x] + v2[y] * v2[y] + v2[z] * v2[z])
+
+        for i in range(0, 3):
+            v1[i] /= v1_mag
+            v2[i] /= v2_mag
+
+        # cross product
+        nx = v1[y] * v2[z] - v2[y] * v1[z]
+        ny = v1[x] * v2[z] - v2[x] * v1[z]
+        nz = v1[x] * v2[y] - v2[x] * v1[y]
+
+        # normalise
+        nmag = math.sqrt(nx * nx + ny * ny + nz * nz)
+
+        for vert in range(0, 3):
+            ni = tri + 4 + (num_vb_floats * vert)
+            vb[ni + 0] = nx / nmag
+            vb[ni + 1] = ny / nmag
+            vb[ni + 2] = nz / nmag
+
+    return vb
 
 
 def grow_extents(v, min, max):
@@ -63,7 +106,6 @@ def write_geometry(file, root):
                 face_list.reverse()
             if not cur_mesh:
                 cur_mesh = (basename, "obj_default", [], [], [], [])
-
             tri_list = []
             if len(face_list) == 4:
                 tri_list.append(face_list[0])
@@ -76,7 +118,6 @@ def write_geometry(file, root):
                 tri_list.append(face_list[0])
                 tri_list.append(face_list[1])
                 tri_list.append(face_list[2])
-
             for trivert in tri_list:
                 elem_indices = [0]
                 if trivert.find("//") != -1:
@@ -84,13 +125,13 @@ def write_geometry(file, root):
                     elem_indices.append(1)
                 else:
                     velems = trivert.split("/")
-                    elem_indices.append(1)
+                    # elem_indices.append(1)
                     elem_indices.append(2)
-                vertex = [[0.0, 0.0, 0.0, 1.0],
-                          [0.0, 0.0, 0.0, 1.0],
-                          [0.0, 1.0, 0.0, 1.0],
-                          [1.0, 0.0, 0.0, 1.0],
-                          [0.0, 0.0, 1.0, 1.0]]
+                vertex = [[0.0, 0.0, 0.0, 1.0],     # pos
+                          [0.0, 1.0, 0.0, 1.0],     # normal
+                          [0.0, 0.0, 0.0, 1.0],     # texcoord
+                          [1.0, 0.0, 0.0, 1.0],     # tangent
+                          [0.0, 0.0, 1.0, 1.0]]     # bitangent
                 elem_index = 0
                 for vi in velems:
                     ii = elem_indices[elem_index]
@@ -125,12 +166,15 @@ def write_geometry(file, root):
                      struct.pack("i", (int(len(meshes))))]
 
     for m in meshes:
-        print(m[0])
         helpers.pack_parsable_string(geometry_data, m[0])
 
     data_size = len(geometry_data) * 4
 
     for mesh in meshes:
+        generated_vb = mesh[vb]
+        if len(vertex_data[1]) == 0:
+            generated_vb = calc_normals(generated_vb)
+
         mesh_data = []
 
         # write min / max extents
@@ -141,7 +185,7 @@ def write_geometry(file, root):
 
         # write vb and ib
         mesh_data.append(struct.pack("i", (len(mesh[pb]))))
-        mesh_data.append(struct.pack("i", (len(mesh[vb]))))
+        mesh_data.append(struct.pack("i", (len(generated_vb))))
         mesh_data.append(struct.pack("i", (len(mesh[ib]))))
         mesh_data.append(struct.pack("i", (len(mesh[cb]))))
 
@@ -155,7 +199,7 @@ def write_geometry(file, root):
         for vf in mesh[pb]:
             # position only buffer
             mesh_data.append(struct.pack("f", (float(vf))))
-        for vf in mesh[vb]:
+        for vf in generated_vb:
             mesh_data.append(struct.pack("f", (float(vf))))
 
         data_size += len(mesh_data)*4

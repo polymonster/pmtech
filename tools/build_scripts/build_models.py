@@ -274,9 +274,13 @@ for root, dirs, files in os.walk(model_dir):
             os.makedirs(out_dir)
 
         if file.endswith(".obj"):
-            # add dependency to these scripts
             dependency_inputs = [os.path.join(os.getcwd(), f)]
             dependency_outputs = [depends_dest + ".pmm"]
+
+            # add dependency to the scripts for obj
+            main_file = os.path.realpath(__file__)
+            dependency_inputs.append(os.path.realpath(__file__))
+            dependency_inputs.append(main_file.replace("build_models.py", os.path.join("models", "parse_obj.py")))
 
             file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
             dependencies_directory["files"].append(file_info)
@@ -300,10 +304,10 @@ for root, dirs, files in os.walk(model_dir):
             animations = []
             image_list = []
 
-            # add dependency to these scripts
             dependency_inputs = [os.path.join(os.getcwd(), f)]
             dependency_outputs = [depends_dest + ".pmm", depends_dest + ".pma"]
 
+            # add dependency to the build scripts dae
             main_file = os.path.realpath(__file__)
             dependency_inputs.append(os.path.realpath(__file__))
             models_lib = ["parse_materials.py",

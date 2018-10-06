@@ -218,6 +218,28 @@ ps_output ps_vertex_normals( vs_output input )
     return output;
 }
 
+ps_output ps_texcoord_0( vs_output input ) 
+{	
+	ps_output output;
+	
+	output.colour.rg = input.texcoord.xy;
+	output.colour.b = 0.0;
+	output.colour.a = 1.0;
+	
+    return output;
+}
+
+ps_output ps_texcoord_0( vs_output input ) 
+{	
+	ps_output output;
+	
+	output.colour.rg = input.texcoord.zw;
+	output.colour.b = 0.0;
+	output.colour.a = 1.0;
+	
+    return output;
+}
+
 ps_output ps_debug( vs_output_picking input ) 
 {	
 	ps_output_picking output;
@@ -488,6 +510,18 @@ pmfx:
 	{
 		"vs": "vs_main",
 		"ps": "ps_vertex_normals"
+	},
+	
+	"texcoord_0":
+	{
+	    "vs": "vs_main",
+	    "ps": "ps_texcoord_0"
+	},
+	
+	"texcoord_1":
+	{
+	    "vs": "vs_main",
+	    "ps": "ps_texcoord_1"
 	},
 	
 	"diffuse_skinned":
