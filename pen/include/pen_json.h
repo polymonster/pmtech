@@ -44,7 +44,8 @@ namespace pen
     // care must be taken with filenames, colons (:) need to be stripped from filenames (ie C:\windows)
     // use set_filename and as filen which will replace : with @ (ie C:@windows) or the inverse.
 
-    // Combine will combine members of j1 and j2 on an object by object basis
+    // Combine will combine members of j1 and j2 on an object by object, member by members basis
+    // if duplicate members exist j2.member will replace j1.member
 
     // API for writing json is limited, if you want to write to nested members or arrays
     // you will need to create copies of the objects and then manually recursively write the objects

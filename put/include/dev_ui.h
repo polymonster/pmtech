@@ -64,7 +64,7 @@ namespace put
     } // namespace dev_ui
 } // namespace put
 
-#define dev_console_log_level(level, fmt, ...) put::dev_ui::log_level(level, fmt, __VA_ARGS__)
-#define dev_console_log(fmt, ...) put::dev_ui::log(fmt, __VA_ARGS__)
+#define dev_console_log_level(level, fmt, ...) put::dev_ui::log_level(level, fmt, ## __VA_ARGS__)
+#define dev_console_log(fmt, ...) put::dev_ui::log(fmt, ## __VA_ARGS__)
 
 #endif

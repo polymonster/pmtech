@@ -245,9 +245,16 @@ namespace
         u32 screen_quad_ib;
     };
 
-    std::vector<Str>                     s_post_process_names;
-    std::vector<view_params>             s_views;
-    std::vector<Str>                     s_view_set;
+    // Views / Sets
+    std::vector<Str>                     s_post_process_names;      // List of post process names (ie bloom, dof.. etc)
+    std::vector<view_params>             s_views;                   // List of all view parameters
+    std::vector<Str>                     s_view_sets;               // list of view set names (ie. forward, deferred.. etc)
+    std::vector<Str>                     s_view_set;                // list of view names in the current set
+    Str                                  s_view_set_name;           // Name of the current view set
+    Str                                  s_edited_view_set_name;    // Name of the user selected view
+    std::vector<edited_post_process>     s_edited_post_processes;   // User edited post processes
+    
+    // Render Resources
     std::vector<scene_controller>        s_controllers;
     std::vector<scene_view_renderer>     s_scene_view_renderers;
     std::vector<render_target>           s_render_targets;
@@ -257,7 +264,6 @@ namespace
     std::vector<sampler_binding>         s_sampler_bindings;
     std::vector<filter_kernel>           s_filter_kernels;
     geometry_utility                     s_geometry;
-    std::vector<edited_post_process>     s_edited_post_processes;
 } // namespace
 
 namespace put
@@ -419,7 +425,17 @@ namespace put
                 // texture id and handle from render targets.. todo add global textures
                 sb.id_texture           = binding["texture"].as_hash_id();
                 const render_target* rt = get_render_target(sb.id_texture);
-                sb.handle               = rt->handle;
+                
+                if(!rt)
+                {
+                    dev_console_log_level(dev_ui::CONSOLE_WARNING,
+                                          "[warning] pmfx: view '%s' expects sampler '%s' but it does not exist",
+                                          vp.name.c_str(), binding["texture"].as_cstr());
+                    
+                    continue;
+                }
+
+                sb.handle = rt->handle;
 
                 // sampler state from name
                 Str ss = binding["state"].as_str();
@@ -639,8 +655,6 @@ namespace put
                 else
                     rs.handle = pen::renderer_create_depth_stencil_state(dscp);
 
-                dev_console_log("[pmfx] add dss : %i", rs.handle);
-
                 s_render_states.push_back(rs);
             }
         }
@@ -813,8 +827,8 @@ namespace put
 
             return rs.handle;
         }
-
-        void parse_render_targets(pen::json& render_config)
+        
+        void add_backbuffer_targets()
         {
             // add 2 defaults
             render_target main_colour;
@@ -826,10 +840,10 @@ namespace put
             main_colour.num_mips = 1;
             main_colour.pp       = VRT_WRITE;
             main_colour.flags    = RT_WRITE_ONLY;
-
+            
             s_render_targets.push_back(main_colour);
             s_render_target_tcp.push_back(texture_creation_params());
-
+            
             render_target main_depth;
             main_depth.id_name  = ID_MAIN_DEPTH;
             main_depth.name     = "Backbuffer Depth";
@@ -839,10 +853,13 @@ namespace put
             main_depth.num_mips = 1;
             main_depth.pp       = VRT_WRITE;
             main_depth.flags    = RT_WRITE_ONLY;
-
+            
             s_render_targets.push_back(main_depth);
             s_render_target_tcp.push_back(texture_creation_params());
+        }
 
+        void parse_render_targets(pen::json& render_config, Str* include_targets)
+        {
             pen::json j_render_targets = render_config["render_targets"];
 
             s32 num = j_render_targets.size();
@@ -852,6 +869,24 @@ namespace put
                 pen::json r = j_render_targets[i];
 
                 hash_id id_format = r["format"].as_hash_id();
+                
+                if(include_targets)
+                {
+                    // only parse specific targets in list
+                    bool include = false;
+                    u32 num_includes = sb_count(include_targets);
+                    for(int j = 0; j < num_includes; ++j)
+                    {
+                        if(r.name() == include_targets[j])
+                        {
+                            include = true;
+                            break;
+                        }
+                    }
+                    
+                    if(!include)
+                        continue;
+                }
 
                 for (s32 f = 0; f < PEN_ARRAY_SIZE(rt_format); ++f)
                 {
@@ -1925,8 +1960,11 @@ namespace put
 
                 pen::json include_json = pen::json::load_from_file(include_dir.c_str());
 
-                render_config = pen::json::combine(render_config, include_json);
+                render_config = pen::json::combine(include_json, render_config);
             }
+            
+            // add main_colour and main_depth backbuffer target
+            add_backbuffer_targets();
 
             // parse info
             parse_sampler_states(render_config);
@@ -1934,17 +1972,32 @@ namespace put
             parse_depth_stencil_states(render_config);
             parse_partial_blend_states(render_config);
             parse_filters(render_config);
-            parse_render_targets(render_config);
 
-            pen::json j_views         = render_config["views"];
-            pen::json j_view_set      = render_config["view_set"];
-            u32       num_views_chain = j_view_set.size();
-            if (num_views_chain > 0)
+            pen::json j_views = render_config["views"];
+            pen::json j_view_sets = render_config["view_sets"];
+            
+            s_view_set_name = render_config["view_set"].as_str();
+            if(!s_edited_view_set_name.empty())
+                s_view_set_name = s_edited_view_set_name;
+            
+            // get view set names
+            u32 num_view_sets = j_view_sets.size();
+            for(u32 i = 0; i < num_view_sets; ++i)
+            {
+                s_view_sets.push_back(j_view_sets[i].name());
+            }
+            
+            // get views for view set
+            pen::json j_view_set = j_view_sets[s_view_set_name.c_str()];
+            u32 num_views_in_set = j_view_set.size();
+            if (num_views_in_set > 0)
             {
                 // views from "view_set"
                 pen::json view_set;
 
-                for (u32 i = 0; i < num_views_chain; ++i)
+                Str* used_targets = nullptr;
+                
+                for (u32 i = 0; i < num_views_in_set; ++i)
                 {
                     Str vs = j_view_set[i].as_str();
                     s_view_set.push_back(vs);
@@ -1957,14 +2010,22 @@ namespace put
                     }
 
                     view_set.set(vs.c_str(), v);
+                    
+                    u32 num_targets = v["target"].size();
+                    for(u32 t = 0; t < num_targets; ++t)
+                    {
+                        sb_push(used_targets, v["target"][t].as_str());
+                    }
                 }
+                
+                // only add targets in use
+                parse_render_targets(render_config, used_targets);
 
                 parse_views(view_set, j_views, s_views);
             }
             else
             {
-                // array of views from "views" members
-                parse_views(j_views, j_views, s_views);
+                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - no views in view set");
             }
 
             // parse post process info
@@ -2064,6 +2125,7 @@ namespace put
             s_render_target_names.clear();
             s_view_set.clear();
             s_views.clear();
+            s_view_sets.clear();
             s_post_process_names.clear();
             s_virtual_rt.clear();
         }
@@ -2501,288 +2563,311 @@ namespace put
             ImGui::EndMainMenuBar();
 
             static s32 current_render_target = 0;
+            
+            if(!open_renderer)
+                return;
 
-            if (open_renderer)
+            if (ImGui::Begin("Pmfx", &open_renderer))
             {
-                if (ImGui::Begin("Pmfx", &open_renderer))
+                if (ImGui::CollapsingHeader("Render Targets"))
                 {
-                    if (ImGui::CollapsingHeader("Render Targets"))
+                    if (s_render_target_names.size() != s_render_targets.size())
                     {
-                        if (s_render_target_names.size() != s_render_targets.size())
-                        {
-                            s_render_target_names.clear();
+                        s_render_target_names.clear();
 
-                            for (auto& rr : s_render_targets)
+                        for (auto& rr : s_render_targets)
+                        {
+                            s_render_target_names.push_back(rr.name.c_str());
+                        }
+                    }
+
+                    ImGui::Combo("", &current_render_target, (const c8* const*)&s_render_target_names[0],
+                                 (s32)s_render_target_names.size(), 10);
+
+                    static s32 display_ratio = 3;
+                    ImGui::InputInt("Buffer Size", &display_ratio);
+                    display_ratio = std::max<s32>(1, display_ratio);
+                    display_ratio = std::min<s32>(4, display_ratio);
+
+                    render_target& rt = s_render_targets[current_render_target];
+
+                    f32 w, h;
+                    get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
+
+                    bool unsupported_display = rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH;
+                    unsupported_display |= rt.format == PEN_TEX_FORMAT_R32_UINT;
+
+                    if (!unsupported_display)
+                    {
+                        f32 aspect = w / h;
+                        ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
+                    }
+
+                    render_target_info_ui(rt);
+                }
+                
+                if (ImGui::CollapsingHeader("View"))
+                {
+                    bool invalidated = false;
+                    
+                    static std::vector<c8*> view_set_items;
+                    
+                    static s32 s_selected_view_set = 1;
+                    
+                    view_set_items.clear();
+                    
+                    u32 i = 0;
+                    for (auto& vs : s_view_sets)
+                    {
+                        if(vs == s_view_set_name)
+                            s_selected_view_set = i;
+                            
+                        view_set_items.push_back(vs.c_str());
+                        ++i;
+                    }
+
+                    if(ImGui::Combo("View Set", &s_selected_view_set, &view_set_items[0], view_set_items.size()))
+                    {
+                        invalidated = true;
+                        s_edited_view_set_name = view_set_items[s_selected_view_set];
+                    }
+                    
+                    ImGui::Separator();
+                    
+                    for (auto& v : s_views)
+                    {
+                        view_info_ui(v);
+                        ImGui::Separator();
+                    }
+                    
+                    if(invalidated)
+                    {
+                        pmfx_config_hotload();
+                    }
+                }
+
+                if (ImGui::CollapsingHeader("Post Processing"))
+                {
+                    static s32 s_selected_input_view = 0;
+                    static s32 s_selected_chain_pp   = 0;
+                    static s32 s_selected_process    = 0;
+                    static s32 s_selected_pp_view    = 0;
+
+                    static std::vector<c8*> view_items;
+                    static std::vector<c8*> chain_items;
+                    static std::vector<c8*> process_items;
+                    static std::vector<c8*> pass_items;
+
+                    bool invalidated = false;
+
+                    // input views which has post processing
+                    view_items.clear();
+                    for (auto& v : s_views)
+                        if (v.post_process_flags & PP_ENABLED)
+                            view_items.push_back(v.name.c_str());
+
+                    if (view_items.size() == 0)
+                    {
+                        ImGui::Text("No views have 'post_process' set\n");
+                    }
+                    else
+                    {
+                        ImGui::Combo("Input View", &s_selected_input_view, &view_items[0], view_items.size());
+                    }
+
+                    std::vector<Str>&         s_post_process_chain  = s_views[s_selected_input_view].post_process_chain;
+                    std::vector<view_params>& s_post_process_passes = s_views[s_selected_input_view].post_process_views;
+                    view_params&              edit_view             = s_views[s_selected_input_view];
+
+                    // all available post processes from config (ie bloom, dof, colour_lut)
+                    process_items.clear();
+                    for (auto& pp : s_post_process_names)
+                        process_items.push_back(pp.c_str());
+
+                    // selected input view post process chain
+                    chain_items.clear();
+                    for (auto& pp : s_post_process_chain)
+                        chain_items.push_back(pp.c_str());
+
+                    // selected input view, view passes which make up the post process chain
+                    pass_items.clear();
+                    for (auto& pp : s_post_process_passes)
+                        pass_items.push_back(pp.name.c_str());
+
+                    // Main Toolbar
+                    static bool s_save_dialog_open = false;
+                    if (ImGui::Button(ICON_FA_FLOPPY_O))
+                        s_save_dialog_open = true;
+
+                    dev_ui::set_tooltip("Save post process preset");
+                    ImGui::SameLine();
+
+                    static bool s_load_dialog_open = false;
+                    if (ImGui::Button(ICON_FA_FOLDER_OPEN_O))
+                        s_load_dialog_open = true;
+
+                    dev_ui::set_tooltip("Load post process preset");
+                    ImGui::Separator();
+
+                    if (s_save_dialog_open)
+                    {
+                        const c8* res = dev_ui::file_browser(s_save_dialog_open, dev_ui::FB_SAVE);
+                        if (res)
+                        {
+                            json j_pp;
+                            generate_post_process_config(j_pp, s_post_process_chain, s_post_process_passes);
+
+                            Str basename = pen::str_remove_ext(res);
+                            basename.append(".jsn");
+
+                            std::ofstream ofs(basename.c_str());
+                            ofs << j_pp.dumps().c_str();
+                            ofs.close();
+                        }
+                    }
+
+                    if (s_load_dialog_open)
+                    {
+                        const c8* res = dev_ui::file_browser(s_load_dialog_open, dev_ui::FB_OPEN);
+                        if (res)
+                        {
+                            // perform load: todo
+                        }
+                    }
+
+                    ImGui::Columns(2);
+
+                    ImGui::SetColumnWidth(0, 300);
+                    ImGui::SetColumnOffset(1, 300);
+                    ImGui::SetColumnWidth(1, 500);
+
+                    // Edit Toolbar
+                    if (ImGui::Button(ICON_FA_ARROW_UP) && s_selected_chain_pp > 0)
+                    {
+                        invalidated                               = true;
+                        Str tmp                                   = s_post_process_chain[s_selected_chain_pp];
+                        s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp - 1].c_str();
+                        s_post_process_chain[s_selected_chain_pp - 1] = tmp.c_str();
+
+                        s_selected_chain_pp--;
+                    }
+                    dev_ui::set_tooltip("Move selected post process up");
+
+                    ImGui::SameLine();
+                    if (ImGui::Button(ICON_FA_ARROW_DOWN) && s_selected_chain_pp < s_post_process_chain.size() - 1)
+                    {
+                        invalidated                               = true;
+                        Str tmp                                   = s_post_process_chain[s_selected_chain_pp];
+                        s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp + 1].c_str();
+                        s_post_process_chain[s_selected_chain_pp + 1] = tmp.c_str();
+
+                        s_selected_chain_pp++;
+                    }
+                    dev_ui::set_tooltip("Move selected post process down");
+
+                    ImGui::SameLine();
+                    if (ImGui::Button(ICON_FA_TRASH))
+                    {
+                        invalidated = true;
+                        s_post_process_chain.erase(s_post_process_chain.begin() + s_selected_chain_pp);
+                        s_selected_pp_view = -1;
+                    }
+                    dev_ui::set_tooltip("Remove selected post process");
+
+                    ImGui::Text("Post Process Chain");
+                    dev_ui::set_tooltip("A chain of post processes executed top to bottom");
+
+                    // List box
+                    ImGui::PushID("Post Process Chain");
+                    ImGui::ListBox("", &s_selected_chain_pp, &chain_items[0], chain_items.size());
+                    ImGui::PopID();
+
+                    ImGui::NextColumn();
+
+                    if (ImGui::Button(ICON_FA_ARROW_LEFT))
+                    {
+                        invalidated = true;
+
+                        s_post_process_chain.insert(s_post_process_chain.begin() + s_selected_chain_pp,
+                                                    process_items[s_selected_process]);
+                    }
+
+                    dev_ui::set_tooltip("Insert selected post process to chain");
+
+                    ImGui::Text("Post Processes");
+                    dev_ui::set_tooltip("A view or collections of post process views make up a post process");
+
+                    ImGui::PushID("Post Processes");
+                    ImGui::ListBox("", &s_selected_process, &process_items[0], process_items.size());
+                    ImGui::PopID();
+
+                    ImGui::Columns(1);
+
+                    if (invalidated)
+                    {
+                        set_post_process_edited(edit_view);
+                        pmfx_config_hotload();
+                    }
+                    else
+                    {
+                        ImGui::Separator();
+
+                        ImGui::Text("Parameters");
+
+                        for (auto& pp : s_post_process_passes)
+                        {
+                            u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
+
+                            if (has_technique_params(pp.pmfx_shader, ti))
                             {
-                                s_render_target_names.push_back(rr.name.c_str());
+                                ImGui::Separator();
+                                ImGui::Text("Technique: %s", pp.name.c_str());
+
+                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0],
+                                                  pp.technique_samplers);
                             }
                         }
 
-                        ImGui::Combo("", &current_render_target, (const c8* const*)&s_render_target_names[0],
-                                     (s32)s_render_target_names.size(), 10);
+                        ImGui::Separator();
 
-                        static s32 display_ratio = 3;
-                        ImGui::InputInt("Buffer Size", &display_ratio);
-                        display_ratio = std::max<s32>(1, display_ratio);
-                        display_ratio = std::min<s32>(4, display_ratio);
-
-                        render_target& rt = s_render_targets[current_render_target];
-
-                        f32 w, h;
-                        get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
-
-                        bool unsupported_display = rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH;
-                        unsupported_display |= rt.format == PEN_TEX_FORMAT_R32_UINT;
-
-                        if (!unsupported_display)
+                        if (ImGui::CollapsingHeader("Passes"))
                         {
-                            f32 aspect = w / h;
-                            ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
-                        }
+                            ImGui::Columns(2);
 
-                        render_target_info_ui(rt);
-                    }
+                            ImGui::SetColumnWidth(0, 300);
+                            ImGui::SetColumnOffset(1, 300);
+                            ImGui::SetColumnWidth(1, 500);
 
-                    const c8* view_passes[] = {"Views"};
+                            ImGui::PushID("Passes_");
+                            ImGui::ListBox("", &s_selected_pp_view, &pass_items[0], pass_items.size());
+                            ImGui::PopID();
 
-                    std::vector<view_params>* view_arrays[] = {&s_views};
+                            ImGui::NextColumn();
 
-                    for (u32 x = 0; x < PEN_ARRAY_SIZE(view_passes); ++x)
-                    {
-                        if (ImGui::CollapsingHeader(view_passes[x]))
-                        {
-                            for (auto& v : *view_arrays[x])
+                            if (s_selected_pp_view != -1)
                             {
-                                view_info_ui(v);
+                                ImGui::Text("Input / Output");
+
+                                view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
+                                view_info_ui(selected_chain_pp);
+
+                                selected_chain_pp.stash_output = true;
+
+                                if (selected_chain_pp.stashed_output_rt != PEN_INVALID_HANDLE)
+                                {
+                                    f32 aspect = selected_chain_pp.stashed_rt_aspect;
+                                    ImGui::Image(&selected_chain_pp.stashed_output_rt, ImVec2(128.0f * aspect, 128.0f));
+                                }
+
+                                ImGui::Columns(1);
+
                                 ImGui::Separator();
                             }
                         }
                     }
-
-                    if (ImGui::CollapsingHeader("Post Processing"))
-                    {
-                        static s32 s_selected_input_view = 0;
-                        static s32 s_selected_chain_pp   = 0;
-                        static s32 s_selected_process    = 0;
-                        static s32 s_selected_pp_view    = 0;
-
-                        static std::vector<c8*> view_items;
-                        static std::vector<c8*> chain_items;
-                        static std::vector<c8*> process_items;
-                        static std::vector<c8*> pass_items;
-
-                        bool invalidated = false;
-
-                        // input views which has post processing
-                        view_items.clear();
-                        for (auto& v : s_views)
-                            if (v.post_process_flags & PP_ENABLED)
-                                view_items.push_back(v.name.c_str());
-
-                        if (view_items.size() == 0)
-                        {
-                            ImGui::Text("No views have 'post_process' set\n");
-                            return;
-                        }
-                        else
-                        {
-                            ImGui::Combo("Input View", &s_selected_input_view, &view_items[0], view_items.size());
-                        }
-
-                        std::vector<Str>&         s_post_process_chain  = s_views[s_selected_input_view].post_process_chain;
-                        std::vector<view_params>& s_post_process_passes = s_views[s_selected_input_view].post_process_views;
-                        view_params&              edit_view             = s_views[s_selected_input_view];
-
-                        // all available post processes from config (ie bloom, dof, colour_lut)
-                        process_items.clear();
-                        for (auto& pp : s_post_process_names)
-                            process_items.push_back(pp.c_str());
-
-                        // selected input view post process chain
-                        chain_items.clear();
-                        for (auto& pp : s_post_process_chain)
-                            chain_items.push_back(pp.c_str());
-
-                        // selected input view, view passes which make up the post process chain
-                        pass_items.clear();
-                        for (auto& pp : s_post_process_passes)
-                            pass_items.push_back(pp.name.c_str());
-
-                        // Main Toolbar
-                        static bool s_save_dialog_open = false;
-                        if (ImGui::Button(ICON_FA_FLOPPY_O))
-                            s_save_dialog_open = true;
-
-                        dev_ui::set_tooltip("Save post process preset");
-                        ImGui::SameLine();
-
-                        static bool s_load_dialog_open = false;
-                        if (ImGui::Button(ICON_FA_FOLDER_OPEN_O))
-                            s_load_dialog_open = true;
-
-                        dev_ui::set_tooltip("Load post process preset");
-                        ImGui::Separator();
-
-                        if (s_save_dialog_open)
-                        {
-                            const c8* res = dev_ui::file_browser(s_save_dialog_open, dev_ui::FB_SAVE);
-                            if (res)
-                            {
-                                json j_pp;
-                                generate_post_process_config(j_pp, s_post_process_chain, s_post_process_passes);
-
-                                Str basename = pen::str_remove_ext(res);
-                                basename.append(".jsn");
-
-                                std::ofstream ofs(basename.c_str());
-                                ofs << j_pp.dumps().c_str();
-                                ofs.close();
-                            }
-                        }
-
-                        if (s_load_dialog_open)
-                        {
-                            const c8* res = dev_ui::file_browser(s_load_dialog_open, dev_ui::FB_OPEN);
-                            if (res)
-                            {
-                                // perform load: todo
-                            }
-                        }
-
-                        ImGui::Columns(2);
-
-                        ImGui::SetColumnWidth(0, 300);
-                        ImGui::SetColumnOffset(1, 300);
-                        ImGui::SetColumnWidth(1, 500);
-
-                        // Edit Toolbar
-                        if (ImGui::Button(ICON_FA_ARROW_UP) && s_selected_chain_pp > 0)
-                        {
-                            invalidated                               = true;
-                            Str tmp                                   = s_post_process_chain[s_selected_chain_pp];
-                            s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp - 1].c_str();
-                            s_post_process_chain[s_selected_chain_pp - 1] = tmp.c_str();
-
-                            s_selected_chain_pp--;
-                        }
-                        dev_ui::set_tooltip("Move selected post process up");
-
-                        ImGui::SameLine();
-                        if (ImGui::Button(ICON_FA_ARROW_DOWN) && s_selected_chain_pp < s_post_process_chain.size() - 1)
-                        {
-                            invalidated                               = true;
-                            Str tmp                                   = s_post_process_chain[s_selected_chain_pp];
-                            s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp + 1].c_str();
-                            s_post_process_chain[s_selected_chain_pp + 1] = tmp.c_str();
-
-                            s_selected_chain_pp++;
-                        }
-                        dev_ui::set_tooltip("Move selected post process down");
-
-                        ImGui::SameLine();
-                        if (ImGui::Button(ICON_FA_TRASH))
-                        {
-                            invalidated = true;
-                            s_post_process_chain.erase(s_post_process_chain.begin() + s_selected_chain_pp);
-                            s_selected_pp_view = -1;
-                        }
-                        dev_ui::set_tooltip("Remove selected post process");
-
-                        ImGui::Text("Post Process Chain");
-                        dev_ui::set_tooltip("A chain of post processes executed top to bottom");
-
-                        // List box
-                        ImGui::PushID("Post Process Chain");
-                        ImGui::ListBox("", &s_selected_chain_pp, &chain_items[0], chain_items.size());
-                        ImGui::PopID();
-
-                        ImGui::NextColumn();
-
-                        if (ImGui::Button(ICON_FA_ARROW_LEFT))
-                        {
-                            invalidated = true;
-
-                            s_post_process_chain.insert(s_post_process_chain.begin() + s_selected_chain_pp,
-                                                        process_items[s_selected_process]);
-                        }
-
-                        dev_ui::set_tooltip("Insert selected post process to chain");
-
-                        ImGui::Text("Post Processes");
-                        dev_ui::set_tooltip("A view or collections of post process views make up a post process");
-
-                        ImGui::PushID("Post Processes");
-                        ImGui::ListBox("", &s_selected_process, &process_items[0], process_items.size());
-                        ImGui::PopID();
-
-                        ImGui::Columns(1);
-
-                        if (invalidated)
-                        {
-                            set_post_process_edited(edit_view);
-                            pmfx_config_hotload();
-                        }
-                        else
-                        {
-                            ImGui::Separator();
-
-                            ImGui::Text("Parameters");
-
-                            for (auto& pp : s_post_process_passes)
-                            {
-                                u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
-
-                                if (has_technique_params(pp.pmfx_shader, ti))
-                                {
-                                    ImGui::Separator();
-                                    ImGui::Text("Technique: %s", pp.name.c_str());
-
-                                    show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0],
-                                                      pp.technique_samplers);
-                                }
-                            }
-
-                            ImGui::Separator();
-
-                            if (ImGui::CollapsingHeader("Passes"))
-                            {
-                                ImGui::Columns(2);
-
-                                ImGui::SetColumnWidth(0, 300);
-                                ImGui::SetColumnOffset(1, 300);
-                                ImGui::SetColumnWidth(1, 500);
-
-                                ImGui::PushID("Passes_");
-                                ImGui::ListBox("", &s_selected_pp_view, &pass_items[0], pass_items.size());
-                                ImGui::PopID();
-
-                                ImGui::NextColumn();
-
-                                if (s_selected_pp_view != -1)
-                                {
-                                    ImGui::Text("Input / Output");
-
-                                    view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
-                                    view_info_ui(selected_chain_pp);
-
-                                    selected_chain_pp.stash_output = true;
-
-                                    if (selected_chain_pp.stashed_output_rt != PEN_INVALID_HANDLE)
-                                    {
-                                        f32 aspect = selected_chain_pp.stashed_rt_aspect;
-                                        ImGui::Image(&selected_chain_pp.stashed_output_rt, ImVec2(128.0f * aspect, 128.0f));
-                                    }
-
-                                    ImGui::Columns(1);
-
-                                    ImGui::Separator();
-                                }
-                            }
-                        }
-                    }
-
-                    ImGui::End();
                 }
+
+                ImGui::End();
             }
         }
 

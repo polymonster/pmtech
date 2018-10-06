@@ -1,88 +1,17 @@
 {
     include: [
-	    common.jsn
-	]
+	    common.jsn,
+	    editor_renderer.jsn
+	],
 	
-	render_targets:
+	view_sets: 
 	{
-		picking:
-		{
-			size: equal,
-			format: r32u,
-			cpu_read: true
-		},
-		
-		picking_ds:
-		{
-			size: equal,
-			format: d24s8,
-		},
-				
-		shadow_map:
-		{
-			size: [2048,2048],
-			format: d24s8,
-		},
+	    example: [
+	        main_view,
+	        editor_view,
+	        picking_view
+	    ]
 	},
-			
-	views:
-	{
-		main_view:
-		{
-			target:[main_colour, main_depth],
-			clear_colour:[0.5, 0.5, 0.5, 1.0],
-			clear_depth: 1.0,
-			colour_write_mask: 0xf,
-			blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: default,
-			depth_stencil_state: default,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			scene_views:["ces_render_scene"],
-			render_flags:["forward_lit"],
-			
-			sampler_bindings:
-			[
-				{ texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
-			],
-		},
-		
-		editor_view:
-		{
-			target:[main_colour, main_depth],
-			colour_write_mask: 0xf,
-			blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: wireframe,
-			depth_stencil_state: default,
-			pmfx_shader: forward_render,
-			technique: constant_colour,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			scene_views:["ces_render_editor"]
-		},
-		
-		picking_view:
-		{
-			target:[picking, picking_ds],
-			clear:
-			{
-				picking:
-				{
-					clear_colour_u:[10000, 10000, 10000, 10000]
-				}
-			},
-			clear_depth: 1.0,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			blend_state: disabled,
-			raster_state: default,
-			depth_stencil_state: default,
-			pmfx_shader: pmfx_utility,
-			technique: picking,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			scene_views:["ces_render_scene"]
-		},
-	},
+	
+	view_set: example
 }

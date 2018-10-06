@@ -37,7 +37,11 @@ void mrt_example_ui()
     bool opened = true;
     ImGui::Begin("Multiple Render Targets", &opened, ImGuiWindowFlags_AlwaysAutoResize);
 
-    static hash_id rt_ids[] = {PEN_HASH("gbuffer_albedo"), PEN_HASH("gbuffer_normals"), PEN_HASH("gbuffer_depth")};
+    static hash_id rt_ids[] = {
+        PEN_HASH("gbuffer_albedo"),
+        PEN_HASH("gbuffer_normals"),
+        PEN_HASH("gbuffer_world_pos"),
+        PEN_HASH("gbuffer_depth")};
 
     int c = 0;
     for (hash_id id : rt_ids)
@@ -51,7 +55,7 @@ void mrt_example_ui()
 
         ImGui::Image((void*)&r->handle, size);
 
-        if (c == 0)
+        if (c == 0 || c == 2)
             ImGui::SameLine();
 
         c++;

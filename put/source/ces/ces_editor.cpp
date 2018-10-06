@@ -962,6 +962,58 @@ namespace put
                 }
             }
         }
+        
+        void context_menu_ui(entity_scene* scene)
+        {
+            static ImGuiID cm_id = ImGui::GetID("right click context menu");
+            
+            if(pen::input_mouse(1))
+            {
+                ImGui::OpenPopupEx(cm_id, false);
+            }
+            
+            if(ImGui::BeginPopupEx(cm_id, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                if(ImGui::MenuItem("Hide All"))
+                {
+                    for(u32 i = 0; i < scene->num_nodes; ++i)
+                    {
+                        scene->state_flags[i] |= SF_HIDDEN;
+                    }
+                }
+                
+                if(ImGui::MenuItem("Unhide All"))
+                {
+                    for(u32 i = 0; i < scene->num_nodes; ++i)
+                    {
+                        scene->state_flags[i] &= ~SF_HIDDEN;
+                    }
+                }
+                
+                if(sb_count(s_selection_list) > 0)
+                {
+                    if(ImGui::MenuItem("Hide Selected"))
+                    {
+                        for(u32 i = 0; i < scene->num_nodes; ++i)
+                        {
+                            if(scene->state_flags[i] & SF_SELECTED)
+                                scene->state_flags[i] |= SF_HIDDEN;
+                        }
+                    }
+                    
+                    if(ImGui::MenuItem("Hide Un-Selected"))
+                    {
+                        for(u32 i = 0; i < scene->num_nodes; ++i)
+                        {
+                            if(!(scene->state_flags[i] & SF_SELECTED))
+                                scene->state_flags[i] |= SF_HIDDEN;
+                        }
+                    }
+                }
+                
+                ImGui::EndPopup();
+            }
+        }
 
         void update_model_viewer_scene(put::scene_controller* sc)
         {
@@ -976,6 +1028,9 @@ namespace put
             static bool selection_list     = false;
             static bool view_menu          = false;
             static bool settings_open      = false;
+            
+            // right click context menu
+            context_menu_ui(sc->scene);
 
             // auto save
             bool auto_save = dev_ui::get_program_preference("auto_save").as_bool();
@@ -1133,15 +1188,35 @@ namespace put
             }
             dev_ui::set_tooltip("Selection List");
 
-            static const c8* transform_icons[]   = {ICON_FA_MOUSE_POINTER, ICON_FA_ARROWS, ICON_FA_REFRESH, ICON_FA_EXPAND,
-                                                  ICON_FA_HAND_POINTER_O};
-            static s32       num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
+            // clang-format off
+            static const c8* transform_icons[] = {
+                ICON_FA_MOUSE_POINTER,
+                ICON_FA_ARROWS,
+                ICON_FA_REFRESH,
+                ICON_FA_EXPAND,
+                ICON_FA_HAND_POINTER_O
+            };
 
-            static const c8* transform_tooltip[] = {"Select (Q)", "Translate (W)", "Rotate (E)", "Scale (R)",
-                                                    "Grab Physics (T)"};
+            static const c8* transform_tooltip[] = {
+                "Select (Q)",
+                "Translate (W)",
+                "Rotate (E)",
+                "Scale (R)",
+                "Grab Physics (T)"
+            };
+            
+            static u32 widget_shortcut_key[] = {
+                PK_Q,
+                PK_W,
+                PK_E,
+                PK_R,
+                PK_T
+            };
+            // clang-format on
+
+            static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
+            
             static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
-
-            static u32 widget_shortcut_key[] = {PK_Q, PK_W, PK_E, PK_R, PK_T};
             static_assert(PEN_ARRAY_SIZE(widget_shortcut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
 
             for (s32 i = 0; i < num_transform_icons; ++i)
@@ -2525,23 +2600,29 @@ namespace put
                 }
 
                 static vec3f attach_point = vec3f::zero();
+                static vec3f drag_point = vec3f::zero();
                 for (s32 i = 0; i < 3; ++i)
                 {
                     if (!ms.buttons[PEN_MOUSE_L])
                     {
                         attach_point = _cp;
+                        drag_point = vec3f::zero();
                         continue;
                     }
-
+                    
+                    if(drag_point == vec3f::zero())
+                        drag_point = _cp;
+                    
                     if (selected[i])
                     {
                         k_select_flags |= WIDGET_SELECTED;
 
                         vec3f prev_line = normalised(attach_point - pos);
                         vec3f cur_line  = normalised(_cp - pos);
-
-                        dbg::add_line(pos, attach_point, vec4f::cyan());
-                        dbg::add_line(pos, _cp, vec4f::magenta());
+                        vec3f start_line = normalised(drag_point - pos);
+                        
+                        dbg::add_line(pos, pos + cur_line * rd, vec4f::white());
+                        dbg::add_line(pos, pos + start_line * rd, vec4f::white() * vec4f(0.3f, 0.3f, 0.3f, 1.0f));
 
                         vec3f x   = cross(prev_line, cur_line);
                         f32   amt = dot(x, plane_normals[i]);

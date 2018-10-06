@@ -866,7 +866,7 @@ namespace put
             kp_dev_console->AddLogV(level, fmt, args);
             va_end(args);
 
-            if (level > 0)
+            if (level > 1)
                 k_console_open = true;
         }
 
