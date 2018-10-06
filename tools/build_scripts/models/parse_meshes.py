@@ -410,7 +410,10 @@ def write_geometry_file(geom_instance):
                      struct.pack("i", (int(num_meshes)))]
 
     for mat in geom_instance.materials:
-        helpers.pack_parsable_string(geometry_data, mat)
+        if not mat:
+            helpers.pack_parsable_string(geometry_data, "none")
+        else:
+            helpers.pack_parsable_string(geometry_data, mat)
 
     data_size = len(geometry_data)*4
     for mesh in geom_instance.meshes:

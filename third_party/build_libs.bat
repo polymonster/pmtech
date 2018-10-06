@@ -1,13 +1,12 @@
 :: third party build for win32
 
-:: build machines running from dev prompt dont bnee vcvarsall
+:: build machines running from dev prompt dont require vcvarsall setup
 IF [%1] == [] GOTO build
 
 pushd .
 cd /D %1
 call vcvarsall.bat x86_amd64
 popd
-
 
 :: bullet
 :build
