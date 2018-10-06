@@ -87,7 +87,7 @@ namespace put
             u32 prev_vb   = vb_3d[buffer_index];
             u32 prev_size = sizeof(vertex_debug_3d) * buffer_3d_size_in_verts[buffer_index];
 
-            buffer_3d_size_in_verts[buffer_index] = num_verts + 2048;
+            buffer_3d_size_in_verts[buffer_index] = num_verts * 2;
 
             // debug lines buffer
             pen::buffer_creation_params bcp;
@@ -132,7 +132,7 @@ namespace put
             u32 prev_vb   = vb_2d[buffer_index];
             u32 prev_size = sizeof(vertex_debug_2d) * buffer_2d_size_in_verts[buffer_index];
 
-            buffer_2d_size_in_verts[buffer_index] = num_verts + 2048;
+            buffer_2d_size_in_verts[buffer_index] = num_verts * 2;
 
             // debug lines buffer
             pen::buffer_creation_params bcp;

@@ -63,7 +63,21 @@ def write_geometry(file, root):
                 face_list.reverse()
             if not cur_mesh:
                 cur_mesh = (basename, "obj_default", [], [], [], [])
-            for trivert in face_list:
+
+            tri_list = []
+            if len(face_list) == 4:
+                tri_list.append(face_list[0])
+                tri_list.append(face_list[1])
+                tri_list.append(face_list[2])
+                tri_list.append(face_list[2])
+                tri_list.append(face_list[3])
+                tri_list.append(face_list[0])
+            elif len(face_list) == 3:
+                tri_list.append(face_list[0])
+                tri_list.append(face_list[1])
+                tri_list.append(face_list[2])
+
+            for trivert in tri_list:
                 elem_indices = [0]
                 if trivert.find("//") != -1:
                     velems = trivert.split("//")
@@ -81,7 +95,7 @@ def write_geometry(file, root):
                 for vi in velems:
                     ii = elem_indices[elem_index]
                     li = int(vi)-1
-                    if(li < len(vertex_data[ii])):
+                    if li < len(vertex_data[ii]):
                         vertex[ii] = vertex_data[ii][li]
                         for vf in vertex_data[ii][int(vi)-1]:
                             if elem_index == 0:

@@ -131,6 +131,7 @@ namespace put
             }
         }
 
+        // clang-format off
         enum e_debug_draw_flags
         {
             DD_HIDE              = SV_HIDE,
@@ -142,12 +143,25 @@ namespace put
             DD_LIGHTS            = 1 << (SV_BITS_END + 6),
             DD_PHYSICS           = 1 << (SV_BITS_END + 7),
             DD_SELECTED_CHILDREN = 1 << (SV_BITS_END + 8),
+            DD_GEOMETRY          = 1 << (SV_BITS_END + 9),
 
-            DD_NUM_FLAGS = 9
+            DD_NUM_FLAGS         = 10
         };
 
-        const c8* dd_names[]{"Hide Scene", "Selected Node", "Grid",    "Matrices",         "Bones",
-                             "AABB",       "Lights",        "Physics", "Selected Children"};
+        const c8* dd_names[] ={
+            "Hide Scene",
+            "Selected Node",
+            "Grid",
+            "Matrices",
+            "Bones",
+            "AABB",
+            "Lights",
+            "Physics",
+            "Selected Children",
+            "Debug Geometry"
+        };
+        // clang-format on
+        
         static_assert(sizeof(dd_names) / sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
 
@@ -2994,22 +3008,37 @@ namespace put
             render_light_debug(view);
 
             // Selected Node
+            u32 sel_num = sb_count(s_selection_list);
+            
             if (scene->view_flags & DD_NODE)
             {
-                u32 sel_num = sb_count(s_selection_list);
                 for (u32 i = 0; i < sel_num; ++i)
                 {
                     u32 s = s_selection_list[i];
 
                     dbg::add_aabb(scene->bounding_volumes[s].transformed_min_extents,
                                   scene->bounding_volumes[s].transformed_max_extents);
+                }
+            }
+            
+            // Debug triangles and vertices
+            if(scene->view_flags & DD_GEOMETRY && sel_num > 0)
+            {
+                ImGui::Begin("Debug Geometry");
+                
+                static s32 trii = 0;
+                ImGui::InputInt("Debug Triangle", &trii);
+                
+                static bool show_verts = false;
+                ImGui::Checkbox("Show Vertices", &show_verts);
+
+                for (u32 i = 0; i < sel_num; ++i)
+                {
+                    u32 s = s_selection_list[i];
                     
                     if(scene->id_geometry[s] != 0)
                     {
                         geometry_resource* gr = get_geometry_resource(scene->id_geometry[s]);
-                        
-                        static s32 trii = 0;
-                        ImGui::InputInt("Debug Triangle", &trii);
                         
                         s32 index_offset = trii * 3;
                         
@@ -3028,13 +3057,12 @@ namespace put
                                 tri_indices[i] = indices[index_offset + i];
                         }
                         
-                        
-                        u8* bb = (u8*)gr->cpu_position_buffer;
+                        vec4f* pb = (vec4f*)gr->cpu_position_buffer;
                         
                         vec3f positions[3] = {};
                         for(u32 i = 0; i < 3; ++i)
                         {
-                            memcpy(&positions[i], &bb[gr->vertex_size * tri_indices[i]], sizeof(vec3f));
+                            memcpy(&positions[i], &pb[tri_indices[i]], sizeof(vec3f));
                         }
                         
                         for(u32 i = 0; i < 3; ++i)
@@ -3042,8 +3070,20 @@ namespace put
                             u32 x = (i + 1) % 3;
                             dbg::add_line(positions[i], positions[x], vec4f::cyan());
                         }
+                        
+                        ImGui::Text("Node %i: %i, %i, %i", s, tri_indices[0], tri_indices[1], tri_indices[2]);
+                        
+                        if(show_verts)
+                        {
+                            for(u32 v = 0; v < gr->num_vertices; ++v)
+                            {
+                                dbg::add_point(pb[v].xyz, 0.05f, vec4f::green());
+                            }
+                        }
                     }
                 }
+                
+                ImGui::End();
             }
 
             if (scene->view_flags & DD_SELECTED_CHILDREN)
