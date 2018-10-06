@@ -236,11 +236,13 @@ namespace pen
         {
             if (hFind != INVALID_HANDLE_VALUE)
             {
+                /*
                 if (!s_show_hidden)
                 {
                     if ((ffd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)
                         continue;
                 }
+                */
 
                 if (match_file(ffd, num_wildcards, args))
                 {
