@@ -218,6 +218,26 @@ ps_output ps_vertex_normals( vs_output input )
     return output;
 }
 
+ps_output ps_vertex_tangents( vs_output input ) 
+{	
+	ps_output output;
+	
+	output.colour.rgb = input.tangent * 0.5 + 0.5;
+	output.colour.a = 1.0;
+	
+    return output;
+}
+
+ps_output ps_vertex_bitangents( vs_output input ) 
+{	
+	ps_output output;
+	
+	output.colour.rgb = input.bitangent * 0.5 + 0.5;
+	output.colour.a = 1.0;
+	
+    return output;
+}
+
 ps_output ps_texcoord_0( vs_output input ) 
 {	
 	ps_output output;
@@ -229,7 +249,7 @@ ps_output ps_texcoord_0( vs_output input )
     return output;
 }
 
-ps_output ps_texcoord_0( vs_output input ) 
+ps_output ps_texcoord_1( vs_output input ) 
 {	
 	ps_output output;
 	
@@ -510,6 +530,18 @@ pmfx:
 	{
 		"vs": "vs_main",
 		"ps": "ps_vertex_normals"
+	},
+	
+	"vertex_tangents":
+	{
+		"vs": "vs_main",
+		"ps": "ps_vertex_tangents"
+	},
+	
+	"vertex_bitangents":
+	{
+		"vs": "vs_main",
+		"ps": "ps_vertex_bitangents"
 	},
 	
 	"texcoord_0":

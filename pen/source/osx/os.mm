@@ -16,6 +16,8 @@
 #include "str/Str.h"
 #include "str_utilities.h"
 
+#include "os.h"
+
 // global stuff for window graphics api sync
 extern pen::window_creation_params pen_window;
 extern a_u8                        g_window_resize;
@@ -590,7 +592,39 @@ namespace pen
         width  = rect.size.width;
         height = rect.size.height;
     }
-
+    
+    void window_set_size(s32 width, s32 height)
+    {
+        NSRect frame = [_window frame];
+        frame.size.width = width;
+        frame.size.height = height;
+        
+        [_window setFrame: frame display: YES animate: NO];
+    }
+    
+    void window_get_frame(window_frame &f)
+    {
+        NSScreen* screen = [_window screen];
+        NSRect    rect   = [screen frame];
+        
+        f.x = rect.origin.x;
+        f.y = rect.origin.y;
+        f.width = rect.size.width;
+        f.height = rect.size.height;
+    }
+    
+    void window_set_frame(const window_frame& f)
+    {
+        NSRect frame = [_window frame];
+        
+        frame.origin.x = f.x;
+        frame.origin.y = f.y;
+        frame.size.width = f.width;
+        frame.size.height = f.height;
+        
+        [_window setFrame: frame display: YES animate: NO];
+    }
+    
     void* window_get_primary_display_handle()
     {
         return (void*)_window;

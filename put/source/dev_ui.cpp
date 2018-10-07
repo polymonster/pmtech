@@ -9,6 +9,7 @@
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
+#include "os.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -433,7 +434,9 @@ namespace put
                     if (selection_stack[c] >= 0)
                     {
                         fs_iter = &fs_iter->children[selection_stack[c]];
-                        current_path.append(fs_iter->name);
+                        
+                        if(fs_iter)
+                            current_path.append(fs_iter->name);
 
                         if (!(current_path.c_str()[0] == '/' && current_path.length() == 1))
                             current_path.append("/");

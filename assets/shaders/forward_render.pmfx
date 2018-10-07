@@ -293,7 +293,7 @@ ps_output ps_forward_lit( vs_output input )
 			float s = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
 			light_col *= smoothstep( 0.0, 0.1, s);
 		}
-		
+
 		if( lights[i].colour.a == 0.0 )
 		{
 			lit_colour += light_col;
@@ -399,6 +399,7 @@ ps_output ps_forward_lit( vs_output input )
 	}
 
 	output.colour.rgb = lit_colour.rgb;
+	
 	output.colour.a = albedo.a;
 	
     return output;
@@ -462,6 +463,45 @@ pmfx:
 			"albedo": { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
 			"roughness": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
 			"reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 }
+		},
+		
+		"texture_samplers": 
+		{
+		    "albedo":
+		    {
+		        "type": "texture_2d",
+		        "unit": 0,
+		        "shader": "ps",
+		        "sampler": "wrap_linear",
+		        "default": "data/textures/defaults/albedo.dds"
+		    },
+		    
+		    "normals":
+		    {
+		        "type": "texture_2d",
+		        "unit": 1,
+		        "shader": "ps",
+		        "sampler": "wrap_linear",
+		        "default": "data/textures/defaults/normal.dds"
+		    },
+		    
+		    "roughness":
+		    {
+		        "type": "texture_2d",
+		        "unit": 2,
+		        "shader": "ps",
+		        "sampler": "wrap_linear",
+		        "default": "data/textures/defaults/spec.dds"
+		    },
+		    
+		    "metalness":
+		    {
+		        "type": "texture_2d",
+		        "unit": 3,
+		        "shader": "ps",
+		        "sampler": "wrap_linear",
+		        "default": "data/textures/defaults/black.dds"
+		    }
 		}
 	},
 	

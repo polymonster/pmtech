@@ -27,7 +27,12 @@ namespace put
     namespace ces
     {
         static hash_id k_primitives[] = {
-            PEN_HASH("cube"), PEN_HASH("cylinder"), PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone"),
+            PEN_HASH("quad"),
+            PEN_HASH("cube"),
+            PEN_HASH("cylinder"),
+            PEN_HASH("sphere"),
+            PEN_HASH("capsule"),
+            PEN_HASH("cone")
         };
 
         struct transform_undo
@@ -1652,7 +1657,9 @@ namespace put
                 }
 
                 static s32 primitive_type = -1;
-                ImGui::Combo("Shape##Primitive", (s32*)&primitive_type, "Box\0Cylinder\0Sphere\0Capsule\0Cone\0", 5);
+                ImGui::Combo("Shape##Primitive",
+                             (s32*)&primitive_type,
+                             "Quad\0Box\0Cylinder\0Sphere\0Capsule\0Cone\0", PEN_ARRAY_SIZE(k_primitives));
 
                 if (ImGui::Button("Add Primitive") && primitive_type > -1)
                 {
@@ -1774,12 +1781,17 @@ namespace put
                 perform_transform |= ImGui::InputFloat3("Translation", (float*)&t.translation);
 
                 vec3f euler = t.rotation.to_euler();
-                euler       = euler * (f32)M_PI_OVER_180;
+                for(u32 i = 0; i < 3; ++i)
+                    euler[i] = maths::rad_to_deg(euler[i]);
 
                 if (ImGui::InputFloat3("Rotation", (float*)&euler))
                 {
-                    euler = euler * (f32)M_180_OVER_PI;
-                    t.rotation.euler_angles(euler.z, euler.y, euler.x);
+                    vec3f euler_rad;
+                    for(u32 i = 0; i < 3; ++i)
+                        euler_rad[i] = maths::deg_to_rad(euler[i]);
+                    
+                    t.rotation.euler_angles(euler_rad.z, euler_rad.y, euler_rad.x);
+
                     perform_transform = true;
                 }
 
@@ -1806,6 +1818,8 @@ namespace put
                 return false;
 
             u32 selected_index = s_selection_list[0];
+            if (!(scene->entities[selected_index] & CMP_MATERIAL))
+                return false;
 
             // master mat
             cmp_material& mm = scene->materials[selected_index];
@@ -1830,77 +1844,63 @@ namespace put
             if (ImGui::CollapsingHeader("Material"))
             {
                 cmp_material_data mat  = scene->material_data[selected_index];
-                cmp_samplers      samp = scene->samplers[selected_index];
+                cmp_samplers&     samp = scene->samplers[selected_index];
 
                 ImGui::Text("%s", scene->material_names[selected_index].c_str());
+                ImGui::Separator();
 
-                if (scene->entities[s_selection_list[0]] & CMP_MATERIAL)
+                auto& mm = scene->materials[selected_index];
+                bool  cm = false;
+
+                u32        num_shaders;
+                const c8** shader_list = pmfx::get_shader_list(num_shaders);
+                cm |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
+
+                u32        num_techniques;
+                const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
+                cm |= ImGui::Combo("Technique", (s32*)&technique, technique_list, num_techniques);
+
+                // apply shader changes
+                if (cm)
                 {
-                    u32 count = 0;
-                    for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
-                    {
-                        if (scene->materials[selected_index].texture_handles[t] > 0)
-                        {
-                            if (count++ > 0)
-                                ImGui::SameLine();
+                    hash_id id_technique = PEN_HASH(technique_list[technique]);
 
-                            ImGui::Image(&scene->materials[selected_index].texture_handles[t], ImVec2(64, 64));
-                        }
+                    for (u32 i = 0; i < num_selected; ++i)
+                    {
+                        u32 si                           = s_selection_list[i];
+                        scene->materials[si].pmfx_shader = shader;
+                        scene->materials[si].technique   = technique;
+
+                        scene->material_resources[si].id_technique = id_technique;
                     }
+                }
+                
+                pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
 
-                    auto& mm = scene->materials[selected_index];
-                    bool  cm = false;
+                if (tc)
+                {
+                    pmfx::show_technique_ui(shader, technique, &mat.data[0], samp);
 
-                    u32        num_shaders;
-                    const c8** shader_list = pmfx::get_shader_list(num_shaders);
-                    cm |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
+                    u32               num_constants = sb_count(tc);
+                    cmp_material_data pre_edit      = scene->material_data[selected_index];
 
-                    u32        num_techniques;
-                    const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
-                    cm |= ImGui::Combo("Technique", (s32*)&technique, technique_list, num_techniques);
-
-                    // apply shader changes
-                    if (cm)
+                    for (u32 i = 0; i < num_selected; ++i)
                     {
-                        hash_id id_technique = PEN_HASH(technique_list[technique]);
+                        u32 si = s_selection_list[i];
 
-                        for (u32 i = 0; i < num_selected; ++i)
+                        for (u32 c = 0; c < num_constants; ++c)
                         {
-                            u32 si                           = s_selection_list[i];
-                            scene->materials[si].pmfx_shader = shader;
-                            scene->materials[si].technique   = technique;
+                            u32 cb_offset = tc[c].cb_offset;
+                            u32 tc_size   = sizeof(f32) * tc[c].num_elements;
 
-                            scene->material_resources[si].id_technique = id_technique;
-                        }
-                    }
+                            f32* f1 = &mat.data[cb_offset];
+                            f32* f2 = &pre_edit.data[cb_offset];
 
-                    pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
+                            if (memcmp(f1, f2, tc_size) == 0)
+                                continue;
 
-                    if (tc)
-                    {
-                        pmfx::show_technique_ui(shader, technique, &mat.data[0], samp);
-
-                        u32               num_constants = sb_count(tc);
-                        cmp_material_data pre_edit      = scene->material_data[selected_index];
-
-                        for (u32 i = 0; i < num_selected; ++i)
-                        {
-                            u32 si = s_selection_list[i];
-
-                            for (u32 c = 0; c < num_constants; ++c)
-                            {
-                                u32 cb_offset = tc[c].cb_offset;
-                                u32 tc_size   = sizeof(f32) * tc[c].num_elements;
-
-                                f32* f1 = &mat.data[cb_offset];
-                                f32* f2 = &pre_edit.data[cb_offset];
-
-                                if (memcmp(f1, f2, tc_size) == 0)
-                                    continue;
-
-                                f32* f3 = &scene->material_data[si].data[cb_offset];
-                                memcpy(f3, f1, tc_size);
-                            }
+                            f32* f3 = &scene->material_data[si].data[cb_offset];
+                            memcpy(f3, f1, tc_size);
                         }
                     }
                 }
@@ -2042,10 +2042,10 @@ namespace put
 
             if (ImGui::CollapsingHeader("Light"))
             {
+                cmp_light& snl = scene->lights[selected_index];
+                
                 if (scene->entities[selected_index] & CMP_LIGHT)
                 {
-                    cmp_light& snl = scene->lights[selected_index];
-
                     bool changed = ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type,
                                                 "Directional\0Point\0Spot\0Area Box (wip)\0", 4);
 
@@ -2059,6 +2059,13 @@ namespace put
                         case LIGHT_TYPE_DIR:
                             ImGui::SliderAngle("Azimuth", &snl.azimuth);
                             ImGui::SliderAngle("Altitude", &snl.altitude);
+                            
+                            if(edited)
+                            {
+                                scene->bounding_volumes[selected_index].min_extents = -vec3f(FLT_MAX);
+                                scene->bounding_volumes[selected_index].max_extents = vec3f(FLT_MAX);
+                            }
+                            
                             break;
 
                         case LIGHT_TYPE_POINT:
@@ -2081,6 +2088,9 @@ namespace put
                             edited |= ImGui::SliderFloat("Cos Cutoff", &snl.cos_cutoff, 0.0f, 1.0f);
                             edited |= ImGui::SliderFloat("Range", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01f);
+                            
+                            // prevent negative or zero fall off
+                            snl.spot_falloff = max(snl.spot_falloff, 0.001f);
 
                             if (edited)
                             {
@@ -2143,6 +2153,12 @@ namespace put
 
                         scene->world_matrices[s] = mat4::create_identity();
 
+                        // basic defaultsa
+                        snl.colour = vec3f::white();
+                        snl.radius = 1.0f;
+                        snl.spot_falloff = 0.001f;
+                        snl.cos_cutoff = 0.1f;
+                        
                         // cbuffer for rendering light volume, for debug/editor or for deferred
                         instantiate_model_cbuffer(scene, s);
                     }
@@ -2425,16 +2441,20 @@ namespace put
                 store_node_state(scene, i, UNDO);
 
                 cmp_transform& t = scene->transforms[i];
+                
                 if (k_transform_mode == TRANSFORM_TRANSLATE)
+                {
                     t.translation += move_axis;
-                if (k_transform_mode == TRANSFORM_SCALE)
+                }
+                else if (k_transform_mode == TRANSFORM_SCALE)
+                {
                     t.scale += move_axis * 0.1f;
-                if (k_transform_mode == TRANSFORM_ROTATE)
+                }
+                else if (k_transform_mode == TRANSFORM_ROTATE)
                 {
                     quat q;
                     q.euler_angles(move_axis.z, move_axis.y, move_axis.x);
-
-                    t.rotation = q * t.rotation;
+                    t.rotation = t.rotation * q;
                 }
 
                 scene->entities[i] |= CMP_TRANSFORM;
@@ -2884,14 +2904,6 @@ namespace put
                 if (selected_only && !(scene->state_flags[n] & SF_SELECTED))
                     continue;
 
-                // quad point at pos for all types
-                vec3f p = scene->world_matrices[n].get_translation();
-
-                p = maths::project_to_sc(p, view_proj, vpi);
-
-                if (p.z > 0.0f)
-                    put::dbg::add_quad_2f(p.xy, vec2f(5.0f, 5.0f), vec4f(scene->lights[n].colour, 1.0f));
-
                 cmp_light& snl = scene->lights[n];
 
                 switch (snl.type)
@@ -2899,7 +2911,7 @@ namespace put
                     case LIGHT_TYPE_DIR:
                     {
                         // line only
-                        dbg::add_line(vec3f::zero(), scene->lights[n].direction * 10000.0f,
+                        dbg::add_line(vec3f::zero(), scene->lights[n].direction * k_dir_light_offset,
                                       vec4f(scene->lights[n].colour, 1.0f));
                         continue;
                     }
@@ -2914,6 +2926,15 @@ namespace put
                     case LIGHT_TYPE_SPOT:
                     case LIGHT_TYPE_POINT:
                     {
+                        // quad point at pos
+                        vec3f p = scene->world_matrices[n].get_translation();
+                        
+                        p = maths::project_to_sc(p, view_proj, vpi);
+                        
+                        if (p.z > 0.0f)
+                            put::dbg::add_quad_2f(p.xy, vec2f(5.0f, 5.0f), vec4f(scene->lights[n].colour, 1.0f));
+                        
+                        // volume geometry
                         geometry_resource* vol = volume[snl.type];
 
                         pmfx::set_technique(shader, id_technique, 0);

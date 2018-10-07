@@ -28,6 +28,82 @@ namespace put
             for (u32 i = 0; i < num_indices; ++i)
                 cpu_indices[i] = indices[i];
         }
+        
+        void create_quad()
+        {
+            static const u32 num_verts   = 4;
+            static const u32 num_indices = 6;
+            
+            geometry_resource* p_geometry = new geometry_resource;
+            
+            vertex_model v0;
+            v0.pos = vec4f(-1.0f, 0.0f, -1.0f, 1.0f);
+            v0.normal = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+            v0.uv12 = vec4f(0.0f, 1.0f, 0.0f, 0.0f);
+            v0.tangent = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+            v0.bitangent = vec4f(0.0f, 0.0f, 1.0f, 0.0f);
+            
+            vertex_model v1;
+            v1.pos = vec4f(-1.0f, 0.0f, 1.0f, 1.0f);
+            v1.normal = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+            v1.uv12 = vec4f(0.0f, 0.0f, 0.0f, 0.0f);
+            v1.tangent = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+            v1.bitangent = vec4f(0.0f, 0.0f, 1.0f, 0.0f);
+            
+            vertex_model v2;
+            v2.pos = vec4f(1.0f, 0.0f, 1.0f, 1.0f);
+            v2.normal = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+            v2.uv12 = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+            v2.tangent = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+            v2.bitangent = vec4f(0.0f, 0.0f, 1.0f, 0.0f);
+            
+            vertex_model v3;
+            v3.pos = vec4f(1.0f, 0.0f, -1.0f, 1.0f);
+            v3.normal = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+            v3.uv12 = vec4f(1.0f, 1.0f, 0.0f, 0.0f);
+            v3.tangent = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+            v3.bitangent = vec4f(0.0f, 0.0f, 1.0f, 0.0f);
+            
+            vertex_model v[num_verts] = {
+                v0, v1, v2, v3
+            };
+            
+            u16 indices[num_indices] = {0, 2, 1, 2, 0, 3};
+            
+            // VB
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags      = PEN_USAGE_DEFAULT;
+            bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size      = sizeof(vertex_model) * num_verts;
+            bcp.data             = (void*)v;
+            
+            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            
+            // IB
+            bcp.usage_flags      = PEN_USAGE_DEFAULT;
+            bcp.bind_flags       = PEN_BIND_INDEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size      = 2 * num_indices;
+            bcp.data             = (void*)indices;
+            
+            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            
+            // info
+            p_geometry->num_indices   = num_indices;
+            p_geometry->num_vertices  = num_verts;
+            p_geometry->vertex_size   = sizeof(vertex_model);
+            p_geometry->index_type    = PEN_FORMAT_R16_UINT;
+            p_geometry->min_extents   = -vec3f(1.0f, 0.00001f, 1.0f);
+            p_geometry->max_extents   = vec3f(1.0f, 0.00001f, 1.0f);
+            p_geometry->geometry_name = "quad";
+            p_geometry->hash          = PEN_HASH("quad");
+            p_geometry->file_hash     = PEN_HASH("primitive");
+            p_geometry->filename      = "primitive";
+            p_geometry->p_skin        = nullptr;
+            
+            add_geometry_resource(p_geometry);
+        }
 
         void create_fulscreen_quad()
         {
@@ -802,6 +878,7 @@ namespace put
             create_capsule_primitive();
             create_cone_primitive("cone", 0.0f, -1.0f);
             create_cone_primitive("physics_cone", 0.5f, -0.5f);
+            create_quad();
             create_fulscreen_quad();
         }
     } // namespace ces

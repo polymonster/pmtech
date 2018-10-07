@@ -524,9 +524,12 @@ namespace put
             material_resource* resource = &scene->material_resources[node_index];
             cmp_material*      material = &scene->materials[node_index];
             cmp_geometry*      geometry = &scene->geometries[node_index];
+            cmp_samplers&      samplers = scene->samplers[node_index];
 
             if (!resource)
                 return;
+            
+            u32 sf = scene->state_flags[node_index];
 
             material->pmfx_shader = pmfx::load_shader(resource->shader_name.c_str());
 
@@ -545,8 +548,32 @@ namespace put
             {
                 pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique,
                                                    scene->material_data[node_index].data);
-
+                
                 scene->state_flags[node_index] |= SF_MATERIAL_INITIALISED;
+            }
+            
+            if (!(scene->state_flags[node_index] & SF_SAMPLERS_INITIALISED))
+            {
+                pmfx::initialise_sampler_defaults(material->pmfx_shader, material->technique, samplers);
+                
+                // set material texture from source data
+                for(u32 t = 0; t < SN_NUM_TEXTURES; ++t)
+                {
+                    if(material->texture_handles[t] != 0 && is_valid(material->texture_handles[t]))
+                    {
+                        for(u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+                        {
+                            if(samplers.sb[s].sampler_unit == t)
+                            {
+                                samplers.sb[s].id_texture = PEN_HASH(put::get_texture_filename(material->texture_handles[t]));
+                                samplers.sb[s].handle = material->texture_handles[t];
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                scene->state_flags[node_index] |= SF_SAMPLERS_INITIALISED;
             }
 
             instantiate_material_cbuffer(scene, node_index, cbuffer_size);
@@ -1064,6 +1091,10 @@ namespace put
                             if (mr)
                             {
                                 scene->material_names[dest] = mat_name;
+                                
+                                // due to cloning, clear these flags
+                                scene->state_flags[dest] &= ~SF_MATERIAL_INITIALISED;
+                                scene->state_flags[dest] &= ~SF_SAMPLERS_INITIALISED;
 
                                 instantiate_material(mr, scene, dest);
 

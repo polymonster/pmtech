@@ -488,7 +488,7 @@ namespace put
         }
 
         void new_frame()
-        {
+        {            
             process_input();
 
             ImGuiIO& io = ImGui::GetIO();

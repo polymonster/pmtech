@@ -4,14 +4,14 @@
 		disabled:
 		{
 			blend_enable: false,	
-		}
+		},
 		
 		additive:
 		{
 			blend_enable: true,
 			src_blend: one,
 			dest_blend: one
-		}
+		},
 		
 		alpha_belnd:
 		{

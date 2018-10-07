@@ -538,6 +538,7 @@ namespace put
                 // set textures
                 if (p_mat)
                 {
+                    // todo: old textures.. phase out
                     for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
                     {
                         if (is_valid(p_mat->texture_handles[t]))
@@ -545,6 +546,18 @@ namespace put
                             pen::renderer_set_texture(p_mat->texture_handles[t], p_mat->sampler_states[t], t,
                                                       PEN_SHADER_TYPE_PS);
                         }
+                    }
+                    
+                    cmp_samplers& samplers = scene->samplers[n];
+                    for(u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+                    {
+                        if (!samplers.sb[s].handle)
+                            continue;
+                        
+                        pen::renderer_set_texture(samplers.sb[s].handle,
+                                                  samplers.sb[s].sampler_state,
+                                                  samplers.sb[s].sampler_unit,
+                                                  PEN_SHADER_TYPE_PS);
                     }
                 }
 
@@ -849,7 +862,7 @@ namespace put
 
                 // current directional light is a point light very far away
                 // with no attenuation..
-                vec3f light_pos                     = l.direction * 100000.0f;
+                vec3f light_pos                     = l.direction * k_dir_light_offset;
                 light_buffer.lights[pos].pos_radius = vec4f(light_pos, 0.0);
                 light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
 
@@ -1002,7 +1015,7 @@ namespace put
         struct scene_header
         {
             s32 header_size        = sizeof(*this);
-            s32 version            = 5;
+            s32 version            = 6;
             u32 num_nodes          = 0;
             s32 num_components     = 0;
             s32 num_lookup_strings = 0;
@@ -1145,7 +1158,7 @@ namespace put
                 for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                     write_lookup_string(put::get_texture_filename(mat.texture_handles[i]).c_str(), ofs, project_dir.c_str());
             }
-
+            
             // shadow
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -1155,6 +1168,18 @@ namespace put
                 cmp_shadow& shadow = scene->shadows[n];
 
                 write_lookup_string(put::get_texture_filename(shadow.texture_handle).c_str(), ofs, project_dir.c_str());
+            }
+            
+            // sampler bindings
+            for (s32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_SAMPLERS))
+                    continue;
+                
+                cmp_samplers& samplers = scene->samplers[n];
+                
+                for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                    write_lookup_string(put::get_texture_filename(samplers.sb[i].handle).c_str(), ofs, project_dir.c_str());
             }
 
             ofs.close();
@@ -1431,7 +1456,7 @@ namespace put
                 mat_res.id_technique  = PEN_HASH(technique.c_str());
                 mat_res.shader_name   = shader;
             }
-
+            
             // sdf shadow
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
@@ -1443,6 +1468,23 @@ namespace put
 
                 dev_console_log("[scene load] %s", sdf_shadow_volume_file.c_str());
                 instantiate_sdf_shadow(sdf_shadow_volume_file.c_str(), scene, n);
+            }
+            
+            if(sh.version >= 6)
+            {
+                // sampler binding textures
+                for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                {
+                    if (!(scene->entities[n] & CMP_SAMPLERS))
+                        continue;
+
+                    Str texture_name = read_lookup_string(ifs);
+                    
+                    cmp_samplers& samplers = scene->samplers[n];
+                    
+                    for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                        samplers.sb[i].handle = put::load_texture(texture_name.c_str());
+                }
             }
 
             bake_material_handles();

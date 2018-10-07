@@ -64,7 +64,8 @@ namespace put
             SF_CHILD_SELECTED       = (1 << 1),
             SF_HIDDEN               = (1 << 2),
             SF_MATERIAL_INITIALISED = (1 << 3),
-            SF_NO_SHADOW            = (1 << 4)
+            SF_NO_SHADOW            = (1 << 4),
+            SF_SAMPLERS_INITIALISED = (1 << 5)
         };
 
         enum e_light_types : u32
@@ -74,6 +75,7 @@ namespace put
             LIGHT_TYPE_SPOT     = 2,
             LIGHT_TYPE_AREA_BOX = 3
         };
+        static const f32 k_dir_light_offset = 1000000.0f;
 
         enum e_scene_node_textures
         {

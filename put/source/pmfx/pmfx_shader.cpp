@@ -502,16 +502,44 @@ namespace put
             return program;
         }
 
-        void initialise_constant_defaults(shader_handle handle, u32 index, f32* data)
+        void initialise_constant_defaults(shader_handle handle, u32 technique_index, f32* data)
         {
             if (handle >= sb_count(k_pmfx_list))
                 return;
 
-            if (index >= sb_count(k_pmfx_list[handle].techniques))
+            if (technique_index >= sb_count(k_pmfx_list[handle].techniques))
                 return;
 
-            memcpy(data, k_pmfx_list[handle].techniques[index].constant_defaults,
-                   k_pmfx_list[handle].techniques[index].technique_constant_size);
+            memcpy(data, k_pmfx_list[handle].techniques[technique_index].constant_defaults,
+                   k_pmfx_list[handle].techniques[technique_index].technique_constant_size);
+        }
+
+        void initialise_sampler_defaults(shader_handle handle, u32 technique_index, sampler_set& samplers)
+        {
+            if (handle >= sb_count(k_pmfx_list))
+                return;
+            
+            if (technique_index >= sb_count(k_pmfx_list[handle].techniques))
+                return;
+            
+            if (pmfx::has_technique_samplers(handle, technique_index))
+            {
+                pmfx::technique_sampler* ts = pmfx::get_technique_samplers(handle, technique_index);
+                
+                static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
+                
+                u32 num_tt = sb_count(ts);
+                for (u32 i = 0; i < num_tt; ++i)
+                {
+                    sampler_binding sb;
+                    sb.handle        = ts[i].handle;
+                    sb.sampler_unit  = ts[i].unit;
+                    sb.shader_type   = PEN_SHADER_TYPE_PS;
+                    sb.sampler_state = pmfx::get_render_state_by_name(id_default_sampler_state);
+                    
+                    samplers.sb[i] = sb;
+                }
+            }
         }
 
         technique_constant* get_technique_constants(shader_handle handle, u32 index)
@@ -854,6 +882,10 @@ namespace put
 
         bool constant_ui(shader_handle shader, u32 technique_index, f32* material_data)
         {
+            ImGui::Separator();
+            ImGui::Text("Constants");
+            ImGui::Separator();
+
             technique_constant* tc = get_technique_constants(shader, technique_index);
 
             bool rv = false;
@@ -917,6 +949,10 @@ namespace put
 
         bool texture_ui(shader_handle shader, u32 technique_index, cmp_samplers& samplers)
         {
+            ImGui::Separator();
+            ImGui::Text("Texture Samplers");
+            ImGui::Separator();
+
             technique_sampler* tt = get_technique_samplers(shader, technique_index);
 
             bool rv = false;
@@ -936,6 +972,7 @@ namespace put
                 technique_sampler& t = tt[i];
 
                 ImGui::Text("unit: %i [%s]", t.unit, t.name.c_str());
+                
                 if (ImGui::ImageButton((void*)&samplers.sb[i].handle, ImVec2(64, 64)))
                 {
                     if (select_index == -1)

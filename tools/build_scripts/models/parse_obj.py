@@ -6,45 +6,126 @@ import math
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 
+x = 0
+y = 1
+z = 2
 
-def calc_normals(vb):
-    print("Generating Normals")
-    # without vector math library to reduce dependencies
-    x = 0
-    y = 1
-    z = 2
+
+def normalise(v):
+    m = 0
+    for i in range(0, len(v)):
+        m += v[i] * v[i]
+    mag = math.sqrt(m)
+    vr = []
+    for i in range(0, len(v)):
+        if mag == 0.0:
+            vr.append(0.0)
+        else:
+            vr.append(v[i] / mag)
+    return vr
+
+
+def subtract(v1, v2):
+    vr = []
+    for i in range(0, len(v1)):
+        vr.append(v1[i] - v2[i])
+    return vr
+
+
+def multiply_scalar(v1, s):
+    vr = []
+    for i in range(0, len(v1)):
+        vr.append(v1[i] * s)
+    return vr
+
+
+def dot(v1, v2):
+    d = 0.0
+    for i in range(0, len(v1)):
+        d += v1[i] * v2[i]
+    return d
+
+
+def cross(v1, v2):
+    cx = v1[y] * v2[z] - v2[y] * v1[z]
+    cy = v1[x] * v2[z] - v2[x] * v1[z]
+    cz = v1[x] * v2[y] - v2[x] * v1[y]
+    return [cx, cy, cz]
+
+
+def calc_tangents(vb):
     num_vb_floats = 20
     for tri in range(0, len(vb), num_vb_floats*3):
         p = []
+        uv = []
+        n = []
+        for vert in range(0, 3):
+            vi = tri + num_vb_floats * vert
+            p.append([vb[vi + 0], vb[vi + 1], vb[vi + 2]])
+            uvi = vi + 8
+            uv.append([vb[uvi + 0], vb[uvi + 1], vb[uvi + 2]])
+            ni = vi + 4
+            n.append([vb[ni + 0], vb[ni + 1], vb[ni + 2]])
+
+        v1 = normalise(subtract(p[1], p[0]))
+        v2 = normalise(subtract(p[2], p[0]))
+
+        w1 = normalise(subtract(uv[1], uv[0]))
+        w2 = normalise(subtract(uv[2], uv[0]))
+
+        c = w1[x] * w2[y] - w2[x] * w1[y]
+        if c == 0.0:
+            r = 0.0
+        else:
+            r = 1.0 / c
+
+        sdir = [(w2[y] * v1[x] - w1[y] * v2[x]) * r,
+                (w2[y] * v1[y] - w1[y] * v2[y]) * r,
+                (w2[y] * v1[z] - w1[y] * v2[z]) * r]
+
+        tdir = [(w1[x] * v2[x] - w2[x] * v1[x]) * r,
+                (w1[x] * v2[y] - w2[x] * v1[y]) * r,
+                (w1[x] * v2[z] - w2[x] * v1[z]) * r]
+
+        # orthogonalise
+        t = normalise(subtract(sdir, multiply_scalar(n[0], dot(n[0], sdir))))
+        b = normalise(subtract(tdir, multiply_scalar(n[0], dot(n[0], tdir))))
+
+        for vert in range(0, 3):
+            ti = tri + 12 + (num_vb_floats * vert)
+            bi = tri + 16 + (num_vb_floats * vert)
+            for i in range(0, 3):
+                vb[ti + i] = t[i]
+                vb[bi + i] = b[i]
+
+    return vb
+
+
+def calc_normals(vb):
+    # without vector math library to reduce dependencies
+
+    num_vb_floats = 20
+    for tri in range(0, len(vb), num_vb_floats*3):
+        p = []
+        uv = []
         for vert in range(0, 3):
             vi = tri + num_vb_floats * vert
             p.append([vb[vi + 0], vb[vi + 1], vb[vi + 2]])
 
-        # edges
-        v1 = [p[1][x] - p[0][x], p[1][y] - p[0][y], p[1][z] - p[0][z]]
-        v2 = [p[2][x] - p[0][x], p[2][y] - p[0][y], p[2][z] - p[0][z]]
+        v1 = normalise(subtract(p[1], p[0]))
+        v2 = normalise(subtract(p[2], p[0]))
 
-        # normalise vectors
-        v1_mag = math.sqrt(v1[x] * v1[x] + v1[y] * v1[y] + v1[z] * v1[z])
-        v2_mag = math.sqrt(v2[x] * v2[x] + v2[y] * v2[y] + v2[z] * v2[z])
+        n = normalise(cross(v1, v2))
 
-        for i in range(0, 3):
-            v1[i] /= v1_mag
-            v2[i] /= v2_mag
-
-        # cross product
-        nx = v1[y] * v2[z] - v2[y] * v1[z]
-        ny = v1[x] * v2[z] - v2[x] * v1[z]
-        nz = v1[x] * v2[y] - v2[x] * v1[y]
-
-        # normalise
-        nmag = math.sqrt(nx * nx + ny * ny + nz * nz)
+        # flip handedness
+        n[x] *= -1.0
+        n[z] *= -1.0
 
         for vert in range(0, 3):
             ni = tri + 4 + (num_vb_floats * vert)
-            vb[ni + 0] = nx / nmag
-            vb[ni + 1] = ny / nmag
-            vb[ni + 2] = nz / nmag
+            vb[ni + 0] = n[x]
+            vb[ni + 1] = n[y]
+            vb[ni + 2] = n[z]
 
     return vb
 
@@ -125,8 +206,8 @@ def write_geometry(file, root):
                     elem_indices.append(1)
                 else:
                     velems = trivert.split("/")
-                    # elem_indices.append(1)
                     elem_indices.append(2)
+                    elem_indices.append(1)
                 vertex = [[0.0, 0.0, 0.0, 1.0],     # pos
                           [0.0, 1.0, 0.0, 1.0],     # normal
                           [0.0, 0.0, 0.0, 1.0],     # texcoord
@@ -174,6 +255,7 @@ def write_geometry(file, root):
         generated_vb = mesh[vb]
         if len(vertex_data[1]) == 0:
             generated_vb = calc_normals(generated_vb)
+            generated_vb = calc_tangents(generated_vb)
 
         mesh_data = []
 

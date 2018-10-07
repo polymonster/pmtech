@@ -236,7 +236,8 @@ namespace put
         bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
 
         void initialise_constant_defaults(shader_handle handle, u32 index, f32* data);
-
+        void initialise_sampler_defaults(shader_handle handle, u32 index, sampler_set& samplers);
+        
         const c8**          get_shader_list(u32& count);
         const c8**          get_technique_list(shader_handle handle, u32& count);
         const c8*           get_shader_name(shader_handle handle);
