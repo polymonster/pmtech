@@ -573,6 +573,7 @@ namespace put
                     }
                 }
                 
+                scene->entities[node_index] |= CMP_SAMPLERS;
                 scene->state_flags[node_index] |= SF_SAMPLERS_INITIALISED;
             }
 

@@ -823,8 +823,6 @@ def replace_conditional_blocks(source):
 
 
 def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name):
-    print("converting: " + os.path.splitext(filename)[0] + " " + technique_name)
-
     mf = open(macros_file)
     macros_text = mf.read()
     mf.close()
@@ -950,6 +948,7 @@ def shader_compile_v1():
     for root, dirs, files in os.walk(shader_source_dir):
         for file in files:
             if file.endswith(".pmfx"):
+                print("compiling: " + os.path.splitext(file_and_path)[0])
                 file_and_path = os.path.join(root, file)
                 create_shader_set(file_and_path, root)
                 create_vsc_psc(file_and_path, "vs_main", "ps_main", "default")
@@ -971,6 +970,24 @@ def generate_technique_texture_variables(pmfx_block, technique_name):
         technique_texture.append((textures[t]["type"], t, textures[t]["unit"]))
 
     return
+
+
+def member_wise_merge(j1, j2):
+    for key in j2.keys():
+        if key not in j1.keys():
+            j1[key] = j2[key]
+        elif type(j1[key]) is dict:
+            j1[key] = member_wise_merge(j1[key], j2[key])
+    return j1
+
+
+def inherit_technique(technique, pmfx_block):
+    if "inherit" in technique.keys():
+        inherit = technique["inherit"]
+        if inherit in pmfx_block.keys():
+            technique = member_wise_merge(technique, pmfx_block[inherit])
+            # print(json.dumps(technique, indent=4))
+    return technique
 
 
 constant_info = [["float", 1], ["float2", 2], ["float3", 3], ["float4", 4], ["float4x4", 16]]
@@ -1038,6 +1055,7 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
 
     technique["constants"] = pmfx_constants
     technique["constants_size_bytes"] = int(offset * 4)
+
     return technique, c_struct
 
 
@@ -1067,6 +1085,9 @@ def parse_pmfx(filename, root):
             pmfx_end = enclose_brackets(shader_file_text[pmfx_loc:])
             pmfx_block = json.loads(shader_file_text[json_loc:pmfx_end+json_loc])
             for technique in pmfx_block:
+                pmfx_block[technique] = inherit_technique(pmfx_block[technique], pmfx_block)
+            for technique in pmfx_block:
+                print("technique: " + technique)
                 c_stuct = ""
                 pmfx_block[technique], c_stuct = generate_technique_constant_buffers(pmfx_block, technique)
                 generate_defines(pmfx_block, technique)
@@ -1085,7 +1106,7 @@ def parse_pmfx(filename, root):
                     pmfx_block[technique]["ps_file"] = technique + ".psc"
                 del pmfx_block[technique]["vs"]
                 pmfx_block[technique]["vs_file"] = technique + ".vsc"
-                techniques.append(pmfx_block[technique])
+                techniques.append(json.dumps(pmfx_block[technique]))
         else:
             # globals to insert into shaders
             global technique_defines
@@ -1100,7 +1121,7 @@ def parse_pmfx(filename, root):
             default_technique["instance_inputs"], \
             default_technique["vs_outputs"] =\
                 create_vsc_psc(file_and_path, shader_file_text, "vs_main", "ps_main", "default")
-            techniques.append(default_technique)
+            techniques.append(json.dumps(default_technique))
 
         # write out header file of c_structs for accessing materials in code
         if shader_c_struct != "":
@@ -1112,10 +1133,15 @@ def parse_pmfx(filename, root):
             h_file.write(shader_c_struct)
             h_file.close()
 
+        tj = []
+        for t in techniques:
+            print(t)
+            tj.append(json.loads(t))
+
         generate_shader_info(
             file_and_path,
             included_files,
-            techniques,
+            tj,
             texture_samplers_source,
             constant_buffers)
 

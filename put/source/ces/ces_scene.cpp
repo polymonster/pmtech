@@ -1483,7 +1483,10 @@ namespace put
                     cmp_samplers& samplers = scene->samplers[n];
                     
                     for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                    {
                         samplers.sb[i].handle = put::load_texture(texture_name.c_str());
+                        samplers.sb[i].sampler_state = 0;
+                    }
                 }
             }
 

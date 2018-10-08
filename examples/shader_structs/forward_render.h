@@ -6,6 +6,15 @@ struct forward_lit
 	float3 m_padding;
 };
 
+struct forward_lit_uv_scale
+{
+	float4 m_uv_scale;
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float3 m_padding;
+};
+
 struct forward_lit_sdf_shadow
 {
 	float4 m_albedo;

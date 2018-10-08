@@ -155,18 +155,20 @@ vs_output vs_main( vs_input input )
 	world_rot_mat[0] = normalize(world_rot_mat[0]);
 	world_rot_mat[1] = normalize(world_rot_mat[1]);
 	world_rot_mat[2] = normalize(world_rot_mat[2]);
-		
+			
 	float3x3 rotation_matrix = mul( world_rot_mat, to_3x3(view_matrix) );
-	float3x3 ws_rotation_matrix = world_rot_mat;
-		
-	rotation_matrix = ws_rotation_matrix;
 		
 	output.normal = mul( input.normal.xyz, rotation_matrix );
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
 	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
 		
-	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, 
-		input.texcoord.z, 1.0f - input.texcoord.w );
+	output.texcoord = float4(input.texcoord.x, 1.0f - input.texcoord.y, 
+		                     input.texcoord.z, 1.0f - input.texcoord.w );
+		
+	if:(UV_SCALE)
+	{
+	    output.texcoord *= float4(m_uv_scale.x, m_uv_scale.y, m_uv_scale.x, m_uv_scale.y);
+	}
 		
 	output.colour = m_albedo;
 		
@@ -505,10 +507,23 @@ pmfx:
 		}
 	},
 	
+	"forward_lit_uv_scale":
+	{
+	    "inherit": "forward_lit",
+	    "constants":
+	    {
+            "uv_scale": { "type": "float4", "widget": "slider", "min": 0, "max": 100, "default": 1.0 },
+            "albedo": { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
+			"roughness": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
+			"reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 }
+	    },
+	    
+	    "defines": ["UV_SCALE"]
+	},
+	
 	"forward_lit_sdf_shadow":
 	{
-		"vs": "vs_main",
-		"ps": "ps_forward_lit",
+	    "inherit": "forward_lit",
 		"defines": ["SDF_SHADOW"],
 		
 		"constants":

@@ -332,7 +332,7 @@ void test_ray_plane_intersect(entity_scene* scene, bool initialise)
 
     dbg::add_plane(plane.point, plane.normal);
 
-    dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, vec4f::green());
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, vec4f::green());
 }
 
 void test_ray_vs_aabb(entity_scene* scene, bool initialise)
@@ -360,7 +360,7 @@ void test_ray_vs_aabb(entity_scene* scene, bool initialise)
     if (intersect)
         col = vec4f::red();
 
-    dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, col);
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
 
     // debug output
     if (intersect)
@@ -394,7 +394,7 @@ void test_ray_vs_obb(entity_scene* scene, bool initialise)
     if (intersect)
         col = vec4f::red();
 
-    dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, col);
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
 
     {
         vec3f r1  = ray.origin;
@@ -649,7 +649,7 @@ void test_point_ray(entity_scene* scene, bool initialise)
 
     vec3f cp = maths::closest_point_on_ray(ray.origin, ray.direction, point.point);
 
-    dbg::add_line(ray.origin - ray.direction * 50.0f, ray.origin + ray.direction * 50.0f, vec4f::green());
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, vec4f::green());
 
     dbg::add_line(point.point, cp);
 
