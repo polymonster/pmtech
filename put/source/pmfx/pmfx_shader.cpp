@@ -722,7 +722,6 @@ namespace put
             u32 num_pmfx = sb_count(k_pmfx_list);
 
             ph = 0;
-            // for (auto& p : s_pmfx_list)
             for (u32 i = 0; i < num_pmfx; ++i)
                 if (k_pmfx_list[i].filename == pmfx_name)
                     return ph;
@@ -732,7 +731,6 @@ namespace put
             pmfx_shader new_pmfx = load_internal(pmfx_name);
 
             ph = 0;
-            // for (auto& p : s_pmfx_list)
             for (u32 i = 0; i < num_pmfx; ++i)
             {
                 auto& p = k_pmfx_list[i];
@@ -975,7 +973,7 @@ namespace put
                 
                 if (ImGui::ImageButton((void*)&samplers.sb[i].handle, ImVec2(64, 64)))
                 {
-                    if (select_index == -1)
+                    if (!open_fb)
                     {
                         open_fb      = true;
                         select_index = i;

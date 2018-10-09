@@ -1478,14 +1478,13 @@ namespace put
                     if (!(scene->entities[n] & CMP_SAMPLERS))
                         continue;
 
-                    Str texture_name = read_lookup_string(ifs);
-                    
                     cmp_samplers& samplers = scene->samplers[n];
                     
                     for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
                     {
+                        Str texture_name = read_lookup_string(ifs);
                         samplers.sb[i].handle = put::load_texture(texture_name.c_str());
-                        samplers.sb[i].sampler_state = 0;
+                        samplers.sb[i].sampler_state = pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
                     }
                 }
             }

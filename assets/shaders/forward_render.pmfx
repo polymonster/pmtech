@@ -156,7 +156,7 @@ vs_output vs_main( vs_input input )
 	world_rot_mat[1] = normalize(world_rot_mat[1]);
 	world_rot_mat[2] = normalize(world_rot_mat[2]);
 			
-	float3x3 rotation_matrix = mul( world_rot_mat, to_3x3(view_matrix) );
+	float3x3 rotation_matrix = world_rot_mat;
 		
 	output.normal = mul( input.normal.xyz, rotation_matrix );
 	output.tangent = mul( input.tangent.xyz, rotation_matrix );
@@ -227,8 +227,10 @@ ps_output ps_forward_lit( vs_output input )
 	float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
 	normal_sample = normal_sample * 2.0 - 1.0;
 	
-	float4 specular_sample = sample_texture( specular_texture, input.texcoord.xy );
-		
+	float4 ro_sample = sample_texture( specular_texture, input.texcoord.xy );
+	
+	float4 specular_sample = float4(1.0, 1.0, 1.0, 1.0);
+	
 	float3 n = transform_ts_normal( 
 		input.tangent, 
 		input.bitangent, 
@@ -245,6 +247,8 @@ ps_output ps_forward_lit( vs_output input )
 	
 	roughness = m_roughness;
 	reflectivity = m_reflectivity;
+	
+	roughness = ro_sample.x;
 	
 	if:(SDF_SHADOW)
 	{				
@@ -400,8 +404,7 @@ ps_output ps_forward_lit( vs_output input )
 		lit_colour += light_col;
 	}
 
-	output.colour.rgb = lit_colour.rgb;
-	
+	output.colour.rgb = lit_colour.rgb;	
 	output.colour.a = albedo.a;
 	
     return output;
@@ -512,10 +515,7 @@ pmfx:
 	    "inherit": "forward_lit",
 	    "constants":
 	    {
-            "uv_scale": { "type": "float4", "widget": "slider", "min": 0, "max": 100, "default": 1.0 },
-            "albedo": { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
-			"roughness": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
-			"reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 }
+            "uv_scale": { "type": "float2", "widget": "slider", "min": 0, "max": 100, "default": 1.0 }
 	    },
 	    
 	    "defines": ["UV_SCALE"]

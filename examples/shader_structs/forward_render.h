@@ -8,11 +8,10 @@ struct forward_lit
 
 struct forward_lit_uv_scale
 {
-	float4 m_uv_scale;
 	float4 m_albedo;
+	float2 m_uv_scale;
 	float m_roughness;
 	float m_reflectivity;
-	float3 m_padding;
 };
 
 struct forward_lit_sdf_shadow
@@ -21,7 +20,7 @@ struct forward_lit_sdf_shadow
 	float m_roughness;
 	float m_reflectivity;
 	float m_surface_offset;
-	float2 m_padding;
+	float4 m_padding;
 };
 
 struct forward_lit_instanced

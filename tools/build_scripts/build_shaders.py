@@ -1014,24 +1014,50 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
 
     for tc in technique_constants:
         if "constants" in tc.keys():
+            # sort constants
+            sorted_constants = []
             for const in tc["constants"]:
                 for ci in constant_info:
                     if ci[0] == tc["constants"][const]["type"]:
-                        pmfx_constants[const] = tc["constants"][const]
-                        pmfx_constants[const]["offset"] = offset
-                        pmfx_constants[const]["num_elements"] = ci[1]
-                        shader_constant.append("\t" + tc["constants"][const]["type"] + " " + "m_" + const + ";\n")
-                        shader_struct.append("\t" + tc["constants"][const]["type"] + " " + "m_" + const + ";\n")
-                        offset += ci[1]
-                        break
+                        cc = [const, ci[1]]
+                        pos = 0
+                        for sc in sorted_constants:
+                            if cc[1] > sc[1]:
+                                sorted_constants.insert(pos, cc)
+                                break
+                            pos += 1
+                        if pos >= len(sorted_constants):
+                            sorted_constants.append(cc)
+            for const in sorted_constants:
+                const_name = const[0]
+                const_elems = const[1]
+                pmfx_constants[const_name] = tc["constants"][const_name]
+                pmfx_constants[const_name]["offset"] = offset
+                pmfx_constants[const_name]["num_elements"] = const_elems
+                shader_constant.append("\t" + tc["constants"][const_name]["type"] + " " + "m_" + const_name + ";\n")
+                shader_struct.append("\t" + tc["constants"][const_name]["type"] + " " + "m_" + const_name + ";\n")
+                offset += const_elems
+
+            if False:
+                for const in tc["constants"]:
+                    for ci in constant_info:
+                        if ci[0] == tc["constants"][const]["type"]:
+                            pmfx_constants[const] = tc["constants"][const]
+                            pmfx_constants[const]["offset"] = offset
+                            pmfx_constants[const]["num_elements"] = ci[1]
+                            shader_constant.append("\t" + tc["constants"][const]["type"] + " " + "m_" + const + ";\n")
+                            shader_struct.append("\t" + tc["constants"][const]["type"] + " " + "m_" + const + ";\n")
+                            offset += ci[1]
+                            break
 
     if offset == 0:
         return technique, ""
 
     # we must pad to 16 bytes alignment
+    pre_pad_offset = offset
     diff = offset / 4
-    next = math.floor(diff) + 1
-    pad = (next - diff) * 4
+    next = math.floor(diff)
+    pad = (diff - next) * 4
     if pad != 0:
         shader_constant.append("\t" + constant_info[int(pad)][0] + " " + "m_padding" + ";\n")
         shader_struct.append("\t" + constant_info[int(pad)][0] + " " + "m_padding" + ";\n")
@@ -1054,6 +1080,7 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
     technique_cb_str = cb_str
 
     technique["constants"] = pmfx_constants
+    technique["constants_used_bytes"] = int(pre_pad_offset * 4)
     technique["constants_size_bytes"] = int(offset * 4)
 
     return technique, c_struct
@@ -1068,10 +1095,10 @@ def generate_defines(pmfx_block, technique_name):
 
 
 def parse_pmfx(filename, root):
-    print(filename)
     file_and_path = os.path.join(root, filename)
     needs_building, shader_file_text, included_files = create_shader_set(file_and_path, root)
     if needs_building:
+        print(filename)
         shader_c_struct = ""
         pmfx_loc = shader_file_text.find("pmfx:")
         if pmfx_loc == -1:
@@ -1133,9 +1160,9 @@ def parse_pmfx(filename, root):
             h_file.write(shader_c_struct)
             h_file.close()
 
+        # load json to dict
         tj = []
         for t in techniques:
-            print(t)
             tj.append(json.loads(t))
 
         generate_shader_info(
