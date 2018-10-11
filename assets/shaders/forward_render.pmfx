@@ -248,7 +248,9 @@ ps_output ps_forward_lit( vs_output input )
 	roughness = m_roughness;
 	reflectivity = m_reflectivity;
 	
-	roughness = ro_sample.x;
+	//roughness = ro_sample.x;
+	
+	n = input.normal.rgb;
 	
 	if:(SDF_SHADOW)
 	{				
@@ -406,7 +408,7 @@ ps_output ps_forward_lit( vs_output input )
 
 	output.colour.rgb = lit_colour.rgb;	
 	output.colour.a = albedo.a;
-	
+		
     return output;
 }
 

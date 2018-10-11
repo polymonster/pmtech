@@ -207,6 +207,8 @@ namespace put
         mat4 t2 = mat::create_translation(p_camera->focus);
 
         p_camera->view = t2 * (ry * rx) * t;
+        
+        p_camera->pos = p_camera->view.get_translation();
 
         p_camera->view = mat::inverse3x4(p_camera->view);
 

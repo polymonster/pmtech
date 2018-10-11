@@ -313,6 +313,9 @@ namespace put
             static hash_id id_cull_front = PEN_HASH("front_face_cull_raster_state");
             u32            cull_front    = pmfx::get_render_state_by_name(id_cull_front);
 
+            static hash_id id_disable_depth = PEN_HASH("disabled_depth_stencil_state");
+            u32            depth_disabled = pmfx::get_render_state_by_name(id_disable_depth);
+            
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
@@ -328,7 +331,7 @@ namespace put
 
                 vec3f pos = dc.world_matrix.get_translation();
 
-                bool flip_cullmode = false;
+                bool inside_volume = false;
 
                 light_data ld = {};
 
@@ -340,14 +343,12 @@ namespace put
                         ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
                         break;
                     case LIGHT_TYPE_POINT:
-                        dc.world_matrix *= mat::create_scale(vec3f(scene->lights[n].radius));
-
                         ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                         ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
                         ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
 
                         if (maths::point_inside_sphere(pos, scene->lights[n].radius, view.camera->pos))
-                            flip_cullmode = true;
+                            inside_volume = true;
 
                         break;
                     case LIGHT_TYPE_SPOT:
@@ -355,6 +356,15 @@ namespace put
                         ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
                         ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
                         ld.data       = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
+                        
+                        if (maths::point_inside_cone(view.camera->pos,
+                                                     pos,
+                                                     ld.dir_cutoff.xyz,
+                                                     scene->transforms[n].scale.y,
+                                                     scene->transforms[n].scale.x))
+                        {
+                            inside_volume = true;
+                        }
 
                         break;
                     default:
@@ -365,8 +375,11 @@ namespace put
                 memcpy(&dc.world_matrix_inv_transpose, &ld, sizeof(mat4));
 
                 // flip cull mode if we are inside the light volume
-                if (flip_cullmode)
+                if (inside_volume)
+                {
                     pen::renderer_set_rasterizer_state(cull_front);
+                    pen::renderer_set_depth_stencil_state(depth_disabled);
+                }
 
                 pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
@@ -375,8 +388,11 @@ namespace put
                 pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
                 pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 
-                if (flip_cullmode)
+                if (inside_volume)
+                {
                     pen::renderer_set_rasterizer_state(view.raster_state);
+                    pen::renderer_set_depth_stencil_state(view.depth_stencil_state);
+                }
             }
         }
 
@@ -1015,7 +1031,7 @@ namespace put
         struct scene_header
         {
             s32 header_size        = sizeof(*this);
-            s32 version            = 6;
+            s32 version            = entity_scene::k_version;
             u32 num_nodes          = 0;
             s32 num_components     = 0;
             s32 num_lookup_strings = 0;
@@ -1179,7 +1195,15 @@ namespace put
                 cmp_samplers& samplers = scene->samplers[n];
                 
                 for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                {
                     write_lookup_string(put::get_texture_filename(samplers.sb[i].handle).c_str(), ofs, project_dir.c_str());
+                    
+                    if(entity_scene::k_version > 5)
+                    {
+                        write_lookup_string(pmfx::get_render_state_name(samplers.sb[i].sampler_state).c_str(),
+                                            ofs, project_dir.c_str());
+                    }
+                }
             }
 
             ofs.close();
@@ -1237,9 +1261,14 @@ namespace put
             // header
             scene_header sh;
             ifs.read((c8*)&sh, sizeof(scene_header));
+            
+            if(!merge)
+            {
+                scene->version = sh.version;
+                scene->filename = filename;
+            }
 
             // unpack header
-            // s32 version   = sh.version;
             s32 num_nodes = sh.num_nodes;
 
             scene->selected_index = sh.selected_index;
@@ -1485,6 +1514,12 @@ namespace put
                         Str texture_name = read_lookup_string(ifs);
                         samplers.sb[i].handle = put::load_texture(texture_name.c_str());
                         samplers.sb[i].sampler_state = pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
+                        
+                        if(entity_scene::k_version > 5)
+                        {
+                            Str sampler_state_name = read_lookup_string(ifs);
+                            samplers.sb[i].sampler_state  = pmfx::get_render_state_by_name(PEN_HASH(sampler_state_name));
+                        }
                     }
                 }
             }

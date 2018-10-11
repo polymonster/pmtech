@@ -343,6 +343,8 @@ namespace put
 
         struct entity_scene
         {
+            static const u32 k_version = 6;
+            
             entity_scene()
             {
                 num_components = (((size_t)&num_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
@@ -394,6 +396,9 @@ namespace put
             u32             flags                 = 0;
             u32             view_flags            = 0;
             extents         renderable_extents;
+            
+            u32             version               = k_version;
+            Str             filename              = "";
 
             // Access to component data in a generic way
             pen_inline generic_cmp_array& get_component_array(u32 index)

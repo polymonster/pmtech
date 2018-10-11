@@ -149,8 +149,9 @@ namespace put
             DD_PHYSICS           = 1 << (SV_BITS_END + 7),
             DD_SELECTED_CHILDREN = 1 << (SV_BITS_END + 8),
             DD_GEOMETRY          = 1 << (SV_BITS_END + 9),
+            DD_CAMERA            = 1 << (SV_BITS_END + 10),
 
-            DD_NUM_FLAGS         = 10
+            DD_NUM_FLAGS         = 11
         };
 
         const c8* dd_names[] ={
@@ -163,7 +164,8 @@ namespace put
             "Lights",
             "Physics",
             "Selected Children",
-            "Debug Geometry"
+            "Debug Geometry",
+            "Camera / Frustum"
         };
         // clang-format on
         
@@ -2297,6 +2299,9 @@ namespace put
 
                 if (ImGui::CollapsingHeader("Scene Info"))
                 {
+                    if(!scene->filename.empty())
+                        ImGui::Text("Scene File: %s (version %i)", scene->filename.c_str(), scene->version);
+                    
                     ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
                     ImGui::Text("Selected: %i", (s32)sb_count(s_selection_list));
 
@@ -3004,8 +3009,6 @@ namespace put
         {
             entity_scene* scene = view.scene;
 
-            dbg::add_frustum(view.camera->camera_frustum.corners[0], view.camera->camera_frustum.corners[1]);
-
             render_physics_debug(view);
 
             if (scene->view_flags & DD_MATRIX)
@@ -3040,6 +3043,32 @@ namespace put
                     dbg::add_aabb(scene->bounding_volumes[s].transformed_min_extents,
                                   scene->bounding_volumes[s].transformed_max_extents);
                 }
+            }
+            
+            // Detach frustum and camera data to debug
+            static bool detach_cam = true;
+            if(scene->view_flags & DD_CAMERA)
+            {
+                static camera dc;
+                
+                if(detach_cam)
+                {
+                    dc = *view.camera;
+                }
+                
+                dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
+                
+                mat4 iv = mat::inverse3x4(dc.view);
+                
+                dbg::add_coord_space(iv, 0.3f);
+                
+                dbg::add_point(dc.pos, 0.2f);
+                
+                detach_cam = false;
+            }
+            else
+            {
+                detach_cam = true;
             }
             
             // Debug triangles and vertices

@@ -226,6 +226,7 @@ namespace put
         const render_target* get_render_target(hash_id h);
         void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
         u32                  get_render_state_by_name(hash_id id_name);
+        Str                  get_render_state_name(u32 handle);
 
         // pmfx shader -----------------------------------------------------------------------------------------------------
 

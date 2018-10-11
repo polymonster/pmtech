@@ -218,6 +218,7 @@ namespace
     {
         hash_id id_name;
         hash_id hash;
+        Str     typed_name;
         u32     handle;
 
         e_render_state_type type;
@@ -366,6 +367,14 @@ namespace put
 
             return 0;
         }
+        
+        Str get_render_state_name(u32 handle)
+        {
+            size_t num = s_render_states.size();
+            for (s32 i = 0; i < num; ++i)
+                if (s_render_states[i].handle == handle)
+                    return s_render_states[i].typed_name;
+        }
 
         void create_geometry_utilities()
         {
@@ -501,9 +510,9 @@ namespace put
 
                 render_state rs;
                 rs.hash        = hh;
-                Str typed_name = state.name();
-                typed_name.append("_sampler_state");
-                rs.id_name = PEN_HASH(typed_name.c_str());
+                rs.typed_name = state.name();
+                rs.typed_name.append("_sampler_state");
+                rs.id_name = PEN_HASH(rs.typed_name.c_str());
                 rs.type    = RS_SAMPLER;
 
                 render_state* existing_state = get_state_by_hash(hh);
@@ -541,9 +550,9 @@ namespace put
 
                 render_state rs;
                 rs.hash        = hh;
-                Str typed_name = state.name();
-                typed_name.append("_raster_state");
-                rs.id_name = PEN_HASH(typed_name.c_str());
+                rs.typed_name = state.name();
+                rs.typed_name.append("_raster_state");
+                rs.id_name = PEN_HASH(rs.typed_name.c_str());
                 rs.type    = RS_RASTERIZER;
 
                 render_state* existing_state = get_state_by_hash(hh);
@@ -644,9 +653,9 @@ namespace put
 
                 render_state rs;
                 rs.hash        = hh;
-                Str typed_name = state.name();
-                typed_name.append("_depth_stencil_state");
-                rs.id_name = PEN_HASH(typed_name.c_str());
+                rs.typed_name = state.name();
+                rs.typed_name.append("_depth_stencil_state");
+                rs.id_name = PEN_HASH(rs.typed_name.c_str());
                 rs.type    = RS_DEPTH_STENCIL;
 
                 render_state* existing_state = get_state_by_hash(hh);
@@ -812,9 +821,9 @@ namespace put
 
             render_state rs;
             rs.hash        = hh;
-            Str typed_name = view_name;
-            typed_name.append("_blend_state");
-            rs.id_name = PEN_HASH(typed_name.c_str());
+            rs.typed_name = view_name;
+            rs.typed_name.append("_blend_state");
+            rs.id_name = PEN_HASH(rs.typed_name.c_str());
             rs.type    = RS_BLEND;
 
             render_state* existing_state = get_state_by_hash(hh);
