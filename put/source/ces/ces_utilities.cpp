@@ -246,6 +246,13 @@ namespace put
             {
                 if (!(scene->entities[n] & CMP_ALLOCATED))
                     continue;
+                
+                const c8* node_name = scene->names[n].c_str();
+                if (!node_name || scene->names[n].empty())
+                {
+                    scene->names[n] = "node_";
+                    scene->names[n].appendf("%i", n);
+                }
 
                 scene_tree node;
                 node.node_index = n;

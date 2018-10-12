@@ -578,22 +578,64 @@ namespace put
             //|        |
             // 4 ------ 5
 
+            // clang-format off
             vec3f corners[] = {
-                vec3f(-1.0f, -1.0f, -1.0f), vec3f(1.0f, -1.0f, -1.0f), vec3f(1.0f, -1.0f, 1.0f), vec3f(-1.0f, -1.0f, 1.0f),
+                vec3f(-1.0f, -1.0f, -1.0f),
+                vec3f(1.0f, -1.0f, -1.0f),
+                vec3f(1.0f, -1.0f, 1.0f),
+                vec3f(-1.0f, -1.0f, 1.0f),
+                vec3f(-1.0f, 1.0f, -1.0f),
+                vec3f(1.0f, 1.0f, -1.0f),
+                vec3f(1.0f, 1.0f, 1.0f),
+                vec3f(-1.0f, 1.0f, 1.0f)
+            };
 
-                vec3f(-1.0f, 1.0f, -1.0f),  vec3f(1.0f, 1.0f, -1.0f),  vec3f(1.0f, 1.0f, 1.0f),  vec3f(-1.0f, 1.0f, 1.0f)};
+            vec3f face_normals[] = {
+                vec3f(0.0f, -1.0f, 0.0f),
+                vec3f(0.0f, 0.0f, -1.0f),
+                vec3f(0.0f, 0.0f, 1.0f),
+                vec3f(0.0f, 1.0f, 0.0f),
+                vec3f(-1.0f, 0.0f, 0.0f),
+                vec3f(1.0f, 0.0f, 0.0f)
+            };
 
-            vec3f face_normals[] = {vec3f(0.0f, -1.0f, 0.0f), vec3f(0.0f, 0.0f, -1.0f), vec3f(0.0f, 0.0f, 1.0f),
+            vec3f face_tangents[] = {
+                vec3f(-1.0f, 0.0f, 0.0f),
+                vec3f(-1.0f, 0.0f, -1.0f),
+                vec3f(1.0f, 0.0f, 0.0f),
+                vec3f(1.0f, 0.0f, 0.0f),
+                vec3f(0.0f, 0.0f, -1.0f),
+                vec3f(0.0f, 0.0f, 1.0f)
+            };
+            
+            vec2f corner_uv[] = {
+                vec2f(0.0f, 0.0f),
+                vec2f(1.0f, 0.0f),
+                vec2f(1.0f, 1.0f),
+                vec2f(0.0f, 1.0f),
+                vec2f(0.0f, 1.0f),
+                vec2f(1.0f, 1.0f),
+                vec2f(1.0f, 0.0f),
+                vec2f(0.0f, 0.0f),
+            };
+            
+            vec2f corner_uv_x[] = {
+                vec2f(0.0f, 0.0f), //
+                vec2f(1.0f, 0.0f),
+                vec2f(0.0f, 0.0f),
+                vec2f(1.0f, 0.0f), //
+                vec2f(0.0f, 1.0f), //
+                vec2f(1.0f, 1.0f),
+                vec2f(0.0f, 1.0f),
+                vec2f(1.0f, 1.0f) //
+            };
 
-                                    vec3f(0.0f, 1.0f, 0.0f),  vec3f(-1.0f, 0.0f, 0.0f), vec3f(1.0f, 0.0f, 0.0f)};
-
-            vec3f face_tangents[] = {vec3f(-1.0f, 0.0f, 0.0f), vec3f(-1.0f, 0.0f, -1.0f), vec3f(1.0f, 0.0f, 0.0f),
-
-                                     vec3f(1.0f, 0.0f, 0.0f),  vec3f(0.0f, 0.0f, -1.0f),  vec3f(0.0f, 0.0f, 1.0f)};
-
-            s32 c[] = {0, 3, 2, 1, 0, 1, 5, 4, 3, 7, 6, 2,
-
-                       4, 5, 6, 7, 3, 0, 4, 7, 1, 2, 6, 5};
+            s32 c[] = {
+                0, 3, 2, 1, 0, 1, 5, 4, 3, 7, 6, 2,
+                4, 5, 6, 7, 3, 0, 4, 7, 1, 2, 6, 5
+            };
+            
+            // clang-format on
 
             const u32 num_indices = 36;
             u16       indices[num_indices];
@@ -608,11 +650,16 @@ namespace put
                 for (s32 j = 0; j < 4; ++j)
                 {
                     s32 cc = c[offset + j];
+                    
+                    vec2f uv = corner_uv[cc];
+                    if(i >= 4)
+                        uv = corner_uv_x[cc];
 
                     v[offset + j].pos       = vec4f(corners[cc], 1.0f);
                     v[offset + j].normal    = vec4f(face_normals[i], 1.0f);
                     v[offset + j].tangent   = vec4f(face_tangents[i], 1.0f);
                     v[offset + j].bitangent = vec4f(bt, 1.0f);
+                    v[offset + j].uv12      = vec4f(uv.x, uv.y, 0.0f, 0.0f);
                 }
 
                 indices[index_offset + 0] = offset + 0;
