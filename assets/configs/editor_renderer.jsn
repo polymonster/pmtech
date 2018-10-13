@@ -118,7 +118,14 @@
 	        editor_view, 
             picking_view, 
             volume_rasteriser
-	    ]
+	    ],
+	    
+	    editor_post_processed: [
+            main_view_post_processed,
+	        editor_view, 
+            picking_view, 
+            volume_rasteriser
+	    ],
 	},
 	
 	view_set: editor

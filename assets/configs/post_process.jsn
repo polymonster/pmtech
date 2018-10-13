@@ -187,6 +187,18 @@
 			technique: depth_of_field,
 			camera: model_viewer_camera
 		},
+		
+		menger_sponge:
+		{
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: post_process,
+			depth_stencil_state: disabled,
+			pmfx_shader: post_process,
+			technique: menger_sponge,
+			camera: model_viewer_camera
+		}
 	},
 	
 	post_processes:
@@ -399,10 +411,19 @@
 				camera: model_viewer_camera,
 				sampler_bindings:
 				[
-					{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+					{ texture: post_process_colour, unit: 0, state: clamp_linear, shader: ps },
 					{ texture: post_process_depth, unit: 1, state: clamp_linear, shader: ps },
 				]
 			}
+		],
+		
+		menger_sponge: [
+			{
+		        inherit: menger_sponge,
+		        target: [pp_output_full],
+		        technique: menger_sponge,
+		        camera: model_viewer_camera
+		    },
 		]
 	},
 			

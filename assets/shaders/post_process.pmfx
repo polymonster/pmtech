@@ -247,6 +247,15 @@ ps_output ps_colour_lut( vs_output input )
     return output;
 }
 
+ps_output ps_menger( vs_output input )
+{
+    ps_output output;
+    
+    output.colour = float4(0.0, 0.5, 1.0, 1.0);
+    
+    return output;
+}
+
 pmfx:
 {	
 	"blit":
@@ -339,6 +348,12 @@ pmfx:
 				"type": "float", "widget": "input", "default": 20
 			}
 		}
+	},
+	
+	"menger_sponge":
+	{
+		"vs": "vs_ndc_quad",
+		"ps": "ps_menger"
 	}
 }
 

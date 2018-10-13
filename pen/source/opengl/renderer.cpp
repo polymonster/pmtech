@@ -1414,7 +1414,8 @@ namespace pen
     }
 
     extern resolve_resources g_resolve_resources;
-    void                     direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type)
+    
+    void direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type)
     {
         resource_allocation& colour_res = resource_pool[target];
 

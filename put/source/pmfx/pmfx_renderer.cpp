@@ -867,7 +867,7 @@ namespace put
             s_render_target_tcp.push_back(texture_creation_params());
         }
 
-        void parse_render_targets(pen::json& render_config, Str* include_targets)
+        void parse_render_targets(const pen::json& render_config, Str* include_targets)
         {
             pen::json j_render_targets = render_config["render_targets"];
 
@@ -886,6 +886,20 @@ namespace put
                     u32 num_includes = sb_count(include_targets);
                     for(int j = 0; j < num_includes; ++j)
                     {
+                        // check for existing
+                        bool exists = false;
+                        for(auto& er : s_render_targets)
+                        {
+                            if(er.name == r.name())
+                            {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        
+                        if(exists)
+                            continue;
+                        
                         if(r.name() == include_targets[j])
                         {
                             include = true;
@@ -1800,6 +1814,17 @@ namespace put
                 }
             }
         } // namespace
+        
+        void load_view_render_targets(const pen::json& render_config, const pen::json& view)
+        {            
+            Str* targets = nullptr;
+            u32 num_targets = view["target"].size();
+            
+            for(u32 t = 0; t < num_targets; ++t)
+                sb_push(targets, view["target"][t].as_str());
+            
+            parse_render_targets(render_config, targets);
+        }
 
         bool load_edited_post_process(const pen::json& render_config, const pen::json& pp_config, const pen::json& j_views,
                                       view_params& v)
@@ -1811,6 +1836,8 @@ namespace put
                 for (auto& ppc : v.post_process_chain)
                 {
                     pen::json ppv = pp_config[ppc.c_str()];
+
+                    load_view_render_targets(render_config, ppv);
                     parse_views(ppv, j_views, v.post_process_views, ppc.c_str());
                 }
 
@@ -1866,6 +1893,7 @@ namespace put
             for (auto& ppc : v.post_process_chain)
             {
                 pen::json ppv = pp_config[ppc.c_str()];
+                load_view_render_targets(render_config, ppv);
                 parse_views(ppv, j_views, v.post_process_views, ppc.c_str());
             }
 
