@@ -43,9 +43,9 @@ float ud_round_box(float3 p, float3 b, float r)
 
 float sd_cross(float3 p, float2 s)
 {
-    float da = sd_box(p.xyz, vec3(s.y, s.x, s.x));
-    float db = sd_box(p.yzx, vec3(s.x, s.y, s.x));
-    float dc = sd_box(p.zxy, vec3(s.x, s.x, s.y));
+    float da = sd_box(p.xyz, float3(s.y, s.x, s.x));
+    float db = sd_box(p.yzx, float3(s.x, s.y, s.x));
+    float dc = sd_box(p.zxy, float3(s.x, s.x, s.y));
   
     return op_union(da, op_union(db, dc));
 }

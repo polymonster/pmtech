@@ -21,6 +21,7 @@
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;
 
 #define remap_depth( d ) d = d * 0.5 + 0.5
+#define remap_ndc_ray( r ) float2(r.x, r.y)  
 
 #define depth_ps_output gl_FragDepth
 
@@ -33,9 +34,10 @@
 #define float3 vec3
 #define float2 vec2
 
-#define lerp mix
+// hlsl style mod
 #define modf mod
 #define frac fract
+#define lerp mix
 
 #define mul( A, B ) (A * B)
 #define mul_tbn( A, B ) (B * A)
@@ -63,6 +65,9 @@
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3; mat = transpose(mat)
 
 #define remap_depth( d ) (d)
+#define remap_ndc_ray( r ) float2(r.x, r.y * -1.0)
+
+#define mod(x, y) x - y * floor(x/y) // glsl style mod
 
 #endif
 

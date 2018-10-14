@@ -992,22 +992,30 @@ namespace pen
             u32 colour_target                 = colour_targets[i];
             g_context.active_colour_target[i] = colour_target;
 
-            if (colour_target != 0)
+            if (colour_target != 0 && colour_target != PEN_INVALID_HANDLE)
             {
                 if (resource_pool[colour_target].render_target->rt_msaa[colour_face])
                     colour_rtv[i] = resource_pool[colour_target].render_target->rt_msaa[colour_face];
                 else
                     colour_rtv[i] = resource_pool[colour_target].render_target->rt[colour_face];
             }
+            else
+            {
+                g_context.active_colour_target[i] = 0;
+            }
         }
 
         ID3D11DepthStencilView* dsv = nullptr;
-        if (depth_target != 0)
+        if (depth_target != 0 && depth_target != PEN_INVALID_HANDLE)
         {
             if (resource_pool[depth_target].depth_target->ds_msaa[depth_face])
                 dsv = resource_pool[depth_target].depth_target->ds_msaa[depth_face];
             else
                 dsv = resource_pool[depth_target].depth_target->ds[depth_face];
+        }
+        else
+        {
+            g_context.active_depth_target = 0;
         }
 
         s_immediate_context->OMSetRenderTargets(num_views, colour_rtv, dsv);

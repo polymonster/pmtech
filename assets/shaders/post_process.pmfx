@@ -256,7 +256,8 @@ float map( in float3 p )
     float s = 1.0;
     for( int m=0; m<4; m++ )
     {
-        float3 a = mod( p * s, 2.0 ) - 1.0;
+        float3 a = mod(p * s, float3(2.0, 2.0, 2.0)) - 1.0;
+		
         s *= 3.0;
         float3 r = 1.0 - 3.0 * abs(a);
 
@@ -302,6 +303,9 @@ ps_output ps_menger( vs_output input )
     
     float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
     
+	//d3d needs to flip y
+	ndc = remap_ndc_ray(ndc);
+	
     // unproject ray
     float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
     float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
@@ -325,7 +329,7 @@ ps_output ps_menger( vs_output input )
         n = n * 0.5 + 0.5;
         output.colour = float4(n.x, n.y, n.z, 1.0);
     }
-
+	
     return output;
 }
 

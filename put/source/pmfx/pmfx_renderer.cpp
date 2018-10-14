@@ -374,6 +374,8 @@ namespace put
             for (s32 i = 0; i < num; ++i)
                 if (s_render_states[i].handle == handle)
                     return s_render_states[i].typed_name;
+
+            return "";
         }
 
         void create_geometry_utilities()
@@ -2824,7 +2826,8 @@ namespace put
 
                     // List box
                     ImGui::PushID("Post Process Chain");
-                    ImGui::ListBox("", &s_selected_chain_pp, &chain_items[0], chain_items.size());
+                    if (chain_items.size() > 0)
+                        ImGui::ListBox("", &s_selected_chain_pp, &chain_items[0], chain_items.size());
                     ImGui::PopID();
 
                     ImGui::NextColumn();
