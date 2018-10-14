@@ -763,6 +763,11 @@ namespace pen
 
         return m_internal_object->tokens[0].type;
     }
+    
+    bool json::is_null() const
+    {
+        return type() == JSMN_UNDEFINED;
+    }
 
     json::~json()
     {

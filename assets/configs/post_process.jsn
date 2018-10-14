@@ -1,6 +1,20 @@
 {	
 	render_targets:
 	{
+		post_process_colour:
+		{
+			size: equal,
+			samples: 4,
+			format: rgba8
+		},
+		
+		post_process_depth:
+		{
+			size: equal,
+			samples: 4,
+			format: d24s8
+		},
+		
 		pp_output_full:
 		{
 			size: equal,

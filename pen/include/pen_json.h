@@ -77,6 +77,7 @@ namespace pen
         Str        key() const;
         Str        name() const; // same as key
         jsmntype_t type() const;
+        bool       is_null() const; // jsmntype_t == JSMN_UNDEFINED
         u32        size() const;
 
         json  operator[](const c8* name) const;

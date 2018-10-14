@@ -31,20 +31,6 @@
 		{
 			size: [128,128],
 			format: d24s8,
-		},
-		
-		post_process_colour:
-		{
-			size: equal,
-			samples: 4,
-			format: rgba8
-		},
-		
-		post_process_depth:
-		{
-			size: equal,
-			samples: 4,
-			format: d24s8
 		}
 	},
 		

@@ -1883,6 +1883,13 @@ namespace put
                 // look in embedded post_process_sets
                 pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
             }
+            
+            if(pp_set.is_null())
+            {
+                dev_console_log_level(dev_ui::CONSOLE_ERROR,
+                                      "[error] pmfx - missing post process set %s'", v.post_process_name.c_str());
+                return;
+            }
 
             pen::json pp_chain = pp_set["chain"];
             u32       num_pp   = pp_chain.size();
@@ -2198,7 +2205,8 @@ namespace put
                 return;
 
             pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, PEN_SHADER_TYPE_VS);
-
+            pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, PEN_SHADER_TYPE_PS);
+            
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
 
@@ -2845,7 +2853,7 @@ namespace put
                         set_post_process_edited(edit_view);
                         pmfx_config_hotload();
                     }
-                    else
+                    else if(s_selected_input_view >= 0 && s_selected_pp_view < s_post_process_passes.size())
                     {
                         ImGui::Separator();
 
@@ -2881,25 +2889,22 @@ namespace put
 
                             ImGui::NextColumn();
 
-                            if (s_selected_pp_view != -1)
+                            ImGui::Text("Input / Output");
+                            
+                            view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
+                            view_info_ui(selected_chain_pp);
+                            
+                            selected_chain_pp.stash_output = true;
+                            
+                            if (selected_chain_pp.stashed_output_rt != PEN_INVALID_HANDLE)
                             {
-                                ImGui::Text("Input / Output");
-
-                                view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
-                                view_info_ui(selected_chain_pp);
-
-                                selected_chain_pp.stash_output = true;
-
-                                if (selected_chain_pp.stashed_output_rt != PEN_INVALID_HANDLE)
-                                {
-                                    f32 aspect = selected_chain_pp.stashed_rt_aspect;
-                                    ImGui::Image(&selected_chain_pp.stashed_output_rt, ImVec2(128.0f * aspect, 128.0f));
-                                }
-
-                                ImGui::Columns(1);
-
-                                ImGui::Separator();
+                                f32 aspect = selected_chain_pp.stashed_rt_aspect;
+                                ImGui::Image(&selected_chain_pp.stashed_output_rt, ImVec2(128.0f * aspect, 128.0f));
                             }
+                            
+                            ImGui::Columns(1);
+                            
+                            ImGui::Separator();
                         }
                     }
                 }

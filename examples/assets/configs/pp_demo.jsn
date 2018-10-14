@@ -1,0 +1,44 @@
+{
+	include: [
+	    common.jsn,
+	    post_process.jsn
+	],
+	
+	views:
+	{	
+		pp_main_view:
+		{
+			target: [post_process_colour, post_process_depth],
+			clear_colour: [0.0, 0.0, 0.0, 0.0],
+			clear_depth: 1.0,
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: default,
+			depth_stencil_state: default,
+			scene: main_scene,
+			camera: model_viewer_camera,
+			post_process: pp_demo
+		}
+	},
+	
+	post_process_sets:
+	{
+	    pp_demo:
+	    {
+	        chain: [
+	            menger_sponge,
+	            blit_post_process
+	        ]
+	    } 
+	},
+					
+	view_sets: 
+	{
+	    pp_view: [
+	        pp_main_view
+	    ]
+	},
+	
+	view_set: pp_view
+}

@@ -280,6 +280,7 @@ namespace put
             wvp.view_position       = vec4f(inv_view.get_translation(), p_camera->near_plane);
             wvp.view_direction      = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
             wvp.view_matrix_inverse = inv_view;
+            wvp.view_projection_inverse = mat::inverse4x4(wvp.view_projection);
 
             pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
 

@@ -1,4 +1,5 @@
 #include "libs/globals.pmfx"
+#include "libs/maths.pmfx"
 
 // io structs
 struct vs_output
@@ -251,7 +252,33 @@ ps_output ps_menger( vs_output input )
 {
     ps_output output;
     
-    output.colour = float4(0.0, 0.5, 1.0, 1.0);
+    float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
+    
+    // unproject ray
+    float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
+    float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
+    
+    float4 wnear = mul(near, vp_matrix_inverse);
+    wnear /= wnear.w;
+    
+    float4 wfar = mul(far, vp_matrix_inverse);
+    wfar /= wfar.w;
+    
+    float3 ip;
+    float4 col = float4(0.0, 0.0, 0.0, 1.0);
+    if( ray_vs_aabb(float3(-10.0, -10.0, -10.0), 
+                    float3(10.0, 10.0, 10.0),
+                    wnear.xyz,
+                    wfar.xyz, 
+                    ip) )
+    {
+        col = float4(1.0, 0.0, 1.0, 1.0);
+    }
+    
+    float3 wv = normalize(wfar.xyz - wnear.xyz);
+    //col.rgb = wv;
+    
+    output.colour = col;
     
     return output;
 }
