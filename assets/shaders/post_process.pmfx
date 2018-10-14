@@ -323,6 +323,8 @@ ps_output ps_menger( vs_output input )
     
     float d = intersect(ray_origin, ray_dir);
     
+    output.colour = float4(ray_dir, 1.0);
+    
     if(d > 0.0)
     {
         float3 n = calc_normal(ray_origin + ray_dir * d);

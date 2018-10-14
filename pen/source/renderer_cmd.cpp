@@ -895,6 +895,8 @@ namespace pen
 
     u32 renderer_create_render_target(const texture_creation_params& tcp)
     {
+        PEN_ASSERT(tcp.width != 0 && tcp.height != 0);
+        
         cmd_buffer[put_pos].command_index = CMD_CREATE_RENDER_TARGET;
 
         memcpy(&cmd_buffer[put_pos].create_render_target, (void*)&tcp, sizeof(texture_creation_params));
@@ -1150,6 +1152,14 @@ namespace pen
 
     void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target)
     {
+        if(num_colour_targets > 0)
+        {
+            if(colour_targets[0] == 214 || colour_targets[0] == 213)
+            {
+                u32 a = 0;
+            }
+        }
+        
         cmd_buffer[put_pos].command_index          = CMD_SET_TARGETS;
         cmd_buffer[put_pos].set_targets.num_colour = num_colour_targets;
         memcpy(&cmd_buffer[put_pos].set_targets.colour, colour_targets, num_colour_targets * sizeof(u32));

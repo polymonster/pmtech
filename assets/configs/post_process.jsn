@@ -434,7 +434,8 @@
 		menger_sponge: [
 			{
 		        inherit: menger_sponge,
-		        target: [pp_output_full],
+		        target: [post_process_colour, post_process_depth],
+		        pp_write_non_aux: true,
 		        technique: menger_sponge,
 		        camera: model_viewer_camera
 		    },

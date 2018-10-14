@@ -72,7 +72,7 @@ namespace put
             if (pen::input_key(PK_RIGHT))
                 p_camera->rot.y += cursor_speed;
 
-            if (ms.buttons[PEN_MOUSE_R])
+            if (ms.buttons[PEN_MOUSE_L])
             {
                 // rotation
                 vec2f swapxy = vec2f(mouse_drag.y, mouse_drag.x);

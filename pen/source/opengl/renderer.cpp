@@ -1263,6 +1263,8 @@ namespace pen
         texture_creation_params _tcp = tcp;
 
         res.render_target.uid = (u32)get_time_ms();
+        
+        PEN_ASSERT(tcp.width != 0 && tcp.height != 0);
 
         if (tcp.width == BACK_BUFFER_RATIO)
         {

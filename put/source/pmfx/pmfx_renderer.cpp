@@ -133,7 +133,8 @@ namespace
     {
         PP_NONE    = 0,
         PP_ENABLED = (1 << 0),
-        PP_EDITED  = (1 << 1)
+        PP_EDITED  = (1 << 1),
+        PP_WRITE_NON_AUX = (1 << 2) // writes directly to the specified target bypassing aux / virtual buffers
     };
 
     struct view_params
@@ -417,7 +418,7 @@ namespace put
 
             s_geometry.screen_quad_ib = pen::renderer_create_buffer(bcp);
         }
-
+        
         void parse_sampler_bindings(pen::json render_config, view_params& vp)
         {
             std::vector<sampler_binding>& bindings           = vp.sampler_bindings;
@@ -912,7 +913,7 @@ namespace put
                     if(!include)
                         continue;
                 }
-
+                
                 for (s32 f = 0; f < PEN_ARRAY_SIZE(rt_format); ++f)
                 {
                     if (rt_format[f].id_name == id_format)
@@ -993,14 +994,23 @@ namespace put
 
                         hash_id idr = r["init_read"].as_hash_id();
                         u32     hr  = 0;
-                        for (auto& rt : s_render_targets)
+                        if(idr != 0)
                         {
-                            if (rt.id_name == idr)
+                            // load any init read targets
+                            Str* include_rt = nullptr;
+                            sb_push(include_rt, r["init_read"].as_str());
+                            parse_render_targets(render_config, include_rt);
+                            sb_free(include_rt);
+                            
+                            for (auto& rt : s_render_targets)
                             {
-                                new_info.pp_read = hr;
-                                break;
+                                if (rt.id_name == idr)
+                                {
+                                    new_info.pp_read = hr;
+                                    break;
+                                }
+                                ++hr;
                             }
-                            ++hr;
                         }
 
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
@@ -1493,6 +1503,9 @@ namespace put
                 new_view.post_process_name = view["post_process"].as_cstr();
                 if (!new_view.post_process_name.empty())
                     new_view.post_process_flags |= PP_ENABLED;
+                
+                if(view["pp_write_non_aux"].as_bool())
+                    new_view.post_process_flags |= PP_WRITE_NON_AUX;
 
                 // filter id for post process passes
                 Str fk = view["filter_kernel"].as_str();
@@ -1680,7 +1693,7 @@ namespace put
                 return s_render_targets.size() - 1;
             }
 
-            u32 get_virtual_target(hash_id id, e_rt_mode mode)
+            u32 get_virtual_target(hash_id id, e_rt_mode mode, bool non_aux)
             {
                 u32 result = PEN_INVALID_HANDLE;
 
@@ -1689,16 +1702,26 @@ namespace put
                     if (vrt.id == id)
                     {
                         u32 rt_index = vrt.rt_index[mode];
-
+                        
                         if (is_valid(rt_index))
                         {
                             result = s_render_targets[rt_index].handle;
                         }
                         else if (mode == VRT_WRITE)
                         {
-                            rt_index           = get_aux_buffer(id);
-                            vrt.rt_index[mode] = rt_index;
-                            result             = s_render_targets[rt_index].handle;
+                            if(non_aux)
+                            {
+                                // find buffer
+                                for (u32 i = 0; i < s_render_targets.size(); ++i)
+                                    if (id == s_render_targets[i].id_name)
+                                        return s_render_targets[i].handle;
+                            }
+                            else
+                            {
+                                rt_index           = get_aux_buffer(id);
+                                vrt.rt_index[mode] = rt_index;
+                                result             = s_render_targets[rt_index].handle;
+                            }
                         }
 
                         if (mode == VRT_WRITE)
@@ -1771,22 +1794,24 @@ namespace put
                 u32 pass_counter = 0;
                 for (auto& p : pp_views)
                 {
+                    bool non_aux = p.post_process_flags & PP_WRITE_NON_AUX;
                     for (u32 i = 0; i < p.num_colour_targets; ++i)
-                        p.render_targets[i] = get_virtual_target(p.id_render_target[i], VRT_WRITE);
+                        p.render_targets[i] = get_virtual_target(p.id_render_target[i], VRT_WRITE, non_aux);
 
                     if (is_valid(p.depth_target))
-                        p.depth_target = get_virtual_target(p.id_depth_target, VRT_WRITE);
+                        p.depth_target = get_virtual_target(p.id_depth_target, VRT_WRITE, non_aux);
                     else
                         p.depth_target = PEN_NULL_DEPTH_BUFFER;
 
                     for (auto& sb : p.sampler_bindings)
-                        sb.handle = get_virtual_target(sb.id_texture, VRT_READ);
+                        sb.handle = get_virtual_target(sb.id_texture, VRT_READ, false);
 
                     // material for pass
                     pmfx::initialise_constant_defaults(p.pmfx_shader, p.technique, p.technique_constants.data);
 
                     // swap buffers
-                    virtual_rt_swap_buffers();
+                    if(!non_aux)
+                        virtual_rt_swap_buffers();
 
                     ++pass_counter;
                 }
@@ -1820,12 +1845,19 @@ namespace put
         void load_view_render_targets(const pen::json& render_config, const pen::json& view)
         {            
             Str* targets = nullptr;
-            u32 num_targets = view["target"].size();
             
+            u32 num_targets = view["target"].size();
             for(u32 t = 0; t < num_targets; ++t)
                 sb_push(targets, view["target"][t].as_str());
             
-            parse_render_targets(render_config, targets);
+            u32 num_samplers = view["sampler_bindings"].size();
+            for(u32 s = 0; s < num_samplers; ++s)
+                sb_push(targets, view["sampler_bindings"][s]["texture"].as_str());
+            
+            if(num_targets > 0)
+                parse_render_targets(render_config, targets);
+            
+            sb_free(targets);
         }
 
         bool load_edited_post_process(const pen::json& render_config, const pen::json& pp_config, const pen::json& j_views,
@@ -1839,7 +1871,11 @@ namespace put
                 {
                     pen::json ppv = pp_config[ppc.c_str()];
 
-                    load_view_render_targets(render_config, ppv);
+                    // subview
+                    u32 num_sub_views = ppv.size();
+                    for(u32 i = 0; i < num_sub_views; ++i)
+                        load_view_render_targets(render_config, ppv[i]);
+                    
                     parse_views(ppv, j_views, v.post_process_views, ppc.c_str());
                 }
 
@@ -1902,7 +1938,12 @@ namespace put
             for (auto& ppc : v.post_process_chain)
             {
                 pen::json ppv = pp_config[ppc.c_str()];
-                load_view_render_targets(render_config, ppv);
+
+                // subview
+                u32 num_sub_views = ppv.size();
+                for(u32 i = 0; i < num_sub_views; ++i)
+                    load_view_render_targets(render_config, ppv[i]);
+                
                 parse_views(ppv, j_views, v.post_process_views, ppc.c_str());
             }
 
@@ -1972,6 +2013,8 @@ namespace put
 
         void load_script_internal(const c8* filename)
         {
+            pen::renderer_consume_cmd_buffer();
+            
             create_geometry_utilities();
 
             void* config_data;
@@ -2018,6 +2061,8 @@ namespace put
             parse_depth_stencil_states(render_config);
             parse_partial_blend_states(render_config);
             parse_filters(render_config);
+            
+            pen::renderer_consume_cmd_buffer();
 
             pen::json j_views = render_config["views"];
             pen::json j_view_sets = render_config["view_sets"];
@@ -2068,12 +2113,16 @@ namespace put
                 parse_render_targets(render_config, used_targets);
 
                 parse_views(view_set, j_views, s_views);
+                
+                sb_free(used_targets);
             }
             else
             {
                 dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - no views in view set");
             }
 
+            pen::renderer_consume_cmd_buffer();
+            
             // parse post process info
             pen::json pp_config = render_config["post_processes"];
             for (u32 i = 0; i < pp_config.size(); ++i)
@@ -2089,6 +2138,8 @@ namespace put
                 }
             }
 
+            pen::renderer_consume_cmd_buffer();
+            
             // rebake material handles
             ces::bake_material_handles();
         }
@@ -2168,6 +2219,7 @@ namespace put
 
             s_render_states.clear();
             s_render_targets.clear();
+            s_render_target_tcp.clear();
             s_render_target_names.clear();
             s_view_set.clear();
             s_views.clear();
@@ -2856,8 +2908,11 @@ namespace put
                         set_post_process_edited(edit_view);
                         pmfx_config_hotload();
                     }
-                    else if(s_selected_input_view >= 0 && s_selected_pp_view < s_post_process_passes.size())
+                    else if(s_selected_input_view >= 0 && s_post_process_passes.size() > 0)
                     {
+                        if(s_selected_pp_view == -1)
+                            s_selected_pp_view = 0;
+                        
                         ImGui::Separator();
 
                         ImGui::Text("Parameters");
