@@ -17,4 +17,4 @@
 *.RTF	 diff=astextplain
 
 *.pmfx linguist-language=hlsl
-*.jsn linguist-language=json
+*.jsn linguist-language=yaml
