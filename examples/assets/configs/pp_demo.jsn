@@ -28,6 +28,8 @@
 	    {
 	        chain: [
 	            menger_sponge,
+	            depth_of_field,
+	            bloom,
 	            blit_post_process
 	        ]
 	    } 

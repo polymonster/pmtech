@@ -1,5 +1,6 @@
 #include "libs/globals.pmfx"
 #include "libs/maths.pmfx"
+#include "libs/lighting.pmfx"
 #include "ray_march.pmfx"
 
 // io structs
@@ -251,12 +252,19 @@ ps_output ps_colour_lut( vs_output input )
 
 float map( in float3 p )
 {
-    float d = sd_box(p, float3(1.0, 1.0, 1.0));
+    float scale = 10.0;
+    float rep = 30.0;
+    
+    float3 q = mod(p, rep) - 0.5 * rep;
+    
+    q = q / scale;
+    
+    float d = sd_box(q, float3(1.0, 1.0, 1.0));
     
     float s = 1.0;
     for( int m=0; m<4; m++ )
     {
-        float3 a = mod(p * s, float3(2.0, 2.0, 2.0)) - 1.0;
+        float3 a = mod(q * s, float3(2.0, 2.0, 2.0)) - 1.0;
 		
         s *= 3.0;
         float3 r = 1.0 - 3.0 * abs(a);
@@ -265,7 +273,7 @@ float map( in float3 p )
         d = op_subtract(-c, d);
     }
 
-    return d;
+    return d * scale;
 }
 
 float3 calc_normal(in float3 pos)
@@ -280,16 +288,19 @@ float3 calc_normal(in float3 pos)
     return normalize(nor);
 }
 
-float intersect(in float3 ro, in float3 rd)
+float intersect(in float3 ro, in float3 rd, out float3 pos)
 {
-    for(float t = 0.0; t < 100.0;)
+    for(float t = 0.0; t < 150.0;)
     {
         float3 p = ro + rd * t;
-        
+                
         float d = map(p);
                 
         if(d < 0.001)
+        {
+            pos = p;
             return t;
+        }
             
         t += d;
     }
@@ -297,9 +308,9 @@ float intersect(in float3 ro, in float3 rd)
     return -1.0;
 }
 
-ps_output ps_menger( vs_output input )
+ps_output_colour_depth ps_menger( vs_output input )
 {
-    ps_output output;
+    ps_output_colour_depth output;
     
     float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
     
@@ -321,17 +332,91 @@ ps_output ps_menger( vs_output input )
     float3 ray_origin = wnear.xyz;
     float3 ray_dir = normalize(wfar.xyz - wnear.xyz);
     
-    float d = intersect(ray_origin, ray_dir);
+    float3 world_pos;
+    float d = intersect(ray_origin, ray_dir, world_pos);
     
-    output.colour = float4(ray_dir, 1.0);
+    float3 grad_a = float3(0.9, 0.5, 0.0);
+    float3 grad_b = float3(0.5, 0.0, 1.0);
+    float grad_t = ray_dir.y * 0.5 + 0.5;
+    
+    float4 sky = float4(lerp(grad_a, grad_b, grad_t), 1.0);
+    
+    output.depth = 1.0;
+    
+    float4 sd_col = sky;
+        
+    float sky_t = 0.0;
     
     if(d > 0.0)
     {
         float3 n = calc_normal(ray_origin + ray_dir * d);
-        n = n * 0.5 + 0.5;
-        output.colour = float4(n.x, n.y, n.z, 1.0);
+        
+        float4 lpr = float4(camera_view_pos.xyz, 100.0);
+        
+        float3 l = normalize(lpr.xyz - world_pos);
+        
+        float ndotl = dot(n, l);
+        
+        float a = point_light_attenuation(lpr, world_pos.xyz);	
+                
+        float3 lc = a * ndotl * float3(0.8, 0.8, 0.9);
+        
+        sd_col = float4(lc, 1.0);
+        
+        float4 proj = mul(float4(world_pos, 1.0), vp_matrix);
+        proj /= proj.w;
+        
+        output.depth = proj.z;
+        
+        sky_t = smoothstep(150.0, 80.0, length(world_pos - ray_origin));
     }
+    
+    output.colour = lerp(sky, sd_col, sky_t);
 	
+    return output;
+}
+
+ps_output ps_crt( vs_output input )
+{
+    ps_output output;
+    
+    float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
+    
+	//d3d needs to flip y
+	ndc = remap_ndc_ray(ndc);
+	
+    // unproject ray
+    float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
+    float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
+    
+    float4 wnear = mul(near, vp_matrix_inverse);
+    wnear /= wnear.w;
+    
+    float4 wfar = mul(far, vp_matrix_inverse);
+    wfar /= wfar.w;
+    
+    float3 ro = wnear.xyz;
+    float3 rd = normalize(wfar.xyz - wnear.xyz);
+    
+    float3 p = float3(0.0, 0.0, 0.0);
+    
+    float3 sp = camera_view_pos.xyz + camera_view_dir.xyz;
+    
+    for(float t = 0.0; t < 10.0;)
+    {
+        p = ro + rd * t;
+                
+        float d = sd_sphere(p, 1000.0);
+        
+        if(d < 0.001)
+            break;
+            
+        t += d;
+    }
+    
+    output.colour.rgb = rd;
+    output.colour.a = 1.0;
+    
     return output;
 }
 
@@ -433,6 +518,12 @@ pmfx:
 	{
 		"vs": "vs_ndc_quad",
 		"ps": "ps_menger"
+	},
+	
+	"crt":
+	{
+	    "vs": "vs_ndc_quad",
+		"ps": "ps_crt"
 	}
 }
 

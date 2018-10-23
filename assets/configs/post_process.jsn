@@ -204,13 +204,26 @@
 		
 		menger_sponge:
 		{
+		    clear_depth: 1.0,
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: post_process,
+			depth_stencil_state: depth_always,
+			pmfx_shader: post_process,
+			technique: menger_sponge,
+			camera: model_viewer_camera
+		},
+		
+		crt:
+		{
 			colour_write_mask: 0xf,
 			blend_state: disabled,
 			viewport: [0.0, 0.0, 1.0, 1.0],
 			raster_state: post_process,
 			depth_stencil_state: disabled,
 			pmfx_shader: post_process,
-			technique: menger_sponge,
+			technique: crt,
 			camera: model_viewer_camera
 		}
 	},
@@ -439,7 +452,21 @@
 		        technique: menger_sponge,
 		        camera: model_viewer_camera
 		    },
-		]
+		],
+		
+		crt: [
+			{
+		        inherit: crt,
+		        target: [pp_output_full],
+		        technique: menger_sponge,
+		        camera: model_viewer_camera,
+		        
+		        sampler_bindings:
+				[
+					{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+				]
+		    },
+		],
 	},
 			
 	post_process_sets:

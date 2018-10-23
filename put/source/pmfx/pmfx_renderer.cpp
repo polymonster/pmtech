@@ -2877,11 +2877,15 @@ namespace put
                     dev_ui::set_tooltip("A chain of post processes executed top to bottom");
 
                     // List box
-                    ImGui::PushID("Post Process Chain");
-                    if (chain_items.size() > 0)
-                        ImGui::ListBox("", &s_selected_chain_pp, &chain_items[0], chain_items.size());
-                    ImGui::PopID();
-
+                    if (!invalidated)
+                    {
+                        ImGui::PushID("Post Process Chain");
+                        if (chain_items.size() > 0)
+                            ImGui::ListBox("", &s_selected_chain_pp, &chain_items[0], chain_items.size());
+                        
+                        ImGui::PopID();
+                    }
+                    
                     ImGui::NextColumn();
 
                     if (ImGui::Button(ICON_FA_ARROW_LEFT))
