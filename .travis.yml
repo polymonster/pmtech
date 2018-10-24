@@ -15,5 +15,4 @@ matrix:
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 60
     - compiler: clang
       os: osx
-      install: brew upgrade python
       script: ./travis.sh
