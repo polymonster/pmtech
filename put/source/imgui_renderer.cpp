@@ -528,7 +528,24 @@ namespace put
 
         void render()
         {
-            ImGui::Render();
+            static bool enable_rendering = true;
+            static bool debounce = false;
+            
+            if((pen::input_key(PK_CONTROL) || pen::input_key(PK_COMMAND)) && pen::input_key(PK_X))
+            {
+                if(!debounce)
+                {
+                    enable_rendering = !enable_rendering;
+                    debounce = true;
+                }
+            }
+            else
+            {
+                debounce = false;
+            }
+            
+            if(enable_rendering)
+                ImGui::Render();
         }
     } // namespace dev_ui
 } // namespace put

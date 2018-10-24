@@ -2243,7 +2243,8 @@ namespace put
             for (u32 u = 0; u < put::UPDATES_NUM; ++u)
                 for (u32 i = 0; i < num_controllers; ++i)
                     if (s_controllers[i].order == u)
-                        s_controllers[i].update_function(&s_controllers[i]);
+                        if(s_controllers[i].update_function)
+                            s_controllers[i].update_function(&s_controllers[i]);
         }
 
         struct post_process_per_view

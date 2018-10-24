@@ -55,7 +55,8 @@ PEN_TRV pen::user_entry(void* params)
 
     put::scene_controller cc;
     cc.camera          = &main_camera;
-    cc.update_function = &ces::update_model_viewer_camera;
+    //cc.update_function = &ces::update_model_viewer_camera;
+    cc.update_function = nullptr;
     cc.name            = "model_viewer_camera";
     cc.id_name         = PEN_HASH(cc.name.c_str());
 
@@ -105,6 +106,24 @@ PEN_TRV pen::user_entry(void* params)
         put::dev_ui::new_frame();
 
         pmfx::update();
+
+        // animate camera
+        static bool start = true;
+        
+        if(start)
+        {
+            main_camera.pos =  vec3f(0.0f, 0.0f, 0.0f);
+            start = false;
+        }
+        
+        main_camera.pos += vec3f::unit_x();
+        
+        main_camera.view.set_row(2, vec4f(0.0f, 0.0f, 1.0f, main_camera.pos.x));
+        main_camera.view.set_row(1, vec4f(0.0f, 1.0f, 0.0f, main_camera.pos.y));
+        main_camera.view.set_row(0, vec4f(1.0f, 0.0f, 0.0f, main_camera.pos.z));
+        main_camera.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+        
+        main_camera.flags |= CF_INVALIDATED;
 
         pmfx::render();
 

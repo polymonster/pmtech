@@ -1,6 +1,13 @@
 struct high_pass
 {
 	float m_threshold;
+	float m_smoothness;
+	float3 m_padding;
+};
+
+struct bloom_upsample
+{
+	float m_intensity;
 	float2 m_padding;
 };
 

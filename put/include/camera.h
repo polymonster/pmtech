@@ -65,6 +65,7 @@ namespace put
     void camera_update_fly(camera* p_camera, bool has_focus = true, bool invert_y = false);
 
     void camera_update_shader_constants(camera* p_camera, bool viewport_correction = false);
+    
 } // namespace put
 
 #endif

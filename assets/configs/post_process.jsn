@@ -179,6 +179,17 @@
 			technique: downsample_2x2
 		},
 		
+		downsample_average:
+		{
+			colour_write_mask: 0xf,
+			blend_state: disabled,
+			viewport: [0.0, 0.0, 1.0, 1.0],
+			raster_state: post_process,
+			depth_stencil_state: disabled,
+			pmfx_shader: post_process,
+			technique: downsample_average
+		},
+		
 		bloom_upsample:
 		{
 			colour_write_mask: 0xf,
@@ -266,7 +277,7 @@
 			},
 						
 			{ 
-				inherit: downsample_2x2,
+				inherit: downsample_average,
 				target: [pp_output_half],
 				camera: model_viewer_camera,
 				sampler_bindings:
@@ -300,7 +311,7 @@
 			},
 		
 			{ 
-				inherit: downsample_2x2,
+				inherit: downsample_average,
 				target: [pp_output_quarter],
 				camera: model_viewer_camera,
 				sampler_bindings:
@@ -332,6 +343,40 @@
 				filter_kernel: gauss_9_1,
 				filter_direction: vertical
 			},
+			
+			{ 
+				inherit: downsample_average,
+				target: [pp_output_eighth],
+				camera: model_viewer_camera,
+				sampler_bindings:
+				[
+					{ texture: pp_output_quarter, unit: 0, state: clamp_linear, shader: ps },
+				],
+			},
+		
+			{ 
+				inherit: filter,
+				target: [pp_output_eighth],
+				camera: model_viewer_camera,
+				sampler_bindings:
+				[
+					{ texture: pp_output_eighth, unit: 0, state: clamp_linear, shader: ps },
+				],
+				filter_kernel: gauss_9_1,
+				filter_direction: horizontal
+			},
+		
+			{ 
+				inherit: filter,
+				target: [pp_output_eighth],
+				camera: model_viewer_camera,
+				sampler_bindings:
+				[
+					{ texture: pp_output_eighth, unit: 0, state: clamp_linear, shader: ps },
+				],
+				filter_kernel: gauss_9_1,
+				filter_direction: vertical
+			},
 		
 			{ 
 				inherit: bloom_upsample,
@@ -343,6 +388,7 @@
 					{ texture: pp_output_full, unit: 1, state: clamp_linear, shader: ps },
 					{ texture: pp_output_half, unit: 2, state: clamp_linear, shader: ps },
 					{ texture: pp_output_quarter, unit: 3, state: clamp_linear, shader: ps },
+					{ texture: pp_output_eighth, unit: 4, state: clamp_linear, shader: ps },
 				],
 			}
 		 ],

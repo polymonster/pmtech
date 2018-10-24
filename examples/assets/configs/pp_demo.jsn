@@ -28,10 +28,33 @@
 	    {
 	        chain: [
 	            menger_sponge,
-	            depth_of_field,
 	            bloom,
+	        	depth_of_field,
+	            crt,
 	            blit_post_process
-	        ]
+	        ],
+	        
+	        parameters: 
+            {
+                high_pass: 
+                {
+                    threshold: [0.000000],
+                    smoothness: [0.289000],
+                },
+                
+                bloom_upsample: 
+                {
+                    intensity: [1.000000],
+                },
+                
+                depth_of_field: 
+                {
+                    focus_centre: [0.000000],
+                    centre_range: [0.000000],
+                    focus_width: [0.044000],
+                    width_range: [100.000000],
+                }
+            }
 	    } 
 	},
 					

@@ -120,9 +120,8 @@ ps_output ps_high_pass( vs_output input )
 	
 	float lum = dot( float3(0.2126, 0.7152, 0.0722), output.colour.rgb);
 	
-	if(lum < m_threshold)
-		output.colour *= float4(0.0, 0.0, 0.0, 1.0);
-				
+	output.colour *= smoothstep(m_threshold, m_threshold + m_smoothness, lum);
+					
 	return output;
 }
 
@@ -133,11 +132,13 @@ ps_output ps_filter( vs_output input )
 	float2 inv_texel = inv_texel_size[0];
 		
 	output.colour = float4(0.0, 0.0, 0.0, 1.0);
-	for(int i = 0; i < filter_info.z; ++i)
-	{
-		float2 offset = (filter_offset_weight[i].x + 0.5) * inv_texel * filter_info.xy; 
-		float w = filter_offset_weight[i].y;
+	int lc = int(filter_info.z);
 				
+	for(int i = 0; i < lc; ++i)
+	{
+		float2 offset = (filter_offset_weight[i].x) * inv_texel * filter_info.xy; 
+		float w = filter_offset_weight[i].y;
+
 		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset) * w;
 	}
 	
@@ -168,6 +169,37 @@ ps_output ps_downsample_2x2( vs_output input )
 	return output;
 }
 
+ps_output ps_downsample_average( vs_output input ) 
+{
+	ps_output output;
+
+	float2 inv_texel = inv_texel_size[0];
+	
+	float2 offset[9];
+	offset[0] = float2(0.0, 0.0) * inv_texel;
+	offset[1] = float2(1.0, 0.0) * inv_texel;
+	offset[2] = float2(1.0, 1.0) * inv_texel;
+	offset[3] = float2(0.0, 1.0) * inv_texel;
+	offset[4] = float2(-1.0, 0.0) * inv_texel;
+	offset[5] = float2(-1.0, -1.0) * inv_texel;
+	offset[6] = float2(-1.0, 1.0) * inv_texel;
+	offset[7] = float2(0.0, -1.0) * inv_texel;
+	offset[8] = float2(1.0, -1.0) * inv_texel;
+	
+	float2 tc = input.texcoord.xy;
+	output.colour = float4(0.0, 0.0, 0.0, 1.0);
+	
+	for(int i = 0; i < 9; ++i)
+	{
+	    output.colour += sample_texture( src_texture_0, tc + offset[i]);
+	}	
+
+	output.colour /= 9.0;
+	
+	return output;
+}
+
+
 ps_output ps_bloom_upsample( vs_output input ) 
 {
 	ps_output output;
@@ -179,9 +211,10 @@ ps_output ps_bloom_upsample( vs_output input )
 	bloom += sample_texture( src_texture_1, tc); // full
 	bloom += sample_texture( src_texture_2, tc); // half
 	bloom += sample_texture( src_texture_3, tc); // quarter
-	bloom *= 0.333333;
+	bloom += sample_texture( src_texture_4, tc); // eighth
+	bloom *= 0.25;
 	
-	output.colour += bloom;
+	output.colour += bloom * m_intensity;
 		
 	return output;
 }
@@ -211,8 +244,6 @@ ps_output ps_depth_of_field( vs_output input )
 	float r = saturate(smoothstep(d, -fw, fw));
 	
 	output.colour = lerp(focus_colour, blur_colour, r);
-	
-	//output.colour = float4(r, r, r, 1.0);
 	
 	return output;
 }
@@ -359,7 +390,7 @@ ps_output_colour_depth ps_menger( vs_output input )
         
         float a = point_light_attenuation(lpr, world_pos.xyz);	
                 
-        float3 lc = a * ndotl * float3(0.8, 0.8, 0.9);
+        float3 lc = a * ndotl * float3(0.0, 0.7, 0.9);
         
         sd_col = float4(lc, 1.0);
         
@@ -380,42 +411,26 @@ ps_output ps_crt( vs_output input )
 {
     ps_output output;
     
-    float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
+    float2 tc = input.texcoord.xy;
     
-	//d3d needs to flip y
-	ndc = remap_ndc_ray(ndc);
-	
-    // unproject ray
-    float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
-    float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
+    float2 cc = tc - 0.5;
+    float dist = dot(cc, cc) * 0.07;
     
-    float4 wnear = mul(near, vp_matrix_inverse);
-    wnear /= wnear.w;
+    tc = tc * (tc + cc * (1.0 + dist) * dist) / tc;
     
-    float4 wfar = mul(far, vp_matrix_inverse);
-    wfar /= wfar.w;
+    float2 inv_texel = inv_texel_size[0];
     
-    float3 ro = wnear.xyz;
-    float3 rd = normalize(wfar.xyz - wnear.xyz);
+    float2 ca = float2(inv_texel.x * 2.0, 0.0);
     
-    float3 p = float3(0.0, 0.0, 0.0);
-    
-    float3 sp = camera_view_pos.xyz + camera_view_dir.xyz;
-    
-    for(float t = 0.0; t < 10.0;)
-    {
-        p = ro + rd * t;
-                
-        float d = sd_sphere(p, 1000.0);
-        
-        if(d < 0.001)
-            break;
-            
-        t += d;
-    }
-    
-    output.colour.rgb = rd;
+    output.colour.r = sample_texture(src_texture_0, tc - ca).r;
+    output.colour.g = sample_texture(src_texture_0, tc).g;
+    output.colour.b = sample_texture(src_texture_0, tc + ca).b;
     output.colour.a = 1.0;
+    
+    output.colour.rgb *= abs(sin(tc.y / inv_texel.y));
+    
+    if(tc.x < 0 || tc.x > 1.0 || tc.y < 0.0 || tc.y > 1.0)
+        output.colour *= 0.0;
     
     return output;
 }
@@ -467,6 +482,10 @@ pmfx:
 		{
 			"threshold": { 
 				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+			},
+			
+			"smoothness": { 
+				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
 			}
 		}
 	},
@@ -483,10 +502,23 @@ pmfx:
 		"ps": "ps_downsample_2x2"
 	},
 	
+	"downsample_average":
+	{
+		"vs": "vs_ndc_quad",
+		"ps": "ps_downsample_average"
+	},
+	
 	"bloom_upsample":
 	{
 		"vs": "vs_ndc_quad",
-		"ps": "ps_bloom_upsample"
+		"ps": "ps_bloom_upsample",
+		
+        "constants":
+		{
+		    "intensity": { 
+				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+			}
+		}
 	},
 	
 	"depth_of_field":
