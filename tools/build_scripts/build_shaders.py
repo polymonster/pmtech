@@ -1038,26 +1038,14 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
                 shader_struct.append("\t" + tc["constants"][const_name]["type"] + " " + "m_" + const_name + ";\n")
                 offset += const_elems
 
-            if False:
-                for const in tc["constants"]:
-                    for ci in constant_info:
-                        if ci[0] == tc["constants"][const]["type"]:
-                            pmfx_constants[const] = tc["constants"][const]
-                            pmfx_constants[const]["offset"] = offset
-                            pmfx_constants[const]["num_elements"] = ci[1]
-                            shader_constant.append("\t" + tc["constants"][const]["type"] + " " + "m_" + const + ";\n")
-                            shader_struct.append("\t" + tc["constants"][const]["type"] + " " + "m_" + const + ";\n")
-                            offset += ci[1]
-                            break
-
     if offset == 0:
         return technique, ""
 
     # we must pad to 16 bytes alignment
     pre_pad_offset = offset
     diff = offset / 4
-    next = math.floor(diff)
-    pad = (diff - next) * 4
+    next = math.ceil(diff)
+    pad = (next - diff) * 4
     if pad != 0:
         shader_constant.append("\t" + constant_info[int(pad)][0] + " " + "m_padding" + ";\n")
         shader_struct.append("\t" + constant_info[int(pad)][0] + " " + "m_padding" + ";\n")
@@ -1082,6 +1070,8 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
     technique["constants"] = pmfx_constants
     technique["constants_used_bytes"] = int(pre_pad_offset * 4)
     technique["constants_size_bytes"] = int(offset * 4)
+
+    assert int(offset * 4) % 16 == 0
 
     return technique, c_struct
 

@@ -8,7 +8,7 @@ struct high_pass
 struct bloom_upsample
 {
 	float m_intensity;
-	float2 m_padding;
+	float4 m_padding;
 };
 
 struct depth_of_field
