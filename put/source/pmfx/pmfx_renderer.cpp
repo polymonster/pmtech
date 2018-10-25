@@ -176,7 +176,7 @@ namespace
         u32 cbuffer_technique   = PEN_INVALID_HANDLE;
 
         // shader and technique
-        shader_handle pmfx_shader;
+        u32 pmfx_shader;
         hash_id       technique; // todo rename to id_technique
         u32           render_flags;
 
@@ -2435,7 +2435,7 @@ namespace put
                 }
 
                 // render
-                static shader_handle           pp_shader = pmfx::load_shader("post_process");
+                static u32           pp_shader = pmfx::load_shader("post_process");
                 static ces::geometry_resource* quad      = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
                 pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
@@ -2478,7 +2478,7 @@ namespace put
 
                 if (rt.samples > 1)
                 {
-                    static shader_handle pmfx_resolve = pmfx::load_shader("msaa_resolve");
+                    static u32 pmfx_resolve = pmfx::load_shader("msaa_resolve");
                     pmfx::set_technique(pmfx_resolve, PEN_HASH("average_4x"), 0);
 
                     pen::renderer_resolve_target(rt.handle, pen::RESOLVE_CUSTOM);

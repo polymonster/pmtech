@@ -35,7 +35,7 @@ namespace put
             void* vb_copy_buffer = nullptr;
             void* ib_copy_buffer = nullptr;
 
-            shader_handle imgui_shader;
+            u32 imgui_shader;
         };
 
         render_handles g_imgui_rs;

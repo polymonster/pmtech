@@ -304,7 +304,7 @@ namespace put
 
             static hash_id id_technique[] = {PEN_HASH("directional_light"), PEN_HASH("point_light"), PEN_HASH("spot_light")};
 
-            static pmfx::shader_handle shader = pmfx::load_shader("deferred_render");
+            static u32 shader = pmfx::load_shader("deferred_render");
 
             geometry_resource* volume[PEN_ARRAY_SIZE(id_volume)];
             for (u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
@@ -982,10 +982,10 @@ namespace put
             }
 
             // Update pre skinned vertex buffers
-            static hash_id             id_pre_skin_technique = PEN_HASH("pre_skin");
-            static pmfx::shader_handle ph                    = pmfx::load_shader("forward_render");
+            static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
+            static u32 shader = pmfx::load_shader("forward_render");
 
-            if (pmfx::set_technique(ph, id_pre_skin_technique, 0))
+            if (pmfx::set_technique(shader, id_pre_skin_technique, 0))
             {
                 for (s32 n = 0; n < scene->num_nodes; ++n)
                 {

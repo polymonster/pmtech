@@ -2894,8 +2894,8 @@ namespace put
 
             static const hash_id id_volume[] = {PEN_HASH("full_screen_quad"), PEN_HASH("sphere"), PEN_HASH("cone")};
 
-            static const hash_id             id_technique = PEN_HASH("constant_colour");
-            static const pmfx::shader_handle shader       = pmfx::load_shader("pmfx_utility");
+            static const hash_id id_technique = PEN_HASH("constant_colour");
+            static const u32 shader = pmfx::load_shader("pmfx_utility");
 
             geometry_resource* volume[PEN_ARRAY_SIZE(id_volume)];
             for (u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)

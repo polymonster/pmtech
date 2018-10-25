@@ -152,8 +152,8 @@ namespace put
             u32 material_cbuffer                 = PEN_INVALID_HANDLE;
             u32 material_cbuffer_size            = 0;
 
-            pmfx::shader_handle pmfx_shader;
-            u32                 technique;
+            u32 pmfx_shader;
+            u32 technique;
         };
 
         // from pmfx

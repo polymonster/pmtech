@@ -94,29 +94,29 @@ namespace put
             return k_shader_names;
         }
 
-        const c8** get_technique_list(shader_handle index, u32& count)
+        const c8** get_technique_list(u32 shader, u32& count)
         {
-            count = sb_count(k_technique_names[index]);
-            return k_technique_names[index];
+            count = sb_count(k_technique_names[shader]);
+            return k_technique_names[shader];
         }
 
-        const c8* get_shader_name(shader_handle handle)
+        const c8* get_shader_name(u32 shader)
         {
-            if (handle >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(k_pmfx_list))
                 return nullptr;
 
-            return k_pmfx_list[handle].filename.c_str();
+            return k_pmfx_list[shader].filename.c_str();
         }
 
-        const c8* get_technique_name(shader_handle handle, hash_id id_technique)
+        const c8* get_technique_name(u32 shader, hash_id id_technique)
         {
-            if (handle >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(k_pmfx_list))
                 return nullptr;
 
-            u32 nt = sb_count(k_pmfx_list[handle].techniques);
+            u32 nt = sb_count(k_pmfx_list[shader].techniques);
             for (u32 i = 0; i < nt; ++i)
-                if (k_pmfx_list[handle].techniques[i].id_name == id_technique)
-                    return k_pmfx_list[handle].techniques[i].name.c_str();
+                if (k_pmfx_list[shader].techniques[i].id_name == id_technique)
+                    return k_pmfx_list[shader].techniques[i].name.c_str();
 
             return nullptr;
         }
@@ -502,29 +502,29 @@ namespace put
             return program;
         }
 
-        void initialise_constant_defaults(shader_handle handle, u32 technique_index, f32* data)
+        void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data)
         {
-            if (handle >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(k_pmfx_list))
                 return;
 
-            if (technique_index >= sb_count(k_pmfx_list[handle].techniques))
+            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
                 return;
 
-            memcpy(data, k_pmfx_list[handle].techniques[technique_index].constant_defaults,
-                   k_pmfx_list[handle].techniques[technique_index].technique_constant_size);
+            memcpy(data, k_pmfx_list[shader].techniques[technique_index].constant_defaults,
+                   k_pmfx_list[shader].techniques[technique_index].technique_constant_size);
         }
 
-        void initialise_sampler_defaults(shader_handle handle, u32 technique_index, sampler_set& samplers)
+        void initialise_sampler_defaults(u32 shader, u32 technique_index, sampler_set& samplers)
         {
-            if (handle >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(k_pmfx_list))
                 return;
             
-            if (technique_index >= sb_count(k_pmfx_list[handle].techniques))
+            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
                 return;
             
-            if (pmfx::has_technique_samplers(handle, technique_index))
+            if (pmfx::has_technique_samplers(shader, technique_index))
             {
-                pmfx::technique_sampler* ts = pmfx::get_technique_samplers(handle, technique_index);
+                pmfx::technique_sampler* ts = pmfx::get_technique_samplers(shader, technique_index);
                 
                 static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
                 
@@ -542,20 +542,20 @@ namespace put
             }
         }
 
-        technique_constant* get_technique_constants(shader_handle handle, u32 index)
+        technique_constant* get_technique_constants(u32 shader, u32 technique_index)
         {
-            if (handle >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(k_pmfx_list))
                 return nullptr;
 
-            if (index >= sb_count(k_pmfx_list[handle].techniques))
+            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
                 return nullptr;
 
-            return k_pmfx_list[handle].techniques[index].constants;
+            return k_pmfx_list[shader].techniques[technique_index].constants;
         }
 
-        technique_constant* get_technique_constant(hash_id id_constant, shader_handle handle, u32 technique_index)
+        technique_constant* get_technique_constant(hash_id id_constant, u32 shader, u32 technique_index)
         {
-            technique_constant* tc = get_technique_constants(handle, technique_index);
+            technique_constant* tc = get_technique_constants(shader, technique_index);
 
             for (u32 i = 0; i < sb_count(tc); ++i)
             {
@@ -568,20 +568,20 @@ namespace put
             return nullptr;
         }
 
-        technique_sampler* get_technique_samplers(shader_handle handle, u32 index)
+        technique_sampler* get_technique_samplers(u32 shader, u32 technique_index)
         {
-            if (handle >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(k_pmfx_list))
                 return nullptr;
 
-            if (index >= sb_count(k_pmfx_list[handle].techniques))
+            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
                 return nullptr;
 
-            return k_pmfx_list[handle].techniques[index].textures;
+            return k_pmfx_list[shader].techniques[technique_index].textures;
         }
 
-        technique_sampler* get_technique_sampler(hash_id id_sampler, shader_handle handle, u32 index)
+        technique_sampler* get_technique_sampler(hash_id id_sampler, u32 shader, u32 technique_index)
         {
-            technique_sampler* ts = get_technique_samplers(handle, index);
+            technique_sampler* ts = get_technique_samplers(shader, technique_index);
 
             for (u32 i = 0; i < sb_count(ts); ++i)
             {
@@ -594,23 +594,23 @@ namespace put
             return nullptr;
         }
 
-        u32 get_technique_cbuffer_size(shader_handle handle, u32 index)
+        u32 get_technique_cbuffer_size(u32 shader, u32 technique_index)
         {
-            if (handle >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(k_pmfx_list))
                 return 0;
 
-            if (index >= sb_count(k_pmfx_list[handle].techniques))
+            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
                 return 0;
 
-            return k_pmfx_list[handle].techniques[index].technique_constant_size;
+            return k_pmfx_list[shader].techniques[technique_index].technique_constant_size;
         }
 
-        void set_technique(shader_handle handle, u32 index)
+        void set_technique(u32 shader, u32 technique_index)
         {
-            if (index >= sb_count(k_pmfx_list[handle].techniques))
+            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
                 return;
 
-            auto& t = k_pmfx_list[handle].techniques[index];
+            auto& t = k_pmfx_list[shader].techniques[technique_index];
 
             if (t.stream_out_shader)
             {
@@ -625,24 +625,24 @@ namespace put
             pen::renderer_set_input_layout(t.input_layout);
         }
 
-        bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type)
+        bool set_technique(u32 shader, hash_id id_technique, hash_id id_sub_type)
         {
-            u32 technique_index = get_technique_index(handle, id_technique, id_sub_type);
+            u32 technique_index = get_technique_index(shader, id_technique, id_sub_type);
 
             if (!is_valid(technique_index))
                 return false;
 
-            set_technique(handle, technique_index);
+            set_technique(shader, technique_index);
 
             return true;
         }
 
-        u32 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type)
+        u32 get_technique_index(u32 shader, hash_id id_technique, hash_id id_sub_type)
         {
-            u32 num_techniques = sb_count(k_pmfx_list[handle].techniques);
+            u32 num_techniques = sb_count(k_pmfx_list[shader].techniques);
             for (u32 i = 0; i < num_techniques; ++i)
             {
-                auto& t = k_pmfx_list[handle].techniques[i];
+                auto& t = k_pmfx_list[shader].techniques[i];
 
                 if (t.id_name != id_technique)
                     continue;
@@ -662,15 +662,15 @@ namespace put
                                pmfx_filename);
         }
 
-        void release_shader(shader_handle handle)
+        void release_shader(u32 shader)
         {
-            k_pmfx_list[handle].filename = nullptr;
+            k_pmfx_list[shader].filename = nullptr;
 
-            u32 num_techniques = sb_count(k_pmfx_list[handle].techniques);
+            u32 num_techniques = sb_count(k_pmfx_list[shader].techniques);
 
             for (u32 i = 0; i < num_techniques; ++i)
             {
-                auto& t = k_pmfx_list[handle].techniques[i];
+                auto& t = k_pmfx_list[shader].techniques[i];
 
                 pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
                 pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
@@ -712,10 +712,10 @@ namespace put
             return new_pmfx;
         }
 
-        shader_handle load_shader(const c8* pmfx_name)
+        u32 load_shader(const c8* pmfx_name)
         {
             // return existing
-            shader_handle ph = PEN_INVALID_HANDLE;
+            u32 ph = PEN_INVALID_HANDLE;
             if (!pmfx_name)
                 return ph;
 
@@ -751,11 +751,11 @@ namespace put
             return ph;
         }
 
-        shader_handle get_shader_handle(hash_id id_filename)
+        u32 get_shader_handle(hash_id id_filename)
         {
             u32 num_pmfx = sb_count(k_pmfx_list);
 
-            shader_handle ph = 0;
+            u32 ph = 0;
             // for (auto& p : s_pmfx_list)
             for (u32 i = 0; i < num_pmfx; ++i)
                 if (k_pmfx_list[i].id_filename == id_filename)
@@ -800,7 +800,7 @@ namespace put
             if (shader_compiler_str == "")
                 return;
 
-            shader_handle current_counter = 0;
+            u32 current_counter = 0;
 
             u32 num_pmfx = sb_count(k_pmfx_list);
 
@@ -863,22 +863,22 @@ namespace put
             }
         }
 
-        bool has_technique_constants(shader_handle shader, u32 technique_index)
+        bool has_technique_constants(u32 shader, u32 technique_index)
         {
             return get_technique_constants(shader, technique_index);
         }
 
-        bool has_technique_samplers(shader_handle shader, u32 technique_index)
+        bool has_technique_samplers(u32 shader, u32 technique_index)
         {
             return get_technique_samplers(shader, technique_index);
         }
 
-        bool has_technique_params(shader_handle shader, u32 technique_index)
+        bool has_technique_params(u32 shader, u32 technique_index)
         {
             return get_technique_constants(shader, technique_index) || get_technique_samplers(shader, technique_index);
         }
 
-        bool constant_ui(shader_handle shader, u32 technique_index, f32* material_data)
+        bool constant_ui(u32 shader, u32 technique_index, f32* material_data)
         {
             ImGui::Separator();
             ImGui::Text("Constants");
@@ -945,7 +945,7 @@ namespace put
             return rv;
         }
 
-        bool texture_ui(shader_handle shader, u32 technique_index, cmp_samplers& samplers)
+        bool texture_ui(u32 shader, u32 technique_index, cmp_samplers& samplers)
         {
             ImGui::Separator();
             ImGui::Text("Texture Samplers");
@@ -1002,7 +1002,7 @@ namespace put
             return rv;
         }
 
-        bool show_technique_ui(shader_handle shader, u32 technique_index, f32* material_data, cmp_samplers& samplers)
+        bool show_technique_ui(u32 shader, u32 technique_index, f32* material_data, sampler_set& samplers)
         {
             bool rv = false;
             rv |= constant_ui(shader, technique_index, material_data);

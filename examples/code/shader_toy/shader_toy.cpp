@@ -266,7 +266,7 @@ PEN_TRV pen::user_entry(void* params)
     put::dev_ui::init();
 
     // load shaders now requiring dependency on put to make loading simpler.
-    pmfx::shader_handle shader_toy_pmfx = pmfx::load_shader("shader_toy");
+    u32 shader_toy_pmfx = pmfx::load_shader("shader_toy");
 
     u32 test_texture = put::load_texture("data/textures/test_normal.dds");
 

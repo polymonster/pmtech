@@ -11,11 +11,6 @@ namespace pen
 
 namespace put
 {
-    namespace pmfx
-    {
-        typedef u32 shader_handle;
-    }
-
     namespace ces
     {
         struct entity_scene;
@@ -50,7 +45,7 @@ namespace put
         u32                 raster_state        = 0;
         put::camera*        camera              = nullptr;
         pen::viewport*      viewport            = nullptr;
-        pmfx::shader_handle pmfx_shader         = PEN_INVALID_HANDLE;
+        u32                 pmfx_shader         = PEN_INVALID_HANDLE;
         hash_id             technique           = 0; // todo rename to id_technique
         ces::entity_scene*  scene               = nullptr;
         bool                viewport_correction = false;
@@ -230,30 +225,30 @@ namespace put
 
         // pmfx shader -----------------------------------------------------------------------------------------------------
 
-        shader_handle load_shader(const c8* pmfx_name);
-        void          release_shader(shader_handle handle);
+        u32 load_shader(const c8* pmfx_name);
+        void release_shader(u32 shader);
 
-        void set_technique(shader_handle handle, u32 index);
-        bool set_technique(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
+        void set_technique(u32 shader, u32 technique_index);
+        bool set_technique(u32 shader, hash_id id_technique, hash_id id_sub_type);
 
-        void initialise_constant_defaults(shader_handle handle, u32 index, f32* data);
-        void initialise_sampler_defaults(shader_handle handle, u32 index, sampler_set& samplers);
+        void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data);
+        void initialise_sampler_defaults(u32 handle, u32 technique_index, sampler_set& samplers);
         
         const c8**          get_shader_list(u32& count);
-        const c8**          get_technique_list(shader_handle handle, u32& count);
-        const c8*           get_shader_name(shader_handle handle);
-        const c8*           get_technique_name(shader_handle handle, hash_id id_technique);
-        u32                 get_technique_index(shader_handle handle, hash_id id_technique, hash_id id_sub_type);
-        technique_constant* get_technique_constants(shader_handle handle, u32 index);
-        technique_constant* get_technique_constant(hash_id id_constant, shader_handle handle, u32 technique_index);
-        u32                 get_technique_cbuffer_size(shader_handle handle, u32 index);
-        technique_sampler*  get_technique_samplers(shader_handle handle, u32 index);
-        technique_sampler*  get_technique_sampler(hash_id id_sampler, shader_handle handle, u32 index);
+        const c8**          get_technique_list(u32 shader, u32& count);
+        const c8*           get_shader_name(u32 shader);
+        const c8*           get_technique_name(u32 shader, hash_id id_technique);
+        u32                 get_technique_index(u32 shader, hash_id id_technique, hash_id id_sub_type);
+        technique_constant* get_technique_constants(u32 shader, u32 technique_index);
+        technique_constant* get_technique_constant(hash_id id_constant, u32 shader, u32 technique_index);
+        u32                 get_technique_cbuffer_size(u32 shader, u32 technique_index);
+        technique_sampler*  get_technique_samplers(u32 shader, u32 technique_index);
+        technique_sampler*  get_technique_sampler(hash_id id_sampler, u32 shader, u32 technique_index);
 
-        bool show_technique_ui(shader_handle shader, u32 technique_index, f32* data, sampler_set& samplers);
-        bool has_technique_constants(shader_handle shader, u32 technique_index);
-        bool has_technique_samplers(shader_handle shader, u32 technique_index);
-        bool has_technique_params(shader_handle shader, u32 technique_index);
+        bool show_technique_ui(u32 shader, u32 technique_index, f32* data, sampler_set& samplers);
+        bool has_technique_constants(u32 shader, u32 technique_index);
+        bool has_technique_samplers(u32 shader, u32 technique_index);
+        bool has_technique_params(u32 shader, u32 technique_index);
 
         void poll_for_changes();
     } // namespace pmfx

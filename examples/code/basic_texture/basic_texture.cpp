@@ -38,7 +38,7 @@ PEN_TRV pen::user_entry(void* params)
 
     // create 2 clear states one for the render target and one for the main screen, so we can see the difference
     static pen::clear_state cs = {
-        0.0f, 0.0, 1.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER,
+        0.0f, 0.0, 1.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
     u32 clear_state = pen::renderer_create_clear_state(cs);
@@ -57,7 +57,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::viewport vp = {0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f};
 
     // load shaders now requiring dependency on pmfx to make loading simpler.
-    pmfx::shader_handle textured_shader = pmfx::load_shader("textured");
+    u32 textured_shader = pmfx::load_shader("textured");
 
     u32 test_texture = put::load_texture("data/textures/met_12N.dds");
 
