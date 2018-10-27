@@ -129,13 +129,18 @@ void debug_render_frustum(const scene_view& view)
 
 void get_aabb_corners(vec3f* corners, vec3f min, vec3f max)
 {
-    static const vec3f offsets[8] = {vec3f::zero(),           vec3f::one(),
-
-                                     vec3f::unit_x(),         vec3f::unit_y(),
-                                     vec3f::unit_z(),
-
-                                     vec3f(1.0f, 0.0f, 1.0f), vec3f(1.0f, 1.0f, 0.0f),
-                                     vec3f(0.0f, 1.0f, 1.0f)};
+    // clang-format off
+    static const vec3f offsets[8] = {
+        vec3f::zero(),
+        vec3f::one(),
+        vec3f::unit_x(),
+        vec3f::unit_y(),
+        vec3f::unit_z(),
+        vec3f(1.0f, 0.0f, 1.0f),
+        vec3f(1.0f, 1.0f, 0.0f),
+        vec3f(0.0f, 1.0f, 1.0f)
+    };
+    // clang-format on
 
     vec3f size = max - min;
     for (s32 i = 0; i < 8; ++i)

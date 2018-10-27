@@ -39,6 +39,15 @@ struct forward_lit_skinned
 	float3 m_padding;
 };
 
+struct forward_lit_sss
+{
+	float4 m_albedo;
+	float m_sss_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float2 m_padding;
+};
+
 struct gbuffer
 {
 	float4 m_albedo;

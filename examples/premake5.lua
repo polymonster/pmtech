@@ -13,6 +13,10 @@ solution "examples"
 	startproject "empty_project"
 	buildoptions { build_cmd }
 	linkoptions { link_cmd }
+	includedirs
+	{
+	    "shader_structs"
+	}
 	
 -- Engine Project	
 dofile "../pen/project.lua"
@@ -46,3 +50,4 @@ create_app_example( "multiple_render_targets", script_path() )
 create_app_example( "maths_functions", script_path() )
 create_app_example( "sdf_shadow", script_path() )
 create_app_example( "post_processing", script_path() )
+create_app_example( "sss", script_path() )

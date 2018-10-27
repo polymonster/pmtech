@@ -57,15 +57,13 @@ namespace put
 
     void camera_create_perspective(camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane);
     void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
-
+    
     void camera_update_projection_matrix(camera* p_camera);
     void camera_update_frustum(camera* p_camera);
-
     void camera_update_modelling(camera* p_camera, bool has_focus = true, bool invert_y = false);
     void camera_update_fly(camera* p_camera, bool has_focus = true, bool invert_y = false);
-
     void camera_update_shader_constants(camera* p_camera, bool viewport_correction = false);
-    
+    void camera_update_shadow_frustum(put::camera* p_camera, vec3f light_dir, vec3f min, vec3f max);
 } // namespace put
 
 #endif

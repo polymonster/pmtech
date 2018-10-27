@@ -244,16 +244,15 @@ ps_output ps_forward_lit( vs_output input )
 	//todo these need to be passed from vs for instancing
 	float reflectivity = saturate(user_data.z);
 	float roughness = saturate(user_data.y); 
-	
-	roughness = m_roughness;
+
 	reflectivity = m_reflectivity;
-	
-	//roughness = ro_sample.x;
-	
-	n = input.normal.rgb;
+	roughness = ro_sample.x;
 	
 	if:(SDF_SHADOW)
-	{				
+	{			
+	    n = input.normal.rgb;
+	    roughness = m_roughness;
+	    	
 		float max_samples = 128.0;
 	
 		float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
@@ -268,6 +267,8 @@ ps_output ps_forward_lit( vs_output input )
 		float3 vddx = ddx( r1 );
 		float3 vddy = ddy( r1 );
 	}
+		
+	float t = 1.0;
 	
 	//for directional lights
 	for( int i = 0; i < light_info.x; ++i )
@@ -301,7 +302,7 @@ ps_output ps_forward_lit( vs_output input )
 			float s = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
 			light_col *= smoothstep( 0.0, 0.1, s);
 		}
-
+        
 		if( lights[i].colour.a == 0.0 )
 		{
 			lit_colour += light_col;
@@ -309,7 +310,8 @@ ps_output ps_forward_lit( vs_output input )
 		}
 		else
 		{
-			float4 sp = mul( input.world_pos, shadow_matrix );
+		    float4 offset_pos = float4(input.world_pos.xyz + n.xyz * 0.01, 1.0);
+			float4 sp = mul( offset_pos, shadow_matrix );
 			sp.xyz /= sp.w;
 			sp.y *= -1.0;
 			sp.xy = sp.xy * 0.5 + 0.5;
@@ -317,7 +319,42 @@ ps_output ps_forward_lit( vs_output input )
 			
 			float d = sample_texture( shadowmap_texture, sp.xy ).r;
 			float shadow = sp.z < d ? 1.0 : 0.0;
-			lit_colour += light_col * shadow;
+
+            lit_colour += light_col * shadow;
+            
+			if:(SSS)
+			{
+				// sss
+				float4 shrink_pos = float4(input.world_pos.xyz - n.xyz * 0.09, 1.0);
+                sp = mul( shrink_pos, shadow_matrix );
+                sp.xyz /= sp.w;
+                sp.y *= -1.0;
+                sp.xy = sp.xy * 0.5 + 0.5;
+                sp.z = remap_depth(sp.z);
+                d = sample_texture( shadowmap_texture, sp.xy ).r;
+            
+                float fp = 1.0;
+                float3 light_dir = input.world_pos.xyz - lights[i].pos_radius.xyz;
+            
+                float d1 = d;
+                float d2 = sp.z;
+                d1 *= fp;
+                float sssd = m_sss_scale * abs(d1 - d2) * 0.5 + 0.5;
+            
+                float dd = -sssd * sssd;
+                float3 profile = float3(0.233, 0.455, 0.649) * exp(dd / 0.0064) +
+                     float3(0.1,   0.336, 0.344) * exp(dd / 0.0484) +
+                     float3(0.118, 0.198, 0.0)   * exp(dd / 0.187)  +
+                     float3(0.113, 0.007, 0.007) * exp(dd / 0.567)  +
+                     float3(0.358, 0.004, 0.0)   * exp(dd / 1.99)   +
+                     float3(0.078, 0.0,   0.0)   * exp(dd / 7.41);
+                            
+                float sss = saturate(0.5 + dot(light_dir, n));
+            
+                lit_colour.rgb += profile * sss;
+            
+                lit_colour += albedo.rgb * 0.15;
+			}
 		}
 	}
 	
@@ -551,6 +588,19 @@ pmfx:
 		"ps": "ps_forward_lit",
 		
 		"inherit_constants": ["forward_lit"]
+	},
+	
+	"forward_lit_sss":
+	{
+		"vs": "vs_main",
+		"ps": "ps_forward_lit",
+		"inherit": "forward_lit",
+		"defines": ["SSS"],
+		
+		"constants":
+		{
+            "sss_scale": { "type": "float", "widget": "slider", "min": 0, "max": 500, "default": 1.0 }		    
+		}		
 	},
 	
 	"gbuffer":

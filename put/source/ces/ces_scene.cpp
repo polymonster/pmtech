@@ -980,6 +980,15 @@ namespace put
 
                 pen::renderer_set_constant_buffer(scene->area_box_light_buffer, 6, PEN_SHADER_TYPE_PS);
             }
+            
+            // Shadow maps
+            for (s32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                
+            }
 
             // Update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");

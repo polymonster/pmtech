@@ -528,8 +528,6 @@ namespace put
 
             if (!resource)
                 return;
-            
-            u32 sf = scene->state_flags[node_index];
 
             material->pmfx_shader = pmfx::load_shader(resource->shader_name.c_str());
 

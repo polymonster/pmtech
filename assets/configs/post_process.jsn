@@ -236,7 +236,12 @@
 			pmfx_shader: post_process,
 			technique: crt,
 			camera: model_viewer_camera
-		}
+		},
+		
+		sss_reflectance:
+		{
+		    
+		},
 	},
 	
 	post_processes:
@@ -513,7 +518,40 @@
 				]
 		    },
 		],
+		
+		sss_reflectance: [
+		    {
+                inherit: filter,
+		        target: [pp_output_full],
+		        technique: sss_reflectance,
+		        camera: model_viewer_camera,
+		        filter_kernel: gauss_9_1,
+		        filter_direction: horizontal,
+		        
+		        sampler_bindings:
+				[
+					{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+					{ texture: post_process_depth, unit: 1, state: clamp_linear, shader: ps },
+				]
+		    },
+		    		    
+		    {
+                inherit: filter,
+		        target: [pp_output_full],
+		        technique: sss_reflectance,
+		        camera: model_viewer_camera,
+		        filter_kernel: gauss_9_1,
+		        filter_direction: vertical,
+		        
+		        sampler_bindings:
+				[
+					{ texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+					{ texture: post_process_depth, unit: 1, state: clamp_linear, shader: ps },
+				]
+		    }
+		]
 	},
+	
 			
 	post_process_sets:
 	{

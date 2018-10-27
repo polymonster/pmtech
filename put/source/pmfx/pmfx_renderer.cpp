@@ -1291,7 +1291,7 @@ namespace put
 
                     pen::json inherit_view = all_views[ihv.c_str()];
 
-                    view = pen::json::combine(view, inherit_view);
+                    view = pen::json::combine(inherit_view, view);
 
                     ihv = inherit_view["inherit"].as_str();
                 }
@@ -1484,7 +1484,7 @@ namespace put
                 new_view.render_flags  = 0;
                 for (s32 f = 0; f < render_flags.size(); ++f)
                 {
-                    new_view.render_flags |= mode_from_string(render_flags_map, render_flags[i].as_cstr(), 0);
+                    new_view.render_flags |= mode_from_string(render_flags_map, render_flags[f].as_cstr(), 0);
                 }
 
                 // scene views
@@ -2094,10 +2094,25 @@ namespace put
                     s_view_set.push_back(vs);
 
                     pen::json v = j_views[vs.c_str()];
+                    
                     if (v.type() == JSMN_UNDEFINED)
                     {
                         dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - view '%s' not found", vs.c_str());
                         return;
+                    }
+                    
+                    // inherit and combine
+                    Str ihv = v["inherit"].as_str();
+                    for (;;)
+                    {
+                        if (ihv == "")
+                            break;
+                        
+                        pen::json inherit_view = j_views[ihv.c_str()];
+                        
+                        v = pen::json::combine(inherit_view, v);
+                        
+                        ihv = inherit_view["inherit"].as_str();
                     }
 
                     view_set.set(vs.c_str(), v);

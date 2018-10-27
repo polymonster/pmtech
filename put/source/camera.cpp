@@ -287,4 +287,58 @@ namespace put
             p_camera->flags &= ~CF_INVALIDATED;
         }
     }
+    
+    void get_aabb_corners(vec3f* corners, vec3f min, vec3f max)
+    {
+        // clang-format off
+        static const vec3f offsets[8] = {
+            vec3f::zero(),
+            vec3f::one(),
+            vec3f::unit_x(),
+            vec3f::unit_y(),
+            vec3f::unit_z(),
+            vec3f(1.0f, 0.0f, 1.0f),
+            vec3f(1.0f, 1.0f, 0.0f),
+            vec3f(0.0f, 1.0f, 1.0f)
+        };
+        // clang-format on
+        
+        vec3f size = max - min;
+        for (s32 i = 0; i < 8; ++i)
+        {
+            corners[i] = min + offsets[i] * size;
+        }
+    }
+    
+    void camera_update_shadow_frustum(put::camera* p_camera, vec3f light_dir, vec3f min, vec3f max)
+    {
+        // create view matrix
+        vec3f right = cross(light_dir, vec3f::unit_y());
+        vec3f up    = cross(right, light_dir);
+        
+        mat4 shadow_view;
+        shadow_view.set_vectors(right, up, -light_dir, vec3f::zero());
+        
+        // get corners
+        vec3f corners[8];
+        get_aabb_corners(&corners[0], min, max);
+        
+        // calculate extents in shadow space
+        vec3f cmin = vec3f::flt_max();
+        vec3f cmax = -vec3f::flt_max();
+        for (s32 i = 0; i < 8; ++i)
+        {
+            vec3f p = shadow_view.transform_vector(corners[i]);
+            
+            cmin = vec3f::vmin(cmin, p);
+            cmax = vec3f::vmax(cmax, p);
+        }
+        
+        // create ortho mat and set view matrix
+        p_camera->view = shadow_view;
+        p_camera->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmin.z, cmax.z);
+        p_camera->flags |= CF_INVALIDATED | CF_ORTHO;
+
+        camera_update_frustum(p_camera);
+    }
 } // namespace put

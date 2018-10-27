@@ -435,6 +435,67 @@ ps_output ps_crt( vs_output input )
     return output;
 }
 
+ps_output ps_sss_reflectance( vs_output input )
+{
+    float4 kernel[25];
+    kernel[0] = float4(0.530605, 0.613514, 0.739601, 0);
+    kernel[1] = float4(0.000973794, 1.11862e-005, 9.43437e-007, -3);
+    kernel[2] = float4(0.00333804, 7.85443e-005, 1.2945e-005, -2.52083);
+    kernel[3] = float4(0.00500364, 0.00020094, 5.28848e-005, -2.08333);
+    kernel[4] = float4(0.00700976, 0.00049366, 0.000151938, -1.6875);
+    kernel[5] = float4(0.0094389, 0.00139119, 0.000416598, -1.33333);
+    kernel[6] = float4(0.0128496, 0.00356329, 0.00132016, -1.02083);
+    kernel[7] = float4(0.017924, 0.00711691, 0.00347194, -0.75);
+    kernel[8] = float4(0.0263642, 0.0119715, 0.00684598, -0.520833);
+    kernel[9] = float4(0.0410172, 0.0199899, 0.0118481, -0.333333);
+    kernel[10] = float4(0.0493588, 0.0367726, 0.0219485, -0.1875);
+    kernel[11] = float4(0.0402784, 0.0657244, 0.04631, -0.0833333);
+    kernel[12] = float4(0.0211412, 0.0459286, 0.0378196, -0.0208333);
+    kernel[13] = float4(0.0211412, 0.0459286, 0.0378196, 0.0208333);
+    kernel[14] = float4(0.0402784, 0.0657244, 0.04631, 0.0833333);
+    kernel[15] = float4(0.0493588, 0.0367726, 0.0219485, 0.1875);
+    kernel[16] = float4(0.0410172, 0.0199899, 0.0118481, 0.333333);
+    kernel[17] = float4(0.0263642, 0.0119715, 0.00684598, 0.520833);
+    kernel[18] = float4(0.017924, 0.00711691, 0.00347194, 0.75);
+    kernel[19] = float4(0.0128496, 0.00356329, 0.00132016, 1.02083);
+    kernel[20] = float4(0.0094389, 0.00139119, 0.000416598, 1.33333);
+    kernel[21] = float4(0.00700976, 0.00049366, 0.000151938, 1.6875);
+    kernel[22] = float4(0.00500364, 0.00020094, 5.28848e-005, 2.08333);
+    kernel[23] = float4(0.00333804, 7.85443e-005, 1.2945e-005, 2.52083);
+    kernel[24] = float4(0.000973794, 1.11862e-005, 9.43437e-007, 3);
+
+    ps_output output;
+    float2 tc = input.texcoord.xy;
+    
+    float z = sample_texture(src_texture_1, tc).r;
+    
+    float n = camera_view_pos.w;
+	float f = camera_view_dir.w;
+
+	float ez  = (2 * n * f) / (f + n - z * (f - n));
+	float lz  = (ez - n) / (f - n);
+
+    float dist = 1.0 / tan(0.5 * 60.0 * 3.14 / 180.0 );
+    float scale = dist / lz;
+
+    float w = 1.0;
+    
+    // Calculate the final step to fetch the surrounding pixels:
+    float2 final_step = w * scale * filter_info.xy;
+    final_step *= 1.0 / 3.0; // Divide by 3 as the kernels range from -3 to 3.
+        
+    float3 col = sample_texture(src_texture_0, tc).rgb * kernel[0].rgb;
+    
+    for(int i = 1; i < 25; ++i)
+    {
+        float2 offset = kernel[i].a * final_step * inv_texel_size[0].xy;
+        col += sample_texture(src_texture_0, tc + offset).rgb * kernel[i].rgb;
+    }
+    
+    output.colour.rgb = col;
+    return output;
+}
+
 pmfx:
 {	
 	"blit":
@@ -556,6 +617,12 @@ pmfx:
 	{
 	    "vs": "vs_ndc_quad",
 		"ps": "ps_crt"
+	},
+	
+	"sss_reflectance":
+	{
+        "vs": "vs_ndc_quad",
+		"ps": "ps_sss_reflectance"
 	}
 }
 

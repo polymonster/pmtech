@@ -9,7 +9,6 @@ import sys
 
 stats_start = time.time()
 
-
 def options_from_export(info, filename):
     base_name = os.path.basename(filename)
     if "files" in info.keys():
