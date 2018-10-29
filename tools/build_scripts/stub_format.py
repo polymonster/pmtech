@@ -45,8 +45,11 @@ if __name__ == "__main__":
         if "-i" in sys.argv:
             input_file = sys.argv[sys.argv.index("-i") + 1]
 
-        file = open(input_file, "rw")
+        print(input_file)
+
+        file = open(input_file, "r")
         file_data = file.read()
+        file.close()
 
         if "-tabs_to_spaces" in sys.argv:
             spaces = sys.argv[sys.argv.index("-tabs_to_spaces") + 1]
@@ -56,4 +59,8 @@ if __name__ == "__main__":
             align_char = sys.argv[sys.argv.index("-align_consecutive") + 1]
             file_data = align_consecutive(file_data, align_char)
 
+        print(file_data)
+
+        file = open(input_file, "w")
         file.write(file_data)
+        file.close()
