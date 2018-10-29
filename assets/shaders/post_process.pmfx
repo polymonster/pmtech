@@ -6,61 +6,61 @@
 // io structs
 struct vs_output
 {
-	float4 position		: SV_POSITION;
-	float4 texcoord		: TEXCOORD0;
+    float4 position        : SV_POSITION;
+    float4 texcoord        : TEXCOORD0;
 };
 
 struct vs_input
 {
-	float4 position	 	: POSITION;
-	float4 texcoord	 	: TEXCOORD0;
+    float4 position         : POSITION;
+    float4 texcoord         : TEXCOORD0;
 };
 
 struct ps_output
 {
-	float4 colour : SV_Target;
+    float4 colour : SV_Target;
 };
 
 struct ps_output_depth
 {
-	float depth : SV_Depth;
+    float depth : SV_Depth;
 };
 
 struct ps_output_colour_depth
 {
-	float4 colour 	: SV_Target;
-	float depth 	: SV_Depth;
+    float4 colour     : SV_Target;
+    float depth       : SV_Depth;
 };
 
 cbuffer src_info : register(b10)
 {
-	float2 inv_texel_size[8];
+    float2 inv_texel_size[8];
 };
 
 cbuffer filter_kernel : register(b2)
 {
-	float4	filter_info; //xy = mask / direction, z = num samples, w = unused
-	float4 	filter_offset_weight[16];
+    float4    filter_info; //xy = mask / direction, z = num samples, w = unused
+    float4     filter_offset_weight[16];
 };
 
 // samplers
 declare_texture_samplers
 {
-	texture_2d( src_texture_0, 0 );
-	texture_2d( src_texture_1, 1 );
-	texture_2d( src_texture_2, 2 );
-	texture_2d( src_texture_3, 3 );
-	texture_2d( src_texture_4, 4 );
-	texture_2d( src_texture_5, 5 );
-	texture_2d( src_texture_6, 6 );
-	texture_2d( src_texture_7, 7 );
+    texture_2d( src_texture_0, 0 );
+    texture_2d( src_texture_1, 1 );
+    texture_2d( src_texture_2, 2 );
+    texture_2d( src_texture_3, 3 );
+    texture_2d( src_texture_4, 4 );
+    texture_2d( src_texture_5, 5 );
+    texture_2d( src_texture_6, 6 );
+    texture_2d( src_texture_7, 7 );
 };
 
 // utility functions
 float calc_gaussian_weight(int sample_dist, float sigma)
 {
-	float g = 1.0f / sqrt(2.0f * 3.14159 * sigma * sigma);
-	return (g * exp(-(sample_dist * sample_dist) / (2 * sigma * sigma)));
+    float g = 1.0f / sqrt(2.0f * 3.14159 * sigma * sigma);
+    return (g * exp(-(sample_dist * sample_dist) / (2 * sigma * sigma)));
 }
 
 float dof_blur_factor(in float depth) 
@@ -74,178 +74,178 @@ float dof_blur_factor(in float depth)
 // vs / ps
 vs_output vs_ndc_quad( vs_input input )
 {
-	vs_output output;
+    vs_output output;
 
-	output.position = input.position;
-	output.texcoord = input.texcoord;
-	
-	output.position.y = output.position.y * viewport_correction.x;
-	
-	return output;
+    output.position = input.position;
+    output.texcoord = input.texcoord;
+    
+    output.position.y = output.position.y * viewport_correction.x;
+    
+    return output;
 }
 
 ps_output ps_blit( vs_output input ) 
 {
-	ps_output output;
-	
-	output.colour = sample_texture( src_texture_0, input.texcoord.xy );
-	
-	return output;
+    ps_output output;
+    
+    output.colour = sample_texture( src_texture_0, input.texcoord.xy );
+    
+    return output;
 }
 
 ps_output_depth ps_blit_depth( vs_output input ) 
 {
-	ps_output_depth output;
-	
-	output.depth = sample_texture( src_texture_0, input.texcoord.xy ).r;
-	
-	return output;
+    ps_output_depth output;
+    
+    output.depth = sample_texture( src_texture_0, input.texcoord.xy ).r;
+    
+    return output;
 }
 
 ps_output_colour_depth ps_blit_colour_depth( vs_output input ) 
 {
-	ps_output_colour_depth output;
-	
-	output.colour = sample_texture( src_texture_0, input.texcoord.xy );
-	output.depth = sample_texture( src_texture_1, input.texcoord.xy ).r;
-	
-	return output;
+    ps_output_colour_depth output;
+    
+    output.colour = sample_texture( src_texture_0, input.texcoord.xy );
+    output.depth = sample_texture( src_texture_1, input.texcoord.xy ).r;
+    
+    return output;
 }
 
 ps_output ps_high_pass( vs_output input ) 
 {
-	ps_output output;
-	
-	output.colour = sample_texture( src_texture_0, input.texcoord.xy );
-	
-	float lum = dot( float3(0.2126, 0.7152, 0.0722), output.colour.rgb);
-	
-	output.colour *= smoothstep(m_threshold, m_threshold + m_smoothness, lum);
-					
-	return output;
+    ps_output output;
+    
+    output.colour = sample_texture( src_texture_0, input.texcoord.xy );
+    
+    float lum = dot( float3(0.2126, 0.7152, 0.0722), output.colour.rgb);
+    
+    output.colour *= smoothstep(m_threshold, m_threshold + m_smoothness, lum);
+                    
+    return output;
 }
 
 ps_output ps_filter( vs_output input ) 
 {
-	ps_output output;
+    ps_output output;
 
-	float2 inv_texel = inv_texel_size[0];
-		
-	output.colour = float4(0.0, 0.0, 0.0, 1.0);
-	int lc = int(filter_info.z);
-				
-	for(int i = 0; i < lc; ++i)
-	{
-		float2 offset = (filter_offset_weight[i].x) * inv_texel * filter_info.xy; 
-		float w = filter_offset_weight[i].y;
+    float2 inv_texel = inv_texel_size[0];
+        
+    output.colour = float4(0.0, 0.0, 0.0, 1.0);
+    int lc = int(filter_info.z);
+                
+    for(int i = 0; i < lc; ++i)
+    {
+        float2 offset = (filter_offset_weight[i].x) * inv_texel * filter_info.xy; 
+        float w = filter_offset_weight[i].y;
 
-		output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset) * w;
-	}
-	
-	output.colour.a = 1.0;
-	return output;
+        output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset) * w;
+    }
+    
+    output.colour.a = 1.0;
+    return output;
 }
 
 ps_output ps_downsample_2x2( vs_output input ) 
 {
-	ps_output output;
+    ps_output output;
 
-	float2 inv_texel = inv_texel_size[0];
-	
-	float2 offset[4];
-	offset[0] = float2(0.0, 0.0) * inv_texel;
-	offset[1] = float2(1.0, 0.0) * inv_texel;
-	offset[2] = float2(1.0, 1.0) * inv_texel;
-	offset[3] = float2(0.0, 1.0) * inv_texel;
-	
-	float2 tc = input.texcoord.xy;
-	output.colour = float4(0.0, 0.0, 0.0, 1.0);
-	output.colour += sample_texture( src_texture_0, tc + offset[0]);
-	output.colour += sample_texture( src_texture_0, tc + offset[1]);
-	output.colour += sample_texture( src_texture_0, tc + offset[2]);
-	output.colour += sample_texture( src_texture_0, tc + offset[3]);
-	output.colour *= 0.25;
-	
-	return output;
+    float2 inv_texel = inv_texel_size[0];
+    
+    float2 offset[4];
+    offset[0] = float2(0.0, 0.0) * inv_texel;
+    offset[1] = float2(1.0, 0.0) * inv_texel;
+    offset[2] = float2(1.0, 1.0) * inv_texel;
+    offset[3] = float2(0.0, 1.0) * inv_texel;
+    
+    float2 tc = input.texcoord.xy;
+    output.colour = float4(0.0, 0.0, 0.0, 1.0);
+    output.colour += sample_texture( src_texture_0, tc + offset[0]);
+    output.colour += sample_texture( src_texture_0, tc + offset[1]);
+    output.colour += sample_texture( src_texture_0, tc + offset[2]);
+    output.colour += sample_texture( src_texture_0, tc + offset[3]);
+    output.colour *= 0.25;
+    
+    return output;
 }
 
 ps_output ps_downsample_average( vs_output input ) 
 {
-	ps_output output;
+    ps_output output;
 
-	float2 inv_texel = inv_texel_size[0];
-	
-	float2 offset[9];
-	offset[0] = float2(0.0, 0.0) * inv_texel;
-	offset[1] = float2(1.0, 0.0) * inv_texel;
-	offset[2] = float2(1.0, 1.0) * inv_texel;
-	offset[3] = float2(0.0, 1.0) * inv_texel;
-	offset[4] = float2(-1.0, 0.0) * inv_texel;
-	offset[5] = float2(-1.0, -1.0) * inv_texel;
-	offset[6] = float2(-1.0, 1.0) * inv_texel;
-	offset[7] = float2(0.0, -1.0) * inv_texel;
-	offset[8] = float2(1.0, -1.0) * inv_texel;
-	
-	float2 tc = input.texcoord.xy;
-	output.colour = float4(0.0, 0.0, 0.0, 1.0);
-	
-	for(int i = 0; i < 9; ++i)
-	{
-	    output.colour += sample_texture( src_texture_0, tc + offset[i]);
-	}	
+    float2 inv_texel = inv_texel_size[0];
+    
+    float2 offset[9];
+    offset[0] = float2(0.0, 0.0) * inv_texel;
+    offset[1] = float2(1.0, 0.0) * inv_texel;
+    offset[2] = float2(1.0, 1.0) * inv_texel;
+    offset[3] = float2(0.0, 1.0) * inv_texel;
+    offset[4] = float2(-1.0, 0.0) * inv_texel;
+    offset[5] = float2(-1.0, -1.0) * inv_texel;
+    offset[6] = float2(-1.0, 1.0) * inv_texel;
+    offset[7] = float2(0.0, -1.0) * inv_texel;
+    offset[8] = float2(1.0, -1.0) * inv_texel;
+    
+    float2 tc = input.texcoord.xy;
+    output.colour = float4(0.0, 0.0, 0.0, 1.0);
+    
+    for(int i = 0; i < 9; ++i)
+    {
+        output.colour += sample_texture( src_texture_0, tc + offset[i]);
+    }    
 
-	output.colour /= 9.0;
-	
-	return output;
+    output.colour /= 9.0;
+    
+    return output;
 }
 
 
 ps_output ps_bloom_upsample( vs_output input ) 
 {
-	ps_output output;
+    ps_output output;
 
-	float2 tc = input.texcoord.xy;
-	output.colour = sample_texture( src_texture_0, tc); // source
-	
-	float4 bloom = float4(0.0, 0.0, 0.0, 0.0);
-	bloom += sample_texture( src_texture_1, tc); // full
-	bloom += sample_texture( src_texture_2, tc); // half
-	bloom += sample_texture( src_texture_3, tc); // quarter
-	bloom += sample_texture( src_texture_4, tc); // eighth
-	bloom *= 0.25;
-	
-	output.colour += bloom * m_intensity;
-		
-	return output;
+    float2 tc = input.texcoord.xy;
+    output.colour = sample_texture( src_texture_0, tc); // source
+    
+    float4 bloom = float4(0.0, 0.0, 0.0, 0.0);
+    bloom += sample_texture( src_texture_1, tc); // full
+    bloom += sample_texture( src_texture_2, tc); // half
+    bloom += sample_texture( src_texture_3, tc); // quarter
+    bloom += sample_texture( src_texture_4, tc); // eighth
+    bloom *= 0.25;
+    
+    output.colour += bloom * m_intensity;
+        
+    return output;
 }
 
 ps_output ps_depth_of_field( vs_output input )
 {
-	ps_output output;
+    ps_output output;
 
-	float2 tc = input.texcoord.xy;
-	float z = sample_texture( src_texture_0, tc).r;				// depth
-	float4 focus_colour = sample_texture( src_texture_1, tc); 	// source
-	float4 blur_colour  = sample_texture( src_texture_2, tc); 	// blurred
+    float2 tc = input.texcoord.xy;
+    float z = sample_texture( src_texture_0, tc).r;                // depth
+    float4 focus_colour = sample_texture( src_texture_1, tc);     // source
+    float4 blur_colour  = sample_texture( src_texture_2, tc);     // blurred
 
-	// convert to linear depth
-	float n = camera_view_pos.w;
-	float f = camera_view_dir.w;
+    // convert to linear depth
+    float n = camera_view_pos.w;
+    float f = camera_view_dir.w;
 
-	float ez  = (2 * n * f) / (f + n - z * (f - n));
-	float lz  = (ez - n) / (f - n);
-	
-	float centre_scale = m_centre_range / (f-n);
-	float width_scale = m_width_range / (f-n);
-	
-	float fw = m_focus_width * width_scale;
-		
-	float d = (abs(lz - m_focus_centre * centre_scale));
-	float r = saturate(smoothstep(d, -fw, fw));
-	
-	output.colour = lerp(focus_colour, blur_colour, r);
-	
-	return output;
+    float ez  = (2 * n * f) / (f + n - z * (f - n));
+    float lz  = (ez - n) / (f - n);
+    
+    float centre_scale = m_centre_range / (f-n);
+    float width_scale = m_width_range / (f-n);
+    
+    float fw = m_focus_width * width_scale;
+        
+    float d = (abs(lz - m_focus_centre * centre_scale));
+    float r = saturate(smoothstep(d, -fw, fw));
+    
+    output.colour = lerp(focus_colour, blur_colour, r);
+    
+    return output;
 }
 
 ps_output ps_colour_lut( vs_output input )
@@ -296,7 +296,7 @@ float map( in float3 p )
     for( int m=0; m<4; m++ )
     {
         float3 a = mod(q * s, float3(2.0, 2.0, 2.0)) - 1.0;
-		
+        
         s *= 3.0;
         float3 r = 1.0 - 3.0 * abs(a);
 
@@ -345,9 +345,9 @@ ps_output_colour_depth ps_menger( vs_output input )
     
     float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
     
-	//d3d needs to flip y
-	ndc = remap_ndc_ray(ndc);
-	
+    //d3d needs to flip y
+    ndc = remap_ndc_ray(ndc);
+    
     // unproject ray
     float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
     float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
@@ -388,7 +388,7 @@ ps_output_colour_depth ps_menger( vs_output input )
         
         float ndotl = dot(n, l);
         
-        float a = point_light_attenuation(lpr, world_pos.xyz);	
+        float a = point_light_attenuation(lpr, world_pos.xyz);    
                 
         float3 lc = a * ndotl * float3(0.0, 0.7, 0.9);
         
@@ -403,7 +403,7 @@ ps_output_colour_depth ps_menger( vs_output input )
     }
     
     output.colour = lerp(sky, sd_col, sky_t);
-	
+    
     return output;
 }
 
@@ -470,10 +470,10 @@ ps_output ps_sss_reflectance( vs_output input )
     float z = sample_texture(src_texture_1, tc).r;
     
     float n = camera_view_pos.w;
-	float f = camera_view_dir.w;
+    float f = camera_view_dir.w;
 
-	float ez  = (2 * n * f) / (f + n - z * (f - n));
-	float lz  = (ez - n) / (f - n);
+    float ez  = (2 * n * f) / (f + n - z * (f - n));
+    float lz  = (ez - n) / (f - n);
 
     float dist = 1.0 / tan(0.5 * 60.0 * 3.14 / 180.0 );
     float scale = dist / lz;
@@ -497,132 +497,133 @@ ps_output ps_sss_reflectance( vs_output input )
 }
 
 pmfx:
-{	
-	"blit":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_blit"
-	},
-	
-	"blit_depth":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_blit_depth"
-	},
-	
-	"blit_colour_depth":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_blit_colour_depth"
-	},
-	
-	"colour_lut":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_colour_lut",
-		
-		"texture_samplers": 
-		{
-		    "lookup_texture":
-		    {
-		        "type": "texture_2d",
-		        "unit": 8,
-		        "shader": "ps",
-		        "sampler": "clamp_linear",
-		        "default": "data/textures/luts/identity.dds"
-		    }
-		}
-	},
-	
-	"high_pass":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_high_pass",
-		
-		"constants":
-		{
-			"threshold": { 
-				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
-			},
-			
-			"smoothness": { 
-				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
-			}
-		}
-	},
-	
-	"filter":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_filter"
-	},
-	
-	"downsample_2x2":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_downsample_2x2"
-	},
-	
-	"downsample_average":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_downsample_average"
-	},
-	
-	"bloom_upsample":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_bloom_upsample",
-		
-        "constants":
-		{
-		    "intensity": { 
-				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
-			}
-		}
-	},
-	
-	"depth_of_field":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_depth_of_field",
-		
-		"constants":
-		{
-			"focus_centre": { 
-				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
-			},
-					
-			"centre_range": { 
-				"type": "float", "widget": "input", "default": 100
-			},
-			
-			"focus_width": { 
-				"type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
-			},
-
-			"width_range": { 
-				"type": "float", "widget": "input", "default": 20
-			}
-		}
-	},
-	
-	"menger_sponge":
-	{
-		"vs": "vs_ndc_quad",
-		"ps": "ps_menger"
-	},
-	
-	"crt":
-	{
-	    "vs": "vs_ndc_quad",
-		"ps": "ps_crt"
-	},
-	
-	"sss_reflectance":
-	{
+{    
+    "blit":
+    {
         "vs": "vs_ndc_quad",
-		"ps": "ps_sss_reflectance"
-	}
+        "ps": "ps_blit"
+    },
+    
+    "blit_depth":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_blit_depth"
+    },
+    
+    "blit_colour_depth":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_blit_colour_depth"
+    },
+    
+    "colour_lut":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_colour_lut",
+        
+        "texture_samplers": 
+        {
+            "lookup_texture":
+            {
+                "type"   : "texture_2d",
+                "unit"   : 8,
+                "shader" : "ps",
+                "sampler": "clamp_linear",
+                "default": "data/textures/luts/identity.dds"
+            }
+        }
+    },
+    
+    "high_pass":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_high_pass",
+        
+        "constants":
+        {
+            "threshold": { 
+                "type" : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            },
+            
+            "smoothness": { 
+                "type"  : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            }
+        }
+    },
+    
+    "filter":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_filter"
+    },
+    
+    "downsample_2x2":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_downsample_2x2"
+    },
+    
+    "downsample_average":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_downsample_average"
+    },
+    
+    "bloom_upsample":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_bloom_upsample",
+        
+        "constants":
+        {
+            "intensity": { 
+                "type" : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            }
+        }
+    },
+    
+    "depth_of_field":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_depth_of_field",
+        
+        "constants":
+        {
+            "focus_centre": { 
+                "type"    : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            },
+                    
+            "centre_range": { 
+                "type"    : "float", "widget": "input", "default": 100
+            },
+            
+            "focus_width": { 
+                "type"   : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            },
+
+            "width_range": { 
+                "type"   : "float", "widget": "input", "default": 20
+            }
+        }
+    },
+    
+    "menger_sponge":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_menger"
+    },
+    
+    "crt":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_crt"
+    },
+    
+    "sss_reflectance":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_sss_reflectance"
+    }
 }
+
 

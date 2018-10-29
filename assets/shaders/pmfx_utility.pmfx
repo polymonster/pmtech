@@ -9,610 +9,610 @@
 
 struct vs_output
 {
-	float4 position		: SV_POSITION;
-	float4 world_pos 	: TEXCOORD0;
-	float3 normal		: TEXCOORD1;
-	float3 tangent		: TEXCOORD2;
-	float3 bitangent	: TEXCOORD3;
-	float4 texcoord		: TEXCOORD4;
+    float4 position        : SV_POSITION;
+    float4 world_pos       : TEXCOORD0;
+    float3 normal          : TEXCOORD1;
+    float3 tangent         : TEXCOORD2;
+    float3 bitangent       : TEXCOORD3;
+    float4 texcoord        : TEXCOORD4;
 };
 
 struct vs_output_picking
 {
-	float4 position		: SV_POSITION;
-	float4 index		: TEXCOORD0;
+    float4 position        : SV_POSITION;
+    float4 index           : TEXCOORD0;
 };
 
 struct vs_input
 {
-	float4 position	 	: POSITION;
-	float4 normal	 	: TEXCOORD0;
-	float4 texcoord	 	: TEXCOORD1;
-	float4 tangent	 	: TEXCOORD2;
-	float4 bitangent	: TEXCOORD3;
+    float4 position         : POSITION;
+    float4 normal           : TEXCOORD0;
+    float4 texcoord         : TEXCOORD1;
+    float4 tangent          : TEXCOORD2;
+    float4 bitangent        : TEXCOORD3;
 };
 
 struct vs_input_skinned
 {
-	float4 position	 		: POSITION;
-	float4 normal	 		: TEXCOORD0;
-	float4 texcoord	 		: TEXCOORD1;
-	float4 tangent	 		: TEXCOORD2;
-	float4 bitangent		: TEXCOORD3;
-	float4 blend_indices	: TEXCOORD4;
-	float4 blend_weights	: TEXCOORD5;
+    float4 position             : POSITION;
+    float4 normal               : TEXCOORD0;
+    float4 texcoord             : TEXCOORD1;
+    float4 tangent              : TEXCOORD2;
+    float4 bitangent            : TEXCOORD3;
+    float4 blend_indices        : TEXCOORD4;
+    float4 blend_weights        : TEXCOORD5;
 };
 
 struct vs_instance_input
 {
-	float4 world_matrix_0	 : TEXCOORD6;
-	float4 world_matrix_1	 : TEXCOORD7;
-	float4 world_matrix_2	 : TEXCOORD8;
-	float4 world_matrix_3	 : TEXCOORD9;
-	float4 user_data	 	 : TEXCOORD10;
-	float4 user_data2	 	 : TEXCOORD11;
+    float4 world_matrix_0      : TEXCOORD6;
+    float4 world_matrix_1      : TEXCOORD7;
+    float4 world_matrix_2      : TEXCOORD8;
+    float4 world_matrix_3      : TEXCOORD9;
+    float4 user_data           : TEXCOORD10;
+    float4 user_data2          : TEXCOORD11;
 };
 
 struct ps_output
 {
-	float4 colour : SV_Target;
+    float4 colour : SV_Target;
 };
 
 struct ps_output_picking
 {
-	uint colour : SV_Target;
+    uint colour : SV_Target;
 };
 
 struct ps_output_multi
 {
-	float4 albedo : SV_Target0;
-	float4 normal : SV_Target1;
+    float4 albedo : SV_Target0;
+    float4 normal : SV_Target1;
 };
 
 // Textures ----------------------------------------------------------------------------------------------------------------
 
 declare_texture_samplers
 {
-	texture_2d( diffuse_texture, 0 );
-	texture_2d( normal_texture, 1 );
-	texture_2d( specular_texture, 2 );
-	
-	texture_cube( cubemap_texture, 3 );
-	texture_3d( volume_texture, 4 );
-	
-	texture_3d( sdf_volume, 14 );
+    texture_2d( diffuse_texture, 0 );
+    texture_2d( normal_texture, 1 );
+    texture_2d( specular_texture, 2 );
+    
+    texture_cube( cubemap_texture, 3 );
+    texture_3d( volume_texture, 4 );
+    
+    texture_3d( sdf_volume, 14 );
 };
 
 // Vertex Shaders -----------------------------------------------------------------------------------------------------------
 
 vs_output vs_main_skinned( vs_input_skinned input )
 {
-	vs_output output;
-	
-	float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
-	
-	output.position = mul( sp, vp_matrix );
-	output.world_pos = mul( input.position, world_matrix );
-		
-	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
-	
-	output.normal = mul( input.normal.xyz, rotation_matrix );
-	output.tangent = mul( input.tangent.xyz, rotation_matrix );
-	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
-	
-	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
-	
-	output.texcoord = input.blend_weights;
-	
+    vs_output output;
+    
+    float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+    
+    output.position = mul( sp, vp_matrix );
+    output.world_pos = mul( input.position, world_matrix );
+        
+    float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+    
+    output.normal = mul( input.normal.xyz, rotation_matrix );
+    output.tangent = mul( input.tangent.xyz, rotation_matrix );
+    output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
+    
+    output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+    
+    output.texcoord = input.blend_weights;
+    
     return output;
 }
 
 vs_output vs_main( vs_input input )
 {
-	vs_output output;
-	
-	float4x4 wvp = mul( world_matrix, vp_matrix );
+    vs_output output;
+    
+    float4x4 wvp = mul( world_matrix, vp_matrix );
 
-	output.position = mul( input.position, wvp );
-	output.world_pos = mul( input.position, world_matrix );
-		
-	float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
-	
-	output.normal = mul( input.normal.xyz, rotation_matrix );
-	output.tangent = mul( input.tangent.xyz, rotation_matrix );
-	output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
-	
-	output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
-	
+    output.position = mul( input.position, wvp );
+    output.world_pos = mul( input.position, world_matrix );
+        
+    float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+    
+    output.normal = mul( input.normal.xyz, rotation_matrix );
+    output.tangent = mul( input.tangent.xyz, rotation_matrix );
+    output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
+    
+    output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
+    
     return output;
 }
 
 vs_output_picking vs_picking( vs_input input )
 {
-	vs_output_picking output;
-	
-	float4x4 wvp = mul( world_matrix, vp_matrix );
+    vs_output_picking output;
+    
+    float4x4 wvp = mul( world_matrix, vp_matrix );
 
-	output.position = mul( input.position, wvp );
-	output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
-	
-	return output;
+    output.position = mul( input.position, wvp );
+    output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
+    
+    return output;
 }
 
 vs_output_picking vs_picking_skinned( vs_input_skinned input )
 {
-	vs_output_picking output;
+    vs_output_picking output;
 
-	float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
-	
-	output.position = mul( sp, vp_matrix );
-	output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
-		
-	return output;
+    float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+    
+    output.position = mul( sp, vp_matrix );
+    output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
+        
+    return output;
 }
 
 vs_output_picking vs_picking_instanced( vs_input input, vs_instance_input instance_input )
 {
-	vs_output_picking output;
-	
-	float4x4 instance_world_mat;
-	unpack_vb_instance_mat(instance_world_mat, 
-		instance_input.world_matrix_0, 
-		instance_input.world_matrix_1, 
-		instance_input.world_matrix_2, 
-		instance_input.world_matrix_3);
-		
-	float4x4 wvp = mul( instance_world_mat, vp_matrix );
-	
-	output.position = mul( input.position, wvp );
-	output.index = float4( instance_input.user_data.x, 0.0, 0.0, 0.0 );
-				
+    vs_output_picking output;
+    
+    float4x4 instance_world_mat;
+    unpack_vb_instance_mat(instance_world_mat, 
+        instance_input.world_matrix_0, 
+        instance_input.world_matrix_1, 
+        instance_input.world_matrix_2, 
+        instance_input.world_matrix_3);
+        
+    float4x4 wvp = mul( instance_world_mat, vp_matrix );
+    
+    output.position = mul( input.position, wvp );
+    output.index = float4( instance_input.user_data.x, 0.0, 0.0, 0.0 );
+                
     return output;
 }
 
 vs_output vs_main_volume_texture( vs_input input )
 {
-	vs_output output;
-	
-	float4x4 wvp = mul( world_matrix, vp_matrix );
+    vs_output output;
+    
+    float4x4 wvp = mul( world_matrix, vp_matrix );
 
-	output.position = mul( input.position, wvp );
-	output.world_pos = mul( input.position, world_matrix );
-		
-	output.normal = input.normal.xyz;
-	output.tangent = input.tangent.xyz;
-	output.bitangent = input.bitangent.xyz;
-	
-	output.texcoord = input.position;
-		
+    output.position = mul( input.position, wvp );
+    output.world_pos = mul( input.position, world_matrix );
+        
+    output.normal = input.normal.xyz;
+    output.tangent = input.tangent.xyz;
+    output.bitangent = input.bitangent.xyz;
+    
+    output.texcoord = input.position;
+        
     return output;
 }
 
 // Pixel Shaders -----------------------------------------------------------------------------------------------------------
 
 ps_output_picking ps_picking( vs_output_picking input ) 
-{	
-	ps_output_picking output;
-		
-	output.colour = uint(input.index.x + 0.5);
-	
+{    
+    ps_output_picking output;
+        
+    output.colour = uint(input.index.x + 0.5);
+    
     return output;
 }
 
 ps_output ps_diffuse( vs_output input ) 
-{	
-	ps_output output;
-	
-	output.colour = sample_texture( diffuse_texture, input.texcoord.xy );
-	
+{    
+    ps_output output;
+    
+    output.colour = sample_texture( diffuse_texture, input.texcoord.xy );
+    
     return output;
 }
 
 ps_output ps_vertex_normals( vs_output input ) 
-{	
-	ps_output output;
-	
-	output.colour.rgb = input.normal * 0.5 + 0.5;
-	output.colour.a = 1.0;
-	
+{    
+    ps_output output;
+    
+    output.colour.rgb = input.normal * 0.5 + 0.5;
+    output.colour.a = 1.0;
+    
     return output;
 }
 
 ps_output ps_vertex_tangents( vs_output input ) 
-{	
-	ps_output output;
-	
-	output.colour.rgb = input.tangent * 0.5 + 0.5;
-	output.colour.a = 1.0;
-	
+{    
+    ps_output output;
+    
+    output.colour.rgb = input.tangent * 0.5 + 0.5;
+    output.colour.a = 1.0;
+    
     return output;
 }
 
 ps_output ps_vertex_bitangents( vs_output input ) 
-{	
-	ps_output output;
-	
-	output.colour.rgb = input.bitangent * 0.5 + 0.5;
-	output.colour.a = 1.0;
-	
+{    
+    ps_output output;
+    
+    output.colour.rgb = input.bitangent * 0.5 + 0.5;
+    output.colour.a = 1.0;
+    
     return output;
 }
 
 ps_output ps_texcoord_0( vs_output input ) 
-{	
-	ps_output output;
-	
-	output.colour.rg = input.texcoord.xy;
-	output.colour.b = 0.0;
-	output.colour.a = 1.0;
-	
+{    
+    ps_output output;
+    
+    output.colour.rg = input.texcoord.xy;
+    output.colour.b = 0.0;
+    output.colour.a = 1.0;
+    
     return output;
 }
 
 ps_output ps_texcoord_1( vs_output input ) 
-{	
-	ps_output output;
-	
-	output.colour.rg = input.texcoord.zw;
-	output.colour.b = 0.0;
-	output.colour.a = 1.0;
-	
+{    
+    ps_output output;
+    
+    output.colour.rg = input.texcoord.zw;
+    output.colour.b = 0.0;
+    output.colour.a = 1.0;
+    
     return output;
 }
 
 ps_output ps_debug( vs_output_picking input ) 
-{	
-	ps_output_picking output;
-	
-	output.colour = uint(input.index.x);
-	
+{    
+    ps_output_picking output;
+    
+    output.colour = uint(input.index.x);
+    
     return output;
 }
 
 ps_output ps_cubemapped( vs_output input ) 
 {
-	ps_output output;
-	
-	output.colour = sample_texture( cubemap_texture, normalize(input.world_pos.xyz));
-	
-	return output;
+    ps_output output;
+    
+    output.colour = sample_texture( cubemap_texture, normalize(input.world_pos.xyz));
+    
+    return output;
 }
 
 ps_output ps_constant_colour( vs_output input ) 
 {
-	ps_output output;
-	output.colour = float4( user_data2.rgb, 1.0 );
-		
-	return output;	
+    ps_output output;
+    output.colour = float4( user_data2.rgb, 1.0 );
+        
+    return output;    
 }
 
 ps_output ps_volume_texture( vs_output input ) 
 {
-	ps_output output;
-	
-	float3 v = input.texcoord.xyz;
-		
-	float3 chebyshev_norm = chebyshev_normalize(v);
-	
-	float3 uvw = chebyshev_norm * 0.5 + 0.5;
-	float depth = 1.0;
-	
-	float max_samples = 256.0;
-		
-	float3 ray_dir = normalize(input.world_pos.xyz - camera_view_pos.xyz);
-				
-	//transform ray into volume space
-	float3x3 inv_rot = to_3x3(world_matrix_inv_transpose);
-	
-	ray_dir = mul( inv_rot, ray_dir );
-	
-	float3 ray_step = chebyshev_normalize(ray_dir.xyz) / max_samples;
-				
-	float depth_step = 1.0 / max_samples;
-	
-	float3 vddx = ddx( uvw );
-	float3 vddy = ddy( uvw );
-	
-	for( int s = 0; s < int(max_samples); ++s )
-	{		
-		output.colour = sample_texture_grad( volume_texture, uvw, vddx, vddy );
-		
-		if(output.colour.a != 0.0)
-			break;
-		
-		depth -= depth_step;
-		uvw += ray_step;
-		
-		if(uvw.x > 1.0 || uvw.x < 0.0)
-			discard;
-			
-		if(uvw.y > 1.0 || uvw.y < 0.0)
-			discard;
-			
-		if(uvw.z > 1.0 || uvw.z < 0.0)
-			discard;
-		
-		if( s == max_samples-1)
-			discard;
-	}
-	
-	output.colour.rgb *= lerp( 0.5, 1.0, depth );
-		
-	return output;
+    ps_output output;
+    
+    float3 v = input.texcoord.xyz;
+        
+    float3 chebyshev_norm = chebyshev_normalize(v);
+    
+    float3 uvw = chebyshev_norm * 0.5 + 0.5;
+    float depth = 1.0;
+    
+    float max_samples = 256.0;
+        
+    float3 ray_dir = normalize(input.world_pos.xyz - camera_view_pos.xyz);
+                
+    //transform ray into volume space
+    float3x3 inv_rot = to_3x3(world_matrix_inv_transpose);
+    
+    ray_dir = mul( inv_rot, ray_dir );
+    
+    float3 ray_step = chebyshev_normalize(ray_dir.xyz) / max_samples;
+                
+    float depth_step = 1.0 / max_samples;
+    
+    float3 vddx = ddx( uvw );
+    float3 vddy = ddy( uvw );
+    
+    for( int s = 0; s < int(max_samples); ++s )
+    {        
+        output.colour = sample_texture_grad( volume_texture, uvw, vddx, vddy );
+        
+        if(output.colour.a != 0.0)
+            break;
+        
+        depth -= depth_step;
+        uvw += ray_step;
+        
+        if(uvw.x > 1.0 || uvw.x < 0.0)
+            discard;
+            
+        if(uvw.y > 1.0 || uvw.y < 0.0)
+            discard;
+            
+        if(uvw.z > 1.0 || uvw.z < 0.0)
+            discard;
+        
+        if( s == max_samples-1)
+            discard;
+    }
+    
+    output.colour.rgb *= lerp( 0.5, 1.0, depth );
+        
+    return output;
 }
 
 ps_output ps_volume_sdf( vs_output input ) 
 {
-	ps_output output;
-	
-	float3 v = input.texcoord.xyz;
-	float3 chebyshev_norm = chebyshev_normalize(v);
-	float3 uvw = chebyshev_norm * 0.5 + 0.5;
-	
-	float max_samples = 64.0;
-	
-	float3 ray_dir = normalize(input.world_pos.xyz - camera_view_pos.xyz);
-				
-	//transform ray into volume space
-	float3x3 inv_rot = to_3x3(world_matrix_inv_transpose);
-	
-	ray_dir = mul(inv_rot, ray_dir);
-	ray_dir = normalize(ray_dir);
-					
-	float3 vddx = ddx( uvw );
-	float3 vddy = ddy( uvw );
-	
-	float3 scale = float3(length(world_matrix[0].xyz), length(world_matrix[1].xyz), length(world_matrix[2].xyz)) * 2.0;
-	
-	float d;
-	
-	d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
-	
-	float3 col = float3( 0.0, 0.0, 0.0 );
-	
-	float3 ray_pos = input.world_pos.xyz;
-	
-	float taken = 0.0;
-	
-	float3 min_step = (scale / max_samples); 
-	
-	for( int s = 0; s < int(max_samples); ++s )
-	{		
-		taken += 1.0/max_samples;
-				
-		d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
-			
-		float3 step = ray_dir.xyz * float3(d / scale) * 0.5;
-		
-		uvw += step;		
-									
-		if(uvw.x >= 1.0 || uvw.x <= 0.0)
-			discard;
-		
-		if(uvw.y >= 1.0 || uvw.y <= 0.0)
-			discard;
-		
-		if(uvw.z >= 1.0 || uvw.z <= 0.0)
-			discard;
-			
-		if( d <= 0.01 )	
-			break;
-	}
-	
-	float vd = (1.0 - d);
-	output.colour.rgb = float3(vd*vd,vd*vd, vd*vd);
-	output.colour.rgb = float3(taken, taken, taken);
-	output.colour.a = 1.0;
-		
-	return output;
+    ps_output output;
+    
+    float3 v = input.texcoord.xyz;
+    float3 chebyshev_norm = chebyshev_normalize(v);
+    float3 uvw = chebyshev_norm * 0.5 + 0.5;
+    
+    float max_samples = 64.0;
+    
+    float3 ray_dir = normalize(input.world_pos.xyz - camera_view_pos.xyz);
+                
+    //transform ray into volume space
+    float3x3 inv_rot = to_3x3(world_matrix_inv_transpose);
+    
+    ray_dir = mul(inv_rot, ray_dir);
+    ray_dir = normalize(ray_dir);
+                    
+    float3 vddx = ddx( uvw );
+    float3 vddy = ddy( uvw );
+    
+    float3 scale = float3(length(world_matrix[0].xyz), length(world_matrix[1].xyz), length(world_matrix[2].xyz)) * 2.0;
+    
+    float d;
+    
+    d = sample_texture_grad( volume_texture, uvw, vddx, vddy ).r;
+    
+    float3 col = float3( 0.0, 0.0, 0.0 );
+    
+    float3 ray_pos = input.world_pos.xyz;
+    
+    float taken = 0.0;
+    
+    float3 min_step = (scale / max_samples); 
+    
+    for( int s = 0; s < int(max_samples); ++s )
+    {        
+        taken += 1.0/max_samples;
+                
+        d = sample_texture_grad(volume_texture, uvw, vddx, vddy).r;
+            
+        float3 step = ray_dir.xyz * float3(d / scale) * 0.5;
+        
+        uvw += step;        
+                                    
+        if(uvw.x >= 1.0 || uvw.x <= 0.0)
+            discard;
+        
+        if(uvw.y >= 1.0 || uvw.y <= 0.0)
+            discard;
+        
+        if(uvw.z >= 1.0 || uvw.z <= 0.0)
+            discard;
+            
+        if( d <= 0.01 )    
+            break;
+    }
+    
+    float vd = (1.0 - d);
+    output.colour.rgb = float3(vd*vd,vd*vd, vd*vd);
+    output.colour.rgb = float3(taken, taken, taken);
+    output.colour.a = 1.0;
+        
+    return output;
 }
 
 ps_output ps_shadow_sdf( vs_output input ) 
 {
-	ps_output output;
-	
-	output.colour = float4(0.0, 0.0, 0.0, 1.0);
-	float3 albedo = float3(1.0, 1.0, 1.0);
-	
-	float max_samples = 128.0;
-	
-	float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
-	
-	// point on surface ray origin in sdf space
-	float3 r1 = input.world_pos.xyz + input.normal.xyz * 0.3; // offset slightly by normal to avoid self-shdow
-	float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
-					
-	float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
-	
-	// derivatives for texture grad
-	float3 vddx = ddx( r1 );
-	float3 vddy = ddy( r1 );
-	
-	float3 v1;
-			
-	//for( int i = 0; i < light_info.x; ++i )
-	int point_start = int(light_info.x);
-	int point_end =  int(light_info.x) + int(light_info.y);
-		
-	for( int i = point_start; i < point_end; ++i )
-	{
-		float3 light_col = float3( 0.0, 0.0, 0.0 );
-					
-		light_col += lambert(lights[i].pos_radius,
-							 lights[i].colour.rgb,
-							 input.normal.xyz,
-							 input.world_pos.xyz,
-							 albedo.rgb);
-							 
-		if(length(light_col) <= 0.0)
-			continue;
-		
-		float atten = point_light_attenuation(lights[i].pos_radius , input.world_pos.xyz);
-		light_col *= atten;
-		
-		float closest = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
-						
-		light_col *= smoothstep( 0.0, 0.1, closest);
-		
-		output.colour.rgb += light_col;
-	}
-				
-	return output;
+    ps_output output;
+    
+    output.colour = float4(0.0, 0.0, 0.0, 1.0);
+    float3 albedo = float3(1.0, 1.0, 1.0);
+    
+    float max_samples = 128.0;
+    
+    float3x3 inv_rot = to_3x3(sdf_shadow.world_matrix_inv);
+    
+    // point on surface ray origin in sdf space
+    float3 r1 = input.world_pos.xyz + input.normal.xyz * 0.3; // offset slightly by normal to avoid self-shdow
+    float3 tr1 = mul( float4(r1, 1.0), sdf_shadow.world_matrix_inv ).xyz;
+                    
+    float3 scale = float3(length(sdf_shadow.world_matrix[0].xyz), length(sdf_shadow.world_matrix[1].xyz), length(sdf_shadow.world_matrix[2].xyz)) * 2.0;
+    
+    // derivatives for texture grad
+    float3 vddx = ddx( r1 );
+    float3 vddy = ddy( r1 );
+    
+    float3 v1;
+            
+    //for( int i = 0; i < light_info.x; ++i )
+    int point_start = int(light_info.x);
+    int point_end =  int(light_info.x) + int(light_info.y);
+        
+    for( int i = point_start; i < point_end; ++i )
+    {
+        float3 light_col = float3( 0.0, 0.0, 0.0 );
+                    
+        light_col += lambert(lights[i].pos_radius,
+                             lights[i].colour.rgb,
+                             input.normal.xyz,
+                             input.world_pos.xyz,
+                             albedo.rgb);
+                             
+        if(length(light_col) <= 0.0)
+            continue;
+        
+        float atten = point_light_attenuation(lights[i].pos_radius , input.world_pos.xyz);
+        light_col *= atten;
+        
+        float closest = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
+                        
+        light_col *= smoothstep( 0.0, 0.1, closest);
+        
+        output.colour.rgb += light_col;
+    }
+                
+    return output;
 }
 
 ps_output ps_area_box_light( vs_output input ) 
 {
-	ps_output output;
-	
-	output.colour = float4(0.0, 0.0, 0.0, 1.0);
-	
-	float3 albedo = float3( 1.0, 1.0, 1.0 );
-	
-	float max_samples = 64.0;
-	
-	float3 v = input.texcoord.xyz;
-	float3 chebyshev_norm = chebyshev_normalize(v);
-	
-	float3 light_pos = lights[0].pos_radius.xyz;
-	
-	float3 view_v = normalize(input.world_pos.xyz - camera_view_pos.xyz);
-	float3 refl = reflect(view_v, input.normal);
-	
-	float3 cp = closest_point_on_obb(area_lights.world_matrix, area_lights.world_matrix_inv, input.world_pos.xyz);
-	
-	float diff = saturate(dot(-normalize(input.world_pos.xyz-cp), input.normal));
-	
-	float3 rv = normalize(refl);
-	float3 r1 = input.world_pos.xyz;
-	
-	float3 ip, bp, rp;
-	bool hit = ray_vs_obb_ex(area_lights.world_matrix, area_lights.world_matrix_inv, r1, rv, ip, bp, rp);
-	
-	float wd = length(input.world_pos.xyz-rp)/100;
-	
-	float dp2 = dot(normalize(input.world_pos.xyz-cp), refl);
-	
-	float n_dot_v = dot(input.normal, -view_v);
-	
-	float n_dot_l = saturate( dot(normalize(cp-input.world_pos.xyz), input.normal) );
-		
-	float s = lerp(0.01, 10.0, wd);
-	
-	float d = 1.0 - length(bp-rp) / s;
-	
-	if(n_dot_l <= 0.0)
-		d = 0.0;
+    ps_output output;
+    
+    output.colour = float4(0.0, 0.0, 0.0, 1.0);
+    
+    float3 albedo = float3( 1.0, 1.0, 1.0 );
+    
+    float max_samples = 64.0;
+    
+    float3 v = input.texcoord.xyz;
+    float3 chebyshev_norm = chebyshev_normalize(v);
+    
+    float3 light_pos = lights[0].pos_radius.xyz;
+    
+    float3 view_v = normalize(input.world_pos.xyz - camera_view_pos.xyz);
+    float3 refl = reflect(view_v, input.normal);
+    
+    float3 cp = closest_point_on_obb(area_lights.world_matrix, area_lights.world_matrix_inv, input.world_pos.xyz);
+    
+    float diff = saturate(dot(-normalize(input.world_pos.xyz-cp), input.normal));
+    
+    float3 rv = normalize(refl);
+    float3 r1 = input.world_pos.xyz;
+    
+    float3 ip, bp, rp;
+    bool hit = ray_vs_obb_ex(area_lights.world_matrix, area_lights.world_matrix_inv, r1, rv, ip, bp, rp);
+    
+    float wd = length(input.world_pos.xyz-rp)/100;
+    
+    float dp2 = dot(normalize(input.world_pos.xyz-cp), refl);
+    
+    float n_dot_v = dot(input.normal, -view_v);
+    
+    float n_dot_l = saturate( dot(normalize(cp-input.world_pos.xyz), input.normal) );
+        
+    float s = lerp(0.01, 10.0, wd);
+    
+    float d = 1.0 - length(bp-rp) / s;
+    
+    if(n_dot_l <= 0.0)
+        d = 0.0;
 
-	float mask = 1.0 - saturate(dp2);
-	
-	float light = diff; //saturate(d + diff);
-		
-	output.colour = float4( light, light, light, 1.0);
-	
-	return output;
+    float mask = 1.0 - saturate(dp2);
+    
+    float light = diff; //saturate(d + diff);
+        
+    output.colour = float4( light, light, light, 1.0);
+    
+    return output;
 }
 
 pmfx:
-{	
-	"constant_colour":
-	{
-		"vs": "vs_main",
-		"ps": "ps_constant_colour"
-	},
-	
-	"diffuse":
-	{
-		"vs": "vs_main",
-		"ps": "ps_diffuse"
-	},
-	
-	"vertex_normals":
-	{
-		"vs": "vs_main",
-		"ps": "ps_vertex_normals"
-	},
-	
-	"vertex_tangents":
-	{
-		"vs": "vs_main",
-		"ps": "ps_vertex_tangents"
-	},
-	
-	"vertex_bitangents":
-	{
-		"vs": "vs_main",
-		"ps": "ps_vertex_bitangents"
-	},
-	
-	"texcoord_0":
-	{
-	    "vs": "vs_main",
-	    "ps": "ps_texcoord_0"
-	},
-	
-	"texcoord_1":
-	{
-	    "vs": "vs_main",
-	    "ps": "ps_texcoord_1"
-	},
-	
-	"diffuse_skinned":
-	{
-		"vs": "vs_main_skinned",
-		"ps": "ps_diffuse"
-	},
-	
-	"cubemap":
-	{
-		"vs": "vs_main",
-		"ps": "ps_cubemapped"
-	},
-	
-	"volume_texture":
-	{
-		"vs": "vs_main_volume_texture",
-		"ps": "ps_volume_texture"
-	},
-	
-	"volume_sdf":
-	{
-		"vs": "vs_main_volume_texture",
-		"ps": "ps_volume_sdf"
-	},
-	
-	"shadow_sdf":
-	{
-		"vs": "vs_main_volume_texture",
-		"ps": "ps_shadow_sdf"
-	},
-	
-	"area_box_light":
-	{
-		"vs": "vs_main_volume_texture",
-		"ps": "ps_area_box_light"
-	},
-	
-	"picking":
-	{
-		"vs": "vs_picking",
-		"ps": "ps_picking"
-	},
-	
-	"picking_skinned":
-	{
-		"vs": "vs_picking_skinned",
-		"ps": "ps_picking"
-	},
-	
-	"picking_instanced":
-	{
-		"vs": "vs_picking_instanced",
-		"ps": "ps_picking"
-	},
-	
-	"volume_raster_albedo":
-	{
-		"vs": "vs_main",
-		"ps": "ps_diffuse"
-	}
+{    
+    "constant_colour":
+    {
+        "vs": "vs_main",
+        "ps": "ps_constant_colour"
+    },
+    
+    "diffuse":
+    {
+        "vs": "vs_main",
+        "ps": "ps_diffuse"
+    },
+    
+    "vertex_normals":
+    {
+        "vs": "vs_main",
+        "ps": "ps_vertex_normals"
+    },
+    
+    "vertex_tangents":
+    {
+        "vs": "vs_main",
+        "ps": "ps_vertex_tangents"
+    },
+    
+    "vertex_bitangents":
+    {
+        "vs": "vs_main",
+        "ps": "ps_vertex_bitangents"
+    },
+    
+    "texcoord_0":
+    {
+        "vs": "vs_main",
+        "ps": "ps_texcoord_0"
+    },
+    
+    "texcoord_1":
+    {
+        "vs": "vs_main",
+        "ps": "ps_texcoord_1"
+    },
+    
+    "diffuse_skinned":
+    {
+        "vs": "vs_main_skinned",
+        "ps": "ps_diffuse"
+    },
+    
+    "cubemap":
+    {
+        "vs": "vs_main",
+        "ps": "ps_cubemapped"
+    },
+    
+    "volume_texture":
+    {
+        "vs": "vs_main_volume_texture",
+        "ps": "ps_volume_texture"
+    },
+    
+    "volume_sdf":
+    {
+        "vs": "vs_main_volume_texture",
+        "ps": "ps_volume_sdf"
+    },
+    
+    "shadow_sdf":
+    {
+        "vs": "vs_main_volume_texture",
+        "ps": "ps_shadow_sdf"
+    },
+    
+    "area_box_light":
+    {
+        "vs": "vs_main_volume_texture",
+        "ps": "ps_area_box_light"
+    },
+    
+    "picking":
+    {
+        "vs": "vs_picking",
+        "ps": "ps_picking"
+    },
+    
+    "picking_skinned":
+    {
+        "vs": "vs_picking_skinned",
+        "ps": "ps_picking"
+    },
+    
+    "picking_instanced":
+    {
+        "vs": "vs_picking_instanced",
+        "ps": "ps_picking"
+    },
+    
+    "volume_raster_albedo":
+    {
+        "vs": "vs_main",
+        "ps": "ps_diffuse"
+    }
 }

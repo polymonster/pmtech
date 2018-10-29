@@ -1,48 +1,49 @@
 cbuffer per_pass_vs : register(b0)
 {
-	float4x4 projection_matrix;
+    float4x4 projection_matrix;
 };
 
 struct vs_input
 {
-	float2 position 	: POSITION;
-	float2 tex_coord	: TEXCOORD0;
-	float4 colour		: COLOR0;
+    float2 position      : POSITION;
+    float2 tex_coord     : TEXCOORD0;
+    float4 colour        : COLOR0;
 };
 
 struct vs_output
 {
-	float4 position 	: SV_POSITION;
-	float4 colour		: TEXCOORD0;
-	float2 tex_coord	: TEXCOORD1;
+    float4 position      : SV_POSITION;
+    float4 colour        : TEXCOORD0;
+    float2 tex_coord     : TEXCOORD1;
 };
 
 struct ps_output
 {
-	float4 colour : SV_Target;
+    float4 colour : SV_Target;
 };
 
 vs_output vs_main( vs_input input )
 {
-	vs_output output;
-	
-	output.position = mul( projection_matrix, float4( input.position.x, input.position.y, 0.0f, 1.0f ) );
-	output.colour = input.colour;
-	output.tex_coord = input.tex_coord;
-	
+    vs_output output;
+    
+    output.position = mul( projection_matrix, float4( input.position.x, input.position.y, 0.0f, 1.0f ) );
+    output.colour = input.colour;
+    output.tex_coord = input.tex_coord;
+    
     return output;
 }
 
 declare_texture_samplers
 {
-	texture_2d( tex, 0 );
+    texture_2d( tex, 0 );
 };
 
 ps_output ps_main( vs_output input )
 {
-	ps_output output;
-	
-	output.colour = input.colour * sample_texture( tex, input.tex_coord.xy );
-		
-	return output;
+    ps_output output;
+    
+    output.colour = input.colour * sample_texture( tex, input.tex_coord.xy );
+        
+    return output;
 }
+

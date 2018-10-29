@@ -73,3 +73,4 @@ float sd_plane(float3 p, float4 n)
   // n must be normalized
   return dot(p, n.xyz) + n.w;
 }
+

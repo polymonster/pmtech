@@ -42,25 +42,25 @@ if __name__ == "__main__":
     if len(sys.argv) <= 1:
         display_help()
     else:
+        input_files = []
         if "-i" in sys.argv:
-            input_file = sys.argv[sys.argv.index("-i") + 1]
+            pos = sys.argv.index("-i") + 1
+            while pos < len(sys.argv) and sys.argv[pos][0] != "-":
+                input_files.append(sys.argv[pos])
+                pos += 1
+        for input_file in input_files:
+            file = open(input_file, "r")
+            file_data = file.read()
+            file.close()
 
-        print(input_file)
+            if "-tabs_to_spaces" in sys.argv:
+                spaces = sys.argv[sys.argv.index("-tabs_to_spaces") + 1]
+                file_data = tabs_to_spaces(file_data, int(spaces))
 
-        file = open(input_file, "r")
-        file_data = file.read()
-        file.close()
+            if "-align_consecutive" in sys.argv:
+                align_char = sys.argv[sys.argv.index("-align_consecutive") + 1]
+                file_data = align_consecutive(file_data, align_char)
 
-        if "-tabs_to_spaces" in sys.argv:
-            spaces = sys.argv[sys.argv.index("-tabs_to_spaces") + 1]
-            file_data = tabs_to_spaces(file_data, int(spaces))
-
-        if "-align_consecutive" in sys.argv:
-            align_char = sys.argv[sys.argv.index("-align_consecutive") + 1]
-            file_data = align_consecutive(file_data, align_char)
-
-        print(file_data)
-
-        file = open(input_file, "w")
-        file.write(file_data)
-        file.close()
+            file = open(input_file, "w")
+            file.write(file_data)
+            file.close()

@@ -1,188 +1,188 @@
 {
-	blend_states:
-	{
-		disabled:
-		{
-			blend_enable: false,	
-		},
-		
-		additive:
-		{
-			blend_enable: true,
-			src_blend: one,
-			dest_blend: one
-		},
-		
-		alpha_belnd:
-		{
-			blend_enable: true,
-			src_blend: src_alpha,
-			dest_blend: inv_src_alpha
-		}
-	},
-	
-	sampler_states:
-	{
-		wrap_linear:
-		{
-			filter: linear,
-			address: wrap
-		},
-		
-		clamp_linear:
-		{
-			filter: linear,
-			address: clamp
-		},
-		
-		clamp_point:
-		{
-			filter: point,
-			address: clamp
-		},
-	},
-	
-	depth_stencil_states:
-	{
-		disabled:
-		{
-			depth_enable: false,
-		},
-		
-		default:
-		{
-			depth_enable: true,
-			depth_write: true,
-			depth_func: "less"
-		},
-		
-		depth_never:
-		{
-			depth_enable: true,
-			depth_write: true,
-			depth_func: "never"
-		},
-		
-		depth_always:
-		{
-			depth_enable: true,
-			depth_write: true,
-			depth_func: "always"
-		},
-		
-		depth_always_no_write:
-		{
-			depth_enable: true,
-			depth_write: false,
-			depth_func: "always"
-		},
-		
-		stencil_test:
-		{
-			depth_enable: true,
-			depth_write: true,
-			depth_func: "always",
-			stencil_enable: true,
-			stencil_write_mask: 0xff,
-			stencil_read_mask: 0xff,
-			
-			stencil_op:
-			{
-				stencil_fail: "keep",
-				depth_fail: "keep",
-				stencil_pass: "replace",
-				stencil_func: "equal"
-			}
-		},
-	},
-	
-	raster_states:
-	{
-		default:
-		{
-			cull_mode: back,
-		},
-		
-		wireframe:
-		{
-			cull_mode: none,
-			fill_mode: wireframe
-		}
-		
-		front_face_cull:
-		{
-			cull_mode: front,
-			fill_mode: solid
-		},
-		
-		volume_raster:
-		{
-			cull_mode: back
-		},
-		
-		post_process:
-		{
-			cull_mode: none
-		},
-		
-		no_cull:
-		{
-			cull_mode: none
-		}
-	},
-	
+    blend_states:
+    {
+        disabled:
+        {
+            blend_enable: false,    
+        },
+        
+        additive:
+        {
+            blend_enable: true,
+            src_blend   : one,
+            dest_blend  : one
+        },
+        
+        alpha_belnd:
+        {
+            blend_enable: true,
+            src_blend   : src_alpha,
+            dest_blend  : inv_src_alpha
+        }
+    },
+    
+    sampler_states:
+    {
+        wrap_linear:
+        {
+            filter : linear,
+            address: wrap
+        },
+        
+        clamp_linear:
+        {
+            filter : linear,
+            address: clamp
+        },
+        
+        clamp_point:
+        {
+            filter : point,
+            address: clamp
+        },
+    },
+    
+    depth_stencil_states:
+    {
+        disabled:
+        {
+            depth_enable: false,
+        },
+        
+        default:
+        {
+            depth_enable: true,
+            depth_write : true,
+            depth_func  : "less"
+        },
+        
+        depth_never:
+        {
+            depth_enable: true,
+            depth_write : true,
+            depth_func  : "never"
+        },
+        
+        depth_always:
+        {
+            depth_enable: true,
+            depth_write : true,
+            depth_func  : "always"
+        },
+        
+        depth_always_no_write:
+        {
+            depth_enable: true,
+            depth_write : false,
+            depth_func  : "always"
+        },
+        
+        stencil_test:
+        {
+            depth_enable      : true,
+            depth_write       : true,
+            depth_func        : "always",
+            stencil_enable    : true,
+            stencil_write_mask: 0xff,
+            stencil_read_mask : 0xff,
+            
+            stencil_op:
+            {
+                stencil_fail: "keep",
+                depth_fail  : "keep",
+                stencil_pass: "replace",
+                stencil_func: "equal"
+            }
+        },
+    },
+    
+    raster_states:
+    {
+        default:
+        {
+            cull_mode: back,
+        },
+        
+        wireframe:
+        {
+            cull_mode: none,
+            fill_mode: wireframe
+        }
+        
+        front_face_cull:
+        {
+            cull_mode: front,
+            fill_mode: solid
+        },
+        
+        volume_raster:
+        {
+            cull_mode: back
+        },
+        
+        post_process:
+        {
+            cull_mode: none
+        },
+        
+        no_cull:
+        {
+            cull_mode: none
+        }
+    },
+    
     render_targets:
-	{				
-		shadow_map:
-		{
-			size: [2048,2048],
-			format: d24s8,
-		}
-	},
-	
-	views:
-	{
-		main_view:
-		{
-			target: [main_colour, main_depth],
-			clear_colour: [0.5, 0.5, 0.5, 1.0],
-			clear_depth: 1.0,
-			colour_write_mask: 0xf,
-			blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: default,
-			depth_stencil_state: default,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			scene_views: ["ces_render_scene"],
-			render_flags: ["forward_lit"],
-			
-			sampler_bindings:
-			[
-				{ texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
-			],
-		},
-		
-		main_view_post_processed:
-		{
-			target: [post_process_colour, post_process_depth],
-			clear_colour: [0.5, 0.5, 0.5, 1.0],
-			clear_depth: 1.0,
-			colour_write_mask: 0xf,
-			blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: default,
-			depth_stencil_state: default,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			scene_views: ["ces_render_scene"],
-			render_flags: ["forward_lit"],
-			post_process: editor_default,
-			
-			sampler_bindings:
-			[
-				{ texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
-			],
-		},
-	}
+    {                
+        shadow_map:
+        {
+            size  : [2048,2048],
+            format: d24s8,
+        }
+    },
+    
+    views:
+    {
+        main_view:
+        {
+            target             : [main_colour, main_depth],
+            clear_colour       : [0.5, 0.5, 0.5, 1.0],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : default,
+            depth_stencil_state: default,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            scene_views        : ["ces_render_scene"],
+            render_flags       : ["forward_lit"],
+            
+            sampler_bindings:
+            [
+                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+            ],
+        },
+        
+        main_view_post_processed:
+        {
+            target             : [post_process_colour, post_process_depth],
+            clear_colour       : [0.5, 0.5, 0.5, 1.0],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : default,
+            depth_stencil_state: default,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            scene_views        : ["ces_render_scene"],
+            render_flags       : ["forward_lit"],
+            post_process       : editor_default,
+            
+            sampler_bindings:
+            [
+                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+            ],
+        },
+    }
 }

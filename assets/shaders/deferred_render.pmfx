@@ -3,88 +3,88 @@
 
 struct vs_output
 {
-	float4 position         : SV_POSITION;
-	float4 screen_coord     : TEXCOORD0;
-	float4 light_pos_radius : TEXCOORD1;
-	float4 light_dir_cutoff : TEXCOORD2;
-	float4 light_colour     : TEXCOORD3;
-	float4 light_data       : TEXCOORD4;
+    float4 position         : SV_POSITION;
+    float4 screen_coord     : TEXCOORD0;
+    float4 light_pos_radius : TEXCOORD1;
+    float4 light_dir_cutoff : TEXCOORD2;
+    float4 light_colour     : TEXCOORD3;
+    float4 light_data       : TEXCOORD4;
 };
 
 struct vs_input
 {
-	float4 position	 	: POSITION;
-	float4 normal	 	: TEXCOORD0;
-	float4 texcoord	 	: TEXCOORD1;
-	float4 tangent	 	: TEXCOORD2;
-	float4 bitangent	: TEXCOORD3;
+    float4 position         : POSITION;
+    float4 normal           : TEXCOORD0;
+    float4 texcoord         : TEXCOORD1;
+    float4 tangent          : TEXCOORD2;
+    float4 bitangent        : TEXCOORD3;
 };
 
 struct ps_output
 {
-	float4 colour : SV_Target;
+    float4 colour : SV_Target;
 };
 
 declare_texture_samplers
 {
-	texture_2d( gbuffer_albedo, 0 );
-	texture_2d( gbuffer_normals, 1 );
-	texture_2d( gbuffer_world_pos, 2 );	
-	texture_2d( gbuffer_depth, 4 );
+    texture_2d( gbuffer_albedo, 0 );
+    texture_2d( gbuffer_normals, 1 );
+    texture_2d( gbuffer_world_pos, 2 );    
+    texture_2d( gbuffer_depth, 4 );
 };
 
 void unpack_light_data(inout vs_output output)
 {
-	float4x4 ld = world_matrix_inv_transpose;
-	output.light_pos_radius = ld[0];
-	output.light_dir_cutoff = ld[1];
-	output.light_colour = ld[2];
-	output.light_data = ld[3];
+    float4x4 ld = world_matrix_inv_transpose;
+    output.light_pos_radius = ld[0];
+    output.light_dir_cutoff = ld[1];
+    output.light_colour = ld[2];
+    output.light_data = ld[3];
 }
 
 vs_output vs_directional_light(vs_input input)
 {
-	vs_output output;
-	
-	float x = input.position.x;
-	float y = input.position.y;
-	
-	output.position = input.position;
-	
-	// todo y invert
-	output.screen_coord = float4(x * 0.5 + 0.5, -y * 0.5 + 0.5, 0.0, 0.0);
-	
-	unpack_light_data(output);
-		
+    vs_output output;
+    
+    float x = input.position.x;
+    float y = input.position.y;
+    
+    output.position = input.position;
+    
+    // todo y invert
+    output.screen_coord = float4(x * 0.5 + 0.5, -y * 0.5 + 0.5, 0.0, 0.0);
+    
+    unpack_light_data(output);
+        
     return output;
 }
 
 vs_output vs_point_light(vs_input input)
 {
-	vs_output output;
-	
-	float4x4 wvp = mul(world_matrix, vp_matrix);
-	output.position = mul(input.position, wvp);
-	
-	// todo y invert
-	output.screen_coord = output.position;
-	
-	unpack_light_data(output);
-	
+    vs_output output;
+    
+    float4x4 wvp = mul(world_matrix, vp_matrix);
+    output.position = mul(input.position, wvp);
+    
+    // todo y invert
+    output.screen_coord = output.position;
+    
+    unpack_light_data(output);
+    
     return output;
 }
 
 vs_output vs_spot_light(vs_input input)
 {
-	vs_output output;
-	
-	float4x4 wvp = mul(world_matrix, vp_matrix);
-	output.position = mul(input.position, wvp);
+    vs_output output;
+    
+    float4x4 wvp = mul(world_matrix, vp_matrix);
+    output.position = mul(input.position, wvp);
 
-	// todo y invert
-	output.screen_coord = output.position;
-	
-	unpack_light_data(output);
+    // todo y invert
+    output.screen_coord = output.position;
+    
+    unpack_light_data(output);
 
     return output;
 }
@@ -92,32 +92,32 @@ vs_output vs_spot_light(vs_input input)
 
 ps_output ps_light(vs_output input)
 {
-	ps_output output;
-	
-	float2 sc = input.screen_coord.xy;
-	
-	if:(POINT_LIGHT || SPOT_LIGHT)
-	{
-		float x = input.screen_coord.x / input.screen_coord.w;
-	    float y = input.screen_coord.y / input.screen_coord.w;
-	
-	    sc = float2(x * 0.5 + 0.5, -y * 0.5 + 0.5);
-	}
-	
-	float4 g_albedo = sample_texture(gbuffer_albedo, sc);
-	float4 g_normals = sample_texture(gbuffer_normals, sc);
-	float4 g_world_pos = sample_texture(gbuffer_world_pos, sc);
-	
-	float3 albedo = g_albedo.rgb;
-	float3 n = normalize(g_normals.rgb);
-	float3 world_pos = g_world_pos.rgb;
-	
-	float metalness = g_world_pos.a;
-	float roughness = g_albedo.a;
-	float reflectivity = g_normals.a;
-	
-	float3 light_col = cook_torrence(  
-	        input.light_pos_radius,
+    ps_output output;
+    
+    float2 sc = input.screen_coord.xy;
+    
+    if:(POINT_LIGHT || SPOT_LIGHT)
+    {
+        float x = input.screen_coord.x / input.screen_coord.w;
+        float y = input.screen_coord.y / input.screen_coord.w;
+    
+        sc = float2(x * 0.5 + 0.5, -y * 0.5 + 0.5);
+    }
+    
+    float4 g_albedo = sample_texture(gbuffer_albedo, sc);
+    float4 g_normals = sample_texture(gbuffer_normals, sc);
+    float4 g_world_pos = sample_texture(gbuffer_world_pos, sc);
+    
+    float3 albedo = g_albedo.rgb;
+    float3 n = normalize(g_normals.rgb);
+    float3 world_pos = g_world_pos.rgb;
+    
+    float metalness = g_world_pos.a;
+    float roughness = g_albedo.a;
+    float reflectivity = g_normals.a;
+    
+    float3 light_col = cook_torrence(  
+            input.light_pos_radius,
             input.light_colour.rgb,
             n,
             world_pos,
@@ -128,31 +128,31 @@ ps_output ps_light(vs_output input)
             reflectivity);
                                         
      light_col += oren_nayar( 
-			input.light_pos_radius,
-			input.light_colour.rgb,
-			n,
+            input.light_pos_radius,
+            input.light_colour.rgb,
+            n,
             world_pos,
             camera_view_pos.xyz,
-			roughness,
-			albedo.rgb
-		);
-		
-	if:(POINT_LIGHT)
-	{
-	    light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
-	}	
-	
-	if:(SPOT_LIGHT)
-	{
-	    light_col *= spot_light_attenuation(input.light_pos_radius, 
-	                                        input.light_dir_cutoff,
-	                                        input.light_data.x, 
-	                                        world_pos);
-	}
+            roughness,
+            albedo.rgb
+        );
+        
+    if:(POINT_LIGHT)
+    {
+        light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
+    }    
+    
+    if:(SPOT_LIGHT)
+    {
+        light_col *= spot_light_attenuation(input.light_pos_radius, 
+                                            input.light_dir_cutoff,
+                                            input.light_data.x, 
+                                            world_pos);
+    }
                   
-	output.colour.rgb = light_col;
-	
-	return output;
+    output.colour.rgb = light_col;
+    
+    return output;
 }
 
 pmfx:
@@ -165,16 +165,17 @@ pmfx:
     
     "point_light":
     {
-        "vs": "vs_point_light",
-        "ps": "ps_light",
+        "vs"     : "vs_point_light",
+        "ps"     : "ps_light",
         "defines": ["POINT_LIGHT"]
     },
     
     "spot_light":
     {
-        "vs": "vs_spot_light",
-        "ps": "ps_light",
+        "vs"     : "vs_spot_light",
+        "ps"     : "ps_light",
         "defines": ["SPOT_LIGHT"]
     }
 }
+
 
