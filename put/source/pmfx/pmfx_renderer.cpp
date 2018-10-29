@@ -131,9 +131,9 @@ namespace
 
     enum e_post_process_flags
     {
-        PP_NONE    = 0,
-        PP_ENABLED = (1 << 0),
-        PP_EDITED  = (1 << 1),
+        PP_NONE          = 0,
+        PP_ENABLED       = (1 << 0),
+        PP_EDITED        = (1 << 1),
         PP_WRITE_NON_AUX = (1 << 2) // writes directly to the specified target bypassing aux / virtual buffers
     };
 
@@ -176,9 +176,9 @@ namespace
         u32 cbuffer_technique   = PEN_INVALID_HANDLE;
 
         // shader and technique
-        u32 pmfx_shader;
-        hash_id       technique; // todo rename to id_technique
-        u32           render_flags;
+        u32     pmfx_shader;
+        hash_id technique; // todo rename to id_technique
+        u32     render_flags;
 
         technique_constant_data technique_constants;
         sampler_set             technique_samplers;
@@ -248,14 +248,14 @@ namespace
     };
 
     // Views / Sets
-    std::vector<Str>                     s_post_process_names;      // List of post process names (ie bloom, dof.. etc)
-    std::vector<view_params>             s_views;                   // List of all view parameters
-    std::vector<Str>                     s_view_sets;               // list of view set names (ie. forward, deferred.. etc)
-    std::vector<Str>                     s_view_set;                // list of view names in the current set
-    Str                                  s_view_set_name;           // Name of the current view set
-    Str                                  s_edited_view_set_name;    // Name of the user selected view
-    std::vector<edited_post_process>     s_edited_post_processes;   // User edited post processes
-    
+    std::vector<Str>                 s_post_process_names;    // List of post process names (ie bloom, dof.. etc)
+    std::vector<view_params>         s_views;                 // List of all view parameters
+    std::vector<Str>                 s_view_sets;             // list of view set names (ie. forward, deferred.. etc)
+    std::vector<Str>                 s_view_set;              // list of view names in the current set
+    Str                              s_view_set_name;         // Name of the current view set
+    Str                              s_edited_view_set_name;  // Name of the user selected view
+    std::vector<edited_post_process> s_edited_post_processes; // User edited post processes
+
     // Render Resources
     std::vector<scene_controller>        s_controllers;
     std::vector<scene_view_renderer>     s_scene_view_renderers;
@@ -368,7 +368,7 @@ namespace put
 
             return 0;
         }
-        
+
         Str get_render_state_name(u32 handle)
         {
             size_t num = s_render_states.size();
@@ -418,7 +418,7 @@ namespace put
 
             s_geometry.screen_quad_ib = pen::renderer_create_buffer(bcp);
         }
-        
+
         void parse_sampler_bindings(pen::json render_config, view_params& vp)
         {
             std::vector<sampler_binding>& bindings           = vp.sampler_bindings;
@@ -437,13 +437,13 @@ namespace put
                 // texture id and handle from render targets.. todo add global textures
                 sb.id_texture           = binding["texture"].as_hash_id();
                 const render_target* rt = get_render_target(sb.id_texture);
-                
-                if(!rt)
+
+                if (!rt)
                 {
                     dev_console_log_level(dev_ui::CONSOLE_WARNING,
                                           "[warning] pmfx: view '%s' expects sampler '%s' but it does not exist",
                                           vp.name.c_str(), binding["texture"].as_cstr());
-                    
+
                     continue;
                 }
 
@@ -512,7 +512,7 @@ namespace put
                 hash_id hh = PEN_HASH(scp);
 
                 render_state rs;
-                rs.hash        = hh;
+                rs.hash       = hh;
                 rs.typed_name = state.name();
                 rs.typed_name.append("_sampler_state");
                 rs.id_name = PEN_HASH(rs.typed_name.c_str());
@@ -552,7 +552,7 @@ namespace put
                 hash_id hh = PEN_HASH(rcp);
 
                 render_state rs;
-                rs.hash        = hh;
+                rs.hash       = hh;
                 rs.typed_name = state.name();
                 rs.typed_name.append("_raster_state");
                 rs.id_name = PEN_HASH(rs.typed_name.c_str());
@@ -655,7 +655,7 @@ namespace put
                 hash_id hh = PEN_HASH(dscp);
 
                 render_state rs;
-                rs.hash        = hh;
+                rs.hash       = hh;
                 rs.typed_name = state.name();
                 rs.typed_name.append("_depth_stencil_state");
                 rs.id_name = PEN_HASH(rs.typed_name.c_str());
@@ -823,7 +823,7 @@ namespace put
             hash_id hh = hm.end();
 
             render_state rs;
-            rs.hash        = hh;
+            rs.hash       = hh;
             rs.typed_name = view_name;
             rs.typed_name.append("_blend_state");
             rs.id_name = PEN_HASH(rs.typed_name.c_str());
@@ -839,7 +839,7 @@ namespace put
 
             return rs.handle;
         }
-        
+
         void add_backbuffer_targets()
         {
             // add 2 defaults
@@ -852,10 +852,10 @@ namespace put
             main_colour.num_mips = 1;
             main_colour.pp       = VRT_WRITE;
             main_colour.flags    = RT_WRITE_ONLY;
-            
+
             s_render_targets.push_back(main_colour);
             s_render_target_tcp.push_back(texture_creation_params());
-            
+
             render_target main_depth;
             main_depth.id_name  = ID_MAIN_DEPTH;
             main_depth.name     = "Backbuffer Depth";
@@ -865,7 +865,7 @@ namespace put
             main_depth.num_mips = 1;
             main_depth.pp       = VRT_WRITE;
             main_depth.flags    = RT_WRITE_ONLY;
-            
+
             s_render_targets.push_back(main_depth);
             s_render_target_tcp.push_back(texture_creation_params());
         }
@@ -881,39 +881,39 @@ namespace put
                 pen::json r = j_render_targets[i];
 
                 hash_id id_format = r["format"].as_hash_id();
-                
-                if(include_targets)
+
+                if (include_targets)
                 {
                     // only parse specific targets in list
-                    bool include = false;
-                    u32 num_includes = sb_count(include_targets);
-                    for(int j = 0; j < num_includes; ++j)
+                    bool include      = false;
+                    u32  num_includes = sb_count(include_targets);
+                    for (int j = 0; j < num_includes; ++j)
                     {
                         // check for existing
                         bool exists = false;
-                        for(auto& er : s_render_targets)
+                        for (auto& er : s_render_targets)
                         {
-                            if(er.name == r.name())
+                            if (er.name == r.name())
                             {
                                 exists = true;
                                 break;
                             }
                         }
-                        
-                        if(exists)
+
+                        if (exists)
                             continue;
-                        
-                        if(r.name() == include_targets[j])
+
+                        if (r.name() == include_targets[j])
                         {
                             include = true;
                             break;
                         }
                     }
-                    
-                    if(!include)
+
+                    if (!include)
                         continue;
                 }
-                
+
                 for (s32 f = 0; f < PEN_ARRAY_SIZE(rt_format); ++f)
                 {
                     if (rt_format[f].id_name == id_format)
@@ -994,14 +994,14 @@ namespace put
 
                         hash_id idr = r["init_read"].as_hash_id();
                         u32     hr  = 0;
-                        if(idr != 0)
+                        if (idr != 0)
                         {
                             // load any init read targets
                             Str* include_rt = nullptr;
                             sb_push(include_rt, r["init_read"].as_str());
                             parse_render_targets(render_config, include_rt);
                             sb_free(include_rt);
-                            
+
                             for (auto& rt : s_render_targets)
                             {
                                 if (rt.id_name == idr)
@@ -1291,7 +1291,10 @@ namespace put
 
                     pen::json inherit_view = all_views[ihv.c_str()];
 
-                    view = pen::json::combine(inherit_view, view);
+                    if (!view["inherit_reverse"].as_bool())
+                        view = pen::json::combine(view, inherit_view);
+                    else
+                        view = pen::json::combine(inherit_view, view);
 
                     ihv = inherit_view["inherit"].as_str();
                 }
@@ -1503,8 +1506,8 @@ namespace put
                 new_view.post_process_name = view["post_process"].as_cstr();
                 if (!new_view.post_process_name.empty())
                     new_view.post_process_flags |= PP_ENABLED;
-                
-                if(view["pp_write_non_aux"].as_bool())
+
+                if (view["pp_write_non_aux"].as_bool())
                     new_view.post_process_flags |= PP_WRITE_NON_AUX;
 
                 // filter id for post process passes
@@ -1702,14 +1705,14 @@ namespace put
                     if (vrt.id == id)
                     {
                         u32 rt_index = vrt.rt_index[mode];
-                        
+
                         if (is_valid(rt_index))
                         {
                             result = s_render_targets[rt_index].handle;
                         }
                         else if (mode == VRT_WRITE)
                         {
-                            if(non_aux)
+                            if (non_aux)
                             {
                                 // find buffer
                                 for (u32 i = 0; i < s_render_targets.size(); ++i)
@@ -1810,7 +1813,7 @@ namespace put
                     pmfx::initialise_constant_defaults(p.pmfx_shader, p.technique, p.technique_constants.data);
 
                     // swap buffers
-                    if(!non_aux)
+                    if (!non_aux)
                         virtual_rt_swap_buffers();
 
                     ++pass_counter;
@@ -1841,22 +1844,22 @@ namespace put
                 }
             }
         } // namespace
-        
+
         void load_view_render_targets(const pen::json& render_config, const pen::json& view)
-        {            
+        {
             Str* targets = nullptr;
-            
+
             u32 num_targets = view["target"].size();
-            for(u32 t = 0; t < num_targets; ++t)
+            for (u32 t = 0; t < num_targets; ++t)
                 sb_push(targets, view["target"][t].as_str());
-            
+
             u32 num_samplers = view["sampler_bindings"].size();
-            for(u32 s = 0; s < num_samplers; ++s)
+            for (u32 s = 0; s < num_samplers; ++s)
                 sb_push(targets, view["sampler_bindings"][s]["texture"].as_str());
-            
-            if(num_targets > 0)
+
+            if (num_targets > 0)
                 parse_render_targets(render_config, targets);
-            
+
             sb_free(targets);
         }
 
@@ -1873,9 +1876,9 @@ namespace put
 
                     // subview
                     u32 num_sub_views = ppv.size();
-                    for(u32 i = 0; i < num_sub_views; ++i)
+                    for (u32 i = 0; i < num_sub_views; ++i)
                         load_view_render_targets(render_config, ppv[i]);
-                    
+
                     parse_views(ppv, j_views, v.post_process_views, ppc.c_str());
                 }
 
@@ -1921,11 +1924,11 @@ namespace put
                 // look in embedded post_process_sets
                 pp_set = render_config["post_process_sets"][v.post_process_name.c_str()];
             }
-            
-            if(pp_set.is_null())
+
+            if (pp_set.is_null())
             {
-                dev_console_log_level(dev_ui::CONSOLE_ERROR,
-                                      "[error] pmfx - missing post process set %s'", v.post_process_name.c_str());
+                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - missing post process set %s'",
+                                      v.post_process_name.c_str());
                 return;
             }
 
@@ -1941,9 +1944,9 @@ namespace put
 
                 // subview
                 u32 num_sub_views = ppv.size();
-                for(u32 i = 0; i < num_sub_views; ++i)
+                for (u32 i = 0; i < num_sub_views; ++i)
                     load_view_render_targets(render_config, ppv[i]);
-                
+
                 parse_views(ppv, j_views, v.post_process_views, ppc.c_str());
             }
 
@@ -2014,7 +2017,7 @@ namespace put
         void load_script_internal(const c8* filename)
         {
             pen::renderer_consume_cmd_buffer();
-            
+
             create_geometry_utilities();
 
             void* config_data;
@@ -2051,7 +2054,7 @@ namespace put
 
                 render_config = pen::json::combine(include_json, render_config);
             }
-            
+
             // add main_colour and main_depth backbuffer target
             add_backbuffer_targets();
 
@@ -2061,74 +2064,74 @@ namespace put
             parse_depth_stencil_states(render_config);
             parse_partial_blend_states(render_config);
             parse_filters(render_config);
-            
+
             pen::renderer_consume_cmd_buffer();
 
-            pen::json j_views = render_config["views"];
+            pen::json j_views     = render_config["views"];
             pen::json j_view_sets = render_config["view_sets"];
-            
+
             s_view_set_name = render_config["view_set"].as_str();
-            if(!s_edited_view_set_name.empty())
+            if (!s_edited_view_set_name.empty())
                 s_view_set_name = s_edited_view_set_name;
-            
+
             // get view set names
             u32 num_view_sets = j_view_sets.size();
-            for(u32 i = 0; i < num_view_sets; ++i)
+            for (u32 i = 0; i < num_view_sets; ++i)
             {
                 s_view_sets.push_back(j_view_sets[i].name());
             }
-            
+
             // get views for view set
-            pen::json j_view_set = j_view_sets[s_view_set_name.c_str()];
-            u32 num_views_in_set = j_view_set.size();
+            pen::json j_view_set       = j_view_sets[s_view_set_name.c_str()];
+            u32       num_views_in_set = j_view_set.size();
             if (num_views_in_set > 0)
             {
                 // views from "view_set"
                 pen::json view_set;
 
                 Str* used_targets = nullptr;
-                
+
                 for (u32 i = 0; i < num_views_in_set; ++i)
                 {
                     Str vs = j_view_set[i].as_str();
                     s_view_set.push_back(vs);
 
                     pen::json v = j_views[vs.c_str()];
-                    
+
                     if (v.type() == JSMN_UNDEFINED)
                     {
                         dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - view '%s' not found", vs.c_str());
                         return;
                     }
-                    
+
                     // inherit and combine
                     Str ihv = v["inherit"].as_str();
                     for (;;)
                     {
                         if (ihv == "")
                             break;
-                        
+
                         pen::json inherit_view = j_views[ihv.c_str()];
-                        
+
                         v = pen::json::combine(inherit_view, v);
-                        
+
                         ihv = inherit_view["inherit"].as_str();
                     }
 
                     view_set.set(vs.c_str(), v);
-                    
+
                     u32 num_targets = v["target"].size();
-                    for(u32 t = 0; t < num_targets; ++t)
+                    for (u32 t = 0; t < num_targets; ++t)
                     {
                         sb_push(used_targets, v["target"][t].as_str());
                     }
                 }
-                
+
                 // only add targets in use
                 parse_render_targets(render_config, used_targets);
 
                 parse_views(view_set, j_views, s_views);
-                
+
                 sb_free(used_targets);
             }
             else
@@ -2137,7 +2140,7 @@ namespace put
             }
 
             pen::renderer_consume_cmd_buffer();
-            
+
             // parse post process info
             pen::json pp_config = render_config["post_processes"];
             for (u32 i = 0; i < pp_config.size(); ++i)
@@ -2154,7 +2157,7 @@ namespace put
             }
 
             pen::renderer_consume_cmd_buffer();
-            
+
             // rebake material handles
             ces::bake_material_handles();
         }
@@ -2258,7 +2261,7 @@ namespace put
             for (u32 u = 0; u < put::UPDATES_NUM; ++u)
                 for (u32 i = 0; i < num_controllers; ++i)
                     if (s_controllers[i].order == u)
-                        if(s_controllers[i].update_function)
+                        if (s_controllers[i].update_function)
                             s_controllers[i].update_function(&s_controllers[i]);
         }
 
@@ -2276,7 +2279,7 @@ namespace put
 
             pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, PEN_SHADER_TYPE_VS);
             pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, PEN_SHADER_TYPE_PS);
-            
+
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
 
@@ -2450,7 +2453,7 @@ namespace put
                 }
 
                 // render
-                static u32           pp_shader = pmfx::load_shader("post_process");
+                static u32                     pp_shader = pmfx::load_shader("post_process");
                 static ces::geometry_resource* quad      = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
                 pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
@@ -2678,8 +2681,8 @@ namespace put
             ImGui::EndMainMenuBar();
 
             static s32 current_render_target = 0;
-            
-            if(!open_renderer)
+
+            if (!open_renderer)
                 return;
 
             if (ImGui::Begin("Pmfx", &open_renderer))
@@ -2720,42 +2723,42 @@ namespace put
 
                     render_target_info_ui(rt);
                 }
-                
+
                 if (ImGui::CollapsingHeader("View"))
                 {
                     bool invalidated = false;
-                    
+
                     static std::vector<c8*> view_set_items;
-                    
+
                     static s32 s_selected_view_set = 1;
-                    
+
                     view_set_items.clear();
-                    
+
                     u32 i = 0;
                     for (auto& vs : s_view_sets)
                     {
-                        if(vs == s_view_set_name)
+                        if (vs == s_view_set_name)
                             s_selected_view_set = i;
-                            
+
                         view_set_items.push_back(vs.c_str());
                         ++i;
                     }
 
-                    if(ImGui::Combo("View Set", &s_selected_view_set, &view_set_items[0], view_set_items.size()))
+                    if (ImGui::Combo("View Set", &s_selected_view_set, &view_set_items[0], view_set_items.size()))
                     {
-                        invalidated = true;
+                        invalidated            = true;
                         s_edited_view_set_name = view_set_items[s_selected_view_set];
                     }
-                    
+
                     ImGui::Separator();
-                    
+
                     for (auto& v : s_views)
                     {
                         view_info_ui(v);
                         ImGui::Separator();
                     }
-                    
-                    if(invalidated)
+
+                    if (invalidated)
                     {
                         pmfx_config_hotload();
                     }
@@ -2859,9 +2862,9 @@ namespace put
                     // Edit Toolbar
                     if (ImGui::Button(ICON_FA_ARROW_UP) && s_selected_chain_pp > 0)
                     {
-                        invalidated                               = true;
-                        Str tmp                                   = s_post_process_chain[s_selected_chain_pp];
-                        s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp - 1].c_str();
+                        invalidated                                   = true;
+                        Str tmp                                       = s_post_process_chain[s_selected_chain_pp];
+                        s_post_process_chain[s_selected_chain_pp]     = s_post_process_chain[s_selected_chain_pp - 1].c_str();
                         s_post_process_chain[s_selected_chain_pp - 1] = tmp.c_str();
 
                         s_selected_chain_pp--;
@@ -2871,9 +2874,9 @@ namespace put
                     ImGui::SameLine();
                     if (ImGui::Button(ICON_FA_ARROW_DOWN) && s_selected_chain_pp < s_post_process_chain.size() - 1)
                     {
-                        invalidated                               = true;
-                        Str tmp                                   = s_post_process_chain[s_selected_chain_pp];
-                        s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp + 1].c_str();
+                        invalidated                                   = true;
+                        Str tmp                                       = s_post_process_chain[s_selected_chain_pp];
+                        s_post_process_chain[s_selected_chain_pp]     = s_post_process_chain[s_selected_chain_pp + 1].c_str();
                         s_post_process_chain[s_selected_chain_pp + 1] = tmp.c_str();
 
                         s_selected_chain_pp++;
@@ -2898,10 +2901,10 @@ namespace put
                         ImGui::PushID("Post Process Chain");
                         if (chain_items.size() > 0)
                             ImGui::ListBox("", &s_selected_chain_pp, &chain_items[0], chain_items.size());
-                        
+
                         ImGui::PopID();
                     }
-                    
+
                     ImGui::NextColumn();
 
                     if (ImGui::Button(ICON_FA_ARROW_LEFT))
@@ -2928,11 +2931,11 @@ namespace put
                         set_post_process_edited(edit_view);
                         pmfx_config_hotload();
                     }
-                    else if(s_selected_input_view >= 0 && s_post_process_passes.size() > 0)
+                    else if (s_selected_input_view >= 0 && s_post_process_passes.size() > 0)
                     {
-                        if(s_selected_pp_view == -1)
+                        if (s_selected_pp_view == -1)
                             s_selected_pp_view = 0;
-                        
+
                         ImGui::Separator();
 
                         ImGui::Text("Parameters");
@@ -2946,8 +2949,7 @@ namespace put
                                 ImGui::Separator();
                                 ImGui::Text("Technique: %s", pp.name.c_str());
 
-                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0],
-                                                  pp.technique_samplers);
+                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0], pp.technique_samplers);
                             }
                         }
 
@@ -2968,20 +2970,20 @@ namespace put
                             ImGui::NextColumn();
 
                             ImGui::Text("Input / Output");
-                            
+
                             view_params& selected_chain_pp = s_post_process_passes[s_selected_pp_view];
                             view_info_ui(selected_chain_pp);
-                            
+
                             selected_chain_pp.stash_output = true;
-                            
+
                             if (selected_chain_pp.stashed_output_rt != PEN_INVALID_HANDLE)
                             {
                                 f32 aspect = selected_chain_pp.stashed_rt_aspect;
                                 ImGui::Image(&selected_chain_pp.stashed_output_rt, ImVec2(128.0f * aspect, 128.0f));
                             }
-                            
+
                             ImGui::Columns(1);
-                            
+
                             ImGui::Separator();
                         }
                     }

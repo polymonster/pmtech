@@ -4,12 +4,12 @@
 #include "dev_ui.h"
 #include "file_system.h"
 #include "memory.h"
+#include "os.h"
 #include "pen.h"
 #include "pen_json.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
-#include "os.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -434,8 +434,8 @@ namespace put
                     if (selection_stack[c] >= 0)
                     {
                         fs_iter = &fs_iter->children[selection_stack[c]];
-                        
-                        if(fs_iter)
+
+                        if (fs_iter)
                             current_path.append(fs_iter->name);
 
                         if (!(current_path.c_str()[0] == '/' && current_path.length() == 1))

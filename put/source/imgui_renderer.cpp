@@ -488,7 +488,7 @@ namespace put
         }
 
         void new_frame()
-        {            
+        {
             process_input();
 
             ImGuiIO& io = ImGui::GetIO();
@@ -529,22 +529,22 @@ namespace put
         void render()
         {
             static bool enable_rendering = true;
-            static bool debounce = false;
-            
-            if((pen::input_key(PK_CONTROL) || pen::input_key(PK_COMMAND)) && pen::input_key(PK_X))
+            static bool debounce         = false;
+
+            if ((pen::input_key(PK_CONTROL) || pen::input_key(PK_COMMAND)) && pen::input_key(PK_X))
             {
-                if(!debounce)
+                if (!debounce)
                 {
                     enable_rendering = !enable_rendering;
-                    debounce = true;
+                    debounce         = true;
                 }
             }
             else
             {
                 debounce = false;
             }
-            
-            if(enable_rendering)
+
+            if (enable_rendering)
                 ImGui::Render();
         }
     } // namespace dev_ui

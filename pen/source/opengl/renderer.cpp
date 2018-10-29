@@ -1263,7 +1263,7 @@ namespace pen
         texture_creation_params _tcp = tcp;
 
         res.render_target.uid = (u32)get_time_ms();
-        
+
         PEN_ASSERT(tcp.width != 0 && tcp.height != 0);
 
         if (tcp.width == BACK_BUFFER_RATIO)
@@ -1416,7 +1416,7 @@ namespace pen
     }
 
     extern resolve_resources g_resolve_resources;
-    
+
     void direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type)
     {
         resource_allocation& colour_res = resource_pool[target];

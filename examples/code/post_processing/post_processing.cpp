@@ -26,10 +26,10 @@ using namespace put;
 using namespace put::ces;
 
 pen::window_creation_params pen_window{
-    1280,                           // width
-    720,                            // height
-    4,                              // MSAA samples
-    "post_processing"               // window title / process name
+    1280,             // width
+    720,              // height
+    4,                // MSAA samples
+    "post_processing" // window title / process name
 };
 
 namespace physics
@@ -54,8 +54,8 @@ PEN_TRV pen::user_entry(void* params)
     put::camera_create_perspective(&main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f);
 
     put::scene_controller cc;
-    cc.camera          = &main_camera;
-    //cc.update_function = &ces::update_model_viewer_camera;
+    cc.camera = &main_camera;
+    // cc.update_function = &ces::update_model_viewer_camera;
     cc.update_function = nullptr;
     cc.name            = "model_viewer_camera";
     cc.id_name         = PEN_HASH(cc.name.c_str());
@@ -109,20 +109,20 @@ PEN_TRV pen::user_entry(void* params)
 
         // animate camera
         static bool start = true;
-        
-        if(start)
+
+        if (start)
         {
-            main_camera.pos =  vec3f(0.0f, 0.0f, 0.0f);
-            start = false;
+            main_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
+            start           = false;
         }
-        
+
         main_camera.pos += vec3f::unit_x();
-        
+
         main_camera.view.set_row(2, vec4f(0.0f, 0.0f, 1.0f, main_camera.pos.x));
         main_camera.view.set_row(1, vec4f(0.0f, 1.0f, 0.0f, main_camera.pos.y));
         main_camera.view.set_row(0, vec4f(1.0f, 0.0f, 0.0f, main_camera.pos.z));
         main_camera.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
-        
+
         main_camera.flags |= CF_INVALIDATED;
 
         pmfx::render();

@@ -118,7 +118,7 @@ PEN_TRV pen::user_entry(void* params)
 
         // clear screen
         pen::viewport vp = {0.0f, 0.0f, (f32)pen_window.width, (f32)pen_window.height, 0.0f, 1.0f};
-        
+
         pen::renderer_set_viewport(vp);
         pen::renderer_set_rasterizer_state(raster_state);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});

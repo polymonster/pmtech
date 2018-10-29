@@ -518,16 +518,16 @@ namespace put
         {
             if (shader >= sb_count(k_pmfx_list))
                 return;
-            
+
             if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
                 return;
-            
+
             if (pmfx::has_technique_samplers(shader, technique_index))
             {
                 pmfx::technique_sampler* ts = pmfx::get_technique_samplers(shader, technique_index);
-                
+
                 static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
-                
+
                 u32 num_tt = sb_count(ts);
                 for (u32 i = 0; i < num_tt; ++i)
                 {
@@ -536,7 +536,7 @@ namespace put
                     sb.sampler_unit  = ts[i].unit;
                     sb.shader_type   = PEN_SHADER_TYPE_PS;
                     sb.sampler_state = pmfx::get_render_state_by_name(id_default_sampler_state);
-                    
+
                     samplers.sb[i] = sb;
                 }
             }
@@ -970,7 +970,7 @@ namespace put
                 technique_sampler& t = tt[i];
 
                 ImGui::Text("unit: %i [%s]", t.unit, t.name.c_str());
-                
+
                 if (ImGui::ImageButton((void*)&samplers.sb[i].handle, ImVec2(64, 64)))
                 {
                     if (!open_fb)

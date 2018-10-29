@@ -1,0 +1,17 @@
+{
+    include: [
+	    common.jsn,
+	    editor_renderer.jsn
+	],
+	
+	view_sets: 
+	{
+	    example: [
+	        main_view,
+	        editor_view,
+	        picking_view
+	    ]
+	},
+	
+	view_set: example
+}

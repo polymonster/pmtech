@@ -37,18 +37,18 @@ namespace put
 
     struct scene_view
     {
-        u32                 cb_view             = PEN_INVALID_HANDLE;
-        u32                 cb_2d_view          = PEN_INVALID_HANDLE;
-        u32                 render_flags        = 0;
-        u32                 depth_stencil_state = 0;
-        u32                 blend_state_state   = 0;
-        u32                 raster_state        = 0;
-        put::camera*        camera              = nullptr;
-        pen::viewport*      viewport            = nullptr;
-        u32                 pmfx_shader         = PEN_INVALID_HANDLE;
-        hash_id             technique           = 0; // todo rename to id_technique
-        ces::entity_scene*  scene               = nullptr;
-        bool                viewport_correction = false;
+        u32                cb_view             = PEN_INVALID_HANDLE;
+        u32                cb_2d_view          = PEN_INVALID_HANDLE;
+        u32                render_flags        = 0;
+        u32                depth_stencil_state = 0;
+        u32                blend_state_state   = 0;
+        u32                raster_state        = 0;
+        put::camera*       camera              = nullptr;
+        pen::viewport*     viewport            = nullptr;
+        u32                pmfx_shader         = PEN_INVALID_HANDLE;
+        hash_id            technique           = 0; // todo rename to id_technique
+        ces::entity_scene* scene               = nullptr;
+        bool               viewport_correction = false;
     };
 
     struct scene_controller
@@ -225,7 +225,7 @@ namespace put
 
         // pmfx shader -----------------------------------------------------------------------------------------------------
 
-        u32 load_shader(const c8* pmfx_name);
+        u32  load_shader(const c8* pmfx_name);
         void release_shader(u32 shader);
 
         void set_technique(u32 shader, u32 technique_index);
@@ -233,7 +233,7 @@ namespace put
 
         void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data);
         void initialise_sampler_defaults(u32 handle, u32 technique_index, sampler_set& samplers);
-        
+
         const c8**          get_shader_list(u32& count);
         const c8**          get_technique_list(u32 shader, u32& count);
         const c8*           get_shader_name(u32 shader);

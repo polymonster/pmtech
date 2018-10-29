@@ -27,6 +27,7 @@
 		sss_main:
 		{
 			inherit: "main_view_post_processed",
+			inherit_reverse: true,
 			clear_colour: [0.0, 0.0, 0.0, 1.0],
 			clear_depth: 1.0,
 			post_process: pp_sss
@@ -49,7 +50,8 @@
 	{
 	    sss_view: [
 	        single_shadow_view,
-	        sss_main
+	        sss_main,
+	        editor_view
 	    ]
 	},
 	

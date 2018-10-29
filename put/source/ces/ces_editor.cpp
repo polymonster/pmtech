@@ -26,14 +26,8 @@ namespace put
 
     namespace ces
     {
-        static hash_id k_primitives[] = {
-            PEN_HASH("quad"),
-            PEN_HASH("cube"),
-            PEN_HASH("cylinder"),
-            PEN_HASH("sphere"),
-            PEN_HASH("capsule"),
-            PEN_HASH("cone")
-        };
+        static hash_id k_primitives[] = {PEN_HASH("quad"),   PEN_HASH("cube"),    PEN_HASH("cylinder"),
+                                         PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone")};
 
         struct transform_undo
         {
@@ -168,7 +162,7 @@ namespace put
             "Camera / Frustum"
         };
         // clang-format on
-        
+
         static_assert(sizeof(dd_names) / sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
         static bool* k_dd_bools = nullptr;
 
@@ -983,55 +977,55 @@ namespace put
                 }
             }
         }
-        
+
         void context_menu_ui(entity_scene* scene)
         {
             static ImGuiID cm_id = ImGui::GetID("right click context menu");
-            
-            if(pen::input_mouse(1))
+
+            if (pen::input_mouse(1))
             {
                 ImGui::OpenPopupEx(cm_id, false);
             }
-            
-            if(ImGui::BeginPopupEx(cm_id, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize))
+
+            if (ImGui::BeginPopupEx(cm_id, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize))
             {
-                if(ImGui::MenuItem("Hide All"))
+                if (ImGui::MenuItem("Hide All"))
                 {
-                    for(u32 i = 0; i < scene->num_nodes; ++i)
+                    for (u32 i = 0; i < scene->num_nodes; ++i)
                     {
                         scene->state_flags[i] |= SF_HIDDEN;
                     }
                 }
-                
-                if(ImGui::MenuItem("Unhide All"))
+
+                if (ImGui::MenuItem("Unhide All"))
                 {
-                    for(u32 i = 0; i < scene->num_nodes; ++i)
+                    for (u32 i = 0; i < scene->num_nodes; ++i)
                     {
                         scene->state_flags[i] &= ~SF_HIDDEN;
                     }
                 }
-                
-                if(sb_count(s_selection_list) > 0)
+
+                if (sb_count(s_selection_list) > 0)
                 {
-                    if(ImGui::MenuItem("Hide Selected"))
+                    if (ImGui::MenuItem("Hide Selected"))
                     {
-                        for(u32 i = 0; i < scene->num_nodes; ++i)
+                        for (u32 i = 0; i < scene->num_nodes; ++i)
                         {
-                            if(scene->state_flags[i] & SF_SELECTED)
+                            if (scene->state_flags[i] & SF_SELECTED)
                                 scene->state_flags[i] |= SF_HIDDEN;
                         }
                     }
-                    
-                    if(ImGui::MenuItem("Hide Un-Selected"))
+
+                    if (ImGui::MenuItem("Hide Un-Selected"))
                     {
-                        for(u32 i = 0; i < scene->num_nodes; ++i)
+                        for (u32 i = 0; i < scene->num_nodes; ++i)
                         {
-                            if(!(scene->state_flags[i] & SF_SELECTED))
+                            if (!(scene->state_flags[i] & SF_SELECTED))
                                 scene->state_flags[i] |= SF_HIDDEN;
                         }
                     }
                 }
-                
+
                 ImGui::EndPopup();
             }
         }
@@ -1049,7 +1043,7 @@ namespace put
             static bool selection_list     = false;
             static bool view_menu          = false;
             static bool settings_open      = false;
-            
+
             // right click context menu
             context_menu_ui(sc->scene);
 
@@ -1236,7 +1230,7 @@ namespace put
             // clang-format on
 
             static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
-            
+
             static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
             static_assert(PEN_ARRAY_SIZE(widget_shortcut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
 
@@ -1659,9 +1653,8 @@ namespace put
                 }
 
                 static s32 primitive_type = -1;
-                ImGui::Combo("Shape##Primitive",
-                             (s32*)&primitive_type,
-                             "Quad\0Box\0Cylinder\0Sphere\0Capsule\0Cone\0", PEN_ARRAY_SIZE(k_primitives));
+                ImGui::Combo("Shape##Primitive", (s32*)&primitive_type, "Quad\0Box\0Cylinder\0Sphere\0Capsule\0Cone\0",
+                             PEN_ARRAY_SIZE(k_primitives));
 
                 if (ImGui::Button("Add Primitive") && primitive_type > -1)
                 {
@@ -1685,31 +1678,31 @@ namespace put
 
             return iv;
         }
-        
+
         void scene_options_ui(entity_scene* scene)
         {
             if (sb_count(s_selection_list) <= 0)
                 return;
-            
+
             bool visible = true;
-            
+
             u32 num_selected = sb_count(s_selection_list);
-            
-            for(u32 i = 0; i < num_selected; ++i)
+
+            for (u32 i = 0; i < num_selected; ++i)
             {
                 u32 s = s_selection_list[i];
-                if(scene->state_flags[s] & SF_HIDDEN)
+                if (scene->state_flags[s] & SF_HIDDEN)
                     visible = false;
             }
-            
-            if(ImGui::Checkbox("Visible", &visible))
+
+            if (ImGui::Checkbox("Visible", &visible))
             {
-                for(u32 i = 0; i < num_selected; ++i)
+                for (u32 i = 0; i < num_selected; ++i)
                 {
                     u32 s = s_selection_list[i];
-                    if(!visible)
+                    if (!visible)
                     {
-                         scene->state_flags[s] |= SF_HIDDEN;
+                        scene->state_flags[s] |= SF_HIDDEN;
                     }
                     else
                     {
@@ -1718,53 +1711,50 @@ namespace put
                 }
             }
         }
-        
+
         void scene_components_ui(entity_scene* scene)
         {
             if (sb_count(s_selection_list) != 1)
                 return;
-            
+
             u32 selected_index = s_selection_list[0];
-            
-            const c8* component_flag_names[] =
-            {
-                "Allocated",
-                "Geometry",
-                "Physics",
-                "Physics Multi Body",
-                "Material",
-                "Hand",
-                "Skinned",
-                "Bone",
-                "Dynamic",
-                "Animation Controller",
-                "Animation Trajectory",
-                "Light",
-                "Transform",
-                "Constraint",
-                "Sub Instance",
-                "Master Instance",
-                "Pre Skinned",
-                "Sub Geometry",
-                "Signed Distance Field Shadow",
-                "Volume",
-                "Samplers"
-            };
-            
+
+            const c8* component_flag_names[] = {"Allocated",
+                                                "Geometry",
+                                                "Physics",
+                                                "Physics Multi Body",
+                                                "Material",
+                                                "Hand",
+                                                "Skinned",
+                                                "Bone",
+                                                "Dynamic",
+                                                "Animation Controller",
+                                                "Animation Trajectory",
+                                                "Light",
+                                                "Transform",
+                                                "Constraint",
+                                                "Sub Instance",
+                                                "Master Instance",
+                                                "Pre Skinned",
+                                                "Sub Geometry",
+                                                "Signed Distance Field Shadow",
+                                                "Volume",
+                                                "Samplers"};
+
             if (ImGui::CollapsingHeader("Components"))
             {
                 Str components = "";
-                for(u32 i = 0; i < PEN_ARRAY_SIZE(component_flag_names); ++i)
+                for (u32 i = 0; i < PEN_ARRAY_SIZE(component_flag_names); ++i)
                 {
-                    if(scene->entities[selected_index] & (u64)(1<<i))
+                    if (scene->entities[selected_index] & (u64)(1 << i))
                     {
-                        if(i > 0)
+                        if (i > 0)
                             components.append(" | ");
-                        
+
                         components.append(component_flag_names[i]);
                     }
                 }
-                
+
                 ImGui::TextWrapped("%s", components.c_str());
             }
         }
@@ -1783,15 +1773,15 @@ namespace put
                 perform_transform |= ImGui::InputFloat3("Translation", (float*)&t.translation);
 
                 vec3f euler = t.rotation.to_euler();
-                for(u32 i = 0; i < 3; ++i)
+                for (u32 i = 0; i < 3; ++i)
                     euler[i] = maths::rad_to_deg(euler[i]);
 
                 if (ImGui::InputFloat3("Rotation", (float*)&euler))
                 {
                     vec3f euler_rad;
-                    for(u32 i = 0; i < 3; ++i)
+                    for (u32 i = 0; i < 3; ++i)
                         euler_rad[i] = maths::deg_to_rad(euler[i]);
-                    
+
                     t.rotation.euler_angles(euler_rad.z, euler_rad.y, euler_rad.x);
 
                     perform_transform = true;
@@ -1876,7 +1866,7 @@ namespace put
                         scene->material_resources[si].id_technique = id_technique;
                     }
                 }
-                
+
                 pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
 
                 if (tc)
@@ -2045,7 +2035,7 @@ namespace put
             if (ImGui::CollapsingHeader("Light"))
             {
                 cmp_light& snl = scene->lights[selected_index];
-                
+
                 if (scene->entities[selected_index] & CMP_LIGHT)
                 {
                     bool changed = ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type,
@@ -2061,13 +2051,13 @@ namespace put
                         case LIGHT_TYPE_DIR:
                             ImGui::SliderAngle("Azimuth", &snl.azimuth);
                             ImGui::SliderAngle("Altitude", &snl.altitude);
-                            
-                            if(edited)
+
+                            if (edited)
                             {
                                 scene->bounding_volumes[selected_index].min_extents = -vec3f(FLT_MAX);
                                 scene->bounding_volumes[selected_index].max_extents = vec3f(FLT_MAX);
                             }
-                            
+
                             break;
 
                         case LIGHT_TYPE_POINT:
@@ -2090,7 +2080,7 @@ namespace put
                             edited |= ImGui::SliderFloat("Cos Cutoff", &snl.cos_cutoff, 0.0f, 1.0f);
                             edited |= ImGui::SliderFloat("Range", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01f);
-                            
+
                             // prevent negative or zero fall off
                             snl.spot_falloff = max(snl.spot_falloff, 0.001f);
 
@@ -2156,11 +2146,11 @@ namespace put
                         scene->world_matrices[s] = mat4::create_identity();
 
                         // basic defaultsa
-                        snl.colour = vec3f::white();
-                        snl.radius = 1.0f;
+                        snl.colour       = vec3f::white();
+                        snl.radius       = 1.0f;
                         snl.spot_falloff = 0.001f;
-                        snl.cos_cutoff = 0.1f;
-                        
+                        snl.cos_cutoff   = 0.1f;
+
                         // cbuffer for rendering light volume, for debug/editor or for deferred
                         instantiate_model_cbuffer(scene, s);
                     }
@@ -2299,9 +2289,9 @@ namespace put
 
                 if (ImGui::CollapsingHeader("Scene Info"))
                 {
-                    if(!scene->filename.empty())
+                    if (!scene->filename.empty())
                         ImGui::Text("Scene File: %s (version %i)", scene->filename.c_str(), scene->version);
-                    
+
                     ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
                     ImGui::Text("Selected: %i", (s32)sb_count(s_selection_list));
 
@@ -2387,17 +2377,17 @@ namespace put
                     if (parent_index != selected_index)
                         ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
                 }
-                
+
                 // Undoable actions
                 if (sb_count(s_selection_list) == 1)
                     store_node_state(scene, s_selection_list[0], UNDO);
-                
+
                 scene_options_ui(scene);
-                
+
                 scene_components_ui(scene);
-                
+
                 scene_transform_ui(scene);
-                
+
                 scene_physics_ui(scene);
 
                 scene_geometry_ui(scene);
@@ -2446,7 +2436,7 @@ namespace put
                 store_node_state(scene, i, UNDO);
 
                 cmp_transform& t = scene->transforms[i];
-                
+
                 if (k_transform_mode == TRANSFORM_TRANSLATE)
                 {
                     t.translation += move_axis;
@@ -2639,27 +2629,27 @@ namespace put
                 }
 
                 static vec3f attach_point = vec3f::zero();
-                static vec3f drag_point = vec3f::zero();
+                static vec3f drag_point   = vec3f::zero();
                 for (s32 i = 0; i < 3; ++i)
                 {
                     if (!ms.buttons[PEN_MOUSE_L])
                     {
                         attach_point = _cp;
-                        drag_point = vec3f::zero();
+                        drag_point   = vec3f::zero();
                         continue;
                     }
-                    
-                    if(drag_point == vec3f::zero())
+
+                    if (drag_point == vec3f::zero())
                         drag_point = _cp;
-                    
+
                     if (selected[i])
                     {
                         k_select_flags |= WIDGET_SELECTED;
 
-                        vec3f prev_line = normalised(attach_point - pos);
-                        vec3f cur_line  = normalised(_cp - pos);
+                        vec3f prev_line  = normalised(attach_point - pos);
+                        vec3f cur_line   = normalised(_cp - pos);
                         vec3f start_line = normalised(drag_point - pos);
-                        
+
                         dbg::add_line(pos, pos + cur_line * rd, vec4f::white());
                         dbg::add_line(pos, pos + start_line * rd, vec4f::white() * vec4f(0.3f, 0.3f, 0.3f, 1.0f));
 
@@ -2895,7 +2885,7 @@ namespace put
             static const hash_id id_volume[] = {PEN_HASH("full_screen_quad"), PEN_HASH("sphere"), PEN_HASH("cone")};
 
             static const hash_id id_technique = PEN_HASH("constant_colour");
-            static const u32 shader = pmfx::load_shader("pmfx_utility");
+            static const u32     shader       = pmfx::load_shader("pmfx_utility");
 
             geometry_resource* volume[PEN_ARRAY_SIZE(id_volume)];
             for (u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
@@ -2933,12 +2923,12 @@ namespace put
                     {
                         // quad point at pos
                         vec3f p = scene->world_matrices[n].get_translation();
-                        
+
                         p = maths::project_to_sc(p, view_proj, vpi);
-                        
+
                         if (p.z > 0.0f)
                             put::dbg::add_quad_2f(p.xy, vec2f(5.0f, 5.0f), vec4f(scene->lights[n].colour, 1.0f));
-                        
+
                         // volume geometry
                         geometry_resource* vol = volume[snl.type];
 
@@ -3033,7 +3023,7 @@ namespace put
 
             // Selected Node
             u32 sel_num = sb_count(s_selection_list);
-            
+
             if (scene->view_flags & DD_NODE)
             {
                 for (u32 i = 0; i < sel_num; ++i)
@@ -3044,95 +3034,95 @@ namespace put
                                   scene->bounding_volumes[s].transformed_max_extents);
                 }
             }
-            
+
             // Detach frustum and camera data to debug
             static bool detach_cam = true;
-            if(scene->view_flags & DD_CAMERA)
+            if (scene->view_flags & DD_CAMERA)
             {
                 static camera dc;
-                
-                if(detach_cam)
+
+                if (detach_cam)
                 {
                     dc = *view.camera;
                 }
-                
+
                 dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
-                
+
                 mat4 iv = mat::inverse3x4(dc.view);
-                
+
                 dbg::add_coord_space(iv, 0.3f);
-                
+
                 dbg::add_point(dc.pos, 0.2f);
-                
+
                 detach_cam = false;
             }
             else
             {
                 detach_cam = true;
             }
-            
+
             // Debug triangles and vertices
-            if(scene->view_flags & DD_GEOMETRY && sel_num > 0)
+            if (scene->view_flags & DD_GEOMETRY && sel_num > 0)
             {
                 ImGui::Begin("Debug Geometry");
-                
+
                 static s32 trii = 0;
                 ImGui::InputInt("Debug Triangle", &trii);
-                
+
                 static bool show_verts = false;
                 ImGui::Checkbox("Show Vertices", &show_verts);
 
                 for (u32 i = 0; i < sel_num; ++i)
                 {
                     u32 s = s_selection_list[i];
-                    
-                    if(scene->id_geometry[s] != 0)
+
+                    if (scene->id_geometry[s] != 0)
                     {
                         geometry_resource* gr = get_geometry_resource(scene->id_geometry[s]);
-                        
+
                         s32 index_offset = trii * 3;
-                        
-                        s32 tri_indices[3] = { };
-                        
-                        if(gr->index_type == PEN_FORMAT_R16_UINT)
+
+                        s32 tri_indices[3] = {};
+
+                        if (gr->index_type == PEN_FORMAT_R16_UINT)
                         {
                             u16* indices = (u16*)gr->cpu_index_buffer;
-                            for(u32 i = 0; i < 3; ++i)
+                            for (u32 i = 0; i < 3; ++i)
                                 tri_indices[i] = indices[index_offset + i];
                         }
                         else
                         {
                             u32* indices = (u32*)gr->cpu_index_buffer;
-                            for(u32 i = 0; i < 3; ++i)
+                            for (u32 i = 0; i < 3; ++i)
                                 tri_indices[i] = indices[index_offset + i];
                         }
-                        
+
                         vec4f* pb = (vec4f*)gr->cpu_position_buffer;
-                        
+
                         vec3f positions[3] = {};
-                        for(u32 i = 0; i < 3; ++i)
+                        for (u32 i = 0; i < 3; ++i)
                         {
                             memcpy(&positions[i], &pb[tri_indices[i]], sizeof(vec3f));
                         }
-                        
-                        for(u32 i = 0; i < 3; ++i)
+
+                        for (u32 i = 0; i < 3; ++i)
                         {
                             u32 x = (i + 1) % 3;
                             dbg::add_line(positions[i], positions[x], vec4f::cyan());
                         }
-                        
+
                         ImGui::Text("Node %i: %i, %i, %i", s, tri_indices[0], tri_indices[1], tri_indices[2]);
-                        
-                        if(show_verts)
+
+                        if (show_verts)
                         {
-                            for(u32 v = 0; v < gr->num_vertices; ++v)
+                            for (u32 v = 0; v < gr->num_vertices; ++v)
                             {
                                 dbg::add_point(pb[v].xyz, 0.05f, vec4f::green());
                             }
                         }
                     }
                 }
-                
+
                 ImGui::End();
             }
 
@@ -3227,7 +3217,6 @@ namespace put
         }
     } // namespace ces
 } // namespace put
-
 
 #if 0 // code to calc tangents
 

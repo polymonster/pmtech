@@ -236,12 +236,7 @@
 			pmfx_shader: post_process,
 			technique: crt,
 			camera: model_viewer_camera
-		},
-		
-		sss_reflectance:
-		{
-		    
-		},
+		}
 	},
 	
 	post_processes:
@@ -522,6 +517,7 @@
 		sss_reflectance: [
 		    {
                 inherit: filter,
+                inherit_reverse: true,
 		        target: [pp_output_full],
 		        technique: sss_reflectance,
 		        camera: model_viewer_camera,
@@ -537,6 +533,7 @@
 		    		    
 		    {
                 inherit: filter,
+                inherit_reverse: true,
 		        target: [pp_output_full],
 		        technique: sss_reflectance,
 		        camera: model_viewer_camera,

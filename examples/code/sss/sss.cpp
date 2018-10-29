@@ -20,16 +20,16 @@
 #include "str_utilities.h"
 #include "timer.h"
 
-#include "maths/vec.h"
 #include "forward_render.h"
+#include "maths/vec.h"
 
 using namespace put;
 using namespace put::ces;
 
 pen::window_creation_params pen_window{
-    1280,           // width
-    720,            // height
-    4,              // MSAA samples
+    1280,                   // width
+    720,                    // height
+    4,                      // MSAA samples
     "subsurface scattering" // window title / process name
 };
 
@@ -41,7 +41,7 @@ namespace physics
 void create_scene(entity_scene* scene)
 {
     clear_scene(scene);
-    
+
     // add light
     u32 light                            = get_new_node(scene);
     scene->names[light]                  = "front_light";
@@ -55,48 +55,45 @@ void create_scene(entity_scene* scene)
     scene->transforms[light].scale       = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-    
+
     // load head model
     u32 head_model = load_pmm("data/models/head_smooth.pmm", scene) + 1; // node 0 in the model is environment ambient light
     PEN_ASSERT(is_valid(head_model));
-    
+
     // set character scale and pos
     scene->transforms[head_model].translation = vec3f(0.0f, 0.0f, 0.0f);
     scene->transforms[head_model].scale       = vec3f(10.0f);
     scene->entities[head_model] |= CMP_TRANSFORM;
-    
+
     // set textures
-    scene->samplers[head_model].sb[0].handle = put::load_texture("data/textures/head/albedo.dds");
+    scene->samplers[head_model].sb[0].handle       = put::load_texture("data/textures/head/albedo.dds");
     scene->samplers[head_model].sb[0].sampler_unit = 0;
-    scene->samplers[head_model].sb[1].handle = put::load_texture("data/textures/head/normal.dds");
+    scene->samplers[head_model].sb[1].handle       = put::load_texture("data/textures/head/normal.dds");
     scene->samplers[head_model].sb[1].sampler_unit = 1;
-    
+
     // set material to sss
     scene->material_resources[head_model].id_technique = PEN_HASH("forward_lit_sss");
-    scene->material_resources[head_model].shader_name = "forward_render";
-    scene->material_resources[head_model].id_shader =  PEN_HASH(scene->material_resources[head_model].shader_name);
-    
+    scene->material_resources[head_model].shader_name  = "forward_render";
+    scene->material_resources[head_model].id_shader    = PEN_HASH(scene->material_resources[head_model].shader_name);
+
     forward_lit_sss mat_data;
-    mat_data.m_albedo = float4::one();
-    mat_data.m_roughness = 0.5f;
+    mat_data.m_albedo       = float4::one();
+    mat_data.m_roughness    = 0.5f;
     mat_data.m_reflectivity = 0.22f;
-    mat_data.m_sss_scale = 370.0f;
-    
+    mat_data.m_sss_scale    = 370.0f;
+
     memcpy(scene->material_data[head_model].data, &mat_data, sizeof(forward_lit_sss));
-    
+
     bake_material_handles();
 }
 
 void shadow_map_update(put::scene_controller* sc)
 {
-    put::camera_update_shadow_frustum(sc->camera,
-                                      -sc->scene->lights[0].direction,
-                                      sc->scene->renderable_extents.min,
+    put::camera_update_shadow_frustum(sc->camera, -sc->scene->lights[0].direction, sc->scene->renderable_extents.min,
                                       sc->scene->renderable_extents.max);
-    
-    
+
     mat4 shadow_vp = sc->camera->proj * sc->camera->view;
-    
+
     static u32 cbuffer = PEN_INVALID_HANDLE;
     if (!is_valid(cbuffer))
     {
@@ -106,12 +103,12 @@ void shadow_map_update(put::scene_controller* sc)
         bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
         bcp.buffer_size      = sizeof(mat4);
         bcp.data             = nullptr;
-        
+
         cbuffer = pen::renderer_create_buffer(bcp);
     }
-    
+
     pen::renderer_update_buffer(cbuffer, &shadow_vp, sizeof(mat4));
-    
+
     // unbind
     pen::renderer_set_texture(0, 0, 15, PEN_SHADER_TYPE_PS);
     pen::renderer_set_constant_buffer(cbuffer, 4, PEN_SHADER_TYPE_PS);
@@ -161,8 +158,8 @@ PEN_TRV pen::user_entry(void* params)
     svr_editor.name            = "ces_render_editor";
     svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
-    
-    put::camera shadow_camera;
+
+    put::camera           shadow_camera;
     put::scene_controller shadow_cc;
     shadow_cc.scene           = main_scene;
     shadow_cc.camera          = &shadow_camera;
@@ -181,16 +178,16 @@ PEN_TRV pen::user_entry(void* params)
     create_scene(main_scene);
 
     f32 frame_time = 0.0f;
-    
+
     // focus on the head
     main_camera.focus = vec3f(0.0f, 8.5f, 0.0f);
-    main_camera.zoom = 20.0f;
+    main_camera.zoom  = 20.0f;
 
     while (1)
     {
         static u32 frame_timer = pen::timer_create("frame_timer");
         pen::timer_start(frame_timer);
-        
+
         put::dev_ui::new_frame();
 
         pmfx::update();
@@ -200,20 +197,20 @@ PEN_TRV pen::user_entry(void* params)
         pmfx::show_dev_ui();
 
         put::dev_ui::console();
-        
+
         put::dev_ui::render();
-        
+
         frame_time = pen::timer_elapsed_ms(frame_timer);
-        
+
         // rotate light
         cmp_light& snl = main_scene->lights[0];
         snl.azimuth += frame_timer * 0.02f;
-        snl.altitude = maths::deg_to_rad(108.0f);
+        snl.altitude  = maths::deg_to_rad(108.0f);
         snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth, snl.altitude);
-        
+
         main_camera.pos += vec3f(1.0, 0.0, 0.0);
         main_camera.flags |= CF_INVALIDATED;
-        
+
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
 

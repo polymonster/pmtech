@@ -246,7 +246,7 @@ namespace put
             {
                 if (!(scene->entities[n] & CMP_ALLOCATED))
                     continue;
-                
+
                 const c8* node_name = scene->names[n].c_str();
                 if (!node_name || scene->names[n].empty())
                 {

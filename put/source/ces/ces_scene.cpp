@@ -314,8 +314,8 @@ namespace put
             u32            cull_front    = pmfx::get_render_state_by_name(id_cull_front);
 
             static hash_id id_disable_depth = PEN_HASH("disabled_depth_stencil_state");
-            u32            depth_disabled = pmfx::get_render_state_by_name(id_disable_depth);
-            
+            u32            depth_disabled   = pmfx::get_render_state_by_name(id_disable_depth);
+
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
@@ -356,11 +356,8 @@ namespace put
                         ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
                         ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
                         ld.data       = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
-                        
-                        if (maths::point_inside_cone(view.camera->pos,
-                                                     pos,
-                                                     ld.dir_cutoff.xyz,
-                                                     scene->transforms[n].scale.y,
+
+                        if (maths::point_inside_cone(view.camera->pos, pos, ld.dir_cutoff.xyz, scene->transforms[n].scale.y,
                                                      scene->transforms[n].scale.x))
                         {
                             inside_volume = true;
@@ -563,17 +560,15 @@ namespace put
                                                       PEN_SHADER_TYPE_PS);
                         }
                     }
-                    
+
                     cmp_samplers& samplers = scene->samplers[n];
-                    for(u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+                    for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
                     {
                         if (!samplers.sb[s].handle)
                             continue;
-                        
-                        pen::renderer_set_texture(samplers.sb[s].handle,
-                                                  samplers.sb[s].sampler_state,
-                                                  samplers.sb[s].sampler_unit,
-                                                  PEN_SHADER_TYPE_PS);
+
+                        pen::renderer_set_texture(samplers.sb[s].handle, samplers.sb[s].sampler_state,
+                                                  samplers.sb[s].sampler_unit, PEN_SHADER_TYPE_PS);
                     }
                 }
 
@@ -980,19 +975,17 @@ namespace put
 
                 pen::renderer_set_constant_buffer(scene->area_box_light_buffer, 6, PEN_SHADER_TYPE_PS);
             }
-            
+
             // Shadow maps
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
-                
-                
             }
 
             // Update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
-            static u32 shader = pmfx::load_shader("forward_render");
+            static u32     shader                = pmfx::load_shader("forward_render");
 
             if (pmfx::set_technique(shader, id_pre_skin_technique, 0))
             {
@@ -1183,7 +1176,7 @@ namespace put
                 for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                     write_lookup_string(put::get_texture_filename(mat.texture_handles[i]).c_str(), ofs, project_dir.c_str());
             }
-            
+
             // shadow
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -1194,23 +1187,23 @@ namespace put
 
                 write_lookup_string(put::get_texture_filename(shadow.texture_handle).c_str(), ofs, project_dir.c_str());
             }
-            
+
             // sampler bindings
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_SAMPLERS))
                     continue;
-                
+
                 cmp_samplers& samplers = scene->samplers[n];
-                
+
                 for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
                 {
                     write_lookup_string(put::get_texture_filename(samplers.sb[i].handle).c_str(), ofs, project_dir.c_str());
-                    
-                    if(entity_scene::k_version > 5)
+
+                    if (entity_scene::k_version > 5)
                     {
-                        write_lookup_string(pmfx::get_render_state_name(samplers.sb[i].sampler_state).c_str(),
-                                            ofs, project_dir.c_str());
+                        write_lookup_string(pmfx::get_render_state_name(samplers.sb[i].sampler_state).c_str(), ofs,
+                                            project_dir.c_str());
                     }
                 }
             }
@@ -1270,10 +1263,10 @@ namespace put
             // header
             scene_header sh;
             ifs.read((c8*)&sh, sizeof(scene_header));
-            
-            if(!merge)
+
+            if (!merge)
             {
-                scene->version = sh.version;
+                scene->version  = sh.version;
                 scene->filename = filename;
             }
 
@@ -1494,7 +1487,7 @@ namespace put
                 mat_res.id_technique  = PEN_HASH(technique.c_str());
                 mat_res.shader_name   = shader;
             }
-            
+
             // sdf shadow
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
@@ -1507,8 +1500,8 @@ namespace put
                 dev_console_log("[scene load] %s", sdf_shadow_volume_file.c_str());
                 instantiate_sdf_shadow(sdf_shadow_volume_file.c_str(), scene, n);
             }
-            
-            if(sh.version >= 6)
+
+            if (sh.version >= 6)
             {
                 // sampler binding textures
                 for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
@@ -1517,22 +1510,23 @@ namespace put
                         continue;
 
                     cmp_samplers& samplers = scene->samplers[n];
-                    
+
                     for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
                     {
                         Str texture_name = read_lookup_string(ifs);
-                        
+
                         if (!texture_name.empty())
                         {
                             samplers.sb[i].handle = put::load_texture(texture_name.c_str());
-                            samplers.sb[i].sampler_state = pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
+                            samplers.sb[i].sampler_state =
+                                pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
                             continue;
                         }
 
-                        if(entity_scene::k_version > 6)
+                        if (entity_scene::k_version > 6)
                         {
-                            Str sampler_state_name = read_lookup_string(ifs);
-                            samplers.sb[i].sampler_state  = pmfx::get_render_state_by_name(PEN_HASH(sampler_state_name));
+                            Str sampler_state_name       = read_lookup_string(ifs);
+                            samplers.sb[i].sampler_state = pmfx::get_render_state_by_name(PEN_HASH(sampler_state_name));
                         }
                     }
                 }

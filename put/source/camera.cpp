@@ -170,7 +170,7 @@ namespace put
         static f32 prev_mwheel = mwheel;
         f32        zoom        = mwheel - prev_mwheel;
         prev_mwheel            = mwheel;
-        
+
         if (has_focus)
         {
             if (ms.buttons[PEN_MOUSE_L] && pen::input_key(PK_MENU))
@@ -207,7 +207,7 @@ namespace put
         mat4 t2 = mat::create_translation(p_camera->focus);
 
         p_camera->view = t2 * (ry * rx) * t;
-        
+
         p_camera->pos = p_camera->view.get_translation();
 
         p_camera->view = mat::inverse3x4(p_camera->view);
@@ -275,11 +275,11 @@ namespace put
                 wvp.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
             }
 
-            mat4 inv_view           = mat::inverse3x4(p_camera->view);
-            wvp.view_matrix         = p_camera->view;
-            wvp.view_position       = vec4f(inv_view.get_translation(), p_camera->near_plane);
-            wvp.view_direction      = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
-            wvp.view_matrix_inverse = inv_view;
+            mat4 inv_view               = mat::inverse3x4(p_camera->view);
+            wvp.view_matrix             = p_camera->view;
+            wvp.view_position           = vec4f(inv_view.get_translation(), p_camera->near_plane);
+            wvp.view_direction          = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
+            wvp.view_matrix_inverse     = inv_view;
             wvp.view_projection_inverse = mat::inverse4x4(wvp.view_projection);
 
             pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
@@ -287,7 +287,7 @@ namespace put
             p_camera->flags &= ~CF_INVALIDATED;
         }
     }
-    
+
     void get_aabb_corners(vec3f* corners, vec3f min, vec3f max)
     {
         // clang-format off
@@ -302,38 +302,38 @@ namespace put
             vec3f(0.0f, 1.0f, 1.0f)
         };
         // clang-format on
-        
+
         vec3f size = max - min;
         for (s32 i = 0; i < 8; ++i)
         {
             corners[i] = min + offsets[i] * size;
         }
     }
-    
+
     void camera_update_shadow_frustum(put::camera* p_camera, vec3f light_dir, vec3f min, vec3f max)
     {
         // create view matrix
         vec3f right = cross(light_dir, vec3f::unit_y());
         vec3f up    = cross(right, light_dir);
-        
+
         mat4 shadow_view;
         shadow_view.set_vectors(right, up, -light_dir, vec3f::zero());
-        
+
         // get corners
         vec3f corners[8];
         get_aabb_corners(&corners[0], min, max);
-        
+
         // calculate extents in shadow space
         vec3f cmin = vec3f::flt_max();
         vec3f cmax = -vec3f::flt_max();
         for (s32 i = 0; i < 8; ++i)
         {
             vec3f p = shadow_view.transform_vector(corners[i]);
-            
+
             cmin = vec3f::vmin(cmin, p);
             cmax = vec3f::vmax(cmax, p);
         }
-        
+
         // create ortho mat and set view matrix
         p_camera->view = shadow_view;
         p_camera->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmin.z, cmax.z);
