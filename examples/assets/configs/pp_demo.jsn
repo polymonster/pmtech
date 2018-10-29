@@ -1,44 +1,44 @@
 {
-	include: [
-	    common.jsn,
-	    post_process.jsn
-	],
-	
-	views:
-	{	
-		pp_main_view:
-		{
-			target: [main_colour, main_depth],
-			clear_colour: [0.0, 0.0, 0.0, 1.0],
-			clear_depth: 1.0,
-			colour_write_mask: 0xf,
-			blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: default,
-			depth_stencil_state: default,
-			scene: main_scene,
-			camera: model_viewer_camera,
-			post_process: pp_demo
-		}
-	},
-	
-	post_process_sets:
-	{
-	    pp_demo:
-	    {
-	        chain: [
-	            menger_sponge,
-	            bloom,
-	        	depth_of_field,
-	            crt,
-	            blit_post_process
-	        ],
-	        
-	        parameters: 
+    include: [
+        common.jsn,
+        post_process.jsn
+    ],
+    
+    views:
+    {    
+        pp_main_view:
+        {
+            target             : [main_colour, main_depth],
+            clear_colour       : [0.0, 0.0, 0.0, 1.0],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : default,
+            depth_stencil_state: default,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            post_process       : pp_demo
+        }
+    },
+    
+    post_process_sets:
+    {
+        pp_demo:
+        {
+            chain: [
+                menger_sponge,
+                bloom,
+                depth_of_field,
+                crt,
+                blit_post_process
+            ],
+            
+            parameters: 
             {
                 high_pass: 
                 {
-                    threshold: [0.000000],
+                    threshold : [0.000000],
                     smoothness: [0.289000],
                 },
                 
@@ -51,19 +51,19 @@
                 {
                     focus_centre: [0.000000],
                     centre_range: [0.000000],
-                    focus_width: [0.044000],
-                    width_range: [100.000000],
+                    focus_width : [0.044000],
+                    width_range : [100.000000],
                 }
             }
-	    } 
-	},
-					
-	view_sets: 
-	{
-	    pp_view: [
-	        pp_main_view
-	    ]
-	},
-	
-	view_set: pp_view
+        } 
+    },
+                    
+    view_sets: 
+    {
+        pp_view: [
+            pp_main_view
+        ]
+    },
+    
+    view_set: pp_view
 }

@@ -60,3 +60,4 @@ float sdf_shadow_trace(float max_samples, float3 light_pos, float3 world_pos, fl
     
     return closest;
 }
+

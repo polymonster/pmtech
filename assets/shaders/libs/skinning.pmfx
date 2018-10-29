@@ -101,3 +101,4 @@ void skin_pos_tbn(inout float4 pos, inout float3 t, inout float3 b, inout float3
     pos = sp;
     pos.w = 1.0;
 }
+

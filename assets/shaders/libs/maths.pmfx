@@ -109,3 +109,4 @@ float3 closest_point_on_obb(float4x4 mat, float4x4 inv_mat, float3 p)
 
     return tcp;
 }
+

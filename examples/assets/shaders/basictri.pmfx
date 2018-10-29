@@ -1,37 +1,37 @@
 struct vs_input
 {
-	float4 position : POSITION;
+    float4 position : POSITION;
 };
 
 struct vs_output
 {
-	float4 position : SV_POSITION0;
+    float4 position : SV_POSITION0;
 };
 
 struct ps_output
 {
-	float4 colour : SV_Target;
+    float4 colour : SV_Target;
 };
 
 vs_output vs_main( vs_input input )
 {
-	vs_output output;
-	
-	output.position = input.position;
-	
-	return output;
+    vs_output output;
+    
+    output.position = input.position;
+    
+    return output;
 }
 
 ps_output ps_main( vs_output input )
 {
-	ps_output output;
-	
-	output.colour = float4( 1.0f, 1.0f, 1.0f, 1.0f );
-	
-	{
-		//test scope for the shader parser to
-		//correctly find the body of the main function
-	}
-			
-	return output;
+    ps_output output;
+    
+    output.colour = float4( 1.0f, 1.0f, 1.0f, 1.0f );
+    
+    {
+        //test scope for the shader parser to
+        //correctly find the body of the main function
+    }
+            
+    return output;
 }

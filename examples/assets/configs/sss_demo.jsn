@@ -1,59 +1,59 @@
 {
-	include: [
-	    common.jsn,
-	    post_process.jsn,
-	    editor_renderer.jsn
-	],
-				
-	views:
-	{
-		single_shadow_view:
-		{
-			target: [shadow_map],
-			clear_depth: 1.0,
-			colour_write_mask: 0xf,
-			blend_state: disabled,
-			viewport: [0.0, 0.0, 1.0, 1.0],
-			raster_state: default,
-			depth_stencil_state: default,
-			pmfx_shader: forward_render,
-			technique: zonly,
-			scene: main_scene,
-			camera: shadow_camera,
-			scene_views: ["ces_render_scene"],
-			render_flags: ["forward_lit"]
-		},
-		
-		sss_main:
-		{
-			inherit: "main_view_post_processed",
-			inherit_reverse: true,
-			clear_colour: [0.0, 0.0, 0.0, 1.0],
-			clear_depth: 1.0,
-			post_process: pp_sss
-		}
-	},
-	
-	post_process_sets:
-	{
-	    pp_sss:
-	    {
-	        chain: [
-	            sss_reflectance,
-	            blit_post_process
-	        ]
-	    } 
-	},
-		
-	
-	view_sets: 
-	{
-	    sss_view: [
-	        single_shadow_view,
-	        sss_main,
-	        editor_view
-	    ]
-	},
-	
-	view_set: sss_view
+    include: [
+        common.jsn,
+        post_process.jsn,
+        editor_renderer.jsn
+    ],
+                
+    views:
+    {
+        single_shadow_view:
+        {
+            target             : [shadow_map],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : default,
+            depth_stencil_state: default,
+            pmfx_shader        : forward_render,
+            technique          : zonly,
+            scene              : main_scene,
+            camera             : shadow_camera,
+            scene_views        : ["ces_render_scene"],
+            render_flags       : ["forward_lit"]
+        },
+        
+        sss_main:
+        {
+            inherit        : "main_view_post_processed",
+            inherit_reverse: true,
+            clear_colour   : [0.0, 0.0, 0.0, 1.0],
+            clear_depth    : 1.0,
+            post_process   : pp_sss
+        }
+    },
+    
+    post_process_sets:
+    {
+        pp_sss:
+        {
+            chain: [
+                sss_reflectance,
+                blit_post_process
+            ]
+        } 
+    },
+        
+    
+    view_sets: 
+    {
+        sss_view: [
+            single_shadow_view,
+            sss_main,
+            editor_view
+        ]
+    },
+    
+    view_set: sss_view
 }
