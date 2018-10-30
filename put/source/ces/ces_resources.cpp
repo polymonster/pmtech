@@ -298,7 +298,7 @@ namespace put
             hash_id id_type = pmv["volume_type"].as_hash_id();
 
             static hash_id id_sdf   = PEN_HASH("signed_distance_field");
-            static hash_id id_ss_cl = PEN_HASH("clamp_linear_sampler_state");
+            static hash_id id_cl = PEN_HASH("clamp_linear");
             if (id_type != id_sdf)
             {
                 dev_console_log_level(dev_ui::CONSOLE_ERROR, "[shadow] %s is not a signed distance field texture",
@@ -308,7 +308,7 @@ namespace put
 
             scene->transforms[node_index].scale       = scale;
             scene->shadows[node_index].texture_handle = volume_texture;
-            scene->shadows[node_index].sampler_state  = pmfx::get_render_state_by_name(id_ss_cl);
+            scene->shadows[node_index].sampler_state  = pmfx::get_render_state(id_cl, pmfx::RS_SAMPLER);
         }
 
         void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)
@@ -506,7 +506,7 @@ namespace put
                 mr->id_technique = id_default_technique;
             }
 
-            static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
+            static hash_id id_default_sampler_state = PEN_HASH("wrap_linear");
 
             for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
             {
@@ -538,7 +538,7 @@ namespace put
                 pmfx::get_technique_index(material->pmfx_shader, resource->id_technique, geometry->vertex_shader_class);
 
             for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
-                material->sampler_states[i] = pmfx::get_render_state_by_name(resource->id_sampler_state[i]);
+                material->sampler_states[i] = pmfx::get_render_state(resource->id_sampler_state[i], pmfx::RS_SAMPLER);
 
             s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->pmfx_shader, material->technique);
 

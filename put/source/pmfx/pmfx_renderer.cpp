@@ -207,19 +207,12 @@ namespace
         std::vector<view_params> views;
     };
 
-    enum e_render_state_type : u32
-    {
-        RS_RASTERIZER = 0,
-        RS_SAMPLER,
-        RS_BLEND,
-        RS_DEPTH_STENCIL
-    };
-
     struct render_state
     {
-        hash_id id_name;
+        Str     name;
+        hash_id id_name_nt;
+        
         hash_id hash;
-        Str     typed_name;
         u32     handle;
 
         e_render_state_type type;
@@ -266,6 +259,9 @@ namespace
     std::vector<sampler_binding>         s_sampler_bindings;
     std::vector<filter_kernel>           s_filter_kernels;
     geometry_utility                     s_geometry;
+    
+    // ids
+       hash_id id_wrap_linear = PEN_HASH("wrap_linear");
 } // namespace
 
 namespace put
@@ -339,16 +335,6 @@ namespace put
             return default_value;
         }
 
-        render_state* get_state_by_name(hash_id id_name)
-        {
-            size_t num = s_render_states.size();
-            for (s32 i = 0; i < num; ++i)
-                if (s_render_states[i].id_name == id_name)
-                    return &s_render_states[i];
-
-            return nullptr;
-        }
-
         render_state* get_state_by_hash(hash_id hash)
         {
             size_t num = s_render_states.size();
@@ -358,14 +344,24 @@ namespace put
 
             return nullptr;
         }
-
-        u32 get_render_state_by_name(hash_id id_name)
+        
+        render_state* _get_render_state(hash_id id_name, u32 type)
         {
-            render_state* rs = nullptr;
-            rs               = get_state_by_name(id_name);
-            if (rs)
-                return rs->handle;
+            size_t num = s_render_states.size();
+            for (s32 i = 0; i < num; ++i)
+                if(s_render_states[i].type == type)
+                    if (s_render_states[i].id_name_nt == id_name)
+                        return &s_render_states[i];
+        }
 
+        u32 get_render_state(hash_id id_name, u32 type)
+        {
+            size_t num = s_render_states.size();
+            for (s32 i = 0; i < num; ++i)
+                if(s_render_states[i].type == type)
+                    if (s_render_states[i].id_name_nt == id_name)
+                        return s_render_states[i].handle;
+            
             return 0;
         }
 
@@ -374,7 +370,7 @@ namespace put
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
                 if (s_render_states[i].handle == handle)
-                    return s_render_states[i].typed_name;
+                    return s_render_states[i].name;
 
             return "";
         }
@@ -451,8 +447,7 @@ namespace put
 
                 // sampler state from name
                 Str ss = binding["state"].as_str();
-                ss.append("_sampler_state");
-                sb.sampler_state = get_render_state_by_name(PEN_HASH(ss.c_str()));
+                sb.sampler_state = get_render_state(PEN_HASH(ss.c_str()), RS_SAMPLER);
 
                 // unit
                 sb.sampler_unit = binding["unit"].as_u32();
@@ -513,9 +508,8 @@ namespace put
 
                 render_state rs;
                 rs.hash       = hh;
-                rs.typed_name = state.name();
-                rs.typed_name.append("_sampler_state");
-                rs.id_name = PEN_HASH(rs.typed_name.c_str());
+                rs.name = state.name();
+                rs.id_name_nt = PEN_HASH(rs.name);
                 rs.type    = RS_SAMPLER;
 
                 render_state* existing_state = get_state_by_hash(hh);
@@ -552,11 +546,10 @@ namespace put
                 hash_id hh = PEN_HASH(rcp);
 
                 render_state rs;
-                rs.hash       = hh;
-                rs.typed_name = state.name();
-                rs.typed_name.append("_raster_state");
-                rs.id_name = PEN_HASH(rs.typed_name.c_str());
-                rs.type    = RS_RASTERIZER;
+                rs.hash = hh;
+                rs.name = state.name();
+                rs.id_name_nt = PEN_HASH(rs.name);
+                rs.type = RS_RASTERIZER;
 
                 render_state* existing_state = get_state_by_hash(hh);
                 if (existing_state)
@@ -656,9 +649,8 @@ namespace put
 
                 render_state rs;
                 rs.hash       = hh;
-                rs.typed_name = state.name();
-                rs.typed_name.append("_depth_stencil_state");
-                rs.id_name = PEN_HASH(rs.typed_name.c_str());
+                rs.name = state.name();
+                rs.id_name_nt = PEN_HASH(rs.name);
                 rs.type    = RS_DEPTH_STENCIL;
 
                 render_state* existing_state = get_state_by_hash(hh);
@@ -823,10 +815,9 @@ namespace put
             hash_id hh = hm.end();
 
             render_state rs;
-            rs.hash       = hh;
-            rs.typed_name = view_name;
-            rs.typed_name.append("_blend_state");
-            rs.id_name = PEN_HASH(rs.typed_name.c_str());
+            rs.hash = hh;
+            rs.name = view_name;
+            rs.id_name_nt = PEN_HASH(view_name);
             rs.type    = RS_BLEND;
 
             render_state* existing_state = get_state_by_hash(hh);
@@ -1395,15 +1386,13 @@ namespace put
 
                 // raster
                 Str raster_state = view["raster_state"].as_cstr("default");
-                raster_state.append("_raster_state");
-                state = get_state_by_name(PEN_HASH(raster_state.c_str()));
+                state = _get_render_state(PEN_HASH(raster_state.c_str()), RS_RASTERIZER);
                 if (state)
                     new_view.raster_state = state->handle;
 
                 // depth stencil
                 Str depth_stencil_state = view["depth_stencil_state"].as_cstr("default");
-                depth_stencil_state.append("_depth_stencil_state");
-                state = get_state_by_name(PEN_HASH(depth_stencil_state.c_str()));
+                state = _get_render_state(PEN_HASH(depth_stencil_state.c_str()), RS_DEPTH_STENCIL);
                 if (state)
                     new_view.depth_stencil_state = state->handle;
 
@@ -1827,8 +1816,6 @@ namespace put
                     {
                         technique_sampler* ts = get_technique_samplers(p.pmfx_shader, ti);
 
-                        static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
-
                         u32 num_tt = sb_count(ts);
                         for (u32 i = 0; i < num_tt; ++i)
                         {
@@ -1836,7 +1823,7 @@ namespace put
                             sb.handle        = ts[i].handle;
                             sb.sampler_unit  = ts[i].unit;
                             sb.shader_type   = PEN_SHADER_TYPE_PS;
-                            sb.sampler_state = get_render_state_by_name(id_default_sampler_state);
+                            sb.sampler_state = get_render_state(id_wrap_linear, RS_SAMPLER);
 
                             p.technique_samplers.sb[i] = sb;
                         }
@@ -2460,8 +2447,7 @@ namespace put
                 pen::renderer_set_viewport(vp);
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
 
-                static hash_id id_wlss = PEN_HASH("wrap_linear_sampler_state");
-                u32            wlss    = get_render_state_by_name(id_wlss);
+                u32 wlss = get_render_state(id_wrap_linear, RS_SAMPLER);
 
                 pen::renderer_set_texture(v.render_targets[0], wlss, 0, PEN_SHADER_TYPE_PS);
 

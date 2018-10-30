@@ -526,7 +526,7 @@ namespace put
             {
                 pmfx::technique_sampler* ts = pmfx::get_technique_samplers(shader, technique_index);
 
-                static hash_id id_default_sampler_state = PEN_HASH("wrap_linear_sampler_state");
+                static hash_id id_wrap_linear = PEN_HASH("wrap_linear");
 
                 u32 num_tt = sb_count(ts);
                 for (u32 i = 0; i < num_tt; ++i)
@@ -535,7 +535,7 @@ namespace put
                     sb.handle        = ts[i].handle;
                     sb.sampler_unit  = ts[i].unit;
                     sb.shader_type   = PEN_SHADER_TYPE_PS;
-                    sb.sampler_state = pmfx::get_render_state_by_name(id_default_sampler_state);
+                    sb.sampler_state = pmfx::get_render_state(id_wrap_linear, RS_SAMPLER);
 
                     samplers.sb[i] = sb;
                 }

@@ -34,7 +34,7 @@ namespace put
     {
         MAX_TECHNIQUE_SAMPLER_BINDINGS = 8
     };
-
+    
     struct scene_view
     {
         u32                cb_view             = PEN_INVALID_HANDLE;
@@ -118,6 +118,14 @@ namespace put
             CB_MATERIAL_CONSTANTS   = 7,
             CB_SAMPLER_INFO         = 10,
             CB_POST_PROCESS_INFO    = 3
+        };
+        
+        enum e_render_state_type : u32
+        {
+            RS_RASTERIZER = 0,
+            RS_SAMPLER,
+            RS_BLEND,
+            RS_DEPTH_STENCIL
         };
 
         struct technique_constant
@@ -220,7 +228,7 @@ namespace put
         const camera*        get_camera(hash_id id_name);
         const render_target* get_render_target(hash_id h);
         void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
-        u32                  get_render_state_by_name(hash_id id_name);
+        u32                  get_render_state(hash_id id_name, u32 type);
         Str                  get_render_state_name(u32 handle);
 
         // pmfx shader -----------------------------------------------------------------------------------------------------

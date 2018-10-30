@@ -38,8 +38,10 @@ namespace pen
 // compiler
 #ifdef _MSC_VER
 #define pen_inline __forceinline
+#define pen_deprecated __declspec(deprecated)
 #else
-#define pen_inline __attribute__((always_inline))
+#define pen_inline inline __attribute__((always_inline))
+#define pen_deprecated __attribute__((deprecated))
 #endif
 
 #endif

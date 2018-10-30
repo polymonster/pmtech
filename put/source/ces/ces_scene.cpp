@@ -310,11 +310,11 @@ namespace put
             for (u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
                 volume[i] = get_geometry_resource(id_volume[i]);
 
-            static hash_id id_cull_front = PEN_HASH("front_face_cull_raster_state");
-            u32            cull_front    = pmfx::get_render_state_by_name(id_cull_front);
+            static hash_id id_cull_front = PEN_HASH("front_face_cull");
+            u32            cull_front    = pmfx::get_render_state(id_cull_front, pmfx::RS_SAMPLER);
 
-            static hash_id id_disable_depth = PEN_HASH("disabled_depth_stencil_state");
-            u32            depth_disabled   = pmfx::get_render_state_by_name(id_disable_depth);
+            static hash_id id_disable_depth = PEN_HASH("disabled");
+            u32            depth_disabled   = pmfx::get_render_state(id_disable_depth, pmfx::RS_SAMPLER);
 
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -1518,15 +1518,16 @@ namespace put
                         if (!texture_name.empty())
                         {
                             samplers.sb[i].handle = put::load_texture(texture_name.c_str());
-                            samplers.sb[i].sampler_state =
-                                pmfx::get_render_state_by_name(PEN_HASH("wrap_linear_sampler_state"));
+                            samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
                             continue;
                         }
 
                         if (entity_scene::k_version > 6)
                         {
-                            Str sampler_state_name       = read_lookup_string(ifs);
-                            samplers.sb[i].sampler_state = pmfx::get_render_state_by_name(PEN_HASH(sampler_state_name));
+                            Str sampler_state_name = read_lookup_string(ifs);
+                            samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::RS_SAMPLER);
+                            
+                            PEN_LOG("sampler state load: %s", sampler_state_name.c_str());
                         }
                     }
                 }

@@ -3192,9 +3192,12 @@ namespace put
 
             put::dbg::render_3d(view.cb_view);
 
-            // no depth test
-            u32 depth_disabled = pmfx::get_render_state_by_name(PEN_HASH("disabled_depth_stencil_state"));
-            u32 fill           = pmfx::get_render_state_by_name(PEN_HASH("default_raster_state"));
+            // no depth test and default raster state
+            static hash_id id_disabled = PEN_HASH("disabled");
+            static hash_id id_default = PEN_HASH("default");
+            
+            u32 depth_disabled = pmfx::get_render_state(id_disabled, pmfx::RS_DEPTH_STENCIL);
+            u32 fill = pmfx::get_render_state(id_default, pmfx::RS_RASTERIZER);
 
             pen::renderer_set_depth_stencil_state(depth_disabled);
             pen::renderer_set_rasterizer_state(fill);

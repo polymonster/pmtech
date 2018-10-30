@@ -44,7 +44,7 @@ void create_scene_objects(ces::entity_scene* scene)
     cubemap_material->shader_name                  = "pmfx_utility";
     cubemap_material->id_shader                    = PEN_HASH("pmfx_utility");
     cubemap_material->id_technique                 = PEN_HASH("cubemap");
-    cubemap_material->id_sampler_state[SN_ENV_MAP] = PEN_HASH("clamp_linear_sampler_state");
+    cubemap_material->id_sampler_state[SN_ENV_MAP] = PEN_HASH("clamp_linear");
     cubemap_material->texture_handles[SN_ENV_MAP]  = cubemap_texture;
     add_material_resource(cubemap_material);
 

@@ -955,7 +955,7 @@ namespace put
             volume_material->id_shader         = PEN_HASH("pmfx_utility");
             volume_material->id_technique      = PEN_HASH("volume_texture");
 
-            volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear_sampler_state");
+            volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear");
             volume_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
             add_material_resource(volume_material);
 
@@ -1461,7 +1461,7 @@ namespace put
 
                     geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
-                    u32 ss = pmfx::get_render_state_by_name(PEN_HASH("clamp_linear_sampler_state"));
+                    u32 ss = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
 
                     // create material for volume sdf sphere trace
                     material_resource* sdf_material                   = new material_resource;
