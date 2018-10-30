@@ -77,18 +77,19 @@ namespace put
 
     struct sampler_binding
     {
-        hash_id id_texture;
-        u32     handle;
-        u32     sampler_unit;
-        u32     sampler_state;
-        u32     shader_type;
+        hash_id id_texture = 0;
+        hash_id id_sampler_state = 0;
+        u32     handle = 0;
+        u32     sampler_unit = 0;
+        u32     sampler_state = 0;
+        u32     shader_type = 0;
     };
 
     struct sampler_set
     {
         // 8 generic samplers for draw calls, can bind to any slots.. if more are required use a second set.
         // global samplers (shadow map, render targets etc, will still be bound in addition to these)
-        sampler_binding sb[MAX_TECHNIQUE_SAMPLER_BINDINGS] = {0};
+        sampler_binding sb[MAX_TECHNIQUE_SAMPLER_BINDINGS];
     };
 
 } // namespace put

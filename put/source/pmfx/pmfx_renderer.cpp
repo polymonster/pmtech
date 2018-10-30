@@ -2187,6 +2187,8 @@ namespace put
             // release render states
             for (auto& rs : s_render_states)
             {
+                dev_console_log("release state %i : %s (%i)", rs.type, rs.name.c_str(), rs.handle);
+                
                 switch (rs.type)
                 {
                     case RS_RASTERIZER:

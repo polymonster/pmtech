@@ -68,6 +68,7 @@ void create_scene(entity_scene* scene)
     // set textures
     scene->samplers[head_model].sb[0].handle       = put::load_texture("data/textures/head/albedo.dds");
     scene->samplers[head_model].sb[0].sampler_unit = 0;
+    
     scene->samplers[head_model].sb[1].handle       = put::load_texture("data/textures/head/normal.dds");
     scene->samplers[head_model].sb[1].sampler_unit = 1;
 

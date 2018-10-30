@@ -574,7 +574,12 @@ namespace put
                 scene->entities[node_index] |= CMP_SAMPLERS;
                 scene->state_flags[node_index] |= SF_SAMPLERS_INITIALISED;
             }
-
+            
+            // bake ss handles
+            for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+                if (samplers.sb[s].id_sampler_state != 0)
+                    samplers.sb[s].sampler_state = pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::RS_SAMPLER);
+            
             instantiate_material_cbuffer(scene, node_index, cbuffer_size);
         }
 
