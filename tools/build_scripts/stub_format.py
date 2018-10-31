@@ -38,6 +38,87 @@ def align_consecutive(file_data, align_char):
     return output
 
 
+def identify_function(scope, file_pos, file_data):
+    delimiters = [';', '{', '}']
+    ns = len(file_data)
+    ps = -1
+    found = False
+    i = file_pos
+    while found != True:
+        for d in delimiters:
+            if file_data[i] == d:
+                ps = i+1
+                found = True
+                break
+        i -= 1
+    ns = min(file_pos + file_data[file_pos:].find(")") + 1, ns)
+    func = file_data[ps:ns]
+    func = func.strip(" ")
+
+    # skip variable initialisers
+    if func.find("=") != -1:
+        if func.find("=") < func.find("("):
+            return
+
+    # strip comments
+    cps = func.find("//")
+    if cps != -1:
+        func = func[func.find("\n"):]
+
+    cps = func.find("/*")
+    if cps != -1:
+        func = func[func.find("*/"):]
+
+    func = func.replace("\t", " ")
+    func = func.replace("\n", " ")
+    func = func.strip(" ")
+
+    args_start = func.find("(") + 1
+    args_end = func.find(")")
+    args = func[args_start:args_end].split(",")
+
+    rt_name = func[:args_start-1]
+    rt_name.replace("\t", " ")
+    rt_name.replace("\n", " ")
+    rt_name = rt_name.split(" ")
+
+    for r in reversed(rt_name):
+        if r != "":
+            name = r
+            break
+
+    print(scope)
+    print(name)
+    print(args)
+
+
+def generate_stub_functions(file_data):
+    lines = file_data.split("\n")
+    scope = []
+    output = ""
+    file_pos = 0
+    for l in lines:
+        tokens = l.split(" ")
+        bpos = l.find("(")
+        if bpos != -1:
+            identify_function(scope, file_pos + bpos, file_data)
+        for i in range(0, len(tokens)):
+            t = tokens[i]
+            if t[0:2] == "//":
+                break
+            if t == "namespace" or t == "class" or t == "struct":
+                if i + 1 < len(tokens):
+                    qualifier = (t, tokens[i+1])
+            if t.find("{") != -1:
+                scope.append(qualifier)
+                qualifier = ()
+            if t.find("}") != -1:
+                scope.pop()
+        file_pos += len(l)
+
+    return output
+
+
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
         display_help()
@@ -61,6 +142,10 @@ if __name__ == "__main__":
                 align_char = sys.argv[sys.argv.index("-align_consecutive") + 1]
                 file_data = align_consecutive(file_data, align_char)
 
-            file = open(input_file, "w")
-            file.write(file_data)
-            file.close()
+            if "-generate_stub_functions" in sys.argv:
+                file_data = generate_stub_functions(file_data)
+
+            if 0:
+                file = open(input_file, "w")
+                file.write(file_data)
+                file.close()
