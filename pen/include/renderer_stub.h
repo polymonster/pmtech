@@ -1,37 +1,55 @@
-namespace test
+namespace stub_test
 {
+    const void* function_a(); // function with no args
+    void function_b(int param_a, int* pointer, const int& ref); // function with args
+    
     class my_class
     {
-        int var;
-        int funct(int param);
+    public:
+        int var; // comments
+        int function_c(int param); // member function
+        const void* function_d() = 0; // test for virtual function
         
-        int pooper; // comments
+        int test = int(1); // initialiser
+    private:
+    
+        int function_const() const; // const member function
+        void (*function_pointer)(int b, int c); // test for function pointer
         
-        int test = int(1);
+        inline void inline_func()
+        {
+            int a = (int)0.0f; // some code to avoid
+        }
     };
     
-    namespace scope2
+    namespace deeper
     {
-        void free_funct(int a, float b, test c);
+        void function_e(int a, float b, test c);
+        int function_f(int b = 0); // test for default args
         
         class scope_class // ignore this
         {
-            int val;
-            float bal;
-            
-            int function_punction(int b = 0);
-            
-            const void* tester() = 0; // test for virtual function
-            
-            int func
+            // parenthesis might span multiple lines
+            int function_g
             (
-                int parenthesis,
-                int might_be_on_mutliple_lines
+                int a,
+                int b,
+                int c = 0
             );
-        }
+        };
     }
     
     /*
-        comments
-    */
+        int commented_out_function_a(int b = 0);
+        
+        struct commented_out
+        {
+            int a;
+            int b;
+            int c;
+        };
+        
+    */ void function_h(int b); // testing code on the same line as end comment
+    
+    // int commented_out_function_b();
 }
