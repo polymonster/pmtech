@@ -62,6 +62,13 @@ def write_function_stub(scope, file_pos, file_data):
                 found = True
                 break
         i -= 1
+
+    # skip over functions which have a body
+    nns = min(file_pos + file_data[file_pos:].find(";") + 1, ns)
+    if file_pos + file_data[file_pos:].find("{") < nns:
+        if file_pos + file_data[file_pos:].find("}") < nns:
+            return
+
     ns = min(file_pos + file_data[file_pos:].find(")") + 1, ns)
     func = file_data[ps:ns]
     func = func.strip(" ")
@@ -237,7 +244,7 @@ def generate_stub_functions(file_data, filename):
                 if len(qualifier) > 0:
                     if qualifier[0] == "namespace":
                         output += indent_str(indent) + qualifier[0] + " " + qualifier[1] + "\n"
-                        output += indent_str(indent) + "{\n"
+                        output += indent_str(indent) + "{\n\n"
                         indent += 1
                 scope.append(qualifier)
                 qualifier = ()
