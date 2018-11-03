@@ -352,6 +352,8 @@ namespace put
                 if(s_render_states[i].type == type)
                     if (s_render_states[i].id_name == id_name)
                         return &s_render_states[i];
+
+            return nullptr;
         }
 
         u32 get_render_state(hash_id id_name, u32 type)
