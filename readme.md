@@ -20,7 +20,7 @@ A lightweight code base with powerful features that can be used for games and re
 
 There are examples included of how to use the api's, set up projects and data, view them [here...](https://polymonster.github.io/index.html)
 
-![sdf shadow](https://polymonster.github.io/assets/gifs/sdf-shadow.gif)
+![sdf shadow](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sss.gif)
 
 **Getting started** 
 
