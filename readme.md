@@ -1,13 +1,9 @@
 # pmtech [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech)
 
 Follow work in progress: 
-[Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
+[Trello](https://trello.com/b/ciujzpUT)
 
-A lightweight code base with powerful features that can be used for games and real-time 3D applications. The engine (pen) and toolkit (put) are designed with performance and simplicity in mind. This project focuses on data-oriented code with minimalistic c-style api's. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread... [more info](https://polymonster.github.io/articles.html)  
-
-There are examples included of how to use the api's, set up projects and data, view them [here...](https://polymonster.github.io/index.html)
-
-![sdf shadow](https://polymonster.github.io/assets/gifs/sdf-shadow.gif)
+A lightweight code base with powerful features that can be used for games and real-time 3D applications. This project focuses on data-oriented and multithreaded systems with minimalistic c-style api's with a strong emphasis on performance. [more info](https://polymonster.github.io/articles.html)  
 
 **Platform support**  
 - Platforms: Windows, MacOS, Linux, iOS, Android (wip).   
@@ -15,21 +11,16 @@ There are examples included of how to use the api's, set up projects and data, v
 - Compilers: vs2015, vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
 **Features**  
-- Data-Oriented Component Entity System - handling mesh rendering, animation and transformation heirarchies.
-- Scene Editor - Create scenes, import models add lighting, materials.
-- 3D Volume Generator - Generate 3D signed distance field and volume textures for advanced rendering effects.
-- PMFX - Generic shader language, data driven renderer using JSON config to specify render state, passes and techniques.
-- Asset Loading - Models, Textures, Shaders and hot reloading.
-- Maths - Templated vector and matrix library, collection of intersection and test functions.
-- JSON - Fast minimal json parser for data driven config scripts.
-- Platform Agnostic - Renderer, Window, Audio, Memory, Timers, File System, Threads.
+- Multithreaded Systems - Async render, physics, audio and component entity system threads. 
+- Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
+- PMFX - High level data driven renderer, shader system and post-processing configured with json scripts.
+- Hot loading - reload pmfx configs, shaders, models and textures in real time for rapid development.
+- Tools - Scene editor, 3D volume / signed distance field generator.
+- Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 
-**Tools**  
-- Models - Convert models, skeletons, scenes and animations to binary format. (Collada, Obj)
-- Textures - Compression, conversion, mip-map generation and assembly using NVTT.
-- Premake5 - All projects are configured using premake and are IDE agnostic.
-- PMFX - shader reflection info and agnostic hlsl / glsl shaders
-- Shader Compiler - offline shader compilation.
+There are examples included of how to use the api's, set up projects and data, view them [here...](https://polymonster.github.io/index.html)
+
+![sdf shadow](https://polymonster.github.io/assets/gifs/sdf-shadow.gif)
 
 **Getting started** 
 
