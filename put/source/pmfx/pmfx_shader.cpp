@@ -965,6 +965,10 @@ namespace put
 
             static bool open_fb      = false;
             static s32  select_index = -1;
+            
+            // sampler state list
+            c8** sampler_state_list = pmfx::get_render_state_list(pmfx::RS_SAMPLER);
+            hash_id* sampler_state_id_list = pmfx::get_render_state_id_list(pmfx::RS_SAMPLER);
 
             for (u32 i = 0; i < num_textures; ++i)
             {
@@ -982,9 +986,27 @@ namespace put
                 }
 
                 ImGui::Text("file: %s", put::get_texture_filename(samplers.sb[i].handle).c_str());
+                            
+                s32 ss_index = -1;
+                for(u32 j = 0; j < sb_count(sampler_state_id_list); ++j)
+                {
+                    if(sampler_state_id_list[j] == samplers.sb[i].id_sampler_state)
+                    {
+                        ss_index = j;
+                        break;
+                    }
+                }
+                
+                if(ImGui::Combo("sampler state", &ss_index, &sampler_state_list[0], sb_count(sampler_state_list)))
+                {
+                    samplers.sb[i].id_sampler_state = sampler_state_id_list[ss_index];
+                    rv = true;
+                }
 
                 ImGui::NextColumn();
             }
+            
+            sb_free(sampler_state_list);
 
             if (open_fb)
             {

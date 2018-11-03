@@ -1871,7 +1871,11 @@ namespace put
 
                 if (tc)
                 {
-                    pmfx::show_technique_ui(shader, technique, &mat.data[0], samp);
+                    bool rebake = pmfx::show_technique_ui(shader, technique, &mat.data[0], samp);
+                    if(rebake)
+                    {
+                        ces::bake_material_handles(scene, selected_index);
+                    }
 
                     u32               num_constants = sb_count(tc);
                     cmp_material_data pre_edit      = scene->material_data[selected_index];

@@ -210,7 +210,7 @@ namespace
     struct render_state
     {
         Str     name;
-        hash_id id_name_nt;
+        hash_id id_name;
         
         hash_id hash;
         u32     handle;
@@ -350,7 +350,7 @@ namespace put
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
                 if(s_render_states[i].type == type)
-                    if (s_render_states[i].id_name_nt == id_name)
+                    if (s_render_states[i].id_name == id_name)
                         return &s_render_states[i];
         }
 
@@ -359,7 +359,7 @@ namespace put
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
                 if(s_render_states[i].type == type)
-                    if (s_render_states[i].id_name_nt == id_name)
+                    if (s_render_states[i].id_name == id_name)
                         return s_render_states[i].handle;
             
             return 0;
@@ -373,6 +373,30 @@ namespace put
                     return s_render_states[i].name;
 
             return "";
+        }
+        
+        c8** get_render_state_list(u32 type)
+        {
+            c8** list = nullptr;
+            
+            size_t num = s_render_states.size();
+            for (s32 i = 0; i < num; ++i)
+                if (s_render_states[i].type == type)
+                    sb_push(list, s_render_states[i].name.c_str());
+        
+            return list;
+        }
+        
+        hash_id* get_render_state_id_list(u32 type)
+        {
+            hash_id* list = nullptr;
+            
+            size_t num = s_render_states.size();
+            for (s32 i = 0; i < num; ++i)
+                if (s_render_states[i].type == type)
+                    sb_push(list, s_render_states[i].id_name);
+            
+            return list;
         }
 
         void create_geometry_utilities()
@@ -509,7 +533,7 @@ namespace put
                 render_state rs;
                 rs.hash       = hh;
                 rs.name = state.name();
-                rs.id_name_nt = PEN_HASH(rs.name);
+                rs.id_name = PEN_HASH(rs.name);
                 rs.type    = RS_SAMPLER;
 
                 render_state* existing_state = get_state_by_hash(hh);
@@ -548,7 +572,7 @@ namespace put
                 render_state rs;
                 rs.hash = hh;
                 rs.name = state.name();
-                rs.id_name_nt = PEN_HASH(rs.name);
+                rs.id_name = PEN_HASH(rs.name);
                 rs.type = RS_RASTERIZER;
 
                 render_state* existing_state = get_state_by_hash(hh);
@@ -650,7 +674,7 @@ namespace put
                 render_state rs;
                 rs.hash       = hh;
                 rs.name = state.name();
-                rs.id_name_nt = PEN_HASH(rs.name);
+                rs.id_name = PEN_HASH(rs.name);
                 rs.type    = RS_DEPTH_STENCIL;
 
                 render_state* existing_state = get_state_by_hash(hh);
@@ -817,7 +841,7 @@ namespace put
             render_state rs;
             rs.hash = hh;
             rs.name = view_name;
-            rs.id_name_nt = PEN_HASH(view_name);
+            rs.id_name = PEN_HASH(view_name);
             rs.type    = RS_BLEND;
 
             render_state* existing_state = get_state_by_hash(hh);

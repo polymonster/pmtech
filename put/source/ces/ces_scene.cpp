@@ -551,16 +551,6 @@ namespace put
                 // set textures
                 if (p_mat)
                 {
-                    // todo: old textures.. phase out
-                    for (u32 t = 0; t < put::ces::SN_EMISSIVE_MAP; ++t)
-                    {
-                        if (is_valid(p_mat->texture_handles[t]))
-                        {
-                            pen::renderer_set_texture(p_mat->texture_handles[t], p_mat->sampler_states[t], t,
-                                                      PEN_SHADER_TYPE_PS);
-                        }
-                    }
-
                     cmp_samplers& samplers = scene->samplers[n];
                     for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
                     {
@@ -1199,12 +1189,8 @@ namespace put
                 for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
                 {
                     write_lookup_string(put::get_texture_filename(samplers.sb[i].handle).c_str(), ofs, project_dir.c_str());
-
-                    if (entity_scene::k_version > 5)
-                    {
-                        write_lookup_string(pmfx::get_render_state_name(samplers.sb[i].sampler_state).c_str(), ofs,
-                                            project_dir.c_str());
-                    }
+                    write_lookup_string(pmfx::get_render_state_name(samplers.sb[i].sampler_state).c_str(), ofs,
+                                        project_dir.c_str());
                 }
             }
 
@@ -1519,15 +1505,13 @@ namespace put
                         {
                             samplers.sb[i].handle = put::load_texture(texture_name.c_str());
                             samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
-                            continue;
                         }
-
-                        if (entity_scene::k_version > 6)
+                        
+                        Str sampler_state_name = read_lookup_string(ifs);
+                        
+                        if(!sampler_state_name.empty())
                         {
-                            Str sampler_state_name = read_lookup_string(ifs);
                             samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::RS_SAMPLER);
-                            
-                            PEN_LOG("sampler state load: %s", sampler_state_name.c_str());
                         }
                     }
                 }

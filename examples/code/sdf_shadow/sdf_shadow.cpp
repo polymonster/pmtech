@@ -175,7 +175,7 @@ PEN_TRV pen::user_entry(void* params)
 
     // load scene
     put::ces::load_scene("data/scene/sdf-scene.pms", main_scene);
-
+    
     while (1)
     {
         static u32 frame_timer = pen::timer_create("frame_timer");
