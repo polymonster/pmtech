@@ -5,6 +5,7 @@
 #include "maths/vec.h"
 #include "pen.h"
 #include "renderer.h"
+#include "str/Str.h"
 
 namespace put
 {
@@ -37,13 +38,13 @@ namespace put
     struct camera
     {
         vec3f pos = vec3f::zero();
+        vec3f focus = vec3f::zero();
         vec2f rot = vec2f(-0.5f, 0.5f);
-
+        
         f32   fov = 0.0f;
         f32   aspect;
         f32   near_plane;
         f32   far_plane;
-        vec3f focus = vec3f::zero();
         f32   zoom  = 60.0f;
 
         mat4 view;
@@ -53,6 +54,8 @@ namespace put
         u8  flags   = 0;
 
         frustum camera_frustum;
+        
+        Str name;
     };
 
     void camera_create_perspective(camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane);

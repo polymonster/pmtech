@@ -138,7 +138,6 @@ PEN_TRV pen::user_entry(void* params)
     // create the main scene and controller
     put::ces::entity_scene* main_scene;
     main_scene = put::ces::create_scene("main_scene");
-    put::ces::editor_init(main_scene);
 
     put::scene_controller sc;
     sc.scene           = main_scene;
@@ -165,6 +164,7 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_controller(cc);
 
     // volume rasteriser tool
+    put::ces::editor_init(main_scene);
     put::vgt::init(main_scene);
 
     pmfx::init("data/configs/editor_renderer.jsn");

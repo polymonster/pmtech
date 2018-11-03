@@ -1193,6 +1193,14 @@ namespace put
                                         project_dir.c_str());
                 }
             }
+            
+            // cameras
+            camera** cams = pmfx::get_cameras();
+            u32 num_cams = sb_count(cams);
+            for(u32 i = 0; i < num_cams; ++i)
+            {
+                write_lookup_string(cams[i]->name.c_str(), ofs);
+            }
 
             ofs.close();
 
@@ -1231,6 +1239,22 @@ namespace put
             {
                 write_parsable_string(s_lookup_strings[l].name.c_str(), ofs);
                 ofs.write((const c8*)&s_lookup_strings[l].id, sizeof(hash_id));
+            }
+            
+            // write camera info
+            ofs.write((const c8*)&num_cams, sizeof(u32));
+            for(u32 i = 0; i < num_cams; ++i)
+            {
+                hash_id id_cam = PEN_HASH(cams[i]->name);
+                ofs.write((const c8*)&id_cam, sizeof(hash_id));
+                ofs.write((const c8*)&cams[i]->pos, sizeof(vec3f));
+                ofs.write((const c8*)&cams[i]->focus, sizeof(vec3f));
+                ofs.write((const c8*)&cams[i]->rot, sizeof(vec2f));
+                ofs.write((const c8*)&cams[i]->fov, sizeof(f32));
+                ofs.write((const c8*)&cams[i]->aspect, sizeof(f32));
+                ofs.write((const c8*)&cams[i]->near_plane, sizeof(f32));
+                ofs.write((const c8*)&cams[i]->far_plane, sizeof(f32));
+                ofs.write((const c8*)&cams[i]->zoom, sizeof(f32));
             }
 
             // write scene data
@@ -1300,6 +1324,43 @@ namespace put
                 ifs.read((c8*)&ls.id, sizeof(hash_id));
 
                 sb_push(s_lookup_strings, ls);
+            }
+            
+            if(sh.version >= 7)
+            {
+                // read cameras
+                u32 num_cams;
+                ifs.read((c8*)&num_cams, sizeof(u32));
+                
+                for(u32 i = 0; i < num_cams; ++i)
+                {
+                    camera cam;
+                    hash_id id_cam;
+                    
+                    ifs.read((c8*)&id_cam, sizeof(hash_id));
+                    ifs.read((c8*)&cam.pos, sizeof(vec3f));
+                    ifs.read((c8*)&cam.focus, sizeof(vec3f));
+                    ifs.read((c8*)&cam.rot, sizeof(vec2f));
+                    ifs.read((c8*)&cam.fov, sizeof(f32));
+                    ifs.read((c8*)&cam.aspect, sizeof(f32));
+                    ifs.read((c8*)&cam.near_plane, sizeof(f32));
+                    ifs.read((c8*)&cam.far_plane, sizeof(f32));
+                    ifs.read((c8*)&cam.zoom, sizeof(f32));
+                    
+                    // find camera and set
+                    camera* _cam = pmfx::get_camera(id_cam);
+                    if(_cam)
+                    {
+                        _cam->pos = cam.pos;
+                        _cam->focus = cam.focus;
+                        _cam->rot = cam.rot;
+                        _cam->fov = cam.fov;
+                        _cam->aspect = cam.aspect;
+                        _cam->near_plane = cam.near_plane;
+                        _cam->far_plane = cam.far_plane;
+                        _cam->zoom = cam.zoom;
+                    }
+                }
             }
 
             // read all components

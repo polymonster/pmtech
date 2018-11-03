@@ -271,6 +271,7 @@ namespace put
         void register_scene_controller(const scene_controller& controller)
         {
             s_controllers.push_back(controller);
+            s_controllers.back().camera->name = controller.name;
         }
 
         void register_scene_view_renderer(const scene_view_renderer& svr)
@@ -3007,15 +3008,25 @@ namespace put
             }
         }
 
-        const camera* get_camera(hash_id id_name)
+        camera* get_camera(hash_id id_name)
         {
-            for (auto& cam : s_controllers)
+            for (auto& c : s_controllers)
             {
-                if (cam.id_name == id_name)
-                    return cam.camera;
+                if (c.id_name == id_name)
+                    return c.camera;
             }
 
             return nullptr;
+        }
+        
+        camera** get_cameras()
+        {
+            camera** list = nullptr;
+            
+            for (auto& c : s_controllers)
+                sb_push(list, c.camera);
+            
+            return list;
         }
     } // namespace pmfx
 } // namespace put

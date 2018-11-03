@@ -226,7 +226,8 @@ namespace put
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
         void resize_viewports();
 
-        const camera*        get_camera(hash_id id_name);
+        camera*              get_camera(hash_id id_name);
+        camera**             get_cameras(); // call sb_free on return value when done
         const render_target* get_render_target(hash_id h);
         void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
         u32                  get_render_state(hash_id id_name, u32 type);
