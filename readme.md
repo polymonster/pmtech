@@ -13,7 +13,7 @@ A lightweight code base with powerful features that can be used for games and re
 **Features**  
 - Multithreaded Systems - Async render, physics, audio and component entity system threads. 
 - Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
-- PMFX - High level data driven renderer, shader system and post-processing configured with json scripts.
+- PMFX - High level data driven renderer, shader and post-processing system configured with json scripts.
 - Hot loading - reload pmfx configs, shaders, models and textures in real time for rapid development.
 - Tools - Scene editor, 3D volume / signed distance field generator.
 - Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
