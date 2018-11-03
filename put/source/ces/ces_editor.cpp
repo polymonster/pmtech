@@ -1746,7 +1746,7 @@ namespace put
                 Str components = "";
                 for (u32 i = 0; i < PEN_ARRAY_SIZE(component_flag_names); ++i)
                 {
-                    if (scene->entities[selected_index] & (u64)(1 << i))
+                    if (scene->entities[selected_index] & (u64)((u64)1 << (u64)i))
                     {
                         if (i > 0)
                             components.append(" | ");
