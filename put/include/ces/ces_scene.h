@@ -343,7 +343,7 @@ namespace put
 
         struct entity_scene
         {
-            static const u32 k_version = 6;
+            static const u32 k_version = 7;
 
             entity_scene()
             {
