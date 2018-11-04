@@ -9,6 +9,7 @@
 #include "timer.h"
 
 #include "str_utilities.h"
+#include "data_struct.h"
 
 extern a_u8    g_window_resize;
 pen::user_info pen_user_info;
@@ -59,9 +60,36 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 }
 
 extern pen::window_creation_params pen_window;
+
+namespace
+{
+    enum os_cmd_id
+    {
+        OS_CMD_NULL = 0,
+        OS_CMD_SET_WINDOW_FRAME
+    };
+
+    struct os_cmd
+    {
+        u32 cmd_index;
+
+        union
+        {
+            struct
+            {
+                pen::window_frame frame;
+            };
+        };
+    };
+
+    pen_ring_buffer<os_cmd> s_cmd_buffer;
+}
+
 namespace pen
 {
     LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+    HWND      g_hwnd = nullptr;
+    HINSTANCE g_hinstance = nullptr;
 
     bool os_update()
     {
@@ -80,6 +108,33 @@ namespace pen
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
+        }
+
+        os_cmd* cmd = s_cmd_buffer.get();
+        while (cmd)
+        {
+            // process cmd
+            switch (cmd->cmd_index)
+            {
+            case OS_CMD_SET_WINDOW_FRAME:
+            {
+                SetWindowPos(g_hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
+
+                RECT r;
+                GetClientRect(g_hwnd, &r);
+
+                pen_window.width = r.right - r.left;
+                pen_window.height = r.bottom - r.top;
+
+                g_window_resize = 1;
+            }
+            break;
+            default:
+                break;
+            }
+
+            // get next
+            cmd = s_cmd_buffer.get();
         }
 
         static bool terminate_app = false;
@@ -102,11 +157,10 @@ namespace pen
         int       cmdshow;
     };
 
-    HWND      g_hwnd      = nullptr;
-    HINSTANCE g_hinstance = nullptr;
-
     u32 window_init(void* params)
     {
+        s_cmd_buffer.create(32);
+
         window_params* wp = (window_params*)params;
 
         // Register class
@@ -273,12 +327,23 @@ namespace pen
     
     void window_get_frame(window_frame& f)
     {
-        
+        RECT r;
+        GetWindowRect(g_hwnd, &r);
+
+        f.x = r.left;
+        f.y = r.top;
+
+        f.width = r.right - r.left;
+        f.height = r.bottom - r.top;
     }
     
     void window_set_frame(const window_frame& f)
     {
-        
+        os_cmd cmd;
+        cmd.cmd_index = OS_CMD_SET_WINDOW_FRAME;
+        cmd.frame = f;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)
