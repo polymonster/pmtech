@@ -24,7 +24,7 @@ There are examples included of how to use the api's, set up projects and data, v
 
 **Getting started** 
 
-To build data and generate example projects run build.sh or build.bat. Workspace and projects are generated in examples/build/<platform>.
+To build data and generate example projects run build.sh or build.bat. Workspace and projects are generated in examples/build/platform.
 
 For more information about how to use different toolsets or hook into the sdk, take a look at this [guide](https://polymonster.github.io/articles.html#getting-started)
 
