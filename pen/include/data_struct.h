@@ -109,4 +109,52 @@ struct pen_stack
     }
 };
 
+template <class T>
+struct pen_ring_buffer
+{
+    T* data = nullptr;
+    
+    a_u32 get_pos;
+    a_u32 put_pos;
+    a_u32 _capacity;
+    
+    pen_ring_buffer()
+    {
+        get_pos = 0;
+        put_pos = 0;
+        _capacity = 0;
+    }
+    
+    void create(u32 capacity)
+    {
+        get_pos = 0;
+        put_pos = 0;
+        _capacity = capacity;
+        
+        data = new T[_capacity.load()];
+    }
+    
+    ~pen_ring_buffer()
+    {
+        delete data;
+    }
+    
+    void put(const T& item)
+    {
+        data[put_pos] = item;
+        put_pos =  (put_pos + 1) % _capacity;
+    }
+    
+    T* get()
+    {
+        u32 gp = get_pos;
+        if(gp == put_pos)
+            return nullptr;
+        
+        get_pos = (get_pos + 1) % _capacity;
+        
+        return &data[gp];
+    }
+};
+
 #endif //_pen_data_struct

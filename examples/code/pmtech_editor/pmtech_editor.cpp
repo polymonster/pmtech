@@ -96,10 +96,8 @@ PEN_TRV pen::user_entry(void* params)
     // volume rasteriser tool
     put::ces::editor_init(main_scene);
     put::vgt::init(main_scene);
-
+    
     pmfx::init("data/configs/editor_renderer.jsn");
-
-    bool enable_dev_ui = true;
 
     f32 frame_time = 0.0f;
 
@@ -117,15 +115,8 @@ PEN_TRV pen::user_entry(void* params)
         pmfx::show_dev_ui();
 
         put::vgt::show_dev_ui();
-
-        if (enable_dev_ui)
-        {
-            put::dev_ui::console();
-            put::dev_ui::render();
-        }
-
-        if (pen::input_is_key_held(PK_MENU) && pen::input_is_key_pressed(PK_D))
-            enable_dev_ui = !enable_dev_ui;
+        
+        put::dev_ui::render();
 
         frame_time = pen::timer_elapsed_ms(frame_timer);
 

@@ -197,8 +197,6 @@ PEN_TRV pen::user_entry(void* params)
 
         pmfx::show_dev_ui();
 
-        put::dev_ui::console();
-
         put::dev_ui::render();
 
         frame_time = pen::timer_elapsed_ms(frame_timer);

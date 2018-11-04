@@ -197,16 +197,7 @@ PEN_TRV pen::user_entry(void* params)
 
         mrt_example_ui();
 
-        if (enable_dev_ui)
-        {
-            put::dev_ui::console();
-            put::dev_ui::render();
-        }
-
-        if (pen::input_is_key_held(PK_MENU) && pen::input_is_key_pressed(PK_D))
-            enable_dev_ui = !enable_dev_ui;
-
-        frame_time = pen::timer_elapsed_ms(frame_timer);
+        put::dev_ui::render();
 
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();

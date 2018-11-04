@@ -185,4 +185,14 @@ namespace pen
     {
         return false;
     }
+    
+    void window_get_frame(window_frame& f)
+    {
+
+    }
+    
+    void window_set_frame(const window_frame& f)
+    {
+
+    }
 }

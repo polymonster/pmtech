@@ -506,6 +506,8 @@ namespace put
                 pen::input_show_cursor(false);
 
             ImGui::NewFrame();
+            
+            put::dev_ui::update();
         }
 
         u32 want_capture()
@@ -543,7 +545,7 @@ namespace put
             {
                 debounce = false;
             }
-
+            
             if (enable_rendering)
                 ImGui::Render();
         }

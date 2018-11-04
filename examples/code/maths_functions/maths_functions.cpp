@@ -1029,8 +1029,7 @@ PEN_TRV pen::user_entry(void* params)
     constant_colour_material->id_technique  = PEN_HASH("constant_colour");
     add_material_resource(constant_colour_material);
 
-    bool enable_dev_ui = true;
-    f32  frame_time    = 0.0f;
+    f32  frame_time = 0.0f;
 
     while (1)
     {
@@ -1047,14 +1046,7 @@ PEN_TRV pen::user_entry(void* params)
 
         maths_test_ui(main_scene);
 
-        if (enable_dev_ui)
-        {
-            put::dev_ui::console();
-            put::dev_ui::render();
-        }
-
-        if (pen::input_is_key_held(PK_MENU) && pen::input_is_key_pressed(PK_D))
-            enable_dev_ui = !enable_dev_ui;
+        put::dev_ui::render();
 
         frame_time = pen::timer_elapsed_ms(frame_timer);
 

@@ -40,6 +40,7 @@ namespace put
         u32  want_capture();
 
         void util_init();
+        void update();
 
         // console
         void show_console(bool val);

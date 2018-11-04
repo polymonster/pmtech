@@ -204,8 +204,7 @@ PEN_TRV pen::user_entry(void* params)
 
     create_physics_objects(main_scene);
 
-    bool enable_dev_ui = true;
-    f32  frame_time    = 0.0f;
+    f32  frame_time = 0.0f;
 
     while (1)
     {
@@ -226,19 +225,11 @@ PEN_TRV pen::user_entry(void* params)
 
         pmfx::show_dev_ui();
 
-        if (enable_dev_ui)
-        {
-            put::dev_ui::console();
-
-            pen::renderer_push_perf_marker("dev_ui::render");
-
-            put::dev_ui::render();
-
-            pen::renderer_pop_perf_marker();
-        }
-
-        if (pen::input_is_key_held(PK_MENU) && pen::input_is_key_pressed(PK_D))
-            enable_dev_ui = !enable_dev_ui;
+        pen::renderer_push_perf_marker("dev_ui::render");
+        
+        put::dev_ui::render();
+        
+        pen::renderer_pop_perf_marker();
 
         frame_time = pen::timer_elapsed_ms(frame_timer);
 

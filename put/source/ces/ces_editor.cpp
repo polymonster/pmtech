@@ -14,6 +14,7 @@
 #include "timer.h"
 
 #include "data_struct.h"
+#include "os.h"
 
 extern pen::user_info pen_user_info;
 
@@ -277,6 +278,15 @@ namespace put
             else
             {
                 default_scene(scene);
+            }
+            
+            s32 wx = put::dev_ui::get_program_preference("window_x").as_s32(-1);
+            s32 wy = put::dev_ui::get_program_preference("window_y").as_s32(-1);
+            s32 ww = put::dev_ui::get_program_preference("window_width").as_s32(-1);
+            s32 wh = put::dev_ui::get_program_preference("window_height").as_s32(-1);
+            if(wx != -1)
+            {
+                pen::window_set_frame({(u32)wx, (u32)wy, (u32)ww, (u32)wh});
             }
 
             // grid

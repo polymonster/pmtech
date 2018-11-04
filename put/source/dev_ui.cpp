@@ -25,6 +25,9 @@ namespace put
         static Str          k_program_prefs_filename;
         static app_console* kp_dev_console;
         bool                k_console_open = false;
+        s32                 s_program_prefs_save_timer = 0;
+        bool                s_save_program_prefs = false;
+        u32                 k_program_prefs_save_timeout = 60; //frames
 
         void load_program_preferences()
         {
@@ -33,14 +36,27 @@ namespace put
 
             k_program_preferences = pen::json::load_from_file(k_program_prefs_filename.c_str());
         }
+        
+        void perform_save_program_prefs()
+        {
+            if(s_save_program_prefs && s_program_prefs_save_timer < 0)
+            {
+                s_save_program_prefs = false;
+                
+                std::ofstream ofs(k_program_prefs_filename.c_str());
+                
+                ofs << k_program_preferences.dumps().c_str();
+                
+                ofs.close();
+            }
+            
+            k_program_prefs_save_timeout--;
+        }
 
         void save_program_preferences()
         {
-            std::ofstream ofs(k_program_prefs_filename.c_str());
-
-            ofs << k_program_preferences.dumps().c_str();
-
-            ofs.close();
+            s_save_program_prefs = true;
+            s_program_prefs_save_timer = k_program_prefs_save_timeout;
         }
 
         void set_last_used_directory(Str& dir)
@@ -877,6 +893,30 @@ namespace put
         {
             load_program_preferences();
             kp_dev_console = new app_console();
+        }
+        
+        void update()
+        {
+            // check for window frame updates
+            static window_frame f;
+            window_frame f2;
+            
+            pen::window_get_frame(f2);
+            
+            if(memcmp(&f, &f2, sizeof(window_frame)) != 0)
+            {
+                f = f2;
+                put::dev_ui::set_program_preference("window_x", (s32)f.x);
+                put::dev_ui::set_program_preference("window_y", (s32)f.y);
+                put::dev_ui::set_program_preference("window_width", (s32)f.width);
+                put::dev_ui::set_program_preference("window_height", (s32)f.height);
+            }
+            
+            // update console
+            put::dev_ui::console();
+            
+            // perform program prefs save
+            perform_save_program_prefs();
         }
 
         void show_platform_info()

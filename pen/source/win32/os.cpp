@@ -270,6 +270,16 @@ namespace pen
     {
         return g_hwnd;
     }
+    
+    void window_get_frame(window_frame& f)
+    {
+        
+    }
+    
+    void window_set_frame(const window_frame& f)
+    {
+        
+    }
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)
     {

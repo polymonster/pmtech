@@ -17,6 +17,7 @@
 #include "str_utilities.h"
 
 #include "os.h"
+#include "data_struct.h"
 
 // global stuff for window graphics api sync
 extern pen::window_creation_params pen_window;
@@ -433,6 +434,31 @@ void users()
 
 void __main_update()
 {
+    
+}
+
+namespace
+{
+    enum os_cmd_id
+    {
+        OS_CMD_NULL = 0,
+        OS_CMD_SET_WINDOW_FRAME
+    };
+    
+    struct os_cmd
+    {
+        u32 cmd_index;
+        
+        union
+        {
+            struct
+            {
+                pen::window_frame frame;
+            };
+        };
+    };
+    
+    pen_ring_buffer<os_cmd> s_cmd_buffer;
 }
 
 int main(int argc, char** argv)
@@ -440,6 +466,8 @@ int main(int argc, char** argv)
     // get working dir
     Str working_dir = argv[0];
     working_dir     = pen::str_normalise_filepath(working_dir);
+    
+    s_cmd_buffer.create(32);
 
     // strip exe and go back 2 \contents\macos\exe
     for (u32 i = 0, pos = 0; i < 4; ++i)
@@ -557,7 +585,33 @@ namespace pen
             if (pen::thread_terminate_jobs())
                 return false;
         }
-
+        
+        os_cmd* cmd = s_cmd_buffer.get();
+        while(cmd)
+        {
+            // process cmd
+            switch(cmd->cmd_index)
+            {
+                case OS_CMD_SET_WINDOW_FRAME:
+                {
+                    NSRect frame      = [_window frame];
+                    
+                    frame.origin.x    = cmd->frame.x;
+                    frame.origin.y    = cmd->frame.y;
+                    frame.size.width  = cmd->frame.width;
+                    frame.size.height = cmd->frame.height;
+                    
+                    [_window setFrame:frame display:YES animate:NO];
+                }
+                break;
+                default:
+                    break;
+            }
+            
+            // get next
+            cmd = s_cmd_buffer.get();
+        }
+        
         return true;
     }
 
@@ -604,9 +658,8 @@ namespace pen
 
     void window_get_frame(window_frame& f)
     {
-        NSScreen* screen = [_window screen];
-        NSRect    rect   = [screen frame];
-
+        NSRect  rect = [_window frame];
+        
         f.x      = rect.origin.x;
         f.y      = rect.origin.y;
         f.width  = rect.size.width;
@@ -615,14 +668,11 @@ namespace pen
 
     void window_set_frame(const window_frame& f)
     {
-        NSRect frame = [_window frame];
-
-        frame.origin.x    = f.x;
-        frame.origin.y    = f.y;
-        frame.size.width  = f.width;
-        frame.size.height = f.height;
-
-        [_window setFrame:frame display:YES animate:NO];
+        os_cmd cmd;
+        cmd.cmd_index = OS_CMD_SET_WINDOW_FRAME;
+        cmd.frame = f;
+        
+        s_cmd_buffer.put(cmd);
     }
 
     void* window_get_primary_display_handle()
