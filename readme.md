@@ -1,9 +1,5 @@
 # pmtech [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech)
 
-(https://travis-matrix-badges.herokuapp.com/repos/polymonster/pmtech/branches/master/1)
-(https://travis-matrix-badges.herokuapp.com/repos/polymonster/pmtech/branches/master/2)
-(https://travis-matrix-badges.herokuapp.com/repos/polymonster/pmtech/branches/master/3)
-
 Follow work in progress: 
 [Trello](https://trello.com/b/ciujzpUT)
 
