@@ -824,12 +824,39 @@ namespace put
             for (u32 i = 0; i < num; ++i)
             {
                 generic_cmp_array& cmp = scene->get_component_array(i);
+                
+                // specialisations
+                // remove physics
+                if(cmp[node_index] == &scene->physics_handles[node_index])
+                {
+                    u32 h_cur = scene->physics_handles[node_index];
+                    u32 h_prev = *(u32*)ns.components[i];
+                    
+                    if(h_prev == 0 && h_cur)
+                    {
+                        // release previous physics handle
+                        physics::release_entity(h_cur);
+                    }
+                }
+                
+                if(cmp[node_index] == &scene->physics_handles[node_index])
+                {
+                    u32 h_cur = scene->physics_handles[node_index];
+                    u32 h_prev = *(u32*)ns.components[i];
+                    
+                    if(h_prev == 0 && h_cur)
+                    {
+                        // release previous physics handle
+                        physics::release_entity(h_cur);
+                    }
+                }
 
                 memcpy(cmp[node_index], ns.components[i], cmp.size);
             }
 
             node_state& us = k_editor_nodes[node_index].action_state[UNDO];
             node_state& rs = k_editor_nodes[node_index].action_state[REDO];
+            
             free_node_state_mem(scene, us);
             free_node_state_mem(scene, rs);
         }
