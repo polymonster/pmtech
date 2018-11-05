@@ -20,11 +20,13 @@ A lightweight code base with powerful features that can be used for games and re
 
 There are examples included of how to use the api's, set up projects and data, view them [here...](https://polymonster.github.io/index.html)
 
-![sdf shadow](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sdf-shadow.gif)
+[<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sdf-shadow.gif" width="1280" />](http://www.polymonster.co.uk/index.html)
 
 **Getting started** 
 
-Take a look at getting started quick [guide](https://polymonster.github.io/articles.html#getting-started)
+To build data and generate example projects run build.sh or build.bat. Workspace and projects are generated in examples/build/platform.
+
+For more information about how to use different toolsets or hook into the sdk, take a look at this [guide](https://polymonster.github.io/articles.html#getting-started)
 
 **Shoutout to thirdparty stuff!**  
 - [Jsmn](https://github.com/zserge/jsmn)
