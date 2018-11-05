@@ -16,5 +16,6 @@ matrix:
     - compiler: clang
       os: osx
       script: ./travis.sh
-    - os: osx
+    - language: glsl
+      os: osx
       script: ./travis_glsl.sh
