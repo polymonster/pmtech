@@ -36,6 +36,7 @@ namespace put
             void* ib_copy_buffer = nullptr;
 
             u32 imgui_shader;
+            u32 imgui_ex_shader;
         };
 
         render_handles g_imgui_rs;
@@ -80,6 +81,7 @@ namespace put
 
             // load shaders
             g_imgui_rs.imgui_shader = pmfx::load_shader("imgui");
+            g_imgui_rs.imgui_ex_shader = pmfx::load_shader("imgui_ex");
 
             create_texture_atlas();
 
@@ -485,6 +487,31 @@ namespace put
             io.KeyShift = pen::input_key(PK_SHIFT);
             io.KeyAlt   = pen::input_key(PK_MENU);
             io.KeySuper = false;
+        }
+
+        void _set_shader_cb(const ImDrawList* parent_list, const ImDrawCmd* cmd)
+        {
+            e_dev_ui_shader shader = (e_dev_ui_shader)(intptr_t)cmd->UserCallbackData;
+
+            static hash_id ids[] =
+            {
+                PEN_HASH("default"),
+                PEN_HASH("tex_cube"),
+                PEN_HASH("tex_volume")
+            };
+
+            if (shader == SHADER_DEFAULT)
+            {
+                pmfx::set_technique(g_imgui_rs.imgui_shader, 0);
+                return;
+            }
+
+            pmfx::set_technique(g_imgui_rs.imgui_ex_shader, ids[shader], 0);
+        }
+
+        void set_shader(e_dev_ui_shader shader)
+        {
+            ImGui::GetWindowDrawList()->AddCallback(&_set_shader_cb, (void*)(intptr_t)shader);
         }
 
         void new_frame()

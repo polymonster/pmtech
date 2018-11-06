@@ -126,7 +126,7 @@ namespace pen
 
     struct perf_marker_set
     {
-        static const u32 num_marker_buffers          = 3;
+        static const u32 num_marker_buffers          = 5;
         perf_marker*     markers[num_marker_buffers] = {0};
         u32              pos[num_marker_buffers]     = {0};
 

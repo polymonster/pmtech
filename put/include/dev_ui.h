@@ -32,12 +32,20 @@ namespace put
             CONSOLE_ERROR   = 2
         };
 
+        enum e_dev_ui_shader : u32
+        {
+            SHADER_DEFAULT,
+            SHADER_CUBEMAP,
+            SHADER_VOLUME_TEXTURE
+        };
+
         // imgui_renderer
         bool init();
         void shutdown();
         void new_frame();
         void render();
         u32  want_capture();
+        void set_shader(e_dev_ui_shader shader);
 
         void util_init();
         void update();

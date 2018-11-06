@@ -155,12 +155,7 @@
             scene              : main_scene,
             camera             : model_viewer_camera,
             scene_views        : ["ces_render_scene"],
-            render_flags       : ["forward_lit"],
-            
-            sampler_bindings:
-            [
-                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
-            ],
+            render_flags       : ["forward_lit"]
         },
         
         main_view_post_processed:
@@ -177,12 +172,7 @@
             camera             : model_viewer_camera,
             scene_views        : ["ces_render_scene"],
             render_flags       : ["forward_lit"],
-            post_process       : editor_default,
-            
-            sampler_bindings:
-            [
-                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
-            ],
+            post_process       : editor_default
         },
     }
 }

@@ -906,14 +906,22 @@ namespace put
             if(memcmp(&f, &f2, sizeof(window_frame)) != 0)
             {
                 f = f2;
-                put::dev_ui::set_program_preference("window_x", (s32)f.x);
-                put::dev_ui::set_program_preference("window_y", (s32)f.y);
-                put::dev_ui::set_program_preference("window_width", (s32)f.width);
-                put::dev_ui::set_program_preference("window_height", (s32)f.height);
+
+                bool valid = true;
+                if ((s32)f.width <= 0 || (s32)f.height <= 0 || (s32)f.x <= 0 || (s32)f.y <= 0)
+                    valid = false;
+                
+                if (valid)
+                {
+                    set_program_preference("window_x", (s32)f.x);
+                    set_program_preference("window_y", (s32)f.y);
+                    set_program_preference("window_width", (s32)f.width);
+                    set_program_preference("window_height", (s32)f.height);
+                }
             }
             
             // update console
-            put::dev_ui::console();
+            console();
             
             // perform program prefs save
             perform_save_program_prefs();

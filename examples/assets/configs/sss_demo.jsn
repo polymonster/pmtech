@@ -30,7 +30,12 @@
             inherit_reverse: true,
             clear_colour   : [0.0, 0.0, 0.0, 1.0],
             clear_depth    : 1.0,
-            post_process   : pp_sss
+            post_process   : pp_sss,
+			
+            sampler_bindings:
+            [
+                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+            ],
         }
     },
     

@@ -2732,9 +2732,21 @@ namespace put
 
                     if (!unsupported_display)
                     {
+                        dev_ui::set_shader(dev_ui::SHADER_CUBEMAP);
+
                         f32 aspect = w / h;
                         ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
+
+                        dev_ui::set_shader(dev_ui::SHADER_DEFAULT);
                     }
+
+                    static u32 cubemap_texture = put::load_texture("data/textures/cubemap.dds");
+
+                    dev_ui::set_shader(dev_ui::SHADER_CUBEMAP);
+
+                    ImGui::Image((void*)&cubemap_texture, ImVec2(1024 / display_ratio, 1024 / display_ratio));
+
+                    dev_ui::set_shader(dev_ui::SHADER_DEFAULT);
 
                     render_target_info_ui(rt);
                 }

@@ -1,0 +1,112 @@
+#include "ray_march.pmfx"
+
+cbuffer per_pass_vs : register(b0)
+{
+    float4x4 projection_matrix;
+};
+
+struct vs_input
+{
+    float2 position      : POSITION;
+    float2 tex_coord     : TEXCOORD0;
+    float4 colour        : COLOR0;
+};
+
+struct vs_output
+{
+    float4 position      : SV_POSITION;
+    float4 colour        : TEXCOORD0;
+    float2 tex_coord     : TEXCOORD1;
+};
+
+struct ps_output
+{
+    float4 colour : SV_Target;
+};
+
+vs_output vs_main( vs_input input )
+{
+    vs_output output;
+    
+    output.position = mul( projection_matrix, float4( input.position.x, input.position.y, 0.0f, 1.0f ) );
+    output.colour = input.colour;
+    output.tex_coord = input.tex_coord;
+    
+    return output;
+}
+
+declare_texture_samplers
+{
+    texture_3d( tex_3d, 0 );
+	texture_cube( tex_cube, 0 );
+};
+
+ps_output ps_tex_cube( vs_output input )
+{
+    ps_output output;
+	
+	float3 ro = float3(0.0, 0.0, -2.0);	
+	float3 rd = normalize(float3(input.tex_coord.xy * 2.0 - 1.0, 1.0));
+	float3 n = float3(0.0, 0.0, 0.0);
+	
+	for(float t = 0.0; t < 10.0;)
+    {
+        float3 p = ro + rd * t;
+                
+        float d = sd_sphere(p, 1.0);
+                
+        if(d < 0.001)
+        {
+			n = -rd;
+            break;
+        }
+            
+        t += d;
+    }
+		
+    output.colour = input.colour * sample_texture(tex_cube, n);
+    return output;
+}
+
+ps_output ps_tex_volume( vs_output input )
+{
+    ps_output output;
+    
+	output.colour = float4(0.0, 1.0, 1.0, 1.0);
+    //output.colour = input.colour * sample_texture( tex, input.tex_coord.xy );
+        
+    return output;
+}
+
+ps_output ps_tex_mip_level( vs_output input )
+{
+    ps_output output;
+    
+	output.colour = float4(0.0, 1.0, 1.0, 1.0);
+    //output.colour = input.colour * sample_texture( tex, input.tex_coord.xy );
+        
+    return output;
+}
+
+pmfx:
+{    
+    "tex_cube":
+    {
+        "vs"        : "vs_main",
+		"ps"		: "ps_tex_cube"
+    },
+	
+	"tex_volume":
+    {
+        "vs"        : "vs_main",
+		"ps"		: "ps_tex_volume"
+    },
+	
+	"tex_mip_level":
+    {
+        "vs"        : "vs_main",
+		"ps"		: "ps_tex_mip_level"
+    }
+}
+
+
