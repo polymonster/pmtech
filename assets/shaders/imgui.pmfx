@@ -1,4 +1,4 @@
-cbuffer per_pass_vs : register(b0)
+cbuffer per_pass_vs : register(b1)
 {
     float4x4 projection_matrix;
 };

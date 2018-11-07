@@ -45,7 +45,7 @@ namespace put
         void new_frame();
         void render();
         u32  want_capture();
-        void set_shader(e_dev_ui_shader shader);
+        void set_shader(e_dev_ui_shader shader, u32 cbuffer);
 
         void util_init();
         void update();

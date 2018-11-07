@@ -1,6 +1,6 @@
 #include "ray_march.pmfx"
 
-cbuffer per_pass_vs : register(b0)
+cbuffer per_pass_vs : register(b1)
 {
     float4x4 projection_matrix;
 };
@@ -44,9 +44,27 @@ declare_texture_samplers
 ps_output ps_tex_cube( vs_output input )
 {
     ps_output output;
+    
+    float2 ndc = input.tex_coord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
+    
+    //d3d needs to flip y
+    ndc = remap_ndc_ray(ndc);
+    
+    // unproject ray
+    float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
+    float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
+    
+    float4 wnear = mul(near, vp_matrix_inverse);
+    wnear /= wnear.w;
+    
+    float4 wfar = mul(far, vp_matrix_inverse);
+    wfar /= wfar.w;
+    
+    float4 col = float4(0.0, 0.0, 0.0, 1.0);
+    
+    float3 ro = wnear.xyz;
+    float3 rd = normalize(wfar.xyz - wnear.xyz);
 	
-	float3 ro = float3(0.0, 0.0, -2.0);	
-	float3 rd = normalize(float3(input.tex_coord.xy * 2.0 - 1.0, 1.0));
 	float3 n = float3(0.0, 0.0, 0.0);
 	
 	for(float t = 0.0; t < 10.0;)
@@ -57,7 +75,8 @@ ps_output ps_tex_cube( vs_output input )
                 
         if(d < 0.001)
         {
-			n = -rd;
+			n = normalize(p);
+			n.y *= -1.0;
             break;
         }
             
@@ -65,6 +84,7 @@ ps_output ps_tex_cube( vs_output input )
     }
 		
     output.colour = input.colour * sample_texture(tex_cube, n);
+    
     return output;
 }
 

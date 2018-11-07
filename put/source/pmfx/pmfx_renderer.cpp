@@ -2732,21 +2732,61 @@ namespace put
 
                     if (!unsupported_display)
                     {
-                        dev_ui::set_shader(dev_ui::SHADER_CUBEMAP);
-
                         f32 aspect = w / h;
                         ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
-
-                        dev_ui::set_shader(dev_ui::SHADER_DEFAULT);
                     }
 
                     static u32 cubemap_texture = put::load_texture("data/textures/cubemap.dds");
 
-                    dev_ui::set_shader(dev_ui::SHADER_CUBEMAP);
-
-                    ImGui::Image((void*)&cubemap_texture, ImVec2(1024 / display_ratio, 1024 / display_ratio));
-
-                    dev_ui::set_shader(dev_ui::SHADER_DEFAULT);
+                    static camera cam;
+                    bool init = true;
+                    if(init)
+                    {
+                        init = false;
+                        camera_create_perspective(&cam, 60, 1.0, 0.01, 10.0);
+                    }
+                    
+                    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+                    ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
+                    ImVec2 canvas_size = ImVec2(1024 / display_ratio, 1024 / display_ratio);
+                    
+                    ImVec2 uv0 = ImVec2(0, 0);
+                    ImVec2 uv1 = ImVec2(1, 1);
+                    ImVec4 tint_col = ImVec4(1, 1, 1, 1);
+                    
+                    ImVec2 bb_max;
+                    bb_max.x = canvas_pos.x + canvas_size.x;
+                    bb_max.y = canvas_pos.y + canvas_size.y;
+                    
+                    ImGui::InvisibleButton("canvas", canvas_size);
+                    
+                    if (ImGui::IsItemHovered())
+                    {
+                        if(ImGui::GetIO().MouseDown[0])
+                        {
+                            cam.rot.x += ImGui::GetIO().MouseDelta.y * 0.1f;
+                            cam.rot.y += ImGui::GetIO().MouseDelta.x * 0.1f;
+                        }
+                        
+                        cam.zoom += ImGui::GetIO().MouseWheel;
+                        cam.zoom = max(cam.zoom, 1.0f);
+                        
+                        camera_update_look_at(&cam);
+                    }
+                    
+                    camera_update_shader_constants(&cam);
+                    
+                    dev_ui::set_shader(dev_ui::SHADER_CUBEMAP, cam.cbuffer);
+                    
+                    draw_list->AddImage((void*)&cubemap_texture,
+                                        canvas_pos,
+                                        bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));
+                    
+                    
+                    dev_ui::set_shader(dev_ui::SHADER_DEFAULT, 0);
+                    
+                    ImGui::InputFloat2("Rot", (f32*)&cam.rot);
+                    ImGui::InputFloat("Zoom", &cam.zoom);
 
                     render_target_info_ui(rt);
                 }

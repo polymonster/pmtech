@@ -984,7 +984,7 @@ PEN_TRV pen::user_entry(void* params)
     put::dbg::init();
 
     // create main camera and controller
-    put::camera_create_perspective(&main_camera, 60.0f, (f32)pen_window.width / (f32)pen_window.height, 0.1f, 1000.0f);
+    put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
     put::scene_controller cc;
     cc.camera          = &main_camera;

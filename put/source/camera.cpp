@@ -20,7 +20,18 @@ namespace put
         far_size.x = far_size.y * aspect_ratio;
 
         p_camera->fov        = fov_degrees;
-        p_camera->aspect     = aspect_ratio;
+
+        if(aspect_ratio == -1)
+        {
+            f32 window_aspect = (f32)pen_window.width / (f32)pen_window.height;
+            p_camera->flags |= CF_WINDOW_ASPECT;
+            p_camera->aspect = window_aspect;
+        }
+        else
+        {
+            p_camera->aspect = aspect_ratio;
+        }
+        
         p_camera->near_plane = near_plane;
         p_camera->far_plane  = far_plane;
 
@@ -214,6 +225,22 @@ namespace put
 
         p_camera->flags |= CF_INVALIDATED;
     }
+    
+    void camera_update_look_at(camera* p_camera)
+    {
+        mat4 rx = mat::create_x_rotation(p_camera->rot.x);
+        mat4 ry = mat::create_y_rotation(-p_camera->rot.y);
+        mat4 t  = mat::create_translation(vec3f(0.0f, 0.0f, p_camera->zoom));
+        mat4 t2 = mat::create_translation(p_camera->focus);
+        
+        p_camera->view = t2 * (ry * rx) * t;
+        
+        p_camera->pos = p_camera->view.get_translation();
+        
+        p_camera->view = mat::inverse3x4(p_camera->view);
+        
+        p_camera->flags |= CF_INVALIDATED;
+    }
 
     void camera_update_projection_matrix(camera* p_camera)
     {
@@ -222,7 +249,7 @@ namespace put
 
     void camera_update_shader_constants(camera* p_camera, bool viewport_correction)
     {
-        if (!(p_camera->flags & CF_ORTHO))
+        if (p_camera->flags & CF_WINDOW_ASPECT)
         {
             f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
             if (cur_aspect != p_camera->aspect)

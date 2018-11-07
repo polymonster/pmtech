@@ -337,7 +337,7 @@ namespace put
             pen::renderer_set_vertex_buffer(g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
             pen::renderer_set_index_buffer(g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
-            pen::renderer_set_constant_buffer(g_imgui_rs.constant_buffer, 0, PEN_SHADER_TYPE_VS);
+            pen::renderer_set_constant_buffer(g_imgui_rs.constant_buffer, 1, PEN_SHADER_TYPE_VS);
 
             int vtx_offset = 0;
             int idx_offset = 0;
@@ -488,10 +488,17 @@ namespace put
             io.KeyAlt   = pen::input_key(PK_MENU);
             io.KeySuper = false;
         }
+        
+        struct custom_draw_call
+        {
+            e_dev_ui_shader shader;
+            u32 cbuffer;
+        };
 
         void _set_shader_cb(const ImDrawList* parent_list, const ImDrawCmd* cmd)
         {
-            e_dev_ui_shader shader = (e_dev_ui_shader)(intptr_t)cmd->UserCallbackData;
+            custom_draw_call cd = *(custom_draw_call*)cmd->UserCallbackData;
+            delete (custom_draw_call*)cmd->UserCallbackData;
 
             static hash_id ids[] =
             {
@@ -500,18 +507,25 @@ namespace put
                 PEN_HASH("tex_volume")
             };
 
-            if (shader == SHADER_DEFAULT)
+            if (cd.shader == SHADER_DEFAULT)
             {
                 pmfx::set_technique(g_imgui_rs.imgui_shader, 0);
                 return;
             }
+            
+            pen::renderer_set_constant_buffer(cd.cbuffer, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_constant_buffer(cd.cbuffer, 0, PEN_SHADER_TYPE_VS);
 
-            pmfx::set_technique(g_imgui_rs.imgui_ex_shader, ids[shader], 0);
+            pmfx::set_technique(g_imgui_rs.imgui_ex_shader, ids[cd.shader], 0);
         }
 
-        void set_shader(e_dev_ui_shader shader)
+        void set_shader(e_dev_ui_shader shader, u32 cbuffer)
         {
-            ImGui::GetWindowDrawList()->AddCallback(&_set_shader_cb, (void*)(intptr_t)shader);
+            custom_draw_call* cd = new custom_draw_call();
+            cd->shader = shader;
+            cd->cbuffer = cbuffer;
+            
+            ImGui::GetWindowDrawList()->AddCallback(&_set_shader_cb, (void*)cd);
         }
 
         void new_frame()
