@@ -218,7 +218,7 @@ namespace put
 
             g_imgui_rs.font_texture = pen::renderer_create_texture(tcp);
 
-            io.Fonts->TexID = (void*)&g_imgui_rs.font_texture;
+            io.Fonts->TexID = IMG(g_imgui_rs.font_texture);
         }
 
         void update_dynamic_buffers(ImDrawData* draw_data)
@@ -353,7 +353,7 @@ namespace put
                     }
                     else
                     {
-                        pen::renderer_set_texture(*(u32*)pcmd->TextureId, g_imgui_rs.font_sampler_state, 0,
+                        pen::renderer_set_texture((u32)(intptr_t)pcmd->TextureId, g_imgui_rs.font_sampler_state, 0,
                                                   PEN_SHADER_TYPE_PS);
 
                         pen::rect r = {pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w};
@@ -491,7 +491,7 @@ namespace put
         
         struct custom_draw_call
         {
-            e_dev_ui_shader shader;
+            e_shader shader;
             u32 cbuffer;
         };
 
@@ -506,7 +506,7 @@ namespace put
                 PEN_HASH("tex_cube"),
                 PEN_HASH("tex_volume")
             };
-
+            
             if (cd.shader == SHADER_DEFAULT)
             {
                 pmfx::set_technique(g_imgui_rs.imgui_shader, 0);
@@ -519,7 +519,7 @@ namespace put
             pmfx::set_technique(g_imgui_rs.imgui_ex_shader, ids[cd.shader], 0);
         }
 
-        void set_shader(e_dev_ui_shader shader, u32 cbuffer)
+        void set_shader(e_shader shader, u32 cbuffer)
         {
             custom_draw_call* cd = new custom_draw_call();
             cd->shader = shader;

@@ -10,6 +10,8 @@
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
+#include "camera.h"
+#include "loader.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -943,6 +945,73 @@ namespace put
                 ImGui::End();
             }
         }
-
+        
+        void image_ex(u32 handle, vec2f size, e_shader shader, s32 mip_level)
+        {
+            ImVec2 canvas_size = ImVec2(size.x, size.y);
+            
+            // 2d image
+            if(shader == dev_ui::SHADER_DEFAULT)
+            {
+                ImGui::Image(IMG(handle), ImVec2(canvas_size));
+                return;
+            }
+            
+            // cube or volume
+            static camera cam;
+            bool init = true;
+            if(init)
+            {
+                init = false;
+                camera_create_perspective(&cam, 60, 1.0, 0.01, 10.0);
+            }
+            
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+            ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
+            
+            ImVec2 uv0 = ImVec2(0, 0);
+            ImVec2 uv1 = ImVec2(1, 1);
+            ImVec4 tint_col = ImVec4(1, 1, 1, 1);
+            
+            ImVec2 bb_max;
+            bb_max.x = canvas_pos.x + canvas_size.x;
+            bb_max.y = canvas_pos.y + canvas_size.y;
+            
+            ImGui::InvisibleButton("canvas", canvas_size);
+            
+            if (ImGui::IsItemHovered())
+            {
+                if(ImGui::GetIO().MouseDown[0])
+                {
+                    cam.rot.x += ImGui::GetIO().MouseDelta.y * 0.1f;
+                    cam.rot.y += ImGui::GetIO().MouseDelta.x * 0.1f;
+                }
+                
+                cam.zoom += ImGui::GetIO().MouseWheel;
+                cam.zoom = max(cam.zoom, 1.0f);
+                cam.zoom = 3.0f;
+                
+                camera_update_look_at(&cam);
+            }
+            
+            camera_update_shader_constants(&cam);
+            
+            dev_ui::set_shader(shader, cam.cbuffer);
+            
+            draw_list->AddImage(IMG(handle),
+                                canvas_pos,
+                                bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));
+            
+            
+            dev_ui::set_shader(dev_ui::SHADER_DEFAULT, 0);
+        }
+        
+        void image(u32 handle, vec2f size, s32 mip_level)
+        {
+            pen::texture_creation_params tcp;
+            put::get_texture_info(handle, tcp);
+            s32 type = tcp.collection_type;
+            image_ex(handle, size, (e_shader)type, mip_level);
+        }
     } // namespace dev_ui
 } // namespace put

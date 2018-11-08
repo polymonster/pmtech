@@ -1394,7 +1394,7 @@ namespace put
                     {
                         static hash_id             id_volume_raster_rt = PEN_HASH("volume_raster");
                         const pmfx::render_target* volume_rt           = pmfx::get_render_target(id_volume_raster_rt);
-                        ImGui::Image((void*)&volume_rt->handle, ImVec2(256, 256));
+                        ImGui::Image(IMG(volume_rt->handle), ImVec2(256, 256));
                     }
 
                     put::dbg::add_aabb(s_rasteriser_job.current_slice_aabb.min, s_rasteriser_job.current_slice_aabb.max,

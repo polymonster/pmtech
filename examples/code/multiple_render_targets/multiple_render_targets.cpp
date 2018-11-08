@@ -50,7 +50,7 @@ void mrt_example_ui()
 
         ImVec2 size(w / 2.5, h / 2.5);
 
-        ImGui::Image((void*)&r->handle, size);
+        ImGui::Image(IMG(r->handle), size);
 
         if (c == 0 || c == 2)
             ImGui::SameLine();

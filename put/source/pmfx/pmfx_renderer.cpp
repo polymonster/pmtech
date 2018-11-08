@@ -985,13 +985,28 @@ namespace put
                         tcp.num_mips         = 1;
                         tcp.num_arrays       = 1;
                         tcp.collection_type  = pen::TEXTURE_COLLECTION_NONE;
-
-                        // arays and mips
-                        tcp.num_arrays = r["num_arrays"].as_u32(1);
+                        
+                        // mips
                         if (r["mips"].as_bool(false))
                         {
                             new_info.num_mips = calc_num_mips(new_info.width, new_info.height);
                             tcp.num_mips      = new_info.num_mips;
+                        }
+                        
+                        // cubes and arrays
+                        Str type = r["type"].as_str("");
+                        if(!type.empty())
+                        {
+                            if(type == "cube")
+                            {
+                                new_info.collection = pen::TEXTURE_COLLECTION_CUBE;
+                                tcp.num_arrays = 5;
+                            }
+                            else if(type == "array")
+                            {
+                                new_info.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                                tcp.num_arrays = r["num_arrays"].as_u32(1);
+                            }
                         }
 
                         // flags
@@ -2732,63 +2747,32 @@ namespace put
 
                     if (!unsupported_display)
                     {
+                        static u32 cubemap = put::load_texture("data/textures/cubemap.dds");
+                        
                         f32 aspect = w / h;
-                        ImGui::Image((void*)&rt.handle, ImVec2(1024 / display_ratio * aspect, 1024 / display_ratio));
-                    }
-
-                    static u32 cubemap_texture = put::load_texture("data/textures/cubemap.dds");
-
-                    static camera cam;
-                    bool init = true;
-                    if(init)
-                    {
-                        init = false;
-                        camera_create_perspective(&cam, 60, 1.0, 0.01, 10.0);
-                    }
-                    
-                    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-                    ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
-                    ImVec2 canvas_size = ImVec2(1024 / display_ratio, 1024 / display_ratio);
-                    
-                    ImVec2 uv0 = ImVec2(0, 0);
-                    ImVec2 uv1 = ImVec2(1, 1);
-                    ImVec4 tint_col = ImVec4(1, 1, 1, 1);
-                    
-                    ImVec2 bb_max;
-                    bb_max.x = canvas_pos.x + canvas_size.x;
-                    bb_max.y = canvas_pos.y + canvas_size.y;
-                    
-                    ImGui::InvisibleButton("canvas", canvas_size);
-                    
-                    if (ImGui::IsItemHovered())
-                    {
-                        if(ImGui::GetIO().MouseDown[0])
+                        
+                        if(rt.collection == pen::TEXTURE_COLLECTION_CUBE)
                         {
-                            cam.rot.x += ImGui::GetIO().MouseDelta.y * 0.1f;
-                            cam.rot.y += ImGui::GetIO().MouseDelta.x * 0.1f;
+                            dev_ui::image_ex(cubemap,
+                                             vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
+                                             (dev_ui::e_shader)rt.collection);
                         }
-                        
-                        cam.zoom += ImGui::GetIO().MouseWheel;
-                        cam.zoom = max(cam.zoom, 1.0f);
-                        
-                        camera_update_look_at(&cam);
+
+                        dev_ui::image_ex(rt.handle,
+                                         vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
+                                         (dev_ui::e_shader)rt.collection);
                     }
-                    
-                    camera_update_shader_constants(&cam);
-                    
-                    dev_ui::set_shader(dev_ui::SHADER_CUBEMAP, cam.cbuffer);
-                    
-                    draw_list->AddImage((void*)&cubemap_texture,
-                                        canvas_pos,
-                                        bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));
-                    
-                    
-                    dev_ui::set_shader(dev_ui::SHADER_DEFAULT, 0);
-                    
-                    ImGui::InputFloat2("Rot", (f32*)&cam.rot);
-                    ImGui::InputFloat("Zoom", &cam.zoom);
 
                     render_target_info_ui(rt);
+                    
+                    // test
+                    /*
+                    static u32 cubemap = put::load_texture("data/textures/cubemap.dds");
+                    static u32 volume = put::load_texture("data/textures/sdf-shadow-128.dds");
+                    
+                    dev_ui::image(cubemap, vec2f(1024 / display_ratio));
+                    dev_ui::image(volume, vec2f(1024 / display_ratio));
+                    */
                 }
 
                 if (ImGui::CollapsingHeader("View"))
@@ -3046,7 +3030,7 @@ namespace put
                             if (selected_chain_pp.stashed_output_rt != PEN_INVALID_HANDLE)
                             {
                                 f32 aspect = selected_chain_pp.stashed_rt_aspect;
-                                ImGui::Image(&selected_chain_pp.stashed_output_rt, ImVec2(128.0f * aspect, 128.0f));
+                                ImGui::Image(IMG(selected_chain_pp.stashed_output_rt), ImVec2(128.0f * aspect, 128.0f));
                             }
 
                             ImGui::Columns(1);

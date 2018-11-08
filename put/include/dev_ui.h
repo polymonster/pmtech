@@ -5,7 +5,11 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "pen.h"
+#include "renderer.h"
 #include "pen_json.h"
+#include "vec.h"
+
+#define IMG(I) (void*)(intptr_t)I
 
 namespace put
 {
@@ -32,11 +36,12 @@ namespace put
             CONSOLE_ERROR   = 2
         };
 
-        enum e_dev_ui_shader : u32
+        enum e_shader : u32
         {
-            SHADER_DEFAULT,
-            SHADER_CUBEMAP,
-            SHADER_VOLUME_TEXTURE
+            SHADER_DEFAULT = pen::TEXTURE_COLLECTION_NONE,
+            SHADER_CUBEMAP = pen::TEXTURE_COLLECTION_CUBE,
+            SHADER_VOLUME_TEXTURE = pen::TEXTURE_COLLECTION_VOLUME,
+            SHADER_TEXTURE_ARRAY = pen::TEXTURE_COLLECTION_ARRAY
         };
 
         // imgui_renderer
@@ -45,7 +50,7 @@ namespace put
         void new_frame();
         void render();
         u32  want_capture();
-        void set_shader(e_dev_ui_shader shader, u32 cbuffer);
+        void set_shader(e_shader shader, u32 cbuffer);
 
         void util_init();
         void update();
@@ -61,7 +66,9 @@ namespace put
         void      set_tooltip(const c8* fmt, ...);
         const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes = 0, ...);
         void      show_platform_info();
-
+        void      image(u32 handle, vec2f size, s32 mip_level = -1);
+        void      image_ex(u32 handle, vec2f size, e_shader shader, s32 mip_level = -1);
+        
         // generic program preferences
         void      set_program_preference(const c8* name, f32 val);
         void      set_program_preference(const c8* name, s32 val);

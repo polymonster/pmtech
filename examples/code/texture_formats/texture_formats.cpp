@@ -129,7 +129,7 @@ void texture_formats_ui()
     {
         texture_info info;
         get_texture_info(k_textures[current_type].handle, info);
-        ImGui::Image((void*)&k_textures[current_type].handle, ImVec2(info.width, info.height));
+        ImGui::Image(IMG(k_textures[current_type].handle), ImVec2(info.width, info.height));
 
         ImVec2 mip_size = ImVec2(info.width, info.height);
         for (u32 i = 0; i < info.num_mips; ++i)
@@ -141,7 +141,7 @@ void texture_formats_ui()
             mip_size.y = std::max<f32>(mip_size.y, 1.0f);
 
             ImGui::SameLine();
-            ImGui::Image((void*)&k_textures[current_type].handle, mip_size);
+            ImGui::Image(IMG(k_textures[current_type].handle), mip_size);
         }
     }
     else

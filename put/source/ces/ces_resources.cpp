@@ -1241,7 +1241,7 @@ namespace put
                             if (t > 0)
                                 ImGui::SameLine();
 
-                            ImGui::Image(&m->texture_handles[t], ImVec2(128, 128));
+                            ImGui::Image(IMG(m->texture_handles[t]), ImVec2(128, 128));
                         }
                     }
 

@@ -805,7 +805,6 @@ namespace put
 
             u32 num_pmfx = sb_count(k_pmfx_list);
 
-            // for( auto& pmfx_set : s_pmfx_list )
             for (u32 i = 0; i < num_pmfx; ++i)
             {
                 auto& pmfx_set = k_pmfx_list[i];
@@ -976,7 +975,7 @@ namespace put
 
                 ImGui::Text("unit: %i [%s]", t.unit, t.name.c_str());
 
-                if (ImGui::ImageButton((void*)&samplers.sb[i].handle, ImVec2(64, 64)))
+                if (ImGui::ImageButton(IMG(samplers.sb[i].handle), ImVec2(64, 64)))
                 {
                     if (!open_fb)
                     {

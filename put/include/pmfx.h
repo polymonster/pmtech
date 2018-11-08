@@ -210,6 +210,7 @@ namespace put
             u32 flags    = 0;
             u32 pp       = VRT_READ;
             u32 pp_read  = PEN_INVALID_HANDLE;
+            u32 collection = pen::TEXTURE_COLLECTION_NONE;
         };
 
         // pmfx renderer ---------------------------------------------------------------------------------------------------

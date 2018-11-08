@@ -229,7 +229,7 @@ void show_ui()
         k_tex_samplers[i].sampler = sampler_states[k_tex_samplers[i].sampler_choice];
 
         if (k_tex_samplers[i].texture != 0)
-            ImGui::Image((void*)&k_tex_samplers[i].texture, ImVec2(128, 128));
+            ImGui::Image(IMG(k_tex_samplers[i].texture), ImVec2(128, 128));
 
         if (ImGui::Button("Load Image"))
         {
