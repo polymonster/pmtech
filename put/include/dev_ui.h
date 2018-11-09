@@ -7,7 +7,7 @@
 #include "pen.h"
 #include "renderer.h"
 #include "pen_json.h"
-#include "vec.h"
+#include "maths/vec.h"
 
 #define IMG(I) (void*)(intptr_t)I
 
