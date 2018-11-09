@@ -3,6 +3,7 @@
 
 #include "str/Str.h"
 #include "types.h"
+#include "renderer.h"
 
 namespace pen
 {
