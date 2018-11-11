@@ -231,13 +231,11 @@ def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, tec
         print("\n")
 
 
-token_io = ["input", "output"]
-token_io_replace = ["_input", "_output"]
-token_post_delimiters = ['.', ';', ' ', '(', ')', ',', '-', '+', '*', '/']
-token_pre_delimiters = [' ', '\t', '\n', '(', ')', ',', '-', '+', '*', '/']
-
-
 def replace_io_tokens(text):
+    token_io = ["input", "output"]
+    token_io_replace = ["_input", "_output"]
+    token_post_delimiters = ['.', ';', ' ', '(', ')', ',', '-', '+', '*', '/']
+    token_pre_delimiters = [' ', '\t', '\n', '(', ')', ',', '-', '+', '*', '/']
     split = text.split(' ')
     split_replace = []
     for token in split:
@@ -324,10 +322,8 @@ def find_main(shader_text, decl):
     return shader_text[start:body_pos] + "\n\n"
 
 
-special_structs = ["vs_input", "vs_output", "ps_input", "ps_output", "vs_instance_input"]
-
-
 def find_struct_declarations(shader_text):
+    special_structs = ["vs_input", "vs_output", "ps_input", "ps_output", "vs_instance_input"]
     struct_list = []
     start = 0
     while start != -1:
@@ -1000,14 +996,11 @@ def inherit_technique(technique, pmfx_block):
     return technique
 
 
-constant_info = [["float", 1], ["float2", 2], ["float3", 3], ["float4", 4], ["float4x4", 16]]
-technique_cb_str = ""
-
-
 def generate_technique_constant_buffers(pmfx_block, technique_name):
     global technique_cb_str
     technique_cb_str = ""
     offset = 0
+    constant_info = [["float", 1], ["float2", 2], ["float3", 3], ["float4", 4], ["float4x4", 16]]
 
     technique = pmfx_block[technique_name]
     technique_constants = [technique]
@@ -1101,19 +1094,26 @@ def permute(define_list, permute_list, output_permutations):
     return output_permutations
 
 
-def generate_defines(pmfx_block, technique_name):
-    global technique_defines
-    technique_defines = ""
-    if "defines" in pmfx_block[technique_name].keys():
-        for d in pmfx_block[technique_name]["defines"]:
-            technique_defines += "#define " + d + " 1\n"
-
-
 def generate_permutation_defines(permutation):
     global technique_defines
     technique_defines = ""
     for p in permutation:
+        if p[1] == 0:
+            continue
         technique_defines += "#define " + p[0] + " " + str(p[1]) + "\n"
+
+
+def generate_permutation_id(define_list, permutation):
+    pid = 0
+    for p in permutation:
+        for d in define_list:
+            if p[0] == d[0]:
+                if p[1] > 0:
+                    exponent = d[2]
+                    if p[1] > 1:
+                        exponent = p[1]+exponent-1
+                    pid += pow(2, exponent)
+    return pid
 
 
 def parse_pmfx(filename, root):
@@ -1138,10 +1138,11 @@ def parse_pmfx(filename, root):
 
             # generate uber shader permutations
             output_permutations = []
+            define_list = []
             if "permutations" in pmfx_block:
-                define_list = []
-                for p in pmfx_block["permutations"]:
-                    define_list.append((p, pmfx_block["permutations"][p]))
+                for p in pmfx_block["permutations"].keys():
+                    pp = pmfx_block["permutations"][p]
+                    define_list.append((p, pp[1], pp[0]))
                 output_permutations = permute(define_list, [], [])
                 del pmfx_block["permutations"]
 
@@ -1153,7 +1154,6 @@ def parse_pmfx(filename, root):
                 if len(tp) == 0:
                     default_permute = []
                     if "defines" in pmfx_block[technique].keys():
-                        print("defines")
                         for d in pmfx_block[technique]["defines"]:
                             default_permute.append((d, 1))
                     else:
@@ -1166,12 +1166,12 @@ def parse_pmfx(filename, root):
                 src_pmfx = json.dumps(pmfx_block)
                 for p in technique_permutations[technique]:
                     if p[0][0] != "SINGLE_PERMUTATION":
-                        print("technique: " + technique + " " + str(p))
+                        id = str(generate_permutation_id(define_list, p))
+                        print("technique: " + technique + " [" + id + "] " + str(p))
                     else:
                         print("technique: " + technique)
                     pmfx_block = json.loads(src_pmfx)
                     technique_json, c_stuct = generate_technique_constant_buffers(pmfx_block, technique)
-                    # generate_defines(pmfx_block, technique)
                     generate_permutation_defines(p)
                     shader_c_struct += c_stuct
                     generate_technique_texture_variables(pmfx_block, technique)
@@ -1237,32 +1237,6 @@ def shader_compile_pmfx():
                 if file.endswith(".pmfx"):
                     file_and_path = os.path.join(root, file)
                     parse_pmfx(file, root)
-
-
-def generate_shader_debug_info():
-    f = open(macros_file)
-    macros_text = f.read()
-    f.close()
-
-    # parse macros file to find DEBUG_ settings
-    debug_settings_start_pos = macros_text.find("#define DEBUG_SETTINGS_START")
-    debug_settings_start_pos = macros_text.find("\n", debug_settings_start_pos) + 1
-    debug_settings_end_pos = macros_text.find("#define DEBUG_SETTINGS_END")
-    debug_settings = macros_text[debug_settings_start_pos:debug_settings_end_pos].split("\n")
-
-    # create dictionary
-    debug_settings_dictionary = dict()
-    debug_settings_dictionary["debug_settings"] = []
-    for setting in debug_settings:
-        split_setting = setting.split()
-        if len(split_setting) == 5:
-            debug_settings_dictionary["debug_settings"].append(
-                {"name": split_setting[1].replace("DEBUG_", ""), "index": int(split_setting[2])})
-
-    shader_debug_settings_file = os.path.join(shader_build_dir, "debug_settings.json")
-    output_settings = open(shader_debug_settings_file, 'wb+')
-    output_settings.write(bytes(json.dumps(debug_settings_dictionary, indent=4), 'UTF-8'))
-    output_settings.close()
 
 
 # build shaders
