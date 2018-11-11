@@ -775,6 +775,8 @@ namespace pen
 
 - (void)windowDidBecomeKey:(NSNotification*)notification
 {
+    //NSCursor* currentCursor = [NSCursor arrowCursor];
+    //[currentCursor set];
 }
 
 - (void)windowDidResignKey:(NSNotification*)notification

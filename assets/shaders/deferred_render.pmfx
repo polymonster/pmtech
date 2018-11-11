@@ -137,12 +137,12 @@ ps_output ps_light(vs_output input)
             albedo.rgb
         );
         
-    if:(POINT_LIGHT)
+    if:(POINT_LIGHT > 0)
     {
         light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
     }    
     
-    if:(SPOT_LIGHT)
+    if:(SPOT_LIGHT > 0)
     {
         light_col *= spot_light_attenuation(input.light_pos_radius, 
                                             input.light_dir_cutoff,

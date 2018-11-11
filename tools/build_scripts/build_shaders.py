@@ -787,6 +787,7 @@ def replace_conditional_blocks(source):
         body_start = source.find("{", conditions_start) + 1
         conditions = source[conditions_start:body_start - 1]
         delimiters = [" ", "(", ")", "&", "|"]
+        comparisons = [">", "<", "==", "!=", "<=", ">="]
         token = ""
         defined = ""
         for char in conditions:
@@ -794,9 +795,18 @@ def replace_conditional_blocks(source):
                 if char == " ":
                     continue
                 if token != "":
-                    defined += "defined("
-                    defined += token
-                    defined += ")"
+                    ifdefined = True
+                    for comp in comparisons:
+                        if comp in token:
+                            ifdefined = False
+                    if ifdefined:
+                        defined += "defined("
+                        defined += token
+                        defined += ")"
+                    else:
+                        defined += "("
+                        defined += token
+                        defined += ")"
                 defined += char
                 token = ""
             else:
@@ -1076,6 +1086,21 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
     return technique, c_struct
 
 
+def permute(define_list, permute_list, output_permutations):
+    if len(define_list) == 0:
+        output_permutations.append(list(permute_list))
+    else:
+        d = define_list.pop()
+        for s in d[1]:
+            ds = (d[0], s)
+            permute_list.append(ds)
+            output_permutations = permute(define_list, permute_list, output_permutations)
+            if len(permute_list) > 0:
+                permute_list.pop()
+        define_list.append(d)
+    return output_permutations
+
+
 def generate_defines(pmfx_block, technique_name):
     global technique_defines
     technique_defines = ""
@@ -1084,10 +1109,18 @@ def generate_defines(pmfx_block, technique_name):
             technique_defines += "#define " + d + " 1\n"
 
 
+def generate_permutation_defines(permutation):
+    global technique_defines
+    technique_defines = ""
+    for p in permutation:
+        technique_defines += "#define " + p[0] + " " + str(p[1]) + "\n"
+
+
 def parse_pmfx(filename, root):
     file_and_path = os.path.join(root, filename)
     needs_building, shader_file_text, included_files = create_shader_set(file_and_path, root)
     if needs_building:
+        # get shader code
         print(filename)
         shader_c_struct = ""
         pmfx_loc = shader_file_text.find("pmfx:")
@@ -1099,31 +1132,63 @@ def parse_pmfx(filename, root):
         constant_buffers = find_constant_buffers(shader_file_text)
         texture_samplers_source = find_texture_samplers(shader_file_text)
         if pmfx_loc != -1:
+            # find pmfx block
             pmfx_end = enclose_brackets(shader_file_text[pmfx_loc:])
             pmfx_block = json.loads(shader_file_text[json_loc:pmfx_end+json_loc])
+
+            # generate uber shader permutations
+            output_permutations = []
+            if "permutations" in pmfx_block:
+                define_list = []
+                for p in pmfx_block["permutations"]:
+                    define_list.append((p, pmfx_block["permutations"][p]))
+                output_permutations = permute(define_list, [], [])
+                del pmfx_block["permutations"]
+
+            # generate default permutation, inherit / get permutation constants
+            technique_permutations = dict()
             for technique in pmfx_block:
+                tp = list(output_permutations)
                 pmfx_block[technique] = inherit_technique(pmfx_block[technique], pmfx_block)
+                if len(tp) == 0:
+                    default_permute = []
+                    if "defines" in pmfx_block[technique].keys():
+                        print("defines")
+                        for d in pmfx_block[technique]["defines"]:
+                            default_permute.append((d, 1))
+                    else:
+                        default_permute = [("SINGLE_PERMUTATION", 1)]
+                    tp.append(default_permute)
+                technique_permutations[technique] = tp
+
+            # for technique for permutation generate and compile shader
             for technique in pmfx_block:
-                print("technique: " + technique)
-                c_stuct = ""
-                pmfx_block[technique], c_stuct = generate_technique_constant_buffers(pmfx_block, technique)
-                generate_defines(pmfx_block, technique)
-                shader_c_struct += c_stuct
-                generate_technique_texture_variables(pmfx_block, technique)
-                ps_name = ""
-                if "ps" in pmfx_block[technique].keys():
-                    ps_name = pmfx_block[technique]["ps"]
-                pmfx_block[technique]["vs_inputs"], \
-                pmfx_block[technique]["instance_inputs"], \
-                pmfx_block[technique]["vs_outputs"] = \
-                    create_vsc_psc(file_and_path, shader_file_text, pmfx_block[technique]["vs"], ps_name, technique)
-                pmfx_block[technique]["name"] = technique
-                if "ps" in pmfx_block[technique].keys():
-                    del pmfx_block[technique]["ps"]
-                    pmfx_block[technique]["ps_file"] = technique + ".psc"
-                del pmfx_block[technique]["vs"]
-                pmfx_block[technique]["vs_file"] = technique + ".vsc"
-                techniques.append(json.dumps(pmfx_block[technique]))
+                src_pmfx = json.dumps(pmfx_block)
+                for p in technique_permutations[technique]:
+                    if p[0][0] != "SINGLE_PERMUTATION":
+                        print("technique: " + technique + " " + str(p))
+                    else:
+                        print("technique: " + technique)
+                    pmfx_block = json.loads(src_pmfx)
+                    technique_json, c_stuct = generate_technique_constant_buffers(pmfx_block, technique)
+                    # generate_defines(pmfx_block, technique)
+                    generate_permutation_defines(p)
+                    shader_c_struct += c_stuct
+                    generate_technique_texture_variables(pmfx_block, technique)
+                    ps_name = ""
+                    if "ps" in technique_json.keys():
+                        ps_name = technique_json["ps"]
+                    technique_json["vs_inputs"], \
+                        technique_json["instance_inputs"], \
+                        technique_json["vs_outputs"] = \
+                        create_vsc_psc(file_and_path, shader_file_text, technique_json["vs"], ps_name, technique)
+                    technique_json["name"] = technique
+                    if "ps" in technique_json.keys():
+                        del technique_json["ps"]
+                        technique_json["ps_file"] = technique + ".psc"
+                    del technique_json["vs"]
+                    technique_json["vs_file"] = technique + ".vsc"
+                    techniques.append(json.dumps(technique_json))
         else:
             # globals to insert into shaders
             global technique_defines
@@ -1135,8 +1200,8 @@ def parse_pmfx(filename, root):
             default_technique["vs_file"] = "default.vsc"
             default_technique["ps_file"] = "default.psc"
             default_technique["vs_inputs"], \
-            default_technique["instance_inputs"], \
-            default_technique["vs_outputs"] =\
+                default_technique["instance_inputs"], \
+                default_technique["vs_outputs"] =\
                 create_vsc_psc(file_and_path, shader_file_text, "vs_main", "ps_main", "default")
             techniques.append(json.dumps(default_technique))
 
