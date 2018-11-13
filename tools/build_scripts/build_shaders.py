@@ -58,6 +58,8 @@ if not os.path.exists(shader_build_dir):
 if not os.path.exists(temp_dir):
     os.mkdir(temp_dir)
 
+technique_texture = []
+
 print("--------------------------------------------------------------------------------")
 print("pmfx shader compilation --------------------------------------------------------")
 print("--------------------------------------------------------------------------------")
@@ -960,24 +962,6 @@ def shader_compile_v1():
                 create_vsc_psc(file_and_path, "vs_main", "ps_main", "default")
 
 
-technique_texture = []
-
-
-def generate_technique_texture_variables(pmfx_block, technique_name):
-    global technique_texture
-    technique_texture = []
-
-    technique = pmfx_block[technique_name]
-    if "texture_samplers" not in technique.keys():
-        return
-
-    textures = technique["texture_samplers"]
-    for t in textures.keys():
-        technique_texture.append((textures[t]["type"], t, textures[t]["unit"]))
-
-    return
-
-
 def member_wise_merge(j1, j2):
     for key in j2.keys():
         if key not in j1.keys():
@@ -996,7 +980,51 @@ def inherit_technique(technique, pmfx_block):
     return technique
 
 
-def generate_technique_constant_buffers(pmfx_block, technique_name):
+def get_permutation_conditionals(block, permutation):
+    if "constants" in block:
+        # find conditionals
+        conditionals = []
+        cblock = block["constants"]
+        for key in cblock.keys():
+            if key.find("permutation(") != -1:
+                conditionals.append((key, cblock[key]))
+        # check conditionals valid
+        for c in conditionals:
+            # remove conditional permutation
+            del block["constants"][c[0]]
+
+            full_condition = c[0].replace("permutation", "")
+            full_condition = full_condition.replace("&&", "and")
+            full_condition = full_condition.replace("||", "or")
+
+            gv = dict()
+            for v in permutation:
+                gv[str(v[0])] = v[1]
+
+            if eval(full_condition, gv):
+                block["constants"] = member_wise_merge(block["constants"], c[1])
+    return block
+
+
+def generate_technique_texture_variables(pmfx_block, technique_name, permutation):
+    global technique_texture
+    technique_texture = []
+
+    technique = pmfx_block[technique_name]
+    if "texture_samplers" not in technique.keys():
+        return
+
+    textures = technique["texture_samplers"]
+
+    get_permutation_conditionals(textures, permutation)
+
+    for t in textures.keys():
+        technique_texture.append((textures[t]["type"], t, textures[t]["unit"]))
+
+    return
+
+
+def generate_technique_constant_buffers(pmfx_block, technique_name, permutation):
     global technique_cb_str
     technique_cb_str = ""
     offset = 0
@@ -1009,6 +1037,9 @@ def generate_technique_constant_buffers(pmfx_block, technique_name):
     if "inherit_constants" in technique.keys():
         for inherit in technique["inherit_constants"]:
             technique_constants.append(pmfx_block[inherit])
+
+    for tc in technique_constants:
+        tc = get_permutation_conditionals(tc, permutation)
 
     # find all constants
     shader_constant = []
@@ -1165,24 +1196,27 @@ def parse_pmfx(filename, root):
             for technique in pmfx_block:
                 src_pmfx = json.dumps(pmfx_block)
                 for p in technique_permutations[technique]:
+                    technique_name = technique
                     if p[0][0] != "SINGLE_PERMUTATION":
                         id = str(generate_permutation_id(define_list, p))
                         print("technique: " + technique + " [" + id + "] " + str(p))
+                        if id != "0":
+                            technique_name += "[" + id + "]"
                     else:
                         print("technique: " + technique)
                     pmfx_block = json.loads(src_pmfx)
-                    technique_json, c_stuct = generate_technique_constant_buffers(pmfx_block, technique)
+                    technique_json, c_stuct = generate_technique_constant_buffers(pmfx_block, technique, p)
                     generate_permutation_defines(p)
                     shader_c_struct += c_stuct
-                    generate_technique_texture_variables(pmfx_block, technique)
+                    generate_technique_texture_variables(pmfx_block, technique, p)
                     ps_name = ""
                     if "ps" in technique_json.keys():
                         ps_name = technique_json["ps"]
                     technique_json["vs_inputs"], \
                         technique_json["instance_inputs"], \
                         technique_json["vs_outputs"] = \
-                        create_vsc_psc(file_and_path, shader_file_text, technique_json["vs"], ps_name, technique)
-                    technique_json["name"] = technique
+                        create_vsc_psc(file_and_path, shader_file_text, technique_json["vs"], ps_name, technique_name)
+                    technique_json["name"] = technique_name
                     if "ps" in technique_json.keys():
                         del technique_json["ps"]
                         technique_json["ps_file"] = technique + ".psc"

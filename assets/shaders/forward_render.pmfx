@@ -494,7 +494,7 @@ void ps_null( vs_output_zonly input )
 }
 
 pmfx:
-{    
+{
     "pre_skin":
     {
         "vs"        : "vs_main_pre_skin",

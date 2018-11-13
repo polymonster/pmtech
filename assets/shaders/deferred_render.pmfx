@@ -152,11 +152,16 @@ ps_output ps_light(vs_output input)
                   
     output.colour.rgb = light_col;
     
+    if:(DEBUG_COLOUR)
+    {
+        output.colour = m_colour;
+    }
+    
     return output;
 }
 
 pmfx:
-{
+{    
     "directional_light":
     {
         "vs": "vs_directional_light",
