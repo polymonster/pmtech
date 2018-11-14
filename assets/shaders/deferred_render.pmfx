@@ -137,12 +137,12 @@ ps_output ps_light(vs_output input)
             albedo.rgb
         );
         
-    if:(POINT_LIGHT > 0)
+    if:(POINT_LIGHT)
     {
         light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
     }    
     
-    if:(SPOT_LIGHT > 0)
+    if:(SPOT_LIGHT)
     {
         light_col *= spot_light_attenuation(input.light_pos_radius, 
                                             input.light_dir_cutoff,
@@ -154,7 +154,7 @@ ps_output ps_light(vs_output input)
     
     if:(DEBUG_COLOUR)
     {
-        output.colour = m_colour;
+        output.colour = float4(1.0, 1.0, 0.0, 1.0);
     }
     
     return output;
@@ -162,6 +162,7 @@ ps_output ps_light(vs_output input)
 
 pmfx:
 {    
+
     "directional_light":
     {
         "vs": "vs_directional_light",
@@ -180,6 +181,17 @@ pmfx:
         "vs"     : "vs_spot_light",
         "ps"     : "ps_light",
         "defines": ["SPOT_LIGHT"]
+    },
+    
+    "permutation_ttt":
+    {
+        "vs"     : "vs_spot_light",
+        "ps"     : "ps_light",
+        
+        "permutations":
+        {
+            "DEBUG_COLOUR": [0, [0,1]]
+        }
     }
 }
 

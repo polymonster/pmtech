@@ -1167,41 +1167,47 @@ def parse_pmfx(filename, root):
             pmfx_end = enclose_brackets(shader_file_text[pmfx_loc:])
             pmfx_block = json.loads(shader_file_text[json_loc:pmfx_end+json_loc])
 
-            # generate uber shader permutations
-            output_permutations = []
-            define_list = []
-            if "permutations" in pmfx_block:
-                for p in pmfx_block["permutations"].keys():
-                    pp = pmfx_block["permutations"][p]
-                    define_list.append((p, pp[1], pp[0]))
-                output_permutations = permute(define_list, [], [])
-                del pmfx_block["permutations"]
-
-            # generate default permutation, inherit / get permutation constants
-            technique_permutations = dict()
+            # inherit techniques
             for technique in pmfx_block:
-                tp = list(output_permutations)
                 pmfx_block[technique] = inherit_technique(pmfx_block[technique], pmfx_block)
+
+            # for technique for permutation generate and compile shader
+            for technique in pmfx_block:
+                technique_block = pmfx_block[technique]
+
+                # permutation list
+                output_permutations = []
+                define_list = []
+                if "permutations" in technique_block:
+                    for p in technique_block["permutations"].keys():
+                        pp = technique_block["permutations"][p]
+                        define_list.append((p, pp[1], pp[0]))
+                    output_permutations = permute(define_list, [], [])
+                    del technique_block["permutations"]
+
+                # generate default permutation, inherit / get permutation constants
+                technique_permutations = dict()
+                tp = list(output_permutations)
                 if len(tp) == 0:
                     default_permute = []
-                    if "defines" in pmfx_block[technique].keys():
-                        for d in pmfx_block[technique]["defines"]:
+                    if "defines" in technique_block.keys():
+                        for d in technique_block["defines"]:
                             default_permute.append((d, 1))
                     else:
                         default_permute = [("SINGLE_PERMUTATION", 1)]
                     tp.append(default_permute)
                 technique_permutations[technique] = tp
 
-            # for technique for permutation generate and compile shader
-            for technique in pmfx_block:
+                # fixes a bug where pmfx_block is written to during compile / shader generation
                 src_pmfx = json.dumps(pmfx_block)
+
                 for p in technique_permutations[technique]:
                     technique_name = technique
                     if p[0][0] != "SINGLE_PERMUTATION":
                         id = str(generate_permutation_id(define_list, p))
                         print("technique: " + technique + " [" + id + "] " + str(p))
                         if id != "0":
-                            technique_name += "[" + id + "]"
+                            technique_name += "__" + id + "__"
                     else:
                         print("technique: " + technique)
                     pmfx_block = json.loads(src_pmfx)
@@ -1219,9 +1225,9 @@ def parse_pmfx(filename, root):
                     technique_json["name"] = technique_name
                     if "ps" in technique_json.keys():
                         del technique_json["ps"]
-                        technique_json["ps_file"] = technique + ".psc"
+                        technique_json["ps_file"] = technique_name + ".psc"
                     del technique_json["vs"]
-                    technique_json["vs_file"] = technique + ".vsc"
+                    technique_json["vs_file"] = technique_name + ".vsc"
                     techniques.append(json.dumps(technique_json))
         else:
             # globals to insert into shaders
