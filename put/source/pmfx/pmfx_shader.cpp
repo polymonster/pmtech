@@ -498,6 +498,33 @@ namespace put
 
                 sb_push(program.constants, tc);
             }
+            
+            // generate permutation metadata
+            program.permutations = nullptr;
+            u32 num_permutations = j_techique["permutations"].size();
+            
+            for(u32 i = 0; i < num_permutations; ++i)
+            {
+                technique_permutation tp;
+                tp.name = j_techique["permutations"][i].key();
+                tp.val = j_techique["permutations"][i]["val"].as_u32();
+                
+                hash_id id_widget = j_techique["permutations"][i]["type"].as_hash_id();
+                
+                static hash_id id_checkbox = PEN_HASH("checkbox");
+                static hash_id id_input = PEN_HASH("input");
+                
+                if(id_widget == id_checkbox)
+                {
+                    tp.widget = PW_CHECKBOX;
+                }
+                else if(id_widget == id_input)
+                {
+                    tp.widget = PW_INPUT;
+                }
+                
+                sb_push(program.permutations, tp);
+            }
 
             return program;
         }
@@ -593,6 +620,17 @@ namespace put
             }
 
             return nullptr;
+        }
+        
+        technique_permutation* get_technique_permutations(u32 shader, u32 technique_index)
+        {
+            if (shader >= sb_count(k_pmfx_list))
+                return nullptr;
+            
+            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
+                return nullptr;
+            
+            return k_pmfx_list[shader].techniques[technique_index].permutations;
         }
 
         u32 get_technique_cbuffer_size(u32 shader, u32 technique_index)
@@ -877,19 +915,43 @@ namespace put
         {
             return get_technique_constants(shader, technique_index) || get_technique_samplers(shader, technique_index);
         }
+        
+        bool permutation_ui(u32 shader, u32 technique_index)
+        {
+            technique_permutation* tp = get_technique_permutations(shader, technique_index);
+            
+            bool rv = false;
+            
+            if(!tp)
+            {
+                return rv;
+            }
+            
+            ImGui::Separator();
+            ImGui::Text("Permutation");
+            ImGui::Separator();
+            
+            u32 num_permutations = sb_count(tp);
+            for(u32 i = 0; i < num_permutations; ++i)
+            {
+                ImGui::Text("%s", tp[i].name.c_str());
+            }
+            
+            return rv;
+        }
 
         bool constant_ui(u32 shader, u32 technique_index, f32* material_data)
         {
-            ImGui::Separator();
-            ImGui::Text("Constants");
-            ImGui::Separator();
-
             technique_constant* tc = get_technique_constants(shader, technique_index);
 
             bool rv = false;
 
             if (!tc)
                 return rv;
+            
+            ImGui::Separator();
+            ImGui::Text("Constants");
+            ImGui::Separator();
 
             static bool colour_edit[64] = {0};
             u32         num_constants   = sb_count(tc);
@@ -947,16 +1009,16 @@ namespace put
 
         bool texture_ui(u32 shader, u32 technique_index, cmp_samplers& samplers)
         {
-            ImGui::Separator();
-            ImGui::Text("Texture Samplers");
-            ImGui::Separator();
-
             technique_sampler* tt = get_technique_samplers(shader, technique_index);
 
             bool rv = false;
 
             if (!tt)
                 return false;
+            
+            ImGui::Separator();
+            ImGui::Text("Texture Samplers");
+            ImGui::Separator();
 
             u32 num_textures = sb_count(tt);
 
@@ -1027,6 +1089,7 @@ namespace put
         bool show_technique_ui(u32 shader, u32 technique_index, f32* material_data, sampler_set& samplers)
         {
             bool rv = false;
+            rv |= permutation_ui(shader, technique_index);
             rv |= constant_ui(shader, technique_index, material_data);
             rv |= texture_ui(shader, technique_index, samplers);
 

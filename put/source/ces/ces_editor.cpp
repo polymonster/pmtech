@@ -1893,7 +1893,8 @@ namespace put
                 if (cm)
                 {
                     hash_id id_technique = PEN_HASH(technique_list[technique]);
-
+                    hash_id id_shader = PEN_HASH(shader_list[shader]);
+                    
                     for (u32 i = 0; i < num_selected; ++i)
                     {
                         u32 si                           = s_selection_list[i];
@@ -1901,12 +1902,13 @@ namespace put
                         scene->materials[si].technique   = technique;
 
                         scene->material_resources[si].id_technique = id_technique;
+                        scene->material_resources[si].id_shader = id_shader;
                     }
                 }
 
                 pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
-
-                if (tc)
+                
+                //if (tc)
                 {
                     bool rebake = pmfx::show_technique_ui(shader, technique, &mat.data[0], samp);
                     if(rebake)
@@ -1914,26 +1916,29 @@ namespace put
                         ces::bake_material_handles(scene, selected_index);
                     }
 
-                    u32               num_constants = sb_count(tc);
-                    cmp_material_data pre_edit      = scene->material_data[selected_index];
-
-                    for (u32 i = 0; i < num_selected; ++i)
+                    if(tc)
                     {
-                        u32 si = s_selection_list[i];
-
-                        for (u32 c = 0; c < num_constants; ++c)
+                        u32               num_constants = sb_count(tc);
+                        cmp_material_data pre_edit      = scene->material_data[selected_index];
+                        
+                        for (u32 i = 0; i < num_selected; ++i)
                         {
-                            u32 cb_offset = tc[c].cb_offset;
-                            u32 tc_size   = sizeof(f32) * tc[c].num_elements;
-
-                            f32* f1 = &mat.data[cb_offset];
-                            f32* f2 = &pre_edit.data[cb_offset];
-
-                            if (memcmp(f1, f2, tc_size) == 0)
-                                continue;
-
-                            f32* f3 = &scene->material_data[si].data[cb_offset];
-                            memcpy(f3, f1, tc_size);
+                            u32 si = s_selection_list[i];
+                            
+                            for (u32 c = 0; c < num_constants; ++c)
+                            {
+                                u32 cb_offset = tc[c].cb_offset;
+                                u32 tc_size   = sizeof(f32) * tc[c].num_elements;
+                                
+                                f32* f1 = &mat.data[cb_offset];
+                                f32* f2 = &pre_edit.data[cb_offset];
+                                
+                                if (memcmp(f1, f2, tc_size) == 0)
+                                    continue;
+                                
+                                f32* f3 = &scene->material_data[si].data[cb_offset];
+                                memcpy(f3, f1, tc_size);
+                            }
                         }
                     }
                 }

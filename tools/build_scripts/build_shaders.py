@@ -487,7 +487,8 @@ def generate_glsl(
         vs_output_source, ps_output_source,
         constant_buffers,
         texture_samplers_source,
-        technique_name):
+        technique_name,
+        permutation):
     shader_name = os.path.basename(source_filename)
     shader_name = os.path.splitext(shader_name)[0]
 
@@ -579,7 +580,7 @@ def generate_glsl(
     final_vs_source += "}\n"
 
     final_vs_source = replace_io_tokens(final_vs_source)
-    final_vs_source = replace_conditional_blocks(final_vs_source)
+    final_vs_source = evaluate_conditional_blocks(final_vs_source, permutation)
 
     vs_fn = os.path.join(shader_build_dir, shader_name, technique_name + ".vsc")
     vs_file = open(vs_fn, "w")
@@ -643,7 +644,7 @@ def generate_glsl(
         final_ps_source += "}\n"
 
         final_ps_source = replace_io_tokens(final_ps_source)
-        final_ps_source = replace_conditional_blocks(final_ps_source)
+        final_ps_source = evaluate_conditional_blocks(final_ps_source, permutation)
 
         ps_fn = os.path.join(shader_build_dir, shader_name, technique_name + ".psc")
         ps_file = open(ps_fn, "w")
@@ -775,6 +776,52 @@ def create_shader_set(filename, root):
     return True, shader_file_text, included_files
 
 
+def evaluate_conditional_blocks(source, permutation):
+    if not permutation:
+        return source
+    pos = 0
+    while True:
+        pos = source.find("if:", pos)
+        if pos == -1:
+            break
+
+        conditions_start = source.find("(", pos)
+        body_start = source.find("{", conditions_start) + 1
+        conditions = source[conditions_start:body_start - 1]
+
+        conditions = conditions.replace("&&", "and")
+        conditions = conditions.replace("||", "or")
+        conditions = conditions.replace('\n', '')
+
+        gv = dict()
+        for v in permutation:
+            gv[str(v[0])] = v[1]
+
+        conditional_block = ""
+
+        i = body_start
+        stack_size = 1
+        while True:
+            if source[i] == "{":
+                stack_size += 1
+            if source[i] == "}":
+                stack_size -= 1
+            if stack_size == 0:
+                break
+            i += 1
+
+        try:
+            if eval(conditions, gv):
+                conditional_block = source[body_start:i]
+        except NameError:
+            conditional_block = ""
+
+        source = source.replace(source[pos:i+1], conditional_block)
+        pos += len(conditional_block)
+
+    return source
+
+
 def replace_conditional_blocks(source):
     pos = 0
     while True:
@@ -830,7 +877,7 @@ def replace_conditional_blocks(source):
     return source
 
 
-def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name):
+def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name, permutation):
     mf = open(macros_file)
     macros_text = mf.read()
     mf.close()
@@ -914,7 +961,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     vs_source += texture_samplers_source
     vs_source += vs_functions
     vs_source += vs_main
-    vs_source = replace_conditional_blocks(vs_source)
+    vs_source = evaluate_conditional_blocks(vs_source, permutation)
 
     # pixel shader
     for s in struct_list:
@@ -929,7 +976,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
     if ps_main != "":
         ps_source += ps_functions
         ps_source += ps_main
-        ps_source = replace_conditional_blocks(ps_source)
+        ps_source = evaluate_conditional_blocks(ps_source, permutation)
 
     if shader_platform == "hlsl":
         compile_hlsl(vs_source, filename, "vs_4_0", ".vs", vs_name, technique_name)
@@ -946,7 +993,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name)
             vs_input_source, instance_input_source,
             vs_output_source, ps_output_source,
             constant_buffers, texture_samplers_source,
-            technique_name)
+            technique_name, permutation)
 
     return make_input_info(vs_input_source), make_input_info(instance_input_source), make_input_info(vs_output_source)
 
@@ -959,7 +1006,7 @@ def shader_compile_v1():
                 print("compiling: " + os.path.splitext(file_and_path)[0])
                 file_and_path = os.path.join(root, file)
                 create_shader_set(file_and_path, root)
-                create_vsc_psc(file_and_path, "vs_main", "ps_main", "default")
+                create_vsc_psc(file_and_path, "vs_main", "ps_main", "default", None)
 
 
 def member_wise_merge(j1, j2):
@@ -1178,11 +1225,19 @@ def parse_pmfx(filename, root):
                 # permutation list
                 output_permutations = []
                 define_list = []
+                permutation_options = dict()
+
                 if "permutations" in technique_block:
                     for p in technique_block["permutations"].keys():
                         pp = technique_block["permutations"][p]
                         define_list.append((p, pp[1], pp[0]))
                     output_permutations = permute(define_list, [], [])
+                    for key in technique_block["permutations"]:
+                        tp = technique_block["permutations"][key]
+                        ptype = "checkbox"
+                        if len(tp[1]) > 2:
+                            ptype = "input_int"
+                        permutation_options[key] = {"val": pow(2, tp[0]), "type": ptype}
                     del technique_block["permutations"]
 
                 # generate default permutation, inherit / get permutation constants
@@ -1202,7 +1257,9 @@ def parse_pmfx(filename, root):
                 src_pmfx = json.dumps(pmfx_block)
 
                 for p in technique_permutations[technique]:
+                    # names / permutation ids
                     technique_name = technique
+                    id = 0
                     if p[0][0] != "SINGLE_PERMUTATION":
                         id = str(generate_permutation_id(define_list, p))
                         print("technique: " + technique + " [" + id + "] " + str(p))
@@ -1210,22 +1267,36 @@ def parse_pmfx(filename, root):
                             technique_name += "__" + id + "__"
                     else:
                         print("technique: " + technique)
+
+                    # generate cbuffers, textures and c structs meta data / reflection
                     pmfx_block = json.loads(src_pmfx)
                     technique_json, c_stuct = generate_technique_constant_buffers(pmfx_block, technique, p)
                     generate_permutation_defines(p)
                     shader_c_struct += c_stuct
                     generate_technique_texture_variables(pmfx_block, technique, p)
+
+                    # check for ps
                     ps_name = ""
                     if "ps" in technique_json.keys():
                         ps_name = technique_json["ps"]
-                    technique_json["vs_inputs"], \
-                        technique_json["instance_inputs"], \
-                        technique_json["vs_outputs"] = \
-                        create_vsc_psc(file_and_path, shader_file_text, technique_json["vs"], ps_name, technique_name)
+
+                    # generate vs and ps
                     technique_json["name"] = technique_name
+                    technique_json["vs_inputs"], \
+                    technique_json["instance_inputs"], \
+                    technique_json["vs_outputs"] = \
+                    create_vsc_psc(file_and_path, shader_file_text, technique_json["vs"], ps_name, technique_name, p)
+
+                    # permutation meta data
+                    technique_json["permutations"] = permutation_options
+                    technique_json["permutation_id"] = id
+
+                    # clean up ps
                     if "ps" in technique_json.keys():
                         del technique_json["ps"]
                         technique_json["ps_file"] = technique_name + ".psc"
+
+                    # cleanup vs
                     del technique_json["vs"]
                     technique_json["vs_file"] = technique_name + ".vsc"
                     techniques.append(json.dumps(technique_json))
@@ -1242,7 +1313,7 @@ def parse_pmfx(filename, root):
             default_technique["vs_inputs"], \
                 default_technique["instance_inputs"], \
                 default_technique["vs_outputs"] =\
-                create_vsc_psc(file_and_path, shader_file_text, "vs_main", "ps_main", "default")
+                create_vsc_psc(file_and_path, shader_file_text, "vs_main", "ps_main", "default", None)
             techniques.append(json.dumps(default_technique))
 
         # write out header file of c_structs for accessing materials in code

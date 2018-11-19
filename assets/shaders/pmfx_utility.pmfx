@@ -518,28 +518,16 @@ ps_output ps_permutation_test( vs_output input )
     
     output.colour = float4(0.0, 0.0, 0.0, 1.0);
     
-    if:(POOP)
+    if:(RED > 0)
     {
-        output.colour.rgb = float3(1.0, 0.0, 1.0);
+        output.colour += float4(1.0, 0.0, 1.0, 0.0);
     }
     
-    /*
-    if:(RED>0)
-    {
-        output.colour += float4(1.0, 0.0, 0.0, 0.0);
-    }
-    
-    if:(GREEN>0)
+    if:(GREEN > 0)
     {
         output.colour += float4(0.0, 1.0, 0.0, 0.0);    
     }
-    
-    if:(BLUE>0)
-    {
-        output.colour += float4(0.0, 0.0, 1.0, 0.0);   
-    }
-    */
-    
+
     return output;
 }
 
@@ -645,6 +633,18 @@ pmfx:
     {
         "vs": "vs_main",
         "ps": "ps_diffuse"
+    },
+    
+    "permutation_test":
+    {
+        "vs"     : "vs_main",
+        "ps"     : "ps_permutation_test",
+        
+        "permutations":
+        {
+            "RED": [0, [0,1]],
+            "GREEN": [1, [0,1]]
+        }
     }
 }
 

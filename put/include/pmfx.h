@@ -104,8 +104,14 @@ namespace put
             CW_SLIDER,
             CW_INPUT,
             CW_COLOUR,
-
             CW_NUM
+        };
+        
+        enum e_permutation_widget
+        {
+            PW_CHECKBOX,
+            PW_INPUT,
+            PW_NUM
         };
 
         enum e_constant_buffer_locations
@@ -156,6 +162,13 @@ namespace put
             u32 sampler_state;
             u32 shader_type;
         };
+        
+        struct technique_permutation
+        {
+            Str name = "";
+            u32 val = 0;
+            u32 widget = PW_CHECKBOX;
+        };
 
         // sub types of shader for differing vs / ps combos
         static const c8* k_sub_types[] = {
@@ -175,10 +188,12 @@ namespace put
             u32 input_layout;
             u32 program_index;
             u32 technique_constant_size; // bytes
-
+            u64 permutation_id; // bitmask
+            
             f32*                constant_defaults;
             technique_constant* constants;
             technique_sampler*  textures;
+            technique_permutation* permutations;
         };
 
         enum rt_flags

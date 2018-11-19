@@ -152,11 +152,6 @@ ps_output ps_light(vs_output input)
                   
     output.colour.rgb = light_col;
     
-    if:(DEBUG_COLOUR)
-    {
-        output.colour = float4(1.0, 1.0, 0.0, 1.0);
-    }
-    
     return output;
 }
 
@@ -181,17 +176,6 @@ pmfx:
         "vs"     : "vs_spot_light",
         "ps"     : "ps_light",
         "defines": ["SPOT_LIGHT"]
-    },
-    
-    "permutation_ttt":
-    {
-        "vs"     : "vs_spot_light",
-        "ps"     : "ps_light",
-        
-        "permutations":
-        {
-            "DEBUG_COLOUR": [0, [0,1]]
-        }
     }
 }
 
