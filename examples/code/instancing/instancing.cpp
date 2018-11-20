@@ -138,8 +138,10 @@ void animate_instances(entity_scene* scene)
         scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
         scene->entities.data[i] |= CMP_TRANSFORM;
     }
-    f32 array_cost = pen::timer_elapsed_ms(timer);
 
+    // debug / test array cost vs operator [] in component entity system
+#if 0
+    f32 array_cost = pen::timer_elapsed_ms(timer);
     pen::timer_start(timer);
     for (s32 i = 2; i < scene->num_nodes; ++i)
     {
@@ -149,6 +151,7 @@ void animate_instances(entity_scene* scene)
     f32 operator_cost = pen::timer_elapsed_ms(timer);
 
     PEN_LOG("operator: %f, array: %f\n", operator_cost, array_cost);
+#endif
 }
 
 PEN_TRV pen::user_entry(void* params)

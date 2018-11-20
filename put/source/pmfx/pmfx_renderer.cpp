@@ -182,6 +182,7 @@ namespace
 
         technique_constant_data technique_constants;
         sampler_set             technique_samplers;
+        u32                     technique_permutation;
 
         std::vector<sampler_binding> sampler_bindings;
         vec4f*                       sampler_info;
@@ -3000,7 +3001,8 @@ namespace put
                                 ImGui::Separator();
                                 ImGui::Text("Technique: %s", pp.name.c_str());
 
-                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0], pp.technique_samplers);
+                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0],
+                                                  pp.technique_samplers, &pp.technique_permutation);
                             }
                         }
 

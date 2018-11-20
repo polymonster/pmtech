@@ -117,18 +117,6 @@ namespace put
             MAX_SDF_SHADOWS    = 1
         };
 
-        struct material_resource
-        {
-            hash_id hash;
-            Str     material_name;
-            Str     shader_name;
-            f32     data[64];
-            hash_id id_shader                         = 0;
-            hash_id id_technique                      = 0;
-            hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
-            s32     texture_handles[SN_NUM_TEXTURES]  = {0};
-        };
-
         struct cmp_draw_call
         {
             mat4  world_matrix;
@@ -145,18 +133,34 @@ namespace put
             u32  bone_cbuffer = PEN_INVALID_HANDLE;
         };
 
+        // contains handles and data to re-create a material from scratch
+        // material resources could be re-used created and shared
+        struct material_resource
+        {
+            hash_id hash;
+            Str     material_name;
+            Str     shader_name;
+            f32     data[64];
+            hash_id id_shader                         = 0;
+            hash_id id_technique                      = 0;
+            hash_id id_sampler_state[SN_NUM_TEXTURES] = {0}; // todo: evaluate if needed
+            s32     texture_handles[SN_NUM_TEXTURES]  = {0}; // todo: evaluate if needed
+        };
+
+        // contains baked handles for o(1) time setting of technique / shader
+        // unique per-instance cbuffer
         struct cmp_material
         {
-            s32 texture_handles[SN_NUM_TEXTURES] = {0}; // this is now depracated in favour of sampler sets / cmp_samplers
-            u32 sampler_states[SN_NUM_TEXTURES]  = {0};
+            s32 texture_handles[SN_NUM_TEXTURES] = {0}; // depracated in favour of sampler sets / cmp_samplers
+            u32 sampler_states[SN_NUM_TEXTURES]  = {0}; // depracated in favour of sampler sets / cmp_samplers
             u32 material_cbuffer                 = PEN_INVALID_HANDLE;
             u32 material_cbuffer_size            = 0;
 
-            u32 pmfx_shader;
-            u32 technique;
+            u32 pmfx_shader; // shader
+            u32 technique; // technique index
         };
 
-        // from pmfx
+        // from pmfx per instance material cbuffer data and samplers
         typedef technique_constant_data cmp_material_data; // upto 64 floats of data stored in material cbuffer
         typedef sampler_set             cmp_samplers;      // 8 samplers which can bind to any slots
 
@@ -343,7 +347,7 @@ namespace put
 
         struct entity_scene
         {
-            static const u32 k_version = 7;
+            static const u32 k_version = 8;
 
             entity_scene()
             {
@@ -381,6 +385,7 @@ namespace put
             cmp_array<material_resource>   material_resources;
             cmp_array<cmp_shadow>          shadows;
             cmp_array<cmp_samplers>        samplers; // version 5
+            cmp_array<u32>                 material_permutation; // version 8
 
             // Ensure num_components is the next to calc size
             u32 num_components;

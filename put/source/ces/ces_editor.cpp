@@ -1840,6 +1840,9 @@ namespace put
 
         bool scene_material_ui(entity_scene* scene)
         {
+            if (!ImGui::CollapsingHeader("Material"))
+                return false;
+            
             bool iv = false;
 
             u32 num_selected = sb_count(s_selection_list);
@@ -1852,95 +1855,137 @@ namespace put
 
             // master mat
             cmp_material& mm = scene->materials[selected_index];
-
+            material_resource& mr = scene->material_resources[selected_index];
+            cmp_material_data mat  = scene->material_data[selected_index];
+            cmp_samplers&     samp = scene->samplers[selected_index];
+            u32*              perm = &scene->material_permutation[selected_index];
+            
             // multi parameters
-            s32 shader    = mm.pmfx_shader;
-            s32 technique = mm.technique;
-
+            s32 shader = mm.pmfx_shader;
+            s32 technique_list_index = pmfx::get_technique_list_index(shader, mr.id_technique);
+            
             // set parameters if all are shared, if not set to invalid
             for (u32 i = 1; i < num_selected; ++i)
             {
                 cmp_material& m2 = scene->materials[s_selection_list[i]];
-
+                material_resource& mr2 = scene->material_resources[s_selection_list[i]];
+                
                 if (shader != m2.pmfx_shader)
+                {
+                    // mismatched shader and techniques selected
                     shader = PEN_INVALID_HANDLE;
-
-                if (technique != m2.technique)
-                    technique = PEN_INVALID_HANDLE;
+                    technique_list_index = PEN_INVALID_HANDLE;
+                }
+                else
+                {
+                    u32 m2_tli = pmfx::get_technique_list_index(shader, mr2.id_technique);
+                    
+                    // mismatched techniques
+                    if (technique_list_index != m2_tli)
+                        technique_list_index = PEN_INVALID_HANDLE;
+                }
             }
 
-            // material
-            if (ImGui::CollapsingHeader("Material"))
+            ImGui::Text("%s", scene->material_names[selected_index].c_str());
+            ImGui::Separator();
+
+            bool  cs = false;
+            bool  ct = false;
+
+            u32        num_shaders;
+            const c8** shader_list = pmfx::get_shader_list(num_shaders);
+            cs |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
+
+            u32        num_techniques;
+            const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
+            ct |= ImGui::Combo("Technique", (s32*)&technique_list_index, technique_list, num_techniques);
+
+            bool rebake = false;
+            
+            // apply shader changes
+            if(cs)
             {
-                cmp_material_data mat  = scene->material_data[selected_index];
-                cmp_samplers&     samp = scene->samplers[selected_index];
+                // changing shader will leave us with a bunk technique
+                // choose technique 0
 
-                ImGui::Text("%s", scene->material_names[selected_index].c_str());
-                ImGui::Separator();
-
-                auto& mm = scene->materials[selected_index];
-                bool  cm = false;
-
-                u32        num_shaders;
-                const c8** shader_list = pmfx::get_shader_list(num_shaders);
-                cm |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
-
-                u32        num_techniques;
-                const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
-                cm |= ImGui::Combo("Technique", (s32*)&technique, technique_list, num_techniques);
-
-                // apply shader changes
-                if (cm)
+                hash_id id_shader = PEN_HASH(shader_list[shader]);
+                
+                u32 new_shader = pmfx::load_shader(shader_list[shader]);
+                
+                hash_id id_technique = pmfx::get_technique_id(new_shader, 0);
+                
+                for (u32 i = 0; i < num_selected; ++i)
                 {
-                    hash_id id_technique = PEN_HASH(technique_list[technique]);
-                    hash_id id_shader = PEN_HASH(shader_list[shader]);
+                    u32 si = s_selection_list[i];
+                    
+                    scene->material_resources[si].id_technique = id_technique;
+                    scene->material_resources[si].id_shader = id_shader;
+                    scene->material_resources[si].shader_name = shader_list[shader];
+                }
+                
+                rebake = true;
+            }
+            
+            // apply technique changes
+            if (ct)
+            {
+                // changing technique - set id technique in mat resource
+                hash_id id_technique = PEN_HASH(technique_list[technique_list_index]);
+                
+                for (u32 i = 0; i < num_selected; ++i)
+                {
+                    u32 si = s_selection_list[i];
+
+                    scene->material_resources[si].id_technique = id_technique;
+                }
+                
+                rebake = true;
+            }
+            
+            // display technique ui if valid
+            if(technique_list_index != PEN_INVALID_HANDLE && !rebake)
+            {
+                pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, mm.technique);
+                rebake |= pmfx::show_technique_ui(shader, mm.technique, &mat.data[0], samp, perm);
+                
+                if(tc)
+                {
+                    u32               num_constants = sb_count(tc);
+                    cmp_material_data pre_edit      = scene->material_data[selected_index];
                     
                     for (u32 i = 0; i < num_selected; ++i)
                     {
-                        u32 si                           = s_selection_list[i];
-                        scene->materials[si].pmfx_shader = shader;
-                        scene->materials[si].technique   = technique;
-
-                        scene->material_resources[si].id_technique = id_technique;
-                        scene->material_resources[si].id_shader = id_shader;
-                    }
-                }
-
-                pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, technique);
-                
-                //if (tc)
-                {
-                    bool rebake = pmfx::show_technique_ui(shader, technique, &mat.data[0], samp);
-                    if(rebake)
-                    {
-                        ces::bake_material_handles(scene, selected_index);
-                    }
-
-                    if(tc)
-                    {
-                        u32               num_constants = sb_count(tc);
-                        cmp_material_data pre_edit      = scene->material_data[selected_index];
+                        u32 si = s_selection_list[i];
                         
-                        for (u32 i = 0; i < num_selected; ++i)
+                        for (u32 c = 0; c < num_constants; ++c)
                         {
-                            u32 si = s_selection_list[i];
+                            u32 cb_offset = tc[c].cb_offset;
+                            u32 tc_size   = sizeof(f32) * tc[c].num_elements;
                             
-                            for (u32 c = 0; c < num_constants; ++c)
-                            {
-                                u32 cb_offset = tc[c].cb_offset;
-                                u32 tc_size   = sizeof(f32) * tc[c].num_elements;
-                                
-                                f32* f1 = &mat.data[cb_offset];
-                                f32* f2 = &pre_edit.data[cb_offset];
-                                
-                                if (memcmp(f1, f2, tc_size) == 0)
-                                    continue;
-                                
-                                f32* f3 = &scene->material_data[si].data[cb_offset];
-                                memcpy(f3, f1, tc_size);
-                            }
+                            f32* f1 = &mat.data[cb_offset];
+                            f32* f2 = &pre_edit.data[cb_offset];
+                            
+                            if (memcmp(f1, f2, tc_size) == 0)
+                                continue;
+                            
+                            f32* f3 = &scene->material_data[si].data[cb_offset];
+                            memcpy(f3, f1, tc_size);
                         }
                     }
+                }
+                
+                // todo:
+                // samplers
+                // permutations
+            }
+            
+            // rebake all selected handles
+            if(rebake)
+            {
+                for (u32 i = 0; i < num_selected; ++i)
+                {
+                    u32 si = s_selection_list[i];
+                    ces::bake_material_handles(scene, si);
                 }
             }
 

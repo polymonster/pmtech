@@ -188,7 +188,7 @@ namespace put
             u32 input_layout;
             u32 program_index;
             u32 technique_constant_size; // bytes
-            u64 permutation_id; // bitmask
+            u32 permutation_id; // bitmask
             
             f32*                constant_defaults;
             technique_constant* constants;
@@ -244,13 +244,13 @@ namespace put
         void resize_viewports();
 
         camera*              get_camera(hash_id id_name);
-        camera**             get_cameras(); // call sb_free on return value when done
+        camera**             get_cameras();                                     // call sb_free on return value when done
         const render_target* get_render_target(hash_id h);
         void                 get_render_target_dimensions(const render_target* rt, f32& w, f32& h);
         u32                  get_render_state(hash_id id_name, u32 type);
         Str                  get_render_state_name(u32 handle);
-        c8**                 get_render_state_list(u32 type); // call sb_free on return value when done
-        hash_id*             get_render_state_id_list(u32 type); // call sb_free on return value when done
+        c8**                 get_render_state_list(u32 type);                   // call sb_free on return value when done
+        hash_id*             get_render_state_id_list(u32 type);                // call sb_free on return value when done
 
         // pmfx shader -----------------------------------------------------------------------------------------------------
 
@@ -258,23 +258,27 @@ namespace put
         void release_shader(u32 shader);
 
         void set_technique(u32 shader, u32 technique_index);
-        bool set_technique(u32 shader, hash_id id_technique, hash_id id_sub_type);
+        bool set_technique(u32 shader, hash_id id_technique, hash_id id_sub_type) pen_deprecated;
 
         void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data);
         void initialise_sampler_defaults(u32 handle, u32 technique_index, sampler_set& samplers);
 
         const c8**          get_shader_list(u32& count);
         const c8**          get_technique_list(u32 shader, u32& count);
+        u32                 get_technique_list_index(u32 shader, hash_id id_technique); // return index in name list excluding permutations
         const c8*           get_shader_name(u32 shader);
         const c8*           get_technique_name(u32 shader, hash_id id_technique);
-        u32                 get_technique_index(u32 shader, hash_id id_technique, hash_id id_sub_type);
+        hash_id             get_technique_id(u32 shader, u32 technique_index);
+        u32                 get_technique_index(u32 shader, hash_id id_technique, hash_id id_sub_type) pen_deprecated;
+        u32                 get_technique_index_perm(u32 shader, hash_id id_technique, u32 permutation);
         technique_constant* get_technique_constants(u32 shader, u32 technique_index);
         technique_constant* get_technique_constant(hash_id id_constant, u32 shader, u32 technique_index);
         u32                 get_technique_cbuffer_size(u32 shader, u32 technique_index);
         technique_sampler*  get_technique_samplers(u32 shader, u32 technique_index);
         technique_sampler*  get_technique_sampler(hash_id id_sampler, u32 shader, u32 technique_index);
 
-        bool show_technique_ui(u32 shader, u32 technique_index, f32* data, sampler_set& samplers);
+        bool show_technique_ui(u32 shader, u32 technique_index, f32* data, sampler_set& samplers, u32* permutation);
+        bool has_technique_permutations(u32 shader, u32 technique_index);
         bool has_technique_constants(u32 shader, u32 technique_index);
         bool has_technique_samplers(u32 shader, u32 technique_index);
         bool has_technique_params(u32 shader, u32 technique_index);

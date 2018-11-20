@@ -1281,7 +1281,7 @@ def parse_pmfx(filename, root):
                         ps_name = technique_json["ps"]
 
                     # generate vs and ps
-                    technique_json["name"] = technique_name
+                    technique_json["name"] = technique
                     technique_json["vs_inputs"], \
                     technique_json["instance_inputs"], \
                     technique_json["vs_outputs"] = \

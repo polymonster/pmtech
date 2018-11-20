@@ -523,37 +523,52 @@ namespace put
         {
             material_resource* resource = &scene->material_resources[node_index];
             cmp_material*      material = &scene->materials[node_index];
-            cmp_geometry*      geometry = &scene->geometries[node_index];
             cmp_samplers&      samplers = scene->samplers[node_index];
+            u32                permutation = scene->material_permutation[node_index];
+            cmp_geometry*      geometry = &scene->geometries[node_index];
 
             if (!resource)
                 return;
 
+            // shader
             material->pmfx_shader = pmfx::load_shader(resource->shader_name.c_str());
-
-            if (!is_valid(material->pmfx_shader))
+            if(!is_valid(material->pmfx_shader))
                 return;
 
-            material->technique =
-                pmfx::get_technique_index(material->pmfx_shader, resource->id_technique, geometry->vertex_shader_class);
-
+            // technique / permutation
+            material->technique = pmfx::get_technique_index_perm(material->pmfx_shader, resource->id_technique, permutation);
+            
+            if(!is_valid(material->technique) || geometry->vertex_shader_class != 0)
+            {
+                // old style vertex sub type
+                material->technique = pmfx::get_technique_index(material->pmfx_shader, resource->id_technique,
+                                                                geometry->vertex_shader_class);
+            }
+            
+            PEN_ASSERT(is_valid(material->technique));
+            
+            // old material samplers
             for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
                 material->sampler_states[i] = pmfx::get_render_state(resource->id_sampler_state[i], pmfx::RS_SAMPLER);
-
+            
+            // material / technique constant buffers
             s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->pmfx_shader, material->technique);
-
+            
             if (!(scene->state_flags[node_index] & SF_MATERIAL_INITIALISED))
             {
                 pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique,
                                                    scene->material_data[node_index].data);
-
+                
                 scene->state_flags[node_index] |= SF_MATERIAL_INITIALISED;
             }
-
+            
+            instantiate_material_cbuffer(scene, node_index, cbuffer_size);
+            
+            // material samplers
             if (!(scene->state_flags[node_index] & SF_SAMPLERS_INITIALISED))
             {
                 pmfx::initialise_sampler_defaults(material->pmfx_shader, material->technique, samplers);
-
+                
                 // set material texture from source data
                 for (u32 t = 0; t < SN_NUM_TEXTURES; ++t)
                 {
@@ -570,7 +585,7 @@ namespace put
                         }
                     }
                 }
-
+                
                 scene->entities[node_index] |= CMP_SAMPLERS;
                 scene->state_flags[node_index] |= SF_SAMPLERS_INITIALISED;
             }
@@ -580,7 +595,12 @@ namespace put
                 if (samplers.sb[s].id_sampler_state != 0)
                     samplers.sb[s].sampler_state = pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::RS_SAMPLER);
             
-            instantiate_material_cbuffer(scene, node_index, cbuffer_size);
+            //
+#if 0
+
+            
+            material->technique = pmfx::get_technique_index_perm(material->pmfx_shader, resource->id_technique, permutation);
+#endif
         }
 
         extern std::vector<entity_scene_instance> k_scenes;
