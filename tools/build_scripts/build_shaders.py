@@ -789,9 +789,10 @@ def evaluate_conditional_blocks(source, permutation):
         body_start = source.find("{", conditions_start) + 1
         conditions = source[conditions_start:body_start - 1]
 
-        conditions = conditions.replace("&&", "and")
-        conditions = conditions.replace("||", "or")
         conditions = conditions.replace('\n', '')
+        conditions = conditions.replace("&&", " and ")
+        conditions = conditions.replace("||", " or ")
+        conditions = conditions.replace("!", " not ")
 
         gv = dict()
         for v in permutation:
@@ -933,6 +934,11 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name,
 
     instance_input_source = find_struct(shader_file_text, "struct " + vs_instance_input_struct_name)
     vs_input_source = find_struct(shader_file_text, "struct " + vs_vertex_input_struct_name)
+
+    # evaluate conditional inputs
+    instance_input_source = evaluate_conditional_blocks(instance_input_source, permutation)
+    vs_input_source = evaluate_conditional_blocks(vs_input_source, permutation)
+
     vs_output_source = find_struct(shader_file_text, "struct " + vs_output_struct_name)
     ps_output_source = find_struct(shader_file_text, "struct " + ps_output_struct_name)
 
