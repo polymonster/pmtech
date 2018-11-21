@@ -68,7 +68,7 @@ struct vs_input_multi
     }
 };
 
-struct vs_input_instance_multi
+struct vs_instance_input_multi
 {
     if:(INSTANCED)
     {
@@ -78,11 +78,6 @@ struct vs_input_instance_multi
         float4 world_matrix_3      : TEXCOORD9;
         float4 user_data           : TEXCOORD10;
         float4 user_data2          : TEXCOORD11;
-    }
-    
-    if:(!INSTANCED)
-    {
-        float4 pad : TEXCOORD6;
     }
 };
 
@@ -118,7 +113,7 @@ declare_texture_samplers
 
 // Vertex Shaders -----------------------------------------------------------------------------------------------------------
 
-vs_output vs_multi( vs_input_multi input, vs_instance_multi instance_input )
+vs_output vs_multi( vs_input_multi input, vs_instance_input_multi instance_input )
 {
     vs_output output;
     

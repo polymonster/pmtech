@@ -878,6 +878,29 @@ def replace_conditional_blocks(source):
     return source
 
 
+def us(v):
+    if v == -1:
+        return 65535
+    return v
+
+
+def strip_empty_vs_inputs(vs_input, vs_main):
+    conditioned = vs_input.replace("\n", "").replace(";", "").replace(";", "").replace("}", "").replace("{", "")
+    tokens = conditioned.split(" ")
+    for t in tokens:
+        if t == "":
+            tokens.remove(t)
+    if len(tokens) == 2:
+        # input is empty so remove from vs_main args
+        vs_input = ""
+        name = tokens[1]
+        pos = vs_main.find(name)
+        prev_delim = max(us(vs_main[:pos].rfind(",")), us(vs_main[:pos].rfind("(")))
+        next_delim = pos + min(us(vs_main[pos:].find(",")), us(vs_main[pos:].find(")")))
+        vs_main = vs_main.replace(vs_main[prev_delim:next_delim], " ")
+    return vs_input, vs_main
+
+
 def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name, permutation):
     mf = open(macros_file)
     macros_text = mf.read()
@@ -936,8 +959,12 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name,
     vs_input_source = find_struct(shader_file_text, "struct " + vs_vertex_input_struct_name)
 
     # evaluate conditional inputs
-    instance_input_source = evaluate_conditional_blocks(instance_input_source, permutation)
     vs_input_source = evaluate_conditional_blocks(vs_input_source, permutation)
+    instance_input_source = evaluate_conditional_blocks(instance_input_source, permutation)
+
+    # remove empty inputs
+    vs_input_source, vs_main = strip_empty_vs_inputs(vs_input_source, vs_main)
+    instance_input_source, vs_main = strip_empty_vs_inputs(instance_input_source, vs_main)
 
     vs_output_source = find_struct(shader_file_text, "struct " + vs_output_struct_name)
     ps_output_source = find_struct(shader_file_text, "struct " + ps_output_struct_name)
