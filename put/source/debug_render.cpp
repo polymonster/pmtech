@@ -187,7 +187,7 @@ namespace put
 
             static hash_id ID_DEBUG_3D = PEN_HASH("debug_3d");
 
-            pmfx::set_technique(debug_shader, ID_DEBUG_3D, 0);
+            pmfx::set_technique_perm(debug_shader, ID_DEBUG_3D);
             pen::renderer_set_constant_buffer(cb_3d_view, 1, PEN_SHADER_TYPE_VS); // gles on ios will crash if not set
             pen::renderer_set_constant_buffer(cb_3d_view, 0, PEN_SHADER_TYPE_VS);
 
@@ -209,7 +209,7 @@ namespace put
 
             static hash_id ID_DEBUG_2D = PEN_HASH("debug_2d");
 
-            pmfx::set_technique(debug_shader, ID_DEBUG_2D, 0);
+            pmfx::set_technique_perm(debug_shader, ID_DEBUG_2D);
             pen::renderer_set_constant_buffer(cb_2d_view, 1, PEN_SHADER_TYPE_VS);
             pen::renderer_set_constant_buffer(cb_2d_view, 0, PEN_SHADER_TYPE_VS); // gles on ios will crash if not set
 

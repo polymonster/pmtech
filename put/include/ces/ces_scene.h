@@ -143,16 +143,16 @@ namespace put
             f32     data[64];
             hash_id id_shader                         = 0;
             hash_id id_technique                      = 0;
-            hash_id id_sampler_state[SN_NUM_TEXTURES] = {0}; // todo: evaluate if needed
-            s32     texture_handles[SN_NUM_TEXTURES]  = {0}; // todo: evaluate if needed
+            hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
+            s32     texture_handles[SN_NUM_TEXTURES]  = {0};
         };
 
         // contains baked handles for o(1) time setting of technique / shader
         // unique per-instance cbuffer
         struct cmp_material
         {
-            s32 texture_handles[SN_NUM_TEXTURES] = {0}; // depracated in favour of sampler sets / cmp_samplers
-            u32 sampler_states[SN_NUM_TEXTURES]  = {0}; // depracated in favour of sampler sets / cmp_samplers
+            u32 pad[12]; // todo remove. and version
+
             u32 material_cbuffer                 = PEN_INVALID_HANDLE;
             u32 material_cbuffer_size            = 0;
 

@@ -324,7 +324,7 @@ namespace put
                 u32                t   = scene->lights[n].type;
                 geometry_resource* vol = volume[t];
 
-                pmfx::set_technique(shader, id_technique[t], 0);
+                pmfx::set_technique_perm(shader, id_technique[t]);
 
                 cmp_draw_call dc;
                 dc.world_matrix = scene->world_matrices[n];
@@ -977,7 +977,7 @@ namespace put
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
             static u32     shader                = pmfx::load_shader("forward_render");
 
-            if (pmfx::set_technique(shader, id_pre_skin_technique, 0))
+            if (pmfx::set_technique_perm(shader, id_pre_skin_technique))
             {
                 for (s32 n = 0; n < scene->num_nodes; ++n)
                 {
@@ -1162,9 +1162,6 @@ namespace put
                 write_lookup_string(mat_res.material_name.c_str(), ofs);
                 write_lookup_string(shader_name, ofs);
                 write_lookup_string(technique_name, ofs);
-
-                for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
-                    write_lookup_string(put::get_texture_filename(mat.texture_handles[i]).c_str(), ofs, project_dir.c_str());
             }
 
             // shadow
@@ -1374,11 +1371,22 @@ namespace put
                 }
                 else
                 {
-                    // read in previous version
-                    u32 offset = 0;
-                    for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                    if (cmp.data == scene->materials.data)
                     {
-                        ifs.read((c8*)cmp.data + offset, component_sizes[i]);
+                        // material version < 8
+                        u32 offset = 0;
+                        for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                        {
+                            // old material had 12 u32's for sampler state and texture
+                            static u32 st[12];
+                            ifs.read((c8*)&st[0], sizeof(st[12]));
+                            ifs.read((c8*)cmp.data + offset, cmp.size);
+                            offset += cmp.size;
+                        }
+                    }
+                    else
+                    {
+                        PEN_ASSERT(0); // mismatched size and unhandled case
                     }
                 }
             }
@@ -1526,7 +1534,6 @@ namespace put
 
                     dev_console_log("[scene load] %s", texture_name.c_str());
                     mat_res.texture_handles[i] = put::load_texture(texture_name.c_str());
-                    mat.texture_handles[i]     = mat_res.texture_handles[i];
                 }
 
                 mat_res.material_name = material_name;

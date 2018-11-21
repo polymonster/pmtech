@@ -3023,7 +3023,7 @@ namespace put
                         // volume geometry
                         geometry_resource* vol = volume[snl.type];
 
-                        pmfx::set_technique(shader, id_technique, 0);
+                        pmfx::set_technique_perm(shader, id_technique);
 
                         cmp_draw_call dc;
                         dc.world_matrix               = scene->world_matrices[n];
@@ -3065,7 +3065,7 @@ namespace put
 
                     geometry_resource* gr = get_geometry_resource(k_primitives[prim - 1]);
 
-                    if (!pmfx::set_technique(view.pmfx_shader, view.technique, 0))
+                    if (!pmfx::set_technique_perm(view.pmfx_shader, view.technique))
                         continue;
 
                     // draw

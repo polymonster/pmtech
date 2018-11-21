@@ -516,7 +516,7 @@ namespace put
             pen::renderer_set_constant_buffer(cd.cbuffer, 0, PEN_SHADER_TYPE_PS);
             pen::renderer_set_constant_buffer(cd.cbuffer, 0, PEN_SHADER_TYPE_VS);
 
-            pmfx::set_technique(g_imgui_rs.imgui_ex_shader, ids[cd.shader], 0);
+            pmfx::set_technique_perm(g_imgui_rs.imgui_ex_shader, ids[cd.shader]);
         }
 
         void set_shader(e_shader shader, u32 cbuffer)

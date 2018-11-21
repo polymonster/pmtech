@@ -698,6 +698,18 @@ namespace put
             pen::renderer_set_input_layout(t.input_layout);
         }
 
+        bool set_technique_perm(u32 shader, hash_id id_technique, u32 permutation)
+        {
+            u32 technique_index = get_technique_index_perm(shader, id_technique, permutation);
+
+            if (!is_valid(technique_index))
+                return false;
+
+            set_technique(shader, technique_index);
+
+            return true;
+        }
+
         bool set_technique(u32 shader, hash_id id_technique, hash_id id_sub_type)
         {
             u32 technique_index = get_technique_index(shader, id_technique, id_sub_type);

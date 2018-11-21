@@ -486,10 +486,6 @@ namespace put
 
         void instantiate_material(material_resource* mr, entity_scene* scene, u32 node_index)
         {
-            cmp_material* instance = &scene->materials[node_index];
-
-            memcpy(instance->texture_handles, mr->texture_handles, sizeof(u32) * SN_NUM_TEXTURES);
-
             scene->id_material[node_index]    = mr->hash;
             scene->material_names[node_index] = mr->material_name;
 
@@ -541,16 +537,13 @@ namespace put
             if(!is_valid(material->technique) || geometry->vertex_shader_class != 0)
             {
                 // old style vertex sub type
+                // todo : permutation from vertex class
                 material->technique = pmfx::get_technique_index(material->pmfx_shader, resource->id_technique,
                                                                 geometry->vertex_shader_class);
             }
             
             PEN_ASSERT(is_valid(material->technique));
-            
-            // old material samplers
-            for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
-                material->sampler_states[i] = pmfx::get_render_state(resource->id_sampler_state[i], pmfx::RS_SAMPLER);
-            
+                        
             // material / technique constant buffers
             s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->pmfx_shader, material->technique);
             
@@ -572,14 +565,14 @@ namespace put
                 // set material texture from source data
                 for (u32 t = 0; t < SN_NUM_TEXTURES; ++t)
                 {
-                    if (material->texture_handles[t] != 0 && is_valid(material->texture_handles[t]))
+                    if (resource->texture_handles[t] != 0 && is_valid(resource->texture_handles[t]))
                     {
                         for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
                         {
                             if (samplers.sb[s].sampler_unit == t)
                             {
-                                samplers.sb[s].id_texture = PEN_HASH(put::get_texture_filename(material->texture_handles[t]));
-                                samplers.sb[s].handle     = material->texture_handles[t];
+                                samplers.sb[s].id_texture = PEN_HASH(put::get_texture_filename(resource->texture_handles[t]));
+                                samplers.sb[s].handle     = resource->texture_handles[t];
                                 break;
                             }
                         }

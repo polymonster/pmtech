@@ -1598,7 +1598,7 @@ namespace put
 
                 if (is_valid(new_view.pmfx_shader))
                 {
-                    u32 ti = get_technique_index(new_view.pmfx_shader, new_view.technique, 0);
+                    u32 ti = get_technique_index_perm(new_view.pmfx_shader, new_view.technique);
                     if (has_technique_constants(new_view.pmfx_shader, ti))
                     {
                         pen::buffer_creation_params bcp;
@@ -1854,7 +1854,7 @@ namespace put
                 // get technique sampler bindings
                 for (auto& p : pp_views)
                 {
-                    u32 ti = get_technique_index(p.pmfx_shader, p.technique, 0);
+                    u32 ti = get_technique_index_perm(p.pmfx_shader, p.technique);
                     if (has_technique_samplers(p.pmfx_shader, ti))
                     {
                         technique_sampler* ts = get_technique_samplers(p.pmfx_shader, ti);
@@ -1992,7 +1992,7 @@ namespace put
                     pen::json tech_params = params[i];
                     if (pv.id_name == PEN_HASH(tech_params.key()))
                     {
-                        u32 ti = get_technique_index(pv.pmfx_shader, pv.technique, 0);
+                        u32 ti = get_technique_index_perm(pv.pmfx_shader, pv.technique);
 
                         u32 num_c = tech_params.size();
                         for (u32 c = 0; c < num_c; ++c)
@@ -2315,7 +2315,7 @@ namespace put
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
 
-            if (!pmfx::set_technique(sv.pmfx_shader, sv.technique, 0))
+            if (!pmfx::set_technique_perm(sv.pmfx_shader, sv.technique))
                 PEN_ASSERT(0);
 
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
@@ -2500,7 +2500,7 @@ namespace put
                 pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
 
                 static hash_id id_technique = PEN_HASH("blit");
-                if (!pmfx::set_technique(pp_shader, id_technique, 0))
+                if (!pmfx::set_technique_perm(pp_shader, id_technique))
                     PEN_ASSERT(0);
 
                 pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
@@ -2528,7 +2528,7 @@ namespace put
                 if (rt.samples > 1)
                 {
                     static u32 pmfx_resolve = pmfx::load_shader("msaa_resolve");
-                    pmfx::set_technique(pmfx_resolve, PEN_HASH("average_4x"), 0);
+                    pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("average_4x"));
 
                     pen::renderer_resolve_target(rt.handle, pen::RESOLVE_CUSTOM);
                 }
@@ -2632,7 +2632,7 @@ namespace put
 
             for (auto& pp : pp_views)
             {
-                u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
+                u32 ti = get_technique_index_perm(pp.pmfx_shader, pp.technique);
 
                 if (!has_technique_params(pp.pmfx_shader, ti))
                     continue;
@@ -2994,7 +2994,7 @@ namespace put
 
                         for (auto& pp : s_post_process_passes)
                         {
-                            u32 ti = get_technique_index(pp.pmfx_shader, pp.technique, 0);
+                            u32 ti = get_technique_index_perm(pp.pmfx_shader, pp.technique);
 
                             if (has_technique_params(pp.pmfx_shader, ti))
                             {

@@ -258,7 +258,8 @@ namespace put
         void release_shader(u32 shader);
 
         void set_technique(u32 shader, u32 technique_index);
-        bool set_technique(u32 shader, hash_id id_technique, hash_id id_sub_type) pen_deprecated;
+        bool set_technique_perm(u32 shader, hash_id id_technique, u32 permutation = 0);
+        bool pen_deprecated set_technique(u32 shader, hash_id id_technique, hash_id id_sub_type);
 
         void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data);
         void initialise_sampler_defaults(u32 handle, u32 technique_index, sampler_set& samplers);
@@ -269,8 +270,8 @@ namespace put
         const c8*           get_shader_name(u32 shader);
         const c8*           get_technique_name(u32 shader, hash_id id_technique);
         hash_id             get_technique_id(u32 shader, u32 technique_index);
-        u32                 get_technique_index(u32 shader, hash_id id_technique, hash_id id_sub_type) pen_deprecated;
-        u32                 get_technique_index_perm(u32 shader, hash_id id_technique, u32 permutation);
+        u32 pen_deprecated  get_technique_index(u32 shader, hash_id id_technique, hash_id id_sub_type);
+        u32                 get_technique_index_perm(u32 shader, hash_id id_technique, u32 permutation = 0);
         technique_constant* get_technique_constants(u32 shader, u32 technique_index);
         technique_constant* get_technique_constant(hash_id id_constant, u32 shader, u32 technique_index);
         u32                 get_technique_cbuffer_size(u32 shader, u32 technique_index);
