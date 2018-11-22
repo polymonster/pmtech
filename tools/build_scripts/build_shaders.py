@@ -362,6 +362,10 @@ def find_generic_functions(shader_text):
             continue
         # find the function name and return type
         function_name = shader_text.rfind(" ", 0, start)
+        name_str = shader_text[function_name:start]
+        if name_str.find("if:") != -1:
+            start = deliminator_pos
+            continue
         function_return_type = 0
         for delim in deliminator_list:
             decl_start = shader_text.rfind(delim, 0, function_name)
@@ -511,7 +515,7 @@ def generate_glsl(
     if len(ps_output_source.split()) > 0:
         ps_output_struct_name = ps_output_source.split()[1]
 
-    # cbuffers to unifom
+    # cbuffers to uniform
     uniform_buffers = ""
     for cbuf in constant_buffers:
         name_start = cbuf.find(" ")
