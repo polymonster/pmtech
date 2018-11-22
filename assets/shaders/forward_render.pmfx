@@ -235,30 +235,66 @@ vs_output vs_main_multi( vs_input_multi input, vs_instance_input instance_input 
     vs_output output;
     
     float4x4 wvp = mul( world_matrix, vp_matrix );
+    float4x4 wm = world_matrix;
     
-    output.position = mul( input.position, wvp );
-    output.world_pos = mul( input.position, world_matrix );
+    if:(INSTANCED)
+    {
+        float4x4 instance_world_mat;
+        unpack_vb_instance_mat(
+            instance_world_mat, 
+            instance_input.world_matrix_0, 
+            instance_input.world_matrix_1, 
+            instance_input.world_matrix_2, 
+            instance_input.world_matrix_3
+        );
+        
+        wvp = mul( instance_world_mat, vp_matrix );
+        wm = instance_world_mat;
+        
+        output.colour = instance_input.user_data2;
+    }
     
-    float3x3 world_rot_mat = to_3x3(world_matrix);
-    world_rot_mat[0] = normalize(world_rot_mat[0]);
-    world_rot_mat[1] = normalize(world_rot_mat[1]);
-    world_rot_mat[2] = normalize(world_rot_mat[2]);
+    if:(SKINNED)
+    {
+        float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+    
+        output.tangent = input.tangent.xyz;
+        output.bitangent = input.bitangent.xyz;
+        output.normal = input.normal.xyz;
+    
+        skin_tbn(output.tangent, output.bitangent, output.normal, input.blend_weights, input.blend_indices);
+    
+        output.position = mul( sp, vp_matrix );
+        output.world_pos = sp;
+    }
+    
+    if:(!SKINNED)
+    {
+        output.position = mul( input.position, wvp );
+        output.world_pos = mul( input.position, wm );
+    
+        float3x3 wrm = to_3x3(wm);
+        wrm[0] = normalize(wrm[0]);
+        wrm[1] = normalize(wrm[1]);
+        wrm[2] = normalize(wrm[2]);
+                    
+        output.normal = mul( input.normal.xyz, wrm );
+        output.tangent = mul( input.tangent.xyz, wrm );
+        output.bitangent = mul( input.bitangent.xyz, wrm );
+        
+        output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
+                                 input.texcoord.z, 1.0 - input.texcoord.w );
+    }
             
-    float3x3 rotation_matrix = world_rot_mat;
-        
-    output.normal = mul( input.normal.xyz, rotation_matrix );
-    output.tangent = mul( input.tangent.xyz, rotation_matrix );
-    output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
-        
-    output.texcoord = float4(input.texcoord.x, 1.0f - input.texcoord.y, 
-                             input.texcoord.z, 1.0f - input.texcoord.w );
-        
     if:(UV_SCALE)
     {
         output.texcoord *= float4(m_uv_scale.x, m_uv_scale.y, m_uv_scale.x, m_uv_scale.y);
     }
         
-    output.colour = m_albedo;
+    if:(!INSTANCED)
+    {
+        output.colour = m_albedo;
+    }
         
     return output;
 }
@@ -612,21 +648,31 @@ pmfx:
         "permutations":
         {
             "SKINNED": [31, [0,1]],
-            "INSTANCED": [30, [0,1]]
-        }
-    },
-    
-    "forward_lit_uv_scale":
-    {
-        "inherit"  : "forward_lit",
-        "constants":
-        {
-            "uv_scale": { "type": "float2", "widget": "slider", "min": 0, "max": 100, "default": 1.0 }
+            "INSTANCED": [30, [0,1]],
+            "UV_SCALE": [1, [0,1]],
+            "SSS": [2, [0,1]],
+            "SDF_SHADOW": [3, [0,1]]
         },
         
-        "defines": ["UV_SCALE"]
+        "constants":
+        {
+            "permutation(SSS)":
+            {
+                "sss_scale": { "type": "float", "widget": "slider", "min": 0, "max": 500, "default": 1.0 }   
+            },
+            
+            "permutation(SDF_SHADOW)":
+            {
+                "surface_offset": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 1.0 }   
+            },
+            
+            "permutation(UV_SCALE)":
+            {
+                "uv_scale": { "type": "float2", "widget": "slider", "min": 0, "max": 100, "default": 1.0 }   
+            }
+        }
     },
-    
+
     "forward_lit_sdf_shadow":
     {
         "inherit": "forward_lit",

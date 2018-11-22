@@ -495,7 +495,7 @@ namespace put
             if (mr->id_shader == 0)
             {
                 static hash_id id_default_shader    = PEN_HASH("forward_render");
-                static hash_id id_default_technique = PEN_HASH("forward_lit");
+                static hash_id id_default_technique = PEN_HASH("forward_lit_multi");
 
                 mr->shader_name  = "forward_render";
                 mr->id_shader    = id_default_shader;
@@ -514,13 +514,25 @@ namespace put
 
             bake_material_handles(scene, node_index);
         }
+        
+        void permutation_flags_from_vertex_class(u32& permutation, hash_id vertex_class)
+        {
+            u32 clear_vertex = ~(PERMUTATION_SKINNED | PERMUTATION_INSTANCED);
+            permutation &= clear_vertex;
+            
+            if(vertex_class == ID_VERTEX_CLASS_SKINNED)
+                permutation |= PERMUTATION_SKINNED;
+            
+            if(vertex_class == ID_VERTEX_CLASS_INSTANCED)
+                permutation |=  PERMUTATION_INSTANCED;
+        }
 
         void bake_material_handles(entity_scene* scene, u32 node_index)
         {
             material_resource* resource = &scene->material_resources[node_index];
             cmp_material*      material = &scene->materials[node_index];
             cmp_samplers&      samplers = scene->samplers[node_index];
-            u32                permutation = scene->material_permutation[node_index];
+            u32&               permutation = scene->material_permutation[node_index];
             cmp_geometry*      geometry = &scene->geometries[node_index];
 
             if (!resource)
@@ -530,17 +542,12 @@ namespace put
             material->pmfx_shader = pmfx::load_shader(resource->shader_name.c_str());
             if(!is_valid(material->pmfx_shader))
                 return;
+            
+            // permutation form geom
+            permutation_flags_from_vertex_class(permutation, geometry->vertex_shader_class);
 
             // technique / permutation
             material->technique = pmfx::get_technique_index_perm(material->pmfx_shader, resource->id_technique, permutation);
-            
-            if(!is_valid(material->technique) || geometry->vertex_shader_class != 0)
-            {
-                // old style vertex sub type
-                // todo : permutation from vertex class
-                material->technique = pmfx::get_technique_index(material->pmfx_shader, resource->id_technique,
-                                                                geometry->vertex_shader_class);
-            }
             
             PEN_ASSERT(is_valid(material->technique));
                         
@@ -811,14 +818,12 @@ namespace put
 
             if (err != PEN_ERR_OK || model_file_size == 0)
             {
-                // TODO error dialog
                 dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] load pmm - failed to find file: %s", filename);
                 return PEN_INVALID_HANDLE;
             }
 
             const u32* p_u32reader = (u32*)model_file;
 
-            //
             u32 num_scene     = *p_u32reader++;
             u32 num_geom      = *p_u32reader++;
             u32 num_materials = *p_u32reader++;

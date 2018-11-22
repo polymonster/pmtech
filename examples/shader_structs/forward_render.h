@@ -38,12 +38,268 @@ struct forward_lit_multi
 	float3 m_padding;
 };
 
-struct forward_lit_uv_scale
+struct forward_lit_multi
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
 	float m_roughness;
 	float m_reflectivity;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float2 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float2 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float2 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float2 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float4 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float4 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float4 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float4 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+
+struct forward_lit_multi
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
 };
 
 struct forward_lit_sdf_shadow
