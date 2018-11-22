@@ -718,8 +718,9 @@ def add_files_recursive(filename, root):
     shader_source = clean_spaces(shader_source)
     sub_root = os.path.dirname(file_path)
     include_list = find_includes(shader_source, sub_root)
-    for slib in reversed(include_list):
-        included_source, sub_includes = add_files_recursive(slib, sub_root)
+    print(include_list)
+    for include_file in reversed(include_list):
+        included_source, sub_includes = add_files_recursive(include_file, sub_root)
         shader_source = included_source + "\n" + shader_source
         include_list = include_list + sub_includes
     return shader_source, include_list
