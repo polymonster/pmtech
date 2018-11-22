@@ -1177,7 +1177,16 @@ def generate_technique_constant_buffers(pmfx_block, technique_name, permutation)
         cb_str += sc
     cb_str += "};\n"
 
-    c_struct = "struct " + technique_name + "\n"
+    permutation_name = ""
+    for p in permutation:
+        if p[0] == "SINGLE_PERMUTATION":
+            continue
+        if p[1] == 1:
+            permutation_name += "_" + p[0].lower()
+        if p[1] > 1:
+            permutation_name += "_" + p[0].lower() + p[1]
+
+    c_struct = "struct " + technique_name + permutation_name + "\n"
     c_struct += "{\n"
     for ss in shader_struct:
         c_struct += ss
