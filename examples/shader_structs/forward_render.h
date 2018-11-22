@@ -302,7 +302,7 @@ struct forward_lit_multi_sdf_shadow_sss_uv_scale_instanced_skinned
 	float3 m_padding;
 };
 
-struct forward_lit_sdf_shadow_sdf_shadow
+struct forward_lit_sdf_shadow
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -311,7 +311,7 @@ struct forward_lit_sdf_shadow_sdf_shadow
 	float2 m_padding;
 };
 
-struct forward_lit_instanced_instanced
+struct forward_lit_instanced
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -327,7 +327,7 @@ struct forward_lit_skinned
 	float3 m_padding;
 };
 
-struct forward_lit_sss_sss
+struct forward_lit_sss
 {
 	float4 m_albedo;
 	float m_sss_scale;

@@ -1109,7 +1109,7 @@ def generate_technique_texture_variables(pmfx_block, technique_name, permutation
     return
 
 
-def generate_technique_constant_buffers(pmfx_block, technique_name, permutation):
+def generate_technique_constant_buffers(pmfx_block, technique_name, permutation, id):
     global technique_cb_str
     technique_cb_str = ""
     offset = 0
@@ -1177,14 +1177,14 @@ def generate_technique_constant_buffers(pmfx_block, technique_name, permutation)
         cb_str += sc
     cb_str += "};\n"
 
+    # append permutation string to shader c struct
     permutation_name = ""
-    for p in permutation:
-        if p[0] == "SINGLE_PERMUTATION":
-            continue
-        if p[1] == 1:
-            permutation_name += "_" + p[0].lower()
-        if p[1] > 1:
-            permutation_name += "_" + p[0].lower() + p[1]
+    if int(id) != 0:
+        for p in permutation:
+            if p[1] == 1:
+                permutation_name += "_" + p[0].lower()
+            if p[1] > 1:
+                permutation_name += "_" + p[0].lower() + p[1]
 
     c_struct = "struct " + technique_name + permutation_name + "\n"
     c_struct += "{\n"
@@ -1246,7 +1246,6 @@ def parse_pmfx(filename, root):
     needs_building, shader_file_text, included_files = create_shader_set(file_and_path, root)
     if needs_building:
         # get shader code
-        print(filename)
         shader_c_struct = ""
         pmfx_loc = shader_file_text.find("pmfx:")
         if pmfx_loc == -1:
@@ -1317,7 +1316,7 @@ def parse_pmfx(filename, root):
 
                     # generate cbuffers, textures and c structs meta data / reflection
                     pmfx_block = json.loads(src_pmfx)
-                    technique_json, c_stuct = generate_technique_constant_buffers(pmfx_block, technique, p)
+                    technique_json, c_stuct = generate_technique_constant_buffers(pmfx_block, technique, p, id)
                     generate_permutation_defines(p)
                     shader_c_struct += c_stuct
                     generate_technique_texture_variables(pmfx_block, technique, p)
