@@ -9,6 +9,7 @@ import time
 import platform
 import build_scripts.util as util
 
+
 def display_help():
     print("run with no arguments for prompted input")
     print("commandline arguments")

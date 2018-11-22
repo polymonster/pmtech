@@ -673,6 +673,7 @@ def find_includes(file_text, root):
             break
         include_name = file_text[start:end]
         include_path = os.path.join(root, include_name)
+        include_path = util.sanitize_file_path(include_path)
         if include_path not in added_includes:
             include_list.append(include_path)
             added_includes.append(include_path)
@@ -718,7 +719,6 @@ def add_files_recursive(filename, root):
     shader_source = clean_spaces(shader_source)
     sub_root = os.path.dirname(file_path)
     include_list = find_includes(shader_source, sub_root)
-    print(include_list)
     for include_file in reversed(include_list):
         included_source, sub_includes = add_files_recursive(include_file, sub_root)
         shader_source = included_source + "\n" + shader_source

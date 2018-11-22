@@ -29,5 +29,11 @@ def correct_path(path):
     return path
 
 
+def sanitize_file_path(path):
+    path = path.replace("/", os.sep)
+    path = path.replace("\\", os.sep)
+    return path
+
+
 if __name__ == "__main__":
     print("util")
