@@ -2,7 +2,7 @@
 pmtech source is split into two libraries:
 
 ## pen
-Contains platform / operating system specific code and other utility code which is used at this low level. It serves mainly as an abstraction layer for cross platform support, it has the following modules:
+Contains platform / operating system specific code and other utility code which is required at this low level. It serves mainly as an abstraction layer for cross platform support, it has the following modules:
 
 - Renderer
 - Types
