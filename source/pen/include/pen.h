@@ -9,8 +9,7 @@ namespace pen
 
     enum resource_types
     {
-        MAX_RENDERER_RESOURCES = 10000,
-        MAX_AUDIO_RESOURCES = 100
+        MAX_RENDERER_RESOURCES = 10000
     };
 
     // Structs for user to setup, make sure to define:

@@ -1,12 +1,11 @@
 #include "audio.h"
-#include "fmod.hpp"
 #include "memory.h"
-#include "pen.h"
 #include "slot_resource.h"
-
 #include "console.h"
 
-namespace pen
+#include "fmod.hpp"
+
+namespace put
 {
 #define MAX_CHANNELS 32
 #define NUM_AUDIO_STATE_BUFFERS 2
@@ -424,13 +423,13 @@ namespace pen
 
         switch (type)
         {
-            case pen::DSP_FFT:
+            case DSP_FFT:
                 resource_type = AUDIO_RESOURCE_DSP_FFT;
                 return FMOD_DSP_TYPE_FFT;
-            case pen::DSP_THREE_BAND_EQ:
+            case DSP_THREE_BAND_EQ:
                 resource_type = AUDIO_RESOURCE_DSP_EQ;
                 return FMOD_DSP_TYPE_THREE_EQ;
-            case pen::DSP_GAIN:
+            case DSP_GAIN:
                 resource_type = AUDIO_RESOURCE_DSP_GAIN;
                 return FMOD_DSP_TYPE_CHANNELMIX;
             default:

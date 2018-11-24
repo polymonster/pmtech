@@ -65,7 +65,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
-    pen::thread_create_job(pen::audio_thread_function, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
+    pen::thread_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
 
     renderer_state_init();
 
@@ -94,7 +94,7 @@ PEN_TRV pen::user_entry(void* params)
 
         pen::renderer_consume_cmd_buffer();
 
-        pen::audio_consume_command_buffer();
+        put::audio_consume_command_buffer();
 
         // msg from the engine we want to terminate
         if (pen::thread_semaphore_try_wait(p_thread_info->p_sem_exit))
@@ -198,7 +198,7 @@ struct beat
 class spectrum_analyser
 {
   public:
-    pen::audio_fft_spectrum frame_spectrum;
+    put::audio_fft_spectrum frame_spectrum;
     u32                     spectrum_dsp;
 
     static const u32       max_fft_length = 1024;
@@ -237,7 +237,7 @@ class spectrum_analyser
         }
 
         // update fft spectrum history
-        pen_error err = pen::audio_dsp_get_spectrum(spectrum_dsp, &frame_spectrum);
+        pen_error err = put::audio_dsp_get_spectrum(spectrum_dsp, &frame_spectrum);
 
         if (err == PEN_ERR_OK)
         {
@@ -599,10 +599,10 @@ class playback_deck
     spectrum_analyser sa;
 
     // audio states
-    pen::audio_channel_state   channel_state;
-    pen::audio_fft_spectrum    spectrum;
-    pen::audio_group_state     group_state;
-    pen::audio_sound_file_info file_info;
+    put::audio_channel_state   channel_state;
+    put::audio_fft_spectrum    spectrum;
+    put::audio_group_state     group_state;
+    put::audio_sound_file_info file_info;
 
     // filesystem
     bool      open_file = false;
@@ -671,7 +671,7 @@ class playback_deck
         ImGui::Text("%s", file);
 
         // update states
-        pen_error err = pen::audio_channel_get_state(channel_index, &channel_state);
+        pen_error err = put::audio_channel_get_state(channel_index, &channel_state);
 
         if (err == PEN_ERR_OK)
         {
@@ -682,7 +682,7 @@ class playback_deck
             flags &= ~(CHANNEL_STATE_VALID);
         }
 
-        err = pen::audio_group_get_state(group_index, &group_state);
+        err = put::audio_group_get_state(group_index, &group_state);
 
         if (err == PEN_ERR_OK)
         {
@@ -697,7 +697,7 @@ class playback_deck
         if (flags & FILE_INFO_INVALID)
         {
             // get file info
-            err = pen::audio_channel_get_sound_file_info(sound_index, &file_info);
+            err = put::audio_channel_get_sound_file_info(sound_index, &file_info);
             if (err == PEN_ERR_OK)
             {
                 flags &= ~(FILE_INFO_INVALID);
@@ -706,28 +706,28 @@ class playback_deck
         }
 
         // transport controls
-        if (channel_state.play_state == pen::NOT_PLAYING || channel_index == 0)
+        if (channel_state.play_state == put::NOT_PLAYING || channel_index == 0)
         {
             if (ImGui::Button("Play"))
             {
-                channel_index = pen::audio_create_channel_for_sound(sound_index);
-                pen::audio_add_channel_to_group(channel_index, group_index);
+                channel_index = put::audio_create_channel_for_sound(sound_index);
+                put::audio_add_channel_to_group(channel_index, group_index);
                 flags &= ~(PAUSE_FFT_UPDATE | CUE);
             }
         }
-        else if (group_state.play_state == pen::PLAYING)
+        else if (group_state.play_state == put::PLAYING)
         {
             if (ImGui::Button("Pause"))
             {
-                pen::audio_group_set_pause(group_index, true);
+                put::audio_group_set_pause(group_index, true);
                 flags |= PAUSE_FFT_UPDATE;
             }
         }
-        else if (group_state.play_state == pen::PAUSED)
+        else if (group_state.play_state == put::PAUSED)
         {
             if (ImGui::Button("Play"))
             {
-                pen::audio_group_set_pause(group_index, false);
+                put::audio_group_set_pause(group_index, false);
                 flags &= ~(PAUSE_FFT_UPDATE | CUE);
             }
         }
@@ -740,7 +740,7 @@ class playback_deck
                 cue_pos = channel_state.position_ms;
 
                 flags &= ~(PAUSE_FFT_UPDATE);
-                pen::audio_group_set_pause(group_index, false);
+                put::audio_group_set_pause(group_index, false);
 
                 flags |= CUE;
             }
@@ -748,8 +748,8 @@ class playback_deck
             {
                 flags |= PAUSE_FFT_UPDATE;
                 channel_state.position_ms = cue_pos;
-                pen::audio_channel_set_position(channel_index, channel_state.position_ms);
-                pen::audio_group_set_pause(group_index, true);
+                put::audio_channel_set_position(channel_index, channel_state.position_ms);
+                put::audio_group_set_pause(group_index, true);
             }
         }
 
@@ -758,10 +758,10 @@ class playback_deck
         {
             if (sound_index != 0)
             {
-                pen::audio_channel_stop(channel_index);
+                put::audio_channel_stop(channel_index);
                 channel_index = 0;
 
-                pen::audio_release_resource(sound_index);
+                put::audio_release_resource(sound_index);
                 sound_index = 0;
             }
         }
@@ -782,35 +782,35 @@ class playback_deck
         // file info valid
         if (ImGui::SliderInt("Track Pos", (s32*)&channel_state.position_ms, 0, file_info.length_ms))
         {
-            pen::audio_channel_set_position(channel_index, channel_state.position_ms);
+            put::audio_channel_set_position(channel_index, channel_state.position_ms);
         }
 
         switch (group_state.play_state)
         {
-            case pen::PLAYING:
+            case put::PLAYING:
                 ImGui::Text("%s", "Playing");
                 break;
 
-            case pen::NOT_PLAYING:
+            case put::NOT_PLAYING:
                 ImGui::Text("%s", "Not Playing");
                 break;
 
-            case pen::PAUSED:
+            case put::PAUSED:
                 ImGui::Text("%s", "Paused");
                 break;
         }
 
         switch (channel_state.play_state)
         {
-            case pen::PLAYING:
+            case put::PLAYING:
                 ImGui::Text("%s", "Channel Playing");
                 break;
 
-            case pen::NOT_PLAYING:
+            case put::NOT_PLAYING:
                 ImGui::Text("%s", "Channel Not Playing");
                 break;
 
-            case pen::PAUSED:
+            case put::PAUSED:
                 ImGui::Text("%s", "Channel Paused");
                 break;
         }
@@ -824,7 +824,7 @@ class playback_deck
         if (ImGui::VSliderFloat("Pitch", ImVec2(20.0f, 100.0f), &group_state.pitch, 1.0f - pitch_range_f,
                                 1.0f + pitch_range_f, ""))
         {
-            pen::audio_group_set_pitch(group_index, group_state.pitch);
+            put::audio_group_set_pitch(group_index, group_state.pitch);
         }
 
         ImGui::PopID();
@@ -834,7 +834,7 @@ class playback_deck
     {
         file = _file;
 
-        sound_index = pen::audio_create_sound(file);
+        sound_index = put::audio_create_sound(file);
     }
 };
 
@@ -845,45 +845,45 @@ class mixer_channel
     u32 three_band_eq_dsp;
     u32 gain_dsp;
 
-    pen::audio_group_state group_state;
-    pen::audio_eq_state    eq_state;
+    put::audio_group_state group_state;
+    put::audio_eq_state    eq_state;
 
     f32 gain;
 
     void control_ui()
     {
-        pen::audio_group_get_state(group_index, &group_state);
-        pen::audio_dsp_get_three_band_eq(three_band_eq_dsp, &eq_state);
-        pen::audio_dsp_get_gain(gain_dsp, &gain);
+        put::audio_group_get_state(group_index, &group_state);
+        put::audio_dsp_get_three_band_eq(three_band_eq_dsp, &eq_state);
+        put::audio_dsp_get_gain(gain_dsp, &gain);
 
         ImGui::PushID(this);
         if (ImGui::SliderFloat("Gain", &gain, -10.0f, 10.0f))
         {
-            pen::audio_dsp_set_gain(gain_dsp, gain);
+            put::audio_dsp_set_gain(gain_dsp, gain);
         }
 
         if (ImGui::SliderFloat("Hi", &eq_state.high, -100.0f, 100.0f))
         {
-            pen::audio_group_set_volume(group_index, group_state.volume);
+            put::audio_group_set_volume(group_index, group_state.volume);
         }
 
         if (ImGui::SliderFloat("Med", &eq_state.med, -100.0f, 100.0f))
         {
-            pen::audio_group_set_volume(group_index, group_state.volume);
+            put::audio_group_set_volume(group_index, group_state.volume);
         }
 
         if (ImGui::SliderFloat("Low", &eq_state.low, -100.0f, 100.0f))
         {
-            pen::audio_group_set_volume(group_index, group_state.volume);
+            put::audio_group_set_volume(group_index, group_state.volume);
         }
 
         if (ImGui::VSliderFloat("Vol", ImVec2(20.0f, 100.0f), &group_state.volume, 0.0f, 1.0f, ""))
         {
-            pen::audio_group_set_volume(group_index, group_state.volume);
+            put::audio_group_set_volume(group_index, group_state.volume);
         }
         ImGui::PopID();
 
-        pen::audio_dsp_set_three_band_eq(three_band_eq_dsp, eq_state.low, eq_state.med, eq_state.high);
+        put::audio_dsp_set_three_band_eq(three_band_eq_dsp, eq_state.low, eq_state.med, eq_state.high);
     }
 };
 
@@ -901,13 +901,13 @@ void audio_player_update()
     {
         for (s32 i = 0; i < num_decks; ++i)
         {
-            decks[i].group_index = pen::audio_create_channel_group();
+            decks[i].group_index = put::audio_create_channel_group();
             mixer_channels[i].group_index = decks[i].group_index;
 
             // create sound spectrum dsp
-            decks[i].spectrum_dsp = pen::audio_add_dsp_to_group(decks[i].group_index, pen::DSP_FFT);
-            mixer_channels[i].three_band_eq_dsp = pen::audio_add_dsp_to_group(decks[i].group_index, pen::DSP_THREE_BAND_EQ);
-            mixer_channels[i].gain_dsp = pen::audio_add_dsp_to_group(decks[i].group_index, pen::DSP_GAIN);
+            decks[i].spectrum_dsp = put::audio_add_dsp_to_group(decks[i].group_index, put::DSP_FFT);
+            mixer_channels[i].three_band_eq_dsp = put::audio_add_dsp_to_group(decks[i].group_index, put::DSP_THREE_BAND_EQ);
+            mixer_channels[i].gain_dsp = put::audio_add_dsp_to_group(decks[i].group_index, put::DSP_GAIN);
         }
 
         initialised = true;

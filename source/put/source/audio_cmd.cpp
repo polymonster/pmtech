@@ -6,7 +6,9 @@
 #include "threads.h"
 #include <math.h>
 
-namespace pen
+using namespace pen;
+
+namespace put
 {
 #define MAX_AUDIO_COMMANDS (1 << 12)
 #define INC_WRAP(V) V = (V + 1) & (MAX_AUDIO_COMMANDS - 1);
@@ -61,9 +63,9 @@ namespace pen
         union {
             c8*              filename;
             u32              resource_index;
-            pen::set_valuei  set_valuei;
-            pen::set_valuef  set_valuef;
-            pen::set_value3f set_value3f;
+            put::set_valuei  set_valuei;
+            put::set_valuef  set_valuef;
+            put::set_value3f set_value3f;
         };
     };
 

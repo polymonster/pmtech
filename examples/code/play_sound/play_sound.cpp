@@ -50,19 +50,19 @@ PEN_TRV pen::user_entry(void* params)
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
     
-    pen::thread_create_job(pen::audio_thread_function, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
+    pen::thread_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
 
     renderer_state_init();
 
-    u32 sound_index = pen::audio_create_sound("data/audio/singing.wav");
-    u32 channel_index = pen::audio_create_channel_for_sound(sound_index);
-    u32 group_index = pen::audio_create_channel_group();
+    u32 sound_index = put::audio_create_sound("data/audio/singing.wav");
+    u32 channel_index = put::audio_create_channel_for_sound(sound_index);
+    u32 group_index = put::audio_create_channel_group();
 
-    pen::audio_add_channel_to_group(channel_index, group_index);
+    put::audio_add_channel_to_group(channel_index, group_index);
 
-    pen::audio_group_set_pitch(group_index, 0.5f);
+    put::audio_group_set_pitch(group_index, 0.5f);
 
-    pen::audio_group_set_volume(group_index, 1.0f);
+    put::audio_group_set_volume(group_index, 1.0f);
 
     // cb
     pen::buffer_creation_params bcp;
@@ -100,7 +100,7 @@ PEN_TRV pen::user_entry(void* params)
 
         pen::renderer_consume_cmd_buffer();
 
-        pen::audio_consume_command_buffer();
+        put::audio_consume_command_buffer();
 
         // msg from the engine we want to terminate
         if (pen::thread_semaphore_try_wait(p_thread_info->p_sem_exit))
@@ -117,10 +117,10 @@ PEN_TRV pen::user_entry(void* params)
     pen::renderer_release_clear_state(clear_state_grey);
     pen::renderer_consume_cmd_buffer();
 
-    pen::audio_release_resource(sound_index);
-    pen::audio_release_resource(channel_index);
-    pen::audio_release_resource(group_index);
-    pen::audio_consume_command_buffer();
+    put::audio_release_resource(sound_index);
+    put::audio_release_resource(channel_index);
+    put::audio_release_resource(group_index);
+    put::audio_consume_command_buffer();
 
     // signal to the engine the thread has finished
     pen::thread_semaphore_signal(p_thread_info->p_sem_terminated, 1);
