@@ -1,5 +1,5 @@
 
-pmtech source is split into two libraries:
+pmtech source is split into two libraries to make cross platform development as simple as possible:
 
 ## pen
 Contains platform / operating system specific code and other utility code which is required at this low level. It serves mainly as an abstraction layer for cross platform support, it has the following modules:
