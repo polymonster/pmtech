@@ -70,7 +70,7 @@ namespace pen
         // mark free and add to free list
         resources->slots[slot].flags |= RESOURCE_FREE;
         resources->slots[slot].next = resources->head;
-        resources->head             = &resources->slots[slot];
+        resources->head = &resources->slots[slot];
 
         return true;
     }

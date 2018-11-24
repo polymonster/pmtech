@@ -114,11 +114,11 @@ namespace physics
             case physics::MESH:
             {
                 u32                         num_tris = params.mesh_data.num_indices / 3;
-                btTriangleIndexVertexArray* mesh     = new btTriangleIndexVertexArray(
+                btTriangleIndexVertexArray* mesh = new btTriangleIndexVertexArray(
                     num_tris, (s32*)params.mesh_data.indices, sizeof(u32) * 3, params.mesh_data.num_floats / 3,
                     params.mesh_data.vertices, sizeof(f32) * 3);
                 btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape(mesh, true);
-                shape                                = concave_mesh;
+                shape = concave_mesh;
             }
             break;
             case physics::COMPOUND:
@@ -398,7 +398,7 @@ namespace physics
 
         // using motion state is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
         btDefaultMotionState* motion_state = new btDefaultMotionState(shape_transform);
-        entity.default_motion_state        = motion_state;
+        entity.default_motion_state = motion_state;
 
         btRigidBody::btRigidBodyConstructionInfo rb_info(mass, motion_state, shape, local_inertia);
 
@@ -585,7 +585,7 @@ namespace physics
 
             // set indices
             k_trigger_contacts[trigger_a].entity[contact_index] = k_triggers[trigger_b].entity_index;
-            k_trigger_contacts[trigger_a].flag[contact_index]   = k_triggers[trigger_b].group;
+            k_trigger_contacts[trigger_a].flag[contact_index] = k_triggers[trigger_b].group;
 
             // increment contact index for the next one
             k_trigger_contacts[trigger_a].num++;
@@ -634,7 +634,7 @@ namespace physics
         for (u32 i = 0; i < k_num_triggers; ++i)
         {
             g_readable_data.output_hit_flags[current_ouput_backbuffer][k_triggers[i].entity_index] = k_triggers[i].hit_flags;
-            k_triggers[i].hit_flags                                                                = 0;
+            k_triggers[i].hit_flags = 0;
         }
 
         for (u32 i = 0; i < k_num_triggers; ++i)
@@ -650,17 +650,17 @@ namespace physics
     void add_rb_internal(const rigid_body_params& params, u32 resource_slot, bool ghost)
     {
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& entity        = k_bullet_objects.entities[resource_slot];
+        physics_entity& entity = k_bullet_objects.entities[resource_slot];
 
         // add the body to the dynamics world
         btRigidBody* rb = create_rb_internal(entity, params, ghost);
         rb->setUserIndex(resource_slot);
 
-        entity.rb.rigid_body          = rb;
+        entity.rb.rigid_body = rb;
         entity.rb.rigid_body_in_world = !ghost;
 
         entity.group = params.group;
-        entity.mask  = params.mask;
+        entity.mask = params.mask;
 
         entity.type = ENTITY_RIGID_BODY;
     }
@@ -668,27 +668,27 @@ namespace physics
     void add_compound_rb_internal(const compound_rb_params& params, u32 resource_slot)
     {
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& next_entity   = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
-        btCollisionShape* col      = create_collision_shape(next_entity, params.base, &params);
+        btCollisionShape* col = create_collision_shape(next_entity, params.base, &params);
         btCompoundShape*  compound = (btCompoundShape*)col;
 
-        next_entity.compound_shape           = compound;
+        next_entity.compound_shape = compound;
         next_entity.num_base_compound_shapes = params.num_shapes;
 
         next_entity.rb.rigid_body = create_rb_internal(next_entity, params.base, 0, compound);
 
         next_entity.rb.rigid_body_in_world = 1;
-        next_entity.group                  = params.base.group;
-        next_entity.mask                   = params.base.mask;
+        next_entity.group = params.base.group;
+        next_entity.mask = params.base.mask;
     }
 
     void add_compound_shape_internal(const compound_rb_params& params, u32 resource_slot)
     {
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& next_entity   = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
-        btCollisionShape* col      = create_collision_shape(next_entity, params.base, &params);
+        btCollisionShape* col = create_collision_shape(next_entity, params.base, &params);
         btCompoundShape*  compound = (btCompoundShape*)col;
 
         next_entity.compound_shape = compound;
@@ -697,7 +697,7 @@ namespace physics
     void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body)
     {
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& next_entity   = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
         /*
         u32 fixed_con = 1;
@@ -770,7 +770,7 @@ namespace physics
         PEN_ASSERT(params.rb_indices[0] > -1);
 
         k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& next_entity   = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
 
         btRigidBody* rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
 
@@ -780,7 +780,7 @@ namespace physics
 
         k_bullet_systems.dynamics_world->addConstraint(hinge);
 
-        next_entity.constraint.type  = CONSTRAINT_HINGE;
+        next_entity.constraint.type = CONSTRAINT_HINGE;
         next_entity.constraint.hinge = hinge;
     }
 
@@ -794,7 +794,7 @@ namespace physics
             {
                 add_p2p_constraint_params p2p;
                 p2p.entity_index = params.rb_indices[0];
-                p2p.position     = params.pivot;
+                p2p.position = params.pivot;
                 add_p2p_constraint_internal(p2p, resource_slot);
             }
             break;
@@ -807,7 +807,7 @@ namespace physics
 
             case CONSTRAINT_DOF6:
             {
-                btRigidBody* p_rb    = nullptr;
+                btRigidBody* p_rb = nullptr;
                 btRigidBody* p_fixed = nullptr;
 
                 if (params.rb_indices[0] != -1)
@@ -905,9 +905,9 @@ namespace physics
         btGeneric6DofConstraint* dof6 = k_bullet_objects.entities[cmd.object_index].constraint.dof6;
 
         btTranslationalLimitMotor* motor = dof6->getTranslationalLimitMotor();
-        motor->m_enableMotor[1]          = cmd.data.x == 0.0f ? false : true;
-        motor->m_targetVelocity          = btVector3(0.0f, cmd.data.y, 0.0f);
-        motor->m_maxMotorForce           = btVector3(0.0f, cmd.data.z, 0.0f);
+        motor->m_enableMotor[1] = cmd.data.x == 0.0f ? false : true;
+        motor->m_targetVelocity = btVector3(0.0f, cmd.data.y, 0.0f);
+        motor->m_maxMotorForce = btVector3(0.0f, cmd.data.z, 0.0f);
 
         k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
@@ -957,7 +957,7 @@ namespace physics
     {
         if (k_bullet_objects.entities[cmd.master].type == ENTITY_RIGID_BODY)
         {
-            btRigidBody* p_rb       = k_bullet_objects.entities[cmd.master].rb.rigid_body;
+            btRigidBody* p_rb = k_bullet_objects.entities[cmd.master].rb.rigid_body;
             btRigidBody* p_rb_slave = k_bullet_objects.entities[cmd.slave].rb.rigid_body;
 
             btTransform master = p_rb->getWorldTransform();
@@ -966,7 +966,7 @@ namespace physics
 
         if (k_bullet_objects.entities[cmd.master].type == ENTITY_MULTI_BODY && cmd.link_index != -1)
         {
-            btMultiBody* p_mb       = k_bullet_objects.entities[cmd.master].mb.multi_body;
+            btMultiBody* p_mb = k_bullet_objects.entities[cmd.master].mb.multi_body;
             btRigidBody* p_rb_slave = k_bullet_objects.entities[cmd.slave].rb.rigid_body;
 
             btTransform master = p_mb->getLink(cmd.link_index).m_collider->getWorldTransform();
@@ -983,9 +983,9 @@ namespace physics
 
     void sync_compound_multi_internal(const sync_compound_multi_params& cmd)
     {
-        btMultiBody*     p_multi    = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody*     p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
         btCompoundShape* p_compound = k_bullet_objects.entities[cmd.compound_index].compound_shape;
-        btRigidBody*     p_rb       = k_bullet_objects.entities[cmd.compound_index].rb.rigid_body;
+        btRigidBody*     p_rb = k_bullet_objects.entities[cmd.compound_index].rb.rigid_body;
 
         u32 num_base_compound_shapes = k_bullet_objects.entities[cmd.compound_index].num_base_compound_shapes;
 
@@ -1061,14 +1061,14 @@ namespace physics
 
             k_bullet_systems.dynamics_world->addConstraint(p2p, true);
 
-            btScalar mousePickClamping    = 0.f;
+            btScalar mousePickClamping = 0.f;
             p2p->m_setting.m_impulseClamp = mousePickClamping;
 
             // very weak constraint for picking
             p2p->m_setting.m_tau = 10.0f;
 
             entity->constraint.point = p2p;
-            entity->constraint.type  = CONSTRAINT_P2P;
+            entity->constraint.type = CONSTRAINT_P2P;
         }
         else if (mb)
         {
@@ -1082,7 +1082,7 @@ namespace physics
             k_bullet_systems.dynamics_world->addMultiBodyConstraint(p2p);
 
             entity->constraint.point_multi = p2p;
-            entity->constraint.type        = CONSTRAINT_P2P_MULTI;
+            entity->constraint.type = CONSTRAINT_P2P_MULTI;
         }
     }
 
@@ -1131,10 +1131,10 @@ namespace physics
         if (pe.type == ENTITY_RIGID_BODY)
         {
             k_triggers[k_num_triggers].collision_object = (btCollisionObject*)pe.rb.rigid_body;
-            k_triggers[k_num_triggers].group            = trigger_data.group;
-            k_triggers[k_num_triggers].mask             = trigger_data.mask;
-            k_triggers[k_num_triggers].hit_flags        = 0;
-            k_triggers[k_num_triggers].entity_index     = trigger_data.entity_index;
+            k_triggers[k_num_triggers].group = trigger_data.group;
+            k_triggers[k_num_triggers].mask = trigger_data.mask;
+            k_triggers[k_num_triggers].hit_flags = 0;
+            k_triggers[k_num_triggers].entity_index = trigger_data.entity_index;
             k_num_triggers++;
         }
     }
@@ -1144,7 +1144,7 @@ namespace physics
         // todo test this function still works after refactor
 
         physics_entity& compound = k_bullet_objects.entities[params.compound];
-        physics_entity& pe       = k_bullet_objects.entities[params.rb];
+        physics_entity& pe = k_bullet_objects.entities[params.rb];
 
         rigid_body_entity rb = pe.rb;
 
@@ -1156,9 +1156,9 @@ namespace physics
             {
                 // to callback later
                 rb.p_attach_user_data = params.p_user_data;
-                rb.attach_function    = params.function;
+                rb.attach_function = params.function;
                 rb.attach_shape_index = -1;
-                rb.call_attach        = 1;
+                rb.call_attach = 1;
 
                 rb.rigid_body_in_world = 1;
 
@@ -1174,9 +1174,9 @@ namespace physics
             {
                 // to callback later
                 rb.p_attach_user_data = params.p_user_data;
-                rb.attach_function    = params.function;
+                rb.attach_function = params.function;
                 rb.attach_shape_index = compound.compound_shape->getNumChildShapes();
-                rb.call_attach        = 1;
+                rb.call_attach = 1;
 
                 rb.rigid_body_in_world = 0;
 
@@ -1223,16 +1223,16 @@ namespace physics
     void cast_ray_internal(const ray_cast_params& rcp)
     {
         btVector3 from = from_lw_vec3(rcp.start);
-        btVector3 to   = from_lw_vec3(rcp.end);
+        btVector3 to = from_lw_vec3(rcp.end);
 
         btCollisionWorld::ClosestRayResultCallback ray_callback(from, to);
 
-        btVector3 pick_pos   = btVector3(0.0, 0.0, 0.0);
+        btVector3 pick_pos = btVector3(0.0, 0.0, 0.0);
         s32       user_index = -1;
         k_bullet_systems.dynamics_world->rayTest(from, to, ray_callback);
         if (ray_callback.hasHit())
         {
-            pick_pos          = ray_callback.m_hitPointWorld;
+            pick_pos = ray_callback.m_hitPointWorld;
             btRigidBody* body = (btRigidBody*)btRigidBody::upcast(ray_callback.m_collisionObject);
 
             if (body)
@@ -1240,7 +1240,7 @@ namespace physics
         }
 
         ray_cast_result rcr;
-        rcr.point          = from_btvector(pick_pos);
+        rcr.point = from_btvector(pick_pos);
         rcr.physics_handle = user_index;
 
         rcp.callback(rcr);

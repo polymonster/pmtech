@@ -27,11 +27,11 @@ namespace pen
 
     struct job
     {
-        thread*             p_thread              = nullptr;
-        semaphore*          p_sem_consume         = nullptr;
-        semaphore*          p_sem_continue        = nullptr;
-        semaphore*          p_sem_exit            = nullptr;
-        semaphore*          p_sem_terminated      = nullptr;
+        thread*             p_thread = nullptr;
+        semaphore*          p_sem_consume = nullptr;
+        semaphore*          p_sem_continue = nullptr;
+        semaphore*          p_sem_exit = nullptr;
+        semaphore*          p_sem_terminated = nullptr;
         completion_callback p_completion_callback = nullptr;
 
         f32 thread_time;
@@ -47,13 +47,13 @@ namespace pen
     {
         THREAD_START_DETACHED = 1,
         THREAD_START_JOINABLE = 2,
-        THREAD_CALL_FUNCTION  = 3
+        THREAD_CALL_FUNCTION = 3
     };
 
     enum default_thread_create_flags
     {
         PEN_CREATE_RENDER_THREAD = 1 << 0,
-        PEN_CREATE_AUDIO_THREAD  = 1 << 1,
+        PEN_CREATE_AUDIO_THREAD = 1 << 1,
     };
 
     struct default_thread_info

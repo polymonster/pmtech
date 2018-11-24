@@ -8,13 +8,13 @@
 namespace
 {
     hash_id ID_VERTEX_CLASS_INSTANCED = PEN_HASH("_instanced");
-    hash_id ID_VERTEX_CLASS_SKINNED   = PEN_HASH("_skinned");
-    hash_id ID_VERTEX_CLASS_BASIC     = PEN_HASH("");
-    
+    hash_id ID_VERTEX_CLASS_SKINNED = PEN_HASH("_skinned");
+    hash_id ID_VERTEX_CLASS_BASIC = PEN_HASH("");
+
     enum e_shader_permutation
     {
-        PERMUTATION_SKINNED = 1<<31,
-        PERMUTATION_INSTANCED = 1<<30
+        PERMUTATION_SKINNED = 1 << 31,
+        PERMUTATION_INSTANCED = 1 << 30
     };
 } // namespace
 
@@ -33,13 +33,15 @@ namespace put
         {
             CLONE_INSTANTIATE = 0, // clones node and instantiates new entites (physics, cbuffer, etc),
             CLONE_COPY = 1, // clones node with a shallow copy and will not instantiate new physics or rendering entities
-            CLONE_MOVE = 2 // clones node to the new location keeping physics and rendering entities and zeros the src node
+            CLONE_MOVE = 2  // clones node to the new location keeping physics and rendering entities and zeros the src node
         };
 
         u32  get_next_node(entity_scene* scene); // gets next node index
         u32  get_new_node(entity_scene* scene);  // allocates a new node at the next index o(1)
-        void get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start, s32& end); // gets new nodes finding contiguous space in the scene o(n)
-        void get_new_nodes_append(entity_scene* scene, s32 num, s32& start, s32& end); // gets new nodes appending them on the end o(1)
+        void get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start,
+                                      s32& end); // gets new nodes finding contiguous space in the scene o(n)
+        void get_new_nodes_append(entity_scene* scene, s32 num, s32& start,
+                                  s32& end); // gets new nodes appending them on the end o(1)
 
         u32  clone_node(entity_scene* scene, u32 src, s32 dst = -1, s32 parent = -1, u32 flags = CLONE_INSTANTIATE,
                         vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");

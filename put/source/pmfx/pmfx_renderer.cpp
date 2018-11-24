@@ -131,9 +131,9 @@ namespace
 
     enum e_post_process_flags
     {
-        PP_NONE          = 0,
-        PP_ENABLED       = (1 << 0),
-        PP_EDITED        = (1 << 1),
+        PP_NONE = 0,
+        PP_ENABLED = (1 << 0),
+        PP_EDITED = (1 << 1),
         PP_WRITE_NON_AUX = (1 << 2) // writes directly to the specified target bypassing aux / virtual buffers
     };
 
@@ -144,8 +144,8 @@ namespace
         hash_id id_name;
         hash_id id_group;
         hash_id id_render_target[pen::MAX_MRT] = {0};
-        hash_id id_depth_target                = 0;
-        hash_id id_filter                      = 0;
+        hash_id id_depth_target = 0;
+        hash_id id_filter = 0;
 
         // draw / update
         ces::entity_scene* scene;
@@ -167,13 +167,13 @@ namespace
         f32 viewport[4] = {0};
 
         // render state
-        u32 num_colour_targets  = 0;
-        u32 clear_state         = 0;
-        u32 raster_state        = 0;
+        u32 num_colour_targets = 0;
+        u32 clear_state = 0;
+        u32 raster_state = 0;
         u32 depth_stencil_state = 0;
-        u32 blend_state         = 0;
-        u32 cbuffer_filter      = PEN_INVALID_HANDLE;
-        u32 cbuffer_technique   = PEN_INVALID_HANDLE;
+        u32 blend_state = 0;
+        u32 cbuffer_filter = PEN_INVALID_HANDLE;
+        u32 cbuffer_technique = PEN_INVALID_HANDLE;
 
         // shader and technique
         u32     pmfx_shader;
@@ -194,7 +194,7 @@ namespace
         std::vector<view_params> post_process_views;
 
         // for debug
-        bool stash_output      = false;
+        bool stash_output = false;
         u32  stashed_output_rt = PEN_INVALID_HANDLE;
         f32  stashed_rt_aspect = 0.0f;
 
@@ -212,7 +212,7 @@ namespace
     {
         Str     name;
         hash_id id_name;
-        
+
         hash_id hash;
         u32     handle;
 
@@ -260,9 +260,9 @@ namespace
     std::vector<sampler_binding>         s_sampler_bindings;
     std::vector<filter_kernel>           s_filter_kernels;
     geometry_utility                     s_geometry;
-    
+
     // ids
-       hash_id id_wrap_linear = PEN_HASH("wrap_linear");
+    hash_id id_wrap_linear = PEN_HASH("wrap_linear");
 } // namespace
 
 namespace put
@@ -291,7 +291,7 @@ namespace put
                 width /= 2;
                 height /= 2;
 
-                width  = std::max<s32>(1, width);
+                width = std::max<s32>(1, width);
                 height = std::max<s32>(1, height);
             }
 
@@ -346,12 +346,12 @@ namespace put
 
             return nullptr;
         }
-        
+
         render_state* _get_render_state(hash_id id_name, u32 type)
         {
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
-                if(s_render_states[i].type == type)
+                if (s_render_states[i].type == type)
                     if (s_render_states[i].id_name == id_name)
                         return &s_render_states[i];
 
@@ -362,10 +362,10 @@ namespace put
         {
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
-                if(s_render_states[i].type == type)
+                if (s_render_states[i].type == type)
                     if (s_render_states[i].id_name == id_name)
                         return s_render_states[i].handle;
-            
+
             return 0;
         }
 
@@ -378,28 +378,28 @@ namespace put
 
             return "";
         }
-        
+
         c8** get_render_state_list(u32 type)
         {
             c8** list = nullptr;
-            
+
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
                 if (s_render_states[i].type == type)
                     sb_push(list, s_render_states[i].name.c_str());
-        
+
             return list;
         }
-        
+
         hash_id* get_render_state_id_list(u32 type)
         {
             hash_id* list = nullptr;
-            
+
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
                 if (s_render_states[i].type == type)
                     sb_push(list, s_render_states[i].id_name);
-            
+
             return list;
         }
 
@@ -422,32 +422,32 @@ namespace put
             };
 
             pen::buffer_creation_params bcp;
-            bcp.usage_flags      = PEN_USAGE_DEFAULT;
-            bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.cpu_access_flags = 0;
 
             bcp.buffer_size = sizeof(textured_vertex) * 4;
-            bcp.data        = (void*)&quad_vertices[0];
+            bcp.data = (void*)&quad_vertices[0];
 
             s_geometry.screen_quad_vb = pen::renderer_create_buffer(bcp);
 
             // create index buffer
             u16 indices[] = {0, 1, 2, 2, 3, 0};
 
-            bcp.usage_flags      = PEN_USAGE_IMMUTABLE;
-            bcp.bind_flags       = PEN_BIND_INDEX_BUFFER;
+            bcp.usage_flags = PEN_USAGE_IMMUTABLE;
+            bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
-            bcp.buffer_size      = sizeof(u16) * 6;
-            bcp.data             = (void*)&indices[0];
+            bcp.buffer_size = sizeof(u16) * 6;
+            bcp.data = (void*)&indices[0];
 
             s_geometry.screen_quad_ib = pen::renderer_create_buffer(bcp);
         }
 
         void parse_sampler_bindings(pen::json render_config, view_params& vp)
         {
-            std::vector<sampler_binding>& bindings           = vp.sampler_bindings;
+            std::vector<sampler_binding>& bindings = vp.sampler_bindings;
             pen::json                     j_sampler_bindings = render_config["sampler_bindings"];
-            s32                           num                = j_sampler_bindings.size();
+            s32                           num = j_sampler_bindings.size();
 
             if (num > 0)
                 vp.sampler_info = new vec4f[num];
@@ -459,7 +459,7 @@ namespace put
                 sampler_binding sb;
 
                 // texture id and handle from render targets.. todo add global textures
-                sb.id_texture           = binding["texture"].as_hash_id();
+                sb.id_texture = binding["texture"].as_hash_id();
                 const render_target* rt = get_render_target(sb.id_texture);
 
                 if (!rt)
@@ -481,7 +481,7 @@ namespace put
                 sb.sampler_unit = binding["unit"].as_u32();
 
                 // shader type
-                Str st         = binding["shader"].as_str("ps");
+                Str st = binding["shader"].as_str("ps");
                 sb.shader_type = PEN_SHADER_TYPE_PS;
                 if (st == "vs")
                     sb.shader_type = PEN_SHADER_TYPE_VS;
@@ -500,14 +500,14 @@ namespace put
         void parse_sampler_states(pen::json render_config)
         {
             pen::json j_sampler_states = render_config["sampler_states"];
-            s32       num              = j_sampler_states.size();
+            s32       num = j_sampler_states.size();
             for (s32 i = 0; i < num; ++i)
             {
                 pen::sampler_creation_params scp;
 
                 pen::json state = j_sampler_states[i];
 
-                scp.filter    = mode_from_string(k_filter_mode_map, state["filter"].as_cstr(), PEN_FILTER_MIN_MAG_MIP_LINEAR);
+                scp.filter = mode_from_string(k_filter_mode_map, state["filter"].as_cstr(), PEN_FILTER_MIN_MAG_MIP_LINEAR);
                 scp.address_u = mode_from_string(k_address_mode_map, state["address"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP);
                 scp.address_v = scp.address_w = scp.address_u;
 
@@ -515,7 +515,7 @@ namespace put
                 scp.address_v = mode_from_string(k_address_mode_map, state["address_v"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP);
                 scp.address_w = mode_from_string(k_address_mode_map, state["address_w"].as_cstr(), PEN_TEXTURE_ADDRESS_WRAP);
 
-                scp.mip_lod_bias   = state["mip_lod_bias"].as_f32(0.0f);
+                scp.mip_lod_bias = state["mip_lod_bias"].as_f32(0.0f);
                 scp.max_anisotropy = state["max_anisotropy"].as_u32(0);
 
                 scp.comparison_func =
@@ -535,10 +535,10 @@ namespace put
                 hash_id hh = PEN_HASH(scp);
 
                 render_state rs;
-                rs.hash       = hh;
+                rs.hash = hh;
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
-                rs.type    = RS_SAMPLER;
+                rs.type = RS_SAMPLER;
 
                 render_state* existing_state = get_state_by_hash(hh);
                 if (existing_state)
@@ -553,23 +553,23 @@ namespace put
         void parse_raster_states(pen::json& render_config)
         {
             pen::json j_raster_states = render_config["raster_states"];
-            s32       num             = j_raster_states.size();
+            s32       num = j_raster_states.size();
             for (s32 i = 0; i < num; ++i)
             {
                 pen::rasteriser_state_creation_params rcp;
 
                 pen::json state = j_raster_states[i];
 
-                rcp.fill_mode               = mode_from_string(k_fill_mode_map, state["fill_mode"].as_cstr(), PEN_FILL_SOLID);
-                rcp.cull_mode               = mode_from_string(k_cull_mode_map, state["cull_mode"].as_cstr(), PEN_CULL_BACK);
-                rcp.front_ccw               = state["front_ccw"].as_bool(false) ? 1 : 0;
-                rcp.depth_bias              = state["depth_bias"].as_s32(0);
-                rcp.depth_bias_clamp        = state["depth_bias_clamp"].as_f32(0.0f);
+                rcp.fill_mode = mode_from_string(k_fill_mode_map, state["fill_mode"].as_cstr(), PEN_FILL_SOLID);
+                rcp.cull_mode = mode_from_string(k_cull_mode_map, state["cull_mode"].as_cstr(), PEN_CULL_BACK);
+                rcp.front_ccw = state["front_ccw"].as_bool(false) ? 1 : 0;
+                rcp.depth_bias = state["depth_bias"].as_s32(0);
+                rcp.depth_bias_clamp = state["depth_bias_clamp"].as_f32(0.0f);
                 rcp.sloped_scale_depth_bias = state["sloped_scale_depth_bias"].as_f32(0.0f);
-                rcp.depth_clip_enable       = state["depth_clip_enable"].as_bool(true) ? 1 : 0;
-                rcp.scissor_enable          = state["scissor_enable"].as_bool(false) ? 1 : 0;
-                rcp.multisample             = state["multisample"].as_bool(true) ? 1 : 0;
-                rcp.aa_lines                = state["aa_lines"].as_bool(false) ? 1 : 0;
+                rcp.depth_clip_enable = state["depth_clip_enable"].as_bool(true) ? 1 : 0;
+                rcp.scissor_enable = state["scissor_enable"].as_bool(false) ? 1 : 0;
+                rcp.multisample = state["multisample"].as_bool(true) ? 1 : 0;
+                rcp.aa_lines = state["aa_lines"].as_bool(false) ? 1 : 0;
 
                 hash_id hh = PEN_HASH(rcp);
 
@@ -599,7 +599,7 @@ namespace put
         void parse_partial_blend_states(pen::json& render_config)
         {
             pen::json j_blend_states = render_config["blend_states"];
-            s32       num            = j_blend_states.size();
+            s32       num = j_blend_states.size();
             for (s32 i = 0; i < num; ++i)
             {
                 pen::render_target_blend rtb;
@@ -607,9 +607,9 @@ namespace put
                 pen::json state = j_blend_states[i];
 
                 rtb.blend_enable = state["blend_enable"].as_bool(false);
-                rtb.src_blend    = mode_from_string(k_blend_mode_map, state["src_blend"].as_cstr(), PEN_BLEND_ONE);
-                rtb.dest_blend   = mode_from_string(k_blend_mode_map, state["dest_blend"].as_cstr(), PEN_BLEND_ZERO);
-                rtb.blend_op     = mode_from_string(k_blend_op_mode_map, state["blend_op"].as_cstr(), PEN_BLEND_OP_ADD);
+                rtb.src_blend = mode_from_string(k_blend_mode_map, state["src_blend"].as_cstr(), PEN_BLEND_ONE);
+                rtb.dest_blend = mode_from_string(k_blend_mode_map, state["dest_blend"].as_cstr(), PEN_BLEND_ZERO);
+                rtb.blend_op = mode_from_string(k_blend_op_mode_map, state["blend_op"].as_cstr(), PEN_BLEND_OP_ADD);
 
                 rtb.src_blend_alpha = mode_from_string(k_blend_mode_map, state["src_blend_alpha"].as_cstr(), PEN_BLEND_ONE);
                 rtb.dest_blend_alpha =
@@ -647,21 +647,21 @@ namespace put
         void parse_depth_stencil_states(pen::json& render_config)
         {
             pen::json j_ds_states = render_config["depth_stencil_states"];
-            s32       num         = j_ds_states.size();
+            s32       num = j_ds_states.size();
             for (s32 i = 0; i < num; ++i)
             {
                 pen::depth_stencil_creation_params dscp;
 
                 pen::json state = j_ds_states[i];
 
-                dscp.depth_enable     = state["depth_enable"].as_bool(false) ? 1 : 0;
+                dscp.depth_enable = state["depth_enable"].as_bool(false) ? 1 : 0;
                 dscp.depth_write_mask = state["depth_write"].as_bool(false) ? 1 : 0;
 
                 dscp.depth_func =
                     mode_from_string(k_comparison_mode_map, state["depth_func"].as_cstr(), PEN_COMPARISON_ALWAYS);
 
-                dscp.stencil_enable     = state["stencil_enable"].as_bool(false) ? 1 : 0;
-                dscp.stencil_read_mask  = state["stencil_read_mask"].as_u8_hex(0);
+                dscp.stencil_enable = state["stencil_enable"].as_bool(false) ? 1 : 0;
+                dscp.stencil_read_mask = state["stencil_read_mask"].as_u8_hex(0);
                 dscp.stencil_write_mask = state["stencil_write_mask"].as_u8_hex(0);
 
                 pen::json op = state["stencil_op"];
@@ -676,10 +676,10 @@ namespace put
                 hash_id hh = PEN_HASH(dscp);
 
                 render_state rs;
-                rs.hash       = hh;
+                rs.hash = hh;
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
-                rs.type    = RS_DEPTH_STENCIL;
+                rs.type = RS_DEPTH_STENCIL;
 
                 render_state* existing_state = get_state_by_hash(hh);
                 if (existing_state)
@@ -694,23 +694,23 @@ namespace put
         void parse_filters(pen::json& render_config)
         {
             pen::json j_filters = render_config["filter_kernels"];
-            s32       num       = j_filters.size();
+            s32       num = j_filters.size();
             for (s32 i = 0; i < num; ++i)
             {
                 pen::json jfk = j_filters[i];
 
                 filter_kernel fk;
-                fk.name    = j_filters[i].name();
+                fk.name = j_filters[i].name();
                 fk.id_name = PEN_HASH(fk.name.c_str());
 
                 // weights / offsets
-                pen::json jweights    = jfk["weights"];
-                pen::json joffsets    = jfk["offsets"];
+                pen::json jweights = jfk["weights"];
+                pen::json joffsets = jfk["offsets"];
                 pen::json joffsets_xy = jfk["offsets_xy"];
 
                 u32 num_xy = joffsets_xy.size();
-                u32 num_w  = jweights.size();
-                u32 num_o  = joffsets.size();
+                u32 num_w = jweights.size();
+                u32 num_o = joffsets.size();
 
                 u32 num_samples = 0;
 
@@ -728,7 +728,7 @@ namespace put
 
                     for (u32 s = 0; s < num_w; ++s)
                     {
-                        f32 w                 = jweights[s].as_f32();
+                        f32 w = jweights[s].as_f32();
                         fk.offset_weight[s].z = w;
                     }
                 }
@@ -807,7 +807,7 @@ namespace put
                 masks.push_back(0x0F);
 
             bool   multi_blend = rtb.size() > 1 || write_mask.size() > 1;
-            size_t num_rt      = std::max<size_t>(rtb.size(), write_mask.size());
+            size_t num_rt = std::max<size_t>(rtb.size(), write_mask.size());
 
             // splat
             size_t rtb_start = rtb.size();
@@ -823,12 +823,12 @@ namespace put
             pen::blend_creation_params bcp;
             bcp.alpha_to_coverage_enable = alpha_to_coverage;
             bcp.independent_blend_enable = multi_blend;
-            bcp.num_render_targets       = num_rt;
-            bcp.render_targets           = new pen::render_target_blend[num_rt];
+            bcp.num_render_targets = num_rt;
+            bcp.render_targets = new pen::render_target_blend[num_rt];
 
             for (s32 i = 0; i < num_rt; ++i)
             {
-                bcp.render_targets[i]                          = rtb[i];
+                bcp.render_targets[i] = rtb[i];
                 bcp.render_targets[i].render_target_write_mask = masks[i];
             }
 
@@ -846,7 +846,7 @@ namespace put
             rs.hash = hh;
             rs.name = view_name;
             rs.id_name = PEN_HASH(view_name);
-            rs.type    = RS_BLEND;
+            rs.type = RS_BLEND;
 
             render_state* existing_state = get_state_by_hash(hh);
             if (existing_state)
@@ -863,27 +863,27 @@ namespace put
         {
             // add 2 defaults
             render_target main_colour;
-            main_colour.id_name  = ID_MAIN_COLOUR;
-            main_colour.name     = "Backbuffer Colour";
-            main_colour.ratio    = 1;
-            main_colour.format   = PEN_TEX_FORMAT_RGBA8_UNORM;
-            main_colour.handle   = PEN_BACK_BUFFER_COLOUR;
+            main_colour.id_name = ID_MAIN_COLOUR;
+            main_colour.name = "Backbuffer Colour";
+            main_colour.ratio = 1;
+            main_colour.format = PEN_TEX_FORMAT_RGBA8_UNORM;
+            main_colour.handle = PEN_BACK_BUFFER_COLOUR;
             main_colour.num_mips = 1;
-            main_colour.pp       = VRT_WRITE;
-            main_colour.flags    = RT_WRITE_ONLY;
+            main_colour.pp = VRT_WRITE;
+            main_colour.flags = RT_WRITE_ONLY;
 
             s_render_targets.push_back(main_colour);
             s_render_target_tcp.push_back(texture_creation_params());
 
             render_target main_depth;
-            main_depth.id_name  = ID_MAIN_DEPTH;
-            main_depth.name     = "Backbuffer Depth";
-            main_depth.ratio    = 1;
-            main_depth.format   = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
-            main_depth.handle   = PEN_BACK_BUFFER_DEPTH;
+            main_depth.id_name = ID_MAIN_DEPTH;
+            main_depth.name = "Backbuffer Depth";
+            main_depth.ratio = 1;
+            main_depth.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
+            main_depth.handle = PEN_BACK_BUFFER_DEPTH;
             main_depth.num_mips = 1;
-            main_depth.pp       = VRT_WRITE;
-            main_depth.flags    = RT_WRITE_ONLY;
+            main_depth.pp = VRT_WRITE;
+            main_depth.flags = RT_WRITE_ONLY;
 
             s_render_targets.push_back(main_depth);
             s_render_target_tcp.push_back(texture_creation_params());
@@ -904,7 +904,7 @@ namespace put
                 if (include_targets)
                 {
                     // only parse specific targets in list
-                    bool include      = false;
+                    bool include = false;
                     u32  num_includes = sb_count(include_targets);
                     for (int j = 0; j < num_includes; ++j)
                     {
@@ -943,21 +943,21 @@ namespace put
                         s_render_target_tcp.push_back(texture_creation_params());
                         pen::texture_creation_params& tcp = s_render_target_tcp.back();
 
-                        new_info.ratio   = 0;
-                        new_info.name    = r.name();
+                        new_info.ratio = 0;
+                        new_info.name = r.name();
                         new_info.id_name = PEN_HASH(r.name().c_str());
 
                         pen::json size = r["size"];
                         if (size.size() == 2)
                         {
                             // explicit size
-                            new_info.width  = size[0].as_s32();
+                            new_info.width = size[0].as_s32();
                             new_info.height = size[1].as_s32();
                         }
                         else
                         {
                             // ratio
-                            new_info.width  = 0;
+                            new_info.width = 0;
                             new_info.height = 0;
 
                             Str ratio_str = size.as_str();
@@ -965,45 +965,45 @@ namespace put
                             for (s32 rr = 0; rr < PEN_ARRAY_SIZE(rt_ratio); ++rr)
                                 if (rt_ratio[rr] == ratio_str)
                                 {
-                                    new_info.width  = pen::BACK_BUFFER_RATIO;
+                                    new_info.width = pen::BACK_BUFFER_RATIO;
                                     new_info.height = rr;
-                                    new_info.ratio  = rr;
+                                    new_info.ratio = rr;
                                     break;
                                 }
                         }
 
                         new_info.num_mips = 1;
-                        new_info.format   = rt_format[f].format;
+                        new_info.format = rt_format[f].format;
 
-                        tcp.data             = nullptr;
-                        tcp.width            = new_info.width;
-                        tcp.height           = new_info.height;
-                        tcp.format           = new_info.format;
+                        tcp.data = nullptr;
+                        tcp.width = new_info.width;
+                        tcp.height = new_info.height;
+                        tcp.format = new_info.format;
                         tcp.pixels_per_block = 1;
-                        tcp.block_size       = rt_format[f].block_size;
-                        tcp.usage            = PEN_USAGE_DEFAULT;
-                        tcp.flags            = 0;
-                        tcp.num_mips         = 1;
-                        tcp.num_arrays       = 1;
-                        tcp.collection_type  = pen::TEXTURE_COLLECTION_NONE;
-                        
+                        tcp.block_size = rt_format[f].block_size;
+                        tcp.usage = PEN_USAGE_DEFAULT;
+                        tcp.flags = 0;
+                        tcp.num_mips = 1;
+                        tcp.num_arrays = 1;
+                        tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
+
                         // mips
                         if (r["mips"].as_bool(false))
                         {
                             new_info.num_mips = calc_num_mips(new_info.width, new_info.height);
-                            tcp.num_mips      = new_info.num_mips;
+                            tcp.num_mips = new_info.num_mips;
                         }
-                        
+
                         // cubes and arrays
                         Str type = r["type"].as_str("");
-                        if(!type.empty())
+                        if (!type.empty())
                         {
-                            if(type == "cube")
+                            if (type == "cube")
                             {
                                 new_info.collection = pen::TEXTURE_COLLECTION_CUBE;
                                 tcp.num_arrays = 5;
                             }
-                            else if(type == "array")
+                            else if (type == "array")
                             {
                                 new_info.collection = pen::TEXTURE_COLLECTION_ARRAY;
                                 tcp.num_arrays = r["num_arrays"].as_u32(1);
@@ -1027,7 +1027,7 @@ namespace put
                         }
 
                         hash_id idr = r["init_read"].as_hash_id();
-                        u32     hr  = 0;
+                        u32     hr = 0;
                         if (idr != 0)
                         {
                             // load any init read targets
@@ -1050,7 +1050,7 @@ namespace put
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
 
                         // msaa
-                        tcp.sample_count   = r["samples"].as_u32(1);
+                        tcp.sample_count = r["samples"].as_u32(1);
                         tcp.sample_quality = 0;
 
                         new_info.samples = tcp.sample_count;
@@ -1078,7 +1078,7 @@ namespace put
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format)
         {
             render_target* current_target = nullptr;
-            size_t         num            = s_render_targets.size();
+            size_t         num = s_render_targets.size();
             for (u32 i = 0; i < num; ++i)
             {
                 if (s_render_targets[i].id_name == target)
@@ -1088,7 +1088,7 @@ namespace put
                 }
             }
 
-            s32 new_format   = current_target->format;
+            s32 new_format = current_target->format;
             u32 format_index = 0;
 
             if (format)
@@ -1122,26 +1122,26 @@ namespace put
             }
 
             pen::texture_creation_params tcp;
-            tcp.data             = nullptr;
-            tcp.width            = width;
-            tcp.height           = height;
-            tcp.format           = new_format;
+            tcp.data = nullptr;
+            tcp.width = width;
+            tcp.height = height;
+            tcp.format = new_format;
             tcp.pixels_per_block = 1;
-            tcp.block_size       = rt_format[format_index].block_size;
-            tcp.usage            = PEN_USAGE_DEFAULT;
-            tcp.flags            = 0;
-            tcp.num_mips         = 1;
-            tcp.num_arrays       = 1;
-            tcp.sample_count     = 1;
+            tcp.block_size = rt_format[format_index].block_size;
+            tcp.usage = PEN_USAGE_DEFAULT;
+            tcp.flags = 0;
+            tcp.num_mips = 1;
+            tcp.num_arrays = 1;
+            tcp.sample_count = 1;
             tcp.cpu_access_flags = PEN_CPU_ACCESS_READ;
-            tcp.sample_quality   = 0;
-            tcp.bind_flags       = rt_format[format_index].flags | PEN_BIND_SHADER_RESOURCE;
-            tcp.collection_type  = pen::TEXTURE_COLLECTION_NONE;
+            tcp.sample_quality = 0;
+            tcp.bind_flags = rt_format[format_index].flags | PEN_BIND_SHADER_RESOURCE;
+            tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
 
             u32 h = pen::renderer_create_render_target(tcp);
             pen::renderer_replace_resource(current_target->handle, h, pen::RESOURCE_RENDER_TARGET);
 
-            current_target->width  = width;
+            current_target->width = width;
             current_target->height = height;
             current_target->format = new_format;
         }
@@ -1188,12 +1188,12 @@ namespace put
                     target_w = rt->width;
                     target_h = rt->height;
                     target_r = rt->ratio;
-                    first    = false;
+                    first = false;
                 }
 
-                s_views[i].rt_width  = target_w;
+                s_views[i].rt_width = target_w;
                 s_views[i].rt_height = target_h;
-                s_views[i].rt_ratio  = target_r;
+                s_views[i].rt_ratio = target_r;
             }
         }
 
@@ -1304,13 +1304,13 @@ namespace put
 
                 pen::json view = j_views[i];
 
-                new_view.name    = view.name();
+                new_view.name = view.name();
                 new_view.id_name = PEN_HASH(view.name());
 
                 if (group)
                 {
                     new_view.id_group = PEN_HASH(group);
-                    new_view.group    = group;
+                    new_view.group = group;
                 }
 
                 // inherit and combine
@@ -1320,7 +1320,7 @@ namespace put
                     if (ihv == "")
                         break;
 
-                    new_view.name    = ihv.c_str();
+                    new_view.name = ihv.c_str();
                     new_view.id_name = PEN_HASH(new_view.name);
 
                     pen::json inherit_view = all_views[ihv.c_str()];
@@ -1344,7 +1344,7 @@ namespace put
 
                 for (s32 t = 0; t < num_targets; ++t)
                 {
-                    Str     target_str  = targets[t].as_str();
+                    Str     target_str = targets[t].as_str();
                     hash_id target_hash = PEN_HASH(target_str.c_str());
 
                     new_view.viewport_correction = pen::renderer_viewport_vup();
@@ -1358,15 +1358,15 @@ namespace put
                         {
                             found = true;
 
-                            s32 w  = r.width;
-                            s32 h  = r.height;
+                            s32 w = r.width;
+                            s32 h = r.height;
                             s32 rr = r.ratio;
 
                             if (cur_rt == 0)
                             {
-                                new_view.rt_width  = w;
+                                new_view.rt_width = w;
                                 new_view.rt_height = h;
-                                new_view.rt_ratio  = rr;
+                                new_view.rt_ratio = rr;
                             }
                             else
                             {
@@ -1383,7 +1383,7 @@ namespace put
 
                             if (r.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
                             {
-                                new_view.depth_target    = r.handle;
+                                new_view.depth_target = r.handle;
                                 new_view.id_depth_target = target_hash;
                             }
                             else
@@ -1442,7 +1442,7 @@ namespace put
                 // blend
                 bool      alpha_to_coverage = view["alpha_to_coverage"].as_bool();
                 pen::json colour_write_mask = view["colour_write_mask"];
-                pen::json blend_state       = view["blend_state"];
+                pen::json blend_state = view["blend_state"];
 
                 new_view.blend_state =
                     create_blend_state(view.name().c_str(), blend_state, colour_write_mask, alpha_to_coverage);
@@ -1461,7 +1461,7 @@ namespace put
                         if (s.id_name == scene_id)
                         {
                             new_view.scene = s.scene;
-                            found_scene    = true;
+                            found_scene = true;
                             break;
                         }
                     }
@@ -1488,7 +1488,7 @@ namespace put
                         if (c.id_name == camera_id)
                         {
                             new_view.camera = c.camera;
-                            found_camera    = true;
+                            found_camera = true;
                             break;
                         }
                     }
@@ -1502,7 +1502,7 @@ namespace put
                 }
 
                 // shader and technique
-                Str technique_str  = view["technique"].as_str();
+                Str technique_str = view["technique"].as_str();
                 new_view.technique = PEN_HASH(technique_str.c_str());
 
                 new_view.pmfx_shader = pmfx::load_shader(view["pmfx_shader"].as_cstr());
@@ -1516,7 +1516,7 @@ namespace put
 
                 // render flags
                 pen::json render_flags = view["render_flags"];
-                new_view.render_flags  = 0;
+                new_view.render_flags = 0;
                 for (s32 f = 0; f < render_flags.size(); ++f)
                 {
                     new_view.render_flags |= mode_from_string(render_flags_map, render_flags[f].as_cstr(), 0);
@@ -1585,11 +1585,11 @@ namespace put
                     // create the cbuffer itself
                     static const u32            filter_cbuffer_size = sizeof(fk.offset_weight) + sizeof(fk.info);
                     pen::buffer_creation_params bcp;
-                    bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-                    bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+                    bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                    bcp.buffer_size      = filter_cbuffer_size;
-                    bcp.data             = nullptr;
+                    bcp.buffer_size = filter_cbuffer_size;
+                    bcp.data = nullptr;
 
                     new_view.cbuffer_filter = pen::renderer_create_buffer(bcp);
 
@@ -1602,11 +1602,11 @@ namespace put
                     if (has_technique_constants(new_view.pmfx_shader, ti))
                     {
                         pen::buffer_creation_params bcp;
-                        bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-                        bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                         bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                        bcp.buffer_size      = sizeof(technique_constant_data);
-                        bcp.data             = nullptr;
+                        bcp.buffer_size = sizeof(technique_constant_data);
+                        bcp.data = nullptr;
 
                         new_view.cbuffer_technique = pen::renderer_create_buffer(bcp);
                     }
@@ -1621,9 +1621,9 @@ namespace put
         {
             struct virtual_rt
             {
-                hash_id id                = 0;
+                hash_id id = 0;
                 u32     rt_index[VRT_NUM] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
-                u32     rt_read           = PEN_INVALID_HANDLE;
+                u32     rt_read = PEN_INVALID_HANDLE;
                 bool    swap;
             };
             std::vector<virtual_rt> s_virtual_rt;
@@ -1648,10 +1648,10 @@ namespace put
 
                 // add new
                 virtual_rt vrt;
-                vrt.id                  = id;
-                vrt.rt_index[VRT_READ]  = PEN_INVALID_HANDLE;
+                vrt.id = id;
+                vrt.rt_index[VRT_READ] = PEN_INVALID_HANDLE;
                 vrt.rt_index[VRT_WRITE] = PEN_INVALID_HANDLE;
-                vrt.swap                = false;
+                vrt.swap = false;
 
                 u32 pp = s_render_targets[rt_index].pp;
 
@@ -1722,7 +1722,7 @@ namespace put
                 aux_rt.flags |= RT_AUX;
                 aux_rt.flags |= RT_AUX_USED;
                 aux_rt.handle = pen::renderer_create_render_target(s_render_target_tcp[rt_index]);
-                aux_rt.name   = rt->name;
+                aux_rt.name = rt->name;
                 aux_rt.name.append("_aux");
                 s_render_targets.push_back(aux_rt);
                 return s_render_targets.size() - 1;
@@ -1753,9 +1753,9 @@ namespace put
                             }
                             else
                             {
-                                rt_index           = get_aux_buffer(id);
+                                rt_index = get_aux_buffer(id);
                                 vrt.rt_index[mode] = rt_index;
-                                result             = s_render_targets[rt_index].handle;
+                                result = s_render_targets[rt_index].handle;
                             }
                         }
 
@@ -1863,9 +1863,9 @@ namespace put
                         for (u32 i = 0; i < num_tt; ++i)
                         {
                             sampler_binding sb;
-                            sb.handle        = ts[i].handle;
-                            sb.sampler_unit  = ts[i].unit;
-                            sb.shader_type   = PEN_SHADER_TYPE_PS;
+                            sb.handle = ts[i].handle;
+                            sb.sampler_unit = ts[i].unit;
+                            sb.shader_type = PEN_SHADER_TYPE_PS;
                             sb.sampler_state = get_render_state(id_wrap_linear, RS_SAMPLER);
 
                             p.technique_samplers.sb[i] = sb;
@@ -1926,7 +1926,7 @@ namespace put
                             continue;
 
                         // found group / view matching
-                        pv.technique_samplers  = ev.technique_samplers;
+                        pv.technique_samplers = ev.technique_samplers;
                         pv.technique_constants = ev.technique_constants;
 
                         break;
@@ -1963,7 +1963,7 @@ namespace put
             }
 
             pen::json pp_chain = pp_set["chain"];
-            u32       num_pp   = pp_chain.size();
+            u32       num_pp = pp_chain.size();
 
             for (u32 i = 0; i < num_pp; ++i)
                 v.post_process_chain.push_back(pp_chain[i].as_str());
@@ -1983,7 +1983,7 @@ namespace put
             bake_post_process_targets(v.post_process_views);
 
             // load constants and samplers from data
-            pen::json params     = pp_set["parameters"];
+            pen::json params = pp_set["parameters"];
             u32       num_params = params.size();
             for (u32 i = 0; i < num_params; ++i)
             {
@@ -1999,7 +1999,7 @@ namespace put
                         {
                             pen::json tp = tech_params[c];
 
-                            hash_id              id_c        = PEN_HASH(tp.key());
+                            hash_id              id_c = PEN_HASH(tp.key());
                             static const hash_id id_textures = PEN_HASH("textures");
 
                             if (id_c == id_textures)
@@ -2010,18 +2010,18 @@ namespace put
                                     pen::json j_sampler = tp[s];
 
                                     hash_id            id_s = PEN_HASH(j_sampler.key());
-                                    technique_sampler* ts   = get_technique_sampler(id_s, pv.pmfx_shader, ti);
+                                    technique_sampler* ts = get_technique_sampler(id_s, pv.pmfx_shader, ti);
 
                                     if (!ts)
                                         continue;
 
                                     sampler_binding& sb = pv.technique_samplers.sb[s];
 
-                                    sb.sampler_unit  = ts->unit;
-                                    sb.handle        = put::load_texture(j_sampler["filename"].as_cstr());
+                                    sb.sampler_unit = ts->unit;
+                                    sb.handle = put::load_texture(j_sampler["filename"].as_cstr());
                                     sb.sampler_state = j_sampler["filename"].as_u32();
-                                    sb.id_texture    = PEN_HASH(j_sampler["filename"].as_cstr());
-                                    sb.shader_type   = ts->shader_type;
+                                    sb.id_texture = PEN_HASH(j_sampler["filename"].as_cstr());
+                                    sb.shader_type = ts->shader_type;
                                 }
                             }
                             else
@@ -2073,9 +2073,9 @@ namespace put
                 Str include_filename = render_config["include"][i].as_str();
 
                 Str config_path = (const c8*)config_data;
-                config_path     = pen::str_normalise_filepath(filename);
+                config_path = pen::str_normalise_filepath(filename);
 
-                u32 last_dir    = pen::str_find_reverse(config_path, "/");
+                u32 last_dir = pen::str_find_reverse(config_path, "/");
                 Str include_dir = pen::str_substr(config_path, 0, last_dir + 1);
 
                 include_dir.append(include_filename.c_str());
@@ -2097,7 +2097,7 @@ namespace put
 
             pen::renderer_consume_cmd_buffer();
 
-            pen::json j_views     = render_config["views"];
+            pen::json j_views = render_config["views"];
             pen::json j_view_sets = render_config["view_sets"];
 
             s_view_set_name = render_config["view_set"].as_str();
@@ -2112,7 +2112,7 @@ namespace put
             }
 
             // get views for view set
-            pen::json j_view_set       = j_view_sets[s_view_set_name.c_str()];
+            pen::json j_view_set = j_view_sets[s_view_set_name.c_str()];
             u32       num_views_in_set = j_view_set.size();
             if (num_views_in_set > 0)
             {
@@ -2231,7 +2231,7 @@ namespace put
             for (auto& rs : s_render_states)
             {
                 dev_console_log("release state %i : %s (%i)", rs.type, rs.name.c_str(), rs.handle);
-                
+
                 switch (rs.type)
                 {
                     case RS_RASTERIZER:
@@ -2323,16 +2323,16 @@ namespace put
 
         void render_view(view_params& v)
         {
-            static u32 cb_2d           = PEN_INVALID_HANDLE;
+            static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
             if (!is_valid(cb_2d))
             {
                 pen::buffer_creation_params bcp;
-                bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-                bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size      = sizeof(float) * 16;
-                bcp.data             = (void*)nullptr;
+                bcp.buffer_size = sizeof(float) * 16;
+                bcp.data = (void*)nullptr;
 
                 cb_2d = pen::renderer_create_buffer(bcp);
 
@@ -2362,8 +2362,8 @@ namespace put
             pen::renderer_clear(v.clear_state);
 
             // create 2d view proj matrix
-            float W         = 2.0f / vp.width;
-            float H         = 2.0f / vp.height;
+            float W = 2.0f / vp.width;
+            float H = 2.0f / vp.height;
             float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
 
@@ -2418,16 +2418,16 @@ namespace put
                 pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, PEN_SHADER_TYPE_PS);
             }
 
-            sv.render_flags        = v.render_flags;
-            sv.technique           = v.technique;
-            sv.raster_state        = v.raster_state;
+            sv.render_flags = v.render_flags;
+            sv.technique = v.technique;
+            sv.raster_state = v.raster_state;
             sv.depth_stencil_state = v.depth_stencil_state;
-            sv.blend_state_state   = v.blend_state;
-            sv.camera              = v.camera;
-            sv.viewport            = &vp;
+            sv.blend_state_state = v.blend_state;
+            sv.camera = v.camera;
+            sv.viewport = &vp;
             sv.viewport_correction = v.viewport_correction;
-            sv.cb_2d_view          = cb_2d;
-            sv.pmfx_shader         = v.pmfx_shader;
+            sv.cb_2d_view = cb_2d;
+            sv.pmfx_shader = v.pmfx_shader;
 
             // render passes
             for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
@@ -2461,22 +2461,22 @@ namespace put
                     if (v.stashed_output_rt == PEN_INVALID_HANDLE)
                     {
                         pen::texture_creation_params tcp;
-                        tcp.data             = nullptr;
-                        tcp.width            = vp.width;
-                        tcp.height           = vp.height;
-                        tcp.format           = PEN_TEX_FORMAT_RGBA8_UNORM;
+                        tcp.data = nullptr;
+                        tcp.width = vp.width;
+                        tcp.height = vp.height;
+                        tcp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
                         tcp.pixels_per_block = 1;
-                        tcp.block_size       = 4;
-                        tcp.usage            = PEN_USAGE_DEFAULT;
-                        tcp.flags            = 0;
-                        tcp.num_mips         = 1;
-                        tcp.num_arrays       = 1;
-                        tcp.sample_count     = 1;
+                        tcp.block_size = 4;
+                        tcp.usage = PEN_USAGE_DEFAULT;
+                        tcp.flags = 0;
+                        tcp.num_mips = 1;
+                        tcp.num_arrays = 1;
+                        tcp.sample_count = 1;
                         tcp.cpu_access_flags = PEN_CPU_ACCESS_READ;
-                        tcp.sample_quality   = 0;
-                        tcp.bind_flags       = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
-                        tcp.collection_type  = pen::TEXTURE_COLLECTION_NONE;
-                        u32 h                = pen::renderer_create_render_target(tcp);
+                        tcp.sample_quality = 0;
+                        tcp.bind_flags = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
+                        tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
+                        u32 h = pen::renderer_create_render_target(tcp);
 
                         v.stashed_output_rt = h;
                         v.stashed_rt_aspect = vp.width / vp.height;
@@ -2486,7 +2486,7 @@ namespace put
 
                 // render
                 static u32                     pp_shader = pmfx::load_shader("post_process");
-                static ces::geometry_resource* quad      = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
+                static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
                 pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
                 pen::renderer_set_viewport(vp);
@@ -2573,13 +2573,13 @@ namespace put
             get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
 
             const c8* format_str = nullptr;
-            s32       byte_size  = 0;
+            s32       byte_size = 0;
             for (s32 f = 0; f < PEN_ARRAY_SIZE(rt_format); ++f)
             {
                 if (rt_format[f].format == rt.format)
                 {
                     format_str = rt_format[f].name.c_str();
-                    byte_size  = rt_format[f].block_size / 8;
+                    byte_size = rt_format[f].block_size / 8;
                     break;
                 }
             }
@@ -2694,8 +2694,8 @@ namespace put
             // add new
             s_edited_post_processes.push_back(edited_post_process());
             s_edited_post_processes.back().id_name = input_view.id_name;
-            s_edited_post_processes.back().chain   = input_view.post_process_chain;
-            s_edited_post_processes.back().views   = input_view.post_process_views;
+            s_edited_post_processes.back().chain = input_view.post_process_chain;
+            s_edited_post_processes.back().views = input_view.post_process_views;
         }
 
         void show_dev_ui()
@@ -2749,23 +2749,21 @@ namespace put
                     if (!unsupported_display)
                     {
                         static u32 cubemap = put::load_texture("data/textures/cubemap.dds");
-                        
+
                         f32 aspect = w / h;
-                        
-                        if(rt.collection == pen::TEXTURE_COLLECTION_CUBE)
+
+                        if (rt.collection == pen::TEXTURE_COLLECTION_CUBE)
                         {
-                            dev_ui::image_ex(cubemap,
-                                             vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
+                            dev_ui::image_ex(cubemap, vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
                                              (dev_ui::e_shader)rt.collection);
                         }
 
-                        dev_ui::image_ex(rt.handle,
-                                         vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
+                        dev_ui::image_ex(rt.handle, vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
                                          (dev_ui::e_shader)rt.collection);
                     }
 
                     render_target_info_ui(rt);
-                    
+
                     // test
                     /*
                     static u32 cubemap = put::load_texture("data/textures/cubemap.dds");
@@ -2798,7 +2796,7 @@ namespace put
 
                     if (ImGui::Combo("View Set", &s_selected_view_set, &view_set_items[0], view_set_items.size()))
                     {
-                        invalidated            = true;
+                        invalidated = true;
                         s_edited_view_set_name = view_set_items[s_selected_view_set];
                     }
 
@@ -2819,9 +2817,9 @@ namespace put
                 if (ImGui::CollapsingHeader("Post Processing"))
                 {
                     static s32 s_selected_input_view = 0;
-                    static s32 s_selected_chain_pp   = 0;
-                    static s32 s_selected_process    = 0;
-                    static s32 s_selected_pp_view    = 0;
+                    static s32 s_selected_chain_pp = 0;
+                    static s32 s_selected_process = 0;
+                    static s32 s_selected_pp_view = 0;
 
                     static std::vector<c8*> view_items;
                     static std::vector<c8*> chain_items;
@@ -2845,9 +2843,9 @@ namespace put
                         ImGui::Combo("Input View", &s_selected_input_view, &view_items[0], view_items.size());
                     }
 
-                    std::vector<Str>&         s_post_process_chain  = s_views[s_selected_input_view].post_process_chain;
+                    std::vector<Str>&         s_post_process_chain = s_views[s_selected_input_view].post_process_chain;
                     std::vector<view_params>& s_post_process_passes = s_views[s_selected_input_view].post_process_views;
-                    view_params&              edit_view             = s_views[s_selected_input_view];
+                    view_params&              edit_view = s_views[s_selected_input_view];
 
                     // all available post processes from config (ie bloom, dof, colour_lut)
                     process_items.clear();
@@ -2914,9 +2912,9 @@ namespace put
                     // Edit Toolbar
                     if (ImGui::Button(ICON_FA_ARROW_UP) && s_selected_chain_pp > 0)
                     {
-                        invalidated                                   = true;
-                        Str tmp                                       = s_post_process_chain[s_selected_chain_pp];
-                        s_post_process_chain[s_selected_chain_pp]     = s_post_process_chain[s_selected_chain_pp - 1].c_str();
+                        invalidated = true;
+                        Str tmp = s_post_process_chain[s_selected_chain_pp];
+                        s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp - 1].c_str();
                         s_post_process_chain[s_selected_chain_pp - 1] = tmp.c_str();
 
                         s_selected_chain_pp--;
@@ -2926,9 +2924,9 @@ namespace put
                     ImGui::SameLine();
                     if (ImGui::Button(ICON_FA_ARROW_DOWN) && s_selected_chain_pp < s_post_process_chain.size() - 1)
                     {
-                        invalidated                                   = true;
-                        Str tmp                                       = s_post_process_chain[s_selected_chain_pp];
-                        s_post_process_chain[s_selected_chain_pp]     = s_post_process_chain[s_selected_chain_pp + 1].c_str();
+                        invalidated = true;
+                        Str tmp = s_post_process_chain[s_selected_chain_pp];
+                        s_post_process_chain[s_selected_chain_pp] = s_post_process_chain[s_selected_chain_pp + 1].c_str();
                         s_post_process_chain[s_selected_chain_pp + 1] = tmp.c_str();
 
                         s_selected_chain_pp++;
@@ -3001,8 +2999,8 @@ namespace put
                                 ImGui::Separator();
                                 ImGui::Text("Technique: %s", pp.name.c_str());
 
-                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0],
-                                                  pp.technique_samplers, &pp.technique_permutation);
+                                show_technique_ui(pp.pmfx_shader, ti, &pp.technique_constants.data[0], pp.technique_samplers,
+                                                  &pp.technique_permutation);
                             }
                         }
 
@@ -3056,14 +3054,14 @@ namespace put
 
             return nullptr;
         }
-        
+
         camera** get_cameras()
         {
             camera** list = nullptr;
-            
+
             for (auto& c : s_controllers)
                 sb_push(list, c.camera);
-            
+
             return list;
         }
     } // namespace pmfx

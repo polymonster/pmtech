@@ -10,12 +10,12 @@
 namespace put
 {
     static const f32 k_use_window_aspect = -1;
-    
+
     enum camera_flags : u32
     {
-        CF_INVALIDATED  = 1 << 1,
+        CF_INVALIDATED = 1 << 1,
         CF_VP_CORRECTED = 1 << 2,
-        CF_ORTHO        = 1 << 3,
+        CF_ORTHO = 1 << 3,
         CF_WINDOW_ASPECT = 1 << 4
     };
 
@@ -43,21 +43,21 @@ namespace put
         vec3f pos = vec3f::zero();
         vec3f focus = vec3f::zero();
         vec2f rot = vec2f(-0.5f, 0.5f);
-        
-        f32   fov = 0.0f;
-        f32   aspect;
-        f32   near_plane;
-        f32   far_plane;
-        f32   zoom  = 60.0f;
+
+        f32 fov = 0.0f;
+        f32 aspect;
+        f32 near_plane;
+        f32 far_plane;
+        f32 zoom = 60.0f;
 
         mat4 view;
         mat4 proj;
 
         u32 cbuffer = (u32)-1;
-        u8  flags   = 0;
+        u8  flags = 0;
 
         frustum camera_frustum;
-        
+
         Str name;
     };
 

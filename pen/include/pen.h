@@ -10,7 +10,7 @@ namespace pen
     enum resource_types
     {
         MAX_RENDERER_RESOURCES = 10000,
-        MAX_AUDIO_RESOURCES    = 100
+        MAX_AUDIO_RESOURCES = 100
     };
 
     // Structs for user to setup, make sure to define:
@@ -27,8 +27,8 @@ namespace pen
 
     struct user_info
     {
-        const c8* user_name         = nullptr;
-        const c8* full_user_name    = nullptr;
+        const c8* user_name = nullptr;
+        const c8* full_user_name = nullptr;
         const c8* working_directory = nullptr;
     };
 

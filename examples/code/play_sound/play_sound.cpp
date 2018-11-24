@@ -34,11 +34,11 @@ void renderer_state_init()
     // raster state
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
-    rcp.fill_mode               = PEN_FILL_SOLID;
-    rcp.cull_mode               = PEN_CULL_BACK;
-    rcp.depth_bias_clamp        = 0.0f;
+    rcp.fill_mode = PEN_FILL_SOLID;
+    rcp.cull_mode = PEN_CULL_BACK;
+    rcp.depth_bias_clamp = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
-    rcp.depth_clip_enable       = true;
+    rcp.depth_clip_enable = true;
 
     raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
 }
@@ -46,15 +46,15 @@ void renderer_state_init()
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
     renderer_state_init();
 
-    u32 sound_index   = pen::audio_create_sound("data/audio/singing.wav");
+    u32 sound_index = pen::audio_create_sound("data/audio/singing.wav");
     u32 channel_index = pen::audio_create_channel_for_sound(sound_index);
-    u32 group_index   = pen::audio_create_channel_group();
+    u32 group_index = pen::audio_create_channel_group();
 
     pen::audio_add_channel_to_group(channel_index, group_index);
 
@@ -64,11 +64,11 @@ PEN_TRV pen::user_entry(void* params)
 
     // cb
     pen::buffer_creation_params bcp;
-    bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-    bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+    bcp.usage_flags = PEN_USAGE_DYNAMIC;
+    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-    bcp.buffer_size      = sizeof(float) * 16;
-    bcp.data             = (void*)nullptr;
+    bcp.buffer_size = sizeof(float) * 16;
+    bcp.data = (void*)nullptr;
 
     u32 cb_2d_view = pen::renderer_create_buffer(bcp);
 
@@ -77,8 +77,8 @@ PEN_TRV pen::user_entry(void* params)
         pen::viewport vp = {0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f};
 
         // create 2d view proj matrix
-        float W         = 2.0f / vp.width;
-        float H         = 2.0f / vp.height;
+        float W = 2.0f / vp.width;
+        float H = 2.0f / vp.height;
         float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
         pen::renderer_update_buffer(cb_2d_view, mvp, sizeof(mvp), 0);
 

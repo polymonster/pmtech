@@ -4,12 +4,12 @@
 #include "dev_ui_icons.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
-#include "pen.h"
-#include "renderer.h"
-#include "pen_json.h"
 #include "maths/vec.h"
+#include "pen.h"
+#include "pen_json.h"
+#include "renderer.h"
 
-#define IMG(I) (void*)(intptr_t)I
+#define IMG(I) (void*)(intptr_t) I
 
 namespace put
 {
@@ -18,9 +18,9 @@ namespace put
         enum io_capture : u32
         {
             NO_INPUT = 0,
-            MOUSE    = 1 << 0,
+            MOUSE = 1 << 0,
             KEYBOARD = 1 << 1,
-            TEXT     = 1 << 2
+            TEXT = 1 << 2
         };
 
         enum e_file_browser_flags : u32
@@ -33,7 +33,7 @@ namespace put
         {
             CONSOLE_MESSAGE = 0,
             CONSOLE_WARNING = 1,
-            CONSOLE_ERROR   = 2
+            CONSOLE_ERROR = 2
         };
 
         enum e_shader : u32
@@ -68,7 +68,7 @@ namespace put
         void      show_platform_info();
         void      image(u32 handle, vec2f size, s32 mip_level = -1);
         void      image_ex(u32 handle, vec2f size, e_shader shader, s32 mip_level = -1);
-        
+
         // generic program preferences
         void      set_program_preference(const c8* name, f32 val);
         void      set_program_preference(const c8* name, s32 val);

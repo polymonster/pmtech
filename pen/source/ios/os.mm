@@ -55,11 +55,11 @@ extern PEN_TRV                     pen::user_entry(void* params);
     self.window.backgroundColor = [UIColor whiteColor];
     [self.window makeKeyAndVisible];
 
-    _gl_context                = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
-    GLKView* view              = [[GLKView alloc] initWithFrame:window_rect];
-    view.context               = _gl_context;
-    view.delegate              = self;
-    view.drawableDepthFormat   = GLKViewDrawableDepthFormat24;
+    _gl_context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
+    GLKView* view = [[GLKView alloc] initWithFrame:window_rect];
+    view.context = _gl_context;
+    view.delegate = self;
+    view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
     view.drawableStencilFormat = GLKViewDrawableStencilFormat8;
 
     [self.window addSubview:view];
@@ -68,14 +68,14 @@ extern PEN_TRV                     pen::user_entry(void* params);
     CADisplayLink* displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(render:)];
     [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
 
-    GLKViewController* viewController       = [[GLKViewController alloc] initWithNibName:nil bundle:nil]; // 1
-    viewController.view                     = view;
-    viewController.delegate                 = self;
+    GLKViewController* viewController = [[GLKViewController alloc] initWithNibName:nil bundle:nil]; // 1
+    viewController.view = view;
+    viewController.delegate = self;
     viewController.preferredFramesPerSecond = 60;
-    self.window.rootViewController          = viewController;
+    self.window.rootViewController = viewController;
 
     // hardcoded for iphone7 right now, as the correct dimension relies on an asset catalog
-    pen_window.width  = 750;  // window_rect.size.width;
+    pen_window.width = 750;   // window_rect.size.width;
     pen_window.height = 1334; // window_rect.size.height;
 
     pen::timer_system_intialise();
@@ -185,14 +185,12 @@ namespace pen
     {
         return false;
     }
-    
+
     void window_get_frame(window_frame& f)
     {
-
     }
-    
+
     void window_set_frame(const window_frame& f)
     {
-
     }
 }

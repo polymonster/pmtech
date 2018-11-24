@@ -37,7 +37,7 @@ namespace put
                 if (!(scene->entities[i] & CMP_ALLOCATED))
                 {
                     free_node_list* l = &scene->free_list[i];
-                    l->next           = scene->free_list_head;
+                    l->next = scene->free_list_head;
 
                     if (l->next)
                         l->next->prev = l;
@@ -53,7 +53,7 @@ namespace put
 
             for (u32 i = 0; i < scene->num_components; ++i)
             {
-                generic_cmp_array& cmp        = scene->get_component_array(i);
+                generic_cmp_array& cmp = scene->get_component_array(i);
                 u32                alloc_size = cmp.size * new_size;
 
                 if (cmp.data)
@@ -62,9 +62,9 @@ namespace put
                     cmp.data = pen::memory_realloc(cmp.data, alloc_size);
 
                     // zero new mem
-                    u32 prev_size  = scene->nodes_size * cmp.size;
+                    u32 prev_size = scene->nodes_size * cmp.size;
                     u8* new_offset = (u8*)cmp.data + prev_size;
-                    u32 zero_size  = alloc_size - prev_size;
+                    u32 zero_size = alloc_size - prev_size;
                     pen::memory_zero(new_offset, zero_size);
 
                     continue;
@@ -98,14 +98,14 @@ namespace put
             }
 
             scene->nodes_size = 0;
-            scene->num_nodes  = 0;
+            scene->num_nodes = 0;
         }
 
         void zero_entity_components(entity_scene* scene, u32 node_index)
         {
             for (u32 i = 0; i < scene->num_components; ++i)
             {
-                generic_cmp_array& cmp    = scene->get_component_array(i);
+                generic_cmp_array& cmp = scene->get_component_array(i);
                 u8*                offset = (u8*)cmp.data + node_index * cmp.size;
                 pen::memory_zero(offset, cmp.size);
             }
@@ -229,7 +229,7 @@ namespace put
             }
             else if (flags == CLONE_MOVE)
             {
-                p_sn->cbuffer[dst]         = p_sn->cbuffer[src];
+                p_sn->cbuffer[dst] = p_sn->cbuffer[src];
                 p_sn->physics_handles[dst] = p_sn->physics_handles[src];
 
                 zero_entity_components(scene, src);
@@ -241,7 +241,7 @@ namespace put
         entity_scene* create_scene(const c8* name)
         {
             entity_scene_instance new_instance;
-            new_instance.name  = name;
+            new_instance.name = name;
             new_instance.scene = new entity_scene();
 
             k_scenes.push_back(new_instance);
@@ -252,29 +252,29 @@ namespace put
             pen::buffer_creation_params bcp;
 
             // forward lights
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size      = sizeof(forward_light_buffer);
-            bcp.data             = nullptr;
+            bcp.buffer_size = sizeof(forward_light_buffer);
+            bcp.data = nullptr;
 
             new_instance.scene->forward_light_buffer = pen::renderer_create_buffer(bcp);
 
             // sdf shadows
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size      = sizeof(distance_field_shadow_buffer);
-            bcp.data             = nullptr;
+            bcp.buffer_size = sizeof(distance_field_shadow_buffer);
+            bcp.data = nullptr;
 
             new_instance.scene->sdf_shadow_buffer = pen::renderer_create_buffer(bcp);
 
             // area lights
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size      = sizeof(area_box_light_buffer);
-            bcp.data             = nullptr;
+            bcp.buffer_size = sizeof(area_box_light_buffer);
+            bcp.data = nullptr;
 
             new_instance.scene->area_box_light_buffer = pen::renderer_create_buffer(bcp);
 
@@ -311,17 +311,17 @@ namespace put
                 volume[i] = get_geometry_resource(id_volume[i]);
 
             static hash_id id_cull_front = PEN_HASH("front_face_cull");
-            u32            cull_front    = pmfx::get_render_state(id_cull_front, pmfx::RS_SAMPLER);
+            u32            cull_front = pmfx::get_render_state(id_cull_front, pmfx::RS_SAMPLER);
 
             static hash_id id_disable_depth = PEN_HASH("disabled");
-            u32            depth_disabled   = pmfx::get_render_state(id_disable_depth, pmfx::RS_SAMPLER);
+            u32            depth_disabled = pmfx::get_render_state(id_disable_depth, pmfx::RS_SAMPLER);
 
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
 
-                u32                t   = scene->lights[n].type;
+                u32                t = scene->lights[n].type;
                 geometry_resource* vol = volume[t];
 
                 pmfx::set_technique_perm(shader, id_technique[t]);
@@ -340,12 +340,12 @@ namespace put
                     case LIGHT_TYPE_DIR:
                         ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
                         ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
-                        ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
+                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
                         break;
                     case LIGHT_TYPE_POINT:
                         ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                         ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
-                        ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
+                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
 
                         if (maths::point_inside_sphere(pos, scene->lights[n].radius, view.camera->pos))
                             inside_volume = true;
@@ -354,8 +354,8 @@ namespace put
                     case LIGHT_TYPE_SPOT:
                         ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                         ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
-                        ld.colour     = vec4f(scene->lights[n].colour, 0.0f);
-                        ld.data       = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
+                        ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                        ld.data = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
 
                         if (maths::point_inside_cone(view.camera->pos, pos, ld.dir_cutoff.xyz, scene->transforms[n].scale.y,
                                                      scene->transforms[n].scale.x))
@@ -445,7 +445,7 @@ namespace put
                     vec3f& min = scene->bounding_volumes[n].transformed_min_extents;
                     vec3f& max = scene->bounding_volumes[n].transformed_max_extents;
 
-                    vec3f pos    = min + (max - min) * 0.5f;
+                    vec3f pos = min + (max - min) * 0.5f;
                     f32   radius = scene->bounding_volumes[n].radius;
 
                     f32 d = maths::point_plane_distance(pos, camera_frustum.p[i], camera_frustum.n[i]);
@@ -466,7 +466,7 @@ namespace put
                 draw_count++;
 
                 cmp_geometry* p_geom = &scene->geometries[n];
-                cmp_material* p_mat  = &scene->materials[n];
+                cmp_material* p_mat = &scene->materials[n];
 
                 // update skin
                 if (scene->entities[n] & CMP_SKINNED && !(scene->entities[n] & CMP_SUB_GEOMETRY))
@@ -474,11 +474,11 @@ namespace put
                     if (p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
                     {
                         pen::buffer_creation_params bcp;
-                        bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-                        bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                         bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                        bcp.buffer_size      = sizeof(mat4) * 85;
-                        bcp.data             = nullptr;
+                        bcp.buffer_size = sizeof(mat4) * 85;
+                        bcp.data = nullptr;
 
                         p_geom->p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
                     }
@@ -500,7 +500,7 @@ namespace put
 
                 if (!is_valid(shader))
                 {
-                    shader        = p_mat->pmfx_shader;
+                    shader = p_mat->pmfx_shader;
                     u32 technique = p_mat->technique;
 
                     pmfx::set_technique(shader, technique);
@@ -629,7 +629,7 @@ namespace put
 
                             if (controller.current_time > anim->length)
                             {
-                                apply_trajectory        = true;
+                                apply_trajectory = true;
                                 controller.current_time = (controller.current_time) - (anim->length);
                             }
                         }
@@ -748,7 +748,7 @@ namespace put
                 }
 
                 f32& trad = scene->bounding_volumes[n].radius;
-                trad      = mag(tmax - tmin) * 0.5f;
+                trad = mag(tmax - tmin) * 0.5f;
 
                 if (!(scene->entities[n] & CMP_GEOMETRY))
                     continue;
@@ -776,7 +776,7 @@ namespace put
 
                 if (scene->entities[p] & CMP_ANIM_CONTROLLER)
                 {
-                    vec3f pad   = (parent_tmax - parent_tmin) * 0.5f;
+                    vec3f pad = (parent_tmax - parent_tmin) * 0.5f;
                     parent_tmin = tmin - pad;
                     parent_tmax = tmax + pad;
                 }
@@ -843,7 +843,7 @@ namespace put
 
             // Forward light buffer
             static forward_light_buffer light_buffer;
-            s32                         pos        = 0;
+            s32                         pos = 0;
             s32                         num_lights = 0;
 
             // directional lights
@@ -863,9 +863,9 @@ namespace put
 
                 // current directional light is a point light very far away
                 // with no attenuation..
-                vec3f light_pos                     = l.direction * k_dir_light_offset;
+                vec3f light_pos = l.direction * k_dir_light_offset;
                 light_buffer.lights[pos].pos_radius = vec4f(light_pos, 0.0);
-                light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+                light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
 
                 ++num_directions_lights;
                 ++num_lights;
@@ -890,7 +890,7 @@ namespace put
                 cmp_transform& t = scene->transforms[n];
 
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
-                light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+                light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
 
                 ++num_point_lights;
                 ++num_lights;
@@ -918,8 +918,8 @@ namespace put
 
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
                 light_buffer.lights[pos].dir_cutoff = vec4f(dir, l.cos_cutoff);
-                light_buffer.lights[pos].colour     = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
-                light_buffer.lights[pos].data       = vec4f(l.spot_falloff, 0.0f, 0.0f, 0.0f);
+                light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+                light_buffer.lights[pos].data = vec4f(l.spot_falloff, 0.0f, 0.0f, 0.0f);
 
                 ++num_spot_lights;
                 ++num_lights;
@@ -939,7 +939,7 @@ namespace put
 
                 static distance_field_shadow_buffer sdf_buffer;
 
-                sdf_buffer.shadows.world_matrix         = scene->world_matrices[n];
+                sdf_buffer.shadows.world_matrix = scene->world_matrices[n];
                 sdf_buffer.shadows.world_matrix_inverse = mat::inverse4x4(scene->world_matrices[n]);
 
                 pen::renderer_update_buffer(scene->sdf_shadow_buffer, &sdf_buffer, sizeof(sdf_buffer));
@@ -958,7 +958,7 @@ namespace put
 
                 static area_box_light_buffer abl_buffer;
 
-                abl_buffer.area_lights.world_matrix         = scene->world_matrices[n];
+                abl_buffer.area_lights.world_matrix = scene->world_matrices[n];
                 abl_buffer.area_lights.world_matrix_inverse = mat::inverse4x4(scene->world_matrices[n]);
 
                 pen::renderer_update_buffer(scene->area_box_light_buffer, &abl_buffer, sizeof(abl_buffer));
@@ -975,7 +975,7 @@ namespace put
 
             // Update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
-            static u32     shader                = pmfx::load_shader("forward_render");
+            static u32     shader = pmfx::load_shader("forward_render");
 
             if (pmfx::set_technique_perm(shader, id_pre_skin_technique))
             {
@@ -989,11 +989,11 @@ namespace put
                     if (geom.p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
                     {
                         pen::buffer_creation_params bcp;
-                        bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-                        bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                         bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                        bcp.buffer_size      = sizeof(mat4) * 85;
-                        bcp.data             = nullptr;
+                        bcp.buffer_size = sizeof(mat4) * 85;
+                        bcp.data = nullptr;
 
                         geom.p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
                     }
@@ -1022,15 +1022,15 @@ namespace put
 
         struct scene_header
         {
-            s32 header_size        = sizeof(*this);
-            s32 version            = entity_scene::k_version;
-            u32 num_nodes          = 0;
-            s32 num_components     = 0;
+            s32 header_size = sizeof(*this);
+            s32 version = entity_scene::k_version;
+            u32 num_nodes = 0;
+            s32 num_components = 0;
             s32 num_lookup_strings = 0;
-            s32 reserved_1[27]     = {0};
-            u32 view_flags         = 0;
-            s32 selected_index     = 0;
-            s32 reserved_2[30]     = {0};
+            s32 reserved_1[27] = {0};
+            u32 view_flags = 0;
+            s32 selected_index = 0;
+            s32 reserved_2[30] = {0};
         };
 
         struct lookup_string
@@ -1048,7 +1048,7 @@ namespace put
             if (strip_project_dir)
             {
                 stripped = pen::str_replace_string(stripped, strip_project_dir, "");
-                string   = stripped.c_str();
+                string = stripped.c_str();
             }
 
             if (!string)
@@ -1153,10 +1153,10 @@ namespace put
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
 
-                cmp_material&      mat     = scene->materials[n];
+                cmp_material&      mat = scene->materials[n];
                 material_resource& mat_res = scene->material_resources[n];
 
-                const char* shader_name    = pmfx::get_shader_name(mat.pmfx_shader);
+                const char* shader_name = pmfx::get_shader_name(mat.pmfx_shader);
                 const char* technique_name = pmfx::get_technique_name(mat.pmfx_shader, mat_res.id_technique);
 
                 write_lookup_string(mat_res.material_name.c_str(), ofs);
@@ -1190,11 +1190,11 @@ namespace put
                                         project_dir.c_str());
                 }
             }
-            
+
             // cameras
             camera** cams = pmfx::get_cameras();
-            u32 num_cams = sb_count(cams);
-            for(u32 i = 0; i < num_cams; ++i)
+            u32      num_cams = sb_count(cams);
+            for (u32 i = 0; i < num_cams; ++i)
             {
                 write_lookup_string(cams[i]->name.c_str(), ofs);
             }
@@ -1218,10 +1218,10 @@ namespace put
 
             // header
             scene_header sh;
-            sh.num_nodes          = scene->num_nodes;
-            sh.view_flags         = scene->view_flags;
-            sh.selected_index     = scene->selected_index;
-            sh.num_components     = scene->num_components;
+            sh.num_nodes = scene->num_nodes;
+            sh.view_flags = scene->view_flags;
+            sh.selected_index = scene->selected_index;
+            sh.num_components = scene->num_components;
             sh.num_lookup_strings = sb_count(s_lookup_strings);
             ofs.write((const c8*)&sh, sizeof(scene_header));
 
@@ -1237,10 +1237,10 @@ namespace put
                 write_parsable_string(s_lookup_strings[l].name.c_str(), ofs);
                 ofs.write((const c8*)&s_lookup_strings[l].id, sizeof(hash_id));
             }
-            
+
             // write camera info
             ofs.write((const c8*)&num_cams, sizeof(u32));
-            for(u32 i = 0; i < num_cams; ++i)
+            for (u32 i = 0; i < num_cams; ++i)
             {
                 hash_id id_cam = PEN_HASH(cams[i]->name);
                 ofs.write((const c8*)&id_cam, sizeof(hash_id));
@@ -1262,7 +1262,7 @@ namespace put
         void load_scene(const c8* filename, entity_scene* scene, bool merge)
         {
             scene->flags |= INVALIDATE_SCENE_TREE;
-            bool error       = false;
+            bool error = false;
             Str  project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
 
             std::ifstream ifs(filename, std::ofstream::binary);
@@ -1273,7 +1273,7 @@ namespace put
 
             if (!merge)
             {
-                scene->version  = sh.version;
+                scene->version = sh.version;
                 scene->filename = filename;
             }
 
@@ -1281,14 +1281,14 @@ namespace put
             s32 num_nodes = sh.num_nodes;
 
             scene->selected_index = sh.selected_index;
-            s32 scene_view_flags  = sh.view_flags;
+            s32 scene_view_flags = sh.view_flags;
 
-            u32 zero_offset   = 0;
+            u32 zero_offset = 0;
             s32 new_num_nodes = num_nodes;
 
             if (merge)
             {
-                zero_offset   = scene->num_nodes;
+                zero_offset = scene->num_nodes;
                 new_num_nodes = scene->num_nodes + num_nodes;
             }
             else
@@ -1322,16 +1322,16 @@ namespace put
 
                 sb_push(s_lookup_strings, ls);
             }
-            
+
             // read cameras
             u32 num_cams;
             ifs.read((c8*)&num_cams, sizeof(u32));
-            
-            for(u32 i = 0; i < num_cams; ++i)
+
+            for (u32 i = 0; i < num_cams; ++i)
             {
-                camera cam;
+                camera  cam;
                 hash_id id_cam;
-                
+
                 ifs.read((c8*)&id_cam, sizeof(hash_id));
                 ifs.read((c8*)&cam.pos, sizeof(vec3f));
                 ifs.read((c8*)&cam.focus, sizeof(vec3f));
@@ -1341,10 +1341,10 @@ namespace put
                 ifs.read((c8*)&cam.near_plane, sizeof(f32));
                 ifs.read((c8*)&cam.far_plane, sizeof(f32));
                 ifs.read((c8*)&cam.zoom, sizeof(f32));
-                
+
                 // find camera and set
                 camera* _cam = pmfx::get_camera(id_cam);
-                if(_cam)
+                if (_cam)
                 {
                     _cam->pos = cam.pos;
                     _cam->focus = cam.focus;
@@ -1369,12 +1369,12 @@ namespace put
                 else
                 {
                     // read the old size
-                    u32 array_size = component_sizes[i]*num_nodes;
+                    u32 array_size = component_sizes[i] * num_nodes;
                     c8* old = (c8*)pen::memory_alloc(array_size);
                     ifs.read(old, array_size);
-                    
+
                     // here any fuxup can be applied old into cmp.data
-                    
+
                     pen::memory_free(old);
                 }
             }
@@ -1390,7 +1390,7 @@ namespace put
                 memset(&scene->geometry_names[n], 0x0, sizeof(Str));
                 memset(&scene->material_names[n], 0x0, sizeof(Str));
 
-                scene->names[n]          = read_lookup_string(ifs);
+                scene->names[n] = read_lookup_string(ifs);
                 scene->geometry_names[n] = read_lookup_string(ifs);
                 scene->material_names[n] = read_lookup_string(ifs);
             }
@@ -1403,11 +1403,11 @@ namespace put
                     u32 submesh;
                     ifs.read((c8*)&submesh, sizeof(u32));
 
-                    Str filename      = project_dir;
-                    Str name          = read_lookup_string(ifs).c_str();
+                    Str filename = project_dir;
+                    Str name = read_lookup_string(ifs).c_str();
                     Str geometry_name = read_lookup_string(ifs);
 
-                    hash_id        name_hash    = PEN_HASH(name.c_str());
+                    hash_id        name_hash = PEN_HASH(name.c_str());
                     static hash_id primitive_id = PEN_HASH("primitive");
 
                     filename.append(name.c_str());
@@ -1433,7 +1433,7 @@ namespace put
                     else
                     {
                         hash_id geom_hash = PEN_HASH(geometry_name.c_str());
-                        gr                = get_geometry_resource(geom_hash);
+                        gr = get_geometry_resource(geom_hash);
                     }
 
                     if (gr)
@@ -1498,7 +1498,7 @@ namespace put
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
 
-                cmp_material&      mat     = scene->materials[n];
+                cmp_material&      mat = scene->materials[n];
                 material_resource& mat_res = scene->material_resources[n];
 
                 // Invalidate stuff we need to recreate
@@ -1507,13 +1507,13 @@ namespace put
                 mat.material_cbuffer = PEN_INVALID_HANDLE;
 
                 Str material_name = read_lookup_string(ifs);
-                Str shader        = read_lookup_string(ifs);
-                Str technique     = read_lookup_string(ifs);
+                Str shader = read_lookup_string(ifs);
+                Str technique = read_lookup_string(ifs);
 
                 mat_res.material_name = material_name;
-                mat_res.id_shader     = PEN_HASH(shader.c_str());
-                mat_res.id_technique  = PEN_HASH(technique.c_str());
-                mat_res.shader_name   = shader;
+                mat_res.id_shader = PEN_HASH(shader.c_str());
+                mat_res.id_technique = PEN_HASH(technique.c_str());
+                mat_res.shader_name = shader;
             }
 
             // sdf shadow
@@ -1523,7 +1523,7 @@ namespace put
                     continue;
 
                 Str sdf_shadow_volume_file = read_lookup_string(ifs);
-                sdf_shadow_volume_file     = pen::str_replace_string(sdf_shadow_volume_file, ".dds", ".pmv");
+                sdf_shadow_volume_file = pen::str_replace_string(sdf_shadow_volume_file, ".dds", ".pmv");
 
                 dev_console_log("[scene load] %s", sdf_shadow_volume_file.c_str());
                 instantiate_sdf_shadow(sdf_shadow_volume_file.c_str(), scene, n);
@@ -1534,28 +1534,28 @@ namespace put
             {
                 if (!(scene->entities[n] & CMP_SAMPLERS))
                     continue;
-                
+
                 cmp_samplers& samplers = scene->samplers[n];
-                
+
                 for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
                 {
                     Str texture_name = read_lookup_string(ifs);
-                    
+
                     if (!texture_name.empty())
                     {
                         samplers.sb[i].handle = put::load_texture(texture_name.c_str());
                         samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
                     }
-                    
+
                     Str sampler_state_name = read_lookup_string(ifs);
-                    
-                    if(!sampler_state_name.empty())
+
+                    if (!sampler_state_name.empty())
                     {
                         samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::RS_SAMPLER);
                     }
                 }
             }
-            
+
             bake_material_handles();
 
             // light geom

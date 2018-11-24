@@ -40,7 +40,7 @@ namespace physics
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
@@ -57,8 +57,8 @@ PEN_TRV pen::user_entry(void* params)
     cc.camera = &main_camera;
     // cc.update_function = &ces::update_model_viewer_camera;
     cc.update_function = nullptr;
-    cc.name            = "model_viewer_camera";
-    cc.id_name         = PEN_HASH(cc.name.c_str());
+    cc.name = "model_viewer_camera";
+    cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
     put::ces::entity_scene* main_scene;
@@ -66,21 +66,21 @@ PEN_TRV pen::user_entry(void* params)
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;
-    sc.scene           = main_scene;
+    sc.scene = main_scene;
     sc.update_function = &ces::update_model_viewer_scene;
-    sc.name            = "main_scene";
-    sc.camera          = &main_camera;
-    sc.id_name         = PEN_HASH(sc.name.c_str());
+    sc.name = "main_scene";
+    sc.camera = &main_camera;
+    sc.id_name = PEN_HASH(sc.name.c_str());
 
     // create view renderers
     put::scene_view_renderer svr_main;
-    svr_main.name            = "ces_render_scene";
-    svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
+    svr_main.name = "ces_render_scene";
+    svr_main.id_name = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
 
     put::scene_view_renderer svr_editor;
-    svr_editor.name            = "ces_render_editor";
-    svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
+    svr_editor.name = "ces_render_editor";
+    svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
 
     pmfx::register_scene_view_renderer(svr_main);
@@ -111,7 +111,7 @@ PEN_TRV pen::user_entry(void* params)
         if (start)
         {
             main_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
-            start           = false;
+            start = false;
         }
 
         main_camera.pos += vec3f::unit_x();

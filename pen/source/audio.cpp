@@ -77,7 +77,7 @@ namespace pen
 
         // initialise double buffer
         g_current_write_buffer = 0;
-        g_current_read_buffer  = 1;
+        g_current_read_buffer = 1;
 
         PEN_ASSERT(result == FMOD_OK);
     }
@@ -241,10 +241,10 @@ namespace pen
         }
 
         // swap buffers
-        u32 prev_read  = g_current_read_buffer;
+        u32 prev_read = g_current_read_buffer;
         s32 prev_write = g_current_write_buffer;
 
-        g_current_read_buffer  = prev_write;
+        g_current_read_buffer = prev_write;
         g_current_write_buffer = prev_read;
     }
 
@@ -409,7 +409,7 @@ namespace pen
     void direct::audio_add_channel_to_group(const u32 channel_index, const u32 group_index)
     {
         FMOD::ChannelGroup* p_group = (FMOD::ChannelGroup*)g_audio_resources[group_index].resource;
-        FMOD::Channel*      p_chan  = (FMOD::Channel*)g_audio_resources[channel_index].resource;
+        FMOD::Channel*      p_chan = (FMOD::Channel*)g_audio_resources[channel_index].resource;
 
         FMOD_RESULT result;
 

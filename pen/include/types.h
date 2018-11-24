@@ -68,10 +68,10 @@ inline bool is_invalid(u32 handle)
 // Generic erors for the few cases erors are handled :)
 enum pen_error
 {
-    PEN_ERR_OK             = 0,
+    PEN_ERR_OK = 0,
     PEN_ERR_FILE_NOT_FOUND = 1,
-    PEN_ERR_NOT_READY      = 2,
-    PEN_ERR_FAILED         = 3
+    PEN_ERR_NOT_READY = 2,
+    PEN_ERR_FAILED = 3
 };
 
 // Minimal amount of macros that are handy to have evrywhere
@@ -92,12 +92,12 @@ inline f16 float_to_half(f32 f)
         uint32_t ui;
     };
 
-    static int const shift      = 13;
+    static int const shift = 13;
     static int const shift_sign = 16;
 
-    static int32_t const infN  = 0x7F800000; // flt32 infinity
-    static int32_t const maxN  = 0x477FE000; // max flt16 normal as a flt32
-    static int32_t const minN  = 0x38800000; // min flt16 normal as a flt32
+    static int32_t const infN = 0x7F800000;  // flt32 infinity
+    static int32_t const maxN = 0x477FE000;  // max flt16 normal as a flt32
+    static int32_t const minN = 0x38800000;  // min flt16 normal as a flt32
     static int32_t const signN = 0x80000000; // flt32 sign bit
 
     static int32_t const infC = infN >> shift;
@@ -113,7 +113,7 @@ inline f16 float_to_half(f32 f)
     static int32_t const minD = minC - subC - 1;
 
     bits v, s;
-    v.f           = f;
+    v.f = f;
     uint32_t sign = v.si & signN;
     v.si ^= sign;
     sign >>= shift_sign; // logical shift

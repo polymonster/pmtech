@@ -69,7 +69,7 @@ static int  ctx_error_handler(Display* dpy, XErrorEvent* ev)
 
 void users()
 {
-    static struct passwd* pw      = getpwuid(getuid());
+    static struct passwd* pw = getpwuid(getuid());
     const char*           homedir = pw->pw_dir;
 
     pen_user_info.user_name = &homedir[6];
@@ -83,8 +83,8 @@ int main(int argc, char* argv[])
     XSetWindowAttributes frame_attributes;
 
     _display = XOpenDisplay(NULL);
-    visual   = DefaultVisual(_display, 0);
-    depth    = DefaultDepth(_display, 0);
+    visual = DefaultVisual(_display, 0);
+    depth = DefaultDepth(_display, 0);
 
     // Check glx version
     s32 glx_major, glx_minor = 0;
@@ -93,13 +93,13 @@ int main(int argc, char* argv[])
     // glx setup
     const char* glxExts = glXQueryExtensionsString(_display, DefaultScreen(_display));
 
-    ctx_error_occured                         = false;
+    ctx_error_occured = false;
     int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctx_error_handler);
 
     // find fb with matching samples
     s32          fbcount;
     s32          chosen_fb = 0;
-    GLXFBConfig* fbc       = glXChooseFBConfig(_display, DefaultScreen(_display), visual_attribs, &fbcount);
+    GLXFBConfig* fbc = glXChooseFBConfig(_display, DefaultScreen(_display), visual_attribs, &fbcount);
     for (int i = 0; i < fbcount; ++i)
     {
         XVisualInfo* vi = glXGetVisualFromFBConfig(_display, fbc[i]);
@@ -122,10 +122,10 @@ int main(int argc, char* argv[])
 
     XSetWindowAttributes swa;
     Colormap             cmap;
-    swa.colormap = cmap   = XCreateColormap(_display, RootWindow(_display, vi->screen), vi->visual, AllocNone);
+    swa.colormap = cmap = XCreateColormap(_display, RootWindow(_display, vi->screen), vi->visual, AllocNone);
     swa.background_pixmap = None;
-    swa.border_pixel      = 0;
-    swa.event_mask        = StructureNotifyMask;
+    swa.border_pixel = 0;
+    swa.event_mask = StructureNotifyMask;
 
     _window = XCreateWindow(_display, RootWindow(_display, vi->screen), 0, 0, pen_window.width, pen_window.height, 0,
                             vi->depth, InputOutput, vi->visual, CWBorderPixel | CWColormap | CWEventMask, &swa);
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
     pen_make_gl_context_current();
 
     glewExperimental = true;
-    GLenum err       = glewInit();
+    GLenum err = glewInit();
     if (err != GLEW_OK)
     {
         PEN_LOG("Error: glewInit failed: %s\n", glewGetErrorString(err));
@@ -343,7 +343,7 @@ namespace pen
                 {
                     XWindowAttributes attribs;
                     XGetWindowAttributes(_display, _window, &attribs);
-                    pen_window.width  = attribs.width;
+                    pen_window.width = attribs.width;
                     pen_window.height = attribs.height;
                 }
                 break;
@@ -424,18 +424,16 @@ namespace pen
 
     void window_get_size(s32& width, s32& height)
     {
-        width  = pen_window.width;
+        width = pen_window.width;
         height = pen_window.height;
     }
-    
+
     void window_get_frame(window_frame& f)
     {
-        
     }
-    
+
     void window_set_frame(const window_frame& f)
     {
-        
     }
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)

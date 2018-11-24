@@ -35,18 +35,18 @@
 
 static void* stb__sbgrowf(void* arr, int increment, int itemsize)
 {
-    int start      = stb_sb_count(arr);
-    int dbl_cur    = arr ? 2 * stb__sbm(arr) : 0;
+    int start = stb_sb_count(arr);
+    int dbl_cur = arr ? 2 * stb__sbm(arr) : 0;
     int min_needed = stb_sb_count(arr) + increment;
-    int m          = dbl_cur > min_needed ? dbl_cur : min_needed;
+    int m = dbl_cur > min_needed ? dbl_cur : min_needed;
 
     // stretch buffer and zero mem
     int* p = nullptr;
     {
         uint32_t total_size = itemsize * m + sizeof(int) * 2;
-        p                   = (int*)realloc(arr ? stb__sbraw(arr) : 0, total_size);
+        p = (int*)realloc(arr ? stb__sbraw(arr) : 0, total_size);
 
-        char*    pp            = (char*)p;
+        char*    pp = (char*)p;
         uint32_t preserve_size = sizeof(int) * 2 + itemsize * start;
         memset(pp + preserve_size, 0x00, total_size - preserve_size);
     }
@@ -73,7 +73,7 @@ template <class T>
 struct pen_stack
 {
     T*  data = nullptr;
-    int pos  = 0;
+    int pos = 0;
 
     void clear()
     {
@@ -113,46 +113,46 @@ template <class T>
 struct pen_ring_buffer
 {
     T* data = nullptr;
-    
+
     a_u32 get_pos;
     a_u32 put_pos;
     a_u32 _capacity;
-    
+
     pen_ring_buffer()
     {
         get_pos = 0;
         put_pos = 0;
         _capacity = 0;
     }
-    
+
     void create(u32 capacity)
     {
         get_pos = 0;
         put_pos = 0;
         _capacity = capacity;
-        
+
         data = new T[_capacity.load()];
     }
-    
+
     ~pen_ring_buffer()
     {
         delete data;
     }
-    
+
     void put(const T& item)
     {
         data[put_pos] = item;
-        put_pos =  (put_pos + 1) % _capacity;
+        put_pos = (put_pos + 1) % _capacity;
     }
-    
+
     T* get()
     {
         u32 gp = get_pos;
-        if(gp == put_pos)
+        if (gp == put_pos)
             return nullptr;
-        
+
         get_pos = (get_pos + 1) % _capacity;
-        
+
         return &data[gp];
     }
 };

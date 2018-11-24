@@ -15,15 +15,15 @@ namespace put
     enum pmm_transform_types
     {
         PMM_TRANSLATE = 0,
-        PMM_ROTATE    = 1,
-        PMM_MATRIX    = 2,
+        PMM_ROTATE = 1,
+        PMM_MATRIX = 2,
         PMM_IDENTITY
     };
 
     // id hashes
     const hash_id ID_CONTROL_RIG = PEN_HASH("controlrig");
-    const hash_id ID_JOINT       = PEN_HASH("joint");
-    const hash_id ID_TRAJECTORY  = PEN_HASH("trajectoryshjnt");
+    const hash_id ID_JOINT = PEN_HASH("joint");
+    const hash_id ID_TRAJECTORY = PEN_HASH("trajectoryshjnt");
 
     namespace ces
     {
@@ -58,10 +58,10 @@ namespace put
             physics::constraint_params& cp = scene->physics_data[node_index].constraint;
 
             // hinge
-            s32 rb   = cp.rb_indices[0];
+            s32 rb = cp.rb_indices[0];
             cp.pivot = scene->transforms[node_index].translation - scene->physics_data[rb].rigid_body.position;
 
-            scene->physics_handles[node_index]   = physics::add_constraint(cp);
+            scene->physics_handles[node_index] = physics::add_constraint(cp);
             scene->physics_data[node_index].type = PHYSICS_TYPE_CONSTRAINT;
 
             scene->entities[node_index] |= CMP_CONSTRAINT;
@@ -69,14 +69,14 @@ namespace put
 
         void instantiate_rigid_body(entity_scene* scene, u32 node_index)
         {
-            u32                         s  = node_index;
+            u32                         s = node_index;
             physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
 
             vec3f min = scene->bounding_volumes[s].min_extents;
             vec3f max = scene->bounding_volumes[s].max_extents;
 
-            vec3f pos      = scene->transforms[s].translation;
-            vec3f scale    = scene->transforms[s].scale;
+            vec3f pos = scene->transforms[s].translation;
+            vec3f scale = scene->transforms[s].scale;
             quat  rotation = scene->transforms[s].rotation;
 
             scene->offset_matrices[s] = mat::create_scale(scale);
@@ -100,12 +100,12 @@ namespace put
             mat4 start_transform = mrot * mat::create_translation(pos);
 
             // masks / groups are currently hardcoded.
-            rb.group         = 1;
+            rb.group = 1;
             rb.shape_up_axis = physics::UP_Y;
-            rb.mask          = 0xffffffff;
-            rb.start_matrix  = start_transform;
+            rb.mask = 0xffffffff;
+            rb.start_matrix = start_transform;
 
-            scene->physics_handles[s]            = physics::add_rb(rb);
+            scene->physics_handles[s] = physics::add_rb(rb);
             scene->physics_data[node_index].type = PHYSICS_TYPE_RIGID_BODY;
 
             scene->entities[s] |= CMP_PHYSICS;
@@ -127,22 +127,22 @@ namespace put
             cmp_geometry* instance = &scene->geometries[node_index];
 
             instance->position_buffer = gr->position_buffer;
-            instance->vertex_buffer   = gr->vertex_buffer;
-            instance->index_buffer    = gr->index_buffer;
-            instance->num_indices     = gr->num_indices;
-            instance->num_vertices    = gr->num_vertices;
-            instance->index_type      = gr->index_type;
-            instance->vertex_size     = gr->vertex_size;
-            instance->p_skin          = gr->p_skin;
+            instance->vertex_buffer = gr->vertex_buffer;
+            instance->index_buffer = gr->index_buffer;
+            instance->num_indices = gr->num_indices;
+            instance->num_vertices = gr->num_vertices;
+            instance->index_type = gr->index_type;
+            instance->vertex_size = gr->vertex_size;
+            instance->p_skin = gr->p_skin;
 
             cmp_bounding_volume* bv = &scene->bounding_volumes[node_index];
 
             bv->min_extents = gr->min_extents;
             bv->max_extents = gr->max_extents;
-            bv->radius      = mag(bv->max_extents - bv->min_extents) * 0.5f;
+            bv->radius = mag(bv->max_extents - bv->min_extents) * 0.5f;
 
             scene->geometry_names[node_index] = gr->geometry_name;
-            scene->id_geometry[node_index]    = gr->hash;
+            scene->id_geometry[node_index] = gr->hash;
             scene->entities[node_index] |= CMP_GEOMETRY;
 
             if (gr->p_skin)
@@ -167,7 +167,7 @@ namespace put
 
             // release cbuffer
             pen::renderer_release_buffer(scene->cbuffer[node_index]);
-            scene->cbuffer[node_index]        = PEN_INVALID_HANDLE;
+            scene->cbuffer[node_index] = PEN_INVALID_HANDLE;
             scene->geometry_names[node_index] = "";
 
             // release matrial cbuffer
@@ -193,11 +193,11 @@ namespace put
             scene->materials[node_index].material_cbuffer_size = size;
 
             pen::buffer_creation_params bcp;
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size      = scene->materials[node_index].material_cbuffer_size;
-            bcp.data             = nullptr;
+            bcp.buffer_size = scene->materials[node_index].material_cbuffer_size;
+            bcp.data = nullptr;
 
             scene->materials[node_index].material_cbuffer = pen::renderer_create_buffer(bcp);
         }
@@ -205,29 +205,29 @@ namespace put
         void instantiate_model_cbuffer(entity_scene* scene, s32 node_index)
         {
             pen::buffer_creation_params bcp;
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size      = sizeof(cmp_draw_call);
-            bcp.data             = nullptr;
+            bcp.buffer_size = sizeof(cmp_draw_call);
+            bcp.data = nullptr;
 
             scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
         }
 
         void instantiate_model_pre_skin(entity_scene* scene, s32 node_index)
         {
-            cmp_geometry& geom     = scene->geometries[node_index];
+            cmp_geometry& geom = scene->geometries[node_index];
             cmp_pre_skin& pre_skin = scene->pre_skin[node_index];
 
             u32 num_verts = geom.num_vertices;
 
             // stream out / transform feedback vertex buffer
             pen::buffer_creation_params bcp;
-            bcp.usage_flags      = PEN_USAGE_DEFAULT;
-            bcp.bind_flags       = PEN_STREAM_OUT_VERTEX_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_STREAM_OUT_VERTEX_BUFFER;
             bcp.cpu_access_flags = 0;
-            bcp.buffer_size      = sizeof(vertex_model) * num_verts;
-            bcp.data             = nullptr;
+            bcp.buffer_size = sizeof(vertex_model) * num_verts;
+            bcp.data = nullptr;
 
             u32 vb = pen::renderer_create_buffer(bcp);
             u32 pb = 0; // todo - position only buffer is currently not used
@@ -235,15 +235,15 @@ namespace put
             // swap the bufers around
 
             // pre_skin has skinned vertex format containing weights and indices
-            pre_skin.vertex_buffer   = geom.vertex_buffer;
+            pre_skin.vertex_buffer = geom.vertex_buffer;
             pre_skin.position_buffer = geom.position_buffer;
-            pre_skin.vertex_size     = geom.vertex_size;
-            pre_skin.num_verts       = geom.num_vertices;
+            pre_skin.vertex_size = geom.vertex_size;
+            pre_skin.num_verts = geom.num_vertices;
 
             // geometry has the stream out target and non-skinned vertex format
-            geom.vertex_buffer   = vb;
+            geom.vertex_buffer = vb;
             geom.position_buffer = pb;
-            geom.vertex_size     = sizeof(vertex_model);
+            geom.vertex_size = sizeof(vertex_model);
 
             // set pre-skinned and unset skinned
             scene->entities[node_index] |= CMP_PRE_SKINNED;
@@ -279,7 +279,7 @@ namespace put
                             scene->parents[jnode] = node_index;
                 }
 
-                controller.current_time  = 0.0f;
+                controller.current_time = 0.0f;
                 controller.current_frame = 0;
 
                 scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
@@ -291,13 +291,13 @@ namespace put
             pen::json pmv = pen::json::load_from_file(pmv_filename);
 
             Str volume_texture_filename = pmv["filename"].as_str();
-            u32 volume_texture          = put::load_texture(volume_texture_filename.c_str());
+            u32 volume_texture = put::load_texture(volume_texture_filename.c_str());
 
             vec3f scale = vec3f(pmv["scale_x"].as_f32(), pmv["scale_y"].as_f32(), pmv["scale_z"].as_f32());
 
             hash_id id_type = pmv["volume_type"].as_hash_id();
 
-            static hash_id id_sdf   = PEN_HASH("signed_distance_field");
+            static hash_id id_sdf = PEN_HASH("signed_distance_field");
             static hash_id id_cl = PEN_HASH("clamp_linear");
             if (id_type != id_sdf)
             {
@@ -306,9 +306,9 @@ namespace put
                 return;
             }
 
-            scene->transforms[node_index].scale       = scale;
+            scene->transforms[node_index].scale = scale;
             scene->shadows[node_index].texture_handle = volume_texture;
-            scene->shadows[node_index].sampler_state  = pmfx::get_render_state(id_cl, pmfx::RS_SAMPLER);
+            scene->shadows[node_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::RS_SAMPLER);
         }
 
         void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)
@@ -329,8 +329,8 @@ namespace put
                 }
             }
 
-            u32* p_reader   = (u32*)data;
-            u32  version    = *p_reader++;
+            u32* p_reader = (u32*)data;
+            u32  version = *p_reader++;
             u32  num_meshes = *p_reader++;
 
             if (version < 1)
@@ -352,14 +352,14 @@ namespace put
 
                 geometry_resource* p_geometry = new geometry_resource;
 
-                p_geometry->p_skin           = nullptr;
-                p_geometry->file_hash        = file_hash;
-                p_geometry->hash             = sub_hash;
-                p_geometry->geometry_name    = geometry_name;
-                p_geometry->filename         = filename;
-                p_geometry->material_name    = mat_names[submesh];
+                p_geometry->p_skin = nullptr;
+                p_geometry->file_hash = file_hash;
+                p_geometry->hash = sub_hash;
+                p_geometry->geometry_name = geometry_name;
+                p_geometry->filename = filename;
+                p_geometry->material_name = mat_names[submesh];
                 p_geometry->material_id_name = PEN_HASH(mat_names[submesh].c_str());
-                p_geometry->submesh_index    = submesh;
+                p_geometry->submesh_index = submesh;
 
                 memcpy(&p_geometry->min_extents, p_reader, sizeof(vec3f));
                 p_reader += 3;
@@ -368,11 +368,11 @@ namespace put
                 p_reader += 3;
 
                 // vb and ib
-                u32 num_pos_floats       = *p_reader++;
-                u32 num_floats           = *p_reader++;
-                u32 num_indices          = *p_reader++;
+                u32 num_pos_floats = *p_reader++;
+                u32 num_floats = *p_reader++;
+                u32 num_indices = *p_reader++;
                 u32 num_collision_floats = *p_reader++;
-                u32 skinned              = *p_reader++;
+                u32 skinned = *p_reader++;
 
                 u32 index_size = num_indices < 65535 ? 2 : 4;
 
@@ -413,17 +413,17 @@ namespace put
                 p_geometry->vertex_size = vertex_size;
 
                 // all vertex data is written out as 4 byte ints
-                u32 num_verts     = num_floats / (vertex_size / sizeof(u32));
+                u32 num_verts = num_floats / (vertex_size / sizeof(u32));
                 u32 num_pos_verts = num_pos_floats / (sizeof(vertex_position) / sizeof(u32));
 
                 p_geometry->num_vertices = num_verts;
 
                 pen::buffer_creation_params bcp;
-                bcp.usage_flags      = PEN_USAGE_DEFAULT;
-                bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
+                bcp.usage_flags = PEN_USAGE_DEFAULT;
+                bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
                 bcp.cpu_access_flags = 0;
-                bcp.buffer_size      = sizeof(vertex_position) * num_pos_verts;
-                bcp.data             = (void*)p_reader;
+                bcp.buffer_size = sizeof(vertex_position) * num_pos_verts;
+                bcp.data = (void*)p_reader;
 
                 // keep a cpu copy of position data
                 p_geometry->cpu_position_buffer = pen::memory_alloc(bcp.buffer_size);
@@ -443,20 +443,20 @@ namespace put
                 p_reader += bcp.buffer_size / sizeof(f32);
 
                 bcp.buffer_size = vertex_size * num_verts;
-                bcp.data        = (void*)p_reader;
+                bcp.data = (void*)p_reader;
 
                 p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
                 p_reader += bcp.buffer_size / sizeof(u32);
 
-                bcp.usage_flags      = PEN_USAGE_DEFAULT;
-                bcp.bind_flags       = PEN_BIND_INDEX_BUFFER;
+                bcp.usage_flags = PEN_USAGE_DEFAULT;
+                bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
                 bcp.cpu_access_flags = 0;
-                bcp.buffer_size      = index_size * num_indices;
-                bcp.data             = (void*)p_reader;
+                bcp.buffer_size = index_size * num_indices;
+                bcp.data = (void*)p_reader;
 
-                p_geometry->num_indices  = num_indices;
-                p_geometry->index_type   = index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
+                p_geometry->num_indices = num_indices;
+                p_geometry->index_type = index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
                 p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
 
                 // keep a cpu copy of index data
@@ -486,7 +486,7 @@ namespace put
 
         void instantiate_material(material_resource* mr, entity_scene* scene, u32 node_index)
         {
-            scene->id_material[node_index]    = mr->hash;
+            scene->id_material[node_index] = mr->hash;
             scene->material_names[node_index] = mr->material_name;
 
             scene->entities[node_index] |= CMP_MATERIAL;
@@ -494,11 +494,11 @@ namespace put
             // set defaults
             if (mr->id_shader == 0)
             {
-                static hash_id id_default_shader    = PEN_HASH("forward_render");
+                static hash_id id_default_shader = PEN_HASH("forward_render");
                 static hash_id id_default_technique = PEN_HASH("forward_lit");
 
-                mr->shader_name  = "forward_render";
-                mr->id_shader    = id_default_shader;
+                mr->shader_name = "forward_render";
+                mr->id_shader = id_default_shader;
                 mr->id_technique = id_default_technique;
             }
 
@@ -514,17 +514,17 @@ namespace put
 
             bake_material_handles(scene, node_index);
         }
-        
+
         void permutation_flags_from_vertex_class(u32& permutation, hash_id vertex_class)
         {
             u32 clear_vertex = ~(PERMUTATION_SKINNED | PERMUTATION_INSTANCED);
             permutation &= clear_vertex;
-            
-            if(vertex_class == ID_VERTEX_CLASS_SKINNED)
+
+            if (vertex_class == ID_VERTEX_CLASS_SKINNED)
                 permutation |= PERMUTATION_SKINNED;
-            
-            if(vertex_class == ID_VERTEX_CLASS_INSTANCED)
-                permutation |=  PERMUTATION_INSTANCED;
+
+            if (vertex_class == ID_VERTEX_CLASS_INSTANCED)
+                permutation |= PERMUTATION_INSTANCED;
         }
 
         void bake_material_handles(entity_scene* scene, u32 node_index)
@@ -540,35 +540,35 @@ namespace put
 
             // shader
             material->pmfx_shader = pmfx::load_shader(resource->shader_name.c_str());
-            if(!is_valid(material->pmfx_shader))
+            if (!is_valid(material->pmfx_shader))
                 return;
-            
+
             // permutation form geom
             permutation_flags_from_vertex_class(permutation, geometry->vertex_shader_class);
 
             // technique / permutation
             material->technique = pmfx::get_technique_index_perm(material->pmfx_shader, resource->id_technique, permutation);
-            
+
             PEN_ASSERT(is_valid(material->technique));
-                        
+
             // material / technique constant buffers
             s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->pmfx_shader, material->technique);
-            
+
             if (!(scene->state_flags[node_index] & SF_MATERIAL_INITIALISED))
             {
                 pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique,
                                                    scene->material_data[node_index].data);
-                
+
                 scene->state_flags[node_index] |= SF_MATERIAL_INITIALISED;
             }
-            
+
             instantiate_material_cbuffer(scene, node_index, cbuffer_size);
-            
+
             // material samplers
             if (!(scene->state_flags[node_index] & SF_SAMPLERS_INITIALISED))
             {
                 pmfx::initialise_sampler_defaults(material->pmfx_shader, material->technique, samplers);
-                
+
                 // set material texture from source data
                 for (u32 t = 0; t < SN_NUM_TEXTURES; ++t)
                 {
@@ -579,17 +579,17 @@ namespace put
                             if (samplers.sb[s].sampler_unit == t)
                             {
                                 samplers.sb[s].id_texture = PEN_HASH(put::get_texture_filename(resource->texture_handles[t]));
-                                samplers.sb[s].handle     = resource->texture_handles[t];
+                                samplers.sb[s].handle = resource->texture_handles[t];
                                 break;
                             }
                         }
                     }
                 }
-                
+
                 scene->entities[node_index] |= CMP_SAMPLERS;
                 scene->state_flags[node_index] |= SF_SAMPLERS_INITIALISED;
             }
-            
+
             // bake ss handles
             for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
                 if (samplers.sb[s].id_sampler_state != 0)
@@ -634,7 +634,7 @@ namespace put
             material_resource* p_mat = new material_resource;
 
             p_mat->material_name = material_name;
-            p_mat->hash          = hash;
+            p_mat->hash = hash;
 
             // diffuse
             memcpy(&p_mat->data[0], p_reader, sizeof(vec4f));
@@ -668,8 +668,8 @@ namespace put
 
             for (u32 map = 0; map < num_maps; ++map)
             {
-                u32 map_type                     = *p_reader++;
-                Str texture_name                 = read_parsable_string(&p_reader);
+                u32 map_type = *p_reader++;
+                Str texture_name = read_parsable_string(&p_reader);
                 p_mat->texture_handles[map_type] = put::load_texture(texture_name.c_str());
             }
 
@@ -730,28 +730,28 @@ namespace put
             k_animations.push_back(animation_resource());
             animation_resource& new_animation = k_animations.back();
 
-            new_animation.name    = stipped_filename;
+            new_animation.name = stipped_filename;
             new_animation.id_name = filename_hash;
 
             u32 num_channels = *p_u32reader++;
 
             new_animation.num_channels = num_channels;
-            new_animation.channels     = new animation_channel[num_channels];
+            new_animation.channels = new animation_channel[num_channels];
 
             new_animation.length = 0.0f;
-            new_animation.step   = FLT_MAX;
+            new_animation.step = FLT_MAX;
 
             for (s32 i = 0; i < num_channels; ++i)
             {
-                Str bone_name                    = read_parsable_string(&p_u32reader);
+                Str bone_name = read_parsable_string(&p_u32reader);
                 new_animation.channels[i].target = PEN_HASH(bone_name.c_str());
 
                 u32 num_sources = *p_u32reader++;
 
                 for (s32 j = 0; j < num_sources; ++j)
                 {
-                    u32 sematic    = *p_u32reader++;
-                    u32 type       = *p_u32reader++;
+                    u32 sematic = *p_u32reader++;
+                    u32 type = *p_u32reader++;
                     u32 num_floats = *p_u32reader++;
 
                     if (type > 1)
@@ -766,7 +766,7 @@ namespace put
                     {
                         case A_TIME:
                             new_animation.channels[i].num_frames = num_floats;
-                            new_animation.channels[i].times      = data;
+                            new_animation.channels[i].times = data;
                             break;
                         case A_TRANSFORM:
                             new_animation.channels[i].matrices = (mat4*)data;
@@ -781,7 +781,7 @@ namespace put
                     f32* times = new_animation.channels[i].times;
                     if (t > 0)
                     {
-                        f32 interval       = times[t] - times[t - 1];
+                        f32 interval = times[t] - times[t - 1];
                         new_animation.step = fmin(new_animation.step, interval);
                     }
 
@@ -817,8 +817,8 @@ namespace put
 
             const u32* p_u32reader = (u32*)model_file;
 
-            u32 num_scene     = *p_u32reader++;
-            u32 num_geom      = *p_u32reader++;
+            u32 num_scene = *p_u32reader++;
+            u32 num_geom = *p_u32reader++;
             u32 num_materials = *p_u32reader++;
 
             std::vector<u32> scene_offsets;
@@ -850,8 +850,8 @@ namespace put
 
             c8* p_data_start = (c8*)p_u32reader;
 
-            p_u32reader          = (u32*)p_data_start + scene_offsets[0];
-            u32 version          = *p_u32reader++;
+            p_u32reader = (u32*)p_data_start + scene_offsets[0];
+            u32 version = *p_u32reader++;
             u32 num_import_nodes = *p_u32reader++;
 
             if (version < 1)
@@ -890,21 +890,21 @@ namespace put
             get_new_nodes_append(scene, num_import_nodes, nodes_start, nodes_end);
 
             u32 node_zero_offset = nodes_start;
-            u32 current_node     = node_zero_offset;
-            u32 inserted_nodes   = 0;
+            u32 current_node = node_zero_offset;
+            u32 inserted_nodes = 0;
 
             // load scene nodes
             for (u32 n = 0; n < num_import_nodes; ++n)
             {
                 p_u32reader++; // e_node type
 
-                Str node_name     = read_parsable_string(&p_u32reader);
+                Str node_name = read_parsable_string(&p_u32reader);
                 Str geometry_name = read_parsable_string(&p_u32reader);
 
-                scene->id_name[current_node]     = PEN_HASH(node_name.c_str());
+                scene->id_name[current_node] = PEN_HASH(node_name.c_str());
                 scene->id_geometry[current_node] = PEN_HASH(geometry_name.c_str());
 
-                scene->names[current_node]          = node_name;
+                scene->names[current_node] = node_name;
                 scene->geometry_names[current_node] = geometry_name;
 
                 scene->entities[current_node] |= CMP_ALLOCATED;
@@ -922,16 +922,16 @@ namespace put
                 // material pre load
                 for (u32 mat = 0; mat < num_meshes; ++mat)
                 {
-                    Str name   = read_parsable_string(&p_u32reader);
+                    Str name = read_parsable_string(&p_u32reader);
                     Str symbol = read_parsable_string(&p_u32reader);
 
                     mesh_material_names.push_back({PEN_HASH(symbol.c_str()), name});
                 }
 
                 // transformation load
-                u32 parent                   = *p_u32reader++ + node_zero_offset + inserted_nodes;
+                u32 parent = *p_u32reader++ + node_zero_offset + inserted_nodes;
                 scene->parents[current_node] = parent;
-                u32 transforms               = *p_u32reader++;
+                u32 transforms = *p_u32reader++;
 
                 // parent fix up
                 if (scene->id_name[current_node] == ID_CONTROL_RIG)
@@ -941,7 +941,7 @@ namespace put
                 vec4f rotations[3];
                 mat4  matrix;
                 bool  has_matrix_transform = false;
-                u32   num_rotations        = 0;
+                u32   num_rotations = 0;
 
                 static f32 zero_rotation_epsilon = 0.000001f;
                 for (u32 t = 0; t < transforms; ++t)
@@ -970,7 +970,7 @@ namespace put
                             break;
                         case PMM_IDENTITY:
                             has_matrix_transform = true;
-                            matrix               = mat4::create_identity();
+                            matrix = mat4::create_identity();
                             break;
                         default:
                             // unsupported transform type
@@ -1020,8 +1020,8 @@ namespace put
                 {
                     // create matrix from transform
                     scene->transforms[current_node].translation = translation;
-                    scene->transforms[current_node].rotation    = final_rotation;
-                    scene->transforms[current_node].scale       = vec3f::one();
+                    scene->transforms[current_node].rotation = final_rotation;
+                    scene->transforms[current_node].scale = vec3f::one();
 
                     // make a transform matrix for geometry
                     mat4 rot_mat;
@@ -1169,7 +1169,7 @@ namespace put
             pen::json pmv = pen::json::load_from_file(filename);
 
             Str volume_texture_filename = pmv["filename"].as_str();
-            u32 volume_texture          = put::load_texture(volume_texture_filename.c_str());
+            u32 volume_texture = put::load_texture(volume_texture_filename.c_str());
 
             vec3f scale = vec3f(pmv["scale_x"].as_f32(), pmv["scale_y"].as_f32(), pmv["scale_z"].as_f32());
 
@@ -1191,13 +1191,13 @@ namespace put
             }
 
             // create material for volume sdf sphere trace
-            material_resource* material                   = new material_resource;
-            material->material_name                       = "volume_sdf_material";
-            material->shader_name                         = "pmfx_utility";
-            material->id_shader                           = PEN_HASH("pmfx_utility");
-            material->id_technique                        = vi[i].id_technique;
+            material_resource* material = new material_resource;
+            material->material_name = "volume_sdf_material";
+            material->shader_name = "pmfx_utility";
+            material->id_shader = PEN_HASH("pmfx_utility");
+            material->id_technique = vi[i].id_technique;
             material->id_sampler_state[SN_VOLUME_TEXTURE] = vi[i].id_sampler_state;
-            material->texture_handles[SN_VOLUME_TEXTURE]  = volume_texture;
+            material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
             add_material_resource(material);
 
             geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
@@ -1208,8 +1208,8 @@ namespace put
 
             scene->names[v] = "volume";
             scene->names[v].appendf("%i", v);
-            scene->transforms[v].rotation    = quat();
-            scene->transforms[v].scale       = scale;
+            scene->transforms[v].rotation = quat();
+            scene->transforms[v].scale = scale;
             scene->transforms[v].translation = pos;
             scene->entities[v] |= CMP_TRANSFORM;
             scene->parents[v] = v;

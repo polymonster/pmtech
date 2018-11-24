@@ -140,28 +140,28 @@ namespace
                 case JSON_U32:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                    result.u    = atoi(tok_str);
+                    result.u = atoi(tok_str);
                     pen::memory_free(tok_str);
                 }
                 break;
                 case JSON_S32:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                    result.s    = atol(tok_str);
+                    result.s = atol(tok_str);
                     pen::memory_free(tok_str);
                 }
                 break;
                 case JSON_U32_HEX:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                    result.u    = strtol(tok_str, NULL, 16);
+                    result.u = strtol(tok_str, NULL, 16);
                     pen::memory_free(tok_str);
                     break;
                 }
                 case JSON_F32:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                    result.f    = (f32)atof(tok_str);
+                    result.f = (f32)atof(tok_str);
                     pen::memory_free(tok_str);
                 }
                 break;
@@ -274,7 +274,7 @@ namespace
                     create_json_object(result.object);
 
                     ep.return_value = 1;
-                    ep.get_next     = false;
+                    ep.get_next = false;
                     return 1;
                 }
 
@@ -292,7 +292,7 @@ namespace
                 create_json_object(result.object);
 
                 ep.return_value = 1;
-                ep.get_next     = false;
+                ep.get_next = false;
                 return 1;
             }
 
@@ -309,7 +309,7 @@ namespace
                     create_json_object(result.object);
 
                     ep.return_value = 1;
-                    ep.get_next     = false;
+                    ep.get_next = false;
                     return 1;
                 }
 
@@ -332,9 +332,9 @@ namespace
     json_object get_object(json_object* jo, const c8* name, s32 index)
     {
         json_value jv;
-        jv.object.name       = nullptr;
-        jv.object.tokens     = nullptr;
-        jv.object.data       = nullptr;
+        jv.object.name = nullptr;
+        jv.object.tokens = nullptr;
+        jv.object.data = nullptr;
         jv.object.num_tokens = 0;
 
         if (jo == NULL)
@@ -353,7 +353,7 @@ namespace
 
         // default try 64 tokens
         u32 token_count = 64;
-        jo.tokens       = new jsmntok_t[token_count];
+        jo.tokens = new jsmntok_t[token_count];
 
         bool loaded = false;
         while (!loaded)
@@ -424,7 +424,7 @@ namespace pen
 
         if (err == PEN_ERR_OK)
         {
-            new_json.m_internal_object       = (json_object*)memory_alloc(sizeof(json_object));
+            new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
             new_json.m_internal_object->data = (c8*)data;
             new_json.m_internal_object->size = size;
             new_json.m_internal_object->name = nullptr;
@@ -453,7 +453,7 @@ namespace pen
 
     enum combine_action
     {
-        json_keep    = 0,
+        json_keep = 0,
         json_combine = 1,
         json_discard = 2
     };
@@ -473,7 +473,7 @@ namespace pen
         memset(j2_action, 0, sizeof(combine_action) * s2);
 
         Str json_string = "{\n";
-        Str indent_str  = "\t";
+        Str indent_str = "\t";
 
         for (s32 i = 0; i < s1; ++i)
         {
@@ -525,7 +525,7 @@ namespace pen
 
             if (j1_action[i] == json_combine)
             {
-                s32  j        = combine_index[i];
+                s32  j = combine_index[i];
                 json combined = combine(j1[i], j2[j], indent + 1);
 
                 json_string.append(indent_str.c_str());
@@ -618,7 +618,7 @@ namespace pen
         // shallow copy default copy ctor
         *dst->m_internal_object = *other.m_internal_object;
 
-        u32 num_tokens                 = other.m_internal_object->num_tokens;
+        u32 num_tokens = other.m_internal_object->num_tokens;
         dst->m_internal_object->tokens = new jsmntok_t[num_tokens];
         memcpy(dst->m_internal_object->tokens, other.m_internal_object->tokens, sizeof(jsmntok_t) * num_tokens);
 
@@ -635,8 +635,8 @@ namespace pen
         // take ownership of name
         if (other.m_internal_object->name)
         {
-            s32 name_size                      = string_length(other.m_internal_object->name);
-            m_internal_object->name            = (c8*)memory_alloc(name_size + 1);
+            s32 name_size = string_length(other.m_internal_object->name);
+            m_internal_object->name = (c8*)memory_alloc(name_size + 1);
             m_internal_object->name[name_size] = '\0';
 
             memcpy(m_internal_object->name, other.m_internal_object->name, name_size);
@@ -847,7 +847,7 @@ namespace pen
     void json::set_filename(const c8* name, const Str& filename)
     {
         Str fn = str_replace_chars(filename, ':', '@');
-        fn     = str_replace_chars(fn, '\\', '/');
+        fn = str_replace_chars(fn, '\\', '/');
 
         set(name, fn);
     }
@@ -855,8 +855,8 @@ namespace pen
     Str json::as_filename(const c8* default_value)
     {
         Str fn = as_str(default_value);
-        fn     = str_replace_chars(fn, '@', ':');
-        fn     = str_replace_chars(fn, '\\', '/');
+        fn = str_replace_chars(fn, '@', ':');
+        fn = str_replace_chars(fn, '\\', '/');
 
         return fn;
     }

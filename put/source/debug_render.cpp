@@ -20,8 +20,8 @@ namespace put
         enum VERTEX_BUFFER_TYPES
         {
             VB_LINES = 0,
-            VB_TRIS  = 1,
-            VB_NUM   = 2
+            VB_TRIS = 1,
+            VB_NUM = 2
         };
 
         struct vertex_debug_3d
@@ -44,22 +44,22 @@ namespace put
 
         u32 vb_3d[VB_NUM];
         u32 line_vert_3d_count = 0;
-        u32 tri_vert_3d_count  = 0;
+        u32 tri_vert_3d_count = 0;
 
         vertex_debug_3d* debug_3d_buffers[VB_NUM] = {0};
-        vertex_debug_3d* debug_3d_verts           = debug_3d_buffers[VB_LINES];
-        vertex_debug_3d* debug_3d_tris            = debug_3d_buffers[VB_TRIS];
+        vertex_debug_3d* debug_3d_verts = debug_3d_buffers[VB_LINES];
+        vertex_debug_3d* debug_3d_tris = debug_3d_buffers[VB_TRIS];
 
         u32 vb_2d[VB_NUM];
-        u32 tri_vert_2d_count  = 0;
+        u32 tri_vert_2d_count = 0;
         u32 line_vert_2d_count = 0;
 
         u32 buffer_2d_size_in_verts[VB_NUM] = {0};
         u32 buffer_3d_size_in_verts[VB_NUM] = {0};
 
         vertex_debug_2d* debug_2d_buffers[VB_NUM] = {0};
-        vertex_debug_2d* debug_2d_verts           = debug_2d_buffers[VB_LINES];
-        vertex_debug_2d* debug_2d_tris            = debug_2d_buffers[VB_TRIS];
+        vertex_debug_2d* debug_2d_verts = debug_2d_buffers[VB_LINES];
+        vertex_debug_2d* debug_2d_tris = debug_2d_buffers[VB_TRIS];
 
         u32 debug_shader;
 
@@ -84,18 +84,18 @@ namespace put
 
             vertex_debug_3d* prev_buffer = debug_3d_buffers[buffer_index];
 
-            u32 prev_vb   = vb_3d[buffer_index];
+            u32 prev_vb = vb_3d[buffer_index];
             u32 prev_size = sizeof(vertex_debug_3d) * buffer_3d_size_in_verts[buffer_index];
 
             buffer_3d_size_in_verts[buffer_index] = num_verts * 2;
 
             // debug lines buffer
             pen::buffer_creation_params bcp;
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size      = sizeof(vertex_debug_3d) * buffer_3d_size_in_verts[buffer_index];
-            bcp.data             = NULL;
+            bcp.buffer_size = sizeof(vertex_debug_3d) * buffer_3d_size_in_verts[buffer_index];
+            bcp.data = NULL;
 
             vb_3d[buffer_index] = pen::renderer_create_buffer(bcp);
 
@@ -110,7 +110,7 @@ namespace put
             }
 
             debug_3d_verts = &debug_3d_buffers[VB_LINES][0];
-            debug_3d_tris  = &debug_3d_buffers[VB_TRIS][0];
+            debug_3d_tris = &debug_3d_buffers[VB_TRIS][0];
         }
 
         void release_2d_buffers()
@@ -129,18 +129,18 @@ namespace put
 
             vertex_debug_2d* prev_buffer = debug_2d_buffers[buffer_index];
 
-            u32 prev_vb   = vb_2d[buffer_index];
+            u32 prev_vb = vb_2d[buffer_index];
             u32 prev_size = sizeof(vertex_debug_2d) * buffer_2d_size_in_verts[buffer_index];
 
             buffer_2d_size_in_verts[buffer_index] = num_verts * 2;
 
             // debug lines buffer
             pen::buffer_creation_params bcp;
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size      = sizeof(vertex_debug_2d) * buffer_2d_size_in_verts[buffer_index];
-            bcp.data             = NULL;
+            bcp.buffer_size = sizeof(vertex_debug_2d) * buffer_2d_size_in_verts[buffer_index];
+            bcp.data = NULL;
 
             vb_2d[buffer_index] = pen::renderer_create_buffer(bcp);
 
@@ -156,7 +156,7 @@ namespace put
             }
 
             debug_2d_verts = &debug_2d_buffers[VB_LINES][0];
-            debug_2d_tris  = &debug_2d_buffers[VB_TRIS][0];
+            debug_2d_tris = &debug_2d_buffers[VB_TRIS][0];
         }
 
         void create_buffers()
@@ -198,7 +198,7 @@ namespace put
             pen::renderer_draw(line_vert_3d_count, 0, PEN_PT_LINELIST);
 
             // reset
-            tri_vert_3d_count  = 0;
+            tri_vert_3d_count = 0;
             line_vert_3d_count = 0;
         }
 
@@ -220,7 +220,7 @@ namespace put
             pen::renderer_draw(line_vert_2d_count, 0, PEN_PT_LINELIST);
 
             // reset
-            tri_vert_2d_count  = 0;
+            tri_vert_2d_count = 0;
             line_vert_2d_count = 0;
         }
 
@@ -228,7 +228,7 @@ namespace put
         {
             alloc_3d_buffer(line_vert_3d_count + 2, VB_LINES);
 
-            debug_3d_verts[line_vert_3d_count].pos     = vec4f(start, 1.0f);
+            debug_3d_verts[line_vert_3d_count].pos = vec4f(start, 1.0f);
             debug_3d_verts[line_vert_3d_count + 1].pos = vec4f(end, 1.0f);
 
             for (u32 j = 0; j < 2; ++j)
@@ -253,15 +253,15 @@ namespace put
                 right = cross(axis, vec3f::unit_x());
 
             vec3f up = cross(axis, right);
-            right    = cross(axis, up);
+            right = cross(axis, up);
 
-            static const s32 segments   = 16;
-            f32              angle      = 0.0;
+            static const s32 segments = 16;
+            f32              angle = 0.0;
             f32              angle_step = M_TWO_PI / segments;
             for (s32 i = 0; i < segments; ++i)
             {
                 f32 clamped_angle = std::max<f32>(angle, min);
-                clamped_angle     = std::min<f32>(angle, max);
+                clamped_angle = std::min<f32>(angle, max);
 
                 f32 x = cos(clamped_angle);
                 f32 y = -sin(clamped_angle);
@@ -275,8 +275,8 @@ namespace put
                 clamped_angle = std::max<f32>(angle, min);
                 clamped_angle = std::min<f32>(angle, max);
 
-                x        = cos(clamped_angle);
-                y        = -sin(clamped_angle);
+                x = cos(clamped_angle);
+                y = -sin(clamped_angle);
                 vec3f v2 = normalised(vec3f(x, y, 0.0));
 
                 v2 = right * x + up * y;
@@ -361,7 +361,7 @@ namespace put
 
             // top and bottom
             s32 cur_offset = line_vert_3d_count + 8;
-            f32 y[2]       = {min.y, max.y};
+            f32 y[2] = {min.y, max.y};
             for (s32 i = 0; i < 2; ++i)
             {
                 //
@@ -414,7 +414,7 @@ namespace put
             for (s32 i = 0; i < num_verts; ++i)
             {
                 debug_3d_verts[line_vert_3d_count + i].pos.w = 1.0;
-                debug_3d_verts[line_vert_3d_count + i].col   = col;
+                debug_3d_verts[line_vert_3d_count + i].col = col;
             }
 
             line_vert_3d_count += num_verts;
@@ -434,10 +434,10 @@ namespace put
 
         void add_line_transform(const vec3f& start, const vec3f& end, const mat4* matrix, const vec4f& col)
         {
-            f32   w             = 1.0f;
+            f32   w = 1.0f;
             vec3f transformed_s = matrix->transform_vector(start, w);
 
-            w                   = 1.0f;
+            w = 1.0f;
             vec3f transformed_e = matrix->transform_vector(end, w);
 
             dbg::add_line(transformed_s, transformed_e, col);
@@ -459,12 +459,12 @@ namespace put
             for (s32 i = 0; i < 4; ++i)
             {
                 mat4 view_proj = proj * view;
-                pp[i]          = maths::project_to_sc(p + axis[i] * size, view_proj, vp);
+                pp[i] = maths::project_to_sc(p + axis[i] * size, view_proj, vp);
             }
 
             for (s32 i = 0; i < 3; ++i)
             {
-                vec2f p2   = vec2f(pp[i + 1].x, pp[i + 1].y);
+                vec2f p2 = vec2f(pp[i + 1].x, pp[i + 1].y);
                 vec2f base = vec2f(pp[0].x, pp[0].y);
 
                 vec2f v1 = normalised(p2 - base);
@@ -502,7 +502,7 @@ namespace put
                 debug_3d_verts[line_vert_3d_count].pos = vec4f(pos, 1.0f);
 
                 debug_3d_verts[line_vert_3d_count + 1].pos.xyz = pos + mat.get_column(i).xyz * size;
-                debug_3d_verts[line_vert_3d_count + 1].pos.w   = 1.0f;
+                debug_3d_verts[line_vert_3d_count + 1].pos.w = 1.0f;
 
                 for (u32 j = 0; j < 2; ++j)
                 {
@@ -530,7 +530,7 @@ namespace put
 
             for (u32 i = 0; i < 6; ++i)
             {
-                debug_3d_verts[line_vert_3d_count].pos     = vec4f(point, 1.0f);
+                debug_3d_verts[line_vert_3d_count].pos = vec4f(point, 1.0f);
                 debug_3d_verts[line_vert_3d_count + 1].pos = vec4f(point + units[i] * size, 1.0f);
 
                 for (u32 j = 0; j < 2; ++j)
@@ -546,7 +546,7 @@ namespace put
         {
             alloc_3d_buffer(line_vert_3d_count + divisions.x * 2 + divisions.z * 2, VB_LINES);
 
-            vec3f start         = centre - size * 0.5f;
+            vec3f start = centre - size * 0.5f;
             vec3f division_size = size / divisions;
 
             start.y = centre.y;
@@ -625,7 +625,7 @@ namespace put
             vec3f t = cross(b, normal);
 
             vec3f horiz = point - b * size;
-            vec3f vert  = point - t * size;
+            vec3f vert = point - t * size;
             for (int i = 0; i < size * 2; ++i)
             {
                 dbg::add_line(horiz - t * size, horiz + t * size, vec4f::white());
@@ -711,7 +711,7 @@ namespace put
         {
             alloc_2d_buffer(line_vert_2d_count + 2, VB_LINES);
 
-            debug_2d_verts[line_vert_2d_count].pos     = start;
+            debug_2d_verts[line_vert_2d_count].pos = start;
             debug_2d_verts[line_vert_2d_count + 1].pos = end;
 
             for (u32 i = 0; i < 2; ++i)
@@ -732,7 +732,7 @@ namespace put
             alloc_2d_buffer(tri_vert_2d_count + 6, VB_TRIS);
 
             // tri 1
-            s32 start_index                      = tri_vert_2d_count;
+            s32 start_index = tri_vert_2d_count;
             debug_2d_tris[tri_vert_2d_count].pos = p1;
             tri_vert_2d_count++;
 
@@ -754,7 +754,7 @@ namespace put
                                 pos + size * vec2f(1.0f, 1.0f), pos + size * vec2f(1.0f, -1.0f)};
 
             // tri 1
-            s32 start_index                      = tri_vert_2d_count;
+            s32 start_index = tri_vert_2d_count;
             debug_2d_tris[tri_vert_2d_count].pos = corners[0];
             tri_vert_2d_count++;
 

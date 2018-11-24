@@ -8,8 +8,8 @@
 #include "threads.h"
 #include "timer.h"
 
-#include "str_utilities.h"
 #include "data_struct.h"
+#include "str_utilities.h"
 
 extern a_u8    g_window_resize;
 pen::user_info pen_user_info;
@@ -32,10 +32,10 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     GetModuleFileNameA(hInstance, module_filename, MAX_PATH);
 
     static Str working_directory = module_filename;
-    working_directory            = pen::str_normalise_filepath(working_directory);
+    working_directory = pen::str_normalise_filepath(working_directory);
 
     // remove exe
-    u32 dir           = pen::str_find_reverse(working_directory, "/");
+    u32 dir = pen::str_find_reverse(working_directory, "/");
     working_directory = pen::str_substr(working_directory, 0, dir + 1);
 
     pen_user_info.working_directory = working_directory.c_str();
@@ -44,7 +44,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     window_params wp;
-    wp.cmdshow   = nCmdShow;
+    wp.cmdshow = nCmdShow;
     wp.hinstance = hInstance;
 
     if (pen::window_init(((void*)&wp)))
@@ -73,8 +73,7 @@ namespace
     {
         u32 cmd_index;
 
-        union
-        {
+        union {
             struct
             {
                 pen::window_frame frame;
@@ -83,13 +82,13 @@ namespace
     };
 
     pen_ring_buffer<os_cmd> s_cmd_buffer;
-}
+} // namespace
 
 namespace pen
 {
     LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-    HWND      g_hwnd = nullptr;
-    HINSTANCE g_hinstance = nullptr;
+    HWND             g_hwnd = nullptr;
+    HINSTANCE        g_hinstance = nullptr;
 
     bool os_update()
     {
@@ -116,21 +115,21 @@ namespace pen
             // process cmd
             switch (cmd->cmd_index)
             {
-            case OS_CMD_SET_WINDOW_FRAME:
-            {
-                SetWindowPos(g_hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
+                case OS_CMD_SET_WINDOW_FRAME:
+                {
+                    SetWindowPos(g_hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
 
-                RECT r;
-                GetClientRect(g_hwnd, &r);
+                    RECT r;
+                    GetClientRect(g_hwnd, &r);
 
-                pen_window.width = r.right - r.left;
-                pen_window.height = r.bottom - r.top;
+                    pen_window.width = r.right - r.left;
+                    pen_window.height = r.bottom - r.top;
 
-                g_window_resize = 1;
-            }
-            break;
-            default:
+                    g_window_resize = 1;
+                }
                 break;
+                default:
+                    break;
             }
 
             // get next
@@ -166,18 +165,18 @@ namespace pen
         // Register class
         WNDCLASSEXA wcex;
         ZeroMemory(&wcex, sizeof(WNDCLASSEXA));
-        wcex.cbSize        = sizeof(WNDCLASSEXA);
-        wcex.style         = CS_HREDRAW | CS_VREDRAW;
-        wcex.lpfnWndProc   = WndProc;
-        wcex.cbClsExtra    = 0;
-        wcex.cbWndExtra    = 0;
-        wcex.hInstance     = wp->hinstance;
-        wcex.hIcon         = NULL;
-        wcex.hCursor       = LoadCursor(nullptr, IDC_ARROW);
+        wcex.cbSize = sizeof(WNDCLASSEXA);
+        wcex.style = CS_HREDRAW | CS_VREDRAW;
+        wcex.lpfnWndProc = WndProc;
+        wcex.cbClsExtra = 0;
+        wcex.cbWndExtra = 0;
+        wcex.hInstance = wp->hinstance;
+        wcex.hIcon = NULL;
+        wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
         wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-        wcex.lpszMenuName  = nullptr;
+        wcex.lpszMenuName = nullptr;
         wcex.lpszClassName = pen_window.window_title;
-        wcex.hIconSm       = NULL;
+        wcex.hIconSm = NULL;
 
         if (!RegisterClassExA(&wcex))
             return E_FAIL;
@@ -287,10 +286,10 @@ namespace pen
             case WM_MOUSEWHEEL:
             {
                 s16 low_w = (s16)LOWORD(wParam);
-                s16 hi_w  = (s16)HIWORD(wParam);
+                s16 hi_w = (s16)HIWORD(wParam);
 
                 s16 low_l = (s16)LOWORD(lParam);
-                s16 hi_l  = (s16)HIWORD(lParam);
+                s16 hi_l = (s16)HIWORD(lParam);
 
                 pen::input_set_mouse_wheel((f32)(hi_w / WHEEL_DELTA) * 10.0f);
             }
@@ -305,7 +304,7 @@ namespace pen
 
                 if (g_window_resize == 0)
                 {
-                    pen_window.width  = LOWORD(lParam);
+                    pen_window.width = LOWORD(lParam);
                     pen_window.height = HIWORD(lParam);
 
                     g_window_resize = 1;
@@ -324,7 +323,7 @@ namespace pen
     {
         return g_hwnd;
     }
-    
+
     void window_get_frame(window_frame& f)
     {
         RECT r;
@@ -336,7 +335,7 @@ namespace pen
         f.width = r.right - r.left;
         f.height = r.bottom - r.top;
     }
-    
+
     void window_set_frame(const window_frame& f)
     {
         os_cmd cmd;
@@ -349,7 +348,7 @@ namespace pen
     void os_set_cursor_pos(u32 client_x, u32 client_y)
     {
         HWND  hw = (HWND)pen::window_get_primary_display_handle();
-        POINT p  = {(LONG)client_x, (LONG)client_y};
+        POINT p = {(LONG)client_x, (LONG)client_y};
 
         ClientToScreen(hw, &p);
         SetCursorPos(p.x, p.y);

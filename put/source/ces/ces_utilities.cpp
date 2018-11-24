@@ -15,8 +15,8 @@ namespace put
         {
             Str name;
 
-            const u32* p_len       = *data;
-            u32        name_len    = *p_len++;
+            const u32* p_len = *data;
+            u32        name_len = *p_len++;
             c8*        char_reader = (c8*)p_len;
             for (s32 j = 0; j < name_len; ++j)
             {
@@ -69,7 +69,7 @@ namespace put
                 resize_scene_buffers(scene);
 
             start = scene->num_nodes;
-            end   = start + num;
+            end = start + num;
 
             // iterate over nodes flagging allocated
             for (s32 i = start; i < end; ++i)
@@ -99,7 +99,7 @@ namespace put
             if (scene->num_nodes + num >= scene->nodes_size || !scene->free_list_head)
                 resize_scene_buffers(scene);
 
-            free_node_list* fnl_iter  = scene->free_list_head;
+            free_node_list* fnl_iter = scene->free_list_head;
             free_node_list* fnl_start = fnl_iter;
 
             s32 count = num;
@@ -124,14 +124,14 @@ namespace put
                 else
                 {
                     fnl_start = fnl_iter;
-                    count     = num;
+                    count = num;
                 }
             }
 
             if (count == 0)
             {
                 start = fnl_start->node;
-                end   = start + num;
+                end = start + num;
 
                 // iterate over nodes allocating
                 fnl_iter = fnl_start;
@@ -139,7 +139,7 @@ namespace put
                 {
                     scene->entities[fnl_iter->node] |= CMP_ALLOCATED;
                     scene->free_list_head = fnl_iter;
-                    fnl_iter              = fnl_iter->next;
+                    fnl_iter = fnl_iter->next;
                 }
 
                 scene->num_nodes = std::max<u32>(end, scene->num_nodes);
@@ -161,8 +161,8 @@ namespace put
             if (!scene->free_list_head)
                 resize_scene_buffers(scene);
 
-            u32 ii                = 0;
-            ii                    = scene->free_list_head->node;
+            u32 ii = 0;
+            ii = scene->free_list_head->node;
             scene->free_list_head = scene->free_list_head->next;
 
             u32 i = ii;
@@ -207,7 +207,7 @@ namespace put
             {
                 bool leaf = child.children.size() == 0;
 
-                bool               selected   = scene->state_flags[child.node_index] & SF_SELECTED;
+                bool               selected = scene->state_flags[child.node_index] & SF_SELECTED;
                 ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
 
                 if (leaf)
@@ -350,9 +350,9 @@ namespace put
                     if (j < 0)
                         continue;
 
-                    u32 j_parent      = scene->parents[j];
+                    u32 j_parent = scene->parents[j];
                     u32 parent_offset = j_parent - src_parent;
-                    u32 parent        = dst_parent + parent_offset;
+                    u32 parent = dst_parent + parent_offset;
 
                     u32 new_child =
                         clone_node(scene, j, nodes_start + node_counter, parent, CLONE_INSTANTIATE, vec3f::zero(), "");
@@ -381,14 +381,14 @@ namespace put
 
             scene->entities[master] |= CMP_MASTER_INSTANCE;
 
-            scene->master_instances[master].num_instances   = num_nodes;
+            scene->master_instances[master].num_instances = num_nodes;
             scene->master_instances[master].instance_stride = sizeof(cmp_draw_call);
 
             pen::buffer_creation_params bcp;
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
-            bcp.buffer_size      = sizeof(cmp_draw_call) * scene->master_instances[master].num_instances;
-            bcp.data             = nullptr;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.buffer_size = sizeof(cmp_draw_call) * scene->master_instances[master].num_instances;
+            bcp.data = nullptr;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
 
             scene->master_instances[master].instance_buffer = pen::renderer_create_buffer(bcp);

@@ -9,24 +9,24 @@ namespace put
     {
         enum e_animation_semantics
         {
-            A_TIME      = 0,
+            A_TIME = 0,
             A_TRANSFORM = 1,
         };
 
         enum e_animation_data_types
         {
-            A_FLOAT       = 0,
-            A_FLOAT4x4    = 1,
+            A_FLOAT = 0,
+            A_FLOAT4x4 = 1,
             A_TRANSLATION = 2,
-            A_ROTATION    = 3
+            A_ROTATION = 3
         };
 
         enum e_pmm_load_flags : u32
         {
             PMM_GEOMETRY = (1 << 0),
             PMM_MATERIAL = (1 << 1),
-            PMM_NODES    = (1 << 2),
-            PMM_ALL      = 7
+            PMM_NODES = (1 << 2),
+            PMM_ALL = 7
         };
 
         struct animation_channel

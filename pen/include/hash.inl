@@ -27,10 +27,10 @@ namespace pen
 
     inline void HashMurmur2A::begin(uint32_t _seed)
     {
-        m_hash  = _seed;
-        m_tail  = 0;
+        m_hash = _seed;
+        m_tail = 0;
         m_count = 0;
-        m_size  = 0;
+        m_size = 0;
     }
 
     inline void HashMurmur2A::add(const void* _data, int _len)
@@ -122,7 +122,7 @@ namespace pen
             if (m_count == 4)
             {
                 mmix(m_hash, m_tail);
-                m_tail  = 0;
+                m_tail = 0;
                 m_count = 0;
             }
         }

@@ -15,8 +15,8 @@ namespace pen
     enum audio_play_state : s32
     {
         NOT_PLAYING = 0,
-        PLAYING     = 2,
-        PAUSED      = 3
+        PLAYING = 2,
+        PAUSED = 3
     };
 
     enum dsp_type : s32

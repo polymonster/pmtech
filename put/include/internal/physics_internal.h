@@ -94,10 +94,10 @@ namespace physics
     {
         physics_entity_v1()
         {
-            rigid_body     = NULL;
-            multi_body     = NULL;
+            rigid_body = NULL;
+            multi_body = NULL;
             compound_shape = NULL;
-            call_attach    = 0;
+            call_attach = 0;
         }
 
         btRigidBody* rigid_body;
@@ -174,11 +174,11 @@ namespace physics
     {
         readable_data()
         {
-            current_ouput_backbuffer  = 0;
+            current_ouput_backbuffer = 0;
             current_ouput_frontbuffer = 1;
 
             b_consume = 0;
-            b_paused  = 0;
+            b_paused = 0;
         }
 
         a_u32 current_ouput_backbuffer;

@@ -24,14 +24,14 @@ a_u8                               g_window_resize(0);
 //--------------------------------------------------------------------------------------
 namespace
 {
-    D3D_DRIVER_TYPE         s_driverType          = D3D_DRIVER_TYPE_HARDWARE;
-    D3D_FEATURE_LEVEL       s_featureLevel        = D3D_FEATURE_LEVEL_11_0;
-    ID3D11Device*           s_device              = nullptr;
-    ID3D11Device1*          s_device_1            = nullptr;
-    IDXGISwapChain*         s_swap_chain          = nullptr;
-    IDXGISwapChain1*        s_swap_chain_1        = nullptr;
-    ID3D11RenderTargetView* s_backbuffer_rtv      = nullptr;
-    ID3D11DeviceContext*    s_immediate_context   = nullptr;
+    D3D_DRIVER_TYPE         s_driverType = D3D_DRIVER_TYPE_HARDWARE;
+    D3D_FEATURE_LEVEL       s_featureLevel = D3D_FEATURE_LEVEL_11_0;
+    ID3D11Device*           s_device = nullptr;
+    ID3D11Device1*          s_device_1 = nullptr;
+    IDXGISwapChain*         s_swap_chain = nullptr;
+    IDXGISwapChain1*        s_swap_chain_1 = nullptr;
+    ID3D11RenderTargetView* s_backbuffer_rtv = nullptr;
+    ID3D11DeviceContext*    s_immediate_context = nullptr;
     ID3D11DeviceContext1*   s_immediate_context_1 = nullptr;
 
     u64 s_frame = 0;
@@ -83,12 +83,12 @@ namespace pen
     struct perf_marker
     {
         ID3D11Query* begin = nullptr;
-        ID3D11Query* end   = nullptr;
+        ID3D11Query* end = nullptr;
 
-        u64       frame  = 0;
-        const c8* name   = nullptr;
+        u64       frame = 0;
+        const c8* name = nullptr;
         u32       issued = 0;
-        u32       depth  = 0;
+        u32       depth = 0;
         u64       result = 0;
     };
 
@@ -126,15 +126,15 @@ namespace pen
 
     struct perf_marker_set
     {
-        static const u32 num_marker_buffers          = 5;
+        static const u32 num_marker_buffers = 5;
         perf_marker*     markers[num_marker_buffers] = {0};
-        u32              pos[num_marker_buffers]     = {0};
+        u32              pos[num_marker_buffers] = {0};
 
         ID3D11Query* disjoint_query[num_marker_buffers];
 
         index_stack stack;
 
-        u32 buf   = 0;
+        u32 buf = 0;
         u32 depth = 0;
     };
     static perf_marker_set k_perf;
@@ -144,8 +144,8 @@ namespace pen
         if (s_frame == 0)
             return;
 
-        u32& buf   = k_perf.buf;
-        u32& pos   = k_perf.pos[buf];
+        u32& buf = k_perf.buf;
+        u32& pos = k_perf.pos[buf];
         u32& depth = k_perf.depth;
 
         if (pos >= sb_count(k_perf.markers[buf]))
@@ -177,7 +177,7 @@ namespace pen
 
             k_perf.stack.push(pos);
 
-            k_perf.markers[buf][pos].name  = name;
+            k_perf.markers[buf][pos].name = name;
             k_perf.markers[buf][pos].depth = depth;
             k_perf.markers[buf][pos].frame = s_frame;
 
@@ -249,7 +249,7 @@ namespace pen
                             UINT64  ts_begin;
                             UINT64  ts_end;
                             HRESULT hr = 0;
-                            hr         = s_immediate_context->GetData(m.begin, &ts_begin, sizeof(UINT64), 0);
+                            hr = s_immediate_context->GetData(m.begin, &ts_begin, sizeof(UINT64), 0);
                             if (hr == S_OK)
                             {
                                 hr = s_immediate_context->GetData(m.end, &ts_end, sizeof(UINT64), 0);
@@ -271,7 +271,7 @@ namespace pen
                 if (num_complete == k_perf.pos[bb])
                 {
                     k_perf.pos[bb] = 0;
-                    k_perf.depth   = 0;
+                    k_perf.depth = 0;
                 }
             }
         }
@@ -295,8 +295,8 @@ namespace pen
         u32 backbuffer_colour;
         u32 backbuffer_depth;
 
-        u32 active_colour_target[8]   = {0};
-        u32 active_depth_target       = 0;
+        u32 active_colour_target[8] = {0};
+        u32 active_depth_target = 0;
         u32 num_active_colour_targets = 1;
 
         u32 active_query_index;
@@ -316,19 +316,19 @@ namespace pen
     struct texture2d_internal
     {
         ID3D11Texture2D*          texture = nullptr;
-        ID3D11ShaderResourceView* srv     = nullptr;
+        ID3D11ShaderResourceView* srv = nullptr;
     };
 
     struct texture3d_internal
     {
         ID3D11Texture3D*          texture = nullptr;
-        ID3D11ShaderResourceView* srv     = nullptr;
+        ID3D11ShaderResourceView* srv = nullptr;
     };
 
     struct texture_resource
     {
         ID3D11Resource*           resource = nullptr;
-        ID3D11ShaderResourceView* srv      = nullptr;
+        ID3D11ShaderResourceView* srv = nullptr;
     };
 
     struct render_target_internal
@@ -431,9 +431,9 @@ namespace pen
         resource_pool[resource_slot].clear_state->rgba[1] = cs.g;
         resource_pool[resource_slot].clear_state->rgba[2] = cs.b;
         resource_pool[resource_slot].clear_state->rgba[3] = cs.a;
-        resource_pool[resource_slot].clear_state->depth   = cs.depth;
+        resource_pool[resource_slot].clear_state->depth = cs.depth;
         resource_pool[resource_slot].clear_state->stencil = cs.stencil;
-        resource_pool[resource_slot].clear_state->flags   = cs.flags;
+        resource_pool[resource_slot].clear_state->flags = cs.flags;
 
         resource_pool[resource_slot].clear_state->num_colour_targets = cs.num_colour_targets;
 
@@ -517,7 +517,7 @@ namespace pen
     }
 
     static u32  k_resize_counter = 0;
-    static bool k_needs_resize   = 0;
+    static bool k_needs_resize = 0;
 
     void direct::renderer_present()
     {
@@ -547,9 +547,9 @@ namespace pen
 
             create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
 
-            k_needs_resize   = true;
+            k_needs_resize = true;
             k_resize_counter = 0;
-            g_window_resize  = 0;
+            g_window_resize = 0;
         }
         else
         {
@@ -569,7 +569,7 @@ namespace pen
                 renderer_create_render_target(rt.tcp, rt.resource_index, false);
             }
 
-            k_needs_resize   = 0;
+            k_needs_resize = 0;
             k_resize_counter = 0;
         }
 
@@ -580,7 +580,7 @@ namespace pen
 
     void direct::renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
     {
-        HRESULT hr         = -1;
+        HRESULT hr = -1;
         u32     handle_out = (u32)-1;
 
         u32 resource_index = resource_slot;
@@ -602,7 +602,7 @@ namespace pen
             else
             {
                 resource_pool[resource_index].pixel_shader = NULL;
-                hr                                         = S_OK;
+                hr = S_OK;
             }
         }
         else if (params.type == PEN_SHADER_TYPE_SO)
@@ -646,8 +646,8 @@ namespace pen
             if (!dss)
             {
                 D3D11_DEPTH_STENCIL_DESC dss_disable = {0};
-                dss_disable.DepthEnable              = 0;
-                dss_disable.StencilEnable            = 0;
+                dss_disable.DepthEnable = 0;
+                dss_disable.StencilEnable = 0;
 
                 CHECK_CALL(s_device->CreateDepthStencilState(&dss_disable, &dss));
             }
@@ -664,8 +664,8 @@ namespace pen
 
         // for now d3d just keeps handles to vs, ps and il..
         // the additional requirements of gl and buffer bindings could provide useful reflection info.
-        sp.input_layout  = params.input_layout;
-        sp.pixel_shader  = params.pixel_shader;
+        sp.input_layout = params.input_layout;
+        sp.pixel_shader = params.pixel_shader;
         sp.vertex_shader = params.vertex_shader;
     }
 
@@ -676,9 +676,9 @@ namespace pen
         D3D11_BUFFER_DESC bd;
         ZeroMemory(&bd, sizeof(bd));
 
-        bd.Usage          = (D3D11_USAGE)params.usage_flags;
-        bd.ByteWidth      = params.buffer_size;
-        bd.BindFlags      = (D3D11_BIND_FLAG)params.bind_flags;
+        bd.Usage = (D3D11_USAGE)params.usage_flags;
+        bd.ByteWidth = params.buffer_size;
+        bd.BindFlags = (D3D11_BIND_FLAG)params.bind_flags;
         bd.CPUAccessFlags = params.cpu_access_flags;
 
         if (params.data)
@@ -806,7 +806,7 @@ namespace pen
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
-        u32  array_size  = texture_desc.ArraySize;
+        u32  array_size = texture_desc.ArraySize;
         bool texture2dms = texture_desc.SampleDesc.Count > 1;
 
         if (array_size > 1 && texture2dms)
@@ -829,12 +829,12 @@ namespace pen
             // depth target
             D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
             dsv_desc.Format = (DXGI_FORMAT)depth_texture_format_to_dsv_format(texture_desc.Format);
-            dsv_desc.Flags  = 0;
+            dsv_desc.Flags = 0;
 
             // Create the render target view.
             if (array_size == 1)
             {
-                dsv_desc.ViewDimension      = texture2dms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+                dsv_desc.ViewDimension = texture2dms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
                 dsv_desc.Texture2D.MipSlice = 0;
 
                 CHECK_CALL(s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[0]));
@@ -843,18 +843,18 @@ namespace pen
             {
                 for (u32 a = 0; a < array_size; ++a)
                 {
-                    dsv_desc.ViewDimension                  = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+                    dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
                     dsv_desc.Texture2DArray.FirstArraySlice = a;
-                    dsv_desc.Texture2DArray.MipSlice        = 0;
-                    dsv_desc.Texture2DArray.ArraySize       = 1;
+                    dsv_desc.Texture2DArray.MipSlice = 0;
+                    dsv_desc.Texture2DArray.ArraySize = 1;
 
                     CHECK_CALL(s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[a]));
                 }
             }
 
             // create shader resource view
-            resource_view_desc.Format              = (DXGI_FORMAT)depth_texture_format_to_srv_format(texture_desc.Format);
-            resource_view_desc.ViewDimension       = srv_dimension;
+            resource_view_desc.Format = (DXGI_FORMAT)depth_texture_format_to_srv_format(texture_desc.Format);
+            resource_view_desc.ViewDimension = srv_dimension;
             resource_view_desc.Texture2D.MipLevels = -1;
             resource_view_desc.Texture2D.MostDetailedMip = 0;
         }
@@ -867,7 +867,7 @@ namespace pen
             // Create the render target view.
             if (array_size == 1)
             {
-                rtv_desc.ViewDimension      = texture2dms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
+                rtv_desc.ViewDimension = texture2dms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
                 rtv_desc.Texture2D.MipSlice = 0;
 
                 CHECK_CALL(s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[0]));
@@ -876,18 +876,18 @@ namespace pen
             {
                 for (u32 a = 0; a < array_size; ++a)
                 {
-                    rtv_desc.ViewDimension                  = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+                    rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
                     rtv_desc.Texture2DArray.FirstArraySlice = a;
-                    rtv_desc.Texture2DArray.MipSlice        = 0;
-                    rtv_desc.Texture2DArray.ArraySize       = 1;
+                    rtv_desc.Texture2DArray.MipSlice = 0;
+                    rtv_desc.Texture2DArray.ArraySize = 1;
                     CHECK_CALL(s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[a]));
                 }
             }
 
             // create shader resource view
-            resource_view_desc.Format                    = texture_desc.Format;
-            resource_view_desc.ViewDimension             = srv_dimension;
-            resource_view_desc.Texture2D.MipLevels       = -1;
+            resource_view_desc.Format = texture_desc.Format;
+            resource_view_desc.ViewDimension = srv_dimension;
+            resource_view_desc.Texture2D.MipLevels = -1;
             resource_view_desc.Texture2D.MostDetailedMip = 0;
         }
         else
@@ -913,13 +913,13 @@ namespace pen
 
         // format required for resolve
         resource_pool[resource_index].render_target->format = (DXGI_FORMAT)tcp.format;
-        resource_pool[resource_index].render_target->tcp    = nullptr;
+        resource_pool[resource_index].render_target->tcp = nullptr;
 
         texture_creation_params _tcp = tcp;
 
         if (_tcp.width == -1)
         {
-            _tcp.width  = pen_window.width / _tcp.height;
+            _tcp.width = pen_window.width / _tcp.height;
             _tcp.height = pen_window.height / _tcp.height;
 
             if (track)
@@ -932,8 +932,8 @@ namespace pen
         if (_tcp.cpu_access_flags != 0)
         {
             texture_creation_params read_back_tcp = _tcp;
-            read_back_tcp.bind_flags              = 0;
-            read_back_tcp.usage                   = D3D11_USAGE_STAGING;
+            read_back_tcp.bind_flags = 0;
+            read_back_tcp.usage = D3D11_USAGE_STAGING;
 
             D3D11_TEXTURE2D_DESC texture_desc;
             memcpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
@@ -952,13 +952,13 @@ namespace pen
                                                 resource_pool[resource_index].render_target->rt_msaa);
 
             // for resolve later
-            resource_pool[resource_index].render_target->tcp  = new texture_creation_params;
+            resource_pool[resource_index].render_target->tcp = new texture_creation_params;
             *resource_pool[resource_index].render_target->tcp = tcp;
         }
         else
         {
             texture_creation_params resolve_tcp = _tcp;
-            resolve_tcp.sample_count            = 1;
+            resolve_tcp.sample_count = 1;
             renderer_create_render_target_multi(resolve_tcp, &resource_pool[resource_index].render_target->tex,
                                                 resource_pool[resource_index].depth_target->ds,
                                                 resource_pool[resource_index].render_target->rt);
@@ -982,14 +982,14 @@ namespace pen
     void direct::renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
                                       u32 colour_face, u32 depth_face)
     {
-        g_context.active_depth_target       = depth_target;
+        g_context.active_depth_target = depth_target;
         g_context.num_active_colour_targets = num_colour_targets;
 
-        u32                     num_views           = num_colour_targets;
+        u32                     num_views = num_colour_targets;
         ID3D11RenderTargetView* colour_rtv[MAX_MRT] = {0};
         for (s32 i = 0; i < num_colour_targets; ++i)
         {
-            u32 colour_target                 = colour_targets[i];
+            u32 colour_target = colour_targets[i];
             g_context.active_colour_target[i] = colour_target;
 
             if (colour_target != 0 && colour_target != PEN_INVALID_HANDLE)
@@ -1048,7 +1048,7 @@ namespace pen
                                                  tcp.cpu_access_flags,
                                                  tcp.flags};
 
-            resource_pool[resource_index].type       = RES_TEXTURE_3D;
+            resource_pool[resource_index].type = RES_TEXTURE_3D;
             resource_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
             CHECK_CALL(
                 s_device->CreateTexture3D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_3d->texture)));
@@ -1065,7 +1065,7 @@ namespace pen
                 texture_desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
             }
 
-            resource_pool[resource_index].type       = RES_TEXTURE;
+            resource_pool[resource_index].type = RES_TEXTURE;
             resource_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
             CHECK_CALL(
                 s_device->CreateTexture2D(&texture_desc, nullptr, &(resource_pool[resource_index].texture_2d->texture)));
@@ -1081,15 +1081,15 @@ namespace pen
             // for arrays, slices, faces
             for (s32 a = 0; a < num_arrays; ++a)
             {
-                u32 current_width  = tcp.width / tcp.pixels_per_block;
+                u32 current_width = tcp.width / tcp.pixels_per_block;
                 u32 current_height = tcp.height / tcp.pixels_per_block;
-                u32 current_depth  = num_slices / tcp.pixels_per_block;
-                u32 block_size     = tcp.block_size;
+                u32 current_depth = num_slices / tcp.pixels_per_block;
+                u32 block_size = tcp.block_size;
 
                 // for mips
                 for (s32 i = 0; i < tcp.num_mips; ++i)
                 {
-                    u32 row_pitch   = current_width * block_size;
+                    u32 row_pitch = current_width * block_size;
                     u32 slice_pitch = current_height * row_pitch;
                     u32 depth_pitch = slice_pitch * current_depth;
 
@@ -1100,18 +1100,18 @@ namespace pen
 
                     image_data += depth_pitch;
 
-                    current_width  = max<u32>(current_width / 2, 1);
+                    current_width = max<u32>(current_width / 2, 1);
                     current_height = max<u32>(current_height / 2, 1);
-                    current_depth  = max<u32>(current_depth / 2, 1);
+                    current_depth = max<u32>(current_depth / 2, 1);
                 }
             }
         }
 
         // create shader resource view
         D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
-        resource_view_desc.Format                    = (DXGI_FORMAT)tcp.format;
-        resource_view_desc.ViewDimension             = view_dimension;
-        resource_view_desc.Texture2D.MipLevels       = -1;
+        resource_view_desc.Format = (DXGI_FORMAT)tcp.format;
+        resource_view_desc.ViewDimension = view_dimension;
+        resource_view_desc.Texture2D.MipLevels = -1;
         resource_view_desc.Texture2D.MostDetailedMip = 0;
 
         CHECK_CALL(s_device->CreateShaderResourceView(tex_res->resource, &resource_view_desc, &tex_res->srv));
@@ -1127,7 +1127,7 @@ namespace pen
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
     {
         ID3D11SamplerState*       null_sampler = nullptr;
-        ID3D11ShaderResourceView* null_srv     = nullptr;
+        ID3D11ShaderResourceView* null_srv = nullptr;
 
         if (resource_pool[texture_index].type == RES_RENDER_TARGET && flags & TEXTURE_BIND_MSAA)
         {
@@ -1192,7 +1192,7 @@ namespace pen
         D3D11_BLEND_DESC bd;
         pen::memory_zero(&bd, sizeof(D3D11_BLEND_DESC));
 
-        bd.AlphaToCoverageEnable  = bcp.alpha_to_coverage_enable;
+        bd.AlphaToCoverageEnable = bcp.alpha_to_coverage_enable;
         bd.IndependentBlendEnable = bcp.independent_blend_enable;
 
         for (u32 i = 0; i < bcp.num_render_targets; ++i)
@@ -1365,10 +1365,10 @@ namespace pen
         if (rt->tex_read_back.texture)
             rt->tex_read_back.texture->Release();
 
-        rt->tex_msaa.srv     = nullptr;
+        rt->tex_msaa.srv = nullptr;
         rt->tex_msaa.texture = nullptr;
-        rt->tex.srv          = nullptr;
-        rt->tex.texture      = nullptr;
+        rt->tex.srv = nullptr;
+        rt->tex.texture = nullptr;
 
         delete rt->tcp;
     }
@@ -1438,11 +1438,11 @@ namespace pen
         {
             // create a resolve surface
             texture_creation_params resolve_tcp = *rti->tcp;
-            resolve_tcp.sample_count            = 1;
+            resolve_tcp.sample_count = 1;
 
             texture_creation_params& _tcp = resolve_tcp;
-            _tcp.width                    = w;
-            _tcp.height                   = h;
+            _tcp.width = w;
+            _tcp.height = h;
 
             // depth gets resolved into colour textures
             if (rti->format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
@@ -1558,33 +1558,33 @@ namespace pen
         CHECK_CALL(s_device->CreateRenderTargetView(resource_pool[crtv].render_target->tex.texture, nullptr,
                                                     &resource_pool[crtv].render_target->rt[0]));
 
-        g_context.active_depth_target       = PEN_BACK_BUFFER_DEPTH;
-        g_context.active_colour_target[0]   = PEN_BACK_BUFFER_COLOUR;
+        g_context.active_depth_target = PEN_BACK_BUFFER_DEPTH;
+        g_context.active_colour_target[0] = PEN_BACK_BUFFER_COLOUR;
         g_context.num_active_colour_targets = 1;
-        g_context.backbuffer_colour         = crtv;
-        g_context.backbuffer_depth          = dsv;
+        g_context.backbuffer_colour = crtv;
+        g_context.backbuffer_depth = dsv;
 
         // Create depth stencil texture
         D3D11_TEXTURE2D_DESC descDepth;
         ZeroMemory(&descDepth, sizeof(descDepth));
-        descDepth.Width              = w;
-        descDepth.Height             = h;
-        descDepth.MipLevels          = 1;
-        descDepth.ArraySize          = 1;
-        descDepth.Format             = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        descDepth.SampleDesc.Count   = pen_window.sample_count;
+        descDepth.Width = w;
+        descDepth.Height = h;
+        descDepth.MipLevels = 1;
+        descDepth.ArraySize = 1;
+        descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+        descDepth.SampleDesc.Count = pen_window.sample_count;
         descDepth.SampleDesc.Quality = 0;
-        descDepth.Usage              = D3D11_USAGE_DEFAULT;
-        descDepth.BindFlags          = D3D11_BIND_DEPTH_STENCIL;
-        descDepth.CPUAccessFlags     = 0;
-        descDepth.MiscFlags          = 0;
+        descDepth.Usage = D3D11_USAGE_DEFAULT;
+        descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+        descDepth.CPUAccessFlags = 0;
+        descDepth.MiscFlags = 0;
 
         CHECK_CALL(s_device->CreateTexture2D(&descDepth, nullptr, &resource_pool[dsv].depth_target->tex.texture));
 
         // Create the depth stencil view
         D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
         ZeroMemory(&descDSV, sizeof(descDSV));
-        descDSV.Format        = descDepth.Format;
+        descDSV.Format = descDepth.Format;
         descDSV.ViewDimension = pen_window.sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
         descDSV.Texture2D.MipSlice = 0;
         CHECK_CALL(s_device->CreateDepthStencilView(resource_pool[dsv].depth_target->tex.texture, &descDSV,
@@ -1604,7 +1604,7 @@ namespace pen
 
         RECT rc;
         GetClientRect(*hwnd, &rc);
-        UINT width  = rc.right - rc.left;
+        UINT width = rc.right - rc.left;
         UINT height = rc.bottom - rc.top;
 
         UINT createDeviceFlags = 0;
@@ -1652,11 +1652,11 @@ namespace pen
         IDXGIFactory1* dxgiFactory = nullptr;
         {
             IDXGIDevice* dxgiDevice = nullptr;
-            hr                      = s_device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
+            hr = s_device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
             if (SUCCEEDED(hr))
             {
                 IDXGIAdapter* adapter = nullptr;
-                hr                    = dxgiDevice->GetAdapter(&adapter);
+                hr = dxgiDevice->GetAdapter(&adapter);
                 if (SUCCEEDED(hr))
                 {
                     hr = adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&dxgiFactory));
@@ -1683,13 +1683,13 @@ namespace pen
 
             DXGI_SWAP_CHAIN_DESC1 sd;
             ZeroMemory(&sd, sizeof(sd));
-            sd.Width              = width;
-            sd.Height             = height;
-            sd.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;
-            sd.SampleDesc.Count   = pen_window.sample_count;
+            sd.Width = width;
+            sd.Height = height;
+            sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            sd.SampleDesc.Count = pen_window.sample_count;
             sd.SampleDesc.Quality = 0;
-            sd.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            sd.BufferCount        = 1;
+            sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            sd.BufferCount = 1;
 
             hr = dxgiFactory2->CreateSwapChainForHwnd(s_device, *hwnd, &sd, nullptr, nullptr, &s_swap_chain_1);
             if (SUCCEEDED(hr))
@@ -1704,17 +1704,17 @@ namespace pen
             // DirectX 11.0 systems
             DXGI_SWAP_CHAIN_DESC sd;
             ZeroMemory(&sd, sizeof(sd));
-            sd.BufferCount                        = 1;
-            sd.BufferDesc.Width                   = width;
-            sd.BufferDesc.Height                  = height;
-            sd.BufferDesc.Format                  = DXGI_FORMAT_R8G8B8A8_UNORM;
-            sd.BufferDesc.RefreshRate.Numerator   = 60;
+            sd.BufferCount = 1;
+            sd.BufferDesc.Width = width;
+            sd.BufferDesc.Height = height;
+            sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            sd.BufferDesc.RefreshRate.Numerator = 60;
             sd.BufferDesc.RefreshRate.Denominator = 1;
-            sd.BufferUsage                        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            sd.OutputWindow                       = *hwnd;
-            sd.SampleDesc.Count                   = pen_window.sample_count;
-            sd.SampleDesc.Quality                 = 0;
-            sd.Windowed                           = TRUE;
+            sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            sd.OutputWindow = *hwnd;
+            sd.SampleDesc.Count = pen_window.sample_count;
+            sd.SampleDesc.Quality = 0;
+            sd.Windowed = TRUE;
 
             hr = dxgiFactory->CreateSwapChain(s_device, &sd, &s_swap_chain);
         }
@@ -1768,9 +1768,9 @@ namespace pen
         // todo renderer caps
 
         k_renderer_info.shader_version = str_hlsl_version.c_str();
-        k_renderer_info.api_version    = str_d3d_version.c_str();
-        k_renderer_info.renderer       = str_d3d_renderer.c_str();
-        k_renderer_info.vendor         = str_d3d_vendor.c_str();
+        k_renderer_info.api_version = str_d3d_version.c_str();
+        k_renderer_info.renderer = str_d3d_renderer.c_str();
+        k_renderer_info.vendor = str_d3d_vendor.c_str();
 
         k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
         k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;

@@ -136,7 +136,7 @@ struct Array1
         data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n     = n_;
+        n = n_;
         max_n = n_;
     }
 
@@ -150,7 +150,7 @@ struct Array1
         data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n     = n_;
+        n = n_;
         max_n = n_;
         for (unsigned long i = 0; i < n; ++i)
             data[i] = value;
@@ -167,7 +167,7 @@ struct Array1
         data = (T*)std::calloc(max_n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n     = n_;
+        n = n_;
         max_n = max_n_;
         for (unsigned long i = 0; i < n; ++i)
             data[i] = value;
@@ -183,7 +183,7 @@ struct Array1
         data = (T*)std::calloc(n_, sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n     = n_;
+        n = n_;
         max_n = n_;
         assert(data_);
         std::memcpy(data, data_, n * sizeof(T));
@@ -201,7 +201,7 @@ struct Array1
         if (!data)
             throw std::bad_alloc();
         max_n = max_n_;
-        n     = n_;
+        n = n_;
         assert(data_);
         std::memcpy(data, data_, n * sizeof(T));
     }
@@ -214,7 +214,7 @@ struct Array1
         data = (T*)std::malloc(x.n * sizeof(T));
         if (!data)
             throw std::bad_alloc();
-        n     = x.n;
+        n = x.n;
         max_n = x.n;
         std::memcpy(data, x.data, n * sizeof(T));
     }
@@ -259,7 +259,7 @@ struct Array1
             if (!new_data)
                 throw std::bad_alloc();
             std::free(data);
-            data  = new_data;
+            data = new_data;
             max_n = x.n;
         }
         n = x.n;
@@ -443,9 +443,9 @@ struct Array1
     void clear(void)
     {
         std::free(data);
-        data  = 0;
+        data = 0;
         max_n = 0;
-        n     = 0;
+        n = 0;
     }
 
     bool empty(void) const
@@ -506,7 +506,7 @@ struct Array1
         T*            new_data = (T*)std::realloc(data, new_size * sizeof(T));
         if (!new_data)
             throw std::bad_alloc();
-        data  = new_data;
+        data = new_data;
         max_n = new_size;
     }
 
@@ -564,7 +564,7 @@ struct Array1
         T* new_data = (T*)std::realloc(data, r * sizeof(T));
         if (!new_data)
             throw std::bad_alloc();
-        data  = new_data;
+        data = new_data;
         max_n = r;
     }
 
@@ -613,7 +613,7 @@ struct Array1
             return;
         std::memcpy(new_data, data, n * sizeof(T));
         std::free(data);
-        data  = new_data;
+        data = new_data;
         max_n = n;
     }
 };
@@ -702,9 +702,9 @@ struct WrapArray1
     {
         assert(n_ <= max_n_);
         assert(data_ || max_n_ == 0);
-        n     = n_;
+        n = n_;
         max_n = max_n_;
-        data  = data_;
+        data = data_;
     }
 
     const T& operator[](unsigned long i) const

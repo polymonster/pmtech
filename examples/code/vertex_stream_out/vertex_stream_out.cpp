@@ -43,24 +43,24 @@ void create_physics_objects(ces::entity_scene* scene)
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
 
     // add light
-    u32 light                            = get_new_node(scene);
-    scene->names[light]                  = "front_light";
-    scene->id_name[light]                = PEN_HASH("front_light");
-    scene->lights[light].colour          = vec3f::one();
-    scene->lights[light].direction       = vec3f::one();
-    scene->lights[light].type            = LIGHT_TYPE_DIR;
+    u32 light = get_new_node(scene);
+    scene->names[light] = "front_light";
+    scene->id_name[light] = PEN_HASH("front_light");
+    scene->lights[light].colour = vec3f::one();
+    scene->lights[light].direction = vec3f::one();
+    scene->lights[light].type = LIGHT_TYPE_DIR;
     scene->transforms[light].translation = vec3f::zero();
-    scene->transforms[light].rotation    = quat();
-    scene->transforms[light].scale       = vec3f::one();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
 
     // ground
-    u32 ground                            = get_new_node(scene);
-    scene->names[ground]                  = "ground";
+    u32 ground = get_new_node(scene);
+    scene->names[ground] = "ground";
     scene->transforms[ground].translation = vec3f::zero();
-    scene->transforms[ground].rotation    = quat();
-    scene->transforms[ground].scale       = vec3f(50.0f, 1.0f, 50.0f);
+    scene->transforms[ground].rotation = quat();
+    scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
     scene->entities[ground] |= CMP_TRANSFORM;
     scene->parents[ground] = ground;
     instantiate_geometry(box, scene, ground);
@@ -73,7 +73,7 @@ void create_physics_objects(ces::entity_scene* scene)
 
     // set character scale and pos
     scene->transforms[skinned_char].translation = vec3f(0.0f, 1.0f, 0.0f);
-    scene->transforms[skinned_char].scale       = vec3f(0.25f);
+    scene->transforms[skinned_char].scale = vec3f(0.25f);
     scene->entities[skinned_char] |= CMP_TRANSFORM;
 
     instantiate_model_pre_skin(scene, skinned_char);
@@ -85,34 +85,34 @@ void create_physics_objects(ces::entity_scene* scene)
     anim_handle ah = load_pma("data/models/characters/testcharacter/anims/testcharacter_idle.pma");
     sb_push(scene->anim_controller[skinned_char].handles, ah);
 
-    scene->anim_controller[skinned_char].current_frame     = 0;
-    scene->anim_controller[skinned_char].current_time      = 1.0f;
+    scene->anim_controller[skinned_char].current_frame = 0;
+    scene->anim_controller[skinned_char].current_time = 1.0f;
     scene->anim_controller[skinned_char].current_animation = ah;
-    scene->anim_controller[skinned_char].play_flags        = cmp_anim_controller::PLAY;
+    scene->anim_controller[skinned_char].play_flags = cmp_anim_controller::PLAY;
 
     // remove the geometry flag from the skinned character as we just want to use it as vertex stream out
     scene->entities[skinned_char] &= ~CMP_GEOMETRY;
 
     // in order to instance stuff we must have a contiguous list of nodes.
     // this node aliases the geometry and materials from the skinned_char root node
-    u32 master_node                            = get_new_node(scene);
-    scene->names[master_node]                  = "master skinned instance";
+    u32 master_node = get_new_node(scene);
+    scene->names[master_node] = "master skinned instance";
     scene->transforms[master_node].translation = vec3f::zero();
-    scene->transforms[master_node].rotation    = quat();
-    scene->transforms[master_node].scale       = vec3f::one();
-    scene->parents[master_node]                = master_node;
+    scene->transforms[master_node].rotation = quat();
+    scene->transforms[master_node].scale = vec3f::one();
+    scene->parents[master_node] = master_node;
 
     scene->entities[master_node] |= (CMP_TRANSFORM | CMP_GEOMETRY | CMP_MATERIAL);
 
-    scene->geometries[master_node]         = scene->geometries[skinned_char];
-    scene->materials[master_node]          = scene->materials[skinned_char];
+    scene->geometries[master_node] = scene->geometries[skinned_char];
+    scene->materials[master_node] = scene->materials[skinned_char];
     scene->material_resources[master_node] = scene->material_resources[skinned_char];
-    scene->cbuffer[master_node]            = scene->cbuffer[skinned_char];
+    scene->cbuffer[master_node] = scene->cbuffer[skinned_char];
 
     s32 num = 20;
 
     f32 spacing = 20.0f;
-    f32 start   = (spacing * (num - 1)) * 0.5f;
+    f32 start = (spacing * (num - 1)) * 0.5f;
 
     vec3f start_pos = vec3f(-start, 0, -start);
 
@@ -124,14 +124,14 @@ void create_physics_objects(ces::entity_scene* scene)
 
         for (s32 j = 0; j < num; ++j)
         {
-            u32 new_prim           = get_new_node(scene);
+            u32 new_prim = get_new_node(scene);
             scene->names[new_prim] = "skinned instance";
             scene->names[new_prim].appendf("%i", new_prim);
 
-            scene->transforms[new_prim].rotation    = quat();
-            scene->transforms[new_prim].scale       = vec3f::one();
+            scene->transforms[new_prim].rotation = quat();
+            scene->transforms[new_prim].scale = vec3f::one();
             scene->transforms[new_prim].translation = cur_pos;
-            scene->parents[new_prim]                = skinned_char;
+            scene->parents[new_prim] = skinned_char;
 
             scene->entities[new_prim] |= CMP_TRANSFORM;
             scene->entities[new_prim] |= CMP_GEOMETRY;
@@ -153,7 +153,7 @@ void create_physics_objects(ces::entity_scene* scene)
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
@@ -164,34 +164,34 @@ PEN_TRV pen::user_entry(void* params)
 
     // create main camera and controller
     put::camera main_camera;
-    put::camera_create_perspective(&main_camera, 60.0f,  put::k_use_window_aspect, 0.1f, 1000.0f);
+    put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
     put::scene_controller cc;
-    cc.camera          = &main_camera;
+    cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
-    cc.name            = "model_viewer_camera";
-    cc.id_name         = PEN_HASH(cc.name.c_str());
+    cc.name = "model_viewer_camera";
+    cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
     put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;
-    sc.scene           = main_scene;
+    sc.scene = main_scene;
     sc.update_function = &ces::update_model_viewer_scene;
-    sc.name            = "main_scene";
-    sc.camera          = &main_camera;
-    sc.id_name         = PEN_HASH(sc.name.c_str());
+    sc.name = "main_scene";
+    sc.camera = &main_camera;
+    sc.id_name = PEN_HASH(sc.name.c_str());
 
     // create view renderers
     put::scene_view_renderer svr_main;
-    svr_main.name            = "ces_render_scene";
-    svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
+    svr_main.name = "ces_render_scene";
+    svr_main.id_name = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
 
     put::scene_view_renderer svr_editor;
-    svr_editor.name            = "ces_render_editor";
-    svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
+    svr_editor.name = "ces_render_editor";
+    svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
 
     pmfx::register_scene_view_renderer(svr_main);
@@ -204,7 +204,7 @@ PEN_TRV pen::user_entry(void* params)
 
     create_physics_objects(main_scene);
 
-    f32  frame_time = 0.0f;
+    f32 frame_time = 0.0f;
 
     while (1)
     {
@@ -226,9 +226,9 @@ PEN_TRV pen::user_entry(void* params)
         pmfx::show_dev_ui();
 
         pen::renderer_push_perf_marker("dev_ui::render");
-        
+
         put::dev_ui::render();
-        
+
         pen::renderer_pop_perf_marker();
 
         frame_time = pen::timer_elapsed_ms(frame_timer);

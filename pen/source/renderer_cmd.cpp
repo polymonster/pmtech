@@ -10,8 +10,8 @@
 
 namespace pen
 {
-    u32 put_pos             = 0;
-    u32 get_pos             = 0;
+    u32 put_pos = 0;
+    u32 get_pos = 0;
     u32 commands_this_frame = 0;
 
 #define MAX_COMMANDS (1 << 18)
@@ -474,7 +474,7 @@ namespace pen
     void renderer_wait_for_jobs();
 
     static pen::job*           p_job_thread_info;
-    static pen::semaphore*     p_consume_semaphore  = nullptr;
+    static pen::semaphore*     p_consume_semaphore = nullptr;
     static pen::semaphore*     p_continue_semaphore = nullptr;
     static pen::slot_resources k_renderer_slot_resources;
 
@@ -567,32 +567,32 @@ namespace pen
         }
 
         buffer_creation_params bcp;
-        bcp.usage_flags      = PEN_USAGE_DEFAULT;
-        bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
+        bcp.usage_flags = PEN_USAGE_DEFAULT;
+        bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
         bcp.cpu_access_flags = 0;
 
         bcp.buffer_size = sizeof(textured_vertex) * 4;
-        bcp.data        = (void*)&quad_vertices[0];
+        bcp.data = (void*)&quad_vertices[0];
 
         g_resolve_resources.vertex_buffer = renderer_create_buffer(bcp);
 
         // create index buffer
         u16 indices[] = {0, 1, 2, 2, 3, 0};
 
-        bcp.usage_flags      = PEN_USAGE_IMMUTABLE;
-        bcp.bind_flags       = PEN_BIND_INDEX_BUFFER;
+        bcp.usage_flags = PEN_USAGE_IMMUTABLE;
+        bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
         bcp.cpu_access_flags = 0;
-        bcp.buffer_size      = sizeof(u16) * 6;
-        bcp.data             = (void*)&indices[0];
+        bcp.buffer_size = sizeof(u16) * 6;
+        bcp.data = (void*)&indices[0];
 
         g_resolve_resources.index_buffer = renderer_create_buffer(bcp);
 
         // create cbuffer
-        bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-        bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
         bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-        bcp.buffer_size      = sizeof(resolve_cbuffer);
-        bcp.data             = nullptr;
+        bcp.buffer_size = sizeof(resolve_cbuffer);
+        bcp.data = nullptr;
 
         g_resolve_resources.constant_buffer = renderer_create_buffer(bcp);
     }
@@ -611,7 +611,7 @@ namespace pen
         slot_resources_init(&k_renderer_slot_resources, MAX_RENDERER_RESOURCES);
 
         // initialise renderer
-        u32 bb_res       = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 bb_res = slot_resources_get_next(&k_renderer_slot_resources);
         u32 bb_depth_res = slot_resources_get_next(&k_renderer_slot_resources);
 
         direct::renderer_initialise(user_data, bb_res, bb_depth_res);
@@ -628,7 +628,7 @@ namespace pen
 
         p_job_thread_info = job_params->job_info;
 
-        p_consume_semaphore  = p_job_thread_info->p_sem_consume;
+        p_consume_semaphore = p_job_thread_info->p_sem_consume;
         p_continue_semaphore = p_job_thread_info->p_sem_continue;
 
         renderer_init(job_params->user_data, true);
@@ -648,7 +648,7 @@ namespace pen
 
     void renderer_clear(u32 clear_state_index)
     {
-        cmd_buffer[put_pos].command_index      = CMD_CLEAR;
+        cmd_buffer[put_pos].command_index = CMD_CLEAR;
         cmd_buffer[put_pos].command_data_index = clear_state_index;
 
         INC_WRAP(put_pos);
@@ -656,10 +656,10 @@ namespace pen
 
     void renderer_clear_cube(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
-        cmd_buffer[put_pos].command_index          = CMD_CLEAR_CUBE;
+        cmd_buffer[put_pos].command_index = CMD_CLEAR_CUBE;
         cmd_buffer[put_pos].clear_cube.clear_state = clear_state_index;
         cmd_buffer[put_pos].clear_cube.colour_face = colour_face;
-        cmd_buffer[put_pos].clear_cube.depth_face  = depth_face;
+        cmd_buffer[put_pos].clear_cube.depth_face = depth_face;
 
         INC_WRAP(put_pos);
     }
@@ -676,7 +676,7 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_LOAD_SHADER;
 
         cmd_buffer[put_pos].shader_load.byte_code_size = params.byte_code_size;
-        cmd_buffer[put_pos].shader_load.type           = params.type;
+        cmd_buffer[put_pos].shader_load.type = params.type;
 
         if (params.byte_code)
         {
@@ -689,13 +689,13 @@ namespace pen
         {
             cmd_buffer[put_pos].shader_load.so_num_entries = params.so_num_entries;
 
-            u32 entries_size                                = sizeof(stream_out_decl_entry) * params.so_num_entries;
+            u32 entries_size = sizeof(stream_out_decl_entry) * params.so_num_entries;
             cmd_buffer[put_pos].shader_load.so_decl_entries = (stream_out_decl_entry*)memory_alloc(entries_size);
 
             memcpy(cmd_buffer[put_pos].shader_load.so_decl_entries, params.so_decl_entries, entries_size);
         }
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -709,17 +709,17 @@ namespace pen
 
         cmd_buffer[put_pos].link_params = params;
 
-        u32 num                                   = params.num_constants;
-        u32 layout_size                           = sizeof(constant_layout_desc) * num;
+        u32 num = params.num_constants;
+        u32 layout_size = sizeof(constant_layout_desc) * num;
         cmd_buffer[put_pos].link_params.constants = (constant_layout_desc*)memory_alloc(layout_size);
 
         constant_layout_desc* c = cmd_buffer[put_pos].link_params.constants;
         for (u32 i = 0; i < num; ++i)
         {
             c[i].location = params.constants[i].location;
-            c[i].type     = params.constants[i].type;
+            c[i].type = params.constants[i].type;
 
-            u32 len   = string_length(params.constants[i].name);
+            u32 len = string_length(params.constants[i].name);
             c[i].name = (c8*)memory_alloc(len + 1);
 
             memcpy(c[i].name, params.constants[i].name, len);
@@ -729,21 +729,21 @@ namespace pen
         cmd_buffer[put_pos].link_params.stream_out_names = nullptr;
         if (params.stream_out_shader != 0)
         {
-            u32 num_so                                       = params.num_stream_out_names;
+            u32 num_so = params.num_stream_out_names;
             cmd_buffer[put_pos].link_params.stream_out_names = (c8**)memory_alloc(sizeof(c8*) * num_so);
 
             c8** so = cmd_buffer[put_pos].link_params.stream_out_names;
             for (u32 i = 0; i < num_so; ++i)
             {
                 u32 len = string_length(params.stream_out_names[i]);
-                so[i]   = (c8*)memory_alloc(len + 1);
+                so[i] = (c8*)memory_alloc(len + 1);
 
                 memcpy(so[i], params.stream_out_names[i], len);
                 so[i][len] = '\0';
             }
         }
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -760,7 +760,7 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_SET_SHADER;
 
         cmd_buffer[put_pos].set_shader.shader_index = shader_index;
-        cmd_buffer[put_pos].set_shader.shader_type  = shader_type;
+        cmd_buffer[put_pos].set_shader.shader_type = shader_type;
 
         INC_WRAP(put_pos);
     }
@@ -770,7 +770,7 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_CREATE_INPUT_LAYOUT;
 
         // simple data
-        cmd_buffer[put_pos].create_input_layout.num_elements      = params.num_elements;
+        cmd_buffer[put_pos].create_input_layout.num_elements = params.num_elements;
         cmd_buffer[put_pos].create_input_layout.vs_byte_code_size = params.vs_byte_code_size;
 
         // copy buffer
@@ -778,12 +778,12 @@ namespace pen
         memcpy(cmd_buffer[put_pos].create_input_layout.vs_byte_code, params.vs_byte_code, params.vs_byte_code_size);
 
         // copy array
-        u32 input_layouts_size                               = sizeof(input_layout_desc) * params.num_elements;
+        u32 input_layouts_size = sizeof(input_layout_desc) * params.num_elements;
         cmd_buffer[put_pos].create_input_layout.input_layout = (input_layout_desc*)memory_alloc(input_layouts_size);
 
         memcpy(cmd_buffer[put_pos].create_input_layout.input_layout, params.input_layout, input_layouts_size);
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -813,7 +813,7 @@ namespace pen
             memcpy(cmd_buffer[put_pos].create_buffer.data, params.data, params.buffer_size);
         }
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -831,18 +831,18 @@ namespace pen
     {
         cmd_buffer[put_pos].command_index = CMD_SET_VERTEX_BUFFER;
 
-        cmd_buffer[put_pos].set_vertex_buffer.start_slot  = start_slot;
+        cmd_buffer[put_pos].set_vertex_buffer.start_slot = start_slot;
         cmd_buffer[put_pos].set_vertex_buffer.num_buffers = num_buffers;
 
         cmd_buffer[put_pos].set_vertex_buffer.buffer_indices = (u32*)memory_alloc(sizeof(u32) * num_buffers);
-        cmd_buffer[put_pos].set_vertex_buffer.strides        = (u32*)memory_alloc(sizeof(u32) * num_buffers);
-        cmd_buffer[put_pos].set_vertex_buffer.offsets        = (u32*)memory_alloc(sizeof(u32) * num_buffers);
+        cmd_buffer[put_pos].set_vertex_buffer.strides = (u32*)memory_alloc(sizeof(u32) * num_buffers);
+        cmd_buffer[put_pos].set_vertex_buffer.offsets = (u32*)memory_alloc(sizeof(u32) * num_buffers);
 
         for (u32 i = 0; i < num_buffers; ++i)
         {
             cmd_buffer[put_pos].set_vertex_buffer.buffer_indices[i] = buffer_indices[i];
-            cmd_buffer[put_pos].set_vertex_buffer.strides[i]        = strides[i];
-            cmd_buffer[put_pos].set_vertex_buffer.offsets[i]        = offsets[i];
+            cmd_buffer[put_pos].set_vertex_buffer.strides[i] = strides[i];
+            cmd_buffer[put_pos].set_vertex_buffer.offsets[i] = offsets[i];
         }
 
         INC_WRAP(put_pos);
@@ -850,19 +850,19 @@ namespace pen
 
     void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
     {
-        cmd_buffer[put_pos].command_index                 = CMD_SET_INDEX_BUFFER;
+        cmd_buffer[put_pos].command_index = CMD_SET_INDEX_BUFFER;
         cmd_buffer[put_pos].set_index_buffer.buffer_index = buffer_index;
-        cmd_buffer[put_pos].set_index_buffer.format       = format;
-        cmd_buffer[put_pos].set_index_buffer.offset       = offset;
+        cmd_buffer[put_pos].set_index_buffer.format = format;
+        cmd_buffer[put_pos].set_index_buffer.offset = offset;
 
         INC_WRAP(put_pos);
     }
 
     void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
     {
-        cmd_buffer[put_pos].command_index           = CMD_DRAW;
-        cmd_buffer[put_pos].draw.vertex_count       = vertex_count;
-        cmd_buffer[put_pos].draw.start_vertex       = start_vertex;
+        cmd_buffer[put_pos].command_index = CMD_DRAW;
+        cmd_buffer[put_pos].draw.vertex_count = vertex_count;
+        cmd_buffer[put_pos].draw.start_vertex = start_vertex;
         cmd_buffer[put_pos].draw.primitive_topology = primitive_topology;
 
         INC_WRAP(put_pos);
@@ -870,10 +870,10 @@ namespace pen
 
     void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
     {
-        cmd_buffer[put_pos].command_index                   = CMD_DRAW_INDEXED;
-        cmd_buffer[put_pos].draw_indexed.index_count        = index_count;
-        cmd_buffer[put_pos].draw_indexed.start_index        = start_index;
-        cmd_buffer[put_pos].draw_indexed.base_vertex        = base_vertex;
+        cmd_buffer[put_pos].command_index = CMD_DRAW_INDEXED;
+        cmd_buffer[put_pos].draw_indexed.index_count = index_count;
+        cmd_buffer[put_pos].draw_indexed.start_index = start_index;
+        cmd_buffer[put_pos].draw_indexed.base_vertex = base_vertex;
         cmd_buffer[put_pos].draw_indexed.primitive_topology = primitive_topology;
 
         INC_WRAP(put_pos);
@@ -882,12 +882,12 @@ namespace pen
     void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                          u32 base_vertex, u32 primitive_topology)
     {
-        cmd_buffer[put_pos].command_index                             = CMD_DRAW_INDEXED_INSTANCED;
-        cmd_buffer[put_pos].draw_indexed_instanced.instance_count     = instance_count;
-        cmd_buffer[put_pos].draw_indexed_instanced.start_instance     = start_instance;
-        cmd_buffer[put_pos].draw_indexed_instanced.index_count        = index_count;
-        cmd_buffer[put_pos].draw_indexed_instanced.start_index        = start_index;
-        cmd_buffer[put_pos].draw_indexed_instanced.base_vertex        = base_vertex;
+        cmd_buffer[put_pos].command_index = CMD_DRAW_INDEXED_INSTANCED;
+        cmd_buffer[put_pos].draw_indexed_instanced.instance_count = instance_count;
+        cmd_buffer[put_pos].draw_indexed_instanced.start_instance = start_instance;
+        cmd_buffer[put_pos].draw_indexed_instanced.index_count = index_count;
+        cmd_buffer[put_pos].draw_indexed_instanced.start_index = start_index;
+        cmd_buffer[put_pos].draw_indexed_instanced.base_vertex = base_vertex;
         cmd_buffer[put_pos].draw_indexed_instanced.primitive_topology = primitive_topology;
 
         INC_WRAP(put_pos);
@@ -901,7 +901,7 @@ namespace pen
 
         memcpy(&cmd_buffer[put_pos].create_render_target, (void*)&tcp, sizeof(texture_creation_params));
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -937,7 +937,7 @@ namespace pen
             cmd_buffer[put_pos].create_texture.data = nullptr;
         }
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -953,7 +953,7 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_RELEASE_SHADER;
 
         cmd_buffer[put_pos].set_shader.shader_index = shader_index;
-        cmd_buffer[put_pos].set_shader.shader_type  = shader_type;
+        cmd_buffer[put_pos].set_shader.shader_type = shader_type;
 
         INC_WRAP(put_pos);
     }
@@ -988,7 +988,7 @@ namespace pen
 
         memcpy(&cmd_buffer[put_pos].create_sampler, (void*)&scp, sizeof(sampler_creation_params));
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -1003,8 +1003,8 @@ namespace pen
         cmd_buffer[put_pos].set_texture.texture_index = texture_index;
         cmd_buffer[put_pos].set_texture.sampler_index = sampler_index;
         cmd_buffer[put_pos].set_texture.resource_slot = resource_slot;
-        cmd_buffer[put_pos].set_texture.shader_type   = shader_type;
-        cmd_buffer[put_pos].set_texture.flags         = flags;
+        cmd_buffer[put_pos].set_texture.shader_type = shader_type;
+        cmd_buffer[put_pos].set_texture.flags = flags;
 
         INC_WRAP(put_pos);
     }
@@ -1015,7 +1015,7 @@ namespace pen
 
         memcpy(&cmd_buffer[put_pos].create_raster_state, (void*)&rscp, sizeof(rasteriser_state_creation_params));
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -1069,13 +1069,13 @@ namespace pen
         memcpy(&cmd_buffer[put_pos].create_blend_state, (void*)&bcp, sizeof(blend_creation_params));
 
         // alloc and copy the render targets blend modes. to save space in the cmd buffer
-        u32   render_target_modes_size                        = sizeof(render_target_blend) * bcp.num_render_targets;
-        void* mem                                             = memory_alloc(render_target_modes_size);
+        u32   render_target_modes_size = sizeof(render_target_blend) * bcp.num_render_targets;
+        void* mem = memory_alloc(render_target_modes_size);
         cmd_buffer[put_pos].create_blend_state.render_targets = (render_target_blend*)mem;
 
         memcpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -1099,9 +1099,9 @@ namespace pen
 
         cmd_buffer[put_pos].command_index = CMD_SET_CONSTANT_BUFFER;
 
-        cmd_buffer[put_pos].set_constant_buffer.buffer_index  = buffer_index;
+        cmd_buffer[put_pos].set_constant_buffer.buffer_index = buffer_index;
         cmd_buffer[put_pos].set_constant_buffer.resource_slot = resource_slot;
-        cmd_buffer[put_pos].set_constant_buffer.shader_type   = shader_type;
+        cmd_buffer[put_pos].set_constant_buffer.shader_type = shader_type;
 
         INC_WRAP(put_pos);
     }
@@ -1114,9 +1114,9 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_UPDATE_BUFFER;
 
         cmd_buffer[put_pos].update_buffer.buffer_index = buffer_index;
-        cmd_buffer[put_pos].update_buffer.data_size    = data_size;
-        cmd_buffer[put_pos].update_buffer.offset       = offset;
-        cmd_buffer[put_pos].update_buffer.data         = memory_alloc(data_size);
+        cmd_buffer[put_pos].update_buffer.data_size = data_size;
+        cmd_buffer[put_pos].update_buffer.offset = offset;
+        cmd_buffer[put_pos].update_buffer.data = memory_alloc(data_size);
         memcpy(cmd_buffer[put_pos].update_buffer.data, data, data_size);
 
         INC_WRAP(put_pos);
@@ -1131,7 +1131,7 @@ namespace pen
 
         memcpy(cmd_buffer[put_pos].p_create_depth_stencil_state, &dscp, sizeof(depth_stencil_creation_params));
 
-        u32 resource_slot                 = slot_resources_get_next(&k_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
@@ -1158,7 +1158,7 @@ namespace pen
             }
         }
 
-        cmd_buffer[put_pos].command_index          = CMD_SET_TARGETS;
+        cmd_buffer[put_pos].command_index = CMD_SET_TARGETS;
         cmd_buffer[put_pos].set_targets.num_colour = num_colour_targets;
         memcpy(&cmd_buffer[put_pos].set_targets.colour, colour_targets, num_colour_targets * sizeof(u32));
         cmd_buffer[put_pos].set_targets.depth = depth_target;
@@ -1168,21 +1168,21 @@ namespace pen
 
     void renderer_set_targets(u32 colour_target, u32 depth_target)
     {
-        cmd_buffer[put_pos].command_index          = CMD_SET_TARGETS;
+        cmd_buffer[put_pos].command_index = CMD_SET_TARGETS;
         cmd_buffer[put_pos].set_targets.num_colour = 1;
-        cmd_buffer[put_pos].set_targets.colour[0]  = colour_target;
-        cmd_buffer[put_pos].set_targets.depth      = depth_target;
+        cmd_buffer[put_pos].set_targets.colour[0] = colour_target;
+        cmd_buffer[put_pos].set_targets.depth = depth_target;
 
         INC_WRAP(put_pos);
     }
 
     void renderer_set_targets_cube(u32 colour_target, u32 colour_face, u32 depth_target, u32 depth_face)
     {
-        cmd_buffer[put_pos].command_index                = CMD_SET_TARGETS_CUBE;
-        cmd_buffer[put_pos].set_targets_cube.colour      = colour_target;
+        cmd_buffer[put_pos].command_index = CMD_SET_TARGETS_CUBE;
+        cmd_buffer[put_pos].set_targets_cube.colour = colour_target;
         cmd_buffer[put_pos].set_targets_cube.colour_face = colour_face;
-        cmd_buffer[put_pos].set_targets_cube.depth       = depth_target;
-        cmd_buffer[put_pos].set_targets_cube.depth_face  = depth_face;
+        cmd_buffer[put_pos].set_targets_cube.depth = depth_target;
+        cmd_buffer[put_pos].set_targets_cube.depth_face = depth_face;
 
         INC_WRAP(put_pos);
     }
@@ -1192,7 +1192,7 @@ namespace pen
         if (!slot_resources_free(&k_renderer_slot_resources, blend_state))
             return;
 
-        cmd_buffer[put_pos].command_index      = CMD_RELEASE_BLEND_STATE;
+        cmd_buffer[put_pos].command_index = CMD_RELEASE_BLEND_STATE;
         cmd_buffer[put_pos].command_data_index = blend_state;
 
         INC_WRAP(put_pos);
@@ -1284,7 +1284,7 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_RESOLVE_TARGET;
 
         cmd_buffer[put_pos].resolve_params.render_target = target;
-        cmd_buffer[put_pos].resolve_params.resolve_type  = type;
+        cmd_buffer[put_pos].resolve_params.resolve_type = type;
 
         INC_WRAP(put_pos);
     }
@@ -1318,9 +1318,9 @@ namespace pen
     {
         u32 resource_slot = slot_resources_get_next(&k_renderer_slot_resources);
 
-        cmd_buffer[put_pos].command_index      = CMD_CREATE_CLEAR_STATE;
+        cmd_buffer[put_pos].command_index = CMD_CREATE_CLEAR_STATE;
         cmd_buffer[put_pos].clear_state_params = cs;
-        cmd_buffer[put_pos].resource_slot      = resource_slot;
+        cmd_buffer[put_pos].resource_slot = resource_slot;
 
         INC_WRAP(put_pos);
 
@@ -1332,7 +1332,7 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_PUSH_PERF_MARKER;
 
         // make copy of string to be able to use temporaries
-        u32 len                  = string_length(name);
+        u32 len = string_length(name);
         cmd_buffer[put_pos].name = (c8*)memory_alloc(len);
         memcpy(cmd_buffer[put_pos].name, name, len);
         cmd_buffer[put_pos].name[len] = '\0';

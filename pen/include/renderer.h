@@ -41,8 +41,8 @@ namespace pen
     enum special_values
     {
         BACK_BUFFER_RATIO = (u32)-1,
-        MAX_MRT           = 8,
-        CUBEMAP_FACES     = 6
+        MAX_MRT = 8,
+        CUBEMAP_FACES = 6
     };
 
     enum e_clear_types
@@ -165,10 +165,10 @@ namespace pen
 
     enum texture_collection_type
     {
-        TEXTURE_COLLECTION_NONE   = 0,
-        TEXTURE_COLLECTION_CUBE   = 1,
+        TEXTURE_COLLECTION_NONE = 0,
+        TEXTURE_COLLECTION_CUBE = 1,
         TEXTURE_COLLECTION_VOLUME = 2,
-        TEXTURE_COLLECTION_ARRAY  = 3
+        TEXTURE_COLLECTION_ARRAY = 3
     };
 
     struct texture_creation_params
@@ -193,32 +193,32 @@ namespace pen
 
     struct sampler_creation_params
     {
-        u32 filter          = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-        u32 address_u       = PEN_TEXTURE_ADDRESS_WRAP;
-        u32 address_v       = PEN_TEXTURE_ADDRESS_WRAP;
-        u32 address_w       = PEN_TEXTURE_ADDRESS_WRAP;
-        f32 mip_lod_bias    = 0.0f;
-        u32 max_anisotropy  = 0;
+        u32 filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
+        u32 address_u = PEN_TEXTURE_ADDRESS_WRAP;
+        u32 address_v = PEN_TEXTURE_ADDRESS_WRAP;
+        u32 address_w = PEN_TEXTURE_ADDRESS_WRAP;
+        f32 mip_lod_bias = 0.0f;
+        u32 max_anisotropy = 0;
         u32 comparison_func = PEN_COMPARISON_ALWAYS;
         f32 border_color[4] = {0.0f};
-        f32 min_lod         = -1.0f;
-        f32 max_lod         = -1.0f;
+        f32 min_lod = -1.0f;
+        f32 max_lod = -1.0f;
 
         sampler_creation_params(){};
     };
 
     struct rasteriser_state_creation_params
     {
-        u32 fill_mode               = PEN_FILL_SOLID;
-        u32 cull_mode               = PEN_CULL_BACK;
-        s32 front_ccw               = 0;
-        s32 depth_bias              = 0;
-        f32 depth_bias_clamp        = 0.0f;
+        u32 fill_mode = PEN_FILL_SOLID;
+        u32 cull_mode = PEN_CULL_BACK;
+        s32 front_ccw = 0;
+        s32 depth_bias = 0;
+        f32 depth_bias_clamp = 0.0f;
         f32 sloped_scale_depth_bias = 0.0f;
-        s32 depth_clip_enable       = 1;
-        s32 scissor_enable          = 0;
-        s32 multisample             = 0;
-        s32 aa_lines                = 0;
+        s32 depth_clip_enable = 1;
+        s32 scissor_enable = 0;
+        s32 multisample = 0;
+        s32 aa_lines = 0;
 
         rasteriser_state_creation_params(){};
     };
@@ -236,13 +236,13 @@ namespace pen
 
     struct render_target_blend
     {
-        s32 blend_enable             = 0;
-        u32 src_blend                = PEN_BLEND_ONE;
-        u32 dest_blend               = PEN_BLEND_ZERO;
-        u32 blend_op                 = PEN_BLEND_OP_ADD;
-        u32 src_blend_alpha          = PEN_BLEND_ONE;
-        u32 dest_blend_alpha         = PEN_BLEND_ZERO;
-        u32 blend_op_alpha           = PEN_BLEND_OP_ADD;
+        s32 blend_enable = 0;
+        u32 src_blend = PEN_BLEND_ONE;
+        u32 dest_blend = PEN_BLEND_ZERO;
+        u32 blend_op = PEN_BLEND_OP_ADD;
+        u32 src_blend_alpha = PEN_BLEND_ONE;
+        u32 dest_blend_alpha = PEN_BLEND_ZERO;
+        u32 blend_op_alpha = PEN_BLEND_OP_ADD;
         u8  render_target_write_mask = 0xff;
 
         render_target_blend(){};
@@ -290,15 +290,15 @@ namespace pen
     enum e_texture_bind_flags
     {
         TEXTURE_BIND_NO_FLAGS = 0,
-        TEXTURE_BIND_MSAA     = 1
+        TEXTURE_BIND_MSAA = 1
     };
 
     enum e_msaa_resolve_type
     {
         RESOLVE_AVERAGE = 0,
-        RESOLVE_MIN     = 1,
-        RESOLVE_MAX     = 2,
-        RESOLVE_CUSTOM  = 3
+        RESOLVE_MIN = 1,
+        RESOLVE_MAX = 2,
+        RESOLVE_CUSTOM = 3
     };
 
     struct resolve_resources

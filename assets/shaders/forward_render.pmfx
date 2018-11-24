@@ -561,20 +561,6 @@ pmfx:
             }
         }
     },
-
-    "forward_lit_sdf_shadow":
-    {
-        "inherit": "forward_lit",
-        "defines": ["SDF_SHADOW"],
-        
-        "constants":
-        {
-            "albedo"        : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
-            "roughness"     : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
-            "reflectivity"  : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
-            "surface_offset": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 }
-        }
-    },
     
     "gbuffer":
     {

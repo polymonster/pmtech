@@ -94,10 +94,10 @@ namespace put
         struct vgt_options
         {
             s32  volume_dimension = 7;
-            u32  rasterise_axes   = AXIS_ALL_MASK;
-            s32  volume_type      = VOLUME_RASTERISED_TEXELS;
-            s32  capture_data     = 0;
-            bool generate_mips    = true;
+            u32  rasterise_axes = AXIS_ALL_MASK;
+            s32  volume_type = VOLUME_RASTERISED_TEXELS;
+            s32  capture_data = 0;
+            bool generate_mips = true;
         };
 
         struct generated_volume
@@ -113,9 +113,9 @@ namespace put
         {
             vgt_options options;
             void**      volume_slices[k_num_axes] = {0};
-            s32         current_slice             = 0;
-            s32         current_requested_slice   = -1;
-            s32         current_axis              = 0;
+            s32         current_slice = 0;
+            s32         current_requested_slice = -1;
+            s32         current_axis = 0;
             u32         dimension;
             extents     visible_extents;
             extents     current_slice_aabb;
@@ -149,7 +149,7 @@ namespace put
             bool          trust_sign = true;
             f32           padding;
             u32           generate_in_progress = 0;
-            s32           capture_type         = 0;
+            s32           capture_type = 0;
             u32           generated_volume_index;
         };
         static vgt_sdf_job s_sdf_job;
@@ -163,11 +163,11 @@ namespace put
 
         u8* get_texel(u32 axis, u32 x, u32 y, u32 z)
         {
-            u32&    volume_dim    = s_rasteriser_job.dimension;
+            u32&    volume_dim = s_rasteriser_job.dimension;
             void*** volume_slices = s_rasteriser_job.volume_slices;
 
             u32 block_size = 4;
-            u32 row_pitch  = volume_dim * 4;
+            u32 row_pitch = volume_dim * 4;
 
             u32 invx = volume_dim - x - 1;
             u32 invy = volume_dim - y - 1;
@@ -187,38 +187,38 @@ namespace put
                 case ZAXIS_POS:
                 {
                     u32 offset_zpos = y * row_pitch + invx * block_size;
-                    slice           = (u8*)volume_slices[0][z];
+                    slice = (u8*)volume_slices[0][z];
                     return &slice[offset_zpos];
                 }
                 case ZAXIS_NEG:
                 {
                     u32 offset_zneg = y * row_pitch + x * block_size;
-                    slice           = (u8*)volume_slices[3][invz];
+                    slice = (u8*)volume_slices[3][invz];
                     return &slice[offset_zneg];
                 }
                 case YAXIS_POS:
                 {
                     u32 offset_ypos = invz * row_pitch + x * block_size;
-                    slice           = (u8*)volume_slices[1][invy];
+                    slice = (u8*)volume_slices[1][invy];
                     return &slice[offset_ypos];
                 }
                 case YAXIS_NEG:
                 {
                     u32 offset_yneg = z * row_pitch + x * block_size;
-                    slice           = (u8*)volume_slices[4][y];
+                    slice = (u8*)volume_slices[4][y];
 
                     return &slice[offset_yneg];
                 }
                 case XAXIS_POS:
                 {
                     u32 offset_xpos = y * row_pitch + z * block_size;
-                    slice           = (u8*)volume_slices[2][x];
+                    slice = (u8*)volume_slices[2][x];
                     return &slice[offset_xpos];
                 }
                 case XAXIS_NEG:
                 {
                     u32 offset_xneg = y * row_pitch + invz * block_size;
-                    slice           = (u8*)volume_slices[5][invx];
+                    slice = (u8*)volume_slices[5][invx];
                     return &slice[offset_xneg];
                 }
                 default:
@@ -242,7 +242,7 @@ namespace put
             }
 
             s32&    current_slice = s_rasteriser_job.current_slice;
-            s32&    current_axis  = s_rasteriser_job.current_axis;
+            s32&    current_axis = s_rasteriser_job.current_axis;
             void*** volume_slices = s_rasteriser_job.volume_slices;
 
             u32 w = row_pitch / block_size;
@@ -251,8 +251,8 @@ namespace put
             if (w != s_rasteriser_job.dimension)
             {
                 u32 dest_row_pitch = s_rasteriser_job.dimension * block_size;
-                u8* src_iter       = (u8*)p_data;
-                u8* dest_iter      = (u8*)volume_slices[current_axis][current_slice];
+                u8* src_iter = (u8*)p_data;
+                u8* dest_iter = (u8*)volume_slices[current_axis][current_slice];
                 for (u32 y = 0; y < h; ++y)
                 {
                     memcpy(dest_iter, src_iter, dest_row_pitch);
@@ -270,20 +270,20 @@ namespace put
 
         PEN_TRV raster_voxel_combine(void* params)
         {
-            pen::job_thread_params* job_params     = (pen::job_thread_params*)params;
+            pen::job_thread_params* job_params = (pen::job_thread_params*)params;
             vgt_rasteriser_job*     rasteriser_job = (vgt_rasteriser_job*)job_params->user_data;
-            pen::job*               p_thread_info  = job_params->job_info;
+            pen::job*               p_thread_info = job_params->job_info;
             pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
-            u32&    volume_dim    = rasteriser_job->dimension;
+            u32&    volume_dim = rasteriser_job->dimension;
             void*** volume_slices = rasteriser_job->volume_slices;
 
             // create a simple 3d texture
             rasteriser_job->block_size = 4;
-            rasteriser_job->data_size  = volume_dim * volume_dim * volume_dim * rasteriser_job->block_size;
+            rasteriser_job->data_size = volume_dim * volume_dim * volume_dim * rasteriser_job->block_size;
 
             u8* volume_data = (u8*)pen::memory_alloc(rasteriser_job->data_size);
-            u32 row_pitch   = volume_dim * rasteriser_job->block_size;
+            u32 row_pitch = volume_dim * rasteriser_job->block_size;
             u32 slice_pitch = volume_dim * row_pitch;
 
             rasteriser_job->combine_position = 0;
@@ -368,7 +368,7 @@ namespace put
                             for (u32 n = 0; n < PEN_ARRAY_SIZE(nb); ++n)
                             {
                                 vec3i nn = vec3i(x + nb[n].x, y + nb[n].y, z + nb[n].z);
-                                nn       = vclamp(nn, clamp_min, clamp_max);
+                                nn = vclamp(nn, clamp_min, clamp_max);
 
                                 u32 noffset = get_texel_offset(sp, rp, bs, nn.x, nn.y, nn.z);
 
@@ -393,7 +393,7 @@ namespace put
             sb_push(s_generated_volumes, gv);
 
             rasteriser_job->generated_volume_index = sb_count(s_generated_volumes) - 1;
-            rasteriser_job->combine_in_progress    = 2;
+            rasteriser_job->combine_in_progress = 2;
 
             pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
             pen::thread_semaphore_signal(p_thread_info->p_sem_terminated, 1);
@@ -404,8 +404,8 @@ namespace put
         {
 #if PEN_SIMD
             // calc num mips
-            u32              num_mips   = 1;
-            u32              data_size  = 0;
+            u32              num_mips = 1;
+            u32              data_size = 0;
             static const u32 block_size = 4;
 
             vec3ui m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
@@ -431,7 +431,7 @@ namespace put
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
             u8* prev_level = (u8*)data;
-            u8* cur_level  = prev_level + tcp.data_size;
+            u8* cur_level = prev_level + tcp.data_size;
 
             __m128 vrecip = _mm_set1_ps(1.0f / 8.0f);
             __m128 r00, r01, r10, r11;
@@ -451,7 +451,7 @@ namespace put
                 u32 c_sp = c_rp * m.y;       // cur slice pitch
 
                 u32 block_copy_size = std::min<u32>(m.x * 4, 16);
-                u32 block_offset    = block_copy_size < 16 ? 0 : 16;
+                u32 block_offset = block_copy_size < 16 ? 0 : 16;
 
                 for (u32 z = 0; z < m.z; ++z)
                 {
@@ -460,16 +460,16 @@ namespace put
                         for (u32 x = 0; x < m.x; x += 4)
                         {
                             vec3ui vobase = vec3ui(x * 2, y * 2, z * 2);
-                            vec3ui vo     = vobase;
-                            p_offset[0]   = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
+                            vec3ui vo = vobase;
+                            p_offset[0] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
-                            vo          = vobase + offsets[1];
+                            vo = vobase + offsets[1];
                             p_offset[1] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
-                            vo          = vobase + offsets[2];
+                            vo = vobase + offsets[2];
                             p_offset[2] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
-                            vo          = vobase + offsets[3];
+                            vo = vobase + offsets[3];
                             p_offset[3] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
                             memcpy(&r00, &prev_level[p_offset[0]], block_copy_size);
@@ -492,13 +492,13 @@ namespace put
                             __m128 x7 = _mm_shuffle_ps(d10, d11, _MM_SHUFFLE(3, 1, 3, 1));
 
                             __m128 output = _mm_add_ps(x0, x1);
-                            output        = _mm_add_ps(output, x2);
-                            output        = _mm_add_ps(output, x3);
-                            output        = _mm_add_ps(output, x4);
-                            output        = _mm_add_ps(output, x5);
-                            output        = _mm_add_ps(output, x6);
-                            output        = _mm_add_ps(output, x7);
-                            output        = _mm_mul_ps(output, vrecip);
+                            output = _mm_add_ps(output, x2);
+                            output = _mm_add_ps(output, x3);
+                            output = _mm_add_ps(output, x4);
+                            output = _mm_add_ps(output, x5);
+                            output = _mm_add_ps(output, x6);
+                            output = _mm_add_ps(output, x7);
+                            output = _mm_mul_ps(output, vrecip);
 
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
                             memcpy(&cur_level[c_offset], &output, block_copy_size);
@@ -510,7 +510,7 @@ namespace put
                 cur_level += c_sp * m.z;
             }
 
-            tcp.num_mips  = num_mips;
+            tcp.num_mips = num_mips;
             tcp.data_size = data_size;
 
             tcp.data = data;
@@ -521,8 +521,8 @@ namespace put
         {
 #if PEN_SIMD
             // calc num mips
-            u32              num_mips   = 1;
-            u32              data_size  = 0;
+            u32              num_mips = 1;
+            u32              data_size = 0;
             static const u32 block_size = 4;
 
             vec3ui m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
@@ -548,7 +548,7 @@ namespace put
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
             u8* prev_level = (u8*)data;
-            u8* cur_level  = prev_level + tcp.data_size;
+            u8* cur_level = prev_level + tcp.data_size;
 
             u32 p_offset[4];
 
@@ -603,7 +603,7 @@ namespace put
                 u32 c_sp = c_rp * m.y;       // cur slice pitch
 
                 u32 block_copy_size = std::min<u32>(m.x * 4, 16);
-                u32 block_offset    = block_copy_size < 16 ? 0 : 16;
+                u32 block_offset = block_copy_size < 16 ? 0 : 16;
 
                 for (u32 z = 0; z < m.z; ++z)
                 {
@@ -612,16 +612,16 @@ namespace put
                         for (u32 x = 0; x < m.x; x += 4)
                         {
                             vec3ui vobase = vec3ui(x * 2, y * 2, z * 2);
-                            vec3ui vo     = vobase;
-                            p_offset[0]   = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
+                            vec3ui vo = vobase;
+                            p_offset[0] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
-                            vo          = vobase + offsets[1];
+                            vo = vobase + offsets[1];
                             p_offset[1] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
-                            vo          = vobase + offsets[2];
+                            vo = vobase + offsets[2];
                             p_offset[2] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
-                            vo          = vobase + offsets[3];
+                            vo = vobase + offsets[3];
                             p_offset[3] = p_sp * vo.z + p_rp * vo.y + block_size * vo.x;
 
                             memcpy(&r00, &prev_level[p_offset[0]], block_copy_size);
@@ -636,12 +636,12 @@ namespace put
 
                             // max of 4x4 rgba block
                             __m128i x0 = _mm_max_epu8(r00, r10);
-                            x0         = _mm_max_epu8(x0, d00);
-                            x0         = _mm_max_epu8(x0, d10);
+                            x0 = _mm_max_epu8(x0, d00);
+                            x0 = _mm_max_epu8(x0, d10);
 
                             __m128i x1 = _mm_max_epu8(r01, r11);
-                            x1         = _mm_max_epu8(x1, d01);
-                            x1         = _mm_max_epu8(x1, d11);
+                            x1 = _mm_max_epu8(x1, d01);
+                            x1 = _mm_max_epu8(x1, d11);
 
                             // shuffle and interleave
                             __m128i v0 = _mm_shuffle_epi8(x0, am);
@@ -649,8 +649,8 @@ namespace put
                             __m128i y0 = _mm_shuffle_epi8(x1, bm);
                             __m128i y1 = _mm_shuffle_epi8(x1, dm);
 
-                            __m128i vv     = _mm_max_epu8(v0, v1);
-                            __m128i yy     = _mm_max_epu8(y0, y1);
+                            __m128i vv = _mm_max_epu8(v0, v1);
+                            __m128i yy = _mm_max_epu8(y0, y1);
                             __m128i output = _mm_max_epu8(vv, yy);
 
                             u32 c_offset = c_sp * z + c_rp * y + block_size * x;
@@ -663,7 +663,7 @@ namespace put
                 cur_level += c_sp * m.z;
             }
 
-            tcp.num_mips  = num_mips;
+            tcp.num_mips = num_mips;
             tcp.data_size = data_size;
 
             tcp.data = data;
@@ -673,8 +673,8 @@ namespace put
         void generate_mips_r32f(pen::texture_creation_params& tcp)
         {
             // calc num mips
-            u32              num_mips   = 1;
-            u32              data_size  = 0;
+            u32              num_mips = 1;
+            u32              data_size = 0;
             static const u32 block_size = 4;
 
             vec3ui m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
@@ -704,7 +704,7 @@ namespace put
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
             u8* prev_level = (u8*)data;
-            u8* cur_level  = prev_level + tcp.data_size;
+            u8* cur_level = prev_level + tcp.data_size;
 
             for (u32 i = 0; i < num_mips - 1; ++i)
             {
@@ -747,7 +747,7 @@ namespace put
                 cur_level += c_sp * m.z;
             }
 
-            tcp.num_mips  = num_mips;
+            tcp.num_mips = num_mips;
             tcp.data_size = data_size;
 
             tcp.data = data;
@@ -756,8 +756,8 @@ namespace put
         void generate_mips_rgba8(pen::texture_creation_params& tcp)
         {
             // calc num mips
-            u32              num_mips   = 1;
-            u32              data_size  = 0;
+            u32              num_mips = 1;
+            u32              data_size = 0;
             static const u32 block_size = 4;
 
             vec3ui m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
@@ -787,7 +787,7 @@ namespace put
             m = vec3ui(tcp.width, tcp.height, tcp.num_arrays);
 
             u8* prev_level = (u8*)data;
-            u8* cur_level  = prev_level + tcp.data_size;
+            u8* cur_level = prev_level + tcp.data_size;
 
             for (u32 i = 0; i < num_mips - 1; ++i)
             {
@@ -833,7 +833,7 @@ namespace put
                 cur_level += c_sp * m.z;
             }
 
-            tcp.num_mips  = num_mips;
+            tcp.num_mips = num_mips;
             tcp.data_size = data_size;
 
             tcp.data = data;
@@ -847,39 +847,39 @@ namespace put
             pen::texture_creation_params tcp;
             tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
 
-            tcp.width            = volume_dim;
-            tcp.height           = volume_dim;
-            tcp.format           = tex_format;
-            tcp.num_mips         = 1;
-            tcp.num_arrays       = volume_dim;
-            tcp.sample_count     = 1;
-            tcp.sample_quality   = 0;
-            tcp.usage            = PEN_USAGE_DEFAULT;
-            tcp.bind_flags       = PEN_BIND_SHADER_RESOURCE;
+            tcp.width = volume_dim;
+            tcp.height = volume_dim;
+            tcp.format = tex_format;
+            tcp.num_mips = 1;
+            tcp.num_arrays = volume_dim;
+            tcp.sample_count = 1;
+            tcp.sample_quality = 0;
+            tcp.usage = PEN_USAGE_DEFAULT;
+            tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
             tcp.cpu_access_flags = 0;
-            tcp.flags            = 0;
-            tcp.block_size       = block_size;
+            tcp.flags = 0;
+            tcp.block_size = block_size;
             tcp.pixels_per_block = 1;
-            tcp.data             = volume_data;
-            tcp.data_size        = data_size;
+            tcp.data = volume_data;
+            tcp.data_size = data_size;
 
             if (tex_format == PEN_TEX_FORMAT_R16_FLOAT)
             {
-                tcp.block_size    = 2;
+                tcp.block_size = 2;
                 u32 new_data_size = tcp.width * tcp.height * tcp.num_arrays * tcp.block_size;
 
-                f16* new_data   = (f16*)pen::memory_alloc(new_data_size);
+                f16* new_data = (f16*)pen::memory_alloc(new_data_size);
                 f32* float_data = (f32*)volume_data;
 
                 for (u32 i = 0; i < tcp.width * tcp.height * tcp.num_arrays; ++i)
                     new_data[i] = float_to_half(float_data[i]);
 
-                tcp.data      = new_data;
-                tcp.format    = PEN_TEX_FORMAT_R16_FLOAT;
+                tcp.data = new_data;
+                tcp.format = PEN_TEX_FORMAT_R16_FLOAT;
                 tcp.data_size = new_data_size;
 
                 gv.texture = PEN_INVALID_HANDLE;
-                gv.tcp     = tcp;
+                gv.tcp = tcp;
 
                 return gv;
             }
@@ -923,7 +923,7 @@ namespace put
             }
 
             gv.texture = PEN_INVALID_HANDLE;
-            gv.tcp     = tcp;
+            gv.tcp = tcp;
 
             return gv;
         }
@@ -950,25 +950,25 @@ namespace put
 
             // create material for volume ray trace
             material_resource* volume_material = new material_resource;
-            volume_material->material_name     = "volume_material";
-            volume_material->shader_name       = "pmfx_utility";
-            volume_material->id_shader         = PEN_HASH("pmfx_utility");
-            volume_material->id_technique      = PEN_HASH("volume_texture");
+            volume_material->material_name = "volume_material";
+            volume_material->shader_name = "pmfx_utility";
+            volume_material->id_shader = PEN_HASH("pmfx_utility");
+            volume_material->id_technique = PEN_HASH("volume_texture");
 
             volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear");
-            volume_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
+            volume_material->texture_handles[SN_VOLUME_TEXTURE] = gv.texture;
             add_material_resource(volume_material);
 
             geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
             vec3f scale = (s_rasteriser_job.visible_extents.max - s_rasteriser_job.visible_extents.min) / 2.0f;
-            vec3f pos   = s_rasteriser_job.visible_extents.min + scale;
+            vec3f pos = s_rasteriser_job.visible_extents.min + scale;
 
-            u32 new_prim           = get_new_node(scene);
+            u32 new_prim = get_new_node(scene);
             scene->names[new_prim] = "volume";
             scene->names[new_prim].appendf("%i", new_prim);
-            scene->transforms[new_prim].rotation    = quat();
-            scene->transforms[new_prim].scale       = scale;
+            scene->transforms[new_prim].rotation = quat();
+            scene->transforms[new_prim].scale = scale;
             scene->transforms[new_prim].translation = pos;
             scene->entities[new_prim] |= CMP_TRANSFORM | CMP_VOLUME;
             scene->parents[new_prim] = new_prim;
@@ -977,7 +977,7 @@ namespace put
             instantiate_material(volume_material, scene, new_prim);
             instantiate_model_cbuffer(scene, new_prim);
 
-            gv.pos   = pos;
+            gv.pos = pos;
             gv.scale = scale;
 
             gv.scene_node_index = new_prim;
@@ -993,7 +993,7 @@ namespace put
 
             // completed
             s_rasteriser_job.rasterise_in_progress = false;
-            s_rasteriser_job.combine_in_progress   = 0;
+            s_rasteriser_job.combine_in_progress = 0;
         }
 
         void volume_rasteriser_update(put::scene_controller* sc)
@@ -1033,15 +1033,15 @@ namespace put
                 return;
             }
 
-            u32& volume_dim              = s_rasteriser_job.dimension;
-            s32& current_slice           = s_rasteriser_job.current_slice;
-            s32& current_axis            = s_rasteriser_job.current_axis;
+            u32& volume_dim = s_rasteriser_job.dimension;
+            s32& current_slice = s_rasteriser_job.current_slice;
+            s32& current_axis = s_rasteriser_job.current_axis;
             s32& current_requested_slice = s_rasteriser_job.current_requested_slice;
 
             vec3f min = s_rasteriser_job.visible_extents.min;
             vec3f max = s_rasteriser_job.visible_extents.max;
 
-            vec3f dim           = max - min;
+            vec3f dim = max - min;
             f32   texel_boarder = component_wise_max(dim) / volume_dim;
 
             min -= texel_boarder;
@@ -1064,7 +1064,7 @@ namespace put
             vec3f mmax = smax[current_axis];
 
             f32 slice_thickness = (mmax.z - mmin.z) / volume_dim;
-            f32 near_slice      = mmin.z + slice_thickness * current_slice;
+            f32 near_slice = mmin.z + slice_thickness * current_slice;
 
             mmin.z = near_slice;
             mmax.z = near_slice + slice_thickness;
@@ -1079,15 +1079,15 @@ namespace put
             s_rasteriser_job.current_slice_aabb.max.z *= -1;
 
             static hash_id             id_volume_raster = PEN_HASH("volume_raster");
-            const pmfx::render_target* rt               = pmfx::get_render_target(id_volume_raster);
+            const pmfx::render_target* rt = pmfx::get_render_target(id_volume_raster);
 
             pen::resource_read_back_params rrbp;
-            rrbp.block_size         = 4;
-            rrbp.row_pitch          = volume_dim * rrbp.block_size;
-            rrbp.depth_pitch        = volume_dim * rrbp.row_pitch;
-            rrbp.data_size          = rrbp.depth_pitch;
-            rrbp.resource_index     = rt->handle;
-            rrbp.format             = PEN_TEX_FORMAT_BGRA8_UNORM;
+            rrbp.block_size = 4;
+            rrbp.row_pitch = volume_dim * rrbp.block_size;
+            rrbp.depth_pitch = volume_dim * rrbp.row_pitch;
+            rrbp.data_size = rrbp.depth_pitch;
+            rrbp.resource_index = rt->handle;
+            rrbp.format = PEN_TEX_FORMAT_BGRA8_UNORM;
             rrbp.call_back_function = image_read_back;
 
             pen::renderer_read_back_resource(rrbp);
@@ -1097,7 +1097,7 @@ namespace put
         PEN_TRV sdf_generate(void* params)
         {
             pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-            vgt_sdf_job*            sdf_job    = (vgt_sdf_job*)job_params->user_data;
+            vgt_sdf_job*            sdf_job = (vgt_sdf_job*)job_params->user_data;
 
             pen::job* p_thread_info = job_params->job_info;
             pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
@@ -1106,10 +1106,10 @@ namespace put
 
             // create a simple 3d texture
             u32 block_size = sdf_job->block_size;
-            u32 data_size  = volume_dim * volume_dim * volume_dim * block_size;
+            u32 data_size = volume_dim * volume_dim * volume_dim * block_size;
 
             u8* volume_data = (u8*)pen::memory_alloc(data_size);
-            u32 row_pitch   = volume_dim * block_size;
+            u32 row_pitch = volume_dim * block_size;
             u32 slice_pitch = volume_dim * row_pitch;
 
             std::vector<vec3f>  vertices;
@@ -1187,18 +1187,18 @@ namespace put
             s_sdf_job.scene_extents.min -= sd * s_sdf_job.padding;
             s_sdf_job.scene_extents.max += sd * s_sdf_job.padding;
 
-            extents scene_extents   = s_sdf_job.scene_extents;
+            extents scene_extents = s_sdf_job.scene_extents;
             vec3f   scene_dimension = scene_extents.max - scene_extents.min;
 
             sdf_job->volume_data = volume_data;
-            sdf_job->volume_dim  = volume_dim;
-            sdf_job->data_size   = data_size;
+            sdf_job->volume_dim = volume_dim;
+            sdf_job->data_size = data_size;
 
             if (triangles.size() > 0)
             {
                 f32 dx = component_wise_max(scene_dimension) / (f32)volume_dim;
 
-                vec3f centre          = scene_extents.min + ((scene_extents.max - scene_extents.min) / 2.0f);
+                vec3f centre = scene_extents.min + ((scene_extents.max - scene_extents.min) / 2.0f);
                 sdf_job->scene_centre = centre;
 
                 vec3f grid_origin = centre - vec3f(component_wise_max(scene_dimension) / 2.0f);
@@ -1209,8 +1209,8 @@ namespace put
                 if (g_cancel_volume_job)
                 {
                     s_sdf_job.generate_in_progress = false;
-                    g_mls_progress.sweeps          = 0;
-                    g_mls_progress.triangles       = 0;
+                    g_mls_progress.sweeps = 0;
+                    g_mls_progress.triangles = 0;
                     pen::memory_free(volume_data);
                     g_cancel_handled = true;
 
@@ -1326,10 +1326,10 @@ namespace put
 
                     // setup new job
                     s_rasteriser_job.options = s_options;
-                    u32 dim                  = 1 << s_rasteriser_job.options.volume_dimension;
+                    u32 dim = 1 << s_rasteriser_job.options.volume_dimension;
 
-                    s_rasteriser_job.dimension     = dim;
-                    s_rasteriser_job.current_axis  = 0;
+                    s_rasteriser_job.dimension = dim;
+                    s_rasteriser_job.current_axis = 0;
                     s_rasteriser_job.current_slice = 0;
 
                     // allocate cpu mem for rasterised slices
@@ -1393,7 +1393,7 @@ namespace put
                     if (ImGui::CollapsingHeader("Render Target Output"))
                     {
                         static hash_id             id_volume_raster_rt = PEN_HASH("volume_raster");
-                        const pmfx::render_target* volume_rt           = pmfx::get_render_target(id_volume_raster_rt);
+                        const pmfx::render_target* volume_rt = pmfx::get_render_target(id_volume_raster_rt);
                         ImGui::Image(IMG(volume_rt->handle), ImVec2(256, 256));
                     }
 
@@ -1423,18 +1423,18 @@ namespace put
 
                     if (sdf_texture_format == 0)
                     {
-                        s_sdf_job.block_size     = 4; // first generate a 32 bit float one, and compress later
+                        s_sdf_job.block_size = 4; // first generate a 32 bit float one, and compress later
                         s_sdf_job.texture_format = PEN_TEX_FORMAT_R16_FLOAT;
                     }
                     else
                     {
-                        s_sdf_job.block_size     = 4;
+                        s_sdf_job.block_size = 4;
                         s_sdf_job.texture_format = PEN_TEX_FORMAT_R32_FLOAT;
                     }
 
                     s_sdf_job.generate_in_progress = 1;
-                    s_sdf_job.scene                = s_main_scene;
-                    s_sdf_job.options              = s_options;
+                    s_sdf_job.scene = s_main_scene;
+                    s_sdf_job.options = s_options;
 
                     pen::thread_create_job(sdf_generate, 1024 * 1024 * 1024, &s_sdf_job, pen::THREAD_START_DETACHED);
                     return;
@@ -1464,24 +1464,24 @@ namespace put
                     u32 ss = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
 
                     // create material for volume sdf sphere trace
-                    material_resource* sdf_material                   = new material_resource;
-                    sdf_material->material_name                       = "volume_sdf_material";
-                    sdf_material->shader_name                         = "pmfx_utility";
-                    sdf_material->id_shader                           = PEN_HASH("pmfx_utility");
-                    sdf_material->id_technique                        = PEN_HASH("volume_sdf");
+                    material_resource* sdf_material = new material_resource;
+                    sdf_material->material_name = "volume_sdf_material";
+                    sdf_material->shader_name = "pmfx_utility";
+                    sdf_material->id_shader = PEN_HASH("pmfx_utility");
+                    sdf_material->id_technique = PEN_HASH("volume_sdf");
                     sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = ss;
-                    sdf_material->texture_handles[SN_VOLUME_TEXTURE]  = gv.texture;
+                    sdf_material->texture_handles[SN_VOLUME_TEXTURE] = gv.texture;
                     add_material_resource(sdf_material);
 
                     f32 single_scale = component_wise_max((s_sdf_job.scene_extents.max - s_sdf_job.scene_extents.min) / 2.0f);
-                    vec3f scale      = vec3f(single_scale);
-                    vec3f pos        = s_sdf_job.scene_centre;
+                    vec3f scale = vec3f(single_scale);
+                    vec3f pos = s_sdf_job.scene_centre;
 
-                    u32 new_prim                  = get_new_node(s_main_scene);
+                    u32 new_prim = get_new_node(s_main_scene);
                     s_main_scene->names[new_prim] = "volume";
                     s_main_scene->names[new_prim].appendf("%i", new_prim);
-                    s_main_scene->transforms[new_prim].rotation    = quat();
-                    s_main_scene->transforms[new_prim].scale       = scale;
+                    s_main_scene->transforms[new_prim].rotation = quat();
+                    s_main_scene->transforms[new_prim].scale = scale;
                     s_main_scene->transforms[new_prim].translation = pos;
                     s_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
                     s_main_scene->parents[new_prim] = new_prim;
@@ -1491,7 +1491,7 @@ namespace put
                     instantiate_model_cbuffer(s_main_scene, new_prim);
 
                     gv.scene_node_index = new_prim;
-                    gv.scale            = scale;
+                    gv.scale = scale;
 
                     s_sdf_job.generate_in_progress = 0;
                 }
@@ -1506,11 +1506,11 @@ namespace put
         {
             s_main_scene = scene;
             put::scene_controller cc;
-            cc.camera          = &s_volume_raster_ortho;
+            cc.camera = &s_volume_raster_ortho;
             cc.update_function = &volume_rasteriser_update;
-            cc.name            = "volume_rasteriser_camera";
-            cc.id_name         = PEN_HASH(cc.name.c_str());
-            cc.scene           = scene;
+            cc.name = "volume_rasteriser_camera";
+            cc.id_name = PEN_HASH(cc.name.c_str());
+            cc.scene = scene;
 
             pmfx::register_scene_controller(cc);
         }
@@ -1580,8 +1580,8 @@ namespace put
                 if (has_volumes)
                 {
                     static bool      save_dialog_open = false;
-                    static const c8* save_location    = nullptr;
-                    static s32       save_index       = -1;
+                    static const c8* save_location = nullptr;
+                    static s32       save_index = -1;
 
                     ImGui::Separator();
                     ImGui::Text("Generated Volumes");
@@ -1609,7 +1609,7 @@ namespace put
                         ImGui::NextColumn();
                         if (ImGui::Button("Save"))
                         {
-                            save_index       = n;
+                            save_index = n;
                             save_dialog_open = true;
                         }
 
@@ -1646,7 +1646,7 @@ namespace put
                                     Str json_file = basename;
                                     json_file.appendf(".pmv");
 
-                                    bool      sdf      = s_main_scene->entities[save_index] & CMP_SDF_SHADOW;
+                                    bool      sdf = s_main_scene->entities[save_index] & CMP_SDF_SHADOW;
                                     const c8* vol_name = sdf ? "signed_distance_field" : "volume_texture";
 
                                     pen::json j;
@@ -1675,7 +1675,7 @@ namespace put
 
         void post_update()
         {
-            static u32     dim                 = 128;
+            static u32     dim = 128;
             static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
             static hash_id id_volume_raster_ds = PEN_HASH("volume_raster_ds");
 

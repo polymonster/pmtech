@@ -117,47 +117,47 @@ vec3f random_vec_range(const debug_extents& extents)
 // Spawn a randomised point within range of extents
 void add_debug_point(const debug_extents& extents, entity_scene* scene, debug_point& point)
 {
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "point";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "point";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
     scene->parents[node] = node;
 
-    point.node  = node;
+    point.node = node;
     point.point = scene->transforms[node].translation;
 }
 
 // Spawn a random plane which starts at a point within extents
 void add_debug_plane(const debug_extents& extents, entity_scene* scene, debug_plane& plane)
 {
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "plane";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "plane";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
     scene->parents[node] = node;
 
     plane.normal = normalised(random_vec_range({-vec3f::one(), vec3f::one()}));
-    plane.point  = scene->transforms[node].translation;
+    plane.point = scene->transforms[node].translation;
 }
 
 // Spawn a random ray which contains point within extents
 void add_debug_ray(const debug_extents& extents, entity_scene* scene, debug_ray& ray)
 {
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "ray";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "ray";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
     scene->parents[node] = node;
 
     ray.direction = normalised(random_vec_range({-vec3f::one(), vec3f::one()}));
-    ray.origin    = scene->transforms[node].translation;
+    ray.origin = scene->transforms[node].translation;
 }
 
 // Spawn a random line which contains both points within extents
 void add_debug_line(const debug_extents& extents, entity_scene* scene, debug_line& line)
 {
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "line";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "line";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
     scene->parents[node] = node;
@@ -169,8 +169,8 @@ void add_debug_line(const debug_extents& extents, entity_scene* scene, debug_lin
 // Spawn a random AABB which contains centre within extents and size within extents
 void add_debug_aabb(const debug_extents& extents, entity_scene* scene, debug_aabb& aabb)
 {
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "aabb";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "aabb";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
     scene->parents[node] = node;
@@ -188,11 +188,11 @@ void add_debug_sphere(const debug_extents& extents, entity_scene* scene, debug_s
 
     vec3f size = fabs(random_vec_range(extents));
 
-    u32 node           = ces::get_new_node(scene);
+    u32 node = ces::get_new_node(scene);
     scene->names[node] = "sphere";
 
-    scene->transforms[node].rotation    = quat();
-    scene->transforms[node].scale       = vec3f(size.x);
+    scene->transforms[node].rotation = quat();
+    scene->transforms[node].scale = vec3f(size.x);
     scene->transforms[node].translation = random_vec_range(extents);
 
     scene->entities[node] |= CMP_TRANSFORM;
@@ -202,9 +202,9 @@ void add_debug_sphere(const debug_extents& extents, entity_scene* scene, debug_s
     instantiate_material(constant_colour_material, scene, node);
     instantiate_model_cbuffer(scene, node);
 
-    sphere.pos    = scene->transforms[node].translation;
+    sphere.pos = scene->transforms[node].translation;
     sphere.radius = size.x;
-    sphere.node   = node;
+    sphere.node = node;
 }
 
 void add_debug_solid_aabb(const debug_extents& extents, entity_scene* scene, debug_aabb& aabb)
@@ -213,11 +213,11 @@ void add_debug_solid_aabb(const debug_extents& extents, entity_scene* scene, deb
 
     vec3f size = fabs(random_vec_range(extents));
 
-    u32 node           = ces::get_new_node(scene);
+    u32 node = ces::get_new_node(scene);
     scene->names[node] = "cube";
 
-    scene->transforms[node].rotation    = quat();
-    scene->transforms[node].scale       = size;
+    scene->transforms[node].rotation = quat();
+    scene->transforms[node].scale = size;
     scene->transforms[node].translation = random_vec_range(extents);
 
     scene->entities[node] |= CMP_TRANSFORM;
@@ -227,15 +227,15 @@ void add_debug_solid_aabb(const debug_extents& extents, entity_scene* scene, deb
     instantiate_material(constant_colour_material, scene, node);
     instantiate_model_cbuffer(scene, node);
 
-    aabb.min  = scene->transforms[node].translation - size;
-    aabb.max  = scene->transforms[node].translation + size;
+    aabb.min = scene->transforms[node].translation - size;
+    aabb.max = scene->transforms[node].translation + size;
     aabb.node = node;
 }
 
 void add_debug_obb(const debug_extents& extents, entity_scene* scene, debug_obb& obb)
 {
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "obb";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "obb";
     scene->transforms[node].translation = random_vec_range(extents);
 
     vec3f rr = random_vec_range(extents);
@@ -253,8 +253,8 @@ void add_debug_solid_obb(const debug_extents& extents, entity_scene* scene, debu
 {
     geometry_resource* cube_res = get_geometry_resource(PEN_HASH("cube"));
 
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "obb";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "obb";
     scene->transforms[node].translation = random_vec_range(extents);
 
     vec3f rr = random_vec_range(extents);
@@ -276,8 +276,8 @@ void add_debug_solid_cone(const debug_extents& extents, entity_scene* scene, deb
 {
     geometry_resource* cone_res = get_geometry_resource(PEN_HASH("cone"));
 
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "cone";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "cone";
     scene->transforms[node].translation = random_vec_range(extents);
 
     vec3f rr = random_vec_range(extents);
@@ -297,8 +297,8 @@ void add_debug_solid_cone(const debug_extents& extents, entity_scene* scene, deb
 
 void add_debug_triangle(const debug_extents& extents, entity_scene* scene, debug_triangle& tri)
 {
-    u32 node                            = ces::get_new_node(scene);
-    scene->names[node]                  = "triangle";
+    u32 node = ces::get_new_node(scene);
+    scene->names[node] = "triangle";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
     scene->parents[node] = node;
@@ -397,17 +397,17 @@ void test_ray_vs_obb(entity_scene* scene, bool initialise)
     dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
 
     {
-        vec3f r1  = ray.origin;
-        vec3f rv  = ray.direction;
+        vec3f r1 = ray.origin;
+        vec3f rv = ray.direction;
         mat4  mat = scene->world_matrices[obb.node];
 
         mat4  invm = mat::inverse4x4(mat);
-        vec3f tr1  = invm.transform_vector(vec4f(r1, 1.0f)).xyz;
+        vec3f tr1 = invm.transform_vector(vec4f(r1, 1.0f)).xyz;
 
         invm.set_translation(vec3f::zero());
         vec3f trv = invm.transform_vector(vec4f(rv, 1.0f)).xyz;
 
-        vec3f cp  = maths::closest_point_on_ray(tr1, normalised(trv), vec3f::zero());
+        vec3f cp = maths::closest_point_on_ray(tr1, normalised(trv), vec3f::zero());
         vec3f ccp = mat.transform_vector(vec4f(cp, 1.0f)).xyz;
 
         put::dbg::add_point(ccp, 0.1f, vec4f::yellow());
@@ -528,7 +528,7 @@ void test_project(entity_scene* scene, bool initialise)
 
     vec2i vp = vec2i(pen_window.width, pen_window.height);
 
-    mat4  view_proj    = main_camera.proj * main_camera.view;
+    mat4  view_proj = main_camera.proj * main_camera.view;
     vec3f screen_point = maths::project_to_sc(point.point, view_proj, vp);
 
     // vec3f unproj = maths::unproject_sc(screen_point, view_proj, vp);
@@ -686,12 +686,12 @@ void test_point_triangle(entity_scene* scene, bool initialise)
     dbg::add_triangle(tri.t0, tri.t1, tri.t2, col);
 
     // debug get normal
-    vec3f n  = maths::get_normal(tri.t0, tri.t1, tri.t2);
+    vec3f n = maths::get_normal(tri.t0, tri.t1, tri.t2);
     vec3f cc = (tri.t0 + tri.t1 + tri.t2) / 3.0f;
     dbg::add_line(cc, cc + n, col);
 
     f32   side = 1.0f;
-    vec3f cp   = maths::closest_point_on_triangle(point.point, tri.t0, tri.t1, tri.t2, side);
+    vec3f cp = maths::closest_point_on_triangle(point.point, tri.t0, tri.t1, tri.t2, side);
 
     Vec4f col2 = vec4f::cyan();
     if (side < 1.0)
@@ -754,7 +754,7 @@ void test_sphere_vs_aabb(entity_scene* scene, bool initialise)
         col = vec4f::red();
 
     scene->draw_call_data[sphere.node].v2 = vec4f(col);
-    scene->draw_call_data[aabb.node].v2   = vec4f(col);
+    scene->draw_call_data[aabb.node].v2 = vec4f(col);
 }
 
 void test_aabb_vs_aabb(entity_scene* scene, bool initialise)
@@ -802,11 +802,11 @@ void test_point_sphere(entity_scene* scene, bool initialise)
         add_debug_sphere(e, scene, sphere);
     }
 
-    bool  i  = maths::point_inside_sphere(sphere.pos, sphere.radius, point.point);
+    bool  i = maths::point_inside_sphere(sphere.pos, sphere.radius, point.point);
     vec3f cp = maths::closest_point_on_sphere(sphere.pos, sphere.radius, point.point);
 
     // debug output
-    vec4f col  = vec4f::green();
+    vec4f col = vec4f::green();
     vec4f col2 = vec4f::white();
     if (i)
         col = vec4f::red();
@@ -935,7 +935,7 @@ void maths_test_ui(entity_scene* scene)
 {
     static s32 test_index = 0;
 
-    static bool animate    = false;
+    static bool animate = false;
     static bool initialise = true;
 
     if (ImGui::Combo("Test", &test_index, test_names, PEN_ARRAY_SIZE(test_names)))
@@ -946,7 +946,7 @@ void maths_test_ui(entity_scene* scene)
     if (animate)
     {
         static f32 swap_timer = 0.0f;
-        static u32 at         = pen::timer_create("math_anim_timer");
+        static u32 at = pen::timer_create("math_anim_timer");
         swap_timer += pen::timer_elapsed_ms(at);
         pen::timer_start(at);
 
@@ -974,7 +974,7 @@ namespace physics
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
@@ -987,31 +987,31 @@ PEN_TRV pen::user_entry(void* params)
     put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
     put::scene_controller cc;
-    cc.camera          = &main_camera;
+    cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
-    cc.name            = "model_viewer_camera";
-    cc.id_name         = PEN_HASH(cc.name.c_str());
+    cc.name = "model_viewer_camera";
+    cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
     put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;
-    sc.scene           = main_scene;
+    sc.scene = main_scene;
     sc.update_function = &ces::update_model_viewer_scene;
-    sc.name            = "main_scene";
-    sc.camera          = &main_camera;
-    sc.id_name         = PEN_HASH(sc.name.c_str());
+    sc.name = "main_scene";
+    sc.camera = &main_camera;
+    sc.id_name = PEN_HASH(sc.name.c_str());
 
     // create view renderers
     put::scene_view_renderer svr_main;
-    svr_main.name            = "ces_render_scene";
-    svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
+    svr_main.name = "ces_render_scene";
+    svr_main.id_name = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
 
     put::scene_view_renderer svr_editor;
-    svr_editor.name            = "ces_render_editor";
-    svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
+    svr_editor.name = "ces_render_editor";
+    svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
 
     pmfx::register_scene_view_renderer(svr_main);
@@ -1024,12 +1024,12 @@ PEN_TRV pen::user_entry(void* params)
 
     // create constant col material
     constant_colour_material->material_name = "constant_colour";
-    constant_colour_material->shader_name   = "pmfx_utility";
-    constant_colour_material->id_shader     = PEN_HASH("pmfx_utility");
-    constant_colour_material->id_technique  = PEN_HASH("constant_colour");
+    constant_colour_material->shader_name = "pmfx_utility";
+    constant_colour_material->id_shader = PEN_HASH("pmfx_utility");
+    constant_colour_material->id_technique = PEN_HASH("constant_colour");
     add_material_resource(constant_colour_material);
 
-    f32  frame_time = 0.0f;
+    f32 frame_time = 0.0f;
 
     while (1)
     {

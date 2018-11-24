@@ -19,9 +19,9 @@ namespace put
         far_size.y = 2.0f * tan(maths::deg_to_rad(fov_degrees) / 2.0f) * far_plane;
         far_size.x = far_size.y * aspect_ratio;
 
-        p_camera->fov        = fov_degrees;
+        p_camera->fov = fov_degrees;
 
-        if(aspect_ratio == -1)
+        if (aspect_ratio == -1)
         {
             f32 window_aspect = (f32)pen_window.width / (f32)pen_window.height;
             p_camera->flags |= CF_WINDOW_ASPECT;
@@ -31,9 +31,9 @@ namespace put
         {
             p_camera->aspect = aspect_ratio;
         }
-        
+
         p_camera->near_plane = near_plane;
-        p_camera->far_plane  = far_plane;
+        p_camera->far_plane = far_plane;
 
         p_camera->proj = mat::create_perspective_projection(-near_size.x * 0.5f, near_size.x * 0.5f, -near_size.y * 0.5f,
                                                             near_size.y * 0.5f, near_plane, far_plane);
@@ -54,23 +54,23 @@ namespace put
         mouse_state ms = input_get_mouse_state();
 
         // mouse drag
-        static vec2f prev_mpos     = vec2f((f32)ms.x, (f32)ms.y);
+        static vec2f prev_mpos = vec2f((f32)ms.x, (f32)ms.y);
         vec2f        current_mouse = vec2f((f32)ms.x, (f32)ms.y);
-        vec2f        mouse_drag    = current_mouse - prev_mpos;
-        prev_mpos                  = current_mouse;
+        vec2f        mouse_drag = current_mouse - prev_mpos;
+        prev_mpos = current_mouse;
 
-        f32        mwheel      = (f32)ms.wheel;
+        f32        mwheel = (f32)ms.wheel;
         static f32 prev_mwheel = mwheel;
-        prev_mwheel            = mwheel;
+        prev_mwheel = mwheel;
 
         f32 cursor_speed = 0.1f;
-        f32 speed        = 1.0f;
+        f32 speed = 1.0f;
 
         if (has_focus)
         {
             if (pen::input_key(PK_SHIFT))
             {
-                speed        = 0.01f;
+                speed = 0.01f;
                 cursor_speed = 0.1f;
             }
 
@@ -113,10 +113,10 @@ namespace put
 
         mat4 rx = mat::create_x_rotation(p_camera->rot.x);
         mat4 ry = mat::create_y_rotation(p_camera->rot.y);
-        mat4 t  = mat::create_translation(p_camera->pos * -1.0f);
+        mat4 t = mat::create_translation(p_camera->pos * -1.0f);
 
         mat4 view_rotation = rx * ry;
-        p_camera->view     = view_rotation * t;
+        p_camera->view = view_rotation * t;
 
         p_camera->flags |= CF_INVALIDATED;
     }
@@ -156,8 +156,8 @@ namespace put
         for (s32 i = 0; i < 6; ++i)
         {
             s32   offset = i * 3;
-            vec3f v1     = normalised(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
-            vec3f v2     = normalised(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+            vec3f v1 = normalised(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
+            vec3f v2 = normalised(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
 
             p_camera->camera_frustum.n[i] = cross(v1, v2);
             p_camera->camera_frustum.p[i] = plane_vectors[offset];
@@ -169,18 +169,18 @@ namespace put
         mouse_state ms = input_get_mouse_state();
 
         // mouse drag
-        static vec2f prev_mpos     = vec2f((f32)ms.x, (f32)ms.y);
+        static vec2f prev_mpos = vec2f((f32)ms.x, (f32)ms.y);
         vec2f        current_mouse = vec2f((f32)ms.x, (f32)ms.y);
-        vec2f        mouse_drag    = current_mouse - prev_mpos;
-        prev_mpos                  = current_mouse;
+        vec2f        mouse_drag = current_mouse - prev_mpos;
+        prev_mpos = current_mouse;
 
         f32 mouse_y_inv = invert_y ? -1.0f : 1.0f;
 
         // zoom
-        f32        mwheel      = (f32)ms.wheel;
+        f32        mwheel = (f32)ms.wheel;
         static f32 prev_mwheel = mwheel;
-        f32        zoom        = mwheel - prev_mwheel;
-        prev_mwheel            = mwheel;
+        f32        zoom = mwheel - prev_mwheel;
+        prev_mwheel = mwheel;
 
         if (has_focus)
         {
@@ -194,7 +194,7 @@ namespace put
                      ((ms.buttons[PEN_MOUSE_L] && pen::input_key(PK_COMMAND))))
             {
                 // pan
-                vec3f up    = p_camera->view.get_row(1).xyz;
+                vec3f up = p_camera->view.get_row(1).xyz;
                 vec3f right = p_camera->view.get_row(0).xyz;
 
                 p_camera->focus += up * mouse_drag.y * mouse_y_inv * 0.5f;
@@ -214,7 +214,7 @@ namespace put
 
         mat4 rx = mat::create_x_rotation(p_camera->rot.x);
         mat4 ry = mat::create_y_rotation(-p_camera->rot.y);
-        mat4 t  = mat::create_translation(vec3f(0.0f, 0.0f, p_camera->zoom));
+        mat4 t = mat::create_translation(vec3f(0.0f, 0.0f, p_camera->zoom));
         mat4 t2 = mat::create_translation(p_camera->focus);
 
         p_camera->view = t2 * (ry * rx) * t;
@@ -225,20 +225,20 @@ namespace put
 
         p_camera->flags |= CF_INVALIDATED;
     }
-    
+
     void camera_update_look_at(camera* p_camera)
     {
         mat4 rx = mat::create_x_rotation(p_camera->rot.x);
         mat4 ry = mat::create_y_rotation(-p_camera->rot.y);
-        mat4 t  = mat::create_translation(vec3f(0.0f, 0.0f, p_camera->zoom));
+        mat4 t = mat::create_translation(vec3f(0.0f, 0.0f, p_camera->zoom));
         mat4 t2 = mat::create_translation(p_camera->focus);
-        
+
         p_camera->view = t2 * (ry * rx) * t;
-        
+
         p_camera->pos = p_camera->view.get_translation();
-        
+
         p_camera->view = mat::inverse3x4(p_camera->view);
-        
+
         p_camera->flags |= CF_INVALIDATED;
     }
 
@@ -276,11 +276,11 @@ namespace put
         if (p_camera->cbuffer == PEN_INVALID_HANDLE)
         {
             pen::buffer_creation_params bcp;
-            bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size      = sizeof(camera_cbuffer);
-            bcp.data             = nullptr;
+            bcp.buffer_size = sizeof(camera_cbuffer);
+            bcp.data = nullptr;
 
             p_camera->cbuffer = pen::renderer_create_buffer(bcp);
         }
@@ -293,20 +293,20 @@ namespace put
 
             if (viewport_correction && pen::renderer_viewport_vup())
             {
-                wvp.view_projection     = scale * (p_camera->proj * p_camera->view);
+                wvp.view_projection = scale * (p_camera->proj * p_camera->view);
                 wvp.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
             }
             else
             {
-                wvp.view_projection     = p_camera->proj * p_camera->view;
+                wvp.view_projection = p_camera->proj * p_camera->view;
                 wvp.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
             }
 
-            mat4 inv_view               = mat::inverse3x4(p_camera->view);
-            wvp.view_matrix             = p_camera->view;
-            wvp.view_position           = vec4f(inv_view.get_translation(), p_camera->near_plane);
-            wvp.view_direction          = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
-            wvp.view_matrix_inverse     = inv_view;
+            mat4 inv_view = mat::inverse3x4(p_camera->view);
+            wvp.view_matrix = p_camera->view;
+            wvp.view_position = vec4f(inv_view.get_translation(), p_camera->near_plane);
+            wvp.view_direction = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
+            wvp.view_matrix_inverse = inv_view;
             wvp.view_projection_inverse = mat::inverse4x4(wvp.view_projection);
 
             pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
@@ -341,7 +341,7 @@ namespace put
     {
         // create view matrix
         vec3f right = cross(light_dir, vec3f::unit_y());
-        vec3f up    = cross(right, light_dir);
+        vec3f up = cross(right, light_dir);
 
         mat4 shadow_view;
         shadow_view.set_vectors(right, up, -light_dir, vec3f::zero());

@@ -14,8 +14,8 @@ namespace pen
 
     struct fs_tree_node
     {
-        c8*           name         = nullptr;
-        fs_tree_node* children     = nullptr;
+        c8*           name = nullptr;
+        fs_tree_node* children = nullptr;
         u32           num_children = 0;
     };
 

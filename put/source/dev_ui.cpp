@@ -1,8 +1,10 @@
 #include <fstream>
 
+#include "camera.h"
 #include "console.h"
 #include "dev_ui.h"
 #include "file_system.h"
+#include "loader.h"
 #include "memory.h"
 #include "os.h"
 #include "pen.h"
@@ -10,8 +12,6 @@
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
-#include "camera.h"
-#include "loader.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -38,20 +38,20 @@ namespace put
 
             k_program_preferences = pen::json::load_from_file(k_program_prefs_filename.c_str());
         }
-        
+
         void perform_save_program_prefs()
         {
-            if(s_save_program_prefs && s_program_prefs_save_timer < 0)
+            if (s_save_program_prefs && s_program_prefs_save_timer < 0)
             {
                 s_save_program_prefs = false;
-                
+
                 std::ofstream ofs(k_program_prefs_filename.c_str());
-                
+
                 ofs << k_program_preferences.dumps().c_str();
-                
+
                 ofs.close();
             }
-            
+
             k_program_prefs_save_timeout--;
         }
 
@@ -70,7 +70,7 @@ namespace put
 
             // strip the file
             s32 last_dir = str_find_reverse(formatted, "/");
-            s32 ext      = str_find_reverse(formatted, ".");
+            s32 ext = str_find_reverse(formatted, ".");
 
             Str final = "\"";
 
@@ -153,13 +153,13 @@ namespace put
                 {
                     Str path = last_dir.as_filename();
 
-                    s32 dir_pos     = 0;
+                    s32 dir_pos = 0;
                     directory_depth = 0;
-                    bool finished   = false;
+                    bool finished = false;
                     while (!finished)
                     {
                         s32 prev_pos = dir_pos;
-                        dir_pos      = str_find(path, "/", prev_pos);
+                        dir_pos = str_find(path, "/", prev_pos);
 
                         if (dir_pos != -1)
                         {
@@ -167,7 +167,7 @@ namespace put
                         }
                         else
                         {
-                            dir_pos  = path.length();
+                            dir_pos = path.length();
                             finished = true;
                         }
 
@@ -203,7 +203,7 @@ namespace put
             }
 
             s32        default_depth = 0;
-            const c8** default_dir   = pen::filesystem_get_user_directory(default_depth);
+            const c8** default_dir = pen::filesystem_get_user_directory(default_depth);
 
             directory_depth = default_depth;
 
@@ -212,8 +212,8 @@ namespace put
 
         const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes, ...)
         {
-            static bool initialise           = true;
-            static s32  current_depth        = 1;
+            static bool initialise = true;
+            static s32  current_depth = 1;
             static s32  selection_stack[128] = {-1};
             static c8   user_filename_buf[1024];
 
@@ -228,7 +228,7 @@ namespace put
             if (initialise)
             {
                 s32        default_depth = 0;
-                const c8** default_dir   = get_last_used_directory(default_depth);
+                const c8** default_dir = get_last_used_directory(default_depth);
 
                 selected_path = put::dev_ui::get_program_preference_filename("last_used_directory");
 
@@ -310,7 +310,7 @@ namespace put
                         s32 ext_len = pen::string_length(ft);
 
                         s32       offset = 0;
-                        const c8* fti    = ft + ext_len - 1;
+                        const c8* fti = ft + ext_len - 1;
                         while (*fti-- != '.')
                         {
                             ext_len--;
@@ -332,7 +332,7 @@ namespace put
                         va_end(wildcards);
                     }
 
-                    last_result  = selected_path_and_file;
+                    last_result = selected_path_and_file;
                     return_value = last_result.c_str();
 
                     selected_path_and_file.clear();
@@ -351,7 +351,7 @@ namespace put
                 {
                     // set to home
                     initialise = true;
-                    Str home   = pen::filesystem_get_user_directory();
+                    Str home = pen::filesystem_get_user_directory();
                     set_last_used_directory(home);
                 }
 
@@ -396,7 +396,7 @@ namespace put
                 ImGui::Separator();
 
                 current_path = "";
-                search_path  = "";
+                search_path = "";
 
                 fs_iter = &fs_enumeration;
 
@@ -428,7 +428,7 @@ namespace put
                                         selection_stack[i] = -1;
                                     }
 
-                                    current_depth      = c + 2;
+                                    current_depth = c + 2;
                                     selection_stack[c] = entry;
 
                                     selected_path = search_path;
@@ -509,8 +509,8 @@ namespace put
         void set_tooltip(const c8* fmt, ...)
         {
             static f32       k_tooltip_timer = 0.0f;
-            static const f32 k_delay         = 1.0f;
-            static ImGuiID   k_current       = 0;
+            static const f32 k_delay = 1.0f;
+            static ImGuiID   k_current = 0;
 
             f32 dt = ImGui::GetIO().DeltaTime;
 
@@ -523,7 +523,7 @@ namespace put
             if (k_current != now)
             {
                 k_tooltip_timer = 0.0f;
-                k_current       = now;
+                k_current = now;
             }
 
             k_tooltip_timer += dt;
@@ -594,7 +594,7 @@ namespace put
             }
             static char* Strdup(const char* str)
             {
-                size_t len  = strlen(str) + 1;
+                size_t len = strlen(str) + 1;
                 void*  buff = malloc(len);
                 return (char*)memcpy(buff, (const void*)str, len);
             }
@@ -766,7 +766,7 @@ namespace put
                         // Example of TEXT COMPLETION
 
                         // Locate beginning of current word
-                        const char* word_end   = data->Buf + data->CursorPos;
+                        const char* word_end = data->Buf + data->CursorPos;
                         const char* word_start = word_end;
                         while (word_start > data->Buf)
                         {
@@ -801,7 +801,7 @@ namespace put
                             int match_len = (int)(word_end - word_start);
                             for (;;)
                             {
-                                int  c                      = 0;
+                                int  c = 0;
                                 bool all_candidates_matches = true;
                                 for (int i = 0; i < candidates.Size && all_candidates_matches; i++)
                                     if (i == 0)
@@ -896,23 +896,23 @@ namespace put
             load_program_preferences();
             kp_dev_console = new app_console();
         }
-        
+
         void update()
         {
             // check for window frame updates
             static window_frame f;
-            window_frame f2;
-            
+            window_frame        f2;
+
             pen::window_get_frame(f2);
-            
-            if(memcmp(&f, &f2, sizeof(window_frame)) != 0)
+
+            if (memcmp(&f, &f2, sizeof(window_frame)) != 0)
             {
                 f = f2;
 
                 bool valid = true;
                 if ((s32)f.width <= 0 || (s32)f.height <= 0 || (s32)f.x <= 0 || (s32)f.y <= 0)
                     valid = false;
-                
+
                 if (valid)
                 {
                     set_program_preference("window_x", (s32)f.x);
@@ -921,10 +921,10 @@ namespace put
                     set_program_preference("window_height", (s32)f.height);
                 }
             }
-            
+
             // update console
             console();
-            
+
             // perform program prefs save
             perform_save_program_prefs();
         }
@@ -945,67 +945,64 @@ namespace put
                 ImGui::End();
             }
         }
-        
+
         void image_ex(u32 handle, vec2f size, e_shader shader, s32 mip_level)
         {
             ImVec2 canvas_size = ImVec2(size.x, size.y);
-            
+
             // 2d image
-            if(shader == dev_ui::SHADER_DEFAULT)
+            if (shader == dev_ui::SHADER_DEFAULT)
             {
                 ImGui::Image(IMG(handle), ImVec2(canvas_size));
                 return;
             }
-            
+
             // cube or volume
             static camera cam;
-            bool init = true;
-            if(init)
+            bool          init = true;
+            if (init)
             {
                 init = false;
                 camera_create_perspective(&cam, 60, 1.0, 0.01, 10.0);
             }
-            
+
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
-            ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
-            
+            ImVec2      canvas_pos = ImGui::GetCursorScreenPos();
+
             ImVec2 uv0 = ImVec2(0, 0);
             ImVec2 uv1 = ImVec2(1, 1);
             ImVec4 tint_col = ImVec4(1, 1, 1, 1);
-            
+
             ImVec2 bb_max;
             bb_max.x = canvas_pos.x + canvas_size.x;
             bb_max.y = canvas_pos.y + canvas_size.y;
-            
+
             ImGui::InvisibleButton("canvas", canvas_size);
-            
+
             if (ImGui::IsItemHovered())
             {
-                if(ImGui::GetIO().MouseDown[0])
+                if (ImGui::GetIO().MouseDown[0])
                 {
                     cam.rot.x += ImGui::GetIO().MouseDelta.y * 0.1f;
                     cam.rot.y += ImGui::GetIO().MouseDelta.x * 0.1f;
                 }
-                
+
                 cam.zoom += ImGui::GetIO().MouseWheel;
                 cam.zoom = max(cam.zoom, 1.0f);
                 cam.zoom = 3.0f;
-                
+
                 camera_update_look_at(&cam);
             }
-            
+
             camera_update_shader_constants(&cam);
-            
+
             dev_ui::set_shader(shader, cam.cbuffer);
-            
-            draw_list->AddImage(IMG(handle),
-                                canvas_pos,
-                                bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));
-            
-            
+
+            draw_list->AddImage(IMG(handle), canvas_pos, bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));
+
             dev_ui::set_shader(dev_ui::SHADER_DEFAULT, 0);
         }
-        
+
         void image(u32 handle, vec2f size, s32 mip_level)
         {
             pen::texture_creation_params tcp;

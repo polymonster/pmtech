@@ -81,30 +81,30 @@ void animate_lights(entity_scene* scene, f32 dt)
 
         if (vel_index == 0)
         {
-            f32 tx                           = sin(t);
+            f32 tx = sin(t);
             scene->transforms[n].translation = vec3f(tx * -20.0f, 4.0f, 15.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
 
         if (vel_index == 1)
         {
-            f32 tz                           = cos(t);
+            f32 tz = cos(t);
             scene->transforms[n].translation = vec3f(-15.0f, 3.0f, tz * 20.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
 
         if (vel_index == 2)
         {
-            f32 tx                           = sin(t * 0.5);
-            f32 tz                           = cos(t * 0.5);
+            f32 tx = sin(t * 0.5);
+            f32 tz = cos(t * 0.5);
             scene->transforms[n].translation = vec3f(tx * 40.0f, 1.0f, tz * 30.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
 
         if (vel_index == 3)
         {
-            f32 tx                           = cos(t * 0.25);
-            f32 tz                           = sin(t * 0.25);
+            f32 tx = cos(t * 0.25);
+            f32 tz = sin(t * 0.25);
             scene->transforms[n].translation = vec3f(tx * 30.0f, 6.0f, tz * 30.0f);
             scene->entities[n] |= CMP_TRANSFORM;
         }
@@ -116,7 +116,7 @@ void animate_lights(entity_scene* scene, f32 dt)
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
@@ -130,31 +130,31 @@ PEN_TRV pen::user_entry(void* params)
     put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
     put::scene_controller cc;
-    cc.camera          = &main_camera;
+    cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
-    cc.name            = "model_viewer_camera";
-    cc.id_name         = PEN_HASH(cc.name.c_str());
+    cc.name = "model_viewer_camera";
+    cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
     put::ces::entity_scene* main_scene;
     main_scene = put::ces::create_scene("main_scene");
 
     put::scene_controller sc;
-    sc.scene           = main_scene;
+    sc.scene = main_scene;
     sc.update_function = &ces::update_model_viewer_scene;
-    sc.name            = "main_scene";
-    sc.camera          = &main_camera;
-    sc.id_name         = PEN_HASH(sc.name.c_str());
+    sc.name = "main_scene";
+    sc.camera = &main_camera;
+    sc.id_name = PEN_HASH(sc.name.c_str());
 
     // create view renderers
     put::scene_view_renderer svr_main;
-    svr_main.name            = "ces_render_scene";
-    svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
+    svr_main.name = "ces_render_scene";
+    svr_main.id_name = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
 
     put::scene_view_renderer svr_editor;
-    svr_editor.name            = "ces_render_editor";
-    svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
+    svr_editor.name = "ces_render_editor";
+    svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
 
     pmfx::register_scene_view_renderer(svr_main);
@@ -173,7 +173,7 @@ PEN_TRV pen::user_entry(void* params)
 
     // load scene
     put::ces::load_scene("data/scene/sdf.pms", main_scene);
-    
+
     while (1)
     {
         static u32 frame_timer = pen::timer_create("frame_timer");

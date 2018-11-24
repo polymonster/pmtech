@@ -43,15 +43,15 @@ namespace
     struct pmfx_shader
     {
         hash_id         id_filename = 0;
-        Str             filename    = nullptr;
+        Str             filename = nullptr;
         bool            invalidated = false;
         pen::json       info;
         u32             info_timestamp = 0;
-        shader_program* techniques     = nullptr;
+        shader_program* techniques = nullptr;
     };
     pmfx_shader* k_pmfx_list = nullptr;
 
-    const char**  k_shader_names    = nullptr;
+    const char**  k_shader_names = nullptr;
     const char*** k_technique_names = nullptr;
     hash_id**     s_technique_id_names = nullptr;
 
@@ -72,9 +72,9 @@ namespace put
             pen::memory_free(k_technique_names);
             pen::memory_free(s_technique_id_names);
 
-            u32 num_pmfx      = sb_count(k_pmfx_list);
+            u32 num_pmfx = sb_count(k_pmfx_list);
             k_technique_names = (const char***)pen::memory_calloc(num_pmfx, sizeof(k_technique_names));
-            k_shader_names    = (const char**)pen::memory_calloc(num_pmfx, sizeof(k_shader_names));
+            k_shader_names = (const char**)pen::memory_calloc(num_pmfx, sizeof(k_shader_names));
             s_technique_id_names = (hash_id**)pen::memory_calloc(num_pmfx, sizeof(s_technique_id_names));
 
             for (u32 i = 0; i < num_pmfx; ++i)
@@ -84,9 +84,9 @@ namespace put
                 u32 num_techniques = sb_count(k_pmfx_list[i].techniques);
                 for (u32 t = 0; t < num_techniques; ++t)
                 {
-                    if(k_pmfx_list[i].techniques[t].permutation_id != 0)
+                    if (k_pmfx_list[i].techniques[t].permutation_id != 0)
                         continue;
-                    
+
                     sb_push(k_technique_names[i], k_pmfx_list[i].techniques[t].name.c_str());
                     sb_push(s_technique_id_names[i], PEN_HASH(k_pmfx_list[i].techniques[t].name.c_str()));
                 }
@@ -106,18 +106,18 @@ namespace put
             count = sb_count(k_technique_names[shader]);
             return k_technique_names[shader];
         }
-        
+
         u32 get_technique_list_index(u32 shader, hash_id id_technique)
         {
             u32 num_id = sb_count(s_technique_id_names[shader]);
-            for(u32 i = 0; i < num_id; ++i)
+            for (u32 i = 0; i < num_id; ++i)
             {
-                if(s_technique_id_names[shader][i] == id_technique)
+                if (s_technique_id_names[shader][i] == id_technique)
                 {
                     return i;
                 }
             }
-            
+
             return PEN_INVALID_HANDLE;
         }
 
@@ -141,16 +141,16 @@ namespace put
 
             return nullptr;
         }
-        
+
         hash_id get_technique_id(u32 shader, u32 technique_index)
         {
             if (shader >= sb_count(k_pmfx_list))
                 return 0;
-            
+
             u32 nt = sb_count(k_pmfx_list[shader].techniques);
-            if(technique_index >= nt)
+            if (technique_index >= nt)
                 return 0;
-            
+
             return k_pmfx_list[shader].techniques[technique_index].id_name;
         }
 
@@ -168,11 +168,11 @@ namespace put
             // per pmfx constants
             // .. per technique constants go into: material_data(7), todo rename to techhnique_data
 
-            u32       cc         = 0;
+            u32       cc = 0;
             pen::json j_cbuffers = j_info["cbuffers"];
             for (s32 i = 0; i < j_cbuffers.size(); ++i)
             {
-                pen::json cbuf     = j_cbuffers[i];
+                pen::json cbuf = j_cbuffers[i];
                 Str       name_str = cbuf["name"].as_str();
 
                 u32 name_len = name_str.length();
@@ -238,7 +238,7 @@ namespace put
         void get_input_layout_params(pen::input_layout_creation_params& ilp, pen::json& j_techique)
         {
             u32 vertex_elements = j_techique["vs_inputs"].size();
-            ilp.num_elements    = vertex_elements;
+            ilp.num_elements = vertex_elements;
 
             u32 instance_elements = j_techique["instance_inputs"].size();
             ilp.num_elements += instance_elements;
@@ -265,7 +265,7 @@ namespace put
                 {
                     pen::json vj = j_techique[layouts[l].name][i];
 
-                    u32 num_elements  = vj["num_elements"].as_u32();
+                    u32 num_elements = vj["num_elements"].as_u32();
                     u32 elements_size = vj["element_size"].as_u32();
 
                     static const s32 float_formats[4] = {PEN_VERTEX_FORMAT_FLOAT1, PEN_VERTEX_FORMAT_FLOAT2,
@@ -279,12 +279,12 @@ namespace put
                     if (elements_size == 1)
                         fomats = byte_formats;
 
-                    ilp.input_layout[input_index].semantic_index          = vj["semantic_index"].as_u32();
-                    ilp.input_layout[input_index].format                  = fomats[num_elements - 1];
-                    ilp.input_layout[input_index].semantic_name           = semantic_names[vj["semantic_id"].as_u32()];
-                    ilp.input_layout[input_index].input_slot              = l;
-                    ilp.input_layout[input_index].aligned_byte_offset     = vj["offset"].as_u32();
-                    ilp.input_layout[input_index].input_slot_class        = layouts[l].iclass;
+                    ilp.input_layout[input_index].semantic_index = vj["semantic_index"].as_u32();
+                    ilp.input_layout[input_index].format = fomats[num_elements - 1];
+                    ilp.input_layout[input_index].semantic_name = semantic_names[vj["semantic_id"].as_u32()];
+                    ilp.input_layout[input_index].input_slot = l;
+                    ilp.input_layout[input_index].aligned_byte_offset = vj["offset"].as_u32();
+                    ilp.input_layout[input_index].input_slot_class = layouts[l].iclass;
                     ilp.input_layout[input_index].instance_data_step_rate = layouts[l].step_rate;
 
                     ++input_index;
@@ -299,8 +299,8 @@ namespace put
             Str name = j_techique["name"].as_str();
 
             // default sub type
-            program.name        = name;
-            program.id_name     = PEN_HASH(name.c_str());
+            program.name = name;
+            program.id_name = PEN_HASH(name.c_str());
             program.id_sub_type = PEN_HASH("");
             program.permutation_id = j_techique["permutation_id"].as_u32();
 
@@ -311,7 +311,7 @@ namespace put
                 {
                     Str name_base = pen::str_replace_string(name, k_sub_types[i], "");
 
-                    program.id_name     = PEN_HASH(name_base.c_str());
+                    program.id_name = PEN_HASH(name_base.c_str());
                     program.id_sub_type = PEN_HASH(k_sub_types[i]);
 
                     break;
@@ -321,7 +321,7 @@ namespace put
             const c8* sfp = pen::renderer_get_shader_platform();
 
             // vertex shader
-            c8* vs_file_buf     = (c8*)pen::memory_alloc(256);
+            c8* vs_file_buf = (c8*)pen::memory_alloc(256);
             Str vs_filename_str = j_techique["vs_file"].as_str();
             pen::string_format(vs_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, vs_filename_str.c_str());
 
@@ -347,56 +347,56 @@ namespace put
                 u32 num_vertex_outputs = j_techique["vs_outputs"].size();
 
                 u32                         decl_size_bytes = sizeof(pen::stream_out_decl_entry) * num_vertex_outputs;
-                pen::stream_out_decl_entry* so_decl         = (pen::stream_out_decl_entry*)pen::memory_alloc(decl_size_bytes);
+                pen::stream_out_decl_entry* so_decl = (pen::stream_out_decl_entry*)pen::memory_alloc(decl_size_bytes);
 
                 pen::shader_link_params slp;
                 slp.stream_out_shader = program.stream_out_shader;
-                slp.pixel_shader      = 0;
-                slp.vertex_shader     = 0;
+                slp.pixel_shader = 0;
+                slp.vertex_shader = 0;
 
-                slp.stream_out_names     = new c8*[num_vertex_outputs];
+                slp.stream_out_names = new c8*[num_vertex_outputs];
                 slp.num_stream_out_names = num_vertex_outputs;
 
                 for (u32 vo = 0; vo < num_vertex_outputs; ++vo)
                 {
                     pen::json voj = j_techique["vs_outputs"][vo];
 
-                    so_decl[vo].stream          = 0;
-                    so_decl[vo].semantic_name   = semantic_names[voj["semantic_id"].as_u32()];
-                    so_decl[vo].semantic_index  = voj["semantic_index"].as_u32();
+                    so_decl[vo].stream = 0;
+                    so_decl[vo].semantic_name = semantic_names[voj["semantic_id"].as_u32()];
+                    so_decl[vo].semantic_index = voj["semantic_index"].as_u32();
                     so_decl[vo].start_component = 0;
                     so_decl[vo].component_count = voj["num_elements"].as_u32();
-                    so_decl[vo].output_slot     = 0;
+                    so_decl[vo].output_slot = 0;
 
                     Str gl_name = voj["name"].as_str();
                     gl_name.append("_vs_output");
 
-                    u32 name_len             = gl_name.length();
+                    u32 name_len = gl_name.length();
                     slp.stream_out_names[vo] = new c8[name_len + 1];
                     memcpy(slp.stream_out_names[vo], gl_name.c_str(), name_len);
                     slp.stream_out_names[vo][name_len] = '\0';
                 }
 
                 vs_slp.so_decl_entries = so_decl;
-                vs_slp.so_num_entries  = num_vertex_outputs;
+                vs_slp.so_num_entries = num_vertex_outputs;
 
                 program.stream_out_shader = pen::renderer_load_shader(vs_slp);
-                program.vertex_shader     = 0;
-                program.pixel_shader      = 0;
+                program.vertex_shader = 0;
+                program.pixel_shader = 0;
 
                 pen::memory_free(vs_slp.so_decl_entries);
 
                 get_link_params_constants(slp, j_info, j_techique);
 
                 slp.stream_out_shader = program.stream_out_shader;
-                slp.vertex_shader     = 0;
-                slp.pixel_shader      = 0;
+                slp.vertex_shader = 0;
+                slp.pixel_shader = 0;
 
                 program.program_index = pen::renderer_link_shader_program(slp);
 
                 // create input layout from json
                 pen::input_layout_creation_params ilp;
-                ilp.vs_byte_code      = vs_slp.byte_code;
+                ilp.vs_byte_code = vs_slp.byte_code;
                 ilp.vs_byte_code_size = vs_slp.byte_code_size;
 
                 get_input_layout_params(ilp, j_techique);
@@ -411,7 +411,7 @@ namespace put
             pen::memory_free(vs_slp.so_decl_entries);
 
             // pixel shader
-            c8* ps_file_buf     = (c8*)pen::memory_alloc(256);
+            c8* ps_file_buf = (c8*)pen::memory_alloc(256);
             Str ps_filename_str = j_techique["ps_file"].as_str();
 
             pen::string_format(ps_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str());
@@ -433,7 +433,7 @@ namespace put
 
             // create input layout from json
             pen::input_layout_creation_params ilp;
-            ilp.vs_byte_code      = vs_slp.byte_code;
+            ilp.vs_byte_code = vs_slp.byte_code;
             ilp.vs_byte_code_size = vs_slp.byte_code_size;
 
             get_input_layout_params(ilp, j_techique);
@@ -444,11 +444,11 @@ namespace put
 
             // link the shader to allow opengl to match d3d constant and texture bindings
             pen::shader_link_params link_params;
-            link_params.input_layout      = program.input_layout;
-            link_params.vertex_shader     = program.vertex_shader;
-            link_params.pixel_shader      = program.pixel_shader;
+            link_params.input_layout = program.input_layout;
+            link_params.vertex_shader = program.vertex_shader;
+            link_params.pixel_shader = program.pixel_shader;
             link_params.stream_out_shader = 0;
-            link_params.stream_out_names  = nullptr;
+            link_params.stream_out_names = nullptr;
 
             get_link_params_constants(link_params, j_info, j_techique);
 
@@ -457,7 +457,7 @@ namespace put
             pen::memory_free(link_params.constants);
 
             // generate technique textures meta data
-            program.textures          = nullptr;
+            program.textures = nullptr;
             u32 num_technique_textues = j_techique["texture_samplers"].size();
 
             for (u32 i = 0; i < num_technique_textues; ++i)
@@ -466,21 +466,21 @@ namespace put
 
                 technique_sampler tt;
 
-                tt.name               = jt.name();
-                tt.id_name            = PEN_HASH(tt.name);
+                tt.name = jt.name();
+                tt.id_name = PEN_HASH(tt.name);
                 tt.sampler_state_name = jt["sampler_state"].as_str();
-                tt.unit               = jt["unit"].as_u32();
-                tt.type_name          = jt["type"].as_str();
-                tt.default_name       = jt["default"].as_str();
-                tt.filename           = tt.default_name;
-                tt.handle             = put::load_texture(tt.filename.c_str());
+                tt.unit = jt["unit"].as_u32();
+                tt.type_name = jt["type"].as_str();
+                tt.default_name = jt["default"].as_str();
+                tt.filename = tt.default_name;
+                tt.handle = put::load_texture(tt.filename.c_str());
 
                 sb_push(program.textures, tt);
             }
 
             // generate technique constants meta data
-            program.constants               = nullptr;
-            u32 num_technique_constants     = j_techique["constants"].size();
+            program.constants = nullptr;
+            u32 num_technique_constants = j_techique["constants"].size();
             program.technique_constant_size = j_techique["constants_size_bytes"].as_u32(0);
 
             if (program.technique_constant_size > 0)
@@ -492,7 +492,7 @@ namespace put
                 pen::json jc = j_techique["constants"][i];
 
                 technique_constant tc;
-                tc.name    = jc.name();
+                tc.name = jc.name();
                 tc.id_name = PEN_HASH(tc.name);
 
                 hash_id widget = jc["widget"].as_hash_id(PEN_HASH("input"));
@@ -505,10 +505,10 @@ namespace put
                     }
                 }
 
-                tc.min          = jc["min"].as_f32(tc.min);
-                tc.max          = jc["max"].as_f32(tc.max);
-                tc.step         = jc["step"].as_f32(tc.step);
-                tc.cb_offset    = jc["offset"].as_u32();
+                tc.min = jc["min"].as_f32(tc.min);
+                tc.max = jc["max"].as_f32(tc.max);
+                tc.step = jc["step"].as_f32(tc.step);
+                tc.cb_offset = jc["offset"].as_u32();
                 tc.num_elements = jc["num_elements"].as_u32();
 
                 if (tc.num_elements > 1)
@@ -532,31 +532,31 @@ namespace put
 
                 sb_push(program.constants, tc);
             }
-            
+
             // generate permutation metadata
             program.permutations = nullptr;
             u32 num_permutations = j_techique["permutations"].size();
-            
-            for(u32 i = 0; i < num_permutations; ++i)
+
+            for (u32 i = 0; i < num_permutations; ++i)
             {
                 technique_permutation tp;
                 tp.name = j_techique["permutations"][i].key();
                 tp.val = j_techique["permutations"][i]["val"].as_u32();
-                
+
                 hash_id id_widget = j_techique["permutations"][i]["type"].as_hash_id();
-                
+
                 static hash_id id_checkbox = PEN_HASH("checkbox");
                 static hash_id id_input = PEN_HASH("input");
-                
-                if(id_widget == id_checkbox)
+
+                if (id_widget == id_checkbox)
                 {
                     tp.widget = PW_CHECKBOX;
                 }
-                else if(id_widget == id_input)
+                else if (id_widget == id_input)
                 {
                     tp.widget = PW_INPUT;
                 }
-                
+
                 sb_push(program.permutations, tp);
             }
 
@@ -593,9 +593,9 @@ namespace put
                 for (u32 i = 0; i < num_tt; ++i)
                 {
                     sampler_binding sb;
-                    sb.handle        = ts[i].handle;
-                    sb.sampler_unit  = ts[i].unit;
-                    sb.shader_type   = PEN_SHADER_TYPE_PS;
+                    sb.handle = ts[i].handle;
+                    sb.sampler_unit = ts[i].unit;
+                    sb.shader_type = PEN_SHADER_TYPE_PS;
                     sb.id_sampler_state = id_wrap_linear;
                     sb.sampler_state = pmfx::get_render_state(id_wrap_linear, RS_SAMPLER);
 
@@ -655,15 +655,15 @@ namespace put
 
             return nullptr;
         }
-        
+
         technique_permutation* get_technique_permutations(u32 shader, u32 technique_index)
         {
             if (shader >= sb_count(k_pmfx_list))
                 return nullptr;
-            
+
             if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
                 return nullptr;
-            
+
             return k_pmfx_list[shader].techniques[technique_index].permutations;
         }
 
@@ -740,23 +740,23 @@ namespace put
 
             return PEN_INVALID_HANDLE;
         }
-        
+
         u32 get_technique_index_perm(u32 shader, hash_id id_technique, u32 permutation)
         {
             u32 num_techniques = sb_count(k_pmfx_list[shader].techniques);
             for (u32 i = 0; i < num_techniques; ++i)
             {
                 auto& t = k_pmfx_list[shader].techniques[i];
-                
+
                 if (t.id_name != id_technique)
                     continue;
-                
+
                 if (t.permutation_id != permutation)
                     continue;
-                
+
                 return i;
             }
-            
+
             return PEN_INVALID_HANDLE;
         }
 
@@ -791,7 +791,7 @@ namespace put
             // read shader info json
             pmfx_shader new_pmfx;
 
-            new_pmfx.filename    = filename;
+            new_pmfx.filename = filename;
             new_pmfx.id_filename = PEN_HASH(filename);
 
             new_pmfx.info = pen::json::load_from_file(info_file_buf);
@@ -807,7 +807,7 @@ namespace put
 
             for (s32 i = 0; i < _techniques.size(); ++i)
             {
-                pen::json      t             = _techniques[i];
+                pen::json      t = _techniques[i];
                 shader_program new_technique = load_shader_technique(filename, t, new_pmfx.info);
 
                 sb_push(new_pmfx.techniques, new_technique);
@@ -946,8 +946,8 @@ namespace put
                     s32 num_files = files.size();
                     for (s32 i = 0; i < num_files; ++i)
                     {
-                        pen::json file      = files[i];
-                        Str       fn        = file["name"].as_str();
+                        pen::json file = files[i];
+                        Str       fn = file["name"].as_str();
                         u32       shader_ts = file["timestamp"].as_u32();
                         u32       current_ts;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
@@ -964,7 +964,7 @@ namespace put
                 current_counter++;
             }
         }
-        
+
         bool has_technique_permutations(u32 shader, u32 technique_index)
         {
             return get_technique_permutations(shader, technique_index);
@@ -982,30 +982,29 @@ namespace put
 
         bool has_technique_params(u32 shader, u32 technique_index)
         {
-            return  get_technique_constants(shader, technique_index) ||
-                    get_technique_samplers(shader, technique_index) ||
-                    get_technique_permutations(shader, technique_index);
+            return get_technique_constants(shader, technique_index) || get_technique_samplers(shader, technique_index) ||
+                   get_technique_permutations(shader, technique_index);
         }
-        
+
         bool permutation_ui(u32 shader, u32 technique_index, u32* permutation_flags)
         {
             technique_permutation* tp = get_technique_permutations(shader, technique_index);
-            
+
             bool rv = false;
-            
-            if(!tp)
+
+            if (!tp)
             {
                 return rv;
             }
-            
+
             ImGui::Separator();
             ImGui::Text("Permutation");
             ImGui::Separator();
-            
+
             u32 num_permutations = sb_count(tp);
-            for(u32 i = 0; i < num_permutations; ++i)
+            for (u32 i = 0; i < num_permutations; ++i)
             {
-                switch(tp[i].widget)
+                switch (tp[i].widget)
                 {
                     case PW_CHECKBOX:
                         rv |= ImGui::CheckboxFlags(tp[i].name.c_str(), permutation_flags, tp[i].val);
@@ -1014,7 +1013,7 @@ namespace put
                         break;
                 }
             }
-            
+
             return rv;
         }
 
@@ -1026,13 +1025,13 @@ namespace put
 
             if (!tc)
                 return rv;
-            
+
             ImGui::Separator();
             ImGui::Text("Constants");
             ImGui::Separator();
 
             static bool colour_edit[64] = {0};
-            u32         num_constants   = sb_count(tc);
+            u32         num_constants = sb_count(tc);
             for (u32 i = 0; i < num_constants; ++i)
             {
                 f32* f = &material_data[tc[i].cb_offset];
@@ -1054,7 +1053,7 @@ namespace put
                         if (ImGui::Button(tc[i].name.c_str()))
                         {
                             colour_edit[i] = true;
-                            rv             = true;
+                            rv = true;
                         }
 
                         if (colour_edit[i])
@@ -1093,7 +1092,7 @@ namespace put
 
             if (!tt)
                 return false;
-            
+
             ImGui::Separator();
             ImGui::Text("Texture Samplers");
             ImGui::Separator();
@@ -1102,11 +1101,11 @@ namespace put
 
             ImGui::Columns(num_textures);
 
-            static bool open_fb      = false;
+            static bool open_fb = false;
             static s32  select_index = -1;
-            
+
             // sampler state list
-            c8** sampler_state_list = pmfx::get_render_state_list(pmfx::RS_SAMPLER);
+            c8**     sampler_state_list = pmfx::get_render_state_list(pmfx::RS_SAMPLER);
             hash_id* sampler_state_id_list = pmfx::get_render_state_id_list(pmfx::RS_SAMPLER);
 
             for (u32 i = 0; i < num_textures; ++i)
@@ -1119,24 +1118,24 @@ namespace put
                 {
                     if (!open_fb)
                     {
-                        open_fb      = true;
+                        open_fb = true;
                         select_index = i;
                     }
                 }
 
                 ImGui::Text("file: %s", put::get_texture_filename(samplers.sb[i].handle).c_str());
-                            
+
                 s32 ss_index = -1;
-                for(u32 j = 0; j < sb_count(sampler_state_id_list); ++j)
+                for (u32 j = 0; j < sb_count(sampler_state_id_list); ++j)
                 {
-                    if(sampler_state_id_list[j] == samplers.sb[i].id_sampler_state)
+                    if (sampler_state_id_list[j] == samplers.sb[i].id_sampler_state)
                     {
                         ss_index = j;
                         break;
                     }
                 }
-                
-                if(ImGui::Combo("sampler state", &ss_index, &sampler_state_list[0], sb_count(sampler_state_list)))
+
+                if (ImGui::Combo("sampler state", &ss_index, &sampler_state_list[0], sb_count(sampler_state_list)))
                 {
                     samplers.sb[i].id_sampler_state = sampler_state_id_list[ss_index];
                     rv = true;
@@ -1144,7 +1143,7 @@ namespace put
 
                 ImGui::NextColumn();
             }
-            
+
             sb_free(sampler_state_list);
 
             if (open_fb)

@@ -21,58 +21,58 @@ namespace put
     {
         enum e_scene_view_flags : u32
         {
-            SV_NONE     = 0,
-            SV_HIDE     = (1 << 0),
+            SV_NONE = 0,
+            SV_HIDE = (1 << 0),
             SV_BITS_END = 0
         };
 
         enum e_scene_flags : u32
         {
-            INVALIDATE_NONE       = 0,
+            INVALIDATE_NONE = 0,
             INVALIDATE_SCENE_TREE = 1 << 1,
-            PAUSE_UPDATE          = 1 << 2
+            PAUSE_UPDATE = 1 << 2
         };
 
         enum e_component_flags : u32
         {
-            CMP_ALLOCATED       = (1 << 0),
-            CMP_GEOMETRY        = (1 << 1),
-            CMP_PHYSICS         = (1 << 2),
-            CMP_PHYSICS_MULTI   = (1 << 3),
-            CMP_MATERIAL        = (1 << 4),
-            CMP_HAND            = (1 << 5),
-            CMP_SKINNED         = (1 << 6),
-            CMP_BONE            = (1 << 7),
-            CMP_DYNAMIC         = (1 << 8),
+            CMP_ALLOCATED = (1 << 0),
+            CMP_GEOMETRY = (1 << 1),
+            CMP_PHYSICS = (1 << 2),
+            CMP_PHYSICS_MULTI = (1 << 3),
+            CMP_MATERIAL = (1 << 4),
+            CMP_HAND = (1 << 5),
+            CMP_SKINNED = (1 << 6),
+            CMP_BONE = (1 << 7),
+            CMP_DYNAMIC = (1 << 8),
             CMP_ANIM_CONTROLLER = (1 << 9),
             CMP_ANIM_TRAJECTORY = (1 << 10),
-            CMP_LIGHT           = (1 << 11),
-            CMP_TRANSFORM       = (1 << 12),
-            CMP_CONSTRAINT      = (1 << 13),
-            CMP_SUB_INSTANCE    = (1 << 14),
+            CMP_LIGHT = (1 << 11),
+            CMP_TRANSFORM = (1 << 12),
+            CMP_CONSTRAINT = (1 << 13),
+            CMP_SUB_INSTANCE = (1 << 14),
             CMP_MASTER_INSTANCE = (1 << 15),
-            CMP_PRE_SKINNED     = (1 << 16),
-            CMP_SUB_GEOMETRY    = (1 << 17),
-            CMP_SDF_SHADOW      = (1 << 18),
-            CMP_VOLUME          = (1 << 19),
-            CMP_SAMPLERS        = (1 << 20)
+            CMP_PRE_SKINNED = (1 << 16),
+            CMP_SUB_GEOMETRY = (1 << 17),
+            CMP_SDF_SHADOW = (1 << 18),
+            CMP_VOLUME = (1 << 19),
+            CMP_SAMPLERS = (1 << 20)
         };
 
         enum e_state_flags : u32
         {
-            SF_SELECTED             = (1 << 0),
-            SF_CHILD_SELECTED       = (1 << 1),
-            SF_HIDDEN               = (1 << 2),
+            SF_SELECTED = (1 << 0),
+            SF_CHILD_SELECTED = (1 << 1),
+            SF_HIDDEN = (1 << 2),
             SF_MATERIAL_INITIALISED = (1 << 3),
-            SF_NO_SHADOW            = (1 << 4),
+            SF_NO_SHADOW = (1 << 4),
             SF_SAMPLERS_INITIALISED = (1 << 5)
         };
 
         enum e_light_types : u32
         {
-            LIGHT_TYPE_DIR      = 0,
-            LIGHT_TYPE_POINT    = 1,
-            LIGHT_TYPE_SPOT     = 2,
+            LIGHT_TYPE_DIR = 0,
+            LIGHT_TYPE_POINT = 1,
+            LIGHT_TYPE_SPOT = 2,
             LIGHT_TYPE_AREA_BOX = 3
         };
         static const f32 k_dir_light_offset = 1000000.0f;
@@ -113,8 +113,8 @@ namespace put
         enum e_scene_limits
         {
             MAX_FORWARD_LIGHTS = 8,
-            MAX_SHADOW_MAPS    = 1,
-            MAX_SDF_SHADOWS    = 1
+            MAX_SHADOW_MAPS = 1,
+            MAX_SDF_SHADOWS = 1
         };
 
         struct cmp_draw_call
@@ -144,7 +144,7 @@ namespace put
             hash_id id_shader = 0;
             hash_id id_technique = 0;
             hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
-            s32     texture_handles[SN_NUM_TEXTURES]  = {0};
+            s32     texture_handles[SN_NUM_TEXTURES] = {0};
         };
 
         // contains baked handles for o(1) time setting of technique / shader
@@ -154,7 +154,7 @@ namespace put
             u32 material_cbuffer = PEN_INVALID_HANDLE;
             u32 material_cbuffer_size = 0;
             u32 pmfx_shader; // shader.. todo: rename
-            u32 technique; // technique index.. todo: rename
+            u32 technique;   // technique index.. todo: rename
         };
 
         // from pmfx per instance material cbuffer data and samplers
@@ -228,15 +228,15 @@ namespace put
             enum e_play_flags : u8
             {
                 STOPPED = 0,
-                PLAY    = 1
+                PLAY = 1
             };
 
             anim_handle* handles = nullptr;
             s32          joints_offset;
             anim_handle  current_animation;
             f32          current_time;
-            s32          current_frame     = 0;
-            u8           play_flags        = STOPPED;
+            s32          current_frame = 0;
+            u8           play_flags = STOPPED;
             bool         apply_root_motion = true;
         };
 
@@ -245,9 +245,9 @@ namespace put
             u32   type;
             vec3f colour;
 
-            f32 radius       = 10.0f;
+            f32 radius = 10.0f;
             f32 spot_falloff = 0.05f;
-            f32 cos_cutoff   = -M_PI / 4.0f;
+            f32 cos_cutoff = -M_PI / 4.0f;
             f32 azimuth;
             f32 altitude;
 
@@ -259,8 +259,8 @@ namespace put
         struct cmp_transform
         {
             vec3f translation = vec3f::zero();
-            quat  rotation    = quat();
-            vec3f scale       = vec3f::one();
+            quat  rotation = quat();
+            vec3f scale = vec3f::one();
         };
 
         struct cmp_shadow
@@ -336,7 +336,7 @@ namespace put
 
             pen_inline void* operator[](size_t index)
             {
-                u8* d  = (u8*)data;
+                u8* d = (u8*)data;
                 u8* di = &d[index * size];
                 return (void*)(di);
             }
@@ -381,25 +381,25 @@ namespace put
             cmp_array<cmp_material_data>   material_data;
             cmp_array<material_resource>   material_resources;
             cmp_array<cmp_shadow>          shadows;
-            cmp_array<cmp_samplers>        samplers; // version 5
+            cmp_array<cmp_samplers>        samplers;             // version 5
             cmp_array<u32>                 material_permutation; // version 8
 
             // Ensure num_components is the next to calc size
             u32 num_components;
 
             // Scene Data
-            u32             num_nodes             = 0;
-            u32             nodes_size            = 0;
-            free_node_list* free_list_head        = nullptr;
-            u32             forward_light_buffer  = PEN_INVALID_HANDLE;
-            u32             sdf_shadow_buffer     = PEN_INVALID_HANDLE;
+            u32             num_nodes = 0;
+            u32             nodes_size = 0;
+            free_node_list* free_list_head = nullptr;
+            u32             forward_light_buffer = PEN_INVALID_HANDLE;
+            u32             sdf_shadow_buffer = PEN_INVALID_HANDLE;
             u32             area_box_light_buffer = PEN_INVALID_HANDLE;
-            s32             selected_index        = -1;
-            u32             flags                 = 0;
-            u32             view_flags            = 0;
+            s32             selected_index = -1;
+            u32             flags = 0;
+            u32             view_flags = 0;
             extents         renderable_extents;
 
-            u32 version  = k_version;
+            u32 version = k_version;
             Str filename = "";
 
             // Access to component data in a generic way

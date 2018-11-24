@@ -66,7 +66,7 @@ static void check_neighbour(const std::vector<Vec3ui>& tri, const std::vector<Ve
         float d = point_triangle_distance(gx, x[p], x[q], x[r]);
         if (d < phi(i0, j0, k0))
         {
-            phi(i0, j0, k0)         = d;
+            phi(i0, j0, k0) = d;
             closest_tri(i0, j0, k0) = closest_tri(i1, j1, k1);
         }
     }
@@ -177,7 +177,7 @@ void make_level_set3(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x
                      int nj, int nk, Array3f& phi, const int exact_band)
 {
     g_mls_progress.triangles = 0.0f;
-    g_mls_progress.sweeps    = 0.0f;
+    g_mls_progress.sweeps = 0.0f;
 
     phi.resize(ni, nj, nk);
     phi.assign((ni + nj + nk) * dx); // upper bound on distance
@@ -215,7 +215,7 @@ void make_level_set3(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x
                     float d = point_triangle_distance(gx, x[p], x[q], x[r]);
                     if (d < phi(i, j, k))
                     {
-                        phi(i, j, k)         = d;
+                        phi(i, j, k) = d;
                         closest_tri(i, j, k) = t;
                     }
                 }
@@ -234,8 +234,8 @@ void make_level_set3(const std::vector<Vec3ui>& tri, const std::vector<Vec3f>& x
                 double a, b, c;
                 if (point_in_triangle_2d(j, k, fjp, fkp, fjq, fkq, fjr, fkr, a, b, c))
                 {
-                    double fi         = a * fip + b * fiq + c * fir; // intersection i coordinate
-                    int    i_interval = int(std::ceil(fi));          // intersection is in (i_interval-1,i_interval]
+                    double fi = a * fip + b * fiq + c * fir; // intersection i coordinate
+                    int    i_interval = int(std::ceil(fi));  // intersection is in (i_interval-1,i_interval]
                     if (i_interval < 0)
                         ++intersection_count(0, j,
                                              k); // we enlarge the first interval to include everything to the -x direction

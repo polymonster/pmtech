@@ -16,8 +16,8 @@
 #include "str/Str.h"
 #include "str_utilities.h"
 
-#include "os.h"
 #include "data_struct.h"
+#include "os.h"
 
 // global stuff for window graphics api sync
 extern pen::window_creation_params pen_window;
@@ -94,7 +94,7 @@ void pen_window_resize()
 
     [_gl_view setFrameSize:view_rect.size];
 
-    pen_window.width  = view_rect.size.width;
+    pen_window.width = view_rect.size.width;
     pen_window.height = view_rect.size.height;
 }
 
@@ -153,15 +153,15 @@ void create_gl_context()
     GLint interval = 1;
     [glContext setValues:&interval forParameter:NSOpenGLCPSwapInterval];
 
-    _gl_view    = glView;
+    _gl_view = glView;
     _gl_context = glContext;
 }
 
 void get_mouse_pos(f32& x, f32& y)
 {
     NSRect  original_frame = [_window frame];
-    NSPoint location       = [_window mouseLocationOutsideOfEventStream];
-    NSRect  adjust_frame   = [_window contentRectForFrameRect:original_frame];
+    NSPoint location = [_window mouseLocationOutsideOfEventStream];
+    NSRect  adjust_frame = [_window contentRectForFrameRect:original_frame];
 
     x = location.x;
     y = (int)adjust_frame.size.height - location.y;
@@ -240,7 +240,7 @@ void handle_key_event(NSEvent* event, bool down)
         if (mapped_key_char == 127)
         {
             mapped_key_char = 8;
-            vk              = PK_BACK;
+            vk = PK_BACK;
         }
 
         if (mapped_key_char == 32)
@@ -425,16 +425,15 @@ bool handle_event(NSEvent* event)
 
 void users()
 {
-    NSString* ns_full_user_name  = NSFullUserName();
+    NSString* ns_full_user_name = NSFullUserName();
     pen_user_info.full_user_name = [ns_full_user_name UTF8String];
 
-    NSString* ns_user_name  = NSUserName();
+    NSString* ns_user_name = NSUserName();
     pen_user_info.user_name = [ns_user_name UTF8String];
 }
 
 void __main_update()
 {
-    
 }
 
 namespace
@@ -444,20 +443,19 @@ namespace
         OS_CMD_NULL = 0,
         OS_CMD_SET_WINDOW_FRAME
     };
-    
+
     struct os_cmd
     {
         u32 cmd_index;
-        
-        union
-        {
+
+        union {
             struct
             {
                 pen::window_frame frame;
             };
         };
     };
-    
+
     pen_ring_buffer<os_cmd> s_cmd_buffer;
 }
 
@@ -465,8 +463,8 @@ int main(int argc, char** argv)
 {
     // get working dir
     Str working_dir = argv[0];
-    working_dir     = pen::str_normalise_filepath(working_dir);
-    
+    working_dir = pen::str_normalise_filepath(working_dir);
+
     s_cmd_buffer.create(32);
 
     // strip exe and go back 2 \contents\macos\exe
@@ -585,33 +583,33 @@ namespace pen
             if (pen::thread_terminate_jobs())
                 return false;
         }
-        
+
         os_cmd* cmd = s_cmd_buffer.get();
-        while(cmd)
+        while (cmd)
         {
             // process cmd
-            switch(cmd->cmd_index)
+            switch (cmd->cmd_index)
             {
                 case OS_CMD_SET_WINDOW_FRAME:
                 {
-                    NSRect frame      = [_window frame];
-                    
-                    frame.origin.x    = cmd->frame.x;
-                    frame.origin.y    = cmd->frame.y;
-                    frame.size.width  = cmd->frame.width;
+                    NSRect frame = [_window frame];
+
+                    frame.origin.x = cmd->frame.x;
+                    frame.origin.y = cmd->frame.y;
+                    frame.size.width = cmd->frame.width;
                     frame.size.height = cmd->frame.height;
-                    
+
                     [_window setFrame:frame display:YES animate:NO];
                 }
                 break;
                 default:
                     break;
             }
-            
+
             // get next
             cmd = s_cmd_buffer.get();
         }
-        
+
         return true;
     }
 
@@ -641,16 +639,16 @@ namespace pen
     void window_get_size(s32& width, s32& height)
     {
         NSScreen* screen = [_window screen];
-        NSRect    rect   = [screen frame];
+        NSRect    rect = [screen frame];
 
-        width  = rect.size.width;
+        width = rect.size.width;
         height = rect.size.height;
     }
 
     void window_set_size(s32 width, s32 height)
     {
-        NSRect frame      = [_window frame];
-        frame.size.width  = width;
+        NSRect frame = [_window frame];
+        frame.size.width = width;
         frame.size.height = height;
 
         [_window setFrame:frame display:YES animate:NO];
@@ -658,11 +656,11 @@ namespace pen
 
     void window_get_frame(window_frame& f)
     {
-        NSRect  rect = [_window frame];
-        
-        f.x      = rect.origin.x;
-        f.y      = rect.origin.y;
-        f.width  = rect.size.width;
+        NSRect rect = [_window frame];
+
+        f.x = rect.origin.x;
+        f.y = rect.origin.y;
+        f.width = rect.size.width;
         f.height = rect.size.height;
     }
 
@@ -671,7 +669,7 @@ namespace pen
         os_cmd cmd;
         cmd.cmd_index = OS_CMD_SET_WINDOW_FRAME;
         cmd.frame = f;
-        
+
         s_cmd_buffer.put(cmd);
     }
 
@@ -706,7 +704,7 @@ namespace pen
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender
 {
-    self->terminated  = true;
+    self->terminated = true;
     pen_terminate_app = true;
     return NSTerminateCancel;
 }
@@ -796,7 +794,7 @@ namespace pen
 - (BOOL)performDragOperation:(id<NSDraggingInfo>)sender
 {
     NSPasteboard* pboard = [sender draggingPasteboard];
-    NSArray*      files  = [pboard propertyListForType:NSFilenamesPboardType];
+    NSArray*      files = [pboard propertyListForType:NSFilenamesPboardType];
 
     for (u32 i = 0; i < files.count; ++i)
     {

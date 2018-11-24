@@ -43,16 +43,16 @@ void create_scene(entity_scene* scene)
     clear_scene(scene);
 
     // add light
-    u32 light                            = get_new_node(scene);
-    scene->names[light]                  = "front_light";
-    scene->id_name[light]                = PEN_HASH("front_light");
-    scene->lights[light].colour          = vec3f::one();
-    scene->lights[light].direction       = vec3f::one();
-    scene->lights[light].type            = LIGHT_TYPE_DIR;
-    scene->lights[light].shadow_map      = true;
+    u32 light = get_new_node(scene);
+    scene->names[light] = "front_light";
+    scene->id_name[light] = PEN_HASH("front_light");
+    scene->lights[light].colour = vec3f::one();
+    scene->lights[light].direction = vec3f::one();
+    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
-    scene->transforms[light].rotation    = quat();
-    scene->transforms[light].scale       = vec3f::one();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
 
@@ -62,28 +62,28 @@ void create_scene(entity_scene* scene)
 
     // set character scale and pos
     scene->transforms[head_model].translation = vec3f(0.0f, 0.0f, 0.0f);
-    scene->transforms[head_model].scale       = vec3f(10.0f);
+    scene->transforms[head_model].scale = vec3f(10.0f);
     scene->entities[head_model] |= CMP_TRANSFORM;
 
     // set textures
-    scene->samplers[head_model].sb[0].handle       = put::load_texture("data/textures/head/albedo.dds");
+    scene->samplers[head_model].sb[0].handle = put::load_texture("data/textures/head/albedo.dds");
     scene->samplers[head_model].sb[0].sampler_unit = 0;
-    
-    scene->samplers[head_model].sb[1].handle       = put::load_texture("data/textures/head/normal.dds");
+
+    scene->samplers[head_model].sb[1].handle = put::load_texture("data/textures/head/normal.dds");
     scene->samplers[head_model].sb[1].sampler_unit = 1;
 
     // set material to sss
     scene->material_resources[head_model].id_technique = PEN_HASH("forward_lit");
-    scene->material_resources[head_model].shader_name  = "forward_render";
-    scene->material_resources[head_model].id_shader    = PEN_HASH(scene->material_resources[head_model].shader_name);
+    scene->material_resources[head_model].shader_name = "forward_render";
+    scene->material_resources[head_model].id_shader = PEN_HASH(scene->material_resources[head_model].shader_name);
 
-    scene->material_permutation[head_model] = 1<<2; //sss todo get from mat
-    
+    scene->material_permutation[head_model] = 1 << 2; //sss todo get from mat
+
     forward_lit_sss mat_data;
-    mat_data.m_albedo       = float4::one();
-    mat_data.m_roughness    = 0.5f;
+    mat_data.m_albedo = float4::one();
+    mat_data.m_roughness = 0.5f;
     mat_data.m_reflectivity = 0.22f;
-    mat_data.m_sss_scale    = 370.0f;
+    mat_data.m_sss_scale = 370.0f;
 
     memcpy(scene->material_data[head_model].data, &mat_data, sizeof(forward_lit_sss));
 
@@ -101,11 +101,11 @@ void shadow_map_update(put::scene_controller* sc)
     if (!is_valid(cbuffer))
     {
         pen::buffer_creation_params bcp;
-        bcp.usage_flags      = PEN_USAGE_DYNAMIC;
-        bcp.bind_flags       = PEN_BIND_CONSTANT_BUFFER;
+        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
         bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-        bcp.buffer_size      = sizeof(mat4);
-        bcp.data             = nullptr;
+        bcp.buffer_size = sizeof(mat4);
+        bcp.data = nullptr;
 
         cbuffer = pen::renderer_create_buffer(bcp);
     }
@@ -120,7 +120,7 @@ void shadow_map_update(put::scene_controller* sc)
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
@@ -134,10 +134,10 @@ PEN_TRV pen::user_entry(void* params)
     put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
     put::scene_controller cc;
-    cc.camera          = &main_camera;
+    cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
-    cc.name            = "model_viewer_camera";
-    cc.id_name         = PEN_HASH(cc.name.c_str());
+    cc.name = "model_viewer_camera";
+    cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
     put::ces::entity_scene* main_scene;
@@ -145,30 +145,30 @@ PEN_TRV pen::user_entry(void* params)
     put::ces::editor_init(main_scene);
 
     put::scene_controller sc;
-    sc.scene           = main_scene;
+    sc.scene = main_scene;
     sc.update_function = &ces::update_model_viewer_scene;
-    sc.name            = "main_scene";
-    sc.camera          = &main_camera;
-    sc.id_name         = PEN_HASH(sc.name.c_str());
+    sc.name = "main_scene";
+    sc.camera = &main_camera;
+    sc.id_name = PEN_HASH(sc.name.c_str());
 
     // create view renderers
     put::scene_view_renderer svr_main;
-    svr_main.name            = "ces_render_scene";
-    svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
+    svr_main.name = "ces_render_scene";
+    svr_main.id_name = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
 
     put::scene_view_renderer svr_editor;
-    svr_editor.name            = "ces_render_editor";
-    svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
+    svr_editor.name = "ces_render_editor";
+    svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
 
     put::camera           shadow_camera;
     put::scene_controller shadow_cc;
-    shadow_cc.scene           = main_scene;
-    shadow_cc.camera          = &shadow_camera;
+    shadow_cc.scene = main_scene;
+    shadow_cc.camera = &shadow_camera;
     shadow_cc.update_function = &shadow_map_update;
-    shadow_cc.name            = "shadow_camera";
-    shadow_cc.id_name         = PEN_HASH(shadow_cc.name.c_str());
+    shadow_cc.name = "shadow_camera";
+    shadow_cc.id_name = PEN_HASH(shadow_cc.name.c_str());
 
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
@@ -184,7 +184,7 @@ PEN_TRV pen::user_entry(void* params)
 
     // focus on the head
     main_camera.focus = vec3f(0.0f, 8.5f, 0.0f);
-    main_camera.zoom  = 20.0f;
+    main_camera.zoom = 20.0f;
 
     while (1)
     {
@@ -206,7 +206,7 @@ PEN_TRV pen::user_entry(void* params)
         // rotate light
         cmp_light& snl = main_scene->lights[0];
         snl.azimuth += frame_timer * 0.02f;
-        snl.altitude  = maths::deg_to_rad(108.0f);
+        snl.altitude = maths::deg_to_rad(108.0f);
         snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth, snl.altitude);
 
         main_camera.pos += vec3f(1.0, 0.0, 0.0);

@@ -40,7 +40,7 @@ namespace physics
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
@@ -54,36 +54,36 @@ PEN_TRV pen::user_entry(void* params)
     put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
     put::scene_controller cc;
-    cc.camera          = &main_camera;
+    cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
-    cc.name            = "model_viewer_camera";
-    cc.id_name         = PEN_HASH(cc.name.c_str());
+    cc.name = "model_viewer_camera";
+    cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
     put::ces::entity_scene* main_scene;
     main_scene = put::ces::create_scene("main_scene");
 
     put::scene_controller sc;
-    sc.scene           = main_scene;
+    sc.scene = main_scene;
     sc.update_function = &ces::update_model_viewer_scene;
-    sc.name            = "main_scene";
-    sc.camera          = &main_camera;
-    sc.id_name         = PEN_HASH(sc.name.c_str());
+    sc.name = "main_scene";
+    sc.camera = &main_camera;
+    sc.id_name = PEN_HASH(sc.name.c_str());
 
     // create view renderers
     put::scene_view_renderer svr_main;
-    svr_main.name            = "ces_render_scene";
-    svr_main.id_name         = PEN_HASH(svr_main.name.c_str());
+    svr_main.name = "ces_render_scene";
+    svr_main.id_name = PEN_HASH(svr_main.name.c_str());
     svr_main.render_function = &ces::render_scene_view;
 
     put::scene_view_renderer svr_light_volumes;
-    svr_light_volumes.name            = "ces_render_light_volumes";
-    svr_light_volumes.id_name         = PEN_HASH(svr_light_volumes.name.c_str());
+    svr_light_volumes.name = "ces_render_light_volumes";
+    svr_light_volumes.id_name = PEN_HASH(svr_light_volumes.name.c_str());
     svr_light_volumes.render_function = &ces::render_light_volumes;
 
     put::scene_view_renderer svr_editor;
-    svr_editor.name            = "ces_render_editor";
-    svr_editor.id_name         = PEN_HASH(svr_editor.name.c_str());
+    svr_editor.name = "ces_render_editor";
+    svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
 
     pmfx::register_scene_view_renderer(svr_light_volumes);
@@ -96,7 +96,7 @@ PEN_TRV pen::user_entry(void* params)
     // volume rasteriser tool
     put::ces::editor_init(main_scene);
     put::vgt::init(main_scene);
-    
+
     pmfx::init("data/configs/editor_renderer.jsn");
 
     f32 frame_time = 0.0f;
@@ -115,7 +115,7 @@ PEN_TRV pen::user_entry(void* params)
         pmfx::show_dev_ui();
 
         put::vgt::show_dev_ui();
-        
+
         put::dev_ui::render();
 
         frame_time = pen::timer_elapsed_ms(frame_timer);
