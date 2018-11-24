@@ -5,6 +5,7 @@ pmtech source is split into two static libraries to make cross platform developm
 Contains platform / operating system specific code and other utility code which is required at this low level. It serves mainly as an abstraction layer for cross platform support, it has the following modules:
 
 - Renderer
+- OS
 - Types
 - Timer
 - Threads
@@ -14,6 +15,8 @@ Contains platform / operating system specific code and other utility code which 
 - String
 - Input
 - Memory
+- Hash
+- Data Structures
 
 ## put
 Contains only platform agnostic code which is implemented by using the abstractions provided by pen, it has the following modules:
