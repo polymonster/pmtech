@@ -6,7 +6,9 @@ Contains platform / operating system specific code and other utility code which 
 
 - Renderer
 - OS
+- Filesystem
 - Types
+- Memory
 - Timer
 - Threads
 - Console
@@ -14,7 +16,6 @@ Contains platform / operating system specific code and other utility code which 
 - Json
 - String
 - Input
-- Memory
 - Hash
 - Data Structures
 
