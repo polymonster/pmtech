@@ -69,7 +69,7 @@ project "pen"
         "source/" .. platform_dir .. "/**.cpp",
         "source/" .. platform_dir .. "/**.mm",
     
-        "../third_party/str/*.cpp", 
+        "../../third_party/str/*.cpp", 
     }
 
 	includedirs 
@@ -79,8 +79,7 @@ project "pen"
 		"include/" .. platform_dir, 
 		"include/" .. renderer_dir,
 		
-		"../third_party/fmod/inc",
-		"../third_party" 
+		"../../third_party" 
 	}
 			
 	configuration "Debug"

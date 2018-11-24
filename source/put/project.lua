@@ -16,7 +16,7 @@ project "put"
 	libdirs
 	{ 
 		"../pen/lib/" .. platform_dir,
-		"../third_party/bullet/lib/" .. bullet_lib_dir,
+		"../../third_party/bullet/lib/" .. bullet_lib_dir,
 	}
 	
 	includedirs
@@ -28,10 +28,10 @@ project "put"
 		"../pen/include/" .. platform_dir,
 		"../pen/include/" .. renderer_dir,
 		  
-		"../third_party/fmod/inc",
-		"../third_party/bullet/src/",
-		"../third_party/imgui",
-		"../third_party",
+		"../../third_party/fmod/inc",
+		"../../third_party/bullet/src/",
+		"../../third_party/imgui",
+		"../../third_party",
 	}
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
@@ -44,8 +44,8 @@ project "put"
 		"source/**.cpp",
 		"source/**.h", 
 		
-		"../third_party/imgui/*.cpp",
-		"../third_party/imgui/*.h",
+		"../../third_party/imgui/*.cpp",
+		"../../third_party/imgui/*.h",
 	}
 	includedirs { "include" }
 	

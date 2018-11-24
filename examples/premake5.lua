@@ -19,10 +19,10 @@ solution "examples"
 	}
 	
 -- Engine Project	
-dofile "../pen/project.lua"
+dofile "../source/pen/project.lua"
 
 -- Toolkit Project	
-dofile "../put/project.lua"
+dofile "../source/put/project.lua"
 
 -- Example projects	
 -- ( project name, current script dir, )
