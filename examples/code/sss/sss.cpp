@@ -73,10 +73,12 @@ void create_scene(entity_scene* scene)
     scene->samplers[head_model].sb[1].sampler_unit = 1;
 
     // set material to sss
-    scene->material_resources[head_model].id_technique = PEN_HASH("forward_lit_sss");
+    scene->material_resources[head_model].id_technique = PEN_HASH("forward_lit");
     scene->material_resources[head_model].shader_name  = "forward_render";
     scene->material_resources[head_model].id_shader    = PEN_HASH(scene->material_resources[head_model].shader_name);
 
+    scene->material_permutation[head_model] = 1<<2; //sss todo get from mat
+    
     forward_lit_sss mat_data;
     mat_data.m_albedo       = float4::one();
     mat_data.m_roughness    = 0.5f;

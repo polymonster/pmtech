@@ -141,8 +141,8 @@ namespace put
             Str     material_name;
             Str     shader_name;
             f32     data[64];
-            hash_id id_shader                         = 0;
-            hash_id id_technique                      = 0;
+            hash_id id_shader = 0;
+            hash_id id_technique = 0;
             hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
             s32     texture_handles[SN_NUM_TEXTURES]  = {0};
         };
@@ -151,13 +151,10 @@ namespace put
         // unique per-instance cbuffer
         struct cmp_material
         {
-            u32 pad[12]; // todo remove. and version
-
-            u32 material_cbuffer                 = PEN_INVALID_HANDLE;
-            u32 material_cbuffer_size            = 0;
-
-            u32 pmfx_shader; // shader
-            u32 technique; // technique index
+            u32 material_cbuffer = PEN_INVALID_HANDLE;
+            u32 material_cbuffer_size = 0;
+            u32 pmfx_shader; // shader.. todo: rename
+            u32 technique; // technique index.. todo: rename
         };
 
         // from pmfx per instance material cbuffer data and samplers

@@ -495,7 +495,7 @@ namespace put
             if (mr->id_shader == 0)
             {
                 static hash_id id_default_shader    = PEN_HASH("forward_render");
-                static hash_id id_default_technique = PEN_HASH("forward_lit_multi");
+                static hash_id id_default_technique = PEN_HASH("forward_lit");
 
                 mr->shader_name  = "forward_render";
                 mr->id_shader    = id_default_shader;
@@ -594,13 +594,6 @@ namespace put
             for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
                 if (samplers.sb[s].id_sampler_state != 0)
                     samplers.sb[s].sampler_state = pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::RS_SAMPLER);
-            
-            //
-#if 0
-
-            
-            material->technique = pmfx::get_technique_index_perm(material->pmfx_shader, resource->id_technique, permutation);
-#endif
         }
 
         extern std::vector<entity_scene_instance> k_scenes;

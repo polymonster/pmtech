@@ -1857,8 +1857,8 @@ namespace put
             cmp_material& mm = scene->materials[selected_index];
             material_resource& mr = scene->material_resources[selected_index];
             cmp_material_data mat  = scene->material_data[selected_index];
-            cmp_samplers&     samp = scene->samplers[selected_index];
-            u32*              perm = &scene->material_permutation[selected_index];
+            cmp_samplers      samp = scene->samplers[selected_index];
+            u32               perm = scene->material_permutation[selected_index];
             
             // multi parameters
             s32 shader = mm.pmfx_shader;
@@ -1945,25 +1945,31 @@ namespace put
             // display technique ui if valid
             if(technique_list_index != PEN_INVALID_HANDLE && !rebake)
             {
-                pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, mm.technique);
-                rebake |= pmfx::show_technique_ui(shader, mm.technique, &mat.data[0], samp, perm);
+                rebake |= pmfx::show_technique_ui(shader, mm.technique, &mat.data[0], samp, &perm);
                 
-                if(tc)
+                pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, mm.technique);
+                pmfx::technique_sampler* ts = pmfx::get_technique_samplers(shader, mm.technique);
+                
+                cmp_material_data pre_edit_tc = scene->material_data[selected_index];
+                u32 pre_edit_perm = scene->material_permutation[selected_index];
+                cmp_samplers pre_edit_samp = scene->samplers[selected_index];
+                
+                // set material edits on multiple edited entities
+                for (u32 i = 0; i < num_selected; ++i)
                 {
-                    u32               num_constants = sb_count(tc);
-                    cmp_material_data pre_edit      = scene->material_data[selected_index];
+                    u32 si = s_selection_list[i];
                     
-                    for (u32 i = 0; i < num_selected; ++i)
+                    // technique constants
+                    if(tc)
                     {
-                        u32 si = s_selection_list[i];
-                        
+                        u32 num_constants = sb_count(tc);
                         for (u32 c = 0; c < num_constants; ++c)
                         {
                             u32 cb_offset = tc[c].cb_offset;
                             u32 tc_size   = sizeof(f32) * tc[c].num_elements;
                             
                             f32* f1 = &mat.data[cb_offset];
-                            f32* f2 = &pre_edit.data[cb_offset];
+                            f32* f2 = &pre_edit_tc.data[cb_offset];
                             
                             if (memcmp(f1, f2, tc_size) == 0)
                                 continue;
@@ -1972,11 +1978,26 @@ namespace put
                             memcpy(f3, f1, tc_size);
                         }
                     }
+                    
+                    // samplers
+                    if(ts)
+                    {
+                        u32 num_samplers = sb_count(ts);
+                        for(u32 s = 0; s < num_samplers; ++s)
+                        {
+                            if (memcmp(&samp.sb[s], &pre_edit_samp.sb[s], sizeof(sampler_binding)) == 0)
+                                continue;
+                            
+                            memcpy(&scene->samplers[si].sb[s], &samp.sb[s], sizeof(sampler_binding));
+                        }
+                    }
+                    
+                    // permutation
+                    if(perm != pre_edit_perm)
+                    {
+                        scene->material_permutation[si] = perm;
+                    }
                 }
-                
-                // todo:
-                // samplers
-                // permutations
             }
             
             // rebake all selected handles

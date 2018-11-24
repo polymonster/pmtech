@@ -1323,40 +1323,37 @@ namespace put
                 sb_push(s_lookup_strings, ls);
             }
             
-            if(sh.version >= 7)
+            // read cameras
+            u32 num_cams;
+            ifs.read((c8*)&num_cams, sizeof(u32));
+            
+            for(u32 i = 0; i < num_cams; ++i)
             {
-                // read cameras
-                u32 num_cams;
-                ifs.read((c8*)&num_cams, sizeof(u32));
+                camera cam;
+                hash_id id_cam;
                 
-                for(u32 i = 0; i < num_cams; ++i)
+                ifs.read((c8*)&id_cam, sizeof(hash_id));
+                ifs.read((c8*)&cam.pos, sizeof(vec3f));
+                ifs.read((c8*)&cam.focus, sizeof(vec3f));
+                ifs.read((c8*)&cam.rot, sizeof(vec2f));
+                ifs.read((c8*)&cam.fov, sizeof(f32));
+                ifs.read((c8*)&cam.aspect, sizeof(f32));
+                ifs.read((c8*)&cam.near_plane, sizeof(f32));
+                ifs.read((c8*)&cam.far_plane, sizeof(f32));
+                ifs.read((c8*)&cam.zoom, sizeof(f32));
+                
+                // find camera and set
+                camera* _cam = pmfx::get_camera(id_cam);
+                if(_cam)
                 {
-                    camera cam;
-                    hash_id id_cam;
-                    
-                    ifs.read((c8*)&id_cam, sizeof(hash_id));
-                    ifs.read((c8*)&cam.pos, sizeof(vec3f));
-                    ifs.read((c8*)&cam.focus, sizeof(vec3f));
-                    ifs.read((c8*)&cam.rot, sizeof(vec2f));
-                    ifs.read((c8*)&cam.fov, sizeof(f32));
-                    ifs.read((c8*)&cam.aspect, sizeof(f32));
-                    ifs.read((c8*)&cam.near_plane, sizeof(f32));
-                    ifs.read((c8*)&cam.far_plane, sizeof(f32));
-                    ifs.read((c8*)&cam.zoom, sizeof(f32));
-                    
-                    // find camera and set
-                    camera* _cam = pmfx::get_camera(id_cam);
-                    if(_cam)
-                    {
-                        _cam->pos = cam.pos;
-                        _cam->focus = cam.focus;
-                        _cam->rot = cam.rot;
-                        _cam->fov = cam.fov;
-                        _cam->aspect = cam.aspect;
-                        _cam->near_plane = cam.near_plane;
-                        _cam->far_plane = cam.far_plane;
-                        _cam->zoom = cam.zoom;
-                    }
+                    _cam->pos = cam.pos;
+                    _cam->focus = cam.focus;
+                    _cam->rot = cam.rot;
+                    _cam->fov = cam.fov;
+                    _cam->aspect = cam.aspect;
+                    _cam->near_plane = cam.near_plane;
+                    _cam->far_plane = cam.far_plane;
+                    _cam->zoom = cam.zoom;
                 }
             }
 
@@ -1371,23 +1368,14 @@ namespace put
                 }
                 else
                 {
-                    if (cmp.data == scene->materials.data)
-                    {
-                        // material version < 8
-                        u32 offset = 0;
-                        for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
-                        {
-                            // old material had 12 u32's for sampler state and texture
-                            static u32 st[12];
-                            ifs.read((c8*)&st[0], sizeof(st[12]));
-                            ifs.read((c8*)cmp.data + offset, cmp.size);
-                            offset += cmp.size;
-                        }
-                    }
-                    else
-                    {
-                        PEN_ASSERT(0); // mismatched size and unhandled case
-                    }
+                    // read the old size
+                    u32 array_size = component_sizes[i]*num_nodes;
+                    c8* old = (c8*)pen::memory_alloc(array_size);
+                    ifs.read(old, array_size);
+                    
+                    // here any fuxup can be applied old into cmp.data
+                    
+                    pen::memory_free(old);
                 }
             }
 
@@ -1522,20 +1510,6 @@ namespace put
                 Str shader        = read_lookup_string(ifs);
                 Str technique     = read_lookup_string(ifs);
 
-                for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
-                {
-                    Str texture_name = read_lookup_string(ifs);
-
-                    if (texture_name == "")
-                    {
-                        mat_res.texture_handles[i] = PEN_INVALID_HANDLE;
-                        continue;
-                    }
-
-                    dev_console_log("[scene load] %s", texture_name.c_str());
-                    mat_res.texture_handles[i] = put::load_texture(texture_name.c_str());
-                }
-
                 mat_res.material_name = material_name;
                 mat_res.id_shader     = PEN_HASH(shader.c_str());
                 mat_res.id_technique  = PEN_HASH(technique.c_str());
@@ -1555,36 +1529,33 @@ namespace put
                 instantiate_sdf_shadow(sdf_shadow_volume_file.c_str(), scene, n);
             }
 
-            if (sh.version >= 6)
+            // sampler binding textures
+            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                // sampler binding textures
-                for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                if (!(scene->entities[n] & CMP_SAMPLERS))
+                    continue;
+                
+                cmp_samplers& samplers = scene->samplers[n];
+                
+                for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
                 {
-                    if (!(scene->entities[n] & CMP_SAMPLERS))
-                        continue;
-
-                    cmp_samplers& samplers = scene->samplers[n];
-
-                    for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                    Str texture_name = read_lookup_string(ifs);
+                    
+                    if (!texture_name.empty())
                     {
-                        Str texture_name = read_lookup_string(ifs);
-
-                        if (!texture_name.empty())
-                        {
-                            samplers.sb[i].handle = put::load_texture(texture_name.c_str());
-                            samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
-                        }
-                        
-                        Str sampler_state_name = read_lookup_string(ifs);
-                        
-                        if(!sampler_state_name.empty())
-                        {
-                            samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::RS_SAMPLER);
-                        }
+                        samplers.sb[i].handle = put::load_texture(texture_name.c_str());
+                        samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
+                    }
+                    
+                    Str sampler_state_name = read_lookup_string(ifs);
+                    
+                    if(!sampler_state_name.empty())
+                    {
+                        samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::RS_SAMPLER);
                     }
                 }
             }
-
+            
             bake_material_handles();
 
             // light geom

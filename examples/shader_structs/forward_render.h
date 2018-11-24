@@ -6,7 +6,7 @@ struct forward_lit
 	float3 m_padding;
 };
 
-struct forward_lit_multi
+struct forward_lit_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -14,7 +14,7 @@ struct forward_lit_multi
 	float3 m_padding;
 };
 
-struct forward_lit_multi_skinned
+struct forward_lit_instanced
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -22,7 +22,7 @@ struct forward_lit_multi_skinned
 	float3 m_padding;
 };
 
-struct forward_lit_multi_instanced
+struct forward_lit_instanced_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -30,15 +30,7 @@ struct forward_lit_multi_instanced
 	float3 m_padding;
 };
 
-struct forward_lit_multi_instanced_skinned
-{
-	float4 m_albedo;
-	float m_roughness;
-	float m_reflectivity;
-	float3 m_padding;
-};
-
-struct forward_lit_multi_uv_scale
+struct forward_lit_uv_scale
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -46,7 +38,7 @@ struct forward_lit_multi_uv_scale
 	float m_reflectivity;
 };
 
-struct forward_lit_multi_uv_scale_skinned
+struct forward_lit_uv_scale_skinned
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -54,7 +46,7 @@ struct forward_lit_multi_uv_scale_skinned
 	float m_reflectivity;
 };
 
-struct forward_lit_multi_uv_scale_instanced
+struct forward_lit_uv_scale_instanced
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -62,7 +54,7 @@ struct forward_lit_multi_uv_scale_instanced
 	float m_reflectivity;
 };
 
-struct forward_lit_multi_uv_scale_instanced_skinned
+struct forward_lit_uv_scale_instanced_skinned
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -70,7 +62,7 @@ struct forward_lit_multi_uv_scale_instanced_skinned
 	float m_reflectivity;
 };
 
-struct forward_lit_multi_sss
+struct forward_lit_sss
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -79,7 +71,7 @@ struct forward_lit_multi_sss
 	float2 m_padding;
 };
 
-struct forward_lit_multi_sss_skinned
+struct forward_lit_sss_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -88,7 +80,7 @@ struct forward_lit_multi_sss_skinned
 	float2 m_padding;
 };
 
-struct forward_lit_multi_sss_instanced
+struct forward_lit_sss_instanced
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -97,7 +89,7 @@ struct forward_lit_multi_sss_instanced
 	float2 m_padding;
 };
 
-struct forward_lit_multi_sss_instanced_skinned
+struct forward_lit_sss_instanced_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -106,7 +98,7 @@ struct forward_lit_multi_sss_instanced_skinned
 	float2 m_padding;
 };
 
-struct forward_lit_multi_sss_uv_scale
+struct forward_lit_sss_uv_scale
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -116,7 +108,7 @@ struct forward_lit_multi_sss_uv_scale
 	float4 m_padding;
 };
 
-struct forward_lit_multi_sss_uv_scale_skinned
+struct forward_lit_sss_uv_scale_skinned
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -126,7 +118,7 @@ struct forward_lit_multi_sss_uv_scale_skinned
 	float4 m_padding;
 };
 
-struct forward_lit_multi_sss_uv_scale_instanced
+struct forward_lit_sss_uv_scale_instanced
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -136,7 +128,7 @@ struct forward_lit_multi_sss_uv_scale_instanced
 	float4 m_padding;
 };
 
-struct forward_lit_multi_sss_uv_scale_instanced_skinned
+struct forward_lit_sss_uv_scale_instanced_skinned
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -146,7 +138,7 @@ struct forward_lit_multi_sss_uv_scale_instanced_skinned
 	float4 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow
+struct forward_lit_sdf_shadow
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -155,7 +147,7 @@ struct forward_lit_multi_sdf_shadow
 	float2 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_skinned
+struct forward_lit_sdf_shadow_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -164,7 +156,7 @@ struct forward_lit_multi_sdf_shadow_skinned
 	float2 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_instanced
+struct forward_lit_sdf_shadow_instanced
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -173,7 +165,7 @@ struct forward_lit_multi_sdf_shadow_instanced
 	float2 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_instanced_skinned
+struct forward_lit_sdf_shadow_instanced_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -182,7 +174,7 @@ struct forward_lit_multi_sdf_shadow_instanced_skinned
 	float2 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_uv_scale
+struct forward_lit_sdf_shadow_uv_scale
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -192,7 +184,7 @@ struct forward_lit_multi_sdf_shadow_uv_scale
 	float4 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_uv_scale_skinned
+struct forward_lit_sdf_shadow_uv_scale_skinned
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -202,7 +194,7 @@ struct forward_lit_multi_sdf_shadow_uv_scale_skinned
 	float4 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_uv_scale_instanced
+struct forward_lit_sdf_shadow_uv_scale_instanced
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -212,7 +204,7 @@ struct forward_lit_multi_sdf_shadow_uv_scale_instanced
 	float4 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_uv_scale_instanced_skinned
+struct forward_lit_sdf_shadow_uv_scale_instanced_skinned
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -222,7 +214,7 @@ struct forward_lit_multi_sdf_shadow_uv_scale_instanced_skinned
 	float4 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_sss
+struct forward_lit_sdf_shadow_sss
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -231,7 +223,7 @@ struct forward_lit_multi_sdf_shadow_sss
 	float m_surface_offset;
 };
 
-struct forward_lit_multi_sdf_shadow_sss_skinned
+struct forward_lit_sdf_shadow_sss_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -240,7 +232,7 @@ struct forward_lit_multi_sdf_shadow_sss_skinned
 	float m_surface_offset;
 };
 
-struct forward_lit_multi_sdf_shadow_sss_instanced
+struct forward_lit_sdf_shadow_sss_instanced
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -249,7 +241,7 @@ struct forward_lit_multi_sdf_shadow_sss_instanced
 	float m_surface_offset;
 };
 
-struct forward_lit_multi_sdf_shadow_sss_instanced_skinned
+struct forward_lit_sdf_shadow_sss_instanced_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
@@ -258,7 +250,7 @@ struct forward_lit_multi_sdf_shadow_sss_instanced_skinned
 	float m_surface_offset;
 };
 
-struct forward_lit_multi_sdf_shadow_sss_uv_scale
+struct forward_lit_sdf_shadow_sss_uv_scale
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -269,7 +261,7 @@ struct forward_lit_multi_sdf_shadow_sss_uv_scale
 	float3 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_sss_uv_scale_skinned
+struct forward_lit_sdf_shadow_sss_uv_scale_skinned
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -280,7 +272,7 @@ struct forward_lit_multi_sdf_shadow_sss_uv_scale_skinned
 	float3 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_sss_uv_scale_instanced
+struct forward_lit_sdf_shadow_sss_uv_scale_instanced
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -291,7 +283,7 @@ struct forward_lit_multi_sdf_shadow_sss_uv_scale_instanced
 	float3 m_padding;
 };
 
-struct forward_lit_multi_sdf_shadow_sss_uv_scale_instanced_skinned
+struct forward_lit_sdf_shadow_sss_uv_scale_instanced_skinned
 {
 	float4 m_albedo;
 	float2 m_uv_scale;
@@ -311,44 +303,350 @@ struct forward_lit_sdf_shadow
 	float2 m_padding;
 };
 
-struct forward_lit_instanced
+struct forward_lit_sdf_shadow_skinned
 {
 	float4 m_albedo;
 	float m_roughness;
 	float m_reflectivity;
-	float3 m_padding;
-};
-
-struct forward_lit_skinned
-{
-	float4 m_albedo;
-	float m_roughness;
-	float m_reflectivity;
-	float3 m_padding;
-};
-
-struct forward_lit_sss
-{
-	float4 m_albedo;
-	float m_sss_scale;
-	float m_roughness;
-	float m_reflectivity;
+	float m_surface_offset;
 	float2 m_padding;
+};
+
+struct forward_lit_sdf_shadow_instanced
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_sdf_shadow_instanced_skinned
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_sdf_shadow_uv_scale
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_sdf_shadow_uv_scale_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_sdf_shadow_uv_scale_instanced
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_sdf_shadow_uv_scale_instanced_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sss
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+};
+
+struct forward_lit_sdf_shadow_sss_skinned
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+};
+
+struct forward_lit_sdf_shadow_sss_instanced
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+};
+
+struct forward_lit_sdf_shadow_sss_instanced_skinned
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+};
+
+struct forward_lit_sdf_shadow_sss_uv_scale
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+	float3 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sss_uv_scale_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+	float3 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sss_uv_scale_instanced
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+	float3 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sss_uv_scale_instanced_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+	float3 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_skinned
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_instanced
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_instanced_skinned
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float2 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_uv_scale
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_uv_scale_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_uv_scale_instanced
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_uv_scale_instanced_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float4 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_sss
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_sss_skinned
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_sss_instanced
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_sss_instanced_skinned
+{
+	float4 m_albedo;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_sss_uv_scale
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+	float3 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_sss_uv_scale_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+	float3 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_sss_uv_scale_instanced
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+	float3 m_padding;
+};
+
+struct forward_lit_sdf_shadow_sdf_shadow_sss_uv_scale_instanced_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_surface_offset;
+	float m_sss_scale;
+	float3 m_padding;
 };
 
 struct gbuffer
 {
 	float4 m_albedo;
+	float2 m_uv_scale;
 	float m_roughness;
 	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
 	float3 m_padding;
 };
 
 struct gbuffer_skinned
 {
 	float4 m_albedo;
+	float2 m_uv_scale;
 	float m_roughness;
 	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+
+struct gbuffer_instanced
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+
+struct gbuffer_instanced_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
 	float3 m_padding;
 };
 

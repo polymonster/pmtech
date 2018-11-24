@@ -172,7 +172,7 @@ PEN_TRV pen::user_entry(void* params)
     f32 frame_time = 0.0f;
 
     // load scene
-    put::ces::load_scene("data/scene/sdf-scene.pms", main_scene);
+    put::ces::load_scene("data/scene/sdf.pms", main_scene);
     
     while (1)
     {
