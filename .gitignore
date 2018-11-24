@@ -8,21 +8,12 @@ Desktop.ini
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
-# Windows Installer files
 *.cab
 *.msi
 *.msm
 *.msp
-
-# Windows shortcuts
 *.lnk
-
-# =========================
-# Operating System Files
-# =========================
-
-# OSX
-# =========================
+.vscode
 
 .DS_Store
 .AppleDouble
