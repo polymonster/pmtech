@@ -1,4 +1,4 @@
-#include "sdf/makelevelset3.h"
+#include "makelevelset3.h"
 
 mls_progress             g_mls_progress;
 extern std::atomic<bool> g_cancel_volume_job;

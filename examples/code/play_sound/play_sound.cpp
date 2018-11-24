@@ -49,6 +49,8 @@ PEN_TRV pen::user_entry(void* params)
     pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
+    
+    pen::thread_create_job(pen::audio_thread_function, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
 
     renderer_state_init();
 

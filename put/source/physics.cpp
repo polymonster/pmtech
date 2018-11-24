@@ -3,7 +3,7 @@
 #include "timer.h"
 
 #include "console.h"
-#include "internal/physics_internal.h"
+#include "physics_internal.h"
 
 namespace physics
 {

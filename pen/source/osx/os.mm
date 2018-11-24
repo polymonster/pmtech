@@ -5,7 +5,6 @@
 #import <OpenGL/gl3.h>
 #define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion3_2Core
 
-#include "audio.h"
 #include "console.h"
 #include "input.h"
 #include "pen.h"

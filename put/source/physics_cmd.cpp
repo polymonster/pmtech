@@ -5,7 +5,7 @@
 //#include "physics.h"
 #include "slot_resource.h"
 
-#include "internal/physics_internal.h"
+#include "physics_internal.h"
 
 // for multi body bullet
 #include "BulletDynamics/Featherstone/btMultiBody.h"

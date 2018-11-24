@@ -1,4 +1,3 @@
-#include "audio.h"
 #include "renderer.h"
 #include "threads.h"
 
@@ -45,13 +44,6 @@ namespace pen
             // Render thread is created on the main (window) thread now by default
             thread_create_job(&pen::renderer_thread_function, 1024 * 1024, info.render_thread_params,
                               pen::THREAD_START_DETACHED);
-        }
-
-        if (info.flags & PEN_CREATE_AUDIO_THREAD)
-        {
-#if !TARGET_OS_IPHONE
-            thread_create_job(&pen::audio_thread_function, 1024 * 1024, info.audio_thread_params, pen::THREAD_START_DETACHED);
-#endif
         }
 
         thread_create_job(&pen::user_entry, 1024 * 1024, info.user_thread_params, pen::THREAD_START_DETACHED);

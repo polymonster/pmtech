@@ -172,11 +172,16 @@ function create_app(project_name, source_directory, root_directory)
 		
 		includedirs
 		{
+			-- core
 			pmtech_dir .. "pen/include",
 			pmtech_dir .. "pen/include/common", 
 			pmtech_dir .. "pen/include/" .. platform_dir,
 			pmtech_dir .. "pen/include/" .. renderer_dir,
-			pmtech_dir .. "put/include/",
+			
+			--utility			
+			pmtech_dir .. "put/source/",
+			
+			-- third party			
 			pmtech_dir .. "third_party/",
 		
 			"include/",

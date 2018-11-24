@@ -21,11 +21,14 @@ project "put"
 	
 	includedirs
 	{
+	    "source",
+	    
 		"../pen/include/",
 		"../pen/include/common", 
 		"../pen/include/" .. platform_dir,
 		"../pen/include/" .. renderer_dir,
 		  
+		"../third_party/fmod/inc",
 		"../third_party/bullet/src/",
 		"../third_party/imgui",
 		"../third_party",
@@ -38,8 +41,8 @@ project "put"
 					
 	files 
 	{ 
-		"include/**.h", 
-		"source/**.cpp", 
+		"source/**.cpp",
+		"source/**.h", 
 		
 		"../third_party/imgui/*.cpp",
 		"../third_party/imgui/*.h",
