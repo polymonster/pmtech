@@ -1012,6 +1012,9 @@ namespace put
                     default:
                         break;
                 }
+                
+                if(i%3 != 0 && i < num_permutations-1)
+                    ImGui::SameLine();
             }
 
             return rv;
@@ -1036,12 +1039,24 @@ namespace put
             {
                 f32* f = &material_data[tc[i].cb_offset];
 
+                ImGui::PushID(f);
+                
                 switch (tc[i].widget)
                 {
                     case CW_INPUT:
+                        if(ImGui::Button(ICON_FA_SLIDERS))
+                        {
+                            tc[i].widget = CW_SLIDER;
+                        }
+                        ImGui::SameLine();
                         rv |= ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
                         break;
                     case CW_SLIDER:
+                        if(ImGui::Button(ICON_FA_PENCIL))
+                        {
+                            tc[i].widget = CW_INPUT;
+                        }
+                        ImGui::SameLine();
                         rv |= ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f",
                                                   1.0f);
                         break;
@@ -1079,6 +1094,7 @@ namespace put
                         ImGui::PopStyleColor(2);
                         break;
                 }
+                ImGui::PopID();
             }
 
             return rv;

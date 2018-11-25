@@ -1840,9 +1840,6 @@ namespace put
 
         bool scene_material_ui(entity_scene* scene)
         {
-            if (!ImGui::CollapsingHeader("Material"))
-                return false;
-
             bool iv = false;
 
             u32 num_selected = sb_count(s_selection_list);
@@ -1853,6 +1850,9 @@ namespace put
             if (!(scene->entities[selected_index] & CMP_MATERIAL))
                 return false;
 
+            if (!ImGui::CollapsingHeader("Material"))
+                return false;
+            
             // master mat
             cmp_material&      mm = scene->materials[selected_index];
             material_resource& mr = scene->material_resources[selected_index];
@@ -2398,7 +2398,12 @@ namespace put
                                                  {CMP_GEOMETRY, "Geometries", 0},
                                                  {CMP_BONE, "Bones", 0},
                                                  {CMP_ANIM_CONTROLLER, "Anim Controllers", 0}};
-
+                
+                s32 selected_index = -1;
+                u32 num_selected = sb_count(s_selection_list);
+                if (num_selected == 1)
+                    selected_index = s_selection_list[0];
+                
                 if (ImGui::CollapsingHeader("Scene Info"))
                 {
                     if (!scene->filename.empty())
@@ -2419,75 +2424,81 @@ namespace put
                         ImGui::Text("%s: %i", dumps[i].display_name, dumps[i].count);
                 }
 
-                ImGui::BeginChild("Entities", ImVec2(0, 300), true);
-
-                s32 selected_index = -1;
-                if (sb_count(s_selection_list) == 1)
-                    selected_index = s_selection_list[0];
-
-                if (list_view)
+                if (ImGui::CollapsingHeader("Entities"))
                 {
-                    for (u32 i = 0; i < scene->num_nodes; ++i)
+                    ImGui::BeginChild("Entities", ImVec2(0, 300), true);
+
+                    if (list_view)
                     {
-                        if (!(scene->entities[i] & CMP_ALLOCATED))
-                            continue;
+                        for (u32 i = 0; i < scene->num_nodes; ++i)
+                        {
+                            if (!(scene->entities[i] & CMP_ALLOCATED))
+                                continue;
 
-                        bool selected = scene->state_flags[i] & SF_SELECTED;
+                            bool selected = scene->state_flags[i] & SF_SELECTED;
 
-                        ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+                            ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
 
-                        ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
-                        bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, scene->names[i].c_str(), i);
+                            ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
+                            bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, scene->names[i].c_str(), i);
 
-                        if (ImGui::IsItemClicked())
-                            add_selection(scene, i);
+                            if (ImGui::IsItemClicked())
+                                add_selection(scene, i);
 
-                        if (node_open)
-                            ImGui::TreePop();
+                            if (node_open)
+                                ImGui::TreePop();
 
-                        ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+                            ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+                        }
                     }
-                }
-                else
-                {
-                    static scene_tree tree;
-                    if (scene->flags & INVALIDATE_SCENE_TREE)
+                    else
                     {
-                        tree = scene_tree();
-                        build_scene_tree(scene, -1, tree);
+                        static scene_tree tree;
+                        if (scene->flags & INVALIDATE_SCENE_TREE)
+                        {
+                            tree = scene_tree();
+                            build_scene_tree(scene, -1, tree);
 
-                        scene->flags &= ~INVALIDATE_SCENE_TREE;
+                            scene->flags &= ~INVALIDATE_SCENE_TREE;
+                        }
+
+                        s32 pre_selected = selected_index;
+                        scene_tree_enumerate(scene, tree);
+
+                        if (pre_selected != selected_index)
+                            add_selection(scene, selected_index);
                     }
 
-                    s32 pre_selected = selected_index;
-                    scene_tree_enumerate(scene, tree);
-
-                    if (pre_selected != selected_index)
-                        add_selection(scene, selected_index);
+                    ImGui::EndChild();
                 }
-
-                ImGui::EndChild();
-
-                // node header
+                
+                ImGui::Separator();
+                
+                // selection
                 if (selected_index != -1)
                 {
+                    // single node header
                     static c8 buf[64];
                     u32       end_pos = std::min<u32>(scene->names[selected_index].length(), 64);
                     memcpy(buf, scene->names[selected_index].c_str(), end_pos);
                     buf[end_pos] = '\0';
-
+                    
                     if (ImGui::InputText("", buf, 64))
                     {
                         scene->names[selected_index] = buf;
                         scene->id_name[selected_index] = PEN_HASH(buf);
                     }
-
+                    
                     ImGui::SameLine();
                     ImGui::Text("ces node index %i", selected_index);
-
+                    
                     s32 parent_index = scene->parents[selected_index];
                     if (parent_index != selected_index)
                         ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
+                }
+                else if(num_selected > 0)
+                {
+                    ImGui::Text("%i Selected Items", num_selected);
                 }
 
                 // Undoable actions
