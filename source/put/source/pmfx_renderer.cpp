@@ -2774,7 +2774,7 @@ namespace put
                     */
                 }
 
-                if (ImGui::CollapsingHeader("View"))
+                if (ImGui::CollapsingHeader("Views"))
                 {
                     bool invalidated = false;
 

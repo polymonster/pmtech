@@ -314,7 +314,7 @@ namespace put
             u32            cull_front = pmfx::get_render_state(id_cull_front, pmfx::RS_SAMPLER);
 
             static hash_id id_disable_depth = PEN_HASH("disabled");
-            u32            depth_disabled = pmfx::get_render_state(id_disable_depth, pmfx::RS_SAMPLER);
+            u32            depth_disabled = pmfx::get_render_state(id_disable_depth, pmfx::RS_DEPTH_STENCIL);
 
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
