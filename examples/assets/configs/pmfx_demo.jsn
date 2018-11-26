@@ -1,0 +1,25 @@
+{
+    include: [
+        common.jsn
+    ],
+                
+    views:
+    {        
+		forward_render_main:
+        {
+            inherit        : "main_view",
+            inherit_reverse: true,
+            clear_colour   : [0.0, 0.0, 0.0, 1.0],
+            clear_depth    : 1.0
+        }
+    },
+    
+    view_sets: 
+    {
+        forward_render: [
+            forward_render_main
+        ]
+    },
+    
+    view_set: forward_render
+}
