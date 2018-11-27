@@ -39,48 +39,50 @@ struct forward_lit_material
     f32   reflectivity;
 };
 
+namespace
+{
+    u32 lights_start = 0;
+    f32 light_radius = 10.0f;
+    s32 max_lights = 200;
+    s32 num_lights = max_lights;
+    f32 scene_size = 200.0f;
+    
+    void update_demo(ces::entity_scene* scene, f32 dt)
+    {
+        ImGui::Begin("Lighting");
+        ImGui::InputFloat("Light Radius", &light_radius);
+        ImGui::SliderInt("Lights", &num_lights, 0, max_lights);
+        ImGui::End();
+        
+        u32 lights_end = lights_start + num_lights;
+        for(u32 i = lights_start; i < lights_start + max_lights; ++i)
+        {
+            if(i > lights_end)
+            {
+                scene->entities[i] &= ~CMP_LIGHT;
+                continue;
+            }
+            
+            scene->entities[i] |= CMP_LIGHT;
+            
+            vec3f dir = scene->world_matrices[i].get_column(2).xyz;
+            scene->transforms[i].translation += dir * dt;
+            scene->entities[i] |= CMP_TRANSFORM;
+        }
+    }
+}
+
 void create_scene_objects(ces::entity_scene* scene)
 {
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
-
-    // add light
-    u32 light = get_new_node(scene);
-    scene->names[light] = "front_light";
-    scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f::one();
-    scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
-    scene->transforms[light].translation = vec3f::zero();
-    scene->transforms[light].rotation = quat();
-    scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
-
-    // add ground
-    f32 ground_size = 200.0f;
-    u32 ground = get_new_node(scene);
-    scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);
-    scene->transforms[ground].translation = vec3f::zero();
-    scene->parents[ground] = ground;
-    scene->entities[ground] |= CMP_TRANSFORM;
-
-    instantiate_geometry(box_resource, scene, ground);
-    instantiate_material(default_material, scene, ground);
-    instantiate_model_cbuffer(scene, ground);
-
-    forward_lit_material* m = (forward_lit_material*)&scene->material_data[ground].data[0];
-    m->albedo = vec4f::one() * 0.7f;
-    m->roughness = 1.0f;
-    m->reflectivity = 0.0f;
-
-    // add some pillars for shadow casters
+    
+    // add some pillars for overdraw and illumination
     f32   num_pillar_rows = 20;
     f32   pillar_size = 20.0f;
-    f32   d = ground_size / num_pillar_rows;
+    f32   d = scene_size / num_pillar_rows;
     f32   s = -d * (f32)num_pillar_rows;
     vec3f start_pos = vec3f(s, pillar_size, s);
     vec3f pos = start_pos;
@@ -102,7 +104,8 @@ void create_scene_objects(ces::entity_scene* scene)
             scene->transforms[pillar].translation = pos;
             scene->parents[pillar] = pillar;
             scene->entities[pillar] |= CMP_TRANSFORM;
-
+            scene->names[pillar] = "pillar";
+            
             instantiate_geometry(box_resource, scene, pillar);
             instantiate_material(default_material, scene, pillar);
             instantiate_model_cbuffer(scene, pillar);
@@ -116,6 +119,36 @@ void create_scene_objects(ces::entity_scene* scene)
         }
 
         pos.x += d * 2.0f;
+    }
+    
+    for(s32 i = 0; i < max_lights; ++i)
+    {
+        f32 rx = (f32)(rand()%255) / 255.0f;
+        f32 ry = (f32)(rand()%255) / 255.0f;
+        f32 rz = (f32)(rand()%255) / 255.0f;
+        
+        f32 rrx = (f32)(rand()%255) / 255.0f * M_PI;
+        f32 rry = (f32)(rand()%255) / 255.0f * M_PI;
+        f32 rrz = (f32)(rand()%255) / 255.0f * M_PI;
+        
+        ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
+        vec4f col = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
+        
+        u32 light = get_new_node(scene);
+        scene->names[light] = "light";
+        scene->id_name[light] = PEN_HASH("light");
+        scene->lights[light].colour = col.xyz;
+        scene->lights[light].radius = light_radius;
+        scene->lights[light].type = LIGHT_TYPE_POINT;
+        scene->transforms[light].translation = (vec3f(rx, ry, rz) * vec3f(2.0f) - vec3f(1.0f)) * vec3f(scene_size);
+        scene->transforms[light].rotation = quat();
+        scene->transforms[light].rotation.euler_angles(rrx, rry, rrz);
+        scene->transforms[light].scale = vec3f::one();
+        scene->entities[light] |= CMP_LIGHT;
+        scene->entities[light] |= CMP_TRANSFORM;
+        
+        if(i == 0)
+            lights_start = light;
     }
 }
 
@@ -181,6 +214,8 @@ PEN_TRV pen::user_entry(void* params)
         pen::timer_start(frame_timer);
 
         put::dev_ui::new_frame();
+        
+        update_demo(main_scene, (f32)frame_time);
 
         pmfx::update();
 

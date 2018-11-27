@@ -112,7 +112,7 @@ namespace put
 
         enum e_scene_limits
         {
-            MAX_FORWARD_LIGHTS = 8,
+            MAX_FORWARD_LIGHTS = 100,
             MAX_SHADOW_MAPS = 1,
             MAX_SDF_SHADOWS = 1
         };
