@@ -43,7 +43,7 @@ namespace
 {
     u32 lights_start = 0;
     f32 light_radius = 10.0f;
-    s32 max_lights = 200;
+    s32 max_lights = 10;
     s32 num_lights = max_lights;
     f32 scene_size = 200.0f;
     
@@ -55,19 +55,25 @@ namespace
         ImGui::End();
         
         u32 lights_end = lights_start + num_lights;
-        for(u32 i = lights_start; i < lights_start + max_lights; ++i)
+        for(u32 i = lights_start; i < lights_end; ++i)
         {
-            if(i > lights_end)
-            {
-                scene->entities[i] &= ~CMP_LIGHT;
-                continue;
-            }
-            
             scene->entities[i] |= CMP_LIGHT;
+            scene->lights[i].radius = light_radius;
             
-            vec3f dir = scene->world_matrices[i].get_column(2).xyz;
-            scene->transforms[i].translation += dir * dt;
-            scene->entities[i] |= CMP_TRANSFORM;
+            vec4f dir = scene->local_matrices[i].get_column(2);
+            vec4f pos = scene->local_matrices[i].get_column(3);
+            
+            //pos += dir * dt;
+            //scene->local_matrices[i].set_column(3, pos);
+            
+            for(u32 n = 0; n < 3; ++n)
+            {
+                if(fabs(pos[n]) > scene_size)
+                {
+                    //scene->local_matrices[i].set_column(2, -dir);
+                    break;
+                }
+            }
         }
     }
 }

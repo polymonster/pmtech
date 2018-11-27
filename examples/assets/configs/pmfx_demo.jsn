@@ -1,6 +1,8 @@
 {
     include: [
-        common.jsn
+        common.jsn,
+        deferred_renderer.jsn,
+        editor_renderer.jsn
     ],
                 
     views:
