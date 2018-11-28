@@ -190,7 +190,7 @@ PEN_TRV pen::user_entry(void* params)
     {
         static u32 frame_timer = pen::timer_create("frame_timer");
         pen::timer_start(frame_timer);
-
+        
         put::dev_ui::new_frame();
 
         pmfx::update();

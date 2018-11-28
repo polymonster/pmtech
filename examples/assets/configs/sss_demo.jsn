@@ -55,8 +55,7 @@
     {
         sss_view: [
             single_shadow_view,
-            sss_main,
-            editor_view
+            sss_main
         ]
     },
     

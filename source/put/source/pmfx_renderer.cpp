@@ -2358,6 +2358,12 @@ namespace put
             pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
+            
+            // render state
+            // set before clear for write masks
+            pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
+            pen::renderer_set_rasterizer_state(v.raster_state);
+            pen::renderer_set_blend_state(v.blend_state);
 
             pen::renderer_clear(v.clear_state);
 
@@ -2389,11 +2395,6 @@ namespace put
                 pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers * sizeof(vec4f));
                 pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, PEN_SHADER_TYPE_PS);
             }
-
-            // render state
-            pen::renderer_set_rasterizer_state(v.raster_state);
-            pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
-            pen::renderer_set_blend_state(v.blend_state);
 
             // build view info
             scene_view sv;

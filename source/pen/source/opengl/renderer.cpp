@@ -572,6 +572,7 @@ namespace pen
                 glClearColor(rc.clear_state.rgba[0], rc.clear_state.rgba[1], rc.clear_state.rgba[2], rc.clear_state.rgba[3]));
 
             CHECK_CALL(glClear(rc.clear_state.flags));
+            
             return;
         }
 
