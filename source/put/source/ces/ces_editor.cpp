@@ -1356,7 +1356,11 @@ namespace put
 
                     if (ImGui::InputFloat("Far", &k_model_view_controller.main_camera.far_plane))
                         dev_ui::set_program_preference("camera_far", k_model_view_controller.main_camera.far_plane);
-
+                    
+                    ImGui::InputFloat("Zoom", &k_model_view_controller.main_camera.zoom);
+                    ImGui::InputFloat2("Rotation", (f32*)&k_model_view_controller.main_camera.rot[0]);
+                    ImGui::InputFloat3("Focus", (f32*)&k_model_view_controller.main_camera.focus);
+                    
                     k_model_view_controller.invalidated = true;
 
                     ImGui::End();

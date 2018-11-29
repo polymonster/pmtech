@@ -42,9 +42,9 @@ struct forward_lit_material
 namespace
 {
     u32 lights_start = 0;
-    f32 light_radius = 10.0f;
-    s32 max_lights = 10;
-    s32 num_lights = max_lights;
+    f32 light_radius = 100.0f;
+    s32 max_lights = 100;
+    s32 num_lights = 10;
     f32 scene_size = 200.0f;
     
     void update_demo(ces::entity_scene* scene, f32 dt)
@@ -55,12 +55,19 @@ namespace
         ImGui::End();
         
         u32 lights_end = lights_start + num_lights;
-        for(u32 i = lights_start; i < lights_end; ++i)
+        u32 light_nodes_end = lights_start + max_lights;
+        for(u32 i = lights_start; i < light_nodes_end; ++i)
         {
+            if(i > lights_end)
+            {
+                scene->entities[i] &= ~CMP_LIGHT;
+                continue;
+            }
+            
             scene->entities[i] |= CMP_LIGHT;
             scene->lights[i].radius = light_radius;
             
-            vec4f dir = scene->local_matrices[i].get_column(2);
+            //vec4f dir = scene->local_matrices[i].get_column(2);
             vec4f pos = scene->local_matrices[i].get_column(3);
             
             //pos += dir * dt;
@@ -138,7 +145,7 @@ void create_scene_objects(ces::entity_scene* scene)
         f32 rrz = (f32)(rand()%255) / 255.0f * M_PI;
         
         ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
-        vec4f col = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
+        vec4f col = normalised(vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f));
         
         u32 light = get_new_node(scene);
         scene->names[light] = "light";
@@ -146,7 +153,14 @@ void create_scene_objects(ces::entity_scene* scene)
         scene->lights[light].colour = col.xyz;
         scene->lights[light].radius = light_radius;
         scene->lights[light].type = LIGHT_TYPE_POINT;
-        scene->transforms[light].translation = (vec3f(rx, ry, rz) * vec3f(2.0f) - vec3f(1.0f)) * vec3f(scene_size);
+        
+        scene->transforms[light].translation = (vec3f(rx, ry, rz) *
+                                                vec3f(2.0f, 1.0f, 2.0f) +
+                                                vec3f(-1.0f, 0.0f, -1.0f)) *
+                                                vec3f(scene_size, scene_size * 0.1f, scene_size);
+        
+        scene->transforms[light].translation.y += scene_size;
+        
         scene->transforms[light].rotation = quat();
         scene->transforms[light].rotation.euler_angles(rrx, rry, rrz);
         scene->transforms[light].scale = vec3f::one();

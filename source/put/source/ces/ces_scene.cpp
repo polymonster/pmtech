@@ -845,6 +845,8 @@ namespace put
             static forward_light_buffer light_buffer;
             s32                         pos = 0;
             s32                         num_lights = 0;
+            
+            memset(&light_buffer, 0x0, sizeof(forward_light_buffer));
 
             // directional lights
             s32 num_directions_lights = 0;
