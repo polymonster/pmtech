@@ -194,7 +194,15 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
             
     if:(UV_SCALE)
     {
-        output.texcoord *= float4(m_uv_scale.x, m_uv_scale.y, m_uv_scale.x, m_uv_scale.y);
+        
+        float3 scale = float3(length(world_matrix[0].xyz), 
+                              length(world_matrix[1].xyz), 
+                              length(world_matrix[2].xyz)) * 0.1;
+       
+        float xs = length(input.tangent.xyz * scale);
+        float ys = length(input.bitangent.xyz * scale); 
+    
+        output.texcoord *= float4(m_uv_scale.x * xs, m_uv_scale.y * ys, m_uv_scale.x, m_uv_scale.y);
     }
         
     if:(!INSTANCED)
@@ -244,6 +252,8 @@ ps_output ps_forward_lit( vs_output input )
 
     reflectivity = m_reflectivity;
     roughness = ro_sample.x;
+    
+    //roughness = m_roughness;
     
     if:(SDF_SHADOW)
     {            
@@ -564,7 +574,8 @@ pmfx:
         "permutations":
         {
             "SKINNED": [31, [0,1]],
-            "INSTANCED": [30, [0,1]]
+            "INSTANCED": [30, [0,1]],
+            "UV_SCALE": [1, [0,1]]
         },
         
         "inherit_constants": ["forward_lit"]

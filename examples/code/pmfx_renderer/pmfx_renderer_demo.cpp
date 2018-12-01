@@ -16,6 +16,7 @@
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
+#include "forward_render.h"
 
 using namespace put;
 using namespace ces;
@@ -31,13 +32,6 @@ namespace physics
 {
     extern PEN_TRV physics_thread_main(void* params);
 }
-
-struct forward_lit_material
-{
-    vec4f albedo;
-    f32   roughness;
-    f32   reflectivity;
-};
 
 namespace
 {
@@ -68,6 +62,9 @@ namespace
         
         ImGui::End();
         
+        static f32 t = 0.0f;
+        t += dt * 0.01f;
+        
         u32 lights_end = lights_start + num_lights;
         u32 light_nodes_end = lights_start + max_lights;
         for(u32 i = lights_start; i < light_nodes_end; ++i)
@@ -80,21 +77,6 @@ namespace
             
             scene->entities[i] |= CMP_LIGHT;
             scene->lights[i].radius = light_radius;
-            
-            //vec4f dir = scene->local_matrices[i].get_column(2);
-            vec4f pos = scene->local_matrices[i].get_column(3);
-            
-            //pos += dir * dt;
-            //scene->local_matrices[i].set_column(3, pos);
-            
-            for(u32 n = 0; n < 3; ++n)
-            {
-                if(fabs(pos[n]) > scene_size)
-                {
-                    //scene->local_matrices[i].set_column(2, -dir);
-                    break;
-                }
-            }
         }
     }
 }
@@ -109,6 +91,13 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
+    
+    // pbt textures for material
+    u32 albedo_tex = put::load_texture("data/textures/pbr/metalgrid2_basecolor.dds");
+    u32 normal_tex = put::load_texture("data/textures/pbr/metalgrid2_normal.dds");
+    u32 matallic_tex = put::load_texture("data/textures/pbr/metalgrid2_metallic.dds");
+    u32 roughness_tex = put::load_texture("data/textures/pbr/metalgrid2_roughness.dds");
+    u32 wrap_linear = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
     
     // add some pillars for overdraw and illumination
     f32   num_pillar_rows = 20;
@@ -138,13 +127,25 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             scene->names[pillar] = "pillar";
             
             instantiate_geometry(box_resource, scene, pillar);
-            instantiate_material(default_material, scene, pillar);
             instantiate_model_cbuffer(scene, pillar);
 
-            forward_lit_material* m = (forward_lit_material*)&scene->material_data[pillar].data[0];
-            m->albedo = vec4f::one() * 0.7f;
-            m->roughness = 1.0f;
-            m->reflectivity = 0.0f;
+            // uv scale
+            scene->material_permutation[pillar] |= 1<<1;
+            instantiate_material(default_material, scene, pillar);
+
+            forward_lit_uv_scale* m = (forward_lit_uv_scale*)&scene->material_data[pillar].data[0];
+            m->m_albedo = vec4f::one();
+            m->m_roughness = 1.0f;
+            m->m_reflectivity = 0.0f;
+            m->m_uv_scale = vec2f(0.5f, 0.5f);
+            
+            scene->samplers[pillar].sb[0].handle = albedo_tex;
+            scene->samplers[pillar].sb[1].handle = normal_tex;
+            scene->samplers[pillar].sb[2].handle = roughness_tex;
+            scene->samplers[pillar].sb[3].handle = matallic_tex;
+            
+            for(u32 j = 0; j < 4; ++j)
+                scene->samplers[pillar].sb[j].id_sampler_state = wrap_linear;
 
             pos.z += d * 2.0f;
         }

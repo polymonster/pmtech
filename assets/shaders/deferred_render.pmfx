@@ -151,8 +151,9 @@ ps_output ps_light(vs_output input)
                                             input.light_data.x, 
                                             world_pos);
     }
-                  
-    output.colour.rgb = light_col;    
+    
+    output.colour.rgb = light_col;
+    
     return output;
 }
 

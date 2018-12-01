@@ -1086,12 +1086,6 @@ namespace put
             // right click context menu
             context_menu_ui(sc->scene);
 
-            // auto save
-            bool auto_save = dev_ui::get_program_preference("auto_save").as_bool();
-            if (auto_save)
-            {
-            }
-
             ImGui::BeginMainMenuBar();
 
             if (ImGui::BeginMenu(ICON_FA_LEMON_O))
@@ -2169,29 +2163,11 @@ namespace put
                         case LIGHT_TYPE_DIR:
                             ImGui::SliderAngle("Azimuth", &snl.azimuth);
                             ImGui::SliderAngle("Altitude", &snl.altitude);
-
-                            if (edited)
-                            {
-                                scene->bounding_volumes[selected_index].min_extents = -vec3f(FLT_MAX);
-                                scene->bounding_volumes[selected_index].max_extents = vec3f(FLT_MAX);
-                            }
-
                             break;
 
                         case LIGHT_TYPE_POINT:
                             edited |= ImGui::SliderFloat("Radius##slider", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::InputFloat("Radius##input", &snl.radius);
-
-                            if (edited)
-                            {
-                                scene->bounding_volumes[selected_index].min_extents = -vec3f::one();
-                                scene->bounding_volumes[selected_index].max_extents = vec3f::one();
-
-                                f32 rad = std::max<f32>(snl.radius, 1.0f);
-                                scene->transforms[selected_index].scale = vec3f(rad, rad, rad);
-                                scene->entities[selected_index] |= CMP_TRANSFORM;
-                            }
-
                             break;
 
                         case LIGHT_TYPE_SPOT:
@@ -2201,29 +2177,6 @@ namespace put
 
                             // prevent negative or zero fall off
                             snl.spot_falloff = max(snl.spot_falloff, 0.001f);
-
-                            if (edited)
-                            {
-                                scene->bounding_volumes[selected_index].min_extents = -vec3f::one();
-                                scene->bounding_volumes[selected_index].max_extents = vec3f(1.0f, 0.0f, 1.0f);
-
-                                vec3f pos = scene->world_matrices[selected_index].get_translation();
-                                vec3f vl = normalised(-scene->world_matrices[selected_index].get_column(1).xyz);
-
-                                f32 angle = acos(1.0f - snl.cos_cutoff);
-
-                                mat4 rot = mat::create_rotation(vec3f::unit_z(), angle);
-
-                                vec3f vh = rot.transform_vector(vl);
-
-                                f32 lo = tan(angle);
-                                f32 lh = sqrt(1 + lo * lo);
-                                f32 range = snl.radius;
-
-                                scene->transforms[selected_index].scale = vec3f(lo * range, range, lo * range);
-                                scene->entities[selected_index] |= CMP_TRANSFORM;
-                            }
-
                             break;
 
                         case LIGHT_TYPE_AREA_BOX:

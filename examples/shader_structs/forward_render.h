@@ -338,3 +338,47 @@ struct gbuffer_instanced_skinned
 	float3 m_padding;
 };
 
+struct gbuffer_uv_scale
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+
+struct gbuffer_uv_scale_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+
+struct gbuffer_uv_scale_instanced
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+
+struct gbuffer_uv_scale_instanced_skinned
+{
+	float4 m_albedo;
+	float2 m_uv_scale;
+	float m_roughness;
+	float m_reflectivity;
+	float m_sss_scale;
+	float m_surface_offset;
+	float3 m_padding;
+};
+

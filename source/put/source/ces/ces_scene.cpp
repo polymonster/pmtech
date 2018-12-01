@@ -847,21 +847,24 @@ namespace put
             s32                         num_lights = 0;
             
             memset(&light_buffer, 0x0, sizeof(forward_light_buffer));
-
+            
             // directional lights
             s32 num_directions_lights = 0;
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
-                if (num_lights >= MAX_FORWARD_LIGHTS)
-                    break;
-
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
 
                 cmp_light& l = scene->lights[n];
-
                 if (l.type != LIGHT_TYPE_DIR)
                     continue;
+                
+                // update bv and transform
+                scene->bounding_volumes[n].min_extents = -vec3f(FLT_MAX);
+                scene->bounding_volumes[n].max_extents = vec3f(FLT_MAX);
+                
+                if (num_lights >= MAX_FORWARD_LIGHTS)
+                    break;
 
                 // current directional light is a point light very far away
                 // with no attenuation..
@@ -878,16 +881,23 @@ namespace put
             s32 num_point_lights = 0;
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
-                if (num_lights >= MAX_FORWARD_LIGHTS)
-                    break;
-
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
 
                 cmp_light& l = scene->lights[n];
-
                 if (l.type != LIGHT_TYPE_POINT)
                     continue;
+                
+                // update bv and transform
+                scene->bounding_volumes[n].min_extents = -vec3f::one();
+                scene->bounding_volumes[n].max_extents = vec3f::one();
+                
+                f32 rad = std::max<f32>(l.radius, 1.0f) * 2.0f;
+                scene->transforms[n].scale = vec3f(rad, rad, rad);
+                scene->entities[n] |= CMP_TRANSFORM;
+                
+                if (num_lights >= MAX_FORWARD_LIGHTS)
+                    break;
 
                 cmp_transform& t = scene->transforms[n];
 
@@ -913,6 +923,17 @@ namespace put
 
                 if (l.type != LIGHT_TYPE_SPOT)
                     continue;
+                
+                // update bv and transform
+                scene->bounding_volumes[n].min_extents = -vec3f::one();
+                scene->bounding_volumes[n].max_extents = vec3f(1.0f, 0.0f, 1.0f);
+                
+                f32 angle = acos(1.0f - l.cos_cutoff);
+                f32 lo = tan(angle);
+                f32 range = l.radius;
+                
+                scene->transforms[n].scale = vec3f(lo * range, range, lo * range);
+                scene->entities[n] |= CMP_TRANSFORM;
 
                 cmp_transform& t = scene->transforms[n];
 
