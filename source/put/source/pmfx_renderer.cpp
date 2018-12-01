@@ -1527,9 +1527,22 @@ namespace put
                 for (s32 ii = 0; ii < scene_views.size(); ++ii)
                 {
                     hash_id id = scene_views[ii].as_hash_id();
+                    bool found = false;
                     for (auto& sv : s_scene_view_renderers)
+                    {
                         if (id == sv.id_name)
+                        {
+                            found = true;
                             new_view.render_functions.push_back(sv.render_function);
+                        }
+                    }
+                    
+                    if(!found)
+                    {
+                        dev_console_log_level(dev_ui::CONSOLE_ERROR,
+                                              "[error] render controller: missing scene view - '%s' required by view: '%s'",
+                                              scene_views[ii].as_cstr(), new_view.name.c_str());
+                    }
                 }
 
                 // sampler bindings
@@ -2230,7 +2243,7 @@ namespace put
             // release render states
             for (auto& rs : s_render_states)
             {
-                dev_console_log("release state %i : %s (%i)", rs.type, rs.name.c_str(), rs.handle);
+                // dev_console_log("release state %i : %s (%i)", rs.type, rs.name.c_str(), rs.handle);
 
                 switch (rs.type)
                 {
@@ -2698,7 +2711,13 @@ namespace put
             s_edited_post_processes.back().chain = input_view.post_process_chain;
             s_edited_post_processes.back().views = input_view.post_process_views;
         }
-
+        
+        void set_view_set(const c8* name)
+        {
+            s_edited_view_set_name = name;
+            pmfx_config_hotload();
+        }
+        
         void show_dev_ui()
         {
             ImGui::BeginMainMenuBar();

@@ -130,6 +130,7 @@ namespace put
         void instantiate_anim_controller(entity_scene* scene, s32 node_index);
         void instantiate_material(material_resource* mr, entity_scene* scene, u32 node_index);
         void instantiate_sdf_shadow(const c8* pmv_filename, entity_scene* scene, u32 node_index);
+        void instantiate_light(entity_scene* scene, u32 node_index);
 
         void destroy_geometry(entity_scene* scene, u32 node_index);
         void destroy_physics(entity_scene* scene, s32 node_index);

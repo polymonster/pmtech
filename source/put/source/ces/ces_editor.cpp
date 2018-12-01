@@ -124,9 +124,11 @@ namespace put
             {
                 case CAMERA_MODELLING:
                     put::camera_update_modelling(sc->camera, has_focus, k_model_view_controller.invert_y);
+                    k_model_view_controller.main_camera = *sc->camera;
                     break;
                 case CAMERA_FLY:
                     put::camera_update_fly(sc->camera, has_focus, k_model_view_controller.invert_y);
+                    k_model_view_controller.main_camera = *sc->camera;
                     break;
             }
         }
@@ -2217,9 +2219,6 @@ namespace put
                                 f32 lo = tan(angle);
                                 f32 lh = sqrt(1 + lo * lo);
                                 f32 range = snl.radius;
-
-                                dbg::add_line(pos, pos + vl, vec4f::magenta());
-                                dbg::add_line(pos, pos + vh * lh, vec4f::cyan());
 
                                 scene->transforms[selected_index].scale = vec3f(lo * range, range, lo * range);
                                 scene->entities[selected_index] |= CMP_TRANSFORM;

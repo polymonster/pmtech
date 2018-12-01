@@ -70,6 +70,13 @@
             depth_func  : "always"
         },
         
+        depth_equal:
+        {
+            depth_enable: true,
+            depth_write : false,
+            depth_func  : "equal"
+        },
+        
         depth_always_no_write:
         {
             depth_enable: true,

@@ -47,11 +47,25 @@ namespace
     s32 num_lights = 10;
     f32 scene_size = 200.0f;
     
+    const c8* render_methods[] =
+    {
+        "forward_render",
+        "forward_render_zprepass",
+        "deferred"
+    };
+    s32 render_method = 0;
+    
     void update_demo(ces::entity_scene* scene, f32 dt)
     {
         ImGui::Begin("Lighting");
         ImGui::InputFloat("Light Radius", &light_radius);
         ImGui::SliderInt("Lights", &num_lights, 0, max_lights);
+        
+        if(ImGui::Combo("Method", &render_method, &render_methods[0], PEN_ARRAY_SIZE(render_methods)))
+        {
+            pmfx::set_view_set(render_methods[render_method]);
+        }
+        
         ImGui::End();
         
         u32 lights_end = lights_start + num_lights;
@@ -85,9 +99,13 @@ namespace
     }
 }
 
-void create_scene_objects(ces::entity_scene* scene)
+void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
 {
     clear_scene(scene);
+    
+    // set camera start pos
+    main_camera.zoom = 495.0f;
+    main_camera.rot = vec2f(-0.8f, 0.37f);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
@@ -150,9 +168,6 @@ void create_scene_objects(ces::entity_scene* scene)
         u32 light = get_new_node(scene);
         scene->names[light] = "light";
         scene->id_name[light] = PEN_HASH("light");
-        scene->lights[light].colour = col.xyz;
-        scene->lights[light].radius = light_radius;
-        scene->lights[light].type = LIGHT_TYPE_POINT;
         
         scene->transforms[light].translation = (vec3f(rx, ry, rz) *
                                                 vec3f(2.0f, 1.0f, 2.0f) +
@@ -164,8 +179,12 @@ void create_scene_objects(ces::entity_scene* scene)
         scene->transforms[light].rotation = quat();
         scene->transforms[light].rotation.euler_angles(rrx, rry, rrz);
         scene->transforms[light].scale = vec3f::one();
-        scene->entities[light] |= CMP_LIGHT;
         scene->entities[light] |= CMP_TRANSFORM;
+        
+        scene->lights[light].colour = col.xyz;
+        scene->lights[light].radius = light_radius;
+        scene->lights[light].type = LIGHT_TYPE_POINT;
+        instantiate_light(scene, light);
         
         if(i == 0)
             lights_start = light;
@@ -204,7 +223,7 @@ PEN_TRV pen::user_entry(void* params)
     sc.name = "main_scene";
     sc.camera = &main_camera;
     sc.id_name = PEN_HASH(sc.name.c_str());
-
+    
     // create view renderers
     put::scene_view_renderer svr_main;
     svr_main.name = "ces_render_scene";
@@ -215,18 +234,24 @@ PEN_TRV pen::user_entry(void* params)
     svr_editor.name = "ces_render_editor";
     svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
+    
+    put::scene_view_renderer svr_light_volumes;
+    svr_light_volumes.name = "ces_render_light_volumes";
+    svr_light_volumes.id_name = PEN_HASH(svr_light_volumes.name.c_str());
+    svr_light_volumes.render_function = &ces::render_light_volumes;
 
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
+    pmfx::register_scene_view_renderer(svr_light_volumes);
     
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
 
     pmfx::init("data/configs/pmfx_demo.jsn");
 
-    create_scene_objects(main_scene);
+    create_scene_objects(main_scene, main_camera);
 
-    f32  frame_time = 0.0f;
+    f32 frame_time = 0.0f;
 
     while (1)
     {
