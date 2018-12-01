@@ -278,7 +278,7 @@ ps_output ps_forward_lit( vs_output input )
     float t = 1.0;
     
     //for directional lights
-    for( int i = 0; i < light_info.x; ++i )
+    for( int i = 0; i < int(light_info.x); ++i )
     {
         float3 light_col = float3( 0.0, 0.0, 0.0 );
         
@@ -394,7 +394,7 @@ ps_output ps_forward_lit( vs_output input )
             albedo.rgb
         );        
             
-        float a = point_light_attenuation( lights[i].pos_radius, input.world_pos.xyz );    
+        float a = point_light_attenuation_cutoff( lights[i].pos_radius, input.world_pos.xyz );    
         light_col *= a;
         
         if:(SDF_SHADOW)
@@ -409,10 +409,10 @@ ps_output ps_forward_lit( vs_output input )
     //for spot lights
     int spot_start = point_end;
     int spot_end =  int(light_info.y) + int(light_info.z);
-    for( int i = spot_start; i < spot_end; ++i )
+    for(int i = spot_start; i < spot_end; ++i )
     {
         float3 light_col = float3( 0.0, 0.0, 0.0 );
-        
+
         light_col += cook_torrence( 
             lights[i].pos_radius, 
             lights[i].colour.rgb,

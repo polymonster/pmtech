@@ -69,7 +69,7 @@ namespace
         u32 light_nodes_end = lights_start + max_lights;
         for(u32 i = lights_start; i < light_nodes_end; ++i)
         {
-            if(i > lights_end)
+            if(i >= lights_end)
             {
                 scene->entities[i] &= ~CMP_LIGHT;
                 continue;
@@ -136,7 +136,7 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             forward_lit_uv_scale* m = (forward_lit_uv_scale*)&scene->material_data[pillar].data[0];
             m->m_albedo = vec4f::one();
             m->m_roughness = 1.0f;
-            m->m_reflectivity = 0.0f;
+            m->m_reflectivity = 0.3f;
             m->m_uv_scale = vec2f(0.5f, 0.5f);
             
             scene->samplers[pillar].sb[0].handle = albedo_tex;

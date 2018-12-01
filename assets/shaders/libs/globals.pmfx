@@ -31,8 +31,8 @@ struct light_data
 
 cbuffer per_pass_lights : register(b3)
 {
-    light_data  lights[8];
     float4      light_info;
+    light_data  lights[100];
 };
 
 struct distance_field_shadow

@@ -37,8 +37,6 @@ void unpack_light_data(inout vs_output output)
 {
     float4x4 ld = world_matrix_inv_transpose;
     output.light_pos_radius = ld[0];
-    output.light_pos_radius.w *= 2.0;
-    
     output.light_dir_cutoff = ld[1];
     output.light_colour = ld[2];
     output.light_data = ld[3];

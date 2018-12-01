@@ -112,7 +112,7 @@ namespace put
 
         enum e_scene_limits
         {
-            MAX_FORWARD_LIGHTS = 30,
+            MAX_FORWARD_LIGHTS = 100,
             MAX_SHADOW_MAPS = 1,
             MAX_SDF_SHADOWS = 1
         };
@@ -279,8 +279,8 @@ namespace put
 
         struct forward_light_buffer
         {
-            light_data lights[MAX_FORWARD_LIGHTS];
             vec4f      info;
+            light_data lights[MAX_FORWARD_LIGHTS];
         };
 
         struct distance_field_shadow
