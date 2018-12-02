@@ -253,7 +253,7 @@ ps_output ps_forward_lit( vs_output input )
     reflectivity = m_reflectivity;
     roughness = ro_sample.x;
     
-    //roughness = m_roughness;
+    roughness = m_roughness;
     
     if:(SDF_SHADOW)
     {            

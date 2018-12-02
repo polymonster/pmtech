@@ -30,27 +30,25 @@ struct vs_input
     float4 texcoord         : TEXCOORD1;
     float4 tangent          : TEXCOORD2;
     float4 bitangent        : TEXCOORD3;
-};
 
-struct vs_input_skinned
-{
-    float4 position             : POSITION;
-    float4 normal               : TEXCOORD0;
-    float4 texcoord             : TEXCOORD1;
-    float4 tangent              : TEXCOORD2;
-    float4 bitangent            : TEXCOORD3;
-    float4 blend_indices        : TEXCOORD4;
-    float4 blend_weights        : TEXCOORD5;
+    if:(SKINNED)
+    {
+        float4 blend_indices : TEXCOORD4;
+        float4 blend_weights : TEXCOORD5;
+    }
 };
 
 struct vs_instance_input
 {
-    float4 world_matrix_0      : TEXCOORD6;
-    float4 world_matrix_1      : TEXCOORD7;
-    float4 world_matrix_2      : TEXCOORD8;
-    float4 world_matrix_3      : TEXCOORD9;
-    float4 user_data           : TEXCOORD10;
-    float4 user_data2          : TEXCOORD11;
+    if:(INSTANCED)
+    {
+        float4 world_matrix_0      : TEXCOORD6;
+        float4 world_matrix_1      : TEXCOORD7;
+        float4 world_matrix_2      : TEXCOORD8;
+        float4 world_matrix_3      : TEXCOORD9;
+        float4 user_data           : TEXCOORD10;
+        float4 user_data2          : TEXCOORD11;
+    }
 };
 
 struct ps_output
@@ -127,15 +125,39 @@ vs_output vs_main( vs_input input )
     return output;
 }
 
-vs_output_picking vs_picking( vs_input input )
+vs_output_picking vs_picking( vs_input input, vs_instance_input instance_input )
 {
     vs_output_picking output;
-    
-    float4x4 wvp = mul( world_matrix, vp_matrix );
 
-    output.position = mul( input.position, wvp );
-    output.index = float4( user_data.x, 0.0, 0.0, 0.0 );
+    if:(INSTANCED)
+    {
+        float4x4 instance_world_mat;
+        unpack_vb_instance_mat(instance_world_mat, 
+            instance_input.world_matrix_0, 
+            instance_input.world_matrix_1, 
+            instance_input.world_matrix_2, 
+            instance_input.world_matrix_3);
+        
+        float4x4 wvp = mul( instance_world_mat, vp_matrix );
+        output.position = mul( input.position, wvp );
+        output.index = float4(instance_input.user_data.x, 0.0, 0.0, 0.0);
+
+    }
+     
+    if:(!SKINNED && !INSTANCED)
+    {
+        float4x4 wvp = mul( world_matrix, vp_matrix );
+        output.position = mul( input.position, wvp );
+        output.index = float4(user_data.x, 0.0, 0.0, 0.0);
+    }
     
+    if:(SKINNED)
+    {
+        float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+        output.position = mul( sp, vp_matrix );
+        output.index = float4(user_data.x, 0.0, 0.0, 0.0);
+    }
+
     return output;
 }
 
@@ -512,25 +534,6 @@ ps_output ps_area_box_light( vs_output input )
     return output;
 }
 
-ps_output ps_permutation_test( vs_output input )
-{
-    ps_output output;
-    
-    output.colour = float4(0.0, 0.0, 0.0, 1.0);
-    
-    if:(RED > 0)
-    {
-        output.colour += float4(1.0, 0.0, 0.0, 0.0);
-    }
-    
-    if:(GREEN > 0)
-    {
-        output.colour += float4(0.0, 1.0, 0.0, 0.0);    
-    }
-
-    return output;
-}
-
 pmfx:
 {    
     "constant_colour":
@@ -575,12 +578,6 @@ pmfx:
         "ps": "ps_texcoord_1"
     },
     
-    "diffuse_skinned":
-    {
-        "vs": "vs_main_skinned",
-        "ps": "ps_diffuse"
-    },
-    
     "cubemap":
     {
         "vs": "vs_main",
@@ -614,37 +611,19 @@ pmfx:
     "picking":
     {
         "vs": "vs_picking",
-        "ps": "ps_picking"
-    },
-    
-    "picking_skinned":
-    {
-        "vs": "vs_picking_skinned",
-        "ps": "ps_picking"
-    },
-    
-    "picking_instanced":
-    {
-        "vs": "vs_picking_instanced",
-        "ps": "ps_picking"
+        "ps": "ps_picking",
+        
+        "permutations":
+        {
+            "SKINNED": [31, [0,1]],
+            "INSTANCED": [30, [0,1]]
+        }
     },
     
     "volume_raster_albedo":
     {
         "vs": "vs_main",
         "ps": "ps_diffuse"
-    },
-    
-    "permutation_test":
-    {
-        "vs"     : "vs_main",
-        "ps"     : "ps_permutation_test",
-        
-        "permutations":
-        {
-            "RED": [0, [0,1]],
-            "GREEN": [1, [0,1]]
-        }
     }
 }
 

@@ -35,11 +35,14 @@ namespace physics
 
 namespace
 {
+    const s32 max_lights = 100;
+    
     u32 lights_start = 0;
     f32 light_radius = 100.0f;
-    s32 max_lights = 100;
-    s32 num_lights = 10;
+    s32 num_lights = max_lights;
     f32 scene_size = 200.0f;
+
+    vec3f anim_dir[max_lights];
     
     const c8* render_methods[] =
     {
@@ -67,6 +70,7 @@ namespace
         
         u32 lights_end = lights_start + num_lights;
         u32 light_nodes_end = lights_start + max_lights;
+        u32 dir_index = 0;
         for(u32 i = lights_start; i < light_nodes_end; ++i)
         {
             if(i >= lights_end)
@@ -75,8 +79,26 @@ namespace
                 continue;
             }
             
+            scene->transforms[i].translation += anim_dir[dir_index] * dt * 0.1f;
+            scene->entities[i] |= CMP_TRANSFORM;
+            
+            for(u32 j = 0; j < 3; ++j)
+            {
+                if(fabs(scene->transforms[i].translation[j]) > scene_size)
+                {
+                    f32 rrx = (f32)(rand()%255) / 255.0f;
+                    f32 rry = (f32)(rand()%255) / 255.0f;
+                    f32 rrz = (f32)(rand()%255) / 255.0f;
+                    
+                    anim_dir[dir_index] = vec3f(rrx, rry, rrz) * vec3f(2.0f) - vec3f(1.0);
+                    anim_dir[dir_index] += normalised(vec3f(0.0f, scene_size / 2.0f, 0.0f) - scene->transforms[i].translation);
+                }
+            }
+            
             scene->entities[i] |= CMP_LIGHT;
             scene->lights[i].radius = light_radius;
+            
+            dir_index++;
         }
     }
 }
@@ -135,7 +157,7 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
 
             forward_lit_uv_scale* m = (forward_lit_uv_scale*)&scene->material_data[pillar].data[0];
             m->m_albedo = vec4f::one();
-            m->m_roughness = 1.0f;
+            m->m_roughness = 0.1f;
             m->m_reflectivity = 0.3f;
             m->m_uv_scale = vec2f(0.5f, 0.5f);
             
@@ -159,9 +181,9 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
         f32 ry = (f32)(rand()%255) / 255.0f;
         f32 rz = (f32)(rand()%255) / 255.0f;
         
-        f32 rrx = (f32)(rand()%255) / 255.0f * M_PI;
-        f32 rry = (f32)(rand()%255) / 255.0f * M_PI;
-        f32 rrz = (f32)(rand()%255) / 255.0f * M_PI;
+        f32 rrx = (f32)(rand()%255) / 255.0f;
+        f32 rry = (f32)(rand()%255) / 255.0f;
+        f32 rrz = (f32)(rand()%255) / 255.0f;
         
         ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
         vec4f col = normalised(vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f));
@@ -186,6 +208,8 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
         scene->lights[light].radius = light_radius;
         scene->lights[light].type = LIGHT_TYPE_POINT;
         instantiate_light(scene, light);
+        
+        anim_dir[i] = vec3f(rrx, rry, rrz) * vec3f(2.0f) - vec3f(1.0);
         
         if(i == 0)
             lights_start = light;

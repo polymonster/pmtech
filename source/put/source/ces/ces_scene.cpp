@@ -467,6 +467,7 @@ namespace put
 
                 cmp_geometry* p_geom = &scene->geometries[n];
                 cmp_material* p_mat = &scene->materials[n];
+                u32 permutation = scene->material_permutation[n];
 
                 // update skin
                 if (scene->entities[n] & CMP_SKINNED && !(scene->entities[n] & CMP_SUB_GEOMETRY))
@@ -496,25 +497,22 @@ namespace put
                 }
 
                 // set shader / technique
-                u32 shader = view.pmfx_shader;
-
-                if (!is_valid(shader))
+                if (!is_valid(view.pmfx_shader))
                 {
-                    shader = p_mat->pmfx_shader;
-                    u32 technique = p_mat->technique;
-
-                    pmfx::set_technique(shader, technique);
+                    // material shader / technique
+                    pmfx::set_technique(p_mat->pmfx_shader, p_mat->technique);
                 }
                 else
                 {
-                    hash_id technique = view.technique;
-                    if (!pmfx::set_technique(shader, technique, p_geom->vertex_shader_class))
+                    bool set = pmfx::set_technique_perm(view.pmfx_shader, view.technique, permutation);
+                    if(!set)
                     {
                         if (scene->entities[n] & CMP_MASTER_INSTANCE)
                         {
                             u32 num_instances = scene->master_instances[n].num_instances;
                             n += num_instances;
                         }
+                        PEN_ASSERT(0);
                         continue;
                     }
                 }
