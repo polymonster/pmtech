@@ -303,6 +303,7 @@ namespace put
             program.id_name = PEN_HASH(name.c_str());
             program.id_sub_type = PEN_HASH("");
             program.permutation_id = j_techique["permutation_id"].as_u32();
+            program.permutation_option_mask = j_techique["permutation_option_mask"].as_u32();
 
             for (s32 i = 0; i < PEN_ARRAY_SIZE(k_sub_types); ++i)
             {
@@ -750,8 +751,10 @@ namespace put
 
                 if (t.id_name != id_technique)
                     continue;
-
-                if (t.permutation_id != permutation)
+                
+                u32 masked_permutation = permutation & t.permutation_option_mask;
+                
+                if (t.permutation_id != masked_permutation)
                     continue;
 
                 return i;

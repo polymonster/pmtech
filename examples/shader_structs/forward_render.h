@@ -1,3 +1,9 @@
+#define FORWARD_LIT_SKINNED 2147483648
+#define FORWARD_LIT_INSTANCED 1073741824
+#define FORWARD_LIT_UV_SCALE 2
+#define FORWARD_LIT_SSS 4
+#define FORWARD_LIT_SDF_SHADOW 8
+
 struct forward_lit
 {
 	float4 m_albedo;
@@ -293,6 +299,10 @@ struct forward_lit_sdf_shadow_sss_uv_scale_instanced_skinned
 	float m_surface_offset;
 	float3 m_padding;
 };
+
+#define GBUFFER_SKINNED 2147483648
+#define GBUFFER_INSTANCED 1073741824
+#define GBUFFER_UV_SCALE 2
 
 struct gbuffer
 {

@@ -139,6 +139,7 @@ def generate_shader_info(
         techniques,
         texture_samplers,
         constant_buffers):
+
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
 
     shader_info = dict()
@@ -1272,6 +1273,7 @@ def parse_pmfx(filename, root):
                 output_permutations = []
                 define_list = []
                 permutation_options = dict()
+                permutation_option_mask = 0
 
                 if "permutations" in technique_block:
                     for p in technique_block["permutations"].keys():
@@ -1284,7 +1286,11 @@ def parse_pmfx(filename, root):
                         if len(tp[1]) > 2:
                             ptype = "input_int"
                         permutation_options[key] = {"val": pow(2, tp[0]), "type": ptype}
+                        mask = pow(2, tp[0])
+                        permutation_option_mask += mask
+                        shader_c_struct += "#define " + technique.upper() + "_" + key + " " + str(mask) + "\n"
                     del technique_block["permutations"]
+                    shader_c_struct += "\n"
 
                 # generate default permutation, inherit / get permutation constants
                 technique_permutations = dict()
@@ -1336,6 +1342,7 @@ def parse_pmfx(filename, root):
                     # permutation meta data
                     technique_json["permutations"] = permutation_options
                     technique_json["permutation_id"] = id
+                    technique_json["permutation_option_mask"] = permutation_option_mask
 
                     # clean up ps
                     if "ps" in technique_json.keys():

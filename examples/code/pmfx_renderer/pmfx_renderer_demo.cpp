@@ -152,7 +152,7 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             instantiate_model_cbuffer(scene, pillar);
 
             // uv scale
-            scene->material_permutation[pillar] |= 1<<1;
+            scene->material_permutation[pillar] |= FORWARD_LIT_UV_SCALE;
             instantiate_material(default_material, scene, pillar);
 
             forward_lit_uv_scale* m = (forward_lit_uv_scale*)&scene->material_data[pillar].data[0];

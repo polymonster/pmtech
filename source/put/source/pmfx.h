@@ -182,13 +182,14 @@ namespace put
             hash_id id_sub_type;
             Str     name;
 
-            u32 stream_out_shader;
             u32 vertex_shader;
             u32 pixel_shader;
+            u32 stream_out_shader;
             u32 input_layout;
             u32 program_index;
             u32 technique_constant_size; // bytes
             u32 permutation_id;          // bitmask
+            u32 permutation_option_mask; // bits which this permutation parent technique accepts
 
             f32*                   constant_defaults;
             technique_constant*    constants;
