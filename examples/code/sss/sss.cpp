@@ -77,7 +77,7 @@ void create_scene(entity_scene* scene)
     scene->material_resources[head_model].shader_name = "forward_render";
     scene->material_resources[head_model].id_shader = PEN_HASH(scene->material_resources[head_model].shader_name);
 
-    scene->material_permutation[head_model] = 1 << 2; //sss todo get from mat
+    scene->material_permutation[head_model] |= FORWARD_LIT_SSS;
 
     forward_lit_sss mat_data;
     mat_data.m_albedo = float4::one();

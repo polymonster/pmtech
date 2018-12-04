@@ -159,7 +159,11 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
         
         output.colour = instance_input.user_data2;
     }
-    
+    else:
+    {
+        output.colour = m_albedo;
+    }
+        
     if:(SKINNED)
     {
         float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
@@ -173,8 +177,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
         output.position = mul( sp, vp_matrix );
         output.world_pos = sp;
     }
-    
-    if:(!SKINNED)
+    else:
     {
         output.position = mul( input.position, wvp );
         output.world_pos = mul( input.position, wm );
@@ -204,12 +207,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
     
         output.texcoord *= float4(m_uv_scale.x * xs, m_uv_scale.y * ys, m_uv_scale.x, m_uv_scale.y);
     }
-        
-    if:(!INSTANCED)
-    {
-        output.colour = m_albedo;
-    }
-        
+                
     return output;
 }
 

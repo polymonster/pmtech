@@ -68,6 +68,12 @@ if os_platform == "win32":
     print("fx compiler directory :" + compiler_dir)
 
 
+def us(v):
+    if v == -1:
+        return sys.maxsize
+    return v
+
+
 def parse_and_split_block(code_block):
     start = code_block.find("{") + 1
     end = code_block.find("};")
@@ -786,19 +792,40 @@ def evaluate_conditional_blocks(source, permutation):
     if not permutation:
         return source
     pos = 0
+    case_accepted = False
     while True:
+        else_pos = source.find("else:", pos)
+        else_if_pos = source.find("else if:", pos)
         pos = source.find("if:", pos)
+        else_case = False
+        first_case = True
+
+        if us(else_if_pos) < us(pos):
+            pos = else_if_pos
+            first_case = False
+
+        if us(else_pos) < us(pos):
+            pos = else_pos
+            else_case = True
+            first_case = False
+
+        if first_case:
+            case_accepted = False
+
         if pos == -1:
             break
 
-        conditions_start = source.find("(", pos)
-        body_start = source.find("{", conditions_start) + 1
-        conditions = source[conditions_start:body_start - 1]
-
-        conditions = conditions.replace('\n', '')
-        conditions = conditions.replace("&&", " and ")
-        conditions = conditions.replace("||", " or ")
-        conditions = conditions.replace("!", " not ")
+        if not else_case:
+            conditions_start = source.find("(", pos)
+            body_start = source.find("{", conditions_start) + 1
+            conditions = source[conditions_start:body_start - 1]
+            conditions = conditions.replace('\n', '')
+            conditions = conditions.replace("&&", " and ")
+            conditions = conditions.replace("||", " or ")
+            conditions = conditions.replace("!", " not ")
+        else:
+            body_start = source.find("{", pos) + 1
+            conditions = "True"
 
         gv = dict()
         for v in permutation:
@@ -817,10 +844,14 @@ def evaluate_conditional_blocks(source, permutation):
                 break
             i += 1
 
-        try:
-            if eval(conditions, gv):
-                conditional_block = source[body_start:i]
-        except NameError:
+        if not case_accepted:
+            try:
+                if eval(conditions, gv):
+                    conditional_block = source[body_start:i]
+                    case_accepted = True
+            except NameError:
+                conditional_block = ""
+        else:
             conditional_block = ""
 
         source = source.replace(source[pos:i+1], conditional_block)
@@ -882,12 +913,6 @@ def replace_conditional_blocks(source):
         source = source.replace(source[pos:i+1], conditional_block)
         pos = i
     return source
-
-
-def us(v):
-    if v == -1:
-        return 65535
-    return v
 
 
 def strip_empty_vs_inputs(vs_input, vs_main):
