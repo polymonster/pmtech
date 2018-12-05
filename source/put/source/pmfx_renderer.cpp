@@ -1306,13 +1306,15 @@ namespace put
 
                 pen::json view = j_views[i];
 
-                new_view.name = view.name();
-                new_view.id_name = PEN_HASH(view.name());
-
                 if (group)
                 {
                     new_view.id_group = PEN_HASH(group);
                     new_view.group = group;
+                }
+                else
+                {
+                    new_view.name = view.name();
+                    new_view.id_name = PEN_HASH(view.name());
                 }
 
                 // inherit and combine
@@ -1322,17 +1324,17 @@ namespace put
                     if (ihv == "")
                         break;
 
-                    // todo: we shouldnt inherit name
-                    new_view.name = ihv.c_str();
-                    new_view.id_name = PEN_HASH(new_view.name);
-
                     pen::json inherit_view = all_views[ihv.c_str()];
+                    
+                    // inherit name if we dont have one (group view in post process view array)
+                    if(new_view.name.empty())
+                    {
+                        new_view.name = ihv.c_str();
+                        new_view.id_name = PEN_HASH(new_view.name);
+                    }
 
-                    if (!view["inherit_reverse"].as_bool())
-                        view = pen::json::combine(view, inherit_view);
-                    else
-                        view = pen::json::combine(inherit_view, view);
-
+                    view = pen::json::combine(inherit_view, view);
+                    
                     ihv = inherit_view["inherit"].as_str();
                 }
 
