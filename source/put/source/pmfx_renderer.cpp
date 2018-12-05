@@ -55,6 +55,7 @@ namespace
         "not_equal",        PEN_COMPARISON_NOT_EQUAL,
         "greater_equal",    PEN_COMPARISON_GREATER_EQUAL,
         "always",           PEN_COMPARISON_ALWAYS,
+        "equal",            PEN_COMPARISON_EQUAL,
         nullptr,            0
     };
 
@@ -141,6 +142,7 @@ namespace
     {
         Str     name;
         Str     group;
+        Str     info_json;
         hash_id id_name;
         hash_id id_group;
         hash_id id_render_target[pen::MAX_MRT] = {0};
@@ -1320,6 +1322,7 @@ namespace put
                     if (ihv == "")
                         break;
 
+                    // todo: we shouldnt inherit name
                     new_view.name = ihv.c_str();
                     new_view.id_name = PEN_HASH(new_view.name);
 
@@ -1341,6 +1344,7 @@ namespace put
                 s32 cur_rt = 0;
 
                 new_view.depth_target = PEN_INVALID_HANDLE;
+                new_view.info_json = view.dumps();
 
                 for (s32 t = 0; t < num_targets; ++t)
                 {
@@ -2614,7 +2618,8 @@ namespace put
 
         void view_info_ui(const view_params& v)
         {
-            ImGui::Text("%s", v.name.c_str());
+            if(!ImGui::CollapsingHeader(v.name.c_str()))
+                return;
 
             for (u32 i = 0; i < v.num_colour_targets; ++i)
             {
@@ -2635,6 +2640,8 @@ namespace put
                 ImGui::Text("input sampler %i: %s (%i)", isb, rt->name.c_str(), sb.handle);
                 ++isb;
             }
+            
+            ImGui::TextWrapped("%s", v.info_json.c_str());
         }
 
         void generate_post_process_config(json& j_pp, const std::vector<Str>& pp_chain,
