@@ -142,6 +142,9 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
     
     float4x4 wvp = mul( world_matrix, vp_matrix );
     float4x4 wm = world_matrix;
+	
+	output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
+							 input.texcoord.z, 1.0 - input.texcoord.w );
     
     if:(INSTANCED)
     {
@@ -190,9 +193,6 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
         output.normal = mul( input.normal.xyz, wrm );
         output.tangent = mul( input.tangent.xyz, wrm );
         output.bitangent = mul( input.bitangent.xyz, wrm );
-        
-        output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
-                                 input.texcoord.z, 1.0 - input.texcoord.w );
     }
             
     if:(UV_SCALE)

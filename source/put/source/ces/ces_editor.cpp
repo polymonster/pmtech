@@ -27,8 +27,8 @@ namespace put
 
     namespace ces
     {
-        static hash_id k_primitives[] = {PEN_HASH("quad"),   PEN_HASH("cube"),    PEN_HASH("cylinder"),
-                                         PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone")};
+        static const hash_id k_primitives[] = { PEN_HASH("quad"),   PEN_HASH("cube"),    PEN_HASH("cylinder"),
+                                                PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone")};
 
         struct transform_undo
         {
@@ -36,7 +36,7 @@ namespace put
             u32           node_index;
         };
 
-        static hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
+        static const hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
 
         struct picking_info
         {
@@ -44,7 +44,7 @@ namespace put
             a_u8 ready;
             u32  x, y;
         };
-        static picking_info k_picking_info;
+        static picking_info s_picking_info;
         u32*                s_selection_list = nullptr;
 
         enum e_picking_state : u32
@@ -61,7 +61,7 @@ namespace put
             NONE = 0,
             WIDGET_SELECTED = 1,
         };
-        static u32 k_select_flags = 0;
+        static u32 s_select_flags = 0;
 
         enum e_camera_mode : s32
         {
@@ -81,7 +81,7 @@ namespace put
             f32           grid_size;
             Str           current_working_scene = "";
         };
-        model_view_controller k_model_view_controller;
+        static model_view_controller s_model_view_controller;
 
         enum transform_mode : u32
         {
@@ -92,7 +92,7 @@ namespace put
             TRANSFORM_SCALE = 4,
             TRANSFORM_PHYSICS = 5
         };
-        static transform_mode k_transform_mode = TRANSFORM_NONE;
+        static transform_mode s_transform_mode = TRANSFORM_NONE;
 
         bool shortcut_key(u32 key)
         {
@@ -109,26 +109,26 @@ namespace put
 
         void update_model_viewer_camera(put::scene_controller* sc)
         {
-            if (k_model_view_controller.invalidated)
+            if (s_model_view_controller.invalidated)
             {
-                sc->camera->fov = k_model_view_controller.main_camera.fov;
-                sc->camera->near_plane = k_model_view_controller.main_camera.near_plane;
-                sc->camera->far_plane = k_model_view_controller.main_camera.far_plane;
+                sc->camera->fov = s_model_view_controller.main_camera.fov;
+                sc->camera->near_plane = s_model_view_controller.main_camera.near_plane;
+                sc->camera->far_plane = s_model_view_controller.main_camera.far_plane;
                 camera_update_projection_matrix(sc->camera);
-                k_model_view_controller.invalidated = false;
+                s_model_view_controller.invalidated = false;
             }
 
             bool has_focus = dev_ui::want_capture() == dev_ui::NO_INPUT;
 
-            switch (k_model_view_controller.camera_mode)
+            switch (s_model_view_controller.camera_mode)
             {
                 case CAMERA_MODELLING:
-                    put::camera_update_modelling(sc->camera, has_focus, k_model_view_controller.invert_y);
-                    k_model_view_controller.main_camera = *sc->camera;
+                    put::camera_update_modelling(sc->camera, has_focus, s_model_view_controller.invert_y);
+                    s_model_view_controller.main_camera = *sc->camera;
                     break;
                 case CAMERA_FLY:
-                    put::camera_update_fly(sc->camera, has_focus, k_model_view_controller.invert_y);
-                    k_model_view_controller.main_camera = *sc->camera;
+                    put::camera_update_fly(sc->camera, has_focus, s_model_view_controller.invert_y);
+                    s_model_view_controller.main_camera = *sc->camera;
                     break;
             }
         }
@@ -222,11 +222,11 @@ namespace put
 
                 if (ImGui::CollapsingHeader("Grid Options"))
                 {
-                    if (ImGui::InputFloat("Cell Size", &k_model_view_controller.grid_cell_size))
-                        dev_ui::set_program_preference("grid_cell_size", k_model_view_controller.grid_cell_size);
+                    if (ImGui::InputFloat("Cell Size", &s_model_view_controller.grid_cell_size))
+                        dev_ui::set_program_preference("grid_cell_size", s_model_view_controller.grid_cell_size);
 
-                    if (ImGui::InputFloat("Grid Size", &k_model_view_controller.grid_size))
-                        dev_ui::set_program_preference("grid_size", k_model_view_controller.grid_size);
+                    if (ImGui::InputFloat("Grid Size", &s_model_view_controller.grid_size))
+                        dev_ui::set_program_preference("grid_size", s_model_view_controller.grid_size);
                 }
 
                 ImGui::End();
@@ -273,7 +273,7 @@ namespace put
                 if (last_loaded_scene.length() > 0)
                     load_scene(last_loaded_scene.c_str(), scene);
 
-                k_model_view_controller.current_working_scene = last_loaded_scene;
+                s_model_view_controller.current_working_scene = last_loaded_scene;
 
                 auto_load_last_scene = false;
             }
@@ -292,15 +292,15 @@ namespace put
             }
 
             // grid
-            k_model_view_controller.grid_cell_size = dev_ui::get_program_preference("grid_cell_size").as_f32(1.0f);
-            k_model_view_controller.grid_size = dev_ui::get_program_preference("grid_size").as_f32(100.0f);
+            s_model_view_controller.grid_cell_size = dev_ui::get_program_preference("grid_cell_size").as_f32(1.0f);
+            s_model_view_controller.grid_size = dev_ui::get_program_preference("grid_size").as_f32(100.0f);
 
             // camera
-            k_model_view_controller.main_camera.fov = dev_ui::get_program_preference("camera_fov").as_f32(60.0f);
-            k_model_view_controller.main_camera.near_plane = dev_ui::get_program_preference("camera_near").as_f32(0.1f);
-            k_model_view_controller.main_camera.far_plane = dev_ui::get_program_preference("camera_far").as_f32(1000.0f);
-            k_model_view_controller.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
-            k_model_view_controller.invalidated = true;
+            s_model_view_controller.main_camera.fov = dev_ui::get_program_preference("camera_fov").as_f32(60.0f);
+            s_model_view_controller.main_camera.near_plane = dev_ui::get_program_preference("camera_near").as_f32(0.1f);
+            s_model_view_controller.main_camera.far_plane = dev_ui::get_program_preference("camera_far").as_f32(1000.0f);
+            s_model_view_controller.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
+            s_model_view_controller.invalidated = true;
         }
 
         void editor_shutdown()
@@ -478,7 +478,7 @@ namespace put
         {
             if (ImGui::Begin("Selection List", opened))
             {
-                ImGui::Text("Picking Result: %u", k_picking_info.result);
+                ImGui::Text("Picking Result: %u", s_picking_info.result);
 
                 u32 sel_count = sb_count(s_selection_list);
                 for (s32 i = 0; i < sel_count; ++i)
@@ -494,9 +494,9 @@ namespace put
 
         void picking_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
         {
-            k_picking_info.result = *((u32*)(((u8*)p_data) + k_picking_info.y * row_pitch + k_picking_info.x * block_size));
+            s_picking_info.result = *((u32*)(((u8*)p_data) + s_picking_info.y * row_pitch + s_picking_info.x * block_size));
 
-            k_picking_info.ready = 1;
+            s_picking_info.ready = 1;
         }
 
         void picking_update(entity_scene* scene, const camera* cam)
@@ -509,14 +509,14 @@ namespace put
 
             if (picking_state == PICKING_SINGLE)
             {
-                if (k_picking_info.ready)
+                if (s_picking_info.ready)
                 {
                     picking_state = PICKING_READY;
-                    picking_result = k_picking_info.result;
+                    picking_result = s_picking_info.result;
 
                     add_selection(scene, picking_result);
 
-                    k_picking_info.ready = false;
+                    s_picking_info.ready = false;
                 }
 
                 return;
@@ -677,9 +677,9 @@ namespace put
 
                     pen::renderer_read_back_resource(rrbp);
 
-                    k_picking_info.ready = 0;
-                    k_picking_info.x = ms.x;
-                    k_picking_info.y = ms.y;
+                    s_picking_info.ready = 0;
+                    s_picking_info.x = ms.x;
+                    s_picking_info.y = ms.y;
                 }
                 else
                 {
@@ -984,9 +984,9 @@ namespace put
             if (ImGui::Begin("Settings", opened))
             {
                 Str setting_str;
-                if (ImGui::Checkbox("Invert Camera Y", &k_model_view_controller.invert_y))
+                if (ImGui::Checkbox("Invert Camera Y", &s_model_view_controller.invert_y))
                 {
-                    dev_ui::set_program_preference("invert_camera_y", k_model_view_controller.invert_y);
+                    dev_ui::set_program_preference("invert_camera_y", s_model_view_controller.invert_y);
                 }
 
                 if (ImGui::Checkbox("Auto Load Last Scene", &load_last_scene))
@@ -1271,14 +1271,14 @@ namespace put
             {
                 u32 mode = TRANSFORM_SELECT + i;
                 if (shortcut_key(widget_shortcut_key[i]))
-                    k_transform_mode = (transform_mode)mode;
+                    s_transform_mode = (transform_mode)mode;
 
-                if (put::dev_ui::state_button(transform_icons[i], k_transform_mode == mode))
+                if (put::dev_ui::state_button(transform_icons[i], s_transform_mode == mode))
                 {
-                    if (k_transform_mode == mode)
-                        k_transform_mode = TRANSFORM_NONE;
+                    if (s_transform_mode == mode)
+                        s_transform_mode = TRANSFORM_NONE;
                     else
-                        k_transform_mode = (transform_mode)mode;
+                        s_transform_mode = (transform_mode)mode;
                 }
                 put::dev_ui::set_tooltip(transform_tooltip[i]);
             }
@@ -1317,7 +1317,7 @@ namespace put
                             put::ces::load_scene(import, sc->scene, open_merge);
 
                             if (!open_merge)
-                                k_model_view_controller.current_working_scene = import;
+                                s_model_view_controller.current_working_scene = import;
 
                             Str fn = import;
                             dev_ui::set_program_preference_filename("last_loaded_scene", import);
@@ -1341,23 +1341,23 @@ namespace put
             {
                 if (ImGui::Begin("Camera", &open_camera_menu))
                 {
-                    ImGui::Combo("Camera Mode", (s32*)&k_model_view_controller.camera_mode, (const c8**)&camera_mode_names,
+                    ImGui::Combo("Camera Mode", (s32*)&s_model_view_controller.camera_mode, (const c8**)&camera_mode_names,
                                  2);
 
-                    if (ImGui::SliderFloat("FOV", &k_model_view_controller.main_camera.fov, 10, 180))
-                        dev_ui::set_program_preference("camera_fov", k_model_view_controller.main_camera.fov);
+                    if (ImGui::SliderFloat("FOV", &s_model_view_controller.main_camera.fov, 10, 180))
+                        dev_ui::set_program_preference("camera_fov", s_model_view_controller.main_camera.fov);
 
-                    if (ImGui::InputFloat("Near", &k_model_view_controller.main_camera.near_plane))
-                        dev_ui::set_program_preference("camera_near", k_model_view_controller.main_camera.near_plane);
+                    if (ImGui::InputFloat("Near", &s_model_view_controller.main_camera.near_plane))
+                        dev_ui::set_program_preference("camera_near", s_model_view_controller.main_camera.near_plane);
 
-                    if (ImGui::InputFloat("Far", &k_model_view_controller.main_camera.far_plane))
-                        dev_ui::set_program_preference("camera_far", k_model_view_controller.main_camera.far_plane);
+                    if (ImGui::InputFloat("Far", &s_model_view_controller.main_camera.far_plane))
+                        dev_ui::set_program_preference("camera_far", s_model_view_controller.main_camera.far_plane);
                     
-                    ImGui::InputFloat("Zoom", &k_model_view_controller.main_camera.zoom);
-                    ImGui::InputFloat2("Rotation", (f32*)&k_model_view_controller.main_camera.rot[0]);
-                    ImGui::InputFloat3("Focus", (f32*)&k_model_view_controller.main_camera.focus);
+                    ImGui::InputFloat("Zoom", &s_model_view_controller.main_camera.zoom);
+                    ImGui::InputFloat2("Rotation", (f32*)&s_model_view_controller.main_camera.rot[0]);
+                    ImGui::InputFloat3("Focus", (f32*)&s_model_view_controller.main_camera.focus);
                     
-                    k_model_view_controller.invalidated = true;
+                    s_model_view_controller.invalidated = true;
 
                     ImGui::End();
                 }
@@ -1371,19 +1371,19 @@ namespace put
             if (open_save)
             {
                 const c8* save_file = nullptr;
-                if (open_save_as || k_model_view_controller.current_working_scene.length() == 0)
+                if (open_save_as || s_model_view_controller.current_working_scene.length() == 0)
                 {
                     save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms");
                 }
                 else
                 {
-                    save_file = k_model_view_controller.current_working_scene.c_str();
+                    save_file = s_model_view_controller.current_working_scene.c_str();
                 }
 
                 if (save_file)
                 {
                     put::ces::save_scene(save_file, sc->scene);
-                    k_model_view_controller.current_working_scene = save_file;
+                    s_model_view_controller.current_working_scene = save_file;
                     open_save = false;
 
                     dev_ui::set_program_preference_filename("last_loaded_scene", save_file);
@@ -1408,8 +1408,8 @@ namespace put
 
             // disable selection when we are doing something else
             static bool disable_picking = false;
-            if (pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND) || (k_select_flags & WIDGET_SELECTED) ||
-                (k_transform_mode == TRANSFORM_PHYSICS))
+            if (pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND) || (s_select_flags & WIDGET_SELECTED) ||
+                (s_transform_mode == TRANSFORM_PHYSICS))
             {
                 disable_picking = true;
             }
@@ -2516,15 +2516,15 @@ namespace put
 
                 cmp_transform& t = scene->transforms[i];
 
-                if (k_transform_mode == TRANSFORM_TRANSLATE)
+                if (s_transform_mode == TRANSFORM_TRANSLATE)
                 {
                     t.translation += move_axis;
                 }
-                else if (k_transform_mode == TRANSFORM_SCALE)
+                else if (s_transform_mode == TRANSFORM_SCALE)
                 {
                     t.scale += move_axis * 0.1f;
                 }
-                else if (k_transform_mode == TRANSFORM_ROTATE)
+                else if (s_transform_mode == TRANSFORM_ROTATE)
                 {
                     quat q;
                     q.euler_angles(move_axis.z, move_axis.y, move_axis.x);
@@ -2560,7 +2560,7 @@ namespace put
             if (pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND))
                 return;
 
-            k_select_flags &= ~(WIDGET_SELECTED);
+            s_select_flags &= ~(WIDGET_SELECTED);
 
             entity_scene* scene = view.scene;
             vec2i         vpi = vec2i(view.viewport->width, view.viewport->height);
@@ -2578,7 +2578,7 @@ namespace put
             vec3f r1 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 1.0f), view_proj, vpi);
             vec3f vr = normalised(r1 - r0);
 
-            if (k_transform_mode == TRANSFORM_PHYSICS)
+            if (s_transform_mode == TRANSFORM_PHYSICS)
             {
                 if (!k_physics_pick_info.grabbed && k_physics_pick_info.constraint == -1)
                 {
@@ -2677,7 +2677,7 @@ namespace put
             if (screen_pos.z < -0.0)
                 return;
 
-            if (k_transform_mode == TRANSFORM_ROTATE)
+            if (s_transform_mode == TRANSFORM_ROTATE)
             {
                 float rd = d * 0.75;
 
@@ -2723,7 +2723,7 @@ namespace put
 
                     if (selected[i])
                     {
-                        k_select_flags |= WIDGET_SELECTED;
+                        s_select_flags |= WIDGET_SELECTED;
 
                         vec3f prev_line = normalised(attach_point - pos);
                         vec3f cur_line = normalised(_cp - pos);
@@ -2745,7 +2745,7 @@ namespace put
                 return;
             }
 
-            if (k_transform_mode == TRANSFORM_TRANSLATE || k_transform_mode == TRANSFORM_SCALE)
+            if (s_transform_mode == TRANSFORM_TRANSLATE || s_transform_mode == TRANSFORM_SCALE)
             {
                 static vec3f unit_axis[] = {
                     vec3f::zero(),
@@ -2817,13 +2817,13 @@ namespace put
 
                     if (selected_axis & (1 << i))
                     {
-                        k_select_flags |= WIDGET_SELECTED;
+                        s_select_flags |= WIDGET_SELECTED;
                         col = vec4f::one();
                     }
 
                     put::dbg::add_line_2f(pp[0].xy, pp[i].xy, col);
 
-                    if (k_transform_mode == TRANSFORM_TRANSLATE)
+                    if (s_transform_mode == TRANSFORM_TRANSLATE)
                     {
                         vec2f v = normalised(pp[i].xy - pp[0].xy);
                         vec2f px = perp(v) * 5.0f;
@@ -2833,7 +2833,7 @@ namespace put
                         put::dbg::add_line_2f(pp[i].xy, base + px, col);
                         put::dbg::add_line_2f(pp[i].xy, base - px, col);
                     }
-                    else if (k_transform_mode == TRANSFORM_SCALE)
+                    else if (s_transform_mode == TRANSFORM_SCALE)
                     {
                         put::dbg::add_quad_2f(pp[i].xy, vec2f(3.0f, 3.0f), col);
                     }
@@ -3265,8 +3265,8 @@ namespace put
 
             if (scene->view_flags & DD_GRID)
             {
-                f32 divisions = k_model_view_controller.grid_size / k_model_view_controller.grid_cell_size;
-                put::dbg::add_grid(vec3f::zero(), vec3f(k_model_view_controller.grid_size), vec3f(divisions));
+                f32 divisions = s_model_view_controller.grid_size / s_model_view_controller.grid_cell_size;
+                put::dbg::add_grid(vec3f::zero(), vec3f(s_model_view_controller.grid_size), vec3f(divisions));
             }
 
             put::dbg::render_3d(view.cb_view);

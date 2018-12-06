@@ -26,10 +26,12 @@ extern void pen_window_resize();
 
 a_u8 g_window_resize(0);
 
+#define GL_TIME_ELAPSED 1
+
 namespace
 {
-    u64     k_frame = 0;
-    GLint   k_bb_fbo = -1;
+    u64     s_frame = 0;
+    GLint   s_backbuffer_fbo = -1;
 
 #define GL_DEBUG_LEVEL 0
 
@@ -116,7 +118,7 @@ namespace pen
         u64 frame;
         Str name;
     };
-    gpu_perf_result* k_perf_results = nullptr;
+    static gpu_perf_result* s_perf_results = nullptr;
 
     struct perf_marker
     {
@@ -138,34 +140,34 @@ namespace pen
         u32 buf = 0;
         u32 depth = 0;
     };
-    static perf_marker_set k_perf;
+    static perf_marker_set s_perf;
 
     void insert_marker(const c8* name, bool pad = false)
     {
 #ifdef GL_TIME_ELAPSED
-        u32& buf = k_perf.buf;
-        u32& pos = k_perf.pos[buf];
-        u32& depth = k_perf.depth;
+        u32& buf = s_perf.buf;
+        u32& pos = s_perf.pos[buf];
+        u32& depth = s_perf.depth;
 
-        if (pos >= sb_count(k_perf.markers[buf]))
+        if (pos >= sb_count(s_perf.markers[buf]))
         {
             // push a new marker
             perf_marker m;
             glGenQueries(1, &m.query);
 
-            sb_push(k_perf.markers[buf], m);
+            sb_push(s_perf.markers[buf], m);
         }
 
         // queries have taken longer than 1 frame to obtain results
         // increase num_marker_buffers to avoid losing data
-        PEN_ASSERT(!k_perf.markers[buf][pos].issued);
+        PEN_ASSERT(!s_perf.markers[buf][pos].issued);
 
-        CHECK_CALL(glBeginQuery(GL_TIME_ELAPSED, k_perf.markers[buf][pos].query));
-        k_perf.markers[buf][pos].issued = true;
-        k_perf.markers[buf][pos].depth = depth;
-        k_perf.markers[buf][pos].frame = k_frame;
-        k_perf.markers[buf][pos].pad = pad;
-        k_perf.markers[buf][pos].name = name;
+        CHECK_CALL(glBeginQuery(GL_TIME_ELAPSED, s_perf.markers[buf][pos].query));
+        s_perf.markers[buf][pos].issued = true;
+        s_perf.markers[buf][pos].depth = depth;
+        s_perf.markers[buf][pos].frame = s_frame;
+        s_perf.markers[buf][pos].pad = pad;
+        s_perf.markers[buf][pos].name = name;
 
         ++pos;
 #endif
@@ -174,7 +176,7 @@ namespace pen
     void direct::renderer_push_perf_marker(const c8* name)
     {
 #ifdef GL_TIME_ELAPSED
-        u32& depth = k_perf.depth;
+        u32& depth = s_perf.depth;
 
         if (depth > 0)
         {
@@ -190,7 +192,7 @@ namespace pen
     void direct::renderer_pop_perf_marker()
     {
 #ifdef GL_TIME_ELAPSED
-        u32& depth = k_perf.depth;
+        u32& depth = s_perf.depth;
         --depth;
 
         CHECK_CALL(glEndQuery(GL_TIME_ELAPSED));
@@ -206,15 +208,15 @@ namespace pen
     {
 #ifdef GL_TIME_ELAPSED
         // unbalance push pop in perf markers
-        PEN_ASSERT(k_perf.depth == 0);
+        PEN_ASSERT(s_perf.depth == 0);
 
         // swap buffers
-        u32 bb = (k_perf.buf + 1) % k_perf.num_marker_buffers;
+        u32 bb = (s_perf.buf + 1) % s_perf.num_marker_buffers;
 
         u32 complete_count = 0;
-        for (u32 i = 0; i < k_perf.pos[bb]; ++i)
+        for (u32 i = 0; i < s_perf.pos[bb]; ++i)
         {
-            perf_marker& m = k_perf.markers[bb][i];
+            perf_marker& m = s_perf.markers[bb][i];
             if (m.issued)
             {
                 s32 avail = 0;
@@ -228,15 +230,15 @@ namespace pen
             }
         }
 
-        if (complete_count == k_perf.pos[bb])
+        if (complete_count == s_perf.pos[bb])
         {
             // gather results into a better view
-            sb_free(k_perf_results);
+            sb_free(s_perf_results);
 
-            u32 num_timers = k_perf.pos[bb];
+            u32 num_timers = s_perf.pos[bb];
             for (u32 i = 0; i < num_timers; ++i)
             {
-                perf_marker& m = k_perf.markers[bb][i];
+                perf_marker& m = s_perf.markers[bb][i];
 
                 if (!m.issued)
                     continue;
@@ -264,7 +266,7 @@ namespace pen
                 u32 nest_iter = 0;
                 for (;;)
                 {
-                    perf_marker& n = k_perf.markers[bb][i + nest_iter];
+                    perf_marker& n = s_perf.markers[bb][i + nest_iter];
 
                     if (n.depth < p.depth)
                         break;
@@ -292,10 +294,10 @@ namespace pen
                     g_gpu_total = p.elapsed;
             }
 
-            k_perf.pos[bb] = 0;
+            s_perf.pos[bb] = 0;
         }
 
-        k_perf.buf = bb;
+        s_perf.buf = bb;
 #endif
     }
 
@@ -381,7 +383,7 @@ namespace pen
         hash_id hash;
         GLuint  framebuffer;
     };
-    static framebuffer* k_framebuffers;
+    static framebuffer* s_framebuffers;
 
     enum resource_type : s32
     {
@@ -402,14 +404,14 @@ namespace pen
         u8     uniform_block_location[MAX_UNIFORM_BUFFERS];
         u8     texture_location[MAX_SHADER_TEXTURES];
     };
-    static shader_program* k_shader_programs;
+    static shader_program* s_shader_programs;
 
     struct managed_render_target
     {
         texture_creation_params tcp;
         u32                     render_target_handle;
     };
-    static managed_render_target* k_managed_render_targets;
+    static managed_render_target* s_managed_render_targets;
 
     struct resource_allocation
     {
@@ -548,9 +550,9 @@ namespace pen
             program.uniform_block_location[i] = INVALID_LOC;
         }
 
-        sb_push(k_shader_programs, program);
+        sb_push(s_shader_programs, program);
 
-        return sb_count(k_shader_programs) - 1;
+        return sb_count(s_shader_programs) - 1;
     }
 
     //--------------------------------------------------------------------------------------
@@ -599,15 +601,12 @@ namespace pen
         }
     }
 
-    static u32  k_resize_counter = 0;
-    static bool k_needs_resize = false;
-
     void renderer_resize_managed_targets()
     {
-        u32 num_man_rt = sb_count(k_managed_render_targets);
+        u32 num_man_rt = sb_count(s_managed_render_targets);
         for (u32 i = 0; i < num_man_rt; ++i)
         {
-            auto& managed_rt = k_managed_render_targets[i];
+            auto& managed_rt = s_managed_render_targets[i];
 
             resource_allocation& res = resource_pool[managed_rt.render_target_handle];
             CHECK_CALL(glDeleteTextures(1, &res.render_target.texture.handle));
@@ -621,39 +620,42 @@ namespace pen
             direct::renderer_create_render_target(managed_rt.tcp, managed_rt.render_target_handle, false);
         }
 
-        sb_free(k_framebuffers);
-        k_framebuffers = nullptr;
+        sb_free(s_framebuffers);
+        s_framebuffers = nullptr;
     }
 
     void direct::renderer_present()
     {
+        static u32  resize_counter = 0;
+        static bool needs_resize = false;
+
         pen_gl_swap_buffers();
 
 #ifndef __linux__
-        if (k_frame > 0)
+        if (s_frame > 0)
             renderer_pop_perf_marker(); // gpu total
 
         gather_perf_markers();
 
         if (g_window_resize)
         {
-            k_needs_resize = true;
-            k_resize_counter = 0;
+            needs_resize = true;
+            resize_counter = 0;
             g_window_resize = 0;
         }
         else
         {
-            k_resize_counter++;
+            resize_counter++;
         }
 
-        if (k_resize_counter > 5 && k_needs_resize)
+        if (resize_counter > 5 && needs_resize)
         {
-            k_resize_counter = 0;
+            resize_counter = 0;
             renderer_resize_managed_targets();
-            k_needs_resize = false;
+            needs_resize = false;
         }
 
-        k_frame++;
+        s_frame++;
 
         // gpu total
         renderer_push_perf_marker(nullptr);
@@ -729,7 +731,7 @@ namespace pen
         shader_link_params slp = params;
         u32                program_index = link_program_internal(0, 0, &slp);
 
-        shader_program* linked_program = &k_shader_programs[program_index];
+        shader_program* linked_program = &s_shader_programs[program_index];
 
         GLuint prog = linked_program->program;
         glUseProgram(linked_program->program);
@@ -854,12 +856,12 @@ namespace pen
 
             u32 so_handle = resource_pool[g_bound_state.stream_out_shader].handle;
 
-            u32 num_shaders = sb_count(k_shader_programs);
+            u32 num_shaders = sb_count(s_shader_programs);
             for (s32 i = 0; i < num_shaders; ++i)
             {
-                if (k_shader_programs[i].so == so_handle)
+                if (s_shader_programs[i].so == so_handle)
                 {
-                    linked_program = &k_shader_programs[i];
+                    linked_program = &s_shader_programs[i];
                     break;
                 }
             }
@@ -893,12 +895,12 @@ namespace pen
                 auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
                 auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
 
-                u32 num_shaders = sb_count(k_shader_programs);
+                u32 num_shaders = sb_count(s_shader_programs);
                 for (s32 i = 0; i < num_shaders; ++i)
                 {
-                    if (k_shader_programs[i].vs == vs_handle && k_shader_programs[i].ps == ps_handle)
+                    if (s_shader_programs[i].vs == vs_handle && s_shader_programs[i].ps == ps_handle)
                     {
-                        linked_program = &k_shader_programs[i];
+                        linked_program = &s_shader_programs[i];
                         break;
                     }
                 }
@@ -906,7 +908,7 @@ namespace pen
                 if (linked_program == nullptr)
                 {
                     u32 index = link_program_internal(vs_handle, ps_handle);
-                    linked_program = &k_shader_programs[index];
+                    linked_program = &s_shader_programs[index];
                 }
 
                 CHECK_CALL(glUseProgram(linked_program->program));
@@ -1102,7 +1104,7 @@ namespace pen
         u32 type;
     };
 
-    static tex_format_map k_tex_format_map[] = {
+    static const tex_format_map k_tex_format_map[] = {
         {PEN_TEX_FORMAT_BGRA8_UNORM, GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE},
         {PEN_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE},
         {PEN_TEX_FORMAT_D24_UNORM_S8_UINT, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8},
@@ -1115,7 +1117,7 @@ namespace pen
         {PEN_TEX_FORMAT_BC1_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_TEXTURE_COMPRESSED},
         {PEN_TEX_FORMAT_BC2_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_TEXTURE_COMPRESSED},
         {PEN_TEX_FORMAT_BC3_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_TEXTURE_COMPRESSED}};
-    static u32 k_num_tex_maps = sizeof(k_tex_format_map) / sizeof(k_tex_format_map[0]);
+    static const u32 k_num_tex_maps = sizeof(k_tex_format_map) / sizeof(k_tex_format_map[0]);
 
     void get_texture_format(u32 pen_format, u32& sized_format, u32& format, u32& type)
     {
@@ -1278,7 +1280,7 @@ namespace pen
             if (track)
             {
                 managed_render_target man_rt = {tcp, resource_slot};
-                sb_push(k_managed_render_targets, man_rt);
+                sb_push(s_managed_render_targets, man_rt);
             }
         }
 
@@ -1308,7 +1310,7 @@ namespace pen
     void direct::renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
                                       u32 colour_face, u32 depth_face)
     {
-        static GLenum k_draw_buffers[MAX_MRT] = {
+        static const GLenum k_draw_buffers[MAX_MRT] = {
             GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
             GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7,
         };
@@ -1326,7 +1328,7 @@ namespace pen
         {
             g_current_state.backbuffer_bound = true;
 
-            CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, k_bb_fbo));
+            CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, s_backbuffer_fbo));
             CHECK_CALL(glDrawBuffer(GL_BACK));
             return;
         }
@@ -1358,10 +1360,10 @@ namespace pen
         hh.add(depth_face);
         hash_id h = hh.end();
 
-        u32 num_fb = sb_count(k_framebuffers);
+        u32 num_fb = sb_count(s_framebuffers);
         for (u32 i = 0; i < num_fb; ++i)
         {
-            auto& fb = k_framebuffers[i];
+            auto& fb = s_framebuffers[i];
 
             if (fb.hash == h)
             {
@@ -1416,7 +1418,7 @@ namespace pen
         new_fb.hash = h;
         new_fb.framebuffer = fbh;
 
-        sb_push(k_framebuffers, new_fb);
+        sb_push(s_framebuffers, new_fb);
     }
 
     extern resolve_resources g_resolve_resources;
@@ -1464,10 +1466,10 @@ namespace pen
         hash[1] = hh.end();
 
         GLuint fbos[2] = {0, 0};
-        u32    num_fb = sb_count(k_framebuffers);
+        u32    num_fb = sb_count(s_framebuffers);
         for (u32 i = 0; i < num_fb; ++i)
         {
-            auto& fb = k_framebuffers[i];
+            auto& fb = s_framebuffers[i];
             for (s32 i = 0; i < 2; ++i)
                 if (fb.hash == hash[i])
                     fbos[i] = fb.framebuffer;
@@ -1492,7 +1494,7 @@ namespace pen
                 }
 
                 framebuffer fb = {hash[i], fbos[i]};
-                sb_push(k_framebuffers, fb);
+                sb_push(s_framebuffers, fb);
             }
         }
 
@@ -1865,17 +1867,17 @@ namespace pen
         // remove from managed rt
         managed_render_target* erased = nullptr;
 
-        u32 num_man_rt = sb_count(k_managed_render_targets);
+        u32 num_man_rt = sb_count(s_managed_render_targets);
         for (s32 i = num_man_rt - 1; i >= 0; --i)
         {
-            if (k_managed_render_targets[i].render_target_handle == render_target)
+            if (s_managed_render_targets[i].render_target_handle == render_target)
                 continue;
 
-            sb_push(erased, k_managed_render_targets[i]);
+            sb_push(erased, s_managed_render_targets[i]);
         }
 
-        sb_free(k_managed_render_targets);
-        k_managed_render_targets = erased;
+        sb_free(s_managed_render_targets);
+        s_managed_render_targets = erased;
 
         resource_allocation& res = resource_pool[render_target];
 
@@ -1951,7 +1953,7 @@ namespace pen
         resource_pool[dest] = resource_pool[src];
     }
 
-    static renderer_info k_renderer_info;
+    static renderer_info s_renderer_info;
     static Str           str_glsl_version;
     static Str           str_gl_version;
     static Str           str_gl_renderer;
@@ -1970,34 +1972,34 @@ namespace pen
         str_gl_renderer = (const c8*)gl_renderer;
         str_gl_vendor = (const c8*)gl_vendor;
 
-        k_renderer_info.shader_version = str_glsl_version.c_str();
-        k_renderer_info.api_version = str_gl_version.c_str();
-        k_renderer_info.renderer = str_gl_renderer.c_str();
-        k_renderer_info.vendor = str_gl_vendor.c_str();
+        s_renderer_info.shader_version = str_glsl_version.c_str();
+        s_renderer_info.api_version = str_gl_version.c_str();
+        s_renderer_info.renderer = str_gl_renderer.c_str();
+        s_renderer_info.vendor = str_gl_vendor.c_str();
 
 #ifdef PEN_GLES3
         // gles base fbo is not 0
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &k_bb_fbo);
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &s_backbuffer_fbo);
 
         // gles doesnt have caps yet, anything in caps is unsupported
 #else
         // opengl binds 0 as default
-        k_bb_fbo = 0;
+        s_backbuffer_fbo = 0;
 
         // opengl caps
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
-        k_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
-        k_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
-        k_renderer_info.caps |= PEN_CAPS_COMPUTE;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
+        s_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
+        s_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
+        s_renderer_info.caps |= PEN_CAPS_COMPUTE;
 #endif
         return PEN_ERR_OK;
     }
 
     const renderer_info& renderer_get_info()
     {
-        return k_renderer_info;
+        return s_renderer_info;
     }
 
     void direct::renderer_shutdown()

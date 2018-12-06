@@ -20,12 +20,11 @@ namespace physics
 
     readable_data g_readable_data;
 
-    static trigger              k_triggers[MAX_TRIGGERS];
-    static trigger_contact_data k_trigger_contacts[MAX_TRIGGERS];
-    static u32                  k_num_triggers = 0;
-
-    static bullet_systems k_bullet_systems;
-    static bullet_objects k_bullet_objects;
+    static trigger              s_triggers[MAX_TRIGGERS];
+    static trigger_contact_data s_trigger_contacts[MAX_TRIGGERS];
+    static u32                  s_num_triggers = 0;
+    static bullet_systems       s_bullet_systems;
+    static bullet_objects       s_bullet_objects;
 
     struct collision_responsors
     {
@@ -408,7 +407,7 @@ namespace physics
 
         if (!ghost)
         {
-            k_bullet_systems.dynamics_world->addRigidBody(body, params.group, params.mask);
+            s_bullet_systems.dynamics_world->addRigidBody(body, params.group, params.mask);
         }
 
         return body;
@@ -416,25 +415,25 @@ namespace physics
 
     void physics_initialise()
     {
-        pen::memory_zero(&k_bullet_objects.entities, sizeof(physics_entity) * MAX_PHYSICS_RESOURCES);
-        k_bullet_objects.num_entities = 0;
+        pen::memory_zero(&s_bullet_objects.entities, sizeof(physics_entity) * MAX_PHYSICS_RESOURCES);
+        s_bullet_objects.num_entities = 0;
 
-        k_bullet_systems.collision_config = new btDefaultCollisionConfiguration();
+        s_bullet_systems.collision_config = new btDefaultCollisionConfiguration();
 
         /// use the default collision dispatcher. For parallel processing you can use a different dispatcher (see
         /// Extras/BulletMultiThreaded)
-        k_bullet_systems.dispatcher = new btCollisionDispatcher(k_bullet_systems.collision_config);
+        s_bullet_systems.dispatcher = new btCollisionDispatcher(s_bullet_systems.collision_config);
 
         /// btDbvtBroadphase is a good general purpose broadphase. You can also try out btAxis3Sweep.
-        k_bullet_systems.olp_cache = new btAxisSweep3(btVector3(-50.0f, -50.0f, -50.0f), btVector3(50.0f, 50.0f, 50.0f));
+        s_bullet_systems.olp_cache = new btAxisSweep3(btVector3(-50.0f, -50.0f, -50.0f), btVector3(50.0f, 50.0f, 50.0f));
 
         /// the default constraint solver. For parallel processing you can use a different solver (see
         /// Extras/BulletMultiThreaded)
 #ifdef MULTIBODY_WORLD
-        k_bullet_systems.solver = new btMultiBodyConstraintSolver;
-        k_bullet_systems.dynamics_world =
-            new btMultiBodyDynamicsWorld(k_bullet_systems.dispatcher, k_bullet_systems.olp_cache, k_bullet_systems.solver,
-                                         k_bullet_systems.collision_config);
+        s_bullet_systems.solver = new btMultiBodyConstraintSolver;
+        s_bullet_systems.dynamics_world =
+            new btMultiBodyDynamicsWorld(s_bullet_systems.dispatcher, s_bullet_systems.olp_cache, s_bullet_systems.solver,
+                                         s_bullet_systems.collision_config);
 #else
         k_bullet_systems.solver = new btSequentialImpulseConstraintSolver;
         k_bullet_systems.dynamics_world =
@@ -442,16 +441,16 @@ namespace physics
                                         k_bullet_systems.collision_config);
 #endif
 
-        k_bullet_systems.dynamics_world->setGravity(btVector3(0, -10, 0));
+        s_bullet_systems.dynamics_world->setGravity(btVector3(0, -10, 0));
     }
 
     void update_output_matrices()
     {
         u32 bb = g_readable_data.current_ouput_backbuffer;
 
-        for (u32 i = 0; i < k_bullet_objects.num_entities; i++)
+        for (u32 i = 0; i < s_bullet_objects.num_entities; i++)
         {
-            physics_entity& entity = k_bullet_objects.entities[i];
+            physics_entity& entity = s_bullet_objects.entities[i];
 
             switch (entity.type)
             {
@@ -474,7 +473,7 @@ namespace physics
 
                 case ENTITY_MULTI_BODY:
                 {
-                    btMultiBody* p_multi = k_bullet_objects.entities[i].mb.multi_body;
+                    btMultiBody* p_multi = s_bullet_objects.entities[i].mb.multi_body;
 
                     if (p_multi)
                     {
@@ -564,31 +563,31 @@ namespace physics
         btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
                                  const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
         {
-            if (k_trigger_contacts[trigger_a].num >= MAX_TRIGGER_CONTACTS)
+            if (s_trigger_contacts[trigger_a].num >= MAX_TRIGGER_CONTACTS)
             {
                 return 0.0f;
             }
 
-            u32 contact_index = k_trigger_contacts[trigger_a].num;
+            u32 contact_index = s_trigger_contacts[trigger_a].num;
 
             // set flags
-            k_triggers[trigger_a].hit_flags |= k_triggers[trigger_b].group;
-            k_triggers[trigger_b].hit_flags |= k_triggers[trigger_a].group;
+            s_triggers[trigger_a].hit_flags |= s_triggers[trigger_b].group;
+            s_triggers[trigger_b].hit_flags |= s_triggers[trigger_a].group;
 
             // set normals
-            k_trigger_contacts[trigger_a].normals[contact_index] =
+            s_trigger_contacts[trigger_a].normals[contact_index] =
                 vec3f(cp.m_normalWorldOnB.x(), cp.m_normalWorldOnB.y(), cp.m_normalWorldOnB.z());
 
             // set position
-            k_trigger_contacts[trigger_a].pos[contact_index] =
+            s_trigger_contacts[trigger_a].pos[contact_index] =
                 vec3f(cp.m_positionWorldOnB.x(), cp.m_positionWorldOnB.y(), cp.m_positionWorldOnB.z());
 
             // set indices
-            k_trigger_contacts[trigger_a].entity[contact_index] = k_triggers[trigger_b].entity_index;
-            k_trigger_contacts[trigger_a].flag[contact_index] = k_triggers[trigger_b].group;
+            s_trigger_contacts[trigger_a].entity[contact_index] = s_triggers[trigger_b].entity_index;
+            s_trigger_contacts[trigger_a].flag[contact_index] = s_triggers[trigger_b].group;
 
             // increment contact index for the next one
-            k_trigger_contacts[trigger_a].num++;
+            s_trigger_contacts[trigger_a].num++;
 
             return 0.0f;
         }
@@ -601,29 +600,29 @@ namespace physics
     {
         // step
         if (!g_readable_data.b_paused)
-            k_bullet_systems.dynamics_world->stepSimulation(dt);
+            s_bullet_systems.dynamics_world->stepSimulation(dt);
 
         // update mats
         update_output_matrices();
 
         // process triggers
-        for (u32 i = 0; i < k_num_triggers; ++i)
+        for (u32 i = 0; i < s_num_triggers; ++i)
         {
-            k_trigger_contacts[i].num = 0;
+            s_trigger_contacts[i].num = 0;
 
-            for (u32 j = 0; j < k_num_triggers; ++j)
+            for (u32 j = 0; j < s_num_triggers; ++j)
             {
                 if (i == j)
                     continue;
 
-                if (k_triggers[i].mask & k_triggers[j].group)
+                if (s_triggers[i].mask & s_triggers[j].group)
                 {
                     trigger_callback tc;
                     tc.trigger_a = i;
                     tc.trigger_b = j;
 
-                    k_bullet_systems.dynamics_world->getCollisionWorld()->contactPairTest(k_triggers[i].collision_object,
-                                                                                          k_triggers[j].collision_object, tc);
+                    s_bullet_systems.dynamics_world->getCollisionWorld()->contactPairTest(s_triggers[i].collision_object,
+                                                                                          s_triggers[j].collision_object, tc);
                 }
             }
         }
@@ -631,15 +630,15 @@ namespace physics
         // update outputs and clear hit flags
         u32 current_ouput_backbuffer = g_readable_data.current_ouput_backbuffer;
 
-        for (u32 i = 0; i < k_num_triggers; ++i)
+        for (u32 i = 0; i < s_num_triggers; ++i)
         {
-            g_readable_data.output_hit_flags[current_ouput_backbuffer][k_triggers[i].entity_index] = k_triggers[i].hit_flags;
-            k_triggers[i].hit_flags = 0;
+            g_readable_data.output_hit_flags[current_ouput_backbuffer][s_triggers[i].entity_index] = s_triggers[i].hit_flags;
+            s_triggers[i].hit_flags = 0;
         }
 
-        for (u32 i = 0; i < k_num_triggers; ++i)
+        for (u32 i = 0; i < s_num_triggers; ++i)
         {
-            g_readable_data.output_contact_data[current_ouput_backbuffer][k_triggers[i].entity_index] = k_trigger_contacts[i];
+            g_readable_data.output_contact_data[current_ouput_backbuffer][s_triggers[i].entity_index] = s_trigger_contacts[i];
         }
 
         // swap the output buffers
@@ -649,8 +648,8 @@ namespace physics
 
     void add_rb_internal(const rigid_body_params& params, u32 resource_slot, bool ghost)
     {
-        k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& entity = k_bullet_objects.entities[resource_slot];
+        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
+        physics_entity& entity = s_bullet_objects.entities[resource_slot];
 
         // add the body to the dynamics world
         btRigidBody* rb = create_rb_internal(entity, params, ghost);
@@ -667,8 +666,8 @@ namespace physics
 
     void add_compound_rb_internal(const compound_rb_params& params, u32 resource_slot)
     {
-        k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
+        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
+        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
 
         btCollisionShape* col = create_collision_shape(next_entity, params.base, &params);
         btCompoundShape*  compound = (btCompoundShape*)col;
@@ -685,8 +684,8 @@ namespace physics
 
     void add_compound_shape_internal(const compound_rb_params& params, u32 resource_slot)
     {
-        k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
+        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
+        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
 
         btCollisionShape* col = create_collision_shape(next_entity, params.base, &params);
         btCompoundShape*  compound = (btCompoundShape*)col;
@@ -696,8 +695,8 @@ namespace physics
 
     void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body)
     {
-        k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
+        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
+        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
 
         /*
         u32 fixed_con = 1;
@@ -754,13 +753,13 @@ namespace physics
         dof6->setAngularUpperLimit(
             btVector3(params.upper_limit_rotation.x, params.upper_limit_rotation.y, params.upper_limit_rotation.z));
 
-        k_bullet_systems.dynamics_world->addConstraint(dof6);
+        s_bullet_systems.dynamics_world->addConstraint(dof6);
         next_entity.constraint.dof6 = dof6;
     }
 
     void add_multibody_internal(const multi_body_params& params, u32 resource_slot)
     {
-        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
+        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
 
         next_entity.mb.multi_body = create_multirb_internal(next_entity, params);
     }
@@ -769,16 +768,16 @@ namespace physics
     {
         PEN_ASSERT(params.rb_indices[0] > -1);
 
-        k_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, k_bullet_objects.num_entities);
-        physics_entity& next_entity = k_bullet_objects.entities[resource_slot];
+        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
+        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
 
-        btRigidBody* rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
+        btRigidBody* rb = s_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
 
         btHingeConstraint* hinge = new btHingeConstraint(*rb, btVector3(params.pivot.x, params.pivot.y, params.pivot.z),
                                                          btVector3(params.axis.x, params.axis.y, params.axis.z));
         hinge->setLimit(params.lower_limit_rotation.x, params.upper_limit_rotation.x);
 
-        k_bullet_systems.dynamics_world->addConstraint(hinge);
+        s_bullet_systems.dynamics_world->addConstraint(hinge);
 
         next_entity.constraint.type = CONSTRAINT_HINGE;
         next_entity.constraint.hinge = hinge;
@@ -786,7 +785,7 @@ namespace physics
 
     void add_constraint_internal(const constraint_params& params, u32 resource_slot)
     {
-        k_bullet_objects.entities[resource_slot].type = ENTITY_CONSTRAINT;
+        s_bullet_objects.entities[resource_slot].type = ENTITY_CONSTRAINT;
 
         switch (params.type)
         {
@@ -811,10 +810,10 @@ namespace physics
                 btRigidBody* p_fixed = nullptr;
 
                 if (params.rb_indices[0] != -1)
-                    p_rb = k_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
+                    p_rb = s_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
 
                 if (params.rb_indices[1] != -1)
-                    p_fixed = k_bullet_objects.entities[params.rb_indices[1]].rb.rigid_body;
+                    p_fixed = s_bullet_objects.entities[params.rb_indices[1]].rb.rigid_body;
 
                 PEN_ASSERT(p_rb || p_fixed);
 
@@ -832,32 +831,32 @@ namespace physics
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setLinearVelocity(bt_v3);
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setLinearVelocity(bt_v3);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_angular_velocity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setAngularVelocity(bt_v3);
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setAngularVelocity(bt_v3);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_linear_factor_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setLinearFactor(bt_v3);
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setLinearFactor(bt_v3);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_angular_factor_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setAngularFactor(bt_v3);
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setAngularFactor(bt_v3);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_transform_internal(const set_transform_params& cmd)
@@ -872,12 +871,12 @@ namespace physics
         bt_trans.setOrigin(bt_v3);
         bt_trans.setRotation(bt_quat);
 
-        btRigidBody* rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = s_bullet_objects.entities[cmd.object_index].rb.rigid_body;
 
         if (rb)
         {
-            k_bullet_objects.entities[cmd.object_index].rb.rigid_body->getMotionState()->setWorldTransform(bt_trans);
-            k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setCenterOfMassTransform(bt_trans);
+            s_bullet_objects.entities[cmd.object_index].rb.rigid_body->getMotionState()->setWorldTransform(bt_trans);
+            s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setCenterOfMassTransform(bt_trans);
         }
     }
 
@@ -885,36 +884,36 @@ namespace physics
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setGravity(bt_v3);
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate();
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setGravity(bt_v3);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate();
     }
 
     void set_friction_internal(const set_float_params& cmd)
     {
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->setFriction(cmd.data);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setFriction(cmd.data);
     }
 
     void set_hinge_motor_internal(const set_v3_params& cmd)
     {
-        btHingeConstraint* p_hinge = k_bullet_objects.entities[cmd.object_index].constraint.hinge;
+        btHingeConstraint* p_hinge = s_bullet_objects.entities[cmd.object_index].constraint.hinge;
         p_hinge->enableAngularMotor(cmd.data.x == 0.0f ? false : true, cmd.data.y, cmd.data.z);
     }
 
     void set_button_motor_internal(const set_v3_params& cmd)
     {
-        btGeneric6DofConstraint* dof6 = k_bullet_objects.entities[cmd.object_index].constraint.dof6;
+        btGeneric6DofConstraint* dof6 = s_bullet_objects.entities[cmd.object_index].constraint.dof6;
 
         btTranslationalLimitMotor* motor = dof6->getTranslationalLimitMotor();
         motor->m_enableMotor[1] = cmd.data.x == 0.0f ? false : true;
         motor->m_targetVelocity = btVector3(0.0f, cmd.data.y, 0.0f);
         motor->m_maxMotorForce = btVector3(0.0f, cmd.data.z, 0.0f);
 
-        k_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_multi_joint_motor_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBodyJointMotor* p_joint_motor = k_bullet_objects.entities[cmd.multi_index].mb.joint_motors.at(cmd.link_index);
+        btMultiBodyJointMotor* p_joint_motor = s_bullet_objects.entities[cmd.multi_index].mb.joint_motors.at(cmd.link_index);
 
         p_joint_motor->setVelocityTarget(cmd.data.x);
         p_joint_motor->setMaxAppliedImpulse(cmd.data.y);
@@ -922,7 +921,7 @@ namespace physics
 
     void set_multi_joint_pos_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody* p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = s_bullet_objects.entities[cmd.multi_index].mb.multi_body;
 
         if (1)
         {
@@ -941,33 +940,33 @@ namespace physics
 
     void set_multi_base_velocity_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody* p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = s_bullet_objects.entities[cmd.multi_index].mb.multi_body;
 
         p_multi->setBaseVel(btVector3(cmd.data.x, cmd.data.y, cmd.data.z));
     }
 
     void set_multi_base_pos_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody* p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = s_bullet_objects.entities[cmd.multi_index].mb.multi_body;
 
         p_multi->setBasePos(btVector3(cmd.data.x, cmd.data.y, cmd.data.z));
     }
 
     void sync_rigid_bodies_internal(const sync_rb_params& cmd)
     {
-        if (k_bullet_objects.entities[cmd.master].type == ENTITY_RIGID_BODY)
+        if (s_bullet_objects.entities[cmd.master].type == ENTITY_RIGID_BODY)
         {
-            btRigidBody* p_rb = k_bullet_objects.entities[cmd.master].rb.rigid_body;
-            btRigidBody* p_rb_slave = k_bullet_objects.entities[cmd.slave].rb.rigid_body;
+            btRigidBody* p_rb = s_bullet_objects.entities[cmd.master].rb.rigid_body;
+            btRigidBody* p_rb_slave = s_bullet_objects.entities[cmd.slave].rb.rigid_body;
 
             btTransform master = p_rb->getWorldTransform();
             p_rb_slave->setWorldTransform(master);
         }
 
-        if (k_bullet_objects.entities[cmd.master].type == ENTITY_MULTI_BODY && cmd.link_index != -1)
+        if (s_bullet_objects.entities[cmd.master].type == ENTITY_MULTI_BODY && cmd.link_index != -1)
         {
-            btMultiBody* p_mb = k_bullet_objects.entities[cmd.master].mb.multi_body;
-            btRigidBody* p_rb_slave = k_bullet_objects.entities[cmd.slave].rb.rigid_body;
+            btMultiBody* p_mb = s_bullet_objects.entities[cmd.master].mb.multi_body;
+            btRigidBody* p_rb_slave = s_bullet_objects.entities[cmd.slave].rb.rigid_body;
 
             btTransform master = p_mb->getLink(cmd.link_index).m_collider->getWorldTransform();
             p_rb_slave->setWorldTransform(master);
@@ -976,18 +975,18 @@ namespace physics
 
     void sync_rigid_body_velocity_internal(const sync_rb_params& cmd)
     {
-        btVector3 master_vel = k_bullet_objects.entities[cmd.master].rb.rigid_body->getAngularVelocity();
+        btVector3 master_vel = s_bullet_objects.entities[cmd.master].rb.rigid_body->getAngularVelocity();
 
-        k_bullet_objects.entities[cmd.slave].rb.rigid_body->setAngularVelocity(master_vel);
+        s_bullet_objects.entities[cmd.slave].rb.rigid_body->setAngularVelocity(master_vel);
     }
 
     void sync_compound_multi_internal(const sync_compound_multi_params& cmd)
     {
-        btMultiBody*     p_multi = k_bullet_objects.entities[cmd.multi_index].mb.multi_body;
-        btCompoundShape* p_compound = k_bullet_objects.entities[cmd.compound_index].compound_shape;
-        btRigidBody*     p_rb = k_bullet_objects.entities[cmd.compound_index].rb.rigid_body;
+        btMultiBody*     p_multi = s_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btCompoundShape* p_compound = s_bullet_objects.entities[cmd.compound_index].compound_shape;
+        btRigidBody*     p_rb = s_bullet_objects.entities[cmd.compound_index].rb.rigid_body;
 
-        u32 num_base_compound_shapes = k_bullet_objects.entities[cmd.compound_index].num_base_compound_shapes;
+        u32 num_base_compound_shapes = s_bullet_objects.entities[cmd.compound_index].num_base_compound_shapes;
 
         PEN_ASSERT(p_multi);
         PEN_ASSERT(p_compound);
@@ -1042,10 +1041,10 @@ namespace physics
 
     void add_p2p_constraint_internal(const add_p2p_constraint_params& cmd, u32 resource_slot)
     {
-        physics_entity* entity = &k_bullet_objects.entities[resource_slot];
+        physics_entity* entity = &s_bullet_objects.entities[resource_slot];
 
-        btRigidBody* rb = k_bullet_objects.entities[cmd.entity_index].rb.rigid_body;
-        btMultiBody* mb = k_bullet_objects.entities[cmd.entity_index].mb.multi_body;
+        btRigidBody* rb = s_bullet_objects.entities[cmd.entity_index].rb.rigid_body;
+        btMultiBody* mb = s_bullet_objects.entities[cmd.entity_index].mb.multi_body;
 
         btVector3 constrain_pos = btVector3(cmd.position.x, cmd.position.y, cmd.position.z);
 
@@ -1059,7 +1058,7 @@ namespace physics
 
             btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*rb, local_pivot);
 
-            k_bullet_systems.dynamics_world->addConstraint(p2p, true);
+            s_bullet_systems.dynamics_world->addConstraint(p2p, true);
 
             btScalar mousePickClamping = 0.f;
             p2p->m_setting.m_impulseClamp = mousePickClamping;
@@ -1079,7 +1078,7 @@ namespace physics
 
             p2p->setMaxAppliedImpulse(2);
 
-            k_bullet_systems.dynamics_world->addMultiBodyConstraint(p2p);
+            s_bullet_systems.dynamics_world->addMultiBodyConstraint(p2p);
 
             entity->constraint.point_multi = p2p;
             entity->constraint.type = CONSTRAINT_P2P_MULTI;
@@ -1088,7 +1087,7 @@ namespace physics
 
     void set_p2p_constraint_pos_internal(const set_v3_params& cmd)
     {
-        physics_entity& pe = k_bullet_objects.entities[cmd.object_index];
+        physics_entity& pe = s_bullet_objects.entities[cmd.object_index];
 
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
@@ -1108,34 +1107,34 @@ namespace physics
 
     void set_damping_internal(const set_v3_params& cmd)
     {
-        btRigidBody* rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = s_bullet_objects.entities[cmd.object_index].rb.rigid_body;
 
         rb->setDamping(cmd.data.x, cmd.data.y);
     }
 
     void set_group_internal(const set_group_params& cmd)
     {
-        btRigidBody* rb = k_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = s_bullet_objects.entities[cmd.object_index].rb.rigid_body;
 
         if (rb)
         {
-            k_bullet_systems.dynamics_world->removeRigidBody(rb);
-            k_bullet_systems.dynamics_world->addRigidBody(rb, cmd.group, cmd.mask);
+            s_bullet_systems.dynamics_world->removeRigidBody(rb);
+            s_bullet_systems.dynamics_world->addRigidBody(rb, cmd.group, cmd.mask);
         }
     }
 
     void add_collision_watcher_internal(const collision_trigger_data& trigger_data)
     {
-        physics_entity& pe = k_bullet_objects.entities[trigger_data.entity_index];
+        physics_entity& pe = s_bullet_objects.entities[trigger_data.entity_index];
 
         if (pe.type == ENTITY_RIGID_BODY)
         {
-            k_triggers[k_num_triggers].collision_object = (btCollisionObject*)pe.rb.rigid_body;
-            k_triggers[k_num_triggers].group = trigger_data.group;
-            k_triggers[k_num_triggers].mask = trigger_data.mask;
-            k_triggers[k_num_triggers].hit_flags = 0;
-            k_triggers[k_num_triggers].entity_index = trigger_data.entity_index;
-            k_num_triggers++;
+            s_triggers[s_num_triggers].collision_object = (btCollisionObject*)pe.rb.rigid_body;
+            s_triggers[s_num_triggers].group = trigger_data.group;
+            s_triggers[s_num_triggers].mask = trigger_data.mask;
+            s_triggers[s_num_triggers].hit_flags = 0;
+            s_triggers[s_num_triggers].entity_index = trigger_data.entity_index;
+            s_num_triggers++;
         }
     }
 
@@ -1143,8 +1142,8 @@ namespace physics
     {
         // todo test this function still works after refactor
 
-        physics_entity& compound = k_bullet_objects.entities[params.compound];
-        physics_entity& pe = k_bullet_objects.entities[params.rb];
+        physics_entity& compound = s_bullet_objects.entities[params.compound];
+        physics_entity& pe = s_bullet_objects.entities[params.rb];
 
         rigid_body_entity rb = pe.rb;
 
@@ -1166,7 +1165,7 @@ namespace physics
 
                 compound.compound_shape->removeChildShapeByIndex(params.detach_index);
 
-                k_bullet_systems.dynamics_world->addRigidBody(rb.rigid_body, pe.group, pe.mask);
+                s_bullet_systems.dynamics_world->addRigidBody(rb.rigid_body, pe.group, pe.mask);
 
                 rb.rigid_body->setWorldTransform(base * compound_child);
             }
@@ -1186,24 +1185,24 @@ namespace physics
 
                 compound.compound_shape->addChildShape(offset, rb.rigid_body->getCollisionShape());
 
-                k_bullet_systems.dynamics_world->removeRigidBody(rb.rigid_body);
+                s_bullet_systems.dynamics_world->removeRigidBody(rb.rigid_body);
             }
         }
     }
 
     void release_entity_internal(u32 entity_index)
     {
-        if (k_bullet_objects.entities[entity_index].type == ENTITY_RIGID_BODY)
+        if (s_bullet_objects.entities[entity_index].type == ENTITY_RIGID_BODY)
         {
             remove_from_world_internal(entity_index);
-            delete k_bullet_objects.entities[entity_index].rb.rigid_body;
+            delete s_bullet_objects.entities[entity_index].rb.rigid_body;
         }
-        else if (k_bullet_objects.entities[entity_index].type == ENTITY_CONSTRAINT)
+        else if (s_bullet_objects.entities[entity_index].type == ENTITY_CONSTRAINT)
         {
-            btTypedConstraint* generic_constraint = k_bullet_objects.entities[entity_index].constraint.generic;
+            btTypedConstraint* generic_constraint = s_bullet_objects.entities[entity_index].constraint.generic;
 
             if (generic_constraint)
-                k_bullet_systems.dynamics_world->removeConstraint(generic_constraint);
+                s_bullet_systems.dynamics_world->removeConstraint(generic_constraint);
 
             delete generic_constraint;
         }
@@ -1211,13 +1210,13 @@ namespace physics
 
     void remove_from_world_internal(u32 entity_index)
     {
-        k_bullet_systems.dynamics_world->removeRigidBody(k_bullet_objects.entities[entity_index].rb.rigid_body);
+        s_bullet_systems.dynamics_world->removeRigidBody(s_bullet_objects.entities[entity_index].rb.rigid_body);
     }
 
     void add_to_world_internal(u32 entity_index)
     {
-        physics_entity& pe = k_bullet_objects.entities[entity_index];
-        k_bullet_systems.dynamics_world->addRigidBody(pe.rb.rigid_body, pe.group, pe.mask);
+        physics_entity& pe = s_bullet_objects.entities[entity_index];
+        s_bullet_systems.dynamics_world->addRigidBody(pe.rb.rigid_body, pe.group, pe.mask);
     }
 
     void cast_ray_internal(const ray_cast_params& rcp)
@@ -1229,7 +1228,7 @@ namespace physics
 
         btVector3 pick_pos = btVector3(0.0, 0.0, 0.0);
         s32       user_index = -1;
-        k_bullet_systems.dynamics_world->rayTest(from, to, ray_callback);
+        s_bullet_systems.dynamics_world->rayTest(from, to, ray_callback);
         if (ray_callback.hasHit())
         {
             pick_pos = ray_callback.m_hitPointWorld;

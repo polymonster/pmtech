@@ -78,7 +78,8 @@ namespace pen
         u32 frame;
         Str name;
     };
-    gpu_perf_result* k_perf_results = nullptr;
+    static gpu_perf_result* s_perf_results = nullptr;
+    a_u64 g_gpu_total;
 
     struct perf_marker
     {
@@ -137,18 +138,18 @@ namespace pen
         u32 buf = 0;
         u32 depth = 0;
     };
-    static perf_marker_set k_perf;
+    static perf_marker_set s_perf;
 
     void insert_marker(const c8* name, bool end = false)
     {
         if (s_frame == 0)
             return;
 
-        u32& buf = k_perf.buf;
-        u32& pos = k_perf.pos[buf];
-        u32& depth = k_perf.depth;
+        u32& buf = s_perf.buf;
+        u32& pos = s_perf.pos[buf];
+        u32& depth = s_perf.depth;
 
-        if (pos >= sb_count(k_perf.markers[buf]))
+        if (pos >= sb_count(s_perf.markers[buf]))
         {
             // push a new marker
             perf_marker m;
@@ -157,32 +158,32 @@ namespace pen
             CHECK_CALL(s_device->CreateQuery(&desc, &m.begin));
             CHECK_CALL(s_device->CreateQuery(&desc, &m.end));
 
-            sb_push(k_perf.markers[buf], m);
+            sb_push(s_perf.markers[buf], m);
         }
 
         if (end)
         {
-            u32 pop_pos = k_perf.stack.pop();
+            u32 pop_pos = s_perf.stack.pop();
 
-            PEN_ASSERT(k_perf.markers[buf][pop_pos].issued == 1);
+            PEN_ASSERT(s_perf.markers[buf][pop_pos].issued == 1);
 
-            s_immediate_context->End(k_perf.markers[buf][pop_pos].end);
-            k_perf.markers[buf][pop_pos].issued++;
+            s_immediate_context->End(s_perf.markers[buf][pop_pos].end);
+            s_perf.markers[buf][pop_pos].issued++;
         }
         else
         {
             // queries have taken longer than 1 frame to obtain results
             // increase num_marker_buffers to avoid losing data
-            PEN_ASSERT(k_perf.markers[buf][pos].issued == 0);
+            PEN_ASSERT(s_perf.markers[buf][pos].issued == 0);
 
-            k_perf.stack.push(pos);
+            s_perf.stack.push(pos);
 
-            k_perf.markers[buf][pos].name = name;
-            k_perf.markers[buf][pos].depth = depth;
-            k_perf.markers[buf][pos].frame = s_frame;
+            s_perf.markers[buf][pos].name = name;
+            s_perf.markers[buf][pos].depth = depth;
+            s_perf.markers[buf][pos].frame = s_frame;
 
-            s_immediate_context->End(k_perf.markers[buf][pos].begin);
-            k_perf.markers[buf][pos].issued++;
+            s_immediate_context->End(s_perf.markers[buf][pos].begin);
+            s_perf.markers[buf][pos].issued++;
 
             ++pos;
         }
@@ -193,7 +194,7 @@ namespace pen
         if (s_frame == 0)
             return;
 
-        u32& depth = k_perf.depth;
+        u32& depth = s_perf.depth;
 
         insert_marker(name);
 
@@ -202,7 +203,7 @@ namespace pen
 
     void direct::renderer_pop_perf_marker()
     {
-        u32& depth = k_perf.depth;
+        u32& depth = s_perf.depth;
         --depth;
 
         insert_marker("end", true);
@@ -216,22 +217,22 @@ namespace pen
             for (u32 i = 0; i < perf_marker_set::num_marker_buffers; ++i)
             {
                 static D3D11_QUERY_DESC desc = {(D3D11_QUERY)PEN_QUERY_TIMESTAMP_DISJOINT, 0};
-                CHECK_CALL(s_device->CreateQuery(&desc, &k_perf.disjoint_query[i]));
+                CHECK_CALL(s_device->CreateQuery(&desc, &s_perf.disjoint_query[i]));
             }
 
-            s_immediate_context->Begin(k_perf.disjoint_query[k_perf.buf]);
+            s_immediate_context->Begin(s_perf.disjoint_query[s_perf.buf]);
 
             return;
         }
 
-        s_immediate_context->End(k_perf.disjoint_query[k_perf.buf]);
+        s_immediate_context->End(s_perf.disjoint_query[s_perf.buf]);
 
         // read previous buffers
         for (u32 bb = 0; bb < perf_marker_set::num_marker_buffers; ++bb)
         {
             D3D10_QUERY_DATA_TIMESTAMP_DISJOINT disjoint;
             bool                                frame_ready = false;
-            if (s_immediate_context->GetData(k_perf.disjoint_query[bb], &disjoint, sizeof(disjoint), 0) != S_FALSE)
+            if (s_immediate_context->GetData(s_perf.disjoint_query[bb], &disjoint, sizeof(disjoint), 0) != S_FALSE)
             {
                 frame_ready = true;
             }
@@ -239,9 +240,9 @@ namespace pen
             if (frame_ready)
             {
                 u32 num_complete = 0;
-                for (u32 i = 0; i < k_perf.pos[bb]; ++i)
+                for (u32 i = 0; i < s_perf.pos[bb]; ++i)
                 {
-                    perf_marker& m = k_perf.markers[bb][i];
+                    perf_marker& m = s_perf.markers[bb][i];
                     if (m.issued == 2)
                     {
                         if (!disjoint.Disjoint)
@@ -259,6 +260,11 @@ namespace pen
 
                                     // PEN_LOG("%s : %llu\n", m.name, res);
 
+                                    if (i == 0)
+                                    {
+                                        g_gpu_total = res;
+                                    }
+
                                     m.issued = 0;
 
                                     ++num_complete;
@@ -268,17 +274,17 @@ namespace pen
                     }
                 }
 
-                if (num_complete == k_perf.pos[bb])
+                if (num_complete == s_perf.pos[bb])
                 {
-                    k_perf.pos[bb] = 0;
-                    k_perf.depth = 0;
+                    s_perf.pos[bb] = 0;
+                    s_perf.depth = 0;
                 }
             }
         }
 
         // swap buffers
-        k_perf.buf = (k_perf.buf + 1) % k_perf.num_marker_buffers;
-        s_immediate_context->Begin(k_perf.disjoint_query[k_perf.buf]);
+        s_perf.buf = (s_perf.buf + 1) % s_perf.num_marker_buffers;
+        s_immediate_context->Begin(s_perf.disjoint_query[s_perf.buf]);
     }
 
     //--------------------------------------------------------------------------------------
@@ -418,7 +424,7 @@ namespace pen
         u32                     resource_index;
         texture_creation_params tcp;
     };
-    static managed_rt* k_managed_render_targets;
+    static managed_rt* s_managed_render_targets;
 
     context_state g_context;
 
@@ -516,8 +522,8 @@ namespace pen
         }
     }
 
-    static u32  k_resize_counter = 0;
-    static bool k_needs_resize = 0;
+    static u32  s_resize_counter = 0;
+    static bool s_needs_resize = 0;
 
     void direct::renderer_present()
     {
@@ -547,30 +553,30 @@ namespace pen
 
             create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
 
-            k_needs_resize = true;
-            k_resize_counter = 0;
+            s_needs_resize = true;
+            s_resize_counter = 0;
             g_window_resize = 0;
         }
         else
         {
-            k_resize_counter++;
+            s_resize_counter++;
         }
 
-        if (k_needs_resize && k_resize_counter > 5)
+        if (s_needs_resize && s_resize_counter > 5)
         {
             // recreate dynamic buffers
-            u32 num_man_rt = sb_count(k_managed_render_targets);
+            u32 num_man_rt = sb_count(s_managed_render_targets);
             for (u32 i = 0; i < num_man_rt; ++i)
             {
-                auto& rt = k_managed_render_targets[i];
+                auto& rt = s_managed_render_targets[i];
 
                 release_render_target_internal(rt.resource_index);
 
                 renderer_create_render_target(rt.tcp, rt.resource_index, false);
             }
 
-            k_needs_resize = 0;
-            k_resize_counter = 0;
+            s_needs_resize = 0;
+            s_resize_counter = 0;
         }
 
         s_frame++;
@@ -925,7 +931,7 @@ namespace pen
             if (track)
             {
                 managed_rt man_rt = {resource_index, tcp};
-                sb_push(k_managed_render_targets, man_rt);
+                sb_push(s_managed_render_targets, man_rt);
             }
         }
 
@@ -1320,17 +1326,17 @@ namespace pen
             // remove from managed rt
             managed_rt* erased = nullptr;
 
-            u32 num_man_rt = sb_count(k_managed_render_targets);
+            u32 num_man_rt = sb_count(s_managed_render_targets);
             for (s32 i = num_man_rt - 1; i >= 0; --i)
             {
-                if (k_managed_render_targets[i].resource_index == render_target)
+                if (s_managed_render_targets[i].resource_index == render_target)
                     continue;
 
-                sb_push(erased, k_managed_render_targets[i]);
+                sb_push(erased, s_managed_render_targets[i]);
             }
 
-            sb_free(k_managed_render_targets);
-            k_managed_render_targets = erased;
+            sb_free(s_managed_render_targets);
+            s_managed_render_targets = erased;
         }
 
         render_target_internal* rt = resource_pool[render_target].render_target;
@@ -1757,7 +1763,7 @@ namespace pen
             s_device_1->Release();
     }
 
-    static renderer_info k_renderer_info;
+    static renderer_info s_renderer_info;
     static Str           str_hlsl_version;
     static Str           str_d3d_version;
     static Str           str_d3d_renderer;
@@ -1767,27 +1773,27 @@ namespace pen
     {
         // todo renderer caps
 
-        k_renderer_info.shader_version = str_hlsl_version.c_str();
-        k_renderer_info.api_version = str_d3d_version.c_str();
-        k_renderer_info.renderer = str_d3d_renderer.c_str();
-        k_renderer_info.vendor = str_d3d_vendor.c_str();
+        s_renderer_info.shader_version = str_hlsl_version.c_str();
+        s_renderer_info.api_version = str_d3d_version.c_str();
+        s_renderer_info.renderer = str_d3d_renderer.c_str();
+        s_renderer_info.vendor = str_d3d_vendor.c_str();
 
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC6;
-        k_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC7;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC6;
+        s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC7;
 
-        k_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
-        k_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
-        k_renderer_info.caps |= PEN_CAPS_COMPUTE;
+        s_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
+        s_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
+        s_renderer_info.caps |= PEN_CAPS_COMPUTE;
     }
 
     const renderer_info& renderer_get_info()
     {
-        return k_renderer_info;
+        return s_renderer_info;
     }
 
     const c8* renderer_get_shader_platform()
