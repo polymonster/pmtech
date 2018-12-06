@@ -156,8 +156,7 @@ ps_output ps_light(vs_output input)
 }
 
 pmfx:
-{    
-
+{
     "directional_light":
     {
         "vs": "vs_directional_light",

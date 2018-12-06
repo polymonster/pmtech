@@ -48,13 +48,16 @@ namespace
     {
         "forward_render",
         "forward_render_zprepass",
-        "deferred"
+        "deferred_render",
+        "deferred_render_msaa"
     };
     s32 render_method = 0;
     
+    f32 user_thread_time = 0.0f;
+    
     void update_demo(ces::entity_scene* scene, f32 dt)
     {
-        ImGui::Begin("Lighting");
+        ImGui::Begin("Lighting", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::InputFloat("Light Radius", &light_radius);
         ImGui::SliderInt("Lights", &num_lights, 0, max_lights);
         
@@ -62,6 +65,17 @@ namespace
         {
             pmfx::set_view_set(render_methods[render_method]);
         }
+        
+        f32 render_gpu = 0.0f;
+        f32 render_cpu = 0.0f;
+        pen::renderer_get_present_time(render_cpu, render_gpu);
+        
+        ImGui::Separator();
+        ImGui::Text("Stats:");
+        ImGui::Text("User Thread: %2.2f ms", user_thread_time);
+        ImGui::Text("Render Thread: %2.2f ms", render_cpu);
+        ImGui::Text("GPU: %2.2f ms", render_gpu);
+        ImGui::Separator();
         
         ImGui::End();
         
@@ -137,7 +151,7 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             f32 rx = 0.1f + (f32)(rand()%255) / 255.0f * pillar_size;
             f32 ry = 0.1f + (f32)(rand()%255) / 255.0f * pillar_size * 4.0f;
             f32 rz = 0.1f + (f32)(rand()%255) / 255.0f * pillar_size;
-            
+
             pos.y = ry;
             
             u32 pillar = get_new_node(scene);
@@ -296,6 +310,7 @@ PEN_TRV pen::user_entry(void* params)
         put::dev_ui::render();
 
         frame_time = pen::timer_elapsed_ms(frame_timer);
+        user_thread_time = frame_time;
 
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();

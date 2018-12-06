@@ -169,6 +169,7 @@ float point_light_attenuation(
 {
     float d = length( world_pos.xyz - light_pos_radius.xyz );
     float r = light_pos_radius.w;
+    //d = max(d - r, 0.0);
     
     float denom = d/r + 1.0;
     float attenuation = 1.0 / (denom*denom);
@@ -203,14 +204,14 @@ float point_light_attenuation_cutoff(
     float denom = d/r + 1.0;
     float attenuation = 1.0 / (denom*denom);
     
-    float cutoff = 0.01;
+    float cutoff = 0.2;
         
     // scale and bias attenuation such that:
     // attenuation == 0 at extent of max influence
     // attenuation == 1 when d == 0
     attenuation = (attenuation - cutoff) / (1.0 - cutoff);
     attenuation = max(attenuation, 0.0);
-    
+
     return attenuation;
 }
 

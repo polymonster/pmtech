@@ -412,6 +412,7 @@ namespace pen
     void renderer_window_resize(s32 width, s32 height);
     void renderer_consume_cmd_buffer();
     void renderer_update_queries();
+    void renderer_get_present_time(f32& cpu_ms, f32& gpu_ms);
 
     namespace direct
     {

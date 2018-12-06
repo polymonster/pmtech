@@ -10,9 +10,11 @@
 
 namespace pen
 {
-    u32 put_pos = 0;
-    u32 get_pos = 0;
-    u32 commands_this_frame = 0;
+    static u32 put_pos = 0;
+    static u32 get_pos = 0;
+    static u32 commands_this_frame = 0;
+    static u32 present_timer;
+    static f32 present_time;
 
 #define MAX_COMMANDS (1 << 18)
 #define INC_WRAP(V)                                                                                                          \
@@ -226,7 +228,15 @@ namespace pen
 
     } deferred_cmd;
 
-    deferred_cmd cmd_buffer[MAX_COMMANDS];
+    static deferred_cmd cmd_buffer[MAX_COMMANDS];
+    
+    void renderer_get_present_time(f32& cpu_ms, f32& gpu_ms)
+    {
+        extern a_u64 g_gpu_total;
+        
+        cpu_ms = present_time;
+        gpu_ms = (f32)g_gpu_total;
+    }
 
     void exec_cmd(const deferred_cmd& cmd)
     {
@@ -238,6 +248,8 @@ namespace pen
 
             case CMD_PRESENT:
                 direct::renderer_present();
+                present_time = timer_elapsed_ms(present_timer);
+                timer_start(present_timer);
                 break;
 
             case CMD_LOAD_SHADER:
@@ -617,6 +629,12 @@ namespace pen
         direct::renderer_initialise(user_data, bb_res, bb_depth_res);
 
         init_resolve_resources();
+        
+        // create present timer for cpu perf result
+        present_timer = timer_create("renderer_present_timer");
+        timer_start(present_timer);
+        
+        present_time = 0.0f;
 
         if (wait_for_jobs)
             renderer_wait_for_jobs();

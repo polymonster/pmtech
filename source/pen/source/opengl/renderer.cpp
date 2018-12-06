@@ -28,8 +28,8 @@ a_u8 g_window_resize(0);
 
 namespace
 {
-    static u64 k_frame = 0;
-    GLint      k_bb_fbo = -1;
+    u64     k_frame = 0;
+    GLint   k_bb_fbo = -1;
 
 #define GL_DEBUG_LEVEL 0
 
@@ -107,6 +107,8 @@ namespace pen
     //--------------------------------------------------------------------------------------
     //  PERF MARKER API
     //--------------------------------------------------------------------------------------
+    a_u64 g_gpu_total;
+    
     struct gpu_perf_result
     {
         u64 elapsed;
@@ -285,8 +287,9 @@ namespace pen
 
                 desc.append(" : ");
                 desc.appendf("%llu", p.elapsed);
-
-                // PEN_LOG("%s", desc.c_str());
+                
+                if(i == 0)
+                    g_gpu_total = p.elapsed;
             }
 
             k_perf.pos[bb] = 0;
@@ -301,7 +304,7 @@ namespace pen
 //--------------------------------------------------------------------------------------
 #define MAX_VERTEX_BUFFERS 4
 #define MAX_VERTEX_ATTRIBUTES 16
-#define MAX_UNIFORM_BUFFERS 16
+#define MAX_UNIFORM_BUFFERS 32
 #define MAX_SHADER_TEXTURES 32
 
     struct context_state
