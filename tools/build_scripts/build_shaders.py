@@ -1312,6 +1312,8 @@ def parse_pmfx(filename, root):
                             ptype = "input_int"
                         permutation_options[key] = {"val": pow(2, tp[0]), "type": ptype}
                         mask = pow(2, tp[0])
+                        if tp[0] == 31:
+                            print(mask)
                         permutation_option_mask += mask
                         shader_c_struct += "#define " + technique.upper() + "_" + key + " " + str(mask) + "\n"
                     del technique_block["permutations"]

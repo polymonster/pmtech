@@ -35,11 +35,14 @@ namespace
 #define NON_STRICT_NAME(V)
 #define JSON_NAME NON_STRICT_NAME
 
-    union json_value {
+    union json_value 
+    {
         bool        b;
         u32         u;
         s32         s;
         f32         f;
+        u64         ul;
+        s64         sl;
         const c8*   str;
         json_object object;
     };
@@ -51,7 +54,9 @@ namespace
         JSON_S32,
         JSON_F32,
         JSON_U32_HEX,
-        JSON_BOOL
+        JSON_BOOL,
+        JSON_U64,
+        JSON_S64
     };
 
     struct enumerate_params
@@ -137,20 +142,18 @@ namespace
                 case JSON_STR:
                     result.str = js;
                     break;
+
                 case JSON_U32:
-                {
-                    c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                    result.u = atoi(tok_str);
-                    pen::memory_free(tok_str);
-                }
-                break;
                 case JSON_S32:
+                case JSON_U64:
+                case JSON_S64:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                    result.s = atol(tok_str);
+                    result.ul = _atoi64(tok_str);
                     pen::memory_free(tok_str);
                 }
                 break;
+                
                 case JSON_U32_HEX:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
@@ -655,7 +658,7 @@ namespace pen
         return *this;
     }
 
-    Str json::as_str(const c8* default_value)
+    Str json::as_str(const c8* default_value) const
     {
         json_value jv;
         if (as_value(jv, m_internal_object, JSON_STR))
@@ -664,7 +667,7 @@ namespace pen
         return default_value;
     }
 
-    const c8* json::as_cstr(const c8* default_value)
+    const c8* json::as_cstr(const c8* default_value) const
     {
         json_value jv;
         if (as_value(jv, m_internal_object, JSON_STR))
@@ -673,7 +676,7 @@ namespace pen
         return default_value;
     }
 
-    hash_id json::as_hash_id(hash_id default_value)
+    hash_id json::as_hash_id(hash_id default_value)const
     {
         const c8* cstr = as_cstr();
         if (!cstr)
@@ -682,7 +685,7 @@ namespace pen
         return PEN_HASH(cstr);
     }
 
-    u32 json::as_u32(u32 default_value)
+    u32 json::as_u32(u32 default_value) const
     {
         json_value jv;
         if (as_value(jv, m_internal_object, JSON_U32))
@@ -691,7 +694,7 @@ namespace pen
         return default_value;
     }
 
-    s32 json::as_s32(s32 default_value)
+    s32 json::as_s32(s32 default_value) const
     {
         json_value jv;
         if (as_value(jv, m_internal_object, JSON_S32))
@@ -700,7 +703,25 @@ namespace pen
         return default_value;
     }
 
-    bool json::as_bool(bool default_value)
+    u64 json::as_u64(u64 default_value) const
+    {
+        json_value jv;
+        if (as_value(jv, m_internal_object, JSON_U64))
+            return jv.ul;
+
+        return default_value;
+    }
+
+    s64 json::as_s64(s64 default_value) const
+    {
+        json_value jv;
+        if (as_value(jv, m_internal_object, JSON_S64))
+            return jv.sl;
+
+        return default_value;
+    }
+
+    bool json::as_bool(bool default_value) const
     {
         json_value jv;
         if (as_value(jv, m_internal_object, JSON_BOOL))
@@ -709,7 +730,7 @@ namespace pen
         return default_value;
     }
 
-    f32 json::as_f32(f32 default_value)
+    f32 json::as_f32(f32 default_value) const
     {
         json_value jv;
         if (as_value(jv, m_internal_object, JSON_F32))
@@ -718,7 +739,7 @@ namespace pen
         return default_value;
     }
 
-    u8 json::as_u8_hex(u8 default_value)
+    u8 json::as_u8_hex(u8 default_value) const
     {
         json_value jv;
         if (as_value(jv, m_internal_object, JSON_U32_HEX))
@@ -727,13 +748,22 @@ namespace pen
         return default_value;
     }
 
-    u32 json::as_u32_hex(u32 default_value)
+    u32 json::as_u32_hex(u32 default_value) const
     {
         json_value jv;
         if (as_value(jv, m_internal_object, JSON_U32_HEX))
             return jv.u;
 
         return default_value;
+    }
+
+    Str json::as_filename(const c8* default_value) const
+    {
+        Str fn = as_str(default_value);
+        fn = str_replace_chars(fn, '@', ':');
+        fn = str_replace_chars(fn, '\\', '/');
+
+        return fn;
     }
 
     Str json::dumps() const
@@ -850,15 +880,6 @@ namespace pen
         fn = str_replace_chars(fn, '\\', '/');
 
         set(name, fn);
-    }
-
-    Str json::as_filename(const c8* default_value)
-    {
-        Str fn = as_str(default_value);
-        fn = str_replace_chars(fn, '@', ':');
-        fn = str_replace_chars(fn, '\\', '/');
-
-        return fn;
     }
 
 } // namespace pen

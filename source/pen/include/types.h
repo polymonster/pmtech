@@ -9,22 +9,23 @@
 #include <stdio.h>
 
 // Define small types for extra cuteness
-typedef int32_t  s32;
-typedef uint32_t u32;
+
+typedef int8_t   s8;
+typedef uint8_t  u8;
 typedef int16_t  s16;
 typedef uint16_t u16;
-typedef int64_t  u64;
+typedef int32_t  s32;
+typedef uint32_t u32;
+typedef int64_t  s64;
+typedef uint64_t u64;
 typedef uint32_t hash_id;
 
-typedef char          s8;
-typedef unsigned char u8;
-
-typedef wchar_t c16;
 typedef char    c8;
+typedef wchar_t c16;
 
+typedef uint16_t f16;
 typedef float    f32;
 typedef double   f64;
-typedef uint16_t f16;
 
 typedef unsigned long ulong;
 typedef unsigned long dword; // for win32
