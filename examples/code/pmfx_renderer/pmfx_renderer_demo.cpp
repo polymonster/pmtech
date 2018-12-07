@@ -133,7 +133,6 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
     u32 normal_tex = put::load_texture("data/textures/pbr/metalgrid2_normal.dds");
     u32 matallic_tex = put::load_texture("data/textures/pbr/metalgrid2_metallic.dds");
     u32 roughness_tex = put::load_texture("data/textures/pbr/metalgrid2_roughness.dds");
-    u32 wrap_linear = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
     
     // add some pillars for overdraw and illumination
     f32   num_pillar_rows = 20;
@@ -181,7 +180,7 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             scene->samplers[pillar].sb[3].handle = matallic_tex;
             
             for(u32 j = 0; j < 4; ++j)
-                scene->samplers[pillar].sb[j].id_sampler_state = wrap_linear;
+                scene->samplers[pillar].sb[j].id_sampler_state = PEN_HASH("wrap_linear");
 
             pos.z += d * 2.0f;
         }
