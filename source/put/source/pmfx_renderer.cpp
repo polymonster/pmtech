@@ -1893,6 +1893,22 @@ namespace put
                 }
             }
         } // namespace
+        
+        void load_always_create_render_targets(const pen::json& render_config)
+        {
+            Str* targets = nullptr;
+            
+            json rts = render_config["render_targets"];
+            for(u32 i = 0; i < rts.size(); ++i)
+            {
+                if(rts[i]["always_create"].as_bool() == true)
+                {
+                    sb_push(targets, rts[i].key());
+                }
+            }
+            
+            parse_render_targets(render_config, targets);
+        }
 
         void load_view_render_targets(const pen::json& render_config, const pen::json& view)
         {
@@ -2106,6 +2122,7 @@ namespace put
 
             // add main_colour and main_depth backbuffer target
             add_backbuffer_targets();
+            load_always_create_render_targets(render_config); // load render targets with always_create
 
             // parse info
             parse_sampler_states(render_config);

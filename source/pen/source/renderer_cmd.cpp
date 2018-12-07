@@ -235,7 +235,7 @@ namespace pen
         extern a_u64 g_gpu_total;
         
         cpu_ms = present_time;
-        gpu_ms = (f32)g_gpu_total;
+        gpu_ms = (f64)g_gpu_total / 1000.0 / 1000.0;
     }
 
     void exec_cmd(const deferred_cmd& cmd)

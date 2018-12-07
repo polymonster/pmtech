@@ -156,6 +156,7 @@
         {
             size  : [4,4],
             format: d24s8,
+            always_create: true
         }
     },
     

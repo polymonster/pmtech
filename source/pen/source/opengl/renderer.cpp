@@ -26,8 +26,6 @@ extern void pen_window_resize();
 
 a_u8 g_window_resize(0);
 
-#define GL_TIME_ELAPSED 1
-
 namespace
 {
     u64     s_frame = 0;
