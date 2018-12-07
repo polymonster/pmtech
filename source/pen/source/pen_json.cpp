@@ -149,7 +149,7 @@ namespace
                 case JSON_S64:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
-                    result.ul = _atoi64(tok_str);
+                    result.ul = atoll(tok_str);
                     pen::memory_free(tok_str);
                 }
                 break;
