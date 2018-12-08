@@ -16,9 +16,9 @@ Take a look at:
 **Features**  
 - Multithreaded - Async render, physics, audio and component entity system. 
 - Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
-- PMFX - High level data driven renderer, shader and post-processing system configured with json scripts.
-- Hot loading - reload pmfx configs, shaders, models and textures in real time for rapid development.
-- Tools - Scene editor, 3D volume / signed distance field generator.
+- PMFX - High level data driven renderer, shader and post-processing system.
+- Hot loading - reload configs, shaders, models and textures in real time for rapid development.
+- Tools - Graphical editor, volume texture / signed distance field generator.
 - Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 
 **Getting started** 
