@@ -197,10 +197,9 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
             
     if:(UV_SCALE)
     {
-        
         float3 scale = float3(length(world_matrix[0].xyz), 
                               length(world_matrix[1].xyz), 
-                              length(world_matrix[2].xyz)) * 0.1;
+                              length(world_matrix[2].xyz));
        
         float xs = length(input.tangent.xyz * scale);
         float ys = length(input.bitangent.xyz * scale); 

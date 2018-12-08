@@ -35,7 +35,7 @@ declare_texture_samplers
 
 void unpack_light_data(inout vs_output output)
 {
-    float4x4 ld = world_matrix_inv_transpose;
+    float4x4 ld = to_data_matrix(world_matrix_inv_transpose);
     output.light_pos_radius = ld[0];
     output.light_dir_cutoff = ld[1];
     output.light_colour = ld[2];
@@ -136,7 +136,7 @@ ps_output ps_light(vs_output input)
             roughness,
             albedo.rgb
         );
-        
+        	
     if:(POINT_LIGHT)
     {
         light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
@@ -149,9 +149,9 @@ ps_output ps_light(vs_output input)
                                             input.light_data.x, 
                                             world_pos);
     }
-    
+
     output.colour.rgb = light_col;
-    
+	    
     return output;
 }
 

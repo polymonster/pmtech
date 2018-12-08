@@ -24,6 +24,7 @@
         forward_render_zequal:
         {
             inherit : "main_view",
+			clear_depth : false,
             clear_colour : [0.0, 0.0, 0.0, 1.0],
             depth_stencil_state: "depth_equal"
         }

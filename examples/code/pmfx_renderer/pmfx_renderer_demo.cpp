@@ -38,7 +38,7 @@ namespace
     const s32 max_lights = 100;
     
     u32 lights_start = 0;
-    f32 light_radius = 100.0f;
+    f32 light_radius = 50.0f;
     s32 num_lights = max_lights;
     f32 scene_size = 200.0f;
 
@@ -58,7 +58,7 @@ namespace
     void update_demo(ces::entity_scene* scene, f32 dt)
     {
         ImGui::Begin("Lighting", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::InputFloat("Light Radius", &light_radius);
+        ImGui::SliderFloat("Light Radius", &light_radius, 0.0f, 300.0f);
         ImGui::SliderInt("Lights", &num_lights, 0, max_lights);
         
         if(ImGui::Combo("Method", &render_method, &render_methods[0], PEN_ARRAY_SIZE(render_methods)))
@@ -152,7 +152,22 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             f32 rz = 0.1f + (f32)(rand()%255) / 255.0f * pillar_size;
 
             pos.y = ry;
-            
+
+            // quantize
+            // box mesh is -1 to 1, so scale snap is x2
+            f32 uv_scale = 0.05f;
+            f32 uv_snap = (uv_scale * 40.0f);
+            f32 inv_uv_snap = 1.0f / (uv_snap);
+
+            rx = std::max<f32>(floor(rx * inv_uv_snap) * uv_snap, uv_snap);
+            ry = std::max<f32>(floor(ry * inv_uv_snap) * uv_snap, uv_snap);
+            rz = std::max<f32>(floor(rz * inv_uv_snap) * uv_snap, uv_snap);
+
+            // pos is 0 - 1 so snap is half
+            uv_snap = (uv_scale * 20.0f);
+            inv_uv_snap = 1.0f / (uv_snap);
+            pos = floor(pos * inv_uv_snap) * uv_snap;
+
             u32 pillar = get_new_node(scene);
             scene->transforms[pillar].rotation = quat();
             scene->transforms[pillar].scale = vec3f(rx, ry, rz);
@@ -172,7 +187,7 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             m->m_albedo = vec4f::one();
             m->m_roughness = 0.1f;
             m->m_reflectivity = 0.3f;
-            m->m_uv_scale = vec2f(0.5f, 0.5f);
+            m->m_uv_scale = vec2f(uv_scale, uv_scale);
             
             scene->samplers[pillar].sb[0].handle = albedo_tex;
             scene->samplers[pillar].sb[1].handle = normal_tex;

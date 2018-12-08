@@ -105,7 +105,7 @@ namespace
         bind_flags flags;
     };
     
-    format_info rt_format[] = {
+    const format_info rt_format[] = {
         {"rgba8",   PEN_HASH("rgba8"),      PEN_TEX_FORMAT_RGBA8_UNORM,         32,     PEN_BIND_RENDER_TARGET},
         {"bgra8",   PEN_HASH("bgra8"),      PEN_TEX_FORMAT_BGRA8_UNORM,         32,     PEN_BIND_RENDER_TARGET},
         {"rgba32f", PEN_HASH("rgba32f"),    PEN_TEX_FORMAT_R32G32B32A32_FLOAT,  32 * 4, PEN_BIND_RENDER_TARGET},
@@ -116,7 +116,7 @@ namespace
         {"d24s8",   PEN_HASH("d24s8"),      PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL}
     };
 
-    Str rt_ratio[] = {
+    const Str rt_ratio[] = {
         "none",
         "equal",
         "half",
@@ -125,7 +125,7 @@ namespace
         "sixteenth"
     };
     
-    mode_map render_flags_map[] = {
+    const mode_map render_flags_map[] = {
         "forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0
     };
     // clang-format on
@@ -828,6 +828,8 @@ namespace put
             bcp.num_render_targets = num_rt;
             bcp.render_targets = new pen::render_target_blend[num_rt];
 
+            PEN_ASSERT(num_rt < 8);
+
             for (s32 i = 0; i < num_rt; ++i)
             {
                 bcp.render_targets[i] = rtb[i];
@@ -1217,9 +1219,13 @@ namespace put
             if (clear_colour.size() == 4)
             {
                 for (s32 c = 0; c < 4; ++c)
-                    clear_colour_f[c] = clear_colour[c].as_f32();
-
-                clear_flags |= PEN_CLEAR_COLOUR_BUFFER;
+                {
+                    if (!(clear_colour[c].as_str() == "false"))
+                    {
+                        clear_colour_f[c] = clear_colour[c].as_f32();
+                        clear_flags |= PEN_CLEAR_COLOUR_BUFFER;
+                    }
+                }
             }
 
             // clear depth
@@ -1229,9 +1235,13 @@ namespace put
 
             if (clear_depth.type() != JSMN_UNDEFINED)
             {
-                clear_depth_f = clear_depth.as_f32();
+                if (!(clear_depth.as_str() == "false"))
+                {
+                    clear_depth_f = clear_depth.as_f32();
 
-                clear_flags |= PEN_CLEAR_DEPTH_BUFFER;
+                    clear_flags |= PEN_CLEAR_DEPTH_BUFFER;
+                }
+
             }
 
             // clear stencil
@@ -1239,9 +1249,12 @@ namespace put
 
             if (clear_stencil.type() != JSMN_UNDEFINED)
             {
-                clear_stencil_val = clear_stencil.as_u8_hex();
+                if (!(clear_stencil.as_str() == "false"))
+                {
+                    clear_stencil_val = clear_stencil.as_u8_hex();
 
-                clear_flags |= PEN_CLEAR_STENCIL_BUFFER;
+                    clear_flags |= PEN_CLEAR_STENCIL_BUFFER;
+                }
             }
 
             // clear state
@@ -3016,9 +3029,12 @@ namespace put
                     ImGui::Text("Post Processes");
                     dev_ui::set_tooltip("A view or collections of post process views make up a post process");
 
-                    ImGui::PushID("Post Processes");
-                    ImGui::ListBox("", &s_selected_process, &process_items[0], process_items.size());
-                    ImGui::PopID();
+                    if (process_items.size() > 0)
+                    {
+                        ImGui::PushID("Post Processes");
+                        ImGui::ListBox("", &s_selected_process, &process_items[0], process_items.size());
+                        ImGui::PopID();
+                    }
 
                     ImGui::Columns(1);
 

@@ -19,6 +19,7 @@
 
 #define to_3x3( M4 ) float3x3(M4)
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;
+#define to_data_matrix(mat) mat
 
 #define remap_z_clip_space( d ) d // gl clip space is -1 to 1, and this is normalised device coordinate
 #define remap_depth( d ) d = d * 0.5 + 0.5
@@ -64,6 +65,7 @@
 #define mul_tbn( A, B ) mul(A, B)
 
 #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3; mat = transpose(mat)
+#define to_data_matrix(mat) transpose(mat)
 
 // d3d clip pace z is 0 to 1 and ndc z is -1 to 1
 #define remap_z_clip_space( d ) d = d * 0.5 + 0.5;
