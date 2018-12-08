@@ -14,7 +14,7 @@ Take a look at:
 - Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
 **Features**  
-- Multithreaded Systems - Async render, physics, audio and component entity system threads. 
+- Multithreaded - Async render, physics, audio and component entity system. 
 - Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
 - PMFX - High level data driven renderer, shader and post-processing system configured with json scripts.
 - Hot loading - reload pmfx configs, shaders, models and textures in real time for rapid development.
