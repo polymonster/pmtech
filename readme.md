@@ -9,9 +9,9 @@ Take a look at:
 [demos...](https://polymonster.github.io/index.html)
 
 **Platforms**  
-- Platforms: Windows, MacOS, Linux, iOS, Android (wip).   
+- OS: Windows, MacOS, Linux, iOS, Android (wip).   
 - Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+.   
-- Compilers: vs2015, vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
+- Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
 **Features**  
 - Multithreaded Systems - Async render, physics, audio and component entity system threads. 
