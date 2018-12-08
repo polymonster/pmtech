@@ -1,12 +1,12 @@
 # pmtech [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech)
 
-A lightweight code base with powerful features that can be used for games and real-time 3D applications. This project focuses on data-oriented and multithreaded systems with minimalistic c-style api's and a strong emphasis on performance. [more info...](https://polymonster.github.io/articles.html)  
-
 Follow work in progress: 
-[Trello](https://trello.com/b/ciujzpUT)
+[trello](https://trello.com/b/ciujzpUT)
 
 Take a look at: 
-[Demos...](https://polymonster.github.io/index.html)
+[demos...](https://polymonster.github.io/index.html)
+
+A lightweight code base with powerful features that can be used for games and real-time 3D applications. This project focuses on data-oriented and multithreaded systems with minimalistic c-style api's and a strong emphasis on performance. [more info...](https://polymonster.github.io/articles.html)  
 
 **Platforms**  
 - Platforms: Windows, MacOS, Linux, iOS, Android (wip).   
