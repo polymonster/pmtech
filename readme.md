@@ -20,8 +20,6 @@ A lightweight code base with powerful features that can be used for games and re
 
 There are examples included of how to use the api's, set up projects and data, view them [here...](https://polymonster.github.io/index.html)
 
-[<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sdf-shadow.gif" width="1280" />](http://www.polymonster.co.uk/index.html)
-
 **Getting started** 
 
 To build data and generate example projects run build.sh or build.bat. Workspace and projects are generated in examples/build/platform.
