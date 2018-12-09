@@ -80,23 +80,23 @@ namespace pen
         bool       is_null() const; // jsmntype_t == JSMN_UNDEFINED
         u32        size() const;
 
-        json       operator[](const c8* name) const;
-        json       operator[](const u32 index) const;
-        json       operator[](const s32 index) const;
-        json&      operator=(const json& other);
+        json  operator[](const c8* name) const;
+        json  operator[](const u32 index) const;
+        json  operator[](const s32 index) const;
+        json& operator=(const json& other);
 
-        Str        as_str(const c8* default_value = nullptr) const;
-        const c8*  as_cstr(const c8* default_value = nullptr) const;
-        hash_id    as_hash_id(hash_id default_value = 0) const;
-        u32        as_u32(u32 default_value = 0) const;
-        s32        as_s32(s32 default_value = 0) const;
-        u64        as_u64(u64 default_value = 0) const;
-        s64        as_s64(s64 default_value = 0) const;
-        bool       as_bool(bool default_value = false) const;
-        f32        as_f32(f32 default_value = 0.0f) const;
-        u8         as_u8_hex(u8 default_value = 0) const;
-        u32        as_u32_hex(u32 default_value = 0) const;
-        Str        as_filename(const c8* default_value = nullptr) const;
+        Str       as_str(const c8* default_value = nullptr) const;
+        const c8* as_cstr(const c8* default_value = nullptr) const;
+        hash_id   as_hash_id(hash_id default_value = 0) const;
+        u32       as_u32(u32 default_value = 0) const;
+        s32       as_s32(s32 default_value = 0) const;
+        u64       as_u64(u64 default_value = 0) const;
+        s64       as_s64(s64 default_value = 0) const;
+        bool      as_bool(bool default_value = false) const;
+        f32       as_f32(f32 default_value = 0.0f) const;
+        u8        as_u8_hex(u8 default_value = 0) const;
+        u32       as_u32_hex(u32 default_value = 0) const;
+        Str       as_filename(const c8* default_value = nullptr) const;
 
         // set master functions
         void set(const c8* name, const Str val);

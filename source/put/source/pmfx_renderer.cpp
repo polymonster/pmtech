@@ -1241,7 +1241,6 @@ namespace put
 
                     clear_flags |= PEN_CLEAR_DEPTH_BUFFER;
                 }
-
             }
 
             // clear stencil
@@ -1338,16 +1337,16 @@ namespace put
                         break;
 
                     pen::json inherit_view = all_views[ihv.c_str()];
-                    
+
                     // inherit name if we dont have one (group view in post process view array)
-                    if(new_view.name.empty())
+                    if (new_view.name.empty())
                     {
                         new_view.name = ihv.c_str();
                         new_view.id_name = PEN_HASH(new_view.name);
                     }
 
                     view = pen::json::combine(inherit_view, view);
-                    
+
                     ihv = inherit_view["inherit"].as_str();
                 }
 
@@ -1546,7 +1545,7 @@ namespace put
                 for (s32 ii = 0; ii < scene_views.size(); ++ii)
                 {
                     hash_id id = scene_views[ii].as_hash_id();
-                    bool found = false;
+                    bool    found = false;
                     for (auto& sv : s_scene_view_renderers)
                     {
                         if (id == sv.id_name)
@@ -1555,8 +1554,8 @@ namespace put
                             new_view.render_functions.push_back(sv.render_function);
                         }
                     }
-                    
-                    if(!found)
+
+                    if (!found)
                     {
                         dev_console_log_level(dev_ui::CONSOLE_ERROR,
                                               "[error] render controller: missing scene view - '%s' required by view: '%s'",
@@ -1906,20 +1905,20 @@ namespace put
                 }
             }
         } // namespace
-        
+
         void load_always_create_render_targets(const pen::json& render_config)
         {
             Str* targets = nullptr;
-            
+
             json rts = render_config["render_targets"];
-            for(u32 i = 0; i < rts.size(); ++i)
+            for (u32 i = 0; i < rts.size(); ++i)
             {
-                if(rts[i]["always_create"].as_bool() == true)
+                if (rts[i]["always_create"].as_bool() == true)
                 {
                     sb_push(targets, rts[i].key());
                 }
             }
-            
+
             parse_render_targets(render_config, targets);
         }
 
@@ -2407,7 +2406,7 @@ namespace put
             pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-            
+
             // render state
             // set before clear for write masks
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
@@ -2650,7 +2649,7 @@ namespace put
 
         void view_info_ui(const view_params& v)
         {
-            if(!ImGui::CollapsingHeader(v.name.c_str()))
+            if (!ImGui::CollapsingHeader(v.name.c_str()))
                 return;
 
             for (u32 i = 0; i < v.num_colour_targets; ++i)
@@ -2672,7 +2671,7 @@ namespace put
                 ImGui::Text("input sampler %i: %s (%i)", isb, rt->name.c_str(), sb.handle);
                 ++isb;
             }
-            
+
             ImGui::TextWrapped("%s", v.info_json.c_str());
         }
 
@@ -2750,13 +2749,13 @@ namespace put
             s_edited_post_processes.back().chain = input_view.post_process_chain;
             s_edited_post_processes.back().views = input_view.post_process_views;
         }
-        
+
         void set_view_set(const c8* name)
         {
             s_edited_view_set_name = name;
             pmfx_config_hotload();
         }
-        
+
         void show_dev_ui()
         {
             ImGui::BeginMainMenuBar();

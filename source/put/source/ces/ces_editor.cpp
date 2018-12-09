@@ -27,8 +27,8 @@ namespace put
 
     namespace ces
     {
-        static const hash_id k_primitives[] = { PEN_HASH("quad"),   PEN_HASH("cube"),    PEN_HASH("cylinder"),
-                                                PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone")};
+        static const hash_id k_primitives[] = {PEN_HASH("quad"),   PEN_HASH("cube"),    PEN_HASH("cylinder"),
+                                               PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone")};
 
         struct transform_undo
         {
@@ -1352,11 +1352,11 @@ namespace put
 
                     if (ImGui::InputFloat("Far", &s_model_view_controller.main_camera.far_plane))
                         dev_ui::set_program_preference("camera_far", s_model_view_controller.main_camera.far_plane);
-                    
+
                     ImGui::InputFloat("Zoom", &s_model_view_controller.main_camera.zoom);
                     ImGui::InputFloat2("Rotation", (f32*)&s_model_view_controller.main_camera.rot[0]);
                     ImGui::InputFloat3("Focus", (f32*)&s_model_view_controller.main_camera.focus);
-                    
+
                     s_model_view_controller.invalidated = true;
 
                     ImGui::End();
@@ -1852,7 +1852,7 @@ namespace put
 
             if (!ImGui::CollapsingHeader("Material"))
                 return false;
-            
+
             // master mat
             cmp_material&      mm = scene->materials[selected_index];
             material_resource& mr = scene->material_resources[selected_index];
@@ -2354,12 +2354,12 @@ namespace put
                                                  {CMP_GEOMETRY, "Geometries", 0},
                                                  {CMP_BONE, "Bones", 0},
                                                  {CMP_ANIM_CONTROLLER, "Anim Controllers", 0}};
-                
+
                 s32 selected_index = -1;
                 u32 num_selected = sb_count(s_selection_list);
                 if (num_selected == 1)
                     selected_index = s_selection_list[0];
-                
+
                 if (ImGui::CollapsingHeader("Scene Info"))
                 {
                     if (!scene->filename.empty())
@@ -2427,9 +2427,9 @@ namespace put
 
                     ImGui::EndChild();
                 }
-                
+
                 ImGui::Separator();
-                
+
                 // selection
                 if (selected_index != -1)
                 {
@@ -2438,21 +2438,21 @@ namespace put
                     u32       end_pos = std::min<u32>(scene->names[selected_index].length(), 64);
                     memcpy(buf, scene->names[selected_index].c_str(), end_pos);
                     buf[end_pos] = '\0';
-                    
+
                     if (ImGui::InputText("", buf, 64))
                     {
                         scene->names[selected_index] = buf;
                         scene->id_name[selected_index] = PEN_HASH(buf);
                     }
-                    
+
                     ImGui::SameLine();
                     ImGui::Text("ces node index %i", selected_index);
-                    
+
                     s32 parent_index = scene->parents[selected_index];
                     if (parent_index != selected_index)
                         ImGui::Text("Parent: %s", scene->names[parent_index].c_str());
                 }
-                else if(num_selected > 0)
+                else if (num_selected > 0)
                 {
                     ImGui::Text("%i Selected Items", num_selected);
                 }

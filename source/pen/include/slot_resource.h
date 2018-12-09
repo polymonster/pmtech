@@ -26,15 +26,15 @@ namespace pen
         free_slot_list* slots;
         free_slot_list* head;
     };
-    
+
     // Function decl
-    
+
     void slot_resources_init(slot_resources* resources, u32 num);
     u32  slot_resources_get_next(slot_resources* resources);
     bool slot_resources_free(slot_resources* resources, const u32 slot);
 
     // Implementation
-    
+
     inline void slot_resources_init(slot_resources* resources, u32 num)
     {
         resources->slots = new free_slot_list[num];

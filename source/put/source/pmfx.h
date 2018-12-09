@@ -243,7 +243,7 @@ namespace put
         void register_scene_view_renderer(const scene_view_renderer& svr);
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
         void resize_viewports();
-        
+
         void set_view_set(const c8* name);
 
         camera*              get_camera(hash_id id_name);

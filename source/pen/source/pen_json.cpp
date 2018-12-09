@@ -35,8 +35,7 @@ namespace
 #define NON_STRICT_NAME(V)
 #define JSON_NAME NON_STRICT_NAME
 
-    union json_value 
-    {
+    union json_value {
         bool        b;
         u32         u;
         s32         s;
@@ -153,7 +152,7 @@ namespace
                     pen::memory_free(tok_str);
                 }
                 break;
-                
+
                 case JSON_U32_HEX:
                 {
                     c8* tok_str = pen::sub_string(js + t->start, t->end - t->start);
@@ -676,7 +675,7 @@ namespace pen
         return default_value;
     }
 
-    hash_id json::as_hash_id(hash_id default_value)const
+    hash_id json::as_hash_id(hash_id default_value) const
     {
         const c8* cstr = as_cstr();
         if (!cstr)

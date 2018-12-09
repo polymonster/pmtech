@@ -10,18 +10,18 @@
 namespace pen
 {
     // Function Decls
-    
-    s32 str_find_reverse(const Str& string, const c8* search, s32 start_pos = -1);
-    Str str_substr(const Str& string, s32 start, s32 end);
+
+    s32  str_find_reverse(const Str& string, const c8* search, s32 start_pos = -1);
+    Str  str_substr(const Str& string, s32 start, s32 end);
     bool str_ends_with(const Str& string, const c8* ends);
-    Str str_remove_ext(const Str& string);
-    s32 str_find(const Str& string, const c8* search, u32 start_pos = 0);
-    Str str_replace_chars(const Str& string, const c8 search, const c8 replace);
-    Str str_replace_string(const Str& string, const c8* search, const c8* replace);
-    Str str_normalise_filepath(const Str& filepath);
-    
+    Str  str_remove_ext(const Str& string);
+    s32  str_find(const Str& string, const c8* search, u32 start_pos = 0);
+    Str  str_replace_chars(const Str& string, const c8 search, const c8 replace);
+    Str  str_replace_string(const Str& string, const c8* search, const c8* replace);
+    Str  str_normalise_filepath(const Str& filepath);
+
     // Implementation
-    
+
     inline s32 str_find_reverse(const Str& string, const c8* search, s32 start_pos)
     {
         s32 len = string.length();
@@ -72,7 +72,7 @@ namespace pen
 
         if (len - ii == pen::string_length(ends))
             return true;
-        
+
         return false;
     }
 

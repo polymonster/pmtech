@@ -751,9 +751,9 @@ namespace put
 
                 if (t.id_name != id_technique)
                     continue;
-                
+
                 u32 masked_permutation = permutation & t.permutation_option_mask;
-                
+
                 if (t.permutation_id != masked_permutation)
                     continue;
 
@@ -1015,8 +1015,8 @@ namespace put
                     default:
                         break;
                 }
-                
-                if(i%3 != 0 && i < num_permutations-1)
+
+                if (i % 3 != 0 && i < num_permutations - 1)
                     ImGui::SameLine();
             }
 
@@ -1043,11 +1043,11 @@ namespace put
                 f32* f = &material_data[tc[i].cb_offset];
 
                 ImGui::PushID(f);
-                
+
                 switch (tc[i].widget)
                 {
                     case CW_INPUT:
-                        if(ImGui::Button(ICON_FA_SLIDERS))
+                        if (ImGui::Button(ICON_FA_SLIDERS))
                         {
                             tc[i].widget = CW_SLIDER;
                         }
@@ -1055,7 +1055,7 @@ namespace put
                         rv |= ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
                         break;
                     case CW_SLIDER:
-                        if(ImGui::Button(ICON_FA_PENCIL))
+                        if (ImGui::Button(ICON_FA_PENCIL))
                         {
                             tc[i].widget = CW_INPUT;
                         }
