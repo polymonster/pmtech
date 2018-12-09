@@ -209,7 +209,7 @@ void update_shadow_frustum(ces::entity_scene* scene, put::camera* shadow_cam)
 void shadow_map_update(put::scene_controller* sc)
 {
     // unbind
-    pen::renderer_set_texture(0, 0, 15, PEN_SHADER_TYPE_PS);
+    pen::renderer_set_texture(0, 0, 15, pen::TEXTURE_BIND_PS);
     pen::renderer_set_constant_buffer(cbuffer_shadow, 4, PEN_SHADER_TYPE_PS);
 }
 

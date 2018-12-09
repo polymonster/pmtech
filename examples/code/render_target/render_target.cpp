@@ -198,13 +198,13 @@ PEN_TRV pen::user_entry(void* params)
             pen::renderer_set_index_buffer(quad_index_buffer, PEN_FORMAT_R16_UINT, 0);
 
             // bind render target as texture on sampler 0
-            pen::renderer_set_texture(colour_render_target, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_texture(colour_render_target, render_target_texture_sampler, 0, pen::TEXTURE_BIND_PS);
 
             // draw
             pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
 
             // unbind render target from the sampler
-            pen::renderer_set_texture(0, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_texture(0, render_target_texture_sampler, 0, pen::TEXTURE_BIND_PS);
         }
 
         // present

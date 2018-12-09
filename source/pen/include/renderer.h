@@ -355,7 +355,7 @@ namespace pen
     // textures
     u32  renderer_create_texture(const texture_creation_params& tcp);
     u32  renderer_create_sampler(const sampler_creation_params& scp);
-    void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags = 0);
+    void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags);
 
     // rasterizer
     u32  renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp);
@@ -449,7 +449,7 @@ namespace pen
         // textures
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot);
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot);
-        void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags = 0);
+        void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags);
 
         // rasterizer
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot);

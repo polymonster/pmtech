@@ -354,7 +354,7 @@ namespace put
                     else
                     {
                         pen::renderer_set_texture((u32)(intptr_t)pcmd->TextureId, g_imgui_rs.font_sampler_state, 0,
-                                                  PEN_SHADER_TYPE_PS);
+                                                  pen::TEXTURE_BIND_PS);
 
                         pen::rect r = {pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w};
 

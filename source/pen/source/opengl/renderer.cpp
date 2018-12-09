@@ -1513,7 +1513,7 @@ namespace pen
             direct::renderer_set_vertex_buffer(g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
             direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
-            direct::renderer_set_texture(target, 0, 0, PEN_SHADER_TYPE_PS, TEXTURE_BIND_MSAA);
+            direct::renderer_set_texture(target, 0, 0, TEXTURE_BIND_MSAA | pen::TEXTURE_BIND_PS);
 
             direct::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
         }
@@ -1543,7 +1543,7 @@ namespace pen
         memcpy(resource_pool[resource_slot].sampler_state, &scp, sizeof(scp));
     }
 
-    void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
+    void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
     {
         if (texture_index == 0)
             return;
@@ -1563,7 +1563,7 @@ namespace pen
         }
         else
         {
-            if (flags & TEXTURE_BIND_MSAA)
+            if (bind_flags & TEXTURE_BIND_MSAA)
             {
                 target = GL_TEXTURE_2D_MULTISAMPLE;
                 CHECK_CALL(glBindTexture(target, res.render_target.texture_msaa.handle));

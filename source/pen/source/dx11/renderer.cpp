@@ -1130,46 +1130,43 @@ namespace pen
         CHECK_CALL(s_device->CreateSamplerState((D3D11_SAMPLER_DESC*)&scp, &resource_pool[resource_index].sampler_state));
     }
 
-    void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 shader_type, u32 flags)
+    void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
     {
-        ID3D11SamplerState*       null_sampler = nullptr;
-        ID3D11ShaderResourceView* null_srv = nullptr;
+        static ID3D11SamplerState*       null_sampler = nullptr;
+        static ID3D11ShaderResourceView* null_srv = nullptr;
 
-        if (resource_pool[texture_index].type == RES_RENDER_TARGET && flags & TEXTURE_BIND_MSAA)
+        ID3D11SamplerState**       sampler = &null_sampler;
+        ID3D11ShaderResourceView** srv = &null_srv;
+
+        if (sampler_index > 0)
         {
-            render_target_internal* rt = resource_pool[texture_index].render_target;
+            sampler = &resource_pool[sampler_index].sampler_state;
+        }
 
-            if (shader_type == PEN_SHADER_TYPE_PS)
+        if (texture_index > 0)
+        {
+            if (resource_pool[texture_index].type == RES_RENDER_TARGET && bind_flags & TEXTURE_BIND_MSAA)
             {
-                s_immediate_context->PSSetSamplers(
-                    resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-                s_immediate_context->PSSetShaderResources(resource_slot, 1,
-                                                          texture_index == 0 ? &null_srv : &rt->tex_msaa.srv);
+                render_target_internal* rt = resource_pool[texture_index].render_target;
+                srv = &rt->tex_msaa.srv;
             }
-            else if (shader_type == PEN_SHADER_TYPE_VS)
+            else
             {
-                s_immediate_context->VSSetSamplers(
-                    resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-                s_immediate_context->VSSetShaderResources(resource_slot, 1,
-                                                          texture_index == 0 ? &null_srv : &rt->tex_msaa.srv);
+                srv = &resource_pool[texture_index].texture_resource->srv;
             }
         }
-        else
+
+
+        if (bind_flags & TEXTURE_BIND_PS)
         {
-            if (shader_type == PEN_SHADER_TYPE_PS)
-            {
-                s_immediate_context->PSSetSamplers(
-                    resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-                s_immediate_context->PSSetShaderResources(
-                    resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_resource->srv);
-            }
-            else if (shader_type == PEN_SHADER_TYPE_VS)
-            {
-                s_immediate_context->VSSetSamplers(
-                    resource_slot, 1, sampler_index == 0 ? &null_sampler : &resource_pool[sampler_index].sampler_state);
-                s_immediate_context->VSSetShaderResources(
-                    resource_slot, 1, texture_index == 0 ? &null_srv : &resource_pool[texture_index].texture_resource->srv);
-            }
+            s_immediate_context->PSSetSamplers(resource_slot, 1, sampler);
+            s_immediate_context->PSSetShaderResources(resource_slot, 1, srv);
+        }
+
+        if (bind_flags & TEXTURE_BIND_VS)
+        {
+            s_immediate_context->VSSetSamplers(resource_slot, 1, sampler);
+            s_immediate_context->VSSetShaderResources(resource_slot, 1, srv);
         }
     }
 
@@ -1484,7 +1481,7 @@ namespace pen
             direct::renderer_set_vertex_buffer(g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
             direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
-            direct::renderer_set_texture(target, 0, 0, PEN_SHADER_TYPE_PS, pen::TEXTURE_BIND_MSAA);
+            direct::renderer_set_texture(target, 0, 0, pen::TEXTURE_BIND_MSAA | pen::TEXTURE_BIND_PS);
 
             direct::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
         }

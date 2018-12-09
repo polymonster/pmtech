@@ -596,7 +596,7 @@ namespace put
                     sampler_binding sb;
                     sb.handle = ts[i].handle;
                     sb.sampler_unit = ts[i].unit;
-                    sb.shader_type = PEN_SHADER_TYPE_PS;
+                    sb.bind_flags = PEN_SHADER_TYPE_PS;
                     sb.id_sampler_state = id_wrap_linear;
                     sb.sampler_state = pmfx::get_render_state(id_wrap_linear, RS_SAMPLER);
 

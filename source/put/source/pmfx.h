@@ -33,7 +33,8 @@ namespace put
 
     enum e_render_constants
     {
-        MAX_TECHNIQUE_SAMPLER_BINDINGS = 8
+        MAX_TECHNIQUE_SAMPLER_BINDINGS = 8, // 8 samplers possibly set from shader / technique
+        MAX_SAMPLER_BINDINGS = 16           // +8 samplers for gloabl stuff ie. shadow maps.
     };
 
     struct scene_view
@@ -83,7 +84,7 @@ namespace put
         u32     handle = 0;
         u32     sampler_unit = 0;
         u32     sampler_state = 0;
-        u32     shader_type = 0;
+        u32     bind_flags = 0;
     };
 
     struct sampler_set

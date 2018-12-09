@@ -113,7 +113,7 @@ void shadow_map_update(put::scene_controller* sc)
     pen::renderer_update_buffer(cbuffer, &shadow_vp, sizeof(mat4));
 
     // unbind
-    pen::renderer_set_texture(0, 0, 15, PEN_SHADER_TYPE_PS);
+    pen::renderer_set_texture(0, 0, 15, pen::TEXTURE_BIND_PS);
     pen::renderer_set_constant_buffer(cbuffer, 4, PEN_SHADER_TYPE_PS);
 }
 

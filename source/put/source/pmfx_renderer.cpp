@@ -484,9 +484,9 @@ namespace put
 
                 // shader type
                 Str st = binding["shader"].as_str("ps");
-                sb.shader_type = PEN_SHADER_TYPE_PS;
+                sb.bind_flags = PEN_SHADER_TYPE_PS;
                 if (st == "vs")
-                    sb.shader_type = PEN_SHADER_TYPE_VS;
+                    sb.bind_flags = PEN_SHADER_TYPE_VS;
 
                 // sample info for sampling in shader
                 f32 w, h;
@@ -1896,7 +1896,7 @@ namespace put
                             sampler_binding sb;
                             sb.handle = ts[i].handle;
                             sb.sampler_unit = ts[i].unit;
-                            sb.shader_type = PEN_SHADER_TYPE_PS;
+                            sb.bind_flags = PEN_SHADER_TYPE_PS;
                             sb.sampler_state = get_render_state(id_wrap_linear, RS_SAMPLER);
 
                             p.technique_samplers.sb[i] = sb;
@@ -2068,7 +2068,7 @@ namespace put
                                     sb.handle = put::load_texture(j_sampler["filename"].as_cstr());
                                     sb.sampler_state = j_sampler["filename"].as_u32();
                                     sb.id_texture = PEN_HASH(j_sampler["filename"].as_cstr());
-                                    sb.shader_type = ts->shader_type;
+                                    sb.bind_flags = ts->shader_type;
                                 }
                             }
                             else
@@ -2397,10 +2397,9 @@ namespace put
                 return;
 
             // unbind samplers to stop d3d debug layer moaning
-            for (s32 i = 0; i < 16; ++i)
+            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
             {
-                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
-                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+                pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
 
             pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
@@ -2424,7 +2423,7 @@ namespace put
             // bind view samplers.. render targets, global textures
             for (auto& sb : v.sampler_bindings)
             {
-                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
+                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
 
             // bind technique samplers
@@ -2434,7 +2433,7 @@ namespace put
                 if (sb.handle == 0)
                     continue;
 
-                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.shader_type);
+                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
 
             u32 num_samplers = v.sampler_bindings.size();
@@ -2543,7 +2542,7 @@ namespace put
 
                 u32 wlss = get_render_state(id_wrap_linear, RS_SAMPLER);
 
-                pen::renderer_set_texture(v.render_targets[0], wlss, 0, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_texture(v.render_targets[0], wlss, 0, pen::TEXTURE_BIND_PS);
 
                 pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
                 pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
@@ -2563,10 +2562,9 @@ namespace put
             // resolve.. todo only resolve if we have rendered
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
-            for (s32 i = 0; i < 8; ++i)
+            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
             {
-                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
-                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+                pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
 
             for (auto& rt : s_render_targets)
@@ -2585,10 +2583,9 @@ namespace put
 
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
-            for (s32 i = 0; i < 16; ++i)
+            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
             {
-                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_PS);
-                pen::renderer_set_texture(0, 0, i, PEN_SHADER_TYPE_VS);
+                pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
         }
 

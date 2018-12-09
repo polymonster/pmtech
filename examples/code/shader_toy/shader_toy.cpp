@@ -324,7 +324,7 @@ PEN_TRV pen::user_entry(void* params)
             // bind textures and samplers
             for (s32 i = 0; i < 4; ++i)
             {
-                pen::renderer_set_texture(k_tex_samplers[i].texture, k_tex_samplers[i].sampler, i, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_texture(k_tex_samplers[i].texture, k_tex_samplers[i].sampler, i, pen::TEXTURE_BIND_PS);
             }
 
             // bind cbuffers

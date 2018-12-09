@@ -130,7 +130,7 @@ PEN_TRV pen::user_entry(void* params)
             pen::renderer_set_index_buffer(quad_index_buffer, PEN_FORMAT_R16_UINT, 0);
 
             // bind render target as texture on sampler 0
-            pen::renderer_set_texture(test_texture, linear_sampler, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_texture(test_texture, linear_sampler, 0, pen::TEXTURE_BIND_PS);
 
             // draw
             pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);

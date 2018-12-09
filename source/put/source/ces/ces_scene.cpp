@@ -418,7 +418,7 @@ namespace put
 
                     if (is_valid(shadow.texture_handle))
                         pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT,
-                                                  PEN_SHADER_TYPE_PS);
+                                                  pen::TEXTURE_BIND_PS);
                 }
             }
 
@@ -556,7 +556,7 @@ namespace put
                             continue;
 
                         pen::renderer_set_texture(samplers.sb[s].handle, samplers.sb[s].sampler_state,
-                                                  samplers.sb[s].sampler_unit, PEN_SHADER_TYPE_PS);
+                                                  samplers.sb[s].sampler_unit, pen::TEXTURE_BIND_PS);
                     }
                 }
 
