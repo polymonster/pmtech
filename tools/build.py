@@ -126,7 +126,14 @@ def get_platform_info():
 
 def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, files):
     platform_bin = os.path.join("bin", platform_name, "")
+    excluded_files = [".DS_Store"]
     for file in files:
+        skip = False
+        for ef in excluded_files:
+            if file.endswith(ef):
+                skip = True
+        if skip:
+            continue
         dest_file = os.path.join(dest_sub_dir, file)
         src_file = os.path.join(src_dir, file)
         input_files = [os.path.join(os.getcwd(), src_file)]
