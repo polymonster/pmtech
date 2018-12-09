@@ -170,7 +170,7 @@ namespace put
             u32 widget = PW_CHECKBOX;
         };
 
-        // sub types of shader for differing vs / ps combos
+        // sub types of shader for differing vs / ps combos.. todo get rid of sub type
         static const c8* k_sub_types[] = {
             "_skinned",
             "_instanced",

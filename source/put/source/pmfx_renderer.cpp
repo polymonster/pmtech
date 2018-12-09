@@ -25,8 +25,9 @@ using namespace ces;
 namespace
 {
     // clang-format off
-    hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
-    hash_id ID_MAIN_DEPTH  = PEN_HASH("main_depth");
+    const hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
+    const hash_id ID_MAIN_DEPTH  = PEN_HASH("main_depth");
+    const hash_id id_wrap_linear = PEN_HASH("wrap_linear"); // todo rename
 
     struct mode_map
     {
@@ -264,7 +265,6 @@ namespace
     geometry_utility                     s_geometry;
 
     // ids
-    hash_id id_wrap_linear = PEN_HASH("wrap_linear");
 } // namespace
 
 namespace put
@@ -2834,6 +2834,8 @@ namespace put
 
                 if (ImGui::CollapsingHeader("Views"))
                 {
+                    ImGui::Indent();
+
                     bool invalidated = false;
 
                     static std::vector<c8*> view_set_items;
@@ -2858,22 +2860,19 @@ namespace put
                         s_edited_view_set_name = view_set_items[s_selected_view_set];
                     }
 
-                    ImGui::Separator();
-
                     for (auto& v : s_views)
-                    {
                         view_info_ui(v);
-                        ImGui::Separator();
-                    }
 
                     if (invalidated)
-                    {
                         pmfx_config_hotload();
-                    }
+
+                    ImGui::Unindent();
                 }
 
                 if (ImGui::CollapsingHeader("Post Processing"))
                 {
+                    ImGui::Indent();
+
                     static s32 s_selected_input_view = 0;
                     static s32 s_selected_chain_pp = 0;
                     static s32 s_selected_process = 0;
@@ -3099,6 +3098,8 @@ namespace put
                             ImGui::Separator();
                         }
                     }
+
+                    ImGui::Unindent();
                 }
 
                 ImGui::End();
