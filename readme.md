@@ -22,6 +22,7 @@ Take a look at:
 - Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 
 **Usage**  
+
 To build data and generate the example projects run build.sh (macOS, linux) or build.bat (win32). Workspace and projects are generated in examples/build/platform.
 
 **Shoutout!** 
