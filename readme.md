@@ -21,16 +21,14 @@ Take a look at:
 - Tools - Graphical editor, volume texture / signed distance field generator.
 - Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 
-**Getting started** 
+**Usage** 
+To build data and generate the example projects run build.sh (macOS, linux) or build.bat (win32). Workspace and projects are generated in examples/build/platform.
 
-To build data and generate example projects run build.sh or build.bat. Workspace and projects are generated in examples/build/platform.
-
-For more information about how to use different toolsets or hook into the sdk, take a look at this [guide](https://polymonster.github.io/articles.html#getting-started)
-
-**Shoutout!**  
-- [Jsmn](https://github.com/zserge/jsmn)
-- [Premake](https://github.com/premake/premake-core)
-- [Bullet](https://github.com/bulletphysics/bullet3)
+**Shoutout!** 
 - [ImGui](https://github.com/ocornut/imgui)
+- [Premake](https://github.com/premake/premake-core)
+- [Jsmn](https://github.com/zserge/jsmn)
+- [Bullet](https://github.com/bulletphysics/bullet3)
 - [NVTT](https://github.com/castano/nvidia-texture-tools)
+- [stb](https://github.com/nothings/stb)
 
