@@ -2,9 +2,9 @@
 #include "console.h"
 #include "memory.h"
 #include "pen_string.h"
-#include <pthread.h>
 
 #include <fcntl.h>
+#include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
 

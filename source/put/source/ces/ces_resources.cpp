@@ -310,16 +310,16 @@ namespace put
             scene->shadows[node_index].texture_handle = volume_texture;
             scene->shadows[node_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::RS_SAMPLER);
         }
-        
+
         void instantiate_light(entity_scene* scene, u32 node_index)
         {
-            if(is_valid(scene->cbuffer[node_index]) && scene->cbuffer[node_index] != 0)
+            if (is_valid(scene->cbuffer[node_index]) && scene->cbuffer[node_index] != 0)
                 return;
-            
+
             // cbuffer for draw call, light volume for editor / deferred etc
             scene->entities[node_index] |= CMP_LIGHT;
             instantiate_model_cbuffer(scene, node_index);
-            
+
             scene->bounding_volumes[node_index].min_extents = -vec3f::one();
             scene->bounding_volumes[node_index].max_extents = vec3f::one();
 

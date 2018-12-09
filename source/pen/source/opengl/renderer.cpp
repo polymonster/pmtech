@@ -28,8 +28,8 @@ a_u8 g_window_resize(0);
 
 namespace
 {
-    u64     s_frame = 0;
-    GLint   s_backbuffer_fbo = -1;
+    u64   s_frame = 0;
+    GLint s_backbuffer_fbo = -1;
 
 #define GL_DEBUG_LEVEL 0
 
@@ -108,7 +108,7 @@ namespace pen
     //  PERF MARKER API
     //--------------------------------------------------------------------------------------
     a_u64 g_gpu_total;
-    
+
     struct gpu_perf_result
     {
         u64 elapsed;
@@ -287,8 +287,8 @@ namespace pen
 
                 desc.append(" : ");
                 desc.appendf("%llu", p.elapsed);
-                
-                if(i == 0)
+
+                if (i == 0)
                     g_gpu_total = p.elapsed;
             }
 
@@ -575,7 +575,7 @@ namespace pen
                 glClearColor(rc.clear_state.rgba[0], rc.clear_state.rgba[1], rc.clear_state.rgba[2], rc.clear_state.rgba[3]));
 
             CHECK_CALL(glClear(rc.clear_state.flags));
-            
+
             return;
         }
 

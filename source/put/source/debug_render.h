@@ -1,6 +1,11 @@
 #ifndef debug_render_h__
 #define debug_render_h__
 
+// Minimalist c-style api for rendering debug primitives.
+// Adding primitives will push verts into a buffer which will grow to accomodate space as required.
+// 2D vertices and 3D vertices are stored in different buffers.
+// Calling render_2d or render_3d will flush the buffers and reset them ready for reuse.
+
 #include "maths/maths.h"
 #include "pen.h"
 #include "renderer.h"
@@ -9,11 +14,6 @@ namespace put
 {
     namespace dbg
     {
-        // Minimalist C-Style Api for rendering debug primitives
-        // Adding primitives will push verts into a buffer which will grow to accomodate space as required
-        // 2D vertices and 3D vertices are stored in different buffers
-        // calling render_2d or render_3d will flush the buffers and reset them ready for reuse
-
         // Init and shutdown will allocate and free buffer space for primitives
         void init();
         void shutdown();

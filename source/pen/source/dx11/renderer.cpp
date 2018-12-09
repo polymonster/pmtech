@@ -79,7 +79,7 @@ namespace pen
         Str name;
     };
     static gpu_perf_result* s_perf_results = nullptr;
-    a_u64 g_gpu_total;
+    a_u64                   g_gpu_total;
 
     struct perf_marker
     {

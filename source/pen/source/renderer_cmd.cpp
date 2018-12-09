@@ -229,11 +229,11 @@ namespace pen
     } deferred_cmd;
 
     static deferred_cmd cmd_buffer[MAX_COMMANDS];
-    
+
     void renderer_get_present_time(f32& cpu_ms, f32& gpu_ms)
     {
         extern a_u64 g_gpu_total;
-        
+
         cpu_ms = present_time;
         gpu_ms = (f64)g_gpu_total / 1000.0 / 1000.0;
     }
@@ -629,11 +629,11 @@ namespace pen
         direct::renderer_initialise(user_data, bb_res, bb_depth_res);
 
         init_resolve_resources();
-        
+
         // create present timer for cpu perf result
         present_timer = timer_create("renderer_present_timer");
         timer_start(present_timer);
-        
+
         present_time = 0.0f;
 
         if (wait_for_jobs)

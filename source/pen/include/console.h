@@ -1,6 +1,8 @@
 #ifndef _pen_console_h
 #define _pen_console_h
 
+// Wrapper around assert and print for portability, to control and re-direct in the future if required
+
 #include "types.h"
 
 #include <assert.h>
@@ -9,9 +11,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
-
-// Wrapper around assert and print for portability
-// and to control and re-direct in the future if required
 
 inline void output_debug(const c8* format, ...)
 {

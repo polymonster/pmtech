@@ -467,7 +467,7 @@ namespace put
 
                 cmp_geometry* p_geom = &scene->geometries[n];
                 cmp_material* p_mat = &scene->materials[n];
-                u32 permutation = scene->material_permutation[n];
+                u32           permutation = scene->material_permutation[n];
 
                 // update skin
                 if (scene->entities[n] & CMP_SKINNED && !(scene->entities[n] & CMP_SUB_GEOMETRY))
@@ -505,7 +505,7 @@ namespace put
                 else
                 {
                     bool set = pmfx::set_technique_perm(view.pmfx_shader, view.technique, permutation);
-                    if(!set)
+                    if (!set)
                     {
                         if (scene->entities[n] & CMP_MASTER_INSTANCE)
                         {
@@ -843,9 +843,9 @@ namespace put
             static forward_light_buffer light_buffer;
             s32                         pos = 0;
             s32                         num_lights = 0;
-            
+
             memset(&light_buffer, 0x0, sizeof(forward_light_buffer));
-            
+
             // directional lights
             s32 num_directions_lights = 0;
             for (s32 n = 0; n < scene->num_nodes; ++n)
@@ -856,11 +856,11 @@ namespace put
                 cmp_light& l = scene->lights[n];
                 if (l.type != LIGHT_TYPE_DIR)
                     continue;
-                
+
                 // update bv and transform
                 scene->bounding_volumes[n].min_extents = -vec3f(FLT_MAX);
                 scene->bounding_volumes[n].max_extents = vec3f(FLT_MAX);
-                
+
                 if (num_lights >= MAX_FORWARD_LIGHTS)
                     break;
 
@@ -885,15 +885,15 @@ namespace put
                 cmp_light& l = scene->lights[n];
                 if (l.type != LIGHT_TYPE_POINT)
                     continue;
-                
+
                 // update bv and transform
                 scene->bounding_volumes[n].min_extents = -vec3f::one();
                 scene->bounding_volumes[n].max_extents = vec3f::one();
-                
+
                 f32 rad = std::max<f32>(l.radius, 1.0f) * 2.0f;
                 scene->transforms[n].scale = vec3f(rad, rad, rad);
                 scene->entities[n] |= CMP_TRANSFORM;
-                
+
                 if (num_lights >= MAX_FORWARD_LIGHTS)
                     break;
 
@@ -921,15 +921,15 @@ namespace put
 
                 if (l.type != LIGHT_TYPE_SPOT)
                     continue;
-                
+
                 // update bv and transform
                 scene->bounding_volumes[n].min_extents = -vec3f::one();
                 scene->bounding_volumes[n].max_extents = vec3f(1.0f, 0.0f, 1.0f);
-                
+
                 f32 angle = acos(1.0f - l.cos_cutoff);
                 f32 lo = tan(angle);
                 f32 range = l.radius;
-                
+
                 scene->transforms[n].scale = vec3f(lo * range, range, lo * range);
                 scene->entities[n] |= CMP_TRANSFORM;
 

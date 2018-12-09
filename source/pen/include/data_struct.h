@@ -1,11 +1,11 @@
 #ifndef _pen_data_struct_h
 #define _pen_data_struct_h
 
-#include "memory.h"
-
 // Minimalist data structures to use as bloat free alternative to vector et al.
 
-// Stretchy buffer itself akin to vector
+#include "memory.h"
+
+// Stretchy buffer itself akin to vector.. shoutout stb.
 
 #ifndef NO_STRETCHY_BUFFER_SHORT_NAMES
 #define sb_free stb_sb_free

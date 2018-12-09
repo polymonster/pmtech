@@ -1,7 +1,7 @@
 #include "audio.h"
+#include "console.h"
 #include "memory.h"
 #include "slot_resource.h"
-#include "console.h"
 
 #include "fmod.hpp"
 
@@ -584,4 +584,4 @@ namespace put
 
         return PEN_ERR_NOT_READY;
     }
-} // namespace pen
+} // namespace put

@@ -6,6 +6,7 @@
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "file_system.h"
+#include "forward_render.h"
 #include "hash.h"
 #include "input.h"
 #include "loader.h"
@@ -16,7 +17,6 @@
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "forward_render.h"
 
 using namespace put;
 using namespace ces;
@@ -36,104 +36,99 @@ namespace physics
 namespace
 {
     const s32 max_lights = 100;
-    
+
     u32 lights_start = 0;
     f32 light_radius = 50.0f;
     s32 num_lights = max_lights;
     f32 scene_size = 200.0f;
 
     vec3f anim_dir[max_lights];
-    
-    const c8* render_methods[] =
-    {
-        "forward_render",
-        "forward_render_zprepass",
-        "deferred_render",
-        "deferred_render_msaa"
-    };
-    s32 render_method = 0;
-    
+
+    const c8* render_methods[] = {"forward_render", "forward_render_zprepass", "deferred_render", "deferred_render_msaa"};
+    s32       render_method = 0;
+
     f32 user_thread_time = 0.0f;
-    
+
     void update_demo(ces::entity_scene* scene, f32 dt)
     {
         ImGui::Begin("Lighting", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::SliderFloat("Light Radius", &light_radius, 0.0f, 300.0f);
         ImGui::SliderInt("Lights", &num_lights, 0, max_lights);
-        
-        if(ImGui::Combo("Method", &render_method, &render_methods[0], PEN_ARRAY_SIZE(render_methods)))
+
+        if (ImGui::Combo("Method", &render_method, &render_methods[0], PEN_ARRAY_SIZE(render_methods)))
         {
             pmfx::set_view_set(render_methods[render_method]);
         }
-        
+
         f32 render_gpu = 0.0f;
         f32 render_cpu = 0.0f;
         pen::renderer_get_present_time(render_cpu, render_gpu);
-        
+
         ImGui::Separator();
         ImGui::Text("Stats:");
         ImGui::Text("User Thread: %2.2f ms", user_thread_time);
         ImGui::Text("Render Thread: %2.2f ms", render_cpu);
         ImGui::Text("GPU: %2.2f ms", render_gpu);
         ImGui::Separator();
-        
+
         ImGui::End();
-        
+
         static f32 t = 0.0f;
         t += dt * 0.01f;
-        
+
         u32 lights_end = lights_start + num_lights;
         u32 light_nodes_end = lights_start + max_lights;
         u32 dir_index = 0;
-        for(u32 i = lights_start; i < light_nodes_end; ++i)
+        for (u32 i = lights_start; i < light_nodes_end; ++i)
         {
-            if(i >= lights_end)
+            if (i >= lights_end)
             {
                 scene->entities[i] &= ~CMP_LIGHT;
                 continue;
             }
-            
+
             scene->transforms[i].translation += anim_dir[dir_index] * dt * 0.1f;
             scene->entities[i] |= CMP_TRANSFORM;
-            
-            for(u32 j = 0; j < 3; ++j)
+
+            for (u32 j = 0; j < 3; ++j)
             {
-                if(fabs(scene->transforms[i].translation[j]) > scene_size)
+                if (fabs(scene->transforms[i].translation[j]) > scene_size)
                 {
-                    f32 rrx = (f32)(rand()%255) / 255.0f;
-                    f32 rry = (f32)(rand()%255) / 255.0f;
-                    f32 rrz = (f32)(rand()%255) / 255.0f;
-                    
+                    f32 rrx = (f32)(rand() % 255) / 255.0f;
+                    f32 rry = (f32)(rand() % 255) / 255.0f;
+                    f32 rrz = (f32)(rand() % 255) / 255.0f;
+
                     anim_dir[dir_index] = vec3f(rrx, rry, rrz) * vec3f(2.0f) - vec3f(1.0);
-                    anim_dir[dir_index] += normalised(vec3f(0.0f, scene_size / 2.0f, 0.0f) - scene->transforms[i].translation);
+                    anim_dir[dir_index] +=
+                        normalised(vec3f(0.0f, scene_size / 2.0f, 0.0f) - scene->transforms[i].translation);
                 }
             }
-            
+
             scene->entities[i] |= CMP_LIGHT;
             scene->lights[i].radius = light_radius;
-            
+
             dir_index++;
         }
     }
-}
+} // namespace
 
 void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
 {
     clear_scene(scene);
-    
+
     // set camera start pos
     main_camera.zoom = 495.0f;
     main_camera.rot = vec2f(-0.8f, 0.37f);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
-    
+
     // pbt textures for material
     u32 albedo_tex = put::load_texture("data/textures/pbr/metalgrid2_basecolor.dds");
     u32 normal_tex = put::load_texture("data/textures/pbr/metalgrid2_normal.dds");
     u32 matallic_tex = put::load_texture("data/textures/pbr/metalgrid2_metallic.dds");
     u32 roughness_tex = put::load_texture("data/textures/pbr/metalgrid2_roughness.dds");
-    
+
     // add some pillars for overdraw and illumination
     f32   num_pillar_rows = 20;
     f32   pillar_size = 20.0f;
@@ -147,9 +142,9 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
 
         for (s32 j = 0; j < num_pillar_rows; ++j)
         {
-            f32 rx = 0.1f + (f32)(rand()%255) / 255.0f * pillar_size;
-            f32 ry = 0.1f + (f32)(rand()%255) / 255.0f * pillar_size * 4.0f;
-            f32 rz = 0.1f + (f32)(rand()%255) / 255.0f * pillar_size;
+            f32 rx = 0.1f + (f32)(rand() % 255) / 255.0f * pillar_size;
+            f32 ry = 0.1f + (f32)(rand() % 255) / 255.0f * pillar_size * 4.0f;
+            f32 rz = 0.1f + (f32)(rand() % 255) / 255.0f * pillar_size;
 
             pos.y = ry;
 
@@ -175,7 +170,7 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             scene->parents[pillar] = pillar;
             scene->entities[pillar] |= CMP_TRANSFORM;
             scene->names[pillar] = "pillar";
-            
+
             instantiate_geometry(box_resource, scene, pillar);
             instantiate_model_cbuffer(scene, pillar);
 
@@ -188,13 +183,13 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
             m->m_roughness = 0.1f;
             m->m_reflectivity = 0.3f;
             m->m_uv_scale = vec2f(uv_scale, uv_scale);
-            
+
             scene->samplers[pillar].sb[0].handle = albedo_tex;
             scene->samplers[pillar].sb[1].handle = normal_tex;
             scene->samplers[pillar].sb[2].handle = roughness_tex;
             scene->samplers[pillar].sb[3].handle = matallic_tex;
-            
-            for(u32 j = 0; j < 4; ++j)
+
+            for (u32 j = 0; j < 4; ++j)
                 scene->samplers[pillar].sb[j].id_sampler_state = PEN_HASH("wrap_linear");
 
             pos.z += d * 2.0f;
@@ -202,44 +197,42 @@ void create_scene_objects(ces::entity_scene* scene, camera& main_camera)
 
         pos.x += d * 2.0f;
     }
-    
-    for(s32 i = 0; i < max_lights; ++i)
+
+    for (s32 i = 0; i < max_lights; ++i)
     {
-        f32 rx = (f32)(rand()%255) / 255.0f;
-        f32 ry = (f32)(rand()%255) / 255.0f;
-        f32 rz = (f32)(rand()%255) / 255.0f;
-        
-        f32 rrx = (f32)(rand()%255) / 255.0f;
-        f32 rry = (f32)(rand()%255) / 255.0f;
-        f32 rrz = (f32)(rand()%255) / 255.0f;
-        
+        f32 rx = (f32)(rand() % 255) / 255.0f;
+        f32 ry = (f32)(rand() % 255) / 255.0f;
+        f32 rz = (f32)(rand() % 255) / 255.0f;
+
+        f32 rrx = (f32)(rand() % 255) / 255.0f;
+        f32 rry = (f32)(rand() % 255) / 255.0f;
+        f32 rrz = (f32)(rand() % 255) / 255.0f;
+
         ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
-        vec4f col = normalised(vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f));
-        
+        vec4f   col = normalised(vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f));
+
         u32 light = get_new_node(scene);
         scene->names[light] = "light";
         scene->id_name[light] = PEN_HASH("light");
-        
-        scene->transforms[light].translation = (vec3f(rx, ry, rz) *
-                                                vec3f(2.0f, 1.0f, 2.0f) +
-                                                vec3f(-1.0f, 0.0f, -1.0f)) *
-                                                vec3f(scene_size, scene_size * 0.1f, scene_size);
-        
+
+        scene->transforms[light].translation = (vec3f(rx, ry, rz) * vec3f(2.0f, 1.0f, 2.0f) + vec3f(-1.0f, 0.0f, -1.0f)) *
+                                               vec3f(scene_size, scene_size * 0.1f, scene_size);
+
         scene->transforms[light].translation.y += scene_size;
-        
+
         scene->transforms[light].rotation = quat();
         scene->transforms[light].rotation.euler_angles(rrx, rry, rrz);
         scene->transforms[light].scale = vec3f::one();
         scene->entities[light] |= CMP_TRANSFORM;
-        
+
         scene->lights[light].colour = col.xyz;
         scene->lights[light].radius = light_radius;
         scene->lights[light].type = LIGHT_TYPE_POINT;
         instantiate_light(scene, light);
-        
+
         anim_dir[i] = vec3f(rrx, rry, rrz) * vec3f(2.0f) - vec3f(1.0);
-        
-        if(i == 0)
+
+        if (i == 0)
             lights_start = light;
     }
 }
@@ -276,7 +269,7 @@ PEN_TRV pen::user_entry(void* params)
     sc.name = "main_scene";
     sc.camera = &main_camera;
     sc.id_name = PEN_HASH(sc.name.c_str());
-    
+
     // create view renderers
     put::scene_view_renderer svr_main;
     svr_main.name = "ces_render_scene";
@@ -287,7 +280,7 @@ PEN_TRV pen::user_entry(void* params)
     svr_editor.name = "ces_render_editor";
     svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ces::render_scene_editor;
-    
+
     put::scene_view_renderer svr_light_volumes;
     svr_light_volumes.name = "ces_render_light_volumes";
     svr_light_volumes.id_name = PEN_HASH(svr_light_volumes.name.c_str());
@@ -296,7 +289,7 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
     pmfx::register_scene_view_renderer(svr_light_volumes);
-    
+
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
 
@@ -312,7 +305,7 @@ PEN_TRV pen::user_entry(void* params)
         pen::timer_start(frame_timer);
 
         put::dev_ui::new_frame();
-        
+
         update_demo(main_scene, (f32)frame_time);
 
         pmfx::update();

@@ -11,9 +11,9 @@ namespace put
     // Public API used by the user thread will store function call arguments in a command buffer
     // Dedicated thread will wait on a semaphore until audio_consume_command_buffer is called
     // command buffer will be consumed passing arguments to the direct:: functions.
-    
+
 #define MAX_AUDIO_RESOURCES 100
-    
+
     enum audio_play_state : s32
     {
         NOT_PLAYING = 0,
@@ -131,6 +131,6 @@ namespace put
         void audio_dsp_set_three_band_eq(const u32 eq_index, const f32 low, const f32 med, const f32 high);
         void audio_dsp_set_gain(const u32 dsp_index, const f32 gain);
     } // namespace direct
-} // namespace pen
+} // namespace put
 
 #endif

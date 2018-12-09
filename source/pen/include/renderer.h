@@ -1,6 +1,13 @@
 #ifndef _renderer_h
 #define _renderer_h
 
+// Simple c-style generic rendering api wrapper, with a dedicated dispatch thread.
+// Currently implementations are in Direct3D11 (win32), OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios)
+
+// Public api used by the user thread will store function call arguments in a command buffer
+// Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
+// command buffer will be consumed passing arguments to the direct:: functions.
+
 #include "pen.h"
 #include "renderer_definitions.h"
 
@@ -21,13 +28,6 @@
 
 namespace pen
 {
-    // Simple C-Style generic rendering API wrapper, with a dedicated dispatch thread.
-    // Currently implementations are in Direct3D11 (win32), OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios)
-
-    // Public API used by the user thread will store function call arguments in a command buffer
-    // Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
-    // command buffer will be consumed passing arguments to the direct:: functions.
-
     struct renderer_info
     {
         const c8* api_version;

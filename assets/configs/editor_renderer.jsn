@@ -105,7 +105,7 @@
         
         cubemap_render:
         {
-            target             : [cubemap_test]
+            target : [cubemap_test]
         }
     },
     
@@ -129,12 +129,3 @@
     
     view_set: editor
 }
-
-
-
-
-
-
-
-
-

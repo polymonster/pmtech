@@ -9,7 +9,20 @@
 
 namespace pen
 {
-    inline s32 str_find_reverse(const Str& string, const c8* search, s32 start_pos = -1)
+    // Function decl
+
+    s32  str_find(const Str& string, const c8* search, u32 start_pos = 0);
+    s32  str_find_reverse(const Str& string, const c8* search, s32 start_pos = -1);
+    Str  str_substr(const Str& string, s32 start, s32 end);
+    bool str_ends_with(const Str& string, const c8* ends);
+    Str  str_remove_ext(const Str& string);
+    Str  str_replace_chars(const Str& string, const c8 search, const c8 replace);
+    Str  str_replace_string(const Str& string, const c8* search, const c8* replace);
+    Str  str_normalise_filepath(const Str& filepath);
+
+    // Implementation
+
+    inline s32 str_find_reverse(const Str& string, const c8* search, s32 start_pos)
     {
         s32 len = string.length();
         s32 search_len = pen::string_length(search);
@@ -33,9 +46,7 @@ namespace pen
             }
 
             if (j < 0)
-            {
                 return i; // find_start - search_len;
-            }
 
             --i;
         }
@@ -60,9 +71,7 @@ namespace pen
         s32 ii = str_find_reverse(string, ends);
 
         if (len - ii == pen::string_length(ends))
-        {
             return true;
-        }
 
         return false;
     }
@@ -73,14 +82,12 @@ namespace pen
         s32 dir = str_find_reverse(string, "/");
 
         if (ext > dir)
-        {
             return str_substr(string, 0, ext);
-        }
 
         return string;
     }
 
-    inline s32 str_find(const Str& string, const c8* search, u32 start_pos = 0)
+    inline s32 str_find(const Str& string, const c8* search, u32 start_pos)
     {
         s32 len = string.length();
         s32 search_len = pen::string_length(search);
@@ -101,9 +108,7 @@ namespace pen
             }
 
             if (j == search_len)
-            {
                 return find_start;
-            }
 
             ++i;
         }
