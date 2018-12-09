@@ -16,12 +16,39 @@ def display_help():
     print("\t-all <build all>")
     print("\t-actions <action, ...>")
     for i in range(0, len(action_strings)):
-        print("\t\t" + action_strings[i] + " - " + action_descriptions[ i ])
+        print("\t\t" + action_strings[i] + " - " + action_descriptions[i])
     print("\t-platform <osx, win32, ios, linux, android>")
     print("\t-ide <xcode4, vs2015, v2017, gmake, android-studio>")
     print("\t-clean <clean build, bin and temp dirs>")
     print("\t-renderer <dx11, opengl>")
     print("\t-toolset <gcc, clang, msc>")
+
+
+def display_prompted_input():
+    print("please enter what you want to build")
+    print("1. code")
+    print("2. shaders")
+    print("3. models")
+    print("4. textures")
+    print("5. audio")
+    print("6. fonts")
+    print("7. configs")
+    print("8. all")
+    print("0. show full command line options")
+    input_val = int(input())
+
+    if input_val == 0:
+        display_help()
+
+    add_all = False
+
+    all_value = 8
+    if input_val == all_value:
+        add_all = True
+
+    for index in range(0, all_value - 1):
+        if input_val - 1 == index or add_all:
+            execute_actions.append(action_strings[index])
 
 
 def parse_args(args):
@@ -31,10 +58,17 @@ def parse_args(args):
     global clean_destinations
     global toolset
     for index in range(0, len(sys.argv)):
+        is_action = False
+        for action in action_strings:
+            arg_action = sys.argv[index][1:]
+            if arg_action == action:
+                execute_actions.append(action)
+                is_action = True
+        if is_action:
+            continue
         if sys.argv[index] == "-help":
             display_help()
         if sys.argv[index] == "-platform":
-
             platform_name = sys.argv[index+1]
             index += 1
         if sys.argv[index] == "-ide":
@@ -236,30 +270,7 @@ if __name__ == "__main__":
     clean_destinations = False
 
     if len(sys.argv) <= 1:
-        print("please enter what you want to build")
-        print("1. code projects")
-        print("2. shaders")
-        print("3. models")
-        print("4. textures")
-        print("5. audio")
-        print("6. fonts")
-        print("7. configs")
-        print("8. all")
-        print("0. show full command line options")
-        input_val = int(input())
-
-        if input_val == 0:
-            display_help()
-
-        add_all = False
-
-        all_value = 8
-        if input_val == all_value:
-            add_all = True
-
-        for index in range(0, all_value - 1):
-            if input_val - 1 == index or add_all:
-                execute_actions.append(action_strings[index])
+        display_prompted_input()
     else:
         parse_args(sys.argv)
 
