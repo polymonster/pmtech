@@ -37,7 +37,7 @@ vs_output vs_main( vs_input input )
 
 declare_texture_samplers
 {
-	texture_cube( tex_cube, 0 );
+    texture_cube( tex_cube, 0 );
     texture_3d( tex_3d, 0 );
 };
 
@@ -64,10 +64,10 @@ ps_output ps_tex_cube( vs_output input )
     
     float3 ro = wnear.xyz;
     float3 rd = normalize(wfar.xyz - wnear.xyz);
-	
-	float3 n = float3(0.0, 0.0, 0.0);
-	
-	for(float t = 0.0; t < 10.0;)
+    
+    float3 n = float3(0.0, 0.0, 0.0);
+    
+    for(float t = 0.0; t < 10.0;)
     {
         float3 p = ro + rd * t;
                 
@@ -75,14 +75,14 @@ ps_output ps_tex_cube( vs_output input )
                 
         if(d < 0.001)
         {
-			n = normalize(p);
-			n.y *= -1.0;
+            n = normalize(p);
+            n.y *= -1.0;
             break;
         }
             
         t += d;
     }
-		
+        
     output.colour = sample_texture(tex_cube, n);
     
     return output;
@@ -111,11 +111,11 @@ ps_output ps_tex_volume( vs_output input )
     
     float3 ro = wnear.xyz;
     float3 rd = normalize(wfar.xyz - wnear.xyz);
-	
-	float3 p = float3(0.0, 0.0, 0.0);
-	float n = 0.0;
-	
-	for(float t = 0.0; t < 10.0;)
+    
+    float3 p = float3(0.0, 0.0, 0.0);
+    float n = 0.0;
+    
+    for(float t = 0.0; t < 10.0;)
     {
         p = ro + rd * t;
                 
@@ -140,7 +140,7 @@ ps_output ps_tex_mip_level( vs_output input )
 {
     ps_output output;
     
-	output.colour = float4(0.0, 1.0, 1.0, 1.0);
+    output.colour = float4(0.0, 1.0, 1.0, 1.0);
     //output.colour = input.colour * sample_texture( tex, input.tex_coord.xy );
         
     return output;
@@ -151,19 +151,19 @@ pmfx:
     "tex_cube":
     {
         "vs"        : "vs_main",
-		"ps"		: "ps_tex_cube"
+        "ps"        : "ps_tex_cube"
     },
-	
-	"tex_volume":
+    
+    "tex_volume":
     {
         "vs"        : "vs_main",
-		"ps"		: "ps_tex_volume"
+        "ps"        : "ps_tex_volume"
     },
-	
-	"tex_mip_level":
+    
+    "tex_mip_level":
     {
         "vs"        : "vs_main",
-		"ps"		: "ps_tex_mip_level"
+        "ps"        : "ps_tex_mip_level"
     }
 }
 

@@ -4,6 +4,24 @@ import os
 
 def display_help():
     print("stub format help:")
+    print("    -help (display this dialog)")
+    print("    -i <input file>")
+    print("    -o <output file>")
+    print("    -w <overwrite input file in place>")
+    print("    -p (print result to console)")
+    print("    -generate_stub_functions (generate function stubs from input file")
+    print("    -align_consecutive <char> (align consecutive lines by char)")
+    print("    -tabs_to_spaces <num spaces per tab> (replace tabs with spaces)")
+    print("    -rm_comments (remove comments)")
+    print("    -camel_to_snake (convert camel case to snake case")
+    print("    -snake_to_camel (convert snake case to camel case")
+
+
+def indent_str(count):
+    istr = ""
+    for i in range(count):
+        istr += "    "
+    return istr
 
 
 # replace tabs with spaces for consistent display across editors and websites
@@ -208,13 +226,7 @@ def remove_comments(file_data):
     return conditioned
 
 
-def indent_str(count):
-    istr = ""
-    for i in range(count):
-        istr += "    "
-    return istr
-
-
+# create stub c/c++ functions
 def generate_stub_functions(file_data, filename):
     file_data = tabs_to_spaces(file_data, 4)
     file_data = remove_comments(file_data)
@@ -258,8 +270,41 @@ def generate_stub_functions(file_data, filename):
     return output
 
 
+# snake_case to CamelCase
+def snake_to_camel(file_data):
+    num_chars = len(file_data)
+    out_data = ""
+    for i in range(num_chars):
+        if file_data[i] == "_":
+            continue
+        if i > 0:
+            if file_data[i-1] == "_":
+                out_data += file_data[i].upper()
+                continue
+        out_data += file_data[i]
+    return out_data
+
+
+# CamelCase to snake_case
+def camel_to_snake(file_data):
+    num_chars = len(file_data)
+    out_data = ""
+    for i in range(num_chars):
+        if file_data[i].isupper():
+            if i > 0:
+                if file_data[i-1].islower():
+                    out_data += "_" + file_data[i].lower()
+                    continue
+            out_data += file_data[i].lower()
+        else:
+            out_data += file_data[i]
+    return out_data
+
+
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
+        display_help()
+    elif "-help" in sys.argv:
         display_help()
     else:
         input_files = []
@@ -277,15 +322,26 @@ if __name__ == "__main__":
                 spaces = sys.argv[sys.argv.index("-tabs_to_spaces") + 1]
                 file_data = tabs_to_spaces(file_data, int(spaces))
 
+            if "-rm_comments" in sys.argv:
+                file_data = remove_comments(file_data)
+
             if "-align_consecutive" in sys.argv:
                 align_char = sys.argv[sys.argv.index("-align_consecutive") + 1]
                 file_data = align_consecutive(file_data, align_char)
 
             if "-generate_stub_functions" in sys.argv:
                 file_data = generate_stub_functions(file_data, os.path.basename(input_file))
+
+            if "-camel_to_snake" in sys.argv:
+                file_data = camel_to_snake(file_data)
+
+            if "-snake_to_camel" in sys.argv:
+                file_data = snake_to_camel(file_data)
+
+            if "-p" in sys.argv:
                 print(file_data)
 
-            if 0:
+            if "-w" in sys.argv:
                 file = open(input_file, "w")
                 file.write(file_data)
                 file.close()

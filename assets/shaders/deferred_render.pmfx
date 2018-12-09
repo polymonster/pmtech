@@ -136,7 +136,7 @@ ps_output ps_light(vs_output input)
             roughness,
             albedo.rgb
         );
-        	
+            
     if:(POINT_LIGHT)
     {
         light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
@@ -151,7 +151,7 @@ ps_output ps_light(vs_output input)
     }
 
     output.colour.rgb = light_col;
-	    
+        
     return output;
 }
 

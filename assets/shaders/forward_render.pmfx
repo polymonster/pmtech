@@ -114,10 +114,10 @@ vs_output_zonly vs_main_zonly( vs_input input )
 
     output.position = mul( input.position, wvp );
       
-	// for d3d 0 - 1 clip space
-	output.position /= output.position.w;
-	remap_z_clip_space(output.position.z);
-	
+    // for d3d 0 - 1 clip space
+    output.position /= output.position.w;
+    remap_z_clip_space(output.position.z);
+    
     return output;
 }
 
@@ -142,9 +142,9 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
     
     float4x4 wvp = mul( world_matrix, vp_matrix );
     float4x4 wm = world_matrix;
-	
-	output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
-							 input.texcoord.z, 1.0 - input.texcoord.w );
+    
+    output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
+                             input.texcoord.z, 1.0 - input.texcoord.w );
     
     if:(INSTANCED)
     {
@@ -319,7 +319,7 @@ ps_output ps_forward_lit( vs_output input )
             sp.xyz /= sp.w;
             sp.y *= -1.0;
             sp.xyz = sp.xyz * 0.5 + 0.5;
-			
+            
             float d = sample_texture( shadowmap_texture, sp.xy ).r;
 
             float shadow = sp.z < d ? 1.0 : 0.0;
@@ -334,7 +334,7 @@ ps_output ps_forward_lit( vs_output input )
                 sp.xyz /= sp.w;
                 sp.y *= -1.0;
                 sp.xyz = sp.xyz * 0.5 + 0.5;
-				
+                
                 d = sample_texture( shadowmap_texture, sp.xy ).r;
             
                 float fp = 1.0;

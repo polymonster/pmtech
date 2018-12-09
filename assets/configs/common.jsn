@@ -28,8 +28,8 @@
             filter : linear,
             address: wrap
         },
-		
-		wrap_point:
+        
+        wrap_point:
         {
             filter : point,
             address: wrap
@@ -151,8 +151,8 @@
             size  : [2048,2048],
             format: d24s8,
         },
-		
-		dummy_shadow_map:
+        
+        dummy_shadow_map:
         {
             size  : [4,4],
             format: d24s8,
@@ -176,8 +176,8 @@
             camera             : model_viewer_camera,
             scene_views        : ["ces_render_scene"],
             render_flags       : ["forward_lit"]
-			
-			sampler_bindings:
+            
+            sampler_bindings:
             [
                 { texture: dummy_shadow_map, unit: 15, state: wrap_linear, shader: ps },
             ],
@@ -185,7 +185,7 @@
         
         main_view_post_processed:
         {
-			inherit			   : main_view,
+            inherit               : main_view,
             target             : [post_process_colour, post_process_depth],
             post_process       : editor_default
         },
