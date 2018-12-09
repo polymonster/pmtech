@@ -2423,7 +2423,8 @@ namespace put
             // bind view samplers.. render targets, global textures
             for (auto& sb : v.sampler_bindings)
             {
-                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
+                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit,
+                                          pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
 
             // bind technique samplers
@@ -2433,7 +2434,8 @@ namespace put
                 if (sb.handle == 0)
                     continue;
 
-                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
+                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit,
+                                          pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
 
             u32 num_samplers = v.sampler_bindings.size();

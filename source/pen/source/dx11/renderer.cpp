@@ -1156,7 +1156,6 @@ namespace pen
             }
         }
 
-
         if (bind_flags & TEXTURE_BIND_PS)
         {
             s_immediate_context->PSSetSamplers(resource_slot, 1, sampler);

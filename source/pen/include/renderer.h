@@ -291,8 +291,8 @@ namespace pen
     {
         TEXTURE_BIND_NO_FLAGS = 0,
         TEXTURE_BIND_MSAA = 1,
-        TEXTURE_BIND_PS = 1<<1,
-        TEXTURE_BIND_VS = 1<<2
+        TEXTURE_BIND_PS = 1 << 1,
+        TEXTURE_BIND_VS = 1 << 2
     };
 
     enum e_msaa_resolve_type
