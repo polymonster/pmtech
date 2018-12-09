@@ -1,9 +1,8 @@
 #ifndef _thread_h
 #define _thread_h
 
-// Minimalist C-Style thread wrapper API
-// Includes functions to create jobs, threads, mutex and semaphore
-// Implementations currently in posix and win32
+// Minimalist c-style thread wrapper api.
+// Includes functions to create jobs, threads, mutex and semaphore.
 
 #include "pen.h"
 
@@ -73,26 +72,23 @@ namespace pen
     // Threads
     thread* thread_create(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* thread_params, thread_start_flags flags);
     void    thread_destroy(pen::thread* p_thread);
+    void thread_sleep_ms(u32 milliseconds);
+    void thread_sleep_us(u32 microseconds);
 
     // Mutex
     mutex* thread_mutex_create();
     void   thread_mutex_destroy(mutex* p_mutex);
-
     void thread_mutex_lock(mutex* p_mutex);
     u32  thread_mutex_try_lock(mutex* p_mutex);
     void thread_mutex_unlock(mutex* p_mutex);
 
     // Semaphore
     semaphore* thread_semaphore_create(u32 initial_count, u32 max_count);
-    void       thread_semaphore_destroy(semaphore* p_semaphore);
-
+    void thread_semaphore_destroy(semaphore* p_semaphore);
     bool thread_semaphore_try_wait(semaphore* p_semaphore);
     bool thread_semaphore_wait(semaphore* p_semaphore);
     void thread_semaphore_signal(semaphore* p_semaphore, u32 count);
 
-    // Actions
-    void thread_sleep_ms(u32 milliseconds);
-    void thread_sleep_us(u32 microseconds);
 } // namespace pen
 
 #endif

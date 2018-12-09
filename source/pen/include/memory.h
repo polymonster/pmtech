@@ -1,10 +1,9 @@
 #ifndef _memory_h
 #define _memory_h
 
-// Minimalist memory api wrapping up malloc and free
-// It provides some very minor portability solutions between win32 and osx and linux
-// But mostly it is here to intercept all allocations,
-// So at a later date custom allocation or mem tracking schemes could be used.
+// Minimalist memory api wrapping up malloc and free.
+// It provides some very minor portability solutions between win32 and osx and linux.
+// Mostly it is here to intercept allocs, so at a later date custom allocation or tracking schemes could be used.
 
 #include "pen.h"
 #include <stdio.h>
@@ -21,7 +20,7 @@
 #define THROW_NO_EXCEPT
 #define PEN_MEM_ALIGN_ALLOC(mem, align, size) mem = _aligned_malloc(size, align)
 #define PEN_MEM_ALIGN_FREE _aligned_free
-#else // OSX
+#else // macOS, iOS
 #define PEN_MEM_ALIGN_ALLOC(mem, align, size) posix_memalign(&mem, align, size)
 #define PEN_MEM_ALIGN_FREE free
 #define THROW_BAD_ALLOC throw(std::bad_alloc)
@@ -81,12 +80,12 @@ namespace pen
 } // namespace pen
 
 // And override global new and delete
+
 void* operator new(std::size_t size, const std::nothrow_t& nothrow_value) THROW_NO_EXCEPT;
-
 void* operator new(size_t n) THROW_BAD_ALLOC;
-void  operator delete(void* p)THROW_NO_EXCEPT;
-
 void* operator new[](size_t n) THROW_BAD_ALLOC;
+
 void  operator delete[](void* p) THROW_NO_EXCEPT;
+void  operator delete(void* p)THROW_NO_EXCEPT;
 
 #endif

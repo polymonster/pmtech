@@ -107,6 +107,12 @@
         {
             target             : [cubemap_test]
         }
+        
+        demo_view:
+        {
+            inherit: main_view,
+            clear_colour : [0.0, 0.0, 0.0, 1.0]
+        }
     },
     
     view_sets: 
@@ -117,6 +123,10 @@
             picking_view, 
             volume_rasteriser,
             cubemap_render
+        ],
+        
+        demo: [
+            demo_view,
         ],
         
         editor_post_processed: [

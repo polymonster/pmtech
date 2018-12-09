@@ -1,6 +1,49 @@
 #ifndef _pen_json_h
 #define _pen_json_h
 
+// C++ wrapper api for JSMN.
+// Provides operators to access JSON objects and arrays and get retreive typed values.
+// json file is kept in a char buffer and jsmn tokens are used to iterate.
+// this api does not use any vectors or maps to store the json data.
+
+// Examples:
+// Load:
+// json j = load_from_file("filename");
+//
+// Value by Key:
+// json member = j["key"];
+//
+// As Type:
+// u32 value = member.as_u32();
+//
+// json can be an object or an array
+// query it with:
+// j.get_type() == JSMN_ARRAY or JSMN_OBJECT
+//
+// Arrays:
+// u32 num_array_elements = j.size()
+// for(u32 i = 0; i < num_array_elements; ++i)
+//        value = j[i].as_bool;
+//
+// Iterate Members:
+// u32 num_members = j.size()
+// for(u32 i = 0; i < num_members; ++i)
+//        printf(j[0].name); // print member name
+//
+// Print:
+// printf(j.dumps().c_str())
+
+// To use unstrict json without the need for quotes around keys and string values
+// care must be taken with filenames, colons (:) need to be stripped from filenames (ie C:\windows)
+// use set_filename and as filen which will replace : with @ (ie C:@windows) or the inverse.
+
+// Combine will combine members of j1 and j2 on an object by object, member by members basis
+// if duplicate members exist j2.member will replace j1.member
+
+// API for writing json is limited, if you want to write to nested members or arrays
+// you will need to create copies of the objects and then manually recursively write the objects
+// back upwards once you have written to a value (leaf).
+
 #include "hash.h"
 #include "jsmn/jsmn.h"
 #include "pen.h"
@@ -8,49 +51,6 @@
 
 namespace pen
 {
-    // C++ wrapper API for JSMN
-    // Provides operators to access JSON objects and arrays and get retreive typed values
-    // json file is kept in a char buffer and jsmn tokens are used to iterate
-    // this api does not use any vectors or maps to store the json data
-
-    // Examples:
-    // Load:
-    // json j = load_from_file("filename");
-    //
-    // Value by Key:
-    // json member = j["key"];
-    //
-    // As Type:
-    // u32 value = member.as_u32();
-    //
-    // json can be an object or an array
-    // query it with:
-    // j.get_type() == JSMN_ARRAY or JSMN_OBJECT
-    //
-    // Arrays:
-    // u32 num_array_elements = j.size()
-    // for(u32 i = 0; i < num_array_elements; ++i)
-    //        value = j[i].as_bool;
-    //
-    // Iterate Members:
-    // u32 num_members = j.size()
-    // for(u32 i = 0; i < num_members; ++i)
-    //        printf(j[0].name); // print member name
-    //
-    // Print:
-    // printf(j.dumps().c_str())
-
-    // To use unstrict json without the need for quotes around keys and string values
-    // care must be taken with filenames, colons (:) need to be stripped from filenames (ie C:\windows)
-    // use set_filename and as filen which will replace : with @ (ie C:@windows) or the inverse.
-
-    // Combine will combine members of j1 and j2 on an object by object, member by members basis
-    // if duplicate members exist j2.member will replace j1.member
-
-    // API for writing json is limited, if you want to write to nested members or arrays
-    // you will need to create copies of the objects and then manually recursively write the objects
-    // back upwards once you have written to a value (leaf).
-
     struct json_object;
     class json;
 

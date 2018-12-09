@@ -1,13 +1,13 @@
 #ifndef _slot_resource_h
 #define _slot_resource_h
 
+// Simple slot resource api can be used to allocate an array slot to a generic opaque resource via a handle.
+// Implements a free list so getting a new resource slot is an o(1) operation.
+
 #include "pen.h"
 
 namespace pen
 {
-    // Simple slot resource API can be used to allocate an array slot to a generic resource via a handle
-    // implements a free list so getting a new resource slot is an o(1) operation
-
     enum e_resource_flags
     {
         RESOURCE_FREE = 1,
@@ -26,7 +26,15 @@ namespace pen
         free_slot_list* slots;
         free_slot_list* head;
     };
+    
+    // Function decl
+    
+    void slot_resources_init(slot_resources* resources, u32 num);
+    u32  slot_resources_get_next(slot_resources* resources);
+    bool slot_resources_free(slot_resources* resources, const u32 slot);
 
+    // Implementation
+    
     inline void slot_resources_init(slot_resources* resources, u32 num)
     {
         resources->slots = new free_slot_list[num];
