@@ -1,17 +1,15 @@
 #ifndef _file_system_h
 #define _file_system_h
 
+// Minimalist c-style file system api.
+// Can read files and also enumerate file system and volumes as an fs_tree_node.
+// Make sure to free p_buffer yourself allocated from filesystem_read_file_to_buffer.
+// Make sure to call filesystem_enum_free_mem with your fs_tree_node once finished with it.
+
 #include "pen.h"
 
 namespace pen
 {
-    // Minimalist C-Style filesystem api for portability between windows and unix
-    // Implemented in win32 and using the c file system and windir stat on unix
-    // Can read files and also enumerate file system and volumes as an fs_tree_node
-
-    // Make sure to free p_buffer yourself allocated from filesystem_read_file_to_buffer
-    // Make sure to call filesystem_enum_free_mem with your fs_tree_node once finished with it.
-
     struct fs_tree_node
     {
         c8*           name = nullptr;
