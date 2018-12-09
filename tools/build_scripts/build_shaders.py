@@ -205,7 +205,7 @@ def generate_shader_info(
     shader_info["cbuffers"].append(buffer_desc)
 
     output_info = open(info_filename, 'wb+')
-    output_info.write(bytes(json.dumps(shader_info, indent=4),'UTF-8'))
+    output_info.write(bytes(json.dumps(shader_info, indent=4), 'UTF-8'))
     output_info.close()
     return shader_info
 

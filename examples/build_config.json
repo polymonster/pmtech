@@ -1,6 +1,6 @@
 {
-	"pmtech_dir": "..",
-	"textures_dir": "assets/textures",
-	"models_dir": "assets/mesh",
-	"vcvarsall_dir": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build"
+    "pmtech_dir": "..",
+    "textures_dir": "assets/textures",
+    "models_dir": "assets/mesh",
+    "vcvarsall_dir": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build"
 }

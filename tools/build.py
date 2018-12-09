@@ -137,6 +137,27 @@ def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, f
         shutil.copy(src_file, dest_file)
 
 
+def configure_vc_vars_all(build_config):
+    if "vcvarsall_dir" in build_config.keys():
+        if os.path.exists(build_config["vcvarsall_dir"]):
+            return
+
+    while True:
+        print("Cannot find 'vcvarsall.exe'")
+        print("Please enter the full path to the vc2017 installation directory containing vcvarsall.exe")
+        input_dir = str(input())
+        input_dir = input_dir.strip("\"")
+        input_dir = os.path.normpath(input_dir)
+        if os.path.exists(input_dir):
+            build_config["vcvarsall_dir"] = input_dir
+            bj = open("build_config.json", "w+")
+            bj.write(json.dumps(build_config, indent=4))
+            bj.close()
+            return
+        else:
+            time.sleep(1)
+
+
 if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
     print("pmtech build -------------------------------------------------------------------")
@@ -188,6 +209,7 @@ if __name__ == "__main__":
     if util.get_platform_name() in shell_build:
         third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
     else:
+        configure_vc_vars_all(build_config)
         third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + build_config["vcvarsall_dir"] + "\""
 
     premake_exec = os.path.join(tools_dir, "premake", "premake5")
