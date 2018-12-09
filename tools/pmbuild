@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
-python3 "$SCRIPTPATH"/build.py "$@"
+if [[ "$OSTYPE" == "msys" ]]; then
+	py -3 "$SCRIPTPATH"/build.py "$@"
+else
+	python3 "$SCRIPTPATH"/build.py "$@"
+fi
