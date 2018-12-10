@@ -613,7 +613,7 @@ namespace put
             hash_id                  id_name;
             pen::render_target_blend rtb;
         };
-        static std::vector<partial_blend_state> k_partial_blend_states;
+        static std::vector<partial_blend_state> s_partial_blend_states;
 
         void parse_partial_blend_states(pen::json& render_config)
         {
@@ -636,7 +636,7 @@ namespace put
                 rtb.blend_op_alpha =
                     mode_from_string(k_blend_op_mode_map, state["alpha_blend_op"].as_cstr(), PEN_BLEND_OP_ADD);
 
-                k_partial_blend_states.push_back({PEN_HASH(state.name().c_str()), rtb});
+                s_partial_blend_states.push_back({PEN_HASH(state.name().c_str()), rtb});
             }
         }
 
@@ -787,18 +787,22 @@ namespace put
                     {
                         hash_id hh = PEN_HASH(blend_state[i].as_cstr());
 
-                        for (auto& b : k_partial_blend_states)
+                        for (auto& b : s_partial_blend_states)
+                        {
                             if (hh == b.id_name)
                                 rtb.push_back(b.rtb);
+                        }
                     }
                 }
                 else
                 {
                     hash_id hh = PEN_HASH(blend_state.as_cstr());
 
-                    for (auto& b : k_partial_blend_states)
+                    for (auto& b : s_partial_blend_states)
+                    {
                         if (hh == b.id_name)
                             rtb.push_back(b.rtb);
+                    }
                 }
             }
 
@@ -2333,6 +2337,7 @@ namespace put
             s_view_sets.clear();
             s_post_process_names.clear();
             s_virtual_rt.clear();
+            s_partial_blend_states.clear();
         }
 
         void shutdown()
