@@ -800,10 +800,8 @@ namespace put
                     hash_id hh = PEN_HASH(blend_state.as_cstr());
 
                     for (auto& b : k_partial_blend_states)
-                    {
                         if (hh == b.id_name)
                             rtb.push_back(b.rtb);
-                    }
                 }
             }
 
@@ -813,9 +811,7 @@ namespace put
                 if (write_mask.type() == JSMN_ARRAY)
                 {
                     for (s32 i = 0; i < write_mask.size(); ++i)
-                    {
                         masks.push_back(write_mask[i].as_u8_hex());
-                    }
                 }
                 else
                 {
@@ -845,8 +841,6 @@ namespace put
             bcp.independent_blend_enable = multi_blend;
             bcp.num_render_targets = num_rt;
             bcp.render_targets = new pen::render_target_blend[num_rt];
-
-            PEN_ASSERT(num_rt < 8);
 
             for (s32 i = 0; i < num_rt; ++i)
             {
