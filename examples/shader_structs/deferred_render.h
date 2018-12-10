@@ -1,5 +1,6 @@
-struct directional_light
-{
-	float4 m_colour;
-};
+#define DIRECTIONAL_LIGHT_MSAA 1
+
+#define POINT_LIGHT_MSAA 1
+
+#define SPOT_LIGHT_MSAA 1
 

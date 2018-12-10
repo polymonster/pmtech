@@ -94,53 +94,6 @@ vs_output vs_spot_light(vs_input input)
     return output;
 }
 
-float3 apply_light(vs_output input, float2 sc, float4 g_albedo, float4 g_normals, float4 g_world_pos)
-{    
-    float3 albedo = g_albedo.rgb;
-    float3 n = normalize(g_normals.rgb);
-    float3 world_pos = g_world_pos.rgb;
-    
-    float metalness = g_world_pos.a;
-    float roughness = g_albedo.a;
-    float reflectivity = g_normals.a;
-    
-    float3 light_col = cook_torrence(  
-            input.light_pos_radius,
-            input.light_colour.rgb,
-            n,
-            world_pos,
-            camera_view_pos.xyz,
-            albedo,
-            float3(0.5, 0.5, 0.5),
-            roughness,
-            reflectivity);
-                                        
-     light_col += oren_nayar( 
-            input.light_pos_radius,
-            input.light_colour.rgb,
-            n,
-            world_pos,
-            camera_view_pos.xyz,
-            roughness,
-            albedo.rgb
-        );
-            
-    if:(POINT_LIGHT)
-    {
-        light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
-    }    
-    
-    if:(SPOT_LIGHT)
-    {
-        light_col *= spot_light_attenuation(input.light_pos_radius, 
-                                            input.light_dir_cutoff,
-                                            input.light_data.x, 
-                                            world_pos);
-    }
-	
-	return light_col;
-}	
-
 ps_output ps_light(vs_output input)
 {
     ps_output output;
@@ -167,7 +120,7 @@ ps_output ps_light(vs_output input)
 		int samples = 1;
 	}
 	
-	[unroll]
+	__pmfx_unroll
 	for(int i = 0; i < samples; ++i)
 	{    
 		if:(MSAA)
