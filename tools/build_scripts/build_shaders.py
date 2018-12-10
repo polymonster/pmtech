@@ -211,6 +211,7 @@ def generate_shader_info(
 
 
 def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, technique_name):
+    global error_code
     f = os.path.basename(filename)
     f = os.path.splitext(f)[0]
     temp_file_name = os.path.join(temp_dir, f)
@@ -234,6 +235,7 @@ def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, tec
     proc = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE)
     proc.wait()
     if proc.returncode != 0:
+        error_code = proc.returncode
         print(output_file_and_path)
         print(temp_file_name)
         print(proc.stdout.read())
@@ -598,11 +600,14 @@ def generate_glsl(
     vs_file.write(final_vs_source)
     vs_file.close()
 
+    global error_code
     vs_fn_opt = vs_fn.replace(".vsc", ".vso")
     if compiler_dir != "":
         compiler_exe = os.path.join(compiler_dir, system_platform, "glslopt")
         cmd = compiler_exe + " -v " + vs_fn + " " + vs_fn_opt
-        subprocess.call(cmd, shell=True)
+        ret = subprocess.call(cmd, shell=True)
+        if ret != 0:
+            error_code = ret
 
     # start making ps shader code
     if ps_main != "":
@@ -667,7 +672,9 @@ def generate_glsl(
         if compiler_dir != "":
             compiler_exe = os.path.join(compiler_dir, system_platform, "glslopt")
             cmd = compiler_exe + " -f " + ps_fn + " " + ps_fn_opt
-            subprocess.call(cmd, shell=True)
+            ret = subprocess.call(cmd, shell=True)
+            if ret != 0:
+                error_code = ret
 
 
 def find_includes(file_text, root):
@@ -1419,14 +1426,16 @@ def parse_pmfx(filename, root):
 
 
 def shader_compile_pmfx():
+    global error_code
+    error_code = 0
     print("compile shaders pmfx")
     source_list = [pmtech_shaders, shader_source_dir]
     for source_dir in source_list:
         for root, dirs, files in os.walk(source_dir):
             for file in files:
                 if file.endswith(".pmfx"):
-                    file_and_path = os.path.join(root, file)
                     parse_pmfx(file, root)
+    sys.exit(error_code)
 
 
 # build shaders
