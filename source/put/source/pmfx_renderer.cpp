@@ -505,7 +505,6 @@ namespace put
                 // sampler / texture bind flags
                 sb.bind_flags = sampler_bind_flags_from_json(binding);
 
-                
                 // sample info for sampling in shader
                 f32 w, h;
                 get_render_target_dimensions(rt, w, h);
@@ -789,10 +788,8 @@ namespace put
                         hash_id hh = PEN_HASH(blend_state[i].as_cstr());
 
                         for (auto& b : k_partial_blend_states)
-                        {
                             if (hh == b.id_name)
                                 rtb.push_back(b.rtb);
-                        }
                     }
                 }
                 else
