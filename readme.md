@@ -23,7 +23,7 @@ Take a look at:
 
 **Usage**  
 
-To build data and generate the example projects run build.sh (macOS, linux) or build.bat (win32). Workspace and projects are generated in examples/build/platform.
+Take a look at the getting started [instructions] (https://github.com/polymonster/pmtech/wiki/Getting-Started).
 
 **Shoutout!** 
 - [ImGui](https://github.com/ocornut/imgui)
