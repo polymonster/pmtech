@@ -157,11 +157,10 @@ namespace put
             Str     type_name;
             Str     default_name;
             Str     filename;
-
             u32 handle;
             u32 unit;
             u32 sampler_state;
-            u32 shader_type;
+            u32 bind_flags;
         };
 
         struct technique_permutation

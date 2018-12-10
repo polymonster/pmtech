@@ -1563,6 +1563,7 @@ namespace pen
         }
         else
         {
+            // render target
             if (bind_flags & TEXTURE_BIND_MSAA)
             {
                 target = GL_TEXTURE_2D_MULTISAMPLE;

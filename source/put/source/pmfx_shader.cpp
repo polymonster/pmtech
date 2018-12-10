@@ -460,6 +460,9 @@ namespace put
                 tt.default_name = jt["default"].as_str();
                 tt.filename = tt.default_name;
                 tt.handle = put::load_texture(tt.filename.c_str());
+                
+                extern u32 sampler_bind_flags_from_json(const pen::json& sampler_binding);
+                tt.bind_flags = sampler_bind_flags_from_json(jt);
 
                 sb_push(program.textures, tt);
             }

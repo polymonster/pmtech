@@ -533,7 +533,7 @@ pmfx:
             {
                 "type"   : "texture_2d",
                 "unit"   : 0,
-                "shader" : "ps",
+                "bind_flags" : ["ps"],
                 "sampler": "wrap_linear",
                 "default": "data/textures/defaults/albedo.dds"
             },
@@ -542,7 +542,7 @@ pmfx:
             {
                 "type"   : "texture_2d",
                 "unit"   : 1,
-                "shader" : "ps",
+                "bind_flags" : ["ps"],
                 "sampler": "wrap_linear",
                 "default": "data/textures/defaults/normal.dds"
             },
@@ -551,7 +551,7 @@ pmfx:
             {
                 "type"   : "texture_2d",
                 "unit"   : 2,
-                "shader" : "ps",
+                "bind_flags" : ["ps"],
                 "sampler": "wrap_linear",
                 "default": "data/textures/defaults/spec.dds"
             },
@@ -560,7 +560,7 @@ pmfx:
             {
                 "type"   : "texture_2d",
                 "unit"   : 3,
-                "shader" : "ps",
+                "bind_flags" : ["ps"],
                 "sampler": "wrap_linear",
                 "default": "data/textures/defaults/black.dds"
             }

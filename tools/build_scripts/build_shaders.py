@@ -1010,6 +1010,7 @@ def create_vsc_psc(filename, shader_file_text, vs_name, ps_name, technique_name,
 
     # texture samplers
     texture_samplers_source = find_texture_samplers(shader_file_text)
+    texture_samplers_source = evaluate_conditional_blocks(texture_samplers_source, permutation)
 
     # structs
     struct_list = find_struct_declarations(shader_file_text)

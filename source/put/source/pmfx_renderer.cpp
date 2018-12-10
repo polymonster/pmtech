@@ -346,6 +346,18 @@ namespace put
 
             return default_value;
         }
+        
+        u32 sampler_bind_flags_from_json(const json& sampler_binding)
+        {
+            u32 res = 0;
+            res = pen::TEXTURE_BIND_PS; // todo remove once all configs have been updated
+            json flags = sampler_binding["bind_flags"];
+            u32 num_flags = flags.size();
+            for(u32 i = 0; i < num_flags; ++i)
+                res |= mode_from_string(sampler_bind_flags, flags[i].as_cstr(), 0);
+            
+            return res;
+        }
 
         render_state* get_state_by_hash(hash_id hash)
         {
@@ -491,11 +503,8 @@ namespace put
                 sb.sampler_unit = binding["unit"].as_u32();
 
                 // sampler / texture bind flags
-                sb.bind_flags = pen::TEXTURE_BIND_PS; // todo remove once all configs have been updated
-                json flags = binding["flags"];
-                u32 num_flags = flags.size();
-                for(u32 i = 0; i < num_flags; ++i)
-                    sb.bind_flags |= mode_from_string(sampler_bind_flags, flags[i].as_cstr(), 0);
+                sb.bind_flags = sampler_bind_flags_from_json(binding);
+
                 
                 // sample info for sampling in shader
                 f32 w, h;
@@ -2077,7 +2086,7 @@ namespace put
                                     sb.handle = put::load_texture(j_sampler["filename"].as_cstr());
                                     sb.sampler_state = j_sampler["filename"].as_u32();
                                     sb.id_texture = PEN_HASH(j_sampler["filename"].as_cstr());
-                                    sb.bind_flags = ts->shader_type;
+                                    sb.bind_flags = ts->bind_flags;
                                 }
                             }
                             else
@@ -2432,8 +2441,7 @@ namespace put
             // bind view samplers.. render targets, global textures
             for (auto& sb : v.sampler_bindings)
             {
-                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit,
-                                          pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
+                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
             }
 
             // bind technique samplers
@@ -2443,8 +2451,7 @@ namespace put
                 if (sb.handle == 0)
                     continue;
 
-                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit,
-                                          pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
+                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
             }
 
             u32 num_samplers = v.sampler_bindings.size();

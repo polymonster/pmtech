@@ -130,10 +130,10 @@
             
             sampler_bindings:
             [
-                { texture: gbuffer_albedo_msaa, unit: 0, state: wrap_linear, flags: [ps, msaa]},
-                { texture: gbuffer_normals_msaa, unit: 1, state: wrap_linear, flags: [ps, msaa]},
-                { texture: gbuffer_world_pos_msaa, unit: 2, state: wrap_linear, flags: [ps, msaa]},
-                { texture: gbuffer_depth_msaa, unit: 4, state: wrap_linear, flags: [ps, msaa]}
+                { texture: gbuffer_albedo_msaa, unit: 0, state: wrap_linear, bind_flags: [ps, msaa]},
+                { texture: gbuffer_normals_msaa, unit: 1, state: wrap_linear, bind_flags: [ps, msaa]},
+                { texture: gbuffer_world_pos_msaa, unit: 2, state: wrap_linear, bind_flags: [ps, msaa]},
+                { texture: gbuffer_depth_msaa, unit: 4, state: wrap_linear, bind_flags: [ps, msaa]}
             ],
             
         }
