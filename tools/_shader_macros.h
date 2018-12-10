@@ -76,7 +76,7 @@
 
 #define mod(x, y) x - y * floor(x/y) // glsl style mod
 
-#define __pmfx_unroll [unroll]
+#define pmfx_unroll [unroll]
 
 #endif
 
