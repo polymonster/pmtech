@@ -48,6 +48,8 @@
 #define ddx dFdx
 #define ddy dFdy
 
+#define __pmfx_unroll
+
 #else
 
 //pmfx custom macros
@@ -73,6 +75,8 @@
 #define remap_ndc_ray( r ) float2(r.x, r.y * -1.0)
 
 #define mod(x, y) x - y * floor(x/y) // glsl style mod
+
+#define __pmfx_unroll [unroll]
 
 #endif
 

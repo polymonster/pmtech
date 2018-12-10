@@ -30,7 +30,12 @@ declare_texture_samplers
     texture_2d( gbuffer_albedo, 0 );
     texture_2d( gbuffer_normals, 1 );
     texture_2d( gbuffer_world_pos, 2 );    
-    texture_2d( gbuffer_depth, 4 );
+    texture_2d( gbuffer_depth, 3 );
+	
+	texture_2dms( float4, 4, gbuffer_albedo_msaa, 4 );
+	texture_2dms( float4, 4, gbuffer_normals_msaa, 5 );
+	texture_2dms( float4, 4, gbuffer_world_pos_msaa, 6 );
+	texture_2dms( float4, 4, gbuffer_depth_msaa, 7 );
 };
 
 void unpack_light_data(inout vs_output output)
@@ -89,25 +94,8 @@ vs_output vs_spot_light(vs_input input)
     return output;
 }
 
-
-ps_output ps_light(vs_output input)
-{
-    ps_output output;
-    
-    float2 sc = input.screen_coord.xy;
-    
-    if:(POINT_LIGHT || SPOT_LIGHT)
-    {
-        float x = input.screen_coord.x / input.screen_coord.w;
-        float y = input.screen_coord.y / input.screen_coord.w;
-    
-        sc = float2(x * 0.5 + 0.5, -y * 0.5 + 0.5);
-    }
-    
-    float4 g_albedo = sample_texture(gbuffer_albedo, sc);
-    float4 g_normals = sample_texture(gbuffer_normals, sc);
-    float4 g_world_pos = sample_texture(gbuffer_world_pos, sc);
-    
+float3 apply_light(vs_output input, float2 sc, float4 g_albedo, float4 g_normals, float4 g_world_pos)
+{    
     float3 albedo = g_albedo.rgb;
     float3 n = normalize(g_normals.rgb);
     float3 world_pos = g_world_pos.rgb;
@@ -149,9 +137,99 @@ ps_output ps_light(vs_output input)
                                             input.light_data.x, 
                                             world_pos);
     }
+	
+	return light_col;
+}	
 
-    output.colour.rgb = light_col;
-        
+ps_output ps_light(vs_output input)
+{
+    ps_output output;
+    
+    float2 sc = input.screen_coord.xy;
+    
+    if:(POINT_LIGHT || SPOT_LIGHT)
+    {
+        float x = input.screen_coord.x / input.screen_coord.w;
+        float y = input.screen_coord.y / input.screen_coord.w;
+    
+        sc = float2(x * 0.5 + 0.5, -y * 0.5 + 0.5);
+    }
+    
+
+	float3 final_light_col = float3(0.0, 0.0, 0.0);
+	
+	if:(MSAA)
+	{
+		int samples = 4;
+	}
+	else:
+	{
+		int samples = 1;
+	}
+	
+	[unroll]
+	for(int i = 0; i < samples; ++i)
+	{    
+		if:(MSAA)
+		{
+			float4 g_albedo = sample_texture_2dms(gbuffer_albedo_msaa, sc.x * 1280.0, sc.y * 720.0, i);
+			float4 g_normals = sample_texture_2dms(gbuffer_normals_msaa, sc.x * 1280.0, sc.y * 720.0, i);
+			float4 g_world_pos = sample_texture_2dms(gbuffer_world_pos_msaa, sc.x * 1280.0, sc.y * 720.0, i);
+		}
+		else:
+		{
+			float4 g_albedo = sample_texture(gbuffer_albedo, sc);
+			float4 g_normals = sample_texture(gbuffer_normals, sc);
+			float4 g_world_pos = sample_texture(gbuffer_world_pos, sc);
+		}
+		
+		float3 albedo = g_albedo.rgb;
+		float3 n = normalize(g_normals.rgb);
+		float3 world_pos = g_world_pos.rgb;
+		
+		float metalness = g_world_pos.a;
+		float roughness = g_albedo.a;
+		float reflectivity = g_normals.a;
+		
+		float3 light_col = cook_torrence(  
+				input.light_pos_radius,
+				input.light_colour.rgb,
+				n,
+				world_pos,
+				camera_view_pos.xyz,
+				albedo,
+				float3(0.5, 0.5, 0.5),
+				roughness,
+				reflectivity);
+											
+		 light_col += oren_nayar( 
+				input.light_pos_radius,
+				input.light_colour.rgb,
+				n,
+				world_pos,
+				camera_view_pos.xyz,
+				roughness,
+				albedo.rgb
+			);
+				
+		if:(POINT_LIGHT)
+		{
+			light_col *= point_light_attenuation_cutoff(input.light_pos_radius, world_pos);
+		}    
+		
+		if:(SPOT_LIGHT)
+		{
+			light_col *= spot_light_attenuation(input.light_pos_radius, 
+												input.light_dir_cutoff,
+												input.light_data.x, 
+												world_pos);
+		}
+		
+		final_light_col += light_col;
+	}		
+
+    output.colour.rgb = final_light_col / float(samples);
+	    
     return output;
 }
 
