@@ -23,7 +23,7 @@ Take a look at:
 
 **Usage**  
 
-Take a look at the getting started [instructions] (https://github.com/polymonster/pmtech/wiki/Getting-Started).
+Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Getting-Started).
 
 **Shoutout!** 
 - [ImGui](https://github.com/ocornut/imgui)
