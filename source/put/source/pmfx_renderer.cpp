@@ -127,7 +127,15 @@ namespace
     };
     
     const mode_map render_flags_map[] = {
-        "forward_lit", ces::RENDER_FORWARD_LIT, nullptr, 0
+        "forward_lit", ces::RENDER_FORWARD_LIT,
+        nullptr, 0
+    };
+    
+    const mode_map sampler_bind_flags[] = {
+        "ps", pen::TEXTURE_BIND_PS,
+        "vs", pen::TEXTURE_BIND_VS,
+        "msaa", pen::TEXTURE_BIND_MSAA,
+        nullptr, 0
     };
     // clang-format on
 
@@ -482,12 +490,13 @@ namespace put
                 // unit
                 sb.sampler_unit = binding["unit"].as_u32();
 
-                // shader type
-                Str st = binding["shader"].as_str("ps");
-                sb.bind_flags = PEN_SHADER_TYPE_PS;
-                if (st == "vs")
-                    sb.bind_flags = PEN_SHADER_TYPE_VS;
-
+                // sampler / texture bind flags
+                sb.bind_flags = pen::TEXTURE_BIND_PS; // todo remove once all configs have been updated
+                json flags = binding["flags"];
+                u32 num_flags = flags.size();
+                for(u32 i = 0; i < num_flags; ++i)
+                    sb.bind_flags |= mode_from_string(sampler_bind_flags, flags[i].as_cstr(), 0);
+                
                 // sample info for sampling in shader
                 f32 w, h;
                 get_render_target_dimensions(rt, w, h);
