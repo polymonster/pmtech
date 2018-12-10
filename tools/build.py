@@ -12,16 +12,15 @@ import build_scripts.util as util
 
 def display_help():
     print("run with no arguments for prompted input")
-    print("commandline arguments")
-    print("\t-all <build all>")
-    print("\t-actions <action, ...>")
+    print("commandline arguments:")
+    print("    -all <build all>")
     for i in range(0, len(action_strings)):
-        print("\t\t" + action_strings[i] + " - " + action_descriptions[i])
-    print("\t-platform <osx, win32, ios, linux, android>")
-    print("\t-ide <xcode4, vs2015, v2017, gmake, android-studio>")
-    print("\t-clean <clean build, bin and temp dirs>")
-    print("\t-renderer <dx11, opengl>")
-    print("\t-toolset <gcc, clang, msc>")
+        print("    -" + action_strings[i] + " - <" + action_descriptions[i] + ">")
+    print("    -platform <osx, win32, ios, linux, android>")
+    print("    -ide <xcode4, vs2015, v2017, gmake, android-studio>")
+    print("    -clean <clean build, bin and temp dirs>")
+    print("    -renderer <dx11, opengl>")
+    print("    -toolset <gcc, clang, msc>")
 
 
 def display_prompted_input():
@@ -137,13 +136,10 @@ def get_platform_info():
     extra_target_info += " --pmtech_dir=" + build_config["pmtech_dir"] + "/"
 
     if toolset != "":
-        stats_start = time.time()
         extra_target_info += " --toolset=" + toolset
 
     if platform_name == "ios":
         extra_target_info = "--xcode_target=ios"
-        # extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "copy_files.py"))
-        # extra_build_steps.append(python_exec + " " + os.path.join(tools_dir, "project_ios", "set_xcode_target.py"))
 
     project_options = ide + " --renderer=" + renderer + " " + extra_target_info
 
@@ -199,6 +195,18 @@ def configure_vc_vars_all(build_config):
             time.sleep(1)
 
 
+def build_thirdparty_libs():
+    shell_build = ["linux", "osx", "ios"]
+    third_party_folder = os.path.join(build_config["pmtech_dir"], "third_party")
+    third_party_build = ""
+    if util.get_platform_name() in shell_build:
+        third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
+    else:
+        configure_vc_vars_all(build_config)
+        third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + build_config["vcvarsall_dir"] + "\""
+    return third_party_build
+
+
 if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
     print("pmtech build -------------------------------------------------------------------")
@@ -220,14 +228,15 @@ if __name__ == "__main__":
 
     assets_dir = "assets"
 
-    action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs", "scene"]
+    action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs", "scenes"]
     action_descriptions = ["generate projects and workspaces",
                            "generate shaders and compile binaries",
                            "make binary mesh and animation files",
                            "compress textures and generate mips",
                            "compress and convert audio to platorm format",
                            "copy fonts to data directory",
-                           "copy json configs to data directory"]
+                           "copy json configs to data directory",
+                           "copy scene files to data directory"]
     execute_actions = []
     extra_build_steps = []
     build_steps = []
@@ -241,17 +250,6 @@ if __name__ == "__main__":
     renderer = ""
     data_dir = ""
     toolset = ""
-
-    shell_build = ["linux", "osx", "ios"]
-
-    third_party_folder = os.path.join(build_config["pmtech_dir"], "third_party")
-
-    third_party_build = ""
-    if util.get_platform_name() in shell_build:
-        third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
-    else:
-        configure_vc_vars_all(build_config)
-        third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + build_config["vcvarsall_dir"] + "\""
 
     premake_exec = os.path.join(tools_dir, "premake", "premake5")
     if platform.system() == "Linux":
@@ -290,7 +288,7 @@ if __name__ == "__main__":
                 if os.path.exists(bd):
                     shutil.rmtree(bd)
         elif action == "code":
-            build_steps.append(third_party_build)
+            build_steps.append(build_thirdparty_libs())
             build_steps.append(premake_exec + " " + project_options)
         elif action == "shaders":
             build_steps.append(python_exec + " " + shader_script + " " + shader_options)

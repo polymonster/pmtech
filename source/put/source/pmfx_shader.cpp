@@ -298,26 +298,11 @@ namespace put
 
             Str name = j_techique["name"].as_str();
 
-            // default sub type
             program.name = name;
             program.id_name = PEN_HASH(name.c_str());
             program.id_sub_type = PEN_HASH("");
             program.permutation_id = j_techique["permutation_id"].as_u32();
             program.permutation_option_mask = j_techique["permutation_option_mask"].as_u32();
-
-            for (s32 i = 0; i < PEN_ARRAY_SIZE(k_sub_types); ++i)
-            {
-                // override subtype
-                if (pen::str_find(name, k_sub_types[i]) != -1)
-                {
-                    Str name_base = pen::str_replace_string(name, k_sub_types[i], "");
-
-                    program.id_name = PEN_HASH(name_base.c_str());
-                    program.id_sub_type = PEN_HASH(k_sub_types[i]);
-
-                    break;
-                }
-            }
 
             const c8* sfp = pen::renderer_get_shader_platform();
 
@@ -596,7 +581,7 @@ namespace put
                     sampler_binding sb;
                     sb.handle = ts[i].handle;
                     sb.sampler_unit = ts[i].unit;
-                    sb.bind_flags = PEN_SHADER_TYPE_PS;
+                    sb.bind_flags = pen::TEXTURE_BIND_PS;
                     sb.id_sampler_state = id_wrap_linear;
                     sb.sampler_state = pmfx::get_render_state(id_wrap_linear, RS_SAMPLER);
 
@@ -709,37 +694,6 @@ namespace put
             set_technique(shader, technique_index);
 
             return true;
-        }
-
-        bool set_technique(u32 shader, hash_id id_technique, hash_id id_sub_type)
-        {
-            u32 technique_index = get_technique_index(shader, id_technique, id_sub_type);
-
-            if (!is_valid(technique_index))
-                return false;
-
-            set_technique(shader, technique_index);
-
-            return true;
-        }
-
-        u32 get_technique_index(u32 shader, hash_id id_technique, hash_id id_sub_type)
-        {
-            u32 num_techniques = sb_count(k_pmfx_list[shader].techniques);
-            for (u32 i = 0; i < num_techniques; ++i)
-            {
-                auto& t = k_pmfx_list[shader].techniques[i];
-
-                if (t.id_name != id_technique)
-                    continue;
-
-                if (t.id_sub_type != id_sub_type)
-                    continue;
-
-                return i;
-            }
-
-            return PEN_INVALID_HANDLE;
         }
 
         u32 get_technique_index_perm(u32 shader, hash_id id_technique, u32 permutation)
