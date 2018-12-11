@@ -605,10 +605,7 @@ def generate_glsl(
     if compiler_dir != "":
         compiler_exe = os.path.join(compiler_dir, system_platform, "glslopt")
         cmd = compiler_exe + " -v " + vs_fn + " " + vs_fn_opt
-        ret = subprocess.call(cmd, shell=True)
-        if ret != 0:
-            print("ploop")
-            error_code = ret
+        subprocess.call(cmd, shell=True)
 
     # start making ps shader code
     if ps_main != "":
