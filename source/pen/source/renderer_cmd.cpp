@@ -25,7 +25,6 @@ namespace pen
     {
         CMD_NONE = 0,
         CMD_CLEAR,
-        CMD_CLEAR_CUBE,
         CMD_PRESENT,
         CMD_LOAD_SHADER,
         CMD_SET_SHADER,
@@ -59,7 +58,6 @@ namespace pen
         CMD_UPDATE_QUERIES,
         CMD_CREATE_RENDER_TARGET,
         CMD_SET_TARGETS,
-        CMD_SET_TARGETS_CUBE,
         CMD_RELEASE_BLEND_STATE,
         CMD_RELEASE_RENDER_TARGET,
         CMD_RELEASE_INPUT_LAYOUT,
@@ -90,21 +88,13 @@ namespace pen
         u32 num_colour;
         u32 colour[k_max_colour_targets];
         u32 depth;
+        u32 array_index;
     };
 
-    struct set_target_cube_cmd
-    {
-        u32 colour;
-        u32 colour_face;
-        u32 depth;
-        u32 depth_face;
-    };
-
-    struct clear_cube_cmd
+    struct clear_cmd
     {
         u32 clear_state;
-        u32 colour_face;
-        u32 depth_face;
+        u32 array_index;
     };
 
     struct set_vertex_buffer_cmd
@@ -213,8 +203,7 @@ namespace pen
             depth_stencil_creation_params*   p_create_depth_stencil_state;
             texture_creation_params          create_render_target;
             set_target_cmd                   set_targets;
-            set_target_cube_cmd              set_targets_cube;
-            clear_cube_cmd                   clear_cube;
+            clear_cmd                        clear;
             shader_link_params               link_params;
             resource_read_back_params        rrb_params;
             msaa_resolve_params              resolve_params;
@@ -242,7 +231,7 @@ namespace pen
         switch (cmd.command_index)
         {
             case CMD_CLEAR:
-                direct::renderer_clear(cmd.command_data_index);
+                direct::renderer_clear(cmd.clear.clear_state, cmd.clear.array_index, cmd.clear.array_index);
                 break;
 
             case CMD_PRESENT:
@@ -402,16 +391,7 @@ namespace pen
                 break;
 
             case CMD_SET_TARGETS:
-                direct::renderer_set_targets(cmd.set_targets.colour, cmd.set_targets.num_colour, cmd.set_targets.depth);
-                break;
-
-            case CMD_SET_TARGETS_CUBE:
-                direct::renderer_set_targets(&cmd.set_targets_cube.colour, 1, cmd.set_targets_cube.depth,
-                                             cmd.set_targets_cube.colour_face, cmd.set_targets_cube.depth_face);
-                break;
-
-            case CMD_CLEAR_CUBE:
-                direct::renderer_clear(cmd.clear_cube.clear_state, cmd.clear_cube.colour_face, cmd.clear_cube.depth_face);
+                direct::renderer_set_targets(cmd.set_targets.colour, cmd.set_targets.num_colour, cmd.set_targets.depth, cmd.set_targets.array_index, cmd.set_targets.array_index);
                 break;
 
             case CMD_RELEASE_BLEND_STATE:
@@ -662,20 +642,11 @@ namespace pen
         INC_WRAP(put_pos);
     }
 
-    void renderer_clear(u32 clear_state_index)
+    void renderer_clear(u32 clear_state_index, u32 array_index)
     {
         cmd_buffer[put_pos].command_index = CMD_CLEAR;
-        cmd_buffer[put_pos].command_data_index = clear_state_index;
-
-        INC_WRAP(put_pos);
-    }
-
-    void renderer_clear_cube(u32 clear_state_index, u32 colour_face, u32 depth_face)
-    {
-        cmd_buffer[put_pos].command_index = CMD_CLEAR_CUBE;
-        cmd_buffer[put_pos].clear_cube.clear_state = clear_state_index;
-        cmd_buffer[put_pos].clear_cube.colour_face = colour_face;
-        cmd_buffer[put_pos].clear_cube.depth_face = depth_face;
+        cmd_buffer[put_pos].clear.clear_state = clear_state_index;
+        cmd_buffer[put_pos].clear.array_index = array_index;
 
         INC_WRAP(put_pos);
     }
@@ -1163,12 +1134,13 @@ namespace pen
         INC_WRAP(put_pos);
     }
 
-    void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target)
+    void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target, u32 array_index)
     {
         cmd_buffer[put_pos].command_index = CMD_SET_TARGETS;
         cmd_buffer[put_pos].set_targets.num_colour = num_colour_targets;
         memcpy(&cmd_buffer[put_pos].set_targets.colour, colour_targets, num_colour_targets * sizeof(u32));
         cmd_buffer[put_pos].set_targets.depth = depth_target;
+        cmd_buffer[put_pos].set_targets.array_index = array_index;
 
         INC_WRAP(put_pos);
     }
@@ -1179,17 +1151,7 @@ namespace pen
         cmd_buffer[put_pos].set_targets.num_colour = 1;
         cmd_buffer[put_pos].set_targets.colour[0] = colour_target;
         cmd_buffer[put_pos].set_targets.depth = depth_target;
-
-        INC_WRAP(put_pos);
-    }
-
-    void renderer_set_targets_cube(u32 colour_target, u32 colour_face, u32 depth_target, u32 depth_face)
-    {
-        cmd_buffer[put_pos].command_index = CMD_SET_TARGETS_CUBE;
-        cmd_buffer[put_pos].set_targets_cube.colour = colour_target;
-        cmd_buffer[put_pos].set_targets_cube.colour_face = colour_face;
-        cmd_buffer[put_pos].set_targets_cube.depth = depth_target;
-        cmd_buffer[put_pos].set_targets_cube.depth_face = depth_face;
+        cmd_buffer[put_pos].set_targets.array_index = 0;
 
         INC_WRAP(put_pos);
     }

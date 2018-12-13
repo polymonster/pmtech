@@ -330,8 +330,7 @@ namespace pen
 
     // clears
     u32  renderer_create_clear_state(const clear_state& cs);
-    void renderer_clear(u32 clear_state_index);
-    void renderer_clear_cube(u32 clear_state_index, u32 colour_face, u32 depth_face);
+    void renderer_clear(u32 clear_state_index, u32 array_index = 0);
 
     // shaders
     u32  renderer_load_shader(const pen::shader_load_params& params);
@@ -381,8 +380,7 @@ namespace pen
     // render targets
     u32  renderer_create_render_target(const texture_creation_params& tcp);
     void renderer_set_targets(u32 colour_target, u32 depth_target);
-    void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target);
-    void renderer_set_targets_cube(u32 colour_target, u32 colour_face, u32 depth_target, u32 depth_face);
+    void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target, u32 array_index = 0 );
     void renderer_set_stream_out_target(u32 buffer_index);
     void renderer_resolve_target(u32 target, e_msaa_resolve_type type);
 

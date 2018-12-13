@@ -105,7 +105,9 @@
         
         cubemap_render:
         {
-            target : [cubemap_test]
+			inherit: "main_view",
+            target : [cubemap_test],
+            clear_colour : [1.0, 0.0, 1.0, 1.0],
         }
     },
     

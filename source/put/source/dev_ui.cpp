@@ -959,7 +959,7 @@ namespace put
 
             // cube or volume
             static camera cam;
-            bool          init = true;
+            static bool init = true;
             if (init)
             {
                 init = false;

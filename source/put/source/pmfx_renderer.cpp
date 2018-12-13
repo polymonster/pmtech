@@ -25,9 +25,9 @@ using namespace ces;
 namespace
 {
     // clang-format off
-    const hash_id ID_MAIN_COLOUR = PEN_HASH("main_colour");
-    const hash_id ID_MAIN_DEPTH  = PEN_HASH("main_depth");
-    const hash_id id_wrap_linear = PEN_HASH("wrap_linear"); // todo rename
+    const hash_id k_id_main_colour = PEN_HASH("main_colour");
+    const hash_id k_id_main_depth  = PEN_HASH("main_depth");
+    const hash_id k_id_wrap_linear = PEN_HASH("wrap_linear"); // todo rename
 
     struct mode_map
     {
@@ -178,6 +178,7 @@ namespace
         f32 viewport[4] = {0};
 
         // render state
+        u32 num_arrays = 1; // ie. 6 for cubemap
         u32 num_colour_targets = 0;
         u32 clear_state = 0;
         u32 raster_state = 0;
@@ -880,7 +881,7 @@ namespace put
         {
             // add 2 defaults
             render_target main_colour;
-            main_colour.id_name = ID_MAIN_COLOUR;
+            main_colour.id_name = k_id_main_colour;
             main_colour.name = "Backbuffer Colour";
             main_colour.ratio = 1;
             main_colour.format = PEN_TEX_FORMAT_RGBA8_UNORM;
@@ -893,7 +894,7 @@ namespace put
             s_render_target_tcp.push_back(texture_creation_params());
 
             render_target main_depth;
-            main_depth.id_name = ID_MAIN_DEPTH;
+            main_depth.id_name = k_id_main_depth;
             main_depth.name = "Backbuffer Depth";
             main_depth.ratio = 1;
             main_depth.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
@@ -1018,11 +1019,14 @@ namespace put
                             if (type == "cube")
                             {
                                 new_info.collection = pen::TEXTURE_COLLECTION_CUBE;
-                                tcp.num_arrays = 5;
+                                tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE;
+                                tcp.flags |= PEN_RESOURCE_MISC_TEXTURECUBE;
+                                tcp.num_arrays = 6;
                             }
                             else if (type == "array")
                             {
                                 new_info.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                                tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE;
                                 tcp.num_arrays = r["num_arrays"].as_u32(1);
                             }
                         }
@@ -1379,7 +1383,7 @@ namespace put
                     hash_id target_hash = PEN_HASH(target_str.c_str());
 
                     new_view.viewport_correction = pen::renderer_viewport_vup();
-                    if (target_hash == ID_MAIN_COLOUR || target_hash == ID_MAIN_DEPTH)
+                    if (target_hash == k_id_main_colour || target_hash == k_id_main_depth)
                         new_view.viewport_correction = false;
 
                     bool found = false;
@@ -1392,6 +1396,9 @@ namespace put
                             s32 w = r.width;
                             s32 h = r.height;
                             s32 rr = r.ratio;
+
+                            if (r.collection == pen::TEXTURE_COLLECTION_CUBE)
+                                new_view.num_arrays = 6;
 
                             if (cur_rt == 0)
                             {
@@ -1910,7 +1917,7 @@ namespace put
                             sb.handle = ts[i].handle;
                             sb.sampler_unit = ts[i].unit;
                             sb.bind_flags = PEN_SHADER_TYPE_PS;
-                            sb.sampler_state = get_render_state(id_wrap_linear, RS_SAMPLER);
+                            sb.sampler_state = get_render_state(k_id_wrap_linear, RS_SAMPLER);
 
                             p.technique_samplers.sb[i] = sb;
                         }
@@ -2313,10 +2320,10 @@ namespace put
             // release render targets
             for (auto& rt : s_render_targets)
             {
-                if (rt.id_name == ID_MAIN_COLOUR)
+                if (rt.id_name == k_id_main_colour)
                     continue;
 
-                if (rt.id_name == ID_MAIN_DEPTH)
+                if (rt.id_name == k_id_main_depth)
                     continue;
 
                 pen::renderer_release_render_target(rt.handle);
@@ -2383,7 +2390,7 @@ namespace put
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
-        void render_view(view_params& v)
+        void render_view(view_params& v, u32 array_index = 0)
         {
             static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
@@ -2416,7 +2423,7 @@ namespace put
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
 
-            pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target);
+            pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, array_index);
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
 
@@ -2426,7 +2433,7 @@ namespace put
             pen::renderer_set_rasterizer_state(v.raster_state);
             pen::renderer_set_blend_state(v.blend_state);
 
-            pen::renderer_clear(v.clear_state);
+            pen::renderer_clear(v.clear_state, array_index);
 
             // create 2d view proj matrix
             float W = 2.0f / vp.width;
@@ -2554,7 +2561,7 @@ namespace put
                 pen::renderer_set_viewport(vp);
                 pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
 
-                u32 wlss = get_render_state(id_wrap_linear, RS_SAMPLER);
+                u32 wlss = get_render_state(k_id_wrap_linear, RS_SAMPLER);
 
                 pen::renderer_set_texture(v.render_targets[0], wlss, 0, pen::TEXTURE_BIND_PS);
 
@@ -2607,7 +2614,9 @@ namespace put
         {
             for (auto& v : s_views)
             {
-                render_view(v);
+                for(u32 a = 0; a < v.num_arrays; ++a)
+                    render_view(v, a);
+
                 resolve_targets(false);
 
                 if (v.post_process_flags & PP_ENABLED)
@@ -2812,35 +2821,18 @@ namespace put
                     f32 w, h;
                     get_rt_dimensions(rt.width, rt.height, rt.ratio, w, h);
 
-                    bool unsupported_display = rt.id_name == ID_MAIN_COLOUR || rt.id_name == ID_MAIN_DEPTH;
+                    bool unsupported_display = rt.id_name == k_id_main_colour || rt.id_name == k_id_main_depth;
                     unsupported_display |= rt.format == PEN_TEX_FORMAT_R32_UINT;
 
                     if (!unsupported_display)
                     {
-                        static u32 cubemap = put::load_texture("data/textures/cubemap.dds");
-
                         f32 aspect = w / h;
-
-                        if (rt.collection == pen::TEXTURE_COLLECTION_CUBE)
-                        {
-                            dev_ui::image_ex(cubemap, vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
-                                             (dev_ui::e_shader)rt.collection);
-                        }
 
                         dev_ui::image_ex(rt.handle, vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
                                          (dev_ui::e_shader)rt.collection);
                     }
 
                     render_target_info_ui(rt);
-
-                    // test
-                    /*
-                    static u32 cubemap = put::load_texture("data/textures/cubemap.dds");
-                    static u32 volume = put::load_texture("data/textures/sdf-shadow-128.dds");
-                    
-                    dev_ui::image(cubemap, vec2f(1024 / display_ratio));
-                    dev_ui::image(volume, vec2f(1024 / display_ratio));
-                    */
                 }
 
                 if (ImGui::CollapsingHeader("Views"))

@@ -67,6 +67,7 @@ ps_output ps_tex_cube( vs_output input )
     
     float3 n = float3(0.0, 0.0, 0.0);
     
+	float e = 0.0;
     for(float t = 0.0; t < 10.0;)
     {
         float3 p = ro + rd * t;
@@ -79,12 +80,18 @@ ps_output ps_tex_cube( vs_output input )
             n.y *= -1.0;
             break;
         }
+		
+		if(e > 10.0)
+			break;
             
+		e += 1.0;
         t += d;
     }
-        
-    output.colour = sample_texture(tex_cube, n);
     
+	output.colour = float4(0.0, 0.0, 0.0, 0.0);
+	if(length(n) > 0.0)
+		output.colour = sample_texture(tex_cube, n);
+
     return output;
 }
 

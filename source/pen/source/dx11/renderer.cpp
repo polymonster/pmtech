@@ -821,13 +821,13 @@ namespace pen
             PEN_ASSERT(0);
         }
 
-        CHECK_CALL(s_device->CreateTexture2D(&texture_desc, NULL, &texture_container->texture));
+        CHECK_CALL(s_device->CreateTexture2D(&texture_desc, nullptr, &texture_container->texture));
 
         D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
 
         D3D_SRV_DIMENSION srv_dimension = texture2dms ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
 
-        if (array_size == 6)
+        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE)
             srv_dimension = D3D_SRV_DIMENSION_TEXTURECUBE;
 
         if (texture_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
@@ -988,6 +988,11 @@ namespace pen
     void direct::renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
                                       u32 colour_face, u32 depth_face)
     {
+        if (colour_face > 0)
+        {
+            u32 a = 0;
+        }
+
         g_context.active_depth_target = depth_target;
         g_context.num_active_colour_targets = num_colour_targets;
 
