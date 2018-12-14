@@ -52,6 +52,17 @@ PEN_TRV pen::user_entry(void* params)
     // create main camera and controller
     put::camera main_camera;
     put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
+    
+    //temp
+    put::camera cubemap_camera;
+    put::camera_cteate_cubemap(&cubemap_camera, 0.1f, 1000.0f);
+    cubemap_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
+    
+    put::scene_controller cmc;
+    cmc.camera = &cubemap_camera;
+    cmc.update_function = nullptr;
+    cmc.name = "cubemap_camera";
+    cmc.id_name = PEN_HASH(cmc.name.c_str());
 
     put::scene_controller cc;
     cc.camera = &main_camera;
@@ -92,6 +103,8 @@ PEN_TRV pen::user_entry(void* params)
 
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
+    
+    pmfx::register_scene_controller(cmc);
 
     // volume rasteriser tool
     put::ces::editor_init(main_scene);

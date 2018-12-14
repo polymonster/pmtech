@@ -107,7 +107,7 @@
         {
 			inherit: "main_view",
             target : [cubemap_test],
-            clear_colour : [1.0, 0.0, 1.0, 1.0],
+            camera : "cubemap_camera"
         }
     },
     

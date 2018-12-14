@@ -72,12 +72,11 @@ ps_output ps_tex_cube( vs_output input )
     {
         float3 p = ro + rd * t;
                 
-        float d = sd_sphere(p, 1.0);
+        float d = sd_sphere(p, 1.5);
                 
         if(d < 0.001)
         {
             n = normalize(p);
-            n.y *= -1.0;
             break;
         }
 		
@@ -88,9 +87,12 @@ ps_output ps_tex_cube( vs_output input )
         t += d;
     }
     
-	output.colour = float4(0.0, 0.0, 0.0, 0.0);
+    float3 r = reflect(rd, n);
+    
+	output.colour = sample_texture(tex_cube, rd);
+	
 	if(length(n) > 0.0)
-		output.colour = sample_texture(tex_cube, n);
+		output.colour = sample_texture(tex_cube, r);
 
     return output;
 }

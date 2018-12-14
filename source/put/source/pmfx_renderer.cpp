@@ -2390,8 +2390,12 @@ namespace put
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
-        void render_view(view_params& v, u32 array_index = 0)
+        void render_view(view_params& v)
         {
+            // early out.. nothing to render
+            if (v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
+                return;
+            
             static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
             if (!is_valid(cb_2d))
@@ -2409,32 +2413,19 @@ namespace put
                 cb_sampler_info = pen::renderer_create_buffer(bcp);
             }
 
-            // viewport and scissor
-            pen::viewport vp = {0};
-            get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
-
-            // target
-            if (v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
-                return;
-
             // unbind samplers to stop d3d debug layer moaning
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
-            {
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
-            }
-
-            pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, array_index);
-            pen::renderer_set_viewport(vp);
-            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
 
             // render state
-            // set before clear for write masks
+            pen::viewport vp = {0};
+            get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
+            pen::renderer_set_viewport(vp);
+            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
             pen::renderer_set_rasterizer_state(v.raster_state);
             pen::renderer_set_blend_state(v.blend_state);
-
-            pen::renderer_clear(v.clear_state, array_index);
-
+            
             // create 2d view proj matrix
             float W = 2.0f / vp.width;
             float H = 2.0f / vp.height;
@@ -2457,6 +2448,7 @@ namespace put
                 pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
             }
 
+            // bind any per view cbuffers
             u32 num_samplers = v.sampler_bindings.size();
             if (num_samplers > 0)
             {
@@ -2464,29 +2456,20 @@ namespace put
                 pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, PEN_SHADER_TYPE_PS);
             }
 
-            // build view info
-            scene_view sv;
-            sv.scene = v.scene;
-
-            // generate 3d view proj matrix
-            if (v.camera)
-            {
-                put::camera_update_shader_constants(v.camera, v.viewport_correction);
-                sv.cb_view = v.camera->cbuffer;
-            }
-
-            // bind any per view cbuffers
-
             // filters
             if (is_valid(v.cbuffer_filter))
                 pen::renderer_set_constant_buffer(v.cbuffer_filter, CB_FILTER_KERNEL, PEN_SHADER_TYPE_PS);
 
+            // technique cbuffer
             if (is_valid(v.cbuffer_technique))
             {
                 pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data, sizeof(technique_constant_data));
                 pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, PEN_SHADER_TYPE_PS);
             }
 
+            // build scene view info
+            scene_view sv;
+            sv.scene = v.scene;
             sv.render_flags = v.render_flags;
             sv.technique = v.technique;
             sv.raster_state = v.raster_state;
@@ -2498,10 +2481,29 @@ namespace put
             sv.cb_2d_view = cb_2d;
             sv.pmfx_shader = v.pmfx_shader;
 
-            // render passes
-            for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
-                v.render_functions[rf](sv);
+            // render passes.. multi pass for cubemaps or arrays
+            for(u32 a = 0; a < v.num_arrays; ++a)
+            {
+                // generate 3d view proj matrix
+                if (v.camera)
+                {
+                    if(v.num_arrays == 6)
+                    {
+                        put::camera_set_cubemap_face(v.camera, a);
+                    }
+                    
+                    put::camera_update_shader_constants(v.camera, v.viewport_correction);
+                    sv.cb_view = v.camera->cbuffer;
+                }
+                
+                pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, a);
+                pen::renderer_clear(v.clear_state, a);
+                
+                for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
+                    v.render_functions[rf](sv);
+            }
 
+            // stash output for debug
             if (v.stash_output && v.render_targets[0] != PEN_INVALID_HANDLE)
             {
                 struct stash_rt
@@ -2614,8 +2616,7 @@ namespace put
         {
             for (auto& v : s_views)
             {
-                for(u32 a = 0; a < v.num_arrays; ++a)
-                    render_view(v, a);
+                render_view(v);
 
                 resolve_targets(false);
 

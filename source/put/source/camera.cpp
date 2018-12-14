@@ -249,6 +249,20 @@ namespace put
 
     void camera_update_shader_constants(camera* p_camera, bool viewport_correction)
     {
+        // create cbuffer if needed
+        if (p_camera->cbuffer == PEN_INVALID_HANDLE)
+        {
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = sizeof(camera_cbuffer);
+            bcp.data = nullptr;
+            
+            p_camera->cbuffer = pen::renderer_create_buffer(bcp);
+        }
+        
+        // auto detect window aspect
         if (p_camera->flags & CF_WINDOW_ASPECT)
         {
             f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
@@ -273,46 +287,74 @@ namespace put
             p_camera->flags |= CF_INVALIDATED;
         }
 
-        if (p_camera->cbuffer == PEN_INVALID_HANDLE)
+        camera_cbuffer wvp;
+        
+        static mat4 scale = mat::create_scale(vec3f(1.0f, -1.0f, 1.0f));
+        
+        if (viewport_correction && pen::renderer_viewport_vup())
         {
-            pen::buffer_creation_params bcp;
-            bcp.usage_flags = PEN_USAGE_DYNAMIC;
-            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size = sizeof(camera_cbuffer);
-            bcp.data = nullptr;
-
-            p_camera->cbuffer = pen::renderer_create_buffer(bcp);
+            wvp.view_projection = scale * (p_camera->proj * p_camera->view);
+            wvp.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
         }
-
-        // if (p_camera->flags & CF_INVALIDATED)
+        else
         {
-            camera_cbuffer wvp;
-
-            static mat4 scale = mat::create_scale(vec3f(1.0f, -1.0f, 1.0f));
-
-            if (viewport_correction && pen::renderer_viewport_vup())
-            {
-                wvp.view_projection = scale * (p_camera->proj * p_camera->view);
-                wvp.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
-            }
-            else
-            {
-                wvp.view_projection = p_camera->proj * p_camera->view;
-                wvp.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
-            }
-
-            mat4 inv_view = mat::inverse3x4(p_camera->view);
-            wvp.view_matrix = p_camera->view;
-            wvp.view_position = vec4f(inv_view.get_translation(), p_camera->near_plane);
-            wvp.view_direction = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
-            wvp.view_matrix_inverse = inv_view;
-            wvp.view_projection_inverse = mat::inverse4x4(wvp.view_projection);
-
-            pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
-
-            p_camera->flags &= ~CF_INVALIDATED;
+            wvp.view_projection = p_camera->proj * p_camera->view;
+            wvp.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
         }
+        
+        mat4 inv_view = mat::inverse3x4(p_camera->view);
+        wvp.view_matrix = p_camera->view;
+        wvp.view_position = vec4f(inv_view.get_translation(), p_camera->near_plane);
+        wvp.view_direction = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
+        wvp.view_matrix_inverse = inv_view;
+        wvp.view_projection_inverse = mat::inverse4x4(wvp.view_projection);
+        
+        pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
+        
+        p_camera->flags &= ~CF_INVALIDATED;
+    }
+    
+    void camera_cteate_cubemap(camera* p_camera, f32 near_plane, f32 far_plane)
+    {
+        camera_create_perspective(p_camera, 90, 1, near_plane, far_plane);
+    }
+    
+    void camera_set_cubemap_face(camera* p_camera, u32 face)
+    {
+        static const vec3f at[] =
+        {
+            vec3f(-1.0, 0.0, 0.0),  //+x
+            vec3f(1.0, 0.0, 0.0),   //-x
+            vec3f(0.0, 1.0, 0.0),   //+y
+            vec3f(0.0, -1.0, 0.0),  //-y
+            vec3f(0.0, 0.0, 1.0),   //+z
+            vec3f(0.0, 0.0, -1.0)   //-z
+        };
+        
+        static const vec3f right[] =
+        {
+            vec3f(0.0, 0.0, 1.0),
+            vec3f(0.0, 0.0, -1.0),
+            vec3f(1.0, 0.0, 0.0),
+            vec3f(1.0, 0.0, 0.0),
+            vec3f(1.0, 0.0, 0.0),
+            vec3f(-1.0, 0.0, -0.0)
+        };
+        
+        static const vec3f up[] =
+        {
+            vec3f(0.0, 1.0, 0.0),
+            vec3f(0.0, 1.0, 0.0),
+            vec3f(0.0, 0.0, -1.0),
+            vec3f(0.0, 0.0, 1.0),
+            vec3f(0.0, 1.0, 0.0),
+            vec3f(0.0, 1.0, 0.0)
+        };
+        
+        p_camera->view.set_row(0, vec4f(right[face], p_camera->pos.x));
+        p_camera->view.set_row(1, vec4f(up[face], p_camera->pos.y));
+        p_camera->view.set_row(2, vec4f(at[face], p_camera->pos.z));
+        p_camera->view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
     }
 
     void get_aabb_corners(vec3f* corners, vec3f min, vec3f max)
