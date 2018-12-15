@@ -15,6 +15,16 @@ cbuffer per_pass : register(b0)
     float4 output_buffer_dimension; //zw are unused
 };
 
+struct ps_output_depth
+{
+    float depth : SV_Depth;
+};
+
+struct ps_output
+{
+    float4 colour : SV_Target;
+};
+
 declare_texture_samplers
 {
     texture_2dms( float4, 2, texture_msaa_2, 0 );
@@ -32,14 +42,6 @@ vs_output_textured vs_resolve( vs_input_2d_textured input )
     
     return output;
 }
-
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------
-//AVERAGE---------------------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------
-struct ps_output
-{
-    float4 colour : SV_Target;
-};
 
 ps_output ps_resolve_average_2x( vs_output_textured input )
 {
@@ -97,14 +99,6 @@ ps_output ps_resolve_average_2x( vs_output_textured input )
     return output;
 }
 
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------
-//DEPTH----------------------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------
-struct ps_output_depth
-{
-    float depth : SV_Depth;
-};
-
 ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
 {
     ps_output_depth output;
@@ -119,7 +113,6 @@ ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
 
     return output;
 }
-
 
 pmfx:
 {    
@@ -153,7 +146,3 @@ pmfx:
         "ps": "ps_resolve_depth_4x"
     }
 }
-
-
-
-

@@ -324,7 +324,7 @@ namespace put
                 u32                t = scene->lights[n].type;
                 geometry_resource* vol = volume[t];
 
-                pmfx::set_technique_perm(shader, id_technique[t]);
+                pmfx::set_technique_perm(shader, id_technique[t], view.permutation);
 
                 cmp_draw_call dc;
                 dc.world_matrix = scene->world_matrices[n];

@@ -49,6 +49,7 @@ namespace put
         pen::viewport*     viewport = nullptr;
         u32                pmfx_shader = PEN_INVALID_HANDLE;
         hash_id            technique = 0; // todo rename to id_technique
+        u32                permutation = 0;
         ces::entity_scene* scene = nullptr;
         bool               viewport_correction = false;
     };

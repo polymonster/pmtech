@@ -198,7 +198,13 @@ pmfx:
     {
         "vs"     : "vs_point_light",
         "ps"     : "ps_light",
-        "defines": ["POINT_LIGHT"]
+        "defines": ["POINT_LIGHT"],
+        
+        
+        "permutations":
+        {
+            "MSAA": [1, [0,1]]
+        }
     },
     
     "spot_light":

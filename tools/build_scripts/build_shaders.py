@@ -1267,6 +1267,8 @@ def generate_permutation_id(define_list, permutation):
             if p[0] == d[0]:
                 if p[1] > 0:
                     exponent = d[2]
+                    if exponent < 0:
+                        continue
                     if p[1] > 1:
                         exponent = p[1]+exponent-1
                     pid += pow(2, exponent)
@@ -1310,6 +1312,9 @@ def parse_pmfx(filename, root):
                     for p in technique_block["permutations"].keys():
                         pp = technique_block["permutations"][p]
                         define_list.append((p, pp[1], pp[0]))
+                    if "defines" in technique_block.keys():
+                        for d in technique_block["defines"]:
+                            define_list.append((d, [1], -1))
                     output_permutations = permute(define_list, [], [])
                     for key in technique_block["permutations"]:
                         tp = technique_block["permutations"][key]

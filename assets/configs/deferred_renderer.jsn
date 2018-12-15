@@ -121,7 +121,7 @@
                 gbuffer_normals_msaa, 
                 gbuffer_world_pos_msaa, 
                 gbuffer_depth_msaa
-            ] 
+            ]
         },
         
         deferred_lights_view_msaa:
@@ -135,7 +135,7 @@
                 { texture: gbuffer_world_pos_msaa, unit: 6, state: wrap_linear, bind_flags: [ps, msaa]},
                 { texture: gbuffer_depth_msaa, unit: 7, state: wrap_linear, bind_flags: [ps, msaa]}
             ],
-            
+            permutation: 2
         }
     },
     

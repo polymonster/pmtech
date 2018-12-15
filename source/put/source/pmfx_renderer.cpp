@@ -1542,8 +1542,8 @@ namespace put
                 // shader and technique
                 Str technique_str = view["technique"].as_str();
                 new_view.technique = PEN_HASH(technique_str.c_str());
-
                 new_view.pmfx_shader = pmfx::load_shader(view["pmfx_shader"].as_cstr());
+                new_view.technique_permutation = view["permutation"].as_u32();
 
                 if (view["pmfx_shader"].as_cstr() && !is_valid(new_view.pmfx_shader))
                 {
@@ -2480,6 +2480,7 @@ namespace put
             sv.viewport_correction = v.viewport_correction;
             sv.cb_2d_view = cb_2d;
             sv.pmfx_shader = v.pmfx_shader;
+            sv.permutation = v.technique_permutation;
 
             // render passes.. multi pass for cubemaps or arrays
             for(u32 a = 0; a < v.num_arrays; ++a)

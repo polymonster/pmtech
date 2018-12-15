@@ -1,6 +1,2 @@
-#define DIRECTIONAL_LIGHT_MSAA 1
-
-#define POINT_LIGHT_MSAA 1
-
-#define SPOT_LIGHT_MSAA 1
+#define POINT_LIGHT_MSAA 2
 
