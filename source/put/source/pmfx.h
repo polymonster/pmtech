@@ -33,7 +33,7 @@ namespace put
 
     enum e_render_constants
     {
-        MAX_TECHNIQUE_SAMPLER_BINDINGS = 8, // 8 samplers possibly set from shader / technique
+        MAX_TECHNIQUE_SAMPLER_BINDINGS = 8,  // 8 samplers possibly set from shader / technique
         MAX_SAMPLER_BINDINGS = 16           // +8 samplers for gloabl stuff ie. shadow maps.
     };
 
