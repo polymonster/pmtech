@@ -6,7 +6,7 @@
 #include "pen.h"
 #include "pen_string.h"
 #include "pmfx.h"
-#include "stb_easy_font.h"
+#include "stb/stb_easy_font.h"
 
 extern pen::window_creation_params pen_window;
 
