@@ -945,11 +945,56 @@ namespace put
                 ImGui::End();
             }
         }
+        
+        struct image_render_params
+        {
+            vec4f colour_mask;
+            vec4f mip_array;
+        };
 
         void image_ex(u32 handle, vec2f size, e_shader shader, s32 mip_level)
         {
             ImVec2 canvas_size = ImVec2(size.x, size.y);
-
+            
+            static image_render_params irp;
+            
+            ImGui::Text("Mip: %.0f", irp.mip_array.x);
+            ImGui::SameLine();
+            if(ImGui::Button(ICON_FA_MINUS))
+                irp.mip_array.x++;
+            ImGui::SameLine();
+            if(ImGui::Button(ICON_FA_PLUS))
+                irp.mip_array.x++;
+            ImGui::SameLine();
+            ImGui::Text("Array: %.0f", irp.mip_array.y);
+            ImGui::SameLine();
+            if(ImGui::Button(ICON_FA_MINUS))
+                irp.mip_array.x++;
+            ImGui::SameLine();
+            if(ImGui::Button(ICON_FA_PLUS))
+                irp.mip_array.x++;
+            
+            ImGui::SameLine();
+            
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.0f, 0.0f, 1.0f));
+            ImGui::Button("R");
+            ImGui::PopStyleColor();
+            ImGui::SameLine();
+            
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.7f, 0.0f, 1.0f));
+            ImGui::Button("G");
+            ImGui::PopStyleColor();
+            ImGui::SameLine();
+            
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.7f, 1.0f));
+            ImGui::Button("B");
+            ImGui::PopStyleColor();
+            ImGui::SameLine();
+            
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+            ImGui::Button("A");
+            ImGui::PopStyleColor();
+            
             // 2d image
             if (shader == dev_ui::SHADER_DEFAULT)
             {
