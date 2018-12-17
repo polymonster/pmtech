@@ -500,7 +500,7 @@ namespace put
             custom_draw_call cd = *(custom_draw_call*)cmd->UserCallbackData;
             delete (custom_draw_call*)cmd->UserCallbackData;
 
-            static hash_id ids[] = {PEN_HASH("default"), PEN_HASH("tex_cube"), PEN_HASH("tex_volume")};
+            static hash_id ids[] = {PEN_HASH("tex_2d"), PEN_HASH("tex_cube"), PEN_HASH("tex_volume")};
 
             if (cd.shader == SHADER_DEFAULT)
             {
@@ -508,8 +508,8 @@ namespace put
                 return;
             }
 
-            pen::renderer_set_constant_buffer(cd.cbuffer, 0, PEN_SHADER_TYPE_PS);
-            pen::renderer_set_constant_buffer(cd.cbuffer, 0, PEN_SHADER_TYPE_VS);
+            pen::renderer_set_constant_buffer(cd.cbuffer, 7, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_constant_buffer(cd.cbuffer, 7, PEN_SHADER_TYPE_VS);
 
             pmfx::set_technique_perm(g_imgui_rs.imgui_ex_shader, ids[cd.shader]);
         }

@@ -36,9 +36,10 @@ namespace put
             CONSOLE_ERROR = 2
         };
 
-        enum e_shader : u32
+        enum e_shader : s32
         {
-            SHADER_DEFAULT = pen::TEXTURE_COLLECTION_NONE,
+            SHADER_DEFAULT = -1,
+            SHADER_TEXTURE_2D = pen::TEXTURE_COLLECTION_NONE,
             SHADER_CUBEMAP = pen::TEXTURE_COLLECTION_CUBE,
             SHADER_VOLUME_TEXTURE = pen::TEXTURE_COLLECTION_VOLUME,
             SHADER_TEXTURE_ARRAY = pen::TEXTURE_COLLECTION_ARRAY

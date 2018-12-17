@@ -12,6 +12,7 @@
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
+#include "data_struct.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -946,70 +947,113 @@ namespace put
             }
         }
         
-        struct image_render_params
+        struct image_cbuffer
         {
-            vec4f colour_mask;
-            vec4f mip_array;
+            vec4f colour_mask = vec4f(1.0f, 1.0f, 1.0f, 1.0f);      // mask for rgba channels
+            vec4f mip_array = vec4f(-1.0f, -1.0f, 0.0f, 0.0f);      // x = mip index (x < 0 = auto), y = array slice index
+            mat4  inverse_wvp = mat4::create_identity();            // inverse wvp for cubemap, sdf and volume ray march
+        };
+        
+        struct image_ex_data
+        {
+            u32           handle;
+            camera        cam;
+            image_cbuffer cbuffer;
+            u32           cbuffer_handle;
         };
 
         void image_ex(u32 handle, vec2f size, e_shader shader, s32 mip_level)
         {
             ImVec2 canvas_size = ImVec2(size.x, size.y);
             
-            static image_render_params irp;
-            
-            ImGui::Text("Mip: %.0f", irp.mip_array.x);
-            ImGui::SameLine();
-            if(ImGui::Button(ICON_FA_MINUS))
-                irp.mip_array.x++;
-            ImGui::SameLine();
-            if(ImGui::Button(ICON_FA_PLUS))
-                irp.mip_array.x++;
-            ImGui::SameLine();
-            ImGui::Text("Array: %.0f", irp.mip_array.y);
-            ImGui::SameLine();
-            if(ImGui::Button(ICON_FA_MINUS))
-                irp.mip_array.x++;
-            ImGui::SameLine();
-            if(ImGui::Button(ICON_FA_PLUS))
-                irp.mip_array.x++;
-            
-            ImGui::SameLine();
-            
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.0f, 0.0f, 1.0f));
-            ImGui::Button("R");
-            ImGui::PopStyleColor();
-            ImGui::SameLine();
-            
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.7f, 0.0f, 1.0f));
-            ImGui::Button("G");
-            ImGui::PopStyleColor();
-            ImGui::SameLine();
-            
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.7f, 1.0f));
-            ImGui::Button("B");
-            ImGui::PopStyleColor();
-            ImGui::SameLine();
-            
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-            ImGui::Button("A");
-            ImGui::PopStyleColor();
-            
-            // 2d image
-            if (shader == dev_ui::SHADER_DEFAULT)
+            // cache params for rotations and settings
+            static image_ex_data* _image = nullptr;
+            u32 num_cbuf = sb_count(_image);
+            s32 ix = -1;
+            for(u32 i = 0; i < num_cbuf; ++i)
             {
-                ImGui::Image(IMG(handle), ImVec2(canvas_size));
-                return;
+                if(_image[i].handle == handle)
+                {
+                    ix = i;
+                    break;
+                }
+            }
+            
+            if(ix == -1)
+            {
+                ix = num_cbuf;
+                
+                image_ex_data new_data;
+                new_data.handle = handle;
+                camera_create_perspective(&new_data.cam, 60.0f, 1.0f, 0.1f, 10.0f);
+                sb_push(_image, new_data);
+                
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(camera_cbuffer);
+                bcp.data = nullptr;
+                
+                _image[ix].cbuffer_handle = pen::renderer_create_buffer(bcp);
+            }
+            
+            image_cbuffer _cb = _image[ix].cbuffer;
+            image_cbuffer& cb = _image[ix].cbuffer;
+            
+            // mips / arrays
+            ImGui::Text("Mip: %.0f", cb.mip_array.x);
+            ImGui::SameLine();
+            if(ImGui::Button(ICON_FA_MINUS))
+                cb.mip_array.x--;
+            ImGui::SameLine();
+            if(ImGui::Button(ICON_FA_PLUS))
+                cb.mip_array.x++;
+            ImGui::SameLine();
+            ImGui::Text("Array: %.0f", cb.mip_array.y);
+            ImGui::PushID("Array");
+            ImGui::SameLine();
+            if(ImGui::Button(ICON_FA_MINUS))
+                cb.mip_array.y--;
+            ImGui::SameLine();
+            if(ImGui::Button(ICON_FA_PLUS))
+                cb.mip_array.y++;
+            ImGui::PopID();
+            
+            // rgba channel mask
+            ImGui::SameLine();
+            static const vec4f colours[] = {
+                vec4f(0.7f, 0.0f, 0.0f, 1.0f),
+                vec4f(0.0f, 0.7f, 0.0f, 1.0f),
+                vec4f(0.0f, 0.0f, 0.7f, 1.0f),
+                vec4f(0.7f, 0.7f, 0.7f, 1.0f)
+            };
+            static const char* buttons[] = { "R", "G", "B", "A" };
+            for(u32 i = 0; i < PEN_ARRAY_SIZE(buttons); ++i)
+            {
+                f32 b = 1.0f;
+                if(!cb.colour_mask[i])
+                    b = 0.2f;
+                
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(colours[i].r * b, colours[i].g * b, colours[i].b * b, 1.0f));
+                if(ImGui::Button(buttons[i]))
+                {
+                    if(cb.colour_mask[i] == 1.0f)
+                    {
+                        cb.colour_mask[i] = 0.0f;
+                    }
+                    else
+                    {
+                        cb.colour_mask[i] = 1.0;
+                    }
+                }
+                ImGui::PopStyleColor();
+                if(i < PEN_ARRAY_SIZE(buttons)-1)
+                    ImGui::SameLine();
             }
 
             // cube or volume
-            static camera cam;
-            static bool init = true;
-            if (init)
-            {
-                init = false;
-                camera_create_perspective(&cam, 60, 1.0, 0.01, 10.0);
-            }
+            camera& cam = _image[ix].cam;
 
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
             ImVec2      canvas_pos = ImGui::GetCursorScreenPos();
@@ -1037,11 +1081,17 @@ namespace put
                 cam.zoom = 3.0f;
 
                 camera_update_look_at(&cam);
+                
+                cb.inverse_wvp = mat::inverse4x4(cam.proj * cam.view);
             }
 
-            camera_update_shader_constants(&cam);
-
-            dev_ui::set_shader(shader, cam.cbuffer);
+            // update cbuffer if dirty
+            if(memcmp(&_cb, &cb, sizeof(image_cbuffer)) != 0)
+            {
+                pen::renderer_update_buffer(_image[ix].cbuffer_handle, &cb, sizeof(image_cbuffer));
+            }
+            
+            dev_ui::set_shader(shader, _image[ix].cbuffer_handle);
 
             draw_list->AddImage(IMG(handle), canvas_pos, bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));
 
