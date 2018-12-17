@@ -950,7 +950,7 @@ namespace put
         struct image_cbuffer
         {
             vec4f colour_mask = vec4f(1.0f, 1.0f, 1.0f, 1.0f);      // mask for rgba channels
-            vec4f mip_array = vec4f(-1.0f, -1.0f, 0.0f, 0.0f);      // x = mip index (x < 0 = auto), y = array slice index
+            vec4f mip_array   = vec4f(-1.0f, -1.0f, 1.0f, 0.0f);    // x = mip index, y = array slice index, z = raise to pow
             mat4  inverse_wvp = mat4::create_identity();            // inverse wvp for cubemap, sdf and volume ray march
         };
         
@@ -979,6 +979,7 @@ namespace put
                 }
             }
             
+            image_cbuffer _cb; // copy of cb to compare for changes
             if(ix == -1)
             {
                 ix = num_cbuf;
@@ -997,8 +998,11 @@ namespace put
                 
                 _image[ix].cbuffer_handle = pen::renderer_create_buffer(bcp);
             }
+            else
+            {
+                _cb = _image[ix].cbuffer;
+            }
             
-            image_cbuffer _cb = _image[ix].cbuffer;
             image_cbuffer& cb = _image[ix].cbuffer;
             
             // mips / arrays
@@ -1051,6 +1055,8 @@ namespace put
                 if(i < PEN_ARRAY_SIZE(buttons)-1)
                     ImGui::SameLine();
             }
+            
+            ImGui::SliderFloat("Pow", &cb.mip_array.b, 1.0f, 1000.0f);
 
             // cube or volume
             camera& cam = _image[ix].cam;

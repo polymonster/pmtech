@@ -180,6 +180,8 @@ ps_output ps_tex_2d( vs_output input )
         if(colour_mask.a == 0.0)
             output.colour.a = 1.0;
     }
+    
+    output.colour.rgb = pow(output.colour.rgb, float3(mip_array.z));
 
     return output;
 }
