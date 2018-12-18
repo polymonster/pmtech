@@ -276,13 +276,21 @@ def replace_io_tokens(text):
 
 
 def find_struct(shader_text, decl):
-    start = shader_text.find(decl)
-    end = shader_text.find("};", start)
-    end += 2
-    if start != -1 and end != -1:
-        return shader_text[start:end] + "\n\n"
-    else:
-        return ""
+    delimiters = [" ", "\n", "{"]
+    start = 0
+    while True:
+        start = shader_text.find(decl, start)
+        if start == -1:
+            return ""
+        for d in delimiters:
+            if shader_text[start+len(decl)] == d:
+                end = shader_text.find("};", start)
+                end += 2
+                if start != -1 and end != -1:
+                    return shader_text[start:end] + "\n\n"
+                else:
+                    return ""
+        start += len(decl)
 
 
 def find_constant_buffers(shader_text):

@@ -15,6 +15,11 @@ cbuffer per_pass : register(b0)
     float4 output_buffer_dimension; //zw are unused
 };
 
+struct ps_output_depth
+{
+    float depth : SV_Depth;
+};
+
 struct ps_output
 {
     float4 colour : SV_Target;
@@ -88,11 +93,6 @@ ps_output ps_resolve_average_2x( vs_output_textured input )
     output.colour /= 2.0;
     return output;
 }
-
-struct ps_output_depth
-{
-    float depth : SV_Depth;
-};
 
 ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
 {
