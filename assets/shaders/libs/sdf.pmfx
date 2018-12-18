@@ -1,0 +1,63 @@
+#include "maths.pmfx"
+
+float sdf_shadow_trace(float max_samples, float3 light_pos, float3 world_pos, float3 scale, float3 ray_origin, float4x4 inv_mat, float3x3 inv_rot)
+{
+    float3 ray_dir = normalize(light_pos - world_pos);
+    ray_dir = normalize( mul( ray_dir, inv_rot ) );
+    
+    float closest = 1.0;
+        
+    // if uvw is in -1 to 1 range we are inside the sdf
+    float3 uvw = ray_origin;
+    
+    if(abs(uvw.x) >= 1.0 || abs(uvw.y) >= 1.0 || abs(uvw.z) >= 1.0)
+    {
+        float3 emin = float3(-1.0, -1.0, -1.0);
+        float3 emax = float3(1.0, 1.0, 1.0);
+
+        // ray cast intersection for shadow projection
+        float3 ip = float3(0.0, 0.0, 0.0);
+        bool hit = ray_vs_aabb( emin, emax, uvw, ray_dir, ip);
+        uvw = ip;
+        
+        if(!hit)
+        {
+            return closest;
+        }
+    }
+    
+    float3 light_uvw = mul( float4(light_pos, 1.0), inv_mat ).xyz * 0.5 + 0.5;
+
+    uvw = uvw * 0.5 + 0.5; // into texcoord space
+    
+    float3 v1 = normalize(light_uvw - uvw);
+    
+    for( int s = 0; s < int(max_samples); ++s )
+    {            
+        float d = sample_texture_level( sdf_volume, uvw, 0.0 ).r;
+        closest = min(d, closest);
+        
+        ray_dir = normalize(light_uvw - uvw);
+        float3 step = ray_dir.xyz * float3(d, d, d) / scale * 0.7;
+                                    
+        uvw += step;
+        
+        if( d <= 0.0 )
+        {            
+            closest = max( d, 0.0 );
+            break;
+        }
+        
+        if(uvw.x >= 1.0 || uvw.x < 0.0)
+            break;
+    
+        if(uvw.y >= 1.0 || uvw.y < 0.0)
+            break;
+    
+        if(uvw.z >= 1.0 || uvw.z < 0.0)
+            break;
+    }
+    
+    return closest;
+}
+

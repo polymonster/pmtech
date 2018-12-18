@@ -1,0 +1,630 @@
+#include "libs/globals.pmfx"
+#include "libs/maths.pmfx"
+#include "libs/lighting.pmfx"
+#include "ray_march.pmfx"
+
+// io structs
+struct vs_output
+{
+    float4 position        : SV_POSITION;
+    float4 texcoord        : TEXCOORD0;
+};
+
+struct vs_input
+{
+    float4 position         : POSITION;
+    float4 texcoord         : TEXCOORD0;
+};
+
+struct ps_output
+{
+    float4 colour : SV_Target;
+};
+
+struct ps_output_depth
+{
+    float depth : SV_Depth;
+};
+
+struct ps_output_colour_depth
+{
+    float4 colour     : SV_Target;
+    float depth       : SV_Depth;
+};
+
+cbuffer src_info : register(b10)
+{
+    float2 inv_texel_size[8];
+};
+
+cbuffer filter_kernel : register(b2)
+{
+    float4    filter_info; //xy = mask / direction, z = num samples, w = unused
+    float4     filter_offset_weight[16];
+};
+
+// samplers
+declare_texture_samplers
+{
+    texture_2d( src_texture_0, 0 );
+    texture_2d( src_texture_1, 1 );
+    texture_2d( src_texture_2, 2 );
+    texture_2d( src_texture_3, 3 );
+    texture_2d( src_texture_4, 4 );
+    texture_2d( src_texture_5, 5 );
+    texture_2d( src_texture_6, 6 );
+    texture_2d( src_texture_7, 7 );
+};
+
+// utility functions
+float calc_gaussian_weight(int sample_dist, float sigma)
+{
+    float g = 1.0f / sqrt(2.0f * 3.14159 * sigma * sigma);
+    return (g * exp(-(sample_dist * sample_dist) / (2 * sigma * sigma)));
+}
+
+float dof_blur_factor(in float depth) 
+{
+    float f0 = 1.0f - saturate((depth - m_near_focus_start) / max(m_near_focus_end - m_near_focus_start, 0.01f));
+    float f1 = saturate((depth - m_far_focus_start) / max(m_far_focus_end - m_far_focus_start, 0.01f));
+    float blur = saturate(f0 + f1);
+    return blur;
+}
+
+// vs / ps
+vs_output vs_ndc_quad( vs_input input )
+{
+    vs_output output;
+
+    output.position = input.position;
+    output.texcoord = input.texcoord;
+    
+    output.position.y = output.position.y * viewport_correction.x;
+    
+    return output;
+}
+
+ps_output ps_blit( vs_output input ) 
+{
+    ps_output output;
+    
+    output.colour = sample_texture( src_texture_0, input.texcoord.xy );
+    
+    return output;
+}
+
+ps_output_depth ps_blit_depth( vs_output input ) 
+{
+    ps_output_depth output;
+    
+    output.depth = sample_texture( src_texture_0, input.texcoord.xy ).r;
+    
+    return output;
+}
+
+ps_output_colour_depth ps_blit_colour_depth( vs_output input ) 
+{
+    ps_output_colour_depth output;
+    
+    output.colour = sample_texture( src_texture_0, input.texcoord.xy );
+    output.depth = sample_texture( src_texture_1, input.texcoord.xy ).r;
+    
+    return output;
+}
+
+ps_output ps_high_pass( vs_output input ) 
+{
+    ps_output output;
+    
+    output.colour = sample_texture( src_texture_0, input.texcoord.xy );
+    
+    float lum = dot( float3(0.2126, 0.7152, 0.0722), output.colour.rgb);
+    
+    output.colour *= smoothstep(m_threshold, m_threshold + m_smoothness, lum);
+                    
+    return output;
+}
+
+ps_output ps_filter( vs_output input ) 
+{
+    ps_output output;
+
+    float2 inv_texel = inv_texel_size[0];
+        
+    output.colour = float4(0.0, 0.0, 0.0, 1.0);
+    int lc = int(filter_info.z);
+                
+    for(int i = 0; i < lc; ++i)
+    {
+        float2 offset = (filter_offset_weight[i].x) * inv_texel * filter_info.xy; 
+        float w = filter_offset_weight[i].y;
+
+        output.colour += sample_texture( src_texture_0, input.texcoord.xy + offset) * w;
+    }
+    
+    output.colour.a = 1.0;
+    return output;
+}
+
+ps_output ps_downsample_2x2( vs_output input ) 
+{
+    ps_output output;
+
+    float2 inv_texel = inv_texel_size[0];
+    
+    float2 offset[4];
+    offset[0] = float2(0.0, 0.0) * inv_texel;
+    offset[1] = float2(1.0, 0.0) * inv_texel;
+    offset[2] = float2(1.0, 1.0) * inv_texel;
+    offset[3] = float2(0.0, 1.0) * inv_texel;
+    
+    float2 tc = input.texcoord.xy;
+    output.colour = float4(0.0, 0.0, 0.0, 1.0);
+    output.colour += sample_texture( src_texture_0, tc + offset[0]);
+    output.colour += sample_texture( src_texture_0, tc + offset[1]);
+    output.colour += sample_texture( src_texture_0, tc + offset[2]);
+    output.colour += sample_texture( src_texture_0, tc + offset[3]);
+    output.colour *= 0.25;
+    
+    return output;
+}
+
+ps_output ps_downsample_average( vs_output input ) 
+{
+    ps_output output;
+
+    float2 inv_texel = inv_texel_size[0];
+    
+    float2 offset[9];
+    offset[0] = float2(0.0, 0.0) * inv_texel;
+    offset[1] = float2(1.0, 0.0) * inv_texel;
+    offset[2] = float2(1.0, 1.0) * inv_texel;
+    offset[3] = float2(0.0, 1.0) * inv_texel;
+    offset[4] = float2(-1.0, 0.0) * inv_texel;
+    offset[5] = float2(-1.0, -1.0) * inv_texel;
+    offset[6] = float2(-1.0, 1.0) * inv_texel;
+    offset[7] = float2(0.0, -1.0) * inv_texel;
+    offset[8] = float2(1.0, -1.0) * inv_texel;
+    
+    float2 tc = input.texcoord.xy;
+    output.colour = float4(0.0, 0.0, 0.0, 1.0);
+    
+    for(int i = 0; i < 9; ++i)
+    {
+        output.colour += sample_texture( src_texture_0, tc + offset[i]);
+    }    
+
+    output.colour /= 9.0;
+    
+    return output;
+}
+
+
+ps_output ps_bloom_upsample( vs_output input ) 
+{
+    ps_output output;
+
+    float2 tc = input.texcoord.xy;
+    output.colour = sample_texture( src_texture_0, tc); // source
+    
+    float4 bloom = float4(0.0, 0.0, 0.0, 0.0);
+    bloom += sample_texture( src_texture_1, tc); // full
+    bloom += sample_texture( src_texture_2, tc); // half
+    bloom += sample_texture( src_texture_3, tc); // quarter
+    bloom += sample_texture( src_texture_4, tc); // eighth
+    bloom *= 0.25;
+    
+    output.colour += bloom * m_intensity;
+        
+    return output;
+}
+
+ps_output ps_depth_of_field( vs_output input )
+{
+    ps_output output;
+
+    float2 tc = input.texcoord.xy;
+    float z = sample_texture( src_texture_0, tc).r;                // depth
+    float4 focus_colour = sample_texture( src_texture_1, tc);     // source
+    float4 blur_colour  = sample_texture( src_texture_2, tc);     // blurred
+
+    // convert to linear depth
+    float n = camera_view_pos.w;
+    float f = camera_view_dir.w;
+
+    float ez  = (2 * n * f) / (f + n - z * (f - n));
+    float lz  = (ez - n) / (f - n);
+    
+    float centre_scale = m_centre_range / (f-n);
+    float width_scale = m_width_range / (f-n);
+    
+    float fw = m_focus_width * width_scale;
+        
+    float d = (abs(lz - m_focus_centre * centre_scale));
+    float r = saturate(smoothstep(d, -fw, fw));
+    
+    output.colour = lerp(focus_colour, blur_colour, r);
+    
+    return output;
+}
+
+ps_output ps_colour_lut( vs_output input )
+{
+    ps_output output;
+    
+    float2 tc = input.texcoord.xy;
+    float4 input_colour = sample_texture(src_texture_0, tc); 
+    
+    float input_b = input_colour.b * 63.0;
+
+    float2 quad_1;
+    quad_1.y = floor(floor(input_b) / 8.0);
+    quad_1.x = floor(input_b) - (quad_1.y * 8.0);
+
+    float2 quad_2;
+    quad_2.y = floor(ceil(input_b) / 8.0);
+    quad_2.x = ceil(input_b) - (quad_2.y * 8.0);
+
+    float2 tc_1;
+    tc_1.x = (quad_1.x * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.r);
+    tc_1.y = (quad_1.y * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.g);
+
+    float2 tc_2;
+    tc_2.x = (quad_2.x * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.r);
+    tc_2.y = (quad_2.y * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * input_colour.g);
+
+    float4 remapped_1 = sample_texture_level(lookup_texture, tc_1, 0.0);
+    float4 remapped_2 = sample_texture_level(lookup_texture, tc_2, 0.0);
+
+    output.colour = lerp(remapped_1, remapped_2, frac(input_b));  
+            
+    return output;
+}
+
+float map( in float3 p )
+{
+    float scale = 10.0;
+    float rep = 30.0;
+    
+    float3 q = mod(p, rep) - 0.5 * rep;
+    
+    q = q / scale;
+    
+    float d = sd_box(q, float3(1.0, 1.0, 1.0));
+    
+    float s = 1.0;
+    for( int m=0; m<4; m++ )
+    {
+        float3 a = mod(q * s, float3(2.0, 2.0, 2.0)) - 1.0;
+        
+        s *= 3.0;
+        float3 r = 1.0 - 3.0 * abs(a);
+
+        float c = sd_cross(r, float2(1.0, 10000.0) ) / s;
+        d = op_subtract(-c, d);
+    }
+
+    return d * scale;
+}
+
+float3 calc_normal(in float3 pos)
+{
+    float3 eps = float3(0.001, 0.0, 0.0);
+    float3 nor;
+    
+    nor.x = map(pos+eps.xyy) - map(pos-eps.xyy);
+    nor.y = map(pos+eps.yxy) - map(pos-eps.yxy);
+    nor.z = map(pos+eps.yyx) - map(pos-eps.yyx);
+    
+    return normalize(nor);
+}
+
+float intersect(in float3 ro, in float3 rd, out float3 pos)
+{
+    for(float t = 0.0; t < 150.0;)
+    {
+        float3 p = ro + rd * t;
+                
+        float d = map(p);
+                
+        if(d < 0.001)
+        {
+            pos = p;
+            return t;
+        }
+            
+        t += d;
+    }
+    
+    return -1.0;
+}
+
+ps_output_colour_depth ps_menger( vs_output input )
+{
+    ps_output_colour_depth output;
+    
+    float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
+    
+    //d3d needs to flip y
+    ndc = remap_ndc_ray(ndc);
+    
+    // unproject ray
+    float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
+    float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
+    
+    float4 wnear = mul(near, vp_matrix_inverse);
+    wnear /= wnear.w;
+    
+    float4 wfar = mul(far, vp_matrix_inverse);
+    wfar /= wfar.w;
+    
+    float4 col = float4(0.0, 0.0, 0.0, 1.0);
+    
+    float3 ray_origin = wnear.xyz;
+    float3 ray_dir = normalize(wfar.xyz - wnear.xyz);
+    
+    float3 world_pos;
+    float d = intersect(ray_origin, ray_dir, world_pos);
+    
+    float3 grad_a = float3(0.9, 0.5, 0.0);
+    float3 grad_b = float3(0.5, 0.0, 1.0);
+    float grad_t = ray_dir.y * 0.5 + 0.5;
+    
+    float4 sky = float4(lerp(grad_a, grad_b, grad_t), 1.0);
+    
+    output.depth = 1.0;
+    
+    float4 sd_col = sky;
+        
+    float sky_t = 0.0;
+    
+    if(d > 0.0)
+    {
+        float3 n = calc_normal(ray_origin + ray_dir * d);
+        
+        float4 lpr = float4(camera_view_pos.xyz, 100.0);
+        
+        float3 l = normalize(lpr.xyz - world_pos);
+        
+        float ndotl = dot(n, l);
+        
+        float a = point_light_attenuation(lpr, world_pos.xyz);    
+                
+        float3 lc = a * ndotl * float3(0.0, 0.7, 0.9);
+        
+        sd_col = float4(lc, 1.0);
+        
+        float4 proj = mul(float4(world_pos, 1.0), vp_matrix);
+        proj /= proj.w;
+        
+        output.depth = proj.z;
+        
+        sky_t = smoothstep(150.0, 80.0, length(world_pos - ray_origin));
+    }
+    
+    output.colour = lerp(sky, sd_col, sky_t);
+    
+    return output;
+}
+
+ps_output ps_crt( vs_output input )
+{
+    ps_output output;
+    
+    float2 tc = input.texcoord.xy;
+    
+    float2 cc = tc - 0.5;
+    float dist = dot(cc, cc) * 0.07;
+    
+    tc = tc * (tc + cc * (1.0 + dist) * dist) / tc;
+    
+    float2 inv_texel = inv_texel_size[0];
+    
+    float2 ca = float2(inv_texel.x * 2.0, 0.0);
+    
+    output.colour.r = sample_texture(src_texture_0, tc - ca).r;
+    output.colour.g = sample_texture(src_texture_0, tc).g;
+    output.colour.b = sample_texture(src_texture_0, tc + ca).b;
+    output.colour.a = 1.0;
+    
+    output.colour.rgb *= abs(sin(tc.y / inv_texel.y));
+    
+    if(tc.x < 0 || tc.x > 1.0 || tc.y < 0.0 || tc.y > 1.0)
+        output.colour *= 0.0;
+    
+    return output;
+}
+
+ps_output ps_sss_reflectance( vs_output input )
+{
+    float4 kernel[25];
+    kernel[0] = float4(0.530605, 0.613514, 0.739601, 0);
+    kernel[1] = float4(0.000973794, 1.11862e-005, 9.43437e-007, -3);
+    kernel[2] = float4(0.00333804, 7.85443e-005, 1.2945e-005, -2.52083);
+    kernel[3] = float4(0.00500364, 0.00020094, 5.28848e-005, -2.08333);
+    kernel[4] = float4(0.00700976, 0.00049366, 0.000151938, -1.6875);
+    kernel[5] = float4(0.0094389, 0.00139119, 0.000416598, -1.33333);
+    kernel[6] = float4(0.0128496, 0.00356329, 0.00132016, -1.02083);
+    kernel[7] = float4(0.017924, 0.00711691, 0.00347194, -0.75);
+    kernel[8] = float4(0.0263642, 0.0119715, 0.00684598, -0.520833);
+    kernel[9] = float4(0.0410172, 0.0199899, 0.0118481, -0.333333);
+    kernel[10] = float4(0.0493588, 0.0367726, 0.0219485, -0.1875);
+    kernel[11] = float4(0.0402784, 0.0657244, 0.04631, -0.0833333);
+    kernel[12] = float4(0.0211412, 0.0459286, 0.0378196, -0.0208333);
+    kernel[13] = float4(0.0211412, 0.0459286, 0.0378196, 0.0208333);
+    kernel[14] = float4(0.0402784, 0.0657244, 0.04631, 0.0833333);
+    kernel[15] = float4(0.0493588, 0.0367726, 0.0219485, 0.1875);
+    kernel[16] = float4(0.0410172, 0.0199899, 0.0118481, 0.333333);
+    kernel[17] = float4(0.0263642, 0.0119715, 0.00684598, 0.520833);
+    kernel[18] = float4(0.017924, 0.00711691, 0.00347194, 0.75);
+    kernel[19] = float4(0.0128496, 0.00356329, 0.00132016, 1.02083);
+    kernel[20] = float4(0.0094389, 0.00139119, 0.000416598, 1.33333);
+    kernel[21] = float4(0.00700976, 0.00049366, 0.000151938, 1.6875);
+    kernel[22] = float4(0.00500364, 0.00020094, 5.28848e-005, 2.08333);
+    kernel[23] = float4(0.00333804, 7.85443e-005, 1.2945e-005, 2.52083);
+    kernel[24] = float4(0.000973794, 1.11862e-005, 9.43437e-007, 3);
+
+    ps_output output;
+    float2 tc = input.texcoord.xy;
+    
+    float z = sample_texture(src_texture_1, tc).r;
+    
+    float n = camera_view_pos.w;
+    float f = camera_view_dir.w;
+
+    float ez  = (2 * n * f) / (f + n - z * (f - n));
+    float lz  = (ez - n) / (f - n);
+
+    float dist = 1.0 / tan(0.5 * 60.0 * 3.14 / 180.0 );
+    float scale = dist / lz;
+
+    float w = 1.0;
+    
+    // Calculate the final step to fetch the surrounding pixels:
+    float2 final_step = w * scale * filter_info.xy;
+    final_step *= 1.0 / 3.0; // Divide by 3 as the kernels range from -3 to 3.
+        
+    float3 col = sample_texture(src_texture_0, tc).rgb * kernel[0].rgb;
+    
+    for(int i = 1; i < 25; ++i)
+    {
+        float2 offset = kernel[i].a * final_step * inv_texel_size[0].xy;
+        col += sample_texture(src_texture_0, tc + offset).rgb * kernel[i].rgb;
+    }
+    
+    output.colour.rgb = col;
+    return output;
+}
+
+pmfx:
+{    
+    "blit":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_blit"
+    },
+    
+    "blit_depth":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_blit_depth"
+    },
+    
+    "blit_colour_depth":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_blit_colour_depth"
+    },
+    
+    "colour_lut":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_colour_lut",
+        
+        "texture_samplers": 
+        {
+            "lookup_texture":
+            {
+                "type"   : "texture_2d",
+                "unit"   : 8,
+                "shader" : "ps",
+                "sampler": "clamp_linear",
+                "default": "data/textures/luts/identity.dds"
+            }
+        }
+    },
+    
+    "high_pass":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_high_pass",
+        
+        "constants":
+        {
+            "threshold": { 
+                "type" : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            },
+            
+            "smoothness": { 
+                "type"  : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            }
+        }
+    },
+    
+    "filter":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_filter"
+    },
+    
+    "downsample_2x2":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_downsample_2x2"
+    },
+    
+    "downsample_average":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_downsample_average"
+    },
+    
+    "bloom_upsample":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_bloom_upsample",
+        
+        "constants":
+        {
+            "intensity": { 
+                "type" : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            }
+        }
+    },
+    
+    "depth_of_field":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_depth_of_field",
+        
+        "constants":
+        {
+            "focus_centre": { 
+                "type"    : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            },
+                    
+            "centre_range": { 
+                "type"    : "float", "widget": "input", "default": 100
+            },
+            
+            "focus_width": { 
+                "type"   : "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 
+            },
+
+            "width_range": { 
+                "type"   : "float", "widget": "input", "default": 20
+            }
+        }
+    },
+    
+    "menger_sponge":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_menger"
+    },
+    
+    "crt":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_crt"
+    },
+    
+    "sss_reflectance":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_sss_reflectance"
+    }
+}
+
+
+

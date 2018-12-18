@@ -1,0 +1,155 @@
+{    
+    render_targets:
+    {        
+        gbuffer_depth:
+        {
+            size   : equal,
+            format : d24s8
+        },
+        
+        gbuffer_albedo:
+        {
+            size   : equal,
+            format : rgba8
+        },
+        
+        gbuffer_normals:
+        {
+            size   : equal,
+            format : rgba32f
+        },
+        
+        gbuffer_world_pos:
+        {
+            size   : equal,
+            format : rgba32f
+        },
+        
+        gbuffer_depth_msaa:
+        {
+            size   : equal,
+            format : d24s8,
+            samples: 4
+        },
+        
+        gbuffer_albedo_msaa:
+        {
+            size   : equal,
+            format : rgba8,
+            samples: 4
+        },
+        
+        gbuffer_normals_msaa:
+        {
+            size   : equal,
+            format : rgba32f,
+            samples: 4
+        },
+        
+        gbuffer_world_pos_msaa:
+        {
+            size   : equal,
+            format : rgba32f,
+            samples: 4
+        },
+    },
+        
+    views:
+    {        
+        gbuffer_view:
+        {
+            target      : [gbuffer_albedo, gbuffer_normals, gbuffer_world_pos, gbuffer_depth],
+            clear_colour: [0.0, 0.0, 0.0, 0.0],            
+            clear_depth : 1.0,
+            clear       :
+            {
+                gbuffer_albedo:
+                {
+                    clear_colour_f:[0.0, 0.0, 0.0, 0.0]
+                },
+                
+                gbuffer_normals:
+                {
+                    clear_colour_f:[0.0, 0.0, 0.0, 0.0]
+                },
+                
+                gbuffer_world_pos:
+                {
+                    clear_colour_f:[0.0, 0.0, 0.0, 0.0]
+                }
+            },
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            blend_state        : disabled,
+            raster_state       : default,
+            depth_stencil_state: default,
+            pmfx_shader        : forward_render,
+            technique          : gbuffer,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            scene_views        : ["ces_render_scene"]
+        },
+         
+        deferred_lights_view:
+        {
+            target             : [main_colour],
+            clear_colour       : [0.0, 0.0, 0.0, 0.0],            
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : additive,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : default,
+            depth_stencil_state: "depth_always_no_write",
+            shader             : deferred_render,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            scene_views        : ["ces_render_light_volumes"],
+            
+            sampler_bindings:
+            [
+                { texture: gbuffer_albedo, unit: 0, state: wrap_linear },
+                { texture: gbuffer_normals, unit: 1, state: wrap_linear },
+                { texture: gbuffer_world_pos, unit: 2, state: wrap_linear },
+                { texture: gbuffer_depth, unit: 4, state: wrap_linear }
+            ],
+        },
+        
+        gbuffer_view_msaa:
+        {
+            inherit: gbuffer_view,
+            target: [
+                gbuffer_albedo_msaa, 
+                gbuffer_normals_msaa, 
+                gbuffer_world_pos_msaa, 
+                gbuffer_depth_msaa
+            ]
+        },
+        
+        deferred_lights_view_msaa:
+        {
+            inherit: deferred_lights_view,
+            
+            sampler_bindings:
+            [
+                { texture: gbuffer_albedo_msaa, unit: 4, state: wrap_linear, bind_flags: [ps, msaa]},
+                { texture: gbuffer_normals_msaa, unit: 5, state: wrap_linear, bind_flags: [ps, msaa]},
+                { texture: gbuffer_world_pos_msaa, unit: 6, state: wrap_linear, bind_flags: [ps, msaa]},
+                { texture: gbuffer_depth_msaa, unit: 7, state: wrap_linear, bind_flags: [ps, msaa]}
+            ],
+            permutation: 2
+        }
+    },
+    
+    view_sets: 
+    {    
+        deferred_render: [
+            gbuffer_view,
+            deferred_lights_view
+        ],
+        
+        deferred_render_msaa: [
+            gbuffer_view_msaa,
+            deferred_lights_view_msaa
+        ],
+    },
+}
+

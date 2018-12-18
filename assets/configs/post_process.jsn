@@ -1,0 +1,563 @@
+{    
+    render_targets:
+    {
+        post_process_colour:
+        {
+            size   : equal,
+            samples: 4,
+            format : rgba8
+        },
+        
+        post_process_depth:
+        {
+            size   : equal,
+            samples: 4,
+            format : d24s8
+        },
+        
+        pp_output_full:
+        {
+            size     : equal,
+            format   : rgba8,
+            pp       : write,
+            init_read: post_process_colour
+        },
+        
+        pp_output_half:
+        {
+            size  : half,
+            format: rgba8,
+            pp    : write
+        },
+        
+        pp_output_quarter:
+        {
+            size  : quarter,
+            format: rgba8,
+            pp    : write
+        },
+        
+        pp_output_eighth:
+        {
+            size  : eighth,
+            format: rgba8,
+            pp    : write
+        },
+    },
+    
+    filter_kernels:
+    {
+        gauss_5_1:
+        {
+            weights: [0.06136, 0.24477, 0.38774, 0.24477, 0.06136],
+            offsets: [-2.0, -1.0, 0.0, 1.0, 2.0]
+        },
+        
+        gauss_7_1:
+        {
+            weights: [
+                0.00598, 0.060626, 
+                0.241843, 0.383103, 
+                0.241843, 0.060626, 0.00598
+            ],
+            
+            offsets: [-3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0]
+        },
+        
+        gauss_9_1:
+        {
+            weights: [
+                0.000229, 0.005977, 0.060598, 
+                0.241732, 0.382928, 0.241732, 
+                0.060598, 0.005977, 0.000229
+            ],
+            
+            offsets: [-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0]
+        },
+        
+        poisson_disc_16:
+        {
+            offsets_xy: [
+                0.2069841, 0.2245269,
+                0.525808, -0.2310817,
+                0.1383943, 0.9056122,
+                0.6633009, 0.5129843,
+                -0.4002792, 0.3727058,
+                0.07912822, -0.6512921,
+                -0.7726067, -0.5151217,
+                -0.3843193, -0.1494132,
+                -0.9107782, 0.2500633,
+                0.6940153, -0.7098927,
+                -0.1964669, -0.379389,
+                -0.4769286, 0.1840863,
+                -0.247328, -0.8798459,
+                0.4206541, -0.714772,
+                0.5829348, -0.09794202,
+                0.3691838, 0.4140642
+            ]
+        }
+    },
+    
+    views:
+    {
+        blit:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: depth_always_no_write,
+            pmfx_shader        : post_process,
+            technique          : blit
+        },
+        
+        blit_depth:
+        {
+            clear_depth        : 1.0,
+            colour_write_mask  : 0x0,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: depth_always,
+            pmfx_shader        : post_process,
+            technique          : blit_depth
+        },
+        
+        blit_colour_depth:
+        {
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: depth_always,
+            pmfx_shader        : post_process,
+            technique          : blit_colour_depth
+        },
+        
+        colour_lut:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : colour_lut
+        },
+        
+        high_pass:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : high_pass
+        },
+        
+        filter:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : filter
+        },
+        
+        downsample_2x2:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : downsample_2x2
+        },
+        
+        downsample_average:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : downsample_average
+        },
+        
+        bloom_upsample:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : bloom_upsample
+        },
+        
+        depth_of_field:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : depth_of_field,
+            camera             : model_viewer_camera
+        },
+        
+        menger_sponge:
+        {
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: depth_always,
+            pmfx_shader        : post_process,
+            technique          : menger_sponge,
+            camera             : model_viewer_camera
+        },
+        
+        crt:
+        {
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : crt,
+            camera             : model_viewer_camera
+        }
+    },
+    
+    post_processes:
+    {
+        bloom: [
+            { 
+                inherit         : high_pass,
+                target          : [pp_output_full],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ],
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_full],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: horizontal
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_full],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: vertical
+            },
+                        
+            { 
+                inherit         : downsample_average,
+                target          : [pp_output_half],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ],
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_half],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: horizontal
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_half],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: vertical
+            },
+        
+            { 
+                inherit         : downsample_average,
+                target          : [pp_output_quarter],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+                ],
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_quarter],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_quarter, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: horizontal
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_quarter],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_quarter, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: vertical
+            },
+            
+            { 
+                inherit         : downsample_average,
+                target          : [pp_output_eighth],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_quarter, unit: 0, state: clamp_linear, shader: ps },
+                ],
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_eighth],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_eighth, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: horizontal
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_eighth],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_eighth, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: vertical
+            },
+        
+            { 
+                inherit         : bloom_upsample,
+                target          : [pp_output_full],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: post_process_colour, unit: 0, state: clamp_linear, shader: ps },
+                    { texture: pp_output_full, unit: 1, state: clamp_linear, shader: ps },
+                    { texture: pp_output_half, unit: 2, state: clamp_linear, shader: ps },
+                    { texture: pp_output_quarter, unit: 3, state: clamp_linear, shader: ps },
+                    { texture: pp_output_eighth, unit: 4, state: clamp_linear, shader: ps },
+                ],
+            }
+         ],
+            
+        depth_of_field: [
+            { 
+                inherit         : downsample_2x2,
+                target          : [pp_output_half],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ],
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_half],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: horizontal
+            },
+        
+            { 
+                inherit         : filter,
+                target          : [pp_output_half],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_half, unit: 0, state: clamp_linear, shader: ps },
+                ],
+                filter_kernel   : gauss_9_1,
+                filter_direction: vertical
+            },
+        
+            { 
+                inherit         : depth_of_field,
+                target          : [pp_output_full],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: post_process_depth, unit: 0, state: clamp_linear, shader: ps },
+                    { texture: pp_output_full, unit: 1, state: clamp_linear, shader: ps },
+                    { texture: pp_output_half, unit: 2, state: clamp_linear, shader: ps }
+                ],
+            }
+        ],
+        
+        colour_lut: [
+            { 
+                inherit         : colour_lut,
+                target          : [pp_output_full],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ]
+            }
+        ]
+        
+        blit_depth: [
+            { 
+                inherit         : blit_depth,
+                target          : [main_depth],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: post_process_depth, unit: 0, state: clamp_linear, shader: ps },
+                ]
+            }
+        ],
+        
+        blit_post_process: [
+            { 
+                inherit         : blit,
+                target          : [main_colour],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ]
+            }
+        ],
+        
+        blit_colour_depth: [
+            { 
+                inherit         : blit_colour_depth,
+                target          : [main_colour, main_depth],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: post_process_colour, unit: 0, state: clamp_linear, shader: ps },
+                    { texture: post_process_depth, unit: 1, state: clamp_linear, shader: ps },
+                ]
+            }
+        ],
+        
+        menger_sponge: [
+            {
+                inherit         : menger_sponge,
+                target          : [post_process_colour, post_process_depth],
+                pp_write_non_aux: true,
+                technique       : menger_sponge,
+                camera          : model_viewer_camera
+            },
+        ],
+        
+        crt: [
+            {
+                inherit  : crt,
+                target   : [pp_output_full],
+                camera   : model_viewer_camera,
+                
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ]
+            },
+        ],
+        
+        sss_reflectance: [
+            {
+                inherit         : filter,
+                target          : [pp_output_full],
+                technique       : sss_reflectance,
+                camera          : model_viewer_camera,
+                filter_kernel   : gauss_9_1,
+                filter_direction: horizontal,
+                
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                    { texture: post_process_depth, unit: 1, state: clamp_linear, shader: ps },
+                ]
+            },
+                        
+            {
+                inherit         : filter,
+                target          : [pp_output_full],
+                technique       : sss_reflectance,
+                camera          : model_viewer_camera,
+                filter_kernel   : gauss_9_1,
+                filter_direction: vertical,
+                
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                    { texture: post_process_depth, unit: 1, state: clamp_linear, shader: ps },
+                ]
+            }
+        ]
+    },
+    
+            
+    post_process_sets:
+    {
+        blit_only: 
+        { 
+            chain: [ blit_colour_depth ]
+        },
+        
+        editor_default: 
+        { 
+            chain: [ blit_depth, blit_post_process ]
+        }
+    }
+}
+

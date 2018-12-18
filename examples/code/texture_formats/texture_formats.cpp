@@ -10,7 +10,7 @@
 #include "timer.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include "stb/stb_image_write.h"
 
 using namespace put;
 
@@ -27,7 +27,7 @@ struct typed_texture
     u32       handle;
 };
 const c8**     k_texture_formats;
-typed_texture* k_textures     = nullptr;
+typed_texture* k_textures = nullptr;
 u32            k_num_textures = 0;
 
 template <typename T>
@@ -38,21 +38,21 @@ u32 create_float_texture(u32 w, u32 h, texture_format fmt, T r, T g, T b, T a)
 
     u32 data_size = w * h * 4 * sizeof(T);
 
-    tcp.width            = w;
-    tcp.height           = h;
-    tcp.format           = fmt;
-    tcp.num_mips         = 1;
-    tcp.num_arrays       = 1;
-    tcp.sample_count     = 1;
-    tcp.sample_quality   = 0;
-    tcp.usage            = PEN_USAGE_DEFAULT;
-    tcp.bind_flags       = PEN_BIND_SHADER_RESOURCE;
+    tcp.width = w;
+    tcp.height = h;
+    tcp.format = fmt;
+    tcp.num_mips = 1;
+    tcp.num_arrays = 1;
+    tcp.sample_count = 1;
+    tcp.sample_quality = 0;
+    tcp.usage = PEN_USAGE_DEFAULT;
+    tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
     tcp.cpu_access_flags = 0;
-    tcp.flags            = 0;
-    tcp.block_size       = 4;
+    tcp.flags = 0;
+    tcp.block_size = 4;
     tcp.pixels_per_block = 1;
-    tcp.data             = pen::memory_alloc(data_size);
-    tcp.data_size        = data_size;
+    tcp.data = pen::memory_alloc(data_size);
+    tcp.data_size = data_size;
 
     T* fdata = (T*)tcp.data;
 
@@ -109,7 +109,7 @@ void load_textures()
         {"r32f", create_float_texture<f32>(64, 64, PEN_TEX_FORMAT_R32G32B32A32_FLOAT, 1.0f, 0.0f, 1.0f, 1.0f)},
         {"r16f", create_float_texture<f16>(64, 64, PEN_TEX_FORMAT_R16G16B16A16_FLOAT, h0, h1, h0, h1)}};
 
-    k_textures     = &textures[0];
+    k_textures = &textures[0];
     k_num_textures = PEN_ARRAY_SIZE(textures);
 
     k_texture_formats = new const c8*[k_num_textures];
@@ -129,7 +129,7 @@ void texture_formats_ui()
     {
         texture_info info;
         get_texture_info(k_textures[current_type].handle, info);
-        ImGui::Image((void*)&k_textures[current_type].handle, ImVec2(info.width, info.height));
+        ImGui::Image(IMG(k_textures[current_type].handle), ImVec2(info.width, info.height));
 
         ImVec2 mip_size = ImVec2(info.width, info.height);
         for (u32 i = 0; i < info.num_mips; ++i)
@@ -141,7 +141,7 @@ void texture_formats_ui()
             mip_size.y = std::max<f32>(mip_size.y, 1.0f);
 
             ImGui::SameLine();
-            ImGui::Image((void*)&k_textures[current_type].handle, mip_size);
+            ImGui::Image(IMG(k_textures[current_type].handle), mip_size);
         }
     }
     else
@@ -155,7 +155,7 @@ void texture_formats_ui()
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 

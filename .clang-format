@@ -24,7 +24,7 @@ UseTab: Never
 NamespaceIndentation: All
 PointerAlignment: Left
 AlignConsecutiveDeclarations: 'true'
-AlignConsecutiveAssignments: 'true'
+AlignConsecutiveAssignments: 'false'
 IndentCaseLabels: 'true'
-
+ReflowComments: 'false'
 ...

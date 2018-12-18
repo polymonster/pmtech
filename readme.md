@@ -1,43 +1,35 @@
 # pmtech [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech)
 
 Follow work in progress: 
-[Engine](https://trello.com/b/ciujzpUT) | [Editor](https://trello.com/b/PJ76qXKH/editor)
+[trello](https://trello.com/b/ciujzpUT)
 
-A lightweight code base with powerful features that can be used for games and real-time 3D applications. The engine (pen) and toolkit (put) are designed with performance and simplicity in mind. This project focuses on data-oriented code with minimalistic c-style api's. Core systems such as rendering, audio and physics all have dedicated threads which process command buffers generated on the user thread... [more info](https://polymonster.github.io/articles.html)  
+A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded systems with minimalistic c-style api's and a strong emphasis on performance.
 
-There are examples included of how to use the api's, set up projects and data, view them [here...](https://polymonster.github.io/index.html)
+Take a look at: 
+[demos...](https://polymonster.github.io/index.html)
 
-![sdf shadow](https://polymonster.github.io/assets/gifs/sdf-shadow.gif)
-
-**Platform support**  
-- Platforms: Windows, MacOS, Linux, iOS, Android (wip).   
+**Platforms**  
+- OS: Windows, MacOS, Linux, iOS, Android (wip).   
 - Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+.   
-- Compilers: vs2015, vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
+- Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
 **Features**  
-- Data-Oriented Component Entity System - handling mesh rendering, animation and transformation heirarchies.
-- Scene Editor - Create scenes, import models add lighting, materials.
-- 3D Volume Generator - Generate 3D signed distance field and volume textures for advanced rendering effects.
-- PMFX - Generic shader language, data driven renderer using JSON config to specify render state, passes and techniques.
-- Asset Loading - Models, Textures, Shaders and hot reloading.
-- Maths - Templated vector and matrix library, collection of intersection and test functions.
-- JSON - Fast minimal json parser for data driven config scripts.
-- Platform Agnostic - Renderer, Window, Audio, Memory, Timers, File System, Threads.
+- Multithreaded - Async render, physics, audio and component entity system. 
+- Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
+- PMFX - High level data driven renderer, shader and post-processing system.
+- Hot loading - reload configs, shaders, models and textures in real time for rapid development.
+- Tools - Graphical editor, volume texture / signed distance field generator.
+- Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 
-**Tools**  
-- Models - Convert models, skeletons, scenes and animations to binary format. (Collada, Obj)
-- Textures - Compression, conversion, mip-map generation and assembly using NVTT.
-- Premake5 - All projects are configured using premake and are IDE agnostic.
-- PMFX - shader reflection info and agnostic hlsl / glsl shaders
-- Shader Compiler - offline shader compilation.
+**Usage**  
 
-**Getting started** 
+Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Getting-Started).
 
-Take a look at getting started quick [guide](https://polymonster.github.io/articles.html#getting-started)
-
-**Shoutout to thirdparty stuff!**  
-- [Jsmn](https://github.com/zserge/jsmn)
-- [Premake](https://github.com/premake/premake-core)
-- [Bullet](https://github.com/bulletphysics/bullet3)
+**Shoutout!** 
 - [ImGui](https://github.com/ocornut/imgui)
+- [Premake](https://github.com/premake/premake-core)
+- [Jsmn](https://github.com/zserge/jsmn)
+- [Bullet](https://github.com/bulletphysics/bullet3)
 - [NVTT](https://github.com/castano/nvidia-texture-tools)
+- [stb](https://github.com/nothings/stb)
+

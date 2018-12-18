@@ -1,0 +1,112 @@
+bool ray_vs_aabb(float3 emin, float3 emax, float3 r1, float3 rv, out float3 intersection)
+{
+    float3 dirfrac = float3(1.0, 1.0, 1.0) / rv;
+
+    float t1 = (emin.x - r1.x)*dirfrac.x;
+    float t2 = (emax.x - r1.x)*dirfrac.x;
+    float t3 = (emin.y - r1.y)*dirfrac.y;
+    float t4 = (emax.y - r1.y)*dirfrac.y;
+    float t5 = (emin.z - r1.z)*dirfrac.z;
+    float t6 = (emax.z - r1.z)*dirfrac.z;
+
+    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+    float t = 0.0f;
+
+    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (tmax < 0)
+    {
+        t = tmax;
+        return false;
+    }
+    
+
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (tmin > tmax)
+    {
+        t = tmax;
+        return false;
+    }
+
+    t = tmin;
+
+    intersection = r1 + rv * t;
+
+    return true;
+}
+
+float3 closest_point_on_ray(float3 r0, float3 rV, float3 p)
+{
+    float3 v1 = p - r0;
+    float t = dot(v1, rV);
+
+    return r0 + rV * t;
+}
+
+bool ray_vs_obb(float4x4 obb_mat, float4x4 obb_inv_mat, float3 r1, float3 rv, out float3 intersection)
+{
+    float4x4 inv_rot = obb_inv_mat;
+    inv_rot[0].w = 0.0;
+    inv_rot[1].w = 0.0;
+    inv_rot[2].w = 0.0;
+    inv_rot[3].xyzw = float4(0.0, 0.0, 0.0, 1.0 );
+    
+    //transform into obb
+    float3 trv = mul( float4(rv, 1.0), inv_rot ).xyz;
+    float3 tr1 = mul( float4(r1, 1.0), obb_inv_mat ).xyz;
+    
+    float3 ip;
+    bool hit = ray_vs_aabb(float3(-1.0, -1.0, -1.0), float3(1.0, 1.0, 1.0), tr1, trv, ip);
+    
+    intersection = mul(float4(ip, 1.0), obb_mat).xyz;
+    
+    return hit;
+}
+
+float3 closest_point_on_aabb(float3 emin, float3 emax, float3 p)
+{
+    float3 t1 = float3(max(p.x, emin.x), max(p.y, emin.y), max(p.z, emin.z));
+    float3 t2 = float3(min(t1.x, emax.x), min(t1.y, emax.y), min(t1.z, emax.z));
+    
+    return t2;
+}
+
+bool ray_vs_obb_ex(float4x4 obb_mat, float4x4 obb_inv_mat, float3 r1, float3 rv, 
+                    out float3 intersection, out float3 closest_point_obb, out float3 closest_point_ray)
+{
+    float4x4 inv_rot = obb_inv_mat;
+    inv_rot[0].w = 0.0;
+    inv_rot[1].w = 0.0;
+    inv_rot[2].w = 0.0;
+    inv_rot[3].xyzw = float4(0.0, 0.0, 0.0, 1.0 );
+    
+    //transform into obb
+    float3 trv = mul( float4(rv, 1.0), inv_rot ).xyz;
+    float3 tr1 = mul( float4(r1, 1.0), obb_inv_mat ).xyz;
+    
+    float3 ip;
+    bool hit = ray_vs_aabb(float3(-1.0, -1.0, -1.0), float3(1.0, 1.0, 1.0), tr1, trv, ip);
+    
+    float3 cpr = closest_point_on_ray(tr1, trv, float3(0.0, 0.0, 0.0));
+    float3 cpb = closest_point_on_aabb(float3(-1.0, -1.0, -1.0), float3(1.0, 1.0, 1.0), cpr);
+    
+    intersection = mul(float4(ip, 1.0), obb_mat).xyz;
+    
+    closest_point_obb = mul(float4(cpr, 1.0), obb_mat).xyz;
+    closest_point_ray = mul(float4(cpb, 1.0), obb_mat).xyz;
+    
+    return hit;
+}
+
+float3 closest_point_on_obb(float4x4 mat, float4x4 inv_mat, float3 p)
+{    
+    float3 tp = mul(float4(p, 1.0), inv_mat).xyz;
+
+    float3 cp = closest_point_on_aabb(float3(-1.0, -1.0, -1.0), float3(1.0, 1.0, 1.0), tp);
+
+    float3 tcp = mul(float4(cp, 1.0f), mat).xyz;
+
+    return tcp;
+}
+

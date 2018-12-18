@@ -1,0 +1,46 @@
+{
+    include: [
+        common.jsn,
+        deferred_renderer.jsn,
+        editor_renderer.jsn
+    ],
+                
+    views:
+    {        
+        forward_render_main:
+        {
+            inherit : "main_view",
+            clear_colour : [0.0, 0.0, 0.0, 1.0],
+            clear_depth : 1.0
+        },
+        
+        zprepass:
+        {
+            inherit : "main_view",
+            clear_depth : 1.0,
+            technique: "zonly"
+        },
+        
+        forward_render_zequal:
+        {
+            inherit : "main_view",
+            clear_depth : false,
+            clear_colour : [0.0, 0.0, 0.0, 1.0],
+            depth_stencil_state: "depth_equal"
+        }
+    },
+    
+    view_sets: 
+    {
+        forward_render: [
+            forward_render_main
+        ],
+        
+        forward_render_zprepass: [
+            zprepass,
+            forward_render_zequal
+        ]
+    },
+    
+    view_set: forward_render
+}

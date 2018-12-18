@@ -1,0 +1,133 @@
+{
+    include: [
+        common.jsn,
+        deferred_renderer.jsn,
+        post_process.jsn
+    ],
+    
+    render_targets:
+    {
+        picking:
+        {
+            size    : equal,
+            format  : r32u,
+            cpu_read: true
+        },
+        
+        picking_ds:
+        {
+            size  : equal,
+            format: d24s8,
+        },
+
+        volume_raster:
+        {
+            size    : [128,128],
+            format  : rgba8,
+            cpu_read: true
+        },
+        
+        volume_raster_ds:
+        {
+            size  : [128,128],
+            format: d24s8,
+        },
+        
+        cubemap_test:
+        {
+            size  : [128,128],
+            format: rgba8,
+            type: cube
+        }
+    },
+        
+    views:
+    {                
+        editor_view:
+        {
+            target             : [main_colour, main_depth],
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : wireframe,
+            depth_stencil_state: default,
+            pmfx_shader        : forward_render,
+            technique          : constant_colour,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            scene_views        : ["ces_render_editor"]
+        },
+        
+        picking_view:
+        {
+            target: [picking, picking_ds],
+            clear :
+            {
+                picking:
+                {
+                    clear_colour_u:[10000, 10000, 10000, 10000]
+                }
+            },
+            clear_depth        : 1.0,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            blend_state        : disabled,
+            raster_state       : default,
+            depth_stencil_state: default,
+            pmfx_shader        : pmfx_utility,
+            technique          : picking,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            scene_views        : ["ces_render_scene"]
+        },
+                        
+        volume_rasteriser:
+        {
+            target             : [volume_raster, volume_raster_ds],
+            clear_colour       : [0.0, 0.0, 0.0, 0.0],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : volume_raster,
+            depth_stencil_state: default,
+            scene              : main_scene,
+            camera             : volume_rasteriser_camera,
+            pmfx_shader        : pmfx_utility,
+            technique          : volume_raster_albedo,
+            scene_views        : ["ces_render_scene"],
+            render_flags       : ["forward_lit"],
+            
+            sampler_bindings:
+            [
+                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+            ],
+        },
+        
+        cubemap_render:
+        {
+			inherit: "main_view",
+            target : [cubemap_test],
+            camera : "cubemap_camera"
+        }
+    },
+    
+    view_sets: 
+    {
+        editor: [
+            main_view,
+            editor_view, 
+            picking_view, 
+            volume_rasteriser,
+            cubemap_render
+        ],
+        
+        editor_post_processed: [
+            main_view_post_processed,
+            editor_view, 
+            picking_view, 
+            volume_rasteriser
+        ],
+    },
+    
+    view_set: editor
+}

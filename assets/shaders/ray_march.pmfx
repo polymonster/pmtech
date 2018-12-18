@@ -1,0 +1,77 @@
+#include "libs/globals.pmfx"
+
+// Thanks to Inigo Quilezles for the great resources on distance functions
+// http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+
+// Operators
+float op_union( float d1, float d2 )
+{
+    return min(d1,d2);
+}
+
+float op_subtract( float d1, float d2 )
+{
+    return max(-d1,d2);
+}
+
+float op_intersect( float d1, float d2 )
+{
+    return max(d1,d2);
+}
+
+// Primitives
+float sd_sphere(float3 p, float s)
+{
+    return length(p)-s;
+}
+
+float sd_box(float3 p, float3 b)
+{
+    float3 d = abs(p) - b;
+    return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+}
+
+float ud_box(float3 p, float3 b)
+{
+    return length(max(abs(p) - b, 0.0));
+}
+
+float ud_round_box(float3 p, float3 b, float r)
+{
+    return length(max(abs(p) - b, 0.0)) - r;
+}
+
+float sd_cross(float3 p, float2 s)
+{
+    float da = sd_box(p.xyz, float3(s.y, s.x, s.x));
+    float db = sd_box(p.yzx, float3(s.x, s.y, s.x));
+    float dc = sd_box(p.zxy, float3(s.x, s.x, s.y));
+  
+    return op_union(da, op_union(db, dc));
+}
+
+float sd_torus(float3 p, float2 t)
+{
+    float2 q = float2(length(p.xz) - t.x,p.y);
+    return length(q)-t.y;
+}
+
+float sd_cylinder(float3 p, float3 c)
+{
+    return length(p.xz - c.xy) - c.z;
+}
+
+float sd_cone(float3 p, float2 c)
+{
+    // c must be normalized
+    float q = length(p.xy);
+    return dot(c, float2(q, p.z));
+}
+
+float sd_plane(float3 p, float4 n)
+{
+  // n must be normalized
+  return dot(p, n.xyz) + n.w;
+}
+
+

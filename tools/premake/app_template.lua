@@ -1,59 +1,126 @@
-local function add_osx_links()
-links 
-{ 
-	"Cocoa.framework",
-	"OpenGL.framework",
-	"GameController.framework",
-	"iconv",
-	"fmod"
-}
+local function add_pmtech_links()
+	configuration "Debug"
+		links { "put_d", "pen_d" }
+
+	configuration "Release"
+		links {  "put", "pen" }
+	
+	configuration {}
 end
 
-local function add_linux_links()
-links 
-{ 
-	"pthread",
-	"GLEW",
-	"GLU",
-	"GL",
-	"X11",
-	"fmod"
-}
+local function copy_shared_libs()
+	configuration "Debug"
+		postbuildcommands 
+		{
+			("{COPY} " .. shared_libs_dir .. " %{cfg.targetdir}")
+		}
+		
+	configuration "Release"
+		postbuildcommands 
+		{
+			("{COPY} " .. shared_libs_dir .. " %{cfg.targetdir}")
+		}
+	
+	configuration {}
 end
 
-local function add_win32_links()
-links 
-{ 
-	"d3d11.lib", 
-	"dxguid.lib", 
-	"winmm.lib", 
-	"comctl32.lib", 
-	"fmod64_vc.lib",
-	"Shlwapi.lib"	
-}
+local function setup_osx()
+	links 
+	{ 
+		"Cocoa.framework",
+		"OpenGL.framework",
+		"GameController.framework",
+		"iconv",
+		"fmod"
+	}
+	add_pmtech_links()
+	copy_shared_libs()
 end
 
-local function add_ios_links()
-links 
-{ 
-	"OpenGLES.framework",
-	"Foundation.framework",
-	"UIKit.framework",
-	"GLKit.framework",
-	"QuartzCore.framework",
-}
+local function setup_linux()
+	--linux must be linked in order
+	add_pmtech_links()
+	links 
+	{ 
+		"pthread",
+		"GLEW",
+		"GLU",
+		"GL",
+		"X11",
+		"fmod"
+	}
 end
 
-local function add_ios_files( project_name, root_directory )
-files 
-{ 
-	root_directory .. "/build/ios/ios_files/**.*"
-}
+local function setup_win32()
+	links 
+	{ 
+		"d3d11.lib", 
+		"dxguid.lib", 
+		"winmm.lib", 
+		"comctl32.lib", 
+		"fmod64_vc.lib",
+		"Shlwapi.lib"	
+	}
+	add_pmtech_links()
+	
+	systemversion(windows_sdk_version())
+	disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
 
-excludes 
-{ 
-	root_directory .. "/" .. project_name .. "**.DS_Store"
-}
+	copy_shared_libs()
+end
+
+local function setup_ios()
+	links 
+	{ 
+		"OpenGLES.framework",
+		"Foundation.framework",
+		"UIKit.framework",
+		"GLKit.framework",
+		"QuartzCore.framework",
+	}
+	
+	files 
+	{ 
+		(pmtech_dir .. "/template/ios/**.*"),
+		"bin/ios/data"
+	}
+
+	excludes 
+	{ 
+		("**.DS_Store")
+	}
+
+	xcodebuildresources
+	{
+		"bin/ios/data"
+	}
+end
+
+local function setup_android()
+	files
+	{
+		pmtech_dir .. "/template/android/manifest/**.*",
+		pmtech_dir .. "/template/android/activity/**.*"
+	}
+	
+	androidabis
+	{
+		"armeabi-v7a", "x86"
+	}
+end
+
+local function setup_platform()
+	if platform_dir == "win32" then
+		setup_win32()
+	elseif platform_dir == "osx" then
+		setup_osx()
+	elseif platform_dir == "ios" then
+		setup_ios()
+	elseif platform_dir == "linux" then 
+		setup_linux()
+	elseif platform_dir == "android" then 
+		setup_android()
+	end
 end
 
 local function setup_bullet()
@@ -67,93 +134,94 @@ local function setup_bullet()
 
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
 		bullet_lib_dir = _ACTION
-		bullet_lib = (bullet_lib .. "_x64")
-		bullet_lib_debug = (bullet_lib_debug .. "_x64")
+		bullet_lib = (bullet_lib)
+		bullet_lib_debug = (bullet_lib_debug)
 	end
-end
-
-local function setup_android()
-	files
-	{
-		pmtech_dir .. "pen/template/android/manifest/**.*",
-		pmtech_dir .. "pen/template/android/activity/**.*"
-	}
-end
-
-local function setup_platform()
-	if platform_dir == "win32" then
-		systemversion(windows_sdk_version())
-		disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" } 
-		add_win32_links()
-	elseif platform_dir == "osx" then
-		add_osx_links()
-	elseif platform_dir == "ios" then
-		add_ios_links() 
-		add_ios_files( project_name, root_directory )
-	elseif platform_dir == "linux" then 
-		add_linux_links()
-	elseif platform_dir == "android" then 
-		setup_android()
-	end
-end
-
-function create_app( project_name, source_directory, root_directory )
-project ( project_name )
-	kind "WindowedApp"
-	language "C++"
-	dependson { "pen", "put" }
 	
 	libdirs
-	{ 
-		pmtech_dir .. "pen/lib/" .. platform_dir, 
-		pmtech_dir .. "put/lib/" .. platform_dir,
-				
-		(pmtech_dir .. "third_party/fmod/lib/" .. platform_dir),
-		(pmtech_dir .. "third_party/bullet/lib/" .. bullet_lib_dir),
-	}
-	
-	includedirs
 	{
-		pmtech_dir .. "pen/include",
-		pmtech_dir .. "pen/include/common", 
-		pmtech_dir .. "pen/include/" .. platform_dir,
-		pmtech_dir .. "pen/include/" .. renderer_dir,
-		pmtech_dir .. "put/include/",
-		pmtech_dir .. "third_party/",
-		
-		"include/",
+		(pmtech_dir .. "third_party/bullet/lib/" .. bullet_lib_dir)
 	}
 	
-	location ( root_directory .. "/build/" .. platform_dir )
-	targetdir ( root_directory .. "/bin/" .. platform_dir )
-	debugdir ( root_directory .. "/bin/" .. platform_dir)
-		
-	files 
-	{ 
-		(root_directory .. "code/" .. source_directory .. "/**.cpp"),
-		(root_directory .. "code/" .. source_directory .. "/**.c"),
-		(root_directory .. "code/" .. source_directory .. "/**.h"),
-		(root_directory .. "code/" .. source_directory .. "/**.m"),
-		(root_directory .. "code/" .. source_directory .. "/**.mm")
-	}
-	
-	setup_platform()
-	setup_bullet()
-		 
 	configuration "Debug"
-		defines { "DEBUG" }
-		flags { "WinMain" }
-		symbols "On"
-		targetname (project_name .. "_d")
-		links { "put", "pen", bullet_lib_debug }
-		architecture "x64"
-  
+		links { bullet_lib_debug }
+	
 	configuration "Release"
-		defines { "NDEBUG" }
-		flags { "WinMain", "OptimizeSpeed" }
-		targetname (project_name)
-		links { "put", "pen", bullet_lib }
-		architecture "x64"
+		links { bullet_lib }
+	
+	configuration {}
+end
+
+local function setup_fmod()
+	libdirs
+	{
+		(pmtech_dir .. "third_party/fmod/lib/" .. platform_dir)
+	}
+end
+
+function setup_modules()
+	setup_bullet()
+	setup_fmod()
+end
+
+function create_app(project_name, source_directory, root_directory)
+	project ( project_name )
+		kind "WindowedApp"
+		language "C++"
+		dependson { "pen", "put" }
+		
+		includedirs
+		{
+			-- core
+			pmtech_dir .. "source/pen/include",
+			pmtech_dir .. "source/pen/include/common", 
+			pmtech_dir .. "source/pen/include/" .. platform_dir,
+			pmtech_dir .. "source/pen/include/" .. renderer_dir,
+			
+			--utility			
+			pmtech_dir .. "source/put/source/",
+			
+			-- third party			
+			pmtech_dir .. "third_party/",
+		
+			"include/",
+		}
+		
+		files 
+		{ 
+			(root_directory .. "code/" .. source_directory .. "/**.cpp"),
+			(root_directory .. "code/" .. source_directory .. "/**.c"),
+			(root_directory .. "code/" .. source_directory .. "/**.h"),
+			(root_directory .. "code/" .. source_directory .. "/**.m"),
+			(root_directory .. "code/" .. source_directory .. "/**.mm")
+		}
+	
+		libdirs
+		{ 
+			pmtech_dir .. "source/pen/lib/" .. platform_dir, 
+			pmtech_dir .. "source/put/lib/" .. platform_dir,
+		}
+	
+		setup_env()
+		setup_platform()
+		setup_modules()
+	
+		location (root_directory .. "/build/" .. platform_dir)
+		targetdir (root_directory .. "/bin/" .. platform_dir)
+		debugdir (root_directory .. "/bin/" .. platform_dir)
+			
+		configuration "Debug"
+			defines { "DEBUG" }
+			flags { "WinMain" }
+			symbols "On"
+			targetname (project_name .. "_d")
+			architecture "x64"
+			
+		configuration "Release"
+			defines { "NDEBUG" }
+			flags { "WinMain", "OptimizeSpeed" }
+			targetname (project_name)
+			architecture "x64"
 		
 end
 

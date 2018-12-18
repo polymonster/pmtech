@@ -1,0 +1,213 @@
+#include "ray_march.pmfx"
+
+cbuffer per_pass_vs : register(b1)
+{
+    float4x4 projection_matrix;
+};
+
+cbuffer image_ex : register(b7)
+{
+    float4 colour_mask;
+    float4 params; // x = mip, y = array, z = pow, w = viewport correction
+    float4x4 inverse_wvp;
+};
+
+struct vs_input
+{
+    float2 position      : POSITION;
+    float2 tex_coord     : TEXCOORD0;
+    float4 colour        : COLOR0;
+};
+
+struct vs_output
+{
+    float4 position      : SV_POSITION;
+    float4 colour        : TEXCOORD0;
+    float2 tex_coord     : TEXCOORD1;
+};
+
+struct ps_output
+{
+    float4 colour : SV_Target;
+};
+
+vs_output vs_main( vs_input input )
+{
+    vs_output output;
+    
+    output.position = mul( projection_matrix, float4( input.position.x, input.position.y, 0.0f, 1.0f ) );
+    output.colour = input.colour;
+    output.tex_coord = input.tex_coord;
+    
+    if(params.w > 0.9)
+        output.tex_coord.y = 1.0 - output.tex_coord.y;
+        
+    return output;
+}
+
+declare_texture_samplers
+{
+    texture_2d( tex, 0 );
+    texture_cube( tex_cube, 0 );
+    texture_3d( tex_3d, 0 );
+};
+
+ps_output ps_tex_cube( vs_output input )
+{
+    ps_output output;
+    
+    float2 ndc = input.tex_coord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
+    
+    //d3d needs to flip y
+    ndc = remap_ndc_ray(ndc);
+    
+    // unproject ray
+    float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
+    float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
+    
+    float4 wnear = mul(near, inverse_wvp);
+    wnear /= wnear.w;
+    
+    float4 wfar = mul(far, inverse_wvp);
+    wfar /= wfar.w;
+    
+    float4 col = float4(0.0, 0.0, 0.0, 1.0);
+    
+    float3 ro = wnear.xyz;
+    float3 rd = normalize(wfar.xyz - wnear.xyz);
+    
+    float3 n = float3(0.0, 0.0, 0.0);
+    
+	float e = 0.0;
+    for(float t = 0.0; t < 10.0;)
+    {
+        float3 p = ro + rd * t;
+                
+        float d = sd_sphere(p, 1.5);
+                
+        if(d < 0.001)
+        {
+            n = normalize(p);
+            break;
+        }
+		
+		if(e > 10.0)
+			break;
+            
+		e += 1.0;
+        t += d;
+    }
+    
+    float3 r = reflect(rd, n);
+    
+	output.colour = sample_texture(tex_cube, rd);
+	
+	if(length(n) > 0.0)
+		output.colour = sample_texture(tex_cube, r);
+
+    return output;
+}
+
+ps_output ps_tex_volume( vs_output input )
+{
+    ps_output output;
+    
+    float2 ndc = input.tex_coord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
+    
+    //d3d needs to flip y
+    ndc = remap_ndc_ray(ndc);
+    
+    // unproject ray
+    float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
+    float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
+    
+    float4 wnear = mul(near, inverse_wvp);
+    wnear /= wnear.w;
+    
+    float4 wfar = mul(far, inverse_wvp);
+    wfar /= wfar.w;
+    
+    float4 col = float4(0.0, 0.0, 0.0, 1.0);
+    
+    float3 ro = wnear.xyz;
+    float3 rd = normalize(wfar.xyz - wnear.xyz);
+    
+    float3 p = float3(0.0, 0.0, 0.0);
+    float n = 0.0;
+    
+    for(float t = 0.0; t < 10.0;)
+    {
+        p = ro + rd * t;
+                
+        float d = sd_box(p, float3(1.0, 1.0, 1.0));
+                
+        if(d < 0.001)
+        {
+            n = 1.0;
+            break;
+        }
+            
+        t += d;
+    }
+    
+    output.colour = sample_texture(tex_3d, p * 0.5 + 0.5) * n * 0.2;
+    output.colour.a = 1.0;
+    
+    return output;
+}
+
+ps_output ps_tex_2d( vs_output input )
+{
+    ps_output output;
+    
+    output.colour = float4(0.0, 1.0, 1.0, 1.0);
+    
+    if(params.x < 0)
+    {
+        output.colour = sample_texture( tex, input.tex_coord.xy );
+    }
+    else
+    {
+        output.colour = sample_texture_level( tex, input.tex_coord.xy, params.x );
+    }
+           
+    output.colour *= colour_mask;
+            
+    if(length(colour_mask) == 1.0)
+    {
+        float f = max4(output.colour);
+        output.colour = float4(f, f, f, 1.0);
+    }
+    else
+    {
+        if(colour_mask.a == 0.0)
+            output.colour.a = 1.0;
+    }
+    
+    output.colour.rgb = pow(output.colour.rgb, float3(params.z));
+
+    return output;
+}
+
+pmfx:
+{    
+    "tex_cube":
+    {
+        "vs"        : "vs_main",
+        "ps"        : "ps_tex_cube"
+    },
+    
+    "tex_volume":
+    {
+        "vs"        : "vs_main",
+        "ps"        : "ps_tex_volume"
+    },
+    
+    "tex_2d":
+    {
+        "vs"        : "vs_main",
+        "ps"        : "ps_tex_2d"
+    }
+}
+
+

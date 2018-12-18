@@ -1,0 +1,63 @@
+{
+    include: [
+        common.jsn
+    ],
+                
+    views:
+    {
+        single_shadow_view:
+        {
+            target             : [shadow_map],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : front_face_cull,
+            depth_stencil_state: default,
+            pmfx_shader        : forward_render,
+            technique          : zonly,
+            scene              : main_scene,
+            camera             : shadow_camera,
+            scene_views        : ["ces_render_scene"],
+            render_flags       : ["forward_lit"]
+        },
+        
+        debug_view:
+        {
+            target             : [main_colour, main_depth],
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : wireframe,
+            depth_stencil_state: default,
+            pmfx_shader        : forward_render,
+            technique          : constant_colour,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            scene_views        : ["shadows_debug"]
+        },
+        
+        shadow_demo_main:
+        {
+            inherit        : "main_view",
+            clear_colour   : [0.0, 0.0, 0.0, 1.0],
+            clear_depth    : 1.0,
+            
+            sampler_bindings:
+            [
+                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+            ],
+        }
+    },
+    
+    view_sets: 
+    {
+        shadow_map: [
+            single_shadow_view,
+            shadow_demo_main,
+            debug_view
+        ]
+    },
+    
+    view_set: shadow_map
+}

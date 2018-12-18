@@ -1,0 +1,218 @@
+float omni_shadow( float4 light_pos_inv_radius, float3 world_pos )
+{
+    //point shadow
+    /*    
+    float4 light_pos_inv_radius = float4(0.0f, 80.0f, 0.0f, 150.0f);
+    float3 to_light = (world_pos.xyz - light_pos_inv_radius.xyz) / light_pos_inv_radius.w;
+    float d = length(to_light);
+    float cube_d = cubemap.Sample(cube_samp,normalize(to_light)*float3(1.0f,1.0f,-1.0f)).r;
+    return d > cube_d + 0.001f ? 0.0f : 1.0f;
+    */    
+}
+
+float3 lambert( 
+    float4 light_pos_radius, 
+    float3 light_colour, 
+    float3 n, 
+    float3 world_pos, 
+    float3 albedo 
+)
+{
+    float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
+    float n_dot_l = max( dot( n, l ), 0.0 );
+    
+    float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
+    
+    return lit_colour;
+}
+
+float3 phong( 
+    float4 light_pos_radius,
+    float3 light_colour, 
+    float3 n, 
+    float3 world_pos, 
+    float3 view_pos, 
+    float3 albedo, 
+    float spec_power,
+    float spec_strength
+)
+{    
+    //lambert
+    float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
+    float n_dot_l = max( dot( n, l ), 0.0 );
+        
+    float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
+    
+    //phong
+    float3  v_view         = normalize(view_pos.xyz - world_pos.xyz);
+    float3    v_reflect     = reflect(-l, n.xyz);
+    
+    float spec = pow( max( dot(v_reflect, v_view), 0.0), spec_power ) * spec_strength;
+    
+    return lit_colour + max( spec * light_colour, 0.0 );
+}
+
+float3 blinn( 
+    float4 light_pos_radius,
+    float3 light_colour, 
+    float3 n, 
+    float3 world_pos, 
+    float3 view_pos, 
+    float3 albedo, 
+    float spec_power,
+    float spec_strength
+)
+{    
+    // lambert
+    float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
+    float n_dot_l = max( dot( n, l ), 0.0 );
+    
+    float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
+    
+    // blinn
+    float3  v_view = normalize( (view_pos.xyz - world_pos.xyz) );
+    float3  hv = normalize( v_view + l );
+    
+    float spec = pow( max( dot( hv, n ), 0.0 ), spec_power * 2.0 ) * spec_strength;
+            
+    return lit_colour + max( spec * light_colour, 0.0 );
+}
+
+float3 cook_torrence(
+    float4 light_pos_radius,
+    float3 light_colour, 
+    float3 n, 
+    float3 world_pos, 
+    float3 view_pos, 
+    float3 albedo, 
+    float3 metalness, 
+    float roughness,
+    float reflectivity
+)
+{
+    float3 l = normalize( light_pos_radius.xyz - world_pos.xyz );
+    float n_dot_l = dot( n, l );
+    
+    if( n_dot_l > 0.0f )
+    {
+        float roughness_sq = roughness * roughness;
+        float k = reflectivity;
+    
+        float3  v_view = normalize( (view_pos.xyz - world_pos.xyz) );
+        float3  hv = normalize( v_view + l );
+        
+        float n_dot_v    = dot( n, v_view );
+        float n_dot_h   = dot( n, hv );
+        float v_dot_h   = dot( v_view, hv );
+        
+        // geometric attenuation
+        float n_dot_h_2 = 2.0f * n_dot_h;
+        float g1 = (n_dot_h_2 * n_dot_v) / v_dot_h;
+        float g2 = (n_dot_h_2 * n_dot_l) / v_dot_h;
+        float geom_atten = min(1.0, min(g1, g2));
+        
+        // roughness (or: microfacet distribution function)
+        // beckmann distribution function
+        float r1 = 1.0f / ( 4.0f * roughness_sq * pow(n_dot_h, 4.0f));
+        float r2 = (n_dot_h * n_dot_h - 1.0) / (roughness_sq * n_dot_h * n_dot_h);
+        float roughness_atten = r1 * exp(r2);
+        
+        // fresnel
+        // Schlick approximation
+        float fresnel = pow(1.0 - v_dot_h, 5.0);
+        fresnel *= roughness;
+        fresnel += reflectivity;
+        
+        float specular = (fresnel * geom_atten * roughness_atten) / (n_dot_v * n_dot_l * 3.1419);
+        
+        //specular
+        float3 lit_colour = metalness * light_colour * n_dot_l * ( k + specular * ( 1.0 - k ) );
+        
+        return saturate(lit_colour);    
+    }
+        
+    return float3( 0.0, 0.0, 0.0 );
+}
+
+float3 oren_nayar(
+    float4 light_pos_radius,
+    float3 light_colour,
+    float3 n,
+    float3 world_pos,
+    float3 view_pos,
+    float roughness,
+    float3 albedo) 
+{
+  
+  float3 v = normalize(view_pos-world_pos);
+  float3 l = normalize(light_pos_radius.xyz-world_pos);
+  
+  float l_dot_v = dot(l, v);
+  float n_dot_l = dot(n, l);
+  float n_dot_v = dot(n, v);
+
+  float s = l_dot_v - n_dot_l * n_dot_v;
+  float t = lerp(1.0, max(n_dot_l, n_dot_v), step(0.0, s));
+
+  float lum = length( albedo );
+  
+  float sigma2 = roughness * roughness;
+  float A = 1.0 + sigma2 * (lum / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));
+  float B = 0.45 * sigma2 / (sigma2 + 0.09);
+
+  return ( albedo * light_colour * max(0.0, n_dot_l) * (A + B * s / t) / 3.14159265 );
+}
+
+float point_light_attenuation(
+    float4 light_pos_radius,
+    float3 world_pos)
+{
+    float d = length( world_pos.xyz - light_pos_radius.xyz );
+    float r = light_pos_radius.w;
+    //d = max(d - r, 0.0);
+    
+    float denom = d/r + 1.0;
+    float attenuation = 1.0 / (denom*denom);
+    
+    return attenuation;
+}
+
+float spot_light_attenuation(
+    float4 light_pos_radius,
+    float4 light_dir_cutoff,
+    float  falloff,
+    float3 world_pos)
+{
+    float co = light_dir_cutoff.w;
+    
+    float3 vl = normalize(world_pos.xyz - light_pos_radius.xyz);
+    float3 sd = normalize(light_dir_cutoff.xyz);
+    
+    float dp = (1.0 - dot(vl, sd));
+
+    return smoothstep(co, co - falloff, dp);
+}
+
+float point_light_attenuation_cutoff(
+    float4 light_pos_radius,
+    float3 world_pos)
+{
+    float r = light_pos_radius.w;
+    float d = length(world_pos.xyz - light_pos_radius.xyz);
+    d = max(d - r, 0.0);
+    
+    float denom = d/r + 1.0;
+    float attenuation = 1.0 / (denom*denom);
+    
+    float cutoff = 0.2;
+        
+    // scale and bias attenuation such that:
+    // attenuation == 0 at extent of max influence
+    // attenuation == 1 when d == 0
+    attenuation = (attenuation - cutoff) / (1.0 - cutoff);
+    attenuation = max(attenuation, 0.0);
+
+    return attenuation;
+}
+
+

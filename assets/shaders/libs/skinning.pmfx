@@ -1,0 +1,104 @@
+cbuffer skinning_info : register(b2)
+{
+    float4x4 bones[85];
+};
+
+float4 skin_pos(float4 pos, float4 weights, float4 indices)
+{
+    int bone_indices[4];
+    bone_indices[0] = int(indices.x);
+    bone_indices[1] = int(indices.y);
+    bone_indices[2] = int(indices.z);
+    bone_indices[3] = int(indices.w);
+
+    float4 sp = float4( 0.0, 0.0, 0.0, 0.0 );
+    float final_weight = 1.0;
+    for( int i = 0; i < 3; ++i)    
+    {
+        sp += mul( pos, bones[bone_indices[i]] ) * weights[i];
+        final_weight -= weights[i];
+    }
+        
+    sp += mul( pos, bones[bone_indices[3]] ) * final_weight;
+    
+    sp.w = 1.0;
+        
+    return sp;
+}
+
+void skin_tbn(inout float3 t, inout float3 b, inout float3 n, float4 weights, float4 indices )
+{
+    int bone_indices[4];
+    bone_indices[0] = int(indices.x);
+    bone_indices[1] = int(indices.y);
+    bone_indices[2] = int(indices.z);
+    bone_indices[3] = int(indices.w);
+
+    float3 rt = float3( 0.0, 0.0, 0.0);
+    float3 rb = float3( 0.0, 0.0, 0.0);
+    float3 rn = float3( 0.0, 0.0, 0.0);
+    
+    float final_weight = 1.0;
+    for( int i = 0; i < 3; ++i)    
+    {
+        float3x3 rot_mat = to_3x3(bones[bone_indices[i]]);
+        rt += mul(t, rot_mat) * weights[i];
+        rb += mul(b, rot_mat) * weights[i];
+        rn += mul(n, rot_mat) * weights[i];
+        
+        final_weight -= weights[i];
+    }
+    
+    float3x3 rot_mat = to_3x3(bones[bone_indices[3]]);
+    
+    rt += mul(t, rot_mat) * final_weight;
+    rb += mul(b, rot_mat) * final_weight;
+    rn += mul(n, rot_mat) * final_weight;
+    
+    t = rt;
+    b = rb;
+    n = rn;
+}
+
+void skin_pos_tbn(inout float4 pos, inout float3 t, inout float3 b, inout float3 n, float4 weights, float4 indices )
+{
+    int bone_indices[4];
+    bone_indices[0] = int(indices.x);
+    bone_indices[1] = int(indices.y);
+    bone_indices[2] = int(indices.z);
+    bone_indices[3] = int(indices.w);
+
+    float3 rt = float3( 0.0, 0.0, 0.0);
+    float3 rb = float3( 0.0, 0.0, 0.0);
+    float3 rn = float3( 0.0, 0.0, 0.0);
+    float4 sp = float4( 0.0, 0.0, 0.0, 0.0 );
+    
+    float final_weight = 1.0;
+    for( int i = 0; i < 3; ++i)    
+    {
+        sp += mul( pos, bones[bone_indices[i]] ) * weights[i];
+        
+        float3x3 rot_mat = to_3x3(bones[bone_indices[i]]);
+        rt += mul(t, rot_mat) * weights[i];
+        rb += mul(b, rot_mat) * weights[i];
+        rn += mul(n, rot_mat) * weights[i];
+        
+        final_weight -= weights[i];
+    }
+    
+    sp += mul( pos, bones[bone_indices[3]] ) * final_weight;
+    
+    float3x3 rot_mat = to_3x3(bones[bone_indices[3]]);
+    
+    rt += mul(t, rot_mat) * final_weight;
+    rb += mul(b, rot_mat) * final_weight;
+    rn += mul(n, rot_mat) * final_weight;
+    
+    t = rt;
+    b = rb;
+    n = rn;
+    
+    pos = sp;
+    pos.w = 1.0;
+}
+

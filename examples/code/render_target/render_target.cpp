@@ -31,7 +31,7 @@ typedef struct textured_vertex
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params    = (pen::job_thread_params*)params;
+    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
     pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
 
@@ -51,9 +51,9 @@ PEN_TRV pen::user_entry(void* params)
     // raster state
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(rasteriser_state_creation_params));
-    rcp.fill_mode               = PEN_FILL_SOLID;
-    rcp.cull_mode               = PEN_CULL_NONE;
-    rcp.depth_bias_clamp        = 0.0f;
+    rcp.fill_mode = PEN_FILL_SOLID;
+    rcp.cull_mode = PEN_CULL_NONE;
+    rcp.depth_bias_clamp = 0.0f;
     rcp.sloped_scale_depth_bias = 0.0f;
 
     u32 raster_state = pen::renderer_create_rasterizer_state(rcp);
@@ -66,25 +66,25 @@ PEN_TRV pen::user_entry(void* params)
 
     // create render target
     pen::texture_creation_params tcp;
-    tcp.width            = (u32)vp_rt.width;
-    tcp.height           = (u32)vp_rt.height;
+    tcp.width = (u32)vp_rt.width;
+    tcp.height = (u32)vp_rt.height;
     tcp.cpu_access_flags = 0;
-    tcp.format           = PEN_TEX_FORMAT_RGBA8_UNORM;
-    tcp.num_arrays       = 1;
-    tcp.num_mips         = 1;
-    tcp.bind_flags       = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
+    tcp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
+    tcp.num_arrays = 1;
+    tcp.num_mips = 1;
+    tcp.bind_flags = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
     tcp.pixels_per_block = 1;
-    tcp.sample_count     = 1;
-    tcp.sample_quality   = 0;
-    tcp.block_size       = 32;
-    tcp.usage            = PEN_USAGE_DEFAULT;
-    tcp.flags            = 0;
+    tcp.sample_count = 1;
+    tcp.sample_quality = 0;
+    tcp.block_size = 32;
+    tcp.usage = PEN_USAGE_DEFAULT;
+    tcp.flags = 0;
 
     u32 colour_render_target = pen::renderer_create_render_target(tcp);
 
     // load shaders now requiring dependency on pmfx to make loading simpler.
-    pmfx::shader_handle basic_tri_shader = pmfx::load_shader("basictri");
-    pmfx::shader_handle textured_shader  = pmfx::load_shader("textured");
+    u32 basic_tri_shader = pmfx::load_shader("basictri");
+    u32 textured_shader = pmfx::load_shader("textured");
 
     // create vertex buffer for a triangle
     vertex triangle_vertices[] = {
@@ -92,12 +92,12 @@ PEN_TRV pen::user_entry(void* params)
     };
 
     pen::buffer_creation_params bcp;
-    bcp.usage_flags      = PEN_USAGE_DEFAULT;
-    bcp.bind_flags       = PEN_BIND_VERTEX_BUFFER;
+    bcp.usage_flags = PEN_USAGE_DEFAULT;
+    bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
     bcp.cpu_access_flags = 0;
 
     bcp.buffer_size = sizeof(vertex) * 3;
-    bcp.data        = (void*)&triangle_vertices[0];
+    bcp.data = (void*)&triangle_vertices[0];
 
     u32 triangle_vertex_buffer = pen::renderer_create_buffer(bcp);
 
@@ -117,37 +117,37 @@ PEN_TRV pen::user_entry(void* params)
     };
 
     bcp.buffer_size = sizeof(textured_vertex) * 4;
-    bcp.data        = (void*)&quad_vertices[0];
+    bcp.data = (void*)&quad_vertices[0];
 
     u32 quad_vertex_buffer = pen::renderer_create_buffer(bcp);
 
     // create index buffer
     u16 indices[] = {0, 1, 2, 2, 3, 0};
 
-    bcp.usage_flags      = PEN_USAGE_DEFAULT;
-    bcp.bind_flags       = PEN_BIND_INDEX_BUFFER;
+    bcp.usage_flags = PEN_USAGE_DEFAULT;
+    bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
     bcp.cpu_access_flags = 0;
-    bcp.buffer_size      = sizeof(u16) * 6;
-    bcp.data             = (void*)&indices[0];
+    bcp.buffer_size = sizeof(u16) * 6;
+    bcp.data = (void*)&indices[0];
 
     u32 quad_index_buffer = pen::renderer_create_buffer(bcp);
 
     // create a sampler object so we can sample a texture
     pen::sampler_creation_params scp;
     pen::memory_zero(&scp, sizeof(pen::sampler_creation_params));
-    scp.filter          = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-    scp.address_u       = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_v       = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_w       = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
+    scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
+    scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.comparison_func = PEN_COMPARISON_ALWAYS;
-    scp.min_lod         = 0.0f;
-    scp.max_lod         = 4.0f;
+    scp.min_lod = 0.0f;
+    scp.max_lod = 4.0f;
 
     pen::depth_stencil_creation_params depth_stencil_params = {0};
 
-    depth_stencil_params.depth_enable     = true;
+    depth_stencil_params.depth_enable = true;
     depth_stencil_params.depth_write_mask = 1;
-    depth_stencil_params.depth_func       = PEN_COMPARISON_ALWAYS;
+    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
 
     u32 depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 
@@ -198,13 +198,13 @@ PEN_TRV pen::user_entry(void* params)
             pen::renderer_set_index_buffer(quad_index_buffer, PEN_FORMAT_R16_UINT, 0);
 
             // bind render target as texture on sampler 0
-            pen::renderer_set_texture(colour_render_target, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_texture(colour_render_target, render_target_texture_sampler, 0, pen::TEXTURE_BIND_PS);
 
             // draw
             pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
 
             // unbind render target from the sampler
-            pen::renderer_set_texture(0, render_target_texture_sampler, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_texture(0, render_target_texture_sampler, 0, pen::TEXTURE_BIND_PS);
         }
 
         // present

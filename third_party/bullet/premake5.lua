@@ -1,4 +1,6 @@
-platform_dir = "linux"
+dofile("../../tools/premake/options.lua")
+dofile("../../tools/premake/globals.lua")
+
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
 	platform_dir = _ACTION
 end
@@ -29,9 +31,11 @@ project "bullet_monolithic"
 	}
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
-		systemversion("8.1:10.1")
+		systemversion(windows_sdk_version())
 	end
-		
+	
+	setup_env()
+	
 	files 
 	{ 
 		"src\\Bullet3Collision\\**.*",

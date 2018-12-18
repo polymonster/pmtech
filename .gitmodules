@@ -1,3 +1,7 @@
 [submodule "tools/premake/premake-android-studio"]
 	path = tools/premake/premake-android-studio
 	url = https://github.com/polymonster/premake-android-studio
+	
+[submodule "third_party/maths"]
+	path = third_party/maths
+	url = https://github.com/polymonster/maths.git

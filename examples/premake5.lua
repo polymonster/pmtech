@@ -13,12 +13,16 @@ solution "examples"
 	startproject "empty_project"
 	buildoptions { build_cmd }
 	linkoptions { link_cmd }
+	includedirs
+	{
+	    "shader_structs"
+	}
 	
 -- Engine Project	
-dofile "../pen/project.lua"
+dofile "../source/pen/project.lua"
 
 -- Toolkit Project	
-dofile "../put/project.lua"
+dofile "../source/put/project.lua"
 
 -- Example projects	
 -- ( project name, current script dir, )
@@ -32,7 +36,7 @@ create_app_example( "imgui", script_path() )
 create_app_example( "input", script_path() )
 create_app_example( "audio_player", script_path() )
 create_app_example( "shader_toy", script_path() )
-create_app_example( "scene_editor", script_path() )
+create_app_example( "pmtech_editor", script_path() )
 create_app_example( "rigid_body_primitives", script_path() )
 create_app_example( "physics_constraints", script_path() )
 create_app_example( "instancing", script_path() )
@@ -45,3 +49,6 @@ create_app_example( "volume_texture", script_path() )
 create_app_example( "multiple_render_targets", script_path() )
 create_app_example( "maths_functions", script_path() )
 create_app_example( "sdf_shadow", script_path() )
+create_app_example( "post_processing", script_path() )
+create_app_example( "sss", script_path() )
+create_app_example( "pmfx_renderer", script_path() )
