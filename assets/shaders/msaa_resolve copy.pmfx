@@ -108,6 +108,25 @@ ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
     return output;
 }
 
+struct ps_output_depth
+{
+    float depth : SV_Depth;
+};
+
+ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
+{
+    ps_output_depth output;
+    output.depth = sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, 0 ).r;
+    for( int i = 1; i < 4; ++i )
+    {
+        float depth = sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i ).r;
+        output.depth = max( depth, output.depth );
+    }
+    output.depth = 0.0;
+
+    return output;
+}
+
 pmfx:
 {    
     "average_2x":

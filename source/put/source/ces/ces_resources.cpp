@@ -1257,24 +1257,10 @@ namespace put
                     ImGui::Separator();
                 }
             }
-
-            if (ImGui::CollapsingHeader("Materials"))
+            
+            if (ImGui::CollapsingHeader("Textures"))
             {
-                for (auto* m : s_material_resources)
-                {
-                    for (u32 t = 0; t < put::ces::SN_NUM_TEXTURES; ++t)
-                    {
-                        if (m->texture_handles[t] > 0)
-                        {
-                            if (t > 0)
-                                ImGui::SameLine();
-
-                            ImGui::Image(IMG(m->texture_handles[t]), ImVec2(128, 128));
-                        }
-                    }
-
-                    ImGui::Separator();
-                }
+                put::texture_browser_ui();
             }
 
             ImGui::End();

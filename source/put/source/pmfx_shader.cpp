@@ -435,7 +435,7 @@ namespace put
             link_params.pixel_shader = program.pixel_shader;
             link_params.stream_out_shader = 0;
             link_params.stream_out_names = nullptr;
-
+            
             get_link_params_constants(link_params, j_info, j_techique);
 
             program.program_index = pen::renderer_link_shader_program(link_params);

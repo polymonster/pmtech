@@ -949,9 +949,9 @@ namespace put
         
         struct image_cbuffer
         {
-            vec4f colour_mask = vec4f(1.0f, 1.0f, 1.0f, 1.0f);      // mask for rgba channels
-            vec4f mip_array   = vec4f(-1.0f, -1.0f, 1.0f, 0.0f);    // x = mip index, y = array slice index, z = raise to pow
-            mat4  inverse_wvp = mat4::create_identity();            // inverse wvp for cubemap, sdf and volume ray march
+            vec4f colour_mask = vec4f(1.0f, 1.0f, 1.0f, 1.0f); // mask for rgba channels
+            vec4f params = vec4f(-1.0f, -1.0f, 1.0f, 0.0f);    // x = mip, y = array, z = pow, w = viewport flip
+            mat4  inverse_wvp = mat4::create_identity();       // inverse wvp for cubemap, sdf and volume ray march
         };
         
         struct image_ex_data
@@ -962,7 +962,7 @@ namespace put
             u32           cbuffer_handle;
         };
 
-        void image_ex(u32 handle, vec2f size, e_shader shader, s32 mip_level)
+        void image_ex(u32 handle, vec2f size, e_shader shader)
         {
             ImVec2 canvas_size = ImVec2(size.x, size.y);
             
@@ -980,9 +980,11 @@ namespace put
             }
             
             image_cbuffer _cb; // copy of cb to compare for changes
+            bool force_update = false;
             if(ix == -1)
             {
                 ix = num_cbuf;
+                force_update = true;
                 
                 image_ex_data new_data;
                 new_data.handle = handle;
@@ -1005,27 +1007,34 @@ namespace put
             
             image_cbuffer& cb = _image[ix].cbuffer;
             
-            // mips / arrays
-            ImGui::Text("Mip: %.0f", cb.mip_array.x);
+            // viewport
+            cb.params.w = 0.0f;
+            if(pen::renderer_viewport_vup())
+            {
+                cb.params.w = 1.0f;
+            }
+            
+            // mips
+            ImGui::Text("Mip: %.0f", cb.params.x);
             ImGui::SameLine();
             if(ImGui::Button(ICON_FA_MINUS))
-                cb.mip_array.x--;
+                cb.params.x--;
             ImGui::SameLine();
             if(ImGui::Button(ICON_FA_PLUS))
-                cb.mip_array.x++;
-            ImGui::SameLine();
-            ImGui::Text("Array: %.0f", cb.mip_array.y);
+                cb.params.x++;
+
+            // arrays
+            ImGui::Text("Array: %.0f", cb.params.y);
             ImGui::PushID("Array");
             ImGui::SameLine();
             if(ImGui::Button(ICON_FA_MINUS))
-                cb.mip_array.y--;
+                cb.params.y--;
             ImGui::SameLine();
             if(ImGui::Button(ICON_FA_PLUS))
-                cb.mip_array.y++;
+                cb.params.y++;
             ImGui::PopID();
             
             // rgba channel mask
-            ImGui::SameLine();
             static const vec4f colours[] = {
                 vec4f(0.7f, 0.0f, 0.0f, 1.0f),
                 vec4f(0.0f, 0.7f, 0.0f, 1.0f),
@@ -1056,9 +1065,10 @@ namespace put
                     ImGui::SameLine();
             }
             
-            ImGui::SliderFloat("Pow", &cb.mip_array.b, 1.0f, 1000.0f);
+            // slider for pow range
+            ImGui::SliderFloat("Pow", &cb.params.b, 1.0f, 1000.0f);
 
-            // cube or volume
+            //
             camera& cam = _image[ix].cam;
 
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -1074,7 +1084,7 @@ namespace put
 
             ImGui::InvisibleButton("canvas", canvas_size);
 
-            if (ImGui::IsItemHovered())
+            if (ImGui::IsItemHovered() || force_update)
             {
                 if (ImGui::GetIO().MouseDown[0])
                 {
@@ -1085,14 +1095,13 @@ namespace put
                 cam.zoom += ImGui::GetIO().MouseWheel;
                 cam.zoom = max(cam.zoom, 1.0f);
                 cam.zoom = 3.0f;
-
-                camera_update_look_at(&cam);
                 
+                camera_update_look_at(&cam);
                 cb.inverse_wvp = mat::inverse4x4(cam.proj * cam.view);
             }
 
             // update cbuffer if dirty
-            if(memcmp(&_cb, &cb, sizeof(image_cbuffer)) != 0)
+            if(memcmp(&_cb, &cb, sizeof(image_cbuffer)) != 0 || force_update)
             {
                 pen::renderer_update_buffer(_image[ix].cbuffer_handle, &cb, sizeof(image_cbuffer));
             }
@@ -1102,14 +1111,6 @@ namespace put
             draw_list->AddImage(IMG(handle), canvas_pos, bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));
 
             dev_ui::set_shader(dev_ui::SHADER_DEFAULT, 0);
-        }
-
-        void image(u32 handle, vec2f size, s32 mip_level)
-        {
-            pen::texture_creation_params tcp;
-            put::get_texture_info(handle, tcp);
-            s32 type = tcp.collection_type;
-            image_ex(handle, size, (e_shader)type, mip_level);
         }
     } // namespace dev_ui
 } // namespace put

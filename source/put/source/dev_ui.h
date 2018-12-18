@@ -67,8 +67,7 @@ namespace put
         void      set_tooltip(const c8* fmt, ...);
         const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes = 0, ...);
         void      show_platform_info();
-        void      image(u32 handle, vec2f size, s32 mip_level = -1);
-        void      image_ex(u32 handle, vec2f size, e_shader shader, s32 mip_level = -1);
+        void      image_ex(u32 handle, vec2f size, e_shader shader);
 
         // generic program preferences
         void      set_program_preference(const c8* name, f32 val);

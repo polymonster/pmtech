@@ -1756,27 +1756,31 @@ namespace put
 
             u32 selected_index = s_selection_list[0];
 
-            const c8* component_flag_names[] = {"Allocated",
-                                                "Geometry",
-                                                "Physics",
-                                                "Physics Multi Body",
-                                                "Material",
-                                                "Hand",
-                                                "Skinned",
-                                                "Bone",
-                                                "Dynamic",
-                                                "Animation Controller",
-                                                "Animation Trajectory",
-                                                "Light",
-                                                "Transform",
-                                                "Constraint",
-                                                "Sub Instance",
-                                                "Master Instance",
-                                                "Pre Skinned",
-                                                "Sub Geometry",
-                                                "Signed Distance Field Shadow",
-                                                "Volume",
-                                                "Samplers"};
+            // clang-format off
+            const c8* component_flag_names[] = {
+                "Allocated",
+                "Geometry",
+                "Physics",
+                "Physics Multi Body",
+                "Material",
+                "Hand",
+                "Skinned",
+                "Bone",
+                "Dynamic",
+                "Animation Controller",
+                "Animation Trajectory",
+                "Light",
+                "Transform",
+                "Constraint",
+                "Sub Instance",
+                "Master Instance",
+                "Pre Skinned",
+                "Sub Geometry",
+                "Signed Distance Field Shadow",
+                "Volume",
+                "Samplers"
+            };
+            // clang-format on
 
             if (ImGui::CollapsingHeader("Components"))
             {
