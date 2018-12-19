@@ -185,9 +185,9 @@
         
         main_view_post_processed:
         {
-            inherit               : main_view,
-            target             : [post_process_colour, post_process_depth],
-            post_process       : editor_default
+            inherit	: main_view,
+            target : [post_process_colour, post_process_depth],
+            post_process : editor_default
         },
     }
 }

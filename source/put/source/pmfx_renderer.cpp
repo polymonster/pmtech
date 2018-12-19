@@ -2432,22 +2432,6 @@ namespace put
             float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
 
-            // bind view samplers.. render targets, global textures
-            for (auto& sb : v.sampler_bindings)
-            {
-                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
-            }
-
-            // bind technique samplers
-            for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
-            {
-                auto& sb = v.technique_samplers.sb[i];
-                if (sb.handle == 0)
-                    continue;
-
-                pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
-            }
-
             // bind any per view cbuffers
             u32 num_samplers = v.sampler_bindings.size();
             if (num_samplers > 0)
@@ -2496,10 +2480,27 @@ namespace put
                     put::camera_update_shader_constants(v.camera, v.viewport_correction);
                     sv.cb_view = v.camera->cbuffer;
                 }
-                
+
+                // bind targets before samplers.. 
+                // so that ping-pong buffers get unbound from rt before being bound on samplers
                 pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, a);
                 pen::renderer_clear(v.clear_state, a);
-                
+
+                // bind view samplers.. render targets, global textures
+                for (auto& sb : v.sampler_bindings)
+                    pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
+
+                // bind technique samplers
+                for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                {
+                    auto& sb = v.technique_samplers.sb[i];
+                    if (sb.handle == 0)
+                        continue;
+
+                    pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
+                }
+
+                // call render functions and make draw calls
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                     v.render_functions[rf](sv);
             }

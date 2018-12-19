@@ -298,6 +298,11 @@ namespace put
 
             Str name = j_techique["name"].as_str();
 
+            if (name == "tex_2d")
+            {
+                u32 a = 0;
+            }
+
             program.name = name;
             program.id_name = PEN_HASH(name.c_str());
             program.id_sub_type = PEN_HASH("");

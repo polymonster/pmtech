@@ -76,6 +76,8 @@ function setup_from_action()
     end
     
     platform = platform_dir
+	
+	print("pmtech dir is... " .. pmtech_dir)
     
     if platform == "win32" then
         shared_libs_dir = (pmtech_dir .. '../../third_party/shared_libs/' .. platform_dir)
