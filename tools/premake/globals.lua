@@ -80,9 +80,9 @@ function setup_from_action()
 	print("pmtech dir is... " .. pmtech_dir)
     
     if platform == "win32" then
-        shared_libs_dir = (pmtech_dir .. '../../third_party/shared_libs/' .. platform_dir)
+        shared_libs_dir = ("../../" .. pmtech_dir .. '/third_party/shared_libs/' .. platform_dir)
     elseif platform == "osx"  then
-        shared_libs_dir = ( '"' .. pmtech_dir .. '../../third_party/shared_libs/' .. platform_dir .. '/"' )
+        shared_libs_dir = ( '"' .. "../../" .. pmtech_dir .. '/third_party/shared_libs/' .. platform_dir .. '/"' )
     end
 end
 

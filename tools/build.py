@@ -26,18 +26,21 @@ def display_help():
 def display_prompted_input():
     print("please enter what you want to build")
     print("1. code")
-    print("2. shaders")
-    print("3. models")
-    print("4. textures")
-    print("5. audio")
-    print("6. fonts")
-    print("7. configs")
-    print("8. all")
-    print("0. show full command line options")
-    input_val = int(input())
+    print("2. libs")
+    print("3. shaders")
+    print("4. models")
+    print("5. textures")
+    print("6. audio")
+    print("7. fonts")
+    print("8. configs")
+    print("9. scenes")
+    print("0. all")
 
-    if input_val == 0:
+    try:
+        input_val = int(input())
+    except:
         display_help()
+        sys.exit(0)
 
     add_all = False
 
@@ -135,6 +138,8 @@ def get_platform_info():
     extra_target_info = "--platform_dir=" + platform_name
     extra_target_info += " --pmtech_dir=" + build_config["pmtech_dir"] + "/"
 
+    print(build_config["pmtech_dir"])
+
     if toolset != "":
         extra_target_info += " --toolset=" + toolset
 
@@ -222,14 +227,17 @@ if __name__ == "__main__":
         config = open("build_config.json")
         build_config = json.loads(config.read())
     else:
-        build_config = dict()
+        print("this is not a pmtech project dir!")
+        print("add build_config.json with at least:\n{\n    pmtech_dir: <path_to_pmtech_root>\n}")
+        sys.exit(1)
 
     tools_dir = os.path.join(util.correct_path(build_config["pmtech_dir"]), "tools")
 
     assets_dir = "assets"
 
-    action_strings = ["code", "shaders", "models", "textures", "audio", "fonts", "configs", "scenes"]
+    action_strings = ["code", "libs", "shaders", "models", "textures", "audio", "fonts", "configs", "scenes"]
     action_descriptions = ["generate projects and workspaces",
+                           "precompile third party libs",
                            "generate shaders and compile binaries",
                            "make binary mesh and animation files",
                            "compress textures and generate mips",
@@ -288,8 +296,9 @@ if __name__ == "__main__":
                 if os.path.exists(bd):
                     shutil.rmtree(bd)
         elif action == "code":
-            build_steps.append(build_thirdparty_libs())
             build_steps.append(premake_exec + " " + project_options)
+        elif action == "libs":
+            build_steps.append(build_thirdparty_libs())
         elif action == "shaders":
             build_steps.append(python_exec + " " + shader_script + " " + shader_options)
         elif action == "models":
