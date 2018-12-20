@@ -232,15 +232,7 @@ def compile_hlsl(source, filename, shader_model, temp_extension, entry_name, tec
 
     cmdline = compiler_exe_path + " /T " + shader_model + " /Fo " + output_file_and_path + " " + temp_file_name
     cmdline += " /E " + entry_name
-    proc = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE)
-    proc.wait()
-    if proc.returncode != 0:
-        error_code = proc.returncode
-        print(output_file_and_path)
-        print(temp_file_name)
-        print(proc.stdout.read())
-        print("\n")
-
+    subprocess.call(cmdline, shell=True)
 
 def replace_io_tokens(text):
     token_io = ["input", "output"]
@@ -276,13 +268,21 @@ def replace_io_tokens(text):
 
 
 def find_struct(shader_text, decl):
-    start = shader_text.find(decl)
-    end = shader_text.find("};", start)
-    end += 2
-    if start != -1 and end != -1:
-        return shader_text[start:end] + "\n\n"
-    else:
-        return ""
+    delimiters = [" ", "\n", "{"]
+    start = 0
+    while True:
+        start = shader_text.find(decl, start)
+        if start == -1:
+            return ""
+        for d in delimiters:
+            if shader_text[start+len(decl)] == d:
+                end = shader_text.find("};", start)
+                end += 2
+                if start != -1 and end != -1:
+                    return shader_text[start:end] + "\n\n"
+                else:
+                    return ""
+        start += len(decl)
 
 
 def find_constant_buffers(shader_text):
@@ -671,8 +671,6 @@ def generate_glsl(
             compiler_exe = os.path.join(compiler_dir, system_platform, "glslopt")
             cmd = compiler_exe + " -f " + ps_fn + " " + ps_fn_opt
             ret = subprocess.call(cmd, shell=True)
-            if ret != 0:
-                error_code = ret
 
 
 def find_includes(file_text, root):
