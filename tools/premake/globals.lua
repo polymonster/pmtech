@@ -36,6 +36,10 @@ function script_path()
 end
 
 function windows_sdk_version()
+	if sdk_version ~= "" then
+		return sdk_version
+	end
+	
 	return "10.0.16299.0"
 end
 
@@ -77,13 +81,17 @@ function setup_from_action()
     
     platform = platform_dir
 	
-	print("pmtech dir is... " .. pmtech_dir)
-    
     if platform == "win32" then
         shared_libs_dir = ("../../" .. pmtech_dir .. '/third_party/shared_libs/' .. platform_dir)
     elseif platform == "osx"  then
         shared_libs_dir = ( '"' .. "../../" .. pmtech_dir .. '/third_party/shared_libs/' .. platform_dir .. '/"' )
     end
+	
+	print("platform: " .. platform)
+	print("renderer: " .. renderer_dir)
+	print("pmtech dir: " .. pmtech_dir)
+	print("sdk version: " .. windows_sdk_version())
+    
 end
 
 function setup_env_ios()

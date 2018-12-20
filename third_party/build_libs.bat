@@ -11,7 +11,7 @@ popd
 :: bullet
 :build
 cd bullet
-..\..\tools\premake\premake5.exe vs2017 --platform_dir="win32"
+..\..\tools\premake\premake5.exe vs2017 --platform_dir="win32" --pmtech_dir="%2" --sdk_version="%3"
 cd build/vs2017
 msbuild bullet_build.sln /p:Configuration=Debug
 msbuild bullet_build.sln /p:Configuration=Release

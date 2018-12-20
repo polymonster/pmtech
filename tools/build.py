@@ -136,9 +136,12 @@ def get_platform_info():
             platform_name = "win32"
 
     extra_target_info = "--platform_dir=" + platform_name
-    extra_target_info += " --pmtech_dir=" + build_config["pmtech_dir"] + "/"
 
-    print(build_config["pmtech_dir"])
+    if "pmtech_dir" in build_config.keys():
+        extra_target_info += " --pmtech_dir=" + build_config["pmtech_dir"] + "/"
+
+    if "sdk_version" in build_config.keys():
+        extra_target_info += " --sdk_version=" + build_config["sdk_version"]
 
     if toolset != "":
         extra_target_info += " --toolset=" + toolset
@@ -208,7 +211,15 @@ def build_thirdparty_libs():
         third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
     else:
         configure_vc_vars_all(build_config)
-        third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + build_config["vcvarsall_dir"] + "\""
+
+        args = ""
+        if "pmtech_dir" in build_config.keys():
+            args += build_config["pmtech_dir"] + "/" + " "
+
+        if "sdk_version" in build_config.keys():
+            args += build_config["sdk_version"] + " "
+
+        third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + build_config["vcvarsall_dir"] + "\"" + " " + args
     return third_party_build
 
 
@@ -230,6 +241,12 @@ if __name__ == "__main__":
         print("this is not a pmtech project dir!")
         print("add build_config.json with at least:\n{\n    pmtech_dir: <path_to_pmtech_root>\n}")
         sys.exit(1)
+
+    if os.path.exists("build_config_user.json"):
+        config = open("build_config_user.json")
+        build_config_user = json.loads(config.read())
+        for k in build_config_user.keys():
+            build_config[k] = build_config_user[k]
 
     tools_dir = os.path.join(util.correct_path(build_config["pmtech_dir"]), "tools")
 
