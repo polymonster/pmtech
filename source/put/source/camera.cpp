@@ -179,7 +179,7 @@ namespace put
         // zoom
         f32        mwheel = (f32)ms.wheel;
         static f32 prev_mwheel = mwheel;
-        f32        zoom = mwheel - prev_mwheel;
+        f32        zoom = (mwheel - prev_mwheel);
         prev_mwheel = mwheel;
 
         if (has_focus)
@@ -207,7 +207,7 @@ namespace put
             }
 
             // zoom
-            p_camera->zoom += zoom;
+            p_camera->zoom += zoom * 0.1f;
 
             p_camera->zoom = fmax(p_camera->zoom, 1.0f);
         }

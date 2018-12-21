@@ -306,7 +306,7 @@ def parse_mesh(node, tris, controller):
     return mesh_instance
 
 
-def parse_controller(controller_root,geom_name):
+def parse_controller(controller_root, geom_name):
     for contoller in controller_root.iter(schema + 'controller'):
         for skin in contoller.iter(schema + 'skin'):
             skin_source = skin.get("source")
@@ -363,7 +363,8 @@ def parse_controller(controller_root,geom_name):
                         sc.vec4_indices.float_values.append(indices[i])
                         sc.vec4_weights.float_values.append(weights[i])
 
-            return sc
+                return sc
+            return None
     return None
 
 

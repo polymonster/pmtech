@@ -37,6 +37,13 @@ namespace put
         vec3f corners[2][4];
     };
 
+    struct camera_settings
+    {
+        bool invert_x = false;
+        bool invert_y = false;
+        f32  zoom_speed = 1.0f;
+    };
+
     struct camera
     {
         vec3f pos = vec3f::zero();
@@ -59,6 +66,8 @@ namespace put
 
         Str name;
     };
+
+    
 
     void camera_create_perspective(camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane);
     void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);
