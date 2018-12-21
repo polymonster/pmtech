@@ -125,6 +125,9 @@ def check_up_to_date(dependencies, dest_file):
 def write_to_file(dependencies):
     dir = dependencies["dir"]
     directory_dependencies = os.path.join(dir, "dependencies.json")
-    output_d = open(directory_dependencies, 'wb+')
-    output_d.write(bytes(json.dumps(dependencies, indent=4), 'UTF-8'))
-    output_d.close()
+    try:
+        output_d = open(directory_dependencies, 'wb+')
+        output_d.write(bytes(json.dumps(dependencies, indent=4), 'UTF-8'))
+        output_d.close()
+    except:
+        return
