@@ -76,8 +76,8 @@ namespace put
     void camera_update_look_at(camera* p_camera);
     void camera_update_projection_matrix(camera* p_camera);
     void camera_update_frustum(camera* p_camera);
-    void camera_update_modelling(camera* p_camera, bool has_focus = true, bool invert_y = false);
-    void camera_update_fly(camera* p_camera, bool has_focus = true, bool invert_y = false);
+    void camera_update_modelling(camera* p_camera, bool has_focus = true, camera_settings settings = {});
+    void camera_update_fly(camera* p_camera, bool has_focus = true, camera_settings settings = {});
     void camera_update_shader_constants(camera* p_camera, bool viewport_correction = false);
     void camera_update_shadow_frustum(put::camera* p_camera, vec3f light_dir, vec3f min, vec3f max);
 } // namespace put

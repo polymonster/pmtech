@@ -49,7 +49,7 @@ namespace put
         p_camera->flags |= CF_ORTHO;
     }
 
-    void camera_update_fly(camera* p_camera, bool has_focus, bool invert_y)
+    void camera_update_fly(camera* p_camera, bool has_focus, camera_settings settings)
     {
         mouse_state ms = input_get_mouse_state();
 
@@ -164,7 +164,7 @@ namespace put
         }
     }
 
-    void camera_update_modelling(camera* p_camera, bool has_focus, bool invert_y)
+    void camera_update_modelling(camera* p_camera, bool has_focus, camera_settings settings)
     {
         mouse_state ms = input_get_mouse_state();
 
@@ -174,7 +174,8 @@ namespace put
         vec2f        mouse_drag = current_mouse - prev_mpos;
         prev_mpos = current_mouse;
 
-        f32 mouse_y_inv = invert_y ? -1.0f : 1.0f;
+        f32 mouse_y_inv = settings.invert_y ? -1.0f : 1.0f;
+        f32 mouse_x_inv = settings.invert_x ? -1.0f : 1.0f;
 
         // zoom
         f32        mwheel = (f32)ms.wheel;
@@ -187,7 +188,7 @@ namespace put
             if (ms.buttons[PEN_MOUSE_L] && pen::input_key(PK_MENU))
             {
                 // rotation
-                vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x);
+                vec2f swapxy = vec2f(mouse_drag.y * -mouse_y_inv, mouse_drag.x * mouse_x_inv);
                 p_camera->rot += swapxy * ((2.0f * (f32)M_PI) / 360.0f);
             }
             else if ((ms.buttons[PEN_MOUSE_M] && pen::input_key(PK_MENU)) ||
@@ -198,7 +199,7 @@ namespace put
                 vec3f right = p_camera->view.get_row(0).xyz;
 
                 p_camera->focus += up * mouse_drag.y * mouse_y_inv * 0.5f;
-                p_camera->focus += right * mouse_drag.x * 0.5f;
+                p_camera->focus += right * mouse_drag.x * mouse_x_inv * 0.5f;
             }
             else if (ms.buttons[PEN_MOUSE_R] && pen::input_key(PK_MENU))
             {
@@ -207,7 +208,7 @@ namespace put
             }
 
             // zoom
-            p_camera->zoom += zoom * 0.1f;
+            p_camera->zoom += zoom * settings.zoom_speed;
 
             p_camera->zoom = fmax(p_camera->zoom, 1.0f);
         }

@@ -73,13 +73,13 @@ namespace put
 
         struct model_view_controller
         {
-            put::camera   main_camera;
-            bool          invalidated = false;
-            bool          invert_y = false;
-            e_camera_mode camera_mode = CAMERA_MODELLING;
-            f32           grid_cell_size;
-            f32           grid_size;
-            Str           current_working_scene = "";
+            put::camera             main_camera;
+            bool                    invalidated = false;
+            put::camera_settings    settings;
+            e_camera_mode           camera_mode = CAMERA_MODELLING;
+            f32                     grid_cell_size;
+            f32                     grid_size;
+            Str                     current_working_scene = "";
         };
         static model_view_controller s_model_view_controller;
 
@@ -123,11 +123,11 @@ namespace put
             switch (s_model_view_controller.camera_mode)
             {
                 case CAMERA_MODELLING:
-                    put::camera_update_modelling(sc->camera, has_focus, s_model_view_controller.invert_y);
+                    put::camera_update_modelling(sc->camera, has_focus, s_model_view_controller.settings);
                     s_model_view_controller.main_camera = *sc->camera;
                     break;
                 case CAMERA_FLY:
-                    put::camera_update_fly(sc->camera, has_focus, s_model_view_controller.invert_y);
+                    put::camera_update_fly(sc->camera, has_focus, s_model_view_controller.settings);
                     s_model_view_controller.main_camera = *sc->camera;
                     break;
             }
@@ -299,7 +299,9 @@ namespace put
             s_model_view_controller.main_camera.fov = dev_ui::get_program_preference("camera_fov").as_f32(60.0f);
             s_model_view_controller.main_camera.near_plane = dev_ui::get_program_preference("camera_near").as_f32(0.1f);
             s_model_view_controller.main_camera.far_plane = dev_ui::get_program_preference("camera_far").as_f32(1000.0f);
-            s_model_view_controller.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
+            s_model_view_controller.settings.invert_x = dev_ui::get_program_preference("camera_invert_x").as_bool();
+            s_model_view_controller.settings.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
+            s_model_view_controller.settings.zoom_speed = dev_ui::get_program_preference("camera_zoom_speed").as_f32(1.0f);
             s_model_view_controller.invalidated = true;
         }
 
@@ -984,9 +986,19 @@ namespace put
             if (ImGui::Begin("Settings", opened))
             {
                 Str setting_str;
-                if (ImGui::Checkbox("Invert Camera Y", &s_model_view_controller.invert_y))
+                if (ImGui::Checkbox("Invert Camera Y", &s_model_view_controller.settings.invert_y))
                 {
-                    dev_ui::set_program_preference("invert_camera_y", s_model_view_controller.invert_y);
+                    dev_ui::set_program_preference("invert_camera_y", s_model_view_controller.settings.invert_y);
+                }
+
+                if (ImGui::Checkbox("Invert Camera X", &s_model_view_controller.settings.invert_x))
+                {
+                    dev_ui::set_program_preference("invert_camera_x", s_model_view_controller.settings.invert_x);
+                }
+
+                if (ImGui::SliderFloat("Camera Zoom Speed", &s_model_view_controller.settings.zoom_speed, 0.0f, 10.0f))
+                {
+                    dev_ui::set_program_preference("camera_zoom_speed", s_model_view_controller.settings.zoom_speed);
                 }
 
                 if (ImGui::Checkbox("Auto Load Last Scene", &load_last_scene))

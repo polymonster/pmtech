@@ -167,7 +167,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
         output.colour = m_albedo;
     }
         
-    if:(SKINNED)
+    if:(POOP)
     {
         float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
     
