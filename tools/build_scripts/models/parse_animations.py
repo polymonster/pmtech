@@ -16,6 +16,7 @@ class animation_source:
 
 class animation_sampler:
     id = ""
+    name = ""
     sources = []
 
 
@@ -96,18 +97,3 @@ def write_animation_file(filename):
                     elif src.type == "float4x4":
                         for f in range(0, len(src.data), 16):
                             helpers.write_corrected_4x4matrix(output, src.data[f:f+16])
-
-
-    # for chan in channels:
-    #     print("target = " + chan.target_bone)
-    #     print("sampler = " + chan.sampler.id)
-    #     for srcs in chan.sampler.sources:
-    #         print(srcs.semantic)
-    #         print(str(len(srcs.data)))
-
-    # for node in root.iter(schema+'source'):
-    #     anim_id = node.get("id")
-    #     if anim_id.find('input') != -1:
-    #         add_animation_input(anim_id, node)
-    #     if anim_id.find('output') != -1:
-    #         add_animation_output(anim_id, node)

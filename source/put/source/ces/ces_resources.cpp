@@ -263,15 +263,15 @@ namespace put
                 std::vector<s32> joint_indices;
                 build_heirarchy_node_list(scene, node_index, joint_indices);
 
-                controller.joints_offset = -1; // scene tree has a -1 node to begin
                 for (s32 jj = 0; jj < joint_indices.size(); ++jj)
                 {
                     s32 jnode = joint_indices[jj];
 
                     if (jnode > -1 && scene->entities[jnode] & CMP_BONE)
+                    {
+                        controller.joints_offset = jnode;
                         break;
-                    else
-                        controller.joints_offset++;
+                    }
 
                     // parent stray nodes to the top level anim / geom node
                     if (jnode > -1)
@@ -762,6 +762,7 @@ namespace put
             {
                 Str bone_name = read_parsable_string(&p_u32reader);
                 new_animation.channels[i].target = PEN_HASH(bone_name.c_str());
+                new_animation.channels[i].target_name = bone_name;
 
                 u32 num_sources = *p_u32reader++;
 

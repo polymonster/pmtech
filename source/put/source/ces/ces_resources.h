@@ -35,6 +35,8 @@ namespace put
             hash_id target;
             f32*    times;
             mat4*   matrices;
+            Str     target_name;
+            u32     target_node_index;
         };
 
         struct animation_resource
@@ -44,6 +46,7 @@ namespace put
 
             u32                num_channels;
             animation_channel* channels;
+            bool               remap_channels = false;
 
             f32 length;
             f32 step;

@@ -2101,35 +2101,31 @@ namespace put
                                 std::vector<s32> joint_indices;
                                 build_heirarchy_node_list(scene, selected_index, joint_indices);
 
-                                s32  channel_index = 0;
-                                s32  joints_offset = -1; // scene tree has a -1 node
                                 bool compatible = true;
-                                for (s32 jj = 0; jj < joint_indices.size(); ++jj)
+                                anim->remap_channels = true;
+
+                                for (u32 i = 0; i < anim->num_channels; ++i)
                                 {
-                                    s32 jnode = joint_indices[jj];
-
-                                    if (scene->entities[jnode] & CMP_BONE && jnode > -1)
+                                    for (s32 jj = 0; jj < joint_indices.size(); ++jj)
                                     {
-                                        if (anim->channels[channel_index].target != scene->id_name[jnode])
-                                        {
-                                            dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s",
-                                                                  "[error] animation - does not fit rig");
+                                        s32 jnode = joint_indices[jj];
+                                        if (jnode < 0)
+                                            continue;
 
-                                            compatible = false;
+                                        u32 bone_len = scene->names[jnode].length();
+                                        u32 target_len = anim->channels[i].target_name.length();
+
+                                        Str ss = pen::str_substr(anim->channels[i].target_name, target_len - bone_len, target_len);
+                                        if ( ss == scene->names[jnode] )
+                                        {
+                                            anim->channels[i].target_node_index = jnode;
                                             break;
                                         }
-
-                                        channel_index++;
-                                    }
-                                    else
-                                    {
-                                        joints_offset++;
                                     }
                                 }
-
+  
                                 if (compatible)
                                 {
-                                    scene->anim_controller[selected_index].joints_offset = joints_offset;
                                     scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
 
                                     bool exists = false;

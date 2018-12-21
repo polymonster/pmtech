@@ -489,7 +489,7 @@ namespace put
                     s32 joints_offset = scene->anim_controller[n].joints_offset;
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                     {
-                        bb[i] = scene->world_matrices[n + joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
+                        bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
                     }
 
                     pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
@@ -616,7 +616,10 @@ namespace put
 
                             mat4& mat = anim->channels[c].matrices[t];
 
-                            s32 scene_node_index = n + c + joints_offset;
+                            s32 scene_node_index = joints_offset + c;
+
+                            if(anim->remap_channels)
+                                scene_node_index = anim->channels[c].target_node_index;
 
                             scene->local_matrices[scene_node_index] = mat;
 
@@ -1022,7 +1025,7 @@ namespace put
                     static mat4 bb[85];
                     s32         joints_offset = scene->anim_controller[n].joints_offset;
                     for (s32 i = 0; i < geom.p_skin->num_joints; ++i)
-                        bb[i] = scene->world_matrices[n + joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
+                        bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
 
                     pen::renderer_update_buffer(geom.p_skin->bone_cbuffer, bb, sizeof(bb));
                     pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
