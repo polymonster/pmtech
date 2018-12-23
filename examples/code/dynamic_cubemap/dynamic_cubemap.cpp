@@ -26,10 +26,10 @@ using namespace put;
 using namespace put::ces;
 
 pen::window_creation_params pen_window{
-    1280,           // width
-    720,            // height
-    4,              // MSAA samples
-    "pmtech editor" // window title / process name
+    1280,               // width
+    720,                // height
+    4,                  // MSAA samples
+    "dynamic cubemap"   // window title / process name
 };
 
 namespace physics
@@ -53,6 +53,17 @@ PEN_TRV pen::user_entry(void* params)
     put::camera main_camera;
     put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
     
+    // dynamic cubemap camera
+    put::camera cubemap_camera;
+    put::camera_cteate_cubemap(&cubemap_camera, 0.1f, 1000.0f);
+    cubemap_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
+    
+    put::scene_controller cmc;
+    cmc.camera = &cubemap_camera;
+    cmc.update_function = nullptr;
+    cmc.name = "cubemap_camera";
+    cmc.id_name = PEN_HASH(cmc.name.c_str());
+
     put::scene_controller cc;
     cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;
@@ -92,12 +103,14 @@ PEN_TRV pen::user_entry(void* params)
 
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
+    
+    pmfx::register_scene_controller(cmc);
 
     // volume rasteriser tool
     put::ces::editor_init(main_scene);
     put::vgt::init(main_scene);
 
-    pmfx::init("data/configs/editor_renderer.jsn");
+    pmfx::init("data/configs/dynamic_cubemap.jsn");
 
     f32 frame_time = 0.0f;
 

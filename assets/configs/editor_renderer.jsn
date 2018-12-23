@@ -31,13 +31,6 @@
         {
             size  : [128,128],
             format: d24s8,
-        },
-        
-        cubemap_test:
-        {
-            size  : [128,128],
-            format: rgba8,
-            type: cube
         }
     },
         
@@ -101,13 +94,6 @@
             [
                 { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
             ],
-        },
-        
-        cubemap_render:
-        {
-			inherit: "main_view",
-            target : [cubemap_test],
-            camera : "cubemap_camera"
         }
     },
     
@@ -117,8 +103,7 @@
             main_view,
             editor_view, 
             picking_view, 
-            volume_rasteriser,
-            cubemap_render
+            volume_rasteriser
         ],
         
         editor_post_processed: [

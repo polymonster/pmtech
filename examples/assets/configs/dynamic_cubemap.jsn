@@ -1,0 +1,43 @@
+{
+    include: [
+        common.jsn,
+        post_process.jsn,
+        editor_renderer.jsn
+    ],
+    
+    render_targets:
+    {
+        cubemap_target:
+        {
+            size  : [128,128],
+            format: rgba8,
+            type: cube
+        }
+    },
+                
+    views:
+    {
+        demo_main:
+        {
+            inherit: "main_view",
+            clear_colour: [1.0, 1.0, 1.0, 1.0]
+        },
+        
+        dynamic_cubemap_render:
+        {
+			inherit: "main_view",
+            target : [cubemap_target],
+            camera : "cubemap_camera"
+        }
+    },
+    
+    view_sets: 
+    {
+        dynamic_cubemap: [
+            dynamic_cubemap_render,
+            demo_main
+        ]
+    },
+    
+    view_set: dynamic_cubemap
+}
