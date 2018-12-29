@@ -7,11 +7,18 @@
     
     render_targets:
     {
-        cubemap_target:
+        chrome:
         {
-            size  : [128,128],
+            size  : [256,256],
             format: rgba8,
             type: cube
+        },
+        
+        glass:
+        {
+            size  : [256,256],
+            format: rgba8,
+            type: cube        
         }
     },
                 
@@ -23,18 +30,26 @@
             clear_colour: [1.0, 1.0, 1.0, 1.0]
         },
         
-        dynamic_cubemap_render:
+        chrome_cubemap_render:
         {
-			inherit: "main_view",
-            target : [cubemap_target],
-            camera : "cubemap_camera"
+			inherit: "demo_main",
+            target : [chrome],
+            camera : "chrome_camera"
+        },
+        
+        glass_cubemap_render:
+        {
+			inherit: "demo_main",
+            target : [glass],
+            camera : "glass_camera"
         }
     },
     
     view_sets: 
     {
         dynamic_cubemap: [
-            dynamic_cubemap_render,
+            chrome_cubemap_render,
+            glass_cubemap_render,
             demo_main
         ]
     },

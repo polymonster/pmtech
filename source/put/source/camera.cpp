@@ -326,8 +326,8 @@ namespace put
         {
             vec3f(-1.0, 0.0, 0.0),  //+x
             vec3f(1.0, 0.0, 0.0),   //-x
-            vec3f(0.0, 1.0, 0.0),   //+y
-            vec3f(0.0, -1.0, 0.0),  //-y
+            vec3f(0.0, -1.0, 0.0),  //+y
+            vec3f(0.0, 1.0, 0.0),   //-y
             vec3f(0.0, 0.0, 1.0),   //+z
             vec3f(0.0, 0.0, -1.0)   //-z
         };
@@ -346,16 +346,20 @@ namespace put
         {
             vec3f(0.0, 1.0, 0.0),
             vec3f(0.0, 1.0, 0.0),
-            vec3f(0.0, 0.0, -1.0),
             vec3f(0.0, 0.0, 1.0),
+            vec3f(0.0, 0.0, -1.0),
             vec3f(0.0, 1.0, 0.0),
             vec3f(0.0, 1.0, 0.0)
         };
         
-        p_camera->view.set_row(0, vec4f(right[face], p_camera->pos.x));
-        p_camera->view.set_row(1, vec4f(up[face], p_camera->pos.y));
-        p_camera->view.set_row(2, vec4f(at[face], p_camera->pos.z));
+        p_camera->view.set_row(0, vec4f(right[face], 0.0f));
+        p_camera->view.set_row(1, vec4f(up[face], 0.0f));
+        p_camera->view.set_row(2, vec4f(at[face], 0.0f));
         p_camera->view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+        
+        mat4 translate = mat::create_translation(-p_camera->pos);
+        
+        p_camera->view = p_camera->view * translate;
     }
 
     void get_aabb_corners(vec3f* corners, vec3f min, vec3f max)

@@ -4,32 +4,29 @@
 #include "libs/maths.pmfx"
 #include "libs/sdf.pmfx"
 
-// Structs -----------------------------------------------------------------------------------------------------------
-
-
 struct vs_output
 {
-    float4 position        : SV_POSITION;
-    float4 world_pos       : TEXCOORD0;
-    float3 normal          : TEXCOORD1;
-    float3 tangent         : TEXCOORD2;
-    float3 bitangent       : TEXCOORD3;
-    float4 texcoord        : TEXCOORD4;
+    float4 position : SV_POSITION;
+    float4 world_pos : TEXCOORD0;
+    float3 normal : TEXCOORD1;
+    float3 tangent : TEXCOORD2;
+    float3 bitangent : TEXCOORD3;
+    float4 texcoord : TEXCOORD4;
 };
 
 struct vs_output_picking
 {
-    float4 position        : SV_POSITION;
-    float4 index           : TEXCOORD0;
+    float4 position : SV_POSITION;
+    float4 index : TEXCOORD0;
 };
 
 struct vs_input
 {
-    float4 position         : POSITION;
-    float4 normal           : TEXCOORD0;
-    float4 texcoord         : TEXCOORD1;
-    float4 tangent          : TEXCOORD2;
-    float4 bitangent        : TEXCOORD3;
+    float4 position : POSITION;
+    float4 normal : TEXCOORD0;
+    float4 texcoord : TEXCOORD1;
+    float4 tangent : TEXCOORD2;
+    float4 bitangent : TEXCOORD3;
 
     if:(SKINNED)
     {
@@ -42,12 +39,12 @@ struct vs_instance_input
 {
     if:(INSTANCED)
     {
-        float4 world_matrix_0      : TEXCOORD6;
-        float4 world_matrix_1      : TEXCOORD7;
-        float4 world_matrix_2      : TEXCOORD8;
-        float4 world_matrix_3      : TEXCOORD9;
-        float4 user_data           : TEXCOORD10;
-        float4 user_data2          : TEXCOORD11;
+        float4 world_matrix_0 : TEXCOORD6;
+        float4 world_matrix_1 : TEXCOORD7;
+        float4 world_matrix_2 : TEXCOORD8;
+        float4 world_matrix_3 : TEXCOORD9;
+        float4 user_data : TEXCOORD10;
+        float4 user_data2 : TEXCOORD11;
     }
 };
 
@@ -67,8 +64,6 @@ struct ps_output_multi
     float4 normal : SV_Target1;
 };
 
-// Textures ----------------------------------------------------------------------------------------------------------------
-
 declare_texture_samplers
 {
     texture_2d( diffuse_texture, 0 );
@@ -80,8 +75,6 @@ declare_texture_samplers
     
     texture_3d( sdf_volume, 14 );
 };
-
-// Vertex Shaders -----------------------------------------------------------------------------------------------------------
 
 vs_output vs_main_skinned( vs_input_skinned input )
 {
@@ -114,7 +107,8 @@ vs_output vs_main( vs_input input )
     output.position = mul( input.position, wvp );
     output.world_pos = mul( input.position, world_matrix );
         
-    float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+    // float3x3 rotation_matrix = mul( to_3x3(world_matrix), to_3x3(view_matrix) );
+    float3x3 rotation_matrix = to_3x3(world_matrix);
     
     output.normal = mul( input.normal.xyz, rotation_matrix );
     output.tangent = mul( input.tangent.xyz, rotation_matrix );
@@ -210,8 +204,6 @@ vs_output vs_main_volume_texture( vs_input input )
     return output;
 }
 
-// Pixel Shaders -----------------------------------------------------------------------------------------------------------
-
 ps_output_picking ps_picking( vs_output_picking input ) 
 {    
     ps_output_picking output;
@@ -295,7 +287,35 @@ ps_output ps_cubemapped( vs_output input )
 {
     ps_output output;
     
-    output.colour = sample_texture( cubemap_texture, normalize(input.world_pos.xyz));
+    float3 rd = normalize(input.world_pos.xyz - camera_view_pos.xyz);
+    
+    float3 r = reflect(rd, normalize(input.normal.xyz));
+    
+    output.colour = sample_texture(cubemap_texture, r);
+    
+    return output;
+}
+
+ps_output ps_glass( vs_output input ) 
+{
+    ps_output output;
+    
+    float3 rd = normalize(input.world_pos.xyz - camera_view_pos.xyz);
+    
+    float3 n = normalize(input.normal.xyz);
+    float3 i = rd;
+    float3 r = float3(0.0, 0.0, 0.0);
+    float eta = 1.0;
+    
+    // refract
+    float k = 1.0 - eta * eta * (1.0 - dot(n, i) * dot(n, i));
+    
+    if (k >= 0.0)
+    {
+        r = eta * i - (eta * dot(n, i) + sqrt(k)) * n;
+    }
+    
+    output.colour = sample_texture(cubemap_texture, r);
     
     return output;
 }
@@ -452,7 +472,6 @@ ps_output ps_shadow_sdf( vs_output input )
     
     float3 v1;
             
-    //for( int i = 0; i < light_info.x; ++i )
     int point_start = int(light_info.x);
     int point_end =  int(light_info.x) + int(light_info.y);
         
@@ -582,6 +601,12 @@ pmfx:
     {
         "vs": "vs_main",
         "ps": "ps_cubemapped"
+    },
+    
+    "glass":
+    {
+        "vs": "vs_main",
+        "ps": "ps_glass"
     },
     
     "volume_texture":

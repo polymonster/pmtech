@@ -14,16 +14,16 @@ cbuffer image_ex : register(b7)
 
 struct vs_input
 {
-    float2 position      : POSITION;
-    float2 tex_coord     : TEXCOORD0;
-    float4 colour        : COLOR0;
+    float2 position : POSITION;
+    float2 tex_coord : TEXCOORD0;
+    float4 colour : COLOR0;
 };
 
 struct vs_output
 {
-    float4 position      : SV_POSITION;
-    float4 colour        : TEXCOORD0;
-    float2 tex_coord     : TEXCOORD1;
+    float4 position : SV_POSITION;
+    float4 colour : TEXCOORD0;
+    float2 tex_coord : TEXCOORD1;
 };
 
 struct ps_output
@@ -282,26 +282,26 @@ pmfx:
 {    
     "tex_cube":
     {
-        "vs"        : "vs_main",
-        "ps"        : "ps_tex_cube"
+        "vs" : "vs_main",
+        "ps" : "ps_tex_cube"
     },
     
     "tex_volume":
     {
-        "vs"        : "vs_main",
-        "ps"        : "ps_tex_volume"
+        "vs" : "vs_main",
+        "ps" : "ps_tex_volume"
     },
 	
 	"tex_volume_sdf":
     {
-        "vs"        : "vs_main",
-        "ps"        : "ps_tex_volume_sdf"
+        "vs" : "vs_main",
+        "ps" : "ps_tex_volume_sdf"
     },
     
     "tex_2d":
     {
-        "vs"        : "vs_main",
-        "ps"        : "ps_tex_2d"
+        "vs" : "vs_main",
+        "ps" : "ps_tex_2d"
     }
 }
 
