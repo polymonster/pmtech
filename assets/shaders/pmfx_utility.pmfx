@@ -301,21 +301,11 @@ ps_output ps_glass( vs_output input )
     ps_output output;
     
     float3 rd = normalize(input.world_pos.xyz - camera_view_pos.xyz);
-    
+
     float3 n = normalize(input.normal.xyz);
-    float3 i = rd;
-    float3 r = float3(0.0, 0.0, 0.0);
-    float eta = 1.0;
+    float3 r = refract(rd, n, 0.0);
     
-    // refract
-    float k = 1.0 - eta * eta * (1.0 - dot(n, i) * dot(n, i));
-    
-    if (k >= 0.0)
-    {
-        r = eta * i - (eta * dot(n, i) + sqrt(k)) * n;
-    }
-    
-    output.colour = sample_texture(cubemap_texture, r);
+    output.colour = sample_texture(cubemap_texture, rd);
     
     return output;
 }

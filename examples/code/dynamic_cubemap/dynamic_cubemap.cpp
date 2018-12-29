@@ -43,7 +43,7 @@ namespace
     f32 zpos[] = { 3.0f, -3.0f };
     
     s32 chorme_ball = 0;
-    s32 glass_ball = 0;
+    s32 chrome2_ball = 0;
 }
 
 void setup_scene(entity_scene* scene)
@@ -231,40 +231,40 @@ void setup_scene(entity_scene* scene)
     scene->physics_data[chorme_ball].rigid_body.mass = 1.0f;
     instantiate_rigid_body(scene, chorme_ball);
     
-    // glass ball
-    glass_ball = get_new_node(scene);
-    scene->names[glass_ball] = "glass_ball";
-    scene->transforms[glass_ball].rotation = quat();
-    scene->transforms[glass_ball].scale = vec3f(2.0f, 2.0f, 2.0f);
-    scene->transforms[glass_ball].translation = vec3f(-30.0f, 30.0f, zpos[1]);
-    scene->entities[glass_ball] |= CMP_TRANSFORM;
-    scene->parents[glass_ball] = glass_ball;
+    // chrome2 ball
+    chrome2_ball = get_new_node(scene);
+    scene->names[chrome2_ball] = "chrome2_ball";
+    scene->transforms[chrome2_ball].rotation = quat();
+    scene->transforms[chrome2_ball].scale = vec3f(2.0f, 2.0f, 2.0f);
+    scene->transforms[chrome2_ball].translation = vec3f(-30.0f, 30.0f, zpos[1]);
+    scene->entities[chrome2_ball] |= CMP_TRANSFORM;
+    scene->parents[chrome2_ball] = chrome2_ball;
     
-    instantiate_geometry(sphere, scene, glass_ball);
-    instantiate_model_cbuffer(scene, glass_ball);
-    instantiate_material(default_material, scene, glass_ball);
+    instantiate_geometry(sphere, scene, chrome2_ball);
+    instantiate_model_cbuffer(scene, chrome2_ball);
+    instantiate_material(default_material, scene, chrome2_ball);
     
-    u32 glass_cubemap_handle = pmfx::get_render_target(PEN_HASH("glass"))->handle;
+    u32 chrome2_cubemap_handle = pmfx::get_render_target(PEN_HASH("chrome2"))->handle;
     
     // set material to cubemap
-    scene->material_resources[glass_ball].id_technique = PEN_HASH("glass");
-    scene->material_resources[glass_ball].shader_name = "pmfx_utility";
-    scene->material_resources[glass_ball].id_shader = PEN_HASH("pmfx_utility");
-    scene->samplers[glass_ball].sb[0].handle = glass_cubemap_handle;
-    scene->samplers[glass_ball].sb[0].sampler_unit = 3;
-    scene->samplers[glass_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
-    bake_material_handles(scene, glass_ball);
+    scene->material_resources[chrome2_ball].id_technique = PEN_HASH("cubemap");
+    scene->material_resources[chrome2_ball].shader_name = "pmfx_utility";
+    scene->material_resources[chrome2_ball].id_shader = PEN_HASH("pmfx_utility");
+    scene->samplers[chrome2_ball].sb[0].handle = chrome2_cubemap_handle;
+    scene->samplers[chrome2_ball].sb[0].sampler_unit = 3;
+    scene->samplers[chrome2_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+    bake_material_handles(scene, chrome2_ball);
     
     // add physics
-    scene->physics_data[glass_ball].rigid_body.shape = physics::SPHERE;
-    scene->physics_data[glass_ball].rigid_body.mass = 1.0f;
-    instantiate_rigid_body(scene, glass_ball);
+    scene->physics_data[chrome2_ball].rigid_body.shape = physics::SPHERE;
+    scene->physics_data[chrome2_ball].rigid_body.mass = 1.0f;
+    instantiate_rigid_body(scene, chrome2_ball);
 }
 
-void update_scane(entity_scene* scene, camera* chrome_camera, camera* glass_camera)
+void update_scane(entity_scene* scene, camera* chrome_camera, camera* chrome2_camera)
 {
     chrome_camera->pos = scene->world_matrices[chorme_ball].get_translation();
-    glass_camera->pos = scene->world_matrices[glass_ball].get_translation();
+    chrome2_camera->pos = scene->world_matrices[chrome2_ball].get_translation();
     
     // reset
     static bool debounce = false;
@@ -273,10 +273,10 @@ void update_scane(entity_scene* scene, camera* chrome_camera, camera* glass_came
         if(!debounce)
         {
             scene->transforms[chorme_ball].translation = vec3f(30.0f, 30.0f, zpos[0]);
-            scene->transforms[glass_ball].translation = vec3f(-30.0f, 30.0f, zpos[1]);
+            scene->transforms[chrome2_ball].translation = vec3f(-30.0f, 30.0f, zpos[1]);
             
             scene->entities[chorme_ball] |= CMP_TRANSFORM;
-            scene->entities[glass_ball] |= CMP_TRANSFORM;
+            scene->entities[chrome2_ball] |= CMP_TRANSFORM;
             
             debounce = true;
         }
@@ -310,9 +310,9 @@ PEN_TRV pen::user_entry(void* params)
     put::camera_cteate_cubemap(&chrome_camera, 0.01f, 1000.0f);
     chrome_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
     
-    put::camera glass_camera;
-    put::camera_cteate_cubemap(&glass_camera, 0.01f, 1000.0f);
-    glass_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
+    put::camera chrome2_camera;
+    put::camera_cteate_cubemap(&chrome2_camera, 0.01f, 1000.0f);
+    chrome2_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
     
     put::scene_controller cmc;
     cmc.camera = &chrome_camera;
@@ -321,9 +321,9 @@ PEN_TRV pen::user_entry(void* params)
     cmc.id_name = PEN_HASH(cmc.name.c_str());
     
     put::scene_controller gmc;
-    gmc.camera = &glass_camera;
+    gmc.camera = &chrome2_camera;
     gmc.update_function = nullptr;
-    gmc.name = "glass_camera";
+    gmc.name = "chrome2_camera";
     gmc.id_name = PEN_HASH(gmc.name.c_str());
 
     put::scene_controller cc;
@@ -386,7 +386,7 @@ PEN_TRV pen::user_entry(void* params)
 
         put::dev_ui::new_frame();
         
-        update_scane(main_scene, &chrome_camera, &glass_camera);
+        update_scane(main_scene, &chrome_camera, &chrome2_camera);
 
         pmfx::update();
 
