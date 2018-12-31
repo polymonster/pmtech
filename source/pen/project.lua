@@ -79,7 +79,8 @@ project "pen"
         "include/" .. platform_dir, 
         "include/" .. renderer_dir,
         
-        "../../third_party" 
+        "../../third_party", 
+        "../../third_party/libstem_gamepad/source"
     }
             
     configuration "Debug"

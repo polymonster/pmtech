@@ -593,6 +593,12 @@ pmfx:
         "ps": "ps_cubemapped"
     },
     
+    "skybox":
+    {
+        "vs": "vs_main",
+        "ps": "ps_cubemapped"
+    },
+    
     "glass":
     {
         "vs": "vs_main",

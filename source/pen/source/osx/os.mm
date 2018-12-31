@@ -519,6 +519,7 @@ int main(int argc, char** argv)
 
     // init systems
     pen::timer_system_intialise();
+    pen::input_gamepad_init();
 
     // enters render loop and wait for jobs, will call os_update
     pen::renderer_init(nullptr, true);
@@ -563,6 +564,7 @@ namespace pen
             break;
         }
 
+        // input update
         f32 x, y;
         get_mouse_pos(x, y);
         pen::input_set_mouse_pos(x, y);
@@ -573,6 +575,8 @@ namespace pen
             pen::input_set_mouse_up(PEN_MOUSE_R);
             pen::input_set_mouse_up(PEN_MOUSE_M);
         }
+        
+        input_gamepad_update();
 
         [_pool drain];
         g_rs--;

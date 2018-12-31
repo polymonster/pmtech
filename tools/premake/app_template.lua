@@ -31,7 +31,8 @@ local function setup_osx()
 		"OpenGL.framework",
 		"GameController.framework",
 		"iconv",
-		"fmod"
+		"fmod",
+		"IOKit.framework"
 	}
 	add_pmtech_links()
 	copy_shared_libs()

@@ -133,6 +133,36 @@ PEN_TRV pen::user_entry(void* params)
         }
         press_msg.append("\n");
         put::dbg::add_text_2f(10.0f, 50.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", press_msg.c_str());
+        
+        u32 num_gamepads = input_get_num_gamepads();
+        put::dbg::add_text_2f(10.0f, 60.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Gamepads: %i", num_gamepads);
+        
+        f32 ypos = 70.0f;
+        for(u32 i = 0; i < num_gamepads; ++i)
+        {
+            gamepad_state gs;
+            pen::input_get_gamepad_state(i, gs);
+            
+            for(u32 b = 0; b < 16; ++b)
+            {
+                put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Button: %i : [%i]", b, gs.button[b]);
+                ypos += 10.0f;
+            }
+            
+            f32 xpos = 150.0f;
+            for(u32 r = 0; r < 4; ++r)
+            {
+                ypos = 70.0f;
+                for(u32 a = 0; a < 16; ++a)
+                {
+                    u32 ai = r*16+a;
+                    put::dbg::add_text_2f(xpos, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Axis: %i : [%f]", ai, gs.axis[ai]);
+                    ypos += 10.0f;
+                }
+                
+                xpos += 150.0f;
+            }
+        }
 
         // create 2d view proj matrix
         float W = 2.0f / vp.width;

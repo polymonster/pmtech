@@ -1,6 +1,10 @@
 #ifndef _input_h
 #define _input_h
 
+// Simple input api for getting keyboard and mouse presses
+// and character keys for typing.
+// Implemented with win32, NS and xlib
+
 #include "pen.h"
 
 #define PK_ARRAY_SIZE 512
@@ -9,16 +13,21 @@ extern pen::window_creation_params pen_window;
 
 namespace pen
 {
-    // Simple input api for getting keyboard and mouse presses
-    // and character keys for typing.
-    // Implemented with win32, NS and xlib
-
     struct mouse_state
     {
         f32 x;
         f32 y;
         f32 wheel;
         u8  buttons[3];
+    };
+    
+    struct gamepad_state
+    {
+        u32 device_id = -1;
+        u32 vendor_id = -1;
+        u32 product_id = -1;
+        u8  button[16] = { 0 };
+        f32 axis[64] = { 0 };
     };
 
     void input_set_unicode_key_down(u32 key_index);
@@ -36,6 +45,12 @@ namespace pen
     void input_set_mouse_up(u32 button_index);
     void input_set_mouse_pos(f32 x, f32 y);
     void input_set_mouse_wheel(f32 wheel);
+    
+    void input_gamepad_init();
+    void input_gamepad_shutdown();
+    u32  input_get_num_gamepads();
+    void input_gamepad_update();
+    void input_get_gamepad_state(u32 device_index, gamepad_state& gs);
 
     const mouse_state& input_get_mouse_state();
     bool               input_is_mouse_pressed(u32 button_index);
@@ -180,4 +195,27 @@ enum virtual_key
     PK_SCROLL = 0x91,
     PK_COMMAND = 0x92
 };
+
+enum gamepad_button
+{
+    PGP_DPAD_UP = 0,
+    PGP_DPAD_DOWN,
+    PGP_DPAD_LEFT,
+    PGP_DPAD_RIGHT,
+    
+    PGP_Y,
+    PGP_A,
+    PGP_X,
+    PGP_B,
+    
+    PGP_L1,
+    PGP_R1,
+    
+    PGP_L3,
+    PGP_R3,
+    
+    PGP_START,
+    PGP_SELECT
+};
+
 #endif
