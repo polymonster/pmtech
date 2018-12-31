@@ -41,6 +41,8 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXC
 GLXContext _gl_context = 0;
 Display*   _display;
 Window     _window;
+window_frame _window_frame;
+bool        _invalidate_window_frame = false;
 
 void pen_make_gl_context_current()
 {
@@ -165,6 +167,7 @@ int main(int argc, char* argv[])
     // initilaise any generic systems
     users();
     pen::timer_system_intialise();
+    pen::input_gamepad_init();
 
     // inits renderer and loops in wait for jobs, calling os update
     renderer_init(nullptr, true);
@@ -248,7 +251,7 @@ namespace pen
                 return PK_HOME;
             case XK_Left:
                 return PK_LEFT;
-            case XK_Up:
+            case XK_Up:pen::input_gamepad_init();
                 return PK_UP;
             case XK_Right:
                 return PK_RIGHT;
@@ -345,6 +348,11 @@ namespace pen
                     XGetWindowAttributes(_display, _window, &attribs);
                     pen_window.width = attribs.width;
                     pen_window.height = attribs.height;
+
+                    _window_frame.x = attribs.x;
+                    _window_frame.y = attribs.y;
+                    _window_frame.width = attribs.width;
+                    _window_frame.height = attribs.height;
                 }
                 break;
                 case KeyPress:
@@ -391,6 +399,13 @@ namespace pen
             }
         }
 
+        // update window
+        if(_invalidate_window_frame)
+        {
+            XMoveResizeWindow(_display, _window, (int)_window_frame.x, (int)_window_frame.y, (int)_window_frame.width, (int)_window_frame.height);
+            _invalidate_window_frame = false;
+        }
+
         // Update cursor
         int          root_x, root_y;
         int          win_x, win_y;
@@ -400,6 +415,8 @@ namespace pen
         int result = XQueryPointer(_display, _window, &window_returned, &window_returned, &root_x, &root_y, &win_x, &win_y,
                                    &mask_return);
         pen::input_set_mouse_pos((f32)win_x, (f32)win_y);
+
+        pen::input_gamepad_update();
 
         // Check for terminate and poll terminated jobs
         static bool pen_terminate_app = false;
@@ -430,10 +447,13 @@ namespace pen
 
     void window_get_frame(window_frame& f)
     {
+        f = _window_frame;
     }
 
     void window_set_frame(const window_frame& f)
     {
+        _window_frame = f;
+        _invalidate_window_frame = true;
     }
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)

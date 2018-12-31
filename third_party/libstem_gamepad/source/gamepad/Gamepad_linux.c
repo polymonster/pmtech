@@ -22,12 +22,15 @@
 
 #include "gamepad/Gamepad.h"
 #include "gamepad/Gamepad_private.h"
+
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <linux/input.h>
+#ifndef __USE_UNIX98
 #define __USE_UNIX98
+#endif
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
