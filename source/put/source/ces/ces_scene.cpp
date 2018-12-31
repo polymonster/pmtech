@@ -777,9 +777,11 @@ namespace put
 
                 if (scene->entities[p] & CMP_ANIM_CONTROLLER)
                 {
-                    vec3f pad = (parent_tmax - parent_tmin) * 0.5f;
-                    parent_tmin = tmin - pad;
-                    parent_tmax = tmax + pad;
+                    //vec3f pad = (parent_tmax - parent_tmin) * 0.5f;
+                    vec3f pad = vec3f(0.0f);
+
+                    parent_tmin = vec3f::vmin(parent_tmin, tmin - pad);
+                    parent_tmax = vec3f::vmax(parent_tmax, tmax + pad);
                 }
                 else
                 {

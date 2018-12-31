@@ -99,9 +99,9 @@ static char * getDeviceDescription(UINT joystickID, JOYCAPS caps) {
 	LONG result;
 	
 	snprintf(subkey, REG_STRING_MAX, "%s\\%s\\%s", REGSTR_PATH_JOYCONFIG, caps.szRegKey, REGSTR_KEY_JOYCURR);
-	result = RegOpenKeyEx(topKey = HKEY_LOCAL_MACHINE, subkey, 0, KEY_READ, &key);
+	result = RegOpenKeyEx(topKey = HKEY_LOCAL_MACHINE, (LPCWSTR)subkey, 0, KEY_READ, &key);
 	if (result != ERROR_SUCCESS) {
-		result = RegOpenKeyEx(topKey = HKEY_CURRENT_USER, subkey, 0, KEY_READ, &key);
+		result = RegOpenKeyEx(topKey = HKEY_CURRENT_USER, (LPCWSTR)subkey, 0, KEY_READ, &key);
 	}
 	if (result == ERROR_SUCCESS) {
 		char value[REG_STRING_MAX];
@@ -110,19 +110,19 @@ static char * getDeviceDescription(UINT joystickID, JOYCAPS caps) {
 		
 		snprintf(value, REG_STRING_MAX, "Joystick%d%s", joystickID + 1, REGSTR_VAL_JOYOEMNAME);
 		nameSize = sizeof(name);
-		result = RegQueryValueEx(key, value, NULL, NULL, (LPBYTE) name, &nameSize);
+		result = RegQueryValueEx(key, (LPCWSTR)value, NULL, NULL, (LPBYTE) name, &nameSize);
 		RegCloseKey(key);
 		
 		if (result == ERROR_SUCCESS) {
 			snprintf(subkey, REG_STRING_MAX, "%s\\%s", REGSTR_PATH_JOYOEM, name);
-			result = RegOpenKeyEx(topKey, subkey, 0, KEY_READ, &key);
+			result = RegOpenKeyEx(topKey, (LPCWSTR)subkey, 0, KEY_READ, &key);
 			
 			if (result == ERROR_SUCCESS) {
 				nameSize = sizeof(name);
 				result = RegQueryValueEx(key, REGSTR_VAL_JOYOEMNAME, NULL, NULL, NULL, &nameSize);
 				
 				if (result == ERROR_SUCCESS) {
-					description = malloc(nameSize);
+					description = (char*)malloc(nameSize);
 					result = RegQueryValueEx(key, REGSTR_VAL_JOYOEMNAME, NULL, NULL, (LPBYTE) description, &nameSize);
 				}
 				RegCloseKey(key);
@@ -135,8 +135,8 @@ static char * getDeviceDescription(UINT joystickID, JOYCAPS caps) {
 		}
 	}
 	
-	description = malloc(strlen(caps.szPname) + 1);
-	strcpy(description, caps.szPname);
+	description = (char*)malloc(strlen((const char*)caps.szPname) + 1);
+	strcpy(description, (const char*)caps.szPname);
 	
 	return description;
 }
@@ -175,19 +175,19 @@ void Gamepad_detectDevices() {
 				continue;
 			}
 			
-			deviceRecord = malloc(sizeof(struct Gamepad_device));
+			deviceRecord = (Gamepad_device*)malloc(sizeof(struct Gamepad_device));
 			deviceRecord->deviceID = nextDeviceID++;
 			deviceRecord->description = getDeviceDescription(joystickID, caps);
 			deviceRecord->vendorID = caps.wMid;
 			deviceRecord->productID = caps.wPid;
 			deviceRecord->numAxes = caps.wNumAxes + ((caps.wCaps & JOYCAPS_HASPOV) ? 2 : 0);
 			deviceRecord->numButtons = caps.wNumButtons;
-			deviceRecord->axisStates = calloc(sizeof(float), deviceRecord->numAxes);
-			deviceRecord->buttonStates = calloc(sizeof(bool), deviceRecord->numButtons);
-			devices = realloc(devices, sizeof(struct Gamepad_device *) * (numDevices + 1));
+			deviceRecord->axisStates = (float*)calloc(sizeof(float), deviceRecord->numAxes);
+			deviceRecord->buttonStates = (bool*)calloc(sizeof(bool), deviceRecord->numButtons);
+			devices = (Gamepad_device**)realloc(devices, sizeof(struct Gamepad_device *) * (numDevices + 1));
 			devices[numDevices++] = deviceRecord;
 			
-			deviceRecordPrivate = malloc(sizeof(struct Gamepad_devicePrivate));
+			deviceRecordPrivate = (Gamepad_devicePrivate*)malloc(sizeof(struct Gamepad_devicePrivate));
 			deviceRecordPrivate->joystickID = joystickID;
 			deviceRecordPrivate->lastState = info;
 			
@@ -199,7 +199,7 @@ void Gamepad_detectDevices() {
 			deviceRecordPrivate->uAxisIndex = (caps.wCaps & JOYCAPS_HASU) ? axisIndex++ : -1;
 			deviceRecordPrivate->vAxisIndex = (caps.wCaps & JOYCAPS_HASV) ? axisIndex++ : -1;
 			
-			deviceRecordPrivate->axisRanges = malloc(sizeof(UINT[2]) * axisIndex);
+			deviceRecordPrivate->axisRanges = (UINT(*)[2])malloc(sizeof(UINT[2]) * axisIndex);
 			deviceRecordPrivate->axisRanges[0][0] = caps.wXmin;
 			deviceRecordPrivate->axisRanges[0][1] = caps.wXmax;
 			deviceRecordPrivate->axisRanges[1][0] = caps.wYmin;
@@ -254,7 +254,7 @@ static void handleAxisChange(struct Gamepad_device * device, int axisIndex, DWOR
 		return;
 	}
 	
-	devicePrivate = device->privateData;
+	devicePrivate = (Gamepad_devicePrivate*)device->privateData;
 	value = (ivalue - devicePrivate->axisRanges[axisIndex][0]) / (float) (devicePrivate->axisRanges[axisIndex][1] - devicePrivate->axisRanges[axisIndex][0]) * 2.0f - 1.0f;
 	
 	lastValue = device->axisStates[axisIndex];
@@ -313,7 +313,7 @@ static void handlePOVChange(struct Gamepad_device * device, DWORD lastValue, DWO
 	struct Gamepad_devicePrivate * devicePrivate;
 	int lastX, lastY, newX, newY;
 	
-	devicePrivate = device->privateData;
+	devicePrivate = (Gamepad_devicePrivate*)device->privateData;
 	
 	if (devicePrivate->povXAxisIndex == -1 || devicePrivate->povYAxisIndex == -1) {
 		return;
@@ -351,7 +351,7 @@ void Gamepad_processEvents() {
 	inProcessEvents = true;
 	for (deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
 		device = devices[deviceIndex];
-		devicePrivate = device->privateData;
+		devicePrivate = (Gamepad_devicePrivate*)device->privateData;
 		
 		info.dwSize = sizeof(info);
 		info.dwFlags = JOY_RETURNALL;
