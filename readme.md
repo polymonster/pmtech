@@ -1,4 +1,4 @@
-# pmtech [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech) ![Coverity](https://scan.coverity.com/projects/17568/badge.svg?flat=1)
+# pmtech [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech) [![Coverity](https://scan.coverity.com/projects/17568/badge.svg?flat=1)](https://scan.coverity.com/projects/polymonster-pmtech) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Follow work in progress: 
 [trello](https://trello.com/b/ciujzpUT)
