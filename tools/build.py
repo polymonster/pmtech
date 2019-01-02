@@ -153,11 +153,13 @@ def get_platform_info():
 
     if renderer == "dx11":
         shader_options = "-shader_platform hlsl"
-    elif renderer == "opengl":
-        shader_options = "-shader_platform glsl -platform osx"
-
-    if platform_name == "ios":
-        shader_options = "-shader_platform glsl -platform ios"
+    else:
+        if platform_name == "ios":
+            shader_options = "-shader_platform glsl -platform ios"
+        elif platform_name == "linux":
+            shader_options = "-shader_platform glsl -platform linux"
+        else:
+            shader_options = "-shader_platform glsl -platform osx"
 
     data_dir = os.path.join("bin", platform_name, "data")
 
