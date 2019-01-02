@@ -31,70 +31,33 @@ namespace pen
 {
     void renderer_init(void*, bool);
 }
+
 namespace
 {
-    NSOpenGLView*        _gl_view;
     NSWindow*            _window;
-    NSOpenGLContext*     _gl_context;
-    NSOpenGLPixelFormat* _pixel_format;
     bool                 pen_terminate_app = false;
 }
 
-@interface app_delegate : NSObject <NSApplicationDelegate>
+#ifdef PEN_RENDERER_METAL
+#define create_renderer_context create_metal_context
+
+void create_metal_context()
 {
-    bool terminated;
-}
-
-+ (app_delegate*)shared_delegate;
-- (id)init;
-- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender;
-- (bool)applicationHasTerminated;
-
-@end
-
-@interface window_delegate : NSObject <NSWindowDelegate>
-{
-    uint32_t window_count;
-}
-
-+ (window_delegate*)shared_delegate;
-- (id)init;
-- (void)windowCreated:(NSWindow*)window;
-- (void)windowWillClose:(NSNotification*)notification;
-- (BOOL)windowShouldClose:(NSWindow*)window;
-- (void)windowDidResize:(NSNotification*)notification;
-- (void)windowDidBecomeKey:(NSNotification*)notification;
-- (void)windowDidResignKey:(NSNotification*)notification;
-- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender;
-- (NSDragOperation)draggingEnded:(id<NSDraggingInfo>)sender;
-- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender;
-
-@end
-
-void pen_make_gl_context_current()
-{
-    [_gl_context makeCurrentContext];
-}
-
-void pen_gl_swap_buffers()
-{
-    if (g_rs <= 0)
-        [_gl_context flushBuffer];
+    
 }
 
 void pen_window_resize()
 {
-    g_rs = 10;
+    
+}
 
-    NSRect view_rect = [[_window contentView] bounds];
-
-    if (_gl_view.frame.size.width == view_rect.size.width && _gl_view.frame.size.height == view_rect.size.height)
-        return;
-
-    [_gl_view setFrameSize:view_rect.size];
-
-    pen_window.width = view_rect.size.width;
-    pen_window.height = view_rect.size.height;
+#else  // OpenGL Context
+#define create_renderer_context create_gl_context
+namespace
+{
+    NSOpenGLView*        _gl_view;
+    NSOpenGLContext*     _gl_context;
+    NSOpenGLPixelFormat* _pixel_format;
 }
 
 void create_gl_context()
@@ -155,6 +118,64 @@ void create_gl_context()
     _gl_view = glView;
     _gl_context = glContext;
 }
+
+void pen_make_gl_context_current()
+{
+    [_gl_context makeCurrentContext];
+}
+
+void pen_gl_swap_buffers()
+{
+    if (g_rs <= 0)
+        [_gl_context flushBuffer];
+}
+
+void pen_window_resize()
+{
+    g_rs = 10;
+    
+    NSRect view_rect = [[_window contentView] bounds];
+    
+    if (_gl_view.frame.size.width == view_rect.size.width && _gl_view.frame.size.height == view_rect.size.height)
+        return;
+    
+    [_gl_view setFrameSize:view_rect.size];
+    
+    pen_window.width = view_rect.size.width;
+    pen_window.height = view_rect.size.height;
+}
+#endif
+
+@interface app_delegate : NSObject <NSApplicationDelegate>
+{
+    bool terminated;
+}
+
++ (app_delegate*)shared_delegate;
+- (id)init;
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender;
+- (bool)applicationHasTerminated;
+
+@end
+
+@interface window_delegate : NSObject <NSWindowDelegate>
+{
+    uint32_t window_count;
+}
+
++ (window_delegate*)shared_delegate;
+- (id)init;
+- (void)windowCreated:(NSWindow*)window;
+- (void)windowWillClose:(NSNotification*)notification;
+- (BOOL)windowShouldClose:(NSWindow*)window;
+- (void)windowDidResize:(NSNotification*)notification;
+- (void)windowDidBecomeKey:(NSNotification*)notification;
+- (void)windowDidResignKey:(NSNotification*)notification;
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender;
+- (NSDragOperation)draggingEnded:(id<NSDraggingInfo>)sender;
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender;
+
+@end
 
 void get_mouse_pos(f32& x, f32& y)
 {
@@ -510,7 +531,8 @@ int main(int argc, char** argv)
 
     [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
 
-    create_gl_context();
+    // creates an opengl or metal rendering context
+    create_renderer_context();
 
     [pool drain];
 

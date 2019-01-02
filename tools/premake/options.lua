@@ -6,8 +6,9 @@ newoption
    description = "Choose a renderer",
    allowed = 
    {
-      { "opengl", "OpenGL" },
+      { "opengl", "OpenGL (macOS, linux, iOS, Android)" },
       { "dx11",  "DirectX 11 (Windows only)" },
+      { "metal", "Metal (macOS, iOS only)" }
    }
 }
 

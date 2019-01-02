@@ -77,7 +77,7 @@ def parse_args(args):
             ide = sys.argv[index+1]
             index += 1
         if sys.argv[index] == "-renderer":
-            ide = sys.argv[index+1]
+            renderer = sys.argv[index+1]
             index += 1
         elif sys.argv[index] == "-actions":
             for j in range(index+1, len(sys.argv)):

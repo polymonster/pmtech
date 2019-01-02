@@ -39,13 +39,11 @@ function windows_sdk_version()
 	if sdk_version ~= "" then
 		return sdk_version
 	end
-	
 	return "10.0.16299.0"
 end
 
 function setup_from_action()
     if _ACTION == "gmake" then
-    
         if platform_dir == "linux" then
             build_cmd = "-std=c++11"
         else

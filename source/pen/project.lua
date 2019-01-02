@@ -65,6 +65,7 @@ project "pen"
         "include/" .. renderer_dir .. "/**.h",
     
         "source/" .. renderer_dir .. "/**.cpp",
+        "source/" .. renderer_dir .. "/**.mm",
     
         "source/" .. platform_dir .. "/**.cpp",
         "source/" .. platform_dir .. "/**.mm",
