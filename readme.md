@@ -26,11 +26,11 @@ Take a look at:
 
 Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Getting-Started).
 
-**Shoutout!** 
+**Thanks** 
 - [ImGui](https://github.com/ocornut/imgui)
 - [Premake](https://github.com/premake/premake-core)
 - [Jsmn](https://github.com/zserge/jsmn)
 - [Bullet](https://github.com/bulletphysics/bullet3)
 - [NVTT](https://github.com/castano/nvidia-texture-tools)
 - [stb](https://github.com/nothings/stb)
-
+- [libstem_gamepad](https://github.com/ThemsAllTook/libstem_gamepad)
