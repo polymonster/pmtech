@@ -30,7 +30,7 @@ namespace put
         bool                k_console_open = false;
         s32                 s_program_prefs_save_timer = 0;
         bool                s_save_program_prefs = false;
-        u32                 k_program_prefs_save_timeout = 60; //frames
+        const u32           k_program_prefs_save_timeout = 60; //frames
 
         void load_program_preferences()
         {
@@ -53,7 +53,7 @@ namespace put
                 ofs.close();
             }
 
-            k_program_prefs_save_timeout--;
+            s_program_prefs_save_timer--;
         }
 
         void save_program_preferences()

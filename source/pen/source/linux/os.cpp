@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
 
     XStoreName(_display, _window, pen_window.window_title);
     XSelectInput(_display, _window,
-                 ExposureMask | StructureNotifyMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask);
+                 ExposureMask | StructureNotifyMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask | ConfigureNotify);
 
     // Create Gl Context
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
@@ -251,7 +251,7 @@ namespace pen
                 return PK_HOME;
             case XK_Left:
                 return PK_LEFT;
-            case XK_Up:pen::input_gamepad_init();
+            case XK_Up:
                 return PK_UP;
             case XK_Right:
                 return PK_RIGHT;
@@ -343,14 +343,17 @@ namespace pen
             switch (event.type)
             {
                 case Expose:
+                case ConfigureNotify:
                 {
                     XWindowAttributes attribs;
                     XGetWindowAttributes(_display, _window, &attribs);
                     pen_window.width = attribs.width;
                     pen_window.height = attribs.height;
 
-                    _window_frame.x = attribs.x;
-                    _window_frame.y = attribs.y;
+                    Window unused;
+                    
+                    XTranslateCoordinates(_display, _window, XDefaultRootWindow(_display), 0, 0, (int*)&_window_frame.x, (int*)&_window_frame.y, &unused);
+
                     _window_frame.width = attribs.width;
                     _window_frame.height = attribs.height;
                 }
