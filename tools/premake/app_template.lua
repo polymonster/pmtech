@@ -28,12 +28,25 @@ local function setup_osx()
 	links 
 	{ 
 		"Cocoa.framework",
-		"OpenGL.framework",
 		"GameController.framework",
 		"iconv",
 		"fmod",
 		"IOKit.framework"
 	}
+	
+	if renderer_dir == "metal" then
+		links 
+		{ 
+			"MetalKit.framework",
+			"Metal.framework"
+		}
+	elseif renderer_dir == "opengl" then
+		links 
+		{ 
+			"OpenGL.framework"
+		}
+	end
+	
 	add_pmtech_links()
 	copy_shared_libs()
 end

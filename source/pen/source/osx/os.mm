@@ -1,9 +1,6 @@
 #import <AppKit/NSPasteboard.h>
 #import <Cocoa/Cocoa.h>
-#import <GameController/GameController.h>
-
-#import <OpenGL/gl3.h>
-#define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion3_2Core
+//#import <GameController/GameController.h>
 
 #include "console.h"
 #include "input.h"
@@ -11,10 +8,8 @@
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
-
 #include "str/Str.h"
 #include "str_utilities.h"
-
 #include "data_struct.h"
 #include "os.h"
 
@@ -34,24 +29,106 @@ namespace pen
 
 namespace
 {
-    NSWindow*            _window;
-    bool                 pen_terminate_app = false;
+    NSWindow* _window;
+    bool pen_terminate_app = false;
 }
 
-#ifdef PEN_RENDERER_METAL
+@interface app_delegate : NSObject <NSApplicationDelegate>
+{
+    bool terminated;
+}
+
++ (app_delegate*)shared_delegate;
+- (id)init;
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender;
+- (bool)applicationHasTerminated;
+
+@end
+
+@interface window_delegate : NSObject <NSWindowDelegate>
+{
+    uint32_t window_count;
+}
+
++ (window_delegate*)shared_delegate;
+- (id)init;
+- (void)windowCreated:(NSWindow*)window;
+- (void)windowWillClose:(NSNotification*)notification;
+- (BOOL)windowShouldClose:(NSWindow*)window;
+- (void)windowDidResize:(NSNotification*)notification;
+- (void)windowDidBecomeKey:(NSNotification*)notification;
+- (void)windowDidResignKey:(NSNotification*)notification;
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender;
+- (NSDragOperation)draggingEnded:(id<NSDraggingInfo>)sender;
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender;
+
+@end
+
+#ifdef PEN_RENDERER_METAL // Metal Context
+#import <MetalKit/MetalKit.h>
 #define create_renderer_context create_metal_context
+
+@interface metal_delegate : NSObject<MTKViewDelegate>
+
+- (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView;
+
+@end
+
+namespace
+{
+    MTKView* _metal_view;
+}
+
+@implementation metal_delegate
+
+- (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
+{
+    self = [super init];
+    return self;
+}
+
+- (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size
+{
+    // todo
+}
+
+- (void)drawInMTKView:(nonnull MTKView *)view
+{
+    // todo
+}
+
+@end
 
 void create_metal_context()
 {
+    NSRect frame = [[_window contentView] bounds];
+    _metal_view = [[MTKView alloc] initWithFrame:frame device:MTLCreateSystemDefaultDevice()];
     
+    metal_delegate* dg = [[metal_delegate alloc] initWithMetalKitView: _metal_view];
+    _metal_view.delegate = dg;
+    
+    //assign metal view to window sub view
+    [_window.contentView addSubview:_metal_view];
 }
 
 void pen_window_resize()
 {
+    g_rs = 10;
     
+    NSRect view_rect = [[_window contentView] bounds];
+    
+    if (_metal_view.frame.size.width == view_rect.size.width && _metal_view.frame.size.height == view_rect.size.height)
+        return;
+    
+    [_metal_view setFrameSize:view_rect.size];
+    
+    pen_window.width = view_rect.size.width;
+    pen_window.height = view_rect.size.height;
 }
 
 #else  // OpenGL Context
+#import <OpenGL/gl3.h>
+#define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion3_2Core
 #define create_renderer_context create_gl_context
 namespace
 {
@@ -146,316 +223,6 @@ void pen_window_resize()
 }
 #endif
 
-@interface app_delegate : NSObject <NSApplicationDelegate>
-{
-    bool terminated;
-}
-
-+ (app_delegate*)shared_delegate;
-- (id)init;
-- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender;
-- (bool)applicationHasTerminated;
-
-@end
-
-@interface window_delegate : NSObject <NSWindowDelegate>
-{
-    uint32_t window_count;
-}
-
-+ (window_delegate*)shared_delegate;
-- (id)init;
-- (void)windowCreated:(NSWindow*)window;
-- (void)windowWillClose:(NSNotification*)notification;
-- (BOOL)windowShouldClose:(NSWindow*)window;
-- (void)windowDidResize:(NSNotification*)notification;
-- (void)windowDidBecomeKey:(NSNotification*)notification;
-- (void)windowDidResignKey:(NSNotification*)notification;
-- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender;
-- (NSDragOperation)draggingEnded:(id<NSDraggingInfo>)sender;
-- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender;
-
-@end
-
-void get_mouse_pos(f32& x, f32& y)
-{
-    NSRect  original_frame = [_window frame];
-    NSPoint location = [_window mouseLocationOutsideOfEventStream];
-    NSRect  adjust_frame = [_window contentRectForFrameRect:original_frame];
-
-    x = location.x;
-    y = (int)adjust_frame.size.height - location.y;
-}
-
-void handle_modifiers(NSEvent* event)
-{
-    u32 flags = [event modifierFlags];
-
-    if (flags & NSEventModifierFlagShift)
-    {
-        pen::input_set_key_down(PK_SHIFT);
-    }
-    else
-    {
-        pen::input_set_key_up(PK_SHIFT);
-    }
-
-    if (flags & NSEventModifierFlagOption)
-    {
-        pen::input_set_key_down(PK_MENU);
-    }
-    else
-    {
-        pen::input_set_key_up(PK_MENU);
-    }
-
-    if (flags & NSEventModifierFlagControl)
-    {
-        pen::input_set_key_down(PK_CONTROL);
-    }
-    else
-    {
-        pen::input_set_key_up(PK_CONTROL);
-    }
-
-    if (flags & NSEventModifierFlagCommand)
-    {
-        pen::input_set_key_down(PK_COMMAND);
-    }
-    else
-    {
-        pen::input_set_key_up(PK_COMMAND);
-    }
-}
-
-void handle_key_event(NSEvent* event, bool down)
-{
-    handle_modifiers(event);
-
-    NSString* key = [event charactersIgnoringModifiers];
-
-    if ([key length] == 0)
-    {
-        return;
-    }
-
-    unichar key_char = [key characterAtIndex:0];
-
-    if (key_char < 256)
-    {
-        u32 mapped_key_char = key_char;
-
-        u32 vk = 511;
-
-        if (mapped_key_char >= 'a' && mapped_key_char <= 'z')
-        {
-            vk = PK_A + (mapped_key_char - 'a');
-        }
-
-        if (mapped_key_char >= '0' && mapped_key_char <= '9')
-        {
-            vk = PK_0 + (mapped_key_char - '0');
-        }
-
-        if (mapped_key_char == 127)
-        {
-            mapped_key_char = 8;
-            vk = PK_BACK;
-        }
-
-        if (mapped_key_char == 32)
-            vk = PK_SPACE;
-
-        if (down)
-        {
-            pen::input_set_unicode_key_down(mapped_key_char);
-
-            pen::input_set_key_down(vk);
-        }
-        else
-        {
-            pen::input_set_unicode_key_up(mapped_key_char);
-
-            pen::input_set_key_up(vk);
-        }
-    }
-    else
-    {
-        u32 penk = 0;
-
-        switch (key_char)
-        {
-            case NSF1FunctionKey:
-                penk = PK_F1;
-                break;
-            case NSF2FunctionKey:
-                penk = PK_F2;
-                break;
-            case NSF3FunctionKey:
-                penk = PK_F3;
-                break;
-            case NSF4FunctionKey:
-                penk = PK_F4;
-                break;
-            case NSF5FunctionKey:
-                penk = PK_F5;
-                break;
-            case NSF6FunctionKey:
-                penk = PK_F6;
-                break;
-            case NSF7FunctionKey:
-                penk = PK_F7;
-                break;
-            case NSF8FunctionKey:
-                penk = PK_F8;
-                break;
-            case NSF9FunctionKey:
-                penk = PK_F9;
-                break;
-            case NSF10FunctionKey:
-                penk = PK_F10;
-                break;
-            case NSF11FunctionKey:
-                penk = PK_F11;
-                break;
-            case NSF12FunctionKey:
-                penk = PK_F12;
-                break;
-
-            case NSLeftArrowFunctionKey:
-                penk = PK_LEFT;
-                break;
-            case NSRightArrowFunctionKey:
-                penk = PK_RIGHT;
-                break;
-            case NSUpArrowFunctionKey:
-                penk = PK_UP;
-                break;
-            case NSDownArrowFunctionKey:
-                penk = PK_DOWN;
-                break;
-
-            case NSPageUpFunctionKey:
-                penk = PK_NEXT;
-                break;
-            case NSPageDownFunctionKey:
-                penk = PK_PRIOR;
-                break;
-            case NSHomeFunctionKey:
-                penk = PK_HOME;
-                break;
-            case NSEndFunctionKey:
-                penk = PK_END;
-                break;
-
-            case NSDeleteFunctionKey:
-                penk = PK_BACK;
-                break;
-            case NSDeleteCharFunctionKey:
-                penk = PK_BACK;
-                break;
-
-            case NSPrintScreenFunctionKey:
-                penk = PK_SNAPSHOT;
-                break;
-        }
-
-        if (down)
-        {
-            pen::input_set_key_down(penk);
-        }
-        else
-        {
-            pen::input_set_key_up(penk);
-        }
-    }
-}
-
-bool handle_event(NSEvent* event)
-{
-    if (event)
-    {
-        NSEventType event_type = [event type];
-
-        switch (event_type)
-        {
-            case NSEventTypeMouseMoved:
-            case NSEventTypeLeftMouseDragged:
-            case NSEventTypeRightMouseDragged:
-            case NSEventTypeOtherMouseDragged:
-            {
-                f32 x, y;
-                get_mouse_pos(x, y);
-                pen::input_set_mouse_pos(x, y);
-                return true;
-            }
-
-            case NSEventTypeLeftMouseDown:
-                pen::input_set_mouse_down(PEN_MOUSE_L);
-                break;
-            case NSEventTypeRightMouseDown:
-                pen::input_set_mouse_down(PEN_MOUSE_R);
-                break;
-            case NSEventTypeOtherMouseDown:
-                pen::input_set_mouse_down(PEN_MOUSE_M);
-                break;
-
-            case NSEventTypeLeftMouseUp:
-                pen::input_set_mouse_up(PEN_MOUSE_L);
-                break;
-            case NSEventTypeRightMouseUp:
-                pen::input_set_mouse_up(PEN_MOUSE_R);
-                break;
-            case NSEventTypeOtherMouseUp:
-                pen::input_set_mouse_up(PEN_MOUSE_M);
-                break;
-
-            case NSEventTypeScrollWheel:
-            {
-                f32 scroll_delta = [event deltaY];
-                pen::input_set_mouse_wheel(scroll_delta);
-                return true;
-            }
-
-            case NSEventTypeFlagsChanged:
-            {
-                handle_modifiers(event);
-                return true;
-            }
-
-            case NSEventTypeKeyDown:
-            {
-                handle_key_event(event, true);
-                return true;
-            }
-
-            case NSEventTypeKeyUp:
-            {
-                handle_key_event(event, false);
-                return true;
-            }
-
-            default:
-                return false;
-        }
-    }
-
-    return false;
-}
-
-void users()
-{
-    NSString* ns_full_user_name = NSFullUserName();
-    pen_user_info.full_user_name = [ns_full_user_name UTF8String];
-
-    NSString* ns_user_name = NSUserName();
-    pen_user_info.user_name = [ns_user_name UTF8String];
-}
-
-void __main_update()
-{
-}
-
 namespace
 {
     enum os_cmd_id
@@ -477,6 +244,282 @@ namespace
     };
 
     pen_ring_buffer<os_cmd> s_cmd_buffer;
+    
+    void users()
+    {
+        NSString* ns_full_user_name = NSFullUserName();
+        pen_user_info.full_user_name = [ns_full_user_name UTF8String];
+        
+        NSString* ns_user_name = NSUserName();
+        pen_user_info.user_name = [ns_user_name UTF8String];
+    }
+    
+    void get_mouse_pos(f32& x, f32& y)
+    {
+        NSRect  original_frame = [_window frame];
+        NSPoint location = [_window mouseLocationOutsideOfEventStream];
+        NSRect  adjust_frame = [_window contentRectForFrameRect:original_frame];
+        
+        x = location.x;
+        y = (int)adjust_frame.size.height - location.y;
+    }
+    
+    void handle_modifiers(NSEvent* event)
+    {
+        u32 flags = [event modifierFlags];
+        
+        if (flags & NSEventModifierFlagShift)
+        {
+            pen::input_set_key_down(PK_SHIFT);
+        }
+        else
+        {
+            pen::input_set_key_up(PK_SHIFT);
+        }
+        
+        if (flags & NSEventModifierFlagOption)
+        {
+            pen::input_set_key_down(PK_MENU);
+        }
+        else
+        {
+            pen::input_set_key_up(PK_MENU);
+        }
+        
+        if (flags & NSEventModifierFlagControl)
+        {
+            pen::input_set_key_down(PK_CONTROL);
+        }
+        else
+        {
+            pen::input_set_key_up(PK_CONTROL);
+        }
+        
+        if (flags & NSEventModifierFlagCommand)
+        {
+            pen::input_set_key_down(PK_COMMAND);
+        }
+        else
+        {
+            pen::input_set_key_up(PK_COMMAND);
+        }
+    }
+    
+    void handle_key_event(NSEvent* event, bool down)
+    {
+        handle_modifiers(event);
+        
+        NSString* key = [event charactersIgnoringModifiers];
+        
+        if ([key length] == 0)
+        {
+            return;
+        }
+        
+        unichar key_char = [key characterAtIndex:0];
+        
+        if (key_char < 256)
+        {
+            u32 mapped_key_char = key_char;
+            
+            u32 vk = 511;
+            
+            if (mapped_key_char >= 'a' && mapped_key_char <= 'z')
+            {
+                vk = PK_A + (mapped_key_char - 'a');
+            }
+            
+            if (mapped_key_char >= '0' && mapped_key_char <= '9')
+            {
+                vk = PK_0 + (mapped_key_char - '0');
+            }
+            
+            if (mapped_key_char == 127)
+            {
+                mapped_key_char = 8;
+                vk = PK_BACK;
+            }
+            
+            if (mapped_key_char == 32)
+                vk = PK_SPACE;
+            
+            if (down)
+            {
+                pen::input_set_unicode_key_down(mapped_key_char);
+                
+                pen::input_set_key_down(vk);
+            }
+            else
+            {
+                pen::input_set_unicode_key_up(mapped_key_char);
+                
+                pen::input_set_key_up(vk);
+            }
+        }
+        else
+        {
+            u32 penk = 0;
+            
+            switch (key_char)
+            {
+                case NSF1FunctionKey:
+                    penk = PK_F1;
+                    break;
+                case NSF2FunctionKey:
+                    penk = PK_F2;
+                    break;
+                case NSF3FunctionKey:
+                    penk = PK_F3;
+                    break;
+                case NSF4FunctionKey:
+                    penk = PK_F4;
+                    break;
+                case NSF5FunctionKey:
+                    penk = PK_F5;
+                    break;
+                case NSF6FunctionKey:
+                    penk = PK_F6;
+                    break;
+                case NSF7FunctionKey:
+                    penk = PK_F7;
+                    break;
+                case NSF8FunctionKey:
+                    penk = PK_F8;
+                    break;
+                case NSF9FunctionKey:
+                    penk = PK_F9;
+                    break;
+                case NSF10FunctionKey:
+                    penk = PK_F10;
+                    break;
+                case NSF11FunctionKey:
+                    penk = PK_F11;
+                    break;
+                case NSF12FunctionKey:
+                    penk = PK_F12;
+                    break;
+                    
+                case NSLeftArrowFunctionKey:
+                    penk = PK_LEFT;
+                    break;
+                case NSRightArrowFunctionKey:
+                    penk = PK_RIGHT;
+                    break;
+                case NSUpArrowFunctionKey:
+                    penk = PK_UP;
+                    break;
+                case NSDownArrowFunctionKey:
+                    penk = PK_DOWN;
+                    break;
+                    
+                case NSPageUpFunctionKey:
+                    penk = PK_NEXT;
+                    break;
+                case NSPageDownFunctionKey:
+                    penk = PK_PRIOR;
+                    break;
+                case NSHomeFunctionKey:
+                    penk = PK_HOME;
+                    break;
+                case NSEndFunctionKey:
+                    penk = PK_END;
+                    break;
+                    
+                case NSDeleteFunctionKey:
+                    penk = PK_BACK;
+                    break;
+                case NSDeleteCharFunctionKey:
+                    penk = PK_BACK;
+                    break;
+                    
+                case NSPrintScreenFunctionKey:
+                    penk = PK_SNAPSHOT;
+                    break;
+            }
+            
+            if (down)
+            {
+                pen::input_set_key_down(penk);
+            }
+            else
+            {
+                pen::input_set_key_up(penk);
+            }
+        }
+    }
+    
+    bool handle_event(NSEvent* event)
+    {
+        if (event)
+        {
+            NSEventType event_type = [event type];
+            
+            switch (event_type)
+            {
+                case NSEventTypeMouseMoved:
+                case NSEventTypeLeftMouseDragged:
+                case NSEventTypeRightMouseDragged:
+                case NSEventTypeOtherMouseDragged:
+                {
+                    f32 x, y;
+                    get_mouse_pos(x, y);
+                    pen::input_set_mouse_pos(x, y);
+                    return true;
+                }
+                    
+                case NSEventTypeLeftMouseDown:
+                    pen::input_set_mouse_down(PEN_MOUSE_L);
+                    break;
+                case NSEventTypeRightMouseDown:
+                    pen::input_set_mouse_down(PEN_MOUSE_R);
+                    break;
+                case NSEventTypeOtherMouseDown:
+                    pen::input_set_mouse_down(PEN_MOUSE_M);
+                    break;
+                    
+                case NSEventTypeLeftMouseUp:
+                    pen::input_set_mouse_up(PEN_MOUSE_L);
+                    break;
+                case NSEventTypeRightMouseUp:
+                    pen::input_set_mouse_up(PEN_MOUSE_R);
+                    break;
+                case NSEventTypeOtherMouseUp:
+                    pen::input_set_mouse_up(PEN_MOUSE_M);
+                    break;
+                    
+                case NSEventTypeScrollWheel:
+                {
+                    f32 scroll_delta = [event deltaY];
+                    pen::input_set_mouse_wheel(scroll_delta);
+                    return true;
+                }
+                    
+                case NSEventTypeFlagsChanged:
+                {
+                    handle_modifiers(event);
+                    return true;
+                }
+                    
+                case NSEventTypeKeyDown:
+                {
+                    handle_key_event(event, true);
+                    return true;
+                }
+                    
+                case NSEventTypeKeyUp:
+                {
+                    handle_key_event(event, false);
+                    return true;
+                }
+                    
+                default:
+                    return false;
+            }
+        }
+        
+        return false;
+    }
+
 }
 
 int main(int argc, char** argv)
@@ -722,7 +765,7 @@ namespace pen
     {
         return nil;
     }
-
+    
     self->terminated = false;
     return self;
 }
