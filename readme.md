@@ -3,13 +3,13 @@
 Follow work in progress: 
 [trello](https://trello.com/b/ciujzpUT)
 
-A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded systems with minimalistic c-style api's and a strong emphasis on performance.
+A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded code with minimalistic procedural api's.
 
 Take a look at: 
 [demos...](https://polymonster.github.io/index.html)
 
 **Platforms**  
-- OS: Windows, MacOS, Linux, iOS, Android (wip).   
+- OS: Windows, MacOS, Linux, iOS, Android (wip).   style
 - Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal (wip).   
 - Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
