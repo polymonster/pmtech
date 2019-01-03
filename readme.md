@@ -9,7 +9,7 @@ Take a look at:
 [demos...](https://polymonster.github.io/index.html)
 
 **Platforms**  
-- OS: Windows, MacOS, Linux, iOS, Android (wip).   style
+- OS: Windows, MacOS, Linux, iOS, Android (wip).  
 - Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal (wip).   
 - Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
