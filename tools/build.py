@@ -19,7 +19,7 @@ def display_help():
     print("    -platform <osx, win32, ios, linux, android>")
     print("    -ide <xcode4, vs2015, v2017, gmake, android-studio>")
     print("    -clean <clean build, bin and temp dirs>")
-    print("    -renderer <dx11, opengl>")
+    print("    -renderer <dx11, opengl, metal>")
     print("    -toolset <gcc, clang, msc>")
 
 

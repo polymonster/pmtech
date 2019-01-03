@@ -322,6 +322,7 @@ namespace pen
     const c8*            renderer_get_shader_platform();
     bool                 renderer_viewport_vup();
     const renderer_info& renderer_get_info();
+    bool                 renderer_dispatch();
 
     // resource management
     void renderer_realloc_resource(u32 i, u32 domain);

@@ -1,32 +1,74 @@
+#import <MetalKit/MetalKit.h>
+#import <Metal/Metal.h>
+
 #include "renderer.h"
+#include "console.h"
 
 // globals
 a_u8 g_window_resize;
+
+namespace
+{
+    struct current_state
+    {
+        // metal
+        id<MTLRenderPipelineState>  pipeline;
+        id<MTLCommandQueue>         command_queue;
+        id<MTLRenderCommandEncoder> render_encoder;
+        
+        // pen
+        pen::viewport               viewport;
+        u32                         vertex_buffer;
+        u32                         index_buffer;
+        u32                         vertex_shader;
+        u32                         fragment_shader;
+    };
+    
+    MTKView*        s_metal_view;
+    id<MTLDevice>   s_metal_device;
+    current_state   s_current_state;
+}
 
 namespace pen
 {
     a_u64 g_gpu_total;
     
+    // renderer specific info
     bool renderer_viewport_vup()
     {
         return false;
+    }
+    
+    const c8* renderer_get_shader_platform()
+    {
+        return "glsl";
+    }
+
+    const renderer_info& renderer_get_info()
+    {
+        static renderer_info info;
+        
+        return info;
     }
     
     namespace direct
     {
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res) 
         {
-            return u32();
+            s_metal_view = (MTKView*)params;
+            s_metal_device = s_metal_view.device;
+            
+            return 1;
         }
         
         void renderer_shutdown() 
         {
-        
+            
         }
         
         void renderer_make_context_current() 
         {
-        
+            // stub. used for gl implementation
         }
         
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot) 
@@ -74,12 +116,14 @@ namespace pen
         
         }
         
-        void renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets) 
+        void renderer_set_vertex_buffer(u32 buffer_index,
+                                        u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets)
         {
         
         }
         
-        void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets) 
+        void renderer_set_vertex_buffers(u32* buffer_indices,
+                                         u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
         {
         
         }
@@ -179,7 +223,8 @@ namespace pen
         
         }
         
-        void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face)
+        void renderer_set_targets(const u32* const colour_targets,
+                                  u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face)
         {
         
         }
@@ -206,7 +251,24 @@ namespace pen
         
         void renderer_present() 
         {
-        
+            id<CAMetalDrawable> drawable = s_metal_view.currentDrawable;
+            id<MTLTexture> texture = drawable.texture;
+            
+            MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+            passDescriptor.colorAttachments[0].texture = texture;
+            passDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+            passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+            passDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1, 0, 0, 1);
+            
+            id<MTLCommandQueue> commandQueue = [s_metal_device newCommandQueue];
+            
+            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+            
+            id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:passDescriptor];
+            [commandEncoder endEncoding];
+            
+            [commandBuffer presentDrawable:drawable];
+            [commandBuffer commit];
         }
         
         void renderer_push_perf_marker(const c8* name) 
@@ -278,8 +340,5 @@ namespace pen
         {
         
         }
-        
     }
-
 }
-

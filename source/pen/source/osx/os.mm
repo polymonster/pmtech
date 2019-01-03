@@ -1,6 +1,5 @@
 #import <AppKit/NSPasteboard.h>
 #import <Cocoa/Cocoa.h>
-//#import <GameController/GameController.h>
 
 #include "console.h"
 #include "input.h"
@@ -12,6 +11,8 @@
 #include "str_utilities.h"
 #include "data_struct.h"
 #include "os.h"
+
+// This file contains gl and metal context creation, input handling and os events.
 
 // global stuff for window graphics api sync
 extern pen::window_creation_params pen_window;
@@ -89,12 +90,13 @@ namespace
 
 - (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size
 {
-    // todo
+    // todo resize
 }
 
 - (void)drawInMTKView:(nonnull MTKView *)view
 {
-    // todo
+    if (!pen::renderer_dispatch())
+        pen::thread_sleep_us(100);
 }
 
 @end
@@ -124,6 +126,18 @@ void pen_window_resize()
     
     pen_window.width = view_rect.size.width;
     pen_window.height = view_rect.size.height;
+}
+
+void run()
+{
+    // passes metal view to renderer, renderer dispatch and os update will be called from drawInMTKView
+    pen::renderer_init(_metal_view, false);
+    
+    for (;;)
+    {
+        if (!pen::os_update())
+            break;
+    }
 }
 
 #else  // OpenGL Context
@@ -220,6 +234,12 @@ void pen_window_resize()
     
     pen_window.width = view_rect.size.width;
     pen_window.height = view_rect.size.height;
+}
+
+void run()
+{
+    // enters render loop and wait for jobs, will call os_update
+    pen::renderer_init(nullptr, true);
 }
 #endif
 
@@ -519,7 +539,6 @@ namespace
         
         return false;
     }
-
 }
 
 int main(int argc, char** argv)
@@ -585,9 +604,9 @@ int main(int argc, char** argv)
     // init systems
     pen::timer_system_intialise();
     pen::input_gamepad_init();
-
-    // enters render loop and wait for jobs, will call os_update
-    pen::renderer_init(nullptr, true);
+    
+    // invoke renderer specific update for main thread
+    run();
 }
 
 namespace pen
@@ -841,8 +860,7 @@ namespace pen
 
 - (void)windowDidBecomeKey:(NSNotification*)notification
 {
-    //NSCursor* currentCursor = [NSCursor arrowCursor];
-    //[currentCursor set];
+
 }
 
 - (void)windowDidResignKey:(NSNotification*)notification
