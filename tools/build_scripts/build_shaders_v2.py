@@ -19,8 +19,19 @@ class build_info:
     macros_file = ""
 
 
-class shader_info:
-    included_files = ""
+# info and contents of a .pmfx file
+class pmfx_info:
+    includes = ""
+    json = ""
+    source = ""
+    constant_buffers = ""
+    texture_samplers = ""
+
+
+# info of pmfx technique permutation
+class technique_permutation_info:
+    technique = ""
+    permutation = ""
 
 
 # parse command line args passed in
@@ -33,6 +44,16 @@ def parse_args():
             _info.shader_platform = sys.argv[i + 1]
         if "-platform" in sys.argv[i]:
             _info.os_platform = sys.argv[i + 1]
+
+
+# recursively merge members of 2 json objects
+def member_wise_merge(j1, j2):
+    for key in j2.keys():
+        if key not in j1.keys():
+            j1[key] = j2[key]
+        elif type(j1[key]) is dict:
+            j1[key] = member_wise_merge(j1[key], j2[key])
+    return j1
 
 
 # remove comments, taken from stub_format.py ()
@@ -69,6 +90,22 @@ def sanitize_shader_source(shader_source):
     # remove comments
     shader_source = remove_comments(shader_source)
     return shader_source
+
+
+# find the end of a body text enclosed in brackets
+def enclose_brackets(text):
+    body_pos = text.find("{")
+    bracket_stack = ["{"]
+    text_len = len(text)
+    while len(bracket_stack) > 0 and body_pos < text_len:
+        body_pos += 1
+        character = text[body_pos:body_pos+1]
+        if character == "{":
+            bracket_stack.insert(0, "{")
+        if character == "}" and bracket_stack[0] == "{":
+            bracket_stack.pop(0)
+            body_pos += 1
+    return body_pos
 
 
 # get info filename for dependency checking
@@ -175,19 +212,126 @@ def create_shader_set(filename, root):
     return True, shader_file_text, included_files
 
 
+# recursively generate all possible permutations from inputs
+def permute(define_list, permute_list, output_permutations):
+    if len(define_list) == 0:
+        output_permutations.append(list(permute_list))
+    else:
+        d = define_list.pop()
+        for s in d[1]:
+            ds = (d[0], s)
+            permute_list.append(ds)
+            output_permutations = permute(define_list, permute_list, output_permutations)
+            if len(permute_list) > 0:
+                permute_list.pop()
+        define_list.append(d)
+    return output_permutations
+
+
+# generate numerical id for permutation
+def generate_permutation_id(define_list, permutation):
+    pid = 0
+    for p in permutation:
+        for d in define_list:
+            if p[0] == d[0]:
+                if p[1] > 0:
+                    exponent = d[2]
+                    if exponent < 0:
+                        continue
+                    if p[1] > 1:
+                        exponent = p[1]+exponent-1
+                    pid += pow(2, exponent)
+    return pid
+
+
+# generate permutation list from technique json
+def generate_permutation_list(technique, technique_json):
+    output_permutations = []
+    define_list = []
+    permutation_options = dict()
+    permutation_option_mask = 0
+    define_string = ""
+    if "permutations" in technique_json:
+        for p in technique_json["permutations"].keys():
+            pp = technique_json["permutations"][p]
+            define_list.append((p, pp[1], pp[0]))
+        if "defines" in technique_json.keys():
+            for d in technique_json["defines"]:
+                define_list.append((d, [1], -1))
+        output_permutations = permute(define_list, [], [])
+        for key in technique_json["permutations"]:
+            tp = technique_json["permutations"][key]
+            ptype = "checkbox"
+            if len(tp[1]) > 2:
+                ptype = "input_int"
+            permutation_options[key] = {"val": pow(2, tp[0]), "type": ptype}
+            mask = pow(2, tp[0])
+            permutation_option_mask += mask
+            define_string += "#define " + technique.upper() + "_" + key + " " + str(mask) + "\n"
+        define_string += "\n"
+
+    # generate default permutation, inherit / get permutation constants
+    tp = list(output_permutations)
+    if len(tp) == 0:
+        default_permute = []
+        if "defines" in technique_json.keys():
+            for d in technique_json["defines"]:
+                default_permute.append((d, 1))
+        else:
+            default_permute = [("SINGLE_PERMUTATION", 1)]
+        tp.append(default_permute)
+    return tp, define_string
+
+
+# look for inherit member and inherit another pmfx technique
+def inherit_technique(technique, pmfx_json):
+    if "inherit" in technique.keys():
+        inherit = technique["inherit"]
+        if inherit in pmfx_json.keys():
+            technique = member_wise_merge(technique, pmfx_json[inherit])
+    return technique
+
+
+# parse pmfx file to find the json block pmfx: { }
+def find_pmfx_json(shader_file_text):
+    pmfx_loc = shader_file_text.find("pmfx:")
+    if pmfx_loc != -1:
+        json_loc = shader_file_text.find("{", pmfx_loc)
+        # find pmfx json
+        pmfx_end = enclose_brackets(shader_file_text[pmfx_loc:])
+        pmfx_json = json.loads(shader_file_text[json_loc:pmfx_end + json_loc])
+        return pmfx_json
+    return ""
+
+
 # parse a pmfx file which is a collection of techniques and permutations, made up of vs, ps, cs combinations
 def parse_pmfx(file, root):
     global _info
+    global _pmfx
+    global _tech
+
+    # new pmfx info
+    _pmfx = pmfx_info()
+
     file_and_path = os.path.join(root, file)
     needs_building, shader_file_text, included_files = create_shader_set(file_and_path, root)
 
     if not needs_building:
         return
 
-    print(file_and_path)
+    _pmfx.json = find_pmfx_json(shader_file_text)
+    _pmfx.source = shader_file_text
+
+    # for techniques in pmfx
+    for technique in _pmfx.json:
+        technique_json = inherit_technique(_pmfx.json[technique], _pmfx.json)
+        technique_permutations, defines = generate_permutation_list(technique, technique_json)
+        # for permutatuons in technique
+        print(technique_permutations)
+        print(defines)
 
 
-# main func
+# entry
 if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
     print("pmfx shader compilation (v2)----------------------------------------------------")
