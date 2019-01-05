@@ -55,6 +55,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
     pen::renderer_init((void*)&hwnd, true);
 
+    pen::input_gamepad_init();
+
     return 0;
 }
 
@@ -134,6 +136,8 @@ namespace pen
             // get next
             cmd = s_cmd_buffer.get();
         }
+
+        pen::input_gamepad_update();
 
         static bool terminate_app = false;
         if (WM_QUIT == msg.message)

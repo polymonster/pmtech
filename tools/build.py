@@ -59,6 +59,7 @@ def parse_args(args):
     global platform_name
     global clean_destinations
     global toolset
+    global v2
     for index in range(0, len(sys.argv)):
         is_action = False
         for action in action_strings:
@@ -95,6 +96,8 @@ def parse_args(args):
         elif sys.argv[index] == "-toolset":
             toolset = sys.argv[index+1]
             index += 1
+        elif sys.argv[index] == "-v2":
+            v2 = True
 
 
 def get_platform_info():
@@ -230,6 +233,9 @@ if __name__ == "__main__":
     print("pmtech build -------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
 
+    global v2
+    v2 = False
+
     stats_start = time.time()
 
     if len(sys.argv) > 1:
@@ -298,6 +304,9 @@ if __name__ == "__main__":
         display_prompted_input()
     else:
         parse_args(sys.argv)
+
+    if v2:
+        shader_script = os.path.join(tools_dir, "build_scripts", "build_shaders_v2.py")
 
     get_platform_info()
     copy_steps = []

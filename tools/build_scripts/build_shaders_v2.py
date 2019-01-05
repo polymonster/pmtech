@@ -5,7 +5,7 @@ import re
 import dependencies
 import util
 import math
-import shader_hlsl
+import subprocess
 
 # paths and info for current build environment
 class build_info:
@@ -33,16 +33,16 @@ class pmfx_info:
 # info about a single vs, ps, or cs
 class single_shader_info:
     shader_type = ""
-    main_func = ""
+    main_func_name = ""
     functions_source = ""
     main_func_source = ""
-    struct_source = ""
     input_struct_name = ""
     instance_input_struct_name = ""
     output_struct_name = ""
     input_decl = ""
     instance_input_decl = ""
     output_decl = ""
+    struct_decls = ""
 
 
 # info of pmfx technique permutation
@@ -216,6 +216,7 @@ def find_texture_samplers(shader_text):
     texture_sampler_text += "\n"
     return texture_sampler_text
 
+
 # find struct in shader source
 def find_struct(shader_text, decl):
     delimiters = [" ", "\n", "{"]
@@ -369,7 +370,8 @@ def create_shader_set(filename, root):
 
 
 # gets constants only for this current permutation
-def get_permutation_conditionals(block, permutation):
+def get_permutation_conditionals(pmfx_json, permutation):
+    block = pmfx_json.copy()
     if "constants" in block:
         # find conditionals
         conditionals = []
@@ -390,8 +392,11 @@ def get_permutation_conditionals(block, permutation):
             for v in permutation:
                 gv[str(v[0])] = v[1]
 
-            if eval(full_condition, gv):
-                block["constants"] = member_wise_merge(block["constants"], c[1])
+            try:
+                if eval(full_condition, gv):
+                    block["constants"] = member_wise_merge(block["constants"], c[1])
+            except NameError:
+                pass
     return block
 
 
@@ -417,7 +422,8 @@ def generate_technique_constant_buffers(pmfx_json, _tp):
     # find inherited constants
     if "inherit_constants" in _tp.technique.keys():
         for inherit in _tp.technique["inherit_constants"]:
-            technique_constants.append(pmfx_json[inherit])
+            inherit_conditionals = get_permutation_conditionals(pmfx_json[inherit], _tp.permutation)
+            technique_constants.append(inherit_conditionals)
 
     # find all constants
     shader_constant = []
@@ -714,6 +720,7 @@ def find_used_functions(entry_func, function_list):
 # generate a vs, ps or cs from _tp (technique permutation data)
 def generate_single_shader(main_func, _tp):
     _si = single_shader_info()
+    _si.main_func_name = main_func
 
     # find main func
     main = ""
@@ -782,9 +789,9 @@ def format_source(source, indent_size):
     return formatted
 
 
-def compile_hlsl(_info, _tp, _shader):
-    # shader_source = _info.macros_source
-    shader_source = ""
+def compile_hlsl(_info, pmfx_name, _tp, _shader):
+    shader_source = _info.macros_source
+    shader_source += _tp.struct_decls
     for cb in _tp.cbuffers:
         shader_source += cb
     shader_source += _shader.input_decl
@@ -793,14 +800,43 @@ def compile_hlsl(_info, _tp, _shader):
     shader_source += _tp.texture_decl
     shader_source += _shader.functions_source
     shader_source += _shader.main_func_source
-    print(format_source(shader_source, 4))
+    shader_source = format_source(shader_source, 4)
+
+    exe = os.path.join(_info.tools_dir, "bin", "fxc", "fxc")
+
+    shader_model = {
+        "vs": "vs_4_0",
+        "ps": "ps_4_0"
+    }
+
+    extension = {
+        "vs": ".vs",
+        "ps": ".ps"
+    }
+
+    temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
+    output_path = os.path.join(_info.root_dir, "compiled", pmfx_name, "v2")
+    os.makedirs(temp_path, exist_ok=True)
+    os.makedirs(output_path, exist_ok=True)
+
+    temp_file_and_path = os.path.join(temp_path, _tp.name + extension[_shader.shader_type])
+    output_file_and_path = os.path.join(output_path, _tp.name + extension[_shader.shader_type] + "c")
+
+    temp_shader_source = open(temp_file_and_path, "w")
+    temp_shader_source.write(shader_source)
+    temp_shader_source.close()
+
+    cmdline = exe + " "
+    cmdline += "/T " + shader_model[_shader.shader_type] + " "
+    cmdline += "/E " + _shader.main_func_name + " "
+    cmdline += "/Fo " + output_file_and_path + " " + temp_file_and_path + " "
+
+    subprocess.call(cmdline, shell=True)
 
 
 # parse a pmfx file which is a collection of techniques and permutations, made up of vs, ps, cs combinations
 def parse_pmfx(file, root):
     global _info
-    global _pmfx
-    global _tp
 
     # new pmfx info
     _pmfx = pmfx_info()
@@ -810,6 +846,7 @@ def parse_pmfx(file, root):
 
     _pmfx.json = find_pmfx_json(shader_file_text)
     _pmfx.source = shader_file_text
+    _pmfx.json_text = json.dumps(_pmfx.json)
 
     # pmfx file may be an include or library module containing only functions
     if not _pmfx.json:
@@ -825,25 +862,35 @@ def parse_pmfx(file, root):
     print(file)
     c_code = ""
 
+    pmfx_name = os.path.basename(file).replace(".pmfx", "")
+
     # for techniques in pmfx
     for technique in _pmfx.json:
-        technique_json = inherit_technique(_pmfx.json[technique], _pmfx.json)
+        pmfx_json = json.loads(_pmfx.json_text)
+        technique_json = pmfx_json[technique].copy()
+        technique_json = inherit_technique(technique_json, pmfx_json)
         technique_permutations, define_list, c_defines = generate_permutation_list(technique, technique_json)
         c_code += c_defines
 
-        print(technique)
-
         # for permutations in technique
         for permutation in technique_permutations:
-            print(permutation)
+            pmfx_json = json.loads(_pmfx.json_text)
             _tp = technique_permutation_info()
+            _tp.shader = []
+            _tp.cbuffers = []
+
             # gather technique permutation info
             _tp.id = generate_permutation_id(define_list, permutation)
             _tp.permutation = permutation
             _tp.technique_name = technique
-            _tp.technique = technique_json
+            _tp.technique = inherit_technique(pmfx_json[technique], pmfx_json)
 
-            # print(_tp.technique_name + " " + str(_tp.id))
+            if _tp.id != 0:
+                _tp.name = _tp.technique_name + "__" + str(_tp.id) + "__"
+            else:
+                _tp.name = _tp.technique_name
+
+            print(_tp.name)
 
             # strip condition permutations from source
             _tp.source = evaluate_conditional_blocks(_pmfx.source, permutation)
@@ -855,7 +902,7 @@ def parse_pmfx(file, root):
             _tp.cbuffers = find_constant_buffers(_pmfx.source)
 
             # technique, permutation specific constants
-            _tp.technique, c_struct, tp_cbuffer = generate_technique_constant_buffers(_pmfx.json, _tp)
+            _tp.technique, c_struct, tp_cbuffer = generate_technique_constant_buffers(pmfx_json, _tp)
             c_code += c_struct
 
             # add technique / permutation specific cbuffer to the list
@@ -870,12 +917,15 @@ def parse_pmfx(file, root):
                 for alias in _tp.textures:
                     _tp.texture_decl += str(alias[0]) + "( " + str(alias[1]) + ", " + str(alias[2]) + " );\n"
 
-            # find functions
+            # find functions todo strip unused
             _tp.functions = find_functions(_tp.source)
+            struct_list = find_struct_declarations(_tp.source)
+            _tp.struct_decls = ""
+            for struct in struct_list:
+                _tp.struct_decls += struct + "\n"
 
             # generate single shader data
             shader_types = ["vs", "ps", "cs"]
-            _tp.shader = []
             for s in shader_types:
                 if s in _tp.technique.keys():
                     single_shader = generate_single_shader(_tp.technique[s], _tp)
@@ -885,7 +935,8 @@ def parse_pmfx(file, root):
 
             # convert single shader to platform specific variation
             for s in _tp.shader:
-                compile_hlsl(_info, _tp, s)
+                compile_hlsl(_info, pmfx_name, _tp, s)
+
 
     # write out a c header for accessing materials in code
     if c_code != "":
