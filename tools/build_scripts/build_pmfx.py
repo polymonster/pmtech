@@ -7,6 +7,7 @@ import util
 import math
 import subprocess
 
+
 # paths and info for current build environment
 class build_info:
     shader_platform = ""
@@ -123,6 +124,18 @@ def sanitize_shader_source(shader_source):
     return shader_source
 
 
+# parse and split into an array, from a list of textures or cbuffers etc
+def parse_and_split_block(code_block):
+    start = code_block.find("{") + 1
+    end = code_block.find("};")
+    block_conditioned = code_block[start:end].replace(";", "")
+    block_conditioned = block_conditioned.replace(":", "")
+    block_conditioned = block_conditioned.replace("(", "")
+    block_conditioned = block_conditioned.replace(")", "")
+    block_conditioned = block_conditioned.replace(",", "")
+    return block_conditioned.split()
+
+
 # find the end of a body text enclosed in brackets
 def enclose_brackets(text):
     body_pos = text.find("{")
@@ -137,6 +150,38 @@ def enclose_brackets(text):
             bracket_stack.pop(0)
             body_pos += 1
     return body_pos
+
+
+# replace all "input" and "output" tokens to "_input" and "_ouput" to avoid glsl keywords
+def replace_io_tokens(text):
+    token_io = ["input", "output"]
+    token_io_replace = ["_input", "_output"]
+    token_post_delimiters = ['.', ';', ' ', '(', ')', ',', '-', '+', '*', '/']
+    token_pre_delimiters = [' ', '\t', '\n', '(', ')', ',', '-', '+', '*', '/']
+    split = text.split(' ')
+    split_replace = []
+    for token in split:
+        for i in range(0, len(token_io)):
+            if token_io[i] in token:
+                last_char = len(token_io[i])
+                first_char = token.find(token_io[i])
+                t = token[first_char:first_char+last_char+1]
+                l = len(t)
+                if first_char > 0 and token[first_char-1] not in token_pre_delimiters:
+                    continue
+                if l > last_char:
+                    c = t[last_char]
+                    if c in token_post_delimiters:
+                        token = token.replace(token_io[i], token_io_replace[i])
+                        continue
+                elif l == last_char:
+                    token = token.replace(token_io[i], token_io_replace[i])
+                    continue
+        split_replace.append(token)
+    replaced_text = ""
+    for token in split_replace:
+        replaced_text += token + " "
+    return replaced_text
 
 
 # get info filename for dependency checking
@@ -622,7 +667,7 @@ def generate_permutation_id(define_list, permutation):
 
 
 # generate permutation list from technique json
-def generate_permutation_list(technique, technique_json):
+def generate_permutations(technique, technique_json):
     output_permutations = []
     define_list = []
     permutation_options = dict()
@@ -657,7 +702,7 @@ def generate_permutation_list(technique, technique_json):
         else:
             default_permute = [("SINGLE_PERMUTATION", 1)]
         tp.append(default_permute)
-    return tp, define_list, define_string
+    return tp, permutation_options, permutation_option_mask, define_list, define_string
 
 
 # look for inherit member and inherit another pmfx technique
@@ -789,6 +834,7 @@ def format_source(source, indent_size):
     return formatted
 
 
+# compile hlsl shader model 4
 def compile_hlsl(_info, pmfx_name, _tp, _shader):
     shader_source = _info.macros_source
     shader_source += _tp.struct_decls
@@ -834,6 +880,313 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
     subprocess.call(cmdline, shell=True)
 
 
+# parse shader inputs annd output source into a list of elements and semantics
+def parse_io_struct(source):
+    if len(source) == 0:
+        return [], []
+    io_source = source
+    start = io_source.find("{")
+    end = io_source.find("}")
+    elements = []
+    semantics = []
+    prev_input = start+1
+    next_input = 0
+    while next_input < end:
+        next_input = io_source.find(";", prev_input)
+        if next_input > 0:
+            next_semantic = io_source.find(":", prev_input)
+            elements.append(io_source[prev_input:next_semantic].strip())
+            semantics.append(io_source[next_semantic+1:next_input].strip())
+            prev_input = next_input + 1
+        else:
+            break
+    # the last input will always be "};" pop it out
+    elements.pop(len(elements)-1)
+    semantics.pop(len(semantics)-1)
+    return elements, semantics
+
+
+# generate a global struct to access input structures in a hlsl like manner
+def generate_global_io_struct(io_elements, decl):
+    # global input struct for hlsl compatibility to access like input.value
+    struct_source = decl
+    struct_source += "\n{\n"
+    for element in io_elements:
+        struct_source += element + ";\n"
+    struct_source += "};\n"
+    struct_source += "\n"
+    return struct_source
+
+
+# assign vs or ps inputs to the global struct
+def generate_input_assignment(io_elements, decl, local_var, suffix):
+    assign_source = "//assign " + decl + " struct from glsl inputs\n"
+    assign_source += decl + " " + local_var + ";\n"
+    for element in io_elements:
+        if element.split()[1] == "position" and "vs_output" in decl:
+            continue
+        var_name = element.split()[1]
+        assign_source += local_var + "." + var_name + " = " + var_name + suffix + ";\n"
+    return assign_source
+
+
+# assign vs or ps outputs from the global struct to the output locations
+def generate_output_assignment(io_elements, local_var, suffix):
+    assign_source = "\n//assign glsl global outputs from structs\n"
+    for element in io_elements:
+        var_name = element.split()[1]
+        if var_name == "position":
+           assign_source += "gl_Position = " + local_var + "." + var_name + ";\n"
+        else:
+            assign_source += var_name + suffix + " = " + local_var + "." + var_name + ";\n"
+    return assign_source
+
+
+# compile glsl
+def compile_glsl(_info, pmfx_name, _tp, _shader):
+    # parse inputs and outputs into semantics
+    inputs, input_semantics = parse_io_struct(_shader.input_decl)
+    outputs, output_semantics = parse_io_struct(_shader.output_decl)
+    instance_inputs, instance_input_semantics = parse_io_struct(_shader.instance_input_decl)
+
+    uniform_buffers = ""
+    for cbuf in _tp.cbuffers:
+        name_start = cbuf.find(" ")
+        name_end = cbuf.find(":")
+        uniform_buf = "layout (std140) uniform"
+        uniform_buf += cbuf[name_start:name_end]
+        body_start = cbuf.find("{")
+        body_end = cbuf.find("};") + 2
+        uniform_buf += "\n"
+        uniform_buf += cbuf[body_start:body_end] + "\n"
+        uniform_buffers += uniform_buf + "\n"
+
+    # header and macros
+    shader_source = "//" + pmfx_name + " " + _tp.name + "\n"
+    if "" == "gles":
+        shader_source += "#version 300 es\n"
+        shader_source += "#define GLSL\n"
+        shader_source += "#define GLES\n"
+        shader_source += "precision highp float;\n"
+    elif "glsl" == "glsl":
+        shader_source += "#version 330 core\n"
+        shader_source += "#define GLSL\n"
+    shader_source += _info.macros_source
+
+    # input structs
+    index_counter = 0
+    for input in inputs:
+        if _shader.shader_type == "vs":
+            shader_source += "layout(location = " + str(index_counter) + ") in " + input + "_vs_input;\n"
+        elif _shader.shader_type == "ps":
+            shader_source += "in " + input + "_vs_output;\n"
+        index_counter += 1
+    for instance_input in instance_inputs:
+        shader_source += "layout(location = " + str(index_counter) + ") in " + instance_input + "_instance_input;\n"
+        index_counter += 1
+
+    # outputs structs
+    if _shader.shader_type == "vs":
+        for output in outputs:
+            if output.split()[1] != "position":
+                shader_source += "out " + output + "_" + _shader.shader_type + "_output;\n"
+    elif _shader.shader_type == "ps":
+        for p in range(0, len(outputs)):
+            if "SV_Depth" in output_semantics[p]:
+                continue
+            else:
+                output_index = output_semantics[p].replace("SV_Target", "")
+                if output_index != "":
+                    shader_source += "layout(location = " + output_index + ") "
+                shader_source += "out " + outputs[p] + "_ps_output;\n"
+
+    # global structs for access to inputs or outputs from any function
+    shader_source += generate_global_io_struct(inputs, "struct " + _shader.input_struct_name)
+    if _shader.instance_input_struct_name:
+        shader_source += generate_global_io_struct(instance_inputs, "struct " + _shader.instance_input_struct_name)
+    shader_source += generate_global_io_struct(outputs, "struct " + _shader.output_struct_name)
+
+    shader_source += _tp.struct_decls
+    shader_source += uniform_buffers
+    shader_source += _tp.texture_decl
+    shader_source += _shader.functions_source
+
+    glsl_main = _shader.main_func_source
+    skip_function_start = glsl_main.find("{") + 1
+    skip_function_end = glsl_main.find("return")
+    glsl_main = glsl_main[skip_function_start:skip_function_end].strip()
+
+    input_name = {
+        "vs": "_vs_input",
+        "ps": "_vs_output"
+    }
+
+    output_name = {
+        "vs": "_vs_output",
+        "ps": "_ps_output"
+    }
+
+    pre_assign = generate_input_assignment(inputs, _shader.input_struct_name, "_input", input_name[_shader.shader_type])
+    if _shader.instance_input_struct_name:
+        pre_assign += generate_input_assignment(instance_inputs,
+                                                _shader.instance_input_struct_name, "instance_input", "_instance_input")
+    post_assign = generate_output_assignment(outputs, "_output", output_name[_shader.shader_type])
+
+    shader_source += "void main()\n{\n"
+    shader_source += "\n" + pre_assign + "\n"
+    shader_source += glsl_main
+    shader_source += "\n" + post_assign + "\n"
+    shader_source += "}\n"
+
+    # condition source
+    shader_source = replace_io_tokens(shader_source)
+    shader_source = format_source(shader_source, 4)
+
+    extension = {
+        "vs": ".vs",
+        "ps": ".ps"
+    }
+
+    temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
+    output_path = os.path.join(_info.root_dir, "compiled", pmfx_name, "v2")
+    os.makedirs(temp_path, exist_ok=True)
+    os.makedirs(output_path, exist_ok=True)
+
+    temp_file_and_path = os.path.join(temp_path, _tp.name + extension[_shader.shader_type])
+
+    temp_shader_source = open(temp_file_and_path, "w")
+    temp_shader_source.write(shader_source)
+    temp_shader_source.close()
+
+
+# generate a shader info file with an array of technique permutation descriptions and dependency timestamps
+def generate_shader_info(filename, included_files, techniques):
+    global _info
+    print(filename)
+    info_filename, base_filename, dir_path = get_resource_info_filename(filename, _info.output_dir)
+
+    shader_info = dict()
+    shader_info["files"] = []
+    shader_info["techniques"] = techniques
+
+    # special files which affect the validity of compiled shaders
+    shader_info["files"].append(dependencies.create_info(_info.this_file))
+    shader_info["files"].append(dependencies.create_info(_info.macros_file))
+
+    included_files.insert(0, os.path.join(dir_path, base_filename))
+    for ifile in included_files:
+        full_name = os.path.join(_info.root_dir, ifile)
+        shader_info["files"].append(dependencies.create_info(full_name))
+
+    output_info = open(info_filename, 'wb+')
+    output_info.write(bytes(json.dumps(shader_info, indent=4), 'UTF-8'))
+    output_info.close()
+    return shader_info
+
+
+# generate json description of vs inputs and outputs
+def generate_input_info(inputs):
+    semantic_info = [
+        ["SV_POSITION", "4"],
+        ["POSITION", "4"],
+        ["TEXCOORD", "4"],
+        ["NORMAL", "4"],
+        ["TANGENT", "4"],
+        ["BITANGENT", "4"],
+        ["COLOR", "1"],
+        ["BLENDINDICES", "1"]
+    ]
+    type_info = ["int", "uint", "float", "double"]
+    input_desc = []
+    inputs_split = parse_and_split_block(inputs)
+    offset = int(0)
+    for i in range(0, len(inputs_split), 3):
+        num_elements = 1
+        element_size = 1
+        for type in type_info:
+            if inputs_split[i].find(type) != -1:
+                str_num = inputs_split[i].replace(type, "")
+                if str_num != "":
+                    num_elements = int(str_num)
+        for sem in semantic_info:
+            if inputs_split[i+2].find(sem[0]) != -1:
+                semantic_id = semantic_info.index(sem)
+                semantic_name = sem[0]
+                semantic_index = inputs_split[i+2].replace(semantic_name, "")
+                if semantic_index == "":
+                    semantic_index = "0"
+                element_size = sem[1]
+                break
+        size = int(element_size) * int(num_elements)
+        input_attribute = {
+            "name": inputs_split[i+1],
+            "semantic_index": int(semantic_index),
+            "semantic_id": int(semantic_id),
+            "size": int(size),
+            "element_size": int(element_size),
+            "num_elements": int(num_elements),
+            "offset": int(offset),
+        }
+        input_desc.append(input_attribute)
+        offset += size
+    return input_desc
+
+
+# generate metadata for the technique with info about textures, cbuffers, inputs, outputs, binding points and more
+def generate_technique_permutation_info(_tp):
+    _tp.technique["name"] = _tp.technique_name
+    # textures
+    texture_samplers_split = parse_and_split_block(_tp.texture_decl)
+    i = 0
+    _tp.technique["texture_samplers"] = []
+    while i < len(texture_samplers_split):
+        offset = i
+        tex_type = texture_samplers_split[i+0]
+        if tex_type == "texture_2dms":
+            data_type = texture_samplers_split[i+1]
+            fragments = texture_samplers_split[i+2]
+            offset = i+2
+        else:
+            data_type = "float4"
+            fragments = 1
+        sampler_desc = {
+            "name": texture_samplers_split[offset+1],
+            "data_type": data_type,
+            "fragments": fragments,
+            "type": tex_type,
+            "unit": int(texture_samplers_split[offset+2])
+        }
+        i = offset+3
+        _tp.technique["texture_samplers"].append(sampler_desc)
+    # cbuffers
+    _tp.technique["cbuffers"] = []
+    for buffer in _tp.cbuffers:
+        pos = buffer.find("{")
+        if pos == -1:
+            continue
+        buffer_decl = buffer[0:pos-1]
+        buffer_decl_split = buffer_decl.split(":")
+        buffer_name = buffer_decl_split[0].split()[1]
+        buffer_loc_start = buffer_decl_split[1].find("(") + 1
+        buffer_loc_end = buffer_decl_split[1].find(")", buffer_loc_start)
+        buffer_reg = buffer_decl_split[1][buffer_loc_start:buffer_loc_end]
+        buffer_reg = buffer_reg.strip('b')
+        buffer_desc = {"name": buffer_name, "location": int(buffer_reg)}
+        _tp.technique["cbuffers"].append(buffer_desc)
+    # io structs from vs.. vs input, instance input, vs output (ps input)
+    _tp.technique["vs_inputs"] = generate_input_info(_tp.shader[0].input_decl)
+    _tp.technique["instance_inputs"] = generate_input_info(_tp.shader[0].instance_input_decl)
+    _tp.technique["vs_outputs"] = generate_input_info(_tp.shader[0].output_decl)
+    # vs and ps files
+    _tp.technique["vs_file"] = _tp.name + ".vsc"
+    _tp.technique["ps_file"] = _tp.name + ".psc"
+    # permutation
+    _tp.technique["permutations"] = _tp.permutation_options
+    _tp.technique["permutation_id"] = _tp.id
+    _tp.technique["permutation_option_mask"] = _tp.mask
+    return _tp.technique
+
+
 # parse a pmfx file which is a collection of techniques and permutations, made up of vs, ps, cs combinations
 def parse_pmfx(file, root):
     global _info
@@ -864,12 +1217,15 @@ def parse_pmfx(file, root):
 
     pmfx_name = os.path.basename(file).replace(".pmfx", "")
 
+    pmfx_output_info = dict()
+    pmfx_output_info["techniques"] = []
+
     # for techniques in pmfx
     for technique in _pmfx.json:
         pmfx_json = json.loads(_pmfx.json_text)
         technique_json = pmfx_json[technique].copy()
         technique_json = inherit_technique(technique_json, pmfx_json)
-        technique_permutations, define_list, c_defines = generate_permutation_list(technique, technique_json)
+        technique_permutations, permutation_options, mask, define_list, c_defines = generate_permutations(technique, technique_json)
         c_code += c_defines
 
         # for permutations in technique
@@ -884,6 +1240,8 @@ def parse_pmfx(file, root):
             _tp.permutation = permutation
             _tp.technique_name = technique
             _tp.technique = inherit_technique(pmfx_json[technique], pmfx_json)
+            _tp.mask = mask
+            _tp.permutation_options = permutation_options
 
             if _tp.id != 0:
                 _tp.name = _tp.technique_name + "__" + str(_tp.id) + "__"
@@ -895,7 +1253,7 @@ def parse_pmfx(file, root):
             # strip condition permutations from source
             _tp.source = evaluate_conditional_blocks(_pmfx.source, permutation)
 
-            # get permutation constants.. todo textures
+            # get permutation constants..
             _tp.technique = get_permutation_conditionals(_tp.technique, _tp.permutation)
 
             # global cbuffers
@@ -908,7 +1266,7 @@ def parse_pmfx(file, root):
             # add technique / permutation specific cbuffer to the list
             _tp.cbuffers.append(tp_cbuffer)
 
-            # technique, permutation specific textures.. todo strip unused
+            # technique, permutation specific textures..
             _tp.textures = generate_technique_texture_variables(_tp)
             _tp.texture_decl = find_texture_samplers(_tp.source)
 
@@ -917,8 +1275,10 @@ def parse_pmfx(file, root):
                 for alias in _tp.textures:
                     _tp.texture_decl += str(alias[0]) + "( " + str(alias[1]) + ", " + str(alias[2]) + " );\n"
 
-            # find functions todo strip unused
+            # find functions
             _tp.functions = find_functions(_tp.source)
+
+            # find structs
             struct_list = find_struct_declarations(_tp.source)
             _tp.struct_decls = ""
             for struct in struct_list:
@@ -935,8 +1295,13 @@ def parse_pmfx(file, root):
 
             # convert single shader to platform specific variation
             for s in _tp.shader:
-                compile_hlsl(_info, pmfx_name, _tp, s)
+                # compile_hlsl(_info, pmfx_name, _tp, s)
+                compile_glsl(_info, pmfx_name, _tp, s)
 
+            pmfx_output_info["techniques"].append(generate_technique_permutation_info(_tp))
+
+    # write a shader info file with timestamp for dependencies
+    generate_shader_info(file_and_path, included_files, pmfx_output_info)
 
     # write out a c header for accessing materials in code
     if c_code != "":
@@ -968,7 +1333,7 @@ if __name__ == "__main__":
     _info.build_config = json.loads(config.read())
     _info.pmtech_dir = util.correct_path(_info.build_config["pmtech_dir"])
     _info.tools_dir = os.path.join(_info.pmtech_dir, "tools")
-    _info.output_dir = os.path.join(_info.root_dir, "bin", _info.os_platform, "data", "pmfx", _info.shader_platform)
+    _info.output_dir = os.path.join(_info.root_dir, "bin", _info.os_platform, "data", "pmfx_v2", _info.shader_platform)
     _info.this_file = os.path.join(_info.root_dir, _info.tools_dir, "build_scripts", "build_shaders.py")
     _info.macros_file = os.path.join(_info.root_dir, _info.tools_dir, "_shader_macros.h")
 

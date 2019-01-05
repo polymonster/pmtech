@@ -306,7 +306,7 @@ if __name__ == "__main__":
         parse_args(sys.argv)
 
     if v2:
-        shader_script = os.path.join(tools_dir, "build_scripts", "build_shaders_v2.py")
+        shader_script = os.path.join(tools_dir, "build_scripts", "build_pmfx.py")
 
     get_platform_info()
     copy_steps = []
