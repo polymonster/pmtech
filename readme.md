@@ -8,12 +8,9 @@ A lightweight code base with powerful features that can be used for games and re
 Take a look at: 
 [demos...](https://polymonster.github.io/index.html)
 
-**Platforms**  
-- OS: Windows, MacOS, Linux, iOS, Android (wip).  
-- Renderers: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal (wip).   
-- Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
-
 **Features**  
+- Cross Platform: Windows, MacOS, Linux, iOS, Android (wip).  
+- Multiple Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal (wip).   
 - Multithreaded - Async render, physics, audio and component entity system. 
 - Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
 - Pmfx - High level data driven renderer, shader and post-processing system.
@@ -21,6 +18,7 @@ Take a look at:
 - Hot loading - reload configs, shaders, models and textures in real time for rapid development.
 - Tools - Graphical editor, volume texture / signed distance field generator.
 - Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
+- Supported Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 
 **Usage**  
 
