@@ -10,7 +10,7 @@ Take a look at:
 
 **Features**  
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
-- Multiple Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
+- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
 - Multithreaded - Async render, physics, audio and component entity system.  
 - Data-oriented component entity system - SoA memory layout for blazing fast scene representation.
 - Lightweight - Simple minimal apis, shallow call stacks, no external dependencies.
