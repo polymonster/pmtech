@@ -682,13 +682,33 @@ namespace pen
 
         if (info_log_length > 0)
         {
-            // PEN_LOG("%s", params.byte_code);
+            // print line by line
+            char* lc = (char*)params.byte_code;
+            int line = 2;
+            while(*lc != '\0')
+            {
+                Str str_line = "";
+                
+                while(*lc != '\n' && *lc != '\0')
+                {
+                    str_line.append(*lc);
+                    ++lc;
+                }
+                
+                PEN_LOG("%i: %s", line, str_line.c_str());
+                ++line;
+                
+                if(*lc == '\0')
+                    break;
+                
+                ++lc;
+            }
 
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]));
-
             PEN_LOG(info_log_buf);
+            PEN_ASSERT(0);
         }
     }
 

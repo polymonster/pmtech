@@ -10,8 +10,10 @@ import subprocess
 
 # paths and info for current build environment
 class build_info:
-    shader_platform = ""
-    os_platform = ""
+    shader_platform = ""                                                # hlsl, glsl, metal
+    shader_sub_platform = ""                                            # gles
+    shader_version = ""                                                 # 4_0 (sm 4.0), 330 (glsl 330), 450 (glsl
+    os_platform = ""                                                    # win32, osx, linux, ios, android
     root_dir = ""
     build_config = ""
     pmtech_dir = ""
@@ -24,39 +26,38 @@ class build_info:
 
 # info and contents of a .pmfx file
 class pmfx_info:
-    includes = ""
-    json = ""
-    source = ""
-    constant_buffers = ""
-    texture_samplers = ""
+    includes = ""                                                       # list of included files
+    json = ""                                                           # json object containing techniques
+    json_text = ""                                                      # json as text to reload mutable dictionary
+    source = ""                                                         # source code of the entire shader +includes
+
+
+# info of pmfx technique permutation which is a combination of vs,ps or cs
+class technique_permutation_info:
+    technique_name = ""                                                 # name of technique
+    technique = ""                                                      # technique / permutation json
+    permutation = ""                                                    # permutation options
+    source = ""                                                         # conditioned source code for permute
+    id = ""                                                             # permutation id
+    cbuffers = []                                                       # list of cbuffers source code
+    functions = []                                                      # list of functions source code
+    textures = []                                                       # technique / permutation textures
+    shader = []                                                         # list of shaders, vs, ps or cs
 
 
 # info about a single vs, ps, or cs
 class single_shader_info:
-    shader_type = ""
-    main_func_name = ""
-    functions_source = ""
-    main_func_source = ""
-    input_struct_name = ""
-    instance_input_struct_name = ""
-    output_struct_name = ""
-    input_decl = ""
-    instance_input_decl = ""
-    output_decl = ""
-    struct_decls = ""
-
-
-# info of pmfx technique permutation
-class technique_permutation_info:
-    technique_name = ""                                                     # name of technique
-    technique = ""                                                          # technique / permutation json
-    permutation = ""                                                        # permutation options
-    source = ""                                                             # conditioned source code for permute
-    id = ""                                                                 # permutation id
-    cbuffers = []                                                           # list of cbuffers source code
-    functions = []                                                          # list of functions source code
-    textures = []                                                           # technique / permutation textures
-    shader = []                                                             # list of shaders, vs, ps or cs
+    shader_type = ""                                                    # ie. vs (vertex), ps (pixel), cs (compute)
+    main_func_name = ""                                                 # entry point ie. vs_main
+    functions_source = ""                                               # source code of all used functions
+    main_func_source = ""                                               # source code of main function
+    input_struct_name = ""                                              # name of input to shader ie. vs_input
+    instance_input_struct_name = ""                                     # name of instance input to vertex shader
+    output_struct_name = ""                                             # name of output from shader ie. vs_output
+    input_decl = ""                                                     # struct decl of input struct
+    instance_input_decl = ""                                            # struct decl of instance input struct
+    output_decl = ""                                                    # struct decl of shader output
+    struct_decls = ""                                                   # decls of all generic structs
 
 
 # parse command line args passed in
@@ -804,6 +805,8 @@ def generate_single_shader(main_func, _tp):
 
     if _si.instance_input_struct_name:
         _si.instance_input_decl, main = strip_empty_inputs(_si.instance_input_decl, main)
+        if _si.instance_input_decl == "":
+            _si.instance_input_struct_name = None
 
     _si.main_func_source = main
 
@@ -953,6 +956,8 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     for cbuf in _tp.cbuffers:
         name_start = cbuf.find(" ")
         name_end = cbuf.find(":")
+        if name_end == -1:
+            continue
         uniform_buf = "layout (std140) uniform"
         uniform_buf += cbuf[name_start:name_end]
         body_start = cbuf.find("{")
@@ -962,7 +967,7 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
         uniform_buffers += uniform_buf + "\n"
 
     # header and macros
-    shader_source = "//" + pmfx_name + " " + _tp.name + "\n"
+    shader_source = "//" + pmfx_name + " " + _tp.name + " " + _shader.shader_type + " " + str(_tp.id) + "\n"
     if "" == "gles":
         shader_source += "#version 300 es\n"
         shader_source += "#define GLSL\n"
@@ -1004,7 +1009,8 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     shader_source += generate_global_io_struct(inputs, "struct " + _shader.input_struct_name)
     if _shader.instance_input_struct_name:
         shader_source += generate_global_io_struct(instance_inputs, "struct " + _shader.instance_input_struct_name)
-    shader_source += generate_global_io_struct(outputs, "struct " + _shader.output_struct_name)
+    if len(outputs) > 0:
+        shader_source += generate_global_io_struct(outputs, "struct " + _shader.output_struct_name)
 
     shader_source += _tp.struct_decls
     shader_source += uniform_buffers
@@ -1043,20 +1049,18 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     shader_source = format_source(shader_source, 4)
 
     extension = {
-        "vs": ".vs",
-        "ps": ".ps"
+        "vs": ".vsc",
+        "ps": ".psc"
     }
 
-    temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
-    output_path = os.path.join(_info.root_dir, "compiled", pmfx_name, "v2")
-    os.makedirs(temp_path, exist_ok=True)
+    output_path = os.path.join(_info.output_dir, pmfx_name)
     os.makedirs(output_path, exist_ok=True)
 
-    temp_file_and_path = os.path.join(temp_path, _tp.name + extension[_shader.shader_type])
+    output_file_and_path = os.path.join(output_path, _tp.name + extension[_shader.shader_type])
 
-    temp_shader_source = open(temp_file_and_path, "w")
-    temp_shader_source.write(shader_source)
-    temp_shader_source.close()
+    shader_file = open(output_file_and_path, "w")
+    shader_file.write(shader_source)
+    shader_file.close()
 
 
 # generate a shader info file with an array of technique permutation descriptions and dependency timestamps
@@ -1067,7 +1071,7 @@ def generate_shader_info(filename, included_files, techniques):
 
     shader_info = dict()
     shader_info["files"] = []
-    shader_info["techniques"] = techniques
+    shader_info["techniques"] = techniques["techniques"]
 
     # special files which affect the validity of compiled shaders
     shader_info["files"].append(dependencies.create_info(_info.this_file))
@@ -1138,7 +1142,7 @@ def generate_technique_permutation_info(_tp):
     # textures
     texture_samplers_split = parse_and_split_block(_tp.texture_decl)
     i = 0
-    _tp.technique["texture_samplers"] = []
+    _tp.technique["texture_sampler_bindings"] = []
     while i < len(texture_samplers_split):
         offset = i
         tex_type = texture_samplers_split[i+0]
@@ -1157,7 +1161,7 @@ def generate_technique_permutation_info(_tp):
             "unit": int(texture_samplers_split[offset+2])
         }
         i = offset+3
-        _tp.technique["texture_samplers"].append(sampler_desc)
+        _tp.technique["texture_sampler_bindings"].append(sampler_desc)
     # cbuffers
     _tp.technique["cbuffers"] = []
     for buffer in _tp.cbuffers:
@@ -1270,10 +1274,13 @@ def parse_pmfx(file, root):
             _tp.textures = generate_technique_texture_variables(_tp)
             _tp.texture_decl = find_texture_samplers(_tp.source)
 
+            _tp.technique_perm_texture_decl = ""
             # add technique textures
             if _tp.textures:
                 for alias in _tp.textures:
-                    _tp.texture_decl += str(alias[0]) + "( " + str(alias[1]) + ", " + str(alias[2]) + " );\n"
+                    decl = str(alias[0]) + "( " + str(alias[1]) + ", " + str(alias[2]) + " );\n"
+                    _tp.texture_decl += decl
+                    _tp.technique_perm_texture_decl += decl
 
             # find functions
             _tp.functions = find_functions(_tp.source)

@@ -157,9 +157,8 @@ namespace put
         void get_link_params_constants(pen::shader_link_params& link_params, const pen::json& j_info,
                                        const pen::json& j_technique)
         {
-            u32 num_constants =
-                j_info["cbuffers"].size() + j_info["texture_samplers"].size() + j_technique["texture_samplers"].size();
-
+            u32 num_constants = j_technique["cbuffers"].size() + j_technique["texture_sampler_bindings"].size();
+            
             link_params.num_constants = num_constants;
 
             link_params.constants =
@@ -169,7 +168,7 @@ namespace put
             // .. per technique constants go into: material_data(7), todo rename to techhnique_data
 
             u32       cc = 0;
-            pen::json j_cbuffers = j_info["cbuffers"];
+            pen::json j_cbuffers = j_technique["cbuffers"];
             for (s32 i = 0; i < j_cbuffers.size(); ++i)
             {
                 pen::json cbuf = j_cbuffers[i];
@@ -192,46 +191,36 @@ namespace put
 
             static Str sampler_type_names[] = {"texture_2d", "texture_3d", "texture_cube", "texture_2dms"};
 
-            // per pmfx textures [0]
-            // per technique texture samplers [1]
-            pen::json j_samplers_[2];
-
-            j_samplers_[0] = j_info["texture_samplers"];
-            j_samplers_[1] = j_technique["texture_samplers"];
-
-            for (u32 s = 0; s < 2; ++s)
+            const pen::json& j_samplers = j_technique["texture_sampler_bindings"];
+            
+            for (s32 i = 0; i < j_samplers.size(); ++i)
             {
-                const pen::json& j_samplers = j_samplers_[s];
-
-                for (s32 i = 0; i < j_samplers.size(); ++i)
+                pen::json sampler = j_samplers[i];
+                
+                Str name_str = sampler["name"].as_str();
+                if (!sampler["name"].as_cstr())
+                    name_str = sampler.key();
+                
+                u32 name_len = name_str.length();
+                
+                link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len + 1);
+                
+                memcpy(link_params.constants[cc].name, name_str.c_str(), name_len);
+                
+                link_params.constants[cc].name[name_len] = '\0';
+                
+                link_params.constants[cc].location = sampler["unit"].as_u32();
+                
+                for (u32 i = 0; i < 4; ++i)
                 {
-                    pen::json sampler = j_samplers[i];
-
-                    Str name_str = sampler["name"].as_str();
-                    if (!sampler["name"].as_cstr())
-                        name_str = sampler.key();
-
-                    u32 name_len = name_str.length();
-
-                    link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len + 1);
-
-                    memcpy(link_params.constants[cc].name, name_str.c_str(), name_len);
-
-                    link_params.constants[cc].name[name_len] = '\0';
-
-                    link_params.constants[cc].location = sampler["unit"].as_u32();
-
-                    for (u32 i = 0; i < 4; ++i)
+                    if (sampler["type"].as_str() == sampler_type_names[i])
                     {
-                        if (sampler["type"].as_str() == sampler_type_names[i])
-                        {
-                            link_params.constants[cc].type = (pen::constant_type)i;
-                            break;
-                        }
+                        link_params.constants[cc].type = (pen::constant_type)i;
+                        break;
                     }
-
-                    cc++;
                 }
+                
+                cc++;
             }
         }
 
@@ -292,29 +281,24 @@ namespace put
             }
         }
 
-        shader_program load_shader_technique(const c8* fx_filename, pen::json& j_techique, pen::json& j_info)
+        shader_program load_shader_technique(const c8* fx_filename, pen::json& j_technique, pen::json& j_info)
         {
             shader_program program = {0};
 
-            Str name = j_techique["name"].as_str();
-
-            if (name == "tex_2d")
-            {
-                u32 a = 0;
-            }
+            Str name = j_technique["name"].as_str();
 
             program.name = name;
             program.id_name = PEN_HASH(name.c_str());
             program.id_sub_type = PEN_HASH("");
-            program.permutation_id = j_techique["permutation_id"].as_u32();
-            program.permutation_option_mask = j_techique["permutation_option_mask"].as_u32();
+            program.permutation_id = j_technique["permutation_id"].as_u32();
+            program.permutation_option_mask = j_technique["permutation_option_mask"].as_u32();
 
             const c8* sfp = pen::renderer_get_shader_platform();
 
             // vertex shader
             c8* vs_file_buf = (c8*)pen::memory_alloc(256);
-            Str vs_filename_str = j_techique["vs_file"].as_str();
-            pen::string_format(vs_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, vs_filename_str.c_str());
+            Str vs_filename_str = j_technique["vs_file"].as_str();
+            pen::string_format(vs_file_buf, 256, "data/pmfx_v2/%s/%s/%s", sfp, fx_filename, vs_filename_str.c_str());
 
             pen::shader_load_params vs_slp;
             vs_slp.type = PEN_SHADER_TYPE_VS;
@@ -330,12 +314,12 @@ namespace put
             }
 
             // vertex stream out shader
-            bool stream_out = j_techique["stream_out"].as_bool();
+            bool stream_out = j_technique["stream_out"].as_bool();
             if (stream_out)
             {
                 vs_slp.type = PEN_SHADER_TYPE_SO;
 
-                u32 num_vertex_outputs = j_techique["vs_outputs"].size();
+                u32 num_vertex_outputs = j_technique["vs_outputs"].size();
 
                 u32                         decl_size_bytes = sizeof(pen::stream_out_decl_entry) * num_vertex_outputs;
                 pen::stream_out_decl_entry* so_decl = (pen::stream_out_decl_entry*)pen::memory_alloc(decl_size_bytes);
@@ -350,7 +334,7 @@ namespace put
 
                 for (u32 vo = 0; vo < num_vertex_outputs; ++vo)
                 {
-                    pen::json voj = j_techique["vs_outputs"][vo];
+                    pen::json voj = j_technique["vs_outputs"][vo];
 
                     so_decl[vo].stream = 0;
                     so_decl[vo].semantic_name = semantic_names[voj["semantic_id"].as_u32()];
@@ -377,7 +361,7 @@ namespace put
 
                 pen::memory_free(vs_slp.so_decl_entries);
 
-                get_link_params_constants(slp, j_info, j_techique);
+                get_link_params_constants(slp, j_info, j_technique);
 
                 slp.stream_out_shader = program.stream_out_shader;
                 slp.vertex_shader = 0;
@@ -390,7 +374,7 @@ namespace put
                 ilp.vs_byte_code = vs_slp.byte_code;
                 ilp.vs_byte_code_size = vs_slp.byte_code_size;
 
-                get_input_layout_params(ilp, j_techique);
+                get_input_layout_params(ilp, j_technique);
 
                 program.input_layout = pen::renderer_create_input_layout(ilp);
 
@@ -403,9 +387,9 @@ namespace put
 
             // pixel shader
             c8* ps_file_buf = (c8*)pen::memory_alloc(256);
-            Str ps_filename_str = j_techique["ps_file"].as_str();
+            Str ps_filename_str = j_technique["ps_file"].as_str();
 
-            pen::string_format(ps_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str());
+            pen::string_format(ps_file_buf, 256, "data/pmfx_v2/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str());
 
             pen::shader_load_params ps_slp;
             ps_slp.type = PEN_SHADER_TYPE_PS;
@@ -427,7 +411,7 @@ namespace put
             ilp.vs_byte_code = vs_slp.byte_code;
             ilp.vs_byte_code_size = vs_slp.byte_code_size;
 
-            get_input_layout_params(ilp, j_techique);
+            get_input_layout_params(ilp, j_technique);
 
             program.input_layout = pen::renderer_create_input_layout(ilp);
 
@@ -441,7 +425,7 @@ namespace put
             link_params.stream_out_shader = 0;
             link_params.stream_out_names = nullptr;
             
-            get_link_params_constants(link_params, j_info, j_techique);
+            get_link_params_constants(link_params, j_info, j_technique);
 
             program.program_index = pen::renderer_link_shader_program(link_params);
 
@@ -449,11 +433,11 @@ namespace put
 
             // generate technique textures meta data
             program.textures = nullptr;
-            u32 num_technique_textues = j_techique["texture_samplers"].size();
+            u32 num_technique_textues = j_technique["texture_samplers"].size();
 
             for (u32 i = 0; i < num_technique_textues; ++i)
             {
-                pen::json jt = j_techique["texture_samplers"][i];
+                pen::json jt = j_technique["texture_samplers"][i];
 
                 technique_sampler tt;
 
@@ -474,8 +458,8 @@ namespace put
 
             // generate technique constants meta data
             program.constants = nullptr;
-            u32 num_technique_constants = j_techique["constants"].size();
-            program.technique_constant_size = j_techique["constants_size_bytes"].as_u32(0);
+            u32 num_technique_constants = j_technique["constants"].size();
+            program.technique_constant_size = j_technique["constants_size_bytes"].as_u32(0);
 
             if (program.technique_constant_size > 0)
                 program.constant_defaults = (f32*)pen::memory_alloc(program.technique_constant_size);
@@ -483,7 +467,7 @@ namespace put
             u32 constant_offset = 0;
             for (u32 i = 0; i < num_technique_constants; ++i)
             {
-                pen::json jc = j_techique["constants"][i];
+                pen::json jc = j_technique["constants"][i];
 
                 technique_constant tc;
                 tc.name = jc.name();
@@ -529,15 +513,15 @@ namespace put
 
             // generate permutation metadata
             program.permutations = nullptr;
-            u32 num_permutations = j_techique["permutations"].size();
+            u32 num_permutations = j_technique["permutations"].size();
 
             for (u32 i = 0; i < num_permutations; ++i)
             {
                 technique_permutation tp;
-                tp.name = j_techique["permutations"][i].key();
-                tp.val = j_techique["permutations"][i]["val"].as_u32();
+                tp.name = j_technique["permutations"][i].key();
+                tp.val = j_technique["permutations"][i]["val"].as_u32();
 
-                hash_id id_widget = j_techique["permutations"][i]["type"].as_hash_id();
+                hash_id id_widget = j_technique["permutations"][i]["type"].as_hash_id();
 
                 static hash_id id_checkbox = PEN_HASH("checkbox");
                 static hash_id id_input = PEN_HASH("input");
@@ -727,7 +711,7 @@ namespace put
 
         void get_pmfx_info_filename(c8* file_buf, const c8* pmfx_filename)
         {
-            pen::string_format(file_buf, 256, "data/pmfx/%s/%s/info.json", pen::renderer_get_shader_platform(),
+            pen::string_format(file_buf, 256, "data/pmfx_v2/%s/%s/info.json", pen::renderer_get_shader_platform(),
                                pmfx_filename);
         }
 
