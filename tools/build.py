@@ -233,6 +233,7 @@ if __name__ == "__main__":
     print("pmtech build -------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
 
+    # for experimental new versions of build components
     global v2
     v2 = False
 
@@ -293,7 +294,7 @@ if __name__ == "__main__":
     premake_exec += " --scripts="
     premake_exec += android_studio
 
-    shader_script = os.path.join(tools_dir, "build_scripts", "build_shaders.py")
+    shader_script = os.path.join(tools_dir, "build_scripts", "build_pmfx.py")
     textures_script = os.path.join(tools_dir, "build_scripts", "build_textures.py")
     audio_script = os.path.join(tools_dir, "build_scripts", "build_audio.py")
     models_script = os.path.join(tools_dir, "build_scripts", "build_models.py")
@@ -304,9 +305,6 @@ if __name__ == "__main__":
         display_prompted_input()
     else:
         parse_args(sys.argv)
-
-    if v2:
-        shader_script = os.path.join(tools_dir, "build_scripts", "build_pmfx.py")
 
     get_platform_info()
     copy_steps = []

@@ -1057,10 +1057,14 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     shader_file.close()
 
 
+# compile shader for apple metal
+def compile_metal(_info, pmfx_name, _tp, _shader):
+    print("wip")
+
+
 # generate a shader info file with an array of technique permutation descriptions and dependency timestamps
 def generate_shader_info(filename, included_files, techniques):
     global _info
-    print(filename)
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, _info.output_dir)
 
     shader_info = dict()
@@ -1204,7 +1208,7 @@ def parse_pmfx(file, root):
         return
 
     # check dependencies
-    force = True
+    force = False
     up_to_date = check_dependencies(file_and_path, included_files)
     if up_to_date and not force:
         print(file + " file up to date")
@@ -1296,8 +1300,14 @@ def parse_pmfx(file, root):
 
             # convert single shader to platform specific variation
             for s in _tp.shader:
-                # compile_hlsl(_info, pmfx_name, _tp, s)
-                compile_glsl(_info, pmfx_name, _tp, s)
+                if _info.shader_platform == "hlsl":
+                    compile_hlsl(_info, pmfx_name, _tp, s)
+                elif _info.shader_platform == "glsl":
+                    compile_glsl(_info, pmfx_name, _tp, s)
+                elif _info.shader_platform == "metal":
+                    compile_metal(_info, pmfx_name, _tp, s)
+                else:
+                    print("error: invalid shader platform " + _info.shader_platform)
 
             pmfx_output_info["techniques"].append(generate_technique_permutation_info(_tp))
 
@@ -1330,9 +1340,11 @@ if __name__ == "__main__":
     # pm build config
     config = open("build_config.json")
 
+    if _info.os_platform == "ios" or _info.os_platform == "android":
+        _info.shader_sub_platform = "gles"
+
     # get dirs for build output
     _info.root_dir = os.getcwd()
-
     _info.build_config = json.loads(config.read())
     _info.pmtech_dir = util.correct_path(_info.build_config["pmtech_dir"])
     _info.tools_dir = os.path.join(_info.pmtech_dir, "tools")
