@@ -470,21 +470,21 @@ namespace pen
 
     void renderer_wait_init()
     {
-        thread_semaphore_wait(p_continue_semaphore);
+        semaphore_wait(p_continue_semaphore);
     }
 
     void renderer_consume_cmd_buffer()
     {
         if (p_consume_semaphore)
         {
-            thread_semaphore_signal(p_consume_semaphore, 1);
-            thread_semaphore_wait(p_continue_semaphore);
+            semaphore_post(p_consume_semaphore, 1);
+            semaphore_wait(p_continue_semaphore);
         }
     }
 
     bool renderer_dispatch()
     {
-        if (thread_semaphore_try_wait(p_consume_semaphore))
+        if (semaphore_try_wait(p_consume_semaphore))
         {
             // put_pos might change on the producer thread.
             u32 end_pos = put_pos;
@@ -492,7 +492,7 @@ namespace pen
             // need more commands
             PEN_ASSERT(commands_this_frame < MAX_COMMANDS);
 
-            thread_semaphore_signal(p_continue_semaphore, 1);
+            semaphore_post(p_continue_semaphore, 1);
 
             // some api's need to set the current context on the caller thread.
             direct::renderer_make_context_current();
@@ -514,7 +514,7 @@ namespace pen
     void renderer_wait_for_jobs()
     {
         // this is a dedicated thread which stays for the duration of the program
-        thread_semaphore_signal(p_continue_semaphore, 1);
+        semaphore_post(p_continue_semaphore, 1);
 
         for (;;)
         {
@@ -590,10 +590,10 @@ namespace pen
     void renderer_init(void* user_data, bool wait_for_jobs)
     {
         if (!p_consume_semaphore)
-            p_consume_semaphore = thread_semaphore_create(0, 1);
+            p_consume_semaphore = semaphore_create(0, 1);
 
         if (!p_continue_semaphore)
-            p_continue_semaphore = thread_semaphore_create(0, 1);
+            p_continue_semaphore = semaphore_create(0, 1);
 
         // clear command buffer
         memset(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);

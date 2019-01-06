@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
     renderer_init(nullptr, true);
 
     // exit, kill other threads and wait
-    pen::thread_terminate_jobs();
+    pen::jobs_terminate_all();
 
     XDestroyWindow(_display, _window);
     XCloseDisplay(_display);
@@ -332,7 +332,7 @@ namespace pen
             // audio, user thread etc
             pen::default_thread_info thread_info;
             thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD;
-            pen::thread_create_default_jobs(thread_info);
+            pen::jobs_create_default(thread_info);
             init_jobs = true;
         }
 
@@ -425,7 +425,7 @@ namespace pen
         static bool pen_terminate_app = false;
         if (pen_terminate_app)
         {
-            if (pen::thread_terminate_jobs())
+            if (pen::jobs_terminate_all())
                 return false;
         }
 

@@ -11,7 +11,7 @@ int main()
 
 namespace pen
 {
-    void thread_semaphore_signal(pen::semaphore*, unsigned int)
+    void semaphore_post(pen::semaphore*, unsigned int)
     {
     }
 
@@ -19,7 +19,7 @@ namespace pen
     {
     }
 
-    bool thread_semaphore_try_wait(pen::semaphore*)
+    bool semaphore_try_wait(pen::semaphore*)
     {
         return true;
     }

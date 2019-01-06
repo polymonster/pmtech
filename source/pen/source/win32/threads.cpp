@@ -40,7 +40,7 @@ namespace pen
         SuspendThread(p_thread->handle);
     }
 
-    pen::mutex* thread_mutex_create()
+    pen::mutex* mutex_create()
     {
         pen::mutex* new_mutex = (pen::mutex*)pen::memory_alloc(sizeof(pen::mutex));
 
@@ -49,30 +49,30 @@ namespace pen
         return new_mutex;
     }
 
-    void thread_mutex_destroy(mutex* p_mutex)
+    void mutex_destroy(mutex* p_mutex)
     {
         DeleteCriticalSection(&p_mutex->cs);
 
         pen::memory_free(p_mutex);
     }
 
-    void thread_mutex_lock(mutex* p_mutex)
+    void mutex_lock(mutex* p_mutex)
     {
         EnterCriticalSection(&p_mutex->cs);
     }
 
-    u32 thread_mutex_try_lock(mutex* p_mutex)
+    u32 mutex_try_lock(mutex* p_mutex)
     {
         return TryEnterCriticalSection(&p_mutex->cs);
         ;
     }
 
-    void thread_mutex_unlock(mutex* p_mutex)
+    void mutex_unlock(mutex* p_mutex)
     {
         LeaveCriticalSection(&p_mutex->cs);
     }
 
-    pen::semaphore* thread_semaphore_create(u32 initial_count, u32 max_count)
+    pen::semaphore* semaphore_create(u32 initial_count, u32 max_count)
     {
         pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc(sizeof(pen::semaphore));
 
@@ -81,14 +81,14 @@ namespace pen
         return new_semaphore;
     }
 
-    void thread_semaphore_destroy(semaphore* p_semaphore)
+    void semaphore_destroy(semaphore* p_semaphore)
     {
         CloseHandle(p_semaphore->handle);
 
         pen::memory_free(p_semaphore);
     }
 
-    bool thread_semaphore_wait(semaphore* p_semaphore)
+    bool semaphore_wait(semaphore* p_semaphore)
     {
         DWORD res = WaitForSingleObject(p_semaphore->handle, INFINITE);
 
@@ -100,7 +100,7 @@ namespace pen
         return FALSE;
     }
 
-    bool thread_semaphore_try_wait(semaphore* p_semaphore)
+    bool semaphore_try_wait(semaphore* p_semaphore)
     {
         DWORD res = WaitForSingleObject(p_semaphore->handle, 0);
 
@@ -112,7 +112,7 @@ namespace pen
         return FALSE;
     }
 
-    void thread_semaphore_signal(semaphore* p_semaphore, u32 count)
+    void semaphore_post(semaphore* p_semaphore, u32 count)
     {
         ReleaseSemaphore(p_semaphore->handle, count, NULL);
     }

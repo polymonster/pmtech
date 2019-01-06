@@ -63,31 +63,31 @@ namespace pen
         void* user_thread_params;
     };
 
-    // Job
-    void thread_create_default_jobs(const default_thread_info& info);
-    bool thread_terminate_jobs();
-    job* thread_create_job(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* user_data, thread_start_flags flags,
-                           completion_callback cb = nullptr);
-
     // Threads
     thread* thread_create(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* thread_params, thread_start_flags flags);
     void    thread_destroy(pen::thread* p_thread);
     void    thread_sleep_ms(u32 milliseconds);
     void    thread_sleep_us(u32 microseconds);
 
+    // Jobs
+    void jobs_create_default(const default_thread_info& info);
+    bool jobs_terminate_all();
+    job* jobs_create_job(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* user_data, thread_start_flags flags,
+                           completion_callback cb = nullptr);
+
     // Mutex
-    mutex* thread_mutex_create();
-    void   thread_mutex_destroy(mutex* p_mutex);
-    void   thread_mutex_lock(mutex* p_mutex);
-    u32    thread_mutex_try_lock(mutex* p_mutex);
-    void   thread_mutex_unlock(mutex* p_mutex);
+    mutex* mutex_create();
+    void   mutex_destroy(mutex* p_mutex);
+    void   mutex_lock(mutex* p_mutex);
+    u32    mutex_try_lock(mutex* p_mutex);
+    void   mutex_unlock(mutex* p_mutex);
 
     // Semaphore
-    semaphore* thread_semaphore_create(u32 initial_count, u32 max_count);
-    void       thread_semaphore_destroy(semaphore* p_semaphore);
-    bool       thread_semaphore_try_wait(semaphore* p_semaphore);
-    bool       thread_semaphore_wait(semaphore* p_semaphore);
-    void       thread_semaphore_signal(semaphore* p_semaphore, u32 count);
+    semaphore* semaphore_create(u32 initial_count, u32 max_count);
+    void       semaphore_destroy(semaphore* p_semaphore);
+    bool       semaphore_try_wait(semaphore* p_semaphore);
+    bool       semaphore_wait(semaphore* p_semaphore);
+    void       semaphore_post(semaphore* p_semaphore, u32 count);
 
 } // namespace pen
 

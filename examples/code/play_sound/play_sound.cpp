@@ -48,9 +48,9 @@ PEN_TRV pen::user_entry(void* params)
     // unpack the params passed to the thread and signal to the engine it ok to proceed
     pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
-    pen::thread_semaphore_signal(p_thread_info->p_sem_continue, 1);
+    pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
-    pen::thread_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
+    pen::jobs_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
 
     renderer_state_init();
 
@@ -103,7 +103,7 @@ PEN_TRV pen::user_entry(void* params)
         put::audio_consume_command_buffer();
 
         // msg from the engine we want to terminate
-        if (pen::thread_semaphore_try_wait(p_thread_info->p_sem_exit))
+        if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {
             break;
         }
@@ -123,7 +123,7 @@ PEN_TRV pen::user_entry(void* params)
     put::audio_consume_command_buffer();
 
     // signal to the engine the thread has finished
-    pen::thread_semaphore_signal(p_thread_info->p_sem_terminated, 1);
+    pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
 
     return PEN_THREAD_OK;
 }

@@ -139,8 +139,8 @@ namespace put
 
     void audio_consume_command_buffer()
     {
-        pen::thread_semaphore_signal(p_audio_job_thread_info->p_sem_consume, 1);
-        pen::thread_semaphore_wait(p_audio_job_thread_info->p_sem_continue);
+        pen::semaphore_post(p_audio_job_thread_info->p_sem_consume, 1);
+        pen::semaphore_wait(p_audio_job_thread_info->p_sem_continue);
     }
 
     PEN_TRV audio_thread_function(void* params)
@@ -154,15 +154,15 @@ namespace put
         direct::audio_system_initialise();
 
         // allow main thread to continue now we are initialised
-        pen::thread_semaphore_signal(p_audio_job_thread_info->p_sem_continue, 1);
+        pen::semaphore_post(p_audio_job_thread_info->p_sem_continue, 1);
 
         for (;;)
         {
-            if (pen::thread_semaphore_try_wait(p_audio_job_thread_info->p_sem_consume))
+            if (pen::semaphore_try_wait(p_audio_job_thread_info->p_sem_consume))
             {
                 u32 end_pos = audio_put_pos;
 
-                pen::thread_semaphore_signal(p_audio_job_thread_info->p_sem_continue, 1);
+                pen::semaphore_post(p_audio_job_thread_info->p_sem_continue, 1);
 
                 while (audio_get_pos != end_pos)
                 {
@@ -178,7 +178,7 @@ namespace put
                 pen::thread_sleep_ms(1);
             }
 
-            if (pen::thread_semaphore_try_wait(p_audio_job_thread_info->p_sem_exit))
+            if (pen::semaphore_try_wait(p_audio_job_thread_info->p_sem_exit))
             {
                 break;
             }
@@ -186,8 +186,8 @@ namespace put
 
         direct::audio_system_shutdown();
 
-        pen::thread_semaphore_signal(p_audio_job_thread_info->p_sem_continue, 1);
-        pen::thread_semaphore_signal(p_audio_job_thread_info->p_sem_terminated, 1);
+        pen::semaphore_post(p_audio_job_thread_info->p_sem_continue, 1);
+        pen::semaphore_post(p_audio_job_thread_info->p_sem_terminated, 1);
 
         return PEN_THREAD_OK;
     }

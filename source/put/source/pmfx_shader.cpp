@@ -298,7 +298,7 @@ namespace put
             // vertex shader
             c8* vs_file_buf = (c8*)pen::memory_alloc(256);
             Str vs_filename_str = j_technique["vs_file"].as_str();
-            pen::string_format(vs_file_buf, 256, "data/pmfx_v2/%s/%s/%s", sfp, fx_filename, vs_filename_str.c_str());
+            pen::string_format(vs_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, vs_filename_str.c_str());
 
             pen::shader_load_params vs_slp;
             vs_slp.type = PEN_SHADER_TYPE_VS;
@@ -389,7 +389,7 @@ namespace put
             c8* ps_file_buf = (c8*)pen::memory_alloc(256);
             Str ps_filename_str = j_technique["ps_file"].as_str();
 
-            pen::string_format(ps_file_buf, 256, "data/pmfx_v2/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str());
+            pen::string_format(ps_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, ps_filename_str.c_str());
 
             pen::shader_load_params ps_slp;
             ps_slp.type = PEN_SHADER_TYPE_PS;
@@ -711,7 +711,7 @@ namespace put
 
         void get_pmfx_info_filename(c8* file_buf, const c8* pmfx_filename)
         {
-            pen::string_format(file_buf, 256, "data/pmfx_v2/%s/%s/info.json", pen::renderer_get_shader_platform(),
+            pen::string_format(file_buf, 256, "data/pmfx/%s/%s/info.json", pen::renderer_get_shader_platform(),
                                pmfx_filename);
         }
 

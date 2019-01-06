@@ -27,6 +27,8 @@
 #include <windows.h>
 #include <regstr.h>
 
+#pragma warning(disable:4477)
+
 struct Gamepad_devicePrivate {
 	UINT joystickID;
 	JOYINFOEX lastState;

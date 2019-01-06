@@ -404,14 +404,11 @@ def create_shader_set(filename, root):
     global added_includes
     added_includes = []
     shader_file_text, included_files = add_files_recursive(filename, root)
-
     shader_base_name = os.path.basename(filename)
     shader_set_dir = os.path.splitext(shader_base_name)[0]
     shader_set_build_dir = os.path.join(_info.output_dir, shader_set_dir)
-
     if not os.path.exists(shader_set_build_dir):
         os.makedirs(shader_set_build_dir)
-
     return shader_file_text, included_files
 
 
@@ -429,15 +426,12 @@ def get_permutation_conditionals(pmfx_json, permutation):
         for c in conditionals:
             # remove conditional permutation
             del block["constants"][c[0]]
-
             full_condition = c[0].replace("permutation", "")
             full_condition = full_condition.replace("&&", "and")
             full_condition = full_condition.replace("||", "or")
-
             gv = dict()
             for v in permutation:
                 gv[str(v[0])] = v[1]
-
             try:
                 if eval(full_condition, gv):
                     block["constants"] = member_wise_merge(block["constants"], c[1])
@@ -864,7 +858,7 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
     }
 
     temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
-    output_path = os.path.join(_info.root_dir, "compiled", pmfx_name, "v2")
+    output_path = os.path.join(_info.output_dir, pmfx_name)
     os.makedirs(temp_path, exist_ok=True)
     os.makedirs(output_path, exist_ok=True)
 
@@ -1302,8 +1296,8 @@ def parse_pmfx(file, root):
 
             # convert single shader to platform specific variation
             for s in _tp.shader:
-                # compile_hlsl(_info, pmfx_name, _tp, s)
-                compile_glsl(_info, pmfx_name, _tp, s)
+                compile_hlsl(_info, pmfx_name, _tp, s)
+                # compile_glsl(_info, pmfx_name, _tp, s)
 
             pmfx_output_info["techniques"].append(generate_technique_permutation_info(_tp))
 
@@ -1313,9 +1307,9 @@ def parse_pmfx(file, root):
     # write out a c header for accessing materials in code
     if c_code != "":
         h_filename = file.replace(".pmfx", ".h")
-        if not os.path.exists("shader_structs_v2"):
-            os.mkdir("shader_structs_v2")
-        h_filename = os.path.join("shader_structs_v2", h_filename)
+        if not os.path.exists("shader_structs"):
+            os.mkdir("shader_structs")
+        h_filename = os.path.join("shader_structs", h_filename)
         h_file = open(h_filename, "w+")
         h_file.write(c_code)
         h_file.close()
@@ -1329,6 +1323,7 @@ if __name__ == "__main__":
 
     global _info
     _info = build_info()
+    _info.os_platform = util.get_platform_name()
 
     parse_args()
 
@@ -1337,10 +1332,11 @@ if __name__ == "__main__":
 
     # get dirs for build output
     _info.root_dir = os.getcwd()
+
     _info.build_config = json.loads(config.read())
     _info.pmtech_dir = util.correct_path(_info.build_config["pmtech_dir"])
     _info.tools_dir = os.path.join(_info.pmtech_dir, "tools")
-    _info.output_dir = os.path.join(_info.root_dir, "bin", _info.os_platform, "data", "pmfx_v2", _info.shader_platform)
+    _info.output_dir = os.path.join(_info.root_dir, "bin", _info.os_platform, "data", "pmfx", _info.shader_platform)
     _info.this_file = os.path.join(_info.root_dir, _info.tools_dir, "build_scripts", "build_shaders.py")
     _info.macros_file = os.path.join(_info.root_dir, _info.tools_dir, "_shader_macros.h")
 
