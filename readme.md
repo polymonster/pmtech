@@ -14,7 +14,7 @@ Take a look at:
 - Multithreaded - Async render, physics, audio and component entity system. 
 - Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
 - Pmfx - High level data driven renderer, shader and post-processing system.
-- Cross platform low-level abstractions - Input, Gamepad, Timers, Threads, Window, Filesystem, etc.
+- Low-level abstractions - Input, Gamepad, Timers, Threads, Window, Filesystem, etc.
 - Hot loading - reload configs, shaders, models and textures in real time for rapid development.
 - Tools - Graphical editor, volume texture / signed distance field generator.
 - Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
