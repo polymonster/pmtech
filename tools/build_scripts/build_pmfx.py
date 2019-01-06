@@ -1296,8 +1296,8 @@ def parse_pmfx(file, root):
 
             # convert single shader to platform specific variation
             for s in _tp.shader:
-                compile_hlsl(_info, pmfx_name, _tp, s)
-                # compile_glsl(_info, pmfx_name, _tp, s)
+                # compile_hlsl(_info, pmfx_name, _tp, s)
+                compile_glsl(_info, pmfx_name, _tp, s)
 
             pmfx_output_info["techniques"].append(generate_technique_permutation_info(_tp))
 

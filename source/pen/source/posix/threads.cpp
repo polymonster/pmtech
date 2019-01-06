@@ -76,14 +76,14 @@ namespace pen
 
     void mutex_destroy(mutex* p_mutex)
     {
-        pmutex_destroy(&p_mutex->handle);
+        pthread_mutex_destroy(&p_mutex->handle);
 
         pen::memory_free(p_mutex);
     }
 
     void mutex_lock(mutex* p_mutex)
     {
-        pmutex_lock(&p_mutex->handle);
+        pthread_mutex_lock(&p_mutex->handle);
     }
 
     u32 mutex_try_lock(mutex* p_mutex)
@@ -95,7 +95,7 @@ namespace pen
 
     void mutex_unlock(mutex* p_mutex)
     {
-        pmutex_unlock(&p_mutex->handle);
+        pthread_mutex_unlock(&p_mutex->handle);
     }
 
     pen::semaphore* semaphore_create(u32 initial_count, u32 max_count)
