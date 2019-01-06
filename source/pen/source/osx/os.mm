@@ -137,6 +137,8 @@ void run()
     {
         if (!pen::os_update())
             break;
+        
+        pen::thread_sleep_us(100);
     }
 }
 

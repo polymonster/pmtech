@@ -126,8 +126,8 @@ enum bind_flags : s32
 
 enum cpu_access_flags : s32
 {
-    PEN_CPU_ACCESS_WRITE,
-    PEN_CPU_ACCESS_READ
+    PEN_CPU_ACCESS_WRITE = 1,
+    PEN_CPU_ACCESS_READ = (1<<1)
 };
 
 enum texture_address_mode : s32

@@ -1096,7 +1096,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
 
     # main decl
     shader_source += main_type[_shader.shader_type] + " "
-    shader_source += _shader.output_struct_name + " " + _shader.main_func_name + "("
+    shader_source += _shader.output_struct_name + " " + "main" + "("
 
     if _shader.shader_type == "vs":
         shader_source += "device " + _shader.input_struct_name + "* vertices" + "[[buffer(0)]],"
@@ -1136,9 +1136,12 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     temp_file_and_path = os.path.join(temp_path, _tp.name + extension[_shader.shader_type])
     output_file_and_path = os.path.join(output_path, _tp.name + output_extension[_shader.shader_type])
 
-    temp_shader_source = open(temp_file_and_path, "w")
+    temp_shader_source = open(output_file_and_path, "w")
     temp_shader_source.write(shader_source)
     temp_shader_source.close()
+
+    # todo precompile
+    return
 
     if pmfx_name != "basictri":
         return

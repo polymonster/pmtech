@@ -3,12 +3,20 @@
 
 #include "renderer.h"
 #include "console.h"
+#include "slot_resource.h"
 
 // globals
 a_u8 g_window_resize;
 
 namespace
 {
+    struct clear_cmd
+    {
+        u32 clear_state;
+        u32 colour_index;
+        u32 depth_index;
+    };
+    
     struct current_state
     {
         // metal
@@ -22,7 +30,30 @@ namespace
         u32                         index_buffer;
         u32                         vertex_shader;
         u32                         fragment_shader;
+        clear_cmd                   clear;
     };
+    
+    struct buffer_resource
+    {
+        id<MTLBuffer> buf;
+    };
+    
+    struct shader_resource
+    {
+        id <MTLLibrary> lib;
+        u32             type;
+    };
+    
+    struct resource
+    {
+        union
+        {
+            buffer_resource  buffer;
+            shader_resource  shader;
+            pen::clear_state clear;
+        };
+    };
+    resource        s_resource_pool[pen::MAX_RENDERER_RESOURCES];
     
     MTKView*        s_metal_view;
     id<MTLDevice>   s_metal_device;
@@ -41,7 +72,7 @@ namespace pen
     
     const c8* renderer_get_shader_platform()
     {
-        return "glsl";
+        return "metal";
     }
 
     const renderer_info& renderer_get_info()
@@ -73,22 +104,38 @@ namespace pen
         
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot) 
         {
-        
+            s_resource_pool[resource_slot].clear = cs;
         }
         
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
         {
-        
+            s_current_state.clear = { clear_state_index, colour_face, depth_face };
         }
         
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot) 
         {
-        
+            const c8* csrc = (const c8*)params.byte_code;
+            NSString* str = [[NSString alloc] initWithBytes:csrc length:params.byte_code_size
+                                                   encoding:NSASCIIStringEncoding];
+            
+            NSError* err = [NSError alloc];
+            MTLCompileOptions* opts = [MTLCompileOptions alloc];
+            id <MTLLibrary> lib = [s_metal_device newLibraryWithSource:str options:opts error:&err];
+            
+            s_resource_pool[resource_slot].shader = { lib, params.type };
         }
         
         void renderer_set_shader(u32 shader_index, u32 shader_type) 
         {
-        
+            switch(shader_type)
+            {
+                case PEN_SHADER_TYPE_VS:
+                    s_current_state.vertex_shader = shader_index;
+                    break;
+                case PEN_SHADER_TYPE_PS:
+                    s_current_state.fragment_shader = shader_index;
+                    break;
+            };
         }
         
         void renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot) 
@@ -113,19 +160,32 @@ namespace pen
         
         void renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot) 
         {
-        
-        }
-        
-        void renderer_set_vertex_buffer(u32 buffer_index,
-                                        u32 start_slot, u32 num_buffers, const u32* strides, const u32* offsets)
-        {
-        
+            id<MTLBuffer> buf;
+            
+            u32 options = 0;
+            if(params.cpu_access_flags & PEN_CPU_ACCESS_READ)
+                options |= MTLResourceOptionCPUCacheModeDefault;
+            else if(params.cpu_access_flags & PEN_CPU_ACCESS_WRITE)
+                options |= MTLResourceCPUCacheModeWriteCombined;
+            
+            if(params.data)
+            {
+                buf = [s_metal_device newBufferWithBytes:params.data length:params.buffer_size
+                                                 options:options];
+            }
+            else
+            {
+                buf = [s_metal_device newBufferWithLength:params.buffer_size
+                                                  options:options];
+            }
+            
+            s_resource_pool[resource_slot].buffer = { buf };
         }
         
         void renderer_set_vertex_buffers(u32* buffer_indices,
                                          u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
         {
-        
+            
         }
         
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset) 

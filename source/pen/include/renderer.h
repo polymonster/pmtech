@@ -437,8 +437,6 @@ namespace pen
 
         // buffers
         void renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot);
-        void renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides,
-                                        const u32* offsets);
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
                                          const u32* offsets);
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
