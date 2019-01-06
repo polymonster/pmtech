@@ -20,6 +20,7 @@ Take a look at:
 - Tools - Graphical editor, volume texture / signed distance field generator.
 - Asset Pipeline - binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 - Supported Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
+- Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information.
 
 **Usage**  
 
