@@ -11,9 +11,10 @@ Take a look at:
 **Features**  
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Multiple Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
-- Multithreaded - Async render, physics, audio and component entity system. 
-- Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
-- Pmfx - High level data driven renderer, shader and post-processing system.
+- Multithreaded - Async render, physics, audio and component entity system.  
+- Data-oriented component entity system - SoA memory layout for blazing fast scene representation.
+- Lightweight - Simple minimal apis, shallow call stacks, no external dependencies.
+- Pmfx - High level data driven renderer, shader and post-processing system using json.
 - Low-level abstractions - Input, Gamepad, Timers, Threads, Window, Filesystem, etc.
 - Hot loading - reload configs, shaders, models and textures in real time for rapid development.
 - Tools - Graphical editor, volume texture / signed distance field generator.
@@ -24,7 +25,7 @@ Take a look at:
 
 Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Getting-Started).
 
-**Thanks** 
+**pmtech uses the following thirdparty libs** 
 - [ImGui](https://github.com/ocornut/imgui)
 - [Premake](https://github.com/premake/premake-core)
 - [Jsmn](https://github.com/zserge/jsmn)
