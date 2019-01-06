@@ -170,13 +170,11 @@ namespace pen
             
             if(params.data)
             {
-                buf = [s_metal_device newBufferWithBytes:params.data length:params.buffer_size
-                                                 options:options];
+                buf = [s_metal_device newBufferWithBytes:params.data length:params.buffer_size options:options];
             }
             else
             {
-                buf = [s_metal_device newBufferWithLength:params.buffer_size
-                                                  options:options];
+                buf = [s_metal_device newBufferWithLength:params.buffer_size options:options];
             }
             
             s_resource_pool[resource_slot].buffer = { buf };

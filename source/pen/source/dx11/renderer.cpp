@@ -712,13 +712,6 @@ namespace pen
                                                &resource_pool[resource_index].input_layout));
     }
 
-    void direct::renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 num_buffers, const u32* strides,
-                                            const u32* offsets)
-    {
-        s_immediate_context->IASetVertexBuffers(start_slot, num_buffers, &resource_pool[buffer_index].generic_buffer, strides,
-                                                offsets);
-    }
-
     void direct::renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
                                              const u32* offsets)
     {
@@ -1482,7 +1475,7 @@ namespace pen
 
             u32 stride = 24;
             u32 offset = 0;
-            direct::renderer_set_vertex_buffer(g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
+            direct::renderer_set_vertex_buffers(&g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
             direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
             direct::renderer_set_texture(target, 0, 0, pen::TEXTURE_BIND_MSAA | pen::TEXTURE_BIND_PS);
