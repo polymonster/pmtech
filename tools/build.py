@@ -155,8 +155,11 @@ def get_platform_info():
     project_options = ide + " --renderer=" + renderer + " " + extra_target_info
 
     if renderer == "dx11":
-        shader_options = "-shader_platform hlsl"
+        shader_options = "-shader_platform hlsl -platform win32"
+    elif renderer == "metal":
+        shader_options = "-shader_platform metal -platform osx"
     else:
+        # opengl / glsl
         if platform_name == "ios":
             shader_options = "-shader_platform glsl -platform ios"
         elif platform_name == "linux":

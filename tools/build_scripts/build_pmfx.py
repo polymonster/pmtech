@@ -1059,7 +1059,96 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
 
 # compile shader for apple metal
 def compile_metal(_info, pmfx_name, _tp, _shader):
-    print("wip")
+    # parse inputs and outputs into semantics
+    inputs, input_semantics = parse_io_struct(_shader.input_decl)
+    outputs, output_semantics = parse_io_struct(_shader.output_decl)
+    instance_inputs, instance_input_semantics = parse_io_struct(_shader.instance_input_decl)
+
+    shader_source = _info.macros_source
+    shader_source += "using namespace metal;\n"
+
+    if len(inputs) > 0:
+        shader_source += "struct " + _shader.input_struct_name + "\n{\n"
+        for i in range(0, len(inputs)):
+            shader_source += inputs[i] + ";\n"
+        shader_source += "};\n"
+
+    if _shader.instance_input_struct_name:
+        if len(instance_inputs) > 0:
+            shader_source += "struct " + _shader.instance_input_struct_name + "\n{\n"
+            for i in range(0, len(instance_inputs)):
+                shader_source += instance_inputs[i] + ";\n"
+            shader_source += "};\n"
+
+    if len(outputs) > 0:
+        shader_source += "struct " + _shader.output_struct_name + "\n{\n"
+        for i in range(0, len(outputs)):
+            shader_source += outputs[i]
+            if output_semantics[i].find("SV_POSITION") != -1:
+                shader_source += " [[position]]"
+            shader_source += ";\n"
+        shader_source += "};\n"
+
+    main_type = {
+        "vs": "vertex",
+        "ps": "fragment"
+    }
+
+    # main decl
+    shader_source += main_type[_shader.shader_type] + " "
+    shader_source += _shader.output_struct_name + " " + _shader.main_func_name + "("
+
+    if _shader.shader_type == "vs":
+        shader_source += "device " + _shader.input_struct_name + "* vertices" + "[[buffer(0)]],"
+        shader_source += " uint vid [[vertex_id]]"
+        if _shader.instance_input_struct_name:
+            shader_source += ", device " + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]],"
+            shader_source += " uint iid [[instance_id]]"
+        shader_source += ")\n{\n"
+        # create function header for main and insert assignment to port from hlsl to metal
+        shader_source += _shader.input_struct_name + " input = " + "vertices[vid];\n"
+        if _shader.instance_input_struct_name:
+            shader_source += _shader.instance_input_struct_name + " instance_input = " + "instances[iid];"
+    else:
+        shader_source += _shader.input_struct_name + " input [[stage_in]]"
+        shader_source += ")\n{\n"
+
+    main_func_body = _shader.main_func_source.find("{") + 1
+    shader_source += _shader.main_func_source[main_func_body:]
+
+    shader_source = format_source(shader_source, 4)
+
+    temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
+    output_path = os.path.join(_info.output_dir, pmfx_name)
+    os.makedirs(temp_path, exist_ok=True)
+    os.makedirs(output_path, exist_ok=True)
+
+    extension = {
+        "vs": "_vs.metal",
+        "ps": "_ps.metal"
+    }
+
+    output_extension = {
+        "vs": ".vsc",
+        "ps": ".psc"
+    }
+
+    temp_file_and_path = os.path.join(temp_path, _tp.name + extension[_shader.shader_type])
+    output_file_and_path = os.path.join(output_path, _tp.name + output_extension[_shader.shader_type])
+
+    temp_shader_source = open(temp_file_and_path, "w")
+    temp_shader_source.write(shader_source)
+    temp_shader_source.close()
+
+    if pmfx_name != "basictri":
+        return
+
+    # compile .air
+    cmdline = "xcrun -sdk macosx metal -c "
+    cmdline += temp_file_and_path + " "
+    cmdline += "-o " + output_file_and_path
+
+    subprocess.call(cmdline, shell=True)
 
 
 # generate a shader info file with an array of technique permutation descriptions and dependency timestamps
@@ -1208,7 +1297,7 @@ def parse_pmfx(file, root):
         return
 
     # check dependencies
-    force = False
+    force = True
     up_to_date = check_dependencies(file_and_path, included_files)
     if up_to_date and not force:
         print(file + " file up to date")
