@@ -9,8 +9,8 @@ Take a look at:
 [demos...](https://polymonster.github.io/index.html)
 
 **Features**  
-- Cross Platform: Windows, MacOS, Linux, iOS, Android (wip).  
-- Multiple Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal (wip).   
+- Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
+- Multiple Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
 - Multithreaded - Async render, physics, audio and component entity system. 
 - Data-oriented Component Entity System - SoA memory layout for blazing fast scene representation.
 - Pmfx - High level data driven renderer, shader and post-processing system.
