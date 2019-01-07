@@ -3,10 +3,12 @@
 
 #include "renderer.h"
 #include "console.h"
-#include "slot_resource.h"
+#include "data_struct.h"
 
 // globals
 a_u8 g_window_resize;
+
+#define MAX_VB 4 // max simulataneously bound vertex buffers
 
 namespace
 {
@@ -15,6 +17,15 @@ namespace
         u32 clear_state;
         u32 colour_index;
         u32 depth_index;
+    };
+    
+    struct vertex_buffer_cmd
+    {
+        u32 buffer_index[MAX_VB];
+        u32 stride[MAX_VB];
+        u32 offset[MAX_VB];
+        u32 num_buffers;
+        u32 start_slot;
     };
     
     struct current_state
@@ -26,11 +37,11 @@ namespace
         
         // pen
         pen::viewport               viewport;
-        u32                         vertex_buffer;
         u32                         index_buffer;
         u32                         vertex_shader;
         u32                         fragment_shader;
         clear_cmd                   clear;
+        vertex_buffer_cmd           vertex_buffers;
     };
     
     struct buffer_resource
@@ -44,21 +55,28 @@ namespace
         u32             type;
     };
     
+    struct metal_clear_state
+    {
+        MTLLoadAction colour_load_action;
+        MTLClearColor colour[pen::MAX_MRT];
+    };
+    
     struct resource
     {
         union
         {
-            buffer_resource  buffer;
-            shader_resource  shader;
-            pen::clear_state clear;
+            buffer_resource     buffer;
+            shader_resource     shader;
+            metal_clear_state   clear;
         };
     };
-    resource        s_resource_pool[pen::MAX_RENDERER_RESOURCES];
+    resource*       s_resource_pool = nullptr;
     
     MTKView*        s_metal_view;
     id<MTLDevice>   s_metal_device;
     current_state   s_current_state;
 }
+#define pool_reserve(pool, size) { if(sb_count(pool) < size) for(u32 i = sb_count(pool); i < size*2; ++i) sb_push(pool, {})}
 
 namespace pen
 {
@@ -89,6 +107,11 @@ namespace pen
             s_metal_view = (MTKView*)params;
             s_metal_device = s_metal_view.device;
             
+            s_current_state.command_queue = [s_metal_device newCommandQueue];
+            
+            //reserve space for some resources
+            sb_grow(s_resource_pool, 100);
+            
             return 1;
         }
         
@@ -104,7 +127,34 @@ namespace pen
         
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot) 
         {
-            s_resource_pool[resource_slot].clear = cs;
+            //pool_reserve(s_resource_pool, resource_slot);
+            
+            metal_clear_state& mc = s_resource_pool[resource_slot].clear;
+            
+            // flags
+            mc.colour_load_action = MTLLoadActionLoad;
+            if(cs.flags & PEN_CLEAR_COLOUR_BUFFER)
+                mc.colour_load_action = MTLLoadActionClear;
+            
+            // colour
+            s_resource_pool[resource_slot].clear.colour[0] = MTLClearColorMake(cs.r, cs.g, cs.b, cs.a);
+            
+            for(u32 i = 0; i < cs.num_colour_targets; ++i)
+            {
+                const mrt_clear& m = cs.mrt[i];
+                
+                switch(m.type)
+                {
+                    case CLEAR_F32:
+                        s_resource_pool[resource_slot].clear.colour[i] = MTLClearColorMake(m.rf, m.gf, m.bf, m.af);
+                        break;
+                    case CLEAR_U32:
+                        s_resource_pool[resource_slot].clear.colour[i] = MTLClearColorMake(m.ri, m.gi, m.bi, m.ai);
+                        break;
+                }
+            }
+            
+            // depth stencil
         }
         
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
@@ -114,11 +164,13 @@ namespace pen
         
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot) 
         {
+            //pool_reserve(s_resource_pool, resource_slot);
+            
             const c8* csrc = (const c8*)params.byte_code;
             NSString* str = [[NSString alloc] initWithBytes:csrc length:params.byte_code_size
                                                    encoding:NSASCIIStringEncoding];
             
-            NSError* err = [NSError alloc];
+            NSError* err = nil;
             MTLCompileOptions* opts = [MTLCompileOptions alloc];
             id <MTLLibrary> lib = [s_metal_device newLibraryWithSource:str options:opts error:&err];
             
@@ -160,6 +212,8 @@ namespace pen
         
         void renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot) 
         {
+            //pool_reserve(s_resource_pool, resource_slot);
+            
             id<MTLBuffer> buf;
             
             u32 options = 0;
@@ -183,7 +237,19 @@ namespace pen
         void renderer_set_vertex_buffers(u32* buffer_indices,
                                          u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
         {
+            PEN_ASSERT(num_buffers < MAX_VB);
             
+            vertex_buffer_cmd& vb = s_current_state.vertex_buffers;
+            
+            vb.num_buffers = num_buffers;
+            vb.start_slot = start_slot;
+            
+            for(u32 i = 0; i < num_buffers; ++i)
+            {
+                vb.buffer_index[i] = buffer_indices[i];
+                vb.stride[i] = strides[i];
+                vb.offset[i] = offsets[i];
+            }
         }
         
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset) 
@@ -228,7 +294,7 @@ namespace pen
         
         void renderer_set_viewport(const viewport& vp) 
         {
-        
+            s_current_state.viewport = vp;
         }
         
         void renderer_set_scissor_rect(const rect& r) 
@@ -258,7 +324,60 @@ namespace pen
         
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology) 
         {
-        
+            // rt and clear
+            MTLRenderPassDescriptor *pass_desc = [MTLRenderPassDescriptor renderPassDescriptor];
+            id<MTLCommandBuffer> cmd_buffer = [s_current_state.command_queue commandBuffer];
+            
+            
+            metal_clear_state& clear = s_resource_pool[s_current_state.clear.clear_state].clear;
+            
+            // todo render targets
+            id<CAMetalDrawable> drawable = s_metal_view.currentDrawable;
+            id<MTLTexture> texture = drawable.texture;
+            
+            pass_desc.colorAttachments[0].texture = texture;
+            pass_desc.colorAttachments[0].loadAction = clear.colour_load_action;
+            pass_desc.colorAttachments[0].storeAction = MTLStoreActionStore;
+            pass_desc.colorAttachments[0].clearColor = clear.colour[0];
+            
+            id <MTLRenderCommandEncoder> render_encoder = [cmd_buffer renderCommandEncoderWithDescriptor:pass_desc];
+            
+            // pipeline
+            MTLRenderPipelineDescriptor *pipeline_desc = [MTLRenderPipelineDescriptor new];
+            
+            shader_resource& vs_res = s_resource_pool[s_current_state.vertex_shader].shader;
+            shader_resource& fs_res = s_resource_pool[s_current_state.fragment_shader].shader;
+            
+            id<MTLFunction> vs_main = [vs_res.lib newFunctionWithName:@"vs_main"];
+            id<MTLFunction> fs_main = [fs_res.lib newFunctionWithName:@"ps_main"];
+            
+            pipeline_desc.vertexFunction = vs_main;
+            pipeline_desc.fragmentFunction = fs_main;
+            pipeline_desc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+            
+            NSError *error = nil;
+            id<MTLRenderPipelineState> pipeline = [s_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc
+                                                                                                 error:&error];
+            
+            // draw calls
+            vertex_buffer_cmd& vb = s_current_state.vertex_buffers;
+            
+            [render_encoder setRenderPipelineState:pipeline];
+            
+            for(u32 i = 0; i < vb.num_buffers; ++i)
+            {
+                [render_encoder setVertexBuffer:s_resource_pool[vb.buffer_index[i]].buffer.buf
+                                         offset:vb.offset[i]
+                                        atIndex:vb.start_slot+i];
+            }
+
+            [render_encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start_vertex vertexCount:vertex_count];
+            
+            [render_encoder endEncoding];
+            
+            // submit
+            [cmd_buffer presentDrawable:drawable];
+            [cmd_buffer commit];
         }
         
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology) 
@@ -309,24 +428,7 @@ namespace pen
         
         void renderer_present() 
         {
-            id<CAMetalDrawable> drawable = s_metal_view.currentDrawable;
-            id<MTLTexture> texture = drawable.texture;
             
-            MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-            passDescriptor.colorAttachments[0].texture = texture;
-            passDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-            passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-            passDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1, 0, 0, 1);
-            
-            id<MTLCommandQueue> commandQueue = [s_metal_device newCommandQueue];
-            
-            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-            
-            id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:passDescriptor];
-            [commandEncoder endEncoding];
-            
-            [commandBuffer presentDrawable:drawable];
-            [commandBuffer commit];
         }
         
         void renderer_push_perf_marker(const c8* name) 

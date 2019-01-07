@@ -1096,7 +1096,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
 
     # main decl
     shader_source += main_type[_shader.shader_type] + " "
-    shader_source += _shader.output_struct_name + " " + "main" + "("
+    shader_source += _shader.output_struct_name + " " + _shader.shader_type + "_main" + "("
 
     if _shader.shader_type == "vs":
         shader_source += "device " + _shader.input_struct_name + "* vertices" + "[[buffer(0)]],"

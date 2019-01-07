@@ -1,8 +1,11 @@
 #ifndef _renderer_h
 #define _renderer_h
 
-// Simple c-style generic rendering api wrapper, with a dedicated dispatch thread.
-// Currently implementations are in Direct3D11 (win32), OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios)
+// Generic rendering api wrapper, with a dedicated dispatch thread.
+// Currently implementations are in:
+//      Direct3D11 (win32)
+//      OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios, android)
+//      Metal (osx, ios) (wip)
 
 // Public api used by the user thread will store function call arguments in a command buffer
 // Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
@@ -74,11 +77,13 @@ namespace pen
 
     struct clear_state
     {
+        // single clear
         f32 r, g, b, a;
         f32 depth;
         u8  stencil;
         u32 flags;
 
+        // mrt
         mrt_clear mrt[MAX_MRT];
         u32       num_colour_targets;
     };
