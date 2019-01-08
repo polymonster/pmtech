@@ -68,9 +68,7 @@ static void* stb__sbgrowf(void* arr, int increment, int itemsize)
     }
 }
 
-// Simple stack wraps up stretchy buffer
-
-template <class T>
+template <typename T>
 struct pen_stack
 {
     T*  data = nullptr;
@@ -110,7 +108,7 @@ struct pen_stack
     }
 };
 
-template <class T>
+template <typename T>
 struct pen_ring_buffer
 {
     T* data = nullptr;
