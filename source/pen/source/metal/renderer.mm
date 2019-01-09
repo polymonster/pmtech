@@ -10,7 +10,7 @@ a_u8 g_window_resize;
 
 #define MAX_VB 4 // max simulataneously bound vertex buffers
 
-namespace
+namespace // structs and static vars
 {
     struct clear_cmd
     {
@@ -21,11 +21,18 @@ namespace
     
     struct vertex_buffer_cmd
     {
-        u32 buffer_index[MAX_VB];
-        u32 stride[MAX_VB];
-        u32 offset[MAX_VB];
-        u32 num_buffers;
-        u32 start_slot;
+        id<MTLBuffer>   buffer[MAX_VB];
+        u32             stride[MAX_VB];
+        u32             offset[MAX_VB];
+        u32             num_buffers;
+        u32             start_slot;
+    };
+    
+    struct index_buffer_cmd
+    {
+        id<MTLBuffer>   buffer;
+        MTLIndexType    type;
+        u32             offset;
     };
     
     struct current_state
@@ -37,18 +44,15 @@ namespace
         id<MTLCommandBuffer>        cmd_buffer;
         id<CAMetalDrawable>         drawable;
         
-        // pen
-        pen::viewport               viewport;
-        u32                         index_buffer;
-        u32                         vertex_shader;
-        u32                         fragment_shader;
+        // pen -> metal
+        MTLViewport                 viewport;
+        MTLVertexDescriptor*        vertex_descriptor;
+        id<MTLFunction>             vertex_shader;
+        id<MTLFunction>             fragment_shader;
         clear_cmd                   clear;
         vertex_buffer_cmd           vertex_buffers;
-    };
-    
-    struct buffer_resource
-    {
-        id<MTLBuffer> buf;
+        index_buffer_cmd            index_buffer;
+        u32                         input_layout;
     };
     
     struct shader_resource
@@ -63,21 +67,61 @@ namespace
         MTLClearColor colour[pen::MAX_MRT];
     };
     
+    struct input_layout
+    {
+        u32 num_elements;
+        pen::input_layout_desc slots[10];
+    };
+    
     struct resource
     {
         union
         {
-            buffer_resource     buffer;
-            shader_resource     shader;
-            metal_clear_state   clear;
+            id<MTLBuffer>           buffer;
+            shader_resource         shader;
+            metal_clear_state       clear;
+            MTLVertexDescriptor*    vertex_descriptor;
+            input_layout            input_layout;
         };
     };
     
-    resource*       s_resource_pool = nullptr;
+    resource*       _res_pool = nullptr;
+    MTKView*        _metal_view;
+    id<MTLDevice>   _metal_device;
+    current_state   _state;
+}
+
+namespace // pen consts -> metal consts
+{
+    pen_inline MTLVertexFormat to_metal_vertex_format(u32 pen_vertex_format)
+    {
+        switch(pen_vertex_format)
+        {
+            case PEN_VERTEX_FORMAT_FLOAT1: return MTLVertexFormatFloat;
+            case PEN_VERTEX_FORMAT_FLOAT2: return MTLVertexFormatFloat2;
+            case PEN_VERTEX_FORMAT_FLOAT3: return MTLVertexFormatFloat3;
+            case PEN_VERTEX_FORMAT_FLOAT4: return MTLVertexFormatFloat4;
+            case PEN_VERTEX_FORMAT_UNORM4: return MTLVertexFormatUChar4Normalized;
+            case PEN_VERTEX_FORMAT_UNORM2: return MTLVertexFormatUChar2Normalized;
+            case PEN_VERTEX_FORMAT_UNORM1: return MTLVertexFormatUCharNormalized;
+        }
+        
+        // unhandled
+        PEN_ASSERT(0);
+        return MTLVertexFormatInvalid;
+    }
     
-    MTKView*        s_metal_view;
-    id<MTLDevice>   s_metal_device;
-    current_state   s_current_state;
+    pen_inline MTLIndexType to_metal_index_format(u32 pen_vertex_format)
+    {
+        return pen_vertex_format == PEN_FORMAT_R16_UINT ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
+    }
+    
+    pen_inline u32 to_metal_pixel_format(u32 pen_vertex_format)
+    {
+        // unhandled
+        PEN_ASSERT(0);
+        return 0;
+    }
 }
 
 pen_inline void pool_grow(resource* pool, u32 size)
@@ -111,68 +155,87 @@ namespace pen
     {
         void bind_state()
         {
-            if(s_current_state.render_encoder != 0)
+            if(_state.render_encoder != 0)
                 return;
             
             // rt and clear.. create render_encoder
             MTLRenderPassDescriptor *pass_desc = [MTLRenderPassDescriptor renderPassDescriptor];
-            id<MTLCommandBuffer> cmd_buffer = [s_current_state.command_queue commandBuffer];
+            id<MTLCommandBuffer> cmd_buffer = [_state.command_queue commandBuffer];
             
+            metal_clear_state& clear = _res_pool[_state.clear.clear_state].clear;
             
-            metal_clear_state& clear = s_resource_pool[s_current_state.clear.clear_state].clear;
-            
-            id<CAMetalDrawable> drawable = s_metal_view.currentDrawable;
+            id<CAMetalDrawable> drawable = _metal_view.currentDrawable;
             id<MTLTexture> texture = drawable.texture;
             
-            pass_desc.colorAttachments[0].texture = texture;
+            pass_desc.colorAttachments[0].texture = texture; // todo rt
             pass_desc.colorAttachments[0].loadAction = clear.colour_load_action;
             pass_desc.colorAttachments[0].storeAction = MTLStoreActionStore;
             pass_desc.colorAttachments[0].clearColor = clear.colour[0];
             
             id <MTLRenderCommandEncoder> render_encoder = [cmd_buffer renderCommandEncoderWithDescriptor:pass_desc];
             
+            // set viewport
+            [render_encoder setViewport:_state.viewport];
+            
             // create pipeline
             MTLRenderPipelineDescriptor *pipeline_desc = [MTLRenderPipelineDescriptor new];
             
-            shader_resource& vs_res = s_resource_pool[s_current_state.vertex_shader].shader;
-            shader_resource& fs_res = s_resource_pool[s_current_state.fragment_shader].shader;
-            
-            id<MTLFunction> vs_main = [vs_res.lib newFunctionWithName:@"vs_main"];
-            id<MTLFunction> fs_main = [fs_res.lib newFunctionWithName:@"ps_main"];
-            
-            pipeline_desc.vertexFunction = vs_main;
-            pipeline_desc.fragmentFunction = fs_main;
+            pipeline_desc.vertexFunction = _state.vertex_shader;
+            pipeline_desc.fragmentFunction = _state.fragment_shader;
             pipeline_desc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
             
+            //pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
+            MTLVertexDescriptor* vd = [MTLVertexDescriptor vertexDescriptor];
+            input_layout& il = _res_pool[_state.input_layout].input_layout;
+            for(u32 i = 0; i < il.num_elements; ++i)
+            {
+                pen::input_layout_desc ild = il.slots[i];
+                MTLVertexAttributeDescriptor *ad = [MTLVertexAttributeDescriptor new];
+                ad.format = to_metal_vertex_format(ild.format);
+                ad.offset = ild.aligned_byte_offset;
+                ad.bufferIndex = ild.input_slot;
+
+                [vd.attributes setObject: ad atIndexedSubscript: i];
+            }
+
+            MTLVertexBufferLayoutDescriptor *layout = [MTLVertexBufferLayoutDescriptor new];
+            layout.stride = _state.vertex_buffers.stride[0];
+            layout.stepFunction = MTLVertexStepFunctionPerVertex;
+            layout.stepRate = 1;
+            [vd.layouts setObject: layout atIndexedSubscript: 0];
+        
+            pipeline_desc.vertexDescriptor = vd;
+            //_res_pool[resource_slot].vertex_descriptor = vd;
+            
             NSError *error = nil;
-            id<MTLRenderPipelineState> pipeline = [s_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc
+            id<MTLRenderPipelineState> pipeline = [_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc
                                                                                                  error:&error];
             
             [render_encoder setRenderPipelineState:pipeline];
 
-            vertex_buffer_cmd& vb = s_current_state.vertex_buffers;
+            vertex_buffer_cmd& vb = _state.vertex_buffers;
             for(u32 i = 0; i < vb.num_buffers; ++i)
             {
-                [render_encoder setVertexBuffer:s_resource_pool[vb.buffer_index[i]].buffer.buf
+                [render_encoder setVertexBuffer:vb.buffer[i]
                                          offset:vb.offset[i]
                                         atIndex:vb.start_slot+i];
             }
             
-            s_current_state.render_encoder = render_encoder;
-            s_current_state.cmd_buffer = cmd_buffer;
-            s_current_state.drawable = drawable;
+            _state.render_encoder = render_encoder;
+            _state.cmd_buffer = cmd_buffer;
+            _state.drawable = drawable;
         }
         
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res) 
         {
-            s_metal_view = (MTKView*)params;
-            s_metal_device = s_metal_view.device;
+            _metal_view = (MTKView*)params;
+            _metal_device = _metal_view.device;
             
-            s_current_state.command_queue = [s_metal_device newCommandQueue];
-            s_current_state.render_encoder = 0;
+            _state.command_queue = [_metal_device newCommandQueue];
+            _state.render_encoder = 0;
             
             //reserve space for some resources
-            sb_grow(s_resource_pool, 100);
+            sb_grow(_res_pool, 100);
             
             return 1;
         }
@@ -191,7 +254,7 @@ namespace pen
         {
             //pool_grow(s_resource_pool, resource_slot);
             
-            metal_clear_state& mc = s_resource_pool[resource_slot].clear;
+            metal_clear_state& mc = _res_pool[resource_slot].clear;
             
             // flags
             mc.colour_load_action = MTLLoadActionLoad;
@@ -221,7 +284,7 @@ namespace pen
         
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
         {
-            s_current_state.clear = { clear_state_index, colour_face, depth_face };
+            _state.clear = { clear_state_index, colour_face, depth_face };
         }
         
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot) 
@@ -234,47 +297,73 @@ namespace pen
             
             NSError* err = nil;
             MTLCompileOptions* opts = [MTLCompileOptions alloc];
-            id <MTLLibrary> lib = [s_metal_device newLibraryWithSource:str options:opts error:&err];
+            id <MTLLibrary> lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
             
-            s_resource_pool[resource_slot].shader = { lib, params.type };
+            if(err)
+                NSLog(@" error => %@ ", err);
+            
+            _res_pool[resource_slot].shader = { lib, params.type };
         }
         
         void renderer_set_shader(u32 shader_index, u32 shader_type) 
         {
+            shader_resource& res = _res_pool[shader_index].shader;
+            
             switch(shader_type)
             {
                 case PEN_SHADER_TYPE_VS:
-                    s_current_state.vertex_shader = shader_index;
+                    _state.vertex_shader = [res.lib newFunctionWithName:@"vs_main"];
                     break;
                 case PEN_SHADER_TYPE_PS:
-                    s_current_state.fragment_shader = shader_index;
+                    _state.fragment_shader = [res.lib newFunctionWithName:@"ps_main"];;
                     break;
             };
         }
         
         void renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot) 
         {
-        
+            MTLVertexDescriptor* vd = [MTLVertexDescriptor vertexDescriptor];
+            
+            for(u32 i = 0; i < params.num_elements; ++i)
+            {
+                input_layout_desc& il = params.input_layout[i];
+                _res_pool[resource_slot].input_layout.slots[i] = il;
+                
+                /*
+                MTLVertexAttributeDescriptor *ad = [MTLVertexAttributeDescriptor new];
+                ad.format = to_metal_vertex_format(il.format);
+                ad.offset = il.aligned_byte_offset;
+                ad.bufferIndex = il.input_slot;
+                
+                [vd.attributes setObject: ad atIndexedSubscript: i];
+                */
+            }
+            
+            /*
+            MTLVertexBufferLayoutDescriptor *layout = [MTLVertexBufferLayoutDescriptor new];
+            layout.stride = 24;
+            layout.stepFunction = MTLVertexStepFunctionPerVertex;
+            layout.stepRate = 1;
+            [vd.layouts setObject: layout atIndexedSubscript: 0];
+            */
+            
+            //_res_pool[resource_slot].vertex_descriptor = vd;
         }
         
         void renderer_set_input_layout(u32 layout_index) 
         {
-        
+            //_state.vertex_descriptor = _res_pool[layout_index].vertex_descriptor;
+            _state.input_layout = layout_index;
         }
         
         void renderer_link_shader_program(const shader_link_params& params, u32 resource_slot) 
         {
-        
-        }
-        
-        void renderer_set_shader_program(u32 program_index) 
-        {
-        
+            // stub. used for opengl implementation
         }
         
         void renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot) 
         {
-            pool_grow(s_resource_pool, resource_slot);
+            pool_grow(_res_pool, resource_slot);
             
             id<MTLBuffer> buf;
             
@@ -286,14 +375,14 @@ namespace pen
             
             if(params.data)
             {
-                buf = [s_metal_device newBufferWithBytes:params.data length:params.buffer_size options:options];
+                buf = [_metal_device newBufferWithBytes:params.data length:params.buffer_size options:options];
             }
             else
             {
-                buf = [s_metal_device newBufferWithLength:params.buffer_size options:options];
+                buf = [_metal_device newBufferWithLength:params.buffer_size options:options];
             }
             
-            s_resource_pool[resource_slot].buffer = { buf };
+            _res_pool[resource_slot].buffer = { buf };
         }
         
         void renderer_set_vertex_buffers(u32* buffer_indices,
@@ -301,14 +390,15 @@ namespace pen
         {
             PEN_ASSERT(num_buffers < MAX_VB);
             
-            vertex_buffer_cmd& vb = s_current_state.vertex_buffers;
+            vertex_buffer_cmd& vb = _state.vertex_buffers;
             
             vb.num_buffers = num_buffers;
             vb.start_slot = start_slot;
             
             for(u32 i = 0; i < num_buffers; ++i)
             {
-                vb.buffer_index[i] = buffer_indices[i];
+                u32 ri = buffer_indices[i];
+                vb.buffer[i] = _res_pool[ri].buffer;
                 vb.stride[i] = strides[i];
                 vb.offset[i] = offsets[i];
             }
@@ -316,7 +406,9 @@ namespace pen
         
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset) 
         {
-        
+            index_buffer_cmd& ib = _state.index_buffer;
+            ib.buffer = _res_pool[buffer_index].buffer;
+            ib.type = MTLIndexTypeUInt16;
         }
         
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type) 
@@ -356,7 +448,7 @@ namespace pen
         
         void renderer_set_viewport(const viewport& vp) 
         {
-            s_current_state.viewport = vp;
+            _state.viewport = (MTLViewport){vp.x, vp.y, vp.width, vp.height, vp.min_depth, vp.max_depth};
         }
         
         void renderer_set_scissor_rect(const rect& r) 
@@ -389,24 +481,39 @@ namespace pen
             bind_state();
             
             // draw calls
-            [s_current_state.render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
+            [_state.render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
                                                vertexStart:start_vertex
                                                vertexCount:vertex_count];
             
-            [s_current_state.render_encoder endEncoding];
-            s_current_state.render_encoder = nil;
+            [_state.render_encoder endEncoding];
+            _state.render_encoder = nil;
             
             // submit
-            [s_current_state.cmd_buffer presentDrawable:s_current_state.drawable];
-            [s_current_state.cmd_buffer commit];
+            [_state.cmd_buffer presentDrawable:_state.drawable];
+            [_state.cmd_buffer commit];
         }
         
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology) 
         {
-        
+            bind_state();
+            
+            // draw calls
+            [_state.render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                                       indexCount:index_count
+                                                        indexType:_state.index_buffer.type
+                                                      indexBuffer:_state.index_buffer.buffer
+                                                indexBufferOffset:_state.index_buffer.offset];
+            
+            [_state.render_encoder endEncoding];
+            _state.render_encoder = nil;
+            
+            [_state.cmd_buffer presentDrawable:_state.drawable];
+            [_state.cmd_buffer commit];
         }
         
-        void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology) 
+        void renderer_draw_indexed_instanced(u32 instance_count,
+                                             u32 start_instance,
+                                             u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
         {
         
         }

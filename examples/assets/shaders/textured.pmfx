@@ -34,7 +34,9 @@ ps_output ps_main( vs_output input )
 {
     ps_output output;
     
-    output.colour = sample_texture( tex, input.tex_coord.xy );
+    //output.colour = sample_texture( tex, input.tex_coord.xy );
+    
+    output.colour = float4(1.0, input.tex_coord.x, input.tex_coord.y, 1.0);
     
     return output;
 }

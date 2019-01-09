@@ -29,7 +29,6 @@ namespace pen
         CMD_LOAD_SHADER,
         CMD_SET_SHADER,
         CMD_LINK_SHADER,
-        CMD_SET_SHADER_PROGRAM,
         CMD_CREATE_INPUT_LAYOUT,
         CMD_SET_INPUT_LAYOUT,
         CMD_CREATE_BUFFER,
@@ -736,10 +735,6 @@ namespace pen
         INC_WRAP(put_pos);
 
         return resource_slot;
-    }
-
-    void renderer_set_shader_program(u32 program_index)
-    {
     }
 
     void renderer_set_shader(u32 shader_index, u32 shader_type)
