@@ -58,6 +58,7 @@ class single_shader_info:
     instance_input_decl = ""                                            # struct decl of instance input struct
     output_decl = ""                                                    # struct decl of shader output
     struct_decls = ""                                                   # decls of all generic structs
+    texture_decl = []                                                   # decl of only used textures by this shader
 
 
 # parse command line args passed in
@@ -183,6 +184,21 @@ def replace_io_tokens(text):
     for token in split_replace:
         replaced_text += token + " "
     return replaced_text
+
+
+# returns macros source with only requested platform
+def get_macros_for_platform(platform, macros_source):
+    platform = platform.upper()
+    platform_macros = ""
+    start_str = "#ifdef " + platform
+    start = macros_source.find(start_str) + len(start_str)
+    end = macros_source.find("#endif //" + platform)
+    if start == -1:
+        return ""
+    platform_macros += macros_source[start:end]
+    all_platforms = macros_source.find("//GENERIC MACROS")
+    platform_macros += macros_source[all_platforms:]
+    return platform_macros
 
 
 # get info filename for dependency checking
@@ -727,6 +743,42 @@ def find_pmfx_json(shader_file_text):
     return None
 
 
+# find only used textures
+def find_used_textures(shader_source, texture_decl):
+    if not texture_decl:
+        return
+    # find texture uses
+    texture_uses = []
+    pos = 0
+    while True:
+        sampler = shader_source.find("sample_texture", pos)
+        if sampler == -1:
+            break;
+        start = shader_source.find("(", sampler)
+        end = shader_source.find(")", sampler)
+        if us(sampler) < us(start) < us(end):
+            args = shader_source[start+1:end-1].split(",")
+            if len(args) > 0:
+                name = args[0].strip(" ")
+                if name not in texture_uses:
+                    texture_uses.append(name)
+        pos = end
+    used_texture_decl = ""
+    texture_list = texture_decl.split(";")
+    for texture in texture_list:
+        start = texture.find("(") + 1
+        end = texture.find(")") - 1
+        args = texture[start:end].split(",")
+        name_positions = [0, 2]  # 0 = single sample texture, 2 = msaa texture
+        for p in name_positions:
+            if len(args) > p:
+                name = args[p].strip(" ")
+                if name in texture_uses:
+                    used_texture_decl = used_texture_decl.strip(" ")
+                    used_texture_decl += texture + ";\n"
+    return used_texture_decl
+
+
 # find only used functions from a given entry point
 def find_used_functions(entry_func, function_list):
     used_functions = [entry_func]
@@ -797,12 +849,18 @@ def generate_single_shader(main_func, _tp):
     # remove empty inputs which have no members due to permutation conditionals
     _si.input_decl, main = strip_empty_inputs(_si.input_decl, main)
 
+    # condition main function with stripped inputs
     if _si.instance_input_struct_name:
         _si.instance_input_decl, main = strip_empty_inputs(_si.instance_input_decl, main)
         if _si.instance_input_decl == "":
             _si.instance_input_struct_name = None
-
     _si.main_func_source = main
+
+    # find only used textures by this shader
+    full_source = _si.functions_source + main
+    _si.texture_decl = find_used_textures(full_source, _tp.texture_decl)
+
+    # todo find only used cbuffers
 
     return _si
 
@@ -833,7 +891,7 @@ def format_source(source, indent_size):
 
 # compile hlsl shader model 4
 def compile_hlsl(_info, pmfx_name, _tp, _shader):
-    shader_source = _info.macros_source
+    shader_source = get_macros_for_platform("hlsl", _info.macros_source)
     shader_source += _tp.struct_decls
     for cb in _tp.cbuffers:
         shader_source += cb
@@ -939,6 +997,17 @@ def generate_output_assignment(io_elements, local_var, suffix):
     return assign_source
 
 
+# generates a texture declaration from a texture list
+def generate_texture_decl(texture_list):
+    if not texture_list:
+        return ""
+    texture_decl = ""
+    for alias in texture_list:
+        decl = str(alias[0]) + "( " + str(alias[1]) + ", " + str(alias[2]) + " );\n"
+        texture_decl += decl
+    return texture_decl
+
+
 # compile glsl
 def compile_glsl(_info, pmfx_name, _tp, _shader):
     # parse inputs and outputs into semantics
@@ -970,7 +1039,7 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     elif "glsl" == "glsl":
         shader_source += "#version 330 core\n"
         shader_source += "#define GLSL\n"
-    shader_source += _info.macros_source
+    shader_source += get_macros_for_platform("glsl", _info.macros_source)
 
     # input structs
     index_counter = 0
@@ -1008,7 +1077,7 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
 
     shader_source += _tp.struct_decls
     shader_source += uniform_buffers
-    shader_source += _tp.texture_decl
+    shader_source += _shader.texture_decl
     shader_source += _shader.functions_source
 
     glsl_main = _shader.main_func_source
@@ -1064,7 +1133,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     outputs, output_semantics = parse_io_struct(_shader.output_decl)
     instance_inputs, instance_input_semantics = parse_io_struct(_shader.instance_input_decl)
 
-    shader_source = _info.macros_source
+    shader_source = get_macros_for_platform("metal", _info.macros_source)
     shader_source += "using namespace metal;\n"
 
     if len(inputs) > 0:
@@ -1364,13 +1433,9 @@ def parse_pmfx(file, root):
             _tp.textures = generate_technique_texture_variables(_tp)
             _tp.texture_decl = find_texture_samplers(_tp.source)
 
-            _tp.technique_perm_texture_decl = ""
             # add technique textures
             if _tp.textures:
-                for alias in _tp.textures:
-                    decl = str(alias[0]) + "( " + str(alias[1]) + ", " + str(alias[2]) + " );\n"
-                    _tp.texture_decl += decl
-                    _tp.technique_perm_texture_decl += decl
+                _tp.texture_decl += generate_texture_decl(_tp.textures)
 
             # find functions
             _tp.functions = find_functions(_tp.source)

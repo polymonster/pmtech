@@ -1522,16 +1522,17 @@ namespace pen
             resolve_cbuffer cbuf = {w, h, 0.0f, 0.0f};
 
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fbos[1]));
-
+            
             direct::renderer_update_buffer(g_resolve_resources.constant_buffer, &cbuf, sizeof(cbuf), 0);
             direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, PEN_SHADER_TYPE_PS);
 
             viewport vp = {0.0f, 0.0f, w, h, 0.0f, 1.0f};
             direct::renderer_set_viewport(vp);
+            direct::renderer_set_scissor_rect(rect {0.0f, 0.0f, w, h});
 
             u32 stride = 24;
             u32 offset = 0;
-            direct::renderer_set_vertex_buffers(&g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
+            direct::renderer_set_vertex_buffers(&g_resolve_resources.vertex_buffer, 1, 0, &stride, &offset);
             direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
             direct::renderer_set_texture(target, 0, 0, TEXTURE_BIND_MSAA | pen::TEXTURE_BIND_PS);

@@ -60,7 +60,6 @@ ps_output ps_resolve_average_4x( vs_output_textured input )
     for( int i = 0; i < 4; ++i )
         output.colour += sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
     output.colour /= 4.0;
-    
     return output;
 }
 

@@ -1475,7 +1475,7 @@ namespace pen
 
             u32 stride = 24;
             u32 offset = 0;
-            direct::renderer_set_vertex_buffers(&g_resolve_resources.vertex_buffer, 0, 1, &stride, &offset);
+            direct::renderer_set_vertex_buffers(&g_resolve_resources.vertex_buffer, 1, 0, &stride, &offset);
             direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
             direct::renderer_set_texture(target, 0, 0, pen::TEXTURE_BIND_MSAA | pen::TEXTURE_BIND_PS);
