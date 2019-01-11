@@ -19,15 +19,6 @@ namespace // structs and static vars
         u32 depth_index;
     };
     
-    struct vertex_buffer_cmd
-    {
-        id<MTLBuffer>   buffer[MAX_VB];
-        u32             stride[MAX_VB];
-        u32             offset[MAX_VB];
-        u32             num_buffers;
-        u32             start_slot;
-    };
-    
     struct index_buffer_cmd
     {
         id<MTLBuffer>   buffer;
@@ -50,7 +41,6 @@ namespace // structs and static vars
         id<MTLFunction>             vertex_shader;
         id<MTLFunction>             fragment_shader;
         clear_cmd                   clear;
-        vertex_buffer_cmd           vertex_buffers;
         index_buffer_cmd            index_buffer;
         u32                         input_layout;
     };
@@ -67,21 +57,16 @@ namespace // structs and static vars
         MTLClearColor colour[pen::MAX_MRT];
     };
     
-    struct input_layout
-    {
-        u32 num_elements;
-        pen::input_layout_desc slots[10];
-    };
-    
     struct resource
     {
         union
         {
             id<MTLBuffer>           buffer;
+            id<MTLTexture>          texture;
+            id<MTLSamplerState>     sampler;
             shader_resource         shader;
             metal_clear_state       clear;
             MTLVertexDescriptor*    vertex_descriptor;
-            input_layout            input_layout;
         };
     };
     
@@ -153,30 +138,33 @@ namespace pen
     
     namespace direct
     {
-        void bind_state()
+        void invalidate_pass()
         {
-            if(_state.render_encoder != 0)
-                return;
+            if(_state.cmd_buffer == nil)
+                _state.cmd_buffer = [_state.command_queue commandBuffer];
             
-            // rt and clear.. create render_encoder
-            MTLRenderPassDescriptor *pass_desc = [MTLRenderPassDescriptor renderPassDescriptor];
-            id<MTLCommandBuffer> cmd_buffer = [_state.command_queue commandBuffer];
-            
-            metal_clear_state& clear = _res_pool[_state.clear.clear_state].clear;
-            
-            id<CAMetalDrawable> drawable = _metal_view.currentDrawable;
-            id<MTLTexture> texture = drawable.texture;
-            
-            pass_desc.colorAttachments[0].texture = texture; // todo rt
-            pass_desc.colorAttachments[0].loadAction = clear.colour_load_action;
-            pass_desc.colorAttachments[0].storeAction = MTLStoreActionStore;
-            pass_desc.colorAttachments[0].clearColor = clear.colour[0];
-            
-            id <MTLRenderCommandEncoder> render_encoder = [cmd_buffer renderCommandEncoderWithDescriptor:pass_desc];
-            
-            // set viewport
-            [render_encoder setViewport:_state.viewport];
-            
+            // create a render encoder
+            if(_state.render_encoder == nil)
+            {
+                MTLRenderPassDescriptor *pass_desc = [MTLRenderPassDescriptor renderPassDescriptor];
+                
+                metal_clear_state& clear = _res_pool[_state.clear.clear_state].clear;
+                
+                id<CAMetalDrawable> drawable = _metal_view.currentDrawable;
+                id<MTLTexture> texture = drawable.texture;
+                
+                pass_desc.colorAttachments[0].texture = texture; // todo rt
+                pass_desc.colorAttachments[0].loadAction = clear.colour_load_action;
+                pass_desc.colorAttachments[0].storeAction = MTLStoreActionStore;
+                pass_desc.colorAttachments[0].clearColor = clear.colour[0];
+                
+                _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:pass_desc];
+                _state.drawable = drawable;
+            }
+        }
+        
+        void bind_pipeline()
+        {
             // create pipeline
             MTLRenderPipelineDescriptor *pipeline_desc = [MTLRenderPipelineDescriptor new];
             
@@ -184,46 +172,13 @@ namespace pen
             pipeline_desc.fragmentFunction = _state.fragment_shader;
             pipeline_desc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
             
-            //pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
-            MTLVertexDescriptor* vd = [MTLVertexDescriptor vertexDescriptor];
-            input_layout& il = _res_pool[_state.input_layout].input_layout;
-            for(u32 i = 0; i < il.num_elements; ++i)
-            {
-                pen::input_layout_desc ild = il.slots[i];
-                MTLVertexAttributeDescriptor *ad = [MTLVertexAttributeDescriptor new];
-                ad.format = to_metal_vertex_format(ild.format);
-                ad.offset = ild.aligned_byte_offset;
-                ad.bufferIndex = ild.input_slot;
-
-                [vd.attributes setObject: ad atIndexedSubscript: i];
-            }
-
-            MTLVertexBufferLayoutDescriptor *layout = [MTLVertexBufferLayoutDescriptor new];
-            layout.stride = _state.vertex_buffers.stride[0];
-            layout.stepFunction = MTLVertexStepFunctionPerVertex;
-            layout.stepRate = 1;
-            [vd.layouts setObject: layout atIndexedSubscript: 0];
-        
-            pipeline_desc.vertexDescriptor = vd;
-            //_res_pool[resource_slot].vertex_descriptor = vd;
+            pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
             
             NSError *error = nil;
             id<MTLRenderPipelineState> pipeline = [_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc
-                                                                                                 error:&error];
+                                                                                                error:&error];
             
-            [render_encoder setRenderPipelineState:pipeline];
-
-            vertex_buffer_cmd& vb = _state.vertex_buffers;
-            for(u32 i = 0; i < vb.num_buffers; ++i)
-            {
-                [render_encoder setVertexBuffer:vb.buffer[i]
-                                         offset:vb.offset[i]
-                                        atIndex:vb.start_slot+i];
-            }
-            
-            _state.render_encoder = render_encoder;
-            _state.cmd_buffer = cmd_buffer;
-            _state.drawable = drawable;
+            [_state.render_encoder setRenderPipelineState:pipeline];
         }
         
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res) 
@@ -322,37 +277,26 @@ namespace pen
         
         void renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot) 
         {
-            MTLVertexDescriptor* vd = [MTLVertexDescriptor vertexDescriptor];
+            MTLVertexDescriptor* vd = [[MTLVertexDescriptor alloc] init];
             
             for(u32 i = 0; i < params.num_elements; ++i)
             {
                 input_layout_desc& il = params.input_layout[i];
-                _res_pool[resource_slot].input_layout.slots[i] = il;
                 
-                /*
                 MTLVertexAttributeDescriptor *ad = [MTLVertexAttributeDescriptor new];
                 ad.format = to_metal_vertex_format(il.format);
                 ad.offset = il.aligned_byte_offset;
                 ad.bufferIndex = il.input_slot;
                 
                 [vd.attributes setObject: ad atIndexedSubscript: i];
-                */
             }
             
-            /*
-            MTLVertexBufferLayoutDescriptor *layout = [MTLVertexBufferLayoutDescriptor new];
-            layout.stride = 24;
-            layout.stepFunction = MTLVertexStepFunctionPerVertex;
-            layout.stepRate = 1;
-            [vd.layouts setObject: layout atIndexedSubscript: 0];
-            */
-            
-            //_res_pool[resource_slot].vertex_descriptor = vd;
+            _res_pool[resource_slot].vertex_descriptor = vd;
         }
         
         void renderer_set_input_layout(u32 layout_index) 
         {
-            //_state.vertex_descriptor = _res_pool[layout_index].vertex_descriptor;
+            _state.vertex_descriptor = _res_pool[layout_index].vertex_descriptor;
             _state.input_layout = layout_index;
         }
         
@@ -363,7 +307,7 @@ namespace pen
         
         void renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot) 
         {
-            pool_grow(_res_pool, resource_slot);
+            //pool_grow(_res_pool, resource_slot);
             
             id<MTLBuffer> buf;
             
@@ -388,19 +332,22 @@ namespace pen
         void renderer_set_vertex_buffers(u32* buffer_indices,
                                          u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
         {
-            PEN_ASSERT(num_buffers < MAX_VB);
-            
-            vertex_buffer_cmd& vb = _state.vertex_buffers;
-            
-            vb.num_buffers = num_buffers;
-            vb.start_slot = start_slot;
+            PEN_ASSERT(_state.render_encoder);
             
             for(u32 i = 0; i < num_buffers; ++i)
             {
                 u32 ri = buffer_indices[i];
-                vb.buffer[i] = _res_pool[ri].buffer;
-                vb.stride[i] = strides[i];
-                vb.offset[i] = offsets[i];
+                
+                [_state.render_encoder setVertexBuffer:_res_pool[ri].buffer
+                                                offset:offsets[i]
+                                               atIndex:start_slot+i];
+                
+                
+                MTLVertexBufferLayoutDescriptor *layout = [MTLVertexBufferLayoutDescriptor new];
+                layout.stride = strides[i];
+                layout.stepFunction = MTLVertexStepFunctionPerVertex;
+                layout.stepRate = 1;
+                [_state.vertex_descriptor.layouts setObject: layout atIndexedSubscript: start_slot+i];
             }
         }
         
@@ -423,17 +370,63 @@ namespace pen
         
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot) 
         {
-        
+            MTLTextureDescriptor* td = nil;
+            id<MTLTexture> texture = nil;
+            
+            if(tcp.collection_type == TEXTURE_COLLECTION_NONE)
+            {
+                td = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
+                                                                        width:tcp.width
+                                                                       height:tcp.height
+                                                                    mipmapped:tcp.num_mips > 0];
+                
+                td.usage = MTLTextureUsageShaderRead;
+                
+                texture = [_metal_device newTextureWithDescriptor:td];
+                
+                if(tcp.data)
+                {
+                    u32 pitch = tcp.block_size * tcp.pixels_per_block * tcp.width;
+                    MTLRegion region = MTLRegionMake2D(0, 0, tcp.width, tcp.height);
+                    [texture replaceRegion:region mipmapLevel:0 withBytes:tcp.data bytesPerRow:pitch];
+                }
+            }
+            else
+            {
+                // todo cube, 3d volume, arrays etc
+            }
+            
+            _res_pool[resource_slot].texture = texture;
         }
         
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot) 
         {
-        
+            // create sampler state
+            MTLSamplerDescriptor *sd = [MTLSamplerDescriptor new];
+            sd.sAddressMode = MTLSamplerAddressModeClampToEdge;
+            sd.tAddressMode = MTLSamplerAddressModeClampToEdge;
+            sd.minFilter = MTLSamplerMinMagFilterNearest;
+            sd.magFilter = MTLSamplerMinMagFilterLinear;
+            sd.mipFilter = MTLSamplerMipFilterLinear;
+            
+            _res_pool[resource_slot].sampler = [_metal_device newSamplerStateWithDescriptor:sd];
         }
         
         void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags) 
         {
-        
+            PEN_ASSERT(_state.render_encoder);
+            
+            if(bind_flags & pen::TEXTURE_BIND_PS)
+            {
+                [_state.render_encoder setFragmentTexture:_res_pool[texture_index].texture atIndex:resource_slot];
+                [_state.render_encoder setFragmentSamplerState:_res_pool[sampler_index].sampler atIndex:resource_slot];
+            }
+            
+            if(bind_flags & pen::TEXTURE_BIND_VS)
+            {
+                [_state.render_encoder setVertexTexture:_res_pool[texture_index].texture atIndex:resource_slot];
+                [_state.render_encoder setVertexSamplerState:_res_pool[sampler_index].sampler atIndex:resource_slot];
+            }
         }
         
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot) 
@@ -449,6 +442,7 @@ namespace pen
         void renderer_set_viewport(const viewport& vp) 
         {
             _state.viewport = (MTLViewport){vp.x, vp.y, vp.width, vp.height, vp.min_depth, vp.max_depth};
+            [_state.render_encoder setViewport:_state.viewport];
         }
         
         void renderer_set_scissor_rect(const rect& r) 
@@ -478,7 +472,7 @@ namespace pen
         
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology) 
         {
-            bind_state();
+            bind_pipeline();
             
             // draw calls
             [_state.render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
@@ -486,29 +480,20 @@ namespace pen
                                                vertexCount:vertex_count];
             
             [_state.render_encoder endEncoding];
-            _state.render_encoder = nil;
-            
-            // submit
-            [_state.cmd_buffer presentDrawable:_state.drawable];
-            [_state.cmd_buffer commit];
         }
         
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology) 
         {
-            bind_state();
+            bind_pipeline();
             
             // draw calls
             [_state.render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                                       indexCount:index_count
-                                                        indexType:_state.index_buffer.type
-                                                      indexBuffer:_state.index_buffer.buffer
-                                                indexBufferOffset:_state.index_buffer.offset];
+                                              indexCount:index_count
+                                               indexType:_state.index_buffer.type
+                                             indexBuffer:_state.index_buffer.buffer
+                                       indexBufferOffset:_state.index_buffer.offset];
             
             [_state.render_encoder endEncoding];
-            _state.render_encoder = nil;
-            
-            [_state.cmd_buffer presentDrawable:_state.drawable];
-            [_state.cmd_buffer commit];
         }
         
         void renderer_draw_indexed_instanced(u32 instance_count,
@@ -531,7 +516,7 @@ namespace pen
         void renderer_set_targets(const u32* const colour_targets,
                                   u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face)
         {
-        
+            invalidate_pass();
         }
         
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target) 
@@ -556,7 +541,13 @@ namespace pen
         
         void renderer_present() 
         {
+            // submit
+            [_state.cmd_buffer presentDrawable:_state.drawable];
+            [_state.cmd_buffer commit];
             
+            // null state for next frame
+            _state.render_encoder = nil;
+            _state.cmd_buffer = nil;
         }
         
         void renderer_push_perf_marker(const c8* name) 
@@ -576,12 +567,7 @@ namespace pen
         
         void renderer_release_shader(u32 shader_index, u32 shader_type) 
         {
-        
-        }
-        
-        void renderer_release_program(u32 program) 
-        {
-        
+            _res_pool[shader_index].shader.lib = nil;
         }
         
         void renderer_release_clear_state(u32 clear_state) 
@@ -591,17 +577,17 @@ namespace pen
         
         void renderer_release_buffer(u32 buffer_index) 
         {
-        
+            _res_pool[buffer_index].buffer = nil;
         }
         
         void renderer_release_texture(u32 texture_index) 
         {
-        
+            _res_pool[texture_index].buffer = nil;
         }
         
         void renderer_release_sampler(u32 sampler) 
         {
-        
+            _res_pool[sampler].sampler = nil;
         }
         
         void renderer_release_raster_state(u32 raster_state_index) 
@@ -621,7 +607,7 @@ namespace pen
         
         void renderer_release_input_layout(u32 input_layout) 
         {
-        
+            _res_pool[input_layout].vertex_descriptor = nil;
         }
         
         void renderer_release_depth_stencil_state(u32 depth_stencil_state) 

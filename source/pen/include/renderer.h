@@ -402,7 +402,6 @@ namespace pen
     // cleanup
     void renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type);
     void renderer_release_shader(u32 shader_index, u32 shader_type);
-    void renderer_release_program(u32 program);
     void renderer_release_clear_state(u32 clear_state);
     void renderer_release_buffer(u32 buffer_index);
     void renderer_release_texture(u32 texture_index);
@@ -493,7 +492,6 @@ namespace pen
         // cleanup
         void renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type);
         void renderer_release_shader(u32 shader_index, u32 shader_type);
-        void renderer_release_program(u32 program);
         void renderer_release_clear_state(u32 clear_state);
         void renderer_release_buffer(u32 buffer_index);
         void renderer_release_texture(u32 texture_index);

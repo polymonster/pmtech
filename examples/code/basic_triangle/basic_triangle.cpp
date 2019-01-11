@@ -33,7 +33,7 @@ PEN_TRV pen::user_entry(void* params)
 
     u32 clear_state = pen::renderer_create_clear_state(cs);
 
-    // raster state
+    // create raster state
     pen::rasteriser_state_creation_params rcp;
     pen::memory_zero(&rcp, sizeof(rasteriser_state_creation_params));
     rcp.fill_mode = PEN_FILL_SOLID;
@@ -55,20 +55,12 @@ PEN_TRV pen::user_entry(void* params)
     pen::string_format(shader_file_buf, 256, "data/pmfx/%s/%s/%s", pen::renderer_get_shader_platform(), "basictri",
                        "default.vsc");
     pen_error err = pen::filesystem_read_file_to_buffer(shader_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size);
-
-    if (err)
-    {
-        PEN_ASSERT(0);
-    }
+    PEN_ASSERT(!err);
 
     pen::string_format(shader_file_buf, 256, "data/pmfx/%s/%s/%s", pen::renderer_get_shader_platform(), "basictri",
                        "default.psc");
     err = pen::filesystem_read_file_to_buffer(shader_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
-
-    if (err)
-    {
-        PEN_ASSERT(0);
-    }
+    PEN_ASSERT(!err);
 
     u32 vertex_shader = pen::renderer_load_shader(vs_slp);
     u32 pixel_shader = pen::renderer_load_shader(ps_slp);
@@ -114,6 +106,7 @@ PEN_TRV pen::user_entry(void* params)
 
     while (1)
     {
+        // set render targets to backbuffer
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
         // clear screen

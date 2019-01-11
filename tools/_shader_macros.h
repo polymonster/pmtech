@@ -56,9 +56,9 @@
     #define texture_cube( name, sampler_index )	TextureCube name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 
 
     #define sample_texture_2dms( name, x, y, fragment ) name.Load( uint2(x, y), fragment )
-    #define sample_texture( name, V ) name.Sample( sampler_##name, V )
-    #define sample_texture_level( name, V, l ) name.SampleLevel( sampler_##name, V, l )
-    #define sample_texture_grad( name, V, vddx, vddy ) name.SampleGrad( sampler_##name, V, vddx, vddy )
+    #define sample_texture( name, V ) name.Sample(sampler_##name, V)
+    #define sample_texture_level( name, V, l ) name.SampleLevel(sampler_##name, V, l)
+    #define sample_texture_grad( name, V, vddx, vddy ) name.SampleGrad(sampler_##name, V, vddx, vddy )
 
     #define to_3x3( M4 ) (float3x3)M4
     #define mul_tbn( A, B ) mul(A, B)
@@ -78,11 +78,11 @@
 #endif //HLSL
 
 #ifdef METAL
-    #define texture_2d( name, sampler_index ) texture2d<float> name [[texture(sampler_index)]], sampler_##name samplr [[sampler(sampler_index)]]
+    #define texture_2d( name, sampler_index ) texture2d<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
+    #define sample_texture( name, tc ) name.sample(sampler_##name, tc);
 #endif //METAL
 
 //GENERIC MACROS
-//platform agnostic pmfx macros
 #define chebyshev_normalize( V ) (V.xyz / max( max(abs(V.x), abs(V.y)), abs(V.z) ))	
 #define max3(v) max(max(v.x, v.y),v.z)
 #define max4(v) max(max(max(v.x, v.y),v.z), v.w)

@@ -1149,6 +1149,8 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     if len(inputs) > 0:
         shader_source += "struct " + _shader.input_struct_name + "\n{\n"
         for i in range(0, len(inputs)):
+            if _shader.shader_type == "vs":
+                shader_source += "packed_"
             shader_source += inputs[i] + ";\n"
         shader_source += "};\n"
 
@@ -1183,14 +1185,22 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         if _shader.instance_input_struct_name:
             shader_source += ", device " + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]],"
             shader_source += " uint iid [[instance_id]]"
-        shader_source += ")\n{\n"
+    else:
+        shader_source += _shader.input_struct_name + " input [[stage_in]]"
+
+    # pass in textures, and cbuffers
+    invalid = ["", "\n"]
+    texture_list = _shader.texture_decl.split(";")
+    for texture in texture_list:
+        if texture not in invalid:
+            shader_source += ", " + texture
+    shader_source += ")\n{\n"
+
+    if _shader.shader_type == "vs":
         # create function header for main and insert assignment to port from hlsl to metal
         shader_source += _shader.input_struct_name + " input = " + "vertices[vid];\n"
         if _shader.instance_input_struct_name:
             shader_source += _shader.instance_input_struct_name + " instance_input = " + "instances[iid];"
-    else:
-        shader_source += _shader.input_struct_name + " input [[stage_in]]"
-        shader_source += ")\n{\n"
 
     main_func_body = _shader.main_func_source.find("{") + 1
     shader_source += _shader.main_func_source[main_func_body:]

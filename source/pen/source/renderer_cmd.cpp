@@ -397,10 +397,6 @@ namespace pen
                 direct::renderer_release_blend_state(cmd.command_data_index);
                 break;
 
-            case CMD_RELEASE_PROGRAM:
-                direct::renderer_release_program(cmd.command_data_index);
-                break;
-
             case CMD_RELEASE_CLEAR_STATE:
                 direct::renderer_release_clear_state(cmd.command_data_index);
                 break;
@@ -1182,18 +1178,6 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_RELEASE_CLEAR_STATE;
 
         cmd_buffer[put_pos].command_data_index = clear_state;
-
-        INC_WRAP(put_pos);
-    }
-
-    void renderer_release_program(u32 program)
-    {
-        if (!slot_resources_free(&s_renderer_slot_resources, program))
-            return;
-
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_PROGRAM;
-
-        cmd_buffer[put_pos].command_data_index = program;
 
         INC_WRAP(put_pos);
     }
