@@ -7,7 +7,6 @@ import util
 import math
 import subprocess
 
-
 # paths and info for current build environment
 class build_info:
     shader_platform = ""                                                # hlsl, glsl, metal
@@ -898,7 +897,7 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
     shader_source += _shader.input_decl
     shader_source += _shader.instance_input_decl
     shader_source += _shader.output_decl
-    shader_source += _tp.texture_decl
+    shader_source += _shader.texture_decl
     shader_source += _shader.functions_source
     shader_source += _shader.main_func_source
     shader_source = format_source(shader_source, 4)
@@ -932,7 +931,18 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
     cmdline += "/E " + _shader.main_func_name + " "
     cmdline += "/Fo " + output_file_and_path + " " + temp_file_and_path + " "
 
-    subprocess.call(cmdline, shell=True)
+    # process = subprocess.Popen([exe + ".exe", cmdline], shell=True, stdout=subprocess.PIPE)
+    # rt = subprocess.call(cmdline, shell=True)
+
+    p = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p.wait()
+    output, err = p.communicate()
+    err_str = err.decode('utf-8')
+    err_str = err_str.strip(" ")
+    err_list = err_str.split("\n")
+    for e in err_list:
+        if e != "":
+            print(e)
 
 
 # parse shader inputs annd output source into a list of elements and semantics
