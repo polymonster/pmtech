@@ -143,8 +143,8 @@ PEN_TRV pen::user_entry(void* params)
             gamepad_state gs;
             pen::input_get_gamepad_state(i, gs);
             
-            put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Vendor ID: [%i] : Device ID [%i]",
-                                  gs.vendor_id, gs.device_id);
+            put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Vendor ID: [%i] : Product ID [%i]",
+                                  gs.vendor_id, gs.product_id);
             ypos += 10.0f;
             
             for(u32 b = 0; b < 16; ++b)
