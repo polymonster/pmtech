@@ -51,11 +51,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
     // initilaise any generic systems
     pen::timer_system_intialise();
+    pen::input_gamepad_init();
+
     HWND hwnd = (HWND)pen::window_get_primary_display_handle();
 
     pen::renderer_init((void*)&hwnd, true);
-
-    pen::input_gamepad_init();
 
     return 0;
 }
