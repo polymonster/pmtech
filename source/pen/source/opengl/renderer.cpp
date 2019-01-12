@@ -1941,13 +1941,6 @@ namespace pen
     {
     }
 
-    void direct::renderer_release_program(u32 program)
-    {
-        resource_allocation& res = resource_pool[program];
-
-        CHECK_CALL(glDeleteProgram(res.shader_program->program));
-    }
-
     void direct::renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
     {
         switch (type)

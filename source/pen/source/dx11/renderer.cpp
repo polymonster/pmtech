@@ -1393,11 +1393,6 @@ namespace pen
         resource_pool[depth_stencil_state].depth_stencil_state->Release();
     }
 
-    void direct::renderer_release_program(u32 program)
-    {
-        // program is for opengl
-    }
-
     void direct::renderer_release_clear_state(u32 clear_state)
     {
         memory_free(resource_pool[clear_state].clear_state);

@@ -143,6 +143,10 @@ PEN_TRV pen::user_entry(void* params)
             gamepad_state gs;
             pen::input_get_gamepad_state(i, gs);
             
+            put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Vendor ID: [%i] : Device ID [%i]",
+                                  gs.vendor_id, gs.device_id);
+            ypos += 10.0f;
+            
             for(u32 b = 0; b < 16; ++b)
             {
                 put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Button: %i : [%i]", b, gs.button[b]);
@@ -152,7 +156,7 @@ PEN_TRV pen::user_entry(void* params)
             f32 xpos = 150.0f;
             for(u32 r = 0; r < 4; ++r)
             {
-                ypos = 70.0f;
+                ypos = 80.0f;
                 for(u32 a = 0; a < 16; ++a)
                 {
                     u32 ai = r*16+a;
