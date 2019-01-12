@@ -2084,6 +2084,10 @@ namespace put
                             if (ImGui::Button(ICON_FA_STOP))
                                 controller.play_flags = cmp_anim_controller::STOPPED;
                         }
+                        
+                        ImGui::InputFloat("Time", &controller.current_time, 0.01f);
+                        
+                        
                     }
 
                     if (open_anim_import)
@@ -2115,9 +2119,13 @@ namespace put
                                         u32 bone_len = scene->names[jnode].length();
                                         u32 target_len = anim->channels[i].target_name.length();
 
+                                        if(bone_len > target_len)
+                                            continue;
+                                        
                                         Str ss = pen::str_substr(anim->channels[i].target_name, target_len - bone_len, target_len);
                                         if ( ss == scene->names[jnode] )
                                         {
+                                            //PEN_LOG("%s >> %s", scene->names[jnode].c_str(), anim->channels[i].target_name.c_str());
                                             anim->channels[i].target_node_index = jnode;
                                             break;
                                         }

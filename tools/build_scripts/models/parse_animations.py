@@ -4,14 +4,20 @@ import models.helpers as helpers
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 
 animation_channels = []
-animation_source_semantics = ["TIME", "TRANSFORM", "INTERPOLATION"]
+animation_source_semantics = ["TIME", "TRANSFORM", "X", "Y", "Z", "ANGLE", "INTERPOLATION"]
 animation_source_types = ["float", "float4x4", "Name"]
+animation_targets = ["translate", "transform", "rotate",
+                     "translate.X", "translate.Y", "translate.Z",
+                     "rotateX.ANGLE", "rotateY.ANGLE", "rotateZ.ANGLE"]
+interpolation_types = ["LINEAR", "BEZIER", "CARDINAL", "HERMITE", "BSPLINE", "STEP"]
 
 
 class animation_source:
     semantic = ""
     type = ""
     data = []
+    stride = 0
+    count = 0
 
 
 class animation_sampler:
@@ -31,8 +37,8 @@ def parse_animation_source(root, source_id):
     for src in root.iter(schema+'source'):
         if "#"+src.get("id") == source_id:
             for a in src.iter(schema+'accessor'):
-                count = a.get("count")
-                stride = a.get("stride")
+                new_source.count = a.get("count")
+                new_source.stride = a.get("stride")
                 for p in a.iter(schema+'param'):
                     name = p.get("name")
                     param_type = p.get('type')
@@ -77,23 +83,27 @@ def write_animation_file(filename):
         output.write(struct.pack("i", num_channels))
         for channel in animation_channels:
             bone = channel.target_bone.split('/')
+            target = -1
+            if len(bone) > 1:
+                target = animation_targets.index(bone[1])
             helpers.write_parsable_string(output, bone[0])
-            num_sources = 0
+            output.write(struct.pack("i", len(channel.sampler.sources)))
             for src in channel.sampler.sources:
                 semantic_index = animation_source_semantics.index(src.semantic)
-                if semantic_index < 2:
-                    num_sources += 1
-            output.write(struct.pack("i", num_sources))
-            for src in channel.sampler.sources:
-                semantic_index = animation_source_semantics.index(src.semantic)
-                if semantic_index < 2:
-                    output.write(struct.pack("i", semantic_index))
-                    type_index = animation_source_types.index(src.type)
-                    output.write(struct.pack("i", type_index))
+                type_index = animation_source_types.index(src.type)
+                output.write(struct.pack("i", semantic_index))
+                output.write(struct.pack("i", type_index))
+                output.write(struct.pack("i", target))
+                if src.type == "float":
+                    num_floats = len(src.data) / int(src.stride)
+                    output.write(struct.pack("i", int(num_floats)))
+                    for f in range(0, len(src.data), int(src.stride)):
+                        output.write(struct.pack("f", float(src.data[f])))
+                elif src.type == "float4x4":
                     output.write(struct.pack("i", len(src.data)))
-                    if src.type == "float":
-                        for f in range(0, len(src.data)):
-                            output.write(struct.pack("f", f))
-                    elif src.type == "float4x4":
-                        for f in range(0, len(src.data), 16):
-                            helpers.write_corrected_4x4matrix(output, src.data[f:f+16])
+                    for f in range(0, len(src.data), int(src.stride)):
+                        helpers.write_corrected_4x4matrix(output, src.data[f:f + 16])
+                elif src.semantic == "INTERPOLATION" and src.type == "Name":
+                    output.write(struct.pack("i", len(src.data)))
+                    for i in range(0, len(src.data), int(src.stride)):
+                        output.write(struct.pack("i", interpolation_types.index(src.data[i])))

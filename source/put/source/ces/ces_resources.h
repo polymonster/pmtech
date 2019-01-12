@@ -10,15 +10,42 @@ namespace put
         enum e_animation_semantics
         {
             A_TIME = 0,
-            A_TRANSFORM = 1,
+            A_TRANSFORM,
+            A_OFFSET_X,
+            A_OFFSET_Y,
+            A_OFFSET_Z,
+            A_ANGLE,
+            A_INTERPOLATION
+        };
+        
+        enum e_animation_interpolation_types
+        {
+            A_LINEAR = 0,
+            A_BEZIER,
+            A_CARDINAL,
+            A_HERMITE,
+            A_BSPLINE,
+            A_STEP
         };
 
         enum e_animation_data_types
         {
             A_FLOAT = 0,
-            A_FLOAT4x4 = 1,
-            A_TRANSLATION = 2,
-            A_ROTATION = 3
+            A_FLOAT4x4,
+            A_INT
+        };
+        
+        enum e_animation_targets
+        {
+            A_TRANSLATE_TARGET = 0,
+            A_TRANSFORM_TARGET,
+            A_ROTATE_TARGET,
+            A_TRANSLATE_X_TARGET,
+            A_TRANSLATE_Y_TARGET,
+            A_TRANSLATE_Z_TARGET,
+            A_ROTATE_X_TARGET,
+            A_ROTATE_Y_TARGET,
+            A_ROTATE_Z_TARGET
         };
 
         enum e_pmm_load_flags : u32
@@ -35,8 +62,12 @@ namespace put
             hash_id target;
             f32*    times;
             mat4*   matrices;
+            f32*    offset[3];
+            f32*    angle[3];
+            u32*    interpolation;
             Str     target_name;
             u32     target_node_index;
+            s32     processed_frame = -1;
         };
 
         struct animation_resource

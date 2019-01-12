@@ -594,10 +594,29 @@ namespace put
                             continue;
 
                         if (controller.play_flags == cmp_anim_controller::PLAY)
-                            controller.current_time += dt * 0.1f;
+                            controller.current_time += dt * 0.001f;
 
                         s32 joints_offset = scene->anim_controller[n].joints_offset;
-
+                        cmp_skin* skin = nullptr;
+                        if(scene->geometries[n].p_skin)
+                            skin = scene->geometries[n].p_skin;
+                        
+                        if(controller.current_frame > 0)
+                            continue;
+                        
+                        // set all nodes to initial transform
+                        for (s32 c = 0; c < anim->num_channels; ++c)
+                        {
+                            // anim channel to scene node
+                            s32 sni = joints_offset + c;
+                            
+                            if(anim->remap_channels)
+                                sni = anim->channels[c].target_node_index;
+                            
+                            scene->transforms[sni].rotation = scene->initial_transform[sni].rotation;
+                            scene->transforms[sni].translation = scene->initial_transform[sni].translation;
+                        }
+                        
                         for (s32 c = 0; c < anim->num_channels; ++c)
                         {
                             s32 num_frames = anim->channels[c].num_frames;
@@ -613,19 +632,66 @@ namespace put
                             // loop
                             if (t >= num_frames)
                                 t = 0;
-
-                            mat4& mat = anim->channels[c].matrices[t];
-
-                            s32 scene_node_index = joints_offset + c;
-
+                            
+                            // anim channel to scene node
+                            s32 sni = joints_offset + c;
+                            
                             if(anim->remap_channels)
-                                scene_node_index = anim->channels[c].target_node_index;
+                                sni = anim->channels[c].target_node_index;
+                            
+                            // invalid
+                            if(sni < 0)
+                                continue;
 
-                            scene->local_matrices[scene_node_index] = mat;
-
-                            if (scene->entities[scene_node_index] & CMP_ANIM_TRAJECTORY)
+                            if(anim->channels[c].matrices)
                             {
-                                trajectory = anim->channels[c].matrices[num_frames - 1];
+                                // apply baked tansform anim
+                                mat4& mat = anim->channels[c].matrices[t];
+                                scene->local_matrices[sni] = mat;
+                            }
+                            else
+                            {
+                                // apply offset / angle
+                                vec3f offset = vec3f::zero();
+                                vec3f angle = vec3f::zero();
+                                for(u32 i = 0; i < 3; ++i)
+                                {
+                                    if(anim->channels[c].offset[i])
+                                        offset[i] = anim->channels[c].offset[i][t];
+                                    
+                                    if(anim->channels[c].angle[i])
+                                        angle[i] = anim->channels[c].angle[i][t];
+                                }
+                                
+                                if(skin)
+                                {
+                                    if(anim->channels[c].processed_frame == t)
+                                        continue;
+                                    
+                                    anim->channels[c].processed_frame = t;
+                                    
+                                    u32 bone_index = sni - (n + joints_offset);
+                                    if(bone_index > 84)
+                                        continue;
+
+                                    quat rot;
+                                    rot.euler_angles(maths::deg_to_rad(angle.z),
+                                                     maths::deg_to_rad(angle.y),
+                                                     maths::deg_to_rad(angle.x));
+                                    
+                                    scene->transforms[sni].rotation *= rot;
+                                    
+                                    scene->transforms[sni].translation += offset * 0.01f;
+
+                                    scene->entities[sni] |= CMP_TRANSFORM;
+                                }
+
+                            }
+
+                            if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
+                            {
+                                if(anim->channels[c].matrices)
+                                    trajectory = anim->channels[c].matrices[num_frames - 1];
                             }
 
                             if (controller.current_time > anim->length)

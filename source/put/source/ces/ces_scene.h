@@ -235,7 +235,7 @@ namespace put
             s32          joints_offset;
             anim_handle  current_animation;
             f32          current_time;
-            s32          current_frame = 0;
+            s32          current_frame = -1;
             u8           play_flags = STOPPED;
             bool         apply_root_motion = true;
         };
@@ -383,6 +383,8 @@ namespace put
             cmp_array<cmp_shadow>          shadows;
             cmp_array<cmp_samplers>        samplers;             // version 5
             cmp_array<u32>                 material_permutation; // version 8
+            cmp_array<cmp_transform>       initial_transform;    // version 9
+            cmp_array<cmp_transform>       prev_transform;       // version 9
 
             // Ensure num_components is the next to calc size
             u32 num_components;
