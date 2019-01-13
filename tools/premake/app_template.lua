@@ -225,8 +225,8 @@ function create_app(project_name, source_directory, root_directory)
 			architecture "x64"
 			libdirs
 			{ 
-				pmtech_dir .. "source/pen/lib/" .. platform_dir .. "/debug", 
-				pmtech_dir .. "source/put/lib/" .. platform_dir .. "/debug",
+				pmtech_dir .. "source/pen/lib/" .. platform_dir .. "/release", 
+				pmtech_dir .. "source/put/lib/" .. platform_dir .. "/release",
 			}
 		
 		configuration "Debug"
@@ -237,8 +237,8 @@ function create_app(project_name, source_directory, root_directory)
 			architecture "x64"
 			libdirs
 			{ 
-				pmtech_dir .. "source/pen/lib/" .. platform_dir .. "/release", 
-				pmtech_dir .. "source/put/lib/" .. platform_dir .. "/release",
+				pmtech_dir .. "source/pen/lib/" .. platform_dir .. "/debug", 
+				pmtech_dir .. "source/put/lib/" .. platform_dir .. "/debug",
 			}
 		
 end

@@ -21,13 +21,19 @@ namespace pen
         u8  buttons[3];
     };
 
-    struct gamepad_state
+    struct raw_gamepad_state
     {
         u32 device_id = -1;
         u32 vendor_id = -1;
         u32 product_id = -1;
         u8  button[16] = {0};
         f32 axis[64] = {0};
+    };
+    
+    struct gamepad_state
+    {
+        u8  button[14];
+        f32 axis[6];
     };
 
     void input_set_unicode_key_down(u32 key_index);
@@ -198,24 +204,18 @@ enum virtual_key
 
 enum gamepad_button
 {
-    PGP_DPAD_UP = 0,
-    PGP_DPAD_DOWN,
-    PGP_DPAD_LEFT,
-    PGP_DPAD_RIGHT,
-
-    PGP_Y,
     PGP_A,
-    PGP_X,
     PGP_B,
-
+    PGP_X,
+    PGP_Y,
     PGP_L1,
     PGP_R1,
-
     PGP_L3,
     PGP_R3,
-
     PGP_START,
-    PGP_SELECT
+    PGP_SELECT,
+    PGP_TOUCH_PAD,      // ds4 touch pad
+    PGP_PLATFORM_BUTTON // ps button, xbox button etc
 };
 
 #endif
