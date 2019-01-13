@@ -64,12 +64,12 @@ inline void output_debug(const c8* format, ...)
 #ifdef _WIN32
 #define PEN_DIR '\\'
 #define PEN_PYTHON3 "py -3 "
-#define PEN_SHADER_COMPILE_CMD "tools\\build_scripts\\build_shaders.py -root_dir ..\\..\\"
+#define PEN_SHADER_COMPILE_CMD "tools\\build_scripts\\build_pmfx.py -root_dir ..\\..\\"
 #define PEN_BUILD_CMD "tools\\build.py -root_dir ..\\..\\"
 #else // Unix
 #define PEN_DIR '/'
 #define PEN_PYTHON3 ". ~/.bash_profile;  python3 "
-#define PEN_SHADER_COMPILE_CMD "tools/build_scripts/build_shaders.py -root_dir ../../"
+#define PEN_SHADER_COMPILE_CMD "tools/build_scripts/build_pmfx.py -root_dir ../../"
 #define PEN_BUILD_CMD "tools/build.py -root_dir ../../"
 #endif
 

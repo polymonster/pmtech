@@ -1968,13 +1968,14 @@ namespace pen
     }
 
     static renderer_info s_renderer_info;
-    static Str           str_glsl_version;
-    static Str           str_gl_version;
-    static Str           str_gl_renderer;
-    static Str           str_gl_vendor;
-
+    
     u32 direct::renderer_initialise(void*, u32, u32)
     {
+        static Str           str_glsl_version;
+        static Str           str_gl_version;
+        static Str           str_gl_renderer;
+        static Str           str_gl_vendor;
+        
         // todo renderer caps
         const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
         const GLubyte* gl_version = glGetString(GL_VERSION);
@@ -1991,10 +1992,11 @@ namespace pen
         s_renderer_info.renderer = str_gl_renderer.c_str();
         s_renderer_info.vendor = str_gl_vendor.c_str();
 
+        s_renderer_info.renderer_cmd = "-renderer opengl";
+        
 #ifdef PEN_GLES3
         // gles base fbo is not 0
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &s_backbuffer_fbo);
-
         // gles doesnt have caps yet, anything in caps is unsupported
 #else
         // opengl binds 0 as default

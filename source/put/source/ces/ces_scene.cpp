@@ -9,12 +9,12 @@
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
+#include "console.h"
+#include "timer.h"
 
 #include "ces/ces_resources.h"
 #include "ces/ces_scene.h"
 #include "ces/ces_utilities.h"
-
-#include "console.h"
 
 using namespace put;
 
@@ -732,6 +732,9 @@ namespace put
                 update_animations(scene, dt);
             }
 
+            static u32 timer = pen::timer_create("update_scene");
+            pen::timer_start(timer);
+            
             // update physics
             physics::physics_consume_command_buffer();
 
@@ -865,7 +868,7 @@ namespace put
                     parent_tmax = vec3f::vmax(parent_tmax, tmax);
                 }
             }
-
+            
             // update draw call data
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -919,7 +922,7 @@ namespace put
                 // stride over sub instances
                 n += scene->master_instances[n].num_instances;
             }
-
+            
             // Forward light buffer
             static forward_light_buffer light_buffer;
             s32                         pos = 0;
@@ -1120,6 +1123,10 @@ namespace put
                     pen::renderer_set_stream_out_target(0);
                 }
             }
+            
+            f32 cost = pen::timer_elapsed_ms(timer);
+            // PEN_LOG("Update: %f (ms)", cost );
+            
         }
 
         struct scene_header

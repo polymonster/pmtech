@@ -444,6 +444,7 @@ ps_output ps_forward_lit( vs_output input )
             light_col *= smoothstep( 0.0, 0.1, s);
         }
         
+        
         lit_colour += light_col;
     }
 
@@ -479,7 +480,7 @@ ps_output_multi ps_gbuffer( vs_output input )
     output.albedo = float4(albedo.rgb * input.colour.rgb, roughness);
     output.normal = float4(n, reflectivity);
     output.world_pos = float4(input.world_pos.xyz, metalness.r);
-        
+    
     return output;
 }
 

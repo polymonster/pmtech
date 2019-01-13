@@ -37,6 +37,7 @@ namespace pen
         const c8* shader_version;
         const c8* renderer;
         const c8* vendor;
+        const c8* renderer_cmd;
 
         u64 caps;
     };

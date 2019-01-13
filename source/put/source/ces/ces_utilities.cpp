@@ -406,7 +406,7 @@ namespace put
 
         bool bind_animation_to_rig(entity_scene* scene, anim_handle anim_handle, u32 node_index)
         {
-            animation_resource* anim = get_animation_resource(ah);
+            animation_resource* anim = get_animation_resource(anim_handle);
 
             // validate that the anim can fit the rig
             std::vector<s32> joint_indices;
@@ -447,11 +447,11 @@ namespace put
 
                 s32 size = sb_count(controller.handles);
                 for (s32 h = 0; h < size; ++h)
-                    if (h == ah)
+                    if (h == anim_handle)
                         exists = true;
 
                 if (!exists)
-                    sb_push(scene->anim_controller[node_index].handles, ah);
+                    sb_push(scene->anim_controller[node_index].handles, anim_handle);
 
                 return true;
             }

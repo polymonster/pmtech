@@ -2098,7 +2098,7 @@ namespace put
 
                             if (is_valid(ah))
                             {
-                                bind_animation_to_rig();
+                                bind_animation_to_rig(scene, ah, selected_index);
                             }
                         }
                     }

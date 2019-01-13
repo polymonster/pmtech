@@ -839,7 +839,10 @@ namespace put
 
                     shader_compiler_str.append(PEN_PYTHON3);
                     shader_compiler_str.append(pmtech_dir.c_str());
-                    shader_compiler_str.append(PEN_SHADER_COMPILE_CMD);
+                    shader_compiler_str.append(PEN_BUILD_CMD);
+                    shader_compiler_str.append(" -shaders ");
+                    const pen::renderer_info& ri = pen::renderer_get_info();
+                    shader_compiler_str.append(ri.renderer_cmd);
 
                     dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "[shader compiler cmd] %s", shader_compiler_str.c_str());
                 }
