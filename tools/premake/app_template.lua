@@ -1,6 +1,6 @@
 local function add_pmtech_links()
 	configuration "Debug"
-		links { "put_d", "pen_d" }
+		links { "put", "pen" }
 
 	configuration "Release"
 		links {  "put", "pen" }
@@ -47,7 +47,7 @@ local function setup_osx()
 		}
 	end
 	
-	-- add_pmtech_links()
+	add_pmtech_links()
 	copy_shared_libs()
 end
 
