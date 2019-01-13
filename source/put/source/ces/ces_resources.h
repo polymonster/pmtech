@@ -17,7 +17,7 @@ namespace put
             A_ANGLE,
             A_INTERPOLATION
         };
-        
+
         enum e_animation_interpolation_types
         {
             A_LINEAR = 0,
@@ -34,7 +34,7 @@ namespace put
             A_FLOAT4x4,
             A_INT
         };
-        
+
         enum e_animation_targets
         {
             A_TRANSLATE_TARGET = 0,

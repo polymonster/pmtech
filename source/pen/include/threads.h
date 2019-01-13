@@ -73,7 +73,7 @@ namespace pen
     void jobs_create_default(const default_thread_info& info);
     bool jobs_terminate_all();
     job* jobs_create_job(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* user_data, thread_start_flags flags,
-                           completion_callback cb = nullptr);
+                         completion_callback cb = nullptr);
 
     // Mutex
     mutex* mutex_create();

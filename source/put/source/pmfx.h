@@ -33,7 +33,7 @@ namespace put
 
     enum e_render_constants
     {
-        MAX_TECHNIQUE_SAMPLER_BINDINGS = 8,  // 8 samplers possibly set from shader / technique
+        MAX_TECHNIQUE_SAMPLER_BINDINGS = 8, // 8 samplers possibly set from shader / technique
         MAX_SAMPLER_BINDINGS = 16           // +8 samplers for gloabl stuff ie. shadow maps.
     };
 
@@ -158,10 +158,10 @@ namespace put
             Str     type_name;
             Str     default_name;
             Str     filename;
-            u32 handle;
-            u32 unit;
-            u32 sampler_state;
-            u32 bind_flags;
+            u32     handle;
+            u32     unit;
+            u32     sampler_state;
+            u32     bind_flags;
         };
 
         struct technique_permutation
@@ -264,9 +264,9 @@ namespace put
         const c8** get_shader_list(u32& count);
         const c8** get_technique_list(u32 shader, u32& count);
         u32 get_technique_list_index(u32 shader, hash_id id_technique); // return index in name list excluding permutations
-        const c8* get_shader_name(u32 shader);
-        const c8* get_technique_name(u32 shader, hash_id id_technique);
-        hash_id   get_technique_id(u32 shader, u32 technique_index);
+        const c8*           get_shader_name(u32 shader);
+        const c8*           get_technique_name(u32 shader, hash_id id_technique);
+        hash_id             get_technique_id(u32 shader, u32 technique_index);
         u32                 get_technique_index_perm(u32 shader, hash_id id_technique, u32 permutation = 0);
         technique_constant* get_technique_constants(u32 shader, u32 technique_index);
         technique_constant* get_technique_constant(hash_id id_constant, u32 shader, u32 technique_index);

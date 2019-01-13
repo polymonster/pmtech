@@ -390,7 +390,8 @@ namespace pen
                 break;
 
             case CMD_SET_TARGETS:
-                direct::renderer_set_targets(cmd.set_targets.colour, cmd.set_targets.num_colour, cmd.set_targets.depth, cmd.set_targets.array_index, cmd.set_targets.array_index);
+                direct::renderer_set_targets(cmd.set_targets.colour, cmd.set_targets.num_colour, cmd.set_targets.depth,
+                                             cmd.set_targets.array_index, cmd.set_targets.array_index);
                 break;
 
             case CMD_RELEASE_BLEND_STATE:

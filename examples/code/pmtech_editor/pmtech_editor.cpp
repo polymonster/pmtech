@@ -52,7 +52,7 @@ PEN_TRV pen::user_entry(void* params)
     // create main camera and controller
     put::camera main_camera;
     put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
-    
+
     put::scene_controller cc;
     cc.camera = &main_camera;
     cc.update_function = &ces::update_model_viewer_camera;

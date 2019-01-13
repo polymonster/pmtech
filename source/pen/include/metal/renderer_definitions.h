@@ -39,9 +39,9 @@ enum default_targets : s32
 
 enum clear_bits : s32
 {
-    PEN_CLEAR_COLOUR_BUFFER = 1<<0,
-    PEN_CLEAR_DEPTH_BUFFER = 1<<1,
-    PEN_CLEAR_STENCIL_BUFFER = 1<<2
+    PEN_CLEAR_COLOUR_BUFFER = 1 << 0,
+    PEN_CLEAR_DEPTH_BUFFER = 1 << 1,
+    PEN_CLEAR_STENCIL_BUFFER = 1 << 2
 };
 
 enum input_classification : s32
@@ -65,7 +65,7 @@ enum texture_format : s32
     PEN_TEX_FORMAT_BGRA8_UNORM,
     PEN_TEX_FORMAT_RGBA8_UNORM,
     PEN_TEX_FORMAT_D24_UNORM_S8_UINT,
-    
+
     // floating point
     PEN_TEX_FORMAT_R32G32B32A32_FLOAT,
     PEN_TEX_FORMAT_R32_FLOAT,
@@ -73,7 +73,7 @@ enum texture_format : s32
     PEN_TEX_FORMAT_R16_FLOAT,
     PEN_TEX_FORMAT_R32_UINT,
     PEN_TEX_FORMAT_R8_UNORM,
-    
+
     // bc compressed
     PEN_TEX_FORMAT_BC1_UNORM,
     PEN_TEX_FORMAT_BC2_UNORM,
@@ -81,7 +81,6 @@ enum texture_format : s32
     PEN_TEX_FORMAT_BC4_UNORM,
     PEN_TEX_FORMAT_BC5_UNORM
 };
-
 
 enum vertex_format : s32
 {
@@ -102,23 +101,23 @@ enum index_buffer_format : s32
 
 enum usage : s32
 {
-    PEN_USAGE_DEFAULT,      // gpu read and write, d3d can updatesubresource with usage default
-    PEN_USAGE_IMMUTABLE,    // gpu read only
-    PEN_USAGE_DYNAMIC,      // dynamic
-    PEN_USAGE_STAGING,      // cpu access
+    PEN_USAGE_DEFAULT,   // gpu read and write, d3d can updatesubresource with usage default
+    PEN_USAGE_IMMUTABLE, // gpu read only
+    PEN_USAGE_DYNAMIC,   // dynamic
+    PEN_USAGE_STAGING,   // cpu access
 };
 
 enum bind_flags : s32
 {
     PEN_BIND_SHADER_RESOURCE = 0,
-    
+
     PEN_BIND_VERTEX_BUFFER,
     PEN_BIND_INDEX_BUFFER,
     PEN_BIND_CONSTANT_BUFFER,
     PEN_STREAM_OUT_VERTEX_BUFFER,
     PEN_BIND_RENDER_TARGET,
     PEN_BIND_DEPTH_STENCIL,
-    
+
     // PEN_BIND_UNORDERED_ACCESS = D3D11_BIND_UNORDERED_ACCESS,
     // PEN_BIND_DECODER = D3D11_BIND_DECODER,
     // PEN_BIND_VIDEO_ENCODER = D3D11_BIND_VIDEO_ENCODER
@@ -127,7 +126,7 @@ enum bind_flags : s32
 enum cpu_access_flags : s32
 {
     PEN_CPU_ACCESS_WRITE = 1,
-    PEN_CPU_ACCESS_READ = (1<<1)
+    PEN_CPU_ACCESS_READ = (1 << 1)
 };
 
 enum texture_address_mode : s32

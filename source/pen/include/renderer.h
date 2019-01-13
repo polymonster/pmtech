@@ -385,7 +385,7 @@ namespace pen
     // render targets
     u32  renderer_create_render_target(const texture_creation_params& tcp);
     void renderer_set_targets(u32 colour_target, u32 depth_target);
-    void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target, u32 array_index = 0 );
+    void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target, u32 array_index = 0);
     void renderer_set_stream_out_target(u32 buffer_index);
     void renderer_resolve_target(u32 target, e_msaa_resolve_type type);
 

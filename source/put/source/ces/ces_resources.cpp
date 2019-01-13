@@ -765,10 +765,10 @@ namespace put
                 new_animation.channels[i].target_name = bone_name;
 
                 u32 num_sources = *p_u32reader++;
-                
+
                 // null arrays
                 new_animation.channels[i].matrices = nullptr;
-                for(u32 o = 0; o < 3; ++o)
+                for (u32 o = 0; o < 3; ++o)
                 {
                     new_animation.channels[i].offset[o] = nullptr;
                     new_animation.channels[i].angle[o] = nullptr;
@@ -779,14 +779,14 @@ namespace put
                     u32 sematic = *p_u32reader++;
                     u32 type = *p_u32reader++;
                     u32 target = *p_u32reader++;
-                    
+
                     // read float buffer
                     u32 num_elements = *p_u32reader++;
-                    
-                    if(sematic == A_INTERPOLATION)
+
+                    if (sematic == A_INTERPOLATION)
                     {
                         PEN_ASSERT(type == A_INT);
-                        
+
                         u32* data = new u32[num_elements];
                         memcpy(data, p_u32reader, sizeof(u32) * num_elements);
                         new_animation.channels[i].interpolation = data;
@@ -794,10 +794,10 @@ namespace put
                     else
                     {
                         u32 num_floats = num_elements;
-                        
+
                         f32* data = new f32[num_floats];
                         memcpy(data, p_u32reader, sizeof(f32) * num_floats);
-                        
+
                         switch (sematic)
                         {
                             case A_TIME:
@@ -813,16 +813,16 @@ namespace put
                             case A_OFFSET_Y:
                             case A_OFFSET_Z:
                                 PEN_ASSERT(type == A_FLOAT);
-                                new_animation.channels[i].offset[sematic-A_OFFSET_X] = (f32*)data;
+                                new_animation.channels[i].offset[sematic - A_OFFSET_X] = (f32*)data;
                                 break;
                             case A_ANGLE:
                                 PEN_ASSERT(type == A_FLOAT);
-                                new_animation.channels[i].angle[target-A_ROTATE_X_TARGET] = (f32*)data;
+                                new_animation.channels[i].angle[target - A_ROTATE_X_TARGET] = (f32*)data;
                             default:
                                 break;
                         };
                     }
-                    
+
                     p_u32reader += num_elements;
                 }
 
@@ -1096,7 +1096,7 @@ namespace put
 
                 scene->initial_transform[current_node].rotation = scene->transforms[current_node].rotation;
                 scene->initial_transform[current_node].translation = scene->transforms[current_node].translation;
-                
+
                 scene->local_matrices[current_node] = (matrix);
 
                 // store intial position for physics to hook into later
@@ -1293,7 +1293,7 @@ namespace put
                     ImGui::Separator();
                 }
             }
-            
+
             if (ImGui::CollapsingHeader("Textures"))
             {
                 put::texture_browser_ui();

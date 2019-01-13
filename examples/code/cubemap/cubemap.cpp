@@ -57,7 +57,7 @@ void create_scene_objects(ces::entity_scene* scene)
     instantiate_geometry(sphere, scene, new_prim);
     instantiate_material(cubemap_material, scene, new_prim);
     instantiate_model_cbuffer(scene, new_prim);
-    
+
     scene->samplers[new_prim].sb[0].handle = put::load_texture("data/textures/cubemap.dds");
     scene->samplers[new_prim].sb[0].sampler_unit = 3;
     scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);

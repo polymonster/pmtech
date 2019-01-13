@@ -9,7 +9,7 @@ namespace pen
     static u32 s_num_active_threads = 0;
 
     pen::job* jobs_create_job(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* user_data, thread_start_flags flags,
-                                completion_callback cb)
+                              completion_callback cb)
     {
         if (s_num_active_threads >= MAX_THREADS)
         {
@@ -43,7 +43,7 @@ namespace pen
         {
             // Render thread is created on the main (window) thread now by default
             jobs_create_job(&pen::renderer_thread_function, 1024 * 1024, info.render_thread_params,
-                              pen::THREAD_START_DETACHED);
+                            pen::THREAD_START_DETACHED);
         }
 
         jobs_create_job(&pen::user_entry, 1024 * 1024, info.user_thread_params, pen::THREAD_START_DETACHED);

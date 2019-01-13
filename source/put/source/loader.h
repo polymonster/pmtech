@@ -11,9 +11,9 @@ namespace pen
 }
 
 namespace put
-{    
+{
     typedef pen::texture_creation_params texture_info;
-    
+
     // Textures
     u32  load_texture(const c8* filename);
     void save_texture(const c8* filename, const texture_info& tcp);

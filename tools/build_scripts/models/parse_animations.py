@@ -6,9 +6,17 @@ schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 animation_channels = []
 animation_source_semantics = ["TIME", "TRANSFORM", "X", "Y", "Z", "ANGLE", "INTERPOLATION"]
 animation_source_types = ["float", "float4x4", "Name"]
-animation_targets = ["translate", "transform", "rotate",
-                     "translate.X", "translate.Y", "translate.Z",
-                     "rotateX.ANGLE", "rotateY.ANGLE", "rotateZ.ANGLE"]
+
+animation_targets = ["translate",
+                     "transform",
+                     "rotate",
+                     "translate.X",
+                     "translate.Y",
+                     "translate.Z",
+                     "rotateX.ANGLE",
+                     "rotateY.ANGLE",
+                     "rotateZ.ANGLE"]
+
 interpolation_types = ["LINEAR", "BEZIER", "CARDINAL", "HERMITE", "BSPLINE", "STEP"]
 
 
@@ -32,23 +40,26 @@ class animation_channel:
 
 
 def parse_animation_source(root, source_id):
-    new_source = animation_source()
-    new_source.data = []
+    new_sources = []
     for src in root.iter(schema+'source'):
         if "#"+src.get("id") == source_id:
             for a in src.iter(schema+'accessor'):
-                new_source.count = a.get("count")
-                new_source.stride = a.get("stride")
+                offset = 0
                 for p in a.iter(schema+'param'):
-                    name = p.get("name")
-                    param_type = p.get('type')
-            new_source.type = param_type
-            new_source.semantic = name
-            for data_node in src.iter(schema+'float_array'):
-                split_floats = data_node.text.split()
-                for f in split_floats:
-                    new_source.data.append(f)
-    return new_source
+                    new_source = animation_source()
+                    new_source.data = []
+                    new_source.count = a.get("count")
+                    new_source.stride = a.get("stride")
+                    new_source.semantic = p.get("name")
+                    new_source.type = p.get('type')
+                    new_source.offset = offset
+                    offset += 1
+                    for data_node in src.iter(schema+'float_array'):
+                        split_floats = data_node.text.split()
+                        for f in split_floats:
+                            new_source.data.append(f)
+                    new_sources.append(new_source)
+    return new_sources
 
 
 def parse_animations(root, anims_out, joints_in):
@@ -61,8 +72,9 @@ def parse_animations(root, anims_out, joints_in):
             a_sampler.id = sampler.get("id")
             a_sampler.sources = []
             for input in sampler.iter(schema+'input'):
-                sampler_source = parse_animation_source(root, input.get("source"))
-                a_sampler.sources.append(sampler_source)
+                sampler_sources = parse_animation_source(root, input.get("source"))
+                for src in sampler_sources:
+                    a_sampler.sources.append(src)
             samplers.append(a_sampler)
         for channel in animation.iter(schema+'channel'):
             a_channel = animation_channel()
@@ -97,13 +109,13 @@ def write_animation_file(filename):
                 if src.type == "float":
                     num_floats = len(src.data) / int(src.stride)
                     output.write(struct.pack("i", int(num_floats)))
-                    for f in range(0, len(src.data), int(src.stride)):
+                    for f in range(src.offset, len(src.data), int(src.stride)):
                         output.write(struct.pack("f", float(src.data[f])))
                 elif src.type == "float4x4":
                     output.write(struct.pack("i", len(src.data)))
-                    for f in range(0, len(src.data), int(src.stride)):
+                    for f in range(src.offset, len(src.data), int(src.stride)):
                         helpers.write_corrected_4x4matrix(output, src.data[f:f + 16])
                 elif src.semantic == "INTERPOLATION" and src.type == "Name":
                     output.write(struct.pack("i", len(src.data)))
-                    for i in range(0, len(src.data), int(src.stride)):
+                    for i in range(src.offset, len(src.data), int(src.stride)):
                         output.write(struct.pack("i", interpolation_types.index(src.data[i])))

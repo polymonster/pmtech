@@ -20,14 +20,14 @@ namespace pen
         f32 wheel;
         u8  buttons[3];
     };
-    
+
     struct gamepad_state
     {
         u32 device_id = -1;
         u32 vendor_id = -1;
         u32 product_id = -1;
-        u8  button[16] = { 0 };
-        f32 axis[64] = { 0 };
+        u8  button[16] = {0};
+        f32 axis[64] = {0};
     };
 
     void input_set_unicode_key_down(u32 key_index);
@@ -45,7 +45,7 @@ namespace pen
     void input_set_mouse_up(u32 button_index);
     void input_set_mouse_pos(f32 x, f32 y);
     void input_set_mouse_wheel(f32 wheel);
-    
+
     void input_gamepad_init();
     void input_gamepad_shutdown();
     u32  input_get_num_gamepads();
@@ -202,18 +202,18 @@ enum gamepad_button
     PGP_DPAD_DOWN,
     PGP_DPAD_LEFT,
     PGP_DPAD_RIGHT,
-    
+
     PGP_Y,
     PGP_A,
     PGP_X,
     PGP_B,
-    
+
     PGP_L1,
     PGP_R1,
-    
+
     PGP_L3,
     PGP_R3,
-    
+
     PGP_START,
     PGP_SELECT
 };

@@ -158,7 +158,7 @@ namespace put
                                        const pen::json& j_technique)
         {
             u32 num_constants = j_technique["cbuffers"].size() + j_technique["texture_sampler_bindings"].size();
-            
+
             link_params.num_constants = num_constants;
 
             link_params.constants =
@@ -192,25 +192,25 @@ namespace put
             static Str sampler_type_names[] = {"texture_2d", "texture_3d", "texture_cube", "texture_2dms"};
 
             const pen::json& j_samplers = j_technique["texture_sampler_bindings"];
-            
+
             for (s32 i = 0; i < j_samplers.size(); ++i)
             {
                 pen::json sampler = j_samplers[i];
-                
+
                 Str name_str = sampler["name"].as_str();
                 if (!sampler["name"].as_cstr())
                     name_str = sampler.key();
-                
+
                 u32 name_len = name_str.length();
-                
+
                 link_params.constants[cc].name = (c8*)pen::memory_alloc(name_len + 1);
-                
+
                 memcpy(link_params.constants[cc].name, name_str.c_str(), name_len);
-                
+
                 link_params.constants[cc].name[name_len] = '\0';
-                
+
                 link_params.constants[cc].location = sampler["unit"].as_u32();
-                
+
                 for (u32 i = 0; i < 4; ++i)
                 {
                     if (sampler["type"].as_str() == sampler_type_names[i])
@@ -219,7 +219,7 @@ namespace put
                         break;
                     }
                 }
-                
+
                 cc++;
             }
         }
@@ -424,7 +424,7 @@ namespace put
             link_params.pixel_shader = program.pixel_shader;
             link_params.stream_out_shader = 0;
             link_params.stream_out_names = nullptr;
-            
+
             get_link_params_constants(link_params, j_info, j_technique);
 
             program.program_index = pen::renderer_link_shader_program(link_params);
@@ -449,7 +449,7 @@ namespace put
                 tt.default_name = jt["default"].as_str();
                 tt.filename = tt.default_name;
                 tt.handle = put::load_texture(tt.filename.c_str());
-                
+
                 extern u32 sampler_bind_flags_from_json(const pen::json& sampler_binding);
                 tt.bind_flags = sampler_bind_flags_from_json(jt);
 

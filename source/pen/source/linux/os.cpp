@@ -38,11 +38,11 @@ pen::user_info                pen_user_info;
 #define GLX_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-GLXContext _gl_context = 0;
-Display*   _display;
-Window     _window;
+GLXContext   _gl_context = 0;
+Display*     _display;
+Window       _window;
 window_frame _window_frame;
-bool        _invalidate_window_frame = false;
+bool         _invalidate_window_frame = false;
 
 void pen_make_gl_context_current()
 {
@@ -134,7 +134,8 @@ int main(int argc, char* argv[])
 
     XStoreName(_display, _window, pen_window.window_title);
     XSelectInput(_display, _window,
-                 ExposureMask | StructureNotifyMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask | ConfigureNotify);
+                 ExposureMask | StructureNotifyMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask |
+                     ConfigureNotify);
 
     // Create Gl Context
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
@@ -351,8 +352,9 @@ namespace pen
                     pen_window.height = attribs.height;
 
                     Window unused;
-                    
-                    XTranslateCoordinates(_display, _window, XDefaultRootWindow(_display), 0, 0, (int*)&_window_frame.x, (int*)&_window_frame.y, &unused);
+
+                    XTranslateCoordinates(_display, _window, XDefaultRootWindow(_display), 0, 0, (int*)&_window_frame.x,
+                                          (int*)&_window_frame.y, &unused);
 
                     _window_frame.width = attribs.width;
                     _window_frame.height = attribs.height;
@@ -403,9 +405,10 @@ namespace pen
         }
 
         // update window
-        if(_invalidate_window_frame)
+        if (_invalidate_window_frame)
         {
-            XMoveResizeWindow(_display, _window, (int)_window_frame.x, (int)_window_frame.y, (int)_window_frame.width, (int)_window_frame.height);
+            XMoveResizeWindow(_display, _window, (int)_window_frame.x, (int)_window_frame.y, (int)_window_frame.width,
+                              (int)_window_frame.height);
             _invalidate_window_frame = false;
         }
 

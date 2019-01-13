@@ -259,10 +259,10 @@ namespace put
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             bcp.buffer_size = sizeof(camera_cbuffer);
             bcp.data = nullptr;
-            
+
             p_camera->cbuffer = pen::renderer_create_buffer(bcp);
         }
-        
+
         // auto detect window aspect
         if (p_camera->flags & CF_WINDOW_ASPECT)
         {
@@ -289,9 +289,9 @@ namespace put
         }
 
         camera_cbuffer wvp;
-        
+
         static mat4 scale = mat::create_scale(vec3f(1.0f, -1.0f, 1.0f));
-        
+
         if (viewport_correction && pen::renderer_viewport_vup())
         {
             wvp.view_projection = scale * (p_camera->proj * p_camera->view);
@@ -302,63 +302,48 @@ namespace put
             wvp.view_projection = p_camera->proj * p_camera->view;
             wvp.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
         }
-        
+
         mat4 inv_view = mat::inverse3x4(p_camera->view);
         wvp.view_matrix = p_camera->view;
         wvp.view_position = vec4f(inv_view.get_translation(), p_camera->near_plane);
         wvp.view_direction = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
         wvp.view_matrix_inverse = inv_view;
         wvp.view_projection_inverse = mat::inverse4x4(wvp.view_projection);
-        
+
         pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
-        
+
         p_camera->flags &= ~CF_INVALIDATED;
     }
-    
+
     void camera_cteate_cubemap(camera* p_camera, f32 near_plane, f32 far_plane)
     {
         camera_create_perspective(p_camera, 90, 1, near_plane, far_plane);
     }
-    
+
     void camera_set_cubemap_face(camera* p_camera, u32 face)
     {
-        static const vec3f at[] =
-        {
-            vec3f(-1.0, 0.0, 0.0),  //+x
-            vec3f(1.0, 0.0, 0.0),   //-x
-            vec3f(0.0, -1.0, 0.0),  //+y
-            vec3f(0.0, 1.0, 0.0),   //-y
-            vec3f(0.0, 0.0, 1.0),   //+z
-            vec3f(0.0, 0.0, -1.0)   //-z
+        static const vec3f at[] = {
+            vec3f(-1.0, 0.0, 0.0), //+x
+            vec3f(1.0, 0.0, 0.0),  //-x
+            vec3f(0.0, -1.0, 0.0), //+y
+            vec3f(0.0, 1.0, 0.0),  //-y
+            vec3f(0.0, 0.0, 1.0),  //+z
+            vec3f(0.0, 0.0, -1.0)  //-z
         };
-        
-        static const vec3f right[] =
-        {
-            vec3f(0.0, 0.0, 1.0),
-            vec3f(0.0, 0.0, -1.0),
-            vec3f(1.0, 0.0, 0.0),
-            vec3f(1.0, 0.0, 0.0),
-            vec3f(1.0, 0.0, 0.0),
-            vec3f(-1.0, 0.0, -0.0)
-        };
-        
-        static const vec3f up[] =
-        {
-            vec3f(0.0, 1.0, 0.0),
-            vec3f(0.0, 1.0, 0.0),
-            vec3f(0.0, 0.0, 1.0),
-            vec3f(0.0, 0.0, -1.0),
-            vec3f(0.0, 1.0, 0.0),
-            vec3f(0.0, 1.0, 0.0)
-        };
-        
+
+        static const vec3f right[] = {vec3f(0.0, 0.0, 1.0), vec3f(0.0, 0.0, -1.0), vec3f(1.0, 0.0, 0.0),
+                                      vec3f(1.0, 0.0, 0.0), vec3f(1.0, 0.0, 0.0),  vec3f(-1.0, 0.0, -0.0)};
+
+        static const vec3f up[] = {vec3f(0.0, 1.0, 0.0),  vec3f(0.0, 1.0, 0.0), vec3f(0.0, 0.0, 1.0),
+                                   vec3f(0.0, 0.0, -1.0), vec3f(0.0, 1.0, 0.0), vec3f(0.0, 1.0, 0.0)};
+
         p_camera->view.set_row(0, vec4f(right[face], 0.0f));
         p_camera->view.set_row(1, vec4f(up[face], 0.0f));
         p_camera->view.set_row(2, vec4f(at[face], 0.0f));
         p_camera->view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
-        
+
         mat4 translate = mat::create_translation(-p_camera->pos);
-        
+
         p_camera->view = p_camera->view * translate;
     }
 

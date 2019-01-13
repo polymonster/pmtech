@@ -347,16 +347,16 @@ namespace put
 
             return default_value;
         }
-        
+
         u32 sampler_bind_flags_from_json(const json& sampler_binding)
         {
             u32 res = 0;
             res = pen::TEXTURE_BIND_PS; // todo remove once all configs have been updated
             json flags = sampler_binding["bind_flags"];
-            u32 num_flags = flags.size();
-            for(u32 i = 0; i < num_flags; ++i)
+            u32  num_flags = flags.size();
+            for (u32 i = 0; i < num_flags; ++i)
                 res |= mode_from_string(sampler_bind_flags, flags[i].as_cstr(), 0);
-            
+
             return res;
         }
 
@@ -2395,7 +2395,7 @@ namespace put
             // early out.. nothing to render
             if (v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
                 return;
-            
+
             static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
             if (!is_valid(cb_2d))
@@ -2425,7 +2425,7 @@ namespace put
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
             pen::renderer_set_rasterizer_state(v.raster_state);
             pen::renderer_set_blend_state(v.blend_state);
-            
+
             // create 2d view proj matrix
             float W = 2.0f / vp.width;
             float H = 2.0f / vp.height;
@@ -2467,21 +2467,21 @@ namespace put
             sv.permutation = v.technique_permutation;
 
             // render passes.. multi pass for cubemaps or arrays
-            for(u32 a = 0; a < v.num_arrays; ++a)
+            for (u32 a = 0; a < v.num_arrays; ++a)
             {
                 // generate 3d view proj matrix
                 if (v.camera)
                 {
-                    if(v.num_arrays == 6)
+                    if (v.num_arrays == 6)
                     {
                         put::camera_set_cubemap_face(v.camera, a);
                     }
-                    
+
                     put::camera_update_shader_constants(v.camera, v.viewport_correction);
                     sv.cb_view = v.camera->cbuffer;
                 }
 
-                // bind targets before samplers.. 
+                // bind targets before samplers..
                 // so that ping-pong buffers get unbound from rt before being bound on samplers
                 pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, a);
                 pen::renderer_clear(v.clear_state, a);
@@ -2796,7 +2796,7 @@ namespace put
 
             if (!open_renderer)
                 return;
-            
+
             if (ImGui::Begin("Pmfx", &open_renderer))
             {
                 if (ImGui::CollapsingHeader("Render Targets"))

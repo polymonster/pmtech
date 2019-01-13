@@ -73,13 +73,13 @@ namespace put
 
         struct model_view_controller
         {
-            put::camera             main_camera;
-            bool                    invalidated = false;
-            put::camera_settings    settings;
-            e_camera_mode           camera_mode = CAMERA_MODELLING;
-            f32                     grid_cell_size;
-            f32                     grid_size;
-            Str                     current_working_scene = "";
+            put::camera          main_camera;
+            bool                 invalidated = false;
+            put::camera_settings settings;
+            e_camera_mode        camera_mode = CAMERA_MODELLING;
+            f32                  grid_cell_size;
+            f32                  grid_size;
+            Str                  current_working_scene = "";
         };
         static model_view_controller s_model_view_controller;
 
@@ -2084,10 +2084,8 @@ namespace put
                             if (ImGui::Button(ICON_FA_STOP))
                                 controller.play_flags = cmp_anim_controller::STOPPED;
                         }
-                        
+
                         ImGui::InputFloat("Time", &controller.current_time, 0.01f);
-                        
-                        
                     }
 
                     if (open_anim_import)
@@ -2097,55 +2095,10 @@ namespace put
                         if (anim_import)
                         {
                             anim_handle ah = load_pma(anim_import);
-                            auto*       anim = get_animation_resource(ah);
 
                             if (is_valid(ah))
                             {
-                                // validate that the anim can fit the rig
-                                std::vector<s32> joint_indices;
-                                build_heirarchy_node_list(scene, selected_index, joint_indices);
-
-                                bool compatible = true;
-                                anim->remap_channels = true;
-
-                                for (u32 i = 0; i < anim->num_channels; ++i)
-                                {
-                                    for (s32 jj = 0; jj < joint_indices.size(); ++jj)
-                                    {
-                                        s32 jnode = joint_indices[jj];
-                                        if (jnode < 0)
-                                            continue;
-
-                                        u32 bone_len = scene->names[jnode].length();
-                                        u32 target_len = anim->channels[i].target_name.length();
-
-                                        if(bone_len > target_len)
-                                            continue;
-                                        
-                                        Str ss = pen::str_substr(anim->channels[i].target_name, target_len - bone_len, target_len);
-                                        if ( ss == scene->names[jnode] )
-                                        {
-                                            //PEN_LOG("%s >> %s", scene->names[jnode].c_str(), anim->channels[i].target_name.c_str());
-                                            anim->channels[i].target_node_index = jnode;
-                                            break;
-                                        }
-                                    }
-                                }
-  
-                                if (compatible)
-                                {
-                                    scene->entities[selected_index] |= CMP_ANIM_CONTROLLER;
-
-                                    bool exists = false;
-
-                                    s32 size = sb_count(controller.handles);
-                                    for (s32 h = 0; h < size; ++h)
-                                        if (h == ah)
-                                            exists = true;
-
-                                    if (!exists)
-                                        sb_push(scene->anim_controller[selected_index].handles, ah);
-                                }
+                                bind_animation_to_rig();
                             }
                         }
                     }

@@ -78,7 +78,7 @@ ps_output ps_tex_cube( vs_output input )
     
     float3 n = float3(0.0, 0.0, 0.0);
     
-	float e = 0.0;
+    float e = 0.0;
     for(float t = 0.0; t < 10.0;)
     {
         float3 p = ro + rd * t;
@@ -90,20 +90,20 @@ ps_output ps_tex_cube( vs_output input )
             n = normalize(p);
             break;
         }
-		
-		if(e > 10.0)
-			break;
+        
+        if(e > 10.0)
+            break;
             
-		e += 1.0;
+        e += 1.0;
         t += d;
     }
     
     float3 r = reflect(rd, n);
     
-	output.colour = sample_texture(tex_cube, rd);
-	
-	if(length(n) > 0.0)
-		output.colour = sample_texture(tex_cube, r);
+    output.colour = sample_texture(tex_cube, rd);
+    
+    if(length(n) > 0.0)
+        output.colour = sample_texture(tex_cube, r);
 
     return output;
 }
@@ -291,8 +291,8 @@ pmfx:
         "vs" : "vs_main",
         "ps" : "ps_tex_volume"
     },
-	
-	"tex_volume_sdf":
+    
+    "tex_volume_sdf":
     {
         "vs" : "vs_main",
         "ps" : "ps_tex_volume_sdf"

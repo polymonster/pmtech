@@ -2,6 +2,7 @@
 
 #include "camera.h"
 #include "console.h"
+#include "data_struct.h"
 #include "dev_ui.h"
 #include "file_system.h"
 #include "loader.h"
@@ -12,7 +13,6 @@
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
-#include "data_struct.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -946,14 +946,14 @@ namespace put
                 ImGui::End();
             }
         }
-        
+
         struct image_cbuffer
         {
             vec4f colour_mask = vec4f(1.0f, 1.0f, 1.0f, 1.0f); // mask for rgba channels
             vec4f params = vec4f(-1.0f, -1.0f, 1.0f, 0.0f);    // x = mip, y = array, z = pow, w = viewport flip
             mat4  inverse_wvp = mat4::create_identity();       // inverse wvp for cubemap, sdf and volume ray march
         };
-        
+
         struct image_ex_data
         {
             u32           handle;
@@ -965,93 +965,89 @@ namespace put
         void image_ex(u32 handle, vec2f size, e_shader shader)
         {
             ImVec2 canvas_size = ImVec2(size.x, size.y);
-            
+
             // cache params for rotations and settings
             static image_ex_data* _image = nullptr;
-            u32 num_cbuf = sb_count(_image);
-            s32 ix = -1;
-            for(u32 i = 0; i < num_cbuf; ++i)
+            u32                   num_cbuf = sb_count(_image);
+            s32                   ix = -1;
+            for (u32 i = 0; i < num_cbuf; ++i)
             {
-                if(_image[i].handle == handle)
+                if (_image[i].handle == handle)
                 {
                     ix = i;
                     break;
                 }
             }
-            
+
             image_cbuffer _cb; // copy of cb to compare for changes
-            bool force_update = false;
-            if(ix == -1)
+            bool          force_update = false;
+            if (ix == -1)
             {
                 ix = num_cbuf;
                 force_update = true;
-                
+
                 image_ex_data new_data;
                 new_data.handle = handle;
                 camera_create_perspective(&new_data.cam, 60.0f, 1.0f, 0.1f, 10.0f);
                 sb_push(_image, new_data);
-                
+
                 pen::buffer_creation_params bcp;
                 bcp.usage_flags = PEN_USAGE_DYNAMIC;
                 bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                 bcp.buffer_size = sizeof(camera_cbuffer);
                 bcp.data = nullptr;
-                
+
                 _image[ix].cbuffer_handle = pen::renderer_create_buffer(bcp);
             }
             else
             {
                 _cb = _image[ix].cbuffer;
             }
-            
+
             image_cbuffer& cb = _image[ix].cbuffer;
-            
+
             // viewport
             cb.params.w = 0.0f;
-            if(pen::renderer_viewport_vup())
+            if (pen::renderer_viewport_vup())
             {
                 cb.params.w = 1.0f;
             }
-            
+
             // mips
             ImGui::Text("Mip: %.0f", cb.params.x);
             ImGui::SameLine();
-            if(ImGui::Button(ICON_FA_MINUS))
+            if (ImGui::Button(ICON_FA_MINUS))
                 cb.params.x--;
             ImGui::SameLine();
-            if(ImGui::Button(ICON_FA_PLUS))
+            if (ImGui::Button(ICON_FA_PLUS))
                 cb.params.x++;
 
             // arrays
             ImGui::Text("Array: %.0f", cb.params.y);
             ImGui::PushID("Array");
             ImGui::SameLine();
-            if(ImGui::Button(ICON_FA_MINUS))
+            if (ImGui::Button(ICON_FA_MINUS))
                 cb.params.y--;
             ImGui::SameLine();
-            if(ImGui::Button(ICON_FA_PLUS))
+            if (ImGui::Button(ICON_FA_PLUS))
                 cb.params.y++;
             ImGui::PopID();
-            
+
             // rgba channel mask
-            static const vec4f colours[] = {
-                vec4f(0.7f, 0.0f, 0.0f, 1.0f),
-                vec4f(0.0f, 0.7f, 0.0f, 1.0f),
-                vec4f(0.0f, 0.0f, 0.7f, 1.0f),
-                vec4f(0.7f, 0.7f, 0.7f, 1.0f)
-            };
-            static const char* buttons[] = { "R", "G", "B", "A" };
-            for(u32 i = 0; i < PEN_ARRAY_SIZE(buttons); ++i)
+            static const vec4f colours[] = {vec4f(0.7f, 0.0f, 0.0f, 1.0f), vec4f(0.0f, 0.7f, 0.0f, 1.0f),
+                                            vec4f(0.0f, 0.0f, 0.7f, 1.0f), vec4f(0.7f, 0.7f, 0.7f, 1.0f)};
+            static const char* buttons[] = {"R", "G", "B", "A"};
+            for (u32 i = 0; i < PEN_ARRAY_SIZE(buttons); ++i)
             {
                 f32 b = 1.0f;
-                if(!cb.colour_mask[i])
+                if (!cb.colour_mask[i])
                     b = 0.2f;
-                
+
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(colours[i].r * b, colours[i].g * b, colours[i].b * b, 1.0f));
-                if(ImGui::Button(buttons[i]))
+                if (ImGui::Button(buttons[i]))
                 {
-                    if(cb.colour_mask[i] == 1.0f)
+                    if (cb.colour_mask[i] == 1.0f)
                     {
                         cb.colour_mask[i] = 0.0f;
                     }
@@ -1061,10 +1057,10 @@ namespace put
                     }
                 }
                 ImGui::PopStyleColor();
-                if(i < PEN_ARRAY_SIZE(buttons)-1)
+                if (i < PEN_ARRAY_SIZE(buttons) - 1)
                     ImGui::SameLine();
             }
-            
+
             // slider for pow range
             ImGui::SliderFloat("Pow", &cb.params.b, 1.0f, 1000.0f);
 
@@ -1095,17 +1091,17 @@ namespace put
                 cam.zoom += ImGui::GetIO().MouseWheel;
                 cam.zoom = max(cam.zoom, 1.0f);
                 cam.zoom = 3.0f;
-                
+
                 camera_update_look_at(&cam);
                 cb.inverse_wvp = mat::inverse4x4(cam.proj * cam.view);
             }
 
             // update cbuffer if dirty
-            if(memcmp(&_cb, &cb, sizeof(image_cbuffer)) != 0 || force_update)
+            if (memcmp(&_cb, &cb, sizeof(image_cbuffer)) != 0 || force_update)
             {
                 pen::renderer_update_buffer(_image[ix].cbuffer_handle, &cb, sizeof(image_cbuffer));
             }
-            
+
             dev_ui::set_shader(shader, _image[ix].cbuffer_handle);
 
             draw_list->AddImage(IMG(handle), canvas_pos, bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));

@@ -6,6 +6,7 @@
 #include "ces/ces_utilities.h"
 
 #include "data_struct.h"
+#include "str_utilities.h"
 
 namespace put
 {
@@ -401,6 +402,61 @@ namespace put
 
             // todo - must ensure list is contiguous.
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
+        }
+
+        bool bind_animation_to_rig(entity_scene* scene, anim_handle anim_handle, u32 node_index)
+        {
+            animation_resource* anim = get_animation_resource(ah);
+
+            // validate that the anim can fit the rig
+            std::vector<s32> joint_indices;
+            build_heirarchy_node_list(scene, node_index, joint_indices);
+
+            bool compatible = true;
+            anim->remap_channels = true;
+
+            for (u32 i = 0; i < anim->num_channels; ++i)
+            {
+                for (s32 jj = 0; jj < joint_indices.size(); ++jj)
+                {
+                    s32 jnode = joint_indices[jj];
+                    if (jnode < 0)
+                        continue;
+
+                    u32 bone_len = scene->names[jnode].length();
+                    u32 target_len = anim->channels[i].target_name.length();
+
+                    if (bone_len > target_len)
+                        continue;
+
+                    Str ss = pen::str_substr(anim->channels[i].target_name, target_len - bone_len, target_len);
+                    if (ss == scene->names[jnode])
+                    {
+                        anim->channels[i].target_node_index = jnode;
+                        break;
+                    }
+                }
+            }
+
+            if (compatible)
+            {
+                auto& controller = scene->anim_controller[node_index];
+                scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
+
+                bool exists = false;
+
+                s32 size = sb_count(controller.handles);
+                for (s32 h = 0; h < size; ++h)
+                    if (h == ah)
+                        exists = true;
+
+                if (!exists)
+                    sb_push(scene->anim_controller[node_index].handles, ah);
+
+                return true;
+            }
+
+            return false;
         }
     } // namespace ces
 } // namespace put

@@ -21,10 +21,10 @@ namespace put
 
     struct camera_cbuffer
     {
-        mat4 view_projection;
-        mat4 view_matrix;
-        mat4 view_projection_inverse;
-        mat4 view_matrix_inverse;
+        mat4  view_projection;
+        mat4  view_matrix;
+        mat4  view_projection_inverse;
+        mat4  view_matrix_inverse;
         vec4f view_position;
         vec4f view_direction;
         vec4f viewport_correction;
@@ -66,8 +66,6 @@ namespace put
 
         Str name;
     };
-
-    
 
     void camera_create_perspective(camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane);
     void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar);

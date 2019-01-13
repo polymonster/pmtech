@@ -216,7 +216,8 @@ namespace pen
     }
 } // namespace pen
 
-extern "C"{
+extern "C"
+{
 #include "gamepad/Gamepad.h"
 #include "gamepad/Gamepad_private.c"
 
@@ -235,71 +236,71 @@ extern "C"{
 namespace pen
 {
     static const u32 k_max_gamepads = 4;
-    gamepad_state s_gamepads[k_max_gamepads] = { };
-    
-    void update_gamepad(Gamepad_device * device, u32 axis, u32 button)
+    gamepad_state    s_gamepads[k_max_gamepads] = {};
+
+    void update_gamepad(Gamepad_device* device, u32 axis, u32 button)
     {
         u32 gi = device->deviceID;
-        
-        if(gi >= 4)
+
+        if (gi >= 4)
             return;
-        
+
         s_gamepads[gi].device_id = device->deviceID;
         s_gamepads[gi].vendor_id = device->vendorID;
         s_gamepads[gi].product_id = device->productID;
-        
-        if(button < 16)
+
+        if (button < 16)
             s_gamepads[gi].button[button] = device->buttonStates[button];
-        
-        if(axis <= 64)
+
+        if (axis <= 64)
             s_gamepads[gi].axis[axis] = device->axisStates[axis];
     }
-    
-    void gamepad_attach_func(struct Gamepad_device * device, void * context)
+
+    void gamepad_attach_func(struct Gamepad_device* device, void* context)
     {
         update_gamepad(device, -1, -1);
     }
-    
-    void gamepad_remove_func(struct Gamepad_device * device, void * context)
+
+    void gamepad_remove_func(struct Gamepad_device* device, void* context)
     {
         PEN_LOG("Device Remove\n");
     }
-    
-    void gamepad_button_down_func(struct Gamepad_device * device, u32 button_id, f64 timestamp, void * context)
+
+    void gamepad_button_down_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context)
     {
         update_gamepad(device, -1, button_id);
     }
-    
-    void gamepad_button_up_func(struct Gamepad_device * device, u32 button_id, f64 timestamp, void * context)
+
+    void gamepad_button_up_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context)
     {
         update_gamepad(device, -1, button_id);
     }
-    
-    void gamepad_axis_move_func(struct Gamepad_device * device,
-                                u32 axis_id, f32 value, f32 last_value, f64 timestamp, void * context)
+
+    void gamepad_axis_move_func(struct Gamepad_device* device, u32 axis_id, f32 value, f32 last_value, f64 timestamp,
+                                void* context)
     {
         update_gamepad(device, axis_id, -1);
     }
-    
+
     void input_gamepad_shutdown()
     {
         Gamepad_shutdown();
     }
-    
+
     void input_gamepad_update()
     {
         Gamepad_processEvents();
-        
+
         // detect devices
-        static u32 htimer = timer_create("gamepad_detect");
+        static u32       htimer = timer_create("gamepad_detect");
         static const f32 detect_time = 1000.0f;
-        static f32 detect_timer = detect_time;
-        if(detect_timer <= 0)
+        static f32       detect_timer = detect_time;
+        if (detect_timer <= 0)
         {
             Gamepad_detectDevices();
             detect_timer = detect_time;
         }
-        
+
         detect_timer -= timer_elapsed_ms(htimer);
         timer_start(htimer);
     }
@@ -308,23 +309,23 @@ namespace pen
     {
         return Gamepad_numDevices();
     }
-    
+
     void input_gamepad_init()
     {
         Gamepad_init();
-        
+
         // register call backs
         Gamepad_deviceAttachFunc(gamepad_attach_func, nullptr);
         Gamepad_deviceRemoveFunc(gamepad_remove_func, nullptr);
         Gamepad_buttonDownFunc(gamepad_button_down_func, nullptr);
         Gamepad_buttonUpFunc(gamepad_button_up_func, nullptr);
         Gamepad_axisMoveFunc(gamepad_axis_move_func, nullptr);
-        
+
         Gamepad_detectDevices();
     }
-    
+
     void input_get_gamepad_state(u32 device_index, gamepad_state& gs)
     {
         gs = s_gamepads[device_index];
     }
-}
+} // namespace pen

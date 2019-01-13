@@ -65,7 +65,8 @@ namespace put
             SF_HIDDEN = (1 << 2),
             SF_MATERIAL_INITIALISED = (1 << 3),
             SF_NO_SHADOW = (1 << 4),
-            SF_SAMPLERS_INITIALISED = (1 << 5)
+            SF_SAMPLERS_INITIALISED = (1 << 5),
+            SF_APPLY_ANIM_TRANSFORM = (1 << 6)
         };
 
         enum e_light_types : u32
@@ -263,6 +264,13 @@ namespace put
             vec3f scale = vec3f::one();
         };
 
+        struct cmp_anim_transform
+        {
+            vec3f translation_mask = vec3f::zero();
+            vec3f translation = vec3f::zero();
+            vec3f rotation = vec3f::zero();
+        };
+
         struct cmp_shadow
         {
             u32 texture_handle; // texture handle for sdf
@@ -384,7 +392,7 @@ namespace put
             cmp_array<cmp_samplers>        samplers;             // version 5
             cmp_array<u32>                 material_permutation; // version 8
             cmp_array<cmp_transform>       initial_transform;    // version 9
-            cmp_array<cmp_transform>       prev_transform;       // version 9
+            cmp_array<cmp_anim_transform>  anim_transform;       // version 9
 
             // Ensure num_components is the next to calc size
             u32 num_components;
