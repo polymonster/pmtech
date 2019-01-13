@@ -1124,9 +1124,7 @@ namespace put
                 }
             }
             
-            f32 cost = pen::timer_elapsed_ms(timer);
-            // PEN_LOG("Update: %f (ms)", cost );
-            
+            //f32 cost = pen::timer_elapsed_ms(timer);
         }
 
         struct scene_header
