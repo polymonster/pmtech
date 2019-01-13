@@ -236,7 +236,7 @@ extern "C"
 namespace pen
 {
     static const u32 k_max_gamepads = 4;
-    gamepad_state    s_gamepads[k_max_gamepads] = {};
+    raw_gamepad_state s_gamepads[k_max_gamepads] = {};
 
     void update_gamepad(Gamepad_device* device, u32 axis, u32 button)
     {
@@ -325,6 +325,11 @@ namespace pen
     }
 
     void input_get_gamepad_state(u32 device_index, gamepad_state& gs)
+    {
+        
+    }
+    
+    void input_get_raw_gamepad_state(u32 device_index, raw_gamepad_state& gs)
     {
         gs = s_gamepads[device_index];
     }

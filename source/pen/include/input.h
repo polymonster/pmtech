@@ -57,6 +57,7 @@ namespace pen
     u32  input_get_num_gamepads();
     void input_gamepad_update();
     void input_get_gamepad_state(u32 device_index, gamepad_state& gs);
+    void input_get_raw_gamepad_state(u32 device_index, raw_gamepad_state& gs);
 
     const mouse_state& input_get_mouse_state();
     bool               input_is_mouse_pressed(u32 button_index);
@@ -204,18 +205,30 @@ enum virtual_key
 
 enum gamepad_button
 {
-    PGP_A,
-    PGP_B,
-    PGP_X,
-    PGP_Y,
-    PGP_L1,
-    PGP_R1,
-    PGP_L3,
-    PGP_R3,
-    PGP_START,
-    PGP_SELECT,
-    PGP_TOUCH_PAD,      // ds4 touch pad
-    PGP_PLATFORM_BUTTON // ps button, xbox button etc
+    PGP_BUTTON_A = 0,
+    PGP_BUTTON_B,
+    PGP_BUTTON_X,
+    PGP_BUTTON_Y,
+    PGP_BUTTON_L1,
+    PGP_BUTTON_R1,
+    PGP_BUTTON_START,
+    PGP_BUTTON_SELECT,
+    PGP_BUTTON_L3,
+    PGP_BUTTON_R3,
+    PGP_BUTTON_TOUCH_PAD,      // ds4 touch pad
+    PGP_BUTTON_PLATFORM_BUTTON // ps button, xbox button etc
+};
+
+enum gamepad_axis
+{
+    PGP_AXIS_LEFT_STICK_X = 0,
+    PGP_AXIS_LEFT_STICK_Y,
+    
+    PGP_AXIS_RIGHT_STICK_X = 3,
+    PGP_AXIS_RIGHT_STICK_Y,
+    
+    PGP_DPAD_X = 4,
+    PGP_DPAD_Y,
 };
 
 #endif
