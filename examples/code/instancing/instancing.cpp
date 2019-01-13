@@ -34,7 +34,7 @@ namespace physics
 }
 
 void create_instanced_objects(ces::entity_scene* scene)
-{
+{    
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));

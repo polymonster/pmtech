@@ -561,7 +561,7 @@ int main(int argc, char** argv)
     }
 
     pen_user_info.working_directory = working_dir.c_str();
-
+    
     // window creation
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
     NSLog(@"NSApp=%@", NSApp);

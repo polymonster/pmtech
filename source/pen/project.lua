@@ -84,17 +84,17 @@ project "pen"
         "../../third_party/libstem_gamepad/source"
     }
             
+    configuration "Release"
+        defines { "NDEBUG" }
+        flags { "WinMain", "OptimizeSpeed" }
+        targetdir ("lib/" .. platform_dir .. "/release")
+        targetname "pen"
+        architecture "x64"
+        
     configuration "Debug"
         defines { "DEBUG" }
         flags { "WinMain" }
         symbols "On"
-        targetdir ("lib/" .. platform_dir)
-        targetname "pen_d"
-        architecture "x64"
- 
-    configuration "Release"
-        defines { "NDEBUG" }
-        flags { "WinMain", "OptimizeSpeed" }
-        targetdir ("lib/" .. platform_dir)
+        targetdir ("lib/" .. platform_dir .. "/debug")
         targetname "pen"
         architecture "x64"

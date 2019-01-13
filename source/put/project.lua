@@ -53,16 +53,14 @@ project "put"
         defines { "DEBUG" }
         flags { "WinMain" }
         symbols "On"
-        targetdir ("lib/" .. platform_dir)
-        targetname "put_d"
+        targetdir ("lib/" .. platform_dir .. "/debug")
+        targetname "put"
         architecture "x64"
-        links { "pen_d" }
  
     configuration "Release"
         defines { "NDEBUG" }
         flags { "WinMain", "OptimizeSpeed" }
         links { "bullet_monolithic" }
-        targetdir ("lib/" .. platform_dir)
+        targetdir ("lib/" .. platform_dir .. "/release")
         targetname "put"
         architecture "x64"
-        links { "pen" }

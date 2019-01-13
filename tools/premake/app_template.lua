@@ -47,7 +47,7 @@ local function setup_osx()
 		}
 	end
 	
-	add_pmtech_links()
+	-- add_pmtech_links()
 	copy_shared_libs()
 end
 
@@ -182,7 +182,7 @@ function create_app(project_name, source_directory, root_directory)
 	project ( project_name )
 		kind "WindowedApp"
 		language "C++"
-		dependson { "pen", "put" }
+		dependson{ "pen", "put" }
 		
 		includedirs
 		{
@@ -209,13 +209,7 @@ function create_app(project_name, source_directory, root_directory)
 			(root_directory .. "code/" .. source_directory .. "/**.m"),
 			(root_directory .. "code/" .. source_directory .. "/**.mm")
 		}
-	
-		libdirs
-		{ 
-			pmtech_dir .. "source/pen/lib/" .. platform_dir, 
-			pmtech_dir .. "source/put/lib/" .. platform_dir,
-		}
-	
+		
 		setup_env()
 		setup_platform()
 		setup_modules()
@@ -223,19 +217,29 @@ function create_app(project_name, source_directory, root_directory)
 		location (root_directory .. "/build/" .. platform_dir)
 		targetdir (root_directory .. "/bin/" .. platform_dir)
 		debugdir (root_directory .. "/bin/" .. platform_dir)
-			
+						
+		configuration "Release"
+			defines { "NDEBUG" }
+			flags { "WinMain", "OptimizeSpeed" }
+			targetname (project_name)
+			architecture "x64"
+			libdirs
+			{ 
+				pmtech_dir .. "source/pen/lib/" .. platform_dir .. "/debug", 
+				pmtech_dir .. "source/put/lib/" .. platform_dir .. "/debug",
+			}
+		
 		configuration "Debug"
 			defines { "DEBUG" }
 			flags { "WinMain" }
 			symbols "On"
 			targetname (project_name .. "_d")
 			architecture "x64"
-			
-		configuration "Release"
-			defines { "NDEBUG" }
-			flags { "WinMain", "OptimizeSpeed" }
-			targetname (project_name)
-			architecture "x64"
+			libdirs
+			{ 
+				pmtech_dir .. "source/pen/lib/" .. platform_dir .. "/release", 
+				pmtech_dir .. "source/put/lib/" .. platform_dir .. "/release",
+			}
 		
 end
 
