@@ -407,6 +407,8 @@ namespace pen
         // init vals
         init_gamepad_values(s_gamepads[gi]);
         
+        PEN_LOG("Controller Connect: %i, %i", s_raw_gamepads[gi].vendor_id, s_raw_gamepads[gi].product_id);
+        
         u32 num_maps = sb_count(s_device_maps);
         for(u32 i = 0; i < num_maps; ++i)
         {
@@ -414,6 +416,7 @@ namespace pen
             {
                 if(s_raw_gamepads[gi].product_id == s_device_maps[i].product_id)
                 {
+                    PEN_LOG("Mapping: %i", i);
                     s_raw_gamepads[gi].mapping = i;
                     break;
                 }
@@ -423,7 +426,7 @@ namespace pen
 
     void gamepad_remove_func(struct Gamepad_device* device, void* context)
     {
-        PEN_LOG("Device Remove\n");
+        
     }
 
     void gamepad_button_down_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context)
