@@ -234,6 +234,8 @@ extern "C" {
 #endif
 }
 
+#define TRIGGER_X360 1024
+
 namespace
 {
     struct device_mapping
@@ -328,6 +330,7 @@ namespace
         x360.button_map[9] = PGP_BUTTON_R3;
         x360.axes_map[0] = PGP_AXIS_LEFT_STICK_X;
         x360.axes_map[1] = PGP_AXIS_LEFT_STICK_Y;
+        x360.axes_map[2] = TRIGGER_X360;
         x360.axes_map[3] = PGP_AXIS_RIGHT_STICK_X;
         x360.axes_map[4] = PGP_AXIS_RIGHT_STICK_Y;
         x360.axes_map[5] = PGP_DPAD_X;
@@ -356,7 +359,22 @@ namespace
         if(ra == PEN_INVALID_HANDLE)
             return;
         
-        s_gamepads[gi].axis[ra] = s_raw_gamepads[gi].axis[axis];
+        if(ra == TRIGGER_X360)
+        {
+            f32 raw = s_raw_gamepads[gi].axis[axis];
+            if(raw < 0.0f)
+            {
+                s_gamepads[gi].axis[PGP_AXIS_LTRIGGER] = fabs(raw) * 2.0f - 1.0f;
+            }
+            else
+            {
+                s_gamepads[gi].axis[PGP_AXIS_RTRIGGER] = fabs(raw) * 2.0f - 1.0f;
+            }
+        }
+        else
+        {
+            s_gamepads[gi].axis[ra] = s_raw_gamepads[gi].axis[axis];
+        }
     }
     
     void update_gamepad(Gamepad_device* device, u32 axis, u32 button)

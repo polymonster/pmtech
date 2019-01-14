@@ -157,13 +157,26 @@ PEN_TRV pen::user_entry(void* params)
             }
         }
         
+        static const c8* mappings[] =
+        {
+            "No Mapping",
+            "DS4",
+            "xbox 360"
+        };
+        
         ypos += 10.0f;
         for (u32 i = 0; i < num_gamepads; ++i)
         {
+            raw_gamepad_state rgs;
+            pen::input_get_raw_gamepad_state(i, rgs);
+            
             gamepad_state gs;
             pen::input_get_gamepad_state(i, gs);
+            
+            put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Mapped Gamepad: %s", mappings[rgs.mapping]);
+            ypos += 10.0f;
+            
             f32 start_y = ypos;
-
             static const c8* button_names[] =
             {
                 "A / CROSS",
