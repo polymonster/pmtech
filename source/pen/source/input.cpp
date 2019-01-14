@@ -332,6 +332,7 @@ namespace
         x360.axes_map[4] = PGP_AXIS_RIGHT_STICK_Y;
         x360.axes_map[5] = PGP_DPAD_X;
         x360.axes_map[6] = PGP_DPAD_Y;
+        sb_push(s_device_maps, x360);
     }
 
     void map_button(u32 gamepad, u32 button)
