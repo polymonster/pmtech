@@ -121,25 +121,14 @@ PEN_TRV pen::user_entry(void* params)
 
         put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", ascii_msg.c_str());
 
-        Str press_msg = "character press: ";
-        for (s32 key = 0; key < PK_ARRAY_SIZE; ++key)
-        {
-            if (pen::input_is_key_pressed(key))
-            {
-                press_msg.append("[");
-                key_msg.append(pen::input_get_key_str(key));
-                press_msg.append("]");
-            }
-        }
-        press_msg.append("\n");
-        put::dbg::add_text_2f(10.0f, 50.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", press_msg.c_str());
-
+        // raw gamepad
         u32 num_gamepads = input_get_num_gamepads();
         put::dbg::add_text_2f(10.0f, 60.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Gamepads: %i", num_gamepads);
 
         f32 ypos = 70.0f;
         for (u32 i = 0; i < num_gamepads; ++i)
         {
+            f32 start_y = ypos;
             raw_gamepad_state gs;
             pen::input_get_raw_gamepad_state(i, gs);
 
@@ -156,7 +145,7 @@ PEN_TRV pen::user_entry(void* params)
             f32 xpos = 150.0f;
             for (u32 r = 0; r < 4; ++r)
             {
-                ypos = 80.0f;
+                ypos = start_y + 10.0f;
                 for (u32 a = 0; a < 16; ++a)
                 {
                     u32 ai = r * 16 + a;
@@ -165,6 +154,58 @@ PEN_TRV pen::user_entry(void* params)
                 }
 
                 xpos += 150.0f;
+            }
+        }
+        
+        ypos += 10.0f;
+        for (u32 i = 0; i < num_gamepads; ++i)
+        {
+            gamepad_state gs;
+            pen::input_get_gamepad_state(i, gs);
+            f32 start_y = ypos;
+
+            static const c8* button_names[] =
+            {
+                "A / CROSS",
+                "B / CIRCLE",
+                "X / SQUARE",
+                "Y / TRIANGLE",
+                "L1",
+                "R1",
+                "BACK / SHARE",
+                "START / OPTIONS",
+                "L3",
+                "R3",
+                "TOUCH PAD",
+                "PLATFORM"
+            };
+            static_assert(PEN_ARRAY_SIZE(button_names) == PGP_BUTTON_NUM, "mismatched array size");
+            
+            for(u32 b = 0; b < PGP_BUTTON_NUM; ++b)
+            {
+                put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %i", button_names[b], gs.button[b]);
+                ypos += 10.0f;
+            }
+            
+            static const c8* axis_names[] =
+            {
+                "Left Stick X",
+                "Left Stick Y",
+                "Right Stick X",
+                "Right Stick Y",
+                "DPAD X",
+                "DPAD Y",
+                "L TRIGGER",
+                "R TRIGGER"
+            };
+            static_assert(PEN_ARRAY_SIZE(axis_names) == PGP_AXIS_NUM, "mismatched array size");
+            
+            ypos = start_y;
+            f32 xpos = 150.0f;
+            for(u32 a = 0; a < PGP_AXIS_NUM; ++a)
+            {
+                put::dbg::add_text_2f(xpos, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %f", axis_names[a], gs.axis[a]);
+                ypos += 10.0f;
             }
         }
 

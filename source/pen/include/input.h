@@ -8,8 +8,43 @@
 #include "pen.h"
 
 #define PK_ARRAY_SIZE 512
+#define PGP_MAX_BUTTONS 16  // max buttons in raw gamepad
+#define PGP_MAX_AXIS 64     // max axis in raw gamepad
+#define PGP_MAX_GAMEPADS 4
 
 extern pen::window_creation_params pen_window;
+
+enum gamepad_button
+{
+    PGP_BUTTON_A = 0,
+    PGP_BUTTON_B,
+    PGP_BUTTON_X,
+    PGP_BUTTON_Y,
+    PGP_BUTTON_L1,
+    PGP_BUTTON_R1,
+    PGP_BUTTON_BACK,
+    PGP_BUTTON_START,
+    PGP_BUTTON_L3,
+    PGP_BUTTON_R3,
+    PGP_BUTTON_TOUCH_PAD,   // ds4 touch pad
+    PGP_BUTTON_PLATFORM,    // ps button, xbox button etc
+    
+    PGP_BUTTON_NUM
+};
+
+enum gamepad_axis
+{
+    PGP_AXIS_LEFT_STICK_X = 0,
+    PGP_AXIS_LEFT_STICK_Y,
+    PGP_AXIS_RIGHT_STICK_X,
+    PGP_AXIS_RIGHT_STICK_Y,
+    PGP_DPAD_X,
+    PGP_DPAD_Y,
+    PGP_AXIS_LTRIGGER,
+    PGP_AXIS_RTRIGGER,
+    
+    PGP_AXIS_NUM
+};
 
 namespace pen
 {
@@ -23,17 +58,19 @@ namespace pen
 
     struct raw_gamepad_state
     {
-        u32 device_id = -1;
-        u32 vendor_id = -1;
-        u32 product_id = -1;
-        u8  button[16] = {0};
-        f32 axis[64] = {0};
+        u32 device_id = PEN_INVALID_HANDLE;
+        u32 vendor_id = PEN_INVALID_HANDLE;
+        u32 product_id = PEN_INVALID_HANDLE;
+        u32 mapping = 0;
+        u8  button[PGP_MAX_BUTTONS] = {0};
+        f32 axis[PGP_MAX_AXIS] = {0};
     };
     
     struct gamepad_state
     {
-        u8  button[14];
-        f32 axis[6];
+        u32 device_index;
+        u8  button[PGP_BUTTON_NUM];
+        f32 axis[PGP_AXIS_NUM];
     };
 
     void input_set_unicode_key_down(u32 key_index);
@@ -201,34 +238,6 @@ enum virtual_key
     PK_NUMLOCK = 0x90,
     PK_SCROLL = 0x91,
     PK_COMMAND = 0x92
-};
-
-enum gamepad_button
-{
-    PGP_BUTTON_A = 0,
-    PGP_BUTTON_B,
-    PGP_BUTTON_X,
-    PGP_BUTTON_Y,
-    PGP_BUTTON_L1,
-    PGP_BUTTON_R1,
-    PGP_BUTTON_START,
-    PGP_BUTTON_SELECT,
-    PGP_BUTTON_L3,
-    PGP_BUTTON_R3,
-    PGP_BUTTON_TOUCH_PAD,      // ds4 touch pad
-    PGP_BUTTON_PLATFORM_BUTTON // ps button, xbox button etc
-};
-
-enum gamepad_axis
-{
-    PGP_AXIS_LEFT_STICK_X = 0,
-    PGP_AXIS_LEFT_STICK_Y,
-    
-    PGP_AXIS_RIGHT_STICK_X = 3,
-    PGP_AXIS_RIGHT_STICK_Y,
-    
-    PGP_DPAD_X = 4,
-    PGP_DPAD_Y,
 };
 
 #endif
