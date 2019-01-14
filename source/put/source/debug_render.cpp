@@ -103,7 +103,7 @@ namespace put
 
             if (prev_buffer)
             {
-                memcpy(debug_3d_buffers[buffer_index], debug_3d_verts, prev_size);
+                memcpy(debug_3d_buffers[buffer_index], prev_buffer, prev_size);
                 delete prev_buffer;
 
                 pen::renderer_release_buffer(prev_vb);
@@ -131,7 +131,7 @@ namespace put
 
             u32 prev_vb = vb_2d[buffer_index];
             u32 prev_size = sizeof(vertex_debug_2d) * buffer_2d_size_in_verts[buffer_index];
-
+            
             buffer_2d_size_in_verts[buffer_index] = num_verts * 2;
 
             // debug lines buffer
@@ -148,8 +148,7 @@ namespace put
 
             if (prev_buffer)
             {
-                memcpy(debug_2d_buffers[buffer_index], debug_2d_verts, prev_size);
-
+                memcpy(debug_2d_buffers[buffer_index], prev_buffer, prev_size);
                 delete prev_buffer;
 
                 pen::renderer_release_buffer(prev_vb);
