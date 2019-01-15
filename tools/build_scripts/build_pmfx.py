@@ -21,6 +21,7 @@ class build_info:
     this_file = ""
     macros_file = ""
     macros_source = ""
+    error_code = 0
 
 
 # info and contents of a .pmfx file
@@ -935,7 +936,7 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
     # rt = subprocess.call(cmdline, shell=True)
 
     p = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p.wait()
+    error_code = p.wait()
     output, err = p.communicate()
     err_str = err.decode('utf-8')
     err_str = err_str.strip(" ")
@@ -943,6 +944,9 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
     for e in err_list:
         if e != "":
             print(e)
+
+    if error_code != 0:
+        _info.error_code = error_code
 
 
 # parse shader inputs annd output source into a list of elements and semantics
@@ -1126,11 +1130,44 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
         "ps": ".psc"
     }
 
+    temp_extension = {
+        "vs": ".vert",
+        "ps": ".frag"
+    }
+
+    temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
+    output_path = os.path.join(_info.output_dir, pmfx_name)
+    os.makedirs(temp_path, exist_ok=True)
+    os.makedirs(output_path, exist_ok=True)
+
+    temp_file_and_path = os.path.join(temp_path, _tp.name + temp_extension[_shader.shader_type])
+
+    temp_shader_source = open(temp_file_and_path, "w")
+    temp_shader_source.write(shader_source)
+    temp_shader_source.close()
+
     output_path = os.path.join(_info.output_dir, pmfx_name)
     os.makedirs(output_path, exist_ok=True)
 
     output_file_and_path = os.path.join(output_path, _tp.name + extension[_shader.shader_type])
 
+    exe = os.path.join(_info.tools_dir, "bin", "glsl", util.get_platform_name(), "validator")
+
+    p = subprocess.Popen(exe + " " + temp_file_and_path, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    error_code = p.wait()
+    output, err = p.communicate()
+    output = output.decode('utf-8')
+    output = output.strip(" ")
+    output = output.split("\n")
+
+    for e in output:
+        if e != "":
+            print(e)
+
+    if error_code != 0:
+        _info.error_code = error_code
+
+    # copy shader to data
     shader_file = open(output_file_and_path, "w")
     shader_file.write(shader_source)
     shader_file.close()
@@ -1511,6 +1548,7 @@ if __name__ == "__main__":
     global _info
     _info = build_info()
     _info.os_platform = util.get_platform_name()
+    _info.error_code = 0
 
     parse_args()
 
@@ -1544,3 +1582,6 @@ if __name__ == "__main__":
             for file in files:
                 if file.endswith(".pmfx"):
                     parse_pmfx(file, root)
+
+    # error code for ci
+    sys.exit(_info.error_code)

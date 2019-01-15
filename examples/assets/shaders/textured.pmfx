@@ -35,6 +35,7 @@ ps_output ps_main( vs_output input )
     ps_output output;
     
     output.colour = sample_texture( tex, input.tex_coord.xy );
+    poop
     
     return output;
 }
