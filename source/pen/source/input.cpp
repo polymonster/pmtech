@@ -4,6 +4,7 @@
 #include "input.h"
 #include "os.h"
 #include <atomic>
+#include <math.h>
 
 namespace pen
 {
