@@ -11,9 +11,9 @@ Take a look at:
 **Features**  
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
+- Lightweight - Simple apis, shallow call stacks, minimal dependencies.  
 - Multithreaded - Async render, physics, audio and component entity system.  
 - Data-oriented component entity system - SoA memory layout for blazing fast scene representation.
-- Lightweight - Simple apis, shallow call stacks, [minimal dependencies](https://github.com/polymonster/pmtech/wiki/2.-Prerequisites).
 - Pmfx - High level data driven renderer, shader and post-processing system using json.
 - Low-level abstractions - Input, gamepad, timers, threads, window, os, file system, etc.
 - Hot loading - Reload configs, shaders, models and textures in real time for rapid development.
