@@ -159,7 +159,7 @@ struct pen_ring_buffer
 namespace pen
 {
 	template <typename T>
-    struct resource_pool
+    struct res_pool
     {
 		T* 	_resources = nullptr;
 		u32 _capacity = 0;
