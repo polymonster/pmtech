@@ -156,4 +156,40 @@ struct pen_ring_buffer
     }
 };
 
+namespace pen
+{
+	template <typename T>
+    struct resource_pool
+    {
+		T* 	_resources = nullptr;
+		u32 _capacity = 0;
+		
+		void init(u32 reserved_capacity)
+		{
+			_resources = (T*)pen::memory_alloc(sizeof(T) * reserved_capacity);
+		}
+		
+		void grow(u32 min_capacity)
+		{
+			if(_capacity < min_capacity)
+			{
+				_resources = (T*)pen::memory_realloc(_resources, (min_capacity * 2) * sizeof(T));
+				_capacity = min_capacity * 2;
+			}
+		}
+		
+		void insert(const T& resource, u32 slot)
+		{
+			grow(slot);
+			_resources[slot] = resource;
+			
+		}
+		
+		T* get(u32 slot)
+		{
+			return _resources[slot];
+		}
+    };
+}
+
 #endif //_pen_data_struct
