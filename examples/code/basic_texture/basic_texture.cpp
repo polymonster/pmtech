@@ -59,7 +59,7 @@ PEN_TRV pen::user_entry(void* params)
     // load shaders now requiring dependency on pmfx to make loading simpler.
     u32 textured_shader = pmfx::load_shader("textured");
 
-    u32 test_texture = put::load_texture("data/textures/met_12N.dds");
+    u32 test_texture = put::load_texture("data/textures/formats/texfmt_rgba8.dds");
 
     // create vertex buffer for a quad
     textured_vertex quad_vertices[] = {

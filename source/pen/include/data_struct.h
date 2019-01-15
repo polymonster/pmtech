@@ -185,7 +185,7 @@ namespace pen
 			
 		}
 		
-		T* get(u32 slot)
+		T& get(u32 slot)
 		{
 			return _resources[slot];
 		}

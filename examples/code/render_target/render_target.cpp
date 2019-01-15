@@ -65,7 +65,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::viewport vp_rt = {0.0f, 0.0f, 1024.0f, 512.0f, 0.0f, 1.0f};
 
     // create render target
-    pen::texture_creation_params tcp;
+    pen::texture_creation_params tcp = { 0 };
     tcp.width = (u32)vp_rt.width;
     tcp.height = (u32)vp_rt.height;
     tcp.cpu_access_flags = 0;
@@ -159,10 +159,8 @@ PEN_TRV pen::user_entry(void* params)
         pen::renderer_set_rasterizer_state(raster_state);
 
         // bind and clear render target
-        pen::renderer_set_viewport(vp_rt);
-
         pen::renderer_set_targets(colour_render_target, PEN_NULL_DEPTH_BUFFER);
-
+        pen::renderer_set_viewport(vp_rt);
         pen::renderer_clear(clear_state_rt);
 
         pen::renderer_set_depth_stencil_state(depth_stencil_state);
@@ -181,10 +179,8 @@ PEN_TRV pen::user_entry(void* params)
         }
 
         // bind back buffer and clear
-        pen::renderer_set_viewport(vp);
-
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-
+        pen::renderer_set_viewport(vp);
         pen::renderer_clear(clear_state);
 
         // draw quad
