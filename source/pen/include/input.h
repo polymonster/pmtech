@@ -61,7 +61,7 @@ namespace pen
         u32 device_id = PEN_INVALID_HANDLE;
         u32 vendor_id = PEN_INVALID_HANDLE;
         u32 product_id = PEN_INVALID_HANDLE;
-        u32 mapping = 0;
+        u32 mapping = PEN_INVALID_HANDLE;
         u8  button[PGP_MAX_BUTTONS] = {0};
         f32 axis[PGP_MAX_AXIS] = {0};
     };

@@ -395,6 +395,28 @@ namespace
         if (axis <= PGP_MAX_AXIS)
             s_raw_gamepads[gi].axis[axis] = device->axisStates[axis];
     }
+    
+    void map_gamepad(u32 gamepad)
+    {
+        u32 gi = gamepad;
+        if(s_raw_gamepads[gi].mapping != PEN_INVALID_HANDLE)
+            return;
+        
+        s_raw_gamepads[gi].mapping = 0;
+        
+        u32 num_maps = sb_count(s_device_maps);
+        for(u32 i = 0; i < num_maps; ++i)
+        {
+            if(s_raw_gamepads[gi].vendor_id == s_device_maps[i].vendor_id)
+            {
+                if(s_raw_gamepads[gi].product_id == s_device_maps[i].product_id)
+                {
+                    s_raw_gamepads[gi].mapping = i;
+                    break;
+                }
+            }
+        }
+    }
 }
 namespace pen
 {
@@ -408,21 +430,7 @@ namespace pen
         // init vals
         init_gamepad_values(s_gamepads[gi]);
         
-        //PEN_LOG("Controller Connect: %i, %i", s_raw_gamepads[gi].vendor_id, s_raw_gamepads[gi].product_id);
-        
-        u32 num_maps = sb_count(s_device_maps);
-        for(u32 i = 0; i < num_maps; ++i)
-        {
-            if(s_raw_gamepads[gi].vendor_id == s_device_maps[i].vendor_id)
-            {
-                if(s_raw_gamepads[gi].product_id == s_device_maps[i].product_id)
-                {
-                    //PEN_LOG("Mapping: %i", i);
-                    s_raw_gamepads[gi].mapping = i;
-                    break;
-                }
-            }
-        }
+        map_gamepad(gi);
     }
 
     void gamepad_remove_func(struct Gamepad_device* device, void* context)
@@ -466,6 +474,13 @@ namespace pen
         {
             Gamepad_detectDevices();
             detect_timer = detect_time;
+        }
+        
+        // check device mappings
+        u32 num_gp = input_get_num_gamepads();
+        for(u32 i = 0; i < num_gp; ++i)
+        {
+            map_gamepad(i);
         }
 
         detect_timer -= timer_elapsed_ms(htimer);
