@@ -500,7 +500,7 @@ namespace put
                 if (!is_valid(view.pmfx_shader))
                 {
                     // material shader / technique
-                    pmfx::set_technique(p_mat->pmfx_shader, p_mat->technique);
+                    pmfx::set_technique(p_mat->shader, p_mat->technique_index);
                 }
                 else
                 {
@@ -1263,8 +1263,8 @@ namespace put
                 cmp_material&      mat = scene->materials[n];
                 material_resource& mat_res = scene->material_resources[n];
 
-                const char* shader_name = pmfx::get_shader_name(mat.pmfx_shader);
-                const char* technique_name = pmfx::get_technique_name(mat.pmfx_shader, mat_res.id_technique);
+                const char* shader_name = pmfx::get_shader_name(mat.shader);
+                const char* technique_name = pmfx::get_technique_name(mat.shader, mat_res.id_technique);
 
                 write_lookup_string(mat_res.material_name.c_str(), ofs);
                 write_lookup_string(shader_name, ofs);

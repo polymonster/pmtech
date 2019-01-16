@@ -44,11 +44,11 @@ def display_prompted_input():
 
     add_all = False
 
-    all_value = 8
+    all_value = 0
     if input_val == all_value:
         add_all = True
 
-    for index in range(0, all_value - 1):
+    for index in range(0, 9):
         if input_val - 1 == index or add_all:
             execute_actions.append(action_strings[index])
 

@@ -556,24 +556,24 @@ namespace put
                 return;
 
             // shader
-            material->pmfx_shader = pmfx::load_shader(resource->shader_name.c_str());
-            if (!is_valid(material->pmfx_shader))
+            material->shader = pmfx::load_shader(resource->shader_name.c_str());
+            if (!is_valid(material->shader))
                 return;
 
             // permutation form geom
             permutation_flags_from_vertex_class(permutation, geometry->vertex_shader_class);
 
             // technique / permutation
-            material->technique = pmfx::get_technique_index_perm(material->pmfx_shader, resource->id_technique, permutation);
+            material->technique_index = pmfx::get_technique_index_perm(material->shader, resource->id_technique, permutation);
 
-            PEN_ASSERT(is_valid(material->technique));
+            PEN_ASSERT(is_valid(material->technique_index));
 
             // material / technique constant buffers
-            s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->pmfx_shader, material->technique);
+            s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->shader, material->technique_index);
 
             if (!(scene->state_flags[node_index] & SF_MATERIAL_INITIALISED))
             {
-                pmfx::initialise_constant_defaults(material->pmfx_shader, material->technique,
+                pmfx::initialise_constant_defaults(material->shader, material->technique_index,
                                                    scene->material_data[node_index].data);
 
                 scene->state_flags[node_index] |= SF_MATERIAL_INITIALISED;
@@ -584,7 +584,7 @@ namespace put
             // material samplers
             if (!(scene->state_flags[node_index] & SF_SAMPLERS_INITIALISED))
             {
-                pmfx::initialise_sampler_defaults(material->pmfx_shader, material->technique, samplers);
+                pmfx::initialise_sampler_defaults(material->shader, material->technique_index, samplers);
 
                 // set material texture from source data
                 for (u32 t = 0; t < SN_NUM_TEXTURES; ++t)

@@ -1877,7 +1877,7 @@ namespace put
             u32                perm = scene->material_permutation[selected_index];
 
             // multi parameters
-            s32 shader = mm.pmfx_shader;
+            s32 shader = mm.shader;
             s32 technique_list_index = pmfx::get_technique_list_index(shader, mr.id_technique);
 
             // set parameters if all are shared, if not set to invalid
@@ -1886,7 +1886,7 @@ namespace put
                 cmp_material&      m2 = scene->materials[s_selection_list[i]];
                 material_resource& mr2 = scene->material_resources[s_selection_list[i]];
 
-                if (shader != m2.pmfx_shader)
+                if (shader != m2.shader)
                 {
                     // mismatched shader and techniques selected
                     shader = PEN_INVALID_HANDLE;
@@ -1913,7 +1913,7 @@ namespace put
             cs |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
 
             u32        num_techniques;
-            const c8** technique_list = pmfx::get_technique_list(mm.pmfx_shader, num_techniques);
+            const c8** technique_list = pmfx::get_technique_list(mm.shader, num_techniques);
             ct |= ImGui::Combo("Technique", (s32*)&technique_list_index, technique_list, num_techniques);
 
             bool rebake = false;
@@ -1961,10 +1961,10 @@ namespace put
             // display technique ui if valid
             if (technique_list_index != PEN_INVALID_HANDLE && !rebake)
             {
-                rebake |= pmfx::show_technique_ui(shader, mm.technique, &mat.data[0], samp, &perm);
+                rebake |= pmfx::show_technique_ui(shader, mm.technique_index, &mat.data[0], samp, &perm);
 
-                pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, mm.technique);
-                pmfx::technique_sampler*  ts = pmfx::get_technique_samplers(shader, mm.technique);
+                pmfx::technique_constant* tc = pmfx::get_technique_constants(shader, mm.technique_index);
+                pmfx::technique_sampler*  ts = pmfx::get_technique_samplers(shader, mm.technique_index);
 
                 cmp_material_data pre_edit_tc = scene->material_data[selected_index];
                 u32               pre_edit_perm = scene->material_permutation[selected_index];

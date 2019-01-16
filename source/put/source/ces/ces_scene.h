@@ -154,8 +154,8 @@ namespace put
         {
             u32 material_cbuffer = PEN_INVALID_HANDLE;
             u32 material_cbuffer_size = 0;
-            u32 pmfx_shader; // shader.. todo: rename
-            u32 technique;   // technique index.. todo: rename
+            u32 shader;
+            u32 technique_index;
         };
 
         // from pmfx per instance material cbuffer data and samplers
