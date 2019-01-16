@@ -13,15 +13,15 @@ class build_info:
     shader_sub_platform = ""                                            # gles
     shader_version = ""                                                 # 4_0 (sm 4.0), 330 (glsl 330), 450 (glsl
     os_platform = ""                                                    # win32, osx, linux, ios, android
-    root_dir = ""
-    build_config = ""
-    pmtech_dir = ""
-    tools_dir = ""
-    output_dir = ""
-    this_file = ""
-    macros_file = ""
-    macros_source = ""
-    error_code = 0
+    root_dir = ""                                                       # cwd dir to run from
+    build_config = ""                                                   # json contents of build_config.json
+    pmtech_dir = ""                                                     # location of pmtech root dir
+    tools_dir = ""                                                      # location of pmtech/tools
+    output_dir = ""                                                     # dir to build shader binaries
+    this_file = ""                                                      # the file u are reading
+    macros_file = ""                                                    # _shader_macros.h
+    macros_source = ""                                                  # source code inside _shader_macros.h
+    error_code = 0                                                      # non-zero if any shaders failed to build
 
 
 # info and contents of a .pmfx file
@@ -58,7 +58,8 @@ class single_shader_info:
     instance_input_decl = ""                                            # struct decl of instance input struct
     output_decl = ""                                                    # struct decl of shader output
     struct_decls = ""                                                   # decls of all generic structs
-    texture_decl = []                                                   # decl of only used textures by this shader
+    texture_decl = []                                                   # decl of only used textures by shader
+    cbuffers = []                                                       # array of cbuffer decls used by shader
 
 
 # parse command line args passed in
@@ -779,6 +780,24 @@ def find_used_textures(shader_source, texture_decl):
     return used_texture_decl
 
 
+# find only used cbuffers
+def find_used_cbuffers(shader_source, cbuffers):
+    # turn source to tokens
+    non_tokens = ["(", ")", "{", "}", ".", ",", "+", "-", "=", "*", "/", "&", "|", "~", "\n", "<", ">"]
+    token_source = shader_source
+    for nt in non_tokens:
+        token_source = token_source.replace(nt, " ")
+    token_list = token_source.split(" ")
+    used_cbuffers = []
+    for cbuf in cbuffers:
+        member_list = parse_and_split_block(cbuf)
+        if len(member_list) > 1:
+            if member_list[1] in token_list:
+                used_cbuffers.append(cbuf)
+                break
+    return used_cbuffers
+
+
 # find only used functions from a given entry point
 def find_used_functions(entry_func, function_list):
     used_functions = [entry_func]
@@ -859,6 +878,7 @@ def generate_single_shader(main_func, _tp):
     # find only used textures by this shader
     full_source = _si.functions_source + main
     _si.texture_decl = find_used_textures(full_source, _tp.texture_decl)
+    _si.cbuffers = find_used_cbuffers(full_source, _tp.cbuffers)
 
     # todo find only used cbuffers
 
@@ -1225,12 +1245,16 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     else:
         shader_source += _shader.input_struct_name + " input [[stage_in]]"
 
-    # pass in textures, and cbuffers
+    # pass in textures
     invalid = ["", "\n"]
     texture_list = _shader.texture_decl.split(";")
     for texture in texture_list:
         if texture not in invalid:
             shader_source += ", " + texture
+
+    # pass in cbuffers
+    print(_shader.cbuffers)
+
     shader_source += ")\n{\n"
 
     if _shader.shader_type == "vs":
@@ -1426,7 +1450,7 @@ def parse_pmfx(file, root):
         return
 
     # check dependencies
-    force = True
+    force = False
     up_to_date = check_dependencies(file_and_path, included_files)
     if up_to_date and not force:
         print(file + " file up to date")
@@ -1564,7 +1588,7 @@ if __name__ == "__main__":
     _info.pmtech_dir = util.correct_path(_info.build_config["pmtech_dir"])
     _info.tools_dir = os.path.join(_info.pmtech_dir, "tools")
     _info.output_dir = os.path.join(_info.root_dir, "bin", _info.os_platform, "data", "pmfx", _info.shader_platform)
-    _info.this_file = os.path.join(_info.root_dir, _info.tools_dir, "build_scripts", "build_shaders.py")
+    _info.this_file = os.path.join(_info.root_dir, _info.tools_dir, "build_scripts", "build_pmfx.py")
     _info.macros_file = os.path.join(_info.root_dir, _info.tools_dir, "_shader_macros.h")
 
     # dirs for build input

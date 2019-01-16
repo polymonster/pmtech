@@ -4,6 +4,7 @@
 #include "console.h"
 #include "data_struct.h"
 #include "renderer.h"
+#include "str/Str.h"
 
 // globals
 a_u8 g_window_resize;
@@ -226,6 +227,20 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLSamplerMipFilterNotMipmapped;
     }
+    
+    pen_inline const char* get_metal_version_string()
+    {
+        if([_metal_device supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v2])
+        {
+            return "Metal MacOS 2.0";
+        }
+        else if([_metal_device supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v1])
+        {
+            return "Metal MacOS 1.0";
+        }
+        
+        return "";
+    }
 }
 
 pen_inline void pool_grow(resource* pool, u32 size)
@@ -250,6 +265,15 @@ namespace pen
     const renderer_info& renderer_get_info()
     {
         static renderer_info info;
+        
+        const Str device_name = (const char*)[_metal_device.name UTF8String];
+        const Str version_name = get_metal_version_string();
+        
+        info.api_version = version_name.c_str();
+        info.shader_version = "metal";
+        info.renderer_cmd = "metal";
+        info.renderer = device_name.c_str();
+        info.vendor = device_name.c_str();
 
         return info;
     }

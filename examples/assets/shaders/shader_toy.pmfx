@@ -5,20 +5,20 @@ cbuffer per_pass_view : register(b0)
 
 cbuffer per_pass_params : register(b1)
 {
-    float4     size_time;
+    float4 size_time;
 };
 
 struct vs_input
 {
     float4 position : POSITION;
-    float2 tex_coord: TEXCOORD0;
+    float2 tex_coord : TEXCOORD0;
 };
 
 struct vs_output
 {
-    float4     position : SV_POSITION;
-    float2     tex_coord: TEXCOORD0;
-    float    time       : TEXCOORD1;
+    float4 position : SV_POSITION;
+    float2 tex_coord : TEXCOORD0;
+    float time : TEXCOORD1;
 };
 
 struct ps_output
@@ -55,4 +55,5 @@ ps_output ps_main( vs_output input )
     output.colour.a = 1.0;
     
     return output;
+    
 }
