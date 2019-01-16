@@ -229,7 +229,7 @@ extern "C" {
 #ifdef __linux__
 #include "gamepad/Gamepad_linux.c"
 #elif _WIN32
-#include "gamepad/Gamepad_windows_mm.c"
+#include "gamepad/Gamepad_windows_dinput.c"
 #else //macos
 #include "gamepad/Gamepad_macosx.c"
 #endif
@@ -343,7 +343,9 @@ namespace
     {
         u32 gi = gamepad;
         u32 mapping = s_raw_gamepads[gi].mapping;
-        
+        if (mapping == PEN_INVALID_HANDLE)
+            return;
+
         u32 rb = s_device_maps[mapping].button_map[button];
         if(rb == PEN_INVALID_HANDLE)
             return;
@@ -355,7 +357,9 @@ namespace
     {
         u32 gi = gamepad;
         u32 mapping = s_raw_gamepads[gi].mapping;
-        
+        if (mapping == PEN_INVALID_HANDLE)
+            return;
+
         u32 ra = s_device_maps[mapping].axes_map[axis];
         if(ra == PEN_INVALID_HANDLE)
             return;
