@@ -403,6 +403,10 @@ namespace
     void map_gamepad(u32 gamepad)
     {
         u32 gi = gamepad;
+
+        if (s_raw_gamepads[gi].vendor_id == PEN_INVALID_HANDLE)
+            return;
+
         if(s_raw_gamepads[gi].mapping != PEN_INVALID_HANDLE)
             return;
         

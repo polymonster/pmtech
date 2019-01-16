@@ -169,7 +169,13 @@ PEN_TRV pen::user_entry(void* params)
         {
             raw_gamepad_state rgs;
             pen::input_get_raw_gamepad_state(i, rgs);
-            
+
+            if (rgs.mapping == PEN_INVALID_HANDLE)
+            {
+                put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Initialising Mapping...");
+                continue;
+            }
+
             gamepad_state gs;
             pen::input_get_gamepad_state(i, gs);
             
