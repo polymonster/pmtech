@@ -172,6 +172,60 @@ namespace // pen consts -> metal consts
         
         return usage;
     }
+    
+    pen_inline MTLSamplerAddressMode to_metal_sampler_address_mode(u32 address_mode)
+    {
+        switch (address_mode)
+        {
+            case PEN_TEXTURE_ADDRESS_WRAP:
+                return MTLSamplerAddressModeRepeat;
+            case PEN_TEXTURE_ADDRESS_MIRROR:
+                return MTLSamplerAddressModeMirrorRepeat;
+            case PEN_TEXTURE_ADDRESS_CLAMP:
+                return MTLSamplerAddressModeClampToEdge;
+            case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
+                return MTLSamplerAddressModeMirrorClampToEdge;
+        }
+        
+        // unhandled
+        PEN_ASSERT(0);
+        return MTLSamplerAddressModeRepeat;
+    }
+    
+    pen_inline MTLSamplerMinMagFilter to_metal_min_mag_filter(u32 filter)
+    {
+        switch (filter)
+        {
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+            case PEN_FILTER_LINEAR:
+                return MTLSamplerMinMagFilterLinear;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+            case PEN_FILTER_POINT:
+                return MTLSamplerMinMagFilterNearest;
+        }
+        
+        // unhandled
+        PEN_ASSERT(0);
+        return MTLSamplerMinMagFilterLinear;
+    }
+    
+    pen_inline MTLSamplerMipFilter to_metal_mip_filter(u32 filter)
+    {
+        switch (filter)
+        {
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+                return MTLSamplerMipFilterLinear;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+                return MTLSamplerMipFilterNearest;
+            case PEN_FILTER_LINEAR:
+            case PEN_FILTER_POINT:
+                return MTLSamplerMipFilterNotMipmapped;
+        }
+        
+        // unhandled
+        PEN_ASSERT(0);
+        return MTLSamplerMipFilterNotMipmapped;
+    }
 }
 
 pen_inline void pool_grow(resource* pool, u32 size)
@@ -466,12 +520,18 @@ namespace pen
             // create sampler state
             MTLSamplerDescriptor* sd = [MTLSamplerDescriptor new];
             
-            sd.sAddressMode = MTLSamplerAddressModeClampToEdge;
-            sd.tAddressMode = MTLSamplerAddressModeClampToEdge;
-            sd.minFilter = MTLSamplerMinMagFilterNearest;
-            sd.magFilter = MTLSamplerMinMagFilterLinear;
-            sd.mipFilter = MTLSamplerMipFilterLinear;
+            sd.sAddressMode = to_metal_sampler_address_mode(scp.address_u);
+            sd.tAddressMode = to_metal_sampler_address_mode(scp.address_v);
+            sd.rAddressMode = to_metal_sampler_address_mode(scp.address_w);
+            
+            sd.minFilter = to_metal_min_mag_filter(scp.filter);
+            sd.magFilter = to_metal_min_mag_filter(scp.filter);
+            sd.mipFilter = to_metal_mip_filter(scp.filter);
 
+            sd.lodMinClamp = scp.min_lod;
+            sd.lodMaxClamp = scp.max_lod;
+            sd.maxAnisotropy = 1.0f + scp.max_anisotropy;
+            
             _res_pool.insert(resource(), resource_slot);
             _res_pool.get(resource_slot).sampler = [_metal_device newSamplerStateWithDescriptor:sd];
         }

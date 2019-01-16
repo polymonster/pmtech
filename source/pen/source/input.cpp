@@ -6,12 +6,12 @@
 #include <atomic>
 #include <math.h>
 
+// Keyboard and mouse
+#define KEY_PRESS   0x01
+#define KEY_HELD    0x02
+
 namespace pen
 {
-// Keyboard and mouse
-#define KEY_PRESS 0x01
-#define KEY_HELD 0x02
-
     u8 keyboard_state[PK_ARRAY_SIZE];
     u8 ascii_state[PK_ARRAY_SIZE];
 
@@ -225,7 +225,6 @@ namespace pen
 extern "C" {
 #include "gamepad/Gamepad.h"
 #include "gamepad/Gamepad_private.c"
-    
 #ifdef __linux__
 #include "gamepad/Gamepad_linux.c"
 #elif _WIN32
@@ -437,7 +436,6 @@ namespace pen
         
         // init vals
         init_gamepad_values(s_gamepads[gi]);
-        
         map_gamepad(gi);
     }
 
