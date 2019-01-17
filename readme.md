@@ -25,7 +25,7 @@ Take a look at:
 
 **Usage**  
 
-Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Getting-Started).
+Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/2.-Building-Examples).
 
 **pmtech uses the following thirdparty libs** 
 - [ImGui](https://github.com/ocornut/imgui)
