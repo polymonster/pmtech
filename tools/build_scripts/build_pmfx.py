@@ -1271,11 +1271,11 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     shader_source += _shader.output_struct_name + " " + _shader.shader_type + "_main" + "("
 
     if _shader.shader_type == "vs":
-        shader_source += "device " + _shader.input_struct_name + "* vertices" + "[[buffer(0)]],"
-        shader_source += " uint vid [[vertex_id]]"
+        shader_source += "\n  device " + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
+        shader_source += "\n, uint vid [[vertex_id]]"
         if _shader.instance_input_struct_name:
-            shader_source += ", device " + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]],"
-            shader_source += " uint iid [[instance_id]]"
+            shader_source += "\n, device " + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
+            shader_source += "\n, uint iid [[instance_id]]"
     else:
         shader_source += _shader.input_struct_name + " input [[stage_in]]"
 
@@ -1301,8 +1301,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
 
     # create a function prologue for cbuffer assignment
     for cbuf in _shader.cbuffers:
-
-
+        pass
 
     main_func_body = _shader.main_func_source.find("{") + 1
     shader_source += _shader.main_func_source[main_func_body:]
