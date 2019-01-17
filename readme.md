@@ -12,6 +12,7 @@ Take a look at:
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
 - Lightweight - Simple apis, shallow call stacks, minimal dependencies.  
+- [Orthodox C++](https://gist.github.com/bkaradzic/2e39896bc7d8c34e042b) - Sticking to a small c++ subset. 
 - Multithreaded - Async render, physics, audio and component entity system.  
 - Data-oriented component entity system - SoA memory layout for blazing fast scene representation.
 - Pmfx - High level data driven renderer, shader and post-processing system using json.
