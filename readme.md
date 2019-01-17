@@ -3,7 +3,7 @@
 Follow work in progress: 
 [trello](https://trello.com/b/ciujzpUT)
 
-A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded code with minimalistic procedural api's sticking to [Orthodox C++](https://gist.github.com/bkaradzic/2e39896bc7d8c34e042b) principles.
+A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded code with minimalistic procedural api's, sticking to [Orthodox C++](https://gist.github.com/bkaradzic/2e39896bc7d8c34e042b) principles.
 
 Take a look at: 
 [demos...](https://polymonster.github.io/index.html)
