@@ -3,7 +3,7 @@
 Follow work in progress: 
 [trello](https://trello.com/b/ciujzpUT)
 
-A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded code with minimalistic procedural api's.
+A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded code with minimalistic procedural api's sticking to [Orthodox C++](https://gist.github.com/bkaradzic/2e39896bc7d8c34e042b) principles.
 
 Take a look at: 
 [demos...](https://polymonster.github.io/index.html)
@@ -12,7 +12,6 @@ Take a look at:
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
 - Lightweight - Simple apis, shallow call stacks, minimal dependencies.  
-- [Orthodox C++](https://gist.github.com/bkaradzic/2e39896bc7d8c34e042b) - Sticking to a small c++ subset. 
 - Multithreaded - Async render, physics, audio and component entity system.  
 - Data-oriented component entity system - SoA memory layout for blazing fast scene representation.
 - Pmfx - High level data driven renderer, shader and post-processing system using json.
