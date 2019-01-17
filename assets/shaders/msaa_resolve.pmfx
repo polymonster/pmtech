@@ -47,6 +47,7 @@ ps_output ps_resolve_average_2x( vs_output_textured input )
 {
     ps_output output;
     output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+    _pmfx_unroll
     for( int i = 0; i < 2; ++i )
         output.colour += sample_texture_2dms( texture_msaa_2, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
     output.colour /= 2.0;
@@ -57,6 +58,7 @@ ps_output ps_resolve_average_4x( vs_output_textured input )
 {
     ps_output output;
     output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+    _pmfx_unroll
     for( int i = 0; i < 4; ++i )
         output.colour += sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
     output.colour /= 4.0;
@@ -67,6 +69,7 @@ ps_output ps_resolve_average_8x( vs_output_textured input )
 {
     ps_output output;
     output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+    _pmfx_unroll
     for( int i = 0; i < 8; ++i )
         output.colour += sample_texture_2dms( texture_msaa_8, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
     output.colour /= 8.0;
@@ -77,6 +80,7 @@ ps_output ps_resolve_average_16x( vs_output_textured input )
 {
     ps_output output;
     output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+    _pmfx_unroll
     for( int i = 0; i < 16; ++i )
         output.colour += sample_texture_2dms( texture_msaa_16, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
     output.colour /= 16.0;
@@ -87,6 +91,7 @@ ps_output ps_resolve_average_2x( vs_output_textured input )
 {
     ps_output output;
     output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+    _pmfx_unroll
     for( int i = 0; i < 2; ++i )
         output.colour += sample_texture_2dms( texture_msaa_2, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
     output.colour /= 2.0;
@@ -97,6 +102,7 @@ ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
 {
     ps_output_depth output;
     output.depth = sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, 0 ).r;
+    _pmfx_unroll
     for( int i = 1; i < 4; ++i )
     {
         float depth = sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i ).r;

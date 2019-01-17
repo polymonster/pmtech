@@ -6,14 +6,14 @@
 // io structs
 struct vs_output
 {
-    float4 position        : SV_POSITION;
-    float4 texcoord        : TEXCOORD0;
+    float4 position : SV_POSITION;
+    float4 texcoord : TEXCOORD0;
 };
 
 struct vs_input
 {
-    float4 position         : POSITION;
-    float4 texcoord         : TEXCOORD0;
+    float4 position : POSITION;
+    float4 texcoord : TEXCOORD0;
 };
 
 struct ps_output
@@ -39,8 +39,8 @@ cbuffer src_info : register(b10)
 
 cbuffer filter_kernel : register(b2)
 {
-    float4    filter_info; //xy = mask / direction, z = num samples, w = unused
-    float4     filter_offset_weight[16];
+    float4 filter_info; //xy = mask / direction, z = num samples, w = unused
+    float4 filter_offset_weight[16];
 };
 
 // samplers
@@ -405,6 +405,7 @@ ps_output_colour_depth ps_menger( vs_output input )
     output.colour = lerp(sky, sd_col, sky_t);
     
     return output;
+    
 }
 
 ps_output ps_crt( vs_output input )

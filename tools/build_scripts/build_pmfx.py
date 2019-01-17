@@ -136,6 +136,7 @@ def parse_and_split_block(code_block):
     block_conditioned = block_conditioned.replace("(", "")
     block_conditioned = block_conditioned.replace(")", "")
     block_conditioned = block_conditioned.replace(",", "")
+    block_conditioned = re.sub(' +', ' ', block_conditioned)
     return block_conditioned.split()
 
 
@@ -783,7 +784,7 @@ def find_used_textures(shader_source, texture_decl):
 # find only used cbuffers
 def find_used_cbuffers(shader_source, cbuffers):
     # turn source to tokens
-    non_tokens = ["(", ")", "{", "}", ".", ",", "+", "-", "=", "*", "/", "&", "|", "~", "\n", "<", ">"]
+    non_tokens = ["(", ")", "{", "}", ".", ",", "+", "-", "=", "*", "/", "&", "|", "~", "\n", "<", ">", "[", "]", ";"]
     token_source = shader_source
     for nt in non_tokens:
         token_source = token_source.replace(nt, " ")
@@ -791,8 +792,16 @@ def find_used_cbuffers(shader_source, cbuffers):
     used_cbuffers = []
     for cbuf in cbuffers:
         member_list = parse_and_split_block(cbuf)
-        if len(member_list) > 1:
-            if member_list[1] in token_list:
+        for i in range(1, len(member_list), 2):
+            member = member_list[i].strip()
+            array = member.find("[")
+            if array != -1:
+                if array == 0:
+                    i += 1
+                    continue
+                else:
+                    member = member[:array]
+            if member in token_list:
                 used_cbuffers.append(cbuf)
                 break
     return used_cbuffers
@@ -880,8 +889,6 @@ def generate_single_shader(main_func, _tp):
     _si.texture_decl = find_used_textures(full_source, _tp.texture_decl)
     _si.cbuffers = find_used_cbuffers(full_source, _tp.cbuffers)
 
-    # todo find only used cbuffers
-
     return _si
 
 
@@ -913,7 +920,7 @@ def format_source(source, indent_size):
 def compile_hlsl(_info, pmfx_name, _tp, _shader):
     shader_source = get_macros_for_platform("hlsl", _info.macros_source)
     shader_source += _tp.struct_decls
-    for cb in _tp.cbuffers:
+    for cb in _shader.cbuffers:
         shader_source += cb
     shader_source += _shader.input_decl
     shader_source += _shader.instance_input_decl
@@ -967,6 +974,8 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
 
     if error_code != 0:
         _info.error_code = error_code
+
+    return error_code
 
 
 # parse shader inputs annd output source into a list of elements and semantics
@@ -1050,7 +1059,7 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     instance_inputs, instance_input_semantics = parse_io_struct(_shader.instance_input_decl)
 
     uniform_buffers = ""
-    for cbuf in _tp.cbuffers:
+    for cbuf in _shader.cbuffers:
         name_start = cbuf.find(" ")
         name_end = cbuf.find(":")
         if name_end == -1:
@@ -1192,6 +1201,8 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     shader_file.write(shader_source)
     shader_file.close()
 
+    return error_code
+
 
 # compile shader for apple metal
 def compile_metal(_info, pmfx_name, _tp, _shader):
@@ -1203,6 +1214,27 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     shader_source = get_macros_for_platform("metal", _info.macros_source)
     shader_source += "using namespace metal;\n"
 
+    # struct decls
+    shader_source += _tp.struct_decls
+
+    # cbuffer decls
+    metal_cbuffers = []
+    for cbuf in _shader.cbuffers:
+        name_start = cbuf.find(" ")
+        name_end = cbuf.find(":")
+        body_start = cbuf.find("{")
+        body_end = cbuf.find("};") + 2
+        register_start = cbuf.find("(") + 1
+        register_end = cbuf.find(")")
+        name = cbuf[name_start:name_end].strip()
+        reg = cbuf[register_start:register_end]
+        reg = reg.replace('b', '')
+        metal_cbuffers.append((name, reg))
+        shader_source += "struct c_" + name + "\n"
+        shader_source += cbuf[body_start:body_end]
+        shader_source += "\n"
+
+    # inputs
     if len(inputs) > 0:
         shader_source += "struct " + _shader.input_struct_name + "\n{\n"
         for i in range(0, len(inputs)):
@@ -1211,6 +1243,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
             shader_source += inputs[i] + ";\n"
         shader_source += "};\n"
 
+    # instance inputs
     if _shader.instance_input_struct_name:
         if len(instance_inputs) > 0:
             shader_source += "struct " + _shader.instance_input_struct_name + "\n{\n"
@@ -1218,6 +1251,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
                 shader_source += instance_inputs[i] + ";\n"
             shader_source += "};\n"
 
+    # outputs
     if len(outputs) > 0:
         shader_source += "struct " + _shader.output_struct_name + "\n{\n"
         for i in range(0, len(outputs)):
@@ -1250,18 +1284,25 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     texture_list = _shader.texture_decl.split(";")
     for texture in texture_list:
         if texture not in invalid:
-            shader_source += ", " + texture
+            shader_source += "\n, " + texture
 
-    # pass in cbuffers
-    print(_shader.cbuffers)
+    # pass in cbuffers.. cbuffers start at 8 reserving space for 8 vertex buffers
+    for cbuf in metal_cbuffers:
+        regi = int(cbuf[1]) + 8
+        shader_source += "\n, " + "constant " "c_" + cbuf[0] + " &" + cbuf[0] + " [[buffer(" + str(regi) + ")]]"
 
     shader_source += ")\n{\n"
 
+    # create function prologue for main and insert assignment to port from hlsl to metal
     if _shader.shader_type == "vs":
-        # create function header for main and insert assignment to port from hlsl to metal
         shader_source += _shader.input_struct_name + " input = " + "vertices[vid];\n"
         if _shader.instance_input_struct_name:
             shader_source += _shader.instance_input_struct_name + " instance_input = " + "instances[iid];"
+
+    # create a function prologue for cbuffer assignment
+    for cbuf in _shader.cbuffers:
+
+
 
     main_func_body = _shader.main_func_source.find("{") + 1
     shader_source += _shader.main_func_source[main_func_body:]
@@ -1290,9 +1331,9 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     temp_shader_source.write(shader_source)
     temp_shader_source.close()
 
-    # todo precompile
-    return
+    return True
 
+    # todo precompile
     if pmfx_name != "basictri":
         return
 
@@ -1465,6 +1506,7 @@ def parse_pmfx(file, root):
     pmfx_output_info["techniques"] = []
 
     # for techniques in pmfx
+    success = True
     for technique in _pmfx.json:
         pmfx_json = json.loads(_pmfx.json_text)
         technique_json = pmfx_json[technique].copy()
@@ -1539,15 +1581,21 @@ def parse_pmfx(file, root):
             # convert single shader to platform specific variation
             for s in _tp.shader:
                 if _info.shader_platform == "hlsl":
-                    compile_hlsl(_info, pmfx_name, _tp, s)
+                    ss = compile_hlsl(_info, pmfx_name, _tp, s)
                 elif _info.shader_platform == "glsl":
-                    compile_glsl(_info, pmfx_name, _tp, s)
+                    ss = compile_glsl(_info, pmfx_name, _tp, s)
                 elif _info.shader_platform == "metal":
-                    compile_metal(_info, pmfx_name, _tp, s)
+                    ss = compile_metal(_info, pmfx_name, _tp, s)
                 else:
                     print("error: invalid shader platform " + _info.shader_platform)
 
+                if ss != 0:
+                    success = False
+
             pmfx_output_info["techniques"].append(generate_technique_permutation_info(_tp))
+
+    if not success:
+        return
 
     # write a shader info file with timestamp for dependencies
     generate_shader_info(file_and_path, included_files, pmfx_output_info)

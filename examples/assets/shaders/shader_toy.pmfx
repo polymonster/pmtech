@@ -6,6 +6,7 @@ cbuffer per_pass_view : register(b0)
 cbuffer per_pass_params : register(b1)
 {
     float4 size_time;
+    float4 test;
 };
 
 struct vs_input
@@ -55,5 +56,4 @@ ps_output ps_main( vs_output input )
     output.colour.a = 1.0;
     
     return output;
-    
 }

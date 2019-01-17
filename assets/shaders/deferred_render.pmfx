@@ -120,7 +120,7 @@ ps_output ps_light(vs_output input)
         int samples = 1;
     }
     
-    __pmfx_unroll
+    _pmfx_unroll
     for(int i = 0; i < samples; ++i)
     {    
         if:(MSAA)

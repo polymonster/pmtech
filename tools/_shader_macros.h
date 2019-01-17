@@ -46,7 +46,7 @@
     #define ddx dFdx
     #define ddy dFdy
 
-    #define __pmfx_unroll
+    #define _pmfx_unroll
 #endif //GLSL
 
 #ifdef HLSL
@@ -74,12 +74,14 @@
     // glsl style mod
     #define mod(x, y) x - y * floor(x/y) 
 
-    #define __pmfx_unroll [unroll]
+    #define _pmfx_unroll [unroll]
 #endif //HLSL
 
 #ifdef METAL
     #define texture_2d( name, sampler_index ) texture2d<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
     #define sample_texture( name, tc ) name.sample(sampler_##name, tc);
+    
+    #define _pmfx_unroll
 #endif //METAL
 
 //GENERIC MACROS
