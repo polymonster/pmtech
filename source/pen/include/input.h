@@ -26,6 +26,10 @@ enum gamepad_button
     PGP_BUTTON_START,
     PGP_BUTTON_L3,
     PGP_BUTTON_R3,
+    PGP_BUTTON_DLEFT,
+    PGP_BUTTON_DRIGHT,
+    PGP_BUTTON_DUP,
+    PGP_BUTTON_DDOWN,
     PGP_BUTTON_TOUCH_PAD,   // ds4 touch pad
     PGP_BUTTON_PLATFORM,    // ps button, xbox button etc
     
@@ -38,8 +42,6 @@ enum gamepad_axis
     PGP_AXIS_LEFT_STICK_Y,
     PGP_AXIS_RIGHT_STICK_X,
     PGP_AXIS_RIGHT_STICK_Y,
-    PGP_DPAD_X,
-    PGP_DPAD_Y,
     PGP_AXIS_LTRIGGER,
     PGP_AXIS_RTRIGGER,
     

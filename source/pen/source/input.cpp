@@ -1,14 +1,14 @@
-#include "data_struct.h"
 #include "console.h"
-#include "timer.h"
+#include "data_struct.h"
 #include "input.h"
 #include "os.h"
+#include "timer.h"
 #include <atomic>
 #include <math.h>
 
 // Keyboard and mouse
-#define KEY_PRESS   0x01
-#define KEY_HELD    0x02
+#define KEY_PRESS 0x01
+#define KEY_HELD 0x02
 
 namespace pen
 {
@@ -221,20 +221,26 @@ namespace pen
 } // namespace pen
 
 // Gamepad ------------------------------------------------------------------------------------------------------------------
+#define API_RAW_INPUT 0
+#define API_XINPUT 1
+#define TRIGGER_X360 1024
+#define DPAD_X_AXIS 1025
+#define DPAD_Y_AXIS 1026
 
 extern "C" {
 #include "gamepad/Gamepad.h"
 #include "gamepad/Gamepad_private.c"
 #ifdef __linux__
+#define _API API_RAW_INPUT
 #include "gamepad/Gamepad_linux.c"
 #elif _WIN32
+#define _API API_XINPUT
 #include "gamepad/Gamepad_windows_dinput.c"
 #else //macos
+#define _API API_RAW_INPUT
 #include "gamepad/Gamepad_macosx.c"
 #endif
 }
-
-#define TRIGGER_X360 1024
 
 namespace
 {
@@ -242,35 +248,36 @@ namespace
     {
         u32 vendor_id;
         u32 product_id;
+        u32 api_id;
         u32 button_map[PGP_MAX_BUTTONS];
         u32 axes_map[PGP_MAX_AXIS];
     };
-    
-    pen::raw_gamepad_state  s_raw_gamepads[PGP_MAX_GAMEPADS] = {};
-    pen::gamepad_state      s_gamepads[PGP_MAX_GAMEPADS] = {};
-    device_mapping*         s_device_maps = nullptr;
-    
+
+    pen::raw_gamepad_state s_raw_gamepads[PGP_MAX_GAMEPADS] = {};
+    pen::gamepad_state     s_gamepads[PGP_MAX_GAMEPADS] = {};
+    device_mapping*        s_device_maps = nullptr;
+
     void init_map(device_mapping& map)
     {
-        for(u32 b = 0; b < PGP_MAX_BUTTONS; ++b)
+        for (u32 b = 0; b < PGP_MAX_BUTTONS; ++b)
             map.button_map[b] = PEN_INVALID_HANDLE;
-        
-        for(u32 a = 0; a < PGP_MAX_AXIS; ++a)
+
+        for (u32 a = 0; a < PGP_MAX_AXIS; ++a)
             map.axes_map[a] = PEN_INVALID_HANDLE;
     }
-    
+
     void init_gamepad_values(pen::gamepad_state& gs)
     {
-        for(u32 b = 0; b < PGP_BUTTON_NUM; ++b)
+        for (u32 b = 0; b < PGP_BUTTON_NUM; ++b)
             gs.button[b] = 0;
-        
-        for(u32 a = 0; a < PGP_AXIS_NUM; ++a)
+
+        for (u32 a = 0; a < PGP_AXIS_NUM; ++a)
             gs.axis[a] = 0.0f;
-        
+
         gs.axis[PGP_AXIS_LTRIGGER] = -1.0f;
         gs.axis[PGP_AXIS_RTRIGGER] = -1.0f;
     }
-    
+
     void init_gamepad_mappings()
     {
         // No Mapping
@@ -278,19 +285,20 @@ namespace
         no.vendor_id = 0;
         no.product_id = 0;
         init_map(no);
-        for(u32 i = 0; i < PGP_BUTTON_NUM; ++i)
+        for (u32 i = 0; i < PGP_BUTTON_NUM; ++i)
             no.button_map[i] = i;
-        
-        for(u32 i = 0; i < PGP_AXIS_NUM; ++i)
+
+        for (u32 i = 0; i < PGP_AXIS_NUM; ++i)
             no.axes_map[i] = i;
-        
+
         sb_push(s_device_maps, no);
-        
+
         // DS4
         device_mapping ps4;
         init_map(ps4);
         ps4.vendor_id = 1356;
         ps4.product_id = 1476;
+        ps4.api_id = API_RAW_INPUT;
         ps4.button_map[0] = PGP_BUTTON_X; // SQUARE
         ps4.button_map[1] = PGP_BUTTON_A; // X
         ps4.button_map[2] = PGP_BUTTON_B; // CIRCLE
@@ -307,17 +315,18 @@ namespace
         ps4.axes_map[1] = PGP_AXIS_LEFT_STICK_Y;
         ps4.axes_map[2] = PGP_AXIS_RIGHT_STICK_X;
         ps4.axes_map[3] = PGP_AXIS_RIGHT_STICK_Y;
-        ps4.axes_map[4] = PGP_DPAD_X;
-        ps4.axes_map[5] = PGP_DPAD_Y;
+        ps4.axes_map[4] = DPAD_X_AXIS;
+        ps4.axes_map[5] = DPAD_Y_AXIS;
         ps4.axes_map[7] = PGP_AXIS_LTRIGGER;
         ps4.axes_map[8] = PGP_AXIS_RTRIGGER;
         sb_push(s_device_maps, ps4);
-        
+
         // Xbox 360
         device_mapping x360;
         init_map(x360);
         x360.vendor_id = 1118;
         x360.product_id = 654;
+        x360.api_id = API_RAW_INPUT;
         x360.button_map[0] = PGP_BUTTON_A;
         x360.button_map[1] = PGP_BUTTON_B;
         x360.button_map[2] = PGP_BUTTON_X;
@@ -333,9 +342,52 @@ namespace
         x360.axes_map[2] = TRIGGER_X360;
         x360.axes_map[3] = PGP_AXIS_RIGHT_STICK_X;
         x360.axes_map[4] = PGP_AXIS_RIGHT_STICK_Y;
-        x360.axes_map[5] = PGP_DPAD_X;
-        x360.axes_map[6] = PGP_DPAD_Y;
+        x360.axes_map[5] = DPAD_X_AXIS;
+        x360.axes_map[6] = DPAD_Y_AXIS;
         sb_push(s_device_maps, x360);
+
+        // DS4 with windows XInput
+        device_mapping ps4x;
+        init_map(ps4x);
+        ps4x = ps4;
+        ps4x.vendor_id = 1356;
+        ps4x.product_id = 1476;
+        ps4x.api_id = API_XINPUT;
+        ps4x.axes_map[0] = PGP_AXIS_RIGHT_STICK_Y;
+        ps4x.axes_map[1] = PGP_AXIS_RIGHT_STICK_X;
+        ps4x.axes_map[2] = PGP_AXIS_LEFT_STICK_Y;
+        ps4x.axes_map[3] = PGP_AXIS_LEFT_STICK_X;
+        ps4x.axes_map[7] = PGP_AXIS_LTRIGGER;
+        ps4x.axes_map[6] = PGP_AXIS_RTRIGGER;
+        sb_push(s_device_maps, ps4x);
+
+        // Xbox 360 with XInput
+        device_mapping x360x;
+        init_map(x360x);
+        x360x.vendor_id = 1118;
+        x360x.product_id = 654;
+        x360x.api_id = API_XINPUT;
+        x360x.button_map[0] = PGP_BUTTON_DUP;
+        x360x.button_map[1] = PGP_BUTTON_DDOWN;
+        x360x.button_map[2] = PGP_BUTTON_DLEFT;
+        x360x.button_map[3] = PGP_BUTTON_DRIGHT;
+        x360x.button_map[10] = PGP_BUTTON_A;
+        x360x.button_map[11] = PGP_BUTTON_B;
+        x360x.button_map[12] = PGP_BUTTON_X;
+        x360x.button_map[13] = PGP_BUTTON_Y;
+        x360x.button_map[8] = PGP_BUTTON_L1;
+        x360x.button_map[9] = PGP_BUTTON_R1;
+        x360x.button_map[5] = PGP_BUTTON_BACK;
+        x360x.button_map[4] = PGP_BUTTON_START;
+        x360x.button_map[6] = PGP_BUTTON_L3;
+        x360x.button_map[7] = PGP_BUTTON_R3;
+        x360x.axes_map[0] = PGP_AXIS_LEFT_STICK_X;
+        x360x.axes_map[1] = PGP_AXIS_LEFT_STICK_Y;
+        x360x.axes_map[2] = PGP_AXIS_RIGHT_STICK_X;
+        x360x.axes_map[3] = PGP_AXIS_RIGHT_STICK_Y;
+        x360x.axes_map[4] = PGP_AXIS_LTRIGGER;
+        x360x.axes_map[5] = PGP_AXIS_RTRIGGER;
+        sb_push(s_device_maps, x360x);
     }
 
     void map_button(u32 gamepad, u32 button)
@@ -346,12 +398,12 @@ namespace
             return;
 
         u32 rb = s_device_maps[mapping].button_map[button];
-        if(rb == PEN_INVALID_HANDLE)
+        if (rb == PEN_INVALID_HANDLE)
             return;
-        
+
         s_gamepads[gi].button[rb] = s_raw_gamepads[gi].button[button];
     }
-    
+
     void map_axis(u32 gamepad, u32 axis)
     {
         u32 gi = gamepad;
@@ -360,45 +412,90 @@ namespace
             return;
 
         u32 ra = s_device_maps[mapping].axes_map[axis];
-        if(ra == PEN_INVALID_HANDLE)
+        if (ra == PEN_INVALID_HANDLE)
             return;
-        
-        if(ra == TRIGGER_X360)
-        {
-            f32 raw = s_raw_gamepads[gi].axis[axis];
-            if(raw < 0.0f)
-            {
-                s_gamepads[gi].axis[PGP_AXIS_LTRIGGER] = fabs(raw) * 2.0f - 1.0f;
-            }
-            else
-            {
-                s_gamepads[gi].axis[PGP_AXIS_RTRIGGER] = fabs(raw) * 2.0f - 1.0f;
-            }
-        }
-        else
+
+        // apply basic mapping and bail early
+        if (ra < TRIGGER_X360)
         {
             s_gamepads[gi].axis[ra] = s_raw_gamepads[gi].axis[axis];
+            return;
+        }
+
+        // special mapping
+        switch (ra)
+        {
+            case TRIGGER_X360:
+            {
+                // direct input only supplies 1 axis for both triggers
+                f32 raw = s_raw_gamepads[gi].axis[axis];
+                if (raw < 0.0f)
+                {
+                    s_gamepads[gi].axis[PGP_AXIS_LTRIGGER] = fabs(raw) * 2.0f - 1.0f;
+                }
+                else
+                {
+                    s_gamepads[gi].axis[PGP_AXIS_RTRIGGER] = fabs(raw) * 2.0f - 1.0f;
+                }
+            }
+            break;
+
+            case DPAD_X_AXIS:
+            {
+                // ps4 supplies the dpad as axis
+                f32 raw = s_raw_gamepads[gi].axis[axis];
+                s_gamepads[gi].button[PGP_BUTTON_DLEFT] = 0;
+                s_gamepads[gi].button[PGP_BUTTON_DRIGHT] = 0;
+
+                if (raw < 0.0f)
+                {
+                    s_gamepads[gi].button[PGP_BUTTON_DLEFT] = 1;
+                }
+                else if (raw > 0.0f)
+                {
+                    s_gamepads[gi].button[PGP_BUTTON_DRIGHT] = 1;
+                }
+            }
+            break;
+
+            case DPAD_Y_AXIS:
+            {
+                // ps4 supplies the dpad as axis
+                f32 raw = s_raw_gamepads[gi].axis[axis];
+                s_gamepads[gi].button[PGP_BUTTON_DUP] = 0;
+                s_gamepads[gi].button[PGP_BUTTON_DDOWN] = 0;
+
+                if (raw < 0.0f)
+                {
+                    s_gamepads[gi].button[PGP_BUTTON_DUP] = 1;
+                }
+                else if (raw > 0.0f)
+                {
+                    s_gamepads[gi].button[PGP_BUTTON_DDOWN] = 1;
+                }
+            }
+            break;
         }
     }
-    
+
     void update_gamepad(Gamepad_device* device, u32 axis, u32 button)
     {
         u32 gi = device->deviceID;
-        
+
         if (gi >= PGP_MAX_GAMEPADS)
             return;
-        
+
         s_raw_gamepads[gi].device_id = device->deviceID;
         s_raw_gamepads[gi].vendor_id = device->vendorID;
         s_raw_gamepads[gi].product_id = device->productID;
-        
+
         if (button < PGP_MAX_BUTTONS)
             s_raw_gamepads[gi].button[button] = device->buttonStates[button];
-        
+
         if (axis <= PGP_MAX_AXIS)
             s_raw_gamepads[gi].axis[axis] = device->axisStates[axis];
     }
-    
+
     void map_gamepad(u32 gamepad)
     {
         u32 gi = gamepad;
@@ -406,22 +503,25 @@ namespace
         if (s_raw_gamepads[gi].vendor_id == PEN_INVALID_HANDLE)
             return;
 
-        if(s_raw_gamepads[gi].mapping != PEN_INVALID_HANDLE)
+        if (s_raw_gamepads[gi].mapping != PEN_INVALID_HANDLE)
             return;
-        
+
         s_raw_gamepads[gi].mapping = 0;
-        
+
         u32 num_maps = sb_count(s_device_maps);
-        for(u32 i = 0; i < num_maps; ++i)
+        for (u32 i = 0; i < num_maps; ++i)
         {
-            if(s_raw_gamepads[gi].vendor_id == s_device_maps[i].vendor_id)
-            {
-                if(s_raw_gamepads[gi].product_id == s_device_maps[i].product_id)
-                {
-                    s_raw_gamepads[gi].mapping = i;
-                    break;
-                }
-            }
+            if (s_raw_gamepads[gi].vendor_id != s_device_maps[i].vendor_id)
+                continue;
+
+            if (s_raw_gamepads[gi].product_id != s_device_maps[i].product_id)
+                continue;
+
+            if (_API != s_device_maps[i].api_id)
+                continue;
+
+            s_raw_gamepads[gi].mapping = i;
+            break;
         }
     }
 }
@@ -430,10 +530,10 @@ namespace pen
     void gamepad_attach_func(struct Gamepad_device* device, void* context)
     {
         update_gamepad(device, -1, -1);
-        
+
         // find mapping for buttons and axes
         u32 gi = device->deviceID;
-        
+
         // init vals
         init_gamepad_values(s_gamepads[gi]);
         map_gamepad(gi);
@@ -441,7 +541,6 @@ namespace pen
 
     void gamepad_remove_func(struct Gamepad_device* device, void* context)
     {
-        
     }
 
     void gamepad_button_down_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context)
@@ -481,10 +580,10 @@ namespace pen
             Gamepad_detectDevices();
             detect_timer = detect_time;
         }
-        
+
         // check device mappings
         u32 num_gp = input_get_num_gamepads();
-        for(u32 i = 0; i < num_gp; ++i)
+        for (u32 i = 0; i < num_gp; ++i)
         {
             map_gamepad(i);
         }
@@ -508,7 +607,7 @@ namespace pen
         Gamepad_buttonDownFunc(gamepad_button_down_func, nullptr);
         Gamepad_buttonUpFunc(gamepad_button_up_func, nullptr);
         Gamepad_axisMoveFunc(gamepad_axis_move_func, nullptr);
-        
+
         init_gamepad_mappings();
 
         Gamepad_detectDevices();
@@ -518,7 +617,7 @@ namespace pen
     {
         gs = s_gamepads[device_index];
     }
-    
+
     void input_get_raw_gamepad_state(u32 device_index, raw_gamepad_state& gs)
     {
         gs = s_raw_gamepads[device_index];

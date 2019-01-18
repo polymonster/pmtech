@@ -161,7 +161,9 @@ PEN_TRV pen::user_entry(void* params)
         {
             "No Mapping",
             "DS4",
-            "xbox 360"
+            "xbox 360", 
+            "DS4 XInput", 
+            "xbox 360 XInput"
         };
         
         ypos += 10.0f;
@@ -195,6 +197,10 @@ PEN_TRV pen::user_entry(void* params)
                 "START / OPTIONS",
                 "L3",
                 "R3",
+                "DPAD LEFT", 
+                "DPAD RIGHT",    
+                "DPAD UP", 
+                "DPAD DOWN",
                 "TOUCH PAD",
                 "PLATFORM"
             };
@@ -212,8 +218,6 @@ PEN_TRV pen::user_entry(void* params)
                 "Left Stick Y",
                 "Right Stick X",
                 "Right Stick Y",
-                "DPAD X",
-                "DPAD Y",
                 "L TRIGGER",
                 "R TRIGGER"
             };
