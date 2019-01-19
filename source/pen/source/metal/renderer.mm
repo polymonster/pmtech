@@ -380,7 +380,10 @@ namespace pen
             id<MTLLibrary>     lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
 
             if (err)
-                NSLog(@" error => %@ ", err);
+            {
+                if(err.code == 3)
+                    NSLog(@" error => %@ ", err);
+            }
 
             _res_pool.insert(resource(), resource_slot);
             _res_pool.get(resource_slot).shader = {lib, params.type};
@@ -483,12 +486,14 @@ namespace pen
 
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
         {
+            validate_encoder();
             
+            [_state.render_encoder setVertexBuffer:_res_pool.get(buffer_index).buffer offset:0 atIndex:resource_slot + 8];
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
         {
-            
+            memcpy([_res_pool.get(buffer_index).buffer contents], data, data_size);
         }
 
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)

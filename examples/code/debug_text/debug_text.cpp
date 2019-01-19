@@ -61,7 +61,7 @@ PEN_TRV pen::user_entry(void* params)
     bcp.usage_flags = PEN_USAGE_DYNAMIC;
     bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-    bcp.buffer_size = sizeof(float) * 16;
+    bcp.buffer_size = sizeof(float) * 20; // 4x4 matrix + 4 floats user_data
     bcp.data = (void*)nullptr;
 
     u32 cb_2d_view = pen::renderer_create_buffer(bcp);
