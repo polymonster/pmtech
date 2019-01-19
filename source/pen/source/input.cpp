@@ -317,8 +317,8 @@ namespace
         ps4.axes_map[3] = PGP_AXIS_RIGHT_STICK_Y;
         ps4.axes_map[4] = DPAD_X_AXIS;
         ps4.axes_map[5] = DPAD_Y_AXIS;
-        ps4.axes_map[7] = PGP_AXIS_LTRIGGER;
-        ps4.axes_map[8] = PGP_AXIS_RTRIGGER;
+        ps4.axes_map[6] = PGP_AXIS_LTRIGGER;
+        ps4.axes_map[7] = PGP_AXIS_RTRIGGER;
         sb_push(s_device_maps, ps4);
 
         // Xbox 360
