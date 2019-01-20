@@ -160,7 +160,9 @@ PEN_TRV pen::user_entry(void* params)
 
         // bind and clear render target
         pen::renderer_set_targets(colour_render_target, PEN_NULL_DEPTH_BUFFER);
+        
         pen::renderer_set_viewport(vp_rt);
+        pen::renderer_set_scissor_rect(rect{vp_rt.x, vp_rt.y, vp_rt.width, vp_rt.height});
         pen::renderer_clear(clear_state_rt);
 
         pen::renderer_set_depth_stencil_state(depth_stencil_state);
@@ -181,6 +183,7 @@ PEN_TRV pen::user_entry(void* params)
         // bind back buffer and clear
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_set_viewport(vp);
+        pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
         pen::renderer_clear(clear_state);
 
         // draw quad

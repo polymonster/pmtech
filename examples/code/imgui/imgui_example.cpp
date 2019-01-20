@@ -79,9 +79,9 @@ PEN_TRV pen::user_entry(void* params)
         // bind back buffer and clear
         pen::renderer_set_depth_stencil_state(default_depth_stencil_state);
 
+        pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
-        pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_clear(clear_state_grey);
 
         static bool show_test_window = true;

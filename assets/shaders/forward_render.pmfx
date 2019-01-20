@@ -6,34 +6,34 @@
 // vs inputs
 struct vs_input
 {
-    float4 position         : POSITION;
-    float4 normal           : TEXCOORD0;
-    float4 texcoord         : TEXCOORD1;
-    float4 tangent          : TEXCOORD2;
-    float4 bitangent        : TEXCOORD3;
+    float4 position : POSITION;
+    float4 normal : TEXCOORD0;
+    float4 texcoord : TEXCOORD1;
+    float4 tangent : TEXCOORD2;
+    float4 bitangent : TEXCOORD3;
 };
 
 struct vs_input_skinned
 {
-    float4 position             : POSITION;
-    float4 normal               : TEXCOORD0;
-    float4 texcoord             : TEXCOORD1;
-    float4 tangent              : TEXCOORD2;
-    float4 bitangent            : TEXCOORD3;
-    float4 blend_indices        : TEXCOORD4;
-    float4 blend_weights        : TEXCOORD5;
+    float4 position : POSITION;
+    float4 normal : TEXCOORD0;
+    float4 texcoord : TEXCOORD1;
+    float4 tangent : TEXCOORD2;
+    float4 bitangent : TEXCOORD3;
+    float4 blend_indices : TEXCOORD4;
+    float4 blend_weights : TEXCOORD5;
 };
 
 struct vs_instance_input
 {
     if:(INSTANCED)
     {
-        float4 world_matrix_0      : TEXCOORD6;
-        float4 world_matrix_1      : TEXCOORD7;
-        float4 world_matrix_2      : TEXCOORD8;
-        float4 world_matrix_3      : TEXCOORD9;
-        float4 user_data           : TEXCOORD10;
-        float4 user_data2          : TEXCOORD11;
+        float4 world_matrix_0 : TEXCOORD6;
+        float4 world_matrix_1 : TEXCOORD7;
+        float4 world_matrix_2 : TEXCOORD8;
+        float4 world_matrix_3 : TEXCOORD9;
+        float4 user_data : TEXCOORD10;
+        float4 user_data2 : TEXCOORD11;
     }
 };
 
@@ -55,33 +55,33 @@ struct vs_input_multi
 // vs outputs / ps inputs
 struct vs_output
 {
-    float4 position        : SV_POSITION;
-    float4 world_pos       : TEXCOORD0;
-    float3 normal          : TEXCOORD1;
-    float3 tangent         : TEXCOORD2;
-    float3 bitangent       : TEXCOORD3;
-    float4 texcoord        : TEXCOORD4;
-    float4 colour          : TEXCOORD5;
+    float4 position : SV_POSITION;
+    float4 world_pos : TEXCOORD0;
+    float3 normal : TEXCOORD1;
+    float3 tangent : TEXCOORD2;
+    float3 bitangent : TEXCOORD3;
+    float4 texcoord : TEXCOORD4;
+    float4 colour : TEXCOORD5;
 };
 
 struct vs_output_pre_skin
 {
-    float4 vb_position     : TEXCOORD0;
-    float4 normal          : TEXCOORD1;
-    float4 tangent         : TEXCOORD2;
-    float4 bitangent       : TEXCOORD3;
-    float4 texcoord        : TEXCOORD4;
+    float4 vb_position : TEXCOORD0;
+    float4 normal : TEXCOORD1;
+    float4 tangent : TEXCOORD2;
+    float4 bitangent : TEXCOORD3;
+    float4 texcoord : TEXCOORD4;
 };
 
 struct vs_output_zonly
 {
-    float4 position        : SV_POSITION;
+    float4 position : SV_POSITION;
 };
 
 struct vs_output_picking
 {
-    float4 position        : SV_POSITION;
-    float4 index           : TEXCOORD0;
+    float4 position : SV_POSITION;
+    float4 index : TEXCOORD0;
 };
 
 // ps output

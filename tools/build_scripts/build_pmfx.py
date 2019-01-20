@@ -1204,6 +1204,23 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     return error_code
 
 
+def get_metal_packed_decl(input, semantic):
+    vector_sizes = ["2", "3", "4"]
+    packed_decl = "packed_"
+    split = input.split(" ")
+    type = split[0]
+    if semantic.find("COLOR") != -1:
+        packed_decl += "uchar"
+        count = type[len(type)-1]
+        if count in vector_sizes:
+            packed_decl += count
+    else:
+        packed_decl += type
+    for i in range(1, len(split)):
+        packed_decl += " " + split[i]
+    return packed_decl
+
+
 # compile shader for apple metal
 def compile_metal(_info, pmfx_name, _tp, _shader):
     # parse inputs and outputs into semantics
@@ -1239,16 +1256,16 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         if len(inputs) > 0:
             shader_source += "struct packed_" + _shader.input_struct_name + "\n{\n"
             for i in range(0, len(inputs)):
-                shader_source += "packed_"
-                shader_source += inputs[i] + ";\n"
+                shader_source += get_metal_packed_decl(inputs[i], input_semantics[i])
+                shader_source += ";\n"
             shader_source += "};\n"
 
         if _shader.instance_input_struct_name:
             if len(instance_inputs) > 0:
                 shader_source += "struct packed_" + _shader.instance_input_struct_name + "\n{\n"
                 for i in range(0, len(instance_inputs)):
-                    shader_source += "packed_"
-                    shader_source += instance_inputs[i] + ";\n"
+                    shader_source += get_metal_packed_decl(instance_inputs[i], instance_input_semantics[i])
+                    shader_source += ";\n"
                 shader_source += "};\n"
 
     # inputs
@@ -1314,8 +1331,12 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     if _shader.shader_type == "vs":
         shader_source += _shader.input_struct_name + " input;\n"
         for i in range(0, len(inputs)):
-            input_name = inputs[i].split(" ")[1]
-            shader_source += "input." + input_name + " = vertices[vid]." + input_name + ";\n"
+            split_input = inputs[i].split(" ")
+            input_name = split_input[1]
+            input_unpack_type = split_input[0]
+            shader_source += "input." + input_name + " = "
+            shader_source += input_unpack_type
+            shader_source += "(vertices[vid]." + input_name + ");\n"
         if _shader.instance_input_struct_name:
             shader_source += _shader.instance_input_struct_name + " instance_input = " + "instances[iid];"
 

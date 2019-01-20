@@ -9,8 +9,6 @@
 // globals
 a_u8 g_window_resize;
 
-#define MAX_VB 4 // max simulataneously bound vertex buffers
-
 using namespace pen;
 
 namespace // structs and static vars
@@ -47,6 +45,7 @@ namespace // structs and static vars
 
         // pen -> metal
         MTLViewport          viewport;
+        MTLScissorRect       scissor;
         MTLVertexDescriptor* vertex_descriptor;
         id<MTLFunction>      vertex_shader;
         id<MTLFunction>      fragment_shader;
@@ -241,6 +240,26 @@ namespace // pen consts -> metal consts
         
         return "";
     }
+    
+    pen_inline MTLPrimitiveType to_metal_primitive_type(u32 pt)
+    {
+        switch (pt)
+        {
+            case PEN_PT_POINTLIST:
+                return MTLPrimitiveTypePoint;
+            case PEN_PT_LINELIST:
+                return MTLPrimitiveTypeLine;
+            case PEN_PT_LINESTRIP:
+                return MTLPrimitiveTypeLineStrip;
+            case PEN_PT_TRIANGLELIST:
+                return MTLPrimitiveTypeTriangle;
+            case PEN_PT_TRIANGLESTRIP:
+                return MTLPrimitiveTypeTriangleStrip;
+        };
+        
+        PEN_ASSERT(0);
+        return MTLPrimitiveTypeTriangle;
+    }
 }
 
 pen_inline void pool_grow(resource* pool, u32 size)
@@ -286,6 +305,7 @@ namespace pen
             {
                 _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:_state.pass];
                 [_state.render_encoder setViewport:_state.viewport];
+                [_state.render_encoder setScissorRect:_state.scissor];
             }
         }
         
@@ -323,7 +343,7 @@ namespace pen
 
         void renderer_shutdown()
         {
-            // nothing to do
+            // nothing to do yet
         }
 
         void renderer_make_context_current()
@@ -466,11 +486,12 @@ namespace pen
             for (u32 i = 0; i < num_buffers; ++i)
             {
                 u32 ri = buffer_indices[i];
+                u32 stride = strides[i];
 
                 [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer offset:offsets[i] atIndex:start_slot + i];
 
                 MTLVertexBufferLayoutDescriptor* layout = [MTLVertexBufferLayoutDescriptor new];
-                layout.stride = strides[i];
+                layout.stride = stride;
                 layout.stepFunction = MTLVertexStepFunctionPerVertex;
                 layout.stepRate = 1;
                 [_state.vertex_descriptor.layouts setObject:layout atIndexedSubscript:start_slot + i];
@@ -482,6 +503,7 @@ namespace pen
             index_buffer_cmd& ib = _state.index_buffer;
             ib.buffer = _res_pool.get(buffer_index).buffer;
             ib.type = to_metal_index_format(format);
+            ib.offset = offset;
         }
 
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
@@ -493,7 +515,10 @@ namespace pen
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
         {
-            memcpy([_res_pool.get(buffer_index).buffer contents], data, data_size);
+            u8* pdata = (u8*)[_res_pool.get(buffer_index).buffer contents];
+            pdata = pdata + offset;
+            
+            memcpy(pdata, data, data_size);
         }
 
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
@@ -604,7 +629,7 @@ namespace pen
 
         void renderer_set_scissor_rect(const rect& r)
         {
-            
+            _state.scissor = (MTLScissorRect){(u32)r.left, (u32)r.top, (u32)r.right - (u32)r.left, (u32)r.bottom - (u32)r.top};
         }
 
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
@@ -633,25 +658,37 @@ namespace pen
             bind_pipeline();
 
             // draw calls
-            [_state.render_encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start_vertex vertexCount:vertex_count];
+            [_state.render_encoder drawPrimitives:to_metal_primitive_type(primitive_topology)
+                                      vertexStart:start_vertex
+                                      vertexCount:vertex_count];
+        }
+        
+        static pen_inline void _indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
+                                                  u32 base_vertex, u32 primitive_topology)
+        {
+            validate_encoder();
+            bind_pipeline();
+            
+            // draw calls
+            [_state.render_encoder drawIndexedPrimitives:to_metal_primitive_type(primitive_topology)
+                                              indexCount:index_count
+                                               indexType:_state.index_buffer.type
+                                             indexBuffer:_state.index_buffer.buffer
+                                       indexBufferOffset:_state.index_buffer.offset
+                                           instanceCount:1
+                                              baseVertex:base_vertex
+                                            baseInstance:0];
         }
 
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
         {
-            validate_encoder();
-            bind_pipeline();
-
-            // draw calls
-            [_state.render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                              indexCount:index_count
-                                               indexType:_state.index_buffer.type
-                                             indexBuffer:_state.index_buffer.buffer
-                                       indexBufferOffset:_state.index_buffer.offset];
+            _indexed_instanced(1, 0, index_count, start_index, base_vertex, primitive_topology);
         }
 
         void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                              u32 base_vertex, u32 primitive_topology)
         {
+            _indexed_instanced(instance_count, start_instance, index_count, start_index, base_vertex, primitive_topology);
         }
 
         void renderer_draw_auto()

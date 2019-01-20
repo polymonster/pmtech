@@ -182,7 +182,6 @@ namespace pen
 		{
 			grow(slot);
 			_resources[slot] = resource;
-			
 		}
 		
 		T& get(u32 slot)
