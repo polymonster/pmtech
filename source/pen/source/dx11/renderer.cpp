@@ -1766,6 +1766,7 @@ namespace pen
         s_renderer_info.api_version = str_d3d_version.c_str();
         s_renderer_info.renderer = str_d3d_renderer.c_str();
         s_renderer_info.vendor = str_d3d_vendor.c_str();
+        s_renderer_info.renderer_cmd = " -renderer dx11";
 
         s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
         s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;

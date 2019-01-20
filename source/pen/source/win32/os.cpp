@@ -53,10 +53,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     pen::timer_system_intialise();
     pen::input_gamepad_init();
 
+    // init renderer will enter a loop wait for rendering commands, and call os update
     HWND hwnd = (HWND)pen::window_get_primary_display_handle();
-
     pen::renderer_init((void*)&hwnd, true);
 
+    // exit program
     return 0;
 }
 
