@@ -25,6 +25,7 @@ namespace // structs and static vars
         id<MTLBuffer> buffer;
         MTLIndexType  type;
         u32           offset;
+        u32           size_bytes;
     };
     
     struct pixel_formats
@@ -119,6 +120,14 @@ namespace // pen consts -> metal consts
     pen_inline MTLIndexType to_metal_index_format(u32 pen_vertex_format)
     {
         return pen_vertex_format == PEN_FORMAT_R16_UINT ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
+    }
+    
+    pen_inline u32 index_size_bytes(u32 pen_vertex_format)
+    {
+        if(pen_vertex_format == PEN_FORMAT_R16_UINT)
+            return 2;
+        
+        return 4;
     }
     
     pen_inline MTLPixelFormat to_metal_pixel_format(u32 pen_vertex_format)
@@ -388,6 +397,8 @@ namespace pen
             
             _state.pass.colorAttachments[0].loadAction = clear.colour_load_action;
             _state.pass.colorAttachments[0].clearColor = clear.colour[0];
+            
+            validate_encoder();
         }
 
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
@@ -504,6 +515,7 @@ namespace pen
             ib.buffer = _res_pool.get(buffer_index).buffer;
             ib.type = to_metal_index_format(format);
             ib.offset = offset;
+            ib.size_bytes = index_size_bytes(format);
         }
 
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
@@ -669,15 +681,16 @@ namespace pen
             validate_encoder();
             bind_pipeline();
             
+            u32 offset = (start_index * _state.index_buffer.size_bytes);
             // draw calls
             [_state.render_encoder drawIndexedPrimitives:to_metal_primitive_type(primitive_topology)
                                               indexCount:index_count
                                                indexType:_state.index_buffer.type
                                              indexBuffer:_state.index_buffer.buffer
-                                       indexBufferOffset:_state.index_buffer.offset
-                                           instanceCount:1
+                                       indexBufferOffset:_state.index_buffer.offset + offset
+                                           instanceCount:instance_count
                                               baseVertex:base_vertex
-                                            baseInstance:0];
+                                            baseInstance:start_instance];
         }
 
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
@@ -821,6 +834,7 @@ namespace pen
 
         void renderer_release_render_target(u32 render_target)
         {
+            _res_pool.get(render_target).texture.tex = nil;
         }
 
         void renderer_release_input_layout(u32 input_layout)
