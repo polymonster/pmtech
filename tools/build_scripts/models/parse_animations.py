@@ -69,15 +69,29 @@ def parse_animation_source(root, source_id):
 def consolidate_channels_to_targets():
     global animation_channels
     packed_targets = []
+    packed_target_times = []
     for channel in animation_channels:
         info = channel.target_bone.split('/')
         bone_target = info[0]
         anim_target = info[1]
+        times = []
+        for src in channel.sampler.sources:
+            if src.semantic == "TIME":
+                times = src.data
         if bone_target not in packed_targets:
             packed_targets.append(bone_target)
+            packed_target_times.append(times)
+            # print("target " + bone_target + " " + anim_target + " " + str(len(times)))
         else:
-            print("multi target " + bone_target)
-
+            i = packed_targets.index(bone_target)
+            if packed_target_times[i] == times:
+                # print("multi target " + bone_target + " " + anim_target + " " + str(len(times)))
+                pass
+            else:
+                # print("secondary target " + bone_target + " " + anim_target + " " + str(len(times)))
+                packed_targets.append(bone_target)
+                packed_target_times.append(times)
+    print(len(packed_targets))
 
 
 def parse_animations(root, anims_out, joints_in):
