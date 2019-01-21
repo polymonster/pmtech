@@ -40,12 +40,16 @@ namespace put
             A_TRANSLATE_TARGET = 0,
             A_TRANSFORM_TARGET,
             A_ROTATE_TARGET,
+            A_SCALE_TARGET,
             A_TRANSLATE_X_TARGET,
             A_TRANSLATE_Y_TARGET,
             A_TRANSLATE_Z_TARGET,
             A_ROTATE_X_TARGET,
             A_ROTATE_Y_TARGET,
-            A_ROTATE_Z_TARGET
+            A_ROTATE_Z_TARGET,
+            A_SCALE_X_TARGET,
+            A_SCALE_Y_TARGET,
+            A_SCALE_Z_TARGET
         };
 
         enum e_pmm_load_flags : u32

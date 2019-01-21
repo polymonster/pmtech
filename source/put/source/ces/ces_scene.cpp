@@ -708,6 +708,9 @@ namespace put
 
                             if (anim->remap_channels)
                                 sni = anim->channels[c].target_node_index;
+                            
+                            if(sni == PEN_INVALID_HANDLE)
+                                continue;
 
                             if (!(scene->state_flags[sni] & SF_APPLY_ANIM_TRANSFORM))
                                 continue;

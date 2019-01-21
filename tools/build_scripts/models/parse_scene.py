@@ -65,9 +65,9 @@ def add_vertex_input(input_node, vertex_input_instance):
 
 def write_source_float(p, src, mesh):
     base_p = int(p) * int(src.stride)
-    #always write 4 values per source / semantic so they occupy 1 vector register
+    # always write 4 values per source / semantic so they occupy 1 vector register
     if int(src.stride) == 3:
-        #correct cordspace
+        # correct cordspace
         val_x = float(src.float_values[base_p+0])
         val_y = float(src.float_values[base_p+1])
         val_z = float(src.float_values[base_p+2])

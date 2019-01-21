@@ -417,6 +417,8 @@ namespace put
 
             for (u32 i = 0; i < anim->num_channels; ++i)
             {
+                anim->channels[i].target_node_index = PEN_INVALID_HANDLE;
+                
                 for (s32 jj = 0; jj < joint_indices.size(); ++jj)
                 {
                     s32 jnode = joint_indices[jj];
@@ -435,6 +437,12 @@ namespace put
                         anim->channels[i].target_node_index = jnode;
                         break;
                     }
+                }
+                
+                if(anim->channels[i].target_node_index  == PEN_INVALID_HANDLE)
+                {
+                    dev_console_log_level(put::dev_ui::CONSOLE_WARNING, "[warning] could not find animation target %s",
+                                          anim->channels[i].target_name.c_str());
                 }
             }
 
