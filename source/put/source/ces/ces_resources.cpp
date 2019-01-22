@@ -772,6 +772,7 @@ namespace put
                 {
                     new_animation.channels[i].offset[o] = nullptr;
                     new_animation.channels[i].angle[o] = nullptr;
+                    new_animation.channels[i].scale[o] = nullptr;
                 }
 
                 for (s32 j = 0; j < num_sources; ++j)
@@ -791,20 +792,66 @@ namespace put
                         memcpy(data, p_u32reader, sizeof(u32) * num_elements);
                         new_animation.channels[i].interpolation = data;
                     }
+                    else if(sematic == A_TIME)
+                    {
+                        PEN_ASSERT(type == A_FLOAT);
+                        
+                        f32* data = new f32[num_elements];
+                        memcpy(data, p_u32reader, sizeof(f32) * num_elements);
+                        new_animation.channels[i].num_frames = num_elements;
+                        new_animation.channels[i].times = data;
+                    }
                     else
                     {
                         u32 num_floats = num_elements;
-
                         f32* data = new f32[num_floats];
                         memcpy(data, p_u32reader, sizeof(f32) * num_floats);
+                        
+                        int a = 0;
+                        switch (target)
+                        {
+                            case A_TRANSFORM_TARGET:
+                                a = 0;
+                                break;
+                            case A_TRANSLATE_TARGET:
+                                a = 0;
+                                break;
+                            case A_SCALE_TARGET:
+                                a = 0;
+                                break;
+                            case A_TRANSLATE_X_TARGET:
+                                a = 0;
+                                break;
+                            case A_TRANSLATE_Y_TARGET:
+                                a = 0;
+                                break;
+                            case A_TRANSLATE_Z_TARGET:
+                                a = 0;
+                                break;
+                            case A_ROTATE_X_TARGET:
+                                a = 0;
+                                break;
+                            case A_ROTATE_Y_TARGET:
+                                a = 0;
+                                break;
+                            case A_ROTATE_Z_TARGET:
+                                a = 0;
+                                break;
+                            case A_SCALE_X_TARGET:
+                                a = 0;
+                                break;
+                            case A_SCALE_Y_TARGET:
+                                a = 0;
+                                break;
+                            case A_SCALE_Z_TARGET:
+                                a = 0;
+                                break;
+                            default:
+                                break;
+                        };
 
                         switch (sematic)
                         {
-                            case A_TIME:
-                                PEN_ASSERT(type == A_FLOAT);
-                                new_animation.channels[i].num_frames = num_floats;
-                                new_animation.channels[i].times = data;
-                                break;
                             case A_TRANSFORM:
                                 PEN_ASSERT(type == A_FLOAT4x4);
                                 new_animation.channels[i].matrices = (mat4*)data;
@@ -818,6 +865,12 @@ namespace put
                             case A_ANGLE:
                                 PEN_ASSERT(type == A_FLOAT);
                                 new_animation.channels[i].angle[target - A_ROTATE_X_TARGET] = (f32*)data;
+                                break;
+                            case A_SCALE_X_TARGET:
+                            case A_SCALE_Y_TARGET:
+                            case A_SCALE_Z_TARGET:
+                                PEN_ASSERT(type == A_FLOAT);
+                                new_animation.channels[i].scale[target - A_SCALE_X_TARGET] = (f32*)data;
                                 break;
                             default:
                                 break;

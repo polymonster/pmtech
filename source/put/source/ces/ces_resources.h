@@ -37,8 +37,8 @@ namespace put
 
         enum e_animation_targets
         {
-            A_TRANSLATE_TARGET = 0,
-            A_TRANSFORM_TARGET,
+            A_TRANSFORM_TARGET = 0,
+            A_TRANSLATE_TARGET,
             A_ROTATE_TARGET,
             A_SCALE_TARGET,
             A_TRANSLATE_X_TARGET,
@@ -68,6 +68,7 @@ namespace put
             mat4*   matrices;
             f32*    offset[3];
             f32*    angle[3];
+            f32*    scale[3];
             u32*    interpolation;
             Str     target_name;
             u32     target_node_index;

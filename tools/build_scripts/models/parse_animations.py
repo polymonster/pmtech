@@ -7,8 +7,8 @@ animation_channels = []
 animation_source_semantics = ["TIME", "TRANSFORM", "X", "Y", "Z", "ANGLE", "INTERPOLATION"]
 animation_source_types = ["float", "float4x4", "Name"]
 
-animation_targets = ["translate",
-                     "transform",
+animation_targets = ["transform",
+                     "translate",
                      "rotate",
                      "scale",
                      "translate.X",
@@ -62,6 +62,10 @@ def parse_animation_source(root, source_id):
                         split_floats = data_node.text.split()
                         for f in split_floats:
                             new_source.data.append(f)
+                    for names_node in src.iter(schema+'Name_array'):
+                        split_names = names_node.text.split()
+                        for n in split_names:
+                            new_source.data.append(n)
                     new_sources.append(new_source)
     return new_sources
 
@@ -69,6 +73,7 @@ def parse_animation_source(root, source_id):
 def consolidate_channels_to_targets():
     global animation_channels
     packed_targets = dict()
+    packed_targets.clear()
     for channel in animation_channels:
         info = channel.target_bone.split('/')
         bone_target = info[0]
@@ -79,10 +84,41 @@ def consolidate_channels_to_targets():
         packed_targets[bone_target].append(target_source)
     for target in packed_targets.keys():
         max_keys = 0
-        for channel_target in packed_targets[bone_target]:
+        all_keys = []
+        time = []
+        # get a single time track
+        for channel_target in packed_targets[target]:
             for src in channel_target["channel"].sampler.sources:
                 if src.semantic == "TIME":
+                    src_keys = len(src.data)
                     max_keys = max(len(src.data), max_keys)
+                    if src_keys not in all_keys:
+                        if src_keys == max_keys:
+                            time = src.data
+                        all_keys.append(src_keys)
+        for channel_target in packed_targets[target]:
+            num_keys = 0
+            channel_time = []
+            interp = []
+            data = []
+            for src in channel_target["channel"].sampler.sources:
+                if src.semantic == "TIME":
+                    num_keys = len(src.data)
+                    channel_time = src.data
+                if src.semantic == "INTERPOLATION":
+                    interp = src.data
+                else:
+                    data = src.data
+            if num_keys == max_keys:
+                if channel_time != time:
+                    assert 0
+            else:
+                for t in channel_time:
+                    if t not in time:
+                        print(time)
+                        print(channel_time)
+                        print("not in time")
+                        break
 
 
 def parse_animations(root, anims_out, joints_in):
@@ -106,7 +142,7 @@ def parse_animations(root, anims_out, joints_in):
                     a_channel.target_bone = channel.get("target")
                     a_channel.sampler = s
                     animation_channels.append(a_channel)
-        # consolidate_channels_to_targets()
+    consolidate_channels_to_targets()
 
 
 def write_animation_file(filename):
