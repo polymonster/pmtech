@@ -78,10 +78,11 @@ def consolidate_channels_to_targets():
         target_source = {"anim_target": anim_target, "channel": channel}
         packed_targets[bone_target].append(target_source)
     for target in packed_targets.keys():
-        print("Target: " + target + " Channels " + str(len(packed_targets[bone_target])))
+        max_keys = 0
         for channel_target in packed_targets[bone_target]:
             for src in channel_target["channel"].sampler.sources:
-                print("    " + src.semantic)
+                if src.semantic == "TIME":
+                    max_keys = max(len(src.data), max_keys)
 
 
 def parse_animations(root, anims_out, joints_in):
@@ -105,7 +106,6 @@ def parse_animations(root, anims_out, joints_in):
                     a_channel.target_bone = channel.get("target")
                     a_channel.sampler = s
                     animation_channels.append(a_channel)
-                    
         # consolidate_channels_to_targets()
 
 
