@@ -818,6 +818,7 @@ namespace put
                             case A_ANGLE:
                                 PEN_ASSERT(type == A_FLOAT);
                                 new_animation.channels[i].angle[target - A_ROTATE_X_TARGET] = (f32*)data;
+                                break;
                             default:
                                 break;
                         };

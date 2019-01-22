@@ -25,8 +25,9 @@ struct ps_output
 vs_output vs_main( vs_input input )
 {
     vs_output output;
-    
+        
     output.position = mul( projection_matrix, float4( input.position.x, input.position.y, 0.0f, 1.0f ) );
+
     output.colour = input.colour;
     output.tex_coord = input.tex_coord;
     
@@ -43,7 +44,7 @@ ps_output ps_main( vs_output input )
     ps_output output;
     
     output.colour = input.colour * sample_texture( tex, input.tex_coord.xy );
-        
+            
     return output;
 }
 

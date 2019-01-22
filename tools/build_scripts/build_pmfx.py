@@ -1204,6 +1204,24 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     return error_code
 
 
+# gets metal packed types from hlsl semantic, all types are float except COLOR: uchar, BLENDINDICES uchar
+def get_metal_packed_decl(input, semantic):
+    vector_sizes = ["2", "3", "4"]
+    packed_decl = "packed_"
+    split = input.split(" ")
+    type = split[0]
+    if semantic.find("COLOR") or semantic.find("BLENDINDICES") != -1:
+        packed_decl += "uchar"
+        count = type[len(type)-1]
+        if count in vector_sizes:
+            packed_decl += count
+    else:
+        packed_decl += type
+    for i in range(1, len(split)):
+        packed_decl += " " + split[i]
+    return packed_decl
+
+
 # compile shader for apple metal
 def compile_metal(_info, pmfx_name, _tp, _shader):
     # parse inputs and outputs into semantics
@@ -1234,16 +1252,30 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         shader_source += cbuf[body_start:body_end]
         shader_source += "\n"
 
+    # packed inputs
+    if _shader.shader_type == "vs":
+        if len(inputs) > 0:
+            shader_source += "struct packed_" + _shader.input_struct_name + "\n{\n"
+            for i in range(0, len(inputs)):
+                shader_source += get_metal_packed_decl(inputs[i], input_semantics[i])
+                shader_source += ";\n"
+            shader_source += "};\n"
+
+        if _shader.instance_input_struct_name:
+            if len(instance_inputs) > 0:
+                shader_source += "struct packed_" + _shader.instance_input_struct_name + "\n{\n"
+                for i in range(0, len(instance_inputs)):
+                    shader_source += get_metal_packed_decl(instance_inputs[i], instance_input_semantics[i])
+                    shader_source += ";\n"
+                shader_source += "};\n"
+
     # inputs
     if len(inputs) > 0:
         shader_source += "struct " + _shader.input_struct_name + "\n{\n"
         for i in range(0, len(inputs)):
-            if _shader.shader_type == "vs":
-                shader_source += "packed_"
             shader_source += inputs[i] + ";\n"
         shader_source += "};\n"
 
-    # instance inputs
     if _shader.instance_input_struct_name:
         if len(instance_inputs) > 0:
             shader_source += "struct " + _shader.instance_input_struct_name + "\n{\n"
@@ -1266,12 +1298,15 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         "ps": "fragment"
     }
 
+    # functions
+    shader_source += _shader.functions_source
+
     # main decl
     shader_source += main_type[_shader.shader_type] + " "
     shader_source += _shader.output_struct_name + " " + _shader.shader_type + "_main" + "("
 
     if _shader.shader_type == "vs":
-        shader_source += "\n  device " + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
+        shader_source += "\n  device packed_" + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
         shader_source += "\n, uint vid [[vertex_id]]"
         if _shader.instance_input_struct_name:
             shader_source += "\n, device " + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
@@ -1284,24 +1319,35 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     texture_list = _shader.texture_decl.split(";")
     for texture in texture_list:
         if texture not in invalid:
-            shader_source += "\n, " + texture
+            shader_source += "\n, " + texture.strip("\n")
 
-    # pass in cbuffers.. cbuffers start at 8 reserving space for 8 vertex buffers
+    # pass in cbuffers.. cbuffers start at 8 reserving space for 8 vertex buffers..
     for cbuf in metal_cbuffers:
         regi = int(cbuf[1]) + 8
         shader_source += "\n, " + "constant " "c_" + cbuf[0] + " &" + cbuf[0] + " [[buffer(" + str(regi) + ")]]"
 
     shader_source += ")\n{\n"
 
-    # create function prologue for main and insert assignment to port from hlsl to metal
+    # create function prologue for main and insert assignment to unpack vertex
     if _shader.shader_type == "vs":
-        shader_source += _shader.input_struct_name + " input = " + "vertices[vid];\n"
+        shader_source += _shader.input_struct_name + " input;\n"
+        for i in range(0, len(inputs)):
+            split_input = inputs[i].split(" ")
+            input_name = split_input[1]
+            input_unpack_type = split_input[0]
+            shader_source += "input." + input_name + " = "
+            shader_source += input_unpack_type
+            shader_source += "(vertices[vid]." + input_name + ");\n"
         if _shader.instance_input_struct_name:
             shader_source += _shader.instance_input_struct_name + " instance_input = " + "instances[iid];"
 
     # create a function prologue for cbuffer assignment
-    for cbuf in _shader.cbuffers:
-        pass
+    for c in range(0, len(_shader.cbuffers)):
+        cbuf_members = parse_and_split_block(_shader.cbuffers[c])
+        for i in range(0, len(cbuf_members), 2):
+            shader_source += "constant " + cbuf_members[i] + "& " + cbuf_members[i + 1]
+            shader_source += " = " + metal_cbuffers[c][0] + "." + cbuf_members[i + 1]
+            shader_source += ";\n"
 
     main_func_body = _shader.main_func_source.find("{") + 1
     shader_source += _shader.main_func_source[main_func_body:]

@@ -81,7 +81,8 @@ namespace put
 
             // load shaders
             g_imgui_rs.imgui_shader = pmfx::load_shader("imgui");
-            g_imgui_rs.imgui_ex_shader = pmfx::load_shader("imgui_ex");
+            g_imgui_rs.imgui_ex_shader = 0;
+            //g_imgui_rs.imgui_ex_shader = pmfx::load_shader("imgui_ex");
 
             create_texture_atlas();
 
@@ -322,9 +323,9 @@ namespace put
             // set to main viewport
             pen::viewport vp = {0.0f, 0.0f, (f32)ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, 0.0f, 1.0};
 
+            pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-            pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
             update_dynamic_buffers(draw_data);
 

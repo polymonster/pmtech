@@ -61,7 +61,7 @@ PEN_TRV pen::user_entry(void* params)
     bcp.usage_flags = PEN_USAGE_DYNAMIC;
     bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-    bcp.buffer_size = sizeof(float) * 16;
+    bcp.buffer_size = sizeof(float) * 20;
     bcp.data = (void*)nullptr;
 
     u32 cb_2d_view = pen::renderer_create_buffer(bcp);
@@ -71,11 +71,13 @@ PEN_TRV pen::user_entry(void* params)
         // viewport
         pen::viewport vp = {0.0f, 0.0f, (f32)pen_window.width, (f32)pen_window.height, 0.0f, 1.0f};
 
-        pen::renderer_set_rasterizer_state(raster_state);
-
         // bind back buffer and clear
-        pen::renderer_set_viewport(vp);
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
+        
+        pen::renderer_set_rasterizer_state(raster_state);
+        pen::renderer_set_viewport(vp);
+        pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
+        
         pen::renderer_clear(clear_state);
 
         put::dbg::add_text_2f(10.0f, 10.0f, vp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Input Test");

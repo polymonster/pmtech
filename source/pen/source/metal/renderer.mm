@@ -9,8 +9,6 @@
 // globals
 a_u8 g_window_resize;
 
-#define MAX_VB 4 // max simulataneously bound vertex buffers
-
 using namespace pen;
 
 namespace // structs and static vars
@@ -27,6 +25,7 @@ namespace // structs and static vars
         id<MTLBuffer> buffer;
         MTLIndexType  type;
         u32           offset;
+        u32           size_bytes;
     };
     
     struct pixel_formats
@@ -47,6 +46,7 @@ namespace // structs and static vars
 
         // pen -> metal
         MTLViewport          viewport;
+        MTLScissorRect       scissor;
         MTLVertexDescriptor* vertex_descriptor;
         id<MTLFunction>      vertex_shader;
         id<MTLFunction>      fragment_shader;
@@ -120,6 +120,14 @@ namespace // pen consts -> metal consts
     pen_inline MTLIndexType to_metal_index_format(u32 pen_vertex_format)
     {
         return pen_vertex_format == PEN_FORMAT_R16_UINT ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
+    }
+    
+    pen_inline u32 index_size_bytes(u32 pen_vertex_format)
+    {
+        if(pen_vertex_format == PEN_FORMAT_R16_UINT)
+            return 2;
+        
+        return 4;
     }
     
     pen_inline MTLPixelFormat to_metal_pixel_format(u32 pen_vertex_format)
@@ -241,6 +249,26 @@ namespace // pen consts -> metal consts
         
         return "";
     }
+    
+    pen_inline MTLPrimitiveType to_metal_primitive_type(u32 pt)
+    {
+        switch (pt)
+        {
+            case PEN_PT_POINTLIST:
+                return MTLPrimitiveTypePoint;
+            case PEN_PT_LINELIST:
+                return MTLPrimitiveTypeLine;
+            case PEN_PT_LINESTRIP:
+                return MTLPrimitiveTypeLineStrip;
+            case PEN_PT_TRIANGLELIST:
+                return MTLPrimitiveTypeTriangle;
+            case PEN_PT_TRIANGLESTRIP:
+                return MTLPrimitiveTypeTriangleStrip;
+        };
+        
+        PEN_ASSERT(0);
+        return MTLPrimitiveTypeTriangle;
+    }
 }
 
 pen_inline void pool_grow(resource* pool, u32 size)
@@ -286,6 +314,7 @@ namespace pen
             {
                 _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:_state.pass];
                 [_state.render_encoder setViewport:_state.viewport];
+                [_state.render_encoder setScissorRect:_state.scissor];
             }
         }
         
@@ -323,7 +352,7 @@ namespace pen
 
         void renderer_shutdown()
         {
-            // nothing to do
+            // nothing to do yet
         }
 
         void renderer_make_context_current()
@@ -368,6 +397,8 @@ namespace pen
             
             _state.pass.colorAttachments[0].loadAction = clear.colour_load_action;
             _state.pass.colorAttachments[0].clearColor = clear.colour[0];
+            
+            validate_encoder();
         }
 
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
@@ -380,7 +411,10 @@ namespace pen
             id<MTLLibrary>     lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
 
             if (err)
-                NSLog(@" error => %@ ", err);
+            {
+                if(err.code == 3)
+                    NSLog(@" error => %@ ", err);
+            }
 
             _res_pool.insert(resource(), resource_slot);
             _res_pool.get(resource_slot).shader = {lib, params.type};
@@ -463,11 +497,12 @@ namespace pen
             for (u32 i = 0; i < num_buffers; ++i)
             {
                 u32 ri = buffer_indices[i];
+                u32 stride = strides[i];
 
                 [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer offset:offsets[i] atIndex:start_slot + i];
 
                 MTLVertexBufferLayoutDescriptor* layout = [MTLVertexBufferLayoutDescriptor new];
-                layout.stride = strides[i];
+                layout.stride = stride;
                 layout.stepFunction = MTLVertexStepFunctionPerVertex;
                 layout.stepRate = 1;
                 [_state.vertex_descriptor.layouts setObject:layout atIndexedSubscript:start_slot + i];
@@ -479,16 +514,23 @@ namespace pen
             index_buffer_cmd& ib = _state.index_buffer;
             ib.buffer = _res_pool.get(buffer_index).buffer;
             ib.type = to_metal_index_format(format);
+            ib.offset = offset;
+            ib.size_bytes = index_size_bytes(format);
         }
 
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
         {
+            validate_encoder();
             
+            [_state.render_encoder setVertexBuffer:_res_pool.get(buffer_index).buffer offset:0 atIndex:resource_slot + 8];
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
         {
+            u8* pdata = (u8*)[_res_pool.get(buffer_index).buffer contents];
+            pdata = pdata + offset;
             
+            memcpy(pdata, data, data_size);
         }
 
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
@@ -599,7 +641,7 @@ namespace pen
 
         void renderer_set_scissor_rect(const rect& r)
         {
-            
+            _state.scissor = (MTLScissorRect){(u32)r.left, (u32)r.top, (u32)r.right - (u32)r.left, (u32)r.bottom - (u32)r.top};
         }
 
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
@@ -628,25 +670,38 @@ namespace pen
             bind_pipeline();
 
             // draw calls
-            [_state.render_encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start_vertex vertexCount:vertex_count];
+            [_state.render_encoder drawPrimitives:to_metal_primitive_type(primitive_topology)
+                                      vertexStart:start_vertex
+                                      vertexCount:vertex_count];
+        }
+        
+        static pen_inline void _indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
+                                                  u32 base_vertex, u32 primitive_topology)
+        {
+            validate_encoder();
+            bind_pipeline();
+            
+            u32 offset = (start_index * _state.index_buffer.size_bytes);
+            // draw calls
+            [_state.render_encoder drawIndexedPrimitives:to_metal_primitive_type(primitive_topology)
+                                              indexCount:index_count
+                                               indexType:_state.index_buffer.type
+                                             indexBuffer:_state.index_buffer.buffer
+                                       indexBufferOffset:_state.index_buffer.offset + offset
+                                           instanceCount:instance_count
+                                              baseVertex:base_vertex
+                                            baseInstance:start_instance];
         }
 
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
         {
-            validate_encoder();
-            bind_pipeline();
-
-            // draw calls
-            [_state.render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                              indexCount:index_count
-                                               indexType:_state.index_buffer.type
-                                             indexBuffer:_state.index_buffer.buffer
-                                       indexBufferOffset:_state.index_buffer.offset];
+            _indexed_instanced(1, 0, index_count, start_index, base_vertex, primitive_topology);
         }
 
         void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                              u32 base_vertex, u32 primitive_topology)
         {
+            _indexed_instanced(instance_count, start_instance, index_count, start_index, base_vertex, primitive_topology);
         }
 
         void renderer_draw_auto()
@@ -779,6 +834,7 @@ namespace pen
 
         void renderer_release_render_target(u32 render_target)
         {
+            _res_pool.get(render_target).texture.tex = nil;
         }
 
         void renderer_release_input_layout(u32 input_layout)

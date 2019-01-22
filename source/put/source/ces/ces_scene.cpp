@@ -584,7 +584,8 @@ namespace put
                     auto& controller = scene->anim_controller[n];
 
                     bool apply_trajectory = false;
-                    mat4 trajectory;
+                    mat4 trajectory = mat4::create_identity();
+                    vec3f trajectory_translation = vec3f::zero();
 
                     if (is_valid(controller.current_animation))
                     {
@@ -616,6 +617,13 @@ namespace put
                                 if (controller.current_time < anim->channels[c].times[t])
                                     break;
 
+                            bool new_frame = false;
+                            if(anim->channels[c].processed_frame != t)
+                            {
+                                new_frame = true;
+                                anim->channels[c].processed_frame = t;
+                            }
+                            
                             // loop
                             if (t >= num_frames)
                                 t = 0;
@@ -629,6 +637,26 @@ namespace put
                             // invalid
                             if (sni < 0)
                                 continue;
+                            
+                            //
+                            if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
+                            {
+                                if (anim->channels[c].matrices)
+                                {
+                                    trajectory = anim->channels[c].matrices[num_frames - 1];
+                                }
+                                else
+                                {
+                                    for (u32 i = 0; i < 3; ++i)
+                                    {
+                                        if (anim->channels[c].offset[i] && t > 0 && new_frame)
+                                        {
+                                            apply_trajectory = true;
+                                            trajectory_translation[i] = anim->channels[c].offset[i][t] - anim->channels[c].offset[i][t-1];
+                                        }
+                                    }
+                                }
+                            }
 
                             if (anim->channels[c].matrices)
                             {
@@ -654,20 +682,14 @@ namespace put
                                 scene->state_flags[sni] |= SF_APPLY_ANIM_TRANSFORM;
                             }
 
-                            if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
-                            {
-                                if (anim->channels[c].matrices)
-                                    trajectory = anim->channels[c].matrices[num_frames - 1];
-                            }
-
                             if (controller.current_time > anim->length)
                             {
                                 apply_trajectory = true;
                                 controller.current_time = (controller.current_time) - (anim->length);
                             }
                         }
-
-                        // set all nodes to initial transform
+                        
+                        // apply rot / translation animation
                         for (s32 c = 0; c < anim->num_channels; ++c)
                         {
                             s32 num_frames = anim->channels[c].num_frames;
@@ -686,10 +708,13 @@ namespace put
 
                             if (anim->remap_channels)
                                 sni = anim->channels[c].target_node_index;
+                            
+                            if(sni == PEN_INVALID_HANDLE)
+                                continue;
 
                             if (!(scene->state_flags[sni] & SF_APPLY_ANIM_TRANSFORM))
                                 continue;
-
+                            
                             quat rot;
                             rot.euler_angles(maths::deg_to_rad(scene->anim_transform[sni].rotation.z),
                                              maths::deg_to_rad(scene->anim_transform[sni].rotation.y),
@@ -703,11 +728,38 @@ namespace put
 
                             vec3f translation = offset * mask + start * inv_mask;
 
-                            scene->transforms[sni].rotation = scene->initial_transform[sni].rotation * rot;
-                            scene->transforms[sni].translation = translation;
-                            scene->entities[sni] |= CMP_TRANSFORM;
+                            if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
+                            {
+                                // generate matrix from transform
+                                mat4 rot_mat;
+                                quat q = scene->initial_transform[sni].rotation * rot;
+                                q.get_matrix(rot_mat);
+                                
+                                if (apply_trajectory && controller.apply_root_motion)
+                                {
+                                    apply_trajectory = false;
+                                    trajectory_translation = rot_mat.transform_vector(trajectory_translation);
+                                    scene->initial_transform[n].translation += trajectory_translation;
+                                }
+                                
+                                dbg::add_point(scene->initial_transform[n].translation, 1.0f, vec4f::magenta());
+                                
+                                translation = rot_mat.transform_vector(translation);
+                                translation = scene->initial_transform[n].translation;
+                                
+                                mat4 translation_mat = mat::create_translation(translation);
+                                
+                                scene->local_matrices[n] = translation_mat * rot_mat;
+                            }
+                            else
+                            {
+                                scene->transforms[sni].rotation = scene->initial_transform[sni].rotation * rot;
+                                scene->transforms[sni].translation = translation;
+                                scene->entities[sni] |= CMP_TRANSFORM;
+                            }
 
                             scene->state_flags[sni] &= ~SF_APPLY_ANIM_TRANSFORM;
+                            
                             scene->anim_transform[sni].translation_mask = vec3f::zero();
                         }
                     }
@@ -1250,7 +1302,7 @@ namespace put
                 for (s32 i = 0; i < size; ++i)
                 {
                     auto* anim = get_animation_resource(scene->anim_controller[n].handles[i]);
-                    write_lookup_string(anim->name.c_str(), ofs);
+                    write_lookup_string(anim->name.c_str(), ofs, project_dir.c_str());
                 }
             }
 
@@ -1591,8 +1643,8 @@ namespace put
                                           anim_name.c_str());
                         error = true;
                     }
-
-                    sb_push(scene->anim_controller[n].handles, h);
+                    
+                    bind_animation_to_rig(scene, h, n);
                 }
 
                 if (scene->anim_controller[n].current_animation > sb_count(scene->anim_controller[n].handles))

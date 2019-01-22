@@ -10,12 +10,16 @@ animation_source_types = ["float", "float4x4", "Name"]
 animation_targets = ["translate",
                      "transform",
                      "rotate",
+                     "scale",
                      "translate.X",
                      "translate.Y",
                      "translate.Z",
                      "rotateX.ANGLE",
                      "rotateY.ANGLE",
-                     "rotateZ.ANGLE"]
+                     "rotateZ.ANGLE",
+                     "scale.X",
+                     "scale.Y",
+                     "scale.Z"]
 
 interpolation_types = ["LINEAR", "BEZIER", "CARDINAL", "HERMITE", "BSPLINE", "STEP"]
 
@@ -62,6 +66,34 @@ def parse_animation_source(root, source_id):
     return new_sources
 
 
+def consolidate_channels_to_targets():
+    global animation_channels
+    packed_targets = []
+    packed_target_times = []
+    for channel in animation_channels:
+        info = channel.target_bone.split('/')
+        bone_target = info[0]
+        anim_target = info[1]
+        times = []
+        for src in channel.sampler.sources:
+            if src.semantic == "TIME":
+                times = src.data
+        if bone_target not in packed_targets:
+            packed_targets.append(bone_target)
+            packed_target_times.append(times)
+            # print("target " + bone_target + " " + anim_target + " " + str(len(times)))
+        else:
+            i = packed_targets.index(bone_target)
+            if packed_target_times[i] == times:
+                # print("multi target " + bone_target + " " + anim_target + " " + str(len(times)))
+                pass
+            else:
+                # print("secondary target " + bone_target + " " + anim_target + " " + str(len(times)))
+                packed_targets.append(bone_target)
+                packed_target_times.append(times)
+    print(len(packed_targets))
+
+
 def parse_animations(root, anims_out, joints_in):
     global animation_channels
     animation_channels = []
@@ -83,6 +115,7 @@ def parse_animations(root, anims_out, joints_in):
                     a_channel.target_bone = channel.get("target")
                     a_channel.sampler = s
                     animation_channels.append(a_channel)
+        # consolidate_channels_to_targets()
 
 
 def write_animation_file(filename):

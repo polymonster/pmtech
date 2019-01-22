@@ -804,7 +804,6 @@ namespace put
 
             if (!ns.components)
             {
-                dev_console_log("%s", "allocing state mem");
                 ns.components = (void**)pen::memory_alloc(num * sizeof(generic_cmp_array));
                 pen::memory_zero(ns.components, num * sizeof(generic_cmp_array));
             }
