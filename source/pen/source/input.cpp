@@ -221,6 +221,7 @@ namespace pen
 } // namespace pen
 
 // Gamepad ------------------------------------------------------------------------------------------------------------------
+
 #define API_RAW_INPUT 0
 #define API_XINPUT 1
 #define TRIGGER_X360 1024

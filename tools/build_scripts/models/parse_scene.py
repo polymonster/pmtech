@@ -65,9 +65,9 @@ def add_vertex_input(input_node, vertex_input_instance):
 
 def write_source_float(p, src, mesh):
     base_p = int(p) * int(src.stride)
-    #always write 4 values per source / semantic so they occupy 1 vector register
+    # always write 4 values per source / semantic so they occupy 1 vector register
     if int(src.stride) == 3:
-        #correct cordspace
+        # correct cordspace
         val_x = float(src.float_values[base_p+0])
         val_y = float(src.float_values[base_p+1])
         val_z = float(src.float_values[base_p+2])
@@ -84,9 +84,9 @@ def write_source_float(p, src, mesh):
         mesh.vertex_buffer.append(1.0)
     else:
         for i in range(0, 4, 1):
-            if( i < int(src.stride) ):
+            if i < int(src.stride):
                 mesh.vertex_buffer.append(src.float_values[base_p+i])
-            elif( i == 2 ):
+            elif i == 2:
                 mesh.vertex_buffer.append("0")
             else:
                 mesh.vertex_buffer.append("1.0")
@@ -113,9 +113,9 @@ def grow_extents(p, src, mesh):
         mesh.max_extents.append(v[2])
     else:
         for i in range(0, 3, 1):
-            if( v[i] <= float(mesh.min_extents[i])):
+            if v[i] <= float(mesh.min_extents[i]):
                 mesh.min_extents[i] = v[i]
-            if( v[i] >= float(mesh.max_extents[i])):
+            if v[i] >= float(mesh.max_extents[i]):
                 mesh.max_extents[i] = v[i]
 
 
@@ -149,7 +149,7 @@ def generate_vertex_buffer(mesh):
     p = 0
     while p < len(mesh.triangle_indices):
         for v in mesh.triangle_inputs:
-            for s in range( 0, len(v.source_ids), 1):
+            for s in range(0, len(v.source_ids), 1):
                 write_vertex_data(p+int(v.offsets[s]), v.source_ids[s], mesh)
         p += index_stride
 
@@ -224,10 +224,10 @@ def parse_geometry(node, author_in):
             submesh = 0
             for tris in mesh.iter(schema+'polylist'):
                 geom_container.materials.append(tris.get("material"))
-                geom_container.meshes.append(parse_mesh(mesh,tris))
+                geom_container.meshes.append(parse_mesh(mesh, tris))
                 submesh = submesh+1
 
             for tris in mesh.iter(schema+'triangles'):
                 geom_container.materials.append(tris.get("material"))
-                geom_container.meshes.append(parse_mesh(mesh,tris))
+                geom_container.meshes.append(parse_mesh(mesh, tris))
                 submesh = submesh+1
