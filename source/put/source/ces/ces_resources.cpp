@@ -9,6 +9,7 @@
 #include "ces/ces_utilities.h"
 
 #include "console.h"
+#include "data_struct.h"
 
 namespace put
 {
@@ -491,12 +492,8 @@ namespace put
         material_resource* get_material_resource(hash_id hash)
         {
             for (auto* m : s_material_resources)
-            {
                 if (m->hash == hash)
-                {
                     return m;
-                }
-            }
 
             return nullptr;
         }
@@ -756,7 +753,8 @@ namespace put
             new_animation.channels = new animation_channel[num_channels];
 
             new_animation.length = 0.0f;
-            new_animation.step = FLT_MAX;
+            
+            u32 max_frames = 0;
 
             for (s32 i = 0; i < num_channels; ++i)
             {
@@ -807,72 +805,37 @@ namespace put
                         f32* data = new f32[num_floats];
                         memcpy(data, p_u32reader, sizeof(f32) * num_floats);
                         
-                        int a = 0;
                         switch (target)
                         {
                             case A_TRANSFORM_TARGET:
-                                a = 0;
-                                break;
-                            case A_TRANSLATE_TARGET:
-                                a = 0;
-                                break;
-                            case A_SCALE_TARGET:
-                                a = 0;
-                                break;
-                            case A_TRANSLATE_X_TARGET:
-                                a = 0;
-                                break;
-                            case A_TRANSLATE_Y_TARGET:
-                                a = 0;
-                                break;
-                            case A_TRANSLATE_Z_TARGET:
-                                a = 0;
-                                break;
-                            case A_ROTATE_X_TARGET:
-                                a = 0;
-                                break;
-                            case A_ROTATE_Y_TARGET:
-                                a = 0;
-                                break;
-                            case A_ROTATE_Z_TARGET:
-                                a = 0;
-                                break;
-                            case A_SCALE_X_TARGET:
-                                a = 0;
-                                break;
-                            case A_SCALE_Y_TARGET:
-                                a = 0;
-                                break;
-                            case A_SCALE_Z_TARGET:
-                                a = 0;
-                                break;
-                            default:
-                                break;
-                        };
-
-                        switch (sematic)
-                        {
-                            case A_TRANSFORM:
-                                PEN_ASSERT(type == A_FLOAT4x4);
                                 new_animation.channels[i].matrices = (mat4*)data;
                                 break;
-                            case A_OFFSET_X:
-                            case A_OFFSET_Y:
-                            case A_OFFSET_Z:
-                                PEN_ASSERT(type == A_FLOAT);
-                                new_animation.channels[i].offset[sematic - A_OFFSET_X] = (f32*)data;
+                            case A_TRANSLATE_X_TARGET:
+                            case A_TRANSLATE_Y_TARGET:
+                            case A_TRANSLATE_Z_TARGET:
+                                new_animation.channels[i].offset[target - A_TRANSLATE_X_TARGET] = (f32*)data;
                                 break;
-                            case A_ANGLE:
-                                PEN_ASSERT(type == A_FLOAT);
+                            case A_ROTATE_X_TARGET:
+                            case A_ROTATE_Y_TARGET:
+                            case A_ROTATE_Z_TARGET:
                                 new_animation.channels[i].angle[target - A_ROTATE_X_TARGET] = (f32*)data;
                                 break;
                             case A_SCALE_X_TARGET:
                             case A_SCALE_Y_TARGET:
                             case A_SCALE_Z_TARGET:
-                                PEN_ASSERT(type == A_FLOAT);
                                 new_animation.channels[i].scale[target - A_SCALE_X_TARGET] = (f32*)data;
                                 break;
+                            case A_TRANSLATE_TARGET:
+                                new_animation.channels[i].offset[sematic - A_X] = (f32*)data;
+                                break;
+                            case A_ROTATE_TARGET:
+                                new_animation.channels[i].angle[sematic - A_X] = (f32*)data;
+                                break;
+                            case A_SCALE_TARGET:
+                                new_animation.channels[i].scale[sematic - A_X] = (f32*)data;
+                                break;
                             default:
+                                PEN_ASSERT(0); // unhandled targets
                                 break;
                         };
                     }
@@ -883,17 +846,86 @@ namespace put
                 for (s32 t = 0; t < new_animation.channels[i].num_frames; ++t)
                 {
                     f32* times = new_animation.channels[i].times;
-                    if (t > 0)
-                    {
-                        f32 interval = times[t] - times[t - 1];
-                        new_animation.step = fmin(new_animation.step, interval);
-                    }
-
                     new_animation.length = fmax(times[t], new_animation.length);
                 }
+                
+                max_frames = std::max<u32>(new_animation.channels[i].num_frames, max_frames);
             }
-
+            
+            // free file mem
             pen::memory_free(anim_file);
+            
+            // bake animations into soa.
+            
+            // allocate vertical arrays
+            soa_anim& soa = new_animation.soa;
+            soa.data = new f32*[max_frames];
+            soa.samplers = new anim_sampler[max_frames];
+            soa.info = new anim_info*[max_frames];
+            
+            // null ptrs
+            memset(soa.data, 0x0, max_frames * sizeof(f32*));
+            memset(soa.info, 0x0, max_frames * sizeof(f32*));
+            
+            // push channels into horizontal contiguous arrays
+            for (s32 c = 0; c < num_channels; ++c)
+            {
+                animation_channel& channel = new_animation.channels[c];
+                
+                // setup sampler
+                soa.samplers[c].num_frames = channel.num_frames;
+                soa.samplers[c].joint = 0;
+                soa.samplers[c].pos = 0;
+                
+                u32 elm = 0;
+                
+                // translate
+                for(u32 i = 0; i < 3; ++i)
+                    if(channel.offset[i])
+                        soa.samplers[c].element_offset[elm++] = i;
+                
+                // rotate
+                for(u32 i = 0; i < 3; ++i)
+                    if(channel.angle[i])
+                        soa.samplers[c].element_offset[elm++] = 3 + i;
+                
+                // scale
+                for(u32 i = 0; i < 3; ++i)
+                    if(channel.scale[i])
+                        soa.samplers[c].element_offset[elm++] = 6 + i;
+                
+                soa.samplers[c].element_count = elm;
+                
+                for(u32 t = 0; t < channel.num_frames; ++t)
+                {
+                    u32 start_offset = sb_count(soa.data[t]);
+                    
+                    // translate
+                    for(u32 i = 0; i < 3; ++i)
+                        if(channel.offset[i])
+                            sb_push(soa.data[t], channel.offset[i][t]);
+                    
+                    // rotate
+                    for(u32 i = 0; i < 3; ++i)
+                        if(channel.angle[i])
+                            sb_push(soa.data[t], channel.angle[i][t]);
+                    
+                    // scale
+                    for(u32 i = 0; i < 3; ++i)
+                        if(channel.scale[i])
+                            sb_push(soa.data[t], channel.scale[i][t]);
+                    
+                    u32 end_offset = sb_count(soa.data[t]);
+                    
+                    soa.samplers[c].element_count = end_offset - start_offset;
+                    
+                    anim_info ai;
+                    ai.offset = start_offset;
+                    ai.time = channel.times[t];
+                    sb_push(soa.info[t], ai);
+                }
+            }
+            
             return (anim_handle)k_animations.size() - 1;
         }
 

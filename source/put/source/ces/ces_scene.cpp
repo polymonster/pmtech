@@ -574,200 +574,252 @@ namespace put
                 pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
         }
+        
+        void update_animations_v2(entity_scene* scene, f32 dt)
+        {
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
+                    continue;
+                
+                auto& controller = scene->anim_controller[n];
+                if (!is_valid(controller.current_animation))
+                    continue;
+                
+                auto* anim = get_animation_resource(controller.current_animation);
+                if (!anim)
+                    continue;
+                
+                soa_anim& soa = anim->soa;
+                
+                f32 anim_t = controller.current_time;
+                
+                for (s32 c = 0; c < anim->num_channels; ++c)
+                {
+                    anim_sampler& sampler = soa.samplers[c];
+                    
+                    u32 pos = sampler.pos;
+                    u32 pos_next = (sampler.pos + 1) % sampler.num_frames;
+                    
+                    anim_info& info = soa.info[pos][c];
+                    anim_info& info_next = soa.info[pos_next][c];
+                    
+                    /*
+                     
+                     for sampler
+                     sampler_time = animation.time_offsets[pos].time
+                     if animation.time > sampler_time
+                     pos++
+                     
+                     offset = animation.time_offsets[pos]
+                     next_offset = animation.time_offsets[pos + 1]
+                     
+                     sampler_time = animation.time_offsets[pos].time
+                     next_sampler_time = animation.time_offsets[pos + 1].time
+                     
+                     float* data = animation.tracks.d[offset]
+                     float* next_data = animation.tracks.d[next_offset]
+                     
+                     float t = (animation.time - sampler_time) / (next_sampler_time - sampler_time)
+                     
+                     for i in element_count
+                     
+                    */
+                }
+            }
+        }
 
         void update_animations(entity_scene* scene, f32 dt)
         {
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
-                if (scene->entities[n] & CMP_ANIM_CONTROLLER)
+                if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
+                    continue;
+                
+                auto& controller = scene->anim_controller[n];
+                if (!is_valid(controller.current_animation))
+                    continue;
+                
+                auto* anim = get_animation_resource(controller.current_animation);
+                if (!anim)
+                    continue;
+                
+                bool apply_trajectory = false;
+                mat4 trajectory = mat4::create_identity();
+                vec3f trajectory_translation = vec3f::zero();
+
+                if (controller.play_flags == cmp_anim_controller::PLAY)
+                    controller.current_time += dt * 0.001f;
+                
+                s32       joints_offset = scene->anim_controller[n].joints_offset;
+                cmp_skin* skin = nullptr;
+                if (scene->geometries[n].p_skin)
+                    skin = scene->geometries[n].p_skin;
+                
+                if (controller.current_frame > 0)
+                    continue;
+                
+                for (s32 c = 0; c < anim->num_channels; ++c)
                 {
-                    auto& controller = scene->anim_controller[n];
-
-                    bool apply_trajectory = false;
-                    mat4 trajectory = mat4::create_identity();
-                    vec3f trajectory_translation = vec3f::zero();
-
-                    if (is_valid(controller.current_animation))
+                    s32 num_frames = anim->channels[c].num_frames;
+                    
+                    if (num_frames <= 0)
+                        continue;
+                    
+                    s32 t = 0;
+                    for (t = 0; t < num_frames; ++t)
+                        if (controller.current_time < anim->channels[c].times[t])
+                            break;
+                    
+                    bool new_frame = false;
+                    if(anim->channels[c].processed_frame != t)
                     {
-                        auto* anim = get_animation_resource(controller.current_animation);
-
-                        if (!anim)
-                            continue;
-
-                        if (controller.play_flags == cmp_anim_controller::PLAY)
-                            controller.current_time += dt * 0.001f;
-
-                        s32       joints_offset = scene->anim_controller[n].joints_offset;
-                        cmp_skin* skin = nullptr;
-                        if (scene->geometries[n].p_skin)
-                            skin = scene->geometries[n].p_skin;
-
-                        if (controller.current_frame > 0)
-                            continue;
-
-                        for (s32 c = 0; c < anim->num_channels; ++c)
+                        new_frame = true;
+                        anim->channels[c].processed_frame = t;
+                    }
+                    
+                    // loop
+                    if (t >= num_frames)
+                        t = 0;
+                    
+                    // anim channel to scene node
+                    s32 sni = joints_offset + c;
+                    
+                    if (anim->remap_channels)
+                        sni = anim->channels[c].target_node_index;
+                    
+                    // invalid
+                    if (sni < 0)
+                        continue;
+                    
+                    //
+                    if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
+                    {
+                        if (anim->channels[c].matrices)
                         {
-                            s32 num_frames = anim->channels[c].num_frames;
-
-                            if (num_frames <= 0)
-                                continue;
-
-                            s32 t = 0;
-                            for (t = 0; t < num_frames; ++t)
-                                if (controller.current_time < anim->channels[c].times[t])
-                                    break;
-
-                            bool new_frame = false;
-                            if(anim->channels[c].processed_frame != t)
+                            trajectory = anim->channels[c].matrices[num_frames - 1];
+                        }
+                        else
+                        {
+                            for (u32 i = 0; i < 3; ++i)
                             {
-                                new_frame = true;
-                                anim->channels[c].processed_frame = t;
+                                if (anim->channels[c].offset[i] && t > 0 && new_frame)
+                                {
+                                    apply_trajectory = true;
+                                    trajectory_translation[i] = anim->channels[c].offset[i][t] - anim->channels[c].offset[i][t-1];
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (anim->channels[c].matrices)
+                    {
+                        // apply baked tansform anim
+                        mat4& mat = anim->channels[c].matrices[t];
+                        scene->local_matrices[sni] = mat;
+                    }
+                    else
+                    {
+                        // apply offset / angle
+                        for (u32 i = 0; i < 3; ++i)
+                        {
+                            if (anim->channels[c].offset[i])
+                            {
+                                scene->anim_transform[sni].translation_mask[i] = 1.0f;
+                                scene->anim_transform[sni].translation[i] = anim->channels[c].offset[i][t];
                             }
                             
-                            // loop
-                            if (t >= num_frames)
-                                t = 0;
-
-                            // anim channel to scene node
-                            s32 sni = joints_offset + c;
-
-                            if (anim->remap_channels)
-                                sni = anim->channels[c].target_node_index;
-
-                            // invalid
-                            if (sni < 0)
-                                continue;
-                            
-                            //
-                            if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
-                            {
-                                if (anim->channels[c].matrices)
-                                {
-                                    trajectory = anim->channels[c].matrices[num_frames - 1];
-                                }
-                                else
-                                {
-                                    for (u32 i = 0; i < 3; ++i)
-                                    {
-                                        if (anim->channels[c].offset[i] && t > 0 && new_frame)
-                                        {
-                                            apply_trajectory = true;
-                                            trajectory_translation[i] = anim->channels[c].offset[i][t] - anim->channels[c].offset[i][t-1];
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (anim->channels[c].matrices)
-                            {
-                                // apply baked tansform anim
-                                mat4& mat = anim->channels[c].matrices[t];
-                                scene->local_matrices[sni] = mat;
-                            }
-                            else
-                            {
-                                // apply offset / angle
-                                for (u32 i = 0; i < 3; ++i)
-                                {
-                                    if (anim->channels[c].offset[i])
-                                    {
-                                        scene->anim_transform[sni].translation_mask[i] = 1.0f;
-                                        scene->anim_transform[sni].translation[i] = anim->channels[c].offset[i][t];
-                                    }
-
-                                    if (anim->channels[c].angle[i])
-                                        scene->anim_transform[sni].rotation[i] = anim->channels[c].angle[i][t];
-                                }
-
-                                scene->state_flags[sni] |= SF_APPLY_ANIM_TRANSFORM;
-                            }
-
-                            if (controller.current_time > anim->length)
-                            {
-                                apply_trajectory = true;
-                                controller.current_time = (controller.current_time) - (anim->length);
-                            }
+                            if (anim->channels[c].angle[i])
+                                scene->anim_transform[sni].rotation[i] = anim->channels[c].angle[i][t];
                         }
                         
-                        // apply rot / translation animation
-                        for (s32 c = 0; c < anim->num_channels; ++c)
-                        {
-                            s32 num_frames = anim->channels[c].num_frames;
-
-                            s32 t = 0;
-                            for (t = 0; t < num_frames; ++t)
-                                if (controller.current_time < anim->channels[c].times[t])
-                                    break;
-
-                            // loop
-                            if (t >= num_frames)
-                                t = 0;
-
-                            // anim channel to scene node
-                            s32 sni = joints_offset + c;
-
-                            if (anim->remap_channels)
-                                sni = anim->channels[c].target_node_index;
-                            
-                            if(sni == PEN_INVALID_HANDLE)
-                                continue;
-
-                            if (!(scene->state_flags[sni] & SF_APPLY_ANIM_TRANSFORM))
-                                continue;
-                            
-                            quat rot;
-                            rot.euler_angles(maths::deg_to_rad(scene->anim_transform[sni].rotation.z),
-                                             maths::deg_to_rad(scene->anim_transform[sni].rotation.y),
-                                             maths::deg_to_rad(scene->anim_transform[sni].rotation.x));
-
-                            vec3f offset = scene->anim_transform[sni].translation;
-                            vec3f start = scene->initial_transform[sni].translation;
-
-                            vec3f mask = scene->anim_transform[sni].translation_mask;
-                            vec3f inv_mask = vec3f::one() - mask;
-
-                            vec3f translation = offset * mask + start * inv_mask;
-
-                            if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
-                            {
-                                // generate matrix from transform
-                                mat4 rot_mat;
-                                quat q = scene->initial_transform[sni].rotation * rot;
-                                q.get_matrix(rot_mat);
-                                
-                                if (apply_trajectory && controller.apply_root_motion)
-                                {
-                                    apply_trajectory = false;
-                                    trajectory_translation = rot_mat.transform_vector(trajectory_translation);
-                                    scene->initial_transform[n].translation += trajectory_translation;
-                                }
-                                
-                                dbg::add_point(scene->initial_transform[n].translation, 1.0f, vec4f::magenta());
-                                
-                                translation = rot_mat.transform_vector(translation);
-                                translation = scene->initial_transform[n].translation;
-                                
-                                mat4 translation_mat = mat::create_translation(translation);
-                                
-                                scene->local_matrices[n] = translation_mat * rot_mat;
-                            }
-                            else
-                            {
-                                scene->transforms[sni].rotation = scene->initial_transform[sni].rotation * rot;
-                                scene->transforms[sni].translation = translation;
-                                scene->entities[sni] |= CMP_TRANSFORM;
-                            }
-
-                            scene->state_flags[sni] &= ~SF_APPLY_ANIM_TRANSFORM;
-                            
-                            scene->anim_transform[sni].translation_mask = vec3f::zero();
-                        }
+                        scene->state_flags[sni] |= SF_APPLY_ANIM_TRANSFORM;
                     }
-
-                    if (apply_trajectory && controller.apply_root_motion)
+                    
+                    if (controller.current_time > anim->length)
                     {
-                        scene->local_matrices[n] *= trajectory;
+                        apply_trajectory = true;
+                        controller.current_time = (controller.current_time) - (anim->length);
                     }
+                }
+                
+                if (apply_trajectory && controller.apply_root_motion)
+                {
+                    scene->local_matrices[n] *= trajectory;
+                }
+                
+                // apply rot / translation animation
+                for (s32 c = 0; c < anim->num_channels; ++c)
+                {
+                    s32 num_frames = anim->channels[c].num_frames;
+                    
+                    s32 t = 0;
+                    for (t = 0; t < num_frames; ++t)
+                        if (controller.current_time < anim->channels[c].times[t])
+                            break;
+                    
+                    // loop
+                    if (t >= num_frames)
+                        t = 0;
+                    
+                    // anim channel to scene node
+                    s32 sni = joints_offset + c;
+                    
+                    if (anim->remap_channels)
+                        sni = anim->channels[c].target_node_index;
+                    
+                    if(sni == PEN_INVALID_HANDLE)
+                        continue;
+                    
+                    if (!(scene->state_flags[sni] & SF_APPLY_ANIM_TRANSFORM))
+                        continue;
+                    
+                    quat rot;
+                    rot.euler_angles(maths::deg_to_rad(scene->anim_transform[sni].rotation.z),
+                                     maths::deg_to_rad(scene->anim_transform[sni].rotation.y),
+                                     maths::deg_to_rad(scene->anim_transform[sni].rotation.x));
+                    
+                    vec3f offset = scene->anim_transform[sni].translation;
+                    vec3f start = scene->initial_transform[sni].translation;
+                    
+                    vec3f mask = scene->anim_transform[sni].translation_mask;
+                    vec3f inv_mask = vec3f::one() - mask;
+                    
+                    vec3f translation = offset * mask + start * inv_mask;
+                    
+                    if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
+                    {
+                        // generate matrix from transform
+                        mat4 rot_mat;
+                        quat q = scene->initial_transform[sni].rotation * rot;
+                        q.get_matrix(rot_mat);
+                        
+                        if (apply_trajectory && controller.apply_root_motion)
+                        {
+                            apply_trajectory = false;
+                            trajectory_translation = rot_mat.transform_vector(trajectory_translation);
+                            scene->initial_transform[n].translation += trajectory_translation;
+                        }
+                        
+                        dbg::add_point(scene->initial_transform[n].translation, 1.0f, vec4f::magenta());
+                        
+                        translation = rot_mat.transform_vector(translation);
+                        translation = scene->initial_transform[n].translation;
+                        
+                        mat4 translation_mat = mat::create_translation(translation);
+                        
+                        scene->local_matrices[n] = translation_mat * rot_mat;
+                    }
+                    else
+                    {
+                        scene->transforms[sni].rotation = scene->initial_transform[sni].rotation * rot;
+                        scene->transforms[sni].translation = translation;
+                        scene->entities[sni] |= CMP_TRANSFORM;
+                    }
+                    
+                    scene->state_flags[sni] &= ~SF_APPLY_ANIM_TRANSFORM;
+                    
+                    scene->anim_transform[sni].translation_mask = vec3f::zero();
                 }
             }
         }

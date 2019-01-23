@@ -7,13 +7,44 @@ namespace put
 {
     namespace ces
     {
+        // anim v2
+        struct anim_info
+        {
+            f32 time;
+            u32 interpolation;
+            u32 offset;
+        };
+        
+        struct anim_sampler
+        {
+            u32 num_frames;
+            u32 pos;
+            u32 joint;
+            u32 element_count;
+            u32 element_offset[6];
+        };
+        
+        struct soa_anim
+        {
+            anim_sampler*   samplers;
+            anim_info**     info;       // [frame][samplers]
+            f32**           data;       // [frame][sampler offset]
+        };
+        
+        // todo move into
+        struct anim_instance
+        {
+            f32     time;
+            mat4*   joints;
+        };
+        
         enum e_animation_semantics
         {
             A_TIME = 0,
             A_TRANSFORM,
-            A_OFFSET_X,
-            A_OFFSET_Y,
-            A_OFFSET_Z,
+            A_X,
+            A_Y,
+            A_Z,
             A_ANGLE,
             A_INTERPOLATION
         };
@@ -85,11 +116,11 @@ namespace put
             bool               remap_channels = false;
 
             f32 length;
-            f32 step;
-
             Str name;
+            
+            soa_anim soa;
         };
-
+        
         struct geometry_resource
         {
             hash_id file_hash;
