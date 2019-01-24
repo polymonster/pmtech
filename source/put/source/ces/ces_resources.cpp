@@ -860,7 +860,7 @@ namespace put
             // allocate vertical arrays
             soa_anim& soa = new_animation.soa;
             soa.data = new f32*[max_frames];
-            soa.samplers = new anim_sampler[max_frames];
+            soa.channels = new anim_channel[max_frames];
             soa.info = new anim_info*[max_frames];
             
             // null ptrs
@@ -873,28 +873,26 @@ namespace put
                 animation_channel& channel = new_animation.channels[c];
                 
                 // setup sampler
-                soa.samplers[c].num_frames = channel.num_frames;
-                soa.samplers[c].joint = 0;
-                soa.samplers[c].pos = 0;
+                soa.channels[c].num_frames = channel.num_frames;
                 
                 u32 elm = 0;
                 
                 // translate
                 for(u32 i = 0; i < 3; ++i)
                     if(channel.offset[i])
-                        soa.samplers[c].element_offset[elm++] = i;
+                        soa.channels[c].element_offset[elm++] = i;
                 
                 // rotate
                 for(u32 i = 0; i < 3; ++i)
                     if(channel.angle[i])
-                        soa.samplers[c].element_offset[elm++] = 3 + i;
+                        soa.channels[c].element_offset[elm++] = 3 + i;
                 
                 // scale
                 for(u32 i = 0; i < 3; ++i)
                     if(channel.scale[i])
-                        soa.samplers[c].element_offset[elm++] = 6 + i;
+                        soa.channels[c].element_offset[elm++] = 6 + i;
                 
-                soa.samplers[c].element_count = elm;
+                soa.channels[c].element_count = elm;
                 
                 for(u32 t = 0; t < channel.num_frames; ++t)
                 {
@@ -917,7 +915,7 @@ namespace put
                     
                     u32 end_offset = sb_count(soa.data[t]);
                     
-                    soa.samplers[c].element_count = end_offset - start_offset;
+                    soa.channels[c].element_count = end_offset - start_offset;
                     
                     anim_info ai;
                     ai.offset = start_offset;
