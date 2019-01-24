@@ -14,30 +14,41 @@ namespace put
             u32 interpolation;
             u32 offset;
         };
-        
-        struct anim_sampler
+
+        struct anim_channel
         {
             u32 num_frames;
-            u32 pos;
-            u32 joint;
             u32 element_count;
             u32 element_offset[6];
         };
-        
+
         struct soa_anim
         {
-            anim_sampler*   samplers;
-            anim_info**     info;       // [frame][samplers]
-            f32**           data;       // [frame][sampler offset]
+            anim_channel* channels;
+            anim_info**   info; // [frame][samplers]
+            f32**         data; // [frame][sampler offset]
         };
-        
-        // todo move into
+
+        struct anim_sampler
+        {
+            u32 pos;
+            u32 joint;
+        };
+
+        struct anim_target
+        {
+            f32 t[6]; // t xyz, r xyz, s xyz.
+        };
+
         struct anim_instance
         {
-            f32     time;
-            mat4*   joints;
+            soa_anim*      soa;
+            f32            time;
+            anim_target*   targets;
+            cmp_transform* joints;
+            anim_sampler*  samplers;
         };
-        
+
         enum e_animation_semantics
         {
             A_TIME = 0,
@@ -117,10 +128,10 @@ namespace put
 
             f32 length;
             Str name;
-            
+
             soa_anim soa;
         };
-        
+
         struct geometry_resource
         {
             hash_id file_hash;

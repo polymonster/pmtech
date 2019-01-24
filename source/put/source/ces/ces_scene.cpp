@@ -593,39 +593,44 @@ namespace put
                 soa_anim& soa = anim->soa;
                 
                 f32 anim_t = controller.current_time;
-                
+
+                // for active controller.anim_instances
+                //      for controller.anim_instances.channels
+                anim_instance instance;
+
                 for (s32 c = 0; c < anim->num_channels; ++c)
                 {
-                    anim_sampler& sampler = soa.samplers[c];
+                    // cold data
+                    anim_sampler  sampler = instance.samplers[c];
+                    anim_channel& channel = soa.channels[c];
+
+                    u32 elems = channel.element_count;
+                    u32 pos1 = sampler.pos;
+                    u32 pos2 = (sampler.pos + 1) % channel.num_frames;
+
+                    u32 num_elems = channel.element_count;
                     
-                    u32 pos = sampler.pos;
-                    u32 pos_next = (sampler.pos + 1) % sampler.num_frames;
-                    
-                    anim_info& info = soa.info[pos][c];
-                    anim_info& info_next = soa.info[pos_next][c];
-                    
-                    /*
-                     
-                     for sampler
-                     sampler_time = animation.time_offsets[pos].time
-                     if animation.time > sampler_time
-                     pos++
-                     
-                     offset = animation.time_offsets[pos]
-                     next_offset = animation.time_offsets[pos + 1]
-                     
-                     sampler_time = animation.time_offsets[pos].time
-                     next_sampler_time = animation.time_offsets[pos + 1].time
-                     
-                     float* data = animation.tracks.d[offset]
-                     float* next_data = animation.tracks.d[next_offset]
-                     
-                     float t = (animation.time - sampler_time) / (next_sampler_time - sampler_time)
-                     
-                     for i in element_count
-                     
-                    */
+                    // hot data
+                    anim_info& info1 = soa.info[pos1][c];
+                    anim_info& info2 = soa.info[pos2][c];
+
+                    f32* d1 = &soa.data[pos1][info1.offset];
+                    f32* d2 = &soa.data[pos2][info2.offset];
+
+                    f32 t = (anim_t - info1.time) / (info2.time - info1.time);
+
+                    for (u32 e = 0; e < elems; ++e)
+                    {
+                        f32 td = d1[e] * (1 - t) + d2[e] * t;
+
+                        u32 eo = channel.element_offset[e];
+
+                        instance.targets[sampler.joint].t[eo] = td;
+                    }
                 }
+
+                // for active controller.anim_instances
+                //      blend
             }
         }
 
