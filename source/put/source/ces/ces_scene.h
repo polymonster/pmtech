@@ -19,6 +19,8 @@ namespace put
 
     namespace ces
     {
+        struct anim_instance;
+
         enum e_scene_view_flags : u32
         {
             SV_NONE = 0,
@@ -239,6 +241,12 @@ namespace put
             s32          current_frame = -1;
             u8           play_flags = STOPPED;
             bool         apply_root_motion = true;
+        };
+
+        struct cmp_anim_controller_v2
+        {
+            anim_instance* anim_instances;
+            // blending
         };
 
         struct cmp_light

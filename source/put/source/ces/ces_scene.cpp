@@ -582,55 +582,54 @@ namespace put
                 if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
                     continue;
                 
-                auto& controller = scene->anim_controller[n];
-                if (!is_valid(controller.current_animation))
-                    continue;
-                
-                auto* anim = get_animation_resource(controller.current_animation);
-                if (!anim)
-                    continue;
-                
-                soa_anim& soa = anim->soa;
-                
-                f32 anim_t = controller.current_time;
+                cmp_anim_controller_v2 controller; // todo
 
-                // for active controller.anim_instances
-                //      for controller.anim_instances.channels
-                anim_instance instance;
-
-                for (s32 c = 0; c < anim->num_channels; ++c)
+                u32 num_anims = sb_count(controller.anim_instances);
+                for (u32 ai = 0; ai < num_anims; ++ai)
                 {
-                    // cold data
-                    anim_sampler  sampler = instance.samplers[c];
-                    anim_channel& channel = soa.channels[c];
+                    anim_instance& instance = controller.anim_instances[ai];
 
-                    u32 elems = channel.element_count;
-                    u32 pos1 = sampler.pos;
-                    u32 pos2 = (sampler.pos + 1) % channel.num_frames;
-
-                    u32 num_elems = channel.element_count;
+                    if (!(instance.flags & anim_flags::PLAY))
+                        continue;
                     
-                    // hot data
-                    anim_info& info1 = soa.info[pos1][c];
-                    anim_info& info2 = soa.info[pos2][c];
+                    soa_anim& soa = *instance.soa;
+                    u32       num_channels = sb_count(soa.channels);
+                    f32       anim_t = instance.time;
 
-                    f32* d1 = &soa.data[pos1][info1.offset];
-                    f32* d2 = &soa.data[pos2][info2.offset];
-
-                    f32 t = (anim_t - info1.time) / (info2.time - info1.time);
-
-                    for (u32 e = 0; e < elems; ++e)
+                    for (s32 c = 0; c < num_channels; ++c)
                     {
-                        f32 td = d1[e] * (1 - t) + d2[e] * t;
+                        anim_sampler  sampler = instance.samplers[c];
+                        anim_channel& channel = soa.channels[c];
 
-                        u32 eo = channel.element_offset[e];
+                        u32 elems = channel.element_count;
+                        u32 pos1 = sampler.pos;
+                        u32 pos2 = (sampler.pos + 1) % channel.num_frames;
 
-                        instance.targets[sampler.joint].t[eo] = td;
+                        u32 num_elems = channel.element_count;
+
+                        anim_info& info1 = soa.info[pos1][c];
+                        anim_info& info2 = soa.info[pos2][c];
+
+                        f32* d1 = &soa.data[pos1][info1.offset];
+                        f32* d2 = &soa.data[pos2][info2.offset];
+
+                        f32 t = (anim_t - info1.time) / (info2.time - info1.time);
+
+                        for (u32 e = 0; e < elems; ++e)
+                        {
+                            f32 td = d1[e] * (1 - t) + d2[e] * t;
+
+                            u32 eo = channel.element_offset[e];
+
+                            instance.targets[sampler.joint].t[eo] = td;
+                        }
                     }
                 }
 
-                // for active controller.anim_instances
+                // for active controller.anim_instances, make trans, quat, scale
                 //      blend
+
+                // set bone transforms
             }
         }
 

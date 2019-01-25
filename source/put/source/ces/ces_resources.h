@@ -40,8 +40,18 @@ namespace put
             f32 t[6]; // t xyz, r xyz, s xyz.
         };
 
+        namespace anim_flags
+        {
+            enum
+            {
+                PLAY = 1,
+                APPLY_ROOT_MOTION = 1<<1
+            };
+        }
+
         struct anim_instance
         {
+            u32            flags;
             soa_anim*      soa;
             f32            time;
             anim_target*   targets;
