@@ -286,6 +286,31 @@ namespace put
                 scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
             }
         }
+        
+        void instantiate_anim_controller_v2(entity_scene* scene, s32 node_index)
+        {
+            cmp_geometry* geom = &scene->geometries[node_index];
+            
+            if (geom->p_skin)
+            {
+                cmp_anim_controller_v2& controller = scene->anim_controller_v2[node_index];
+                
+                std::vector<s32> joint_indices;
+                build_heirarchy_node_list(scene, node_index, joint_indices);
+                
+                for (s32 jj = 0; jj < joint_indices.size(); ++jj)
+                {
+                    s32 jnode = joint_indices[jj];
+                    
+                    if (jnode > -1 && scene->entities[jnode] & CMP_BONE)
+                    {
+                        sb_push(controller.joint_indices, jnode);
+                    }
+                }
+                
+                scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
+            }
+        }
 
         void instantiate_sdf_shadow(const c8* pmv_filename, entity_scene* scene, u32 node_index)
         {
@@ -860,8 +885,9 @@ namespace put
             // allocate vertical arrays
             soa_anim& soa = new_animation.soa;
             soa.data = new f32*[max_frames];
-            soa.channels = new anim_channel[max_frames];
+            soa.channels = new anim_channel[num_channels];
             soa.info = new anim_info*[max_frames];
+            soa.num_channels = num_channels;
             
             // null ptrs
             memset(soa.data, 0x0, max_frames * sizeof(f32*));
@@ -1180,6 +1206,7 @@ namespace put
 
                 scene->initial_transform[current_node].rotation = scene->transforms[current_node].rotation;
                 scene->initial_transform[current_node].translation = scene->transforms[current_node].translation;
+                scene->initial_transform[current_node].scale = scene->transforms[current_node].scale;
 
                 scene->local_matrices[current_node] = (matrix);
 
@@ -1286,6 +1313,7 @@ namespace put
                 if ((scene->entities[i] & CMP_GEOMETRY) && scene->geometries[i].p_skin)
                 {
                     instantiate_anim_controller(scene, i);
+                    instantiate_anim_controller_v2(scene, i);
                 }
             }
 

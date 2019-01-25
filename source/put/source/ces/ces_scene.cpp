@@ -577,35 +577,42 @@ namespace put
         
         void update_animations_v2(entity_scene* scene, f32 dt)
         {
+            static s32 frame = 0;
+            ImGui::InputInt("Frame", &frame);
+            
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
                     continue;
                 
-                cmp_anim_controller_v2 controller; // todo
+                cmp_anim_controller_v2 controller = scene->anim_controller_v2[n];
 
                 u32 num_anims = sb_count(controller.anim_instances);
                 for (u32 ai = 0; ai < num_anims; ++ai)
                 {
                     anim_instance& instance = controller.anim_instances[ai];
 
-                    if (!(instance.flags & anim_flags::PLAY))
-                        continue;
+                    //if (!(instance.flags & anim_flags::PLAY))
+                        //continue;
                     
-                    soa_anim& soa = *instance.soa;
-                    u32       num_channels = sb_count(soa.channels);
+                    soa_anim& soa = instance.soa;
+                    u32       num_channels = soa.num_channels;
                     f32       anim_t = instance.time;
+                    instance.time += dt;
 
                     for (s32 c = 0; c < num_channels; ++c)
                     {
                         anim_sampler  sampler = instance.samplers[c];
                         anim_channel& channel = soa.channels[c];
+                        
+                        if(sampler.joint == PEN_INVALID_HANDLE)
+                            continue;
 
                         u32 elems = channel.element_count;
                         u32 pos1 = sampler.pos;
                         u32 pos2 = (sampler.pos + 1) % channel.num_frames;
-
-                        u32 num_elems = channel.element_count;
+                        
+                        pos1 = frame;
 
                         anim_info& info1 = soa.info[pos1][c];
                         anim_info& info2 = soa.info[pos2][c];
@@ -618,14 +625,40 @@ namespace put
                         for (u32 e = 0; e < elems; ++e)
                         {
                             f32 td = d1[e] * (1 - t) + d2[e] * t;
-
                             u32 eo = channel.element_offset[e];
 
-                            instance.targets[sampler.joint].t[eo] = td;
+                            //instance.targets[sampler.joint].t[eo] = td;
+                            instance.targets[sampler.joint].t[eo] = d1[e];
                         }
                     }
-                }
+                    
+                    // bake anim target into a cmp transform for joint
+                    u32 num_joints = sb_count(instance.joints);
+                    for (u32 j = 0; j < num_joints; ++j)
+                    {
+                        u32 jnode = controller.joint_indices[j];
+                        
+                        f32* f = &instance.targets[j].t[0];
+                        
+                        instance.joints[j].translation = vec3f(f[0], f[1], f[2]);
+                        instance.joints[j].rotation.euler_angles(maths::deg_to_rad(f[5]),
+                                                                 maths::deg_to_rad(f[4]),
+                                                                 maths::deg_to_rad(f[3]));
+                        instance.joints[j].scale = vec3f(f[6], f[7], f[8]);
+                        
+                        // todo blend anims
+                        
+                        quat rot = scene->initial_transform[jnode].rotation * instance.joints[j].rotation;
 
+                        // set bone
+
+                        scene->transforms[jnode] = instance.joints[j];
+                        scene->transforms[jnode].rotation = rot;
+                        
+                        scene->entities[jnode] |= CMP_TRANSFORM;
+                    }
+                }
+                
                 // for active controller.anim_instances, make trans, quat, scale
                 //      blend
 
@@ -837,7 +870,18 @@ namespace put
             else
             {
                 physics::set_paused(0);
-                update_animations(scene, dt);
+                
+                static bool v2 = false;
+                ImGui::Checkbox("Anim v2", &v2);
+                
+                if(v2)
+                {
+                    update_animations_v2(scene, dt);
+                }
+                else
+                {
+                    update_animations(scene, dt);
+                }
             }
 
             static u32 timer = pen::timer_create("update_scene");

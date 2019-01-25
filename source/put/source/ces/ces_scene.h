@@ -245,8 +245,8 @@ namespace put
 
         struct cmp_anim_controller_v2
         {
-            anim_instance* anim_instances;
-            // blending
+            anim_instance* anim_instances = nullptr;
+            u32*           joint_indices = nullptr;   // indices into the scene hierarchy
         };
 
         struct cmp_light
@@ -397,10 +397,11 @@ namespace put
             cmp_array<cmp_material_data>   material_data;
             cmp_array<material_resource>   material_resources;
             cmp_array<cmp_shadow>          shadows;
-            cmp_array<cmp_samplers>        samplers;             // version 5
-            cmp_array<u32>                 material_permutation; // version 8
-            cmp_array<cmp_transform>       initial_transform;    // version 9
-            cmp_array<cmp_anim_transform>  anim_transform;       // version 9
+            cmp_array<cmp_samplers>        samplers;                // version 5
+            cmp_array<u32>                 material_permutation;    // version 8
+            cmp_array<cmp_transform>       initial_transform;       // version 9
+            cmp_array<cmp_anim_transform>  anim_transform;          // version 9
+            cmp_array<cmp_anim_controller_v2> anim_controller_v2;   // version 9
 
             // Ensure num_components is the next to calc size
             u32 num_components;

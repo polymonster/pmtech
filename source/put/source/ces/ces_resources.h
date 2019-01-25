@@ -24,9 +24,10 @@ namespace put
 
         struct soa_anim
         {
-            anim_channel* channels;
-            anim_info**   info; // [frame][samplers]
-            f32**         data; // [frame][sampler offset]
+            u32 num_channels = 0;
+            anim_channel* channels = nullptr;
+            anim_info**   info = nullptr;       // [frame][samplers]
+            f32**         data = nullptr;       // [frame][sampler offset]
         };
 
         struct anim_sampler
@@ -37,7 +38,7 @@ namespace put
 
         struct anim_target
         {
-            f32 t[6]; // t xyz, r xyz, s xyz.
+            f32 t[9]; // t xyz, r xyz, s xyz.
         };
 
         namespace anim_flags
@@ -51,12 +52,12 @@ namespace put
 
         struct anim_instance
         {
-            u32            flags;
-            soa_anim*      soa;
-            f32            time;
-            anim_target*   targets;
-            cmp_transform* joints;
-            anim_sampler*  samplers;
+            u32            flags = 0;
+            soa_anim       soa;
+            f32            time = 0.0f;
+            anim_target*   targets = nullptr;
+            cmp_transform* joints = nullptr;
+            anim_sampler*  samplers = nullptr;
         };
 
         enum e_animation_semantics
