@@ -577,8 +577,8 @@ namespace put
         
         void update_animations_v2(entity_scene* scene, f32 dt)
         {
-            static s32 frame = 0;
-            ImGui::InputInt("Frame", &frame);
+            u32 timer = pen::timer_create("anim_v2");
+            pen::timer_start(timer);
             
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -586,53 +586,51 @@ namespace put
                     continue;
                 
                 cmp_anim_controller_v2 controller = scene->anim_controller_v2[n];
-
+                
                 u32 num_anims = sb_count(controller.anim_instances);
                 for (u32 ai = 0; ai < num_anims; ++ai)
                 {
                     anim_instance& instance = controller.anim_instances[ai];
 
-                    //if (!(instance.flags & anim_flags::PLAY))
-                        //continue;
-                    
                     soa_anim& soa = instance.soa;
                     u32       num_channels = soa.num_channels;
                     f32       anim_t = instance.time;
-                    instance.time += dt;
+                    
+                    // roll on time
+                    instance.time += dt * 0.001f;
+                    if(instance.time > 0.7)
+                        instance.time = 0.0f;
 
                     for (s32 c = 0; c < num_channels; ++c)
                     {
-                        anim_sampler  sampler = instance.samplers[c];
+                        anim_sampler& sampler = instance.samplers[c];
                         anim_channel& channel = soa.channels[c];
                         
                         if(sampler.joint == PEN_INVALID_HANDLE)
                             continue;
-
-                        u32 elems = channel.element_count;
-                        u32 pos1 = sampler.pos;
-                        u32 pos2 = (sampler.pos + 1) % channel.num_frames;
                         
-                        pos1 = frame;
+                        // find the frame we are on..
+                        for (; sampler.pos < channel.num_frames; ++sampler.pos)
+                            if (anim_t < soa.info[sampler.pos][c].time)
+                                break;
+                        
+                        if(sampler.pos >= channel.num_frames)
+                            sampler.pos = 0;
+                        
+                        // get anim data
+                        anim_info& info1 = soa.info[sampler.pos][c];
+                        f32* d1 = &soa.data[sampler.pos][info1.offset];
 
-                        anim_info& info1 = soa.info[pos1][c];
-                        anim_info& info2 = soa.info[pos2][c];
-
-                        f32* d1 = &soa.data[pos1][info1.offset];
-                        f32* d2 = &soa.data[pos2][info2.offset];
-
-                        f32 t = (anim_t - info1.time) / (info2.time - info1.time);
-
-                        for (u32 e = 0; e < elems; ++e)
+                        for (u32 e = 0; e < channel.element_count; ++e)
                         {
-                            f32 td = d1[e] * (1 - t) + d2[e] * t;
                             u32 eo = channel.element_offset[e];
-
-                            //instance.targets[sampler.joint].t[eo] = td;
+                            
                             instance.targets[sampler.joint].t[eo] = d1[e];
                         }
                     }
                     
                     // bake anim target into a cmp transform for joint
+                    u32 tn = PEN_INVALID_HANDLE;
                     u32 num_joints = sb_count(instance.joints);
                     for (u32 j = 0; j < num_joints; ++j)
                     {
@@ -641,9 +639,7 @@ namespace put
                         f32* f = &instance.targets[j].t[0];
                         
                         instance.joints[j].translation = vec3f(f[0], f[1], f[2]);
-                        instance.joints[j].rotation.euler_angles(maths::deg_to_rad(f[5]),
-                                                                 maths::deg_to_rad(f[4]),
-                                                                 maths::deg_to_rad(f[3]));
+                        instance.joints[j].rotation.euler_angles(f[5], f[4], f[3]);
                         instance.joints[j].scale = vec3f(f[6], f[7], f[8]);
                         
                         // todo blend anims
@@ -651,11 +647,39 @@ namespace put
                         quat rot = scene->initial_transform[jnode].rotation * instance.joints[j].rotation;
 
                         // set bone
+                        
+                        if(scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
+                        {
+                            tn = jnode;
+                            continue;
+                        }
 
                         scene->transforms[jnode] = instance.joints[j];
                         scene->transforms[jnode].rotation = rot;
-                        
                         scene->entities[jnode] |= CMP_TRANSFORM;
+                    }
+                    
+                    // root motion
+                    if(tn != PEN_INVALID_HANDLE)
+                    {
+                        /*
+                        mat4 rot_mat;
+                        quat q = scene->initial_transform[tn].rotation * rot;
+                        q.get_matrix(rot_mat);
+                        
+                        if (apply_trajectory && controller.apply_root_motion)
+                        {
+                            apply_trajectory = false;
+                            trajectory_translation = rot_mat.transform_vector(trajectory_translation);
+                            scene->initial_transform[n].translation += trajectory_translation;
+                        }
+                        
+                        translation = rot_mat.transform_vector(translation);
+                        translation = scene->initial_transform[n].translation;
+                        
+                        mat4 translation_mat = mat::create_translation(translation);
+                        scene->local_matrices[n] = translation_mat * rot_mat;
+                        */
                     }
                 }
                 
@@ -664,10 +688,16 @@ namespace put
 
                 // set bone transforms
             }
+            
+            f32 ms = pen::timer_elapsed_ms(timer);
+            //PEN_LOG("anim_v2 : %f", ms);
         }
 
         void update_animations(entity_scene* scene, f32 dt)
         {
+            u32 timer = pen::timer_create("anim_v1");
+            pen::timer_start(timer);
+            
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
@@ -812,9 +842,9 @@ namespace put
                         continue;
                     
                     quat rot;
-                    rot.euler_angles(maths::deg_to_rad(scene->anim_transform[sni].rotation.z),
-                                     maths::deg_to_rad(scene->anim_transform[sni].rotation.y),
-                                     maths::deg_to_rad(scene->anim_transform[sni].rotation.x));
+                    rot.euler_angles(scene->anim_transform[sni].rotation.z,
+                                     scene->anim_transform[sni].rotation.y,
+                                     scene->anim_transform[sni].rotation.x);
                     
                     vec3f offset = scene->anim_transform[sni].translation;
                     vec3f start = scene->initial_transform[sni].translation;
@@ -859,6 +889,9 @@ namespace put
                     scene->anim_transform[sni].translation_mask = vec3f::zero();
                 }
             }
+            
+            f32 ms = pen::timer_elapsed_ms(timer);
+            //PEN_LOG("anim_v1 : %f", ms);
         }
 
         void update_scene(entity_scene* scene, f32 dt)

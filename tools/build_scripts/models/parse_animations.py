@@ -1,5 +1,6 @@
 import struct
 import models.helpers as helpers
+import math
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 
@@ -170,7 +171,10 @@ def write_animation_file(filename):
                     num_floats = len(src.data) / int(src.stride)
                     output.write(struct.pack("i", int(num_floats)))
                     for f in range(src.offset, len(src.data), int(src.stride)):
-                        output.write(struct.pack("f", float(src.data[f])))
+                        ff = float(src.data[f])
+                        if src.semantic == "ANGLE":
+                            ff = math.radians(ff)
+                        output.write(struct.pack("f", ff))
                 elif src.type == "float4x4":
                     output.write(struct.pack("i", len(src.data)))
                     for f in range(src.offset, len(src.data), int(src.stride)):

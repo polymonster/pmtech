@@ -895,7 +895,7 @@ namespace put
             
             // push channels into horizontal contiguous arrays
             for (s32 c = 0; c < num_channels; ++c)
-            {
+            {                
                 animation_channel& channel = new_animation.channels[c];
                 
                 // setup sampler
@@ -946,6 +946,15 @@ namespace put
                     anim_info ai;
                     ai.offset = start_offset;
                     ai.time = channel.times[t];
+                    sb_push(soa.info[t], ai);
+                }
+                
+                // pad sparse info array
+                for(u32 t = channel.num_frames; t < max_frames; ++t)
+                {
+                    anim_info ai;
+                    ai.offset = -1;
+                    ai.time = 0.0f;
                     sb_push(soa.info[t], ai);
                 }
             }
