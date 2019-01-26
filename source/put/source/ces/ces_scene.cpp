@@ -617,15 +617,30 @@ namespace put
                         if(sampler.pos >= channel.num_frames)
                             sampler.pos = 0;
                         
+                        u32 next = (sampler.pos + 1) % channel.num_frames;
+                        
                         // get anim data
                         anim_info& info1 = soa.info[sampler.pos][c];
+                        anim_info& info2 = soa.info[next][c];
+                        
                         f32* d1 = &soa.data[sampler.pos][info1.offset];
+                        f32* d2 = &soa.data[next][info2.offset];
+                        
+                        f32 it = min(max((anim_t - info1.time) / (info2.time - info1.time), 0.0f), 1.0f);
 
                         for (u32 e = 0; e < channel.element_count; ++e)
                         {
                             u32 eo = channel.element_offset[e];
                             
-                            instance.targets[sampler.joint].t[eo] = d1[e];
+                            if(sampler.joint > 0)
+                            {
+                                f32 lf = (1 - it) * d1[e] + it * d2[e];
+                                instance.targets[sampler.joint].t[eo] = lf;
+                            }
+                            else
+                            {
+                                instance.targets[sampler.joint].t[eo] = d1[e];
+                            }
                         }
                     }
                     
