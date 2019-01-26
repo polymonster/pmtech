@@ -58,6 +58,7 @@ namespace put
             anim_target*   targets = nullptr;
             cmp_transform* joints = nullptr;
             anim_sampler*  samplers = nullptr;
+            vec3f          root_translation;
         };
 
         enum e_animation_semantics

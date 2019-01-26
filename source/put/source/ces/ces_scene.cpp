@@ -630,11 +630,17 @@ namespace put
                     }
                     
                     // bake anim target into a cmp transform for joint
-                    u32 tn = PEN_INVALID_HANDLE;
+                    u32 tj = PEN_INVALID_HANDLE;
                     u32 num_joints = sb_count(instance.joints);
                     for (u32 j = 0; j < num_joints; ++j)
                     {
                         u32 jnode = controller.joint_indices[j];
+                        
+                        if(scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
+                        {
+                            tj = j;
+                            continue;
+                        }
                         
                         f32* f = &instance.targets[j].t[0];
                         
@@ -642,44 +648,36 @@ namespace put
                         instance.joints[j].rotation.euler_angles(f[5], f[4], f[3]);
                         instance.joints[j].scale = vec3f(f[6], f[7], f[8]);
                         
-                        // todo blend anims
-                        
                         quat rot = scene->initial_transform[jnode].rotation * instance.joints[j].rotation;
 
-                        // set bone
+                        // set bone.. temp
                         
-                        if(scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
-                        {
-                            tn = jnode;
-                            continue;
-                        }
-
                         scene->transforms[jnode] = instance.joints[j];
                         scene->transforms[jnode].rotation = rot;
                         scene->entities[jnode] |= CMP_TRANSFORM;
                     }
                     
-                    // root motion
-                    if(tn != PEN_INVALID_HANDLE)
+                    // root motion.. todo rotation
+                    if(tj != PEN_INVALID_HANDLE)
                     {
-                        /*
-                        mat4 rot_mat;
-                        quat q = scene->initial_transform[tn].rotation * rot;
-                        q.get_matrix(rot_mat);
+                        f32* f = &instance.targets[tj].t[0];
+                        vec3f tt = vec3f(f[0], f[1], f[2]);
                         
-                        if (apply_trajectory && controller.apply_root_motion)
+                        if(instance.samplers[0].pos > 0)
                         {
-                            apply_trajectory = false;
-                            trajectory_translation = rot_mat.transform_vector(trajectory_translation);
-                            scene->initial_transform[n].translation += trajectory_translation;
+                            vec3f delta = tt - instance.root_translation;
+                            
+                            instance.joints[tj].translation += delta;
+                            
+                            mat4 translation_mat = mat::create_translation(instance.joints[tj].translation);
+                            scene->local_matrices[n] = translation_mat;
+                            
+                            instance.root_translation = tt;
                         }
-                        
-                        translation = rot_mat.transform_vector(translation);
-                        translation = scene->initial_transform[n].translation;
-                        
-                        mat4 translation_mat = mat::create_translation(translation);
-                        scene->local_matrices[n] = translation_mat * rot_mat;
-                        */
+                        else
+                        {
+                            instance.root_translation = tt;
+                        }
                     }
                 }
                 
@@ -841,11 +839,10 @@ namespace put
                     if (!(scene->state_flags[sni] & SF_APPLY_ANIM_TRANSFORM))
                         continue;
                     
-                    quat rot;
-                    rot.euler_angles(scene->anim_transform[sni].rotation.z,
-                                     scene->anim_transform[sni].rotation.y,
-                                     scene->anim_transform[sni].rotation.x);
-                    
+                    quat rot = quat(scene->anim_transform[sni].rotation.z,
+                                    scene->anim_transform[sni].rotation.y,
+                                    scene->anim_transform[sni].rotation.x);
+
                     vec3f offset = scene->anim_transform[sni].translation;
                     vec3f start = scene->initial_transform[sni].translation;
                     

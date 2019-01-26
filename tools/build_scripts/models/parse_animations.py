@@ -143,7 +143,7 @@ def parse_animations(root, anims_out, joints_in):
                     a_channel.target_bone = channel.get("target")
                     a_channel.sampler = s
                     animation_channels.append(a_channel)
-    consolidate_channels_to_targets()
+    # consolidate_channels_to_targets()
 
 
 def write_animation_file(filename):
