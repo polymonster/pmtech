@@ -247,6 +247,7 @@ namespace put
         {
             anim_instance* anim_instances = nullptr;
             u32*           joint_indices = nullptr;   // indices into the scene hierarchy
+            f32            blend = 0.0f;
         };
 
         struct cmp_light

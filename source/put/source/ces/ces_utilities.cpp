@@ -472,6 +472,7 @@ namespace put
             animation_resource* anim = get_animation_resource(anim_handle);
             anim_instance anim_instance;
             anim_instance.soa = anim->soa;
+            anim_instance.length = anim->length;
             
             cmp_anim_controller_v2& controller = scene->anim_controller_v2[node_index];
             

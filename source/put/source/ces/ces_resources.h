@@ -55,10 +55,12 @@ namespace put
             u32            flags = 0;
             soa_anim       soa;
             f32            time = 0.0f;
+            f32            length = 0.0f;       // length in time
             anim_target*   targets = nullptr;
             cmp_transform* joints = nullptr;
             anim_sampler*  samplers = nullptr;
             vec3f          root_translation;
+            vec3f          root_delta;
         };
 
         enum e_animation_semantics
