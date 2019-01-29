@@ -47,6 +47,7 @@ namespace put
         void instance_node_range(entity_scene* scene, u32 master_node, u32 num_nodes);
         void set_node_parent(entity_scene* scene, u32 parent, u32 child);
         bool bind_animation_to_rig(entity_scene* scene, anim_handle anim_handle, u32 node_index);
+        bool bind_animation_to_rig_v2(entity_scene* scene, anim_handle anim_handle, u32 node_index);
         void tree_to_node_index_list(const scene_tree& tree, s32 start_node, std::vector<s32>& list_out);
         void build_scene_tree(entity_scene* scene, s32 start_node, scene_tree& tree_out);
         void build_heirarchy_node_list(entity_scene* scene, s32 start_node, std::vector<s32>& node_list);
