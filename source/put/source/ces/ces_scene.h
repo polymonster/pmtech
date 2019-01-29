@@ -242,12 +242,19 @@ namespace put
             u8           play_flags = STOPPED;
             bool         apply_root_motion = true;
         };
+        
+        struct anim_blend
+        {
+            u32 anim_a = 0;
+            u32 anim_b = 0;
+            f32 ratio = 0.0f;
+        };
 
         struct cmp_anim_controller_v2
         {
             anim_instance* anim_instances = nullptr;
             u32*           joint_indices = nullptr;   // indices into the scene hierarchy
-            f32            blend = 0.0f;
+            anim_blend     blend;
         };
 
         struct cmp_light
