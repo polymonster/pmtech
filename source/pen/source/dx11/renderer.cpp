@@ -1210,12 +1210,12 @@ namespace pen
 
     void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
-        if (flags == CBUFFER_BIND_PS)
+        if (flags & pen::CBUFFER_BIND_PS)
         {
             s_immediate_context->PSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
         }
         
-        if (flags == CBUFFER_BIND_VS)
+        if (flags & pen::CBUFFER_BIND_VS)
         {
             s_immediate_context->VSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
         }
@@ -1464,7 +1464,7 @@ namespace pen
             direct::renderer_set_resolve_targets(target, 0);
 
             direct::renderer_update_buffer(g_resolve_resources.constant_buffer, &cbuf, sizeof(cbuf), 0);
-            direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, PEN_SHADER_TYPE_PS);
+            direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, pen::CBUFFER_BIND_PS);
 
             pen::viewport vp = {0.0f, 0.0f, w, h, 0.0f, 1.0f};
             direct::renderer_set_viewport(vp);

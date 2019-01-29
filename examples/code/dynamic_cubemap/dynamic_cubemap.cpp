@@ -106,8 +106,8 @@ void setup_scene(entity_scene* scene)
     scene->samplers[ground].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
     bake_material_handles(scene, ground);
 
-    f32 ramp1_angle[] = {M_PI * 0.125f, M_PI * -0.125f};
-    f32 ramp2_angle[] = {M_PI * -0.125f, M_PI * 0.125f};
+    f32 ramp1_angle[] = {M_PI * 0.125, M_PI * -0.125};
+    f32 ramp2_angle[] = {M_PI * -0.125, M_PI * 0.125};
     f32 ramp1_x[] = {20.0f, -20.0f};
     f32 ramp2_x[] = {-10.0f, 10.0f};
     f32 block1_x[] = {30.0f, -30.0f};
