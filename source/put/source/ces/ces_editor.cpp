@@ -2930,8 +2930,7 @@ namespace put
             if (scene->view_flags & SV_HIDE)
                 return;
 
-            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
-            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
             static const hash_id id_volume[] = {PEN_HASH("full_screen_quad"), PEN_HASH("sphere"), PEN_HASH("cone")};
 
@@ -2991,8 +2990,7 @@ namespace put
                         dc.v2 = vec4f(scene->lights[n].colour, 1.0f);
 
                         pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
-                        pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
-                        pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
+                        pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                         pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
                         pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
                         pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
@@ -3006,8 +3004,7 @@ namespace put
         {
             entity_scene* scene = view.scene;
 
-            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
-            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -3029,8 +3026,7 @@ namespace put
                         continue;
 
                     // draw
-                    pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
-                    pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
+                    pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                     pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
                     pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
                     pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);

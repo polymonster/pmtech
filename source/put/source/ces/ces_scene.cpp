@@ -297,8 +297,7 @@ namespace put
             if (scene->view_flags & SV_HIDE)
                 return;
 
-            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
-            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
             static hash_id id_volume[] = {PEN_HASH("full_screen_quad"), PEN_HASH("sphere"), PEN_HASH("cone")};
 
@@ -379,8 +378,7 @@ namespace put
                 }
 
                 pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
-                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
-                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                 pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
                 pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
                 pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
@@ -400,17 +398,16 @@ namespace put
             if (scene->view_flags & SV_HIDE)
                 return;
 
-            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_VS);
-            pen::renderer_set_constant_buffer(view.cb_view, 0, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
             // fwd lights
             if (view.render_flags & RENDER_FORWARD_LIT)
-                pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
 
             // sdf shadows
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
-                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
 
                 if (scene->entities[n] & CMP_SDF_SHADOW)
                 {
@@ -493,7 +490,7 @@ namespace put
                     }
 
                     pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
-                    pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
+                    pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
                 }
 
                 // set shader / technique
@@ -521,12 +518,10 @@ namespace put
                 u32 mcb = scene->materials[n].material_cbuffer;
                 if (is_valid(mcb))
                 {
-                    pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_VS);
-                    pen::renderer_set_constant_buffer(mcb, 7, PEN_SHADER_TYPE_PS);
+                    pen::renderer_set_constant_buffer(mcb, 7, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                 }
 
-                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_VS);
-                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
                 // set ib / vb
                 if (scene->entities[n] & CMP_MASTER_INSTANCE)
@@ -1157,7 +1152,7 @@ namespace put
 
                 pen::renderer_update_buffer(scene->sdf_shadow_buffer, &sdf_buffer, sizeof(sdf_buffer));
 
-                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
             }
 
             // Area box lights
@@ -1176,7 +1171,7 @@ namespace put
 
                 pen::renderer_update_buffer(scene->area_box_light_buffer, &abl_buffer, sizeof(abl_buffer));
 
-                pen::renderer_set_constant_buffer(scene->area_box_light_buffer, 6, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(scene->area_box_light_buffer, 6, pen::CBUFFER_BIND_PS);
             }
 
             // Shadow maps
@@ -1217,7 +1212,7 @@ namespace put
                         bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
 
                     pen::renderer_update_buffer(geom.p_skin->bone_cbuffer, bb, sizeof(bb));
-                    pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, PEN_SHADER_TYPE_VS);
+                    pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
 
                     // bind stream out targets
                     cmp_pre_skin& pre_skin = scene->pre_skin[n];

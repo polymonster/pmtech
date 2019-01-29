@@ -518,10 +518,12 @@ namespace pen
             ib.size_bytes = index_size_bytes(format);
         }
 
-        void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
+        void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
             validate_encoder();
             
+            // todo ps
+
             [_state.render_encoder setVertexBuffer:_res_pool.get(buffer_index).buffer offset:0 atIndex:resource_slot + 8];
         }
 

@@ -57,6 +57,7 @@ namespace put
             anim_target*   targets;
             cmp_transform* joints;
             anim_sampler*  samplers;
+            anim_target    root_motion;
         };
 
         enum e_animation_semantics

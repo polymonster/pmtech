@@ -150,7 +150,7 @@ namespace pen
     {
         u32 buffer_index;
         u32 resource_slot;
-        u32 shader_type;
+        u32 flags;
     };
 
     struct update_buffer_cmd
@@ -363,7 +363,7 @@ namespace pen
             case CMD_SET_CONSTANT_BUFFER:
                 direct::renderer_set_constant_buffer(cmd.set_constant_buffer.buffer_index,
                                                      cmd.set_constant_buffer.resource_slot,
-                                                     cmd.set_constant_buffer.shader_type);
+                                                     cmd.set_constant_buffer.flags);
                 break;
 
             case CMD_UPDATE_BUFFER:
@@ -1070,7 +1070,7 @@ namespace pen
         INC_WRAP(put_pos);
     }
 
-    void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
+    void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         if (buffer_index == 0)
             return;
@@ -1079,7 +1079,7 @@ namespace pen
 
         cmd_buffer[put_pos].set_constant_buffer.buffer_index = buffer_index;
         cmd_buffer[put_pos].set_constant_buffer.resource_slot = resource_slot;
-        cmd_buffer[put_pos].set_constant_buffer.shader_type = shader_type;
+        cmd_buffer[put_pos].set_constant_buffer.flags = flags;
 
         INC_WRAP(put_pos);
     }

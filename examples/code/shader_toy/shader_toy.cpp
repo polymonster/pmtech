@@ -328,8 +328,8 @@ PEN_TRV pen::user_entry(void* params)
             }
 
             // bind cbuffers
-            pen::renderer_set_constant_buffer(k_render_handles.view_cbuffer, 0, PEN_SHADER_TYPE_VS);
-            pen::renderer_set_constant_buffer(k_render_handles.tweakable_cbuffer, 1, PEN_SHADER_TYPE_VS);
+            pen::renderer_set_constant_buffer(k_render_handles.view_cbuffer, 0, pen::CBUFFER_BIND_VS);
+            pen::renderer_set_constant_buffer(k_render_handles.tweakable_cbuffer, 1, pen::CBUFFER_BIND_VS);
 
             // draw
             pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);

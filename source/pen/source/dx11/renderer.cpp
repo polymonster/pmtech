@@ -1208,13 +1208,14 @@ namespace pen
         s_immediate_context->OMSetBlendState(resource_pool[blend_state_index].blend_state, NULL, 0xffffffff);
     }
 
-    void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
+    void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
-        if (shader_type == PEN_SHADER_TYPE_PS)
+        if (flags == CBUFFER_BIND_PS)
         {
             s_immediate_context->PSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
         }
-        else if (shader_type == PEN_SHADER_TYPE_VS)
+        
+        if (flags == CBUFFER_BIND_VS)
         {
             s_immediate_context->VSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
         }

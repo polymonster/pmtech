@@ -2378,8 +2378,7 @@ namespace put
             if (!is_valid(sv.pmfx_shader))
                 return;
 
-            pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, PEN_SHADER_TYPE_VS);
-            pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, PEN_SHADER_TYPE_PS);
+            pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
@@ -2437,18 +2436,18 @@ namespace put
             if (num_samplers > 0)
             {
                 pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers * sizeof(vec4f));
-                pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, pen::CBUFFER_BIND_PS);
             }
 
             // filters
             if (is_valid(v.cbuffer_filter))
-                pen::renderer_set_constant_buffer(v.cbuffer_filter, CB_FILTER_KERNEL, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(v.cbuffer_filter, CB_FILTER_KERNEL, pen::CBUFFER_BIND_PS);
 
             // technique cbuffer
             if (is_valid(v.cbuffer_technique))
             {
                 pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data, sizeof(technique_constant_data));
-                pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, PEN_SHADER_TYPE_PS);
+                pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, pen::CBUFFER_BIND_PS);
             }
 
             // build scene view info

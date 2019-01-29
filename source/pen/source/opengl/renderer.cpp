@@ -1751,7 +1751,7 @@ namespace pen
         }
     }
 
-    void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 shader_type)
+    void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         resource_allocation& res = resource_pool[buffer_index];
         CHECK_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle));
