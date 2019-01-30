@@ -1246,7 +1246,7 @@ namespace pen
             if (rt->msaa_resolve_readback)
             {
                 // resolve and copy into staging
-                //s_immediate_context->ResolveSubresource(rt->tex_resolve.texture, 0, rt->tex.texture, 0, rt->format);
+                s_immediate_context->ResolveSubresource(rt->tex_resolve.texture, 0, rt->tex.texture, 0, rt->format);
                 s_immediate_context->CopyResource(rt->tex_read_back.texture, rt->tex_resolve.texture);
             }
             else
@@ -1575,7 +1575,7 @@ namespace pen
         resource_pool[crtv].render_target->msaa_resolve_readback = true;
 
         D3D11_TEXTURE2D_DESC rb_desc;
-        rb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        rb_desc.CPUAccessFlags = 0;
         rb_desc.ArraySize = 1;
         rb_desc.Format = p_desc.BufferDesc.Format;
         rb_desc.MipLevels = 1;
@@ -1589,6 +1589,7 @@ namespace pen
         CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr,
                                              &resource_pool[crtv].render_target->tex_resolve.texture));
 
+        rb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
         rb_desc.Usage = D3D11_USAGE_STAGING;
         CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, &resource_pool[crtv].render_target->tex_read_back.texture));
 
