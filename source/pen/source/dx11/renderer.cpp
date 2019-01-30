@@ -345,7 +345,9 @@ namespace pen
         texture2d_internal      tex_msaa;
         ID3D11RenderTargetView* rt_msaa[CUBEMAP_FACES] = {nullptr};
 
-        texture2d_internal tex_read_back;
+        texture2d_internal      tex_read_back;
+        texture2d_internal      tex_resolve;
+        bool                    msaa_resolve_readback = false;
 
         DXGI_FORMAT              format;
         texture_creation_params* tcp;
@@ -1241,9 +1243,18 @@ namespace pen
         {
             render_target_internal* rt = resource_pool[rrbp.resource_index].render_target;
 
-            s_immediate_context->CopyResource(rt->tex_read_back.texture, rt->tex.texture);
+            if (rt->msaa_resolve_readback)
+            {
+                // resolve and copy into staging
+                //s_immediate_context->ResolveSubresource(rt->tex_resolve.texture, 0, rt->tex.texture, 0, rt->format);
+                s_immediate_context->CopyResource(rt->tex_read_back.texture, rt->tex_resolve.texture);
+            }
+            else
+            {
+                s_immediate_context->CopyResource(rt->tex_read_back.texture, rt->tex.texture);
+            }
 
-            s_immediate_context->Map(rt->tex_read_back.texture, 0, D3D11_MAP_READ, 0, &mapped_res);
+            CHECK_CALL(s_immediate_context->Map(rt->tex_read_back.texture, 0, D3D11_MAP_READ, 0, &mapped_res));
 
             rrbp.call_back_function((void*)mapped_res.pData, mapped_res.RowPitch, mapped_res.DepthPitch, rrbp.block_size);
 
@@ -1536,6 +1547,8 @@ namespace pen
         PEN_ASSERT(crtv == PEN_BACK_BUFFER_COLOUR);
         PEN_ASSERT(dsv == PEN_BACK_BUFFER_DEPTH);
 
+        resource_pool[crtv].type = RES_RENDER_TARGET;
+
         if (!resource_pool[crtv].render_target)
             resource_pool[crtv].render_target = (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
 
@@ -1553,6 +1566,31 @@ namespace pen
 
         CHECK_CALL(s_device->CreateRenderTargetView(resource_pool[crtv].render_target->tex.texture, nullptr,
                                                     &resource_pool[crtv].render_target->rt[0]));
+
+        // for readback and resolve
+        DXGI_SWAP_CHAIN_DESC p_desc;
+        s_swap_chain->GetDesc(&p_desc);
+
+        resource_pool[crtv].render_target->format = p_desc.BufferDesc.Format;
+        resource_pool[crtv].render_target->msaa_resolve_readback = true;
+
+        D3D11_TEXTURE2D_DESC rb_desc;
+        rb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        rb_desc.ArraySize = 1;
+        rb_desc.Format = p_desc.BufferDesc.Format;
+        rb_desc.MipLevels = 1;
+        rb_desc.MiscFlags = 0;
+        rb_desc.Width = p_desc.BufferDesc.Width;
+        rb_desc.Height = p_desc.BufferDesc.Height;
+        rb_desc.SampleDesc = {1, 0};
+        rb_desc.BindFlags = 0;
+        rb_desc.Usage = D3D11_USAGE_DEFAULT;
+
+        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr,
+                                             &resource_pool[crtv].render_target->tex_resolve.texture));
+
+        rb_desc.Usage = D3D11_USAGE_STAGING;
+        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, &resource_pool[crtv].render_target->tex_read_back.texture));
 
         g_context.active_depth_target = PEN_BACK_BUFFER_DEPTH;
         g_context.active_colour_target[0] = PEN_BACK_BUFFER_COLOUR;
