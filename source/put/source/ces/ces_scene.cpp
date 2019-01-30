@@ -572,8 +572,8 @@ namespace put
         
         void update_animations_v2(entity_scene* scene, f32 dt)
         {
-            u32 timer = pen::timer_create("anim_v2");
-            pen::timer_start(timer);
+            //u32 timer = pen::timer_create("anim_v2");
+            //pen::timer_start(timer);
             
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -682,11 +682,11 @@ namespace put
                 
                 // for active controller.anim_instances, make trans, quat, scale
                 //      blend tree
-                
                 if(num_anims > 1)
                 {
-                    anim_instance& a = controller.anim_instances[0];
-                    anim_instance& b = controller.anim_instances[1];
+                    anim_instance& a = controller.anim_instances[controller.blend.anim_a];
+                    anim_instance& b = controller.anim_instances[controller.blend.anim_b];
+                    f32 t = controller.blend.ratio;
                     
                     u32 num_joints = sb_count(a.joints);
                     for (u32 j = 0; j < num_joints; ++j)
@@ -699,50 +699,35 @@ namespace put
                         
                         if(scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
                         {
-                            vec3f lerp_delta = lerp(a.root_delta, b.root_delta, controller.blend);
-                            tc.translation += lerp_delta;
+                            vec3f lerp_delta = lerp(a.root_delta, b.root_delta, t);
                             
-                            // todo, rot + scale
+                            mat4 rot_mat;
+                            quat q = scene->initial_transform[jnode].rotation;
+                            q.get_matrix(rot_mat);
+                            vec3f transform_translation = rot_mat.transform_vector(lerp_delta);
                             
+                            scene->transforms[jnode].rotation = q;
+                            scene->transforms[jnode].translation += transform_translation;
                             scene->entities[jnode] |= CMP_TRANSFORM;
                             
                             continue;
                         }
                         
-                        tc.translation = lerp(ta.translation, tb.translation, controller.blend);
-                        tc.rotation = slerp(ta.rotation, tb.rotation, controller.blend);
-                        tc.scale = lerp(ta.scale, tb.scale, controller.blend);
-                        
-                        scene->entities[jnode] |= CMP_TRANSFORM;
-                    }
-                }
-                else if(num_anims > 0)
-                {
-                    anim_instance& a = controller.anim_instances[0];
-                    
-                    u32 num_joints = sb_count(a.joints);
-                    for (u32 j = 0; j < num_joints; ++j)
-                    {
-                        u32 jnode = controller.joint_indices[j];
-                        cmp_transform& tc = scene->transforms[jnode];
-                        
-                        cmp_transform& ta = a.joints[j];
-                        tc = ta;
+                        tc.translation = lerp(ta.translation, tb.translation, t);
+                        tc.rotation = slerp(ta.rotation, tb.rotation, t);
+                        tc.scale = lerp(ta.scale, tb.scale, t);
                         
                         scene->entities[jnode] |= CMP_TRANSFORM;
                     }
                 }
             }
             
-            f32 ms = pen::timer_elapsed_ms(timer);
+            //f32 ms = pen::timer_elapsed_ms(timer);
             //PEN_LOG("anim_v2 : %f", ms);
         }
 
         void update_animations(entity_scene* scene, f32 dt)
         {
-            u32 timer = pen::timer_create("anim_v1");
-            pen::timer_start(timer);
-            
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
@@ -758,7 +743,6 @@ namespace put
                 
                 bool apply_trajectory = false;
                 mat4 trajectory = mat4::create_identity();
-                vec3f trajectory_translation = vec3f::zero();
 
                 if (controller.play_flags == cmp_anim_controller::PLAY)
                     controller.current_time += dt * 0.001f;
@@ -811,17 +795,6 @@ namespace put
                         {
                             trajectory = anim->channels[c].matrices[num_frames - 1];
                         }
-                        else
-                        {
-                            for (u32 i = 0; i < 3; ++i)
-                            {
-                                if (anim->channels[c].offset[i] && t > 0 && new_frame)
-                                {
-                                    apply_trajectory = true;
-                                    trajectory_translation[i] = anim->channels[c].offset[i][t] - anim->channels[c].offset[i][t-1];
-                                }
-                            }
-                        }
                     }
                     
                     if (anim->channels[c].matrices)
@@ -829,23 +802,6 @@ namespace put
                         // apply baked tansform anim
                         mat4& mat = anim->channels[c].matrices[t];
                         scene->local_matrices[sni] = mat;
-                    }
-                    else
-                    {
-                        // apply offset / angle
-                        for (u32 i = 0; i < 3; ++i)
-                        {
-                            if (anim->channels[c].offset[i])
-                            {
-                                scene->anim_transform[sni].translation_mask[i] = 1.0f;
-                                scene->anim_transform[sni].translation[i] = anim->channels[c].offset[i][t];
-                            }
-                            
-                            if (anim->channels[c].angle[i])
-                                scene->anim_transform[sni].rotation[i] = anim->channels[c].angle[i][t];
-                        }
-                        
-                        scene->state_flags[sni] |= SF_APPLY_ANIM_TRANSFORM;
                     }
                     
                     if (controller.current_time > anim->length)
@@ -859,83 +815,7 @@ namespace put
                 {
                     scene->local_matrices[n] *= trajectory;
                 }
-                
-                // apply rot / translation animation
-                for (s32 c = 0; c < anim->num_channels; ++c)
-                {
-                    s32 num_frames = anim->channels[c].num_frames;
-                    
-                    s32 t = 0;
-                    for (t = 0; t < num_frames; ++t)
-                        if (controller.current_time < anim->channels[c].times[t])
-                            break;
-                    
-                    // loop
-                    if (t >= num_frames)
-                        t = 0;
-                    
-                    // anim channel to scene node
-                    s32 sni = joints_offset + c;
-                    
-                    if (anim->remap_channels)
-                        sni = anim->channels[c].target_node_index;
-                    
-                    if(sni == PEN_INVALID_HANDLE)
-                        continue;
-                    
-                    if (!(scene->state_flags[sni] & SF_APPLY_ANIM_TRANSFORM))
-                        continue;
-                    
-                    quat rot = quat(scene->anim_transform[sni].rotation.z,
-                                    scene->anim_transform[sni].rotation.y,
-                                    scene->anim_transform[sni].rotation.x);
-
-                    vec3f offset = scene->anim_transform[sni].translation;
-                    vec3f start = scene->initial_transform[sni].translation;
-                    
-                    vec3f mask = scene->anim_transform[sni].translation_mask;
-                    vec3f inv_mask = vec3f::one() - mask;
-                    
-                    vec3f translation = offset * mask + start * inv_mask;
-                    
-                    if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
-                    {
-                        // generate matrix from transform
-                        mat4 rot_mat;
-                        quat q = scene->initial_transform[sni].rotation * rot;
-                        q.get_matrix(rot_mat);
-                        
-                        if (apply_trajectory && controller.apply_root_motion)
-                        {
-                            apply_trajectory = false;
-                            trajectory_translation = rot_mat.transform_vector(trajectory_translation);
-                            scene->initial_transform[n].translation += trajectory_translation;
-                        }
-                        
-                        dbg::add_point(scene->initial_transform[n].translation, 1.0f, vec4f::magenta());
-                        
-                        translation = rot_mat.transform_vector(translation);
-                        translation = scene->initial_transform[n].translation;
-                        
-                        mat4 translation_mat = mat::create_translation(translation);
-                        
-                        scene->local_matrices[n] = translation_mat * rot_mat;
-                    }
-                    else
-                    {
-                        scene->transforms[sni].rotation = scene->initial_transform[sni].rotation * rot;
-                        scene->transforms[sni].translation = translation;
-                        scene->entities[sni] |= CMP_TRANSFORM;
-                    }
-                    
-                    scene->state_flags[sni] &= ~SF_APPLY_ANIM_TRANSFORM;
-                    
-                    scene->anim_transform[sni].translation_mask = vec3f::zero();
-                }
             }
-            
-            f32 ms = pen::timer_elapsed_ms(timer);
-            //PEN_LOG("anim_v1 : %f", ms);
         }
 
         void update_scene(entity_scene* scene, f32 dt)
@@ -948,17 +828,8 @@ namespace put
             {
                 physics::set_paused(0);
                 
-                static bool v2 = false;
-                ImGui::Checkbox("Anim v2", &v2);
-                
-                if(v2)
-                {
-                    update_animations_v2(scene, dt);
-                }
-                else
-                {
-                    update_animations(scene, dt);
-                }
+                update_animations(scene, dt);
+                update_animations_v2(scene, dt);
             }
 
             static u32 timer = pen::timer_create("update_scene");
