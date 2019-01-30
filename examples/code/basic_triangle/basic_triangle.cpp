@@ -19,6 +19,30 @@ struct vertex
     float x, y, z, w;
 };
 
+void read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
+{
+    u32 a = 0;
+}
+
+void test()
+{
+    static bool ran = false;
+    if (ran)
+        return;
+
+    pen::resource_read_back_params rrbp;
+    rrbp.block_size = 4;
+    rrbp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
+    rrbp.resource_index = PEN_BACK_BUFFER_COLOUR;
+    rrbp.depth_pitch = 1280 * 4;
+    rrbp.data_size = 1280 * 720 * 4;
+    rrbp.call_back_function = &read_complete;
+
+    pen::renderer_read_back_resource(rrbp);
+
+    ran = true;
+}
+
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -135,6 +159,8 @@ PEN_TRV pen::user_entry(void* params)
         pen::renderer_present();
 
         pen::renderer_consume_cmd_buffer();
+
+        test();
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
