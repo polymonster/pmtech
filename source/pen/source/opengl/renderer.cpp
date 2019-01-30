@@ -1524,7 +1524,7 @@ namespace pen
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fbos[1]));
 
             direct::renderer_update_buffer(g_resolve_resources.constant_buffer, &cbuf, sizeof(cbuf), 0);
-            direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, PEN_SHADER_TYPE_PS);
+            direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, pen::CBUFFER_BIND_PS);
 
             viewport vp = {0.0f, 0.0f, w, h, 0.0f, 1.0f};
             direct::renderer_set_viewport(vp);
