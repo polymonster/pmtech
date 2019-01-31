@@ -91,6 +91,7 @@ namespace pen
     LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
     HWND             g_hwnd = nullptr;
     HINSTANCE        g_hinstance = nullptr;
+    static bool      terminate_app = false;
 
     bool os_update()
     {
@@ -140,7 +141,6 @@ namespace pen
 
         pen::input_gamepad_update();
 
-        static bool terminate_app = false;
         if (WM_QUIT == msg.message)
             terminate_app = true;
 
@@ -159,6 +159,11 @@ namespace pen
         HINSTANCE hinstance;
         int       cmdshow;
     };
+
+    void os_terminate()
+    {
+        terminate_app = true;
+    }
 
     u32 window_init(void* params)
     {
@@ -211,7 +216,11 @@ namespace pen
             return E_FAIL;
 
         // console
-        AllocConsole();
+        if (!AttachConsole(ATTACH_PARENT_PROCESS))
+        {
+            AllocConsole();
+        }
+        
         freopen("CONIN$", "r", stdin);
         freopen("CONOUT$", "w", stdout);
         freopen("CONOUT$", "w", stderr);

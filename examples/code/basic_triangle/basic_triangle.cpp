@@ -6,6 +6,7 @@
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
+#include "os.h"
 
 pen::window_creation_params pen_window{
     1280,            // width
@@ -21,7 +22,10 @@ struct vertex
 
 void read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
 {
-    u32 a = 0;
+#ifdef _WIN32
+    pen::os_terminate();
+    printf("Test Complete");
+#endif
 }
 
 void test()
@@ -29,6 +33,8 @@ void test()
     static bool ran = false;
     if (ran)
         return;
+
+    printf("Run Test Basic Triangle");
 
     pen::resource_read_back_params rrbp;
     rrbp.block_size = 4;
