@@ -706,9 +706,10 @@ namespace put
                             q.get_matrix(rot_mat);
                             vec3f transform_translation = rot_mat.transform_vector(lerp_delta);
                             
-                            scene->transforms[jnode].rotation = q;
-                            scene->transforms[jnode].translation += transform_translation;
-                            scene->entities[jnode] |= CMP_TRANSFORM;
+                            // apply root motion to the root controller, so we bring along the meshes
+                            scene->transforms[n].rotation = q;
+                            scene->transforms[n].translation += transform_translation;
+                            scene->entities[n] |= CMP_TRANSFORM;
                             
                             continue;
                         }

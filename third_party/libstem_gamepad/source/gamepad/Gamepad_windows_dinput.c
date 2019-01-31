@@ -35,6 +35,9 @@
 #define __out
 #define __reserved
 #endif
+
+#pragma warning(disable:4838)
+
   
 #include "gamepad/Gamepad.h"
 #include "gamepad/Gamepad_private.h"

@@ -5,6 +5,7 @@
 #include "timer.h"
 #include <atomic>
 #include <math.h>
+#include "threads.h"
 
 // Keyboard and mouse
 #define KEY_PRESS 0x01
@@ -568,17 +569,36 @@ namespace pen
         Gamepad_shutdown();
     }
 
+    std::atomic<bool> a_detecting;
+    PEN_TRV detect_devices_async(void* params)
+    {
+        a_detecting = true;
+
+        pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+
+        pen::job* p_thread_info = job_params->job_info;
+        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+
+        Gamepad_detectDevices();
+
+        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+        pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+
+        a_detecting = false;
+        return PEN_THREAD_OK;
+    }
+
     void input_gamepad_update()
     {
         Gamepad_processEvents();
 
         // detect devices
         static u32       htimer = timer_create("gamepad_detect");
-        static const f32 detect_time = 1000.0f;
+        static const f32 detect_time = 10000.0f;
         static f32       detect_timer = detect_time;
         if (detect_timer <= 0)
         {
-            Gamepad_detectDevices();
+            pen::jobs_create_job(detect_devices_async, 1024 * 1024, nullptr, pen::THREAD_START_DETACHED);
             detect_timer = detect_time;
         }
 
@@ -612,6 +632,8 @@ namespace pen
         init_gamepad_mappings();
 
         Gamepad_detectDevices();
+
+        a_detecting = false;
     }
 
     void input_get_gamepad_state(u32 device_index, gamepad_state& gs)
