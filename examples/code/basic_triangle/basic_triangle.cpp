@@ -7,6 +7,11 @@
 #include "threads.h"
 #include "timer.h"
 #include "os.h"
+#include "str\Str.h"
+#include "loader.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
 
 pen::window_creation_params pen_window{
     1280,            // width
@@ -23,18 +28,62 @@ struct vertex
 void read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
 {
 #ifdef _WIN32
+    Str reference_filename = "data/textures/";
+    reference_filename.appendf("%s%s", pen_window.window_title, ".dds");
+
+    void* file_data = nullptr;
+    u32   file_data_size = 0;
+    u32 pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
+
+    u32 diffs = 0;
+
+    if (pen_err == PEN_ERR_OK)
+    {
+        // file exists do image compare
+        u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
+        u8* cmp_image = (u8*)data;
+
+        for (u32 i = 0; i < depth_pitch; i+=4)
+        {
+            // ref is bgra
+            if (ref_image[i+0] != cmp_image[i+2]) ++diffs;
+            if (ref_image[i+1] != cmp_image[i+1]) ++diffs;
+            if (ref_image[i+2] != cmp_image[i+0]) ++diffs;
+            if (ref_image[i+3] != cmp_image[i+3]) ++diffs;
+        }
+
+        Str output_file = pen_window.window_title;
+        output_file.append(".png");
+        stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
+
+        free(file_data);
+    }
+    else
+    {
+        // save reference image
+        Str output_file = pen_window.window_title;
+        output_file.append(".png");
+        stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, data, row_pitch);
+    }
+
     pen::os_terminate();
-    printf("Test Complete");
+    PEN_CONSOLE("test complete %i diffs (%2.3f%%)\n", diffs, (f32)diffs / (f32)depth_pitch );
 #endif
 }
 
 void test()
 {
+    // wait for the first swap.
+    static u32 count = 0;
+    if (count++ < 1)
+        return;
+
+    // run once, wait for result
     static bool ran = false;
     if (ran)
         return;
 
-    printf("Run Test Basic Triangle");
+    PEN_CONSOLE("running test %s\n", pen_window.window_title);
 
     pen::resource_read_back_params rrbp;
     rrbp.block_size = 4;
@@ -166,7 +215,7 @@ PEN_TRV pen::user_entry(void* params)
 
         pen::renderer_consume_cmd_buffer();
 
-        test();
+        // test();
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

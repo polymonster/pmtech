@@ -133,12 +133,14 @@ if not os.path.exists(build_dir):
 
 print("processing directory: " + texture_dir)
 
-source_dirs = [texture_dir, built_in_texture_dir]
+source_dirs = [texture_dir, built_in_texture_dir, "test_reference"]
 
 # dependencies.delete_orphaned_files(build_dir, platform_data_dir)
 
 dependency_info = dict()
 for source in source_dirs:
+    if not os.path.exists(source):
+        continue
     for root, dirs, files in os.walk(source):
         dest_dir = root.replace(source, build_dir)
         skip = False

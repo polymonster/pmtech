@@ -51,6 +51,7 @@ inline void output_debug(const c8* format, ...)
 #define PEN_SYSTEM system
 #endif
 #define PEN_LOG output_debug
+#define PEN_CONSOLE printf
 #define PEN_ASSERT assert
 #define PEN_ASSERT_MSG(A, M)                                                                                                 \
     assert(A);                                                                                                               \
