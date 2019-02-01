@@ -7,7 +7,7 @@
 #include "threads.h"
 #include "timer.h"
 #include "os.h"
-#include "str\Str.h"
+#include "str/Str.h"
 #include "loader.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
