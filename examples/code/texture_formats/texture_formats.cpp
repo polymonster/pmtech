@@ -8,8 +8,6 @@
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
 using namespace put;

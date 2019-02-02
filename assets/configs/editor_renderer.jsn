@@ -44,7 +44,7 @@
             viewport           : [0.0, 0.0, 1.0, 1.0],
             raster_state       : wireframe,
             depth_stencil_state: default,
-            pmfx_shader        : forward_render,
+            pmfx_shader        : pmfx_utility,
             technique          : constant_colour,
             scene              : main_scene,
             camera             : model_viewer_camera,
