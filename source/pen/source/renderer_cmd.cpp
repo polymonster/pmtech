@@ -8,7 +8,7 @@
 #include "threads.h"
 #include "timer.h"
 #include "file_system.h"
-#include "str\Str.h"
+#include "str/Str.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"

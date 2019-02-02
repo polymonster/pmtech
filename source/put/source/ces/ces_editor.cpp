@@ -3021,7 +3021,7 @@ namespace put
                     if (prim == 0)
                         continue;
 
-                    geometry_resource* gr = get_geometry_resource(k_primitives[prim - 1]);
+                    geometry_resource* gr = get_geometry_resource(k_primitives[prim]);
 
                     if (!pmfx::set_technique_perm(view.pmfx_shader, view.technique))
                         continue;
