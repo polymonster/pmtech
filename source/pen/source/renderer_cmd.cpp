@@ -7,6 +7,13 @@
 #include "slot_resource.h"
 #include "threads.h"
 #include "timer.h"
+#include "file_system.h"
+#include "str\Str.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
+
+extern pen::window_creation_params pen_window;
 
 namespace pen
 {
@@ -1294,5 +1301,87 @@ namespace pen
         cmd_buffer[put_pos].command_index = CMD_POP_PERF_MARKER;
 
         INC_WRAP(put_pos);
+    }
+
+    // graphics test
+    static bool s_run_test = false;
+    static void renderer_test_read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
+    {
+        Str reference_filename = "data/textures/";
+        reference_filename.appendf("%s%s", pen_window.window_title, ".dds");
+
+        void* file_data = nullptr;
+        u32   file_data_size = 0;
+        u32 pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
+
+        u32 diffs = 0;
+
+        if (pen_err == PEN_ERR_OK)
+        {
+            // file exists do image compare
+            u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
+            u8* cmp_image = (u8*)data;
+
+            for (u32 i = 0; i < depth_pitch; i += 4)
+            {
+                // ref is bgra
+                if (ref_image[i + 0] != cmp_image[i + 2]) ++diffs;
+                if (ref_image[i + 1] != cmp_image[i + 1]) ++diffs;
+                if (ref_image[i + 2] != cmp_image[i + 0]) ++diffs;
+                if (ref_image[i + 3] != cmp_image[i + 3]) ++diffs;
+            }
+
+            Str output_file = pen_window.window_title;
+            output_file.append(".png");
+            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
+
+            free(file_data);
+        }
+        else
+        {
+            // save reference image
+            Str output_file = pen_window.window_title;
+            output_file.append(".png");
+            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, data, row_pitch);
+        }
+
+        pen::os_terminate();
+        PEN_CONSOLE("test complete %i diffs (%2.3f%%)\n", diffs, (f32)diffs / (f32)depth_pitch);
+    }
+
+    void renderer_test_enable()
+    {
+        PEN_CONSOLE("renderer test enabled.\n");
+        s_run_test = true;
+    }
+
+    void renderer_test_run()
+    {
+        if (!s_run_test)
+            return;
+
+        // wait for the first swap.
+        static u32 count = 0;
+        if (count++ < 1)
+            return;
+
+        // run once, wait for result
+        static bool ran = false;
+        if (ran)
+            return;
+
+        PEN_CONSOLE("running test %s.\n", pen_window.window_title);
+
+        pen::resource_read_back_params rrbp;
+        rrbp.block_size = 4; // RGBA8
+        rrbp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
+        rrbp.resource_index = PEN_BACK_BUFFER_COLOUR;
+        rrbp.depth_pitch = pen_window.width * rrbp.block_size;
+        rrbp.data_size = pen_window.width * pen_window.height * rrbp.block_size;
+        rrbp.call_back_function = &renderer_test_read_complete;
+
+        pen::renderer_read_back_resource(rrbp);
+
+        ran = true;
     }
 } // namespace pen

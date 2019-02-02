@@ -336,6 +336,8 @@ namespace pen
     bool                 renderer_viewport_vup();
     const renderer_info& renderer_get_info();
     bool                 renderer_dispatch();
+    void                 renderer_test_run();
+    void                 renderer_test_enable();
 
     // resource management
     void renderer_realloc_resource(u32 i, u32 domain);

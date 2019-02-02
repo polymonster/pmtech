@@ -7,11 +7,6 @@
 #include "threads.h"
 #include "timer.h"
 #include "os.h"
-#include "str\Str.h"
-#include "loader.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb/stb_image_write.h"
 
 pen::window_creation_params pen_window{
     1280,            // width
@@ -24,6 +19,12 @@ struct vertex
 {
     float x, y, z, w;
 };
+
+/*
+#include "str\Str.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
 
 void read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
 {
@@ -97,6 +98,7 @@ void test()
 
     ran = true;
 }
+*/
 
 PEN_TRV pen::user_entry(void* params)
 {
@@ -215,7 +217,8 @@ PEN_TRV pen::user_entry(void* params)
 
         pen::renderer_consume_cmd_buffer();
 
-        // test();
+        // for unit test
+        pen::renderer_test_run();
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

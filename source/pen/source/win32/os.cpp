@@ -6,6 +6,7 @@
 #include "pen_string.h"
 #include "threads.h"
 #include "timer.h"
+#include "renderer.h"
 
 #include "data_struct.h"
 #include "str_utilities.h"
@@ -26,6 +27,22 @@ struct window_params
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
+    // console
+    if (!AttachConsole(ATTACH_PARENT_PROCESS))
+    {
+        AllocConsole();
+    }
+
+    freopen("CONIN$", "r", stdin);
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+
+    Str str_cmd = lpCmdLine;
+    if (pen::str_find(str_cmd, "-test") != -1)
+    {
+        pen::renderer_test_enable();
+    }
+
     // get working directory name
     char module_filename[MAX_PATH];
     GetModuleFileNameA(hInstance, module_filename, MAX_PATH);
@@ -214,16 +231,6 @@ namespace pen
 
         if (!g_hwnd)
             return E_FAIL;
-
-        // console
-        if (!AttachConsole(ATTACH_PARENT_PROCESS))
-        {
-            AllocConsole();
-        }
-        
-        freopen("CONIN$", "r", stdin);
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
 
         ShowWindow(g_hwnd, wp->cmdshow);
 
