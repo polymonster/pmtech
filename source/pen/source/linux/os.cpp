@@ -325,6 +325,7 @@ namespace pen
         return 0;
     }
 
+    static bool pen_terminate_app = false;
     bool os_update()
     {
         static bool init_jobs = false;
@@ -425,7 +426,6 @@ namespace pen
         pen::input_gamepad_update();
 
         // Check for terminate and poll terminated jobs
-        static bool pen_terminate_app = false;
         if (pen_terminate_app)
         {
             if (pen::jobs_terminate_all())
@@ -434,7 +434,12 @@ namespace pen
 
         return true;
     }
-
+    
+    void os_terminate()
+    {
+        pen_terminate_app = true;
+    }
+    
     u32 window_init(void* params)
     {
         return 0;

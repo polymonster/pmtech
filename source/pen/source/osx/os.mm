@@ -713,6 +713,12 @@ namespace pen
 
     void os_show_cursor(bool show)
     {
+        
+    }
+    
+    void os_terminate()
+    {
+        pen_terminate_app = true;
     }
 
     bool input_undo_pressed()
