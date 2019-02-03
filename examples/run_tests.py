@@ -23,7 +23,9 @@ if __name__ == "__main__":
     for test in test_list:
         exe = test.replace(".png", exe_ext)
         exe_path = os.path.join(test_dir, exe)
-        p = subprocess.Popen(exe_path + "-test", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmdline = exe_path + " -test"
+        print(cmdline)
+        p = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_code = p.wait()
         output, err = p.communicate()
         output = output.decode('utf-8')
