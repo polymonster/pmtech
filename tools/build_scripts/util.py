@@ -35,5 +35,11 @@ def sanitize_file_path(path):
     return path
 
 
+def get_platform_exe_ext(platform):
+    if platform == "win32":
+        return ".exe"
+    else:
+        return ""
+
 if __name__ == "__main__":
     print("util")
