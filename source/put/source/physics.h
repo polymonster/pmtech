@@ -44,6 +44,7 @@ namespace physics
         CMD_ATTACH_RB_TO_COMPOUND,
         CMD_RELEASE_ENTITY,
         CMD_CAST_RAY,
+        CMD_CAST_SPHERE,
         CMD_ADD_CONSTRAINT
     };
 
@@ -262,7 +263,9 @@ namespace physics
     struct ray_cast_result
     {
         vec3f point;
+        vec3f normal;
         u32   physics_handle;
+        void* user_data;
     };
 
     struct ray_cast_params
@@ -270,7 +273,27 @@ namespace physics
         lw_vec3f start;
         lw_vec3f end;
         u32      timestamp;
+        void* user_data;
         void (*callback)(const ray_cast_result& result);
+    };
+
+    struct sphere_cast_result
+    {
+        vec3f point;
+        vec3f normal;
+        u32   physics_handle;
+        void* user_data;
+    };
+
+    struct sphere_cast_params
+    {
+        vec3f   from;
+        vec3f   to;
+        vec3f   dimension;
+        u32     flags;
+        u32     timestamp;
+        void*   user_data;
+        void(*callback)(const sphere_cast_result& result);
     };
 
     struct physics_cmd
@@ -298,6 +321,7 @@ namespace physics
             attach_to_compound_params  attach_compound;
             add_p2p_constraint_params  add_p2p;
             ray_cast_params            ray_cast;
+            sphere_cast_params         sphere_cast;
         };
 
         physics_cmd(){};
@@ -317,8 +341,10 @@ namespace physics
 
     void add_to_world(const u32& entity_index);
     void remove_from_world(const u32& entity_index);
-    void cast_ray(const ray_cast_params& rcp);
     void add_collision_trigger(const collision_trigger_data& trigger_data);
+
+    void cast_ray(const ray_cast_params& rcp, bool immediate = false);          // non immedite will put a cast command in the buffer.
+    void cast_sphere(const sphere_cast_params& rcp, bool immediate = false);    // using non immediate may not be thread safe depending when you do it.
 
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
     void set_float(const u32& entity_index, const f32& fval, u32 cmd);

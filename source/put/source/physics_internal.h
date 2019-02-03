@@ -90,45 +90,6 @@ namespace physics
         ~physics_entity(){};
     };
 
-    struct physics_entity_v1
-    {
-        physics_entity_v1()
-        {
-            rigid_body = NULL;
-            multi_body = NULL;
-            compound_shape = NULL;
-            call_attach = 0;
-        }
-
-        btRigidBody* rigid_body;
-        u32          rigid_body_in_world;
-
-        btMultiBody*                                           multi_body;
-        btAlignedObjectArray<btMultiBodyJointMotor*>           joint_motors;
-        btAlignedObjectArray<btMultiBodyJointLimitConstraint*> joint_limits;
-        btAlignedObjectArray<btMultiBodyLinkCollider*>         link_colliders;
-
-        btHingeConstraint*       hinge_constraint;
-        btGeneric6DofConstraint* dof6_constraint;
-        btFixedConstraint*       fixed_constraint;
-        btPoint2PointConstraint* point_constraint;
-        btMultiBodyPoint2Point*  point_constraint_multi;
-
-        btDefaultMotionState* default_motion_state;
-        btCollisionShape*     collision_shape;
-        btCompoundShape*      compound_shape;
-        u32                   num_base_compound_shapes;
-
-        // for attaching and detaching rbs into compounds
-        void* p_attach_user_data;
-        s32   attach_shape_index;
-        u32   call_attach;
-        void (*attach_function)(void* user_data, s32 attach_index);
-
-        u32 group;
-        u32 mask;
-    };
-
     struct bullet_systems
     {
         btDefaultCollisionConfiguration* collision_config;
@@ -195,9 +156,6 @@ namespace physics
 
     extern readable_data g_readable_data;
 
-    //--------------------------------------------------------------
-    // FUNCTIONS
-    //--------------------------------------------------------------
     void physics_update(f32 dt);
     void physics_initialise();
 
@@ -211,7 +169,6 @@ namespace physics
     void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body);
     void add_multibody_internal(const multi_body_params& params, u32 resource_slot);
     void add_hinge_internal(const constraint_params& params, u32 resource_slot);
-    void add_constrained_rb_internal(const constraint_params& params, u32 resource_slot);
     void add_constraint_internal(const constraint_params& params, u32 resource_slot);
 
     void set_linear_velocity_internal(const set_v3_params& cmd);
@@ -242,10 +199,10 @@ namespace physics
     void release_entity_internal(u32 entity_index);
 
     void add_p2p_constraint_internal(const add_p2p_constraint_params& cmd, u32 resource_slot);
-    void remove_p2p_constraint_internal(u32 index);
     void set_p2p_constraint_pos_internal(const set_v3_params& cmd);
 
     void add_collision_watcher_internal(const collision_trigger_data& trigger_data);
 
     void cast_ray_internal(const ray_cast_params& rcp);
+    void cast_sphere_internal(const sphere_cast_params& ccp);
 } // namespace physics

@@ -973,7 +973,7 @@ namespace put
             // update draw call data
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
-                if (!(scene->entities[n] & CMP_MATERIAL))
+                if (!scene->cbuffer[n] || scene->cbuffer[n] == PEN_INVALID_HANDLE)
                     continue;
 
                 scene->draw_call_data[n].world_matrix = scene->world_matrices[n];

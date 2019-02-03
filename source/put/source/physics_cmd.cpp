@@ -158,6 +158,10 @@ namespace physics
                 cast_ray_internal(cmd.ray_cast);
                 break;
 
+            case CMD_CAST_SPHERE:
+                cast_sphere_internal(cmd.sphere_cast);
+                break;
+
             case CMD_ADD_CONSTRAINT:
                 add_constraint_internal(cmd.add_constraint_params, cmd.resource_slot);
                 break;
@@ -461,11 +465,31 @@ namespace physics
         INC_WRAP(put_pos);
     }
 
-    void cast_ray(const ray_cast_params& rcp)
+    void cast_ray(const ray_cast_params& rcp, bool immediate)
     {
-        cmd_buffer[put_pos].command_index = CMD_CAST_RAY;
-        cmd_buffer[put_pos].ray_cast = rcp;
+        if (!immediate)
+        {
+            cmd_buffer[put_pos].command_index = CMD_CAST_RAY;
+            cmd_buffer[put_pos].ray_cast = rcp;
+            INC_WRAP(put_pos);
+        }
+        else
+        {
+            cast_ray_internal(rcp);
+        }
+    }
 
-        INC_WRAP(put_pos);
+    void cast_sphere(const sphere_cast_params& scp, bool immediate)
+    {
+        if (!immediate)
+        {
+            cmd_buffer[put_pos].command_index = CMD_CAST_SPHERE;
+            cmd_buffer[put_pos].sphere_cast = scp
+            INC_WRAP(put_pos);
+        }
+        else
+        {
+            cast_sphere_internal(scp);
+        }
     }
 } // namespace physics

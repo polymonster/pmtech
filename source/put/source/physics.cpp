@@ -13,6 +13,11 @@ namespace physics
         return btVector3(v3.x, v3.y, v3.z);
     }
 
+    inline btVector3 from_vec3(const vec3f& v3)
+    {
+        return btVector3(v3.x, v3.y, v3.z);
+    }
+
     inline vec3f from_btvector(const btVector3& bt)
     {
         return vec3f(bt.getX(), bt.getY(), bt.getZ());
@@ -37,6 +42,20 @@ namespace physics
         u32                num_responsors;
     };
     collision_responsors g_collision_responsors;
+
+    // todo merge these 2
+    btTransform get_bttransform(const vec3f& p, const quat& q)
+    {
+        btTransform trans;
+        trans.setIdentity();
+        trans.setOrigin(btVector3(btScalar(p.x), btScalar(p.y), btScalar(p.z)));
+
+        btQuaternion bt_quat;
+        memcpy(&bt_quat, &q, sizeof(quat));
+        trans.setRotation(bt_quat);
+
+        return trans;
+    }
 
     btTransform get_bttransform_from_params(const rigid_body_params& params)
     {
@@ -698,35 +717,6 @@ namespace physics
         s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
         physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
 
-        /*
-        u32 fixed_con = 1;
-        if (rb == NULL)
-        {
-            fixed_con = 0;
-
-            //create the actual rigid body
-            rb = create_rb_internal( next_entity, params.rb, 0 );
-
-            next_entity.rigid_body = rb;
-            next_entity.rigid_body_in_world = 1;
-
-            next_entity.group = params.rb.group;
-            next_entity.mask = params.rb.mask;
-
-        }
-
-        if (fixed_body == NULL)
-        {
-            //create a fixed rigid body as the anchor
-            rigid_body_params fixed_rbp;
-            fixed_rbp = params.rb;
-            fixed_rbp.mass = 0.0f;
-            fixed_rbp.shape = 0;
-            fixed_body = create_rb_internal( next_entity, fixed_rbp, 0 );
-            fixed_body->setActivationState( DISABLE_DEACTIVATION );
-        }
-        */
-
         // reference frames are identity
         btTransform frameInA, frameInB;
         frameInA.setIdentity();
@@ -1226,23 +1216,55 @@ namespace physics
 
         btCollisionWorld::ClosestRayResultCallback ray_callback(from, to);
 
-        btVector3 pick_pos = btVector3(0.0, 0.0, 0.0);
-        s32       user_index = -1;
+        ray_cast_result rcr;
+        rcr.user_data = rcp.user_data;
+
+        rcr.physics_handle = -1;
         s_bullet_systems.dynamics_world->rayTest(from, to, ray_callback);
         if (ray_callback.hasHit())
         {
-            pick_pos = ray_callback.m_hitPointWorld;
+            rcr.point = from_btvector(ray_callback.m_hitPointWorld);
+            rcr.normal = from_btvector(ray_callback.m_hitNormalWorld);
+
             btRigidBody* body = (btRigidBody*)btRigidBody::upcast(ray_callback.m_collisionObject);
 
             if (body)
-                user_index = body->getUserIndex();
+                rcr.physics_handle = body->getUserIndex();
         }
 
-        ray_cast_result rcr;
-        rcr.point = from_btvector(pick_pos);
-        rcr.physics_handle = user_index;
-
         rcp.callback(rcr);
+    }
+
+    void cast_sphere_internal(const sphere_cast_params& scp)
+    {
+        btTransform from = get_bttransform(scp.from, quat());
+        btTransform to = get_bttransform(scp.to, quat());
+
+        btVector3 vfrom = from_vec3(scp.from);
+        btVector3 vto = from_vec3(scp.to);
+
+        btSphereShape shape = btSphereShape(btScalar(scp.dimension.x));
+
+        btCollisionWorld::ClosestConvexResultCallback cast_callback = btCollisionWorld::ClosestConvexResultCallback(vfrom, vto);
+
+        s_bullet_systems.dynamics_world->convexSweepTest((btConvexShape*)&shape, from, to, cast_callback);
+
+        sphere_cast_result sr;
+        sr.user_data = scp.user_data;
+
+        sr.physics_handle = -1;
+        if (cast_callback.hasHit())
+        {
+            btRigidBody* body = (btRigidBody*)btRigidBody::upcast(cast_callback.m_hitCollisionObject);
+
+            if (body)
+                sr.physics_handle = body->getUserIndex();
+
+            sr.point = from_btvector(cast_callback.m_hitPointWorld);
+            sr.normal = from_btvector(cast_callback.m_hitNormalWorld);
+        }
+
+        scp.callback(sr);
     }
 } // namespace physics
 
