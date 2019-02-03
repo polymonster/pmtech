@@ -21,7 +21,7 @@
 namespace physics
 {
 #define MAX_COMMANDS (1 << 12)
-#define INC_WRAP(V) V = (V + 1) & (MAX_COMMANDS - 1);
+#define INC_WRAP(V) (V = (V + 1) & (MAX_COMMANDS - 1))
 
     physics_cmd cmd_buffer[MAX_COMMANDS];
     u32         put_pos = 0;
@@ -484,7 +484,7 @@ namespace physics
         if (!immediate)
         {
             cmd_buffer[put_pos].command_index = CMD_CAST_SPHERE;
-            cmd_buffer[put_pos].sphere_cast = scp
+            cmd_buffer[put_pos].sphere_cast = scp;
             INC_WRAP(put_pos);
         }
         else
