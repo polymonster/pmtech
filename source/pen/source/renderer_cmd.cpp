@@ -1351,6 +1351,7 @@ namespace pen
 
     void renderer_test_enable()
     {
+        PEN_LOG("Testing\n");
         PEN_CONSOLE("renderer test enabled.\n");
         s_run_test = true;
     }
