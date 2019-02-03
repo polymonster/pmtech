@@ -135,6 +135,9 @@ PEN_TRV pen::user_entry(void* params)
         // present
         pen::renderer_present();
 
+        // for unit test
+        pen::renderer_test_run();
+
         pen::renderer_consume_cmd_buffer();
 
         // msg from the engine we want to terminate

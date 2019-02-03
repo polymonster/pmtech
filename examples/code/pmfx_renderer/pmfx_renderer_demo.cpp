@@ -320,6 +320,10 @@ PEN_TRV pen::user_entry(void* params)
         user_thread_time = frame_time;
 
         pen::renderer_present();
+
+        // for unit test
+        pen::renderer_test_run();
+
         pen::renderer_consume_cmd_buffer();
 
         pmfx::poll_for_changes();

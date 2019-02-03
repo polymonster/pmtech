@@ -20,6 +20,11 @@ struct vertex
     float x, y, z, w;
 };
 
+bool test()
+{
+    return true;
+}
+
 PEN_TRV pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
