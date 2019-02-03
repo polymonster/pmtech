@@ -1324,9 +1324,9 @@ namespace pen
 
             for (u32 i = 0; i < depth_pitch; i += 4)
             {
-                if (ref_image[i + 0] != cmp_image[i + 0]) ++diffs;
+                if (ref_image[i + 2] != cmp_image[i + 0]) ++diffs;
                 if (ref_image[i + 1] != cmp_image[i + 1]) ++diffs;
-                if (ref_image[i + 2] != cmp_image[i + 2]) ++diffs;
+                if (ref_image[i + 0] != cmp_image[i + 2]) ++diffs;
                 if (ref_image[i + 3] != cmp_image[i + 3]) ++diffs;
             }
 
@@ -1344,8 +1344,9 @@ namespace pen
             stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, data, row_pitch);
         }
 
-        pen::os_terminate();
-        PEN_CONSOLE("test complete %i diffs (%2.3f%%)\n", diffs, (f32)depth_pitch / (f32)diffs);
+        f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
+        PEN_CONSOLE("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
+        pen::os_terminate(0);
     }
 
     void renderer_test_enable()

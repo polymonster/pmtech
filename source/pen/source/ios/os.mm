@@ -175,6 +175,11 @@ namespace pen
 
         return true;
     }
+	
+	void os_terminate(u32 error_code)
+    {
+		// stub 
+    }
 
     bool input_undo_pressed()
     {

@@ -20,12 +20,13 @@ if __name__ == "__main__":
         for file in files:
             test_list.append(os.path.basename(file))
     err = 0
+    os.chdir(test_dir)
     for test in test_list:
         exe = test.replace(".png", exe_ext)
-        exe_path = os.path.join(test_dir, exe)
-        cmdline = exe_path + " -test"
-        print(cmdline)
-        p = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if not os.path.exists(exe):
+            continue
+        cmdline = exe + " -test"
+        p = subprocess.Popen(cmdline, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_code = p.wait()
         output, err = p.communicate()
         output = output.decode('utf-8')

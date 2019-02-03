@@ -22,7 +22,7 @@ namespace pen
     void  window_set_size(s32 width, s32 height);
 
     // OS
-    void      os_terminate();
+    void      os_terminate(u32 return_code);
     bool      os_update();
     void      os_set_cursor_pos(u32 client_x, u32 client_y);
     void      os_show_cursor(bool show);

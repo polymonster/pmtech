@@ -78,6 +78,7 @@ void users()
     PEN_LOG(pen_user_info.user_name);
 }
 
+static u32 s_error_code = 0;
 int main(int argc, char* argv[])
 {
     Visual*              visual;
@@ -179,7 +180,7 @@ int main(int argc, char* argv[])
     XDestroyWindow(_display, _window);
     XCloseDisplay(_display);
 
-    return 0;
+    return s_error_code;
 }
 
 namespace pen
@@ -435,8 +436,9 @@ namespace pen
         return true;
     }
     
-    void os_terminate()
+    void os_terminate(u32 error_code)
     {
+		s_error_code = error_code;
         pen_terminate_app = true;
     }
     

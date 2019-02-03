@@ -25,6 +25,8 @@ struct window_params
     int       cmdshow;
 };
 
+static u32 s_return_code = 0;
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
     // console
@@ -75,7 +77,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     pen::renderer_init((void*)&hwnd, true);
 
     // exit program
-    return 0;
+    return s_return_code;
 }
 
 extern pen::window_creation_params pen_window;
@@ -177,8 +179,9 @@ namespace pen
         int       cmdshow;
     };
 
-    void os_terminate()
+    void os_terminate(u32 return_code)
     {
+        s_return_code = return_code;
         terminate_app = true;
     }
 

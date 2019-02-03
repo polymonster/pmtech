@@ -543,6 +543,7 @@ namespace
     }
 }
 
+static u32 s_error_code = 0;
 int main(int argc, char** argv)
 {
     // get working dir
@@ -609,6 +610,8 @@ int main(int argc, char** argv)
 
     // invoke renderer specific update for main thread
     run();
+	
+	return s_error_code;
 }
 
 namespace pen
@@ -716,8 +719,9 @@ namespace pen
         
     }
     
-    void os_terminate()
+    void os_terminate(u32 error_code)
     {
+		s_error_code = error_code;
         pen_terminate_app = true;
     }
 
