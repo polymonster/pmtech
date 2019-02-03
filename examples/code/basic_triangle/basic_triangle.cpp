@@ -1,3 +1,6 @@
+#define CATCH_CONFIG_RUNNER
+#include "catch/catch.hpp"
+
 #include "console.h"
 #include "file_system.h"
 #include "memory.h"
@@ -20,8 +23,24 @@ struct vertex
     float x, y, z, w;
 };
 
+bool test()
+{
+    return true;
+}
+
+TEST_CASE("Dummy Test", "Test") {
+    REQUIRE(test());
+}
+
 PEN_TRV pen::user_entry(void* params)
 {
+    char* argv[] =
+    {
+        "prog"
+    };
+
+    int result = Catch::Session().run(1, argv);
+
     // unpack the params passed to the thread and signal to the engine it ok to proceed
     pen::job_thread_params* job_params = (pen::job_thread_params*)params;
     pen::job*               p_thread_info = job_params->job_info;
