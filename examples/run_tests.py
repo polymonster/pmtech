@@ -32,6 +32,9 @@ if __name__ == "__main__":
         output = output.strip(" ")
         output = output.split("\n")
         print("running test: " + exe)
+        for e in output:
+            if e != "":
+                print(e)
         if error_code != 0:
             err = error_code
             print("failed with code: " + str(error_code))
