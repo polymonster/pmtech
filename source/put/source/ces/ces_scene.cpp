@@ -973,8 +973,13 @@ namespace put
             // update draw call data
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
-                if (!scene->cbuffer[n] || scene->cbuffer[n] == PEN_INVALID_HANDLE)
-                    continue;
+                if (scene->entities[n] & CMP_MATERIAL)
+                {
+                    // per node material cbuffer
+                    if (is_valid(scene->materials[n].material_cbuffer))
+                        pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0],
+                            scene->materials[n].material_cbuffer_size);
+                }
 
                 scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
 
@@ -1001,12 +1006,10 @@ namespace put
                 // todo mark dirty?
 
                 // per node cbuffer
-                pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
-
-                // per node material cbuffer
-                if (is_valid(scene->materials[n].material_cbuffer))
-                    pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0],
-                                                scene->materials[n].material_cbuffer_size);
+                if (scene->cbuffer[n] > 0)
+                {
+                    pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
+                }
             }
 
             // update instance buffers

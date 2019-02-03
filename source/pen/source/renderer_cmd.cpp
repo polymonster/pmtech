@@ -1331,8 +1331,8 @@ namespace pen
                 if (ref_image[i + 3] != cmp_image[i + 3]) ++diffs;
             }
 
-            Str output_file = pen_window.window_title;
-            output_file.append(".png");
+            Str output_file = "";
+            output_file.appendf("../../test_reference/%s.png", pen_window.window_title);
             stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
 
             free(file_data);
@@ -1340,8 +1340,8 @@ namespace pen
         else
         {
             // save reference image
-            Str output_file = pen_window.window_title;
-            output_file.append(".png");
+            Str output_file = "";
+            output_file.appendf("../../test_reference/%s.png", pen_window.window_title);
             stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, data, row_pitch);
         }
 
@@ -1351,7 +1351,6 @@ namespace pen
 
     void renderer_test_enable()
     {
-        PEN_LOG("Testing\n");
         PEN_CONSOLE("renderer test enabled.\n");
         s_run_test = true;
     }

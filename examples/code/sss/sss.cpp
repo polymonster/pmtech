@@ -213,6 +213,10 @@ PEN_TRV pen::user_entry(void* params)
         main_camera.flags |= CF_INVALIDATED;
 
         pen::renderer_present();
+
+        // for unit test
+        pen::renderer_test_run();
+
         pen::renderer_consume_cmd_buffer();
 
         put::vgt::post_update();

@@ -340,6 +340,9 @@ PEN_TRV pen::user_entry(void* params)
 
         pen::renderer_present();
 
+        // for unit test
+        pen::renderer_test_run();
+
         pen::renderer_consume_cmd_buffer();
 
         pmfx::poll_for_changes();
