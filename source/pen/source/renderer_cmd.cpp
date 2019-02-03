@@ -1324,10 +1324,9 @@ namespace pen
 
             for (u32 i = 0; i < depth_pitch; i += 4)
             {
-                // ref is bgra
-                if (ref_image[i + 0] != cmp_image[i + 2]) ++diffs;
+                if (ref_image[i + 0] != cmp_image[i + 0]) ++diffs;
                 if (ref_image[i + 1] != cmp_image[i + 1]) ++diffs;
-                if (ref_image[i + 2] != cmp_image[i + 0]) ++diffs;
+                if (ref_image[i + 2] != cmp_image[i + 2]) ++diffs;
                 if (ref_image[i + 3] != cmp_image[i + 3]) ++diffs;
             }
 
@@ -1346,7 +1345,7 @@ namespace pen
         }
 
         pen::os_terminate();
-        PEN_CONSOLE("test complete %i diffs (%2.3f%%)\n", diffs, (f32)diffs / (f32)depth_pitch);
+        PEN_CONSOLE("test complete %i diffs (%2.3f%%)\n", diffs, (f32)depth_pitch / (f32)diffs);
     }
 
     void renderer_test_enable()
