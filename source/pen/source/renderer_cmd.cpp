@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "console.h"
 #include "memory.h"
 #include "os.h"
@@ -1315,13 +1317,16 @@ namespace pen
         u32 pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
 
         u32 diffs = 0;
+        
+        // make test results
+        PEN_SYSTEM("mkdir ../../test_results");
 
         if (pen_err == PEN_ERR_OK)
         {
             // file exists do image compare
             u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
             u8* cmp_image = (u8*)data;
-
+            
             for (u32 i = 0; i < depth_pitch; i += 4)
             {
                 if (ref_image[i + 2] != cmp_image[i + 0]) ++diffs;
@@ -1331,7 +1336,7 @@ namespace pen
             }
 
             Str output_file = "";
-            output_file.appendf("../../test_reference/%s.png", pen_window.window_title);
+            output_file.appendf("../../test_results/%s.png", pen_window.window_title);
             stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
 
             free(file_data);
@@ -1346,7 +1351,14 @@ namespace pen
 
         f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
         PEN_CONSOLE("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
-        PEN_SYSTEM("echo Hello World Echo!");
+        
+        Str output_results_file = "";
+        output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
+        
+        std::ofstream ofs(output_results_file.c_str());
+        ofs << diffs << "/" << depth_pitch << ", " << percentage;
+        ofs.close();
+        
         pen::os_terminate(0);
     }
 
@@ -1377,7 +1389,8 @@ namespace pen
         rrbp.block_size = 4; // RGBA8
         rrbp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
         rrbp.resource_index = PEN_BACK_BUFFER_COLOUR;
-        rrbp.depth_pitch = pen_window.width * rrbp.block_size;
+        rrbp.row_pitch = pen_window.width * rrbp.block_size;
+        rrbp.depth_pitch = pen_window.width * pen_window.height * rrbp.block_size;
         rrbp.data_size = pen_window.width * pen_window.height * rrbp.block_size;
         rrbp.call_back_function = &renderer_test_read_complete;
 

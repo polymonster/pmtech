@@ -1777,6 +1777,11 @@ namespace pen
 #endif
         CHECK_CALL(glBindBuffer(res.type, 0));
     }
+    
+    void update_backbuffer_texture()
+    {
+        
+    }
 
     void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
     {
@@ -1784,7 +1789,41 @@ namespace pen
         resource_allocation& res = resource_pool[rrbp.resource_index];
 
         GLuint t = res.type;
-        if (t == RES_TEXTURE || t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)
+        if( rrbp.resource_index == 0 )
+        {
+            u32 w = rrbp.row_pitch / rrbp.block_size;
+            u32 h = rrbp.depth_pitch / rrbp.row_pitch;
+            
+            // special case reading the backbuffer
+            CHECK_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
+            
+            static u32 resolve_buffer = -1;
+            if(resolve_buffer == -1)
+            {
+                GLuint handle;
+                CHECK_CALL(glGenTextures(1, &handle));
+                CHECK_CALL(glBindTexture(0, handle));
+                CHECK_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
+                
+                CHECK_CALL(glGenFramebuffers(1, &resolve_buffer));
+                CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, handle, 0));
+            }
+            
+            CHECK_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolve_buffer));
+            CHECK_CALL(glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_LINEAR));
+            
+            CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, resolve_buffer));
+            
+            void* data = memory_alloc(rrbp.data_size);
+            CHECK_CALL(glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data));
+            
+            rrbp.call_back_function(data, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
+            
+            memory_free(data);
+            
+            CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+        }
+        else if (t == RES_TEXTURE || t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)
         {
             u32 sized_format, format, type;
             get_texture_format(rrbp.format, sized_format, format, type);

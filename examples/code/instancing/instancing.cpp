@@ -139,8 +139,7 @@ void animate_instances(entity_scene* scene)
         scene->entities.data[i] |= CMP_TRANSFORM;
     }
 
-    // debug / test array cost vs operator [] in component entity system
-#if 0
+#if 0 // debug / test array cost vs operator [] in component entity system
     f32 array_cost = pen::timer_elapsed_ms(timer);
     pen::timer_start(timer);
     for (s32 i = 2; i < scene->num_nodes; ++i)

@@ -561,7 +561,19 @@ int main(int argc, char** argv)
             working_dir = pen::str_substr(working_dir, 0, pos + 1);
     }
 
+    //todo find data and set working dir
+    
     pen_user_info.working_directory = working_dir.c_str();
+    
+    // args
+    if(argc > 1)
+    {
+        if(strcmp(argv[1], "-test") == 0)
+        {
+            // enter test
+            pen::renderer_test_enable();
+        }
+    }
     
     // window creation
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];

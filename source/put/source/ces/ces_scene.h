@@ -341,29 +341,17 @@ namespace put
         {
             u32 size = sizeof(T);
             T*  data = nullptr;
-
-            pen_inline T& operator[](size_t index)
-            {
-                return data[index];
-            }
-
-            pen_inline const T& operator[](size_t index) const
-            {
-                return data[index];
-            }
+            
+            T& operator[](size_t index);
+            const T& operator[](size_t index) const;
         };
 
         struct generic_cmp_array
         {
             u32   size;
             void* data;
-
-            pen_inline void* operator[](size_t index)
-            {
-                u8* d = (u8*)data;
-                u8* di = &d[index * size];
-                return (void*)(di);
-            }
+            
+            void* operator[](size_t index);
         };
 
         struct entity_scene
@@ -470,6 +458,26 @@ namespace put
         void update_view_flags(entity_scene* scene, bool error);
 
         void initialise_free_list(entity_scene* scene);
+        
+        // separate implementations to make clang always inline
+        template <typename T>
+        pen_inline T& cmp_array<T>::operator[](size_t index)
+        {
+            return data[index];
+        }
+        
+        template <typename T>
+        pen_inline const T& cmp_array<T>::operator[](size_t index) const
+        {
+            return data[index];
+        }
+        
+        pen_inline void* generic_cmp_array::operator[](size_t index)
+        {
+            u8* d = (u8*)data;
+            u8* di = &d[index * size];
+            return (void*)(di);
+        }
     } // namespace ces
 } // namespace put
 
