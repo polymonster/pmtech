@@ -252,7 +252,8 @@ namespace
         u32 product_id;
         u32 api_id;
         u32 button_map[PGP_MAX_BUTTONS];
-        u32 axes_map[PGP_MAX_AXIS];
+        u32 axis_map[PGP_MAX_AXIS];
+        f32 axis_flip[PGP_MAX_AXIS];
     };
 
     pen::raw_gamepad_state s_raw_gamepads[PGP_MAX_GAMEPADS] = {};
@@ -265,7 +266,10 @@ namespace
             map.button_map[b] = PEN_INVALID_HANDLE;
 
         for (u32 a = 0; a < PGP_MAX_AXIS; ++a)
-            map.axes_map[a] = PEN_INVALID_HANDLE;
+            map.axis_map[a] = PEN_INVALID_HANDLE;
+
+        for (u32 a = 0; a < PGP_MAX_AXIS; ++a)
+            map.axis_flip[a] = 1.0f;
     }
 
     void init_gamepad_values(pen::gamepad_state& gs)
@@ -291,7 +295,7 @@ namespace
             no.button_map[i] = i;
 
         for (u32 i = 0; i < PGP_AXIS_NUM; ++i)
-            no.axes_map[i] = i;
+            no.axis_map[i] = i;
 
         sb_push(s_device_maps, no);
 
@@ -313,14 +317,14 @@ namespace
         ps4.button_map[11] = PGP_BUTTON_R3;
         ps4.button_map[12] = PGP_BUTTON_PLATFORM;
         ps4.button_map[13] = PGP_BUTTON_TOUCH_PAD;
-        ps4.axes_map[0] = PGP_AXIS_LEFT_STICK_X;
-        ps4.axes_map[1] = PGP_AXIS_LEFT_STICK_Y;
-        ps4.axes_map[2] = PGP_AXIS_RIGHT_STICK_X;
-        ps4.axes_map[3] = PGP_AXIS_RIGHT_STICK_Y;
-        ps4.axes_map[4] = DPAD_X_AXIS;
-        ps4.axes_map[5] = DPAD_Y_AXIS;
-        ps4.axes_map[6] = PGP_AXIS_LTRIGGER;
-        ps4.axes_map[7] = PGP_AXIS_RTRIGGER;
+        ps4.axis_map[0] = PGP_AXIS_LEFT_STICK_X;
+        ps4.axis_map[1] = PGP_AXIS_LEFT_STICK_Y;
+        ps4.axis_map[2] = PGP_AXIS_RIGHT_STICK_X;
+        ps4.axis_map[3] = PGP_AXIS_RIGHT_STICK_Y;
+        ps4.axis_map[4] = DPAD_X_AXIS;
+        ps4.axis_map[5] = DPAD_Y_AXIS;
+        ps4.axis_map[6] = PGP_AXIS_LTRIGGER;
+        ps4.axis_map[7] = PGP_AXIS_RTRIGGER;
         sb_push(s_device_maps, ps4);
 
         // Xbox 360
@@ -339,13 +343,13 @@ namespace
         x360.button_map[7] = PGP_BUTTON_START;
         x360.button_map[8] = PGP_BUTTON_L3;
         x360.button_map[9] = PGP_BUTTON_R3;
-        x360.axes_map[0] = PGP_AXIS_LEFT_STICK_X;
-        x360.axes_map[1] = PGP_AXIS_LEFT_STICK_Y;
-        x360.axes_map[2] = TRIGGER_X360;
-        x360.axes_map[3] = PGP_AXIS_RIGHT_STICK_X;
-        x360.axes_map[4] = PGP_AXIS_RIGHT_STICK_Y;
-        x360.axes_map[5] = DPAD_X_AXIS;
-        x360.axes_map[6] = DPAD_Y_AXIS;
+        x360.axis_map[0] = PGP_AXIS_LEFT_STICK_X;
+        x360.axis_map[1] = PGP_AXIS_LEFT_STICK_Y;
+        x360.axis_map[2] = TRIGGER_X360;
+        x360.axis_map[3] = PGP_AXIS_RIGHT_STICK_X;
+        x360.axis_map[4] = PGP_AXIS_RIGHT_STICK_Y;
+        x360.axis_map[5] = DPAD_X_AXIS;
+        x360.axis_map[6] = DPAD_Y_AXIS;
         sb_push(s_device_maps, x360);
 
         // DS4 with windows XInput
@@ -355,12 +359,12 @@ namespace
         ps4x.vendor_id = 1356;
         ps4x.product_id = 1476;
         ps4x.api_id = API_XINPUT;
-        ps4x.axes_map[0] = PGP_AXIS_RIGHT_STICK_Y;
-        ps4x.axes_map[1] = PGP_AXIS_RIGHT_STICK_X;
-        ps4x.axes_map[2] = PGP_AXIS_LEFT_STICK_Y;
-        ps4x.axes_map[3] = PGP_AXIS_LEFT_STICK_X;
-        ps4x.axes_map[7] = PGP_AXIS_LTRIGGER;
-        ps4x.axes_map[6] = PGP_AXIS_RTRIGGER;
+        ps4x.axis_map[0] = PGP_AXIS_RIGHT_STICK_Y;
+        ps4x.axis_map[1] = PGP_AXIS_RIGHT_STICK_X;
+        ps4x.axis_map[2] = PGP_AXIS_LEFT_STICK_Y;
+        ps4x.axis_map[3] = PGP_AXIS_LEFT_STICK_X;
+        ps4x.axis_map[7] = PGP_AXIS_LTRIGGER;
+        ps4x.axis_map[6] = PGP_AXIS_RTRIGGER;
         sb_push(s_device_maps, ps4x);
 
         // Xbox 360 with XInput
@@ -383,12 +387,14 @@ namespace
         x360x.button_map[4] = PGP_BUTTON_START;
         x360x.button_map[6] = PGP_BUTTON_L3;
         x360x.button_map[7] = PGP_BUTTON_R3;
-        x360x.axes_map[0] = PGP_AXIS_LEFT_STICK_X;
-        x360x.axes_map[1] = PGP_AXIS_LEFT_STICK_Y;
-        x360x.axes_map[2] = PGP_AXIS_RIGHT_STICK_X;
-        x360x.axes_map[3] = PGP_AXIS_RIGHT_STICK_Y;
-        x360x.axes_map[4] = PGP_AXIS_LTRIGGER;
-        x360x.axes_map[5] = PGP_AXIS_RTRIGGER;
+        x360x.axis_map[0] = PGP_AXIS_LEFT_STICK_X;
+        x360x.axis_map[1] = PGP_AXIS_LEFT_STICK_Y;
+        x360x.axis_map[2] = PGP_AXIS_RIGHT_STICK_X;
+        x360x.axis_map[3] = PGP_AXIS_RIGHT_STICK_Y;
+        x360x.axis_map[4] = PGP_AXIS_LTRIGGER;
+        x360x.axis_map[5] = PGP_AXIS_RTRIGGER;
+        x360x.axis_flip[1] = -1.0f;
+        x360x.axis_flip[3] = -1.0f;
         sb_push(s_device_maps, x360x);
     }
 
@@ -413,14 +419,14 @@ namespace
         if (mapping == PEN_INVALID_HANDLE)
             return;
 
-        u32 ra = s_device_maps[mapping].axes_map[axis];
+        u32 ra = s_device_maps[mapping].axis_map[axis];
         if (ra == PEN_INVALID_HANDLE)
             return;
 
         // apply basic mapping and bail early
         if (ra < TRIGGER_X360)
         {
-            s_gamepads[gi].axis[ra] = s_raw_gamepads[gi].axis[axis];
+            s_gamepads[gi].axis[ra] = s_raw_gamepads[gi].axis[axis] * s_device_maps[mapping].axis_flip[axis];
             return;
         }
 

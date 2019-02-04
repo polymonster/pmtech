@@ -190,20 +190,35 @@ def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, f
         shutil.copy(src_file, dest_file)
 
 
+def configure_windows_sdk(build_config):
+    if "sdk_version" in build_config.keys():
+        if os.path.exists(build_config["sdk_version"]):
+            return
+    print("Windows SDK version not set.")
+    print("Please enter the windows sdk you want to use.")
+    print("You can find available sdk versions in:")
+    print("Visual Studio > Project Properties > General > Windows SDK Version.")
+    input_sdk = str(input())
+    build_config["sdk_version"] = input_sdk
+    bj = open("build_config_user.json", "w+")
+    bj.write(json.dumps(build_config, indent=4))
+    bj.close()
+    return
+
+
 def configure_vc_vars_all(build_config):
     if "vcvarsall_dir" in build_config.keys():
         if os.path.exists(build_config["vcvarsall_dir"]):
             return
-
     while True:
-        print("Cannot find 'vcvarsall.exe'")
-        print("Please enter the full path to the vc2017 installation directory containing vcvarsall.exe")
+        print("Cannot find 'vcvarsall.bat'")
+        print("Please enter the full path to the vc2017 installation directory containing vcvarsall.bat")
         input_dir = str(input())
         input_dir = input_dir.strip("\"")
         input_dir = os.path.normpath(input_dir)
         if os.path.exists(input_dir):
             build_config["vcvarsall_dir"] = input_dir
-            bj = open("build_config.json", "w+")
+            bj = open("build_config_user.json", "w+")
             bj.write(json.dumps(build_config, indent=4))
             bj.close()
             return
@@ -219,6 +234,7 @@ def build_thirdparty_libs():
         third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
     else:
         configure_vc_vars_all(build_config)
+        configure_windows_sdk(build_config)
 
         args = ""
         if "pmtech_dir" in build_config.keys():
