@@ -19,7 +19,7 @@ if __name__ == "__main__":
     for root, dirs, files in os.walk(reference_dir):
         for file in files:
             test_list.append(os.path.basename(file))
-    err = 0
+    exit_code = 0
     os.chdir(test_dir)
     for test in test_list:
         exe = test.replace(".png", exe_ext)
@@ -37,10 +37,10 @@ if __name__ == "__main__":
             if e != "":
                 print(e)
         if error_code != 0:
-            err = error_code
+            exit_code = error_code
             print("failed with code: " + str(error_code))
         else:
             print("passed")
-    sys.exit(err)
+    sys.exit(exit_code)
 
 
