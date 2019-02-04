@@ -1346,6 +1346,7 @@ namespace pen
 
         f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
         PEN_CONSOLE("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
+        PEN_SYSTEM("echo Hello World Echo!");
         pen::os_terminate(0);
     }
 
