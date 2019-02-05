@@ -37,13 +37,13 @@ PEN_TRV pen::user_entry(void* params)
 
     // create 2 clear states one for the render target and one for the main screen, so we can see the difference
     static pen::clear_state cs = {
-        1.0f, 0.0, 1.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        0.5f, 0.0, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
     u32 clear_state = pen::renderer_create_clear_state(cs);
 
     static pen::clear_state cs_rt = {
-        0.0f, 1.0, 0.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        0.0f, 0.0, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
     u32 clear_state_rt = pen::renderer_create_clear_state(cs_rt);
@@ -101,21 +101,27 @@ PEN_TRV pen::user_entry(void* params)
 
     u32 triangle_vertex_buffer = pen::renderer_create_buffer(bcp);
 
+    // manually handle differences with gl coordinate system
+    f32 uv_y_a = 1.0f;
+    f32 uv_y_b = 0.0f;
+    
+    if(pen::renderer_viewport_vup())
+        std::swap(uv_y_a, uv_y_b);
+    
     // create vertex buffer for a quad
     textured_vertex quad_vertices[] = {
         -0.5f, -0.5f, 0.5f, 1.0f, // p1
-        0.0f,  0.0f,              // uv1
-
+        0.0f,  uv_y_a,            // uv1
+        
         -0.5f, 0.5f,  0.5f, 1.0f, // p2
-        0.0f,  1.0f,              // uv2
-
+        0.0f,  uv_y_b,            // uv2
+        
         0.5f,  0.5f,  0.5f, 1.0f, // p3
-        1.0f,  1.0f,              // uv3
-
+        1.0f,  uv_y_b,            // uv3
+        
         0.5f,  -0.5f, 0.5f, 1.0f, // p4
-        1.0f,  0.0f,              // uv4
+        1.0f,  uv_y_a,            // uv4
     };
-
     bcp.buffer_size = sizeof(textured_vertex) * 4;
     bcp.data = (void*)&quad_vertices[0];
 

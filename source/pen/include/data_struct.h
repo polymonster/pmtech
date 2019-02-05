@@ -171,7 +171,7 @@ namespace pen
 		
 		void grow(u32 min_capacity)
 		{
-			if(_capacity < min_capacity)
+			if(_capacity <= min_capacity)
 			{
 				_resources = (T*)pen::memory_realloc(_resources, (min_capacity * 2) * sizeof(T));
 				_capacity = min_capacity * 2;

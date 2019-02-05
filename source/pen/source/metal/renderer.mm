@@ -32,7 +32,7 @@ namespace // structs and static vars
     {
         MTLPixelFormat colour_attachments[pen::MAX_MRT];
     };
-
+    
     struct current_state
     {
         // metal
@@ -52,6 +52,7 @@ namespace // structs and static vars
         id<MTLFunction>      fragment_shader;
         index_buffer_cmd     index_buffer;
         u32                  input_layout;
+        u32                  blend_state;
     };
 
     struct shader_resource
@@ -71,6 +72,25 @@ namespace // structs and static vars
         MTLLoadAction colour_load_action;
         MTLClearColor colour[pen::MAX_MRT];
     };
+    
+    struct metal_target_blend
+    {
+        bool enabled;
+        MTLBlendOperation rgb_op;
+        MTLBlendOperation alpha_op;
+        MTLBlendFactor    src_rgb_factor;
+        MTLBlendFactor    dst_rgb_factor;
+        MTLBlendFactor    src_alpha_factor;
+        MTLBlendFactor    dst_alpha_factor;
+        MTLColorWriteMask write_mask;
+    };
+    
+    struct metal_blend_state
+    {
+        bool alpha_to_coverage_enable;
+        u32  num_render_targets;
+        metal_target_blend attachment[pen::MAX_MRT];
+    };
 
     struct resource
     {
@@ -81,6 +101,7 @@ namespace // structs and static vars
             shader_resource      shader;
             metal_clear_state    clear;
             MTLVertexDescriptor* vertex_descriptor;
+            metal_blend_state    blend;
         };
     };
 
@@ -269,6 +290,70 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLPrimitiveTypeTriangle;
     }
+    
+    pen_inline MTLBlendOperation to_metal_blend_op(u32 bo)
+    {
+        switch (bo)
+        {
+            case PEN_BLEND_OP_ADD:
+                return MTLBlendOperationAdd;
+            case PEN_BLEND_OP_SUBTRACT:
+                return MTLBlendOperationSubtract;
+            case PEN_BLEND_OP_REV_SUBTRACT:
+                return MTLBlendOperationReverseSubtract;
+            case PEN_BLEND_OP_MIN:
+                return MTLBlendOperationMin;
+            case PEN_BLEND_OP_MAX:
+                return MTLBlendOperationMax;
+        };
+        
+        PEN_ASSERT(0);
+        return MTLBlendOperationAdd;
+    }
+    
+    pen_inline MTLBlendFactor to_metal_blend_factor(u32 bf)
+    {
+        switch (bf)
+        {
+            case PEN_BLEND_ZERO:
+                return MTLBlendFactorZero;
+            case PEN_BLEND_ONE:
+                return MTLBlendFactorOne;
+            case PEN_BLEND_SRC_COLOR:
+                return MTLBlendFactorSourceColor;
+            case PEN_BLEND_INV_SRC_COLOR:
+                return MTLBlendFactorOneMinusSourceColor;
+            case PEN_BLEND_SRC_ALPHA:
+                return MTLBlendFactorSourceAlpha;
+            case PEN_BLEND_INV_SRC_ALPHA:
+                return MTLBlendFactorOneMinusSourceAlpha;
+            case PEN_BLEND_DEST_ALPHA:
+                return MTLBlendFactorDestinationAlpha;
+            case PEN_BLEND_INV_DEST_ALPHA:
+                return MTLBlendFactorOneMinusDestinationAlpha;
+            case PEN_BLEND_DEST_COLOR:
+                return MTLBlendFactorDestinationColor;
+            case PEN_BLEND_INV_DEST_COLOR:
+                return MTLBlendFactorOneMinusDestinationColor;
+            case PEN_BLEND_SRC_ALPHA_SAT:
+                return MTLBlendFactorSourceAlphaSaturated;
+            case PEN_BLEND_SRC1_COLOR:
+                return MTLBlendFactorSource1Color;
+            case PEN_BLEND_INV_SRC1_COLOR:
+                return MTLBlendFactorOneMinusSource1Color;
+            case PEN_BLEND_SRC1_ALPHA:
+                return MTLBlendFactorSource1Alpha;
+            case PEN_BLEND_INV_SRC1_ALPHA:
+                return MTLBlendFactorOneMinusSource1Alpha;
+            case PEN_BLEND_BLEND_FACTOR:
+                return MTLBlendFactorBlendAlpha;
+            case PEN_BLEND_INV_BLEND_FACTOR:
+                return MTLBlendFactorOneMinusBlendAlpha;
+        };
+        
+        PEN_ASSERT(0);
+        return MTLBlendFactorZero;
+    }
 }
 
 pen_inline void pool_grow(resource* pool, u32 size)
@@ -320,12 +405,31 @@ namespace pen
         
         void bind_pipeline()
         {
+            // todo cache this
+            
             // create pipeline
             MTLRenderPipelineDescriptor* pipeline_desc = [MTLRenderPipelineDescriptor new];
 
             pipeline_desc.vertexFunction = _state.vertex_shader;
             pipeline_desc.fragmentFunction = _state.fragment_shader;
             pipeline_desc.colorAttachments[0].pixelFormat = _state.formats.colour_attachments[0];
+            
+            // apply blend state
+            metal_blend_state& blend = _res_pool.get(_state.blend_state).blend;
+            for(u32 i = 0; i < blend.num_render_targets; ++i)
+            {
+                MTLRenderPipelineColorAttachmentDescriptor* ca = pipeline_desc.colorAttachments[i];
+                metal_target_blend& tb = blend.attachment[i];
+                
+                ca.blendingEnabled = tb.enabled;
+                ca.rgbBlendOperation = tb.rgb_op;
+                ca.alphaBlendOperation = tb.alpha_op;
+                ca.sourceRGBBlendFactor = tb.src_rgb_factor;
+                ca.destinationRGBBlendFactor = tb.dst_rgb_factor;
+                ca.sourceAlphaBlendFactor = tb.src_rgb_factor;
+                ca.destinationAlphaBlendFactor = tb.dst_alpha_factor;
+                ca.writeMask = tb.write_mask;
+            }
 
             pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
 
@@ -628,12 +732,12 @@ namespace pen
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
         {
-            
+            // todo...
         }
 
         void renderer_set_rasterizer_state(u32 rasterizer_state_index)
         {
-            
+            // todo...
         }
 
         void renderer_set_viewport(const viewport& vp)
@@ -648,22 +752,51 @@ namespace pen
 
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
         {
+            _res_pool.insert(resource(), resource_slot);
+            metal_blend_state& blend = _res_pool.get(resource_slot).blend;
             
+            // todo is this the right place?
+            blend.alpha_to_coverage_enable = bcp.alpha_to_coverage_enable;
+            
+            blend.num_render_targets = bcp.num_render_targets;
+            
+            for(u32 i = 0; i < blend.num_render_targets; ++i)
+            {
+                blend.attachment[i].enabled = bcp.render_targets[i].blend_enable;
+                blend.attachment[i].write_mask = bcp.render_targets[i].render_target_write_mask;
+                
+                blend.attachment[i].rgb_op = to_metal_blend_op(bcp.render_targets[i].blend_op);
+                blend.attachment[i].src_rgb_factor = to_metal_blend_factor(bcp.render_targets[i].src_blend);
+                blend.attachment[i].dst_rgb_factor = to_metal_blend_factor(bcp.render_targets[i].dest_blend);
+                
+                if(bcp.independent_blend_enable)
+                {
+                    blend.attachment[i].alpha_op = to_metal_blend_op(bcp.render_targets[i].blend_op_alpha);
+                    blend.attachment[i].src_alpha_factor = to_metal_blend_factor(bcp.render_targets[i].src_blend_alpha);
+                    blend.attachment[i].dst_alpha_factor = to_metal_blend_factor(bcp.render_targets[i].dest_blend_alpha);
+                }
+                else
+                {
+                    blend.attachment[i].alpha_op = blend.attachment[i].rgb_op;
+                    blend.attachment[i].src_alpha_factor = blend.attachment[i].src_rgb_factor;
+                    blend.attachment[i].dst_alpha_factor = blend.attachment[i].dst_rgb_factor;
+                }
+            }
         }
 
         void renderer_set_blend_state(u32 blend_state_index)
         {
-            
+            _state.blend_state = blend_state_index;
         }
 
         void renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
         {
-            
+            // todo..
         }
 
         void renderer_set_depth_stencil_state(u32 depth_stencil_state)
         {
-            
+            // todo..
         }
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)

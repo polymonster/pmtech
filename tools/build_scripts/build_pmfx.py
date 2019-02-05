@@ -1210,7 +1210,7 @@ def get_metal_packed_decl(input, semantic):
     packed_decl = "packed_"
     split = input.split(" ")
     type = split[0]
-    if semantic.find("COLOR") or semantic.find("BLENDINDICES") != -1:
+    if semantic.find("COLOR") != -1 or semantic.find("BLENDINDICES") != -1:
         packed_decl += "uchar"
         count = type[len(type)-1]
         if count in vector_sizes:
