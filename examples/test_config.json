@@ -1,0 +1,26 @@
+{
+	"tests": [
+		{ "name": "basic_triangle", "diff threshold": "1.0" },
+		{ "name": "basic_texture", "diff threshold": "1.0" },
+		{ "name": "render_target", "diff threshold": "1.0" },
+		{ "name": "debug_text", "diff threshold": "1.0" },
+		{ "name": "imgui", "diff threshold": "1.0" },
+		{ "name": "shader_toy", "diff threshold": "1.0" },
+		{ "name": "rigid_body_primitives", "diff threshold": "1.0" },
+		{ "name": "instancing", "diff threshold": "1.0" },
+		{ "name": "shadows", "diff threshold": "1.0" },
+		{ "name": "cubemap", "diff threshold": "1.0" },
+		{ "name": "texture_formats", "diff threshold": "1.0" },
+		{ "name": "skinning", "diff threshold": "1.0" },
+		{ "name": "vertex_stream_out", "diff threshold": "1.0" },
+		{ "name": "sss", "diff threshold": "1.0" },
+		{ "name": "pmfx_renderer", "diff threshold": "1.0" }
+	],
+	
+	"broken_tests":
+	[
+		{ "name": "dynamic_cubemap", "diff threshold": "1.0" },
+		{ "name": "sdf_shadow", "diff threshold": "1.0" },
+		{ "name": "multiple_render_targets", "diff threshold": "1.0" }
+	]
+}

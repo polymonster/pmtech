@@ -29,7 +29,7 @@ pen::window_creation_params pen_window{
     1280,                           // width
     720,                            // height
     4,                              // MSAA samples
-    "signed_distance_field_shadows" // window title / process name
+    "sdf_shadow"                    // window title / process name
 };
 
 namespace physics

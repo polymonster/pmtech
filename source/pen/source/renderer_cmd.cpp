@@ -1319,7 +1319,14 @@ namespace pen
         u32 diffs = 0;
         
         // make test results
-        PEN_SYSTEM("mkdir ../../test_results");
+        // PEN_SYSTEM("mkdir ..\..\test_results");
+
+        // splat 255 alpha as we dont actually see dest alpha from bb
+        u8* cmp_image = (u8*)data;
+        for (u32 i = 0; i < depth_pitch; i += 4)
+        {
+            cmp_image[i + 3] = 255;
+        }
 
         if (pen_err == PEN_ERR_OK)
         {
@@ -1350,13 +1357,16 @@ namespace pen
         }
 
         f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
-        PEN_CONSOLE("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
         
         Str output_results_file = "";
         output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
+
+        // a little json output so its easy to parse
+        Str output_results = "";
+        output_results.appendf("{ \"tested:\" %i, \"diffs:\" %i, \"percentage:\" %3.3f }", depth_pitch, diffs, percentage);
         
         std::ofstream ofs(output_results_file.c_str());
-        ofs << diffs << "/" << depth_pitch << ", " << percentage;
+        ofs << output_results.c_str();
         ofs.close();
         
         pen::os_terminate(0);
