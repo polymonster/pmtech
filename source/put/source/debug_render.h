@@ -1,3 +1,7 @@
+// debug_render.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef debug_render_h__
 #define debug_render_h__
 

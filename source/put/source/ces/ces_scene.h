@@ -1,3 +1,7 @@
+// ces_scene.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef ces_scene_h__
 #define ces_scene_h__
 
@@ -242,7 +246,7 @@ namespace put
             u8           play_flags = STOPPED;
             bool         apply_root_motion = true;
         };
-        
+
         struct anim_blend
         {
             u32 anim_a = 0;
@@ -253,7 +257,7 @@ namespace put
         struct cmp_anim_controller_v2
         {
             anim_instance* anim_instances = nullptr;
-            u32*           joint_indices = nullptr;   // indices into the scene hierarchy
+            u32*           joint_indices = nullptr; // indices into the scene hierarchy
             anim_blend     blend;
         };
 
@@ -341,8 +345,8 @@ namespace put
         {
             u32 size = sizeof(T);
             T*  data = nullptr;
-            
-            T& operator[](size_t index);
+
+            T&       operator[](size_t index);
             const T& operator[](size_t index) const;
         };
 
@@ -350,7 +354,7 @@ namespace put
         {
             u32   size;
             void* data;
-            
+
             void* operator[](size_t index);
         };
 
@@ -364,39 +368,39 @@ namespace put
             };
 
             // Components version 4
-            cmp_array<u64>                 entities;
-            cmp_array<u64>                 state_flags;
-            cmp_array<hash_id>             id_name;
-            cmp_array<hash_id>             id_geometry;
-            cmp_array<hash_id>             id_material;
-            cmp_array<Str>                 names;
-            cmp_array<Str>                 geometry_names;
-            cmp_array<Str>                 material_names;
-            cmp_array<u32>                 parents;
-            cmp_array<cmp_transform>       transforms;
-            cmp_array<mat4>                local_matrices;
-            cmp_array<mat4>                world_matrices;
-            cmp_array<mat4>                offset_matrices;
-            cmp_array<mat4>                physics_matrices;
-            cmp_array<cmp_bounding_volume> bounding_volumes;
-            cmp_array<cmp_light>           lights;
-            cmp_array<u32>                 physics_handles;
-            cmp_array<cmp_master_instance> master_instances;
-            cmp_array<cmp_geometry>        geometries;
-            cmp_array<cmp_pre_skin>        pre_skin;
-            cmp_array<cmp_physics>         physics_data;
-            cmp_array<cmp_anim_controller> anim_controller;
-            cmp_array<u32>                 cbuffer;
-            cmp_array<cmp_draw_call>       draw_call_data;
-            cmp_array<free_node_list>      free_list;
-            cmp_array<cmp_material>        materials;
-            cmp_array<cmp_material_data>   material_data;
-            cmp_array<material_resource>   material_resources;
-            cmp_array<cmp_shadow>          shadows;
-            cmp_array<cmp_samplers>        samplers;                // version 5
-            cmp_array<u32>                 material_permutation;    // version 8
-            cmp_array<cmp_transform>       initial_transform;       // version 9
-            cmp_array<cmp_anim_transform>  anim_transform;          // version 9
+            cmp_array<u64>                    entities;
+            cmp_array<u64>                    state_flags;
+            cmp_array<hash_id>                id_name;
+            cmp_array<hash_id>                id_geometry;
+            cmp_array<hash_id>                id_material;
+            cmp_array<Str>                    names;
+            cmp_array<Str>                    geometry_names;
+            cmp_array<Str>                    material_names;
+            cmp_array<u32>                    parents;
+            cmp_array<cmp_transform>          transforms;
+            cmp_array<mat4>                   local_matrices;
+            cmp_array<mat4>                   world_matrices;
+            cmp_array<mat4>                   offset_matrices;
+            cmp_array<mat4>                   physics_matrices;
+            cmp_array<cmp_bounding_volume>    bounding_volumes;
+            cmp_array<cmp_light>              lights;
+            cmp_array<u32>                    physics_handles;
+            cmp_array<cmp_master_instance>    master_instances;
+            cmp_array<cmp_geometry>           geometries;
+            cmp_array<cmp_pre_skin>           pre_skin;
+            cmp_array<cmp_physics>            physics_data;
+            cmp_array<cmp_anim_controller>    anim_controller;
+            cmp_array<u32>                    cbuffer;
+            cmp_array<cmp_draw_call>          draw_call_data;
+            cmp_array<free_node_list>         free_list;
+            cmp_array<cmp_material>           materials;
+            cmp_array<cmp_material_data>      material_data;
+            cmp_array<material_resource>      material_resources;
+            cmp_array<cmp_shadow>             shadows;
+            cmp_array<cmp_samplers>           samplers;             // version 5
+            cmp_array<u32>                    material_permutation; // version 8
+            cmp_array<cmp_transform>          initial_transform;    // version 9
+            cmp_array<cmp_anim_transform>     anim_transform;       // version 9
             cmp_array<cmp_anim_controller_v2> anim_controller_v2;   // version 9
 
             // Ensure num_components is the next to calc size
@@ -458,20 +462,20 @@ namespace put
         void update_view_flags(entity_scene* scene, bool error);
 
         void initialise_free_list(entity_scene* scene);
-        
+
         // separate implementations to make clang always inline
         template <typename T>
         pen_inline T& cmp_array<T>::operator[](size_t index)
         {
             return data[index];
         }
-        
+
         template <typename T>
         pen_inline const T& cmp_array<T>::operator[](size_t index) const
         {
             return data[index];
         }
-        
+
         pen_inline void* generic_cmp_array::operator[](size_t index)
         {
             u8* d = (u8*)data;

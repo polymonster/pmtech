@@ -1,3 +1,7 @@
+// ces_utilities.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef ces_utility_h__
 #define ces_utility_h__
 

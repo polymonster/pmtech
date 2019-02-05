@@ -1,3 +1,7 @@
+// pmfx_shader.cpp
+// Copyright 2014 - 2019 Alex Dixon. 
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #include <vector>
 
 #include "ces/ces_resources.h"

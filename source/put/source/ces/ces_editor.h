@@ -1,3 +1,7 @@
+// ces_editor.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef ces_editor_h__
 #define ces_editor_h__
 

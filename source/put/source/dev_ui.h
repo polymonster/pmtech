@@ -1,3 +1,7 @@
+// dev_ui.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef _DEV_UI_H
 #define _DEV_UI_H
 

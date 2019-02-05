@@ -1,3 +1,7 @@
+// loader.cpp
+// Copyright 2014 - 2019 Alex Dixon. 
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #include "loader.h"
 #include "console.h"
 #include "data_struct.h"

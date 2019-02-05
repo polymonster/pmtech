@@ -1,3 +1,7 @@
+// memory.cpp
+// Copyright 2014 - 2019 Alex Dixon. 
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #include "memory.h"
 
 // C++ standard says these must be in cpp file and not inline in header ;_;

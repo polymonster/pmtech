@@ -1,3 +1,7 @@
+// hash.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef _hash_h
 #define _hash_h
 

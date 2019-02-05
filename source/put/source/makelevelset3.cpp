@@ -1,3 +1,7 @@
+// makelevelset3.cpp
+// Copyright 2014 - 2019 Alex Dixon. 
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #include "makelevelset3.h"
 
 mls_progress             g_mls_progress;

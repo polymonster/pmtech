@@ -1,3 +1,7 @@
+// os.mm
+// Copyright 2014 - 2019 Alex Dixon. 
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #import <GLKit/GLKit.h>
 #import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>

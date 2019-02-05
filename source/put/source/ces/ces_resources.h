@@ -1,3 +1,7 @@
+// ces_resources.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef ces_resources_h__
 #define ces_resources_h__
 
@@ -24,10 +28,10 @@ namespace put
 
         struct soa_anim
         {
-            u32 num_channels = 0;
+            u32           num_channels = 0;
             anim_channel* channels = nullptr;
-            anim_info**   info = nullptr;       // [frame][samplers]
-            f32**         data = nullptr;       // [frame][sampler offset]
+            anim_info**   info = nullptr; // [frame][samplers]
+            f32**         data = nullptr; // [frame][sampler offset]
         };
 
         struct anim_sampler
@@ -46,7 +50,7 @@ namespace put
             enum
             {
                 PLAY = 1,
-                APPLY_ROOT_MOTION = 1<<1
+                APPLY_ROOT_MOTION = 1 << 1
             };
         }
 
@@ -55,7 +59,7 @@ namespace put
             u32            flags = 0;
             soa_anim       soa;
             f32            time = 0.0f;
-            f32            length = 0.0f;       // length in time
+            f32            length = 0.0f; // length in time
             anim_target*   targets = nullptr;
             cmp_transform* joints = nullptr;
             anim_sampler*  samplers = nullptr;

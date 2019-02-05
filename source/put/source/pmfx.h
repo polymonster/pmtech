@@ -1,3 +1,7 @@
+// pmfx.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef _pmfx_h
 #define _pmfx_h
 
@@ -261,9 +265,9 @@ namespace put
         void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data);
         void initialise_sampler_defaults(u32 handle, u32 technique_index, sampler_set& samplers);
 
-        const c8**          get_shader_list(u32& count);
-        const c8**          get_technique_list(u32 shader, u32& count);
-        u32                 get_technique_list_index(u32 shader, hash_id id_technique); // return index in name list excluding permutations
+        const c8** get_shader_list(u32& count);
+        const c8** get_technique_list(u32 shader, u32& count);
+        u32 get_technique_list_index(u32 shader, hash_id id_technique); // return index in name list excluding permutations
         const c8*           get_shader_name(u32 shader);
         const c8*           get_technique_name(u32 shader, hash_id id_technique);
         hash_id             get_technique_id(u32 shader, u32 technique_index);

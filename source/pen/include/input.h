@@ -1,3 +1,7 @@
+// input.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef _input_h
 #define _input_h
 
@@ -8,8 +12,8 @@
 #include "pen.h"
 
 #define PK_ARRAY_SIZE 512
-#define PGP_MAX_BUTTONS 16  // max buttons in raw gamepad
-#define PGP_MAX_AXIS 64     // max axis in raw gamepad
+#define PGP_MAX_BUTTONS 16 // max buttons in raw gamepad
+#define PGP_MAX_AXIS 64    // max axis in raw gamepad
 #define PGP_MAX_GAMEPADS 4
 
 extern pen::window_creation_params pen_window;
@@ -30,9 +34,9 @@ enum gamepad_button
     PGP_BUTTON_DRIGHT,
     PGP_BUTTON_DUP,
     PGP_BUTTON_DDOWN,
-    PGP_BUTTON_TOUCH_PAD,   // ds4 touch pad
-    PGP_BUTTON_PLATFORM,    // ps button, xbox button etc
-    
+    PGP_BUTTON_TOUCH_PAD, // ds4 touch pad
+    PGP_BUTTON_PLATFORM,  // ps button, xbox button etc
+
     PGP_BUTTON_NUM
 };
 
@@ -44,7 +48,7 @@ enum gamepad_axis
     PGP_AXIS_RIGHT_STICK_Y,
     PGP_AXIS_LTRIGGER,
     PGP_AXIS_RTRIGGER,
-    
+
     PGP_AXIS_NUM
 };
 
@@ -67,7 +71,7 @@ namespace pen
         u8  button[PGP_MAX_BUTTONS] = {0};
         f32 axis[PGP_MAX_AXIS] = {0};
     };
-    
+
     struct gamepad_state
     {
         u32 device_index;

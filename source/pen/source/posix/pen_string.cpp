@@ -1,3 +1,7 @@
+// pen_string.cpp
+// Copyright 2014 - 2019 Alex Dixon. 
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #include "pen_string.h"
 #include "memory.h"
 #include <stdarg.h>

@@ -1,3 +1,7 @@
+// renderer_definitions.h
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #ifndef _renderer_definitions_h
 #define _renderer_definitions_h
 
@@ -109,13 +113,13 @@ enum usage : s32
 
 enum bind_flags : s32
 {
-    PEN_BIND_SHADER_RESOURCE = 1<<0,
-    PEN_BIND_VERTEX_BUFFER = 1<<1,
-    PEN_BIND_INDEX_BUFFER = 1<<2,
-    PEN_BIND_CONSTANT_BUFFER = 1<<3,
-    PEN_STREAM_OUT_VERTEX_BUFFER = 1<<4,
-    PEN_BIND_RENDER_TARGET = 1<<5,
-    PEN_BIND_DEPTH_STENCIL = 1<<6,
+    PEN_BIND_SHADER_RESOURCE = 1 << 0,
+    PEN_BIND_VERTEX_BUFFER = 1 << 1,
+    PEN_BIND_INDEX_BUFFER = 1 << 2,
+    PEN_BIND_CONSTANT_BUFFER = 1 << 3,
+    PEN_STREAM_OUT_VERTEX_BUFFER = 1 << 4,
+    PEN_BIND_RENDER_TARGET = 1 << 5,
+    PEN_BIND_DEPTH_STENCIL = 1 << 6,
 
     // PEN_BIND_UNORDERED_ACCESS = D3D11_BIND_UNORDERED_ACCESS,
     // PEN_BIND_DECODER = D3D11_BIND_DECODER,
