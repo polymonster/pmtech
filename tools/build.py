@@ -192,8 +192,7 @@ def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, f
 
 def configure_windows_sdk(build_config):
     if "sdk_version" in build_config.keys():
-        if os.path.exists(build_config["sdk_version"]):
-            return
+        return
     print("Windows SDK version not set.")
     print("Please enter the windows sdk you want to use.")
     print("You can find available sdk versions in:")
@@ -280,7 +279,7 @@ if __name__ == "__main__":
 
     assets_dir = "assets"
 
-    action_strings = ["code", "libs", "shaders", "models", "textures", "audio", "fonts", "configs", "scenes"]
+    action_strings = ["code", "libs", "shaders", "models", "textures", "audio", "fonts", "configs", "scene"]
     action_descriptions = ["generate projects and workspaces",
                            "precompile third party libs",
                            "generate shaders and compile binaries",

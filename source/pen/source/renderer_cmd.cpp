@@ -808,6 +808,9 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
+        if (resource_slot == 345)
+            u32 a = 0;
+
         INC_WRAP(put_pos);
 
         return resource_slot;
@@ -1099,7 +1102,7 @@ namespace pen
 
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
-        if (buffer_index == 0)
+        if (buffer_index == 0 || buffer_index == PEN_INVALID_HANDLE)
             return;
 
         cmd_buffer[put_pos].command_index = CMD_UPDATE_BUFFER;
@@ -1313,7 +1316,7 @@ namespace pen
     static bool s_run_test = false;
     static void renderer_test_read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
     {
-        Str reference_filename = "data/textures/";
+        Str reference_filename = "test_reference/";
         reference_filename.appendf("%s%s", pen_window.window_title, ".dds");
 
         void* file_data = nullptr;
@@ -1321,9 +1324,6 @@ namespace pen
         u32 pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
 
         u32 diffs = 0;
-        
-        // make test results
-        // PEN_SYSTEM("mkdir ..\..\test_results");
 
         // splat 255 alpha as we dont actually see dest alpha from bb
         u8* cmp_image = (u8*)data;
@@ -1347,7 +1347,7 @@ namespace pen
             }
 
             Str output_file = "";
-            output_file.appendf("../../test_results/%s.png", pen_window.window_title);
+            output_file.appendf("test_results/%s.png", pen_window.window_title);
             stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
 
             free(file_data);
@@ -1363,11 +1363,11 @@ namespace pen
         f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
         
         Str output_results_file = "";
-        output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
+        output_results_file.appendf("test_results/%s.txt", pen_window.window_title);
 
         // a little json output so its easy to parse
         Str output_results = "";
-        output_results.appendf("{ \"tested:\" %i, \"diffs:\" %i, \"percentage:\" %3.3f }", depth_pitch, diffs, percentage);
+        output_results.appendf("{ \"tested\": %i, \"diffs\": %i, \"percentage\": %3.3f }", depth_pitch, diffs, percentage);
         
         std::ofstream ofs(output_results_file.c_str());
         ofs << output_results.c_str();

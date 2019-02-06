@@ -44,6 +44,8 @@ void mrt_example_ui()
     for (hash_id id : rt_ids)
     {
         const pmfx::render_target* r = pmfx::get_render_target(id);
+        if (!r)
+            continue;
 
         f32 w, h;
         pmfx::get_render_target_dimensions(r, w, h);

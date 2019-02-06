@@ -3,5 +3,5 @@
     "textures_dir": "assets/textures",
     "models_dir": "assets/mesh",
     "vcvarsall_dir": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build",
-    "sdk_version": "\u001610.0.17134.0"
+    "sdk_version": "10.0.16299.0"
 }

@@ -4,5 +4,5 @@
         deferred_renderer.jsn
     ],
     
-    view_set: deferred
+    view_set: deferred_render
 }

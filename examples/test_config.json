@@ -14,13 +14,14 @@
 		{ "name": "skinning", "diff threshold": "1.0" },
 		{ "name": "vertex_stream_out", "diff threshold": "1.0" },
 		{ "name": "sss", "diff threshold": "1.0" },
-		{ "name": "pmfx_renderer", "diff threshold": "1.0" }
+		{ "name": "pmfx_renderer", "diff threshold": "1.0" },
+		{ "name": "dynamic_cubemap", "diff threshold": "1.0" },
+		{ "name": "sdf_shadow", "diff threshold": "1.0" },
+		{ "name": "post_processing", "diff threshold": "1.0" }
 	],
 	
 	"broken_tests":
 	[
-		{ "name": "dynamic_cubemap", "diff threshold": "1.0" },
-		{ "name": "sdf_shadow", "diff threshold": "1.0" },
 		{ "name": "multiple_render_targets", "diff threshold": "1.0" }
 	]
 }
