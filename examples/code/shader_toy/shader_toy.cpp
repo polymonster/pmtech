@@ -219,6 +219,9 @@ void show_ui()
     bool open = true;
     ImGui::Begin("Shader Toy", &open);
 
+    if(k_tex_samplers[0].texture == 0)
+        k_tex_samplers[0].texture = put::load_texture("data/textures/01.dds");
+
     static bool browser_open = false;
     static s32  browser_slot = -1;
     for (s32 i = 0; i < 4; ++i)

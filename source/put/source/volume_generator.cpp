@@ -957,9 +957,6 @@ namespace put
             volume_material->shader_name = "pmfx_utility";
             volume_material->id_shader = PEN_HASH("pmfx_utility");
             volume_material->id_technique = PEN_HASH("volume_texture");
-
-            volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_linear");
-            volume_material->texture_handles[SN_VOLUME_TEXTURE] = gv.texture;
             add_material_resource(volume_material);
 
             geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
@@ -975,10 +972,15 @@ namespace put
             scene->transforms[new_prim].translation = pos;
             scene->entities[new_prim] |= CMP_TRANSFORM | CMP_VOLUME;
             scene->parents[new_prim] = new_prim;
+            scene->samplers[new_prim].sb[0].handle = gv.texture;
+            scene->samplers[new_prim].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
+            scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
 
             instantiate_geometry(cube, scene, new_prim);
             instantiate_material(volume_material, scene, new_prim);
             instantiate_model_cbuffer(scene, new_prim);
+
+            //bake_material_handles();
 
             gv.pos = pos;
             gv.scale = scale;

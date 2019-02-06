@@ -111,8 +111,6 @@ void create_scene_objects(ces::entity_scene* scene)
     volume_material->shader_name = "pmfx_utility";
     volume_material->id_shader = PEN_HASH("pmfx_utility");
     volume_material->id_technique = PEN_HASH("volume_texture");
-    volume_material->id_sampler_state[SN_VOLUME_TEXTURE] = PEN_HASH("clamp_point");
-    volume_material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
     add_material_resource(volume_material);
 
     // create scene node
@@ -124,9 +122,15 @@ void create_scene_objects(ces::entity_scene* scene)
     scene->transforms[new_prim].translation = vec3f::zero();
     scene->entities[new_prim] |= CMP_TRANSFORM;
     scene->parents[new_prim] = new_prim;
+    scene->samplers[new_prim].sb[0].handle = volume_texture;
+    scene->samplers[new_prim].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
+    scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::RS_SAMPLER);
+
     instantiate_geometry(cube, scene, new_prim);
     instantiate_material(volume_material, scene, new_prim);
     instantiate_model_cbuffer(scene, new_prim);
+
+    bake_material_handles();
 }
 
 PEN_TRV pen::user_entry(void* params)
