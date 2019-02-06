@@ -32,7 +32,7 @@ namespace physics
     extern PEN_TRV physics_thread_main(void* params);
 }
 
-void mrt_example_ui()
+void blend_mode_ui()
 {
     bool opened = true;
     ImGui::Begin("Multiple Render Targets", &opened, ImGuiWindowFlags_AlwaysAutoResize);
@@ -197,7 +197,7 @@ PEN_TRV pen::user_entry(void* params)
 
         pmfx::show_dev_ui();
 
-        mrt_example_ui();
+        blend_mode_ui();
 
         put::dev_ui::render();
 

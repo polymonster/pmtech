@@ -13,7 +13,7 @@
             dest_blend  : one
         },
         
-        alpha_belnd:
+        alpha_blend:
         {
             blend_enable: true,
             src_blend   : src_alpha,

@@ -10,7 +10,7 @@ import json
 import shutil
 
 
-# run the pmtech samples in test_config.json, compare vs reference image and print resilts
+# run the pmtech samples in test_config.json, compare vs reference image and print results
 if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
     print("pmtech tests -------------------------------------------------------------------")
@@ -60,7 +60,11 @@ if __name__ == "__main__":
         output = output.split("\n")
         # process results, we do this here because appveyor is not getting stdout from c++ programs
         if not generate:
-            results = open(os.path.join("test_results", test["name"] + ".txt"))
+            results_file = os.path.join("test_results", test["name"] + ".txt")
+            if not os.path.exists(results_file):
+                print("missing test results: " + results_file)
+                continue
+            results = open(results_file)
             results = json.loads(results.read())
             print("--------------------------------------------------------------------------------")
             print("running test: " + exe)

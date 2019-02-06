@@ -19,6 +19,7 @@
 		{ "name": "sdf_shadow", "diff threshold": 1.0 },
 		{ "name": "post_processing", "diff threshold": 1.0 },
 		{ "name": "multiple_render_targets", "diff threshold": 1.0 },
-		{ "name": "volume_texture", "diff threshold": 1.0 }
+		{ "name": "volume_texture", "diff threshold": 1.0 },
+		{ "name": "blend_modes", "diff threshold": 1.0 }
 	]
 }
