@@ -72,7 +72,7 @@ if __name__ == "__main__":
                 tested = str(results["tested"])
                 percentage = str(results["percentage"])
                 print(diffs + "/" + tested + " diffs(" + percentage + "%)")
-                if results["percentage"] < test["threshold"]:
+                if results["percentage"] < test["diff threshold"]:
                     print("passed")
                 else:
                     print("failed")
