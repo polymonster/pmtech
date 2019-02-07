@@ -95,9 +95,11 @@ namespace
     };
 
     const mode_map k_blend_op_mode_map[] = {
-        "belnd_op_add",         PEN_BLEND_OP_ADD,           "belnd_op_add",         PEN_BLEND_OP_ADD,
-        "belnd_op_subtract",    PEN_BLEND_OP_SUBTRACT,      "belnd_op_rev_sbtract", PEN_BLEND_OP_REV_SUBTRACT,
-        "belnd_op_min",         PEN_BLEND_OP_MIN,           "belnd_op_max",         PEN_BLEND_OP_MAX,
+        "blend_op_add",             PEN_BLEND_OP_ADD,      
+        "blend_op_subtract",        PEN_BLEND_OP_SUBTRACT,     
+        "blend_op_rev_subtract",    PEN_BLEND_OP_REV_SUBTRACT, 
+        "blend_op_min",             PEN_BLEND_OP_MIN,           
+        "blend_op_max",             PEN_BLEND_OP_MAX,
         nullptr, 0
     };
 
@@ -2461,7 +2463,7 @@ namespace put
             sv.technique = v.technique;
             sv.raster_state = v.raster_state;
             sv.depth_stencil_state = v.depth_stencil_state;
-            sv.blend_state_state = v.blend_state;
+            sv.blend_state = v.blend_state;
             sv.camera = v.camera;
             sv.viewport = &vp;
             sv.viewport_correction = v.viewport_correction;

@@ -1338,12 +1338,25 @@ namespace pen
             u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
             u8* cmp_image = (u8*)data;
             
+            static const u32 src[] = { 0, 1, 2, 3 };
+            static const u32 dst[] = { 2, 1, 0, 3 };
+
             for (u32 i = 0; i < depth_pitch; i += 4)
             {
-                if (ref_image[i + 2] != cmp_image[i + 0]) ++diffs;
-                if (ref_image[i + 1] != cmp_image[i + 1]) ++diffs;
-                if (ref_image[i + 0] != cmp_image[i + 2]) ++diffs;
-                if (ref_image[i + 3] != cmp_image[i + 3]) ++diffs;
+                for (u32 j = 0; j < 4; ++j)
+                {
+                    u32 src_sample = src[j];
+                    u32 dst_sample = dst[j];
+
+                    if (ref_image[i + src_sample] != cmp_image[i + dst_sample])
+                    {
+                        s32 sd = ref_image[i + src_sample] - cmp_image[i + dst_sample];
+                        if (abs(sd) > 5)
+                        {
+                            ++diffs;
+                        }
+                    }
+                }
             }
 
             Str output_file = "";

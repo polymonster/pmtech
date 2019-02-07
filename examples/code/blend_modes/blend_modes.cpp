@@ -37,8 +37,16 @@ void blend_mode_ui()
     bool opened = true;
     ImGui::Begin("Blend Modes", &opened, ImGuiWindowFlags_AlwaysAutoResize);
 
-    static hash_id rt_ids[] = {PEN_HASH("rt_no_blend"), PEN_HASH("rt_alpha_blend"), PEN_HASH("rt_additive"),
-                               PEN_HASH("rt_premultiplied_alpha")};
+    static hash_id rt_ids[] = {
+        PEN_HASH("rt_no_blend"), 
+        PEN_HASH("rt_alpha_blend"), 
+        PEN_HASH("rt_additive"),
+        PEN_HASH("rt_premultiplied_alpha"),
+        PEN_HASH("rt_min"),
+        PEN_HASH("rt_max"),
+        PEN_HASH("rt_subtract"),
+        PEN_HASH("rt_rev_subtract")
+    };
 
     int c = 0;
     for (hash_id id : rt_ids)
@@ -54,10 +62,15 @@ void blend_mode_ui()
 
         ImGui::Image(IMG(r->handle), size);
 
-        if (c == 0 || c == 2)
+        if (c != 3)
+        {
             ImGui::SameLine();
-
-        c++;
+            c++;
+        }
+        else
+        {
+            c = 0;
+        }
     }
 
     ImGui::End();
@@ -71,6 +84,7 @@ void blend_layers(const scene_view& scene_view)
     static u32 foreground_texture = put::load_texture("data/textures/blend_test_fg.dds");
 
     static u32 wrap_linear = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
+    static u32 disable_blend = pmfx::get_render_state(PEN_HASH("disabled"), pmfx::RS_BLEND);
 
     if (!is_valid(scene_view.pmfx_shader))
         return;
@@ -84,10 +98,12 @@ void blend_layers(const scene_view& scene_view)
         PEN_ASSERT(0);
 
     // background
+    pen::renderer_set_blend_state(disable_blend);
     pen::renderer_set_texture(background_texture, wrap_linear, 0, pen::TEXTURE_BIND_PS);
     pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 
     // foreground
+    pen::renderer_set_blend_state(scene_view.blend_state);
     pen::renderer_set_texture(foreground_texture, wrap_linear, 0, pen::TEXTURE_BIND_PS);
     pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 

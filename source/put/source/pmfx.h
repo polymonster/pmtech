@@ -47,7 +47,7 @@ namespace put
         u32                cb_2d_view = PEN_INVALID_HANDLE;
         u32                render_flags = 0;
         u32                depth_stencil_state = 0;
-        u32                blend_state_state = 0;
+        u32                blend_state = 0;
         u32                raster_state = 0;
         put::camera*       camera = nullptr;
         pen::viewport*     viewport = nullptr;

@@ -54,7 +54,7 @@ if __name__ == "__main__":
         ref_dds = os.path.join("test_reference", exe.replace(".exe", ".dds"))
         # generate dds reference image for easier loading
         if os.path.exists(ref):
-            dds_cmd = nvtt + " -rgb -nomips -silent " + ref + " " + ref_dds
+            dds_cmd = nvtt + " -rgb -alpha -nomips -silent " + ref + " " + ref_dds
             p = subprocess.Popen(dds_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             error_code = p.wait()
         if not os.path.exists(exe):
