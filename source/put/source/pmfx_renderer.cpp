@@ -2463,7 +2463,7 @@ namespace put
             sv.technique = v.technique;
             sv.raster_state = v.raster_state;
             sv.depth_stencil_state = v.depth_stencil_state;
-            sv.blend_state_state = v.blend_state;
+            sv.blend_state = v.blend_state;
             sv.camera = v.camera;
             sv.viewport = &vp;
             sv.viewport_correction = v.viewport_correction;

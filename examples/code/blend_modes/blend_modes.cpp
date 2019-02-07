@@ -98,11 +98,12 @@ void blend_layers(const scene_view& scene_view)
         PEN_ASSERT(0);
 
     // background
+    pen::renderer_set_blend_state(disable_blend);
     pen::renderer_set_texture(background_texture, wrap_linear, 0, pen::TEXTURE_BIND_PS);
     pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 
     // foreground
-    pen::renderer_set_blend_state()
+    pen::renderer_set_blend_state(scene_view.blend_state);
     pen::renderer_set_texture(foreground_texture, wrap_linear, 0, pen::TEXTURE_BIND_PS);
     pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 
