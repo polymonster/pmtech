@@ -150,7 +150,7 @@ void run()
 
 #else // OpenGL Context
 #import <OpenGL/gl3.h>
-#define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion3_2Core
+#define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion4_1Core
 #define create_renderer_context create_gl_context
 namespace
 {
@@ -194,6 +194,8 @@ void create_gl_context()
         false,
         NSOpenGLPFAAllowOfflineRenderers,
         true,
+        
+        // end
         0,
         0,
     };
