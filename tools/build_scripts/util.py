@@ -41,5 +41,13 @@ def get_platform_exe_ext(platform):
     else:
         return ""
 
+
+def get_platform_exe_run(platform):
+    if platform == "win32":
+        return ""
+    else:
+        return "./"
+
+
 if __name__ == "__main__":
     print("util")

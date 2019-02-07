@@ -299,11 +299,11 @@ PEN_TRV pen::user_entry(void* params)
 
     // chrome
     put::camera chrome_camera;
-    put::camera_cteate_cubemap(&chrome_camera, 0.01f, 1000.0f);
+    put::camera_create_cubemap(&chrome_camera, 0.01f, 1000.0f);
     chrome_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
 
     put::camera chrome2_camera;
-    put::camera_cteate_cubemap(&chrome2_camera, 0.01f, 1000.0f);
+    put::camera_create_cubemap(&chrome2_camera, 0.01f, 1000.0f);
     chrome2_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
 
     put::scene_controller cmc;

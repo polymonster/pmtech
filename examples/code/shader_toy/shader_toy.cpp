@@ -35,6 +35,8 @@ struct tweakable_cb
     f32 size_y = 0.0f;
     f32 time = 0.0f;
     f32 pad = 0.0f;
+    
+    vec4f test;
 };
 
 struct cbuf_test
@@ -186,7 +188,7 @@ void init_renderer()
     bcp.usage_flags = PEN_USAGE_DYNAMIC;
     bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-    bcp.buffer_size = sizeof(float) * 16;
+    bcp.buffer_size = sizeof(float) * 32;
     bcp.data = (void*)nullptr;
 
     k_render_handles.view_cbuffer = pen::renderer_create_buffer(bcp);

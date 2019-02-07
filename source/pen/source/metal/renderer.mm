@@ -402,9 +402,10 @@ namespace pen
             if(!_state.render_encoder)
             {
                 _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:_state.pass];
-                [_state.render_encoder setViewport:_state.viewport];
-                [_state.render_encoder setScissorRect:_state.scissor];
             }
+            
+            [_state.render_encoder setViewport:_state.viewport];
+            [_state.render_encoder setScissorRect:_state.scissor];
         }
         
         void bind_pipeline()
@@ -909,6 +910,10 @@ namespace pen
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
         {
+            if(rrbp.resource_index == 0)
+            {
+                
+            }
         }
 
         void renderer_present()

@@ -319,7 +319,7 @@ namespace put
         p_camera->flags &= ~CF_INVALIDATED;
     }
 
-    void camera_cteate_cubemap(camera* p_camera, f32 near_plane, f32 far_plane)
+    void camera_create_cubemap(camera* p_camera, f32 near_plane, f32 far_plane)
     {
         camera_create_perspective(p_camera, 90, 1, near_plane, far_plane);
     }

@@ -10,6 +10,14 @@ import json
 import shutil
 
 
+# add rpath so apps can find dylibs
+def add_rapth(exe):
+    if os.path.isdir(exe):
+        # app style
+        exe = os.path.join(exe, "Contents", "MacOS", exe)
+    subprocess.call("install_name_tool -add_rpath \"" + os.getcwd() + "\" " + exe, shell=True)
+
+
 # run the pmtech samples in test_config.json, compare vs reference image and print results
 if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
@@ -19,6 +27,7 @@ if __name__ == "__main__":
     config = open("test_config.json", "r")
     config = json.loads(config.read())
     exe_ext = util.get_platform_exe_ext(platform)
+    exe_run = util.get_platform_exe_run(platform)
     test_dir = os.path.join(os.getcwd(), "bin", platform)
     reference_dir = os.path.join(os.getcwd(), "test_reference")
     nvtt = os.path.join(os.getcwd(), "..", "tools", "bin", "nvtt", platform, "nvcompress")
@@ -50,8 +59,10 @@ if __name__ == "__main__":
             error_code = p.wait()
         if not os.path.exists(exe):
             continue
+        if platform == "osx":
+            add_rapth(exe)
         # if the test exe exists run the test
-        cmdline = exe + " -test"
+        cmdline = exe_run + exe + " -test"
         p = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_code = p.wait()
         output, err = p.communicate()
