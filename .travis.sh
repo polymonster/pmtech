@@ -6,3 +6,5 @@ python3 ../tools/build.py -actions code -ide gmake -platform osx
 cd build/osx
 make config=debug
 make config=release
+cd ../..
+python3 run_tests.py
