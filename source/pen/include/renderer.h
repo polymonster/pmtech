@@ -253,7 +253,7 @@ namespace pen
         u32 src_blend_alpha = PEN_BLEND_ONE;
         u32 dest_blend_alpha = PEN_BLEND_ZERO;
         u32 blend_op_alpha = PEN_BLEND_OP_ADD;
-        u8  render_target_write_mask = 0xff;
+        u8  render_target_write_mask = 0xf;
 
         render_target_blend(){};
     };

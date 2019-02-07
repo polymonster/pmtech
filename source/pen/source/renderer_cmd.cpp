@@ -1334,6 +1334,9 @@ namespace pen
 
         if (pen_err == PEN_ERR_OK)
         {
+            // create a file of the diffs
+            u8* diff_image = (u8*)memory_alloc(depth_pitch);
+
             // file exists do image compare
             u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
             u8* cmp_image = (u8*)data;
@@ -1348,9 +1351,15 @@ namespace pen
                     u32 src_sample = src[j];
                     u32 dst_sample = dst[j];
 
+                    s32 sd = ref_image[i + src_sample] - cmp_image[i + dst_sample];
+                    s32 asd = abs(sd);
+
+                    diff_image[i + j] = asd;
+                    if (j == 3)
+                        diff_image[i + j] = 255; // ignore alpha
+
                     if (ref_image[i + src_sample] != cmp_image[i + dst_sample])
                     {
-                        s32 sd = ref_image[i + src_sample] - cmp_image[i + dst_sample];
                         if (abs(sd) > 5)
                         {
                             ++diffs;
@@ -1363,7 +1372,12 @@ namespace pen
             output_file.appendf("test_results/%s.png", pen_window.window_title);
             stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
 
-            free(file_data);
+            output_file = "";
+            output_file.appendf("test_results/%s_diff.png", pen_window.window_title);
+            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, diff_image, row_pitch);
+
+            memory_free(diff_image);
+            memory_free(file_data);
         }
         else
         {
@@ -1392,6 +1406,7 @@ namespace pen
     void renderer_test_enable()
     {
         PEN_CONSOLE("renderer test enabled.\n");
+        srand(0);
         s_run_test = true;
     }
 
