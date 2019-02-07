@@ -54,7 +54,7 @@ if __name__ == "__main__":
         ref_dds = os.path.join("test_reference", exe.replace(".exe", ".dds"))
         # generate dds reference image for easier loading
         if os.path.exists(ref):
-            dds_cmd = nvtt + " -rgb -alpha -nomips -silent " + ref + " " + ref_dds
+            dds_cmd = exe_run + nvtt + " -rgb -alpha -nomips -silent " + ref + " " + ref_dds
             p = subprocess.Popen(dds_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             error_code = p.wait()
         if not os.path.exists(exe):
@@ -63,12 +63,8 @@ if __name__ == "__main__":
             add_rapth(exe)
         # if the test exe exists run the test
         cmdline = exe_run + exe + " -test"
-        p = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(cmdline, shell=True)
         error_code = p.wait()
-        output, err = p.communicate()
-        output = output.decode('utf-8')
-        output = output.strip(" ")
-        output = output.split("\n")
         # process results, we do this here because appveyor is not getting stdout from c++ programs
         if not generate:
             results_file = os.path.join("test_results", test["name"] + ".txt")

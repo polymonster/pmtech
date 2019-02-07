@@ -643,7 +643,23 @@ namespace put
                 rtb.blend_op_alpha =
                     mode_from_string(k_blend_op_mode_map, state["alpha_blend_op"].as_cstr(), PEN_BLEND_OP_ADD);
 
+                /// make partial blend states for per rt blending
                 s_partial_blend_states.push_back({PEN_HASH(state.name().c_str()), rtb});
+                
+                // create a generic single blend for code use
+                pen::blend_creation_params bcp;
+                bcp.alpha_to_coverage_enable = false; // todo atoc
+                bcp.independent_blend_enable = false; // todo independent blend
+                bcp.num_render_targets = 1;
+                bcp.render_targets = new pen::render_target_blend[1];
+                bcp.render_targets[0] = rtb;
+
+                render_state rs;
+                rs.name = state.name();
+                rs.id_name = PEN_HASH(state.name().c_str());
+                rs.type = RS_BLEND;
+                rs.handle = pen::renderer_create_blend_state(bcp);
+                s_render_states.push_back(rs);
             }
         }
 

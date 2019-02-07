@@ -1728,24 +1728,20 @@ namespace pen
         for (s32 i = 0; i < blend_state->num_render_targets; ++i)
         {
             auto& rt_blend = blend_state->render_targets[i];
-
+            
             if (i == 0)
             {
+                u32 mask = rt_blend.render_target_write_mask;
+                glColorMask(mask & 1, mask & 2, mask & 4, mask & 8);
+                
                 if (rt_blend.blend_enable)
                 {
                     CHECK_CALL(glEnable(GL_BLEND));
 
-                    if (blend_state->independent_blend_enable)
-                    {
-                        CHECK_CALL(glBlendFuncSeparate(rt_blend.src_blend, rt_blend.dest_blend, rt_blend.src_blend_alpha,
-                                                       rt_blend.dest_blend_alpha));
-                        CHECK_CALL(glBlendEquationSeparate(rt_blend.blend_op, rt_blend.blend_op_alpha));
-                    }
-                    else
-                    {
-                        CHECK_CALL(glBlendFunc(rt_blend.src_blend, rt_blend.dest_blend));
-                        CHECK_CALL(glBlendEquation(rt_blend.blend_op));
-                    }
+                    CHECK_CALL(glBlendFuncSeparate(rt_blend.src_blend, rt_blend.dest_blend, rt_blend.src_blend_alpha,
+                                                   rt_blend.dest_blend_alpha));
+                    
+                    CHECK_CALL(glBlendEquationSeparate(rt_blend.blend_op, rt_blend.blend_op_alpha));
                 }
                 else
                 {

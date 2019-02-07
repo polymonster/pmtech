@@ -25,7 +25,7 @@ def display_help():
 
 def display_prompted_input():
     print("please enter what you want to build")
-    print("1. code")
+    print("1. premake")
     print("2. libs")
     print("3. shaders")
     print("4. models")
@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
     assets_dir = "assets"
 
-    action_strings = ["code", "libs", "shaders", "models", "textures", "audio", "fonts", "configs", "scene"]
+    action_strings = ["premake", "libs", "shaders", "models", "textures", "audio", "fonts", "configs", "scene"]
     action_descriptions = ["generate projects and workspaces",
                            "precompile third party libs",
                            "generate shaders and compile binaries",
@@ -339,7 +339,7 @@ if __name__ == "__main__":
             for bd in built_dirs:
                 if os.path.exists(bd):
                     shutil.rmtree(bd)
-        elif action == "code":
+        elif action == "premake":
             build_steps.append(premake_exec + " " + project_options)
         elif action == "libs":
             build_steps.append(build_thirdparty_libs())
@@ -357,7 +357,7 @@ if __name__ == "__main__":
     for step in build_steps:
         subprocess.check_call(step, shell=True)
 
-    if "code" in execute_actions:
+    if "premake" in execute_actions:
         for step in extra_build_steps:
             subprocess.check_call(step, shell=True)
 
