@@ -448,7 +448,7 @@ ps_output ps_forward_lit( vs_output input )
         lit_colour += light_col;
     }
 
-    output.colour.rgb = lit_colour.rgb;    
+	output.colour.rgb = lit_colour.rgb;    
     output.colour.a = albedo.a;
             
     return output;
@@ -510,7 +510,7 @@ pmfx:
         {
             "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
             "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
-            "reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
+            "reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 },
             
             "permutation(SSS)":
             {
