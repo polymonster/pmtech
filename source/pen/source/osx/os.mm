@@ -2,6 +2,8 @@
 // Copyright 2014 - 2019 Alex Dixon. 
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
+#define GL_SILENCE_DEPRECATION
+
 #import <AppKit/NSPasteboard.h>
 #import <Cocoa/Cocoa.h>
 
@@ -182,13 +184,15 @@ void create_gl_context()
         24,
         NSOpenGLPFAStencilSize,
         8,
-
+        
         // double buffered, HAL
         NSOpenGLPFADoubleBuffer,
         true,
         NSOpenGLPFAAccelerated,
         false,
         NSOpenGLPFANoRecovery,
+        false,
+        NSOpenGLPFAAllowOfflineRenderers,
         true,
         0,
         0,
@@ -212,6 +216,13 @@ void create_gl_context()
     GLint interval = 1;
     [glContext setValues:&interval forParameter:NSOpenGLCPSwapInterval];
 
+    const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    const GLubyte* gl_version = glGetString(GL_VERSION);
+    const GLubyte* gl_renderer = glGetString(GL_RENDERER);
+    const GLubyte* gl_vendor = glGetString(GL_VENDOR);
+    
+    PEN_LOG("gl: %s\nglsl: %s\nRenderer: %s\nVendor: %s\n", gl_version, glsl_version, gl_renderer, gl_vendor);
+    
     _gl_view = glView;
     _gl_context = glContext;
 }

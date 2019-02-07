@@ -2030,7 +2030,7 @@ namespace pen
         s_renderer_info.api_version = str_gl_version.c_str();
         s_renderer_info.renderer = str_gl_renderer.c_str();
         s_renderer_info.vendor = str_gl_vendor.c_str();
-
+        
         s_renderer_info.renderer_cmd = "-renderer opengl";
         
 #ifdef PEN_GLES3
