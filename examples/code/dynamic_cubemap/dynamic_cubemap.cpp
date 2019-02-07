@@ -30,7 +30,7 @@ pen::window_creation_params pen_window{
     1280,             // width
     720,              // height
     4,                // MSAA samples
-    "dynamic cubemap" // window title / process name
+    "dynamic_cubemap" // window title / process name
 };
 
 namespace physics

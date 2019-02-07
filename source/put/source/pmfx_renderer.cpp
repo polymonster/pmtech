@@ -95,9 +95,11 @@ namespace
     };
 
     const mode_map k_blend_op_mode_map[] = {
-        "belnd_op_add",         PEN_BLEND_OP_ADD,           "belnd_op_add",         PEN_BLEND_OP_ADD,
-        "belnd_op_subtract",    PEN_BLEND_OP_SUBTRACT,      "belnd_op_rev_sbtract", PEN_BLEND_OP_REV_SUBTRACT,
-        "belnd_op_min",         PEN_BLEND_OP_MIN,           "belnd_op_max",         PEN_BLEND_OP_MAX,
+        "blend_op_add",             PEN_BLEND_OP_ADD,      
+        "blend_op_subtract",        PEN_BLEND_OP_SUBTRACT,     
+        "blend_op_rev_subtract",    PEN_BLEND_OP_REV_SUBTRACT, 
+        "blend_op_min",             PEN_BLEND_OP_MIN,           
+        "blend_op_max",             PEN_BLEND_OP_MAX,
         nullptr, 0
     };
 

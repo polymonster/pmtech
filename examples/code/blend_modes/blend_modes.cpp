@@ -37,8 +37,16 @@ void blend_mode_ui()
     bool opened = true;
     ImGui::Begin("Blend Modes", &opened, ImGuiWindowFlags_AlwaysAutoResize);
 
-    static hash_id rt_ids[] = {PEN_HASH("rt_no_blend"), PEN_HASH("rt_alpha_blend"), PEN_HASH("rt_additive"),
-                               PEN_HASH("rt_premultiplied_alpha")};
+    static hash_id rt_ids[] = {
+        PEN_HASH("rt_no_blend"), 
+        PEN_HASH("rt_alpha_blend"), 
+        PEN_HASH("rt_additive"),
+        PEN_HASH("rt_premultiplied_alpha"),
+        PEN_HASH("rt_min"),
+        PEN_HASH("rt_max"),
+        PEN_HASH("rt_subtract"),
+        PEN_HASH("rt_rev_subtract")
+    };
 
     int c = 0;
     for (hash_id id : rt_ids)
@@ -54,10 +62,15 @@ void blend_mode_ui()
 
         ImGui::Image(IMG(r->handle), size);
 
-        if (c == 0 || c == 2)
+        if (c != 3)
+        {
             ImGui::SameLine();
-
-        c++;
+            c++;
+        }
+        else
+        {
+            c = 0;
+        }
     }
 
     ImGui::End();

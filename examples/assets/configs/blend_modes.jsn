@@ -27,6 +27,30 @@
         {
             size : [256, 256],
             format : rgba8
+        },
+		
+		rt_min:
+        {
+            size : [256, 256],
+            format : rgba8
+        },
+		
+		rt_max:
+        {
+            size : [256, 256],
+            format : rgba8
+        },
+		
+		rt_subtract:
+        {
+            size : [256, 256],
+            format : rgba8
+        },
+		
+		rt_rev_subtract:
+        {
+            size : [256, 256],
+            format : rgba8
         }
 	},
 	
@@ -37,6 +61,38 @@
             blend_enable: true,
 			src_blend: one,
 			dest_blend: inv_src_alpha
+        },
+		
+		min:
+        {
+            blend_enable: true,
+			src_blend: one,
+			dest_blend: one,
+			blend_op: blend_op_min
+        },
+		
+		max:
+        {
+            blend_enable: true,
+			src_blend: src_colour,
+			dest_blend: src_colour,
+			blend_op: blend_op_max
+        },
+		
+		subtract:
+        {
+            blend_enable: true,
+			src_blend: src_colour,
+			dest_blend: src_colour,
+			blend_op: belnd_op_subtract
+        },
+				
+		rev_subtract:
+        {
+            blend_enable: true,
+			src_blend: one,
+			dest_blend: one,
+			blend_op: blend_op_rev_subtract
         }
     },
 	
@@ -89,6 +145,34 @@
 			target : [rt_premultiplied_alpha],
 			inherit: base_blend_view,
 			blend_state: premultiplied_alpha
+		},
+		
+		view_min:
+		{
+			target : [rt_min],
+			inherit: base_blend_view,
+			blend_state: min
+		},
+		
+		view_max:
+		{
+			target : [rt_max],
+			inherit: base_blend_view,
+			blend_state: max
+		},
+		
+		view_subtract:
+		{
+			target : [rt_subtract],
+			inherit: base_blend_view,
+			blend_state: subtract
+		},
+
+		view_rev_subtract:
+		{
+			target : [rt_rev_subtract],
+			inherit: base_blend_view,
+			blend_state: rev_subtract
 		}
 	},
 	
@@ -99,7 +183,11 @@
             view_no_blend,
             view_alpha_blend, 
             view_additive, 
-            view_premultiplied_alpha
+            view_premultiplied_alpha,
+			view_min,
+			view_max,
+			view_subtract,
+			view_rev_subtract
         ],
 	}
     
