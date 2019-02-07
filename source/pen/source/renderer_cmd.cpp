@@ -1340,9 +1340,9 @@ namespace pen
             
             for (u32 i = 0; i < depth_pitch; i += 4)
             {
-                if (ref_image[i + 2] != cmp_image[i + 2]) ++diffs;
+                if (ref_image[i + 2] != cmp_image[i + 0]) ++diffs;
                 if (ref_image[i + 1] != cmp_image[i + 1]) ++diffs;
-                if (ref_image[i + 0] != cmp_image[i + 0]) ++diffs;
+                if (ref_image[i + 0] != cmp_image[i + 2]) ++diffs;
                 if (ref_image[i + 3] != cmp_image[i + 3]) ++diffs;
             }
 
