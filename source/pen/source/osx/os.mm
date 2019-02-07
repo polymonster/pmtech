@@ -187,7 +187,7 @@ void create_gl_context()
         NSOpenGLPFADoubleBuffer,
         true,
         NSOpenGLPFAAccelerated,
-        true,
+        false,
         NSOpenGLPFANoRecovery,
         true,
         0,
