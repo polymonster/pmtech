@@ -233,6 +233,10 @@ namespace pen
 #define DPAD_X_AXIS 1025
 #define DPAD_Y_AXIS 1026
 
+#if __APPLE__
+#include "TargetConditionals.h"
+#endif
+
 extern "C" {
 #include "gamepad/Gamepad.h"
 #include "gamepad/Gamepad_private.c"
@@ -242,9 +246,13 @@ extern "C" {
 #elif _WIN32
 #define _API API_XINPUT
 #include "gamepad/Gamepad_windows_dinput.c"
-#else //macos
+#else //macos, ios
 #define _API API_RAW_INPUT
+#if TARGET_OS_IPHONE
+// make stub if required
+#else
 #include "gamepad/Gamepad_macosx.c"
+#endif
 #endif
 }
 

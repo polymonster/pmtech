@@ -2,8 +2,7 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _input_h
-#define _input_h
+#pragma once
 
 // Simple input api for getting keyboard and mouse presses
 // and character keys for typing.
@@ -245,5 +244,3 @@ enum virtual_key
     PK_SCROLL = 0x91,
     PK_COMMAND = 0x92
 };
-
-#endif

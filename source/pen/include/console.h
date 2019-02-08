@@ -2,8 +2,7 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _pen_console_h
-#define _pen_console_h
+#pragma once
 
 // Wrapper around assert and print for portability, to control and re-direct in the future if required
 
@@ -14,6 +13,8 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#elif __APPLE__
+#include "TargetConditionals.h"
 #endif
 
 inline void output_debug(const c8* format, ...)
@@ -77,5 +78,3 @@ inline void output_debug(const c8* format, ...)
 #define PEN_SHADER_COMPILE_CMD "tools/build_scripts/build_pmfx.py -root_dir ../../"
 #define PEN_BUILD_CMD "tools/build.py -root_dir ../../"
 #endif
-
-#endif //_pen_console_h

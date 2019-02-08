@@ -3,6 +3,7 @@
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #define GL_SILENCE_DEPRECATION
+#define GLES_SILENCE_DEPRECATION
 
 #include <stdlib.h>
 

@@ -1073,15 +1073,16 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
         uniform_buffers += uniform_buf + "\n"
 
     # header and macros
-    shader_source = "//" + pmfx_name + " " + _tp.name + " " + _shader.shader_type + " " + str(_tp.id) + "\n"
-    if "" == "gles":
+    shader_source = ""
+    if _info.shader_sub_platform == "gles":
         shader_source += "#version 300 es\n"
         shader_source += "#define GLSL\n"
         shader_source += "#define GLES\n"
         shader_source += "precision highp float;\n"
-    elif "glsl" == "glsl":
+    else:
         shader_source += "#version 330 core\n"
         shader_source += "#define GLSL\n"
+    shader_source += "//" + pmfx_name + " " + _tp.name + " " + _shader.shader_type + " " + str(_tp.id) + "\n"
     shader_source += get_macros_for_platform("glsl", _info.macros_source)
 
     # input structs

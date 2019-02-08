@@ -218,12 +218,13 @@ void create_gl_context()
     GLint interval = 1;
     [glContext setValues:&interval forParameter:NSOpenGLCPSwapInterval];
 
+#if 0
     const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
     const GLubyte* gl_version = glGetString(GL_VERSION);
     const GLubyte* gl_renderer = glGetString(GL_RENDERER);
     const GLubyte* gl_vendor = glGetString(GL_VENDOR);
-    
     PEN_LOG("gl: %s\nglsl: %s\nRenderer: %s\nVendor: %s\n", gl_version, glsl_version, gl_renderer, gl_vendor);
+#endif
     
     _gl_view = glView;
     _gl_context = glContext;

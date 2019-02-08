@@ -2,8 +2,7 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _os_h
-#define _os_h
+#pragma once
 
 // Tiny api with some window and os specific abstractions.
 
@@ -34,4 +33,3 @@ namespace pen
 
 } // namespace pen
 
-#endif

@@ -95,8 +95,8 @@ end
 function setup_env_ios()
 	xcodebuildsettings
 	{
-		["ARCHS"] = "$(NATIVE_ARCH_ACTUAL)",
-		["SDKROOT"] = "iphoneos11.4",
+		["ARCHS"] = "$(ARCHS_STANDARD)",
+		["SDKROOT"] = "iphoneos",
 		["PRODUCT_BUNDLE_IDENTIFIER"] = "com.pmtech"
 	}
 end
