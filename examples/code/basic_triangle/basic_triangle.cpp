@@ -67,7 +67,7 @@ PEN_TRV pen::user_entry(void* params)
                        "default.psc");
     err = pen::filesystem_read_file_to_buffer(shader_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
     PEN_ASSERT(!err);
-
+    
     u32 vertex_shader = pen::renderer_load_shader(vs_slp);
     u32 pixel_shader = pen::renderer_load_shader(ps_slp);
 
@@ -96,7 +96,7 @@ PEN_TRV pen::user_entry(void* params)
     // free byte code loaded from file
     pen::memory_free(vs_slp.byte_code);
     pen::memory_free(ps_slp.byte_code);
-
+    
     // create vertex buffer
     vertex vertices[] = {0.0f, 0.5f, 0.5f, 1.0f, 0.5f, -0.5f, 0.5f, 1.0f, -0.5f, -0.5f, 0.5f, 1.0f};
 
