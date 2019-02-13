@@ -21,7 +21,7 @@ Take a look at:
 - Hot loading: Reload configs, shaders, models and textures in real time for rapid development.
 - Tools: Graphical editor, volume texture / signed distance field generator.
 - [Examples](https://github.com/polymonster/pmtech/wiki/8.-Examples): Lots of examples of how to use the apis from basic usage to rendering techniques (forward, deferred, subsurface scattering, signed distance fields, volume textures), audio, physics and more.
-- Asset Pipeline: Binary model and skeleton format, texture compression, platform agnostic shader compilation. 
+- [Asset Pipeline](https://github.com/polymonster/pmtech/wiki/5.-Build-Pipeline): Binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information.
 
 **Usage**  
