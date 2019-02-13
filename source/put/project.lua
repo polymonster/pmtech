@@ -31,7 +31,8 @@ project "put"
         "../../third_party/fmod/inc",
         "../../third_party/bullet/src/",
         "../../third_party/imgui",
-        "../../third_party",
+        "../../third_party/sdf_gen",
+        "../../third_party"
     }
     
     if _ACTION == "vs2017" or _ACTION == "vs2015" then
@@ -46,6 +47,9 @@ project "put"
         
         "../../third_party/imgui/*.cpp",
         "../../third_party/imgui/*.h",
+        
+        "../../third_party/sdf_gen/*.h",
+        "../../third_party/sdf_gen/*.cpp"
     }
     includedirs { "include" }
     

@@ -21,7 +21,7 @@
 #include "memory.h"
 #include "pen.h"
 
-#include "makelevelset3.h"
+#include "sdf_gen/makelevelset3.h"
 
 #define PEN_SIMD 0
 #if PEN_SIMD
@@ -30,7 +30,7 @@
 #include <xmmintrin.h>
 #endif
 
-#include <fstream>
+#include <fstream>ß
 
 u8 temp[16];
 #define SIMD_PRINT_u8(V)                                                                                                     \
