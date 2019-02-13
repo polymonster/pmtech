@@ -13,15 +13,15 @@ Take a look at:
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Supported Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
-- Lightweight - Simple apis, shallow call stacks, minimal dependencies.  
-- Multithreaded - Async render, physics, audio and entity component system.  
-- Data-oriented entity component system and root motion animation system.
-- Pmfx - High level data driven renderer, shader and post-processing system using json.
-- Low-level abstractions - Input, gamepad, timers, threads, window, os, file system, etc.
-- Hot loading - Reload configs, shaders, models and textures in real time for rapid development.
-- Tools - Graphical editor, volume texture / signed distance field generator.
-- [Examples](https://github.com/polymonster/pmtech/wiki/8.-Examples) - Tons of examples of how to use the apis from basic usage to rendering techniques (forward, deferred, subsurface scattering, signed distance fields, volume textures), audio, physics and more.
-- Asset Pipeline - Binary model and skeleton format, texture compression, platform agnostic shader compilation. 
+- Lightweight: Simple apis, shallow call stacks, minimal dependencies.  
+- Multithreaded: Async render, physics, audio and entity component system.  
+- Data-oriented: Entity component system and root motion animation system.
+- Pmfx: High level data driven renderer, shader and post-processing system using json.
+- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
+- Hot loading: Reload configs, shaders, models and textures in real time for rapid development.
+- Tools: Graphical editor, volume texture / signed distance field generator.
+- [Examples](https://github.com/polymonster/pmtech/wiki/8.-Examples): Lots of examples of how to use the apis from basic usage to rendering techniques (forward, deferred, subsurface scattering, signed distance fields, volume textures), audio, physics and more.
+- Asset Pipeline: Binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information.
 
 **Usage**  
