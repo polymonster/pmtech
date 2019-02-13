@@ -1,7 +1,3 @@
-// physics.h
-// Copyright 2014 - 2019 Alex Dixon.
-// License: https://github.com/polymonster/pmtech/blob/master/license.md
-
 #ifndef _phyiscs_cmdbuf_h
 #define _phyiscs_cmdbuf_h
 
@@ -106,6 +102,15 @@ namespace physics
         u32  num_indices;
     };
 
+    enum e_physics_create_flags
+    {
+        CF_AUTO = 0,                    // create from geometry and scene node info
+        CF_POSITION = 1 << 1,
+        CF_ROTATION = 1 << 2,
+        CF_DIMENSIONS = 1 << 3,
+        CF_SET_ALL = (CF_POSITION | CF_ROTATION | CF_DIMENSIONS)
+    };
+
     struct rigid_body_params
     {
         vec3f               position;
@@ -118,6 +123,7 @@ namespace physics
         u32                 mask;
         mat4                start_matrix;
         collision_mesh_data mesh_data;
+        u32                 create_flags = 0;
 
         rigid_body_params(){};
         ~rigid_body_params(){};
@@ -277,7 +283,7 @@ namespace physics
         lw_vec3f start;
         lw_vec3f end;
         u32      timestamp;
-        void*    user_data;
+        void* user_data;
         void (*callback)(const ray_cast_result& result);
     };
 
@@ -291,13 +297,13 @@ namespace physics
 
     struct sphere_cast_params
     {
-        vec3f from;
-        vec3f to;
-        vec3f dimension;
-        u32   flags;
-        u32   timestamp;
-        void* user_data;
-        void (*callback)(const sphere_cast_result& result);
+        vec3f   from;
+        vec3f   to;
+        vec3f   dimension;
+        u32     flags;
+        u32     timestamp;
+        void*   user_data;
+        void(*callback)(const sphere_cast_result& result);
     };
 
     struct physics_cmd
@@ -347,9 +353,8 @@ namespace physics
     void remove_from_world(const u32& entity_index);
     void add_collision_trigger(const collision_trigger_data& trigger_data);
 
-    void cast_ray(const ray_cast_params& rcp, bool immediate = false); // non immedite will put a cast command in the buffer.
-    void cast_sphere(const sphere_cast_params& rcp,
-                     bool immediate = false); // using non immediate may not be thread safe depending when you do it.
+    void cast_ray(const ray_cast_params& rcp, bool immediate = false);          // non immedite will put a cast command in the buffer.
+    void cast_sphere(const sphere_cast_params& rcp, bool immediate = false);    // using non immediate may not be thread safe depending when you do it.
 
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
     void set_float(const u32& entity_index, const f32& fval, u32 cmd);

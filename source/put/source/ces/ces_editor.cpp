@@ -1,7 +1,3 @@
-// ces_editor.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
-// License: https://github.com/polymonster/pmtech/blob/master/license.md
-
 #include "ces/ces_editor.h"
 #include "ces/ces_resources.h"
 #include "ces/ces_utilities.h"
@@ -1488,14 +1484,14 @@ namespace put
             physics_preview(){};
             ~physics_preview(){};
         };
-        static physics_preview k_physics_preview;
+        static physics_preview s_physics_preview;
 
         void scene_constraint_ui(entity_scene* scene)
         {
-            physics::constraint_params& preview_constraint = k_physics_preview.params.constraint;
+            physics::constraint_params& preview_constraint = s_physics_preview.params.constraint;
             s32                         constraint_type = preview_constraint.type - 1;
 
-            k_physics_preview.params.type = PHYSICS_TYPE_CONSTRAINT;
+            s_physics_preview.params.type = PHYSICS_TYPE_CONSTRAINT;
 
             ImGui::Combo("Constraint##Physics", (s32*)&constraint_type, "Six DOF\0Hinge\0Point to Point\0", 7);
 
@@ -1563,14 +1559,21 @@ namespace put
 
         void scene_rigid_body_ui(entity_scene* scene)
         {
-            u32 collision_shape = k_physics_preview.params.rigid_body.shape - 1;
+            u32 collision_shape = s_physics_preview.params.rigid_body.shape - 1;
 
-            ImGui::InputFloat("Mass", &k_physics_preview.params.rigid_body.mass);
+            ImGui::InputFloat("Mass", &s_physics_preview.params.rigid_body.mass);
             ImGui::Combo("Shape##Physics", (s32*)&collision_shape,
                          "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0", 7);
 
-            k_physics_preview.params.rigid_body.shape = collision_shape + 1;
+            s_physics_preview.params.rigid_body.shape = collision_shape + 1;
 
+            u32* flags = &s_physics_preview.params.rigid_body.create_flags;
+
+            ImGui::InputFloat3("Position", &s_physics_preview.params.rigid_body.position[0]); 
+            ImGui::InputFloat3("Dimensions", &s_physics_preview.params.rigid_body.dimensions[0]);
+
+            s_physics_preview.params.rigid_body.create_flags = physics::CF_SET_ALL;
+            
             Str button_text = "Set Start Transform";
 
             u32 sel_num = sb_count(s_selection_list);
@@ -1578,29 +1581,30 @@ namespace put
             {
                 u32 i = s_selection_list[s];
 
+                if (is_invalid_or_null(scene->cbuffer[i]))
+                {
+                    // create cbuffer for debug rendering
+                    instantiate_model_cbuffer(scene, i);
+                }
+
                 if (!(scene->entities[i] & CMP_PHYSICS))
                 {
                     button_text = "Add";
                     break;
                 }
             }
-
+            
             if (ImGui::Button(button_text.c_str()))
             {
                 for (u32 s = 0; s < sel_num; ++s)
                 {
                     u32 i = s_selection_list[s];
-                    scene->physics_data[i].rigid_body = k_physics_preview.params.rigid_body;
-
-                    scene->physics_data[i].rigid_body.position = scene->transforms[i].translation;
-                    scene->physics_data[i].rigid_body.rotation = scene->transforms[i].rotation;
+                    scene->physics_data[i].rigid_body = s_physics_preview.params.rigid_body;
 
                     if (!(scene->entities[i] & CMP_PHYSICS))
-                    {
                         instantiate_rigid_body(scene, i);
-                    }
 
-                    k_physics_preview.params.rigid_body = scene->physics_data[i].rigid_body;
+                    s_physics_preview.params.rigid_body = scene->physics_data[i].rigid_body;
                 }
             }
         }
@@ -1608,7 +1612,7 @@ namespace put
         void scene_physics_ui(entity_scene* scene)
         {
             static s32 physics_type = 0;
-            k_physics_preview.active = false;
+            s_physics_preview.active = false;
 
             u32 num_selected = sb_count(s_selection_list);
 
@@ -1617,13 +1621,13 @@ namespace put
 
             if (num_selected == 1)
             {
-                k_physics_preview.params = scene->physics_data[s_selection_list[0]];
-                physics_type = k_physics_preview.params.type;
+                s_physics_preview.params = scene->physics_data[s_selection_list[0]];
+                physics_type = s_physics_preview.params.type;
             }
 
             if (ImGui::CollapsingHeader("Physics"))
             {
-                k_physics_preview.active = true;
+                s_physics_preview.active = true;
 
                 // Delete selection if all have physics
                 bool del_button = true;
@@ -1658,7 +1662,7 @@ namespace put
 
                 ImGui::Combo("Type##Physics", &physics_type, "Rigid Body\0Constraint\0");
 
-                k_physics_preview.params.type = physics_type;
+                s_physics_preview.params.type = physics_type;
 
                 if (physics_type == PHYSICS_TYPE_RIGID_BODY)
                 {
@@ -1673,7 +1677,7 @@ namespace put
             }
 
             if (sb_count(s_selection_list) == 1)
-                scene->physics_data[s_selection_list[0]] = k_physics_preview.params;
+                scene->physics_data[s_selection_list[0]] = s_physics_preview.params;
         }
 
         bool scene_geometry_ui(entity_scene* scene)
@@ -3016,7 +3020,7 @@ namespace put
                 if (!(scene->state_flags[n] & SF_SELECTED) && !(scene->view_flags & DD_PHYSICS))
                     continue;
 
-                bool preview_rb = k_physics_preview.active && k_physics_preview.params.type == PHYSICS_TYPE_RIGID_BODY;
+                bool preview_rb = s_physics_preview.active && s_physics_preview.params.type == PHYSICS_TYPE_RIGID_BODY;
 
                 if ((scene->entities[n] & CMP_PHYSICS) || preview_rb)
                 {
@@ -3030,6 +3034,16 @@ namespace put
                     if (!pmfx::set_technique_perm(view.pmfx_shader, view.technique))
                         continue;
 
+                    if (preview_rb && !(scene->entities[n] & CMP_PHYSICS))
+                    {
+                        // update preview cbuffer
+                        cmp_draw_call dc;
+                        mat4 scale = mat::create_scale(s_physics_preview.params.rigid_body.dimensions);
+                        dc.world_matrix = scene->world_matrices[n] * scale;
+
+                        pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
+                    }
+
                     // draw
                     pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                     pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
@@ -3037,10 +3051,10 @@ namespace put
                     pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
                 }
 
-                bool preview_con = k_physics_preview.active && k_physics_preview.params.type == PHYSICS_TYPE_CONSTRAINT;
+                bool preview_con = s_physics_preview.active && s_physics_preview.params.type == PHYSICS_TYPE_CONSTRAINT;
 
                 if (preview_con)
-                    render_constraint(scene, n, k_physics_preview.params.constraint);
+                    render_constraint(scene, n, s_physics_preview.params.constraint);
 
                 if ((scene->entities[n] & CMP_CONSTRAINT))
                     render_constraint(scene, n, scene->physics_data[n].constraint);

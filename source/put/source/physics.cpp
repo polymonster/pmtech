@@ -1,7 +1,3 @@
-// physics.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
-// License: https://github.com/polymonster/pmtech/blob/master/license.md
-
 #include "pen_string.h"
 #include "slot_resource.h"
 #include "timer.h"
@@ -387,7 +383,7 @@ namespace physics
                                     btCollisionShape* p_existing_shape)
     {
         // create box shape at position and orientation specified in the command
-        btCollisionShape* shape = NULL;
+        btCollisionShape* shape = nullptr;
         btTransform       shape_transform;
 
         if (p_existing_shape)

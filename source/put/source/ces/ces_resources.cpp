@@ -1,7 +1,3 @@
-// ces_resources.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
-// License: https://github.com/polymonster/pmtech/blob/master/license.md
-
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "file_system.h"
@@ -79,17 +75,18 @@ namespace put
 
             vec3f min = scene->bounding_volumes[s].min_extents;
             vec3f max = scene->bounding_volumes[s].max_extents;
-
-            vec3f pos = scene->transforms[s].translation;
             vec3f scale = scene->transforms[s].scale;
-            quat  rotation = scene->transforms[s].rotation;
 
-            scene->offset_matrices[s] = mat::create_scale(scale);
+            if(!(rb.create_flags & physics::CF_POSITION))
+                rb.position = scene->transforms[s].translation;
+            
+            if (!(rb.create_flags & physics::CF_ROTATION))
+                rb.rotation = scene->transforms[s].rotation;
 
-            rb.position = pos;
-            rb.rotation = rotation;
-
-            rb.dimensions = (max - min) * scale * 0.5f;
+            if (!(rb.create_flags & physics::CF_DIMENSIONS))
+            {
+                rb.dimensions = (max - min) * scale * 0.5f;
+            }
 
             // capsule height is extents height + radius * 2 (for the capsule top and bottom)
             if (rb.shape == physics::CAPSULE)
@@ -99,10 +96,15 @@ namespace put
             if (rb.shape == physics::CONE)
                 rb.dimensions.y *= 2.0f;
 
+            // bake scale into offset matrix
+            scene->transforms[s].scale = vec3f::one();
+            scene->entities[s] |= CMP_TRANSFORM;
+            scene->offset_matrices[s] = mat::create_scale(rb.dimensions);
+
             // fill the matrix array with the first matrix because of thread sync
             mat4 mrot;
-            rotation.get_matrix(mrot);
-            mat4 start_transform = mrot * mat::create_translation(pos);
+            rb.rotation.get_matrix(mrot);
+            mat4 start_transform = mrot * mat::create_translation(rb.position);
 
             // masks / groups are currently hardcoded.
             rb.group = 1;
@@ -190,7 +192,6 @@ namespace put
                     return;
 
                 pen::renderer_release_buffer(scene->materials[node_index].material_cbuffer);
-                scene->materials[node_index].material_cbuffer = PEN_INVALID_HANDLE;
             }
 
             if (size == 0)

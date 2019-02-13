@@ -1,7 +1,3 @@
-// ces_scene.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
-// License: https://github.com/polymonster/pmtech/blob/master/license.md
-
 #include <fstream>
 #include <functional>
 
@@ -847,7 +843,19 @@ namespace put
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 // controlled transform
-                if (scene->entities[n] & CMP_TRANSFORM)
+                if (scene->entities[n] & CMP_PHYSICS)
+                {
+                    scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]);
+                    scene->local_matrices[n].transposed();
+
+                    scene->local_matrices[n] = scene->local_matrices[n] * scene->offset_matrices[n];
+
+                    cmp_transform& t = scene->transforms[n];
+
+                    t.translation = scene->local_matrices[n].get_translation();
+                    t.rotation.from_matrix(scene->local_matrices[n]);
+                }
+                else if (scene->entities[n] & CMP_TRANSFORM)
                 {
                     cmp_transform& t = scene->transforms[n];
 
@@ -868,22 +876,6 @@ namespace put
 
                     // local matrix will be baked
                     scene->entities[n] &= ~CMP_TRANSFORM;
-                }
-                else
-                {
-                    if (scene->entities[n] & CMP_PHYSICS)
-                    {
-                        scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]);
-
-                        scene->local_matrices[n].transposed();
-
-                        scene->local_matrices[n] *= scene->offset_matrices[n];
-
-                        cmp_transform& t = scene->transforms[n];
-
-                        t.translation = scene->local_matrices[n].get_translation();
-                        t.rotation.from_matrix(scene->local_matrices[n]);
-                    }
                 }
 
                 // heirarchical scene transform
@@ -990,7 +982,7 @@ namespace put
                 // store node index in v1.x
                 scene->draw_call_data[n].v1.x = (f32)n;
 
-                if (!scene->cbuffer[n])
+                if (is_invalid_or_null(scene->cbuffer[n]))
                     continue;
 
                 if (scene->entities[n] & CMP_SUB_INSTANCE)
@@ -1008,12 +1000,7 @@ namespace put
                 scene->draw_call_data[n].world_matrix_inv_transpose = invt;
 
                 // todo mark dirty?
-
-                // per node cbuffer
-                if (scene->cbuffer[n] > 0)
-                {
-                    pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
-                }
+                pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
             }
 
             // update instance buffers

@@ -1,7 +1,3 @@
-// types.h
-// Copyright 2014 - 2019 Alex Dixon.
-// License: https://github.com/polymonster/pmtech/blob/master/license.md
-
 #ifndef _pen_types_h
 #define _pen_types_h
 
@@ -67,6 +63,16 @@ inline bool is_valid(u32 handle)
 inline bool is_invalid(u32 handle)
 {
     return handle == PEN_INVALID_HANDLE;
+}
+
+inline bool is_valid_non_null(u32 handle)
+{
+    return handle != PEN_INVALID_HANDLE && handle != 0;
+}
+
+inline bool is_invalid_or_null(u32 handle)
+{
+    return handle == PEN_INVALID_HANDLE || handle == 0;
 }
 
 // Generic erors for the few cases erors are handled :)

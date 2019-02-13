@@ -1,7 +1,3 @@
-// renderer_cmd.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
-// License: https://github.com/polymonster/pmtech/blob/master/license.md
-
 #include <fstream>
 
 #include "console.h"
@@ -808,9 +804,6 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd_buffer[put_pos].resource_slot = resource_slot;
 
-        if (resource_slot == 345)
-            u32 a = 0;
-
         INC_WRAP(put_pos);
 
         return resource_slot;
@@ -1102,8 +1095,11 @@ namespace pen
 
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
-        if (buffer_index == 0 || buffer_index == PEN_INVALID_HANDLE)
+        if (buffer_index == 0)
             return;
+
+        if (buffer_index == PEN_INVALID_HANDLE)
+            u32 a = 0;
 
         cmd_buffer[put_pos].command_index = CMD_UPDATE_BUFFER;
 
@@ -1316,7 +1312,7 @@ namespace pen
     static bool s_run_test = false;
     static void renderer_test_read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
     {
-        Str reference_filename = "test_reference/";
+        Str reference_filename = "data/textures/";
         reference_filename.appendf("%s%s", pen_window.window_title, ".dds");
 
         void* file_data = nullptr;
@@ -1324,60 +1320,29 @@ namespace pen
         u32 pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
 
         u32 diffs = 0;
-
-        // splat 255 alpha as we dont actually see dest alpha from bb
-        u8* cmp_image = (u8*)data;
-        for (u32 i = 0; i < depth_pitch; i += 4)
-        {
-            cmp_image[i + 3] = 255;
-        }
+        
+        // make test results
+        PEN_SYSTEM("mkdir ../../test_results");
 
         if (pen_err == PEN_ERR_OK)
         {
-            // create a file of the diffs
-            u8* diff_image = (u8*)memory_alloc(depth_pitch);
-
             // file exists do image compare
             u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
             u8* cmp_image = (u8*)data;
             
-            static const u32 src[] = { 0, 1, 2, 3 };
-            static const u32 dst[] = { 2, 1, 0, 3 };
-
             for (u32 i = 0; i < depth_pitch; i += 4)
             {
-                for (u32 j = 0; j < 4; ++j)
-                {
-                    u32 src_sample = src[j];
-                    u32 dst_sample = dst[j];
-
-                    s32 sd = ref_image[i + src_sample] - cmp_image[i + dst_sample];
-                    s32 asd = abs(sd);
-
-                    diff_image[i + j] = asd;
-                    if (j == 3)
-                        diff_image[i + j] = 255; // ignore alpha
-
-                    if (ref_image[i + src_sample] != cmp_image[i + dst_sample])
-                    {
-                        if (abs(sd) > 5)
-                        {
-                            ++diffs;
-                        }
-                    }
-                }
+                if (ref_image[i + 2] != cmp_image[i + 0]) ++diffs;
+                if (ref_image[i + 1] != cmp_image[i + 1]) ++diffs;
+                if (ref_image[i + 0] != cmp_image[i + 2]) ++diffs;
+                if (ref_image[i + 3] != cmp_image[i + 3]) ++diffs;
             }
 
             Str output_file = "";
-            output_file.appendf("test_results/%s.png", pen_window.window_title);
+            output_file.appendf("../../test_results/%s.png", pen_window.window_title);
             stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
 
-            output_file = "";
-            output_file.appendf("test_results/%s_diff.png", pen_window.window_title);
-            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, diff_image, row_pitch);
-
-            memory_free(diff_image);
-            memory_free(file_data);
+            free(file_data);
         }
         else
         {
@@ -1388,16 +1353,13 @@ namespace pen
         }
 
         f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
+        PEN_CONSOLE("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
         
         Str output_results_file = "";
-        output_results_file.appendf("test_results/%s.txt", pen_window.window_title);
-
-        // a little json output so its easy to parse
-        Str output_results = "";
-        output_results.appendf("{ \"tested\": %i, \"diffs\": %i, \"percentage\": %3.3f }", depth_pitch, diffs, percentage);
+        output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
         
         std::ofstream ofs(output_results_file.c_str());
-        ofs << output_results.c_str();
+        ofs << diffs << "/" << depth_pitch << ", " << percentage;
         ofs.close();
         
         pen::os_terminate(0);
@@ -1406,7 +1368,6 @@ namespace pen
     void renderer_test_enable()
     {
         PEN_CONSOLE("renderer test enabled.\n");
-        srand(0);
         s_run_test = true;
     }
 
