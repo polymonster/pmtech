@@ -843,19 +843,7 @@ namespace put
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 // controlled transform
-                if (scene->entities[n] & CMP_PHYSICS)
-                {
-                    scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]);
-                    scene->local_matrices[n].transposed();
-
-                    scene->local_matrices[n] = scene->local_matrices[n] * scene->offset_matrices[n];
-
-                    cmp_transform& t = scene->transforms[n];
-
-                    t.translation = scene->local_matrices[n].get_translation();
-                    t.rotation.from_matrix(scene->local_matrices[n]);
-                }
-                else if (scene->entities[n] & CMP_TRANSFORM)
+                if (scene->entities[n] & CMP_TRANSFORM)
                 {
                     cmp_transform& t = scene->transforms[n];
 
@@ -876,6 +864,18 @@ namespace put
 
                     // local matrix will be baked
                     scene->entities[n] &= ~CMP_TRANSFORM;
+                }
+                else if (scene->entities[n] & CMP_PHYSICS)
+                {
+                    scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]);
+                    scene->local_matrices[n].transposed();
+
+                    scene->local_matrices[n] = scene->local_matrices[n] * scene->offset_matrices[n];
+
+                    cmp_transform& t = scene->transforms[n];
+
+                    t.translation = scene->local_matrices[n].get_translation();
+                    t.rotation.from_matrix(scene->local_matrices[n]);
                 }
 
                 // heirarchical scene transform

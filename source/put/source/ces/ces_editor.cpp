@@ -1559,6 +1559,7 @@ namespace put
 
         void scene_rigid_body_ui(entity_scene* scene)
         {
+            // shape and mass
             u32 collision_shape = s_physics_preview.params.rigid_body.shape - 1;
 
             ImGui::InputFloat("Mass", &s_physics_preview.params.rigid_body.mass);
@@ -1567,25 +1568,31 @@ namespace put
 
             s_physics_preview.params.rigid_body.shape = collision_shape + 1;
 
-            u32* flags = &s_physics_preview.params.rigid_body.create_flags;
+            ImGui::InputInt("Group", &s_physics_preview.params.rigid_body.group);
+            ImGui::InputInt("Mask", &s_physics_preview.params.rigid_body.mask);
 
-            ImGui::InputFloat3("Position", &s_physics_preview.params.rigid_body.position[0]); 
-            ImGui::InputFloat3("Dimensions", &s_physics_preview.params.rigid_body.dimensions[0]);
+            // transform info / use geom
+            bool cfg = s_physics_preview.params.rigid_body.create_flags == 0;
+            ImGui::Checkbox("Create From Geometry", &cfg);
 
-            s_physics_preview.params.rigid_body.create_flags = physics::CF_SET_ALL;
+            if (!cfg)
+            {
+                s_physics_preview.params.rigid_body.create_flags |= physics::CF_SET_ALL;
+
+                ImGui::InputFloat3("Position", &s_physics_preview.params.rigid_body.position[0]);
+                ImGui::InputFloat3("Dimensions", &s_physics_preview.params.rigid_body.dimensions[0]);
+            }
+            else
+            {
+                s_physics_preview.params.rigid_body.create_flags = 0;
+            }
             
+            // check if an instance exists or is new
             Str button_text = "Set Start Transform";
-
             u32 sel_num = sb_count(s_selection_list);
             for (u32 s = 0; s < sel_num; ++s)
             {
                 u32 i = s_selection_list[s];
-
-                if (is_invalid_or_null(scene->cbuffer[i]))
-                {
-                    // create cbuffer for debug rendering
-                    instantiate_model_cbuffer(scene, i);
-                }
 
                 if (!(scene->entities[i] & CMP_PHYSICS))
                 {
@@ -1594,6 +1601,7 @@ namespace put
                 }
             }
             
+            // create
             if (ImGui::Button(button_text.c_str()))
             {
                 for (u32 s = 0; s < sel_num; ++s)
@@ -3034,18 +3042,38 @@ namespace put
                     if (!pmfx::set_technique_perm(view.pmfx_shader, view.technique))
                         continue;
 
-                    if (preview_rb && !(scene->entities[n] & CMP_PHYSICS))
+                    if (is_invalid_or_null(scene->physics_debug_cbuffer[n]))
                     {
-                        // update preview cbuffer
-                        cmp_draw_call dc;
-                        mat4 scale = mat::create_scale(s_physics_preview.params.rigid_body.dimensions);
-                        dc.world_matrix = scene->world_matrices[n] * scale;
+                        pen::buffer_creation_params bcp;
+                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                        bcp.buffer_size = sizeof(cmp_draw_call);
+                        bcp.data = nullptr;
 
-                        pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
+                        scene->physics_debug_cbuffer[n] = pen::renderer_create_buffer(bcp);
                     }
 
+                    // update cbuffer
+                    cmp_draw_call dc;
+                    if (preview_rb && !(scene->entities[n] & CMP_PHYSICS))
+                    {
+                        // from preview
+                        mat4 scale = mat::create_scale(s_physics_preview.params.rigid_body.dimensions);
+                        dc.world_matrix = scene->world_matrices[n] * scale;
+                    }
+                    else
+                    {
+                        // from physics instance
+                        mat4 scale = mat::create_scale(scene->physics_data[n].rigid_body.dimensions);
+                        mat4 rbmat = physics::get_rb_matrix(scene->physics_handles[n]);
+                        dc.world_matrix = rbmat * scale;
+                    }
+
+                    pen::renderer_update_buffer(scene->physics_debug_cbuffer[n], &dc, sizeof(cmp_draw_call));
+
                     // draw
-                    pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+                    pen::renderer_set_constant_buffer(scene->physics_debug_cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                     pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
                     pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
                     pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
