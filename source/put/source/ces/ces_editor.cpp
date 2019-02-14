@@ -1559,7 +1559,7 @@ namespace put
 
         void scene_rigid_body_ui(entity_scene* scene)
         {
-            // shape and mass
+            // shape, mass, group etc
             u32 collision_shape = s_physics_preview.params.rigid_body.shape - 1;
 
             ImGui::InputFloat("Mass", &s_physics_preview.params.rigid_body.mass);
@@ -1568,8 +1568,8 @@ namespace put
 
             s_physics_preview.params.rigid_body.shape = collision_shape + 1;
 
-            ImGui::InputInt("Group", &s_physics_preview.params.rigid_body.group);
-            ImGui::InputInt("Mask", &s_physics_preview.params.rigid_body.mask);
+            ImGui::InputInt("Group", (s32*)&s_physics_preview.params.rigid_body.group);
+            ImGui::InputInt("Mask", (s32*)&s_physics_preview.params.rigid_body.mask);
 
             // transform info / use geom
             bool cfg = s_physics_preview.params.rigid_body.create_flags == 0;
