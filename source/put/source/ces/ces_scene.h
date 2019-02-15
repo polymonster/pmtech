@@ -284,13 +284,6 @@ namespace put
             vec3f scale = vec3f::one();
         };
 
-        struct cmp_anim_transform
-        {
-            vec3f translation_mask = vec3f::zero();
-            vec3f translation = vec3f::zero();
-            vec3f rotation = vec3f::zero();
-        };
-
         struct cmp_shadow
         {
             u32 texture_handle; // texture handle for sdf
@@ -400,7 +393,8 @@ namespace put
             cmp_array<cmp_samplers>           samplers;             // version 5
             cmp_array<u32>                    material_permutation; // version 8
             cmp_array<cmp_transform>          initial_transform;    // version 9
-            cmp_array<cmp_anim_controller_v2> anim_controller_v2;   // version 9
+            cmp_array<cmp_anim_controller_v2> anim_controller_v2;
+            cmp_array<cmp_transform>          physics_offset;
 
             // test
             cmp_array<u32>                    physics_debug_cbuffer;

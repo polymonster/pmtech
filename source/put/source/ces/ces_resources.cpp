@@ -70,18 +70,17 @@ namespace put
 
         void instantiate_rigid_body(entity_scene* scene, u32 node_index)
         {
-            u32                         s = node_index;
-            physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
+            u32 s = node_index;
+
+            physics::rigid_body_params&  rb = scene->physics_data[s].rigid_body;
+            cmp_transform& pt = scene->physics_offset[s];
 
             vec3f min = scene->bounding_volumes[s].min_extents;
             vec3f max = scene->bounding_volumes[s].max_extents;
             vec3f scale = scene->transforms[s].scale;
 
-            if(!(rb.create_flags & physics::CF_POSITION))
-                rb.position = scene->transforms[s].translation;
-            
-            if (!(rb.create_flags & physics::CF_ROTATION))
-                rb.rotation = scene->transforms[s].rotation;
+            rb.position = scene->transforms[s].translation + pt.translation;
+            rb.rotation = scene->transforms[s].rotation;
 
             if (!(rb.create_flags & physics::CF_DIMENSIONS))
             {
@@ -95,11 +94,6 @@ namespace put
             // cone height is 1. (-0.5 to 0.5) but radius is 1.0;
             if (rb.shape == physics::CONE)
                 rb.dimensions.y *= 2.0f;
-
-            // bake scale into offset matrix
-            scene->transforms[s].scale = vec3f::one();
-            scene->entities[s] |= CMP_TRANSFORM;
-            scene->offset_matrices[s] = mat::create_scale(rb.dimensions);
 
             // fill the matrix array with the first matrix because of thread sync
             mat4 mrot;

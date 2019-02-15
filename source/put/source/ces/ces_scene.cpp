@@ -859,7 +859,8 @@ namespace put
 
                     if (scene->entities[n] & CMP_PHYSICS)
                     {
-                        physics::set_transform(scene->physics_handles[n], t.translation, t.rotation);
+                        cmp_transform& pt = scene->physics_offset[n];
+                        physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation);
                     }
 
                     // local matrix will be baked
@@ -867,12 +868,10 @@ namespace put
                 }
                 else if (scene->entities[n] & CMP_PHYSICS)
                 {
-                    scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]);
-                    scene->local_matrices[n].transposed();
-
-                    scene->local_matrices[n] = scene->local_matrices[n] * scene->offset_matrices[n];
-
                     cmp_transform& t = scene->transforms[n];
+                    mat4 scale_mat = mat::create_scale(t.scale);
+
+                    scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]) * scale_mat;
 
                     t.translation = scene->local_matrices[n].get_translation();
                     t.rotation.from_matrix(scene->local_matrices[n]);

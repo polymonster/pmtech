@@ -1480,6 +1480,7 @@ namespace put
         {
             bool        active = false;
             cmp_physics params;
+            cmp_transform offset;
 
             physics_preview(){};
             ~physics_preview(){};
@@ -1573,20 +1574,20 @@ namespace put
 
             // transform info / use geom
             bool cfg = s_physics_preview.params.rigid_body.create_flags == 0;
-            ImGui::Checkbox("Create From Geometry", &cfg);
+            ImGui::Checkbox("Create Dimensions Geometry", &cfg);
 
             if (!cfg)
             {
                 s_physics_preview.params.rigid_body.create_flags |= physics::CF_SET_ALL;
-
-                ImGui::InputFloat3("Position", &s_physics_preview.params.rigid_body.position[0]);
                 ImGui::InputFloat3("Dimensions", &s_physics_preview.params.rigid_body.dimensions[0]);
             }
             else
             {
                 s_physics_preview.params.rigid_body.create_flags = 0;
             }
-            
+
+            ImGui::InputFloat3("Offset", &s_physics_preview.offset.translation[0]);
+
             // check if an instance exists or is new
             Str button_text = "Set Start Transform";
             u32 sel_num = sb_count(s_selection_list);
@@ -1608,6 +1609,7 @@ namespace put
                 {
                     u32 i = s_selection_list[s];
                     scene->physics_data[i].rigid_body = s_physics_preview.params.rigid_body;
+                    scene->physics_offset[i].translation = s_physics_preview.offset.translation;
 
                     if (!(scene->entities[i] & CMP_PHYSICS))
                         instantiate_rigid_body(scene, i);
