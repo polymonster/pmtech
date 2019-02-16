@@ -1175,6 +1175,11 @@ namespace put
 
                         physics::set_transform(sc->scene->physics_handles[i], t, q);
 
+                        sc->scene->transforms[i].translation = t;
+                        sc->scene->transforms[i].rotation = q;
+
+                        sc->scene->entities[i] |= CMP_TRANSFORM;
+
                         // reset velocity
                         physics::set_v3(sc->scene->physics_handles[i], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
                         physics::set_v3(sc->scene->physics_handles[i], vec3f::zero(), physics::CMD_SET_ANGULAR_VELOCITY);
@@ -2536,14 +2541,14 @@ namespace put
             s32   constraint = -1;
             s32   physics_handle = -1;
         };
-        physics_pick k_physics_pick_info;
+        static physics_pick s_physics_pick_info;
 
         void physics_pick_callback(const physics::ray_cast_result& result)
         {
-            k_physics_pick_info.state = PICKING_COMPLETE;
-            k_physics_pick_info.pos = result.point;
-            k_physics_pick_info.grabbed = false;
-            k_physics_pick_info.physics_handle = result.physics_handle;
+            s_physics_pick_info.state = PICKING_COMPLETE;
+            s_physics_pick_info.pos = result.point;
+            s_physics_pick_info.grabbed = false;
+            s_physics_pick_info.physics_handle = result.physics_handle;
         }
 
         void transform_widget(const scene_view& view)
@@ -2569,57 +2574,61 @@ namespace put
             vec3f r1 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 1.0f), view_proj, vpi);
             vec3f vr = normalised(r1 - r0);
 
+            dbg::add_point(s_physics_pick_info.pos, 0.5f, vec4f::green());
+
             if (s_transform_mode == TRANSFORM_PHYSICS)
             {
-                if (!k_physics_pick_info.grabbed && k_physics_pick_info.constraint == -1)
+                if (!s_physics_pick_info.grabbed && s_physics_pick_info.constraint == -1)
                 {
-                    if (k_physics_pick_info.state == PICKING_READY)
+                    if (s_physics_pick_info.state == PICKING_READY)
                     {
                         if (ms.buttons[PEN_MOUSE_L])
                         {
-                            k_physics_pick_info.state = PICKING_SINGLE;
+                            s_physics_pick_info.state = PICKING_SINGLE;
 
                             physics::ray_cast_params rcp;
                             rcp.start = r0;
                             rcp.end = r1;
+                            rcp.mask = 0xffffff;
+                            rcp.group = 0xffffff;
                             rcp.timestamp = pen::get_time_ms();
                             rcp.callback = physics_pick_callback;
 
                             physics::cast_ray(rcp);
                         }
                     }
-                    else if (k_physics_pick_info.state == PICKING_COMPLETE)
+                    else if (s_physics_pick_info.state == PICKING_COMPLETE)
                     {
-                        if (k_physics_pick_info.physics_handle != -1)
+                        if (s_physics_pick_info.physics_handle != -1)
                         {
                             physics::constraint_params cp;
-                            cp.pivot = k_physics_pick_info.pos;
+                            cp.pivot = s_physics_pick_info.pos;
                             cp.type = physics::CONSTRAINT_P2P;
-                            cp.rb_indices[0] = k_physics_pick_info.physics_handle;
+                            cp.rb_indices[0] = s_physics_pick_info.physics_handle;
 
-                            k_physics_pick_info.constraint = physics::add_constraint(cp);
-                            k_physics_pick_info.state = PICKING_GRABBED;
+                            s_physics_pick_info.constraint = physics::add_constraint(cp);
+                            s_physics_pick_info.state = PICKING_GRABBED;
                         }
                         else
                         {
-                            k_physics_pick_info.state = PICKING_READY;
+                            s_physics_pick_info.state = PICKING_READY;
                         }
                     }
                 }
-                else if (k_physics_pick_info.constraint > 0)
+                else if (s_physics_pick_info.constraint > 0)
                 {
                     if (ms.buttons[PEN_MOUSE_L])
                     {
                         vec3f new_pos =
-                            maths::ray_plane_intersect(r0, vr, k_physics_pick_info.pos, view.camera->view.get_row(2).xyz);
+                            maths::ray_plane_intersect(r0, vr, s_physics_pick_info.pos, view.camera->view.get_row(2).xyz);
 
-                        physics::set_v3(k_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS);
+                        physics::set_v3(s_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS);
                     }
                     else
                     {
-                        physics::release_entity(k_physics_pick_info.constraint);
-                        k_physics_pick_info.constraint = -1;
-                        k_physics_pick_info.state = PICKING_READY;
+                        physics::release_entity(s_physics_pick_info.constraint);
+                        s_physics_pick_info.constraint = -1;
+                        s_physics_pick_info.state = PICKING_READY;
                     }
                 }
             }
@@ -3062,7 +3071,10 @@ namespace put
                     {
                         // from preview
                         mat4 scale = mat::create_scale(s_physics_preview.params.rigid_body.dimensions);
-                        dc.world_matrix = scene->world_matrices[n] * scale;
+
+                        mat4 translation_mat = mat::create_translation(s_physics_preview.offset.translation);
+
+                        dc.world_matrix = translation_mat * scene->world_matrices[n] * scale;
                     }
                     else
                     {

@@ -4,6 +4,7 @@
 
 #include "maths/maths.h"
 #include "physics.h"
+#include "data_struct.h"
 
 // for multi body bullet
 #include "BulletDynamics/Featherstone/btMultiBody.h"
@@ -16,17 +17,14 @@
 #include "BulletDynamics/Featherstone/btMultiBodyPoint2Point.h"
 #include "btBulletDynamicsCommon.h"
 
-namespace physics
-{
-#define MAX_P2P_CONSTRAINTS 20
-#define MULTIBODY_WORLD
 #define MAX_PHYSICS_RESOURCES 2048
 #define MAX_TRIGGERS 1024
-#define MAX_LINKS 32
 #define NUM_OUTPUT_BUFFERS 2
 #define MAX_OUTPUTS 2048
-#define MAX_MULTIS 2048
+#define MAX_P2P_CONSTRAINTS 20
 
+namespace physics
+{
     enum e_entity_type
     {
         ENTITY_NULL = 0,
@@ -99,14 +97,8 @@ namespace physics
         btDefaultCollisionConfiguration* collision_config;
         btCollisionDispatcher*           dispatcher;
         btBroadphaseInterface*           olp_cache;
-
-#ifdef MULTIBODY_WORLD
-        btMultiBodyConstraintSolver* solver;
-        btMultiBodyDynamicsWorld*    dynamics_world;
-#else
-        btConstraintSolver* solver;
-        btDynamicsWorld*    dynamics_world;
-#endif
+        btConstraintSolver*              solver;
+        btDynamicsWorld*                 dynamics_world;
     };
 
     struct bullet_objects
@@ -135,6 +127,13 @@ namespace physics
         u32   call_attach;
     };
 
+    struct entity_data
+    {
+        mat4* output_matrices = nullptr;
+        u32*  output_hit_flags = nullptr;
+        trigger_contact_data* output_contact_data = nullptr;
+    };
+
     struct readable_data
     {
         readable_data()
@@ -148,12 +147,13 @@ namespace physics
 
         a_u32 current_ouput_backbuffer;
         a_u32 current_ouput_frontbuffer;
+        
         a_u32 b_consume;
         a_u32 b_paused;
 
+        pen::multi_buffer<entity_data, 2> buf;
+
         mat4                 output_matrices[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
-        mat4                 multi_output_matrices[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];
-        f32                  multi_joint_positions[NUM_OUTPUT_BUFFERS][MAX_MULTIS][MAX_LINKS];
         u32                  output_hit_flags[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
         trigger_contact_data output_contact_data[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
     };
@@ -163,7 +163,6 @@ namespace physics
     void physics_update(f32 dt);
     void physics_initialise();
 
-    btMultiBody* create_multirb_internal(physics_entity& entity, const multi_body_params& params);
     btRigidBody* create_rb_internal(physics_entity& entity, const rigid_body_params& params, u32 ghost,
                                     btCollisionShape* p_existing_shape = NULL);
 
@@ -171,7 +170,6 @@ namespace physics
     void add_compound_rb_internal(const compound_rb_params& params, u32 resource_slot);
     void add_compound_shape_internal(const compound_rb_params& params, u32 resource_slot);
     void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body);
-    void add_multibody_internal(const multi_body_params& params, u32 resource_slot);
     void add_hinge_internal(const constraint_params& params, u32 resource_slot);
     void add_constraint_internal(const constraint_params& params, u32 resource_slot);
 

@@ -31,18 +31,6 @@ namespace physics
     static bullet_systems       s_bullet_systems;
     static bullet_objects       s_bullet_objects;
 
-    struct collision_responsors
-    {
-        collision_responsors()
-        {
-            num_responsors = 0;
-        }
-
-        collision_response response_data[MAX_PHYSICS_RESOURCES];
-        u32                num_responsors;
-    };
-    collision_responsors g_collision_responsors;
-
     // todo merge these 2
     btTransform get_bttransform(const vec3f& p, const quat& q)
     {
@@ -174,211 +162,6 @@ namespace physics
         return shape;
     }
 
-    btMultiBody* create_multirb_internal(physics_entity& entity, const multi_body_params& params)
-    {
-#if 0
-		//init the base	
-		btVector3 baseInertiaDiag( 0.f, 0.f, 0.f );
-
-		btCollisionShape *p_base_col = create_collision_shape( entity, params.base );
-
-		if (p_base_col)
-		{
-			p_base_col->calculateLocalInertia( params.base.mass, baseInertiaDiag );
-		}
-
-		bool canSleep = false;
-
-		btMultiBody *p_multibody = new btMultiBody( params.num_links, params.base.mass, baseInertiaDiag, params.base.mass == 0.0f ? true : false, canSleep, params.multi_dof == 1 );
-
-		btQuaternion bt_quat;
-		memcpy( &bt_quat, &params.base.rotation, sizeof(quat) );
-
-		btVector3 base_pos = btVector3( params.base.position.x, params.base.position.y, params.base.position.z );
-		p_multibody->setBasePos( base_pos );
-		p_multibody->setWorldToBaseRot( bt_quat );
-
-		//init the links	
-		btVector3 linkInertiaDiag( 0.f, 0.f, 0.f );
-
-		btMultiBodyLinkCollider* col = new btMultiBodyLinkCollider( p_multibody, -1 );
-		entity.link_colliders.push_back(col);
-		col->setCollisionShape( p_base_col );
-
-		btQuaternion world_to_local = p_multibody->getWorldToBaseRot( );
-		float quat[4] =
-		{
-			-world_to_local.x( ),
-			-world_to_local.y( ),
-			-world_to_local.z( ),
-			world_to_local.w( )
-		};
-
-		btTransform tr;
-		tr.setIdentity( );
-		tr.setOrigin( p_multibody->getBasePos( ) );
-		tr.setRotation( btQuaternion( quat[0], quat[1], quat[2], quat[3] ) );
-		col->setWorldTransform( tr );
-
-		//, params.base.group, params.base.mask 
-		if (p_base_col)
-		{
-			g_bullet_systems.dynamics_world->addCollisionObject( col, params.base.group, params.base.mask );
-			p_multibody->setBaseCollider( col );
-		}
-		else
-		{
-			p_multibody->setBaseCollider( NULL );
-		}
-
-		btVector3 parent_pos = base_pos;
-
-		btVector3 link_positions[32];
-
-		entity.joint_motors.clear( );
-
-		for (u32 i = 0; i < params.num_links; ++i)
-		{
-			link_positions[i] = btVector3( params.links[i].rb.position.x, params.links[i].rb.position.y, params.links[i].rb.position.z );
-		}
-
-		for (u32 i = 0; i < params.num_links; ++i)
-		{
-			//y-axis assumed up
-			btVector3 link_pos = btVector3( params.links[i].rb.position.x, params.links[i].rb.position.y, params.links[i].rb.position.z );
-
-			if (params.links[i].parent == -1)
-			{
-				parent_pos = base_pos;
-			}
-			else
-			{
-				parent_pos = link_positions[params.links[i].parent];
-			}
-
-			btVector3 parentComToCurrentCom = link_pos;
-			if (params.links[i].transform_world_to_local)
-			{
-				parentComToCurrentCom = link_pos - parent_pos;
-			}
-
-			btVector3 hinge_offset = btVector3( params.links[i].hinge_offset.x, params.links[i].hinge_offset.y, params.links[i].hinge_offset.z );
-
-			btVector3 currentPivotToCurrentCom = hinge_offset;		 									//cur body's COM to cur body's PIV offset
-			btVector3 parentComToCurrentPivot = parentComToCurrentCom - currentPivotToCurrentCom;	    //par body's COM to cur body's PIV offset
-
-			btQuaternion link_quat;
-			memcpy( &link_quat, &params.links[i].rb.rotation, sizeof(quat) );
-
-			btQuaternion parent_to_this_quat = link_quat.inverse( );
-
-			btVector3 hinge_axis = btVector3( params.links[i].hinge_axis.x, params.links[i].hinge_axis.y, params.links[i].hinge_axis.z );
-
-			if (params.links[i].link_type == REVOLUTE)
-			{
-				p_multibody->setupRevolute( i, params.links[i].rb.mass, linkInertiaDiag, params.links[i].parent, parent_to_this_quat, hinge_axis, parentComToCurrentPivot, currentPivotToCurrentCom, false );
-				parent_pos = link_pos;
-			}
-			else if (params.links[i].link_type == FIXED)
-			{
-				parent_to_this_quat = link_quat.inverse( );
-
-				p_multibody->setupFixed( i, params.links[i].rb.mass, linkInertiaDiag, params.links[i].parent, parent_to_this_quat, parentComToCurrentPivot, currentPivotToCurrentCom, false );
-			}
-
-#ifdef MULTIBODY_WORLD
-			if (params.links[i].joint_motor == 1 && !params.multi_dof)
-			{
-				btMultiBodyJointMotor* con = new btMultiBodyJointMotor( p_multibody, i, 0.0f, 0.0f );
-				g_bullet_systems.dynamics_world->addMultiBodyConstraint( con );
-				
-				entity.joint_motors.push_back( con );
-			}
-			else
-			{
-				entity.joint_motors.push_back( NULL );
-			}
-
-			if (params.links[i].joint_limit_constraint == 1)
-			{
-				btMultiBodyJointLimitConstraint* con = new btMultiBodyJointLimitConstraint( p_multibody, i, params.links[i].hinge_limits.x, params.links[i].hinge_limits.y );
-				g_bullet_systems.dynamics_world->addMultiBodyConstraint( con );
-
-				entity.joint_limits.push_back( con );
-			}
-			else
-			{
-				entity.joint_limits.push_back( NULL );
-			}
-#endif
-		}
-
-		if (params.multi_dof == 1)
-		{
-			p_multibody->finalizeMultiDof( );
-		}
-
-#ifdef MULTIBODY_WORLD
-		k_bullet_systems.dynamics_world->addMultiBody( p_multibody );
-#endif
-
-		btVector3 local_origin;
-
-		for (int i = 0; i < p_multibody->getNumLinks( ); ++i)
-		{
-			btCollisionShape* link_col_shape = NULL;
-
-			if (params.links[i].rb.shape == physics::COMPOUND)
-			{
-				link_col_shape = k_bullet_objects.entities[ params.links[i].compound_index ].compound_shape;
-			}
-			else
-			{
-				link_col_shape = create_collision_shape( entity, params.links[i].rb );
-			}
-
-			if (!link_col_shape)
-			{
-				continue;
-			}
-
-			//const int parent = p_multibody->getParent( i );
-			world_to_local = p_multibody->getParentToLocalRot( i ) * world_to_local;
-
-			btVector3 multi_base_pos = p_multibody->getBasePos( );
-
-			btVector3 r_vector = p_multibody->getRVector( i );
-
-			btQuaternion world_to_local_inverse = world_to_local.inverse( );
-
-			local_origin = p_multibody->getBasePos( ) + (quatRotate( world_to_local_inverse, r_vector ));
-
-			btVector3 posr = local_origin;
-
-			float quat[4] = { -world_to_local.x( ), -world_to_local.y( ), -world_to_local.z( ), world_to_local.w( ) };
-
-			btMultiBodyLinkCollider* col = new btMultiBodyLinkCollider( p_multibody, i );
-			entity.link_colliders.push_back( col );
-
-			col->setCollisionShape( link_col_shape );
-			btTransform tr;
-			tr.setIdentity( );
-			tr.setOrigin( posr );
-			tr.setRotation( btQuaternion( quat[0], quat[1], quat[2], quat[3] ) );
-			col->setWorldTransform( tr );
-
-			k_bullet_systems.dynamics_world->addCollisionObject( col, params.links[i].rb.group, params.links[i].rb.mask );
-
-			p_multibody->getLink( i ).m_collider = col;
-		}
-
-		entity.multi_body = p_multibody;
-
-		return p_multibody;
-#endif
-        return nullptr;
-    }
-
     btRigidBody* create_rb_internal(physics_entity& entity, const rigid_body_params& params, u32 ghost,
                                     btCollisionShape* p_existing_shape)
     {
@@ -448,17 +231,10 @@ namespace physics
 
         /// the default constraint solver. For parallel processing you can use a different solver (see
         /// Extras/BulletMultiThreaded)
-#ifdef MULTIBODY_WORLD
-        s_bullet_systems.solver = new btMultiBodyConstraintSolver;
+        s_bullet_systems.solver = new btSequentialImpulseConstraintSolver;
         s_bullet_systems.dynamics_world =
-            new btMultiBodyDynamicsWorld(s_bullet_systems.dispatcher, s_bullet_systems.olp_cache, s_bullet_systems.solver,
-                                         s_bullet_systems.collision_config);
-#else
-        k_bullet_systems.solver = new btSequentialImpulseConstraintSolver;
-        k_bullet_systems.dynamics_world =
-            new btDiscreteDynamicsWorld(k_bullet_systems.dispatcher, k_bullet_systems.olp_cache, k_bullet_systems.solver,
-                                        k_bullet_systems.collision_config);
-#endif
+            new btDiscreteDynamicsWorld(s_bullet_systems.dispatcher, s_bullet_systems.olp_cache, s_bullet_systems.solver,
+                s_bullet_systems.collision_config);
 
         s_bullet_systems.dynamics_world->setGravity(btVector3(0, -10, 0));
     }
@@ -489,42 +265,6 @@ namespace physics
                     g_readable_data.output_matrices[bb][i] = g_readable_data.output_matrices[bb][i].transposed();
                 }
                 break;
-
-                case ENTITY_MULTI_BODY:
-                {
-                    btMultiBody* p_multi = s_bullet_objects.entities[i].mb.multi_body;
-
-                    if (p_multi)
-                    {
-                        btMultiBodyLinkCollider* p_base_col = p_multi->getBaseCollider();
-
-                        btTransform rb_transform;
-
-                        if (p_base_col)
-                        {
-                            rb_transform = p_base_col->getWorldTransform();
-                            rb_transform.getOpenGLMatrix(g_readable_data.multi_output_matrices[bb][i][0].m);
-                        }
-
-                        g_readable_data.multi_output_matrices[bb][i][0] =
-                            g_readable_data.multi_output_matrices[bb][i][0].transposed();
-
-                        for (s32 j = 0; j < p_multi->getNumLinks(); ++j)
-                        {
-                            if (p_multi->getLink(j).m_collider)
-                            {
-                                rb_transform = p_multi->getLink(j).m_collider->getWorldTransform();
-                                rb_transform.getOpenGLMatrix(g_readable_data.multi_output_matrices[bb][i][j + 1].m);
-
-                                g_readable_data.multi_output_matrices[bb][i][j + 1] =
-                                    g_readable_data.multi_output_matrices[bb][i][j + 1].transposed();
-                            }
-
-                            g_readable_data.multi_joint_positions[bb][i][j + 1] = p_multi->getJointPos(j);
-                        }
-                    }
-                    break;
-                }
 
                 default:
                     break;
@@ -640,8 +380,8 @@ namespace physics
                     tc.trigger_a = i;
                     tc.trigger_b = j;
 
-                    s_bullet_systems.dynamics_world->getCollisionWorld()->contactPairTest(s_triggers[i].collision_object,
-                                                                                          s_triggers[j].collision_object, tc);
+                    s_bullet_systems.dynamics_world->contactPairTest(s_triggers[i].collision_object,
+                        s_triggers[j].collision_object, tc);
                 }
             }
         }
@@ -679,6 +419,8 @@ namespace physics
 
         entity.group = params.group;
         entity.mask = params.mask;
+
+        PEN_ASSERT(rb);
 
         entity.type = ENTITY_RIGID_BODY;
     }
@@ -745,13 +487,6 @@ namespace physics
 
         s_bullet_systems.dynamics_world->addConstraint(dof6);
         next_entity.constraint.dof6 = dof6;
-    }
-
-    void add_multibody_internal(const multi_body_params& params, u32 resource_slot)
-    {
-        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
-
-        next_entity.mb.multi_body = create_multirb_internal(next_entity, params);
     }
 
     void add_hinge_internal(const constraint_params& params, u32 resource_slot)
@@ -867,7 +602,7 @@ namespace physics
         {
             s_bullet_objects.entities[cmd.object_index].rb.rigid_body->getMotionState()->setWorldTransform(bt_trans);
             s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setCenterOfMassTransform(bt_trans);
-        }
+        } 
     }
 
     void set_gravity_internal(const set_v3_params& cmd)
@@ -1034,7 +769,6 @@ namespace physics
         physics_entity* entity = &s_bullet_objects.entities[resource_slot];
 
         btRigidBody* rb = s_bullet_objects.entities[cmd.entity_index].rb.rigid_body;
-        btMultiBody* mb = s_bullet_objects.entities[cmd.entity_index].mb.multi_body;
 
         btVector3 constrain_pos = btVector3(cmd.position.x, cmd.position.y, cmd.position.z);
 
@@ -1058,20 +792,6 @@ namespace physics
 
             entity->constraint.point = p2p;
             entity->constraint.type = CONSTRAINT_P2P;
-        }
-        else if (mb)
-        {
-            btVector3 pivotInA = mb->worldPosToLocal(1, constrain_pos);
-
-            void*                   mem = pen::memory_alloc_align(sizeof(btMultiBodyPoint2Point), 16);
-            btMultiBodyPoint2Point* p2p = new (mem) btMultiBodyPoint2Point(mb, 1, 0, pivotInA, constrain_pos);
-
-            p2p->setMaxAppliedImpulse(2);
-
-            s_bullet_systems.dynamics_world->addMultiBodyConstraint(p2p);
-
-            entity->constraint.point_multi = p2p;
-            entity->constraint.type = CONSTRAINT_P2P_MULTI;
         }
     }
 
@@ -1211,10 +931,12 @@ namespace physics
 
     void cast_ray_internal(const ray_cast_params& rcp)
     {
-        btVector3 from = from_lw_vec3(rcp.start);
-        btVector3 to = from_lw_vec3(rcp.end);
+        btVector3 from = from_vec3(rcp.start);
+        btVector3 to = from_vec3(rcp.end);
 
         btCollisionWorld::ClosestRayResultCallback ray_callback(from, to);
+        ray_callback.m_collisionFilterMask = rcp.mask;
+        ray_callback.m_collisionFilterGroup = rcp.group;
 
         ray_cast_result rcr;
         rcr.user_data = rcp.user_data;
@@ -1246,6 +968,8 @@ namespace physics
         btSphereShape shape = btSphereShape(btScalar(scp.dimension.x));
 
         btCollisionWorld::ClosestConvexResultCallback cast_callback = btCollisionWorld::ClosestConvexResultCallback(vfrom, vto);
+        cast_callback.m_collisionFilterMask = scp.mask;
+        cast_callback.m_collisionFilterGroup = scp.group;
 
         s_bullet_systems.dynamics_world->convexSweepTest((btConvexShape*)&shape, from, to, cast_callback);
 

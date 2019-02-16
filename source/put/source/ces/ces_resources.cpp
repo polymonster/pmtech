@@ -87,23 +87,13 @@ namespace put
                 rb.dimensions = (max - min) * scale * 0.5f;
             }
 
-            // capsule height is extents height + radius * 2 (for the capsule top and bottom)
-            if (rb.shape == physics::CAPSULE)
-                rb.dimensions.y -= rb.dimensions.x / 2.0f;
-
-            // cone height is 1. (-0.5 to 0.5) but radius is 1.0;
-            if (rb.shape == physics::CONE)
-                rb.dimensions.y *= 2.0f;
-
             // fill the matrix array with the first matrix because of thread sync
             mat4 mrot;
             rb.rotation.get_matrix(mrot);
             mat4 start_transform = mrot * mat::create_translation(rb.position);
 
             // masks / groups are currently hardcoded.
-            rb.group = 1;
             rb.shape_up_axis = physics::UP_Y;
-            rb.mask = 0xffffffff;
             rb.start_matrix = start_transform;
 
             scene->physics_handles[s] = physics::add_rb(rb);

@@ -842,6 +842,13 @@ namespace put
             // scene node transform
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
+                // force physics entity to sync and ignore controlled transform
+                if (scene->state_flags[n] & SF_SYNC_PHYSICS_TRANSFORM)
+                {
+                    scene->state_flags[n] &= ~SF_SYNC_PHYSICS_TRANSFORM;
+                    scene->entities[n] &= ~CMP_TRANSFORM;
+                }
+
                 // controlled transform
                 if (scene->entities[n] & CMP_TRANSFORM)
                 {
@@ -860,7 +867,10 @@ namespace put
                     if (scene->entities[n] & CMP_PHYSICS)
                     {
                         cmp_transform& pt = scene->physics_offset[n];
-                        physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation);
+                        physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation );
+                        
+                        physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_ANGULAR_VELOCITY);
+                        physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
                     }
 
                     // local matrix will be baked
@@ -869,12 +879,20 @@ namespace put
                 else if (scene->entities[n] & CMP_PHYSICS)
                 {
                     cmp_transform& t = scene->transforms[n];
+                    cmp_transform& pt = scene->physics_offset[n];
+
+                    mat4 physics_mat = physics::get_rb_matrix(scene->physics_handles[n]);
                     mat4 scale_mat = mat::create_scale(t.scale);
 
-                    scene->local_matrices[n] = physics::get_rb_matrix(scene->physics_handles[n]) * scale_mat;
+                    t.translation = physics_mat.get_translation();
+                    t.rotation.from_matrix(physics_mat);
 
-                    t.translation = scene->local_matrices[n].get_translation();
-                    t.rotation.from_matrix(scene->local_matrices[n]);
+                    mat4 rot_mat;
+                    t.rotation.get_matrix(rot_mat);
+
+                    mat4 translation_mat = mat::create_translation(t.translation - pt.translation);
+
+                    scene->local_matrices[n] = translation_mat * rot_mat * scale_mat;
                 }
 
                 // heirarchical scene transform

@@ -280,9 +280,11 @@ namespace physics
 
     struct ray_cast_params
     {
-        lw_vec3f start;
-        lw_vec3f end;
-        u32      timestamp;
+        vec3f   start;
+        vec3f   end;
+        u32     timestamp;
+        u32     mask = 0xffffffff;
+        u32     group = 0;
         void* user_data;
         void (*callback)(const ray_cast_result& result);
     };
@@ -302,6 +304,8 @@ namespace physics
         vec3f   dimension;
         u32     flags;
         u32     timestamp;
+        u32     mask = 0xffffffff;
+        u32     group = 0;
         void*   user_data;
         void(*callback)(const sphere_cast_result& result);
     };
@@ -366,8 +370,6 @@ namespace physics
     void sync_rigid_bodies(const u32& master, const u32& slave, const s32& link_index, u32 cmd);
 
     mat4 get_rb_matrix(const u32& entity_index);
-    mat4 get_multirb_matrix(const u32& multi_index, const s32& link_index);
-    f32  get_multi_joint_pos(const u32& multi_index, const s32& link_index);
     u32  get_hit_flags(u32 entity_index);
 
     trigger_contact_data* get_trigger_contacts(u32 entity_index);

@@ -24,15 +24,9 @@
 
 namespace physics
 {
-#define MAX_COMMANDS (1 << 12)
-#define INC_WRAP(V) (V = (V + 1) & (MAX_COMMANDS - 1))
-
-    physics_cmd cmd_buffer[MAX_COMMANDS];
-    u32         put_pos = 0;
-    u32         get_pos = 0;
-
-    pen::slot_resources k_physics_slot_resources;
-    pen::slot_resources k_p2p_slot_resources;
+    static pen_ring_buffer<physics_cmd> s_cmd_buffer;
+    static pen::slot_resources          s_physics_slot_resources;
+    static pen::slot_resources          s_p2p_slot_resources;
 
     void exec_cmd(const physics_cmd& cmd)
     {
@@ -68,10 +62,6 @@ namespace physics
 
             case CMD_SET_GRAVITY:
                 set_gravity_internal(cmd.set_v3);
-                break;
-
-            case CMD_ADD_MULTI_BODY:
-                add_multibody_internal(cmd.add_multi, cmd.resource_slot);
                 break;
 
             case CMD_SET_FRICTION:
@@ -192,13 +182,16 @@ namespace physics
 
         p_physics_job_thread_info = p_thread_info;
 
-        pen::slot_resources_init(&k_physics_slot_resources, MAX_PHYSICS_RESOURCES);
-        pen::slot_resources_init(&k_p2p_slot_resources, MAX_P2P_CONSTRAINTS);
+        pen::slot_resources_init(&s_physics_slot_resources, MAX_PHYSICS_RESOURCES);
+        pen::slot_resources_init(&s_p2p_slot_resources, MAX_P2P_CONSTRAINTS);
 
         physics_initialise();
 
         static u32 physics_timer = pen::timer_create("physics_timer");
         pen::timer_start(physics_timer);
+
+        // space for 1024 commands
+        s_cmd_buffer.create(1024);
 
         for (;;)
         {
@@ -207,15 +200,13 @@ namespace physics
 
             if (pen::semaphore_try_wait(p_physics_job_thread_info->p_sem_consume))
             {
-                u32 end_pos = put_pos;
-
                 pen::semaphore_post(p_physics_job_thread_info->p_sem_continue, 1);
 
-                while (get_pos != end_pos)
+                physics_cmd* cmd = s_cmd_buffer.get();
+                while (cmd)
                 {
-                    exec_cmd(cmd_buffer[get_pos]);
-
-                    INC_WRAP(get_pos);
+                    exec_cmd(*cmd);
+                    cmd = s_cmd_buffer.get();
                 }
             }
 
@@ -235,49 +226,38 @@ namespace physics
 
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd)
     {
-        cmd_buffer[put_pos].command_index = cmd;
-        memcpy(&cmd_buffer[put_pos].set_v3.data, &v3, sizeof(vec3f));
-        cmd_buffer[put_pos].set_v3.object_index = entity_index;
+        physics_cmd pc;
+        pc.command_index = cmd;
+        memcpy(&pc.set_v3.data, &v3, sizeof(vec3f));
+        pc.set_v3.object_index = entity_index;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
     }
 
     void set_float(const u32& entity_index, const f32& fval, u32 cmd)
     {
-        cmd_buffer[put_pos].command_index = cmd;
-        memcpy(&cmd_buffer[put_pos].set_float.data, &fval, sizeof(f32));
-        cmd_buffer[put_pos].set_float.object_index = entity_index;
+        physics_cmd pc;
+        pc.command_index = cmd;
+        memcpy(&pc.set_float.data, &fval, sizeof(f32));
+        pc.set_float.object_index = entity_index;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
     }
 
     void set_transform(const u32& entity_index, const vec3f& position, const quat& quaternion)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_TRANSFORM;
-        memcpy(&cmd_buffer[put_pos].set_transform.position, &position, sizeof(vec3f));
-        memcpy(&cmd_buffer[put_pos].set_transform.rotation, &quaternion, sizeof(quat));
-        cmd_buffer[put_pos].set_transform.object_index = entity_index;
+        physics_cmd pc;
+        pc.command_index = CMD_SET_TRANSFORM;
+        memcpy(&pc.set_transform.position, &position, sizeof(vec3f));
+        memcpy(&pc.set_transform.rotation, &quaternion, sizeof(quat));
+        pc.set_transform.object_index = entity_index;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
     }
 
     mat4 get_rb_matrix(const u32& entity_index)
     {
         return g_readable_data.output_matrices[g_readable_data.current_ouput_frontbuffer][entity_index];
-    }
-
-    mat4 get_multirb_matrix(const u32& multi_index, const s32& link_index)
-    {
-        s32 internal_link_index = link_index + 1;
-        return g_readable_data
-            .multi_output_matrices[g_readable_data.current_ouput_frontbuffer][multi_index][internal_link_index];
-    }
-
-    f32 get_multi_joint_pos(const u32& multi_index, const s32& link_index)
-    {
-        s32 internal_link_index = link_index + 1;
-        return g_readable_data
-            .multi_joint_positions[g_readable_data.current_ouput_frontbuffer][multi_index][internal_link_index];
     }
 
     trigger_contact_data* get_trigger_contacts(u32 entity_index)
@@ -287,42 +267,56 @@ namespace physics
 
     u32 add_rb(const rigid_body_params& rbp)
     {
-        cmd_buffer[put_pos].command_index = CMD_ADD_RIGID_BODY;
-        cmd_buffer[put_pos].add_rb = rbp;
+        physics_cmd pc;
 
-        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        pc.command_index = CMD_ADD_RIGID_BODY;
+        pc.add_rb = rbp;
+
+        // capsule height is extents height + radius * 2 (for the capsule top and bottom)
+        //if (pc.add_rb.shape == physics::CAPSULE)
+            //pc.add_rb.dimensions.y -= pc.add_rb.dimensions.x / 2.0f;
+
+        // cone height is 1. (-0.5 to 0.5) but radius is 1.0;
+        if (pc.add_rb.shape == physics::CONE)
+            pc.add_rb.dimensions.y *= 2.0f;
+
+        u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
+        pc.resource_slot = resource_slot;
 
         for (s32 i = 0; i < NUM_OUTPUT_BUFFERS; ++i)
             g_readable_data.output_matrices[i][resource_slot] = rbp.start_matrix;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
 
         return resource_slot;
     }
 
     u32 add_ghost_rb(const rigid_body_params& rbp)
     {
-        cmd_buffer[put_pos].command_index = CMD_ADD_GHOST_RIGID_BODY;
-        cmd_buffer[put_pos].add_rb = rbp;
+        physics_cmd pc;
 
-        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        pc.command_index = CMD_ADD_GHOST_RIGID_BODY;
+        pc.add_rb = rbp;
 
-        INC_WRAP(put_pos);
+        u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
+        pc.resource_slot = resource_slot;
+
+        s_cmd_buffer.put(pc);
 
         return resource_slot;
     }
 
     u32 add_multibody(const multi_body_params& mbp)
     {
-        cmd_buffer[put_pos].command_index = CMD_ADD_MULTI_BODY;
-        cmd_buffer[put_pos].add_multi = mbp;
+        physics_cmd pc;
 
-        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        pc.command_index = CMD_ADD_MULTI_BODY;
+        pc.add_multi = mbp;
 
-        INC_WRAP(put_pos);
+        u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
+        pc.resource_slot = resource_slot;
+
+        s_cmd_buffer.put(pc);
 
         return resource_slot;
     }
@@ -334,93 +328,106 @@ namespace physics
 
     void set_multi_v3(const u32& object_index, const u32& link_index, const vec3f& v3_data, const u32& cmd)
     {
-        cmd_buffer[put_pos].command_index = cmd;
+        physics_cmd pc;
 
-        memcpy(&cmd_buffer[put_pos].set_multi_v3.data, &v3_data, sizeof(vec3f));
-        cmd_buffer[put_pos].set_multi_v3.multi_index = object_index;
-        cmd_buffer[put_pos].set_multi_v3.link_index = link_index;
+        pc.command_index = cmd;
 
-        INC_WRAP(put_pos);
+        memcpy(&pc.set_multi_v3.data, &v3_data, sizeof(vec3f));
+        pc.set_multi_v3.multi_index = object_index;
+        pc.set_multi_v3.link_index = link_index;
+
+        s_cmd_buffer.put(pc);
     }
 
     u32 add_compound_rb(const compound_rb_params& crbp)
     {
-        cmd_buffer[put_pos].command_index = CMD_ADD_COMPOUND_RB;
-        cmd_buffer[put_pos].add_compound_rb = crbp;
+        physics_cmd pc;
 
-        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        pc.command_index = CMD_ADD_COMPOUND_RB;
+        pc.add_compound_rb = crbp;
 
-        INC_WRAP(put_pos);
+        u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
+        pc.resource_slot = resource_slot;
+
+        s_cmd_buffer.put(pc);
 
         return resource_slot;
     }
 
     void sync_compound_multi(const u32& compound_index, const u32& multi_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_SYNC_COMPOUND_TO_MULTI;
+        physics_cmd pc;
 
-        cmd_buffer[put_pos].sync_compound.compound_index = compound_index;
-        cmd_buffer[put_pos].sync_compound.multi_index = multi_index;
+        pc.command_index = CMD_SYNC_COMPOUND_TO_MULTI;
 
-        INC_WRAP(put_pos);
+        pc.sync_compound.compound_index = compound_index;
+        pc.sync_compound.multi_index = multi_index;
+
+        s_cmd_buffer.put(pc);
     }
 
     void sync_rigid_bodies(const u32& master, const u32& slave, const s32& link_index, u32 cmd)
     {
-        cmd_buffer[put_pos].command_index = cmd;
+        physics_cmd pc;
 
-        cmd_buffer[put_pos].sync_rb.master = master;
-        cmd_buffer[put_pos].sync_rb.slave = slave;
-        cmd_buffer[put_pos].sync_rb.link_index = link_index;
+        pc.command_index = cmd;
 
-        INC_WRAP(put_pos);
+        pc.sync_rb.master = master;
+        pc.sync_rb.slave = slave;
+        pc.sync_rb.link_index = link_index;
+
+        s_cmd_buffer.put(pc);
     }
 
     u32 add_constraint(const constraint_params& crbp)
     {
-        cmd_buffer[put_pos].command_index = CMD_ADD_CONSTRAINT;
+        physics_cmd pc;
 
-        cmd_buffer[put_pos].add_constraint_params = crbp;
+        pc.command_index = CMD_ADD_CONSTRAINT;
+        pc.add_constraint_params = crbp;
 
-        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
+        pc.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
 
         return resource_slot;
     }
 
     void set_collision_group(const u32& object_index, const u32& group, const u32& mask)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_GROUP;
+        physics_cmd pc;
 
-        cmd_buffer[put_pos].set_group.group = group;
-        cmd_buffer[put_pos].set_group.mask = mask;
+        pc.command_index = CMD_SET_GROUP;
+        pc.set_group.group = group;
+        pc.set_group.mask = mask;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
     }
 
     u32 add_compound_shape(const compound_rb_params& crbp)
     {
-        cmd_buffer[put_pos].command_index = CMD_ADD_COMPOUND_SHAPE;
-        cmd_buffer[put_pos].add_compound_rb = crbp;
+        physics_cmd pc;
 
-        u32 resource_slot = pen::slot_resources_get_next(&k_physics_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        pc.command_index = CMD_ADD_COMPOUND_SHAPE;
+        pc.add_compound_rb = crbp;
 
-        INC_WRAP(put_pos);
+        u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
+        pc.resource_slot = resource_slot;
+
+        s_cmd_buffer.put(pc);
 
         return resource_slot;
     }
 
     void add_collision_trigger(const collision_trigger_data& trigger_data)
     {
-        cmd_buffer[put_pos].command_index = CMD_ADD_COLLISION_TRIGGER;
+        physics_cmd pc;
 
-        cmd_buffer[put_pos].trigger_data = trigger_data;
+        pc.command_index = CMD_ADD_COLLISION_TRIGGER;
+        pc.trigger_data = trigger_data;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
     }
 
     u32 get_hit_flags(u32 entity_index)
@@ -431,51 +438,57 @@ namespace physics
 
     u32 attach_rb_to_compound(const attach_to_compound_params& params)
     {
-        cmd_buffer[put_pos].command_index = CMD_ATTACH_RB_TO_COMPOUND;
+        physics_cmd pc;
 
-        cmd_buffer[put_pos].attach_compound = params;
+        pc.command_index = CMD_ATTACH_RB_TO_COMPOUND;
+        pc.attach_compound = params;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
 
         return 0;
     }
 
     void remove_from_world(const u32& entity_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_REMOVE_FROM_WORLD;
+        physics_cmd pc;
 
-        cmd_buffer[put_pos].entity_index = entity_index;
+        pc.command_index = CMD_REMOVE_FROM_WORLD;
+        pc.entity_index = entity_index;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
     }
 
     void add_to_world(const u32& entity_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_ADD_TO_WORLD;
+        physics_cmd pc;
 
-        cmd_buffer[put_pos].entity_index = entity_index;
+        pc.command_index = CMD_ADD_TO_WORLD;
+        pc.entity_index = entity_index;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(pc);
     }
 
     void release_entity(const u32& entity_index)
     {
-        if (!pen::slot_resources_free(&k_physics_slot_resources, entity_index))
+        if (!pen::slot_resources_free(&s_physics_slot_resources, entity_index))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_ENTITY;
-        cmd_buffer[put_pos].entity_index = entity_index;
+        physics_cmd pc;
 
-        INC_WRAP(put_pos);
+        pc.command_index = CMD_RELEASE_ENTITY;
+        pc.entity_index = entity_index;
+
+        s_cmd_buffer.put(pc);
     }
 
     void cast_ray(const ray_cast_params& rcp, bool immediate)
     {
         if (!immediate)
         {
-            cmd_buffer[put_pos].command_index = CMD_CAST_RAY;
-            cmd_buffer[put_pos].ray_cast = rcp;
-            INC_WRAP(put_pos);
+            physics_cmd pc;
+            pc.command_index = CMD_CAST_RAY;
+            pc.ray_cast = rcp;
+            s_cmd_buffer.put(pc);
         }
         else
         {
@@ -487,9 +500,10 @@ namespace physics
     {
         if (!immediate)
         {
-            cmd_buffer[put_pos].command_index = CMD_CAST_SPHERE;
-            cmd_buffer[put_pos].sphere_cast = scp;
-            INC_WRAP(put_pos);
+            physics_cmd pc;
+            pc.command_index = CMD_CAST_SPHERE;
+            pc.sphere_cast = scp;
+            s_cmd_buffer.put(pc);
         }
         else
         {

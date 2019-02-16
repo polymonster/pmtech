@@ -72,7 +72,8 @@ namespace put
             SF_MATERIAL_INITIALISED = (1 << 3),
             SF_NO_SHADOW = (1 << 4),
             SF_SAMPLERS_INITIALISED = (1 << 5),
-            SF_APPLY_ANIM_TRANSFORM = (1 << 6)
+            SF_APPLY_ANIM_TRANSFORM = (1 << 6),
+            SF_SYNC_PHYSICS_TRANSFORM = (1 << 7)
         };
 
         enum e_light_types : u32
