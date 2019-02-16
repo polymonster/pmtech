@@ -30,7 +30,7 @@
 #include <xmmintrin.h>
 #endif
 
-#include <fstream>ß
+#include <fstream>
 
 u8 temp[16];
 #define SIMD_PRINT_u8(V)                                                                                                     \
