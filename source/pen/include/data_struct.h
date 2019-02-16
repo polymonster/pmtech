@@ -162,6 +162,7 @@ struct pen_ring_buffer
 
 namespace pen
 {
+    // resource pool which will grow to accomodate contents
     template <typename T>
     struct res_pool
     {
@@ -191,6 +192,39 @@ namespace pen
         T& get(u32 slot)
         {
             return _resources[slot];
+        }
+    };
+
+    // thread safe multi buffer
+    template <typename T, u32 N>
+    struct multi_buffer
+    {
+        T _data[N];
+
+        u32 _num_buffers = N;
+        a_u32 _fb;
+        a_u32 _bb;
+
+        multi_buffer()
+        {
+            _bb = 0;
+            _fb = 1;
+        }
+
+        T& backbuffer()
+        {
+            return _data[_bb];
+        }
+
+        const T& frontbuffer()
+        {
+            return _data[_fb];
+        }
+
+        void swap_buffers()
+        {
+            _fb = _bb;
+            _bb = (_bb + 1) % _num_buffers;
         }
     };
 } // namespace pen
