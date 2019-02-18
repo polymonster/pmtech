@@ -23,7 +23,8 @@ namespace put
         {
             u32 num_frames;
             u32 element_count;
-            u32 element_offset[6];
+            u32 element_offset[21];
+            u32 flags;
         };
 
         struct soa_anim
@@ -42,7 +43,9 @@ namespace put
 
         struct anim_target
         {
-            f32 t[9]; // t xyz, r xyz, s xyz.
+            f32 t[9]; // translate xyz, scale xyz.
+            quat q;
+            u32 flags;
         };
 
         namespace anim_flags
@@ -50,7 +53,8 @@ namespace put
             enum
             {
                 PLAY = 1,
-                APPLY_ROOT_MOTION = 1 << 1
+                APPLY_ROOT_MOTION = 1 << 1,
+                BAKED_QUATERNION = 1 << 2
             };
         }
 
@@ -111,6 +115,19 @@ namespace put
             A_SCALE_Y_TARGET,
             A_SCALE_Z_TARGET
         };
+        
+        enum e_animation_outputs
+        {
+            A_OUT_TX = 0,
+            A_OUT_TY = 1,
+            A_OUT_TZ = 2,
+            
+            A_OUT_SX = 6,
+            A_OUT_SY = 7,
+            A_OUT_SZ = 8,
+            
+            A_OUT_QUAT = 9
+        };
 
         enum e_pmm_load_flags : u32
         {
@@ -127,8 +144,8 @@ namespace put
             f32*    times;
             mat4*   matrices;
             f32*    offset[3];
-            f32*    angle[3];
             f32*    scale[3];
+            quat*   rotation[3];
             u32*    interpolation;
             Str     target_name;
             u32     target_node_index;

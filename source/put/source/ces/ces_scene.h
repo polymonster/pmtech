@@ -259,6 +259,7 @@ namespace put
         {
             anim_instance* anim_instances = nullptr;
             u32*           joint_indices = nullptr; // indices into the scene hierarchy
+            u8*            joint_flags = nullptr;
             anim_blend     blend;
         };
 

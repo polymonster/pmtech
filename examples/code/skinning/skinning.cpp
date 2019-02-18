@@ -82,12 +82,15 @@ void create_physics_objects(ces::entity_scene* scene)
 
     // load an animation
     anim_handle ah = load_pma("data/models/characters/testcharacter/anims/testcharacter_idle.pma");
-    bind_animation_to_rig(scene, ah, skinned_char);
+    bind_animation_to_rig_v2(scene, ah, skinned_char);
 
     scene->anim_controller[skinned_char].current_frame = 0;
     scene->anim_controller[skinned_char].current_time = 1.0f;
     scene->anim_controller[skinned_char].current_animation = ah;
     scene->anim_controller[skinned_char].play_flags = cmp_anim_controller::PLAY;
+    
+    scene->anim_controller_v2[skinned_char].blend.anim_a = 0;
+    scene->anim_controller_v2[skinned_char].blend.anim_b = 0;
 }
 
 PEN_TRV pen::user_entry(void* params)

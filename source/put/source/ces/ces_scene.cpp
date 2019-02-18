@@ -595,6 +595,12 @@ namespace put
                     instance.time += dt * 0.001f;
                     if(instance.time > instance.length)
                         instance.time = 0.0f;
+                    
+                    u32 num_joints = sb_count(instance.joints);
+                    
+                    // reset rotations
+                    for (u32 j = 0; j < num_joints; ++j)
+                        instance.targets[j].q = quat(0.0f, 0.0f, 0.0f);
 
                     for (s32 c = 0; c < num_channels; ++c)
                     {
@@ -622,26 +628,45 @@ namespace put
                         f32* d2 = &soa.data[next][info2.offset];
                         
                         f32 it = min(max((anim_t - info1.time) / (info2.time - info1.time), 0.0f), 1.0f);
-
+                        
                         for (u32 e = 0; e < channel.element_count; ++e)
                         {
                             u32 eo = channel.element_offset[e];
                             
-                            if(sampler.joint > 0)
+                            // slerp quats
+                            if(eo == A_OUT_QUAT)
                             {
-                                f32 lf = (1 - it) * d1[e] + it * d2[e];
-                                instance.targets[sampler.joint].t[eo] = lf;
+                                quat q1;
+                                quat q2;
+                                
+                                memcpy(&q1.v[0], &d1[e], 16);
+                                memcpy(&q2.v[0], &d2[e], 16);
+                                
+                                quat ql = slerp(q1, q2, it);
+                                
+                                instance.targets[sampler.joint].q = ql * instance.targets[sampler.joint].q;
+                                instance.targets[sampler.joint].flags |= channel.flags;
+                                
+                                e+=3;
                             }
                             else
                             {
-                                instance.targets[sampler.joint].t[eo] = d1[e];
+                                // lerp translation / scale
+                                if(sampler.joint > 0)
+                                {
+                                    f32 lf = (1 - it) * d1[e] + it * d2[e];
+                                    instance.targets[sampler.joint].t[eo] = lf;
+                                }
+                                else
+                                {
+                                    instance.targets[sampler.joint].t[eo] = d1[e];
+                                }
                             }
                         }
                     }
                     
                     // bake anim target into a cmp transform for joint
                     u32 tj = PEN_INVALID_HANDLE;
-                    u32 num_joints = sb_count(instance.joints);
                     for (u32 j = 0; j < num_joints; ++j)
                     {
                         u32 jnode = controller.joint_indices[j];
@@ -654,11 +679,13 @@ namespace put
                         
                         f32* f = &instance.targets[j].t[0];
                         
-                        quat rot = quat(f[5], f[4], f[3]);
+                        instance.joints[j].translation = vec3f(f[A_OUT_TX], f[A_OUT_TY], f[A_OUT_TZ]);
+                        instance.joints[j].scale = vec3f(f[A_OUT_SX], f[A_OUT_SY], f[A_OUT_SZ]);
                         
-                        instance.joints[j].translation = vec3f(f[0], f[1], f[2]);
-                        instance.joints[j].rotation = scene->initial_transform[jnode].rotation * rot;
-                        instance.joints[j].scale = vec3f(f[6], f[7], f[8]);
+                        if(instance.targets[j].flags & anim_flags::BAKED_QUATERNION)
+                            instance.joints[j].rotation = instance.targets[j].q;
+                        else
+                            instance.joints[j].rotation = scene->initial_transform[jnode].rotation * instance.targets[j].q;
                     }
                     
                     // root motion.. todo rotation
@@ -682,7 +709,7 @@ namespace put
                 
                 // for active controller.anim_instances, make trans, quat, scale
                 //      blend tree
-                if(num_anims > 1)
+                if(num_anims > 0)
                 {
                     anim_instance& a = controller.anim_instances[controller.blend.anim_a];
                     anim_instance& b = controller.anim_instances[controller.blend.anim_b];
@@ -704,6 +731,7 @@ namespace put
                             mat4 rot_mat;
                             quat q = scene->initial_transform[jnode].rotation;
                             q.get_matrix(rot_mat);
+                            
                             vec3f transform_translation = rot_mat.transform_vector(lerp_delta);
                             
                             // apply root motion to the root controller, so we bring along the meshes
@@ -829,9 +857,7 @@ namespace put
             {
                 physics::set_paused(0);
                 
-                update_animations(scene, dt);
-
-                //update_animations_v2(scene, dt);
+                update_animations_v2(scene, dt);
             }
 
             static u32 timer = pen::timer_create("update_scene");
@@ -864,7 +890,7 @@ namespace put
                     mat4 scale_mat = mat::create_scale(t.scale);
 
                     scene->local_matrices[n] = translation_mat * rot_mat * scale_mat;
-
+                    
                     if (scene->entities[n] & CMP_PHYSICS)
                     {
                         cmp_transform& pt = scene->physics_offset[n];

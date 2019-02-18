@@ -798,10 +798,12 @@ namespace put
                 for (u32 o = 0; o < 3; ++o)
                 {
                     new_animation.channels[i].offset[o] = nullptr;
-                    new_animation.channels[i].angle[o] = nullptr;
                     new_animation.channels[i].scale[o] = nullptr;
+                    new_animation.channels[i].rotation[o] = nullptr;
                 }
 
+                s32 num_rots = 0;
+                
                 for (s32 j = 0; j < num_sources; ++j)
                 {
                     u32 sematic = *p_u32reader++;
@@ -844,40 +846,39 @@ namespace put
                                 u32 num_mats = num_floats / 16;
 
                                 f32* to[3] = { 0 };
-                                f32* tr[3] = { 0 };
                                 f32* ts[3] = { 0 };
-
+                                quat* tq[3] = { 0 };
+                                tq[0] = new quat[num_mats];
+                                
                                 for (u32 t = 0; t < 3; ++t)
                                 {
                                     to[t] = new f32[num_mats];
-                                    tr[t] = new f32[num_mats];
                                     ts[t] = new f32[num_mats];
-
+                                    
                                     new_animation.channels[i].offset[t] = to[t];
-                                    new_animation.channels[i].angle[t] = tr[t];
                                     new_animation.channels[i].scale[t] = ts[t];
+                                    new_animation.channels[i].rotation[t] = tq[t];
                                 }
 
                                 for (u32 m = 0; m < num_mats; ++m)
                                 {
                                     mat4& mat = new_animation.channels[i].matrices[m];
-
+                                    
                                     vec3f trans = mat.get_translation();
                                     quat rot;
                                     rot.from_matrix(mat);
-
-                                    vec3f eul = rot.to_euler();
-
+                                    
+                                    tq[0][m] = rot;
+                                    
                                     f32 sx = mag(mat.get_row(0).xyz);
                                     f32 sy = mag(mat.get_row(1).xyz);
                                     f32 sz = mag(mat.get_row(2).xyz);
-
+                                    
                                     vec3f scale = vec3f(sx, sy, sz);
 
                                     for (u32 t = 0; t < 3; ++t)
                                     {
                                         to[t][m] = trans[t];
-                                        tr[t][m] = eul[t];
                                         ts[t][m] = scale[t];
                                     }
                                 }
@@ -892,7 +893,24 @@ namespace put
                             case A_ROTATE_X_TARGET:
                             case A_ROTATE_Y_TARGET:
                             case A_ROTATE_Z_TARGET:
-                                new_animation.channels[i].angle[target - A_ROTATE_X_TARGET] = (f32*)data;
+                            {
+                                new_animation.channels[i].rotation[num_rots] = new quat[num_floats];
+                                
+                                for(u32 q = 0; q < num_floats; ++q)
+                                {
+                                    vec3f mask[] =
+                                    {
+                                        vec3f::unit_x(),
+                                        vec3f::unit_y(),
+                                        vec3f::unit_z()
+                                    };
+                                    
+                                    vec3f vr = vec3f(data[q]) * mask[target - A_ROTATE_X_TARGET];
+                                    new_animation.channels[i].rotation[num_rots][q] = quat(vr.z, vr.y, vr.x);
+                                }
+                                
+                                num_rots++;
+                            }
                                 break;
                             case A_SCALE_X_TARGET:
                             case A_SCALE_Y_TARGET:
@@ -903,7 +921,22 @@ namespace put
                                 new_animation.channels[i].offset[sematic - A_X] = (f32*)data;
                                 break;
                             case A_ROTATE_TARGET:
-                                new_animation.channels[i].angle[sematic - A_X] = (f32*)data;
+                            {
+                                PEN_ASSERT(0); // code path hasnt been tested
+                                
+                                u32 num_quats = num_floats / 3;
+                                
+                                new_animation.channels[i].rotation[num_rots] = new quat[num_quats];
+                                
+                                for(u32 q = 0; q < num_quats; q++)
+                                {
+                                    u32 qi = q * 3;
+                                    vec3f vr = vec3f(data[qi], data[qi+1], data[qi+2]);
+                                    new_animation.channels[i].rotation[num_rots][q] = quat(vr.z, vr.y, vr.x);
+                                }
+                                
+                                num_rots++;
+                            }
                                 break;
                             case A_SCALE_TARGET:
                                 new_animation.channels[i].scale[sematic - A_X] = (f32*)data;
@@ -955,17 +988,24 @@ namespace put
                 // translate
                 for(u32 i = 0; i < 3; ++i)
                     if(channel.offset[i])
-                        soa.channels[c].element_offset[elm++] = i;
-                
-                // rotate
-                for(u32 i = 0; i < 3; ++i)
-                    if(channel.angle[i])
-                        soa.channels[c].element_offset[elm++] = 3 + i;
+                        soa.channels[c].element_offset[elm++] = A_OUT_TX + i;
                 
                 // scale
                 for(u32 i = 0; i < 3; ++i)
                     if(channel.scale[i])
-                        soa.channels[c].element_offset[elm++] = 6 + i;
+                        soa.channels[c].element_offset[elm++] = A_OUT_SX + i;
+                
+                // quaternion
+                for(u32 i = 0; i < 3; ++i)
+                    if(channel.rotation[i])
+                        for(u32 q = 0; q < 4; ++q)
+                            soa.channels[c].element_offset[elm++] = A_OUT_QUAT;
+                
+                if(channel.matrices)
+                {
+                    // baked
+                    soa.channels[c].flags = anim_flags::BAKED_QUATERNION;
+                }
                 
                 soa.channels[c].element_count = elm;
                 
@@ -978,16 +1018,21 @@ namespace put
                         if(channel.offset[i])
                             sb_push(soa.data[t], channel.offset[i][t]);
                     
-                    // rotate
-                    for(u32 i = 0; i < 3; ++i)
-                        if(channel.angle[i])
-                            sb_push(soa.data[t], channel.angle[i][t]);
-                    
                     // scale
                     for(u32 i = 0; i < 3; ++i)
                         if(channel.scale[i])
                             sb_push(soa.data[t], channel.scale[i][t]);
                     
+                    // quat
+                    for(u32 i = 0; i < 3; ++i)
+                        if(channel.rotation[i])
+                        {
+                            sb_push(soa.data[t], channel.rotation[i][t].x);
+                            sb_push(soa.data[t], channel.rotation[i][t].y);
+                            sb_push(soa.data[t], channel.rotation[i][t].z);
+                            sb_push(soa.data[t], channel.rotation[i][t].w);
+                        }
+                            
                     u32 end_offset = sb_count(soa.data[t]);
                     
                     soa.channels[c].element_count = end_offset - start_offset;
