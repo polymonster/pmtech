@@ -830,7 +830,8 @@ namespace put
                 physics::set_paused(0);
                 
                 update_animations(scene, dt);
-                update_animations_v2(scene, dt);
+
+                //update_animations_v2(scene, dt);
             }
 
             static u32 timer = pen::timer_create("update_scene");

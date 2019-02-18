@@ -174,6 +174,10 @@ void create_physics_objects(ces::entity_scene* scene)
     scene->physics_data[slider_x_constraint].constraint.lower_limit_translation = -vec3f::unit_x() * 10.0f;
     scene->physics_data[slider_x_constraint].constraint.upper_limit_translation = vec3f::unit_x() * 10.0f;
     instantiate_constraint(scene, slider_x_constraint);
+
+    // load physics stuff before calling update
+    physics::physics_consume_command_buffer();
+    pen::thread_sleep_ms(16);
 }
 
 PEN_TRV pen::user_entry(void* params)
@@ -226,7 +230,7 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
 
-    pmfx::init("data/configs/basic_renderer.jsn");
+    pmfx::init("data/configs/editor_renderer.jsn");
 
     create_physics_objects(main_scene);
 

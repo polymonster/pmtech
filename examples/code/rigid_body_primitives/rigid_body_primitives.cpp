@@ -126,6 +126,10 @@ void create_physics_objects(ces::entity_scene* scene)
             cur_pos.z += 2.5f;
         }
     }
+
+    // load physics stuff before calling update
+    physics::physics_consume_command_buffer();
+    pen::thread_sleep_ms(16);
 }
 
 PEN_TRV pen::user_entry(void* params)
@@ -178,7 +182,7 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
 
-    pmfx::init("data/configs/basic_renderer.jsn");
+    pmfx::init("data/configs/editor_renderer.jsn");
 
     create_physics_objects(main_scene);
 

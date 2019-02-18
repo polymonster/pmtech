@@ -207,4 +207,12 @@ namespace physics
 
     void cast_ray_internal(const ray_cast_params& rcp);
     void cast_sphere_internal(const sphere_cast_params& ccp);
+
+    // new stuf
+    // todo: strip the internal idiom
+
+    void add_central_force(const set_v3_params& cmd);
+    void add_central_impulse(const set_v3_params& cmd);
+
+
 } // namespace physics

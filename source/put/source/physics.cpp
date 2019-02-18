@@ -552,6 +552,22 @@ namespace physics
         }
     }
 
+    void add_central_force(const set_v3_params& cmd)
+    {
+        btVector3 bt_v3;
+        memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->applyCentralForce(bt_v3);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+    }
+
+    void add_central_impulse(const set_v3_params& cmd)
+    {
+        btVector3 bt_v3;
+        memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->applyCentralImpulse(bt_v3);
+        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+    }
+
     void set_linear_velocity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;

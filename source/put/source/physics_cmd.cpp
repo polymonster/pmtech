@@ -160,6 +160,14 @@ namespace physics
                 add_constraint_internal(cmd.add_constraint_params, cmd.resource_slot);
                 break;
 
+            case CMD_ADD_CENTRAL_FORCE:
+                add_central_force(cmd.set_v3);
+                break;
+
+            case CMD_ADD_CENTRAL_IMPULSE:
+                add_central_impulse(cmd.set_v3);
+                break;
+
             default:
                 break;
         }
@@ -271,14 +279,6 @@ namespace physics
 
         pc.command_index = CMD_ADD_RIGID_BODY;
         pc.add_rb = rbp;
-
-        // capsule height is extents height + radius * 2 (for the capsule top and bottom)
-        //if (pc.add_rb.shape == physics::CAPSULE)
-            //pc.add_rb.dimensions.y -= pc.add_rb.dimensions.x / 2.0f;
-
-        // cone height is 1. (-0.5 to 0.5) but radius is 1.0;
-        if (pc.add_rb.shape == physics::CONE)
-            pc.add_rb.dimensions.y *= 2.0f;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
         pc.resource_slot = resource_slot;

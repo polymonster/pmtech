@@ -85,6 +85,14 @@ namespace put
             if (!(rb.create_flags & physics::CF_DIMENSIONS))
             {
                 rb.dimensions = (max - min) * scale * 0.5f;
+
+                // capsule height is extents height + radius * 2 (for the capsule top and bottom)
+                if (rb.shape == physics::CAPSULE)
+                    rb.dimensions.y -= rb.dimensions.x / 2.0f;
+
+                // cone height is 1. (-0.5 to 0.5) but radius is 1.0;
+                if (rb.shape == physics::CONE)
+                    rb.dimensions.y *= 2.0f;
             }
 
             // fill the matrix array with the first matrix because of thread sync
@@ -92,7 +100,13 @@ namespace put
             rb.rotation.get_matrix(mrot);
             mat4 start_transform = mrot * mat::create_translation(rb.position);
 
-            // masks / groups are currently hardcoded.
+            // mask 0 and group 0 are invalid
+            if (rb.mask == 0)
+                rb.mask = 0xffffffff;
+
+            if (rb.group == 0)
+                rb.group = 1;
+
             rb.shape_up_axis = physics::UP_Y;
             rb.start_matrix = start_transform;
 
@@ -823,8 +837,53 @@ namespace put
                         switch (target)
                         {
                             case A_TRANSFORM_TARGET:
+                            {
                                 new_animation.channels[i].matrices = (mat4*)data;
-                                break;
+
+                                // make a set of channels from matrix
+                                u32 num_mats = num_floats / 16;
+
+                                f32* to[3] = { 0 };
+                                f32* tr[3] = { 0 };
+                                f32* ts[3] = { 0 };
+
+                                for (u32 t = 0; t < 3; ++t)
+                                {
+                                    to[t] = new f32[num_mats];
+                                    tr[t] = new f32[num_mats];
+                                    ts[t] = new f32[num_mats];
+
+                                    new_animation.channels[i].offset[t] = to[t];
+                                    new_animation.channels[i].angle[t] = tr[t];
+                                    new_animation.channels[i].scale[t] = ts[t];
+                                }
+
+                                for (u32 m = 0; m < num_mats; ++m)
+                                {
+                                    mat4& mat = new_animation.channels[i].matrices[m];
+
+                                    vec3f trans = mat.get_translation();
+                                    quat rot;
+                                    rot.from_matrix(mat);
+
+                                    vec3f eul = rot.to_euler();
+
+                                    f32 sx = mag(mat.get_row(0).xyz);
+                                    f32 sy = mag(mat.get_row(1).xyz);
+                                    f32 sz = mag(mat.get_row(2).xyz);
+
+                                    vec3f scale = vec3f(sx, sy, sz);
+
+                                    for (u32 t = 0; t < 3; ++t)
+                                    {
+                                        to[t][m] = trans[t];
+                                        tr[t][m] = eul[t];
+                                        ts[t][m] = scale[t];
+                                    }
+                                }
+                            }
+                            break;
+
                             case A_TRANSLATE_X_TARGET:
                             case A_TRANSLATE_Y_TARGET:
                             case A_TRANSLATE_Z_TARGET:

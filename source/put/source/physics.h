@@ -45,7 +45,9 @@ namespace physics
         CMD_RELEASE_ENTITY,
         CMD_CAST_RAY,
         CMD_CAST_SPHERE,
-        CMD_ADD_CONSTRAINT
+        CMD_ADD_CONSTRAINT,
+        CMD_ADD_CENTRAL_FORCE,
+        CMD_ADD_CENTRAL_IMPULSE
     };
 
     enum e_physics_shape : s32
