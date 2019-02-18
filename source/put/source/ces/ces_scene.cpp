@@ -570,7 +570,7 @@ namespace put
             }
         }
         
-        void update_animations_v2(entity_scene* scene, f32 dt)
+        void update_animations(entity_scene* scene, f32 dt)
         {
             //u32 timer = pen::timer_create("anim_v2");
             //pen::timer_start(timer);
@@ -755,7 +755,7 @@ namespace put
             //PEN_LOG("anim_v2 : %f", ms);
         }
 
-        void update_animations(entity_scene* scene, f32 dt)
+        void update_animations_baked(entity_scene* scene, f32 dt)
         {
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -857,7 +857,7 @@ namespace put
             {
                 physics::set_paused(0);
                 
-                update_animations_v2(scene, dt);
+                update_animations(scene, dt);
             }
 
             static u32 timer = pen::timer_create("update_scene");
@@ -912,7 +912,10 @@ namespace put
                     mat4 scale_mat = mat::create_scale(t.scale);
 
                     t.translation = physics_mat.get_translation();
-                    t.rotation.from_matrix(physics_mat);
+                    
+                    //t.rotation.from_matrix(physics_mat);
+
+                    //t.rotation
 
                     mat4 rot_mat;
                     t.rotation.get_matrix(rot_mat);

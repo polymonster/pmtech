@@ -407,71 +407,8 @@ namespace put
             // todo - must ensure list is contiguous.
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
         }
-
-        bool bind_animation_to_rig(entity_scene* scene, anim_handle anim_handle, u32 node_index)
-        {
-            animation_resource* anim = get_animation_resource(anim_handle);
-
-            // validate that the anim can fit the rig
-            std::vector<s32> joint_indices;
-            build_heirarchy_node_list(scene, node_index, joint_indices);
-
-            bool compatible = true;
-            anim->remap_channels = true;
-
-            for (u32 i = 0; i < anim->num_channels; ++i)
-            {
-                anim->channels[i].target_node_index = PEN_INVALID_HANDLE;
-                
-                for (s32 jj = 0; jj < joint_indices.size(); ++jj)
-                {
-                    s32 jnode = joint_indices[jj];
-                    if (jnode < 0)
-                        continue;
-
-                    u32 bone_len = scene->names[jnode].length();
-                    u32 target_len = anim->channels[i].target_name.length();
-
-                    if (bone_len > target_len)
-                        continue;
-
-                    Str ss = pen::str_substr(anim->channels[i].target_name, target_len - bone_len, target_len);
-                    if (ss == scene->names[jnode])
-                    {
-                        anim->channels[i].target_node_index = jnode;
-                        break;
-                    }
-                }
-                
-                if(anim->channels[i].target_node_index  == PEN_INVALID_HANDLE)
-                {
-                    dev_console_log_level(put::dev_ui::CONSOLE_WARNING, "[warning] could not find animation target %s",
-                                          anim->channels[i].target_name.c_str());
-                }
-            }
-
-            if (compatible)
-            {
-                auto& controller = scene->anim_controller[node_index];
-                scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
-
-                bool exists = false;
-
-                s32 size = sb_count(controller.handles);
-                for (s32 h = 0; h < size; ++h)
-                    if (h == anim_handle)
-                        exists = true;
-
-                if (!exists)
-                    sb_push(scene->anim_controller[node_index].handles, anim_handle);
-
-                return true;
-            }
-
-            return false;
-        }
         
-        bool bind_animation_to_rig_v2(entity_scene* scene, anim_handle anim_handle, u32 node_index)
+        bool bind_animation_to_rig(entity_scene* scene, anim_handle anim_handle, u32 node_index)
         {
             animation_resource* anim = get_animation_resource(anim_handle);
             anim_instance anim_instance;

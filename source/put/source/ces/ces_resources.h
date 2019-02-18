@@ -24,7 +24,7 @@ namespace put
             u32 num_frames;
             u32 element_count;
             u32 element_offset[21];
-            u32 flags;
+            u32 flags = 0;
         };
 
         struct soa_anim
@@ -45,7 +45,7 @@ namespace put
         {
             f32 t[9]; // translate xyz, scale xyz.
             quat q;
-            u32 flags;
+            u32 flags = 0;
         };
 
         namespace anim_flags

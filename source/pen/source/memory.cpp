@@ -18,7 +18,7 @@ void* operator new(size_t n) THROW_BAD_ALLOC
     return memory_alloc(n);
 }
 
-void operator delete(void* p)THROW_NO_EXCEPT
+void operator delete(void* p) THROW_NO_EXCEPT
 {
     memory_free(p);
 }
