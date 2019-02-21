@@ -2574,8 +2574,6 @@ namespace put
             vec3f r1 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 1.0f), view_proj, vpi);
             vec3f vr = normalised(r1 - r0);
 
-            dbg::add_point(s_physics_pick_info.pos, 0.5f, vec4f::green());
-
             if (s_transform_mode == TRANSFORM_PHYSICS)
             {
                 if (!s_physics_pick_info.grabbed && s_physics_pick_info.constraint == -1)

@@ -856,7 +856,6 @@ namespace put
             else
             {
                 physics::set_paused(0);
-                
                 update_animations(scene, dt);
             }
 
@@ -1262,7 +1261,7 @@ namespace put
                     pen::renderer_set_stream_out_target(0);
                 }
             }
-            
+
             //f32 cost = pen::timer_elapsed_ms(timer);
         }
 
