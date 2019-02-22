@@ -20,7 +20,10 @@ animation_targets = ["transform",
                      "rotateZ.ANGLE",
                      "scale.X",
                      "scale.Y",
-                     "scale.Z"]
+                     "scale.Z",
+                     "wristAngleX",
+                     "wristAngleY",
+                     "wristAngleZ"]
 
 interpolation_types = ["LINEAR", "BEZIER", "CARDINAL", "HERMITE", "BSPLINE", "STEP"]
 
@@ -162,7 +165,10 @@ def write_animation_file(filename):
             helpers.write_parsable_string(output, bone[0])
             output.write(struct.pack("i", len(channel.sampler.sources)))
             for src in channel.sampler.sources:
-                semantic_index = animation_source_semantics.index(src.semantic)
+                if src.semantic:
+                    semantic_index = animation_source_semantics.index(src.semantic)
+                else:
+                    semantic_index = 5
                 type_index = animation_source_types.index(src.type)
                 output.write(struct.pack("i", semantic_index))
                 output.write(struct.pack("i", type_index))
