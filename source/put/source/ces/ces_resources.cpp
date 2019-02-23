@@ -942,7 +942,7 @@ namespace put
                                 new_animation.channels[i].scale[sematic - A_X] = (f32*)data;
                                 break;
                             default:
-                                PEN_ASSERT(0); // unhandled targets
+                                // PEN_ASSERT(0); // unhandled targets
                                 break;
                         };
                     }

@@ -57,6 +57,12 @@ def parse_library_images(library_node):
             identifier = dependencies.get_build_config_setting("textures_dir")
             identifier += "/"
             texture_src = corrected.find(identifier)
+
+            # check for relative path
+            if texture_src == -1:
+                identifier = "../textures/"
+                texture_src = corrected.find(identifier)
+
             if texture_src != -1:
                 texture_sub_dir = corrected[texture_src + len(identifier):len(corrected)]
                 texture_bin = os.path.join("data", "textures", texture_sub_dir)
@@ -81,7 +87,7 @@ def parse_library_images(library_node):
                 cur_dir += 1
 
             if cur_dir == len(split_dirs)-1:
-                print("warning: texture not in assets folder")
+                print("warning: texture not in assets folder " + lib_img.filename)
                 lib_img.filename = "data/textures/" + split_dirs[filename_split]
             else:
                 split_dirs[cur_dir] = "data"

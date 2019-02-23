@@ -65,6 +65,7 @@ namespace put
         ces::entity_scene* scene = nullptr;
         put::camera*       camera = nullptr;
         e_update_order     order = MAIN_UPDATE;
+        f32                dt = 0.0f;
 
         void (*update_function)(scene_controller*) = nullptr;
     };

@@ -50,6 +50,7 @@ namespace pen
 
         sb_push(timers, t);
 
+        timer_start(index);
         return index;
     }
 

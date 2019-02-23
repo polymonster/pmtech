@@ -16,6 +16,7 @@
 #include "pen_string.h"
 #include "pmfx.h"
 #include "str_utilities.h"
+#include "timer.h"
 
 #include <fstream>
 
@@ -2380,12 +2381,20 @@ namespace put
 
         void update()
         {
+            static u32 dt_timer = pen::timer_create("sc_dt");
+            f32 dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
+            pen::timer_start(dt_timer);
+
             size_t num_controllers = s_controllers.size();
             for (u32 u = 0; u < put::UPDATES_NUM; ++u)
                 for (u32 i = 0; i < num_controllers; ++i)
                     if (s_controllers[i].order == u)
                         if (s_controllers[i].update_function)
+                        {
+                            s_controllers[i].dt = dt;
                             s_controllers[i].update_function(&s_controllers[i]);
+                        }
+                            
         }
 
         struct post_process_per_view
