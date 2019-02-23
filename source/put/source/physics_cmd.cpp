@@ -483,6 +483,9 @@ namespace physics
 
     void cast_ray(const ray_cast_params& rcp, bool immediate)
     {
+        if(mag(rcp.start - rcp.end) < 0.0001f)
+            return;
+        
         if (!immediate)
         {
             physics_cmd pc;
@@ -498,6 +501,9 @@ namespace physics
 
     void cast_sphere(const sphere_cast_params& scp, bool immediate)
     {
+        if(mag(scp.from - scp.to) < 0.0001f)
+            return;
+        
         if (!immediate)
         {
             physics_cmd pc;
