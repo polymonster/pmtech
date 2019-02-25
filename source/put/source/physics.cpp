@@ -204,6 +204,12 @@ namespace physics
         btRigidBody::btRigidBodyConstructionInfo rb_info(mass, motion_state, shape, local_inertia);
 
         btRigidBody* body = new btRigidBody(rb_info);
+
+        if (params.create_flags & CF_KINEMATIC)
+        {
+            body->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
+        }
+
         body->setContactProcessingThreshold(BT_LARGE_FLOAT);
         body->setActivationState(DISABLE_DEACTIVATION);
 
@@ -616,8 +622,15 @@ namespace physics
 
         if (rb)
         {
-            s_bullet_objects.entities[cmd.object_index].rb.rigid_body->getMotionState()->setWorldTransform(bt_trans);
-            s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setCenterOfMassTransform(bt_trans);
+            if (rb->getCollisionFlags() & btCollisionObject::CF_KINEMATIC_OBJECT)
+            {
+                rb->getMotionState()->setWorldTransform(bt_trans);
+            }
+            else
+            {
+                rb->getMotionState()->setWorldTransform(bt_trans);
+                rb->setCenterOfMassTransform(bt_trans);
+            }    
         } 
     }
 

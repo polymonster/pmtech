@@ -110,7 +110,9 @@ namespace physics
         CF_POSITION = 1 << 1,
         CF_ROTATION = 1 << 2,
         CF_DIMENSIONS = 1 << 3,
-        CF_SET_ALL = (CF_POSITION | CF_ROTATION | CF_DIMENSIONS)
+        CF_KINEMATIC = 1 << 4,
+
+        CF_SET_ALL_TRANSFORM = (CF_POSITION | CF_ROTATION | CF_DIMENSIONS)
     };
 
     struct rigid_body_params

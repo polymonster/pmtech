@@ -856,15 +856,11 @@ namespace put
             else
             {
                 physics::set_paused(0);
-                update_animations(scene, dt);
             }
 
             static u32 timer = pen::timer_create("update_scene");
             pen::timer_start(timer);
             
-            // update physics
-            physics::physics_consume_command_buffer();
-
             // scene node transform
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -1261,6 +1257,12 @@ namespace put
                     pen::renderer_set_stream_out_target(0);
                 }
             }
+
+            // update physics running 1 frame behind to allow the sets to take effect
+            physics::physics_consume_command_buffer();
+
+            // anims work better here for now to allow user response for collision at the start of the next frame
+            update_animations(scene, dt);
 
             //f32 cost = pen::timer_elapsed_ms(timer);
         }

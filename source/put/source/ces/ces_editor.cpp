@@ -1583,7 +1583,7 @@ namespace put
 
             if (!cfg)
             {
-                s_physics_preview.params.rigid_body.create_flags |= physics::CF_SET_ALL;
+                s_physics_preview.params.rigid_body.create_flags |= physics::CF_SET_ALL_TRANSFORM;
                 ImGui::InputFloat3("Dimensions", &s_physics_preview.params.rigid_body.dimensions[0]);
             }
             else
