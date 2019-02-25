@@ -313,7 +313,25 @@ namespace physics
         void*   user_data;
         void(*callback)(const sphere_cast_result& result);
     };
-
+    
+    struct contact
+    {
+        vec3f normal;
+        vec3f pos;
+    };
+    
+    struct contact_test_results
+    {
+        contact* contacts = nullptr;
+        void* user_data;
+    };
+    
+    struct contact_test_params
+    {
+        u32 entity;
+        void(*callback)(const contact_test_results& result);
+    };
+    
     struct physics_cmd
     {
         u32 command_index;
@@ -363,6 +381,7 @@ namespace physics
 
     void cast_ray(const ray_cast_params& rcp, bool immediate = false);          // non immedite will put a cast command in the buffer.
     void cast_sphere(const sphere_cast_params& rcp, bool immediate = false);    // using non immediate may not be thread safe depending when you do it.
+    void contact_test(const contact_test_params& ctp, bool immediate = false);
 
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
     void set_float(const u32& entity_index, const f32& fval, u32 cmd);

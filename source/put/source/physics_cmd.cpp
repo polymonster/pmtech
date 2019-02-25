@@ -516,4 +516,16 @@ namespace physics
             cast_sphere_internal(scp);
         }
     }
+    
+    void contact_test(const contact_test_params& ctp, bool immediate)
+    {
+        if (!immediate)
+        {
+            // todo
+        }
+        else
+        {
+            contact_test_internal(ctp);
+        }
+    }
 } // namespace physics

@@ -1019,6 +1019,41 @@ namespace physics
 
         scp.callback(sr);
     }
+    
+    class contact_processor : public btCollisionWorld::ContactResultCallback
+    {
+    public:
+        btRigidBody* ref_rb;
+        contact_test_results ctr;
+        
+        btScalar addSingleResult(btManifoldPoint& cp,
+                                 const btCollisionObjectWrapper* colObj0Wrap,
+                                 int partId0, int index0,
+                                 const btCollisionObjectWrapper* colObj1Wrap,
+                                 int partId1,int index1)
+        {
+            contact c;
+
+            c.normal = from_btvector(cp.m_positionWorldOnA);
+            c.pos = from_btvector(cp.m_normalWorldOnB);
+            
+            sb_push(ctr.contacts, c);
+            return 0.0f;
+        }
+    };
+    
+    void contact_test_internal(const contact_test_params& ctp)
+    {
+        btRigidBody* rb = s_bullet_objects.entities[ctp.entity].rb.rigid_body;
+        contact_processor cb;
+        cb.ref_rb = rb;
+        
+        btCollisionObject* cobj = (btCollisionObject*)rb;
+        
+        s_bullet_systems.dynamics_world->contactTest(cobj, cb);
+        
+        ctp.callback(cb.ctr);
+    }
 } // namespace physics
 
 #if 0 // reference

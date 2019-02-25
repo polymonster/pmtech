@@ -207,6 +207,8 @@ namespace physics
 
     void cast_ray_internal(const ray_cast_params& rcp);
     void cast_sphere_internal(const sphere_cast_params& ccp);
+    void contact_test_internal(const contact_test_params& ctp);
+    
 
     // new stuf
     // todo: strip the internal idiom
