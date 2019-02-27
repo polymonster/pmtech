@@ -167,6 +167,9 @@ namespace physics
             case CMD_ADD_CENTRAL_IMPULSE:
                 add_central_impulse(cmd.set_v3);
                 break;
+            case CMD_CONTACT_TEST:
+                contact_test_internal(cmd.contact_test);
+                break;
 
             default:
                 break;
@@ -522,6 +525,10 @@ namespace physics
         if (!immediate)
         {
             // todo
+            physics_cmd pc;
+            pc.command_index = CMD_CONTACT_TEST;
+            pc.contact_test = ctp;
+            s_cmd_buffer.put(pc);
         }
         else
         {

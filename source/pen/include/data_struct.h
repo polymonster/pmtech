@@ -223,7 +223,7 @@ namespace pen
 
         void swap_buffers()
         {
-            _fb = _bb;
+            _fb = _bb.load();
             _bb = (_bb + 1) % _num_buffers;
         }
     };

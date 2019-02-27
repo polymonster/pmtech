@@ -47,7 +47,8 @@ namespace physics
         CMD_CAST_SPHERE,
         CMD_ADD_CONSTRAINT,
         CMD_ADD_CENTRAL_FORCE,
-        CMD_ADD_CENTRAL_IMPULSE
+        CMD_ADD_CENTRAL_IMPULSE,
+        CMD_CONTACT_TEST
     };
 
     enum e_physics_shape : s32
@@ -358,6 +359,7 @@ namespace physics
             add_p2p_constraint_params  add_p2p;
             ray_cast_params            ray_cast;
             sphere_cast_params         sphere_cast;
+            contact_test_params        contact_test;
         };
 
         physics_cmd(){};
