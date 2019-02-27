@@ -1034,8 +1034,17 @@ namespace physics
         {
             contact c;
 
-            c.normal = from_btvector(cp.m_positionWorldOnA);
-            c.pos = from_btvector(cp.m_normalWorldOnB);
+            if(ref_rb == colObj0Wrap->getCollisionObject())
+            {
+                c.pos = from_btvector(cp.m_positionWorldOnB);
+            }
+            else
+            {
+                c.pos = from_btvector(cp.m_positionWorldOnA);
+            }
+            
+            
+            c.normal = from_btvector(cp.m_normalWorldOnB);
             
             sb_push(ctr.contacts, c);
             return 0.0f;
