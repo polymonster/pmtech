@@ -258,6 +258,8 @@ namespace physics
                 case ENTITY_RIGID_BODY:
                 {
                     btRigidBody* p_rb = entity.rb.rigid_body;
+                    if (!p_rb)
+                        continue;
 
                     btTransform rb_transform = p_rb->getWorldTransform();
 
@@ -935,6 +937,7 @@ namespace physics
         {
             remove_from_world_internal(entity_index);
             delete s_bullet_objects.entities[entity_index].rb.rigid_body;
+            s_bullet_objects.entities[entity_index].rb.rigid_body = nullptr;
         }
         else if (s_bullet_objects.entities[entity_index].type == ENTITY_CONSTRAINT)
         {
@@ -944,6 +947,7 @@ namespace physics
                 s_bullet_systems.dynamics_world->removeConstraint(generic_constraint);
 
             delete generic_constraint;
+            s_bullet_objects.entities[entity_index].constraint.generic = nullptr;
         }
     }
 
@@ -1043,7 +1047,6 @@ namespace physics
                 c.pos = from_btvector(cp.m_positionWorldOnA);
             }
             
-            
             c.normal = from_btvector(cp.m_normalWorldOnB);
             
             sb_push(ctr.contacts, c);
@@ -1054,6 +1057,9 @@ namespace physics
     void contact_test_internal(const contact_test_params& ctp)
     {
         btRigidBody* rb = s_bullet_objects.entities[ctp.entity].rb.rigid_body;
+        if (!rb)
+            return;
+
         contact_processor cb;
         cb.ref_rb = rb;
         

@@ -1039,6 +1039,14 @@ namespace put
 
             if (ImGui::BeginPopupEx(cm_id, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize))
             {
+                if (sb_count(s_selection_list) == 1)
+                {
+                    if (ImGui::MenuItem("Save Selection Hierarchy"))
+                    {
+                        save_sub_scene("test_save_sub_scene", scene, s_selection_list[0]);
+                    }
+                }
+
                 if (ImGui::MenuItem("Hide All"))
                 {
                     for (u32 i = 0; i < scene->num_nodes; ++i)

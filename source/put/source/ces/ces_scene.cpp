@@ -80,14 +80,17 @@ namespace put
             scene->nodes_size = new_size;
         }
 
-        void free_scene_buffers(entity_scene* scene)
+        void free_scene_buffers(entity_scene* scene, bool cmp_mem_only = 0)
         {
             // Remove entites for sub systems (physics, rendering, etc)
-            for (s32 i = 0; i < scene->num_nodes; ++i)
-                delete_entity_first_pass(scene, i);
+            if (!cmp_mem_only)
+            {
+                for (s32 i = 0; i < scene->num_nodes; ++i)
+                    delete_entity_first_pass(scene, i);
 
-            for (s32 i = 0; i < scene->num_nodes; ++i)
-                delete_entity_second_pass(scene, i);
+                for (s32 i = 0; i < scene->num_nodes; ++i)
+                    delete_entity_second_pass(scene, i);
+            }
 
             // Free component array memory
             for (u32 i = 0; i < scene->num_components; ++i)
@@ -1350,17 +1353,26 @@ namespace put
             for (u32 i = 0; i < num; ++i)
             {
                 u32 ii = nodes[i];
+                if (ii == PEN_INVALID_HANDLE)
+                    continue;
+
+                u32 ni = sub_scene.num_nodes;
 
                 for (u32 c = 0; c < scene->num_components; ++c)
                 {
                     generic_cmp_array& src = scene->get_component_array(c);
                     generic_cmp_array& dst = sub_scene.get_component_array(c);
-                    memcpy(dst[i], src[ii], src.size);
+
+                    memcpy(dst[ni], src[ii], src.size);
                 }
+
+                sub_scene.parents[ni] -= root;
+                sub_scene.num_nodes++;
             }
 
             save_scene(filename, &sub_scene);
-            free_scene_buffers(&sub_scene);
+
+            free_scene_buffers(&sub_scene, true);
         }
 
         void save_scene(const c8* filename, entity_scene* scene)
@@ -1637,7 +1649,8 @@ namespace put
                 if (cmp.size == component_sizes[i])
                 {
                     // read whole array
-                    ifs.read((c8*)cmp.data, cmp.size * num_nodes);
+                    c8* data_offset = (c8*)cmp.data + zero_offset * cmp.size;
+                    ifs.read(data_offset, cmp.size * num_nodes);
                 }
                 else
                 {
