@@ -1336,6 +1336,32 @@ namespace put
 
             return "";
         }
+        
+        void save_sub_scene(const c8* filename, entity_scene* scene, u32 root)
+        {
+            std::vector<s32> nodes;
+            build_heirarchy_node_list(scene, root, nodes);
+
+            u32 num = nodes.size();
+
+            entity_scene sub_scene;
+            resize_scene_buffers(&sub_scene, num);
+
+            for (u32 i = 0; i < num; ++i)
+            {
+                u32 ii = nodes[i];
+
+                for (u32 c = 0; c < scene->num_components; ++c)
+                {
+                    generic_cmp_array& src = scene->get_component_array(c);
+                    generic_cmp_array& dst = sub_scene.get_component_array(c);
+                    memcpy(dst[i], src[ii], src.size);
+                }
+            }
+
+            save_scene(filename, &sub_scene);
+            free_scene_buffers(&sub_scene);
+        }
 
         void save_scene(const c8* filename, entity_scene* scene)
         {
@@ -1591,7 +1617,7 @@ namespace put
 
                 // find camera and set
                 camera* _cam = pmfx::get_camera(id_cam);
-                if (_cam)
+                if (_cam && !merge)
                 {
                     _cam->pos = cam.pos;
                     _cam->focus = cam.focus;

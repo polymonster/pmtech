@@ -1834,6 +1834,25 @@ namespace put
             }
         }
 
+        bool scene_hierarchy_ui(entity_scene* scene)
+        {
+            if (sb_count(s_selection_list) != 1)
+                return false;
+
+            u32 si = s_selection_list[0];
+
+            if (ImGui::CollapsingHeader("Hierarchy"))
+            {
+                s32 p = scene->parents[si];
+                ImGui::InputInt("Parent", &p);
+
+                if (p != scene->parents[si])
+                    set_node_parent(scene, p, si);
+            }
+
+            return true;
+        }
+
         bool scene_transform_ui(entity_scene* scene)
         {
             if (sb_count(s_selection_list) != 1)
@@ -2460,6 +2479,8 @@ namespace put
                 scene_options_ui(scene);
 
                 scene_components_ui(scene);
+
+                scene_hierarchy_ui(scene);
 
                 scene_transform_ui(scene);
 
