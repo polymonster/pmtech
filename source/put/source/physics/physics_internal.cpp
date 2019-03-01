@@ -10,12 +10,6 @@
 
 namespace physics
 {
-#define SWAP_BUFFERS(b) b = (b + 1) % NUM_OUTPUT_BUFFERS
-    inline btVector3 from_lw_vec3(const lw_vec3f& v3)
-    {
-        return btVector3(v3.x, v3.y, v3.z);
-    }
-
     inline btVector3 from_vec3(const vec3f& v3)
     {
         return btVector3(v3.x, v3.y, v3.z);

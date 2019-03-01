@@ -134,9 +134,9 @@ namespace physics
     struct multi_body_link
     {
         rigid_body_params  rb;
-        lw_vec3f           hinge_axis;
-        lw_vec3f           hinge_offset;
-        lw_vec3f           hinge_limits;
+        vec3f              hinge_axis;
+        vec3f              hinge_offset;
+        vec3f              hinge_limits;
         u32                link_type;
         s32                parent;
         u32                transform_world_to_local;
