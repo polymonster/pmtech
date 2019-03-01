@@ -18,8 +18,6 @@
 #include "btBulletDynamicsCommon.h"
 
 #define MAX_PHYSICS_RESOURCES 2048
-#define NUM_OUTPUT_BUFFERS 2
-#define MAX_OUTPUTS 2048
 #define MAX_P2P_CONSTRAINTS 20
 
 namespace physics

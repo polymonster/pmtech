@@ -740,7 +740,7 @@ namespace put
             f32        timer = 0.0f;
         };
 
-        typedef pen_stack<editor_action> action_stack;
+        typedef pen::stack<editor_action> action_stack;
 
         static action_stack   k_undo_stack;
         static action_stack   k_redo_stack;

@@ -72,9 +72,6 @@ namespace pen
 
     inline bool slot_resources_free(slot_resources* resources, const u32 slot)
     {
-        if (slot == 345)
-            u32 a = 0;
-
         if (slot == 0)
             return false;
 

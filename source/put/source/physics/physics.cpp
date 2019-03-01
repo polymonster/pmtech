@@ -21,9 +21,9 @@
 
 namespace physics
 {
-    static pen_ring_buffer<physics_cmd> s_cmd_buffer;
-    static pen::slot_resources          s_physics_slot_resources;
-    static pen::slot_resources          s_p2p_slot_resources;
+    static pen::ring_buffer<physics_cmd>    s_cmd_buffer;
+    static pen::slot_resources              s_physics_slot_resources;
+    static pen::slot_resources              s_p2p_slot_resources;
 
     void exec_cmd(const physics_cmd& cmd)
     {

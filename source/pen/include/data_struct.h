@@ -72,96 +72,98 @@ static void* stb__sbgrowf(void* arr, int increment, int itemsize)
     }
 }
 
-template <typename T>
-struct pen_stack
-{
-    T*  data = nullptr;
-    int pos = 0;
-
-    void clear()
-    {
-        pos = 0;
-    }
-
-    void push(T i)
-    {
-        if (pos >= sb_count(data))
-        {
-            sb_push(data, i);
-        }
-        else
-        {
-            data[pos] = i;
-        }
-
-        ++pos;
-    }
-
-    T pop()
-    {
-        --pos;
-        if (pos < 0)
-            pos = 0;
-
-        return data[pos];
-    }
-
-    int size()
-    {
-        return pos;
-    }
-};
-
-template <typename T>
-struct pen_ring_buffer
-{
-    T* data = nullptr;
-
-    a_u32 get_pos;
-    a_u32 put_pos;
-    a_u32 _capacity;
-
-    pen_ring_buffer()
-    {
-        get_pos = 0;
-        put_pos = 0;
-        _capacity = 0;
-    }
-
-    void create(u32 capacity)
-    {
-        get_pos = 0;
-        put_pos = 0;
-        _capacity = capacity;
-
-        data = new T[_capacity.load()];
-    }
-
-    ~pen_ring_buffer()
-    {
-        delete data;
-    }
-
-    void put(const T& item)
-    {
-        data[put_pos] = item;
-        put_pos = (put_pos + 1) % _capacity;
-    }
-
-    T* get()
-    {
-        u32 gp = get_pos;
-        if (gp == put_pos)
-            return nullptr;
-
-        get_pos = (get_pos + 1) % _capacity;
-
-        return &data[gp];
-    }
-};
-
 namespace pen
 {
+    // lightweight stack
+    template <typename T>
+    struct stack
+    {
+        T*  data = nullptr;
+        int pos = 0;
+
+        void clear()
+        {
+            pos = 0;
+        }
+
+        void push(T i)
+        {
+            if (pos >= sb_count(data))
+            {
+                sb_push(data, i);
+            }
+            else
+            {
+                data[pos] = i;
+            }
+
+            ++pos;
+        }
+
+        T pop()
+        {
+            --pos;
+            if (pos < 0)
+                pos = 0;
+
+            return data[pos];
+        }
+
+        int size()
+        {
+            return pos;
+        }
+    };
+
+    // single producer single consumer thread safe ring buffer
+    template <typename T>
+    struct ring_buffer
+    {
+        T* data = nullptr;
+
+        a_u32 get_pos;
+        a_u32 put_pos;
+        a_u32 _capacity;
+
+        ring_buffer()
+        {
+            get_pos = 0;
+            put_pos = 0;
+            _capacity = 0;
+        }
+
+        void create(u32 capacity)
+        {
+            get_pos = 0;
+            put_pos = 0;
+            _capacity = capacity;
+
+            data = new T[_capacity.load()];
+        }
+
+        ~ring_buffer()
+        {
+            delete data;
+        }
+
+        void put(const T& item)
+        {
+            data[put_pos] = item;
+            put_pos = (put_pos + 1) % _capacity;
+        }
+
+        T* get()
+        {
+            u32 gp = get_pos;
+            if (gp == put_pos)
+                return nullptr;
+
+            get_pos = (get_pos + 1) % _capacity;
+
+            return &data[gp];
+        }
+    };
+
     // resource pool which will grow to accomodate contents
     template <typename T>
     struct res_pool
