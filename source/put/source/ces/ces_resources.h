@@ -231,7 +231,7 @@ namespace put
         };
 
         void save_scene(const c8* filename, entity_scene* scene);
-        void save_sub_scene(const c8* filename, entity_scene* scene, u32 root);
+        void save_sub_scene(entity_scene* scene, u32 root);
         void load_scene(const c8* filename, entity_scene* scene, bool merge = false);
 
         s32         load_pmm(const c8* model_scene_name, entity_scene* scene = nullptr, u32 load_flags = PMM_ALL);

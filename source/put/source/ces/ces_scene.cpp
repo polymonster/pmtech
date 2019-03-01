@@ -1340,7 +1340,7 @@ namespace put
             return "";
         }
         
-        void save_sub_scene(const c8* filename, entity_scene* scene, u32 root)
+        void save_sub_scene(entity_scene* scene, u32 root)
         {
             std::vector<s32> nodes;
             build_heirarchy_node_list(scene, root, nodes);
@@ -1370,7 +1370,10 @@ namespace put
                 sub_scene.num_nodes++;
             }
 
-            save_scene(filename, &sub_scene);
+            Str fn = ""; 
+            fn.appendf("../../assets/scenes/%s.pms", sub_scene.names[0].c_str());
+
+            save_scene(fn.c_str(), &sub_scene);
 
             free_scene_buffers(&sub_scene, true);
         }

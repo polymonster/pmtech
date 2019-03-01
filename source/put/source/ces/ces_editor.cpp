@@ -1043,7 +1043,7 @@ namespace put
                 {
                     if (ImGui::MenuItem("Save Selection Hierarchy"))
                     {
-                        save_sub_scene("test_save_sub_scene", scene, s_selection_list[0]);
+                        save_sub_scene(scene, s_selection_list[0]);
                     }
                 }
 
