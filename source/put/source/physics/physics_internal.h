@@ -162,11 +162,11 @@ namespace physics
     void sync_compound_multi_internal(const sync_compound_multi_params& cmd);
     void attach_rb_to_compound_internal(const attach_to_compound_params& params);
 
+    mat4 get_rb_start_matrix(u32 rb_index);
+
     void add_to_world_internal(u32 entity_index);
     void remove_from_world_internal(u32 entity_index);
     void release_entity_internal(u32 entity_index);
-
-
 
     void cast_ray_internal(const ray_cast_params& rcp);
     void cast_sphere_internal(const sphere_cast_params& ccp);

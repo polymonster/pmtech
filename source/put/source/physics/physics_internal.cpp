@@ -782,6 +782,11 @@ namespace physics
         }
     }
 
+    mat4 get_rb_start_matrix(u32 rb_index)
+    {
+        return mat4::create_identity();
+    }
+
     void attach_rb_to_compound_internal(const attach_to_compound_params& params)
     {
         // todo test this function still works after refactor

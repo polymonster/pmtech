@@ -263,8 +263,9 @@ namespace physics
     {
         mat4* const& fb = g_readable_data.output_matrices.frontbuffer();
         u32          count = sb_count(fb);
+
         if (entity_index >= count)
-            return mat4::create_identity();
+            return get_rb_start_matrix(entity_index);
 
         return fb[entity_index];
     }
