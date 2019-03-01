@@ -1371,7 +1371,7 @@ namespace put
             }
 
             Str fn = ""; 
-            fn.appendf("../../assets/scenes/%s.pms", sub_scene.names[0].c_str());
+            fn.appendf("../../assets/scene/%s.pms", sub_scene.names[0].c_str());
 
             save_scene(fn.c_str(), &sub_scene);
 

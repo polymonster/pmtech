@@ -262,7 +262,7 @@ namespace put
                 scene_tree node;
                 node.node_index = n;
 
-                if (scene->parents[n] == n)
+                if (scene->parents[n] == n || n == start_node)
                 {
                     if (!enum_all && n != start_node)
                         break;
