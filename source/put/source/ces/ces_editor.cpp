@@ -8,7 +8,7 @@
 #include "hash.h"
 #include "input.h"
 #include "pen_string.h"
-#include "physics.h"
+#include "physics/physics.h"
 #include "pmfx.h"
 #include "str_utilities.h"
 #include "timer.h"
