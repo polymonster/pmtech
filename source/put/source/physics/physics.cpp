@@ -1,14 +1,11 @@
-// physics_cmd.cpp
+// physics.cpp
 // Copyright 2014 - 2019 Alex Dixon. 
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "pen.h"
 #include "pen_string.h"
 #include "timer.h"
-
-//#include "physics.h"
 #include "slot_resource.h"
-
 #include "physics_internal.h"
 
 // for multi body bullet
@@ -24,9 +21,9 @@
 
 namespace physics
 {
-    static pen_ring_buffer<physics_cmd> s_cmd_buffer;
-    static pen::slot_resources          s_physics_slot_resources;
-    static pen::slot_resources          s_p2p_slot_resources;
+    static pen::ring_buffer<physics_cmd>    s_cmd_buffer;
+    static pen::slot_resources              s_physics_slot_resources;
+    static pen::slot_resources              s_p2p_slot_resources;
 
     void exec_cmd(const physics_cmd& cmd)
     {
@@ -126,10 +123,6 @@ namespace physics
 
             case CMD_ADD_COMPOUND_SHAPE:
                 add_compound_shape_internal(cmd.add_compound_rb, cmd.resource_slot);
-                break;
-
-            case CMD_ADD_COLLISION_TRIGGER:
-                add_collision_watcher_internal(cmd.trigger_data);
                 break;
 
             case CMD_ATTACH_RB_TO_COMPOUND:
@@ -268,12 +261,13 @@ namespace physics
 
     mat4 get_rb_matrix(const u32& entity_index)
     {
-        return g_readable_data.output_matrices[g_readable_data.current_ouput_frontbuffer][entity_index];
-    }
+        mat4* const& fb = g_readable_data.output_matrices.frontbuffer();
+        u32          count = sb_count(fb);
 
-    trigger_contact_data* get_trigger_contacts(u32 entity_index)
-    {
-        return &g_readable_data.output_contact_data[g_readable_data.current_ouput_frontbuffer][entity_index];
+        if (entity_index >= count)
+            return get_rb_start_matrix(entity_index);
+
+        return fb[entity_index];
     }
 
     u32 add_rb(const rigid_body_params& rbp)
@@ -285,9 +279,6 @@ namespace physics
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
         pc.resource_slot = resource_slot;
-
-        for (s32 i = 0; i < NUM_OUTPUT_BUFFERS; ++i)
-            g_readable_data.output_matrices[i][resource_slot] = rbp.start_matrix;
 
         s_cmd_buffer.put(pc);
 
@@ -423,22 +414,6 @@ namespace physics
         return resource_slot;
     }
 
-    void add_collision_trigger(const collision_trigger_data& trigger_data)
-    {
-        physics_cmd pc;
-
-        pc.command_index = CMD_ADD_COLLISION_TRIGGER;
-        pc.trigger_data = trigger_data;
-
-        s_cmd_buffer.put(pc);
-    }
-
-    u32 get_hit_flags(u32 entity_index)
-    {
-        u32 r = g_readable_data.output_hit_flags[g_readable_data.current_ouput_frontbuffer][entity_index];
-        return r;
-    }
-
     u32 attach_rb_to_compound(const attach_to_compound_params& params)
     {
         physics_cmd pc;
@@ -520,19 +495,11 @@ namespace physics
         }
     }
     
-    void contact_test(const contact_test_params& ctp, bool immediate)
+    void contact_test(const contact_test_params& ctp)
     {
-        if (!immediate)
-        {
-            // todo
-            physics_cmd pc;
-            pc.command_index = CMD_CONTACT_TEST;
-            pc.contact_test = ctp;
-            s_cmd_buffer.put(pc);
-        }
-        else
-        {
-            contact_test_internal(ctp);
-        }
+        physics_cmd pc;
+        pc.command_index = CMD_CONTACT_TEST;
+        pc.contact_test = ctp;
+        s_cmd_buffer.put(pc);
     }
 } // namespace physics

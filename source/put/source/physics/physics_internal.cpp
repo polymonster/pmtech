@@ -1,18 +1,15 @@
+// physics_internal.cpp
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #include "pen_string.h"
 #include "slot_resource.h"
 #include "timer.h"
-
 #include "console.h"
 #include "physics_internal.h"
 
 namespace physics
 {
-#define SWAP_BUFFERS(b) b = (b + 1) % NUM_OUTPUT_BUFFERS
-    inline btVector3 from_lw_vec3(const lw_vec3f& v3)
-    {
-        return btVector3(v3.x, v3.y, v3.z);
-    }
-
     inline btVector3 from_vec3(const vec3f& v3)
     {
         return btVector3(v3.x, v3.y, v3.z);
@@ -23,15 +20,10 @@ namespace physics
         return vec3f(bt.getX(), bt.getY(), bt.getZ());
     }
 
-    readable_data g_readable_data;
+    readable_data                        g_readable_data;
+    static bullet_systems                s_bullet_systems;
+    static pen::res_pool<physics_entity> s_entities;
 
-    static trigger              s_triggers[MAX_TRIGGERS];
-    static trigger_contact_data s_trigger_contacts[MAX_TRIGGERS];
-    static u32                  s_num_triggers = 0;
-    static bullet_systems       s_bullet_systems;
-    static bullet_objects       s_bullet_objects;
-
-    // todo merge these 2
     btTransform get_bttransform(const vec3f& p, const quat& q)
     {
         btTransform trans;
@@ -223,20 +215,13 @@ namespace physics
 
     void physics_initialise()
     {
-        pen::memory_zero(&s_bullet_objects.entities, sizeof(physics_entity) * MAX_PHYSICS_RESOURCES);
-        s_bullet_objects.num_entities = 0;
+        s_entities.init(1024);
+        g_readable_data.output_matrices._data[0] = nullptr;
+        g_readable_data.output_matrices._data[1] = nullptr;
 
         s_bullet_systems.collision_config = new btDefaultCollisionConfiguration();
-
-        /// use the default collision dispatcher. For parallel processing you can use a different dispatcher (see
-        /// Extras/BulletMultiThreaded)
         s_bullet_systems.dispatcher = new btCollisionDispatcher(s_bullet_systems.collision_config);
-
-        /// btDbvtBroadphase is a good general purpose broadphase. You can also try out btAxis3Sweep.
         s_bullet_systems.olp_cache = new btAxisSweep3(btVector3(-50.0f, -50.0f, -50.0f), btVector3(50.0f, 50.0f, 50.0f));
-
-        /// the default constraint solver. For parallel processing you can use a different solver (see
-        /// Extras/BulletMultiThreaded)
         s_bullet_systems.solver = new btSequentialImpulseConstraintSolver;
         s_bullet_systems.dynamics_world =
             new btDiscreteDynamicsWorld(s_bullet_systems.dispatcher, s_bullet_systems.olp_cache, s_bullet_systems.solver,
@@ -247,11 +232,18 @@ namespace physics
 
     void update_output_matrices()
     {
-        u32 bb = g_readable_data.current_ouput_backbuffer;
+        mat4*& backbuffer = g_readable_data.output_matrices.backbuffer();
+        u32    num = sb_count(backbuffer);
 
-        for (u32 i = 0; i < s_bullet_objects.num_entities; i++)
+        for (u32 i = 0; i < s_entities._capacity; i++)
         {
-            physics_entity& entity = s_bullet_objects.entities[i];
+            if (i >= num)
+            {
+                ++num;
+                sb_push(backbuffer, mat4::create_identity());
+            }
+
+            physics_entity& entity = s_entities.get(i);
 
             switch (entity.type)
             {
@@ -268,9 +260,9 @@ namespace physics
                     rb_transform.getOpenGLMatrix(_mm);
 
                     for (s32 m = 0; m < 16; ++m)
-                        g_readable_data.output_matrices[bb][i].m[m] = _mm[m];
+                        backbuffer[i].m[m] = _mm[m];
 
-                    g_readable_data.output_matrices[bb][i] = g_readable_data.output_matrices[bb][i].transposed();
+                    backbuffer[i].transpose();
                 }
                 break;
 
@@ -278,6 +270,8 @@ namespace physics
                     break;
             }
         }
+
+        g_readable_data.output_matrices.swap_buffers();
     }
 
 #if 0 // todo ressurect compounds
@@ -325,44 +319,6 @@ namespace physics
 	}
 #endif
 
-    struct trigger_callback : public btCollisionWorld::ContactResultCallback
-    {
-        btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
-                                 const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
-        {
-            if (s_trigger_contacts[trigger_a].num >= MAX_TRIGGER_CONTACTS)
-            {
-                return 0.0f;
-            }
-
-            u32 contact_index = s_trigger_contacts[trigger_a].num;
-
-            // set flags
-            s_triggers[trigger_a].hit_flags |= s_triggers[trigger_b].group;
-            s_triggers[trigger_b].hit_flags |= s_triggers[trigger_a].group;
-
-            // set normals
-            s_trigger_contacts[trigger_a].normals[contact_index] =
-                vec3f(cp.m_normalWorldOnB.x(), cp.m_normalWorldOnB.y(), cp.m_normalWorldOnB.z());
-
-            // set position
-            s_trigger_contacts[trigger_a].pos[contact_index] =
-                vec3f(cp.m_positionWorldOnB.x(), cp.m_positionWorldOnB.y(), cp.m_positionWorldOnB.z());
-
-            // set indices
-            s_trigger_contacts[trigger_a].entity[contact_index] = s_triggers[trigger_b].entity_index;
-            s_trigger_contacts[trigger_a].flag[contact_index] = s_triggers[trigger_b].group;
-
-            // increment contact index for the next one
-            s_trigger_contacts[trigger_a].num++;
-
-            return 0.0f;
-        }
-
-        u32 trigger_a;
-        u32 trigger_b;
-    };
-
     void physics_update(f32 dt)
     {
         // step
@@ -371,52 +327,12 @@ namespace physics
 
         // update mats
         update_output_matrices();
-
-        // process triggers
-        for (u32 i = 0; i < s_num_triggers; ++i)
-        {
-            s_trigger_contacts[i].num = 0;
-
-            for (u32 j = 0; j < s_num_triggers; ++j)
-            {
-                if (i == j)
-                    continue;
-
-                if (s_triggers[i].mask & s_triggers[j].group)
-                {
-                    trigger_callback tc;
-                    tc.trigger_a = i;
-                    tc.trigger_b = j;
-
-                    s_bullet_systems.dynamics_world->contactPairTest(s_triggers[i].collision_object,
-                        s_triggers[j].collision_object, tc);
-                }
-            }
-        }
-
-        // update outputs and clear hit flags
-        u32 current_ouput_backbuffer = g_readable_data.current_ouput_backbuffer;
-
-        for (u32 i = 0; i < s_num_triggers; ++i)
-        {
-            g_readable_data.output_hit_flags[current_ouput_backbuffer][s_triggers[i].entity_index] = s_triggers[i].hit_flags;
-            s_triggers[i].hit_flags = 0;
-        }
-
-        for (u32 i = 0; i < s_num_triggers; ++i)
-        {
-            g_readable_data.output_contact_data[current_ouput_backbuffer][s_triggers[i].entity_index] = s_trigger_contacts[i];
-        }
-
-        // swap the output buffers
-        SWAP_BUFFERS(g_readable_data.current_ouput_backbuffer);
-        SWAP_BUFFERS(g_readable_data.current_ouput_frontbuffer);
     }
 
     void add_rb_internal(const rigid_body_params& params, u32 resource_slot, bool ghost)
     {
-        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
-        physics_entity& entity = s_bullet_objects.entities[resource_slot];
+        s_entities.grow(resource_slot);
+        physics_entity& entity = s_entities.get(resource_slot);
 
         // add the body to the dynamics world
         btRigidBody* rb = create_rb_internal(entity, params, ghost);
@@ -435,37 +351,37 @@ namespace physics
 
     void add_compound_rb_internal(const compound_rb_params& params, u32 resource_slot)
     {
-        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
-        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
+        s_entities.grow(resource_slot);
+        physics_entity& entity = s_entities.get(resource_slot);
 
-        btCollisionShape* col = create_collision_shape(next_entity, params.base, &params);
+        btCollisionShape* col = create_collision_shape(entity, params.base, &params);
         btCompoundShape*  compound = (btCompoundShape*)col;
 
-        next_entity.compound_shape = compound;
-        next_entity.num_base_compound_shapes = params.num_shapes;
+        entity.compound_shape = compound;
+        entity.num_base_compound_shapes = params.num_shapes;
 
-        next_entity.rb.rigid_body = create_rb_internal(next_entity, params.base, 0, compound);
+        entity.rb.rigid_body = create_rb_internal(entity, params.base, 0, compound);
 
-        next_entity.rb.rigid_body_in_world = 1;
-        next_entity.group = params.base.group;
-        next_entity.mask = params.base.mask;
+        entity.rb.rigid_body_in_world = 1;
+        entity.group = params.base.group;
+        entity.mask = params.base.mask;
     }
 
     void add_compound_shape_internal(const compound_rb_params& params, u32 resource_slot)
     {
-        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
-        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
+        s_entities.grow(resource_slot);
+        physics_entity& entity = s_entities.get(resource_slot);
 
-        btCollisionShape* col = create_collision_shape(next_entity, params.base, &params);
+        btCollisionShape* col = create_collision_shape(entity, params.base, &params);
         btCompoundShape*  compound = (btCompoundShape*)col;
 
-        next_entity.compound_shape = compound;
+        entity.compound_shape = compound;
     }
 
     void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body)
     {
-        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
-        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
+        s_entities.grow(resource_slot);
+        physics_entity& entity = s_entities.get(resource_slot);
 
         // reference frames are identity
         btTransform frameInA, frameInB;
@@ -494,17 +410,17 @@ namespace physics
             btVector3(params.upper_limit_rotation.x, params.upper_limit_rotation.y, params.upper_limit_rotation.z));
 
         s_bullet_systems.dynamics_world->addConstraint(dof6);
-        next_entity.constraint.dof6 = dof6;
+        entity.constraint.dof6 = dof6;
     }
 
     void add_hinge_internal(const constraint_params& params, u32 resource_slot)
     {
         PEN_ASSERT(params.rb_indices[0] > -1);
 
-        s_bullet_objects.num_entities = std::max<u32>(resource_slot + 1, s_bullet_objects.num_entities);
-        physics_entity& next_entity = s_bullet_objects.entities[resource_slot];
+        s_entities.grow(resource_slot);
+        physics_entity& entity = s_entities.get(resource_slot);
 
-        btRigidBody* rb = s_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
+        btRigidBody* rb = s_entities.get(params.rb_indices[0]).rb.rigid_body;
 
         btHingeConstraint* hinge = new btHingeConstraint(*rb, btVector3(params.pivot.x, params.pivot.y, params.pivot.z),
                                                          btVector3(params.axis.x, params.axis.y, params.axis.z));
@@ -512,13 +428,15 @@ namespace physics
 
         s_bullet_systems.dynamics_world->addConstraint(hinge);
 
-        next_entity.constraint.type = CONSTRAINT_HINGE;
-        next_entity.constraint.hinge = hinge;
+        entity.constraint.type = CONSTRAINT_HINGE;
+        entity.constraint.hinge = hinge;
     }
 
     void add_constraint_internal(const constraint_params& params, u32 resource_slot)
     {
-        s_bullet_objects.entities[resource_slot].type = ENTITY_CONSTRAINT;
+        s_entities.grow(resource_slot);
+        physics_entity& entity = s_entities.get(resource_slot);
+        entity.type = ENTITY_CONSTRAINT;
 
         switch (params.type)
         {
@@ -542,11 +460,11 @@ namespace physics
                 btRigidBody* p_rb = nullptr;
                 btRigidBody* p_fixed = nullptr;
 
-                if (params.rb_indices[0] != -1)
-                    p_rb = s_bullet_objects.entities[params.rb_indices[0]].rb.rigid_body;
+                if (params.rb_indices[0] > 0)
+                    p_rb = s_entities.get(params.rb_indices[0]).rb.rigid_body;
 
-                if (params.rb_indices[1] != -1)
-                    p_fixed = s_bullet_objects.entities[params.rb_indices[1]].rb.rigid_body;
+                if (params.rb_indices[1] > 0)
+                    p_fixed = s_entities.get(params.rb_indices[1]).rb.rigid_body;
 
                 PEN_ASSERT(p_rb || p_fixed);
 
@@ -564,48 +482,48 @@ namespace physics
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->applyCentralForce(bt_v3);
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_entities.get(cmd.object_index).rb.rigid_body->applyCentralForce(bt_v3);
+        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void add_central_impulse(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->applyCentralImpulse(bt_v3);
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_entities.get(cmd.object_index).rb.rigid_body->applyCentralImpulse(bt_v3);
+        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_linear_velocity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setLinearVelocity(bt_v3);
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_entities.get(cmd.object_index).rb.rigid_body->setLinearVelocity(bt_v3);
+        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_angular_velocity_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setAngularVelocity(bt_v3);
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_entities.get(cmd.object_index).rb.rigid_body->setAngularVelocity(bt_v3);
+        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_linear_factor_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setLinearFactor(bt_v3);
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_entities.get(cmd.object_index).rb.rigid_body->setLinearFactor(bt_v3);
+        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_angular_factor_internal(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setAngularFactor(bt_v3);
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_entities.get(cmd.object_index).rb.rigid_body->setAngularFactor(bt_v3);
+        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_transform_internal(const set_transform_params& cmd)
@@ -620,7 +538,7 @@ namespace physics
         bt_trans.setOrigin(bt_v3);
         bt_trans.setRotation(bt_quat);
 
-        btRigidBody* rb = s_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = s_entities.get(cmd.object_index).rb.rigid_body;
 
         if (rb)
         {
@@ -640,36 +558,36 @@ namespace physics
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setGravity(bt_v3);
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate();
+        s_entities.get(cmd.object_index).rb.rigid_body->setGravity(bt_v3);
+        s_entities.get(cmd.object_index).rb.rigid_body->activate();
     }
 
     void set_friction_internal(const set_float_params& cmd)
     {
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->setFriction(cmd.data);
+        s_entities.get(cmd.object_index).rb.rigid_body->setFriction(cmd.data);
     }
 
     void set_hinge_motor_internal(const set_v3_params& cmd)
     {
-        btHingeConstraint* p_hinge = s_bullet_objects.entities[cmd.object_index].constraint.hinge;
+        btHingeConstraint* p_hinge = s_entities.get(cmd.object_index).constraint.hinge;
         p_hinge->enableAngularMotor(cmd.data.x == 0.0f ? false : true, cmd.data.y, cmd.data.z);
     }
 
     void set_button_motor_internal(const set_v3_params& cmd)
     {
-        btGeneric6DofConstraint* dof6 = s_bullet_objects.entities[cmd.object_index].constraint.dof6;
+        btGeneric6DofConstraint* dof6 = s_entities.get(cmd.object_index).constraint.dof6;
 
         btTranslationalLimitMotor* motor = dof6->getTranslationalLimitMotor();
         motor->m_enableMotor[1] = cmd.data.x == 0.0f ? false : true;
         motor->m_targetVelocity = btVector3(0.0f, cmd.data.y, 0.0f);
         motor->m_maxMotorForce = btVector3(0.0f, cmd.data.z, 0.0f);
 
-        s_bullet_objects.entities[cmd.object_index].rb.rigid_body->activate(ACTIVE_TAG);
+        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
     }
 
     void set_multi_joint_motor_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBodyJointMotor* p_joint_motor = s_bullet_objects.entities[cmd.multi_index].mb.joint_motors.at(cmd.link_index);
+        btMultiBodyJointMotor* p_joint_motor = s_entities.get(cmd.multi_index).mb.joint_motors.at(cmd.link_index);
 
         p_joint_motor->setVelocityTarget(cmd.data.x);
         p_joint_motor->setMaxAppliedImpulse(cmd.data.y);
@@ -677,7 +595,7 @@ namespace physics
 
     void set_multi_joint_pos_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody* p_multi = s_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = s_entities.get(cmd.multi_index).mb.multi_body;
 
         if (1)
         {
@@ -696,33 +614,33 @@ namespace physics
 
     void set_multi_base_velocity_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody* p_multi = s_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = s_entities.get(cmd.multi_index).mb.multi_body;
 
         p_multi->setBaseVel(btVector3(cmd.data.x, cmd.data.y, cmd.data.z));
     }
 
     void set_multi_base_pos_internal(const set_multi_v3_params& cmd)
     {
-        btMultiBody* p_multi = s_bullet_objects.entities[cmd.multi_index].mb.multi_body;
+        btMultiBody* p_multi = s_entities.get(cmd.multi_index).mb.multi_body;
 
         p_multi->setBasePos(btVector3(cmd.data.x, cmd.data.y, cmd.data.z));
     }
 
     void sync_rigid_bodies_internal(const sync_rb_params& cmd)
     {
-        if (s_bullet_objects.entities[cmd.master].type == ENTITY_RIGID_BODY)
+        if (s_entities.get(cmd.master).type == ENTITY_RIGID_BODY)
         {
-            btRigidBody* p_rb = s_bullet_objects.entities[cmd.master].rb.rigid_body;
-            btRigidBody* p_rb_slave = s_bullet_objects.entities[cmd.slave].rb.rigid_body;
+            btRigidBody* p_rb = s_entities.get(cmd.master).rb.rigid_body;
+            btRigidBody* p_rb_slave = s_entities.get(cmd.slave).rb.rigid_body;
 
             btTransform master = p_rb->getWorldTransform();
             p_rb_slave->setWorldTransform(master);
         }
 
-        if (s_bullet_objects.entities[cmd.master].type == ENTITY_MULTI_BODY && cmd.link_index != -1)
+        if (s_entities.get(cmd.master).type == ENTITY_MULTI_BODY && cmd.link_index != -1)
         {
-            btMultiBody* p_mb = s_bullet_objects.entities[cmd.master].mb.multi_body;
-            btRigidBody* p_rb_slave = s_bullet_objects.entities[cmd.slave].rb.rigid_body;
+            btMultiBody* p_mb = s_entities.get(cmd.master).mb.multi_body;
+            btRigidBody* p_rb_slave = s_entities.get(cmd.slave).rb.rigid_body;
 
             btTransform master = p_mb->getLink(cmd.link_index).m_collider->getWorldTransform();
             p_rb_slave->setWorldTransform(master);
@@ -731,18 +649,18 @@ namespace physics
 
     void sync_rigid_body_velocity_internal(const sync_rb_params& cmd)
     {
-        btVector3 master_vel = s_bullet_objects.entities[cmd.master].rb.rigid_body->getAngularVelocity();
+        btVector3 master_vel = s_entities.get(cmd.master).rb.rigid_body->getAngularVelocity();
 
-        s_bullet_objects.entities[cmd.slave].rb.rigid_body->setAngularVelocity(master_vel);
+        s_entities.get(cmd.slave).rb.rigid_body->setAngularVelocity(master_vel);
     }
 
     void sync_compound_multi_internal(const sync_compound_multi_params& cmd)
     {
-        btMultiBody*     p_multi = s_bullet_objects.entities[cmd.multi_index].mb.multi_body;
-        btCompoundShape* p_compound = s_bullet_objects.entities[cmd.compound_index].compound_shape;
-        btRigidBody*     p_rb = s_bullet_objects.entities[cmd.compound_index].rb.rigid_body;
+        btMultiBody*     p_multi = s_entities.get(cmd.multi_index).mb.multi_body;
+        btCompoundShape* p_compound = s_entities.get(cmd.compound_index).compound_shape;
+        btRigidBody*     p_rb = s_entities.get(cmd.compound_index).rb.rigid_body;
 
-        u32 num_base_compound_shapes = s_bullet_objects.entities[cmd.compound_index].num_base_compound_shapes;
+        u32 num_base_compound_shapes = s_entities.get(cmd.compound_index).num_base_compound_shapes;
 
         PEN_ASSERT(p_multi);
         PEN_ASSERT(p_compound);
@@ -797,9 +715,9 @@ namespace physics
 
     void add_p2p_constraint_internal(const add_p2p_constraint_params& cmd, u32 resource_slot)
     {
-        physics_entity* entity = &s_bullet_objects.entities[resource_slot];
+        physics_entity* entity = &s_entities.get(resource_slot);
 
-        btRigidBody* rb = s_bullet_objects.entities[cmd.entity_index].rb.rigid_body;
+        btRigidBody* rb = s_entities.get(cmd.entity_index).rb.rigid_body;
 
         btVector3 constrain_pos = btVector3(cmd.position.x, cmd.position.y, cmd.position.z);
 
@@ -828,7 +746,7 @@ namespace physics
 
     void set_p2p_constraint_pos_internal(const set_v3_params& cmd)
     {
-        physics_entity& pe = s_bullet_objects.entities[cmd.object_index];
+        physics_entity& pe = s_entities.get(cmd.object_index);
 
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
@@ -848,14 +766,14 @@ namespace physics
 
     void set_damping_internal(const set_v3_params& cmd)
     {
-        btRigidBody* rb = s_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = s_entities.get(cmd.object_index).rb.rigid_body;
 
         rb->setDamping(cmd.data.x, cmd.data.y);
     }
 
     void set_group_internal(const set_group_params& cmd)
     {
-        btRigidBody* rb = s_bullet_objects.entities[cmd.object_index].rb.rigid_body;
+        btRigidBody* rb = s_entities.get(cmd.object_index).rb.rigid_body;
 
         if (rb)
         {
@@ -864,27 +782,17 @@ namespace physics
         }
     }
 
-    void add_collision_watcher_internal(const collision_trigger_data& trigger_data)
+    mat4 get_rb_start_matrix(u32 rb_index)
     {
-        physics_entity& pe = s_bullet_objects.entities[trigger_data.entity_index];
-
-        if (pe.type == ENTITY_RIGID_BODY)
-        {
-            s_triggers[s_num_triggers].collision_object = (btCollisionObject*)pe.rb.rigid_body;
-            s_triggers[s_num_triggers].group = trigger_data.group;
-            s_triggers[s_num_triggers].mask = trigger_data.mask;
-            s_triggers[s_num_triggers].hit_flags = 0;
-            s_triggers[s_num_triggers].entity_index = trigger_data.entity_index;
-            s_num_triggers++;
-        }
+        return mat4::create_identity();
     }
 
     void attach_rb_to_compound_internal(const attach_to_compound_params& params)
     {
         // todo test this function still works after refactor
 
-        physics_entity& compound = s_bullet_objects.entities[params.compound];
-        physics_entity& pe = s_bullet_objects.entities[params.rb];
+        physics_entity& compound = s_entities.get(params.compound);
+        physics_entity& pe = s_entities.get(params.rb);
 
         rigid_body_entity rb = pe.rb;
 
@@ -933,32 +841,34 @@ namespace physics
 
     void release_entity_internal(u32 entity_index)
     {
-        if (s_bullet_objects.entities[entity_index].type == ENTITY_RIGID_BODY)
+        if (s_entities.get(entity_index).type == ENTITY_RIGID_BODY)
         {
             remove_from_world_internal(entity_index);
-            delete s_bullet_objects.entities[entity_index].rb.rigid_body;
-            s_bullet_objects.entities[entity_index].rb.rigid_body = nullptr;
+            delete s_entities.get(entity_index).rb.rigid_body;
+            s_entities.get(entity_index).rb.rigid_body = nullptr;
         }
-        else if (s_bullet_objects.entities[entity_index].type == ENTITY_CONSTRAINT)
+        else if (s_entities.get(entity_index).type == ENTITY_CONSTRAINT)
         {
-            btTypedConstraint* generic_constraint = s_bullet_objects.entities[entity_index].constraint.generic;
+            btTypedConstraint* generic_constraint = s_entities.get(entity_index).constraint.generic;
 
             if (generic_constraint)
                 s_bullet_systems.dynamics_world->removeConstraint(generic_constraint);
 
             delete generic_constraint;
-            s_bullet_objects.entities[entity_index].constraint.generic = nullptr;
+            s_entities.get(entity_index).constraint.generic = nullptr;
         }
+
+        s_entities.get(entity_index).type = ENTITY_NULL;
     }
 
     void remove_from_world_internal(u32 entity_index)
     {
-        s_bullet_systems.dynamics_world->removeRigidBody(s_bullet_objects.entities[entity_index].rb.rigid_body);
+        s_bullet_systems.dynamics_world->removeRigidBody(s_entities.get(entity_index).rb.rigid_body);
     }
 
     void add_to_world_internal(u32 entity_index)
     {
-        physics_entity& pe = s_bullet_objects.entities[entity_index];
+        physics_entity& pe = s_entities.get(entity_index);
         s_bullet_systems.dynamics_world->addRigidBody(pe.rb.rigid_body, pe.group, pe.mask);
     }
 
@@ -1056,7 +966,7 @@ namespace physics
     
     void contact_test_internal(const contact_test_params& ctp)
     {
-        btRigidBody* rb = s_bullet_objects.entities[ctp.entity].rb.rigid_body;
+        btRigidBody* rb = s_entities.get(ctp.entity).rb.rigid_body;
         if (!rb)
             return;
 

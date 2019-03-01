@@ -283,7 +283,7 @@ namespace
         };
     };
 
-    pen_ring_buffer<os_cmd> s_cmd_buffer;
+    pen::ring_buffer<os_cmd> s_cmd_buffer;
 
     void users()
     {

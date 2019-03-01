@@ -18,9 +18,6 @@
 #include "btBulletDynamicsCommon.h"
 
 #define MAX_PHYSICS_RESOURCES 2048
-#define MAX_TRIGGERS 1024
-#define NUM_OUTPUT_BUFFERS 2
-#define MAX_OUTPUTS 2048
 #define MAX_P2P_CONSTRAINTS 20
 
 namespace physics
@@ -103,20 +100,8 @@ namespace physics
 
     struct bullet_objects
     {
-        physics_entity entities[MAX_PHYSICS_RESOURCES];
-        u32            num_entities;
-
         bullet_objects(){};
         ~bullet_objects(){};
-    };
-
-    struct trigger
-    {
-        btCollisionObject* collision_object;
-        u32                group;
-        u32                mask;
-        u32                hit_flags;
-        u32                entity_index;
     };
 
     struct detach_callback
@@ -127,35 +112,15 @@ namespace physics
         u32   call_attach;
     };
 
-    struct entity_data
-    {
-        mat4* output_matrices = nullptr;
-        u32*  output_hit_flags = nullptr;
-        trigger_contact_data* output_contact_data = nullptr;
-    };
-
     struct readable_data
     {
         readable_data()
         {
-            current_ouput_backbuffer = 0;
-            current_ouput_frontbuffer = 1;
-
-            b_consume = 0;
             b_paused = 0;
         }
-
-        a_u32 current_ouput_backbuffer;
-        a_u32 current_ouput_frontbuffer;
         
-        a_u32 b_consume;
         a_u32 b_paused;
-
-        pen::multi_buffer<entity_data, 2> buf;
-
-        mat4                 output_matrices[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
-        u32                  output_hit_flags[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
-        trigger_contact_data output_contact_data[NUM_OUTPUT_BUFFERS][MAX_OUTPUTS];
+        pen::multi_buffer<mat4*, 2> output_matrices;
     };
 
     extern readable_data g_readable_data;
@@ -172,6 +137,7 @@ namespace physics
     void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body);
     void add_hinge_internal(const constraint_params& params, u32 resource_slot);
     void add_constraint_internal(const constraint_params& params, u32 resource_slot);
+    void add_p2p_constraint_internal(const add_p2p_constraint_params& cmd, u32 resource_slot);
 
     void set_linear_velocity_internal(const set_v3_params& cmd);
     void set_angular_velocity_internal(const set_v3_params& cmd);
@@ -189,30 +155,23 @@ namespace physics
     void set_multi_base_pos_internal(const set_multi_v3_params& cmd);
     void set_group_internal(const set_group_params& cmd);
     void set_damping_internal(const set_v3_params& cmd);
+    void set_p2p_constraint_pos_internal(const set_v3_params& cmd);
 
     void sync_rigid_bodies_internal(const sync_rb_params& cmd);
     void sync_rigid_body_velocity_internal(const sync_rb_params& cmd);
     void sync_compound_multi_internal(const sync_compound_multi_params& cmd);
     void attach_rb_to_compound_internal(const attach_to_compound_params& params);
 
+    mat4 get_rb_start_matrix(u32 rb_index);
+
     void add_to_world_internal(u32 entity_index);
     void remove_from_world_internal(u32 entity_index);
-
     void release_entity_internal(u32 entity_index);
-
-    void add_p2p_constraint_internal(const add_p2p_constraint_params& cmd, u32 resource_slot);
-    void set_p2p_constraint_pos_internal(const set_v3_params& cmd);
-
-    void add_collision_watcher_internal(const collision_trigger_data& trigger_data);
 
     void cast_ray_internal(const ray_cast_params& rcp);
     void cast_sphere_internal(const sphere_cast_params& ccp);
     void contact_test_internal(const contact_test_params& ctp);
     
-
-    // new stuf
-    // todo: strip the internal idiom
-
     void add_central_force(const set_v3_params& cmd);
     void add_central_impulse(const set_v3_params& cmd);
 

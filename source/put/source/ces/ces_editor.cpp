@@ -8,7 +8,7 @@
 #include "hash.h"
 #include "input.h"
 #include "pen_string.h"
-#include "physics.h"
+#include "physics/physics.h"
 #include "pmfx.h"
 #include "str_utilities.h"
 #include "timer.h"
@@ -740,7 +740,7 @@ namespace put
             f32        timer = 0.0f;
         };
 
-        typedef pen_stack<editor_action> action_stack;
+        typedef pen::stack<editor_action> action_stack;
 
         static action_stack   k_undo_stack;
         static action_stack   k_redo_stack;

@@ -7,8 +7,6 @@
 
 namespace physics
 {
-#define MAX_TRIGGER_CONTACTS 8
-
     PEN_TRV physics_thread_main(void* params);
 
     enum e_physics_cmd : s32
@@ -40,7 +38,6 @@ namespace physics
         CMD_SET_GROUP,
         CMD_REMOVE_FROM_WORLD,
         CMD_ADD_TO_WORLD,
-        CMD_ADD_COLLISION_TRIGGER,
         CMD_ATTACH_RB_TO_COMPOUND,
         CMD_RELEASE_ENTITY,
         CMD_CAST_RAY,
@@ -90,13 +87,6 @@ namespace physics
         u32 collider_flags;
     };
 
-    struct collision_trigger_data
-    {
-        u32 entity_index;
-        u32 group;
-        u32 mask;
-    };
-
     struct collision_mesh_data
     {
         f32* vertices;
@@ -144,9 +134,9 @@ namespace physics
     struct multi_body_link
     {
         rigid_body_params  rb;
-        lw_vec3f           hinge_axis;
-        lw_vec3f           hinge_offset;
-        lw_vec3f           hinge_limits;
+        vec3f              hinge_axis;
+        vec3f              hinge_offset;
+        vec3f              hinge_limits;
         u32                link_type;
         s32                parent;
         u32                transform_world_to_local;
@@ -181,7 +171,7 @@ namespace physics
         f32 linear_damping;
         f32 angular_damping;
 
-        s32 rb_indices[2];
+        s32 rb_indices[2] = {0};
 
         constraint_params(){};
         ~constraint_params(){};
@@ -266,15 +256,6 @@ namespace physics
         s32 link_index;
     };
 
-    struct trigger_contact_data
-    {
-        u32   num;
-        u32   flag[MAX_TRIGGER_CONTACTS];
-        u32   entity[MAX_TRIGGER_CONTACTS];
-        vec3f normals[MAX_TRIGGER_CONTACTS];
-        vec3f pos[MAX_TRIGGER_CONTACTS];
-    };
-
     struct ray_cast_result
     {
         vec3f point;
@@ -354,7 +335,6 @@ namespace physics
             u32                        entity_index;
             set_damping_params         set_damping;
             set_group_params           set_group;
-            collision_trigger_data     trigger_data;
             attach_to_compound_params  attach_compound;
             add_p2p_constraint_params  add_p2p;
             ray_cast_params            ray_cast;
@@ -379,11 +359,10 @@ namespace physics
 
     void add_to_world(const u32& entity_index);
     void remove_from_world(const u32& entity_index);
-    void add_collision_trigger(const collision_trigger_data& trigger_data);
 
     void cast_ray(const ray_cast_params& rcp, bool immediate = false);          // non immedite will put a cast command in the buffer.
     void cast_sphere(const sphere_cast_params& rcp, bool immediate = false);    // using non immediate may not be thread safe depending when you do it.
-    void contact_test(const contact_test_params& ctp, bool immediate = false);
+    void contact_test(const contact_test_params& ctp);
 
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
     void set_float(const u32& entity_index, const f32& fval, u32 cmd);
@@ -396,8 +375,6 @@ namespace physics
 
     mat4 get_rb_matrix(const u32& entity_index);
     u32  get_hit_flags(u32 entity_index);
-
-    trigger_contact_data* get_trigger_contacts(u32 entity_index);
 
     void release_entity(const u32& entity_index);
 } // namespace physics
