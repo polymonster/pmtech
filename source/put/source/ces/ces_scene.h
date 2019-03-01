@@ -10,7 +10,7 @@
 #include "maths/maths.h"
 #include "maths/quat.h"
 #include "pen.h"
-#include "physics.h"
+#include "physics/physics.h"
 #include "pmfx.h"
 #include "str/Str.h"
 
