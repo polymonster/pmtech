@@ -1,9 +1,8 @@
-// ces_resources.h
+// ecs_resources.h
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef ces_resources_h__
-#define ces_resources_h__
+#pragma once
 
 #include "ecs/ecs_scene.h"
 
@@ -265,4 +264,3 @@ namespace put
         geometry_resource*  get_geometry_resource(hash_id h);
     } // namespace ces
 } // namespace put
-#endif

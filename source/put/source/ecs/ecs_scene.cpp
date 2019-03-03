@@ -1,3 +1,7 @@
+// ecs_scene.cpp
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #include <fstream>
 #include <functional>
 
@@ -25,6 +29,14 @@ namespace put
     namespace ecs
     {
         std::vector<ecs_scene_instance> k_scenes;
+
+        void register_ecs_extentsions(ecs_scene* scene, const ecs_extension& ext)
+        {
+            sb_push(scene->extensions, ext);
+            scene->num_components += ext.num_components;
+
+            resize_scene_buffers(scene);
+        }
 
         void initialise_free_list(ecs_scene* scene)
         {
@@ -1855,6 +1867,10 @@ namespace put
 
                 instantiate_model_cbuffer(scene, n);
             }
+
+            // invalidate physics debug cbuffer.. will recreate on demand
+            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+                scene->physics_debug_cbuffer[n] = PEN_INVALID_HANDLE;
 
             if (!merge)
             {

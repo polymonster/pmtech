@@ -1,9 +1,8 @@
-// ces_scene.h
+// ecs_scene.h
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef ces_scene_h__
-#define ces_scene_h__
+#pragma once
 
 #include "camera.h"
 #include "loader.h"
@@ -13,6 +12,7 @@
 #include "physics/physics.h"
 #include "pmfx.h"
 #include "str/Str.h"
+#include "data_struct.h"
 
 #include <vector>
 
@@ -353,13 +353,21 @@ namespace put
             void* operator[](size_t index);
         };
 
+        struct ecs_extension
+        {
+            generic_cmp_array* components;
+            u32                num_components;
+            void               (*browser_func)(ecs_scene*);
+        };
+
         struct ecs_scene
         {
             static const u32 k_version = 8;
 
             ecs_scene()
             {
-                num_components = (((size_t)&num_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
+                num_base_components = (((size_t)&num_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
+                num_components = num_base_components;
             };
 
             // Components version 4
@@ -402,7 +410,11 @@ namespace put
             cmp_array<u32>                    physics_debug_cbuffer;
 
             // Ensure num_components is the next to calc size
+            u32 num_base_components;
             u32 num_components;
+
+            // extension components
+            ecs_extension*                    extensions = nullptr;
 
             // Scene Data
             u32             num_nodes = 0;
@@ -415,6 +427,7 @@ namespace put
             u32             flags = 0;
             u32             view_flags = 0;
             extents         renderable_extents;
+            u32*            selection_list = nullptr;
 
             u32 version = k_version;
             Str filename = "";
@@ -422,6 +435,24 @@ namespace put
             // Access to component data in a generic way
             pen_inline generic_cmp_array& get_component_array(u32 index)
             {
+                if (index >= num_base_components)
+                {
+                    // extension components
+                    u32 num_ext = sb_count(extensions);
+                    u32 ext_component_start = num_base_components;
+                    for (u32 e = 0; e < num_ext; ++e)
+                    {
+                        u32 num_components = extensions[e].num_components;
+                        if (index < ext_component_start + num_components)
+                        {
+                            u32 component_offset = index - ext_component_start;
+                            return extensions[e].components[component_offset];
+                        }
+
+                        ext_component_start += num_components;
+                    }
+                }
+
                 generic_cmp_array* begin = (generic_cmp_array*)this;
                 return begin[index];
             }
@@ -461,6 +492,8 @@ namespace put
 
         void initialise_free_list(ecs_scene* scene);
 
+        void register_ecs_extentsions(ecs_scene* scene, const ecs_extension& ext);
+
         // separate implementations to make clang always inline
         template <typename T>
         pen_inline T& cmp_array<T>::operator[](size_t index)
@@ -482,5 +515,3 @@ namespace put
         }
     } // namespace ces
 } // namespace put
-
-#endif

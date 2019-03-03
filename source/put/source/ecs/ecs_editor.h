@@ -1,9 +1,8 @@
-// ces_editor.h
+// ecs_editor.h
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef ces_editor_h__
-#define ces_editor_h__
+#pragma once
 
 #include "ecs/ecs_scene.h"
 
@@ -38,5 +37,3 @@ namespace put
 
     } // namespace ces
 } // namespace put
-
-#endif

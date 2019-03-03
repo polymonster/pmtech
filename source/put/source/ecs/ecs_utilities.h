@@ -1,9 +1,8 @@
-// ces_utilities.h
+// ecs_utilities.h
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef ces_utility_h__
-#define ces_utility_h__
+#pragma once
 
 #include "ecs/ecs_scene.h"
 #include "hash.h"
@@ -59,4 +58,3 @@ namespace put
         void write_parsable_string(const Str& str, std::ofstream& ofs);
     } // namespace ces
 } // namespace put
-#endif
