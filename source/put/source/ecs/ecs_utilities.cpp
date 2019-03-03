@@ -5,16 +5,16 @@
 #include "dev_ui.h"
 #include <fstream>
 
-#include "ces/ces_editor.h"
-#include "ces/ces_resources.h"
-#include "ces/ces_utilities.h"
+#include "ecs/ecs_editor.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_utilities.h"
 
 #include "data_struct.h"
 #include "str_utilities.h"
 
 namespace put
 {
-    namespace ces
+    namespace ecs
     {
         Str read_parsable_string(const u32** data)
         {
@@ -66,7 +66,7 @@ namespace put
             }
         }
 
-        void get_new_nodes_append(entity_scene* scene, s32 num, s32& start, s32& end)
+        void get_new_nodes_append(ecs_scene* scene, s32 num, s32& start, s32& end)
         {
             // o(1) - appends a bunch of nodes on the end
 
@@ -96,7 +96,7 @@ namespace put
             scene->num_nodes = end;
         }
 
-        void get_new_nodes_contiguous(entity_scene* scene, s32 num, s32& start, s32& end)
+        void get_new_nodes_contiguous(ecs_scene* scene, s32 num, s32& start, s32& end)
         {
             // o(n) - has to find contiguous nodes within the free list, and worst case will allocate more mem and append the
             // new nodes
@@ -151,7 +151,7 @@ namespace put
             }
         }
 
-        u32 get_next_node(entity_scene* scene)
+        u32 get_next_node(ecs_scene* scene)
         {
             if (!scene->free_list_head)
                 resize_scene_buffers(scene);
@@ -159,7 +159,7 @@ namespace put
             return scene->free_list_head->node;
         }
 
-        u32 get_new_node(entity_scene* scene)
+        u32 get_new_node(ecs_scene* scene)
         {
             // o(1) using free list
 
@@ -206,7 +206,7 @@ namespace put
             }
         }
 
-        void scene_tree_enumerate(entity_scene* scene, const scene_tree& tree)
+        void scene_tree_enumerate(ecs_scene* scene, const scene_tree& tree)
         {
             for (auto& child : tree.children)
             {
@@ -238,7 +238,7 @@ namespace put
             }
         }
 
-        void build_scene_tree(entity_scene* scene, s32 start_node, scene_tree& tree_out)
+        void build_scene_tree(ecs_scene* scene, s32 start_node, scene_tree& tree_out)
         {
             // tree view
             tree_out.node_index = -1;
@@ -297,7 +297,7 @@ namespace put
             }
         }
 
-        void build_heirarchy_node_list(entity_scene* scene, s32 start_node, std::vector<s32>& list_out)
+        void build_heirarchy_node_list(ecs_scene* scene, s32 start_node, std::vector<s32>& list_out)
         {
             scene_tree tree;
             build_scene_tree(scene, start_node, tree);
@@ -305,7 +305,7 @@ namespace put
             tree_to_node_index_list(tree, start_node, list_out);
         }
 
-        void set_node_parent(entity_scene* scene, u32 parent, u32 child)
+        void set_node_parent(ecs_scene* scene, u32 parent, u32 child)
         {
             if (child == parent)
                 return;
@@ -317,7 +317,7 @@ namespace put
             scene->local_matrices[child] = mat::inverse4x4(parent_mat) * scene->local_matrices[child];
         }
 
-        void clone_selection_hierarchical(entity_scene* scene, u32** selection_list, const c8* suffix)
+        void clone_selection_hierarchical(ecs_scene* scene, u32** selection_list, const c8* suffix)
         {
             std::vector<u32> parent_list;
 
@@ -377,7 +377,7 @@ namespace put
             scene->flags |= INVALIDATE_SCENE_TREE;
         }
 
-        void instance_node_range(entity_scene* scene, u32 master_node, u32 num_nodes)
+        void instance_node_range(ecs_scene* scene, u32 master_node, u32 num_nodes)
         {
             s32 master = master_node;
 
@@ -408,7 +408,7 @@ namespace put
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
         }
         
-        bool bind_animation_to_rig(entity_scene* scene, anim_handle anim_handle, u32 node_index)
+        bool bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index)
         {
             animation_resource* anim = get_animation_resource(anim_handle);
             anim_instance anim_instance;

@@ -7,14 +7,14 @@
 
 namespace put
 {
-    namespace ces
+    namespace ecs
     {
-        struct entity_scene;
+        struct ecs_scene;
     }
 
     namespace vgt
     {
-        void init(ces::entity_scene* scene);
+        void init(ecs::ecs_scene* scene);
 
         void show_dev_ui();
         void post_update();

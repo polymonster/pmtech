@@ -5,11 +5,11 @@
 #ifndef ces_resources_h__
 #define ces_resources_h__
 
-#include "ces/ces_scene.h"
+#include "ecs/ecs_scene.h"
 
 namespace put
 {
-    namespace ces
+    namespace ecs
     {
         // anim v2
         struct anim_info
@@ -230,29 +230,29 @@ namespace put
             f32 x, y, z, w;
         };
 
-        void save_scene(const c8* filename, entity_scene* scene);
-        void save_sub_scene(entity_scene* scene, u32 root);
-        void load_scene(const c8* filename, entity_scene* scene, bool merge = false);
+        void save_scene(const c8* filename, ecs_scene* scene);
+        void save_sub_scene(ecs_scene* scene, u32 root);
+        void load_scene(const c8* filename, ecs_scene* scene, bool merge = false);
 
-        s32         load_pmm(const c8* model_scene_name, entity_scene* scene = nullptr, u32 load_flags = PMM_ALL);
+        s32         load_pmm(const c8* model_scene_name, ecs_scene* scene = nullptr, u32 load_flags = PMM_ALL);
         anim_handle load_pma(const c8* model_scene_name);
-        s32         load_pmv(const c8* filename, entity_scene* scene);
+        s32         load_pmv(const c8* filename, ecs_scene* scene);
 
-        void instantiate_rigid_body(entity_scene* scene, u32 node_index);
-        void instantiate_constraint(entity_scene* scene, u32 node_index);
-        void instantiate_geometry(geometry_resource* gr, entity_scene* scene, s32 node_index);
-        void instantiate_model_pre_skin(entity_scene* scene, s32 node_index);
-        void instantiate_model_cbuffer(entity_scene* scene, s32 node_index);
-        void instantiate_material_cbuffer(entity_scene* scene, s32 node_index, s32 size);
-        void instantiate_anim_controller(entity_scene* scene, s32 node_index);
-        void instantiate_material(material_resource* mr, entity_scene* scene, u32 node_index);
-        void instantiate_sdf_shadow(const c8* pmv_filename, entity_scene* scene, u32 node_index);
-        void instantiate_light(entity_scene* scene, u32 node_index);
+        void instantiate_rigid_body(ecs_scene* scene, u32 node_index);
+        void instantiate_constraint(ecs_scene* scene, u32 node_index);
+        void instantiate_geometry(geometry_resource* gr, ecs_scene* scene, s32 node_index);
+        void instantiate_model_pre_skin(ecs_scene* scene, s32 node_index);
+        void instantiate_model_cbuffer(ecs_scene* scene, s32 node_index);
+        void instantiate_material_cbuffer(ecs_scene* scene, s32 node_index, s32 size);
+        void instantiate_anim_controller(ecs_scene* scene, s32 node_index);
+        void instantiate_material(material_resource* mr, ecs_scene* scene, u32 node_index);
+        void instantiate_sdf_shadow(const c8* pmv_filename, ecs_scene* scene, u32 node_index);
+        void instantiate_light(ecs_scene* scene, u32 node_index);
 
-        void destroy_geometry(entity_scene* scene, u32 node_index);
-        void destroy_physics(entity_scene* scene, s32 node_index);
+        void destroy_geometry(ecs_scene* scene, u32 node_index);
+        void destroy_physics(ecs_scene* scene, s32 node_index);
 
-        void bake_material_handles(entity_scene* scene, u32 node_index);
+        void bake_material_handles(ecs_scene* scene, u32 node_index);
         void bake_material_handles();
 
         void create_geometry_primitives();

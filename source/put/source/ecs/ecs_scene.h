@@ -21,7 +21,7 @@ namespace put
     struct scene_view;
     typedef s32 anim_handle;
 
-    namespace ces
+    namespace ecs
     {
         struct anim_instance;
 
@@ -353,11 +353,11 @@ namespace put
             void* operator[](size_t index);
         };
 
-        struct entity_scene
+        struct ecs_scene
         {
             static const u32 k_version = 8;
 
-            entity_scene()
+            ecs_scene()
             {
                 num_components = (((size_t)&num_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
             };
@@ -427,11 +427,11 @@ namespace put
             }
         };
 
-        struct entity_scene_instance
+        struct ecs_scene_instance
         {
             u32           id_name;
             const c8*     name;
-            entity_scene* scene;
+            ecs_scene* scene;
         };
 
         enum e_scene_render_flags
@@ -439,27 +439,27 @@ namespace put
             RENDER_FORWARD_LIT = 1
         };
 
-        entity_scene* create_scene(const c8* name);
-        void          destroy_scene(entity_scene* scene);
+        ecs_scene* create_scene(const c8* name);
+        void          destroy_scene(ecs_scene* scene);
 
-        void update_scene(entity_scene* scene, f32 dt);
+        void update_scene(ecs_scene* scene, f32 dt);
 
         void render_scene_view(const scene_view& view);
         void render_light_volumes(const scene_view& view);
 
-        void clear_scene(entity_scene* scene);
-        void default_scene(entity_scene* scene);
+        void clear_scene(ecs_scene* scene);
+        void default_scene(ecs_scene* scene);
 
-        void resize_scene_buffers(entity_scene* scene, s32 size = 1024);
-        void zero_entity_components(entity_scene* scene, u32 node_index);
+        void resize_scene_buffers(ecs_scene* scene, s32 size = 1024);
+        void zero_entity_components(ecs_scene* scene, u32 node_index);
 
-        void delete_entity(entity_scene* scene, u32 node_index);
-        void delete_entity_first_pass(entity_scene* scene, u32 node_index);
-        void delete_entity_second_pass(entity_scene* scene, u32 node_index);
+        void delete_entity(ecs_scene* scene, u32 node_index);
+        void delete_entity_first_pass(ecs_scene* scene, u32 node_index);
+        void delete_entity_second_pass(ecs_scene* scene, u32 node_index);
 
-        void update_view_flags(entity_scene* scene, bool error);
+        void update_view_flags(ecs_scene* scene, bool error);
 
-        void initialise_free_list(entity_scene* scene);
+        void initialise_free_list(ecs_scene* scene);
 
         // separate implementations to make clang always inline
         template <typename T>

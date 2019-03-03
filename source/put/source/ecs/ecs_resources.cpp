@@ -5,8 +5,8 @@
 #include "pen_string.h"
 #include "str_utilities.h"
 
-#include "ces/ces_resources.h"
-#include "ces/ces_utilities.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_utilities.h"
 
 #include "console.h"
 #include "data_struct.h"
@@ -26,7 +26,7 @@ namespace put
     const hash_id ID_JOINT = PEN_HASH("joint");
     const hash_id ID_TRAJECTORY = PEN_HASH("trajectoryshjnt");
 
-    namespace ces
+    namespace ecs
     {
         static std::vector<geometry_resource*> s_geometry_resources;
         static std::vector<material_resource*> s_material_resources;
@@ -54,7 +54,7 @@ namespace put
             return nullptr;
         }
 
-        void instantiate_constraint(entity_scene* scene, u32 node_index)
+        void instantiate_constraint(ecs_scene* scene, u32 node_index)
         {
             physics::constraint_params& cp = scene->physics_data[node_index].constraint;
 
@@ -68,7 +68,7 @@ namespace put
             scene->entities[node_index] |= CMP_CONSTRAINT;
         }
 
-        void instantiate_rigid_body(entity_scene* scene, u32 node_index)
+        void instantiate_rigid_body(ecs_scene* scene, u32 node_index)
         {
             u32 s = node_index;
 
@@ -116,7 +116,7 @@ namespace put
             scene->entities[s] |= CMP_PHYSICS;
         }
 
-        void destroy_physics(entity_scene* scene, s32 node_index)
+        void destroy_physics(ecs_scene* scene, s32 node_index)
         {
             if (!(scene->entities[node_index] & CMP_PHYSICS))
                 return;
@@ -127,7 +127,7 @@ namespace put
             scene->physics_handles[node_index] = PEN_INVALID_HANDLE;
         }
 
-        void instantiate_geometry(geometry_resource* gr, entity_scene* scene, s32 node_index)
+        void instantiate_geometry(geometry_resource* gr, ecs_scene* scene, s32 node_index)
         {
             cmp_geometry* instance = &scene->geometries[node_index];
 
@@ -159,7 +159,7 @@ namespace put
                 instance->vertex_shader_class = ID_VERTEX_CLASS_SKINNED;
         }
 
-        void destroy_geometry(entity_scene* scene, u32 node_index)
+        void destroy_geometry(ecs_scene* scene, u32 node_index)
         {
             if (!(scene->entities[node_index] & CMP_GEOMETRY))
                 return;
@@ -182,7 +182,7 @@ namespace put
             scene->materials[node_index].material_cbuffer = PEN_INVALID_HANDLE;
         }
 
-        void instantiate_material_cbuffer(entity_scene* scene, s32 node_index, s32 size)
+        void instantiate_material_cbuffer(ecs_scene* scene, s32 node_index, s32 size)
         {
             if (is_valid(scene->materials[node_index].material_cbuffer))
             {
@@ -207,7 +207,7 @@ namespace put
             scene->materials[node_index].material_cbuffer = pen::renderer_create_buffer(bcp);
         }
 
-        void instantiate_model_cbuffer(entity_scene* scene, s32 node_index)
+        void instantiate_model_cbuffer(ecs_scene* scene, s32 node_index)
         {
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -219,7 +219,7 @@ namespace put
             scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
         }
 
-        void instantiate_model_pre_skin(entity_scene* scene, s32 node_index)
+        void instantiate_model_pre_skin(ecs_scene* scene, s32 node_index)
         {
             cmp_geometry& geom = scene->geometries[node_index];
             cmp_pre_skin& pre_skin = scene->pre_skin[node_index];
@@ -257,7 +257,7 @@ namespace put
             geom.vertex_shader_class = ID_VERTEX_CLASS_BASIC;
         }
 
-        void instantiate_anim_controller(entity_scene* scene, s32 node_index)
+        void instantiate_anim_controller(ecs_scene* scene, s32 node_index)
         {
             cmp_geometry* geom = &scene->geometries[node_index];
 
@@ -291,7 +291,7 @@ namespace put
             }
         }
         
-        void instantiate_anim_controller_v2(entity_scene* scene, s32 node_index)
+        void instantiate_anim_controller_v2(ecs_scene* scene, s32 node_index)
         {
             cmp_geometry* geom = &scene->geometries[node_index];
             
@@ -316,7 +316,7 @@ namespace put
             }
         }
 
-        void instantiate_sdf_shadow(const c8* pmv_filename, entity_scene* scene, u32 node_index)
+        void instantiate_sdf_shadow(const c8* pmv_filename, ecs_scene* scene, u32 node_index)
         {
             pen::json pmv = pen::json::load_from_file(pmv_filename);
 
@@ -341,7 +341,7 @@ namespace put
             scene->shadows[node_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::RS_SAMPLER);
         }
 
-        void instantiate_light(entity_scene* scene, u32 node_index)
+        void instantiate_light(ecs_scene* scene, u32 node_index)
         {
             if (is_valid(scene->cbuffer[node_index]) && scene->cbuffer[node_index] != 0)
                 return;
@@ -527,7 +527,7 @@ namespace put
             return nullptr;
         }
 
-        void instantiate_material(material_resource* mr, entity_scene* scene, u32 node_index)
+        void instantiate_material(material_resource* mr, ecs_scene* scene, u32 node_index)
         {
             scene->id_material[node_index] = mr->hash;
             scene->material_names[node_index] = mr->material_name;
@@ -570,7 +570,7 @@ namespace put
                 permutation |= PERMUTATION_INSTANCED;
         }
 
-        void bake_material_handles(entity_scene* scene, u32 node_index)
+        void bake_material_handles(ecs_scene* scene, u32 node_index)
         {
             material_resource* resource = &scene->material_resources[node_index];
             cmp_material*      material = &scene->materials[node_index];
@@ -639,13 +639,13 @@ namespace put
                     samplers.sb[s].sampler_state = pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::RS_SAMPLER);
         }
 
-        extern std::vector<entity_scene_instance> k_scenes;
+        extern std::vector<ecs_scene_instance> k_scenes;
 
         void bake_material_handles()
         {
             for (auto& si : k_scenes)
             {
-                entity_scene* scene = si.scene;
+                ecs_scene* scene = si.scene;
 
                 for (u32 n = 0; n < scene->nodes_size; ++n)
                 {
@@ -1062,7 +1062,7 @@ namespace put
             Str     name;
         };
 
-        s32 load_pmm(const c8* filename, entity_scene* scene, u32 load_flags)
+        s32 load_pmm(const c8* filename, ecs_scene* scene, u32 load_flags)
         {
             if (scene)
                 scene->flags |= INVALIDATE_SCENE_TREE;
@@ -1432,7 +1432,7 @@ namespace put
             u32     cmp_flags;
         };
 
-        s32 load_pmv(const c8* filename, entity_scene* scene)
+        s32 load_pmv(const c8* filename, ecs_scene* scene)
         {
             pen::json pmv = pen::json::load_from_file(filename);
 

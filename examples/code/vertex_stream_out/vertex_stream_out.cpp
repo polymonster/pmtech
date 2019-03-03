@@ -1,8 +1,8 @@
 #include "camera.h"
-#include "ces/ces_editor.h"
-#include "ces/ces_resources.h"
-#include "ces/ces_scene.h"
-#include "ces/ces_utilities.h"
+#include "ecs/ecs_editor.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_scene.h"
+#include "ecs/ecs_utilities.h"
 #include "console.h"
 #include "data_struct.h"
 #include "debug_render.h"
@@ -20,7 +20,7 @@
 #include "timer.h"
 
 using namespace put;
-using namespace ces;
+using namespace ecs;
 
 pen::window_creation_params pen_window{
     1280,               // width
@@ -34,7 +34,7 @@ namespace physics
     extern PEN_TRV physics_thread_main(void* params);
 }
 
-void create_physics_objects(ces::entity_scene* scene)
+void create_physics_objects(ecs::ecs_scene* scene)
 {
     clear_scene(scene);
 
@@ -168,17 +168,17 @@ PEN_TRV pen::user_entry(void* params)
 
     put::scene_controller cc;
     cc.camera = &main_camera;
-    cc.update_function = &ces::update_model_viewer_camera;
+    cc.update_function = &ecs::update_model_viewer_camera;
     cc.name = "model_viewer_camera";
     cc.id_name = PEN_HASH(cc.name.c_str());
 
     // create the main scene and controller
-    put::ces::entity_scene* main_scene = put::ces::create_scene("main_scene");
-    put::ces::editor_init(main_scene);
+    put::ecs::ecs_scene* main_scene = put::ecs::create_scene("main_scene");
+    put::ecs::editor_init(main_scene);
 
     put::scene_controller sc;
     sc.scene = main_scene;
-    sc.update_function = &ces::update_model_viewer_scene;
+    sc.update_function = &ecs::update_model_viewer_scene;
     sc.name = "main_scene";
     sc.camera = &main_camera;
     sc.id_name = PEN_HASH(sc.name.c_str());
@@ -187,12 +187,12 @@ PEN_TRV pen::user_entry(void* params)
     put::scene_view_renderer svr_main;
     svr_main.name = "ces_render_scene";
     svr_main.id_name = PEN_HASH(svr_main.name.c_str());
-    svr_main.render_function = &ces::render_scene_view;
+    svr_main.render_function = &ecs::render_scene_view;
 
     put::scene_view_renderer svr_editor;
     svr_editor.name = "ces_render_editor";
     svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
-    svr_editor.render_function = &ces::render_scene_editor;
+    svr_editor.render_function = &ecs::render_scene_editor;
 
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
@@ -250,8 +250,8 @@ PEN_TRV pen::user_entry(void* params)
             break;
     }
 
-    ces::destroy_scene(main_scene);
-    ces::editor_shutdown();
+    ecs::destroy_scene(main_scene);
+    ecs::editor_shutdown();
 
     // clean up mem here
     put::pmfx::shutdown();

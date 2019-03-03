@@ -9,12 +9,12 @@
 #include "pen_string.h"
 #include "str_utilities.h"
 
-#include "ces/ces_resources.h"
-#include "ces/ces_utilities.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_utilities.h"
 
 namespace put
 {
-    namespace ces
+    namespace ecs
     {
         void create_cpu_buffers(geometry_resource* p_geometry, vertex_model* v, u32 num_verts, u16* indices, u32 num_indices)
         {

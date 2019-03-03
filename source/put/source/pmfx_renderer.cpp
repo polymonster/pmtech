@@ -2,9 +2,9 @@
 // Copyright 2014 - 2019 Alex Dixon. 
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include "ces/ces_editor.h"
-#include "ces/ces_resources.h"
-#include "ces/ces_scene.h"
+#include "ecs/ecs_editor.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_scene.h"
 #include "console.h"
 #include "data_struct.h"
 #include "debug_render.h"
@@ -25,7 +25,7 @@ extern pen::window_creation_params pen_window;
 using namespace put;
 using namespace pmfx;
 using namespace pen;
-using namespace ces;
+using namespace ecs;
 
 namespace
 {
@@ -134,7 +134,7 @@ namespace
     };
     
     const mode_map render_flags_map[] = {
-        "forward_lit", ces::RENDER_FORWARD_LIT,
+        "forward_lit", ecs::RENDER_FORWARD_LIT,
         nullptr, 0
     };
     
@@ -166,7 +166,7 @@ namespace
         hash_id id_filter = 0;
 
         // draw / update
-        ces::entity_scene* scene;
+        ecs::ecs_scene* scene;
         put::camera*       camera;
 
         std::vector<void (*)(const put::scene_view&)> render_functions;
@@ -2280,7 +2280,7 @@ namespace put
             pen::renderer_consume_cmd_buffer();
 
             // rebake material handles
-            ces::bake_material_handles();
+            ecs::bake_material_handles();
         }
 
         std::vector<Str> k_script_files;
@@ -2404,7 +2404,7 @@ namespace put
 
         void fullscreen_quad(const scene_view& sv)
         {
-            static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
+            static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
             if (!is_valid(sv.pmfx_shader))
                 return;
@@ -2596,7 +2596,7 @@ namespace put
 
                 // render
                 static u32                     pp_shader = pmfx::load_shader("post_process");
-                static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
+                static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
                 pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
                 pen::renderer_set_viewport(vp);
@@ -2773,7 +2773,7 @@ namespace put
                     {
                         sampler_binding sb = pp.technique_samplers.sb[i];
 
-                        Str fn = put::ces::strip_project_dir(put::get_texture_filename(sb.handle));
+                        Str fn = put::ecs::strip_project_dir(put::get_texture_filename(sb.handle));
 
                         pen::json j_texture;
                         j_texture.set("filename", fn);

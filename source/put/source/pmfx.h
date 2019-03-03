@@ -16,9 +16,9 @@ namespace pen
 
 namespace put
 {
-    namespace ces
+    namespace ecs
     {
-        struct entity_scene;
+        struct ecs_scene;
     }
 
     struct camera;
@@ -54,7 +54,7 @@ namespace put
         u32                pmfx_shader = PEN_INVALID_HANDLE;
         hash_id            technique = 0; // todo rename to id_technique
         u32                permutation = 0;
-        ces::entity_scene* scene = nullptr;
+        ecs::ecs_scene*    scene = nullptr;
         bool               viewport_correction = false;
     };
 
@@ -62,7 +62,7 @@ namespace put
     {
         Str                name;
         hash_id            id_name = 0;
-        ces::entity_scene* scene = nullptr;
+        ecs::ecs_scene*    scene = nullptr;
         put::camera*       camera = nullptr;
         e_update_order     order = MAIN_UPDATE;
         f32                dt = 0.0f;

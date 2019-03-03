@@ -12,9 +12,9 @@
 #include "console.h"
 #include "timer.h"
 
-#include "ces/ces_resources.h"
-#include "ces/ces_scene.h"
-#include "ces/ces_utilities.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_scene.h"
+#include "ecs/ecs_utilities.h"
 
 using namespace put;
 
@@ -22,11 +22,11 @@ extern pen::user_info pen_user_info;
 
 namespace put
 {
-    namespace ces
+    namespace ecs
     {
-        std::vector<entity_scene_instance> k_scenes;
+        std::vector<ecs_scene_instance> k_scenes;
 
-        void initialise_free_list(entity_scene* scene)
+        void initialise_free_list(ecs_scene* scene)
         {
             scene->free_list_head = nullptr;
 
@@ -47,7 +47,7 @@ namespace put
             }
         }
 
-        void resize_scene_buffers(entity_scene* scene, s32 size)
+        void resize_scene_buffers(ecs_scene* scene, s32 size)
         {
             u32 new_size = scene->nodes_size + size;
 
@@ -80,7 +80,7 @@ namespace put
             scene->nodes_size = new_size;
         }
 
-        void free_scene_buffers(entity_scene* scene, bool cmp_mem_only = 0)
+        void free_scene_buffers(ecs_scene* scene, bool cmp_mem_only = 0)
         {
             // Remove entites for sub systems (physics, rendering, etc)
             if (!cmp_mem_only)
@@ -104,7 +104,7 @@ namespace put
             scene->num_nodes = 0;
         }
 
-        void zero_entity_components(entity_scene* scene, u32 node_index)
+        void zero_entity_components(ecs_scene* scene, u32 node_index)
         {
             for (u32 i = 0; i < scene->num_components; ++i)
             {
@@ -117,7 +117,7 @@ namespace put
             scene->parents[node_index] = node_index;
         }
 
-        void delete_entity(entity_scene* scene, u32 node_index)
+        void delete_entity(ecs_scene* scene, u32 node_index)
         {
             // free allocated stuff
             if (is_valid(scene->physics_handles[node_index]))
@@ -130,7 +130,7 @@ namespace put
             zero_entity_components(scene, node_index);
         }
 
-        void delete_entity_first_pass(entity_scene* scene, u32 node_index)
+        void delete_entity_first_pass(ecs_scene* scene, u32 node_index)
         {
             // constraints must be freed or removed before we delete rigidbodies using them
             if (is_valid(scene->physics_handles[node_index]) && (scene->entities[node_index] & CMP_CONSTRAINT))
@@ -152,7 +152,7 @@ namespace put
                 pen::renderer_release_buffer(scene->master_instances[node_index].instance_buffer);
         }
 
-        void delete_entity_second_pass(entity_scene* scene, u32 node_index)
+        void delete_entity_second_pass(ecs_scene* scene, u32 node_index)
         {
             // all constraints must be removed by this point.
             if (scene->physics_handles[node_index] && (scene->entities[node_index] & CMP_PHYSICS))
@@ -161,13 +161,13 @@ namespace put
             zero_entity_components(scene, node_index);
         }
 
-        void clear_scene(entity_scene* scene)
+        void clear_scene(ecs_scene* scene)
         {
             free_scene_buffers(scene);
             resize_scene_buffers(scene);
         }
 
-        u32 clone_node(entity_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
+        u32 clone_node(ecs_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
         {
             if (dst == -1)
             {
@@ -179,7 +179,7 @@ namespace put
                     scene->num_nodes = dst + 1;
             }
 
-            entity_scene* p_sn = scene;
+            ecs_scene* p_sn = scene;
 
             // copy components
             for (u32 i = 0; i < scene->num_components; ++i)
@@ -241,11 +241,11 @@ namespace put
             return dst;
         }
 
-        entity_scene* create_scene(const c8* name)
+        ecs_scene* create_scene(const c8* name)
         {
-            entity_scene_instance new_instance;
+            ecs_scene_instance new_instance;
             new_instance.name = name;
-            new_instance.scene = new entity_scene();
+            new_instance.scene = new ecs_scene();
 
             k_scenes.push_back(new_instance);
 
@@ -284,7 +284,7 @@ namespace put
             return new_instance.scene;
         }
 
-        void destroy_scene(entity_scene* scene)
+        void destroy_scene(ecs_scene* scene)
         {
             free_scene_buffers(scene);
 
@@ -295,7 +295,7 @@ namespace put
 
         void render_light_volumes(const scene_view& view)
         {
-            entity_scene* scene = view.scene;
+            ecs_scene* scene = view.scene;
 
             if (scene->view_flags & SV_HIDE)
                 return;
@@ -396,7 +396,7 @@ namespace put
 
         void render_scene_view(const scene_view& view)
         {
-            entity_scene* scene = view.scene;
+            ecs_scene* scene = view.scene;
 
             if (scene->view_flags & SV_HIDE)
                 return;
@@ -573,7 +573,7 @@ namespace put
             }
         }
         
-        void update_animations(entity_scene* scene, f32 dt)
+        void update_animations(ecs_scene* scene, f32 dt)
         {
             //u32 timer = pen::timer_create("anim_v2");
             //pen::timer_start(timer);
@@ -758,7 +758,7 @@ namespace put
             //PEN_LOG("anim_v2 : %f", ms);
         }
 
-        void update_animations_baked(entity_scene* scene, f32 dt)
+        void update_animations_baked(ecs_scene* scene, f32 dt)
         {
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -850,7 +850,7 @@ namespace put
             }
         }
 
-        void update_scene(entity_scene* scene, f32 dt)
+        void update_scene(ecs_scene* scene, f32 dt)
         {
             if (scene->flags & PAUSE_UPDATE)
             {
@@ -1273,7 +1273,7 @@ namespace put
         struct scene_header
         {
             s32 header_size = sizeof(*this);
-            s32 version = entity_scene::k_version;
+            s32 version = ecs_scene::k_version;
             u32 num_nodes = 0;
             s32 num_components = 0;
             s32 num_lookup_strings = 0;
@@ -1340,14 +1340,14 @@ namespace put
             return "";
         }
         
-        void save_sub_scene(entity_scene* scene, u32 root)
+        void save_sub_scene(ecs_scene* scene, u32 root)
         {
             std::vector<s32> nodes;
             build_heirarchy_node_list(scene, root, nodes);
 
             u32 num = nodes.size();
 
-            entity_scene sub_scene;
+            ecs_scene sub_scene;
             resize_scene_buffers(&sub_scene, num);
 
             for (u32 i = 0; i < num; ++i)
@@ -1378,7 +1378,7 @@ namespace put
             free_scene_buffers(&sub_scene, true);
         }
 
-        void save_scene(const c8* filename, entity_scene* scene)
+        void save_scene(const c8* filename, ecs_scene* scene)
         {
             Str project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
 
@@ -1547,7 +1547,7 @@ namespace put
             ofs.close();
         }
 
-        void load_scene(const c8* filename, entity_scene* scene, bool merge)
+        void load_scene(const c8* filename, ecs_scene* scene, bool merge)
         {
             scene->flags |= INVALIDATE_SCENE_TREE;
             bool error = false;

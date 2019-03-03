@@ -1,8 +1,8 @@
 #include "camera.h"
-#include "ces/ces_editor.h"
-#include "ces/ces_resources.h"
-#include "ces/ces_scene.h"
-#include "ces/ces_utilities.h"
+#include "ecs/ecs_editor.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_scene.h"
+#include "ecs/ecs_utilities.h"
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "file_system.h"
@@ -18,7 +18,7 @@
 #include "timer.h"
 
 using namespace put;
-using namespace ces;
+using namespace ecs;
 
 pen::window_creation_params pen_window{
     1280,                     // width
@@ -78,7 +78,7 @@ void blend_mode_ui()
 
 void blend_layers(const scene_view& scene_view)
 {
-    static ces::geometry_resource* quad = ces::get_geometry_resource(PEN_HASH("full_screen_quad"));
+    static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
     static u32 background_texture = put::load_texture("data/textures/blend_test_bg.dds");
     static u32 foreground_texture = put::load_texture("data/textures/blend_test_fg.dds");
@@ -121,7 +121,7 @@ PEN_TRV pen::user_entry(void* params)
     put::dev_ui::init();
     put::dbg::init();
 
-    put::ces::create_geometry_primitives();
+    put::ecs::create_geometry_primitives();
 
     // create view renderers
     put::scene_view_renderer svr_main;
@@ -168,7 +168,7 @@ PEN_TRV pen::user_entry(void* params)
             break;
     }
 
-    ces::editor_shutdown();
+    ecs::editor_shutdown();
 
     // clean up mem here
     put::pmfx::shutdown();

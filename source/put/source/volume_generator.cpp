@@ -5,10 +5,10 @@
 #include "volume_generator.h"
 
 #include "camera.h"
-#include "ces/ces_editor.h"
-#include "ces/ces_resources.h"
-#include "ces/ces_scene.h"
-#include "ces/ces_utilities.h"
+#include "ecs/ecs_editor.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_scene.h"
+#include "ecs/ecs_utilities.h"
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "pmfx.h"
@@ -46,7 +46,7 @@ std::atomic<bool>   g_cancel_handled;
 
 namespace put
 {
-    using namespace ces;
+    using namespace ecs;
 
     namespace
     {
@@ -142,7 +142,7 @@ namespace put
         struct vgt_sdf_job
         {
             vgt_options   options;
-            entity_scene* scene;
+            ecs_scene* scene;
             u32           volume_dim;
             u32           texture_format;
             u32           block_size;
@@ -932,7 +932,7 @@ namespace put
             return gv;
         }
 
-        void volume_raster_completed(ces::entity_scene* scene)
+        void volume_raster_completed(ecs::ecs_scene* scene)
         {
             if (s_rasteriser_job.combine_in_progress == 0)
             {
@@ -1270,7 +1270,7 @@ namespace put
             return PEN_THREAD_OK;
         }
 
-        ces::entity_scene* s_main_scene;
+        ecs::ecs_scene* s_main_scene;
         vgt_options        s_options;
 
         void rasterise_ui()
@@ -1507,7 +1507,7 @@ namespace put
 
     namespace vgt
     {
-        void init(ces::entity_scene* scene)
+        void init(ecs::ecs_scene* scene)
         {
             s_main_scene = scene;
             put::scene_controller cc;
@@ -1602,7 +1602,7 @@ namespace put
                             continue;
 
                         if (ImGui::Selectable(s_main_scene->names[n].c_str()))
-                            ces::add_selection(s_main_scene, n);
+                            ecs::add_selection(s_main_scene, n);
 
                         ImGui::NextColumn();
 
@@ -1621,8 +1621,8 @@ namespace put
                         ImGui::SameLine();
                         if (ImGui::Button("Delete"))
                         {
-                            ces::delete_entity(s_main_scene, n);
-                            ces::add_selection(s_main_scene, n, ces::SELECT_REMOVE);
+                            ecs::delete_entity(s_main_scene, n);
+                            ecs::add_selection(s_main_scene, n, ecs::SELECT_REMOVE);
                         }
 
                         ImGui::NextColumn();

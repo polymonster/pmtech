@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include "ces/ces_resources.h"
+#include "ecs/ecs_resources.h"
 #include "dev_ui.h"
 #include "pmfx.h"
 #include "str/Str.h"
@@ -22,7 +22,7 @@
 
 using namespace put;
 using namespace pmfx;
-using namespace ces;
+using namespace ecs;
 
 namespace
 {
@@ -891,7 +891,7 @@ namespace put
                         // no longer invalidated
                         pmfx_set.invalidated = false;
 
-                        ces::bake_material_handles();
+                        ecs::bake_material_handles();
                         generate_name_lists();
                     }
                 }
