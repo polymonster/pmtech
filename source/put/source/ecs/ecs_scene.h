@@ -355,9 +355,15 @@ namespace put
 
         struct ecs_extension
         {
+            void*              extension;
             generic_cmp_array* components;
             u32                num_components;
-            void               (*browser_func)(ecs_scene*);
+
+            void(*copy_exts_func)(ecs_scene*) = nullptr;    // must implement
+            void(*browser_func)(ecs_scene*) = nullptr;      // component editor ui
+            void(*load_func)(ecs_scene*) = nullptr;         // fix up any loaded resources and read lookup strings
+            void(*save_func)(ecs_scene*) = nullptr;         // fix down any save info.. write lookup strings etc
+            void(*update_func)(ecs_scene*, f32) = nullptr;  // update with dt
         };
 
         struct ecs_scene
@@ -366,7 +372,7 @@ namespace put
 
             ecs_scene()
             {
-                num_base_components = (((size_t)&num_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
+                num_base_components = (((size_t)&num_base_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
                 num_components = num_base_components;
             };
 
@@ -405,11 +411,9 @@ namespace put
             cmp_array<cmp_transform>          initial_transform;    // version 9
             cmp_array<cmp_anim_controller_v2> anim_controller_v2;
             cmp_array<cmp_transform>          physics_offset;
-
-            // test
             cmp_array<u32>                    physics_debug_cbuffer;
 
-            // Ensure num_components is the next to calc size
+            // num base components calculates value based on its address - entities address.
             u32 num_base_components;
             u32 num_components;
 
@@ -493,6 +497,7 @@ namespace put
         void initialise_free_list(ecs_scene* scene);
 
         void register_ecs_extentsions(ecs_scene* scene, const ecs_extension& ext);
+        void unregister_ecs_extensions(ecs_scene* scene);
 
         // separate implementations to make clang always inline
         template <typename T>

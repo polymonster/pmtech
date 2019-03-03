@@ -38,6 +38,15 @@ namespace put
             resize_scene_buffers(scene);
         }
 
+        void unregister_ecs_extensions(ecs_scene* scene)
+        {
+            u32 num_ext = sb_count(scene->extensions);
+            for (u32 e = 0; e < num_ext; ++e)
+                delete scene->extensions[e].extension;
+
+            sb_free(scene->extensions);
+        }
+
         void initialise_free_list(ecs_scene* scene)
         {
             scene->free_list_head = nullptr;
@@ -667,15 +676,8 @@ namespace put
                             else
                             {
                                 // lerp translation / scale
-                                if(sampler.joint > 0)
-                                {
-                                    f32 lf = (1 - it) * d1[e] + it * d2[e];
-                                    instance.targets[sampler.joint].t[eo] = lf;
-                                }
-                                else
-                                {
-                                    instance.targets[sampler.joint].t[eo] = d1[e];
-                                }
+                                f32 lf = (1 - it) * d1[e] + it * d2[e];
+                                instance.targets[sampler.joint].t[eo] = lf;
                             }
                         }
                     }
@@ -742,7 +744,7 @@ namespace put
                         if(scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
                         {
                             vec3f lerp_delta = lerp(a.root_delta, b.root_delta, t);
-                            
+
                             mat4 rot_mat;
                             quat q = scene->initial_transform[jnode].rotation;
                             q.get_matrix(rot_mat);
@@ -1360,6 +1362,12 @@ namespace put
             u32 num = nodes.size();
 
             ecs_scene sub_scene;
+
+            // create sub scene with same components
+            u32 num_ext = sb_count(scene->extensions);
+            for (u32 e = 0; e < num_ext; ++e)
+                scene->extensions[e].copy_exts_func(&sub_scene);
+
             resize_scene_buffers(&sub_scene, num);
 
             for (u32 i = 0; i < num; ++i)
@@ -1388,6 +1396,7 @@ namespace put
             save_scene(fn.c_str(), &sub_scene);
 
             free_scene_buffers(&sub_scene, true);
+            unregister_ecs_extensions(&sub_scene);
         }
 
         void save_scene(const c8* filename, ecs_scene* scene)

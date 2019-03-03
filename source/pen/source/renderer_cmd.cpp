@@ -1102,9 +1102,6 @@ namespace pen
         if (buffer_index == 0)
             return;
 
-        if (buffer_index == 1108)
-            u32 a = 0;
-
         cmd_buffer[put_pos].command_index = CMD_UPDATE_BUFFER;
 
         cmd_buffer[put_pos].update_buffer.buffer_index = buffer_index;

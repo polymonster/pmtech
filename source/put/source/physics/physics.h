@@ -114,8 +114,8 @@ namespace physics
         quat                rotation;
         u32                 shape;
         f32                 mass;
-        u32                 group;
-        u32                 mask;
+        u32                 group = 1;
+        u32                 mask = 0xffffffff;
         mat4                start_matrix;
         collision_mesh_data mesh_data;
         u32                 create_flags = 0;
