@@ -639,9 +639,15 @@ namespace put
                             if (anim_t < soa.info[sampler.pos][c].time)
                                 break;
                         
-                        if(sampler.pos >= channel.num_frames || anim_t == 0.0f )
+                        //reset flag
+                        sampler.flags &= ~anim_flags::LOOPED;
+
+                        if (sampler.pos >= channel.num_frames || anim_t == 0.0f)
+                        {
                             sampler.pos = 0;
-                        
+                            sampler.flags = anim_flags::LOOPED;
+                        }
+
                         u32 next = (sampler.pos + 1) % channel.num_frames;
                         
                         // get anim data
@@ -710,15 +716,15 @@ namespace put
                     {
                         f32* f = &instance.targets[tj].t[0];
                         vec3f tt = vec3f(f[0], f[1], f[2]);
-                        
-                        if(instance.samplers[0].pos > 0)
+
+                        if(instance.samplers[0].flags & anim_flags::LOOPED)
                         {
-                            instance.root_delta = tt - instance.root_translation;
+                            instance.root_delta = vec3f::zero();
                             instance.root_translation = tt;
                         }
                         else
                         {
-                            instance.root_delta = vec3f::zero();
+                            instance.root_delta = tt - instance.root_translation;
                             instance.root_translation = tt;
                         }
                     }
@@ -750,7 +756,7 @@ namespace put
                             q.get_matrix(rot_mat);
                             
                             vec3f transform_translation = rot_mat.transform_vector(lerp_delta);
-                            
+
                             // apply root motion to the root controller, so we bring along the meshes
                             scene->transforms[n].rotation = q;
                             scene->transforms[n].translation += transform_translation;

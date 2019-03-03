@@ -34,10 +34,22 @@ namespace put
             f32**         data = nullptr; // [frame][sampler offset]
         };
 
+        namespace anim_flags
+        {
+            enum
+            {
+                PLAY = 1,
+                APPLY_ROOT_MOTION = 1 << 1,
+                BAKED_QUATERNION = 1 << 2,
+                LOOPED = 1 << 3
+            };
+        }
+
         struct anim_sampler
         {
             u32 pos;
             u32 joint;
+            u32 flags;
         };
 
         struct anim_target
@@ -46,16 +58,6 @@ namespace put
             quat q;
             u32 flags = 0;
         };
-
-        namespace anim_flags
-        {
-            enum
-            {
-                PLAY = 1,
-                APPLY_ROOT_MOTION = 1 << 1,
-                BAKED_QUATERNION = 1 << 2
-            };
-        }
 
         struct anim_instance
         {
