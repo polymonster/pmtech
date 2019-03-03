@@ -615,11 +615,16 @@ namespace put
                     u32       num_channels = soa.num_channels;
                     f32       anim_t = instance.time;
                     
+                    bool looped = false;
+
                     // roll on time
                     instance.time += dt * 0.001f;
-                    if(instance.time > instance.length)
-                        instance.time = 0.0f;
-                    
+                    if (instance.time > instance.length)
+                    {
+                        instance.time = instance.time - instance.length;
+                        looped = true;
+                    }
+
                     u32 num_joints = sb_count(instance.joints);
                     
                     // reset rotations
@@ -642,7 +647,7 @@ namespace put
                         //reset flag
                         sampler.flags &= ~anim_flags::LOOPED;
 
-                        if (sampler.pos >= channel.num_frames || anim_t == 0.0f)
+                        if (sampler.pos >= channel.num_frames || looped)
                         {
                             sampler.pos = 0;
                             sampler.flags = anim_flags::LOOPED;
@@ -727,6 +732,16 @@ namespace put
                             instance.root_delta = tt - instance.root_translation;
                             instance.root_translation = tt;
                         }
+
+                        u32& hp = instance.hp;
+                        instance.root_delta_h[hp] = instance.root_delta;
+                        hp = (hp + 1) % 60;
+
+                        instance.root_delta = vec3f::zero();
+                        for(u32 h = 0; h < 60; ++h)
+                            instance.root_delta += instance.root_delta_h[h];
+
+                        instance.root_delta /= 60.0f;
                     }
                 }
                 
@@ -872,6 +887,12 @@ namespace put
 
         void update_scene(ecs_scene* scene, f32 dt)
         {
+            // anims work better here for now to allow user response for collision at the start of the next frame
+            update_animations(scene, dt);
+
+            // update physics running 1 frame behind to allow the sets to take effect
+            physics::physics_consume_command_buffer();
+
             if (scene->flags & PAUSE_UPDATE)
             {
                 physics::set_paused(1);
@@ -1280,12 +1301,6 @@ namespace put
                     pen::renderer_set_stream_out_target(0);
                 }
             }
-
-            // update physics running 1 frame behind to allow the sets to take effect
-            physics::physics_consume_command_buffer();
-
-            // anims work better here for now to allow user response for collision at the start of the next frame
-            update_animations(scene, dt);
 
             //f32 cost = pen::timer_elapsed_ms(timer);
         }

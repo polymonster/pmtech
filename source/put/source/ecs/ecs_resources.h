@@ -70,6 +70,8 @@ namespace put
             anim_sampler*  samplers = nullptr;
             vec3f          root_translation;
             vec3f          root_delta;
+            vec3f          root_delta_h[60];
+            u32            hp = 0;
         };
 
         enum e_animation_semantics
