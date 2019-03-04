@@ -601,6 +601,8 @@ namespace put
 
         void update_animations(ecs_scene* scene, f32 dt)
         {
+            //dt = 16.66;
+
             //u32 timer = pen::timer_create("anim_v2");
             //pen::timer_start(timer);
 
@@ -624,9 +626,10 @@ namespace put
 
                     // roll on time
                     instance.time += dt * 0.001f;
-                    if (instance.time > instance.length)
+                    if (instance.time >= instance.length)
                     {
-                        instance.time = instance.time - instance.length;
+                        //instance.time = instance.time - instance.length;
+                        instance.time = 0.0f;
                         looped = true;
                     }
 
@@ -645,9 +648,12 @@ namespace put
                             continue;
 
                         // find the frame we are on..
-                        for (; sampler.pos < channel.num_frames; ++sampler.pos)
+                        for (; sampler.pos < channel.num_frames; sampler.pos++)
                             if (anim_t <= soa.info[sampler.pos][c].time)
+                            {
+                                sampler.pos -= 1;
                                 break;
+                            }
 
                         //reset flag
                         sampler.flags &= ~anim_flags::LOOPED;
@@ -735,7 +741,7 @@ namespace put
 
                         if (instance.samplers[0].flags & anim_flags::LOOPED)
                         {
-                            instance.root_delta = vec3f::zero();
+                            // inherit prev root motion
                             instance.root_translation = tt;
                         }
                         else
@@ -743,13 +749,6 @@ namespace put
                             instance.root_delta = tt - instance.root_translation;
                             instance.root_translation = tt;
                         }
-
-                        if (ai == 2)
-                        {
-                            PEN_LOG("RD %f, %f, %f, %i | %f, %f\n", instance.root_delta[2], anim_t, dt, 
-                                instance.samplers[0].pos, instance.samplers[0].cur_t, instance.samplers[0].prev_t);
-                        }
-
                     }
                 }
 
