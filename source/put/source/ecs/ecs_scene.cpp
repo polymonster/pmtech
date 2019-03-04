@@ -895,6 +895,7 @@ namespace put
 
         void update_scene(ecs_scene* scene, f32 dt)
         {
+            /*
             static u32 hp = 0;
             static f32 dt_h[60];
             static f32 inv_h = 1.0f / 60.0f;
@@ -907,6 +908,7 @@ namespace put
                 dt += dt_h[h];
 
             dt *= inv_h;
+            */
 
             u32 num_controllers = sb_count(scene->controllers);
             u32 num_extensions = sb_count(scene->extensions);
