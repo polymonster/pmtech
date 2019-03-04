@@ -2512,7 +2512,7 @@ namespace put
                 // for extensions do thier ui
                 u32 num_ext = sb_count(scene->extensions);
                 for (u32 e = 0; e < num_ext; ++e)
-                    scene->extensions[e].browser_func(scene);
+                    scene->extensions[e].browser_func(scene->extensions[e], scene);
 
                 if (sb_count(scene->selection_list) == 1)
                     store_node_state(scene, scene->selection_list[0], REDO);

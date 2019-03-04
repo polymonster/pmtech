@@ -24,6 +24,7 @@ namespace put
     namespace ecs
     {
         struct anim_instance;
+        struct ecs_scene;
 
         enum e_scene_view_flags : u32
         {
@@ -355,20 +356,33 @@ namespace put
 
         struct ecs_extension
         {
+            Str                name;
+            hash_id            id_name = 0;
             void*              extension;
             generic_cmp_array* components;
             u32                num_components;
 
-            void(*copy_exts_func)(ecs_scene*) = nullptr;    // must implement
-            void(*browser_func)(ecs_scene*) = nullptr;      // component editor ui
-            void(*load_func)(ecs_scene*) = nullptr;         // fix up any loaded resources and read lookup strings
-            void(*save_func)(ecs_scene*) = nullptr;         // fix down any save info.. write lookup strings etc
-            void(*update_func)(ecs_scene*, f32) = nullptr;  // update with dt
+            void (*copy_exts_func)(ecs_scene*) = nullptr;                       // must implement
+            void (*browser_func)(ecs_extension&, ecs_scene*) = nullptr;         // component editor ui
+            void (*load_func)(ecs_extension&, ecs_scene*) = nullptr;            // fix up any loaded resources and read lookup strings
+            void (*save_func)(ecs_extension&, ecs_scene*) = nullptr;            // fix down any save info.. write lookup strings etc
+            void (*update_func)(ecs_extension&, ecs_scene*, f32) = nullptr;     // update with dt
+        };
+
+        struct ecs_controller
+        {
+            Str             name;
+            hash_id         id_name = 0;
+            put::camera*    camera = nullptr;
+            void*           context = nullptr;
+
+            void (*update_func)(ecs_controller&, ecs_scene* scene, f32 dt) = nullptr;
+            void (*post_update_func)(ecs_controller&, ecs_scene* scene, f32 dt) = nullptr;
         };
 
         struct ecs_scene
         {
-            static const u32 k_version = 8;
+            static const u32 k_version = 9;
 
             ecs_scene()
             {
@@ -417,8 +431,9 @@ namespace put
             u32 num_base_components;
             u32 num_components;
 
-            // extension components
-            ecs_extension*                    extensions = nullptr;
+            // extensions and controllers
+            ecs_extension*  extensions = nullptr;
+            ecs_controller* controllers = nullptr;
 
             // Scene Data
             u32             num_nodes = 0;
@@ -432,41 +447,17 @@ namespace put
             u32             view_flags = 0;
             extents         renderable_extents;
             u32*            selection_list = nullptr;
+            u32             version = k_version;
+            Str             filename = "";
 
-            u32 version = k_version;
-            Str filename = "";
-
-            // Access to component data in a generic way
-            pen_inline generic_cmp_array& get_component_array(u32 index)
-            {
-                if (index >= num_base_components)
-                {
-                    // extension components
-                    u32 num_ext = sb_count(extensions);
-                    u32 ext_component_start = num_base_components;
-                    for (u32 e = 0; e < num_ext; ++e)
-                    {
-                        u32 num_components = extensions[e].num_components;
-                        if (index < ext_component_start + num_components)
-                        {
-                            u32 component_offset = index - ext_component_start;
-                            return extensions[e].components[component_offset];
-                        }
-
-                        ext_component_start += num_components;
-                    }
-                }
-
-                generic_cmp_array* begin = (generic_cmp_array*)this;
-                return begin[index];
-            }
+            generic_cmp_array& get_component_array(u32 index);
         };
 
         struct ecs_scene_instance
         {
             u32           id_name;
             const c8*     name;
-            ecs_scene* scene;
+            ecs_scene*    scene;
         };
 
         enum e_scene_render_flags
@@ -475,7 +466,7 @@ namespace put
         };
 
         ecs_scene* create_scene(const c8* name);
-        void          destroy_scene(ecs_scene* scene);
+        void       destroy_scene(ecs_scene* scene);
 
         void update_scene(ecs_scene* scene, f32 dt);
 
@@ -499,6 +490,8 @@ namespace put
         void register_ecs_extentsions(ecs_scene* scene, const ecs_extension& ext);
         void unregister_ecs_extensions(ecs_scene* scene);
 
+        void register_ecs_controller(ecs_scene* scene, const ecs_controller& controller);
+        
         // separate implementations to make clang always inline
         template <typename T>
         pen_inline T& cmp_array<T>::operator[](size_t index)
@@ -517,6 +510,45 @@ namespace put
             u8* d = (u8*)data;
             u8* di = &d[index * size];
             return (void*)(di);
+        }
+
+        pen_inline u32 get_extension_component_offset(ecs_scene* scene, u32 extension)
+        {
+            u32 offset = scene->num_base_components;
+
+            for (u32 i = 0; i < extension; ++i)
+            {
+                if (i == extension)
+                    break;
+
+                offset += scene->extensions[i].num_components;
+            }
+
+            return offset;
+        }
+
+        pen_inline generic_cmp_array& ecs_scene::get_component_array(u32 index)
+        {
+            if (index >= num_base_components)
+            {
+                // extension components
+                u32 num_ext = sb_count(extensions);
+                u32 ext_component_start = num_base_components;
+                for (u32 e = 0; e < num_ext; ++e)
+                {
+                    u32 num_components = extensions[e].num_components;
+                    if (index < ext_component_start + num_components)
+                    {
+                        u32 component_offset = index - ext_component_start;
+                        return extensions[e].components[component_offset];
+                    }
+
+                    ext_component_start += num_components;
+                }
+            }
+
+            generic_cmp_array* begin = (generic_cmp_array*)this;
+            return begin[index];
         }
     } // namespace ces
 } // namespace put

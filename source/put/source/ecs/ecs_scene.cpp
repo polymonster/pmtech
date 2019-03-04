@@ -5,6 +5,7 @@
 #include <fstream>
 #include <functional>
 
+#include "console.h"
 #include "data_struct.h"
 #include "debug_render.h"
 #include "dev_ui.h"
@@ -13,7 +14,6 @@
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
-#include "console.h"
 #include "timer.h"
 
 #include "ecs/ecs_resources.h"
@@ -45,6 +45,11 @@ namespace put
                 delete scene->extensions[e].extension;
 
             sb_free(scene->extensions);
+        }
+
+        void register_ecs_controller(ecs_scene* scene, const ecs_controller& controller)
+        {
+            sb_push(scene->controllers, controller);
         }
 
         void initialise_free_list(ecs_scene* scene)
@@ -593,19 +598,19 @@ namespace put
                 pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
         }
-        
+
         void update_animations(ecs_scene* scene, f32 dt)
         {
             //u32 timer = pen::timer_create("anim_v2");
             //pen::timer_start(timer);
-            
+
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
                     continue;
-                
+
                 cmp_anim_controller_v2 controller = scene->anim_controller_v2[n];
-                
+
                 u32 num_anims = sb_count(controller.anim_instances);
                 for (u32 ai = 0; ai < num_anims; ++ai)
                 {
@@ -614,7 +619,7 @@ namespace put
                     soa_anim& soa = instance.soa;
                     u32       num_channels = soa.num_channels;
                     f32       anim_t = instance.time;
-                    
+
                     bool looped = false;
 
                     // roll on time
@@ -626,7 +631,7 @@ namespace put
                     }
 
                     u32 num_joints = sb_count(instance.joints);
-                    
+
                     // reset rotations
                     for (u32 j = 0; j < num_joints; ++j)
                         instance.targets[j].q = quat(0.0f, 0.0f, 0.0f);
@@ -635,15 +640,15 @@ namespace put
                     {
                         anim_sampler& sampler = instance.samplers[c];
                         anim_channel& channel = soa.channels[c];
-                        
-                        if(sampler.joint == PEN_INVALID_HANDLE)
+
+                        if (sampler.joint == PEN_INVALID_HANDLE)
                             continue;
-                        
+
                         // find the frame we are on..
                         for (; sampler.pos < channel.num_frames; ++sampler.pos)
                             if (anim_t < soa.info[sampler.pos][c].time)
                                 break;
-                        
+
                         //reset flag
                         sampler.flags &= ~anim_flags::LOOPED;
 
@@ -654,35 +659,35 @@ namespace put
                         }
 
                         u32 next = (sampler.pos + 1) % channel.num_frames;
-                        
+
                         // get anim data
                         anim_info& info1 = soa.info[sampler.pos][c];
                         anim_info& info2 = soa.info[next][c];
-                        
+
                         f32* d1 = &soa.data[sampler.pos][info1.offset];
                         f32* d2 = &soa.data[next][info2.offset];
-                        
+
                         f32 it = min(max((anim_t - info1.time) / (info2.time - info1.time), 0.0f), 1.0f);
-                        
+
                         for (u32 e = 0; e < channel.element_count; ++e)
                         {
                             u32 eo = channel.element_offset[e];
-                            
+
                             // slerp quats
-                            if(eo == A_OUT_QUAT)
+                            if (eo == A_OUT_QUAT)
                             {
                                 quat q1;
                                 quat q2;
-                                
+
                                 memcpy(&q1.v[0], &d1[e], 16);
                                 memcpy(&q2.v[0], &d2[e], 16);
-                                
+
                                 quat ql = slerp(q1, q2, it);
-                                
+
                                 instance.targets[sampler.joint].q = ql * instance.targets[sampler.joint].q;
                                 instance.targets[sampler.joint].flags |= channel.flags;
-                                
-                                e+=3;
+
+                                e += 3;
                             }
                             else
                             {
@@ -692,37 +697,37 @@ namespace put
                             }
                         }
                     }
-                    
+
                     // bake anim target into a cmp transform for joint
                     u32 tj = PEN_INVALID_HANDLE;
                     for (u32 j = 0; j < num_joints; ++j)
                     {
                         u32 jnode = controller.joint_indices[j];
-                        
-                        if(scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
+
+                        if (scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
                         {
                             tj = j;
                             continue;
                         }
-                        
+
                         f32* f = &instance.targets[j].t[0];
-                        
+
                         instance.joints[j].translation = vec3f(f[A_OUT_TX], f[A_OUT_TY], f[A_OUT_TZ]);
                         instance.joints[j].scale = vec3f(f[A_OUT_SX], f[A_OUT_SY], f[A_OUT_SZ]);
-                        
-                        if(instance.targets[j].flags & anim_flags::BAKED_QUATERNION)
+
+                        if (instance.targets[j].flags & anim_flags::BAKED_QUATERNION)
                             instance.joints[j].rotation = instance.targets[j].q;
                         else
                             instance.joints[j].rotation = scene->initial_transform[jnode].rotation * instance.targets[j].q;
                     }
-                    
+
                     // root motion.. todo rotation
-                    if(tj != PEN_INVALID_HANDLE)
+                    if (tj != PEN_INVALID_HANDLE)
                     {
-                        f32* f = &instance.targets[tj].t[0];
+                        f32*  f = &instance.targets[tj].t[0];
                         vec3f tt = vec3f(f[0], f[1], f[2]);
 
-                        if(instance.samplers[0].flags & anim_flags::LOOPED)
+                        if (instance.samplers[0].flags & anim_flags::LOOPED)
                         {
                             instance.root_delta = vec3f::zero();
                             instance.root_translation = tt;
@@ -738,57 +743,57 @@ namespace put
                         hp = (hp + 1) % 60;
 
                         instance.root_delta = vec3f::zero();
-                        for(u32 h = 0; h < 60; ++h)
+                        for (u32 h = 0; h < 60; ++h)
                             instance.root_delta += instance.root_delta_h[h];
 
                         instance.root_delta /= 60.0f;
                     }
                 }
-                
+
                 // for active controller.anim_instances, make trans, quat, scale
                 //      blend tree
-                if(num_anims > 0)
+                if (num_anims > 0)
                 {
                     anim_instance& a = controller.anim_instances[controller.blend.anim_a];
                     anim_instance& b = controller.anim_instances[controller.blend.anim_b];
-                    f32 t = controller.blend.ratio;
-                    
+                    f32            t = controller.blend.ratio;
+
                     u32 num_joints = sb_count(a.joints);
                     for (u32 j = 0; j < num_joints; ++j)
                     {
                         u32 jnode = controller.joint_indices[j];
-                        
+
                         cmp_transform& tc = scene->transforms[jnode];
                         cmp_transform& ta = a.joints[j];
                         cmp_transform& tb = b.joints[j];
-                        
-                        if(scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
+
+                        if (scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
                         {
                             vec3f lerp_delta = lerp(a.root_delta, b.root_delta, t);
 
                             mat4 rot_mat;
                             quat q = scene->initial_transform[jnode].rotation;
                             q.get_matrix(rot_mat);
-                            
+
                             vec3f transform_translation = rot_mat.transform_vector(lerp_delta);
 
                             // apply root motion to the root controller, so we bring along the meshes
                             scene->transforms[n].rotation = q;
                             scene->transforms[n].translation += transform_translation;
                             scene->entities[n] |= CMP_TRANSFORM;
-                            
+
                             continue;
                         }
-                        
+
                         tc.translation = lerp(ta.translation, tb.translation, t);
                         tc.rotation = slerp(ta.rotation, tb.rotation, t);
                         tc.scale = lerp(ta.scale, tb.scale, t);
-                        
+
                         scene->entities[jnode] |= CMP_TRANSFORM;
                     }
                 }
             }
-            
+
             //f32 ms = pen::timer_elapsed_ms(timer);
             //PEN_LOG("anim_v2 : %f", ms);
         }
@@ -799,62 +804,62 @@ namespace put
             {
                 if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
                     continue;
-                
+
                 auto& controller = scene->anim_controller[n];
                 if (!is_valid(controller.current_animation))
                     continue;
-                
+
                 auto* anim = get_animation_resource(controller.current_animation);
                 if (!anim)
                     continue;
-                
+
                 bool apply_trajectory = false;
                 mat4 trajectory = mat4::create_identity();
 
                 if (controller.play_flags == cmp_anim_controller::PLAY)
                     controller.current_time += dt * 0.001f;
-                
+
                 s32       joints_offset = scene->anim_controller[n].joints_offset;
                 cmp_skin* skin = nullptr;
                 if (scene->geometries[n].p_skin)
                     skin = scene->geometries[n].p_skin;
-                
+
                 if (controller.current_frame > 0)
                     continue;
-                
+
                 for (s32 c = 0; c < anim->num_channels; ++c)
                 {
                     s32 num_frames = anim->channels[c].num_frames;
-                    
+
                     if (num_frames <= 0)
                         continue;
-                    
+
                     s32 t = 0;
                     for (t = 0; t < num_frames; ++t)
                         if (controller.current_time < anim->channels[c].times[t])
                             break;
-                    
+
                     bool new_frame = false;
-                    if(anim->channels[c].processed_frame != t)
+                    if (anim->channels[c].processed_frame != t)
                     {
                         new_frame = true;
                         anim->channels[c].processed_frame = t;
                     }
-                    
+
                     // loop
                     if (t >= num_frames)
                         t = 0;
-                    
+
                     // anim channel to scene node
                     s32 sni = joints_offset + c;
-                    
+
                     if (anim->remap_channels)
                         sni = anim->channels[c].target_node_index;
-                    
+
                     // invalid
                     if (sni < 0)
                         continue;
-                    
+
                     //
                     if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
                     {
@@ -863,21 +868,21 @@ namespace put
                             trajectory = anim->channels[c].matrices[num_frames - 1];
                         }
                     }
-                    
+
                     if (anim->channels[c].matrices)
                     {
                         // apply baked tansform anim
                         mat4& mat = anim->channels[c].matrices[t];
                         scene->local_matrices[sni] = mat;
                     }
-                    
+
                     if (controller.current_time > anim->length)
                     {
                         apply_trajectory = true;
                         controller.current_time = (controller.current_time) - (anim->length);
                     }
                 }
-                
+
                 if (apply_trajectory && controller.apply_root_motion)
                 {
                     scene->local_matrices[n] *= trajectory;
@@ -887,11 +892,13 @@ namespace put
 
         void update_scene(ecs_scene* scene, f32 dt)
         {
-            // anims work better here for now to allow user response for collision at the start of the next frame
-            update_animations(scene, dt);
+            u32 num_controllers = sb_count(scene->controllers);
+            u32 num_extensions = sb_count(scene->extensions);
 
-            // update physics running 1 frame behind to allow the sets to take effect
-            physics::physics_consume_command_buffer();
+            // pre update controllers
+            for (u32 c = 0; c < num_controllers; ++c)
+                if (scene->controllers[c].update_func)
+                    scene->controllers[c].update_func(scene->controllers[c], scene, dt);
 
             if (scene->flags & PAUSE_UPDATE)
             {
@@ -900,11 +907,17 @@ namespace put
             else
             {
                 physics::set_paused(0);
+                update_animations(scene, dt);
             }
+
+            // extension component update
+            for (u32 e = 0; e < num_extensions; ++e)
+                if (scene->extensions[e].update_func)
+                    scene->extensions[e].update_func(scene->extensions[e], scene, dt);
 
             static u32 timer = pen::timer_create("update_scene");
             pen::timer_start(timer);
-            
+
             // scene node transform
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -929,12 +942,12 @@ namespace put
                     mat4 scale_mat = mat::create_scale(t.scale);
 
                     scene->local_matrices[n] = translation_mat * rot_mat * scale_mat;
-                    
+
                     if (scene->entities[n] & CMP_PHYSICS)
                     {
                         cmp_transform& pt = scene->physics_offset[n];
-                        physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation );
-                        
+                        physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation);
+
                         physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_ANGULAR_VELOCITY);
                         physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
                     }
@@ -952,7 +965,7 @@ namespace put
 
                     t.translation = physics_mat.get_translation();
                     t.rotation.from_matrix(physics_mat);
-                    
+
                     mat4 rot_mat;
                     t.rotation.get_matrix(rot_mat);
 
@@ -1048,7 +1061,7 @@ namespace put
                     parent_tmax = vec3f::vmax(parent_tmax, tmax);
                 }
             }
-            
+
             // update draw call data
             for (s32 n = 0; n < scene->num_nodes; ++n)
             {
@@ -1057,7 +1070,7 @@ namespace put
                     // per node material cbuffer
                     if (is_valid(scene->materials[n].material_cbuffer))
                         pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0],
-                            scene->materials[n].material_cbuffer_size);
+                                                    scene->materials[n].material_cbuffer_size);
                 }
 
                 scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
@@ -1100,7 +1113,7 @@ namespace put
                 // stride over sub instances
                 n += scene->master_instances[n].num_instances;
             }
-            
+
             // Forward light buffer
             static forward_light_buffer light_buffer;
             s32                         pos = 0;
@@ -1302,7 +1315,13 @@ namespace put
                 }
             }
 
-            //f32 cost = pen::timer_elapsed_ms(timer);
+            // update physics running 1 frame behind to allow the sets to take effect
+            physics::physics_consume_command_buffer();
+
+            // controllers post update
+            for (u32 c = 0; c < num_controllers; ++c)
+                if (scene->controllers[c].post_update_func)
+                    scene->controllers[c].post_update_func(scene->controllers[c], scene, dt);
         }
 
         struct scene_header
@@ -1312,7 +1331,8 @@ namespace put
             u32 num_nodes = 0;
             s32 num_components = 0;
             s32 num_lookup_strings = 0;
-            s32 reserved_1[27] = {0};
+            s32 num_extensions = 0;
+            s32 reserved_1[26] = {0};
             u32 view_flags = 0;
             s32 selected_index = 0;
             s32 reserved_2[30] = {0};
@@ -1374,7 +1394,7 @@ namespace put
 
             return "";
         }
-        
+
         void save_sub_scene(ecs_scene* scene, u32 root)
         {
             std::vector<s32> nodes;
@@ -1411,7 +1431,7 @@ namespace put
                 sub_scene.num_nodes++;
             }
 
-            Str fn = ""; 
+            Str fn = "";
             fn.appendf("../../assets/scene/%s.pms", sub_scene.names[0].c_str());
 
             save_scene(fn.c_str(), &sub_scene);
@@ -1529,6 +1549,12 @@ namespace put
                 write_lookup_string(cams[i]->name.c_str(), ofs);
             }
 
+            // write extensions
+            u32 num_extensions = sb_count(scene->extensions);
+            for (u32 i = 0; i < num_extensions; ++i)
+                if (scene->extensions[i].save_func)
+                    scene->extensions[i].save_func(scene->extensions[i], scene);
+
             ofs.close();
 
             std::ifstream infile(filename, std::ifstream::binary);
@@ -1553,12 +1579,22 @@ namespace put
             sh.selected_index = scene->selected_index;
             sh.num_components = scene->num_components;
             sh.num_lookup_strings = sb_count(s_lookup_strings);
+            sh.num_extensions = sb_count(scene->extensions);
             ofs.write((const c8*)&sh, sizeof(scene_header));
 
             // component sizes
             for (u32 c = 0; c < sh.num_components; ++c)
             {
                 ofs.write((const c8*)&scene->get_component_array(c).size, sizeof(u32));
+            }
+
+            // extensions
+            for (u32 i = 0; i < sh.num_extensions; ++i)
+            {
+                u32 co = get_extension_component_offset(scene, i);
+                write_lookup_string(scene->extensions[i].name.c_str(), ofs);
+                ofs.write((const c8*)&co, sizeof(u32));
+                ofs.write((const c8*)&scene->extensions[i].num_components, sizeof(u32));
             }
 
             // string lookups
@@ -1640,6 +1676,15 @@ namespace put
                 sb_push(component_sizes, size);
             }
 
+            // extensions
+            for (u32 i = 0; i < sh.num_extensions; ++i)
+            {
+                u32 uu;
+                ifs.read((c8*)&uu, sizeof(u32));
+                ifs.read((c8*)&uu, sizeof(u32));
+                ifs.read((c8*)&uu, sizeof(u32));
+            }
+
             // read string lookups
             sb_free(s_lookup_strings);
             s_lookup_strings = nullptr;
@@ -1686,6 +1731,8 @@ namespace put
                     _cam->zoom = cam.zoom;
                 }
             }
+
+            // todo.. fix up extensions
 
             // read all components
             for (u32 i = 0; i < sh.num_components; ++i)
@@ -1815,7 +1862,7 @@ namespace put
                                           anim_name.c_str());
                         error = true;
                     }
-                    
+
                     bind_animation_to_rig(scene, h, n);
                 }
 
@@ -1886,6 +1933,15 @@ namespace put
                     }
                 }
             }
+
+            // read cams strings
+            for (u32 i = 0; i < num_cams; ++i)
+                read_lookup_string(ifs);
+
+            // read extensions
+            for (u32 i = 0; i < sh.num_extensions; ++i)
+                if (scene->extensions[i].load_func)
+                    scene->extensions[i].load_func(scene->extensions[i], scene);
 
             bake_material_handles();
 
