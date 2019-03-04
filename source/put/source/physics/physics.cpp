@@ -262,12 +262,17 @@ namespace physics
     mat4 get_rb_matrix(const u32& entity_index)
     {
         mat4* const& fb = g_readable_data.output_matrices.frontbuffer();
-        u32          count = sb_count(fb);
-
-        if (entity_index >= count)
-            return get_rb_start_matrix(entity_index);
-
         return fb[entity_index];
+    }
+
+    bool has_rb_matrix(const u32& entity_index)
+    {
+        auto& om = g_readable_data.output_matrices;
+        mat4* const& fb = om._data[om._fb];
+        if (entity_index >= sb_count(fb))
+            return false;
+
+        return true;
     }
 
     u32 add_rb(const rigid_body_params& rbp)

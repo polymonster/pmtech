@@ -373,9 +373,9 @@ namespace physics
     void sync_compound_multi(const u32& compound_index, const u32& multi_index);
     void sync_rigid_bodies(const u32& master, const u32& slave, const s32& link_index, u32 cmd);
 
+    bool has_rb_matrix(const u32& entity_index);
     mat4 get_rb_matrix(const u32& entity_index);
-    u32  get_hit_flags(u32 entity_index);
-
     void release_entity(const u32& entity_index);
+
 } // namespace physics
 #endif

@@ -2393,6 +2393,15 @@ namespace put
                     if (!scene->filename.empty())
                         ImGui::Text("Scene File: %s (version %i)", scene->filename.c_str(), scene->version);
 
+                    u32 num_extensions = sb_count(scene->extensions);
+                    ImGui::Text("Extensions: %i", num_extensions);
+                    ImGui::Indent();
+                    for (s32 i = 0; i < num_extensions; ++i)
+                    {
+                        ImGui::Text("%s", scene->extensions[i].name.c_str());
+                    }
+                    ImGui::Unindent();
+
                     ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
                     ImGui::Text("Selected: %i", (s32)sb_count(scene->selection_list));
 

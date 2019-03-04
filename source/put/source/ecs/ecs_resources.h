@@ -50,6 +50,9 @@ namespace put
             u32 pos;
             u32 joint;
             u32 flags;
+
+            f32 cur_t;
+            f32 prev_t;
         };
 
         struct anim_target
@@ -70,8 +73,6 @@ namespace put
             anim_sampler*  samplers = nullptr;
             vec3f          root_translation;
             vec3f          root_delta;
-            vec3f          root_delta_h[60];
-            u32            hp = 0;
         };
 
         enum e_animation_semantics

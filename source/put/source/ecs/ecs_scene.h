@@ -358,15 +358,16 @@ namespace put
         {
             Str                name;
             hash_id            id_name = 0;
-            void*              extension;
+            void*              context;
             generic_cmp_array* components;
             u32                num_components;
 
-            void (*copy_exts_func)(ecs_scene*) = nullptr;                       // must implement
+            void (*ext_func)(ecs_scene*) = nullptr;                             // must implement.. registers ext with scene
             void (*browser_func)(ecs_extension&, ecs_scene*) = nullptr;         // component editor ui
             void (*load_func)(ecs_extension&, ecs_scene*) = nullptr;            // fix up any loaded resources and read lookup strings
             void (*save_func)(ecs_extension&, ecs_scene*) = nullptr;            // fix down any save info.. write lookup strings etc
             void (*update_func)(ecs_extension&, ecs_scene*, f32) = nullptr;     // update with dt
+            void(*shutdown)(ecs_extension&) = nullptr;
         };
 
         struct ecs_controller
@@ -527,7 +528,23 @@ namespace put
             return offset;
         }
 
-        pen_inline generic_cmp_array& ecs_scene::get_component_array(u32 index)
+        inline u32 get_extension_component_offset_from_id(ecs_scene* scene, hash_id extension_id)
+        {
+            u32 offset = scene->num_base_components;
+
+            u32 num_extensions = sb_count(scene->extensions);
+            for (u32 i = 0; i < num_extensions; ++i)
+            {
+                if (scene->extensions[i].id_name == extension_id)
+                    break;
+
+                offset += scene->extensions[i].num_components;
+            }
+
+            return offset;
+        }
+
+        inline generic_cmp_array& ecs_scene::get_component_array(u32 index)
         {
             if (index >= num_base_components)
             {

@@ -42,7 +42,7 @@ namespace put
         {
             u32 num_ext = sb_count(scene->extensions);
             for (u32 e = 0; e < num_ext; ++e)
-                delete scene->extensions[e].extension;
+                delete scene->extensions[e].context;
 
             sb_free(scene->extensions);
         }
@@ -646,7 +646,7 @@ namespace put
 
                         // find the frame we are on..
                         for (; sampler.pos < channel.num_frames; ++sampler.pos)
-                            if (anim_t < soa.info[sampler.pos][c].time)
+                            if (anim_t <= soa.info[sampler.pos][c].time)
                                 break;
 
                         //reset flag
@@ -667,7 +667,13 @@ namespace put
                         f32* d1 = &soa.data[sampler.pos][info1.offset];
                         f32* d2 = &soa.data[next][info2.offset];
 
-                        f32 it = min(max((anim_t - info1.time) / (info2.time - info1.time), 0.0f), 1.0f);
+                        f32 a = (anim_t - info1.time);
+                        f32 b = (info2.time - info1.time);
+
+                        f32 it = min(max(a / b, 0.0f), 1.0f);
+
+                        sampler.prev_t = sampler.cur_t;
+                        sampler.cur_t = it;
 
                         for (u32 e = 0; e < channel.element_count; ++e)
                         {
@@ -738,15 +744,12 @@ namespace put
                             instance.root_translation = tt;
                         }
 
-                        u32& hp = instance.hp;
-                        instance.root_delta_h[hp] = instance.root_delta;
-                        hp = (hp + 1) % 60;
+                        if (ai == 2)
+                        {
+                            PEN_LOG("RD %f, %f, %f, %i | %f, %f\n", instance.root_delta[2], anim_t, dt, 
+                                instance.samplers[0].pos, instance.samplers[0].cur_t, instance.samplers[0].prev_t);
+                        }
 
-                        instance.root_delta = vec3f::zero();
-                        for (u32 h = 0; h < 60; ++h)
-                            instance.root_delta += instance.root_delta_h[h];
-
-                        instance.root_delta /= 60.0f;
                     }
                 }
 
@@ -892,13 +895,26 @@ namespace put
 
         void update_scene(ecs_scene* scene, f32 dt)
         {
+            static u32 hp = 0;
+            static f32 dt_h[60];
+            static f32 inv_h = 1.0f / 60.0f;
+
+            dt_h[hp] = dt;
+            hp = (hp + 1) % 60;
+
+            dt = 0.0f;
+            for (u32 h = 0; h < 60; ++h)
+                dt += dt_h[h];
+
+            dt *= inv_h;
+
             u32 num_controllers = sb_count(scene->controllers);
             u32 num_extensions = sb_count(scene->extensions);
 
             // pre update controllers
             for (u32 c = 0; c < num_controllers; ++c)
                 if (scene->controllers[c].update_func)
-                    scene->controllers[c].update_func(scene->controllers[c], scene, dt);
+                    scene->controllers[c].update_func(scene->controllers[c], scene, dt * 0.001f);
 
             if (scene->flags & PAUSE_UPDATE)
             {
@@ -930,7 +946,7 @@ namespace put
 
                 // controlled transform
                 if (scene->entities[n] & CMP_TRANSFORM)
-                {
+                {   
                     cmp_transform& t = scene->transforms[n];
 
                     // generate matrix from transform
@@ -957,6 +973,9 @@ namespace put
                 }
                 else if (scene->entities[n] & CMP_PHYSICS)
                 {
+                    if (!physics::has_rb_matrix(n))
+                        continue;
+
                     cmp_transform& t = scene->transforms[n];
                     cmp_transform& pt = scene->physics_offset[n];
 
@@ -1332,7 +1351,8 @@ namespace put
             s32 num_components = 0;
             s32 num_lookup_strings = 0;
             s32 num_extensions = 0;
-            s32 reserved_1[26] = {0};
+            s32 num_base_components = 0;
+            s32 reserved_1[25] = {0};
             u32 view_flags = 0;
             s32 selected_index = 0;
             s32 reserved_2[30] = {0};
@@ -1395,6 +1415,20 @@ namespace put
             return "";
         }
 
+        hash_id rehash_lookup_string(hash_id id)
+        {
+            u32 num_strings = sb_count(s_lookup_strings);
+            for (u32 i = 0; i < num_strings; ++i)
+            {
+                if (s_lookup_strings[i].id == id)
+                {
+                    return PEN_HASH(s_lookup_strings[i].name);
+                }
+            }
+
+            return 0;
+        }
+
         void save_sub_scene(ecs_scene* scene, u32 root)
         {
             std::vector<s32> nodes;
@@ -1407,7 +1441,7 @@ namespace put
             // create sub scene with same components
             u32 num_ext = sb_count(scene->extensions);
             for (u32 e = 0; e < num_ext; ++e)
-                scene->extensions[e].copy_exts_func(&sub_scene);
+                scene->extensions[e].ext_func(&sub_scene);
 
             resize_scene_buffers(&sub_scene, num);
 
@@ -1549,7 +1583,7 @@ namespace put
                 write_lookup_string(cams[i]->name.c_str(), ofs);
             }
 
-            // write extensions
+            // call extensions specific save
             u32 num_extensions = sb_count(scene->extensions);
             for (u32 i = 0; i < num_extensions; ++i)
                 if (scene->extensions[i].save_func)
@@ -1578,6 +1612,7 @@ namespace put
             sh.view_flags = scene->view_flags;
             sh.selected_index = scene->selected_index;
             sh.num_components = scene->num_components;
+            sh.num_base_components = scene->num_base_components;
             sh.num_lookup_strings = sb_count(s_lookup_strings);
             sh.num_extensions = sb_count(scene->extensions);
             ofs.write((const c8*)&sh, sizeof(scene_header));
@@ -1643,6 +1678,10 @@ namespace put
                 scene->filename = filename;
             }
 
+            // version 9 adds extensions
+            if (sh.version < 9)
+                sh.num_base_components = sh.num_components;
+
             // unpack header
             s32 num_nodes = sh.num_nodes;
 
@@ -1677,12 +1716,22 @@ namespace put
             }
 
             // extensions
+            struct ext_components
+            {
+                hash_id id;
+                u32 start_cmp;
+                u32 num_cmp;
+            };
+            ext_components* exts = nullptr;
+
             for (u32 i = 0; i < sh.num_extensions; ++i)
             {
-                u32 uu;
-                ifs.read((c8*)&uu, sizeof(u32));
-                ifs.read((c8*)&uu, sizeof(u32));
-                ifs.read((c8*)&uu, sizeof(u32));
+                ext_components ext;
+                ifs.read((c8*)&ext.id, sizeof(hash_id));
+                ifs.read((c8*)&ext.start_cmp, sizeof(u32));
+                ifs.read((c8*)&ext.num_cmp, sizeof(u32));
+
+                sb_push(exts, ext);
             }
 
             // read string lookups
@@ -1698,6 +1747,12 @@ namespace put
                 sb_push(s_lookup_strings, ls);
             }
 
+            // rehash extension ids
+            for (u32 i = 0; i < sh.num_extensions; ++i)
+            {
+                exts[i].id = rehash_lookup_string(exts[i].id);
+            }
+            
             // read cameras
             u32 num_cams;
             ifs.read((c8*)&num_cams, sizeof(u32));
@@ -1732,19 +1787,44 @@ namespace put
                 }
             }
 
-            // todo.. fix up extensions
-
             // read all components
             for (u32 i = 0; i < sh.num_components; ++i)
             {
-                generic_cmp_array& cmp = scene->get_component_array(i);
-                if (cmp.size == component_sizes[i])
+                u32 ri = i; // remap i.. if we have extensions
+
+                // extensions
+                if (i >= sh.num_base_components)
                 {
-                    // read whole array
-                    c8* data_offset = (c8*)cmp.data + zero_offset * cmp.size;
-                    ifs.read(data_offset, cmp.size * num_nodes);
+                    ri = -1;
+
+                    //find extension that maps to this component, allow out of order or missing components
+                    for (u32 e = 0; e < sh.num_extensions; ++e)
+                    {
+                        u32 ext_i = i - exts[e].start_cmp;
+                        if (i >= exts[e].start_cmp && ext_i < exts[e].num_cmp)
+                        {
+                            ri = get_extension_component_offset_from_id(scene, exts[e].id) + ext_i;
+                            break;
+                        }
+                    } 
                 }
-                else
+
+                bool read = false;
+
+                if (ri != -1)
+                {
+                    generic_cmp_array& cmp = scene->get_component_array(ri);
+
+                    if (cmp.size == component_sizes[i])
+                    {
+                        // read whole array
+                        c8* data_offset = (c8*)cmp.data + zero_offset * cmp.size;
+                        ifs.read(data_offset, cmp.size * num_nodes);
+                        read = true;
+                    }
+                }
+
+                if(!read)
                 {
                     // read the old size
                     u32 array_size = component_sizes[i] * num_nodes;
@@ -1967,6 +2047,10 @@ namespace put
             ifs.close();
 
             initialise_free_list(scene);
+
+            // cleanup
+            sb_free(component_sizes);
+            sb_free(exts);
         }
     } // namespace ces
 } // namespace put
