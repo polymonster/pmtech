@@ -66,6 +66,7 @@ namespace put
         put::camera*       camera = nullptr;
         e_update_order     order = MAIN_UPDATE;
         f32                dt = 0.0f;
+        bool               deprecated = true; // this is now depracated and will be moved to ecs_controller
 
         void (*update_function)(scene_controller*) = nullptr;
     };
@@ -238,6 +239,9 @@ namespace put
         void update();
         void render();
         void show_dev_ui();
+
+        void register_scene(ecs::ecs_scene* scene, const char* name);
+        void register_camera(camera* cam, const char* name);
 
         void register_scene_controller(const scene_controller& controller);
         void register_scene_view_renderer(const scene_view_renderer& svr);

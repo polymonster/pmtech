@@ -6,6 +6,7 @@
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_utilities.h"
 
+#include "volume_generator.h"
 #include "camera.h"
 #include "debug_render.h"
 #include "dev_ui.h"
@@ -16,7 +17,6 @@
 #include "pmfx.h"
 #include "str_utilities.h"
 #include "timer.h"
-
 #include "data_struct.h"
 #include "os.h"
 
@@ -170,7 +170,7 @@ namespace put
         // clang-format on
 
         static_assert(sizeof(dd_names) / sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
-        static bool* k_dd_bools = nullptr;
+        static bool* s_dd_bools = nullptr;
 
         void undo(ecs_scene* scene);
         void redo(ecs_scene* scene);
@@ -178,22 +178,22 @@ namespace put
 
         void update_view_flags_ui(ecs_scene* scene)
         {
-            if (!k_dd_bools)
+            if (!s_dd_bools)
             {
-                k_dd_bools = new bool[DD_NUM_FLAGS];
-                memset(k_dd_bools, 0x0, sizeof(bool) * DD_NUM_FLAGS);
+                s_dd_bools = new bool[DD_NUM_FLAGS];
+                memset(s_dd_bools, 0x0, sizeof(bool) * DD_NUM_FLAGS);
 
                 // set defaults
                 static u32 defaults[] = {DD_NODE, DD_GRID, DD_LIGHTS};
                 for (s32 i = 1; i < sizeof(defaults) / sizeof(defaults[0]); ++i)
-                    k_dd_bools[i] = true;
+                    s_dd_bools[i] = true;
             }
 
             for (s32 i = 0; i < DD_NUM_FLAGS; ++i)
             {
                 u32 mask = 1 << i;
 
-                if (k_dd_bools[i])
+                if (s_dd_bools[i])
                     scene->view_flags |= mask;
                 else
                     scene->view_flags &= ~(mask);
@@ -207,10 +207,10 @@ namespace put
 
             for (s32 i = 0; i < DD_NUM_FLAGS; ++i)
             {
-                k_dd_bools[i] = false;
+                s_dd_bools[i] = false;
 
                 if (scene->view_flags & (1 << i))
-                    k_dd_bools[i] = true;
+                    s_dd_bools[i] = true;
             }
         }
 
@@ -220,7 +220,7 @@ namespace put
             {
                 for (s32 i = 0; i < DD_NUM_FLAGS; ++i)
                 {
-                    ImGui::Checkbox(dd_names[i], &k_dd_bools[i]);
+                    ImGui::Checkbox(dd_names[i], &s_dd_bools[i]);
                 }
 
                 if (ImGui::CollapsingHeader("Grid Options"))
@@ -242,8 +242,8 @@ namespace put
         {
             // add default view flags
             scene->view_flags = 0;
-            delete[] k_dd_bools;
-            k_dd_bools = nullptr;
+            delete[] s_dd_bools;
+            s_dd_bools = nullptr;
             update_view_flags_ui(scene);
 
             // add light
@@ -263,7 +263,7 @@ namespace put
             sb_clear(scene->selection_list);
         }
 
-        void editor_init(ecs_scene* scene)
+        void editor_init(ecs_scene* scene, camera* cam)
         {
             update_view_flags_ui(scene);
 
@@ -306,11 +306,23 @@ namespace put
             s_model_view_controller.settings.invert_y = dev_ui::get_program_preference("camera_invert_y").as_bool();
             s_model_view_controller.settings.zoom_speed = dev_ui::get_program_preference("camera_zoom_speed").as_f32(1.0f);
             s_model_view_controller.invalidated = true;
+
+            ecs_controller controller;
+            controller.name = "editor_controller";
+            controller.id_name = PEN_HASH(controller.name);
+            controller.context = nullptr; // becomes editor
+            controller.update_func = &editor_update;
+            controller.camera = cam;
+
+            ecs::register_ecs_controller(scene, controller);
+
+            // volume generator
+            put::vgt::init(scene);
         }
 
         void editor_shutdown()
         {
-            delete[] k_dd_bools;
+            delete[] s_dd_bools;
         }
 
         void instance_selection(ecs_scene* scene)
@@ -1091,6 +1103,21 @@ namespace put
             }
         }
 
+        void editor_update(ecs_controller& ecsc, ecs_scene* scene, f32 dt)
+        {
+            if (!ecsc.camera)
+                return;
+
+            put::scene_controller sc;
+            sc.scene = scene;
+            sc.dt = dt;
+            sc.camera = ecsc.camera;
+            sc.deprecated = false;
+
+            update_model_viewer_camera(&sc);
+            update_model_viewer_scene(&sc);
+        }
+
         void update_model_viewer_scene(put::scene_controller* sc)
         {
             static bool open_scene_browser = false;
@@ -1479,19 +1506,22 @@ namespace put
                 view_ui(scene, &view_menu);
 
             // todo move this to main?
-            static u32 timer_index = -1;
-            if (timer_index == -1)
+            if (sc->deprecated)
             {
-                timer_index = pen::timer_create("scene_update_timer");
+                static u32 timer_index = -1;
+                if (timer_index == -1)
+                {
+                    timer_index = pen::timer_create("scene_update_timer");
+                    pen::timer_start(timer_index);
+                }
+                f32 dt_ms = pen::timer_elapsed_ms(timer_index);
+
                 pen::timer_start(timer_index);
+
+                put::ecs::update_scene(scene, dt_ms);
+
+                update_undo_stack(scene, dt_ms);
             }
-            f32 dt_ms = pen::timer_elapsed_ms(timer_index);
-
-            pen::timer_start(timer_index);
-
-            put::ecs::update_scene(scene, dt_ms);
-
-            update_undo_stack(scene, dt_ms);
         }
 
         struct physics_preview

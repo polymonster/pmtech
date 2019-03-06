@@ -643,11 +643,10 @@ namespace put
                     samplers.sb[s].sampler_state = pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::RS_SAMPLER);
         }
 
-        extern std::vector<ecs_scene_instance> k_scenes;
-
         void bake_material_handles()
         {
-            for (auto& si : k_scenes)
+            ecs_scene_list* scenes = get_scenes();
+            for (auto& si : *scenes)
             {
                 ecs_scene* scene = si.scene;
 

@@ -89,9 +89,6 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_controller(sc);
     pmfx::register_scene_controller(cc);
 
-    // volume rasteriser tool
-    put::vgt::init(main_scene);
-
     pmfx::init("data/configs/pp_demo.jsn");
 
     f32 frame_time = 0.0f;

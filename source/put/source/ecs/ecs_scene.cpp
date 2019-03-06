@@ -28,7 +28,7 @@ namespace put
 {
     namespace ecs
     {
-        std::vector<ecs_scene_instance> k_scenes;
+        static std::vector<ecs_scene_instance> s_scenes;
 
         void register_ecs_extentsions(ecs_scene* scene, const ecs_extension& ext)
         {
@@ -273,7 +273,7 @@ namespace put
             new_instance.name = name;
             new_instance.scene = new ecs_scene();
 
-            k_scenes.push_back(new_instance);
+            s_scenes.push_back(new_instance);
 
             resize_scene_buffers(new_instance.scene, 64);
 
@@ -892,23 +892,25 @@ namespace put
             }
         }
 
+        void update()
+        {
+            static u32 dt_timer = pen::timer_create("sc_dt");
+            f32        dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
+            pen::timer_start(dt_timer);
+
+            for (auto& si : s_scenes)
+            {
+                update_scene(si.scene, dt);
+            }
+        }
+
+        std::vector<ecs_scene_instance>* get_scenes()
+        {
+            return &s_scenes;
+        }
+
         void update_scene(ecs_scene* scene, f32 dt)
         {
-            /*
-            static u32 hp = 0;
-            static f32 dt_h[60];
-            static f32 inv_h = 1.0f / 60.0f;
-
-            dt_h[hp] = dt;
-            hp = (hp + 1) % 60;
-
-            dt = 0.0f;
-            for (u32 h = 0; h < 60; ++h)
-                dt += dt_h[h];
-
-            dt *= inv_h;
-            */
-
             u32 num_controllers = sb_count(scene->controllers);
             u32 num_extensions = sb_count(scene->extensions);
 

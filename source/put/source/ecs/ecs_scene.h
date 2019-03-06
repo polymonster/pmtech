@@ -25,7 +25,7 @@ namespace put
     {
         struct anim_instance;
         struct ecs_scene;
-
+        
         enum e_scene_view_flags : u32
         {
             SV_NONE = 0,
@@ -124,6 +124,12 @@ namespace put
             MAX_FORWARD_LIGHTS = 100,
             MAX_SHADOW_MAPS = 1,
             MAX_SDF_SHADOWS = 1
+        };
+
+        enum e_scene_render_flags
+        {
+            RENDER_FORWARD_LIT = 1,
+            RENDER_DEFERRED_LIT = 1<<1
         };
 
         struct cmp_draw_call
@@ -460,16 +466,15 @@ namespace put
             const c8*     name;
             ecs_scene*    scene;
         };
+        typedef std::vector<ecs_scene_instance> ecs_scene_list;
 
-        enum e_scene_render_flags
-        {
-            RENDER_FORWARD_LIT = 1
-        };
+        ecs_scene*      create_scene(const c8* name);
+        void            destroy_scene(ecs_scene* scene);
+        ecs_scene_list* get_scenes();
 
-        ecs_scene* create_scene(const c8* name);
-        void       destroy_scene(ecs_scene* scene);
-
+        void update();
         void update_scene(ecs_scene* scene, f32 dt);
+
 
         void render_scene_view(const scene_view& view);
         void render_light_volumes(const scene_view& view);

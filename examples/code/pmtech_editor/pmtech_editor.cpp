@@ -46,29 +46,16 @@ PEN_TRV pen::user_entry(void* params)
 
     pen::jobs_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
 
-    put::dev_ui::init();
-    put::dbg::init();
+    // create the main scene and camera
+    put::ecs::ecs_scene* main_scene = put::ecs::create_scene("main_scene");
 
-    // create main camera and controller
     put::camera main_camera;
     put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
-    put::scene_controller cc;
-    cc.camera = &main_camera;
-    cc.update_function = &ecs::update_model_viewer_camera;
-    cc.name = "model_viewer_camera";
-    cc.id_name = PEN_HASH(cc.name.c_str());
-
-    // create the main scene and controller
-    put::ecs::ecs_scene* main_scene;
-    main_scene = put::ecs::create_scene("main_scene");
-
-    put::scene_controller sc;
-    sc.scene = main_scene;
-    sc.update_function = &ecs::update_model_viewer_scene;
-    sc.name = "main_scene";
-    sc.camera = &main_camera;
-    sc.id_name = PEN_HASH(sc.name.c_str());
+    // init systems
+    put::dev_ui::init();
+    put::dbg::init();
+    put::ecs::editor_init(main_scene, &main_camera);
 
     // create view renderers
     put::scene_view_renderer svr_main;
@@ -90,12 +77,8 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_editor);
 
-    pmfx::register_scene_controller(sc);
-    pmfx::register_scene_controller(cc);
-
-    // volume rasteriser tool
-    put::ecs::editor_init(main_scene);
-    put::vgt::init(main_scene);
+    pmfx::register_scene(main_scene, "main_scene");
+    pmfx::register_camera(&main_camera, "model_viewer_camera");
 
     pmfx::init("data/configs/editor_renderer.jsn");
 
@@ -110,12 +93,12 @@ PEN_TRV pen::user_entry(void* params)
 
         pmfx::update();
 
+        ecs::update();
+
         pmfx::render();
 
         pmfx::show_dev_ui();
-
         put::vgt::show_dev_ui();
-
         put::dev_ui::render();
 
         frame_time = pen::timer_elapsed_ms(frame_timer);

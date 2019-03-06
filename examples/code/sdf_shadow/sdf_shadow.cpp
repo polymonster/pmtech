@@ -165,7 +165,6 @@ PEN_TRV pen::user_entry(void* params)
 
     // volume rasteriser tool
     put::ecs::editor_init(main_scene);
-    put::vgt::init(main_scene);
 
     pmfx::init("data/configs/editor_renderer.jsn");
 

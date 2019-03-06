@@ -260,6 +260,20 @@ namespace
         u32 screen_quad_ib;
     };
 
+    struct reg_scene
+    {
+        ecs_scene* scene;
+        Str        name;
+        hash_id    id_name;
+    };
+
+    struct reg_camera
+    {
+        camera* cam;
+        Str     name;
+        hash_id id_name;
+    };
+
     // Views / Sets
     std::vector<Str>                 s_post_process_names;    // List of post process names (ie bloom, dof.. etc)
     std::vector<view_params>         s_views;                 // List of all view parameters
@@ -271,6 +285,8 @@ namespace
 
     // Render Resources
     std::vector<scene_controller>        s_controllers;
+    std::vector<reg_scene>               s_scenes;
+    std::vector<reg_camera>              s_cameras;
     std::vector<scene_view_renderer>     s_scene_view_renderers;
     std::vector<render_target>           s_render_targets;
     std::vector<texture_creation_params> s_render_target_tcp;
@@ -296,6 +312,26 @@ namespace put
         void register_scene_view_renderer(const scene_view_renderer& svr)
         {
             s_scene_view_renderers.push_back(svr);
+        }
+
+        void register_scene(ecs::ecs_scene* scene, const char* name)
+        {
+            reg_scene rs;
+            rs.name = name;
+            rs.id_name = PEN_HASH(name);
+            rs.scene = scene;
+
+            s_scenes.push_back(rs);
+        }
+
+        void register_camera(camera* cam, const char* name)
+        {
+            reg_camera rc;
+            rc.name = name;
+            rc.id_name = PEN_HASH(name);
+            rc.cam = cam;
+
+            s_cameras.push_back(rc);
         }
 
         s32 calc_num_mips(s32 width, s32 height)
@@ -1516,6 +1552,7 @@ namespace put
                 {
                     hash_id scene_id = PEN_HASH(scene_str.c_str());
 
+                    // todo deprecate
                     bool found_scene = false;
                     for (auto& s : s_controllers)
                     {
@@ -1524,6 +1561,19 @@ namespace put
                             new_view.scene = s.scene;
                             found_scene = true;
                             break;
+                        }
+                    }
+
+                    if (!found_scene)
+                    {
+                        for (auto& s : s_scenes)
+                        {
+                            if (s.id_name == scene_id)
+                            {
+                                new_view.scene = s.scene;
+                                found_scene = true;
+                                break;
+                            }
                         }
                     }
 
@@ -1543,6 +1593,7 @@ namespace put
                 {
                     hash_id camera_id = PEN_HASH(camera_str.c_str());
 
+                    // todo deprecate
                     bool found_camera = false;
                     for (auto& c : s_controllers)
                     {
@@ -1551,6 +1602,19 @@ namespace put
                             new_view.camera = c.camera;
                             found_camera = true;
                             break;
+                        }
+                    }
+
+                    if (!found_camera)
+                    {
+                        for (auto& c : s_cameras)
+                        {
+                            if (c.id_name == camera_id)
+                            {
+                                new_view.camera = c.cam;
+                                found_camera = true;
+                                break;
+                            }
                         }
                     }
 
