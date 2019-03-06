@@ -40,6 +40,7 @@ namespace put
 
         void unregister_ecs_extensions(ecs_scene* scene)
         {
+            // todo must make func
             u32 num_ext = sb_count(scene->extensions);
             for (u32 e = 0; e < num_ext; ++e)
                 delete scene->extensions[e].context;
@@ -625,10 +626,9 @@ namespace put
                     bool looped = false;
 
                     // roll on time
-                    instance.time += dt * 0.001f;
+                    instance.time += dt;
                     if (instance.time >= instance.length)
                     {
-                        //instance.time = instance.time - instance.length;
                         instance.time = 0.0f;
                         looped = true;
                     }
@@ -917,7 +917,7 @@ namespace put
             // pre update controllers
             for (u32 c = 0; c < num_controllers; ++c)
                 if (scene->controllers[c].update_func)
-                    scene->controllers[c].update_func(scene->controllers[c], scene, dt * 0.001f);
+                    scene->controllers[c].update_func(scene->controllers[c], scene, dt);
 
             if (scene->flags & PAUSE_UPDATE)
             {
