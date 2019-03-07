@@ -72,7 +72,7 @@ namespace put
             cmp_transform* joints = nullptr;
             anim_sampler*  samplers = nullptr;
             vec3f          root_translation;
-            vec3f          root_delta;
+            vec3f          root_delta = vec3f::zero();
         };
 
         enum e_animation_semantics
