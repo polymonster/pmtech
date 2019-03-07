@@ -194,6 +194,7 @@ namespace put
                     return;
 
                 pen::renderer_release_buffer(scene->materials[node_index].material_cbuffer);
+                scene->materials[node_index].material_cbuffer = PEN_INVALID_HANDLE;
             }
 
             if (size == 0)
