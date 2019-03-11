@@ -1,5 +1,5 @@
 // os.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include <windows.h>
@@ -8,9 +8,9 @@
 #include "os.h"
 #include "pen.h"
 #include "pen_string.h"
+#include "renderer.h"
 #include "threads.h"
 #include "timer.h"
-#include "renderer.h"
 
 #include "data_struct.h"
 #include "str_utilities.h"

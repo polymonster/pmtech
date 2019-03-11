@@ -448,7 +448,7 @@ ps_output ps_forward_lit( vs_output input )
         lit_colour += light_col;
     }
 
-	output.colour.rgb = lit_colour.rgb;    
+    output.colour.rgb = lit_colour.rgb;    
     output.colour.a = albedo.a;
             
     return output;

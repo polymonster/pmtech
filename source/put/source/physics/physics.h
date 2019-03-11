@@ -97,7 +97,7 @@ namespace physics
 
     enum e_physics_create_flags
     {
-        CF_AUTO = 0,                    // create from geometry and scene node info
+        CF_AUTO = 0, // create from geometry and scene node info
         CF_POSITION = 1 << 1,
         CF_ROTATION = 1 << 2,
         CF_DIMENSIONS = 1 << 3,
@@ -266,11 +266,11 @@ namespace physics
 
     struct ray_cast_params
     {
-        vec3f   start;
-        vec3f   end;
-        u32     timestamp;
-        u32     mask = 0xffffffff;
-        u32     group = 0;
+        vec3f start;
+        vec3f end;
+        u32   timestamp;
+        u32   mask = 0xffffffff;
+        u32   group = 0;
         void* user_data;
         void (*callback)(const ray_cast_result& result);
     };
@@ -285,35 +285,35 @@ namespace physics
 
     struct sphere_cast_params
     {
-        vec3f   from;
-        vec3f   to;
-        vec3f   dimension;
-        u32     flags;
-        u32     timestamp;
-        u32     mask = 0xffffffff;
-        u32     group = 0;
-        void*   user_data;
-        void(*callback)(const sphere_cast_result& result);
+        vec3f from;
+        vec3f to;
+        vec3f dimension;
+        u32   flags;
+        u32   timestamp;
+        u32   mask = 0xffffffff;
+        u32   group = 0;
+        void* user_data;
+        void (*callback)(const sphere_cast_result& result);
     };
-    
+
     struct contact
     {
         vec3f normal;
         vec3f pos;
     };
-    
+
     struct contact_test_results
     {
         contact* contacts = nullptr;
-        void* user_data;
+        void*    user_data;
     };
-    
+
     struct contact_test_params
     {
         u32 entity;
-        void(*callback)(const contact_test_results& result);
+        void (*callback)(const contact_test_results& result);
     };
-    
+
     struct physics_cmd
     {
         u32 command_index;
@@ -360,8 +360,9 @@ namespace physics
     void add_to_world(const u32& entity_index);
     void remove_from_world(const u32& entity_index);
 
-    void cast_ray(const ray_cast_params& rcp, bool immediate = false);          // non immedite will put a cast command in the buffer.
-    void cast_sphere(const sphere_cast_params& rcp, bool immediate = false);    // using non immediate may not be thread safe depending when you do it.
+    void cast_ray(const ray_cast_params& rcp, bool immediate = false); // non immedite will put a cast command in the buffer.
+    void cast_sphere(const sphere_cast_params& rcp,
+                     bool immediate = false); // using non immediate may not be thread safe depending when you do it.
     void contact_test(const contact_test_params& ctp);
 
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);

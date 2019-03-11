@@ -949,7 +949,7 @@ namespace put
 
                 // controlled transform
                 if (scene->entities[n] & CMP_TRANSFORM)
-                {   
+                {
                     cmp_transform& t = scene->transforms[n];
 
                     // generate matrix from transform
@@ -1722,8 +1722,8 @@ namespace put
             struct ext_components
             {
                 hash_id id;
-                u32 start_cmp;
-                u32 num_cmp;
+                u32     start_cmp;
+                u32     num_cmp;
             };
             ext_components* exts = nullptr;
 
@@ -1755,7 +1755,7 @@ namespace put
             {
                 exts[i].id = rehash_lookup_string(exts[i].id);
             }
-            
+
             // read cameras
             u32 num_cams;
             ifs.read((c8*)&num_cams, sizeof(u32));
@@ -1809,7 +1809,7 @@ namespace put
                             ri = get_extension_component_offset_from_id(scene, exts[e].id) + ext_i;
                             break;
                         }
-                    } 
+                    }
                 }
 
                 bool read = false;
@@ -1827,7 +1827,7 @@ namespace put
                     }
                 }
 
-                if(!read)
+                if (!read)
                 {
                     // read the old size
                     u32 array_size = component_sizes[i] * num_nodes;
@@ -2055,5 +2055,5 @@ namespace put
             sb_free(component_sizes);
             sb_free(exts);
         }
-    } // namespace ces
+    } // namespace ecs
 } // namespace put

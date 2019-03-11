@@ -5,16 +5,16 @@
 #include <fstream>
 
 #include "console.h"
+#include "file_system.h"
 #include "memory.h"
 #include "os.h"
 #include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "slot_resource.h"
+#include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
-#include "file_system.h"
-#include "str/Str.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
@@ -375,8 +375,7 @@ namespace pen
 
             case CMD_SET_CONSTANT_BUFFER:
                 direct::renderer_set_constant_buffer(cmd.set_constant_buffer.buffer_index,
-                                                     cmd.set_constant_buffer.resource_slot,
-                                                     cmd.set_constant_buffer.flags);
+                                                     cmd.set_constant_buffer.resource_slot, cmd.set_constant_buffer.flags);
                 break;
 
             case CMD_UPDATE_BUFFER:
@@ -1321,10 +1320,10 @@ namespace pen
 
         void* file_data = nullptr;
         u32   file_data_size = 0;
-        u32 pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
+        u32   pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
 
         u32 diffs = 0;
-        
+
         // make test results
         PEN_SYSTEM("mkdir ../../test_results");
 
@@ -1333,13 +1332,17 @@ namespace pen
             // file exists do image compare
             u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
             u8* cmp_image = (u8*)data;
-            
+
             for (u32 i = 0; i < depth_pitch; i += 4)
             {
-                if (ref_image[i + 2] != cmp_image[i + 0]) ++diffs;
-                if (ref_image[i + 1] != cmp_image[i + 1]) ++diffs;
-                if (ref_image[i + 0] != cmp_image[i + 2]) ++diffs;
-                if (ref_image[i + 3] != cmp_image[i + 3]) ++diffs;
+                if (ref_image[i + 2] != cmp_image[i + 0])
+                    ++diffs;
+                if (ref_image[i + 1] != cmp_image[i + 1])
+                    ++diffs;
+                if (ref_image[i + 0] != cmp_image[i + 2])
+                    ++diffs;
+                if (ref_image[i + 3] != cmp_image[i + 3])
+                    ++diffs;
             }
 
             Str output_file = "";
@@ -1358,14 +1361,14 @@ namespace pen
 
         f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
         PEN_CONSOLE("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
-        
+
         Str output_results_file = "";
         output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
-        
+
         std::ofstream ofs(output_results_file.c_str());
         ofs << diffs << "/" << depth_pitch << ", " << percentage;
         ofs.close();
-        
+
         pen::os_terminate(0);
     }
 

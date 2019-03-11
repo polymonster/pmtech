@@ -1,5 +1,5 @@
 // debug_render.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "debug_render.h"
@@ -135,7 +135,7 @@ namespace put
 
             u32 prev_vb = vb_2d[buffer_index];
             u32 prev_size = sizeof(vertex_debug_2d) * buffer_2d_size_in_verts[buffer_index];
-            
+
             buffer_2d_size_in_verts[buffer_index] = num_verts * 2;
 
             // debug lines buffer

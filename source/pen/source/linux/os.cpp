@@ -1,5 +1,5 @@
 // os.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "GL/glew.h"
@@ -83,7 +83,7 @@ void users()
 }
 
 static u32 s_error_code = 0;
-int main(int argc, char* argv[])
+int        main(int argc, char* argv[])
 {
     Visual*              visual;
     int                  depth;
@@ -331,7 +331,7 @@ namespace pen
     }
 
     static bool pen_terminate_app = false;
-    bool os_update()
+    bool        os_update()
     {
         static bool init_jobs = false;
         if (!init_jobs)
@@ -439,13 +439,13 @@ namespace pen
 
         return true;
     }
-    
+
     void os_terminate(u32 error_code)
     {
-		s_error_code = error_code;
+        s_error_code = error_code;
         pen_terminate_app = true;
     }
-    
+
     u32 window_init(void* params)
     {
         return 0;

@@ -1,10 +1,10 @@
 #include "camera.h"
+#include "debug_render.h"
+#include "dev_ui.h"
 #include "ecs/ecs_editor.h"
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
 #include "ecs/ecs_utilities.h"
-#include "debug_render.h"
-#include "dev_ui.h"
 #include "file_system.h"
 #include "hash.h"
 #include "input.h"
@@ -21,10 +21,10 @@ using namespace put;
 using namespace ecs;
 
 pen::window_creation_params pen_window{
-    1280,                     // width
-    720,                      // height
-    4,                        // MSAA samples
-    "blend_modes"             // window title / process name
+    1280,         // width
+    720,          // height
+    4,            // MSAA samples
+    "blend_modes" // window title / process name
 };
 
 namespace physics
@@ -38,15 +38,8 @@ void blend_mode_ui()
     ImGui::Begin("Blend Modes", &opened, ImGuiWindowFlags_AlwaysAutoResize);
 
     static hash_id rt_ids[] = {
-        PEN_HASH("rt_no_blend"), 
-        PEN_HASH("rt_alpha_blend"), 
-        PEN_HASH("rt_additive"),
-        PEN_HASH("rt_premultiplied_alpha"),
-        PEN_HASH("rt_min"),
-        PEN_HASH("rt_max"),
-        PEN_HASH("rt_subtract"),
-        PEN_HASH("rt_rev_subtract")
-    };
+        PEN_HASH("rt_no_blend"), PEN_HASH("rt_alpha_blend"), PEN_HASH("rt_additive"), PEN_HASH("rt_premultiplied_alpha"),
+        PEN_HASH("rt_min"),      PEN_HASH("rt_max"),         PEN_HASH("rt_subtract"), PEN_HASH("rt_rev_subtract")};
 
     int c = 0;
     for (hash_id id : rt_ids)
@@ -106,7 +99,6 @@ void blend_layers(const scene_view& scene_view)
     pen::renderer_set_blend_state(scene_view.blend_state);
     pen::renderer_set_texture(foreground_texture, wrap_linear, 0, pen::TEXTURE_BIND_PS);
     pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
-
 }
 
 PEN_TRV pen::user_entry(void* params)

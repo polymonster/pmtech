@@ -36,7 +36,6 @@ PEN_TRV pen::user_entry(void* params)
     pen::job*               p_thread_info = job_params->job_info;
     pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
-    
     static pen::clear_state cs = {
         0.0f, 0.0f, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
@@ -60,30 +59,30 @@ PEN_TRV pen::user_entry(void* params)
     u32 textured_shader = pmfx::load_shader("textured");
 
     u32 test_texture = put::load_texture("data/textures/formats/texfmt_rgba8.dds");
-    
+
     // manually scale 16:9 to 1:1
     f32 x_size = 0.5f / ((f32)pen_window.width / pen_window.height);
-    
+
     // manually handle differences with gl coordinate system
     f32 uv_y_a = 1.0f;
     f32 uv_y_b = 0.0f;
-    
-    if(pen::renderer_viewport_vup())
+
+    if (pen::renderer_viewport_vup())
         std::swap(uv_y_a, uv_y_b);
 
     // create vertex buffer for a quad
     textured_vertex quad_vertices[] = {
-        -x_size, -0.5f, 0.5f, 1.0f, // p1
-        0.0f,  uv_y_a,              // uv1
+        -x_size, -0.5f,  0.5f, 1.0f, // p1
+        0.0f,    uv_y_a,             // uv1
 
-        -x_size, 0.5f,  0.5f, 1.0f, // p2
-        0.0f,  uv_y_b,              // uv2
+        -x_size, 0.5f,   0.5f, 1.0f, // p2
+        0.0f,    uv_y_b,             // uv2
 
-        x_size,  0.5f,  0.5f, 1.0f, // p3
-        1.0f,  uv_y_b,              // uv3
+        x_size,  0.5f,   0.5f, 1.0f, // p3
+        1.0f,    uv_y_b,             // uv3
 
-        x_size,  -0.5f, 0.5f, 1.0f, // p4
-        1.0f,  uv_y_a,              // uv4
+        x_size,  -0.5f,  0.5f, 1.0f, // p4
+        1.0f,    uv_y_a,             // uv4
     };
 
     pen::buffer_creation_params bcp;
@@ -127,7 +126,7 @@ PEN_TRV pen::user_entry(void* params)
         // bind back buffer and clear
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
-        
+
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_clear(clear_state);
 

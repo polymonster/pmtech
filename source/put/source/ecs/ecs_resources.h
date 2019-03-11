@@ -57,9 +57,9 @@ namespace put
 
         struct anim_target
         {
-            f32 t[9]; // translate xyz, scale xyz.
+            f32  t[9]; // translate xyz, scale xyz.
             quat q;
-            u32 flags = 0;
+            u32  flags = 0;
         };
 
         struct anim_instance
@@ -119,17 +119,17 @@ namespace put
             A_SCALE_Y_TARGET,
             A_SCALE_Z_TARGET
         };
-        
+
         enum e_animation_outputs
         {
             A_OUT_TX = 0,
             A_OUT_TY = 1,
             A_OUT_TZ = 2,
-            
+
             A_OUT_SX = 6,
             A_OUT_SY = 7,
             A_OUT_SZ = 8,
-            
+
             A_OUT_QUAT = 9
         };
 
@@ -267,5 +267,5 @@ namespace put
         material_resource*  get_material_resource(hash_id hash);
         animation_resource* get_animation_resource(anim_handle h);
         geometry_resource*  get_geometry_resource(hash_id h);
-    } // namespace ces
+    } // namespace ecs
 } // namespace put

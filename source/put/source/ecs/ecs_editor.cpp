@@ -6,19 +6,19 @@
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_utilities.h"
 
-#include "volume_generator.h"
 #include "camera.h"
+#include "data_struct.h"
 #include "debug_render.h"
 #include "dev_ui.h"
 #include "hash.h"
 #include "input.h"
+#include "os.h"
 #include "pen_string.h"
 #include "physics/physics.h"
 #include "pmfx.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "data_struct.h"
-#include "os.h"
+#include "volume_generator.h"
 
 extern pen::user_info pen_user_info;
 
@@ -1520,14 +1520,14 @@ namespace put
 
                 put::ecs::update_scene(scene, dt_ms);
             }
-            
+
             update_undo_stack(scene, sc->dt);
         }
 
         struct physics_preview
         {
-            bool        active = false;
-            cmp_physics params;
+            bool          active = false;
+            cmp_physics   params;
             cmp_transform offset;
 
             physics_preview(){};
@@ -1649,7 +1649,7 @@ namespace put
                     break;
                 }
             }
-            
+
             // create
             if (ImGui::Button(button_text.c_str()))
             {
@@ -2637,7 +2637,7 @@ namespace put
             s_select_flags &= ~(WIDGET_SELECTED);
 
             ecs_scene* scene = view.scene;
-            vec2i         vpi = vec2i(view.viewport->width, view.viewport->height);
+            vec2i      vpi = vec2i(view.viewport->width, view.viewport->height);
 
             static vec3f widget_points[4];
             static vec3f pre_click_axis_pos[3];
@@ -3163,7 +3163,8 @@ namespace put
                     pen::renderer_update_buffer(scene->physics_debug_cbuffer[n], &dc, sizeof(cmp_draw_call));
 
                     // draw
-                    pen::renderer_set_constant_buffer(scene->physics_debug_cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+                    pen::renderer_set_constant_buffer(scene->physics_debug_cbuffer[n], 1,
+                                                      pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                     pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
                     pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
                     pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
@@ -3402,7 +3403,7 @@ namespace put
             Str stripped = pen::str_replace_string(filename, project_dir.c_str(), "");
             return stripped;
         }
-    } // namespace ces
+    } // namespace ecs
 } // namespace put
 
 #if 0 // code to calc tangents

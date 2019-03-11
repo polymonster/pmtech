@@ -1,5 +1,5 @@
 // ecs_primitives.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "debug_render.h"
@@ -930,5 +930,5 @@ namespace put
             create_quad();
             create_fulscreen_quad();
         }
-    } // namespace ces
+    } // namespace ecs
 } // namespace put

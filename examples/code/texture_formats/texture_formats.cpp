@@ -6,9 +6,9 @@
 #include "pen_string.h"
 #include "pmfx.h"
 #include "renderer.h"
+#include "stb/stb_image_write.h"
 #include "threads.h"
 #include "timer.h"
-#include "stb/stb_image_write.h"
 
 using namespace put;
 

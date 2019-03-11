@@ -4,10 +4,10 @@ using namespace put;
 using namespace ecs;
 
 pen::window_creation_params pen_window{
-    1280,               // width
-    720,                // height
-    4,                  // MSAA samples
-    "instancing"        // window title / process name
+    1280,        // width
+    720,         // height
+    4,           // MSAA samples
+    "instancing" // window title / process name
 };
 
 void example_setup(ecs::ecs_scene* scene)

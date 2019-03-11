@@ -89,7 +89,7 @@ ps_output ps_blit( vs_output input )
     ps_output output;
     
     output.colour = sample_texture( src_texture_0, input.texcoord.xy );
-	    
+        
     return output;
 }
 
@@ -98,8 +98,8 @@ ps_output ps_blit_rgb( vs_output input )
     ps_output output;
     
     output.colour = sample_texture( src_texture_0, input.texcoord.xy );
-	output.colour.a = 1.0;
-	    
+    output.colour.a = 1.0;
+        
     return output;
 }
 
@@ -514,8 +514,8 @@ pmfx:
         "vs": "vs_ndc_quad",
         "ps": "ps_blit"
     },
-	
-	"blit_rgb":
+    
+    "blit_rgb":
     {
         "vs": "vs_ndc_quad",
         "ps": "ps_blit_rgb"

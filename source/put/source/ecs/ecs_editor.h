@@ -37,5 +37,5 @@ namespace put
 
         Str strip_project_dir(const Str& filename);
 
-    } // namespace ces
+    } // namespace ecs
 } // namespace put

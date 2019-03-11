@@ -1,5 +1,5 @@
 // ecs_utilities.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "dev_ui.h"
@@ -407,60 +407,60 @@ namespace put
             // todo - must ensure list is contiguous.
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
         }
-        
+
         bool bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index)
         {
             animation_resource* anim = get_animation_resource(anim_handle);
-            anim_instance anim_instance;
+            anim_instance       anim_instance;
             anim_instance.soa = anim->soa;
             anim_instance.length = anim->length;
-            
+
             cmp_anim_controller_v2& controller = scene->anim_controller_v2[node_index];
-            
+
             // initialise anim with starting transform
             u32 num_joints = sb_count(controller.joint_indices);
             for (u32 j = 0; j < num_joints; ++j)
             {
                 u32 jnode = controller.joint_indices[j];
-                
+
                 // create space for trans quat scale
                 const cmp_transform& t = scene->initial_transform[jnode];
                 sb_push(anim_instance.joints, t);
-                
+
                 // create anim target txyz, rxyz, sxyz
                 anim_target at;
-                for(u32 e = 0; e < 3; ++e)
+                for (u32 e = 0; e < 3; ++e)
                 {
                     at.t[e] = t.translation[e];
-                    at.t[e+6] = t.scale[e];
+                    at.t[e + 6] = t.scale[e];
                 }
-                
+
                 vec3f eu = t.rotation.to_euler();
                 at.t[3] = eu.x;
                 at.t[4] = eu.y;
                 at.t[5] = eu.z;
-                
+
                 sb_push(anim_instance.targets, at);
             }
-            
+
             // bind channels
             for (u32 c = 0; c < anim->num_channels; ++c)
             {
                 anim_sampler sampler;
                 sampler.joint = PEN_INVALID_HANDLE;
                 sampler.pos = 0;
-                
+
                 // find bone for channel
                 for (u32 j = 0; j < num_joints; ++j)
                 {
                     u32 jnode = controller.joint_indices[j];
-                    
+
                     u32 bone_len = scene->names[jnode].length();
                     u32 target_len = anim->channels[c].target_name.length();
-                    
+
                     if (bone_len > target_len)
                         continue;
-                    
+
                     Str ss = pen::str_substr(anim->channels[c].target_name, target_len - bone_len, target_len);
                     if (ss == scene->names[jnode])
                     {
@@ -469,18 +469,18 @@ namespace put
                         break;
                     }
                 }
-                
+
                 sb_push(anim_instance.samplers, sampler);
             }
-            
+
             u32 num_samplers = sb_count(anim_instance.samplers);
             PEN_ASSERT(num_samplers == anim->num_channels);
-            
+
             sb_push(controller.anim_instances, anim_instance);
-            
+
             // todo validate
             scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
             return true;
         }
-    } // namespace ces
+    } // namespace ecs
 } // namespace put

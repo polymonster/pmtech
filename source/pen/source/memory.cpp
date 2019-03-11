@@ -1,5 +1,5 @@
 // memory.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "memory.h"
@@ -18,7 +18,7 @@ void* operator new(size_t n) THROW_BAD_ALLOC
     return memory_alloc(n);
 }
 
-void operator delete(void* p) THROW_NO_EXCEPT
+void operator delete(void* p)THROW_NO_EXCEPT
 {
     memory_free(p);
 }

@@ -1,5 +1,5 @@
 // os.mm
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #define GL_SILENCE_DEPRECATION
@@ -184,7 +184,7 @@ void create_gl_context()
         24,
         NSOpenGLPFAStencilSize,
         8,
-        
+
         // double buffered, HAL
         NSOpenGLPFADoubleBuffer,
         true,
@@ -194,7 +194,7 @@ void create_gl_context()
         false,
         NSOpenGLPFAAllowOfflineRenderers,
         true,
-        
+
         // end
         0,
         0,
@@ -225,7 +225,7 @@ void create_gl_context()
     const GLubyte* gl_vendor = glGetString(GL_VENDOR);
     PEN_LOG("gl: %s\nglsl: %s\nRenderer: %s\nVendor: %s\n", gl_version, glsl_version, gl_renderer, gl_vendor);
 #endif
-    
+
     _gl_view = glView;
     _gl_context = glContext;
 }
@@ -562,7 +562,7 @@ namespace
 }
 
 static u32 s_error_code = 0;
-int main(int argc, char** argv)
+int        main(int argc, char** argv)
 {
     // get working dir
     Str working_dir = argv[0];
@@ -580,19 +580,19 @@ int main(int argc, char** argv)
     }
 
     //todo find data and set working dir
-    
+
     pen_user_info.working_directory = working_dir.c_str();
-    
+
     // args
-    if(argc > 1)
+    if (argc > 1)
     {
-        if(strcmp(argv[1], "-test") == 0)
+        if (strcmp(argv[1], "-test") == 0)
         {
             // enter test
             pen::renderer_test_enable();
         }
     }
-    
+
     // window creation
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
     NSLog(@"NSApp=%@", NSApp);
@@ -640,8 +640,8 @@ int main(int argc, char** argv)
 
     // invoke renderer specific update for main thread
     run();
-	
-	return s_error_code;
+
+    return s_error_code;
 }
 
 namespace pen
@@ -746,12 +746,11 @@ namespace pen
 
     void os_show_cursor(bool show)
     {
-        
     }
-    
+
     void os_terminate(u32 error_code)
     {
-		s_error_code = error_code;
+        s_error_code = error_code;
         pen_terminate_app = true;
     }
 

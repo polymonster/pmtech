@@ -203,7 +203,7 @@ namespace pen
     {
         T _data[N];
 
-        u32 _num_buffers = N;
+        u32   _num_buffers = N;
         a_u32 _fb;
         a_u32 _bb;
 

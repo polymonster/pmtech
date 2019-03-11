@@ -5,6 +5,7 @@
 #pragma once
 
 #include "camera.h"
+#include "data_struct.h"
 #include "loader.h"
 #include "maths/maths.h"
 #include "maths/quat.h"
@@ -12,7 +13,6 @@
 #include "physics/physics.h"
 #include "pmfx.h"
 #include "str/Str.h"
-#include "data_struct.h"
 
 #include <vector>
 
@@ -25,7 +25,7 @@ namespace put
     {
         struct anim_instance;
         struct ecs_scene;
-        
+
         enum e_scene_view_flags : u32
         {
             SV_NONE = 0,
@@ -129,7 +129,7 @@ namespace put
         enum e_scene_render_flags
         {
             RENDER_FORWARD_LIT = 1,
-            RENDER_DEFERRED_LIT = 1<<1
+            RENDER_DEFERRED_LIT = 1 << 1
         };
 
         struct cmp_draw_call
@@ -368,20 +368,20 @@ namespace put
             generic_cmp_array* components;
             u32                num_components;
 
-            void* (*ext_func)(ecs_scene*) = nullptr;                             // must implement.. registers ext with scene
-            void  (*browser_func)(ecs_extension&, ecs_scene*) = nullptr;         // component editor ui
-            void  (*load_func)(ecs_extension&, ecs_scene*) = nullptr;            // fix up any loaded resources and read lookup strings
-            void  (*save_func)(ecs_extension&, ecs_scene*) = nullptr;            // fix down any save info.. write lookup strings etc
-            void  (*update_func)(ecs_extension&, ecs_scene*, f32) = nullptr;     // update with dt
-            void  (*shutdown)(ecs_extension&) = nullptr;
+            void* (*ext_func)(ecs_scene*) = nullptr;                    // must implement.. registers ext with scene
+            void (*browser_func)(ecs_extension&, ecs_scene*) = nullptr; // component editor ui
+            void (*load_func)(ecs_extension&, ecs_scene*) = nullptr;    // fix up any loaded resources and read lookup strings
+            void (*save_func)(ecs_extension&, ecs_scene*) = nullptr;    // fix down any save info.. write lookup strings etc
+            void (*update_func)(ecs_extension&, ecs_scene*, f32) = nullptr; // update with dt
+            void (*shutdown)(ecs_extension&) = nullptr;
         };
 
         struct ecs_controller
         {
-            Str             name;
-            hash_id         id_name = 0;
-            put::camera*    camera = nullptr;
-            void*           context = nullptr;
+            Str          name;
+            hash_id      id_name = 0;
+            put::camera* camera = nullptr;
+            void*        context = nullptr;
 
             void (*update_func)(ecs_controller&, ecs_scene* scene, f32 dt) = nullptr;
             void (*post_update_func)(ecs_controller&, ecs_scene* scene, f32 dt) = nullptr;
@@ -462,9 +462,9 @@ namespace put
 
         struct ecs_scene_instance
         {
-            u32           id_name;
-            const c8*     name;
-            ecs_scene*    scene;
+            u32        id_name;
+            const c8*  name;
+            ecs_scene* scene;
         };
         typedef std::vector<ecs_scene_instance> ecs_scene_list;
 
@@ -474,7 +474,6 @@ namespace put
 
         void update();
         void update_scene(ecs_scene* scene, f32 dt);
-
 
         void render_scene_view(const scene_view& view);
         void render_light_volumes(const scene_view& view);
@@ -497,7 +496,7 @@ namespace put
         void unregister_ecs_extensions(ecs_scene* scene);
 
         void register_ecs_controller(ecs_scene* scene, const ecs_controller& controller);
-        
+
         // separate implementations to make clang always inline
         template <typename T>
         pen_inline T& cmp_array<T>::operator[](size_t index)
@@ -572,5 +571,5 @@ namespace put
             generic_cmp_array* begin = (generic_cmp_array*)this;
             return begin[index];
         }
-    } // namespace ces
+    } // namespace ecs
 } // namespace put

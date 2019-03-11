@@ -1,15 +1,15 @@
 // input.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
+#include "input.h"
 #include "console.h"
 #include "data_struct.h"
-#include "input.h"
 #include "os.h"
+#include "threads.h"
 #include "timer.h"
 #include <atomic>
 #include <math.h>
-#include "threads.h"
 
 // Keyboard and mouse
 #define KEY_PRESS 0x01
@@ -237,7 +237,8 @@ namespace pen
 #include "TargetConditionals.h"
 #endif
 
-extern "C" {
+extern "C"
+{
 #include "gamepad/Gamepad.h"
 #include "gamepad/Gamepad_private.c"
 #ifdef __linux__
@@ -544,7 +545,7 @@ namespace
             break;
         }
     }
-}
+} // namespace
 namespace pen
 {
     void gamepad_attach_func(struct Gamepad_device* device, void* context)
@@ -588,7 +589,7 @@ namespace pen
     }
 
     std::atomic<bool> a_detecting;
-    PEN_TRV detect_devices_async(void* params)
+    PEN_TRV           detect_devices_async(void* params)
     {
         a_detecting = true;
 

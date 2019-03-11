@@ -1,5 +1,5 @@
 // renderer.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include <d3d11_1.h>
@@ -349,9 +349,9 @@ namespace pen
         texture2d_internal      tex_msaa;
         ID3D11RenderTargetView* rt_msaa[CUBEMAP_FACES] = {nullptr};
 
-        texture2d_internal      tex_read_back;
-        texture2d_internal      tex_resolve;
-        bool                    msaa_resolve_readback = false;
+        texture2d_internal tex_read_back;
+        texture2d_internal tex_resolve;
+        bool               msaa_resolve_readback = false;
 
         DXGI_FORMAT              format;
         texture_creation_params* tcp;
@@ -1220,7 +1220,7 @@ namespace pen
         {
             s_immediate_context->PSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
         }
-        
+
         if (flags & pen::CBUFFER_BIND_VS)
         {
             s_immediate_context->VSSetConstantBuffers(resource_slot, 1, &resource_pool[buffer_index].generic_buffer);
@@ -1590,8 +1590,7 @@ namespace pen
         rb_desc.BindFlags = 0;
         rb_desc.Usage = D3D11_USAGE_DEFAULT;
 
-        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr,
-                                             &resource_pool[crtv].render_target->tex_resolve.texture));
+        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, &resource_pool[crtv].render_target->tex_resolve.texture));
 
         rb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
         rb_desc.Usage = D3D11_USAGE_STAGING;

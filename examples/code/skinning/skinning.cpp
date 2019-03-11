@@ -71,5 +71,4 @@ void example_setup(ecs::ecs_scene* scene)
 
 void example_update(ecs::ecs_scene* scene)
 {
-
 }

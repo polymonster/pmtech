@@ -76,8 +76,8 @@ namespace put
         {
             u32 s = node_index;
 
-            physics::rigid_body_params&  rb = scene->physics_data[s].rigid_body;
-            cmp_transform& pt = scene->physics_offset[s];
+            physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
+            cmp_transform&              pt = scene->physics_offset[s];
 
             vec3f min = scene->bounding_volumes[s].min_extents;
             vec3f max = scene->bounding_volumes[s].max_extents;
@@ -295,28 +295,28 @@ namespace put
                 scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
             }
         }
-        
+
         void instantiate_anim_controller_v2(ecs_scene* scene, s32 node_index)
         {
             cmp_geometry* geom = &scene->geometries[node_index];
-            
+
             if (geom->p_skin)
             {
                 cmp_anim_controller_v2& controller = scene->anim_controller_v2[node_index];
-                
+
                 std::vector<s32> joint_indices;
                 build_heirarchy_node_list(scene, node_index, joint_indices);
-                
+
                 for (s32 jj = 0; jj < joint_indices.size(); ++jj)
                 {
                     s32 jnode = joint_indices[jj];
-                    
+
                     if (jnode > -1 && scene->entities[jnode] & CMP_BONE)
                     {
                         sb_push(controller.joint_indices, jnode);
                     }
                 }
-                
+
                 scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
             }
         }
@@ -786,7 +786,7 @@ namespace put
             new_animation.channels = new animation_channel[num_channels];
 
             new_animation.length = 0.0f;
-            
+
             u32 max_frames = 0;
 
             for (s32 i = 0; i < num_channels; ++i)
@@ -807,7 +807,7 @@ namespace put
                 }
 
                 s32 num_rots = 0;
-                
+
                 for (s32 j = 0; j < num_sources; ++j)
                 {
                     u32 sematic = *p_u32reader++;
@@ -825,10 +825,10 @@ namespace put
                         memcpy(data, p_u32reader, sizeof(u32) * num_elements);
                         new_animation.channels[i].interpolation = data;
                     }
-                    else if(sematic == A_TIME)
+                    else if (sematic == A_TIME)
                     {
                         PEN_ASSERT(type == A_FLOAT);
-                        
+
                         f32* data = new f32[num_elements];
                         memcpy(data, p_u32reader, sizeof(f32) * num_elements);
                         new_animation.channels[i].num_frames = num_elements;
@@ -836,10 +836,10 @@ namespace put
                     }
                     else
                     {
-                        u32 num_floats = num_elements;
+                        u32  num_floats = num_elements;
                         f32* data = new f32[num_floats];
                         memcpy(data, p_u32reader, sizeof(f32) * num_floats);
-                        
+
                         switch (target)
                         {
                             case A_TRANSFORM_TARGET:
@@ -849,16 +849,16 @@ namespace put
                                 // make a set of channels from matrix
                                 u32 num_mats = num_floats / 16;
 
-                                f32* to[3] = { 0 };
-                                f32* ts[3] = { 0 };
-                                quat* tq[3] = { 0 };
+                                f32*  to[3] = {0};
+                                f32*  ts[3] = {0};
+                                quat* tq[3] = {0};
                                 tq[0] = new quat[num_mats];
-                                
+
                                 for (u32 t = 0; t < 3; ++t)
                                 {
                                     to[t] = new f32[num_mats];
                                     ts[t] = new f32[num_mats];
-                                    
+
                                     new_animation.channels[i].offset[t] = to[t];
                                     new_animation.channels[i].scale[t] = ts[t];
                                     new_animation.channels[i].rotation[t] = tq[t];
@@ -867,17 +867,17 @@ namespace put
                                 for (u32 m = 0; m < num_mats; ++m)
                                 {
                                     mat4& mat = new_animation.channels[i].matrices[m];
-                                    
+
                                     vec3f trans = mat.get_translation();
-                                    quat rot;
+                                    quat  rot;
                                     rot.from_matrix(mat);
-                                    
+
                                     tq[0][m] = rot;
-                                    
+
                                     f32 sx = mag(mat.get_row(0).xyz);
                                     f32 sy = mag(mat.get_row(1).xyz);
                                     f32 sz = mag(mat.get_row(2).xyz);
-                                    
+
                                     vec3f scale = vec3f(sx, sy, sz);
 
                                     for (u32 t = 0; t < 3; ++t)
@@ -899,23 +899,18 @@ namespace put
                             case A_ROTATE_Z_TARGET:
                             {
                                 new_animation.channels[i].rotation[num_rots] = new quat[num_floats];
-                                
-                                for(u32 q = 0; q < num_floats; ++q)
+
+                                for (u32 q = 0; q < num_floats; ++q)
                                 {
-                                    vec3f mask[] =
-                                    {
-                                        vec3f::unit_x(),
-                                        vec3f::unit_y(),
-                                        vec3f::unit_z()
-                                    };
-                                    
+                                    vec3f mask[] = {vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z()};
+
                                     vec3f vr = vec3f(data[q]) * mask[target - A_ROTATE_X_TARGET];
                                     new_animation.channels[i].rotation[num_rots][q] = quat(vr.z, vr.y, vr.x);
                                 }
-                                
+
                                 num_rots++;
                             }
-                                break;
+                            break;
                             case A_SCALE_X_TARGET:
                             case A_SCALE_Y_TARGET:
                             case A_SCALE_Z_TARGET:
@@ -927,21 +922,21 @@ namespace put
                             case A_ROTATE_TARGET:
                             {
                                 PEN_ASSERT(0); // code path hasnt been tested
-                                
+
                                 u32 num_quats = num_floats / 3;
-                                
+
                                 new_animation.channels[i].rotation[num_rots] = new quat[num_quats];
-                                
-                                for(u32 q = 0; q < num_quats; q++)
+
+                                for (u32 q = 0; q < num_quats; q++)
                                 {
-                                    u32 qi = q * 3;
-                                    vec3f vr = vec3f(data[qi], data[qi+1], data[qi+2]);
+                                    u32   qi = q * 3;
+                                    vec3f vr = vec3f(data[qi], data[qi + 1], data[qi + 2]);
                                     new_animation.channels[i].rotation[num_rots][q] = quat(vr.z, vr.y, vr.x);
                                 }
-                                
+
                                 num_rots++;
                             }
-                                break;
+                            break;
                             case A_SCALE_TARGET:
                                 new_animation.channels[i].scale[sematic - A_X] = (f32*)data;
                                 break;
@@ -959,96 +954,96 @@ namespace put
                     f32* times = new_animation.channels[i].times;
                     new_animation.length = fmax(times[t], new_animation.length);
                 }
-                
+
                 max_frames = std::max<u32>(new_animation.channels[i].num_frames, max_frames);
             }
-            
+
             // free file mem
             pen::memory_free(anim_file);
-            
+
             // bake animations into soa.
-            
+
             // allocate vertical arrays
             soa_anim& soa = new_animation.soa;
             soa.data = new f32*[max_frames];
             soa.channels = new anim_channel[num_channels];
             soa.info = new anim_info*[max_frames];
             soa.num_channels = num_channels;
-            
+
             // null ptrs
             memset(soa.data, 0x0, max_frames * sizeof(f32*));
             memset(soa.info, 0x0, max_frames * sizeof(f32*));
-            
+
             // push channels into horizontal contiguous arrays
             for (s32 c = 0; c < num_channels; ++c)
-            {                
+            {
                 animation_channel& channel = new_animation.channels[c];
-                
+
                 // setup sampler
                 soa.channels[c].num_frames = channel.num_frames;
-                
+
                 u32 elm = 0;
-                
+
                 // translate
-                for(u32 i = 0; i < 3; ++i)
-                    if(channel.offset[i])
+                for (u32 i = 0; i < 3; ++i)
+                    if (channel.offset[i])
                         soa.channels[c].element_offset[elm++] = A_OUT_TX + i;
-                
+
                 // scale
-                for(u32 i = 0; i < 3; ++i)
-                    if(channel.scale[i])
+                for (u32 i = 0; i < 3; ++i)
+                    if (channel.scale[i])
                         soa.channels[c].element_offset[elm++] = A_OUT_SX + i;
-                
+
                 // quaternion
-                for(u32 i = 0; i < 3; ++i)
-                    if(channel.rotation[i])
-                        for(u32 q = 0; q < 4; ++q)
+                for (u32 i = 0; i < 3; ++i)
+                    if (channel.rotation[i])
+                        for (u32 q = 0; q < 4; ++q)
                             soa.channels[c].element_offset[elm++] = A_OUT_QUAT;
-                
-                if(channel.matrices)
+
+                if (channel.matrices)
                 {
                     // baked
                     soa.channels[c].flags = anim_flags::BAKED_QUATERNION;
                 }
-                
+
                 soa.channels[c].element_count = elm;
-                
-                for(u32 t = 0; t < channel.num_frames; ++t)
+
+                for (u32 t = 0; t < channel.num_frames; ++t)
                 {
                     u32 start_offset = sb_count(soa.data[t]);
-                    
+
                     // translate
-                    for(u32 i = 0; i < 3; ++i)
-                        if(channel.offset[i])
+                    for (u32 i = 0; i < 3; ++i)
+                        if (channel.offset[i])
                             sb_push(soa.data[t], channel.offset[i][t]);
-                    
+
                     // scale
-                    for(u32 i = 0; i < 3; ++i)
-                        if(channel.scale[i])
+                    for (u32 i = 0; i < 3; ++i)
+                        if (channel.scale[i])
                             sb_push(soa.data[t], channel.scale[i][t]);
-                    
+
                     // quat
-                    for(u32 i = 0; i < 3; ++i)
-                        if(channel.rotation[i])
+                    for (u32 i = 0; i < 3; ++i)
+                        if (channel.rotation[i])
                         {
                             sb_push(soa.data[t], channel.rotation[i][t].x);
                             sb_push(soa.data[t], channel.rotation[i][t].y);
                             sb_push(soa.data[t], channel.rotation[i][t].z);
                             sb_push(soa.data[t], channel.rotation[i][t].w);
                         }
-                            
+
                     u32 end_offset = sb_count(soa.data[t]);
-                    
+
                     soa.channels[c].element_count = end_offset - start_offset;
-                    
+
                     anim_info ai;
                     ai.offset = start_offset;
                     ai.time = channel.times[t];
                     sb_push(soa.info[t], ai);
                 }
-                
+
                 // pad sparse info array
-                for(u32 t = channel.num_frames; t < max_frames; ++t)
+                for (u32 t = channel.num_frames; t < max_frames; ++t)
                 {
                     anim_info ai;
                     ai.offset = -1;
@@ -1056,7 +1051,7 @@ namespace put
                     sb_push(soa.info[t], ai);
                 }
             }
-            
+
             return (anim_handle)k_animations.size() - 1;
         }
 
@@ -1520,5 +1515,5 @@ namespace put
 
             ImGui::End();
         }
-    } // namespace ces
+    } // namespace ecs
 } // namespace put

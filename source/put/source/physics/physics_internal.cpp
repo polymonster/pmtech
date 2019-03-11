@@ -2,11 +2,11 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
+#include "physics_internal.h"
+#include "console.h"
 #include "pen_string.h"
 #include "slot_resource.h"
 #include "timer.h"
-#include "console.h"
-#include "physics_internal.h"
 
 namespace physics
 {
@@ -225,7 +225,7 @@ namespace physics
         s_bullet_systems.solver = new btSequentialImpulseConstraintSolver;
         s_bullet_systems.dynamics_world =
             new btDiscreteDynamicsWorld(s_bullet_systems.dispatcher, s_bullet_systems.olp_cache, s_bullet_systems.solver,
-                s_bullet_systems.collision_config);
+                                        s_bullet_systems.collision_config);
 
         s_bullet_systems.dynamics_world->setGravity(btVector3(0, -10, 0));
     }
@@ -550,8 +550,8 @@ namespace physics
             {
                 rb->getMotionState()->setWorldTransform(bt_trans);
                 rb->setCenterOfMassTransform(bt_trans);
-            }    
-        } 
+            }
+        }
     }
 
     void set_gravity_internal(const set_v3_params& cmd)
@@ -910,7 +910,8 @@ namespace physics
 
         btSphereShape shape = btSphereShape(btScalar(scp.dimension.x));
 
-        btCollisionWorld::ClosestConvexResultCallback cast_callback = btCollisionWorld::ClosestConvexResultCallback(vfrom, vto);
+        btCollisionWorld::ClosestConvexResultCallback cast_callback =
+            btCollisionWorld::ClosestConvexResultCallback(vfrom, vto);
         cast_callback.m_collisionFilterMask = scp.mask;
         cast_callback.m_collisionFilterGroup = scp.group;
 
@@ -933,22 +934,19 @@ namespace physics
 
         scp.callback(sr);
     }
-    
+
     class contact_processor : public btCollisionWorld::ContactResultCallback
     {
-    public:
-        btRigidBody* ref_rb;
+      public:
+        btRigidBody*         ref_rb;
         contact_test_results ctr;
-        
-        btScalar addSingleResult(btManifoldPoint& cp,
-                                 const btCollisionObjectWrapper* colObj0Wrap,
-                                 int partId0, int index0,
-                                 const btCollisionObjectWrapper* colObj1Wrap,
-                                 int partId1,int index1)
+
+        btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
+                                 const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
         {
             contact c;
 
-            if(ref_rb == colObj0Wrap->getCollisionObject())
+            if (ref_rb == colObj0Wrap->getCollisionObject())
             {
                 c.pos = from_btvector(cp.m_positionWorldOnB);
             }
@@ -956,14 +954,14 @@ namespace physics
             {
                 c.pos = from_btvector(cp.m_positionWorldOnA);
             }
-            
+
             c.normal = from_btvector(cp.m_normalWorldOnB);
-            
+
             sb_push(ctr.contacts, c);
             return 0.0f;
         }
     };
-    
+
     void contact_test_internal(const contact_test_params& ctp)
     {
         btRigidBody* rb = s_entities.get(ctp.entity).rb.rigid_body;
@@ -972,11 +970,11 @@ namespace physics
 
         contact_processor cb;
         cb.ref_rb = rb;
-        
+
         btCollisionObject* cobj = (btCollisionObject*)rb;
-        
+
         s_bullet_systems.dynamics_world->contactTest(cobj, cb);
-        
+
         ctp.callback(cb.ctr);
     }
 } // namespace physics

@@ -1,16 +1,16 @@
 // volume_generator.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "volume_generator.h"
 
 #include "camera.h"
+#include "debug_render.h"
+#include "dev_ui.h"
 #include "ecs/ecs_editor.h"
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
 #include "ecs/ecs_utilities.h"
-#include "debug_render.h"
-#include "dev_ui.h"
 #include "pmfx.h"
 #include "str_utilities.h"
 #include "timer.h"
@@ -141,20 +141,20 @@ namespace put
 
         struct vgt_sdf_job
         {
-            vgt_options   options;
-            ecs_scene* scene;
-            u32           volume_dim;
-            u32           texture_format;
-            u32           block_size;
-            u32           data_size;
-            u8*           volume_data;
-            extents       scene_extents;
-            vec3f         scene_centre;
-            bool          trust_sign = true;
-            f32           padding;
-            u32           generate_in_progress = 0;
-            s32           capture_type = 0;
-            u32           generated_volume_index;
+            vgt_options options;
+            ecs_scene*  scene;
+            u32         volume_dim;
+            u32         texture_format;
+            u32         block_size;
+            u32         data_size;
+            u8*         volume_data;
+            extents     scene_extents;
+            vec3f       scene_centre;
+            bool        trust_sign = true;
+            f32         padding;
+            u32         generate_in_progress = 0;
+            s32         capture_type = 0;
+            u32         generated_volume_index;
         };
         static vgt_sdf_job s_sdf_job;
 
@@ -974,7 +974,8 @@ namespace put
             scene->parents[new_prim] = new_prim;
             scene->samplers[new_prim].sb[0].handle = gv.texture;
             scene->samplers[new_prim].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
-            scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+            scene->samplers[new_prim].sb[0].sampler_state =
+                pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
 
             instantiate_geometry(cube, scene, new_prim);
             instantiate_material(volume_material, scene, new_prim);
@@ -1271,7 +1272,7 @@ namespace put
         }
 
         ecs::ecs_scene* s_main_scene;
-        vgt_options        s_options;
+        vgt_options     s_options;
 
         void rasterise_ui()
         {

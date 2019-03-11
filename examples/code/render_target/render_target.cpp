@@ -65,7 +65,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::viewport vp_rt = {0.0f, 0.0f, 1024.0f, 512.0f, 0.0f, 1.0f};
 
     // create render target
-    pen::texture_creation_params tcp = { 0 };
+    pen::texture_creation_params tcp = {0};
     tcp.width = (u32)vp_rt.width;
     tcp.height = (u32)vp_rt.height;
     tcp.cpu_access_flags = 0;
@@ -104,23 +104,23 @@ PEN_TRV pen::user_entry(void* params)
     // manually handle differences with gl coordinate system
     f32 uv_y_a = 1.0f;
     f32 uv_y_b = 0.0f;
-    
-    if(pen::renderer_viewport_vup())
+
+    if (pen::renderer_viewport_vup())
         std::swap(uv_y_a, uv_y_b);
-    
+
     // create vertex buffer for a quad
     textured_vertex quad_vertices[] = {
-        -0.5f, -0.5f, 0.5f, 1.0f, // p1
-        0.0f,  uv_y_a,            // uv1
-        
-        -0.5f, 0.5f,  0.5f, 1.0f, // p2
-        0.0f,  uv_y_b,            // uv2
-        
-        0.5f,  0.5f,  0.5f, 1.0f, // p3
-        1.0f,  uv_y_b,            // uv3
-        
-        0.5f,  -0.5f, 0.5f, 1.0f, // p4
-        1.0f,  uv_y_a,            // uv4
+        -0.5f, -0.5f,  0.5f, 1.0f, // p1
+        0.0f,  uv_y_a,             // uv1
+
+        -0.5f, 0.5f,   0.5f, 1.0f, // p2
+        0.0f,  uv_y_b,             // uv2
+
+        0.5f,  0.5f,   0.5f, 1.0f, // p3
+        1.0f,  uv_y_b,             // uv3
+
+        0.5f,  -0.5f,  0.5f, 1.0f, // p4
+        1.0f,  uv_y_a,             // uv4
     };
     bcp.buffer_size = sizeof(textured_vertex) * 4;
     bcp.data = (void*)&quad_vertices[0];
@@ -166,7 +166,7 @@ PEN_TRV pen::user_entry(void* params)
 
         // bind and clear render target
         pen::renderer_set_targets(colour_render_target, PEN_NULL_DEPTH_BUFFER);
-        
+
         pen::renderer_set_viewport(vp_rt);
         pen::renderer_set_scissor_rect(rect{vp_rt.x, vp_rt.y, vp_rt.width, vp_rt.height});
         pen::renderer_clear(clear_state_rt);

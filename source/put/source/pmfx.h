@@ -43,30 +43,30 @@ namespace put
 
     struct scene_view
     {
-        u32                cb_view = PEN_INVALID_HANDLE;
-        u32                cb_2d_view = PEN_INVALID_HANDLE;
-        u32                render_flags = 0;
-        u32                depth_stencil_state = 0;
-        u32                blend_state = 0;
-        u32                raster_state = 0;
-        put::camera*       camera = nullptr;
-        pen::viewport*     viewport = nullptr;
-        u32                pmfx_shader = PEN_INVALID_HANDLE;
-        hash_id            technique = 0; // todo rename to id_technique
-        u32                permutation = 0;
-        ecs::ecs_scene*    scene = nullptr;
-        bool               viewport_correction = false;
+        u32             cb_view = PEN_INVALID_HANDLE;
+        u32             cb_2d_view = PEN_INVALID_HANDLE;
+        u32             render_flags = 0;
+        u32             depth_stencil_state = 0;
+        u32             blend_state = 0;
+        u32             raster_state = 0;
+        put::camera*    camera = nullptr;
+        pen::viewport*  viewport = nullptr;
+        u32             pmfx_shader = PEN_INVALID_HANDLE;
+        hash_id         technique = 0; // todo rename to id_technique
+        u32             permutation = 0;
+        ecs::ecs_scene* scene = nullptr;
+        bool            viewport_correction = false;
     };
 
     struct scene_controller
     {
-        Str                name;
-        hash_id            id_name = 0;
-        ecs::ecs_scene*    scene = nullptr;
-        put::camera*       camera = nullptr;
-        e_update_order     order = MAIN_UPDATE;
-        f32                dt = 0.0f;
-        bool               deprecated = true; // this is now depracated and will be moved to ecs_controller
+        Str             name;
+        hash_id         id_name = 0;
+        ecs::ecs_scene* scene = nullptr;
+        put::camera*    camera = nullptr;
+        e_update_order  order = MAIN_UPDATE;
+        f32             dt = 0.0f;
+        bool            deprecated = true; // this is now depracated and will be moved to ecs_controller
 
         void (*update_function)(scene_controller*) = nullptr;
     };

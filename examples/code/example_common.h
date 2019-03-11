@@ -1,11 +1,12 @@
 #include "camera.h"
+#include "console.h"
+#include "data_struct.h"
+#include "debug_render.h"
+#include "dev_ui.h"
 #include "ecs/ecs_editor.h"
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
 #include "ecs/ecs_utilities.h"
-#include "data_struct.h"
-#include "debug_render.h"
-#include "dev_ui.h"
 #include "file_system.h"
 #include "hash.h"
 #include "input.h"
@@ -17,7 +18,6 @@
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "console.h"
 
 using namespace put;
 using namespace ecs;

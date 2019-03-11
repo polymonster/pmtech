@@ -2,9 +2,9 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
+#include "data_struct.h"
 #include "maths/maths.h"
 #include "physics.h"
-#include "data_struct.h"
 
 // for multi body bullet
 #include "BulletDynamics/Featherstone/btMultiBody.h"
@@ -118,8 +118,8 @@ namespace physics
         {
             b_paused = 0;
         }
-        
-        a_u32 b_paused;
+
+        a_u32                       b_paused;
         pen::multi_buffer<mat4*, 2> output_matrices;
     };
 
@@ -171,9 +171,8 @@ namespace physics
     void cast_ray_internal(const ray_cast_params& rcp);
     void cast_sphere_internal(const sphere_cast_params& ccp);
     void contact_test_internal(const contact_test_params& ctp);
-    
+
     void add_central_force(const set_v3_params& cmd);
     void add_central_impulse(const set_v3_params& cmd);
-
 
 } // namespace physics

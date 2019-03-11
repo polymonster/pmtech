@@ -1,14 +1,14 @@
 // pmfx_renderer.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include "ecs/ecs_editor.h"
-#include "ecs/ecs_resources.h"
-#include "ecs/ecs_scene.h"
 #include "console.h"
 #include "data_struct.h"
 #include "debug_render.h"
 #include "dev_ui.h"
+#include "ecs/ecs_editor.h"
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_scene.h"
 #include "file_system.h"
 #include "hash.h"
 #include "os.h"
@@ -167,7 +167,7 @@ namespace
 
         // draw / update
         ecs::ecs_scene* scene;
-        put::camera*       camera;
+        put::camera*    camera;
 
         std::vector<void (*)(const put::scene_view&)> render_functions;
 
@@ -682,7 +682,7 @@ namespace put
 
                 /// make partial blend states for per rt blending
                 s_partial_blend_states.push_back({PEN_HASH(state.name().c_str()), rtb});
-                
+
                 // create a generic single blend for code use
                 pen::blend_creation_params bcp;
                 bcp.alpha_to_coverage_enable = false; // todo atoc
@@ -2446,7 +2446,7 @@ namespace put
         void update()
         {
             static u32 dt_timer = pen::timer_create("sc_dt");
-            f32 dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
+            f32        dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
             pen::timer_start(dt_timer);
 
             size_t num_controllers = s_controllers.size();
@@ -2458,7 +2458,6 @@ namespace put
                             s_controllers[i].dt = dt;
                             s_controllers[i].update_function(&s_controllers[i]);
                         }
-                            
         }
 
         struct post_process_per_view

@@ -73,11 +73,11 @@ PEN_TRV pen::user_entry(void* params)
 
         // bind back buffer and clear
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-        
+
         pen::renderer_set_rasterizer_state(raster_state);
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
-        
+
         pen::renderer_clear(clear_state);
 
         put::dbg::add_text_2f(10.0f, 10.0f, vp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Input Test");
@@ -130,7 +130,7 @@ PEN_TRV pen::user_entry(void* params)
         f32 ypos = 70.0f;
         for (u32 i = 0; i < num_gamepads; ++i)
         {
-            f32 start_y = ypos;
+            f32               start_y = ypos;
             raw_gamepad_state gs;
             pen::input_get_raw_gamepad_state(i, gs);
 
@@ -158,16 +158,9 @@ PEN_TRV pen::user_entry(void* params)
                 xpos += 150.0f;
             }
         }
-        
-        static const c8* mappings[] =
-        {
-            "No Mapping",
-            "DS4",
-            "xbox 360", 
-            "DS4 XInput", 
-            "xbox 360 XInput"
-        };
-        
+
+        static const c8* mappings[] = {"No Mapping", "DS4", "xbox 360", "DS4 XInput", "xbox 360 XInput"};
+
         ypos += 10.0f;
         for (u32 i = 0; i < num_gamepads; ++i)
         {
@@ -182,52 +175,32 @@ PEN_TRV pen::user_entry(void* params)
 
             gamepad_state gs;
             pen::input_get_gamepad_state(i, gs);
-            
-            put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Mapped Gamepad: %s", mappings[rgs.mapping]);
+
+            put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Mapped Gamepad: %s",
+                                  mappings[rgs.mapping]);
             ypos += 10.0f;
-            
-            f32 start_y = ypos;
-            static const c8* button_names[] =
-            {
-                "A / CROSS",
-                "B / CIRCLE",
-                "X / SQUARE",
-                "Y / TRIANGLE",
-                "L1",
-                "R1",
-                "BACK / SHARE",
-                "START / OPTIONS",
-                "L3",
-                "R3",
-                "DPAD LEFT", 
-                "DPAD RIGHT",    
-                "DPAD UP", 
-                "DPAD DOWN",
-                "TOUCH PAD",
-                "PLATFORM"
-            };
+
+            f32              start_y = ypos;
+            static const c8* button_names[] = {"A / CROSS", "B / CIRCLE", "X / SQUARE",   "Y / TRIANGLE",
+                                               "L1",        "R1",         "BACK / SHARE", "START / OPTIONS",
+                                               "L3",        "R3",         "DPAD LEFT",    "DPAD RIGHT",
+                                               "DPAD UP",   "DPAD DOWN",  "TOUCH PAD",    "PLATFORM"};
             static_assert(PEN_ARRAY_SIZE(button_names) == PGP_BUTTON_NUM, "mismatched array size");
-            
-            for(u32 b = 0; b < PGP_BUTTON_NUM; ++b)
+
+            for (u32 b = 0; b < PGP_BUTTON_NUM; ++b)
             {
-                put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %i", button_names[b], gs.button[b]);
+                put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %i", button_names[b],
+                                      gs.button[b]);
                 ypos += 10.0f;
             }
-            
-            static const c8* axis_names[] =
-            {
-                "Left Stick X",
-                "Left Stick Y",
-                "Right Stick X",
-                "Right Stick Y",
-                "L TRIGGER",
-                "R TRIGGER"
-            };
+
+            static const c8* axis_names[] = {"Left Stick X",  "Left Stick Y", "Right Stick X",
+                                             "Right Stick Y", "L TRIGGER",    "R TRIGGER"};
             static_assert(PEN_ARRAY_SIZE(axis_names) == PGP_AXIS_NUM, "mismatched array size");
-            
+
             ypos = start_y;
             f32 xpos = 150.0f;
-            for(u32 a = 0; a < PGP_AXIS_NUM; ++a)
+            for (u32 a = 0; a < PGP_AXIS_NUM; ++a)
             {
                 put::dbg::add_text_2f(xpos, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %f", axis_names[a], gs.axis[a]);
                 ypos += 10.0f;

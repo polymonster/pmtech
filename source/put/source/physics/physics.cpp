@@ -1,12 +1,12 @@
 // physics.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "pen.h"
 #include "pen_string.h"
-#include "timer.h"
-#include "slot_resource.h"
 #include "physics_internal.h"
+#include "slot_resource.h"
+#include "timer.h"
 
 // for multi body bullet
 #include "BulletDynamics/Featherstone/btMultiBody.h"
@@ -21,9 +21,9 @@
 
 namespace physics
 {
-    static pen::ring_buffer<physics_cmd>    s_cmd_buffer;
-    static pen::slot_resources              s_physics_slot_resources;
-    static pen::slot_resources              s_p2p_slot_resources;
+    static pen::ring_buffer<physics_cmd> s_cmd_buffer;
+    static pen::slot_resources           s_physics_slot_resources;
+    static pen::slot_resources           s_p2p_slot_resources;
 
     void exec_cmd(const physics_cmd& cmd)
     {
@@ -267,7 +267,7 @@ namespace physics
 
     bool has_rb_matrix(const u32& entity_index)
     {
-        auto& om = g_readable_data.output_matrices;
+        auto&        om = g_readable_data.output_matrices;
         mat4* const& fb = om._data[om._fb];
         if (entity_index >= sb_count(fb))
             return false;
@@ -466,9 +466,9 @@ namespace physics
 
     void cast_ray(const ray_cast_params& rcp, bool immediate)
     {
-        if(mag(rcp.start - rcp.end) < 0.0001f)
+        if (mag(rcp.start - rcp.end) < 0.0001f)
             return;
-        
+
         if (!immediate)
         {
             physics_cmd pc;
@@ -484,9 +484,9 @@ namespace physics
 
     void cast_sphere(const sphere_cast_params& scp, bool immediate)
     {
-        if(mag(scp.from - scp.to) < 0.0001f)
+        if (mag(scp.from - scp.to) < 0.0001f)
             return;
-        
+
         if (!immediate)
         {
             physics_cmd pc;
@@ -499,7 +499,7 @@ namespace physics
             cast_sphere_internal(scp);
         }
     }
-    
+
     void contact_test(const contact_test_params& ctp)
     {
         physics_cmd pc;

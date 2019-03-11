@@ -35,7 +35,7 @@ struct tweakable_cb
     f32 size_y = 0.0f;
     f32 time = 0.0f;
     f32 pad = 0.0f;
-    
+
     vec4f test;
 };
 
@@ -221,7 +221,7 @@ void show_ui()
     bool open = true;
     ImGui::Begin("Shader Toy", &open);
 
-    if(k_tex_samplers[0].texture == 0)
+    if (k_tex_samplers[0].texture == 0)
         k_tex_samplers[0].texture = put::load_texture("data/textures/01.dds");
 
     static bool browser_open = false;

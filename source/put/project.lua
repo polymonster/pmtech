@@ -49,7 +49,7 @@ project "put"
         "../../third_party/imgui/*.h",
         "../../third_party/sdf_gen/*.h",
         "../../third_party/sdf_gen/*.cpp",
-		"../../third_party/bussik/*.h",
+        "../../third_party/bussik/*.h",
         "../../third_party/bussik/*.cpp"
     }
     includedirs { "include" }

@@ -1,5 +1,5 @@
 // renderer.cpp
-// Copyright 2014 - 2019 Alex Dixon. 
+// Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #define GL_SILENCE_DEPRECATION
@@ -1729,19 +1729,19 @@ namespace pen
         for (s32 i = 0; i < blend_state->num_render_targets; ++i)
         {
             auto& rt_blend = blend_state->render_targets[i];
-            
+
             if (i == 0)
             {
                 u32 mask = rt_blend.render_target_write_mask;
                 glColorMask(mask & 1, mask & 2, mask & 4, mask & 8);
-                
+
                 if (rt_blend.blend_enable)
                 {
                     CHECK_CALL(glEnable(GL_BLEND));
 
                     CHECK_CALL(glBlendFuncSeparate(rt_blend.src_blend, rt_blend.dest_blend, rt_blend.src_blend_alpha,
                                                    rt_blend.dest_blend_alpha));
-                    
+
                     CHECK_CALL(glBlendEquationSeparate(rt_blend.blend_op, rt_blend.blend_op_alpha));
                 }
                 else
@@ -1778,10 +1778,9 @@ namespace pen
 #endif
         CHECK_CALL(glBindBuffer(res.type, 0));
     }
-    
+
     void update_backbuffer_texture()
     {
-        
     }
 
     void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
@@ -1790,38 +1789,38 @@ namespace pen
         resource_allocation& res = resource_pool[rrbp.resource_index];
 
         GLuint t = res.type;
-        if( rrbp.resource_index == 0 )
+        if (rrbp.resource_index == 0)
         {
             u32 w = rrbp.row_pitch / rrbp.block_size;
             u32 h = rrbp.depth_pitch / rrbp.row_pitch;
-            
+
             // special case reading the backbuffer
             CHECK_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
-            
+
             static u32 resolve_buffer = -1;
-            if(resolve_buffer == -1)
+            if (resolve_buffer == -1)
             {
                 GLuint handle;
                 CHECK_CALL(glGenTextures(1, &handle));
                 CHECK_CALL(glBindTexture(0, handle));
                 CHECK_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
-                
+
                 CHECK_CALL(glGenFramebuffers(1, &resolve_buffer));
                 CHECK_CALL(glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, handle, 0));
             }
-            
+
             CHECK_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolve_buffer));
             CHECK_CALL(glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_LINEAR));
-            
+
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, resolve_buffer));
-            
+
             void* data = memory_alloc(rrbp.data_size);
             CHECK_CALL(glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data));
-            
+
             rrbp.call_back_function(data, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
-            
+
             memory_free(data);
-            
+
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
         }
         else if (t == RES_TEXTURE || t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)
@@ -2008,14 +2007,14 @@ namespace pen
     }
 
     static renderer_info s_renderer_info;
-    
+
     u32 direct::renderer_initialise(void*, u32, u32)
     {
-        static Str           str_glsl_version;
-        static Str           str_gl_version;
-        static Str           str_gl_renderer;
-        static Str           str_gl_vendor;
-        
+        static Str str_glsl_version;
+        static Str str_gl_version;
+        static Str str_gl_renderer;
+        static Str str_gl_vendor;
+
         // todo renderer caps
         const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
         const GLubyte* gl_version = glGetString(GL_VERSION);
@@ -2031,9 +2030,9 @@ namespace pen
         s_renderer_info.api_version = str_gl_version.c_str();
         s_renderer_info.renderer = str_gl_renderer.c_str();
         s_renderer_info.vendor = str_gl_vendor.c_str();
-        
+
         s_renderer_info.renderer_cmd = "-renderer opengl";
-        
+
 #ifdef PEN_GLES3
         // gles base fbo is not 0
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &s_backbuffer_fbo);

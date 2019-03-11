@@ -32,4 +32,3 @@ namespace pen
     const c8* os_path_for_resource(const c8* filename);
 
 } // namespace pen
-

@@ -369,7 +369,7 @@ ps_output ps_volume_texture( vs_output input )
     }
     
     output.colour.rgb *= lerp( 0.5, 1.0, depth );
-	        
+            
     return output;
 }
 
