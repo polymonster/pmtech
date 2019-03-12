@@ -496,7 +496,10 @@ namespace put
 
                 bcp.buffer_size = vertex_size * num_verts;
                 bcp.data = (void*)p_reader;
-
+                
+                p_geometry->cpu_vertex_buffer = pen::memory_alloc(bcp.buffer_size);
+                memcpy(p_geometry->cpu_vertex_buffer, bcp.data, bcp.buffer_size);
+                
                 p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
                 p_reader += bcp.buffer_size / sizeof(u32);

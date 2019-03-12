@@ -407,6 +407,98 @@ namespace put
             // todo - must ensure list is contiguous.
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
         }
+        
+        void bake_nodes_to_vb(ecs_scene* scene, u32* node_list)
+        {            
+            u32 num_nodes = sb_count(node_list);
+            
+            // vb / ib
+            pen::buffer_creation_params ibcp;
+            pen::buffer_creation_params vbcp;
+            
+            u32 vertex_size = 0;
+            u32 num_vertices = 0;
+            u32 num_indices = 0;
+            
+            // calc size
+            for(u32 i = 0; i < num_nodes; ++i)
+            {
+                u32 n = node_list[i];
+                
+                pen::hash_murmur hm;
+                hm.begin(0);
+                hm.add(scene->names[n].c_str(), scene->names[n].length());
+                hm.add(scene->geometry_names[n].c_str(), scene->geometry_names[n].length());
+                hm.add(0);
+                hash_id geom_hash = hm.end();
+                
+                geometry_resource* gr = get_geometry_resource(geom_hash);
+                
+                vbcp.buffer_size += gr->num_vertices * gr->vertex_size;
+                ibcp.buffer_size += gr->num_indices * 2;
+                
+                vertex_size = gr->vertex_size;
+                num_vertices += gr->num_vertices;
+                num_indices += gr->num_indices;
+            }
+            
+            // alloc
+            vbcp.data = pen::memory_alloc(vbcp.buffer_size);
+            ibcp.data = pen::memory_alloc(ibcp.buffer_size);
+            
+            // transform verts and bake into buffer
+            u8* vb_data_pos = (u8*)vbcp.data;
+            u8* ib_data_pos = (u8*)ibcp.data;
+            for(u32 i = 0; i < num_nodes; ++i)
+            {
+                u32 n = node_list[i];
+
+                pen::hash_murmur hm;
+                hm.begin(0);
+                hm.add(scene->names[n].c_str(), scene->names[n].length());
+                hm.add(scene->geometry_names[n].c_str(), scene->geometry_names[n].length());
+                hm.add(0);
+                hash_id geom_hash = hm.end();
+                
+                geometry_resource* gr = get_geometry_resource(geom_hash);
+                
+                u32 vb_size = gr->num_vertices * gr->vertex_size;
+                u32 ib_size = gr->num_indices * 2;
+                
+                memcpy(vb_data_pos, gr->cpu_vertex_buffer, vb_size);
+                memcpy(ib_data_pos, gr->cpu_index_buffer, ib_size);
+                
+                vb_data_pos += vb_size;
+                ib_data_pos += ib_size;
+            }
+            
+            // get new node
+            u32 nn = get_new_node(scene);
+            
+            // instantiate
+            scene->entities[nn] |= CMP_GEOMETRY;
+            scene->geometries[nn].vertex_buffer = pen::renderer_create_buffer(vbcp);
+            scene->geometries[nn].index_buffer = pen::renderer_create_buffer(vbcp);
+            scene->geometries[nn].index_type = PEN_FORMAT_R16_UINT;
+            scene->geometries[nn].num_vertices = num_vertices;
+            scene->geometries[nn].num_indices = num_indices;
+            scene->geometries[nn].vertex_size = vertex_size;
+            scene->geometries[nn].vertex_shader_class = 0;
+            scene->geometries[nn].p_skin = nullptr;
+            
+            Str mn = "phong15sg";
+            
+            pen::hash_murmur hm;
+            hm.begin(0);
+            hm.add(scene->names[node_list[0]].c_str(), scene->names[node_list[0]].length());
+            hm.add(mn.c_str(), mn.length());
+            hm.add(0);
+            hash_id mat_hash = hm.end();
+            
+            material_resource* mr = get_material_resource(PEN_HASH("default_material"));
+            instantiate_material(mr, scene, nn);
+            
+        }
 
         bool bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index)
         {

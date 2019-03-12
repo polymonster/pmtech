@@ -195,6 +195,7 @@ namespace put
 
             void* cpu_index_buffer;
             void* cpu_position_buffer;
+            void* cpu_vertex_buffer;
 
             cmp_skin* p_skin;
         };
@@ -245,6 +246,7 @@ namespace put
         void instantiate_rigid_body(ecs_scene* scene, u32 node_index);
         void instantiate_constraint(ecs_scene* scene, u32 node_index);
         void instantiate_geometry(geometry_resource* gr, ecs_scene* scene, s32 node_index);
+        void instantiate_geometry_ref(geometry_resource* gr, ecs_scene* scene, s32 node_index);
         void instantiate_model_pre_skin(ecs_scene* scene, s32 node_index);
         void instantiate_model_cbuffer(ecs_scene* scene, s32 node_index);
         void instantiate_material_cbuffer(ecs_scene* scene, s32 node_index, s32 size);
