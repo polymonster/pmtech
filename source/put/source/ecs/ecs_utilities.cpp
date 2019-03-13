@@ -408,7 +408,7 @@ namespace put
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
         }
         
-        void bake_nodes_to_vb(ecs_scene* scene, u32* node_list)
+        void bake_nodes_to_vb(ecs_scene* scene, u32 parent, u32* node_list)
         {            
             u32 num_nodes = sb_count(node_list);
             
@@ -426,6 +426,7 @@ namespace put
             u32 vertex_size = 0;
             u32 num_vertices = 0;
             u32 num_indices = 0;
+            u32 index_size = 2;
             
             // calc size
             for(u32 i = 0; i < num_nodes; ++i)
@@ -441,13 +442,17 @@ namespace put
                 
                 geometry_resource* gr = get_geometry_resource(geom_hash);
                 
-                vbcp.buffer_size += gr->num_vertices * gr->vertex_size;
-                ibcp.buffer_size += gr->num_indices * 2;
-                
+                index_size = gr->index_type == PEN_FORMAT_R32_UINT ? 4 : 2;
                 vertex_size = gr->vertex_size;
                 num_vertices += gr->num_vertices;
                 num_indices += gr->num_indices;
+                
+                vbcp.buffer_size += gr->num_vertices * gr->vertex_size;
+                ibcp.buffer_size += gr->num_indices * index_size;
             }
+            
+            // todo.. assert with mismatched mats
+            //        determine output index type
             
             // alloc
             vbcp.data = pen::memory_alloc(vbcp.buffer_size);
@@ -456,6 +461,7 @@ namespace put
             // transform verts and bake into buffer
             u8* vb_data_pos = (u8*)vbcp.data;
             u8* ib_data_pos = (u8*)ibcp.data;
+            u32 index_offset = 0;
             for(u32 i = 0; i < num_nodes; ++i)
             {
                 u32 n = node_list[i];
@@ -475,14 +481,46 @@ namespace put
                 memcpy(vb_data_pos, gr->cpu_vertex_buffer, vb_size);
                 memcpy(ib_data_pos, gr->cpu_index_buffer, ib_size);
                 
+                // offset indices
+                for(u32 i = 0; i < gr->num_indices; ++i)
+                {
+                    if(index_size == 2)
+                    {
+                        u16* ii = (u16*)ib_data_pos;
+                        ii[i] += index_offset;
+                    }
+                    else
+                    {
+                        u32* ii = (u32*)ib_data_pos;
+                        ii[i] += index_offset;
+                    }
+                }
+                
+                // transform verts
+                mat4 wm = scene->world_matrices[n];
+                mat4 rm;
+                scene->transforms[n].rotation.get_matrix(rm);
+                
+                for(u32 v = 0; v < gr->num_vertices; ++v)
+                {
+                    vertex_model* vm = (vertex_model*)vb_data_pos;
+                    
+                    vm[v].pos = wm.transform_vector(vm[v].pos);
+                    vm[v].normal.xyz = rm.transform_vector(vm[v].normal.xyz);
+                    vm[v].tangent.xyz = rm.transform_vector(vm[v].tangent.xyz);
+                    vm[v].bitangent.xyz = rm.transform_vector(vm[v].bitangent.xyz);
+                }
+                
                 vb_data_pos += vb_size;
                 ib_data_pos += ib_size;
+                
+                index_offset += gr->num_indices;
                 
                 delete_entity(scene, n);
             }
             
             // get new node
-            u32 nn = get_new_node(scene);
+            u32 nn = parent;
             
             // instantiate
             scene->entities[nn] |= CMP_GEOMETRY;
@@ -494,9 +532,6 @@ namespace put
             scene->geometries[nn].vertex_size = vertex_size;
             scene->geometries[nn].vertex_shader_class = 0;
             scene->geometries[nn].p_skin = nullptr;
-            
-            scene->bounding_volumes[nn].min_extents = vec3f(-100.0f);
-            scene->bounding_volumes[nn].max_extents = vec3f(100.0f);
             
             scene->transforms[nn].scale = vec3f::one();
             scene->transforms[nn].translation = vec3f::zero();

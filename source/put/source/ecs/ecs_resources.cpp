@@ -48,13 +48,19 @@ namespace put
         geometry_resource* get_geometry_resource(hash_id hash)
         {
             for (auto* g : s_geometry_resources)
-            {
                 if (hash == g->hash)
-                {
                     return g;
-                }
-            }
 
+            return nullptr;
+        }
+        
+        geometry_resource* get_geometry_resource_by_index(hash_id id_filename, u32 index)
+        {
+            for (auto* g : s_geometry_resources)
+                if (id_filename == g->file_hash)
+                    if(g->submesh_index == index)
+                        return g;
+            
             return nullptr;
         }
 

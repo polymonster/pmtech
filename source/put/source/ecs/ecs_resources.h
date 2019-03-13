@@ -269,5 +269,6 @@ namespace put
         material_resource*  get_material_resource(hash_id hash);
         animation_resource* get_animation_resource(anim_handle h);
         geometry_resource*  get_geometry_resource(hash_id h);
+        geometry_resource*  get_geometry_resource_by_index(hash_id id_filename, u32 index);
     } // namespace ecs
 } // namespace put
