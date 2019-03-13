@@ -414,7 +414,14 @@ namespace put
             
             // vb / ib
             pen::buffer_creation_params ibcp;
+            ibcp.usage_flags = PEN_USAGE_DEFAULT;
+            ibcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            ibcp.cpu_access_flags = 0;
+            
             pen::buffer_creation_params vbcp;
+            vbcp.usage_flags = PEN_USAGE_DEFAULT;
+            vbcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+            vbcp.cpu_access_flags = 0;
             
             u32 vertex_size = 0;
             u32 num_vertices = 0;
@@ -470,6 +477,8 @@ namespace put
                 
                 vb_data_pos += vb_size;
                 ib_data_pos += ib_size;
+                
+                delete_entity(scene, n);
             }
             
             // get new node
@@ -478,7 +487,7 @@ namespace put
             // instantiate
             scene->entities[nn] |= CMP_GEOMETRY;
             scene->geometries[nn].vertex_buffer = pen::renderer_create_buffer(vbcp);
-            scene->geometries[nn].index_buffer = pen::renderer_create_buffer(vbcp);
+            scene->geometries[nn].index_buffer = pen::renderer_create_buffer(ibcp);
             scene->geometries[nn].index_type = PEN_FORMAT_R16_UINT;
             scene->geometries[nn].num_vertices = num_vertices;
             scene->geometries[nn].num_indices = num_indices;
@@ -486,17 +495,18 @@ namespace put
             scene->geometries[nn].vertex_shader_class = 0;
             scene->geometries[nn].p_skin = nullptr;
             
-            Str mn = "phong15sg";
+            scene->bounding_volumes[nn].min_extents = vec3f(-100.0f);
+            scene->bounding_volumes[nn].max_extents = vec3f(100.0f);
             
-            pen::hash_murmur hm;
-            hm.begin(0);
-            hm.add(scene->names[node_list[0]].c_str(), scene->names[node_list[0]].length());
-            hm.add(mn.c_str(), mn.length());
-            hm.add(0);
-            hash_id mat_hash = hm.end();
-            
+            scene->transforms[nn].scale = vec3f::one();
+            scene->transforms[nn].translation = vec3f::zero();
+            scene->transforms[nn].rotation = quat();
+            scene->entities[nn] |= CMP_TRANSFORM;
+                        
             material_resource* mr = get_material_resource(PEN_HASH("default_material"));
             instantiate_material(mr, scene, nn);
+            
+            instantiate_model_cbuffer(scene, nn);
             
         }
 
