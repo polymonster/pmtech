@@ -376,17 +376,13 @@ namespace put
             hm.begin(0);
             hm.add(filename, pen::string_length(filename));
             hm.add(geometry_name, pen::string_length(geometry_name));
-            hash_id file_hash = hm.end();
+            hash_id geom_hash = hm.end();
 
             // check for existing
             for (s32 g = 0; g < s_geometry_resources.size(); ++g)
-            {
-                if (file_hash == s_geometry_resources[g]->file_hash)
-                {
+                if (geom_hash == s_geometry_resources[g]->geom_hash)
                     return;
-                }
-            }
-
+            
             u32* p_reader = (u32*)data;
             u32  version = *p_reader++;
             u32  num_meshes = *p_reader++;
@@ -396,9 +392,7 @@ namespace put
 
             std::vector<Str> mat_names;
             for (u32 submesh = 0; submesh < num_meshes; ++submesh)
-            {
                 mat_names.push_back(read_parsable_string((const u32**)&p_reader));
-            }
 
             for (u32 submesh = 0; submesh < num_meshes; ++submesh)
             {
@@ -411,7 +405,8 @@ namespace put
                 geometry_resource* p_geometry = new geometry_resource;
 
                 p_geometry->p_skin = nullptr;
-                p_geometry->file_hash = file_hash;
+                p_geometry->file_hash = PEN_HASH(filename);
+                p_geometry->geom_hash = geom_hash;
                 p_geometry->hash = sub_hash;
                 p_geometry->geometry_name = geometry_name;
                 p_geometry->filename = filename;

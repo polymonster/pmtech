@@ -433,14 +433,7 @@ namespace put
             {
                 u32 n = node_list[i];
                 
-                pen::hash_murmur hm;
-                hm.begin(0);
-                hm.add(scene->names[n].c_str(), scene->names[n].length());
-                hm.add(scene->geometry_names[n].c_str(), scene->geometry_names[n].length());
-                hm.add(0);
-                hash_id geom_hash = hm.end();
-                
-                geometry_resource* gr = get_geometry_resource(geom_hash);
+                geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->names[n]), 0);
                 
                 index_size = gr->index_type == PEN_FORMAT_R32_UINT ? 4 : 2;
                 vertex_size = gr->vertex_size;
@@ -452,6 +445,7 @@ namespace put
             }
             
             // todo.. assert with mismatched mats
+            //        assert with mismatched vbs
             //        determine output index type
             
             // alloc
@@ -466,14 +460,7 @@ namespace put
             {
                 u32 n = node_list[i];
 
-                pen::hash_murmur hm;
-                hm.begin(0);
-                hm.add(scene->names[n].c_str(), scene->names[n].length());
-                hm.add(scene->geometry_names[n].c_str(), scene->geometry_names[n].length());
-                hm.add(0);
-                hash_id geom_hash = hm.end();
-                
-                geometry_resource* gr = get_geometry_resource(geom_hash);
+                geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->names[n]), 0);
                 
                 u32 vb_size = gr->num_vertices * gr->vertex_size;
                 u32 ib_size = gr->num_indices * 2;

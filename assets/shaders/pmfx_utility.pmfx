@@ -113,7 +113,7 @@ vs_output vs_main( vs_input input )
     output.normal = mul( input.normal.xyz, rotation_matrix );
     output.tangent = mul( input.tangent.xyz, rotation_matrix );
     output.bitangent = mul( input.bitangent.xyz, rotation_matrix );
-    
+        
     output.texcoord = float4( input.texcoord.x, 1.0f - input.texcoord.y, input.texcoord.z, 1.0f - input.texcoord.w );
     
     return output;
