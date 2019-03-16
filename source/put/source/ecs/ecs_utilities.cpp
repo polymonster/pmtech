@@ -426,27 +426,38 @@ namespace put
             u32 vertex_size = 0;
             u32 num_vertices = 0;
             u32 num_indices = 0;
-            u32 index_size = 2;
             
             // calc size
             for(u32 i = 0; i < num_nodes; ++i)
             {
                 u32 n = node_list[i];
                 
-                geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->names[n]), 0);
+                geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->geometry_names[n]), 0);
                 
-                index_size = gr->index_type == PEN_FORMAT_R32_UINT ? 4 : 2;
+                if(vertex_size && gr->vertex_size != vertex_size)
+                {
+                    dev_console_log("[error] can't bake vertex buffer with different vertex types.");
+                    return;
+                }
+                
                 vertex_size = gr->vertex_size;
                 num_vertices += gr->num_vertices;
                 num_indices += gr->num_indices;
                 
                 vbcp.buffer_size += gr->num_vertices * gr->vertex_size;
-                ibcp.buffer_size += gr->num_indices * index_size;
             }
             
-            // todo.. assert with mismatched mats
-            //        assert with mismatched vbs
-            //        determine output index type
+            // determine output index type
+            u32 output_index_size = 2;
+            u32 index_type = PEN_FORMAT_R16_UINT;
+            if(num_vertices >= 65535)
+            {
+                index_type = PEN_FORMAT_R32_UINT;
+                output_index_size = 4;
+            }
+            
+            // ib buffer size
+            ibcp.buffer_size = output_index_size * num_indices;
             
             // alloc
             vbcp.data = pen::memory_alloc(vbcp.buffer_size);
@@ -460,26 +471,43 @@ namespace put
             {
                 u32 n = node_list[i];
 
-                geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->names[n]), 0);
+                geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->geometry_names[n]), 0);
                 
-                u32 vb_size = gr->num_vertices * gr->vertex_size;
-                u32 ib_size = gr->num_indices * 2;
+                u32 input_index_size = gr->index_type == PEN_FORMAT_R32_UINT ? 4 : 2;
+                u32 vb_stride = gr->num_vertices * gr->vertex_size;
+                u32 ib_stride = gr->num_indices * output_index_size;
                 
-                memcpy(vb_data_pos, gr->cpu_vertex_buffer, vb_size);
-                memcpy(ib_data_pos, gr->cpu_index_buffer, ib_size);
-                
+                memcpy(vb_data_pos, gr->cpu_vertex_buffer, vb_stride);
+
                 // offset indices
                 for(u32 i = 0; i < gr->num_indices; ++i)
                 {
-                    if(index_size == 2)
+                    // get raw index out of ib
+                    u32 raw_i = 0;
+                    if(input_index_size == 2)
                     {
-                        u16* ii = (u16*)ib_data_pos;
-                        ii[i] += index_offset;
+                        u16 ii = ((u16*)gr->cpu_index_buffer)[i];
+                        raw_i = (u32)ii;
                     }
                     else
                     {
-                        u32* ii = (u32*)ib_data_pos;
-                        ii[i] += index_offset;
+                        u32 ii = ((u32*)gr->cpu_index_buffer)[i];
+                        raw_i = (u32)ii;
+                    }
+                    
+                    //offset into new ib
+                    raw_i += index_offset;
+                    
+                    // store in sized format
+                    if(output_index_size == 2)
+                    {
+                        u16* ii = &((u16*)ib_data_pos)[i];
+                        *ii = (u16)raw_i;
+                    }
+                    else
+                    {
+                        u32* ii = &((u32*)ib_data_pos)[i];
+                        *ii = (u32)raw_i;
                     }
                 }
                 
@@ -498,8 +526,8 @@ namespace put
                     vm[v].bitangent.xyz = rm.transform_vector(vm[v].bitangent.xyz);
                 }
                 
-                vb_data_pos += vb_size;
-                ib_data_pos += ib_size;
+                vb_data_pos += vb_stride;
+                ib_data_pos += ib_stride;
                 
                 index_offset += gr->num_indices;
                 
@@ -513,7 +541,7 @@ namespace put
             scene->entities[nn] |= CMP_GEOMETRY;
             scene->geometries[nn].vertex_buffer = pen::renderer_create_buffer(vbcp);
             scene->geometries[nn].index_buffer = pen::renderer_create_buffer(ibcp);
-            scene->geometries[nn].index_type = PEN_FORMAT_R16_UINT;
+            scene->geometries[nn].index_type = index_type;
             scene->geometries[nn].num_vertices = num_vertices;
             scene->geometries[nn].num_indices = num_indices;
             scene->geometries[nn].vertex_size = vertex_size;
@@ -524,12 +552,15 @@ namespace put
             scene->transforms[nn].translation = vec3f::zero();
             scene->transforms[nn].rotation = quat();
             scene->entities[nn] |= CMP_TRANSFORM;
-                        
+            
+            scene->bounding_volumes[nn].min_extents = scene->bounding_volumes[nn].transformed_min_extents;
+            scene->bounding_volumes[nn].max_extents = scene->bounding_volumes[nn].transformed_max_extents;
+            
+            // todo.. use material.
             material_resource* mr = get_material_resource(PEN_HASH("default_material"));
             instantiate_material(mr, scene, nn);
             
             instantiate_model_cbuffer(scene, nn);
-            
         }
 
         bool bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index)

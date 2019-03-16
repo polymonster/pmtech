@@ -234,6 +234,8 @@ namespace physics
     {
         mat4*& backbuffer = g_readable_data.output_matrices.backbuffer();
         u32    num = sb_count(backbuffer);
+        
+        u32 cap = s_entities._capacity;
 
         for (u32 i = 0; i < s_entities._capacity; i++)
         {

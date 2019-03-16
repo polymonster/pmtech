@@ -1937,6 +1937,25 @@ namespace put
             // transforms undos are handled by apply_transform_to_selection
             return false;
         }
+        
+        bool scene_bounds_ui(ecs_scene* scene)
+        {
+            if (sb_count(scene->selection_list) != 1)
+                return false;
+            
+            u32 si = scene->selection_list[0];
+            
+            if (ImGui::CollapsingHeader("Bounds"))
+            {
+                ImGui::InputFloat3("Min", &scene->bounding_volumes[si].min_extents[0]);
+                ImGui::InputFloat3("Max", &scene->bounding_volumes[si].max_extents[0]);
+                ImGui::InputFloat3("Transformed Min", &scene->bounding_volumes[si].transformed_min_extents[0]);
+                ImGui::InputFloat3("Transformed Min", &scene->bounding_volumes[si].transformed_max_extents[0]);
+                ImGui::InputFloat("Radius", &scene->bounding_volumes[si].radius);
+            }
+            
+            return true;
+        }
 
         bool scene_material_ui(ecs_scene* scene)
         {
@@ -2535,6 +2554,8 @@ namespace put
                 scene_hierarchy_ui(scene);
 
                 scene_transform_ui(scene);
+                
+                scene_bounds_ui(scene);
 
                 scene_physics_ui(scene);
 
