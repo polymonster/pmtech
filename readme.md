@@ -28,6 +28,16 @@ Take a look at:
 
 Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/2.-Building-Examples).
 
+**Screen Shots**
+
+[<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sss.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/sss/sss.cpp)
+
+[![Renderer](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/pmfx-renderer.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/pmfx_renderer/pmfx_renderer_demo.cpp)
+
+[![Post Processing](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/post-pro.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/post_processing/post_processing.cpp)
+
+[![Vertex Stream Out](assets/demos/vertex-stream-pbr.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/vertex_stream_out/vertex_stream_out.cpp)
+
 **pmtech uses the following thirdparty libs** 
 - [ImGui](https://github.com/ocornut/imgui)
 - [Premake](https://github.com/premake/premake-core)
