@@ -28,16 +28,6 @@ Take a look at:
 
 Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/2.-Building-Examples).
 
-**pmtech uses the following thirdparty libs** 
-- [ImGui](https://github.com/ocornut/imgui)
-- [Premake](https://github.com/premake/premake-core)
-- [Jsmn](https://github.com/zserge/jsmn)
-- [Bullet](https://github.com/bulletphysics/bullet3)
-- [NVTT](https://github.com/castano/nvidia-texture-tools)
-- [stb](https://github.com/nothings/stb)
-- [libstem_gamepad](https://github.com/ThemsAllTook/libstem_gamepad)
-- [sdf_gen](https://github.com/christopherbatty/SDFGen)
-
 **Media**
 
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sss.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/sss/sss.cpp)
