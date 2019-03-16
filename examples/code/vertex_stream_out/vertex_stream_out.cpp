@@ -18,18 +18,38 @@ void example_setup(ecs::ecs_scene* scene)
 
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
 
-    // add light
-    u32 light = get_new_node(scene);
-    scene->names[light] = "front_light";
-    scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f::one();
-    scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
-    scene->transforms[light].translation = vec3f::zero();
-    scene->transforms[light].rotation = quat();
-    scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    // add lights
+    vec3f light_cols[] =
+    {
+        vec3f(143.0f, 45.0f, 86.0f) / 255.0f,
+        vec3f(255.0f, 149.0f, 0.0f) / 255.0f,
+        vec3f(255.0f, 102.0f, 0.0f) / 255.0f,
+        vec3f(216.0f, 17.0f, 89.0f) / 255.0f
+    };
+    
+    vec3f light_pos[] =
+    {
+        vec3f(-50.0f, 20.0f, -50.0f),
+        vec3f( 50.0f, 20.0f, -50.0f),
+        vec3f( 50.0f, 20.0f,  50.0f),
+        vec3f(-50.0f, 20.0f,  50.0f)
+    };
+    
+    for(u32 l = 0; l < 4; ++l)
+    {
+        u32 light = get_new_node(scene);
+        scene->names[light] = "front_light";
+        scene->id_name[light] = PEN_HASH("front_light");
+        scene->lights[light].colour = light_cols[l];
+        scene->lights[light].direction = vec3f::one();
+        scene->lights[light].radius = 70.0f;
+        scene->lights[light].type = LIGHT_TYPE_POINT;
+        scene->transforms[light].translation = light_pos[l];
+        scene->transforms[light].rotation = quat();
+        scene->transforms[light].scale = vec3f::one();
+        scene->entities[light] |= CMP_LIGHT;
+        scene->entities[light] |= CMP_TRANSFORM;
+    }
 
     // ground
     u32 ground = get_new_node(scene);
@@ -93,6 +113,11 @@ void example_setup(ecs::ecs_scene* scene)
     vec3f start_pos = vec3f(-start, 0, -start);
 
     vec3f cur_pos = start_pos;
+    
+    u32 total = 20 * 20;
+    
+    f32 roughness = 0.0f;
+    f32 roughness_step = 1.0f / (f32)total;
 
     for (s32 i = 0; i < num; ++i)
     {
@@ -115,8 +140,9 @@ void example_setup(ecs::ecs_scene* scene)
             scene->entities[new_prim] |= CMP_SUB_INSTANCE;
 
             ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
-            scene->draw_call_data[new_prim].v2 = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
-
+            scene->draw_call_data[new_prim].v2 = vec4f(0.5f, 0.5f, 0.5f, 1.0f - roughness);
+            
+            roughness += roughness_step;
             cur_pos.x += spacing;
         }
 
@@ -124,6 +150,8 @@ void example_setup(ecs::ecs_scene* scene)
     }
 
     instance_node_range(scene, master_node, pow(num, 2));
+    
+    bake_material_handles();
 }
 
 void example_update(ecs::ecs_scene* scene)

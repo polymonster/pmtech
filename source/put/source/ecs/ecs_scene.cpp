@@ -693,12 +693,11 @@ namespace put
 
                                 memcpy(&q1.v[0], &d1[e], 16);
                                 memcpy(&q2.v[0], &d2[e], 16);
-
+                                
                                 quat ql = slerp(q1, q2, it);
-
+ 
                                 instance.targets[sampler.joint].q = ql * instance.targets[sampler.joint].q;
                                 instance.targets[sampler.joint].flags |= channel.flags;
-
                                 e += 3;
                             }
                             else
@@ -897,7 +896,16 @@ namespace put
             static u32 dt_timer = pen::timer_create("sc_dt");
             f32        dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
             pen::timer_start(dt_timer);
-
+            
+            static f32 fft = 1.0f/60.0f;
+            bool bdt = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
+            f32 ft = dev_ui::get_program_preference("fixed_timestep").as_f32(fft);
+            
+            if(!bdt)
+            {
+                dt = ft;
+            }
+            
             for (auto& si : s_scenes)
             {
                 update_scene(si.scene, dt);

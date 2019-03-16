@@ -876,7 +876,7 @@ namespace put
                                     quat  rot;
                                     rot.from_matrix(mat);
 
-                                    tq[0][m] = rot;
+                                    tq[0][m] = normalised(rot);
 
                                     f32 sx = mag(mat.get_row(0).xyz);
                                     f32 sy = mag(mat.get_row(1).xyz);

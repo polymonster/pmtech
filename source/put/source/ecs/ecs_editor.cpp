@@ -996,6 +996,9 @@ namespace put
 
             static bool load_last_scene = dev_ui::get_program_preference("load_last_scene").as_bool();
             static Str  project_dir_str = dev_ui::get_program_preference_filename("project_dir");
+            
+            static bool dynamic_timestep = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
+            static f32  fixed_timestep = dev_ui::get_program_preference("fixed_timestep").as_f32(1.0f/60.0f);
 
             if (ImGui::Begin("Settings", opened))
             {
@@ -1018,6 +1021,19 @@ namespace put
                 if (ImGui::Checkbox("Auto Load Last Scene", &load_last_scene))
                 {
                     dev_ui::set_program_preference("load_last_scene", load_last_scene);
+                }
+                
+                if (ImGui::Checkbox("Dynamic Timestep", &dynamic_timestep))
+                {
+                    dev_ui::set_program_preference("dynamic_timestep", dynamic_timestep);
+                }
+                
+                if(!dynamic_timestep)
+                {
+                    if(ImGui::InputFloat("Fixed Timestep", &fixed_timestep))
+                    {
+                        dev_ui::set_program_preference("fixed_timestep", fixed_timestep);
+                    }
                 }
 
                 if (ImGui::Button("Set Project Dir"))
