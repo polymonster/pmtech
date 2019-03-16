@@ -24,6 +24,16 @@ Take a look at:
 - [Asset Pipeline](https://github.com/polymonster/pmtech/wiki/5.-Build-Pipeline): Binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information.
 
+**pmtech uses the following thirdparty libs** 
+- [ImGui](https://github.com/ocornut/imgui)
+- [Premake](https://github.com/premake/premake-core)
+- [Jsmn](https://github.com/zserge/jsmn)
+- [Bullet](https://github.com/bulletphysics/bullet3)
+- [NVTT](https://github.com/castano/nvidia-texture-tools)
+- [stb](https://github.com/nothings/stb)
+- [libstem_gamepad](https://github.com/ThemsAllTook/libstem_gamepad)
+- [sdf_gen](https://github.com/christopherbatty/SDFGen)
+
 **Usage**  
 
 Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/2.-Building-Examples).
@@ -37,13 +47,4 @@ Take a look at the getting started [instructions](https://github.com/polymonster
 [![Post Processing](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/post-pro.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/post_processing/post_processing.cpp)
 
 [![Vertex Stream Out](assets/demos/vertex-stream-pbr.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/vertex_stream_out/vertex_stream_out.cpp)
-
-**pmtech uses the following thirdparty libs** 
-- [ImGui](https://github.com/ocornut/imgui)
-- [Premake](https://github.com/premake/premake-core)
-- [Jsmn](https://github.com/zserge/jsmn)
-- [Bullet](https://github.com/bulletphysics/bullet3)
-- [NVTT](https://github.com/castano/nvidia-texture-tools)
-- [stb](https://github.com/nothings/stb)
-- [libstem_gamepad](https://github.com/ThemsAllTook/libstem_gamepad)
 
