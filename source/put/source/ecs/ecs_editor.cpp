@@ -1119,6 +1119,7 @@ namespace put
             }
         }
 
+        static bool s_editor_enabled = true;
         void editor_update(ecs_controller& ecsc, ecs_scene* scene, f32 dt)
         {
             if (!ecsc.camera)
@@ -1130,8 +1131,15 @@ namespace put
             sc.camera = ecsc.camera;
             sc.deprecated = false;
 
+            if(s_editor_enabled)
+                update_model_viewer_scene(&sc);
+            
             update_model_viewer_camera(&sc);
-            update_model_viewer_scene(&sc);
+        }
+        
+        void editor_enable(bool enable)
+        {
+            s_editor_enabled = enable;
         }
 
         void update_model_viewer_scene(put::scene_controller* sc)

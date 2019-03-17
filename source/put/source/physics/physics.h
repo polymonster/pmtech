@@ -362,7 +362,7 @@ namespace physics
 
     void cast_ray(const ray_cast_params& rcp, bool immediate = false); // non immedite will put a cast command in the buffer.
     void cast_sphere(const sphere_cast_params& rcp,
-                     bool immediate = false); // using non immediate may not be thread safe depending when you do it.
+                     bool immediate = false); // using non immediate may not be thread safe..
     void contact_test(const contact_test_params& ctp);
 
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);

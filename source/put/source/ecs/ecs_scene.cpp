@@ -632,6 +632,12 @@ namespace put
                         instance.time = 0.0f;
                         looped = true;
                     }
+                    
+                    if(instance.flags & anim_flags::LOOPED)
+                    {
+                        instance.flags &= ~anim_flags::LOOPED;
+                        looped = true;
+                    }
 
                     u32 num_joints = sb_count(instance.joints);
 
