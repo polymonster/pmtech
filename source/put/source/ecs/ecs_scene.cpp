@@ -796,7 +796,7 @@ namespace put
                         }
 
                         tc.translation = lerp(ta.translation, tb.translation, t);
-                        tc.rotation = slerp(ta.rotation, tb.rotation, t);
+                        tc.rotation = slerp2(ta.rotation, tb.rotation, t);
                         tc.scale = lerp(ta.scale, tb.scale, t);
 
                         scene->entities[jnode] |= CMP_TRANSFORM;
