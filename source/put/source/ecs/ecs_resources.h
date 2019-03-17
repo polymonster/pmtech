@@ -41,7 +41,8 @@ namespace put
                 PLAY = 1,
                 APPLY_ROOT_MOTION = 1 << 1,
                 BAKED_QUATERNION = 1 << 2,
-                LOOPED = 1 << 3
+                LOOPED = 1 << 3,
+                PAUSED = 1 << 4
             };
         }
 

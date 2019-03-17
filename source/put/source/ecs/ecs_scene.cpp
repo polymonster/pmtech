@@ -618,6 +618,9 @@ namespace put
                 for (u32 ai = 0; ai < num_anims; ++ai)
                 {
                     anim_instance& instance = controller.anim_instances[ai];
+                    
+                    if(instance.flags & anim_flags::PAUSED)
+                        continue;
 
                     soa_anim& soa = instance.soa;
                     u32       num_channels = soa.num_channels;
