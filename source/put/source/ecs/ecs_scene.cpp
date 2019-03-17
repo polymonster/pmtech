@@ -72,6 +72,9 @@ namespace put
                     scene->free_list_head = l;
                 }
             }
+            
+            if(!scene->free_list_head)
+                PEN_ASSERT(0);
         }
 
         void resize_scene_buffers(ecs_scene* scene, s32 size)
@@ -102,9 +105,8 @@ namespace put
                 pen::memory_zero(cmp.data, alloc_size);
             }
 
-            initialise_free_list(scene);
-
             scene->nodes_size = new_size;
+            initialise_free_list(scene);
         }
 
         void free_scene_buffers(ecs_scene* scene, bool cmp_mem_only = 0)
@@ -276,7 +278,7 @@ namespace put
 
             s_scenes.push_back(new_instance);
 
-            resize_scene_buffers(new_instance.scene, 64);
+            resize_scene_buffers(new_instance.scene, 8192);
 
             // create buffers
             pen::buffer_creation_params bcp;

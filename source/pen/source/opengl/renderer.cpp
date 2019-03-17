@@ -20,9 +20,6 @@
 #include "console.h"
 #include "data_struct.h"
 
-//--------------------------------------------------------------------------------------
-// Global Variables
-//--------------------------------------------------------------------------------------
 extern pen::window_creation_params pen_window;
 
 extern void pen_make_gl_context_current();
@@ -420,7 +417,6 @@ namespace pen
     {
         u8     asigned_flag;
         GLuint type;
-
         union {
             clear_state_internal           clear_state;
             pen::input_layout*             input_layout;
@@ -434,7 +430,7 @@ namespace pen
             pen::shader_program*           shader_program;
         };
     };
-    resource_allocation resource_pool[MAX_RENDERER_RESOURCES];
+    static res_pool<resource_allocation> _res_pool;
 
     struct active_state
     {
@@ -460,26 +456,28 @@ namespace pen
 
     void clear_resource_table()
     {
-        memory_zero(&resource_pool[0], sizeof(resource_allocation) * MAX_RENDERER_RESOURCES);
+        memory_zero(&_res_pool[0], sizeof(resource_allocation) * MAX_RENDERER_RESOURCES);
 
         // reserve resource 0 for NULL binding.
-        resource_pool[0].asigned_flag |= 0xff;
+        _res_pool[0].asigned_flag |= 0xff;
     }
 
     context_state g_context;
 
     void direct::renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
     {
-        resource_pool[resource_slot].clear_state.rgba[0] = cs.r;
-        resource_pool[resource_slot].clear_state.rgba[1] = cs.g;
-        resource_pool[resource_slot].clear_state.rgba[2] = cs.b;
-        resource_pool[resource_slot].clear_state.rgba[3] = cs.a;
-        resource_pool[resource_slot].clear_state.depth = cs.depth;
-        resource_pool[resource_slot].clear_state.stencil = cs.stencil;
-        resource_pool[resource_slot].clear_state.flags = cs.flags;
+        _res_pool.grow(resource_slot);
+        
+        _res_pool[resource_slot].clear_state.rgba[0] = cs.r;
+        _res_pool[resource_slot].clear_state.rgba[1] = cs.g;
+        _res_pool[resource_slot].clear_state.rgba[2] = cs.b;
+        _res_pool[resource_slot].clear_state.rgba[3] = cs.a;
+        _res_pool[resource_slot].clear_state.depth = cs.depth;
+        _res_pool[resource_slot].clear_state.stencil = cs.stencil;
+        _res_pool[resource_slot].clear_state.flags = cs.flags;
 
-        resource_pool[resource_slot].clear_state.num_colour_targets = cs.num_colour_targets;
-        memcpy(&resource_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
+        _res_pool[resource_slot].clear_state.num_colour_targets = cs.num_colour_targets;
+        memcpy(&_res_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
     }
 
     u32 link_program_internal(u32 vs, u32 ps, const shader_link_params* params = nullptr)
@@ -492,9 +490,9 @@ namespace pen
         if (params)
         {
             // this path is for a proper link with reflection info
-            vs = resource_pool[params->vertex_shader].handle;
-            ps = resource_pool[params->pixel_shader].handle;
-            so = resource_pool[params->stream_out_shader].handle;
+            vs = _res_pool[params->vertex_shader].handle;
+            ps = _res_pool[params->pixel_shader].handle;
+            so = _res_pool[params->stream_out_shader].handle;
 
             if (vs)
             {
@@ -568,7 +566,7 @@ namespace pen
 
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
-        resource_allocation&  rc = resource_pool[clear_state_index];
+        resource_allocation&  rc = _res_pool[clear_state_index];
         clear_state_internal& cs = rc.clear_state;
 
         CHECK_CALL(glClearDepth(cs.depth));
@@ -611,7 +609,7 @@ namespace pen
         {
             auto& managed_rt = s_managed_render_targets[i];
 
-            resource_allocation& res = resource_pool[managed_rt.render_target_handle];
+            resource_allocation& res = _res_pool[managed_rt.render_target_handle];
             CHECK_CALL(glDeleteTextures(1, &res.render_target.texture.handle));
 
             if (managed_rt.tcp.sample_count > 1)
@@ -667,7 +665,7 @@ namespace pen
 
     void direct::renderer_load_shader(const shader_load_params& params, u32 resource_slot)
     {
-        resource_allocation& res = resource_pool[resource_slot];
+        resource_allocation& res = _res_pool[resource_slot];
 
         u32 internal_type = params.type;
         if (params.type == PEN_SHADER_TYPE_SO)
@@ -738,7 +736,9 @@ namespace pen
 
     void direct::renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot)
     {
-        resource_allocation& res = resource_pool[resource_slot];
+        _res_pool.grow(resource_slot);
+        
+        resource_allocation& res = _res_pool[resource_slot];
 
         CHECK_CALL(glGenBuffers(1, &res.handle));
 
@@ -796,7 +796,7 @@ namespace pen
             }
         }
 
-        resource_pool[resource_slot].shader_program = linked_program;
+        _res_pool[resource_slot].shader_program = linked_program;
     }
 
     void direct::renderer_set_stream_out_target(u32 buffer_index)
@@ -810,7 +810,9 @@ namespace pen
 
     void direct::renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
     {
-        resource_allocation& res = resource_pool[resource_slot];
+        _res_pool.grow(resource_slot);
+        
+        resource_allocation& res = _res_pool[resource_slot];
 
         res.input_layout = new input_layout;
 
@@ -868,7 +870,7 @@ namespace pen
 
             shader_program* linked_program = nullptr;
 
-            u32 so_handle = resource_pool[g_bound_state.stream_out_shader].handle;
+            u32 so_handle = _res_pool[g_bound_state.stream_out_shader].handle;
 
             u32 num_shaders = sb_count(s_shader_programs);
             for (s32 i = 0; i < num_shaders; ++i)
@@ -906,8 +908,8 @@ namespace pen
 
                 shader_program* linked_program = nullptr;
 
-                auto vs_handle = resource_pool[g_bound_state.vertex_shader].handle;
-                auto ps_handle = resource_pool[g_bound_state.pixel_shader].handle;
+                auto vs_handle = _res_pool[g_bound_state.vertex_shader].handle;
+                auto ps_handle = _res_pool[g_bound_state.pixel_shader].handle;
 
                 u32 num_shaders = sb_count(s_shader_programs);
                 for (s32 i = 0; i < num_shaders; ++i)
@@ -936,7 +938,7 @@ namespace pen
 
         g_bound_state.input_layout = g_current_state.input_layout;
 
-        auto* input_res = resource_pool[g_current_state.input_layout].input_layout;
+        auto* input_res = _res_pool[g_current_state.input_layout].input_layout;
         if (input_res->vertex_array_handle == 0)
         {
             CHECK_CALL(glGenVertexArrays(1, &input_res->vertex_array_handle));
@@ -949,7 +951,7 @@ namespace pen
             g_bound_state.vertex_buffer[v] = g_current_state.vertex_buffer[v];
             g_bound_state.vertex_buffer_stride[v] = g_current_state.vertex_buffer_stride[v];
 
-            auto& res = resource_pool[g_bound_state.vertex_buffer[v]].handle;
+            auto& res = _res_pool[g_bound_state.vertex_buffer[v]].handle;
             CHECK_CALL(glBindBuffer(GL_ARRAY_BUFFER, res));
 
             u32 num_attribs = sb_count(input_res->attributes);
@@ -979,7 +981,7 @@ namespace pen
             g_bound_state.raster_state = g_current_state.raster_state;
             g_bound_state.backbuffer_bound = g_current_state.backbuffer_bound;
 
-            auto& rs = resource_pool[g_bound_state.raster_state].raster_state;
+            auto& rs = _res_pool[g_bound_state.raster_state].raster_state;
 
             bool ccw = rs.front_ccw;
             if (!g_current_state.backbuffer_bound)
@@ -1035,7 +1037,7 @@ namespace pen
 
             if (g_bound_state.stream_out_buffer)
             {
-                u32 so_buffer = resource_pool[g_bound_state.stream_out_buffer].handle;
+                u32 so_buffer = _res_pool[g_bound_state.stream_out_buffer].handle;
 
                 CHECK_CALL(glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, so_buffer));
                 CHECK_CALL(glBeginTransformFeedback(primitive_topology));
@@ -1067,7 +1069,7 @@ namespace pen
         bind_state(primitive_topology);
 
         // bind index buffer -this must always be re-bound
-        GLuint res = resource_pool[g_bound_state.index_buffer].handle;
+        GLuint res = _res_pool[g_bound_state.index_buffer].handle;
         CHECK_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res));
 
         void* offset = (void*)(size_t)(start_index * 2);
@@ -1084,7 +1086,7 @@ namespace pen
         bind_state(primitive_topology);
 
         // bind index buffer -this must always be re-bound
-        GLuint res = resource_pool[g_bound_state.index_buffer].handle;
+        GLuint res = _res_pool[g_bound_state.index_buffer].handle;
         CHECK_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res));
 
         // todo this needs to check index size 32 or 16 bit
@@ -1277,7 +1279,9 @@ namespace pen
 
     void direct::renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
     {
-        resource_allocation& res = resource_pool[resource_slot];
+        _res_pool.grow(resource_slot);
+        
+        resource_allocation& res = _res_pool[resource_slot];
 
         res.type = RES_RENDER_TARGET;
 
@@ -1358,13 +1362,13 @@ namespace pen
 
         if (depth_target != PEN_NULL_DEPTH_BUFFER)
         {
-            resource_allocation& depth_res = resource_pool[depth_target];
+            resource_allocation& depth_res = _res_pool[depth_target];
             hh.add(depth_res.render_target.uid);
         }
 
         for (s32 i = 0; i < num_colour_targets; ++i)
         {
-            resource_allocation& colour_res = resource_pool[colour_targets[i]];
+            resource_allocation& colour_res = _res_pool[colour_targets[i]];
             hh.add(colour_res.render_target.uid);
             hh.add(colour_targets[i]);
 
@@ -1397,7 +1401,7 @@ namespace pen
 
         if (depth_target != PEN_NULL_DEPTH_BUFFER)
         {
-            resource_allocation& depth_res = resource_pool[depth_target];
+            resource_allocation& depth_res = _res_pool[depth_target];
 
             u32 target = GL_TEXTURE_2D;
             if (depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE)
@@ -1417,7 +1421,7 @@ namespace pen
 
         for (s32 i = 0; i < num_colour_targets; ++i)
         {
-            resource_allocation& colour_res = resource_pool[colour_targets[i]];
+            resource_allocation& colour_res = _res_pool[colour_targets[i]];
 
             u32 target = GL_TEXTURE_2D;
             if (colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE)
@@ -1449,7 +1453,7 @@ namespace pen
 
     void direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type)
     {
-        resource_allocation& colour_res = resource_pool[target];
+        resource_allocation& colour_res = _res_pool[target];
 
         hash_id hash[2] = {0, 0};
 
@@ -1555,19 +1559,23 @@ namespace pen
 
     void direct::renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
     {
-        resource_pool[resource_slot].type = RES_TEXTURE;
+        _res_pool.grow(resource_slot);
+        
+        _res_pool[resource_slot].type = RES_TEXTURE;
 
         if (tcp.collection_type == TEXTURE_COLLECTION_VOLUME)
-            resource_pool[resource_slot].type = RES_TEXTURE_3D;
+            _res_pool[resource_slot].type = RES_TEXTURE_3D;
 
-        resource_pool[resource_slot].texture = create_texture_internal(tcp);
+        _res_pool[resource_slot].texture = create_texture_internal(tcp);
     }
 
     void direct::renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
     {
-        resource_pool[resource_slot].sampler_state = (sampler_creation_params*)memory_alloc(sizeof(scp));
+        _res_pool.grow(resource_slot);
+        
+        _res_pool[resource_slot].sampler_state = (sampler_creation_params*)memory_alloc(sizeof(scp));
 
-        memcpy(resource_pool[resource_slot].sampler_state, &scp, sizeof(scp));
+        memcpy(_res_pool[resource_slot].sampler_state, &scp, sizeof(scp));
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
@@ -1575,13 +1583,13 @@ namespace pen
         if (texture_index == 0)
             return;
 
-        resource_allocation& res = resource_pool[texture_index];
+        resource_allocation& res = _res_pool[texture_index];
 
         CHECK_CALL(glActiveTexture(GL_TEXTURE0 + resource_slot));
 
         u32 max_mip = 0;
 
-        u32 target = resource_pool[texture_index].texture.target;
+        u32 target = _res_pool[texture_index].texture.target;
 
         if (res.type == RES_TEXTURE || res.type == RES_TEXTURE_3D)
         {
@@ -1607,7 +1615,7 @@ namespace pen
         if (sampler_index == 0)
             return;
 
-        auto* sampler_state = resource_pool[sampler_index].sampler_state;
+        auto* sampler_state = _res_pool[sampler_index].sampler_state;
 
         // handle unmipped textures or textures with missing mips
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip));
@@ -1667,7 +1675,9 @@ namespace pen
 
     void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
     {
-        auto& rs = resource_pool[resource_slot].raster_state;
+        _res_pool.grow(resource_slot);
+        
+        auto& rs = _res_pool[resource_slot].raster_state;
 
         rs = {0};
 
@@ -1707,9 +1717,11 @@ namespace pen
 
     void direct::renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
     {
-        resource_pool[resource_slot].blend_state = (blend_creation_params*)memory_alloc(sizeof(blend_creation_params));
+        _res_pool.grow(resource_slot);
+        
+        _res_pool[resource_slot].blend_state = (blend_creation_params*)memory_alloc(sizeof(blend_creation_params));
 
-        blend_creation_params* blend_state = resource_pool[resource_slot].blend_state;
+        blend_creation_params* blend_state = _res_pool[resource_slot].blend_state;
 
         *blend_state = bcp;
 
@@ -1724,7 +1736,7 @@ namespace pen
 
     void direct::renderer_set_blend_state(u32 blend_state_index)
     {
-        auto* blend_state = resource_pool[blend_state_index].blend_state;
+        auto* blend_state = _res_pool[blend_state_index].blend_state;
 
         for (s32 i = 0; i < blend_state->num_render_targets; ++i)
         {
@@ -1754,13 +1766,13 @@ namespace pen
 
     void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
-        resource_allocation& res = resource_pool[buffer_index];
+        resource_allocation& res = _res_pool[buffer_index];
         CHECK_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle));
     }
 
     void direct::renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
-        resource_allocation& res = resource_pool[buffer_index];
+        resource_allocation& res = _res_pool[buffer_index];
         CHECK_CALL(glBindBuffer(res.type, res.handle));
 
 #ifndef PEN_GLES3
@@ -1786,7 +1798,7 @@ namespace pen
     void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
     {
 #ifndef PEN_GLES3
-        resource_allocation& res = resource_pool[rrbp.resource_index];
+        resource_allocation& res = _res_pool[rrbp.resource_index];
 
         GLuint t = res.type;
         if (rrbp.resource_index == 0)
@@ -1855,14 +1867,16 @@ namespace pen
 
     void direct::renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
     {
-        resource_pool[resource_slot].depth_stencil = (depth_stencil_creation_params*)memory_alloc(sizeof(dscp));
+        _res_pool.grow(resource_slot);
+        
+        _res_pool[resource_slot].depth_stencil = (depth_stencil_creation_params*)memory_alloc(sizeof(dscp));
 
-        memcpy(resource_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
+        memcpy(_res_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-        resource_allocation& res = resource_pool[depth_stencil_state];
+        resource_allocation& res = _res_pool[depth_stencil_state];
 
         if (res.depth_stencil->depth_enable)
         {
@@ -1879,7 +1893,7 @@ namespace pen
 
     void direct::renderer_release_shader(u32 shader_index, u32 shader_type)
     {
-        resource_allocation& res = resource_pool[shader_index];
+        resource_allocation& res = _res_pool[shader_index];
         CHECK_CALL(glDeleteShader(res.handle));
 
         res.handle = 0;
@@ -1887,7 +1901,7 @@ namespace pen
 
     void direct::renderer_release_buffer(u32 buffer_index)
     {
-        resource_allocation& res = resource_pool[buffer_index];
+        resource_allocation& res = _res_pool[buffer_index];
         CHECK_CALL(glDeleteBuffers(1, &res.handle));
 
         res.handle = 0;
@@ -1895,7 +1909,7 @@ namespace pen
 
     void direct::renderer_release_texture(u32 texture_index)
     {
-        resource_allocation& res = resource_pool[texture_index];
+        resource_allocation& res = _res_pool[texture_index];
         CHECK_CALL(glDeleteTextures(1, &res.handle));
 
         res.handle = 0;
@@ -1908,7 +1922,7 @@ namespace pen
 
     void direct::renderer_release_blend_state(u32 blend_state)
     {
-        resource_allocation& res = resource_pool[blend_state];
+        resource_allocation& res = _res_pool[blend_state];
 
         if (res.blend_state)
         {
@@ -1939,7 +1953,7 @@ namespace pen
         sb_free(s_managed_render_targets);
         s_managed_render_targets = erased;
 
-        resource_allocation& res = resource_pool[render_target];
+        resource_allocation& res = _res_pool[render_target];
 
         if (res.render_target.texture.handle > 0)
         {
@@ -1957,21 +1971,21 @@ namespace pen
 
     void direct::renderer_release_input_layout(u32 input_layout)
     {
-        resource_allocation& res = resource_pool[input_layout];
+        resource_allocation& res = _res_pool[input_layout];
 
         memory_free(res.input_layout);
     }
 
     void direct::renderer_release_sampler(u32 sampler)
     {
-        resource_allocation& res = resource_pool[sampler];
+        resource_allocation& res = _res_pool[sampler];
 
         memory_free(res.sampler_state);
     }
 
     void direct::renderer_release_depth_stencil_state(u32 depth_stencil_state)
     {
-        resource_allocation& res = resource_pool[depth_stencil_state];
+        resource_allocation& res = _res_pool[depth_stencil_state];
 
         memory_free(res.depth_stencil);
     }
@@ -2003,13 +2017,15 @@ namespace pen
                 break;
         }
 
-        resource_pool[dest] = resource_pool[src];
+        _res_pool[dest] = _res_pool[src];
     }
 
     static renderer_info s_renderer_info;
 
     u32 direct::renderer_initialise(void*, u32, u32)
     {
+        _res_pool.init(2048);
+        
         static Str str_glsl_version;
         static Str str_gl_version;
         static Str str_gl_renderer;

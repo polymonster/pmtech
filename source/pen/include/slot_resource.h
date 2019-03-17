@@ -7,6 +7,7 @@
 
 // Simple slot resource api can be used to allocate an array slot to a generic opaque resource via a handle.
 // Implements a free list so getting a new resource slot is an o(1) operation.
+// will grow to accomodate more items
 
 #include "pen.h"
 
@@ -29,6 +30,7 @@ namespace pen
     {
         free_slot_list* slots;
         free_slot_list* head;
+        u32 _capacity;
     };
 
     // Function decl
@@ -38,10 +40,36 @@ namespace pen
     bool slot_resources_free(slot_resources* resources, const u32 slot);
 
     // Implementation
+    inline void slot_resources_grow(slot_resources* resources)
+    {
+        u32 cur_cap = resources->_capacity;
+        u32 new_cap = resources->_capacity * 2;
+        
+        resources->slots = (free_slot_list*)pen::memory_realloc(resources->slots, sizeof(free_slot_list) * new_cap);
+        
+        // init free list
+        for (s32 i = new_cap - 1; i > cur_cap; --i)
+        {
+            resources->slots[i].index = i;
+            
+            if (i >= new_cap - 1)
+                resources->slots[i].next = nullptr;
+            else
+                resources->slots[i].next = resources->head;
+            
+            resources->head = &resources->slots[i];
+            
+            resources->slots[i].flags |= RESOURCE_FREE;
+        }
+        
+        resources->_capacity = new_cap;
+    }
 
     inline void slot_resources_init(slot_resources* resources, u32 num)
     {
-        resources->slots = new free_slot_list[num];
+        //resources->slots = new free_slot_list[num];
+        resources->_capacity = num;
+        resources->slots = (free_slot_list*)pen::memory_alloc(sizeof(slot_resources) * num);
 
         // 0 is reserved as null slot
         for (s32 i = num - 1; i > 0; --i)
@@ -61,6 +89,9 @@ namespace pen
 
     inline u32 slot_resources_get_next(slot_resources* resources)
     {
+        if(!resources->head)
+            slot_resources_grow(resources);
+            
         u32 r = resources->head->index;
         resources->head->flags &= ~RESOURCE_FREE;
         resources->head->flags |= RESOURCE_USED;

@@ -120,6 +120,8 @@ namespace pen
         void grow(u32 min_capacity);
         void insert(const T& resource, u32 slot);
         T& get(u32 slot);
+        
+        T& operator[](u32 slot);
     };
 
     // single produce multiple consumer - thread safe multi buffer
@@ -270,6 +272,12 @@ namespace pen
     
     template <typename T>
     pen_inline T& res_pool<T>::get(u32 slot)
+    {
+        return _resources[slot];
+    }
+    
+    template <typename T>
+    pen_inline T& res_pool<T>::operator[](u32 slot)
     {
         return _resources[slot];
     }

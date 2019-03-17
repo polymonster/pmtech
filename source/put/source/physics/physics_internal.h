@@ -17,8 +17,8 @@
 #include "BulletDynamics/Featherstone/btMultiBodyPoint2Point.h"
 #include "btBulletDynamicsCommon.h"
 
-#define MAX_PHYSICS_RESOURCES 2048
-#define MAX_P2P_CONSTRAINTS 20
+//#define MAX_PHYSICS_RESOURCES 2048
+//#define MAX_P2P_CONSTRAINTS 20
 
 namespace physics
 {

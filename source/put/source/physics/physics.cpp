@@ -186,8 +186,8 @@ namespace physics
 
         p_physics_job_thread_info = p_thread_info;
 
-        pen::slot_resources_init(&s_physics_slot_resources, MAX_PHYSICS_RESOURCES);
-        pen::slot_resources_init(&s_p2p_slot_resources, MAX_P2P_CONSTRAINTS);
+        pen::slot_resources_init(&s_physics_slot_resources, 1024);
+        pen::slot_resources_init(&s_p2p_slot_resources, 16);
 
         physics_initialise();
 
@@ -195,7 +195,7 @@ namespace physics
         pen::timer_start(physics_timer);
 
         // space for 1024 commands
-        s_cmd_buffer.create(1024);
+        s_cmd_buffer.create(8192);
 
         for (;;)
         {

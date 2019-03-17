@@ -2475,7 +2475,7 @@ namespace put
                     }
                     ImGui::Unindent();
 
-                    ImGui::Text("Total Scene Nodes: %i", scene->num_nodes);
+                    ImGui::Text("Total Entities: %i", scene->num_nodes);
                     ImGui::Text("Selected: %i", (s32)sb_count(scene->selection_list));
 
                     for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
