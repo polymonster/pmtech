@@ -8,6 +8,7 @@
 // Minimalist, fast, bloat free data structures with thread safe versions
 
 #include "memory.h"
+#include "console.h"
 
 // Stretchy buffer itself akin to vector.. shoutout stb.
 
@@ -111,7 +112,6 @@ namespace pen
     {
         T*  _resources = nullptr;
         a_u32 _capacity;
-        a_u32 _size;
         
         res_pool();
         ~res_pool();
@@ -120,7 +120,6 @@ namespace pen
         void grow(u32 min_capacity);
         void insert(const T& resource, u32 slot);
         T& get(u32 slot);
-        
         T& operator[](u32 slot);
     };
 
@@ -225,7 +224,6 @@ namespace pen
     pen_inline res_pool<T>::res_pool()
     {
         _capacity = 0;
-        _size = 0;
     }
     
     template <typename T>
@@ -241,8 +239,6 @@ namespace pen
         _resources = (T*)pen::memory_alloc(sizeof(T) * reserved_capacity);
         
         memset(_resources, 0x0, sizeof(T) * _capacity);
-        
-        _size = 0;
     }
     
     template <typename T>
@@ -259,8 +255,6 @@ namespace pen
             
             _capacity = new_cap;
         }
-        
-        _size = min_capacity;
     }
     
     template <typename T>

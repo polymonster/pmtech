@@ -606,7 +606,8 @@ namespace pen
         // clear command buffer
         memset(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
 
-        slot_resources_init(&s_renderer_slot_resources, MAX_RENDERER_RESOURCES);
+        // start with 2048
+        slot_resources_init(&s_renderer_slot_resources, 2048);
 
         // initialise renderer
         u32 bb_res = slot_resources_get_next(&s_renderer_slot_resources);

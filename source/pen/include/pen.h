@@ -9,13 +9,6 @@
 
 namespace pen
 {
-    // Currently fixed buffer sizes for the number of multi threaded resources
-
-    enum resource_types
-    {
-        MAX_RENDERER_RESOURCES = 10000
-    };
-
     // Structs for user to setup, make sure to define:
     // window_creation_params pen_window
     // and user_entry function somwhere and then you are good to go

@@ -456,8 +456,6 @@ namespace pen
 
     void clear_resource_table()
     {
-        memory_zero(&_res_pool[0], sizeof(resource_allocation) * MAX_RENDERER_RESOURCES);
-
         // reserve resource 0 for NULL binding.
         _res_pool[0].asigned_flag |= 0xff;
     }
