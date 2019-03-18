@@ -15,6 +15,7 @@
 #include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
+#include "data_struct.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
@@ -23,16 +24,11 @@ extern pen::window_creation_params pen_window;
 
 namespace pen
 {
-    static u32 put_pos = 0;
-    static u32 get_pos = 0;
     static u32 commands_this_frame = 0;
     static u32 present_timer;
     static f32 present_time;
 
 #define MAX_COMMANDS (1 << 18)
-#define INC_WRAP(V)                                                                                                          \
-    V = (V + 1) & (MAX_COMMANDS - 1);                                                                                        \
-    commands_this_frame++
 
     enum commands : u32
     {
@@ -187,7 +183,7 @@ namespace pen
         e_renderer_resource type;
     };
 
-    typedef struct deferred_cmd
+    struct renderer_cmd
     {
         u32 command_index;
         u32 resource_slot;
@@ -224,11 +220,10 @@ namespace pen
             c8*                              name;
         };
 
-        deferred_cmd(){};
+        renderer_cmd(){};
+    };
 
-    } deferred_cmd;
-
-    static deferred_cmd cmd_buffer[MAX_COMMANDS];
+    static ring_buffer<renderer_cmd> s_cmd_buffer;
 
     void renderer_get_present_time(f32& cpu_ms, f32& gpu_ms)
     {
@@ -238,7 +233,7 @@ namespace pen
         gpu_ms = (f64)g_gpu_total / 1000.0 / 1000.0;
     }
 
-    void exec_cmd(const deferred_cmd& cmd)
+    void exec_cmd(const renderer_cmd& cmd)
     {
         switch (cmd.command_index)
         {
@@ -494,9 +489,6 @@ namespace pen
     {
         if (semaphore_try_wait(p_consume_semaphore))
         {
-            // put_pos might change on the producer thread.
-            u32 end_pos = put_pos;
-
             // need more commands
             PEN_ASSERT(commands_this_frame < MAX_COMMANDS);
 
@@ -505,11 +497,11 @@ namespace pen
             // some api's need to set the current context on the caller thread.
             direct::renderer_make_context_current();
 
-            while (get_pos != end_pos)
+            renderer_cmd* cmd = s_cmd_buffer.get();
+            while (cmd)
             {
-                exec_cmd(cmd_buffer[get_pos]);
-
-                INC_WRAP(get_pos);
+                exec_cmd(*cmd);
+                cmd = s_cmd_buffer.get();
             }
 
             commands_this_frame = 0;
@@ -604,7 +596,9 @@ namespace pen
             p_continue_semaphore = semaphore_create(0, 1);
 
         // clear command buffer
-        memset(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
+        //memset(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
+
+        s_cmd_buffer.create(MAX_COMMANDS);
 
         // start with 2048
         slot_resources_init(&s_renderer_slot_resources, 2048);
@@ -646,70 +640,79 @@ namespace pen
     //-----------------------------------------------------------------------------------------------------------------------
     void renderer_update_queries()
     {
-        cmd_buffer[put_pos].command_index = CMD_UPDATE_QUERIES;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_UPDATE_QUERIES;
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_clear(u32 clear_state_index, u32 array_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_CLEAR;
-        cmd_buffer[put_pos].clear.clear_state = clear_state_index;
-        cmd_buffer[put_pos].clear.array_index = array_index;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_CLEAR;
+        cmd.clear.clear_state = clear_state_index;
+        cmd.clear.array_index = array_index;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_present()
     {
-        cmd_buffer[put_pos].command_index = CMD_PRESENT;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_PRESENT;
+
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_load_shader(const shader_load_params& params)
     {
-        cmd_buffer[put_pos].command_index = CMD_LOAD_SHADER;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].shader_load.byte_code_size = params.byte_code_size;
-        cmd_buffer[put_pos].shader_load.type = params.type;
+        cmd.command_index = CMD_LOAD_SHADER;
+
+        cmd.shader_load.byte_code_size = params.byte_code_size;
+        cmd.shader_load.type = params.type;
 
         if (params.byte_code)
         {
-            cmd_buffer[put_pos].shader_load.byte_code = memory_alloc(params.byte_code_size);
-            memcpy(cmd_buffer[put_pos].shader_load.byte_code, params.byte_code, params.byte_code_size);
+            cmd.shader_load.byte_code = memory_alloc(params.byte_code_size);
+            memcpy(cmd.shader_load.byte_code, params.byte_code, params.byte_code_size);
         }
 
-        cmd_buffer[put_pos].shader_load.so_decl_entries = nullptr;
+        cmd.shader_load.so_decl_entries = nullptr;
         if (params.so_decl_entries)
         {
-            cmd_buffer[put_pos].shader_load.so_num_entries = params.so_num_entries;
+            cmd.shader_load.so_num_entries = params.so_num_entries;
 
             u32 entries_size = sizeof(stream_out_decl_entry) * params.so_num_entries;
-            cmd_buffer[put_pos].shader_load.so_decl_entries = (stream_out_decl_entry*)memory_alloc(entries_size);
+            cmd.shader_load.so_decl_entries = (stream_out_decl_entry*)memory_alloc(entries_size);
 
-            memcpy(cmd_buffer[put_pos].shader_load.so_decl_entries, params.so_decl_entries, entries_size);
+            memcpy(cmd.shader_load.so_decl_entries, params.so_decl_entries, entries_size);
         }
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     u32 renderer_link_shader_program(const shader_link_params& params)
     {
-        cmd_buffer[put_pos].command_index = CMD_LINK_SHADER;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].link_params = params;
+        cmd.command_index = CMD_LINK_SHADER;
+
+        cmd.link_params = params;
 
         u32 num = params.num_constants;
         u32 layout_size = sizeof(constant_layout_desc) * num;
-        cmd_buffer[put_pos].link_params.constants = (constant_layout_desc*)memory_alloc(layout_size);
+        cmd.link_params.constants = (constant_layout_desc*)memory_alloc(layout_size);
 
-        constant_layout_desc* c = cmd_buffer[put_pos].link_params.constants;
+        constant_layout_desc* c = cmd.link_params.constants;
         for (u32 i = 0; i < num; ++i)
         {
             c[i].location = params.constants[i].location;
@@ -722,13 +725,13 @@ namespace pen
             c[i].name[len] = '\0';
         }
 
-        cmd_buffer[put_pos].link_params.stream_out_names = nullptr;
+        cmd.link_params.stream_out_names = nullptr;
         if (params.stream_out_shader != 0)
         {
             u32 num_so = params.num_stream_out_names;
-            cmd_buffer[put_pos].link_params.stream_out_names = (c8**)memory_alloc(sizeof(c8*) * num_so);
+            cmd.link_params.stream_out_names = (c8**)memory_alloc(sizeof(c8*) * num_so);
 
-            c8** so = cmd_buffer[put_pos].link_params.stream_out_names;
+            c8** so = cmd.link_params.stream_out_names;
             for (u32 i = 0; i < num_so; ++i)
             {
                 u32 len = string_length(params.stream_out_names[i]);
@@ -740,75 +743,83 @@ namespace pen
         }
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_set_shader(u32 shader_index, u32 shader_type)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_SHADER;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].set_shader.shader_index = shader_index;
-        cmd_buffer[put_pos].set_shader.shader_type = shader_type;
+        cmd.command_index = CMD_SET_SHADER;
 
-        INC_WRAP(put_pos);
+        cmd.set_shader.shader_index = shader_index;
+        cmd.set_shader.shader_type = shader_type;
+
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_input_layout(const input_layout_creation_params& params)
     {
-        cmd_buffer[put_pos].command_index = CMD_CREATE_INPUT_LAYOUT;
+        renderer_cmd cmd;
+
+        cmd.command_index = CMD_CREATE_INPUT_LAYOUT;
 
         // simple data
-        cmd_buffer[put_pos].create_input_layout.num_elements = params.num_elements;
-        cmd_buffer[put_pos].create_input_layout.vs_byte_code_size = params.vs_byte_code_size;
+        cmd.create_input_layout.num_elements = params.num_elements;
+        cmd.create_input_layout.vs_byte_code_size = params.vs_byte_code_size;
 
         // copy buffer
-        cmd_buffer[put_pos].create_input_layout.vs_byte_code = memory_alloc(params.vs_byte_code_size);
-        memcpy(cmd_buffer[put_pos].create_input_layout.vs_byte_code, params.vs_byte_code, params.vs_byte_code_size);
+        cmd.create_input_layout.vs_byte_code = memory_alloc(params.vs_byte_code_size);
+        memcpy(cmd.create_input_layout.vs_byte_code, params.vs_byte_code, params.vs_byte_code_size);
 
         // copy array
         u32 input_layouts_size = sizeof(input_layout_desc) * params.num_elements;
-        cmd_buffer[put_pos].create_input_layout.input_layout = (input_layout_desc*)memory_alloc(input_layouts_size);
+        cmd.create_input_layout.input_layout = (input_layout_desc*)memory_alloc(input_layouts_size);
 
-        memcpy(cmd_buffer[put_pos].create_input_layout.input_layout, params.input_layout, input_layouts_size);
+        memcpy(cmd.create_input_layout.input_layout, params.input_layout, input_layouts_size);
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_set_input_layout(u32 layout_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_INPUT_LAYOUT;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].command_data_index = layout_index;
+        cmd.command_index = CMD_SET_INPUT_LAYOUT;
 
-        INC_WRAP(put_pos);
+        cmd.command_data_index = layout_index;
+
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_buffer(const buffer_creation_params& params)
     {
-        cmd_buffer[put_pos].command_index = CMD_CREATE_BUFFER;
+        renderer_cmd cmd;
 
-        memcpy(&cmd_buffer[put_pos].create_buffer, (void*)&params, sizeof(buffer_creation_params));
+        cmd.command_index = CMD_CREATE_BUFFER;
+
+        memcpy(&cmd.create_buffer, (void*)&params, sizeof(buffer_creation_params));
 
         if (params.data)
         {
             // make a copy of the buffers data
-            cmd_buffer[put_pos].create_buffer.data = memory_alloc(params.buffer_size);
-            memcpy(cmd_buffer[put_pos].create_buffer.data, params.data, params.buffer_size);
+            cmd.create_buffer.data = memory_alloc(params.buffer_size);
+            memcpy(cmd.create_buffer.data, params.data, params.buffer_size);
         }
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -821,88 +832,102 @@ namespace pen
     void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
                                      const u32* offsets)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_VERTEX_BUFFER;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].set_vertex_buffer.start_slot = start_slot;
-        cmd_buffer[put_pos].set_vertex_buffer.num_buffers = num_buffers;
+        cmd.command_index = CMD_SET_VERTEX_BUFFER;
 
-        cmd_buffer[put_pos].set_vertex_buffer.buffer_indices = (u32*)memory_alloc(sizeof(u32) * num_buffers);
-        cmd_buffer[put_pos].set_vertex_buffer.strides = (u32*)memory_alloc(sizeof(u32) * num_buffers);
-        cmd_buffer[put_pos].set_vertex_buffer.offsets = (u32*)memory_alloc(sizeof(u32) * num_buffers);
+        cmd.set_vertex_buffer.start_slot = start_slot;
+        cmd.set_vertex_buffer.num_buffers = num_buffers;
+
+        cmd.set_vertex_buffer.buffer_indices = (u32*)memory_alloc(sizeof(u32) * num_buffers);
+        cmd.set_vertex_buffer.strides = (u32*)memory_alloc(sizeof(u32) * num_buffers);
+        cmd.set_vertex_buffer.offsets = (u32*)memory_alloc(sizeof(u32) * num_buffers);
 
         for (u32 i = 0; i < num_buffers; ++i)
         {
-            cmd_buffer[put_pos].set_vertex_buffer.buffer_indices[i] = buffer_indices[i];
-            cmd_buffer[put_pos].set_vertex_buffer.strides[i] = strides[i];
-            cmd_buffer[put_pos].set_vertex_buffer.offsets[i] = offsets[i];
+            cmd.set_vertex_buffer.buffer_indices[i] = buffer_indices[i];
+            cmd.set_vertex_buffer.strides[i] = strides[i];
+            cmd.set_vertex_buffer.offsets[i] = offsets[i];
         }
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_INDEX_BUFFER;
-        cmd_buffer[put_pos].set_index_buffer.buffer_index = buffer_index;
-        cmd_buffer[put_pos].set_index_buffer.format = format;
-        cmd_buffer[put_pos].set_index_buffer.offset = offset;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_SET_INDEX_BUFFER;
+        cmd.set_index_buffer.buffer_index = buffer_index;
+        cmd.set_index_buffer.format = format;
+        cmd.set_index_buffer.offset = offset;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
     {
-        cmd_buffer[put_pos].command_index = CMD_DRAW;
-        cmd_buffer[put_pos].draw.vertex_count = vertex_count;
-        cmd_buffer[put_pos].draw.start_vertex = start_vertex;
-        cmd_buffer[put_pos].draw.primitive_topology = primitive_topology;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_DRAW;
+        cmd.draw.vertex_count = vertex_count;
+        cmd.draw.start_vertex = start_vertex;
+        cmd.draw.primitive_topology = primitive_topology;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
     {
-        cmd_buffer[put_pos].command_index = CMD_DRAW_INDEXED;
-        cmd_buffer[put_pos].draw_indexed.index_count = index_count;
-        cmd_buffer[put_pos].draw_indexed.start_index = start_index;
-        cmd_buffer[put_pos].draw_indexed.base_vertex = base_vertex;
-        cmd_buffer[put_pos].draw_indexed.primitive_topology = primitive_topology;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_DRAW_INDEXED;
+        cmd.draw_indexed.index_count = index_count;
+        cmd.draw_indexed.start_index = start_index;
+        cmd.draw_indexed.base_vertex = base_vertex;
+        cmd.draw_indexed.primitive_topology = primitive_topology;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                          u32 base_vertex, u32 primitive_topology)
     {
-        cmd_buffer[put_pos].command_index = CMD_DRAW_INDEXED_INSTANCED;
-        cmd_buffer[put_pos].draw_indexed_instanced.instance_count = instance_count;
-        cmd_buffer[put_pos].draw_indexed_instanced.start_instance = start_instance;
-        cmd_buffer[put_pos].draw_indexed_instanced.index_count = index_count;
-        cmd_buffer[put_pos].draw_indexed_instanced.start_index = start_index;
-        cmd_buffer[put_pos].draw_indexed_instanced.base_vertex = base_vertex;
-        cmd_buffer[put_pos].draw_indexed_instanced.primitive_topology = primitive_topology;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_DRAW_INDEXED_INSTANCED;
+        cmd.draw_indexed_instanced.instance_count = instance_count;
+        cmd.draw_indexed_instanced.start_instance = start_instance;
+        cmd.draw_indexed_instanced.index_count = index_count;
+        cmd.draw_indexed_instanced.start_index = start_index;
+        cmd.draw_indexed_instanced.base_vertex = base_vertex;
+        cmd.draw_indexed_instanced.primitive_topology = primitive_topology;
+
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_render_target(const texture_creation_params& tcp)
     {
+        renderer_cmd cmd;
+
         PEN_ASSERT(tcp.width != 0 && tcp.height != 0);
 
-        cmd_buffer[put_pos].command_index = CMD_CREATE_RENDER_TARGET;
+        cmd.command_index = CMD_CREATE_RENDER_TARGET;
 
-        memcpy(&cmd_buffer[put_pos].create_render_target, (void*)&tcp, sizeof(texture_creation_params));
+        memcpy(&cmd.create_render_target, (void*)&tcp, sizeof(texture_creation_params));
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     u32 renderer_create_texture(const texture_creation_params& tcp)
     {
+        renderer_cmd cmd;
+
         switch ((pen::texture_collection_type)tcp.collection_type)
         {
             case TEXTURE_COLLECTION_NONE:
@@ -914,399 +939,463 @@ namespace pen
                 break;
         }
 
-        cmd_buffer[put_pos].command_index = CMD_CREATE_TEXTURE;
+        cmd.command_index = CMD_CREATE_TEXTURE;
 
-        memcpy(&cmd_buffer[put_pos].create_texture, (void*)&tcp, sizeof(texture_creation_params));
+        memcpy(&cmd.create_texture, (void*)&tcp, sizeof(texture_creation_params));
 
-        cmd_buffer[put_pos].create_texture.data = memory_alloc(tcp.data_size);
+        cmd.create_texture.data = memory_alloc(tcp.data_size);
 
         if (tcp.data)
         {
-            memcpy(cmd_buffer[put_pos].create_texture.data, tcp.data, tcp.data_size);
+            memcpy(cmd.create_texture.data, tcp.data, tcp.data_size);
         }
         else
         {
-            cmd_buffer[put_pos].create_texture.data = nullptr;
+            cmd.create_texture.data = nullptr;
         }
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_release_shader(u32 shader_index, u32 shader_type)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, shader_index))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_SHADER;
+        cmd.command_index = CMD_RELEASE_SHADER;
 
-        cmd_buffer[put_pos].set_shader.shader_index = shader_index;
-        cmd_buffer[put_pos].set_shader.shader_type = shader_type;
+        cmd.set_shader.shader_index = shader_index;
+        cmd.set_shader.shader_type = shader_type;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_buffer(u32 buffer_index)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, buffer_index))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_BUFFER;
+        cmd.command_index = CMD_RELEASE_BUFFER;
 
-        cmd_buffer[put_pos].command_data_index = buffer_index;
+        cmd.command_data_index = buffer_index;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_texture(u32 texture_index)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, texture_index))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_TEXTURE_2D;
+        cmd.command_index = CMD_RELEASE_TEXTURE_2D;
 
-        cmd_buffer[put_pos].command_data_index = texture_index;
+        cmd.command_data_index = texture_index;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_sampler(const sampler_creation_params& scp)
     {
-        cmd_buffer[put_pos].command_index = CMD_CREATE_SAMPLER;
+        renderer_cmd cmd;
 
-        memcpy(&cmd_buffer[put_pos].create_sampler, (void*)&scp, sizeof(sampler_creation_params));
+        cmd.command_index = CMD_CREATE_SAMPLER;
+
+        memcpy(&cmd.create_sampler, (void*)&scp, sizeof(sampler_creation_params));
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_TEXTURE;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].set_texture.texture_index = texture_index;
-        cmd_buffer[put_pos].set_texture.sampler_index = sampler_index;
-        cmd_buffer[put_pos].set_texture.resource_slot = resource_slot;
-        cmd_buffer[put_pos].set_texture.bind_flags = bind_flags;
+        cmd.command_index = CMD_SET_TEXTURE;
 
-        INC_WRAP(put_pos);
+        cmd.set_texture.texture_index = texture_index;
+        cmd.set_texture.sampler_index = sampler_index;
+        cmd.set_texture.resource_slot = resource_slot;
+        cmd.set_texture.bind_flags = bind_flags;
+
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp)
     {
-        cmd_buffer[put_pos].command_index = CMD_CREATE_RASTER_STATE;
+        renderer_cmd cmd;
 
-        memcpy(&cmd_buffer[put_pos].create_raster_state, (void*)&rscp, sizeof(rasteriser_state_creation_params));
+        cmd.command_index = CMD_CREATE_RASTER_STATE;
+
+        memcpy(&cmd.create_raster_state, (void*)&rscp, sizeof(rasteriser_state_creation_params));
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_set_rasterizer_state(u32 rasterizer_state_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_RASTER_STATE;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].command_data_index = rasterizer_state_index;
+        cmd.command_index = CMD_SET_RASTER_STATE;
 
-        INC_WRAP(put_pos);
+        cmd.command_data_index = rasterizer_state_index;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_set_viewport(const viewport& vp)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_VIEWPORT;
+        renderer_cmd cmd;
 
-        memcpy(&cmd_buffer[put_pos].set_viewport, (void*)&vp, sizeof(viewport));
+        cmd.command_index = CMD_SET_VIEWPORT;
 
-        INC_WRAP(put_pos);
+        memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_set_scissor_rect(const rect& r)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_SCISSOR_RECT;
+        renderer_cmd cmd;
 
-        memcpy(&cmd_buffer[put_pos].set_rect, (void*)&r, sizeof(rect));
+        cmd.command_index = CMD_SET_SCISSOR_RECT;
 
-        INC_WRAP(put_pos);
+        memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_raster_state(u32 raster_state_index)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, raster_state_index))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_RASTER_STATE;
+        cmd.command_index = CMD_RELEASE_RASTER_STATE;
 
-        cmd_buffer[put_pos].command_data_index = raster_state_index;
+        cmd.command_data_index = raster_state_index;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_blend_state(const blend_creation_params& bcp)
     {
-        cmd_buffer[put_pos].command_index = CMD_CREATE_BLEND_STATE;
+        renderer_cmd cmd;
 
-        memcpy(&cmd_buffer[put_pos].create_blend_state, (void*)&bcp, sizeof(blend_creation_params));
+        cmd.command_index = CMD_CREATE_BLEND_STATE;
+
+        memcpy(&cmd.create_blend_state, (void*)&bcp, sizeof(blend_creation_params));
 
         // alloc and copy the render targets blend modes. to save space in the cmd buffer
         u32   render_target_modes_size = sizeof(render_target_blend) * bcp.num_render_targets;
         void* mem = memory_alloc(render_target_modes_size);
-        cmd_buffer[put_pos].create_blend_state.render_targets = (render_target_blend*)mem;
+        cmd.create_blend_state.render_targets = (render_target_blend*)mem;
 
-        memcpy(cmd_buffer[put_pos].create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
+        memcpy(cmd.create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_set_blend_state(u32 blend_state_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_BLEND_STATE;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].command_data_index = blend_state_index;
+        cmd.command_index = CMD_SET_BLEND_STATE;
 
-        INC_WRAP(put_pos);
+        cmd.command_data_index = blend_state_index;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
+        renderer_cmd cmd;
+
         if (buffer_index == 0)
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_SET_CONSTANT_BUFFER;
+        cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
-        cmd_buffer[put_pos].set_constant_buffer.buffer_index = buffer_index;
-        cmd_buffer[put_pos].set_constant_buffer.resource_slot = resource_slot;
-        cmd_buffer[put_pos].set_constant_buffer.flags = flags;
+        cmd.set_constant_buffer.buffer_index = buffer_index;
+        cmd.set_constant_buffer.resource_slot = resource_slot;
+        cmd.set_constant_buffer.flags = flags;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
+        renderer_cmd cmd;
+
         if (buffer_index == 0)
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_UPDATE_BUFFER;
+        cmd.command_index = CMD_UPDATE_BUFFER;
 
-        cmd_buffer[put_pos].update_buffer.buffer_index = buffer_index;
-        cmd_buffer[put_pos].update_buffer.data_size = data_size;
-        cmd_buffer[put_pos].update_buffer.offset = offset;
-        cmd_buffer[put_pos].update_buffer.data = memory_alloc(data_size);
-        memcpy(cmd_buffer[put_pos].update_buffer.data, data, data_size);
+        cmd.update_buffer.buffer_index = buffer_index;
+        cmd.update_buffer.data_size = data_size;
+        cmd.update_buffer.offset = offset;
+        cmd.update_buffer.data = memory_alloc(data_size);
+        memcpy(cmd.update_buffer.data, data, data_size);
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp)
     {
-        cmd_buffer[put_pos].command_index = CMD_CREATE_DEPTH_STENCIL_STATE;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].p_create_depth_stencil_state =
+        cmd.command_index = CMD_CREATE_DEPTH_STENCIL_STATE;
+
+        cmd.p_create_depth_stencil_state =
             (depth_stencil_creation_params*)memory_alloc(sizeof(depth_stencil_creation_params));
 
-        memcpy(cmd_buffer[put_pos].p_create_depth_stencil_state, &dscp, sizeof(depth_stencil_creation_params));
+        memcpy(cmd.p_create_depth_stencil_state, &dscp, sizeof(depth_stencil_creation_params));
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_DEPTH_STENCIL_STATE;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].command_data_index = depth_stencil_state;
+        cmd.command_index = CMD_SET_DEPTH_STENCIL_STATE;
 
-        INC_WRAP(put_pos);
+        cmd.command_data_index = depth_stencil_state;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target, u32 array_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_TARGETS;
-        cmd_buffer[put_pos].set_targets.num_colour = num_colour_targets;
-        memcpy(&cmd_buffer[put_pos].set_targets.colour, colour_targets, num_colour_targets * sizeof(u32));
-        cmd_buffer[put_pos].set_targets.depth = depth_target;
-        cmd_buffer[put_pos].set_targets.array_index = array_index;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_SET_TARGETS;
+        cmd.set_targets.num_colour = num_colour_targets;
+        memcpy(&cmd.set_targets.colour, colour_targets, num_colour_targets * sizeof(u32));
+        cmd.set_targets.depth = depth_target;
+        cmd.set_targets.array_index = array_index;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_set_targets(u32 colour_target, u32 depth_target)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_TARGETS;
-        cmd_buffer[put_pos].set_targets.num_colour = 1;
-        cmd_buffer[put_pos].set_targets.colour[0] = colour_target;
-        cmd_buffer[put_pos].set_targets.depth = depth_target;
-        cmd_buffer[put_pos].set_targets.array_index = 0;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_SET_TARGETS;
+        cmd.set_targets.num_colour = 1;
+        cmd.set_targets.colour[0] = colour_target;
+        cmd.set_targets.depth = depth_target;
+        cmd.set_targets.array_index = 0;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_blend_state(u32 blend_state)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, blend_state))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_BLEND_STATE;
-        cmd_buffer[put_pos].command_data_index = blend_state;
+        cmd.command_index = CMD_RELEASE_BLEND_STATE;
+        cmd.command_data_index = blend_state;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_render_target(u32 render_target)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, render_target))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_RENDER_TARGET;
+        cmd.command_index = CMD_RELEASE_RENDER_TARGET;
 
-        cmd_buffer[put_pos].command_data_index = render_target;
+        cmd.command_data_index = render_target;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_clear_state(u32 clear_state)
     {
-        if (slot_resources_free(&s_renderer_slot_resources, clear_state))
+        renderer_cmd cmd;
+
+        if (!slot_resources_free(&s_renderer_slot_resources, clear_state))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_CLEAR_STATE;
+        cmd.command_index = CMD_RELEASE_CLEAR_STATE;
 
-        cmd_buffer[put_pos].command_data_index = clear_state;
+        cmd.command_data_index = clear_state;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_input_layout(u32 input_layout)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, input_layout))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_INPUT_LAYOUT;
+        cmd.command_index = CMD_RELEASE_INPUT_LAYOUT;
 
-        cmd_buffer[put_pos].command_data_index = input_layout;
+        cmd.command_data_index = input_layout;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_sampler(u32 sampler)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, sampler))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_SAMPLER;
+        cmd.command_index = CMD_RELEASE_SAMPLER;
 
-        cmd_buffer[put_pos].command_data_index = sampler;
+        cmd.command_data_index = sampler;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_release_depth_stencil_state(u32 depth_stencil_state)
     {
+        renderer_cmd cmd;
+
         if (!slot_resources_free(&s_renderer_slot_resources, depth_stencil_state))
             return;
 
-        cmd_buffer[put_pos].command_index = CMD_RELEASE_DEPTH_STENCIL_STATE;
+        cmd.command_index = CMD_RELEASE_DEPTH_STENCIL_STATE;
 
-        cmd_buffer[put_pos].command_data_index = depth_stencil_state;
+        cmd.command_data_index = depth_stencil_state;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_set_stream_out_target(u32 buffer_index)
     {
-        cmd_buffer[put_pos].command_index = CMD_SET_SO_TARGET;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].command_data_index = buffer_index;
+        cmd.command_index = CMD_SET_SO_TARGET;
 
-        INC_WRAP(put_pos);
+        cmd.command_data_index = buffer_index;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_resolve_target(u32 target, e_msaa_resolve_type type)
     {
-        cmd_buffer[put_pos].command_index = CMD_RESOLVE_TARGET;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].resolve_params.render_target = target;
-        cmd_buffer[put_pos].resolve_params.resolve_type = type;
+        cmd.command_index = CMD_RESOLVE_TARGET;
 
-        INC_WRAP(put_pos);
+        cmd.resolve_params.render_target = target;
+        cmd.resolve_params.resolve_type = type;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_draw_auto()
     {
-        cmd_buffer[put_pos].command_index = CMD_DRAW_AUTO;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_DRAW_AUTO;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_read_back_resource(const resource_read_back_params& rrbp)
     {
-        cmd_buffer[put_pos].command_index = CMD_MAP_RESOURCE;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].rrb_params = rrbp;
+        cmd.command_index = CMD_MAP_RESOURCE;
 
-        INC_WRAP(put_pos);
+        cmd.rrb_params = rrbp;
+
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
     {
-        cmd_buffer[put_pos].command_index = CMD_REPLACE_RESOURCE;
+        renderer_cmd cmd;
 
-        cmd_buffer[put_pos].replace_resource_params = {dest, src, type};
+        cmd.command_index = CMD_REPLACE_RESOURCE;
 
-        INC_WRAP(put_pos);
+        cmd.replace_resource_params = {dest, src, type};
+
+        s_cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_clear_state(const clear_state& cs)
     {
+        renderer_cmd cmd;
+
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
 
-        cmd_buffer[put_pos].command_index = CMD_CREATE_CLEAR_STATE;
-        cmd_buffer[put_pos].clear_state_params = cs;
-        cmd_buffer[put_pos].resource_slot = resource_slot;
+        cmd.command_index = CMD_CREATE_CLEAR_STATE;
+        cmd.clear_state_params = cs;
+        cmd.resource_slot = resource_slot;
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_push_perf_marker(const c8* name)
     {
-        cmd_buffer[put_pos].command_index = CMD_PUSH_PERF_MARKER;
+        renderer_cmd cmd;
+
+        cmd.command_index = CMD_PUSH_PERF_MARKER;
 
         // make copy of string to be able to use temporaries
         u32 len = string_length(name);
-        cmd_buffer[put_pos].name = (c8*)memory_alloc(len);
-        memcpy(cmd_buffer[put_pos].name, name, len);
-        cmd_buffer[put_pos].name[len] = '\0';
+        cmd.name = (c8*)memory_alloc(len);
+        memcpy(cmd.name, name, len);
+        cmd.name[len] = '\0';
 
-        INC_WRAP(put_pos);
+        s_cmd_buffer.put(cmd);
     }
 
     void renderer_pop_perf_marker()
     {
-        cmd_buffer[put_pos].command_index = CMD_POP_PERF_MARKER;
+        renderer_cmd cmd;
 
-        INC_WRAP(put_pos);
+        cmd.command_index = CMD_POP_PERF_MARKER;
+
+        s_cmd_buffer.put(cmd);
     }
 
     // graphics test
