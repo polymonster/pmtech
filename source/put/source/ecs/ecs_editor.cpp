@@ -2545,6 +2545,9 @@ namespace put
                 {
                     // single node header
                     static c8 buf[64];
+                    if(scene->names[selected_index].empty())
+                        scene->names[selected_index] = "unnamed node";
+                    
                     u32       end_pos = std::min<u32>(scene->names[selected_index].length(), 64);
                     memcpy(buf, scene->names[selected_index].c_str(), end_pos);
                     buf[end_pos] = '\0';

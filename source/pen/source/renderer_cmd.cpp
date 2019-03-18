@@ -222,7 +222,6 @@ namespace pen
 
         renderer_cmd(){};
     };
-
     static ring_buffer<renderer_cmd> s_cmd_buffer;
 
     void renderer_get_present_time(f32& cpu_ms, f32& gpu_ms)

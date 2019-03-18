@@ -21,9 +21,9 @@
 
 namespace physics
 {
-    static pen::ring_buffer<physics_cmd> s_cmd_buffer;
-    static pen::slot_resources           s_physics_slot_resources;
-    static pen::slot_resources           s_p2p_slot_resources;
+    static pen::ring_buffer<physics_cmd>    s_cmd_buffer;
+    static pen::slot_resources              s_physics_slot_resources;
+    static pen::slot_resources              s_p2p_slot_resources;
 
     void exec_cmd(const physics_cmd& cmd)
     {
@@ -194,7 +194,7 @@ namespace physics
         static u32 physics_timer = pen::timer_create("physics_timer");
         pen::timer_start(physics_timer);
 
-        // space for 1024 commands
+        // space for 8192 commands
         s_cmd_buffer.create(8192);
 
         for (;;)

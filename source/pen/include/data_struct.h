@@ -105,6 +105,29 @@ namespace pen
         void put(const T& item);
         T* get();
     };
+    
+    // single producer single consumer - thread safe ring buffer, will stretch and resize to acommodate contents
+    template <typename T>
+    struct stretchy_ring_buffer
+    {
+        T* data[2] = { 0 };
+        
+        a_u32 get_pos[2];
+        a_u32 put_pos[2];
+        a_u32 count[2];
+        
+        a_u32 read;
+        a_u32 write;
+        
+        a_u32 _capacity[2];
+        
+        stretchy_ring_buffer();
+        ~stretchy_ring_buffer();
+        
+        void create(u32 capacity);
+        void put(const T& item);
+        T* get();
+    };
 
     // single producer multiple consumer - thread safe resource pool which will grow to accomodate contents
     template <typename T>
@@ -218,6 +241,87 @@ namespace pen
         get_pos = (get_pos + 1) % _capacity;
         
         return &data[gp];
+    }
+    
+    template <typename T>
+    pen_inline stretchy_ring_buffer<T>::stretchy_ring_buffer()
+    {
+        read = 0;
+        write = 0;
+        
+        for(u32 i = 0; i < 2; ++i)
+        {
+            get_pos[i] = 0;
+            put_pos[i] = 0;
+            count[i] = 0;
+            _capacity[i] = 0;
+        }
+    }
+    
+    template <typename T>
+    pen_inline stretchy_ring_buffer<T>::~stretchy_ring_buffer()
+    {
+        pen::memory_free(data[0]);
+        pen::memory_free(data[1]);
+    }
+    
+    template <typename T>
+    pen_inline void stretchy_ring_buffer<T>::create(u32 capacity)
+    {
+        for(u32 i = 0; i < 2; ++i)
+        {
+            get_pos[i] = 0;
+            put_pos[i] = 0;
+            count[i] = 0;
+            _capacity[i] = 0;
+        }
+        
+        _capacity[0] = capacity;
+        data[0] = (T*)pen::memory_alloc(sizeof(T) * _capacity[0].load());
+    }
+    
+    template <typename T>
+    void stretchy_ring_buffer<T>::put(const T& item)
+    {
+        u32 cc = count[write].load();
+        if(cc >= _capacity[write].load())
+        {
+            // resize
+            u32 cap = _capacity[write].load();
+            write ^= 1;
+            _capacity[write] = cap * 10;
+            if(data[write])
+                pen::memory_free(data[write]);
+            data[write] = (T*)pen::memory_alloc(sizeof(T) * _capacity[write].load());
+            put_pos[write] = 0;
+            count[write] = 0;
+        }
+        
+        count[write] = count[write] + 1;
+        data[write][put_pos[write].load()] = item;
+        put_pos[write] = (put_pos[write] + 1) % _capacity[write];
+    }
+    
+    template <typename T>
+    T* stretchy_ring_buffer<T>::get()
+    {
+        u32 gp = get_pos[read];
+        u32 pp = put_pos[read];
+        if (gp == pp)
+        {
+            if(read.load() != write.load())
+            {
+                read = write.load();
+                return get();
+            }
+            
+            return nullptr;
+        }
+        
+        get_pos[read] = (get_pos[read] + 1) % _capacity[read];
+        
+        count[read] = count[read] - 1;
+        return &data[read][gp];
     }
     
     template <typename T>

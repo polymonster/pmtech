@@ -197,6 +197,14 @@ void create_scene_objects(ecs::ecs_scene* scene, camera& main_camera)
 
         pos.x += d * 2.0f;
     }
+    
+    static vec4f _pallete[] = {
+        vec4f(117.0f, 219.0f, 205.0f, 255.0f) / 255.0f,
+        vec4f(201.0f, 219.0f, 186.0f, 255.0f) / 255.0f,
+        vec4f(220.0f, 219.0f, 169.0f, 255.0f) / 255.0f,
+        vec4f(245.0f, 205.0f, 167.0f, 255.0f) / 255.0f,
+        vec4f(250.0f, 163.0f, 129.0f, 255.0f) / 255.0f,
+    };
 
     for (s32 i = 0; i < max_lights; ++i)
     {
@@ -210,6 +218,8 @@ void create_scene_objects(ecs::ecs_scene* scene, camera& main_camera)
 
         ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
         vec4f   col = normalised(vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f));
+        
+        col = _pallete[rand() % 5];
 
         u32 light = get_new_node(scene);
         scene->names[light] = "light";
