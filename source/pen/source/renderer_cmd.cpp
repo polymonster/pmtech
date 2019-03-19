@@ -24,11 +24,10 @@ extern pen::window_creation_params pen_window;
 
 namespace pen
 {
-    static u32 commands_this_frame = 0;
     static u32 present_timer;
     static f32 present_time;
 
-#define MAX_COMMANDS (1 << 18)
+#define MAX_COMMANDS (1 << 21)
 
     enum commands : u32
     {
@@ -488,9 +487,6 @@ namespace pen
     {
         if (semaphore_try_wait(p_consume_semaphore))
         {
-            // need more commands
-            PEN_ASSERT(commands_this_frame < MAX_COMMANDS);
-
             semaphore_post(p_continue_semaphore, 1);
 
             // some api's need to set the current context on the caller thread.
@@ -499,11 +495,12 @@ namespace pen
             renderer_cmd* cmd = s_cmd_buffer.get();
             while (cmd)
             {
-                exec_cmd(*cmd);
+                renderer_cmd foff = *cmd;
+                exec_cmd(foff);
+                
                 cmd = s_cmd_buffer.get();
             }
 
-            commands_this_frame = 0;
             return true;
         }
 
@@ -594,12 +591,7 @@ namespace pen
         if (!p_continue_semaphore)
             p_continue_semaphore = semaphore_create(0, 1);
 
-        // clear command buffer
-        //memset(cmd_buffer, 0x0, sizeof(deferred_cmd) * MAX_COMMANDS);
-
         s_cmd_buffer.create(MAX_COMMANDS);
-
-        // start with 2048
         slot_resources_init(&s_renderer_slot_resources, 2048);
 
         // initialise renderer
@@ -743,7 +735,7 @@ namespace pen
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
-
+        
         s_cmd_buffer.put(cmd);
 
         return resource_slot;

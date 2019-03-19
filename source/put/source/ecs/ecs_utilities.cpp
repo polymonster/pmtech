@@ -400,12 +400,14 @@ namespace put
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
 
             scene->master_instances[master].instance_buffer = pen::renderer_create_buffer(bcp);
-
             scene->geometries[master].vertex_shader_class = ID_VERTEX_CLASS_INSTANCED;
 
             // vertex class has changed which changes shader technique
             for (u32 i = master_node; i < master_node + num_nodes; ++i)
+            {
                 bake_material_handles(scene, i);
+                pen::renderer_consume_cmd_buffer();
+            }
 
             // todo - must ensure list is contiguous.
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);

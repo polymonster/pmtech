@@ -183,6 +183,22 @@
             ],
         },
         
+        multiple_shadow_views:
+        {
+            target             : [shadow_map],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : front_face_cull,
+            depth_stencil_state: default,
+            pmfx_shader        : forward_render,
+            technique          : zonly,
+            scene              : main_scene,
+            scene_views        : ["ces_render_shadow_maps"],
+            render_flags       : ["shadow_map"]
+        },
+        
         main_view_post_processed:
         {
             inherit    : main_view,

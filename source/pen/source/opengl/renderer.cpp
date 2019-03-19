@@ -663,6 +663,8 @@ namespace pen
 
     void direct::renderer_load_shader(const shader_load_params& params, u32 resource_slot)
     {
+        _res_pool.grow(resource_slot);
+        
         resource_allocation& res = _res_pool[resource_slot];
 
         u32 internal_type = params.type;
@@ -749,6 +751,8 @@ namespace pen
 
     void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
     {
+        _res_pool.grow(resource_slot);
+        
         shader_link_params slp = params;
         u32                program_index = link_program_internal(0, 0, &slp);
 

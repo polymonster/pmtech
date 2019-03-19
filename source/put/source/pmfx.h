@@ -49,6 +49,7 @@ namespace put
         u32             depth_stencil_state = 0;
         u32             blend_state = 0;
         u32             raster_state = 0;
+        u32             array_index = 0;
         put::camera*    camera = nullptr;
         pen::viewport*  viewport = nullptr;
         u32             pmfx_shader = PEN_INVALID_HANDLE;

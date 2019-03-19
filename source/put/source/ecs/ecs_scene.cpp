@@ -321,6 +321,30 @@ namespace put
             // geom
             // anim
         }
+        
+        void render_shadow_views(const scene_view& view)
+        {
+            ecs_scene* scene = view.scene;
+            
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                if(!scene->lights[n].shadow_map)
+                    continue;
+                
+                camera cam;
+                camera_update_shadow_frustum(&cam, scene->lights[n].direction,
+                                             scene->renderable_extents.min,
+                                             scene->renderable_extents.max);
+                
+                scene_view vv = view;
+                vv.camera = &cam;
+                
+                render_scene_view(vv);
+            }
+        }
 
         void render_light_volumes(const scene_view& view)
         {
@@ -437,10 +461,9 @@ namespace put
                 pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
 
             // sdf shadows
+            pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
-                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
-
                 if (scene->entities[n] & CMP_SDF_SHADOW)
                 {
                     cmp_shadow& shadow = scene->shadows[n];

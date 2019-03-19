@@ -2258,6 +2258,8 @@ namespace put
                         maths::xyz_to_azimuth_altitude(snl.direction, snl.azimuth, snl.altitude);
 
                     bool edited = changed;
+                    
+                    ImGui::Checkbox("Shadow Map", &snl.shadow_map);
 
                     switch (scene->lights[selected_index].type)
                     {
