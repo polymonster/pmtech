@@ -1545,7 +1545,7 @@ namespace put
                 put::ecs::update_scene(scene, dt_ms);
             }
 
-            update_undo_stack(scene, sc->dt);
+            update_undo_stack(scene, sc->dt*1000.0);
         }
 
         struct physics_preview
