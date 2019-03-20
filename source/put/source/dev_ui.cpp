@@ -1019,8 +1019,6 @@ namespace put
             }
 
             // mips
-            ImGui::Text("Mip: %.0f", cb.params.x);
-            ImGui::SameLine();
             if (ImGui::Button(ICON_FA_MINUS))
                 cb.params.x--;
             ImGui::SameLine();
@@ -1028,17 +1026,18 @@ namespace put
                 cb.params.x++;
 
             // arrays
-            ImGui::Text("Array: %.0f", cb.params.y);
+            ImGui::SameLine();
             ImGui::PushID("Array");
             ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_MINUS))
+            if (ImGui::Button(ICON_FA_ARROW_DOWN))
                 cb.params.y--;
             ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_PLUS))
+            if (ImGui::Button(ICON_FA_ARROW_UP))
                 cb.params.y++;
             ImGui::PopID();
 
             // rgba channel mask
+            ImGui::SameLine();
             static const vec4f colours[] = {vec4f(0.7f, 0.0f, 0.0f, 1.0f), vec4f(0.0f, 0.7f, 0.0f, 1.0f),
                                             vec4f(0.0f, 0.0f, 0.7f, 1.0f), vec4f(0.7f, 0.7f, 0.7f, 1.0f)};
             static const char* buttons[] = {"R", "G", "B", "A"};

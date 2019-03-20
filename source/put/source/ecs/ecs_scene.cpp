@@ -322,6 +322,7 @@ namespace put
             // anim
         }
         
+        static u32 cbuffer_shadow = PEN_INVALID_HANDLE;
         void render_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
@@ -335,12 +336,30 @@ namespace put
                     continue;
                 
                 camera cam;
-                camera_update_shadow_frustum(&cam, scene->lights[n].direction,
+                vec3f light_dir = normalised(-scene->lights[n].direction);
+                camera_update_shadow_frustum(&cam, light_dir,
                                              scene->renderable_extents.min,
                                              scene->renderable_extents.max);
                 
                 scene_view vv = view;
                 vv.camera = &cam;
+                
+                if(!is_valid(cbuffer_shadow))
+                {
+                    pen::buffer_creation_params bcp;
+                    bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                    bcp.buffer_size = sizeof(mat4);
+                    bcp.data = nullptr;
+                    
+                    cbuffer_shadow = pen::renderer_create_buffer(bcp);
+                }
+                
+                mat4 shadow_vp = cam.proj * cam.view;
+                pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));
+                
+                vv.cb_view = cbuffer_shadow;
                 
                 render_scene_view(vv);
             }
@@ -458,7 +477,12 @@ namespace put
 
             // fwd lights
             if (view.render_flags & RENDER_FORWARD_LIT)
+            {
                 pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
+                
+                if(is_valid(cbuffer_shadow))
+                    pen::renderer_set_constant_buffer(cbuffer_shadow, 4, pen::CBUFFER_BIND_PS);
+            }
 
             // sdf shadows
             pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);

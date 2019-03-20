@@ -106,11 +106,29 @@ declare_texture_samplers
     texture_2d( shadowmap_texture, 15 );
 };
 
-vs_output_zonly vs_main_zonly( vs_input input )
+vs_output_zonly vs_main_zonly( vs_input input, vs_instance_input instance_input )
 {
     vs_output_zonly output;
     
-    float4x4 wvp = mul( world_matrix, vp_matrix );
+    float4x4 wvp;
+    
+    if:(INSTANCED)
+    {
+        float4x4 instance_world_mat;
+        unpack_vb_instance_mat(
+            instance_world_mat, 
+            instance_input.world_matrix_0, 
+            instance_input.world_matrix_1, 
+            instance_input.world_matrix_2, 
+            instance_input.world_matrix_3
+        );
+        
+        wvp = mul( instance_world_mat, vp_matrix );
+    }
+    else:
+    {
+        wvp = mul( world_matrix, vp_matrix );
+    }
 
     output.position = mul( input.position, wvp );
       
@@ -317,6 +335,7 @@ ps_output ps_forward_lit( vs_output input )
         }
         else
         {
+            // shadow map
             float4 offset_pos = float4(input.world_pos.xyz + n.xyz * 0.01, 1.0);
             float4 sp = mul( offset_pos, shadow_matrix );
             sp.xyz /= sp.w;
@@ -327,7 +346,7 @@ ps_output ps_forward_lit( vs_output input )
 
             float shadow = sp.z < d ? 1.0 : 0.0;
 
-            lit_colour += light_col * shadow;
+            lit_colour = light_col * shadow;
             
             if:(SSS)
             {
@@ -589,7 +608,12 @@ pmfx:
     "zonly":
     {
         "vs": "vs_main_zonly",
-        "ps": "ps_null"
+        "ps": "ps_null",
+        
+        "permutations":
+        {
+            "INSTANCED": [30, [0,1]]
+        }
     },
     
     "pre_skin":

@@ -24,6 +24,7 @@ void example_setup(ecs::ecs_scene* scene)
     scene->lights[light].colour = vec3f::cyan();
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -47,8 +48,8 @@ void example_setup(ecs::ecs_scene* scene)
     scene->names[floor] = "floor";
     scene->transforms[floor].rotation = quat();
     scene->transforms[floor].rotation.euler_angles(0.0f, 0.0f, 0.0f);
-    scene->transforms[floor].scale = vec3f(100000.0f, 1.0f, 100000.0f);
-    scene->transforms[floor].translation = vec3f(0.0f, -100.0f, 0.0f);
+    scene->transforms[floor].scale = vec3f(200.0f, 1.0f, 200.0f);
+    scene->transforms[floor].translation = vec3f(0.0f, -60.0f, 0.0f);
     scene->entities[floor] |= CMP_TRANSFORM;
     scene->parents[floor] = floor;
     instantiate_geometry(box_resource, scene, floor);
