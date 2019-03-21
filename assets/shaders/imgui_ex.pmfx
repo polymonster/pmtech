@@ -259,6 +259,8 @@ ps_output ps_tex_2d( vs_output input )
     {
         output.colour = sample_texture_level( tex, input.tex_coord.xy, params.x );
     }
+    
+    output.colour = float4(1.0, 0.0, 1.0, 1.0);
  
     output.colour *= colour_mask;
             

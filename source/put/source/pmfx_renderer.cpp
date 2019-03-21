@@ -153,6 +153,11 @@ namespace
         PP_EDITED = (1 << 1),
         PP_WRITE_NON_AUX = (1 << 2) // writes directly to the specified target bypassing aux / virtual buffers
     };
+    
+    enum e_view_flags
+    {
+        VF_CUBEMAP = 1
+    };
 
     struct view_params
     {
@@ -172,8 +177,18 @@ namespace
         std::vector<void (*)(const put::scene_view&)> render_functions;
 
         // targets
-        u32 render_targets[pen::MAX_MRT] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
-                                            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
+        // clang-format off
+        u32 render_targets[pen::MAX_MRT] = {
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE
+        };
+        // clang-format on
 
         u32 depth_target = PEN_INVALID_HANDLE;
 
@@ -185,6 +200,7 @@ namespace
         f32 viewport[4] = {0};
 
         // render state
+        u32 view_flags = 0;
         u32 num_arrays = 1; // ie. 6 for cubemap
         u32 num_colour_targets = 0;
         u32 clear_state = 0;
@@ -946,6 +962,7 @@ namespace put
             main_colour.format = PEN_TEX_FORMAT_RGBA8_UNORM;
             main_colour.handle = PEN_BACK_BUFFER_COLOUR;
             main_colour.num_mips = 1;
+            main_colour.num_arrays = 1;
             main_colour.pp = VRT_WRITE;
             main_colour.flags = RT_WRITE_ONLY;
 
@@ -959,6 +976,7 @@ namespace put
             main_depth.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
             main_depth.handle = PEN_BACK_BUFFER_DEPTH;
             main_depth.num_mips = 1;
+            main_colour.num_arrays = 1;
             main_depth.pp = VRT_WRITE;
             main_depth.flags = RT_WRITE_ONLY;
 
@@ -1089,6 +1107,7 @@ namespace put
                                 tcp.num_arrays = r["num_arrays"].as_u32(1);
                             }
                         }
+                        new_info.num_arrays = tcp.num_arrays;
 
                         // flags
                         tcp.cpu_access_flags = 0;
@@ -1154,9 +1173,13 @@ namespace put
 
             return nullptr;
         }
-
-        void resize_render_target(hash_id target, u32 width, u32 height, const c8* format)
+        
+        void resize_render_target(hash_id target, const rt_resize_params& params)
         {
+            u32 width = params.width;
+            u32 height = params.height;
+            const c8* format = params.format;
+            
             render_target* current_target = nullptr;
             size_t         num = s_render_targets.size();
             for (u32 i = 0; i < num; ++i)
@@ -1167,10 +1190,10 @@ namespace put
                     break;
                 }
             }
-
+            
             s32 new_format = current_target->format;
             u32 format_index = 0;
-
+            
             if (format)
             {
                 hash_id id_format = PEN_HASH(format);
@@ -1181,7 +1204,7 @@ namespace put
                         new_format = fmt.format;
                         break;
                     }
-
+                    
                     format_index++;
                 }
             }
@@ -1191,16 +1214,21 @@ namespace put
                 {
                     if (fmt.format == new_format)
                         break;
-
+                    
                     format_index++;
                 }
             }
-
-            if (current_target->width == width && current_target->height == height && current_target->format == new_format)
+            
+            // check for
+            if (current_target->width == width &&
+                current_target->height == height &&
+                current_target->format == new_format &&
+                current_target->num_arrays == params.num_arrays &&
+                current_target->num_mips == params.num_mips)
             {
                 return;
             }
-
+            
             pen::texture_creation_params tcp;
             tcp.data = nullptr;
             tcp.width = width;
@@ -1210,20 +1238,39 @@ namespace put
             tcp.block_size = rt_format[format_index].block_size;
             tcp.usage = PEN_USAGE_DEFAULT;
             tcp.flags = 0;
-            tcp.num_mips = 1;
-            tcp.num_arrays = 1;
+            tcp.num_mips = params.num_mips;
+            tcp.num_arrays = params.num_arrays;
             tcp.sample_count = 1;
             tcp.cpu_access_flags = PEN_CPU_ACCESS_READ;
             tcp.sample_quality = 0;
             tcp.bind_flags = rt_format[format_index].flags | PEN_BIND_SHADER_RESOURCE;
-            tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
-
+            
+            if(params.num_arrays > 1)
+            {
+                tcp.collection_type = pen::TEXTURE_COLLECTION_ARRAY;
+            }
+            else
+            {
+                tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
+            }
+            
             u32 h = pen::renderer_create_render_target(tcp);
             pen::renderer_replace_resource(current_target->handle, h, pen::RESOURCE_RENDER_TARGET);
-
+            
             current_target->width = width;
             current_target->height = height;
             current_target->format = new_format;
+        }
+
+        void resize_render_target(hash_id target, u32 width, u32 height, const c8* format)
+        {
+            rt_resize_params rrp;
+            rrp.width = width;
+            rrp.height = height;
+            rrp.format = format;
+            rrp.num_arrays = 1;
+            rrp.num_mips = 1;
+            resize_render_target(target, rrp);
         }
 
         void resize_viewports()
@@ -1457,7 +1504,10 @@ namespace put
                             s32 rr = r.ratio;
 
                             if (r.collection == pen::TEXTURE_COLLECTION_CUBE)
+                            {
                                 new_view.num_arrays = 6;
+                                new_view.view_flags = VF_CUBEMAP;
+                            }
 
                             if (cur_rt == 0)
                             {
@@ -1847,7 +1897,8 @@ namespace put
                     match &= rt->num_mips == s_render_targets[i].num_mips;
                     match &= rt->format == s_render_targets[i].format;
                     match &= rt->samples == s_render_targets[i].samples;
-
+                    match &= rt->num_arrays == s_render_targets[i].num_arrays;
+                    
                     if (match)
                     {
                         s_render_targets[i].flags |= RT_AUX_USED;
@@ -2562,13 +2613,13 @@ namespace put
             // render passes.. multi pass for cubemaps or arrays
             for (u32 a = 0; a < v.num_arrays; ++a)
             {
+                sv.array_index = a;
+                
                 // generate 3d view proj matrix
                 if (v.camera)
                 {
-                    if (v.num_arrays == 6)
-                    {
+                    if (v.view_flags & VF_CUBEMAP)
                         put::camera_set_cubemap_face(v.camera, a);
-                    }
 
                     put::camera_update_shader_constants(v.camera, v.viewport_correction);
                     sv.cb_view = v.camera->cbuffer;

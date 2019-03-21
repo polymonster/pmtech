@@ -1189,6 +1189,13 @@ namespace pen
                 texture_target = GL_TEXTURE_3D;
                 base_texture_target = texture_target;
                 break;
+            case TEXTURE_COLLECTION_ARRAY:
+                is_msaa = false;
+                num_slices = tcp.num_arrays;
+                num_arrays = tcp.num_arrays;
+                texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE_ARRAY : GL_TEXTURE_2D_ARRAY;
+                base_texture_target = texture_target;
+                break;
             default:
                 texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
                 base_texture_target = texture_target;
@@ -1238,7 +1245,7 @@ namespace pen
                     }
                     else
                     {
-                        if (base_texture_target == GL_TEXTURE_3D)
+                        if (base_texture_target == GL_TEXTURE_3D || tcp.collection_type == TEXTURE_COLLECTION_ARRAY)
                         {
                             CHECK_CALL(glTexImage3D(base_texture_target, mip, sized_format, mip_w, mip_h, mip_d, 0, format,
                                                     type, mip_data));
@@ -1405,19 +1412,26 @@ namespace pen
         {
             resource_allocation& depth_res = _res_pool[depth_target];
 
-            u32 target = GL_TEXTURE_2D;
-            if (depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE)
-                target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + depth_face;
-
-            if (msaa)
+            if(depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
             {
-                CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE,
-                                                  depth_res.render_target.texture_msaa.handle, 0));
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0, 0);
             }
             else
             {
-                CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, target,
-                                                  depth_res.render_target.texture.handle, 0));
+                u32 target = GL_TEXTURE_2D;
+                if (depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE)
+                    target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + depth_face;
+                
+                if (msaa)
+                {
+                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE,
+                                                      depth_res.render_target.texture_msaa.handle, 0));
+                }
+                else
+                {
+                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, target,
+                                                      depth_res.render_target.texture.handle, 0));
+                }
             }
         }
 
@@ -1425,19 +1439,26 @@ namespace pen
         {
             resource_allocation& colour_res = _res_pool[colour_targets[i]];
 
-            u32 target = GL_TEXTURE_2D;
-            if (colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE)
-                target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + colour_face;
-
-            if (msaa)
+            if(colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
             {
-                CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D_MULTISAMPLE,
-                                                  colour_res.render_target.texture_msaa.handle, 0));
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0, 0);
             }
             else
             {
-                CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], target,
-                                                  colour_res.render_target.texture.handle, 0));
+                u32 target = GL_TEXTURE_2D;
+                if (colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE)
+                    target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + colour_face;
+                
+                if (msaa)
+                {
+                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D_MULTISAMPLE,
+                                                      colour_res.render_target.texture_msaa.handle, 0));
+                }
+                else
+                {
+                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], target,
+                                                      colour_res.render_target.texture.handle, 0));
+                }
             }
         }
 

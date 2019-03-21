@@ -200,7 +200,7 @@ void update_shadow_frustum(ecs::ecs_scene* scene, put::camera* shadow_cam)
     }
 
     mat4 shadow_vp = shadow_cam->proj * shadow_cam->view;
-
+    
     camera_update_frustum(shadow_cam);
 
     pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));

@@ -186,7 +186,7 @@ namespace pen
         u32   width;
         u32   height;
         s32   num_mips;
-        u32   num_arrays;
+        u32   num_arrays;     // num array slices
         u32   format;
         u32   sample_count;
         u32   sample_quality;

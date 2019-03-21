@@ -222,6 +222,7 @@ namespace put
             s32 height = 0;
             f32 ratio = 0;
             s32 num_mips = 0;
+            u32 num_arrays = 0;
             u32 format = 0;
             u32 handle = PEN_INVALID_HANDLE;
             u32 samples = 1;
@@ -230,6 +231,15 @@ namespace put
             u32 pp = VRT_READ;
             u32 pp_read = PEN_INVALID_HANDLE;
             u32 collection = pen::TEXTURE_COLLECTION_NONE;
+        };
+        
+        struct rt_resize_params
+        {
+            u32 width = 0;
+            u32 height = 0;
+            u32 num_mips = 0;
+            u32 num_arrays = 0; // num array slices
+            const c8* format = nullptr;
         };
 
         // pmfx renderer ---------------------------------------------------------------------------------------------------
@@ -247,6 +257,7 @@ namespace put
         void register_scene_controller(const scene_controller& controller);
         void register_scene_view_renderer(const scene_view_renderer& svr);
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
+        void resize_render_target(hash_id target, const rt_resize_params& params);
         void resize_viewports();
 
         void set_view_set(const c8* name);

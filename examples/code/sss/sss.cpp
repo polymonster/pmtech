@@ -109,7 +109,7 @@ void shadow_map_update(put::scene_controller* sc)
 
         cbuffer = pen::renderer_create_buffer(bcp);
     }
-
+    
     pen::renderer_update_buffer(cbuffer, &shadow_vp, sizeof(mat4));
 
     // unbind

@@ -37,6 +37,7 @@ void example_setup(ecs::ecs_scene* scene)
     scene->lights[light].colour = vec3f::magenta();
     scene->lights[light].direction = vec3f(-1.0f, 1.0f, 1.0f);
     scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -68,7 +69,8 @@ void example_setup(ecs::ecs_scene* scene)
     instantiate_material(default_material, scene, master_node);
     instantiate_model_cbuffer(scene, master_node);
 
-    s32 num = 128; // 16k instances;
+    //s32 num = 256; // 64k instances;
+    s32 num = 64; // 64k instances;
     f32 angle = 0.0f;
     f32 inner_angle = 0.0f;
     f32 rad = 50.0f;
@@ -128,26 +130,27 @@ void example_update(ecs::ecs_scene* scene)
 {
     quat q;
     q.euler_angles(0.01f, 0.01f, 0.01f);
-
-    static u32 timer = pen::timer_create("perf");
-
-    pen::timer_start(timer);
+    
     for (s32 i = 4; i < scene->num_nodes; ++i)
-    {
-        scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
-        scene->entities.data[i] |= CMP_TRANSFORM;
-    }
-
-#if 0 // debug / test array cost vs operator [] in component entity system
-    f32 array_cost = pen::timer_elapsed_ms(timer);
-    pen::timer_start(timer);
-    for (s32 i = 2; i < scene->num_nodes; ++i)
     {
         scene->transforms[i].rotation = scene->transforms[i].rotation * q;
         scene->entities[i] |= CMP_TRANSFORM;
     }
-    f32 operator_cost = pen::timer_elapsed_ms(timer);
 
+#if 0 // debug / test array cost vs operator [] in component entity system
+    static u32 timer = pen::timer_create("perf");
+    pen::timer_start(timer);
+    for (s32 i = 0; i < scene->num_nodes; ++i)
+    {
+        if(!(scene->entities.data[i] & CMP_SDF_SHADOW))
+            continue;
+        
+        scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
+        scene->entities.data[i] |= CMP_TRANSFORM;
+    }
+    f32 operator_cost = pen::timer_elapsed_ms(timer);
+    pen::timer_start(timer);
+    f32 array_cost = pen::timer_elapsed_ms(timer);
     PEN_LOG("operator: %f, array: %f\n", operator_cost, array_cost);
 #endif
 }
