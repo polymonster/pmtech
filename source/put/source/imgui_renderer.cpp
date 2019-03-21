@@ -85,8 +85,7 @@ namespace put
 
             // load shaders
             g_imgui_rs.imgui_shader = pmfx::load_shader("imgui");
-            g_imgui_rs.imgui_ex_shader = 0;
-            //g_imgui_rs.imgui_ex_shader = pmfx::load_shader("imgui_ex");
+            g_imgui_rs.imgui_ex_shader = pmfx::load_shader("imgui_ex");
 
             create_texture_atlas();
 

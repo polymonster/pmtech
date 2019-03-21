@@ -1414,7 +1414,8 @@ namespace pen
 
             if(depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
             {
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0, 0);
+                glFramebufferTextureLayer(GL_FRAMEBUFFER,
+                                          GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0, depth_face);
             }
             else
             {
@@ -1441,7 +1442,8 @@ namespace pen
 
             if(colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
             {
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0, 0);
+                glFramebufferTextureLayer(GL_FRAMEBUFFER,
+                                          k_draw_buffers[i], colour_res.render_target.texture.handle, 0, colour_face);
             }
             else
             {
@@ -1676,6 +1678,9 @@ namespace pen
         };
 
         // address mode
+        if(target == GL_TEXTURE_2D_ARRAY)
+            CHECK_CALL(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0));
+        
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_S, sampler_state->address_u));
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_T, sampler_state->address_v));
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_R, sampler_state->address_w));

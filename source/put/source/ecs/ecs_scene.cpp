@@ -386,7 +386,7 @@ namespace put
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
                 
                 static mat4 scale = mat::create_scale(vec3f(1.0f, -1.0f, 1.0f));
-                if ( pen::renderer_viewport_vup())
+                if (pen::renderer_viewport_vup())
                     shadow_vp = scale * (cam.proj * cam.view);
                 
                 pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));

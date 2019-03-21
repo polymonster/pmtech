@@ -15,7 +15,7 @@
     #define sample_texture( sampler_name, V ) texture( sampler_name, V )
     #define sample_texture_level( sampler_name, V, l ) textureLod( sampler_name, V, l )
     #define sample_texture_grad( sampler_name, V, vddx, vddy ) textureGrad( sampler_name, V, vddx, vddy )
-    #define sample_texture_array( sampler_name, V, l ) texture( sampler_name, V, l );
+    #define sample_texture_array( sampler_name, V, l ) texture( sampler_name, vec3(V, l) );
         
     #define to_3x3( M4 ) float3x3(M4)
     #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;

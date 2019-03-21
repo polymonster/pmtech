@@ -50,6 +50,7 @@ declare_texture_samplers
     texture_2d( tex, 0 );
     texture_cube( tex_cube, 0 );
     texture_3d( tex_3d, 0 );
+    texture_2d_array( tex_array, 0 );
 };
 
 ps_output ps_tex_cube( vs_output input )
@@ -249,7 +250,7 @@ ps_output ps_tex_2d( vs_output input )
 {
     ps_output output;
     
-    output.colour = float4(0.0, 1.0, 1.0, 1.0);
+    output.colour = float4(0.0, 0.0, 1.0, 1.0);
     
     if(params.x < 0)
     {
@@ -260,7 +261,33 @@ ps_output ps_tex_2d( vs_output input )
         output.colour = sample_texture_level( tex, input.tex_coord.xy, params.x );
     }
     
-    output.colour = float4(1.0, 0.0, 1.0, 1.0);
+    output.colour = sample_texture_array( tex_array, input.tex_coord.xy, 0);
+ 
+    output.colour *= colour_mask;
+            
+    if(length(colour_mask) == 1.0)
+    {
+        float f = max4(output.colour);
+        output.colour = float4(f, f, f, 1.0);
+    }
+    else
+    {
+        if(colour_mask.a == 0.0)
+            output.colour.a = 1.0;
+    }
+    
+    output.colour.rgb = pow(output.colour.rgb, float3(params.z, params.z, params.z));
+
+    return output;
+}
+
+ps_output ps_tex_2d_array( vs_output input )
+{
+    ps_output output;
+    
+    output.colour = float4(0.0, 1.0, 1.0, 1.0);
+    
+    output.colour = sample_texture_array( tex_array, input.tex_coord.xy, params.x );
  
     output.colour *= colour_mask;
             
@@ -304,6 +331,12 @@ pmfx:
     {
         "vs" : "vs_main",
         "ps" : "ps_tex_2d"
+    },
+    
+    "tex_2d_array":
+    {
+        "vs" : "vs_main",
+        "ps" : "ps_tex_2d_array"
     }
 }
 
