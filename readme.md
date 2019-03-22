@@ -12,8 +12,8 @@ A lightweight code base with powerful features that can be used for games and re
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
 - Lightweight: Simple apis, shallow call stacks, minimal dependencies.  
 - Multithreaded: Async render, physics, audio and entity component system.  
-- Data-oriented: Entity component system and root motion animation system.
-- Pmfx: High level data driven renderer, shader and post-processing system using json.
+- Data-oriented: [Entity component system](https://github.com/polymonster/pmtech/wiki/9.-Ecs-and-pmfx) and root motion animation system.
+- [Pmfx](https://github.com/polymonster/pmtech/wiki/9.-Ecs-and-pmfx): High level data driven renderer, shader and post-processing system using json.
 - Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
 - Hot loading: Reload configs, shaders, models and textures in real time for rapid development.
 - Tools: Graphical editor, volume texture / signed distance field generator.
