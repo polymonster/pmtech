@@ -10,7 +10,7 @@ pen::window_creation_params pen_window{
     "rigid_body_primitives" // window title / process name
 };
 
-void example_setup(ecs::ecs_scene* scene)
+void example_setup(ecs_scene* scene, camera& cam)
 {
     clear_scene(scene);
 
@@ -110,6 +110,6 @@ void example_setup(ecs::ecs_scene* scene)
     pen::thread_sleep_ms(16);
 }
 
-void example_update(ecs::ecs_scene* scene)
+void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
 }

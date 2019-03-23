@@ -110,7 +110,7 @@ namespace put
             return pen::input_key(key);
         }
 
-        void update_model_viewer_camera(put::scene_controller* sc)
+        void update_model_viewer_camera(scene_controller* sc)
         {
             if (s_model_view_controller.invalidated)
             {
@@ -1142,7 +1142,7 @@ namespace put
             s_editor_enabled = enable;
         }
 
-        void update_model_viewer_scene(put::scene_controller* sc)
+        void update_model_viewer_scene(scene_controller* sc)
         {
             static bool open_scene_browser = false;
             static bool open_merge = false;

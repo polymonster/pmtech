@@ -504,7 +504,12 @@ namespace put
             custom_draw_call cd = *(custom_draw_call*)cmd->UserCallbackData;
             delete (custom_draw_call*)cmd->UserCallbackData;
 
-            static hash_id ids[] = {PEN_HASH("tex_2d"), PEN_HASH("tex_cube"), PEN_HASH("tex_volume")};
+            static hash_id ids[] = {
+                PEN_HASH("tex_2d"),
+                PEN_HASH("tex_cube"),
+                PEN_HASH("tex_volume"),
+                PEN_HASH("tex_2d_array")
+            };
 
             if (cd.shader == SHADER_DEFAULT)
             {

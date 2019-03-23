@@ -193,7 +193,13 @@ namespace put
                 cc++;
             }
 
-            static Str sampler_type_names[] = {"texture_2d", "texture_3d", "texture_cube", "texture_2dms"};
+            static Str sampler_type_names[] = {
+                "texture_2d",
+                "texture_3d",
+                "texture_cube",
+                "texture_2dms",
+                "texture_2d_array"
+            };
 
             const pen::json& j_samplers = j_technique["texture_sampler_bindings"];
 
@@ -215,7 +221,7 @@ namespace put
 
                 link_params.constants[cc].location = sampler["unit"].as_u32();
 
-                for (u32 i = 0; i < 4; ++i)
+                for (u32 i = 0; i < PEN_ARRAY_SIZE(sampler_type_names); ++i)
                 {
                     if (sampler["type"].as_str() == sampler_type_names[i])
                     {

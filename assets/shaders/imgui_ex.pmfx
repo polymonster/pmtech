@@ -287,7 +287,7 @@ ps_output ps_tex_2d_array( vs_output input )
     
     output.colour = float4(0.0, 1.0, 1.0, 1.0);
     
-    output.colour = sample_texture_array( tex_array, input.tex_coord.xy, params.x );
+    output.colour = sample_texture_array( tex_array, input.tex_coord.xy, params.y);
  
     output.colour *= colour_mask;
             

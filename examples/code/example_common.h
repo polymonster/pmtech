@@ -22,8 +22,8 @@
 using namespace put;
 using namespace ecs;
 
-void example_setup(ecs::ecs_scene* scene);
-void example_update(ecs::ecs_scene* scene);
+void example_setup(ecs::ecs_scene* scene, camera& cam);
+void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt);
 
 namespace physics
 {
@@ -80,8 +80,8 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_camera(&main_camera, "model_viewer_camera");
 
     pmfx::init("data/configs/editor_renderer.jsn");
-
-    example_setup(main_scene);
+    
+    example_setup(main_scene, main_camera);
 
     f32 frame_time = 0.0f;
 
@@ -94,7 +94,7 @@ PEN_TRV pen::user_entry(void* params)
 
         pmfx::update();
 
-        example_update(main_scene);
+        example_update(main_scene, main_camera, frame_timer / 1000.0f);
 
         ecs::update();
 

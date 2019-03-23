@@ -323,23 +323,13 @@ namespace put
         }
         
         static u32 cbuffer_shadow = PEN_INVALID_HANDLE;
+        mat4 s_shadow_matrices[100];
         void render_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
             
-            static u32 sm_arrays = 1;
-            if(sm_arrays < 1)
-            {
-                pmfx::rt_resize_params rrp;
-                rrp.width = 2048;
-                rrp.height = 2048;
-                rrp.format = nullptr;
-                rrp.num_arrays = 2;
-                rrp.num_mips = 1;
-                sm_arrays = 2;
-                pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
-            }
-            
+            // count shadow maps
+            u32 num_shadows = 0;
             for (u32 n = 0; n < scene->num_nodes; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
@@ -348,39 +338,69 @@ namespace put
                 if(!scene->lights[n].shadow_map)
                     continue;
                 
+                ++num_shadows;
+            }
+            
+            static bool once = true;
+            if(view.num_arrays < num_shadows || once)
+            {
+                once = false;
+                pmfx::rt_resize_params rrp;
+                rrp.width = 2048;
+                rrp.height = 2048;
+                rrp.format = nullptr;
+                rrp.num_arrays = num_shadows;
+                rrp.num_mips = 1;
+                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
+                return;
+            }
+            
+            if(!is_valid(cbuffer_shadow))
+            {
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(mat4) * 100;
+                bcp.data = nullptr;
+                
+                cbuffer_shadow = pen::renderer_create_buffer(bcp);
+            }
+            
+            static u32 cb_view = PEN_INVALID_HANDLE;
+            if(!is_valid(cb_view))
+            {
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(mat4);
+                bcp.data = nullptr;
+                
+                cb_view = pen::renderer_create_buffer(bcp);
+            }
+            
+            u32 shadow_index = 0;
+            for (u32 n = 0; n < scene->num_nodes; ++n)
+            {
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                if(!scene->lights[n].shadow_map)
+                    continue;
+                
+                if(shadow_index++ != view.array_index)
+                    continue;
+                
                 camera cam;
                 vec3f light_dir = normalised(-scene->lights[n].direction);
                 camera_update_shadow_frustum(&cam, light_dir,
-                                             scene->renderable_extents.min,
-                                             scene->renderable_extents.max);
+                                             scene->renderable_extents.min - vec3f(0.1f),
+                                             scene->renderable_extents.max + vec3f(0.1f));
                 
                 scene_view vv = view;
                 vv.camera = &cam;
-                
-                if(!is_valid(cbuffer_shadow))
-                {
-                    pen::buffer_creation_params bcp;
-                    bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                    bcp.buffer_size = sizeof(mat4);
-                    bcp.data = nullptr;
-                    
-                    cbuffer_shadow = pen::renderer_create_buffer(bcp);
-                }
-                
-                static u32 cb_view = PEN_INVALID_HANDLE;
-                if(!is_valid(cb_view))
-                {
-                    pen::buffer_creation_params bcp;
-                    bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                    bcp.buffer_size = sizeof(mat4);
-                    bcp.data = nullptr;
-                    
-                    cb_view = pen::renderer_create_buffer(bcp);
-                }
                 
                 mat4 shadow_vp = cam.proj * cam.view;
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
@@ -389,7 +409,7 @@ namespace put
                 if (pen::renderer_viewport_vup())
                     shadow_vp = scale * (cam.proj * cam.view);
                 
-                pen::renderer_update_buffer(cbuffer_shadow, &shadow_vp, sizeof(mat4));
+                s_shadow_matrices[shadow_index-1] = shadow_vp;
                 
                 vv.cb_view = cb_view;
                 
@@ -513,7 +533,10 @@ namespace put
                 pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
                 
                 if(is_valid(cbuffer_shadow))
+                {
+                    pen::renderer_update_buffer(cbuffer_shadow, &s_shadow_matrices[0], sizeof(mat4) * 100);
                     pen::renderer_set_constant_buffer(cbuffer_shadow, 4, pen::CBUFFER_BIND_PS);
+                }
             }
 
             // sdf shadows

@@ -10,7 +10,9 @@ pen::window_creation_params pen_window{
     "entities"   // window title / process name
 };
 
-void example_setup(ecs::ecs_scene* scene)
+static u32 master_node = 0;
+
+void example_setup(ecs_scene* scene, camera& cam)
 {
     clear_scene(scene);
 
@@ -19,9 +21,9 @@ void example_setup(ecs::ecs_scene* scene)
 
     // add lights
     u32 light = get_new_node(scene);
-    scene->names[light] = "front_light";
-    scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f::cyan();
+    scene->names[light] = "cyan_light";
+    scene->id_name[light] = PEN_HASH("cyan_light");
+    scene->lights[light].colour = vec3f(250.0f, 162.0f, 117.0f) / 255.0f;
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = LIGHT_TYPE_DIR;
     scene->lights[light].shadow_map = true;
@@ -32,10 +34,36 @@ void example_setup(ecs::ecs_scene* scene)
     scene->entities[light] |= CMP_TRANSFORM;
     
     light = get_new_node(scene);
-    scene->names[light] = "back_light";
-    scene->id_name[light] = PEN_HASH("back_light");
-    scene->lights[light].colour = vec3f::magenta();
+    scene->names[light] = "magenta_light";
+    scene->id_name[light] = PEN_HASH("magenta_light");
+    scene->lights[light].colour = vec3f(206.0f, 106.0f, 84.0f) / 255.0f;
     scene->lights[light].direction = vec3f(-1.0f, 1.0f, 1.0f);
+    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].shadow_map = true;
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= CMP_LIGHT;
+    scene->entities[light] |= CMP_TRANSFORM;
+
+    light = get_new_node(scene);
+    scene->names[light] = "yellow_light";
+    scene->id_name[light] = PEN_HASH("yellow_light");
+    scene->lights[light].colour = vec3f(152.0f, 82.0f, 119.0f) / 255.0f;
+    scene->lights[light].direction = vec3f(0.0f, 1.0f, 1.0f);
+    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].shadow_map = true;
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= CMP_LIGHT;
+    scene->entities[light] |= CMP_TRANSFORM;
+    
+    light = get_new_node(scene);
+    scene->names[light] = "red_light";
+    scene->id_name[light] = PEN_HASH("red_light");
+    scene->lights[light].colour = vec3f(222.0f, 50.0f, 97.0f) / 255.0f;
+    scene->lights[light].direction = vec3f(0.0f, 1.0f, 1.0f);
     scene->lights[light].type = LIGHT_TYPE_DIR;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
@@ -49,7 +77,7 @@ void example_setup(ecs::ecs_scene* scene)
     scene->names[floor] = "floor";
     scene->transforms[floor].rotation = quat();
     scene->transforms[floor].rotation.euler_angles(0.0f, 0.0f, 0.0f);
-    scene->transforms[floor].scale = vec3f(200.0f, 1.0f, 200.0f);
+    scene->transforms[floor].scale = vec3f(100.0f, 1.0f, 100.0f);
     scene->transforms[floor].translation = vec3f(0.0f, -60.0f, 0.0f);
     scene->entities[floor] |= CMP_TRANSFORM;
     scene->parents[floor] = floor;
@@ -57,7 +85,33 @@ void example_setup(ecs::ecs_scene* scene)
     instantiate_material(default_material, scene, floor);
     instantiate_model_cbuffer(scene, floor);
     
-    u32 master_node = get_new_node(scene);
+    // back walls for shadows
+    vec3f offset[] = {
+        vec3f(150.0f, 0.0f, 0.0f),
+        vec3f(0.0f, 0.0f, 150.0f)
+    };
+    
+    vec3f scale[] = {
+        vec3f(1.0f, 50.0f, 100.0f),
+        vec3f(100.0f, 50.0f, 1.0f)
+    };
+    
+    for(u32 i = 0; i < 2; ++i)
+    {
+        u32 wall = get_new_node(scene);
+        scene->names[wall] = "floor";
+        scene->transforms[wall].rotation = quat();
+        scene->transforms[wall].rotation.euler_angles(0.0f, 0.0f, 0.0f);
+        scene->transforms[wall].scale = scale[i];
+        scene->transforms[wall].translation = offset[i];
+        scene->entities[wall] |= CMP_TRANSFORM;
+        scene->parents[wall] = wall;
+        instantiate_geometry(box_resource, scene, wall);
+        instantiate_material(default_material, scene, wall);
+        instantiate_model_cbuffer(scene, wall);
+    }
+    
+    master_node = get_new_node(scene);
     scene->names[master_node] = "master";
     scene->transforms[master_node].rotation = quat();
     scene->transforms[master_node].rotation.euler_angles(0.0f, 0.0f, 0.0f);
@@ -69,8 +123,7 @@ void example_setup(ecs::ecs_scene* scene)
     instantiate_material(default_material, scene, master_node);
     instantiate_model_cbuffer(scene, master_node);
 
-    //s32 num = 256; // 64k instances;
-    s32 num = 64; // 64k instances;
+    s32 num = 256; // 64k instances;
     f32 angle = 0.0f;
     f32 inner_angle = 0.0f;
     f32 rad = 50.0f;
@@ -126,13 +179,36 @@ void example_setup(ecs::ecs_scene* scene)
     instance_node_range(scene, master_node, pow(num, 2));
 }
 
-void example_update(ecs::ecs_scene* scene)
+void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     quat q;
     q.euler_angles(0.01f, 0.01f, 0.01f);
     
-    for (s32 i = 4; i < scene->num_nodes; ++i)
+    static f32 lr[] = {
+        0.0f,
+        M_PI * 0.5f,
+        M_PI,
+        M_PI * 1.5f
+    };
+    
+    for(u32 i = 0; i < 4; ++i)
     {
+        // animate lights
+        f32 dirsign = 1.0f;
+        if(i % 2 == 0)
+            dirsign = -1.0f;
+            
+        lr[i] += (dt * 5.0f * dirsign * (i+1));
+        
+        vec2f xz = vec2f(cos(lr[i]), sin(lr[i]));
+        
+        vec3f dir = vec3f(xz.x, 1.0f, xz.y);
+        scene->lights[i].direction = dir;
+    }
+    
+    for (s32 i = master_node+1; i < scene->num_nodes; ++i)
+    {
+        // animate boxes
         scene->transforms[i].rotation = scene->transforms[i].rotation * q;
         scene->entities[i] |= CMP_TRANSFORM;
     }

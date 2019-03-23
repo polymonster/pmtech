@@ -53,7 +53,7 @@
     view_sets: 
     {
         sss_view: [
-            single_shadow_view,
+            multiple_shadow_views,
             sss_main
         ]
     },

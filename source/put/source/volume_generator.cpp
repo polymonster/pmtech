@@ -1692,8 +1692,17 @@ namespace put
             {
                 dim = cur_dim;
 
-                pmfx::resize_render_target(id_volume_raster_rt, dim, dim, "rgba8");
-                pmfx::resize_render_target(id_volume_raster_ds, dim, dim, "d24s8");
+                pmfx::rt_resize_params rrp;
+                rrp.width = dim;
+                rrp.height = dim;
+                rrp.num_arrays = 1;
+                rrp.num_mips = 1;
+                rrp.format = "rgba8";
+                pmfx::resize_render_target(id_volume_raster_rt, rrp);
+                
+                rrp.format = "d24s8";
+                pmfx::resize_render_target(id_volume_raster_rt, rrp);
+
                 pmfx::resize_viewports();
 
                 pen::renderer_consume_cmd_buffer();

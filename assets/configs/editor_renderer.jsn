@@ -100,10 +100,10 @@
     view_sets: 
     {
         editor: [
+            multiple_shadow_views,
             main_view,
             editor_view, 
             picking_view, 
-            multiple_shadow_views,
             volume_rasteriser
         ],
         

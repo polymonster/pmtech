@@ -1026,15 +1026,18 @@ namespace put
                 cb.params.x++;
 
             // arrays
-            ImGui::SameLine();
-            ImGui::PushID("Array");
-            ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_ARROW_DOWN))
-                cb.params.y--;
-            ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_ARROW_UP))
-                cb.params.y++;
-            ImGui::PopID();
+            if(shader == SHADER_TEXTURE_ARRAY)
+            {
+                ImGui::SameLine();
+                ImGui::PushID("Array");
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_ARROW_DOWN))
+                    cb.params.y--;
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_ARROW_UP))
+                    cb.params.y++;
+                ImGui::PopID();
+            }
 
             // rgba channel mask
             ImGui::SameLine();

@@ -784,6 +784,7 @@ namespace pen
                 case CT_SAMPLER_2D:
                 case CT_SAMPLER_2DMS:
                 case CT_SAMPLER_CUBE:
+                case CT_SAMPLER_2D_ARRAY:
                 {
                     loc = CHECK_CALL(glGetUniformLocation(prog, constant.name));
 

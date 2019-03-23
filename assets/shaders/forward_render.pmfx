@@ -103,7 +103,7 @@ declare_texture_samplers
     texture_2d( normal_texture, 1 );
     texture_2d( specular_texture, 2 );    
     texture_3d( sdf_volume, 14 );
-    texture_2d( shadowmap_texture, 15 );
+    texture_2d_array( shadowmap_texture, 15 );
 };
 
 vs_output_zonly vs_main_zonly( vs_input input, vs_instance_input instance_input )
@@ -241,16 +241,14 @@ float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
 ps_output ps_forward_lit( vs_output input ) 
 {    
     ps_output output;
-            
+    
     float4 albedo = sample_texture( diffuse_texture, input.texcoord.xy );
-        
     float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
-    normal_sample = normal_sample * 2.0 - 1.0;
-    
     float4 ro_sample = sample_texture( specular_texture, input.texcoord.xy );
-    
     float4 specular_sample = float4(1.0, 1.0, 1.0, 1.0);
     
+    normal_sample = normal_sample * 2.0 - 1.0;
+
     float3 n = transform_ts_normal( 
         input.tangent, 
         input.bitangent, 
@@ -337,31 +335,30 @@ ps_output ps_forward_lit( vs_output input )
         {
             // shadow map
             float4 offset_pos = float4(input.world_pos.xyz + n.xyz * 0.01, 1.0);
-            float4 sp = mul( offset_pos, shadow_matrix );
+            float4 sp = mul( offset_pos, shadow_matrix[i] );
             sp.xyz /= sp.w;
             sp.y *= -1.0;
             sp.xyz = sp.xyz * 0.5 + 0.5;
-            
-            float d = sample_texture( shadowmap_texture, sp.xy ).r;
-            
-            //float d = sample_texture_array(shadowmap_texture, sp.xy, 0).r;
-            //float4 test = sample_texture_array(shadowmap_texture, sp.xy, 0);
-            //float d = 1.0;
+
+            float d = 1.0;
+            float4 sm = sample_texture_array( shadowmap_texture, sp.xy, float(i) );
+            d = sm.r;
 
             float shadow = sp.z < d ? 1.0 : 0.0;
 
-            lit_colour = light_col * shadow;
+            lit_colour += light_col * shadow;
             
             if:(SSS)
             {
                 // sss
                 float4 shrink_pos = float4(input.world_pos.xyz - n.xyz * 0.09, 1.0);
-                sp = mul( shrink_pos, shadow_matrix );
+                sp = mul( shrink_pos, shadow_matrix[i] );
                 sp.xyz /= sp.w;
                 sp.y *= -1.0;
                 sp.xyz = sp.xyz * 0.5 + 0.5;
                 
-                d = sample_texture( shadowmap_texture, sp.xy ).r;
+                sm = sample_texture_array( shadowmap_texture, sp.xy, float(i) );
+                d = sm.r;
             
                 float fp = 1.0;
                 float3 light_dir = input.world_pos.xyz - lights[i].pos_radius.xyz;

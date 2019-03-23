@@ -148,15 +148,8 @@
     {                
         shadow_map:
         {
-            size  : [2048,2048],
-            format: d24s8,
-        },
-        
-        dummy_shadow_map:
-        {
-            size  : [4,4],
-            format: d24s8,
-            always_create: true
+            size  : [2048, 2048],
+            format: d24s8
         }
     },
     
@@ -201,7 +194,7 @@
         
         main_view_post_processed:
         {
-            inherit    : main_view,
+            inherit : main_view,
             target : [post_process_colour, post_process_depth],
             post_process : editor_default
         },

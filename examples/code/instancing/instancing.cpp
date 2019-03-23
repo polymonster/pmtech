@@ -10,7 +10,7 @@ pen::window_creation_params pen_window{
     "instancing" // window title / process name
 };
 
-void example_setup(ecs::ecs_scene* scene)
+void example_setup(ecs_scene* scene, camera& cam)
 {
     clear_scene(scene);
 
@@ -102,7 +102,7 @@ void example_setup(ecs::ecs_scene* scene)
     instance_node_range(scene, 1, pow(num, 3));
 }
 
-void example_update(ecs::ecs_scene* scene)
+void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     quat q;
     q.euler_angles(0.01f, 0.01f, 0.01f);

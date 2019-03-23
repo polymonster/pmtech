@@ -50,6 +50,7 @@ namespace put
         u32             blend_state = 0;
         u32             raster_state = 0;
         u32             array_index = 0;
+        u32             num_arrays = 1;
         put::camera*    camera = nullptr;
         pen::viewport*  viewport = nullptr;
         u32             pmfx_shader = PEN_INVALID_HANDLE;
@@ -218,6 +219,7 @@ namespace put
         {
             hash_id id_name;
 
+            // todo replace with tcp..?
             s32 width = 0;
             s32 height = 0;
             f32 ratio = 0;
@@ -239,6 +241,8 @@ namespace put
             u32 height = 0;
             u32 num_mips = 0;
             u32 num_arrays = 0; // num array slices
+            u32 collection = pen::TEXTURE_COLLECTION_NONE;
+            u32 flags = 0;
             const c8* format = nullptr;
         };
 

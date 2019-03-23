@@ -10,7 +10,7 @@ pen::window_creation_params pen_window{
     "skinning" // window title / process name
 };
 
-void example_setup(ecs::ecs_scene* scene)
+void example_setup(ecs_scene* scene, camera& cam)
 {
     clear_scene(scene);
 
@@ -69,6 +69,6 @@ void example_setup(ecs::ecs_scene* scene)
     scene->anim_controller_v2[skinned_char].blend.ratio = 0.0f;
 }
 
-void example_update(ecs::ecs_scene* scene)
+void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
 }

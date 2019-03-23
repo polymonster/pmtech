@@ -1219,12 +1219,13 @@ namespace put
                 }
             }
             
-            // check for
+            // check if is already equal
             if (current_target->width == width &&
                 current_target->height == height &&
                 current_target->format == new_format &&
                 current_target->num_arrays == params.num_arrays &&
-                current_target->num_mips == params.num_mips)
+                current_target->num_mips == params.num_mips &&
+                current_target->collection == params.collection)
             {
                 return;
             }
@@ -1241,18 +1242,10 @@ namespace put
             tcp.num_mips = params.num_mips;
             tcp.num_arrays = params.num_arrays;
             tcp.sample_count = 1;
-            tcp.cpu_access_flags = PEN_CPU_ACCESS_READ;
+            tcp.cpu_access_flags = params.flags;
             tcp.sample_quality = 0;
             tcp.bind_flags = rt_format[format_index].flags | PEN_BIND_SHADER_RESOURCE;
-            
-            if(params.num_arrays > 1)
-            {
-                tcp.collection_type = pen::TEXTURE_COLLECTION_ARRAY;
-            }
-            else
-            {
-                tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
-            }
+            tcp.collection_type = params.collection;
             
             u32 h = pen::renderer_create_render_target(tcp);
             pen::renderer_replace_resource(current_target->handle, h, pen::RESOURCE_RENDER_TARGET);
@@ -1260,6 +1253,20 @@ namespace put
             current_target->width = width;
             current_target->height = height;
             current_target->format = new_format;
+            current_target->num_arrays = params.num_arrays;
+            current_target->num_mips = params.num_mips;
+            current_target->collection = tcp.collection_type;
+            
+            // update array count for views
+            for(auto& v : s_views)
+            {
+                for(auto& rt : v.render_targets)
+                    if(rt == current_target->handle)
+                        v.num_arrays = params.num_arrays;
+                
+                if(v.depth_target == current_target->handle)
+                    v.num_arrays = params.num_arrays;
+            }
         }
 
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format)
@@ -2424,6 +2431,8 @@ namespace put
 
         void init(const c8* filename)
         {
+            release_script_resources();
+            
             load_script_internal(filename);
 
             k_script_files.push_back(filename);
@@ -2534,6 +2543,85 @@ namespace put
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
+        void stash_output(view_params& v, const pen::viewport& vp)
+        {
+            // stash output for debug
+            if (!v.stash_output || v.render_targets[0] == PEN_INVALID_HANDLE)
+                return;
+            
+            struct stash_rt
+            {
+                u32 handle;
+                f32 width;
+                f32 height;
+                f32 aspect;
+            };
+            
+            static std::vector<stash_rt> s_stash_rt;
+            
+            if (v.stashed_output_rt == PEN_INVALID_HANDLE)
+            {
+                for (auto& r : s_stash_rt)
+                {
+                    if (r.width == vp.width && r.height == vp.height)
+                    {
+                        v.stashed_output_rt = r.handle;
+                        v.stashed_rt_aspect = r.aspect;
+                    }
+                    
+                    break;
+                }
+                
+                if (v.stashed_output_rt == PEN_INVALID_HANDLE)
+                {
+                    pen::texture_creation_params tcp;
+                    tcp.data = nullptr;
+                    tcp.width = vp.width;
+                    tcp.height = vp.height;
+                    tcp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
+                    tcp.pixels_per_block = 1;
+                    tcp.block_size = 4;
+                    tcp.usage = PEN_USAGE_DEFAULT;
+                    tcp.flags = 0;
+                    tcp.num_mips = 1;
+                    tcp.num_arrays = 1;
+                    tcp.sample_count = 1;
+                    tcp.cpu_access_flags = PEN_CPU_ACCESS_READ;
+                    tcp.sample_quality = 0;
+                    tcp.bind_flags = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
+                    tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
+                    u32 h = pen::renderer_create_render_target(tcp);
+                    
+                    v.stashed_output_rt = h;
+                    v.stashed_rt_aspect = vp.width / vp.height;
+                    s_stash_rt.push_back({h, vp.width, vp.height, v.stashed_rt_aspect});
+                }
+            }
+            
+            // render
+            static u32                     pp_shader = pmfx::load_shader("post_process");
+            static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
+            
+            pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
+            pen::renderer_set_viewport(vp);
+            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
+            
+            u32 wlss = get_render_state(k_id_wrap_linear, RS_SAMPLER);
+            
+            pen::renderer_set_texture(v.render_targets[0], wlss, 0, pen::TEXTURE_BIND_PS);
+            
+            pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
+            pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
+            
+            static hash_id id_technique = PEN_HASH("blit");
+            if (!pmfx::set_technique_perm(pp_shader, id_technique))
+                PEN_ASSERT(0);
+            
+            pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+            
+            v.stash_output = false;
+        }
+        
         void render_view(view_params& v)
         {
             // early out.. nothing to render
@@ -2614,6 +2702,7 @@ namespace put
             for (u32 a = 0; a < v.num_arrays; ++a)
             {
                 sv.array_index = a;
+                sv.num_arrays = v.num_arrays;
                 
                 // generate 3d view proj matrix
                 if (v.camera)
@@ -2655,82 +2744,9 @@ namespace put
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                     v.render_functions[rf](sv);
             }
-
-            // stash output for debug
-            if (v.stash_output && v.render_targets[0] != PEN_INVALID_HANDLE)
-            {
-                struct stash_rt
-                {
-                    u32 handle;
-                    f32 width;
-                    f32 height;
-                    f32 aspect;
-                };
-
-                static std::vector<stash_rt> s_stash_rt;
-
-                if (v.stashed_output_rt == PEN_INVALID_HANDLE)
-                {
-                    for (auto& r : s_stash_rt)
-                    {
-                        if (r.width == vp.width && r.height == vp.height)
-                        {
-                            v.stashed_output_rt = r.handle;
-                            v.stashed_rt_aspect = r.aspect;
-                        }
-
-                        break;
-                    }
-
-                    if (v.stashed_output_rt == PEN_INVALID_HANDLE)
-                    {
-                        pen::texture_creation_params tcp;
-                        tcp.data = nullptr;
-                        tcp.width = vp.width;
-                        tcp.height = vp.height;
-                        tcp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
-                        tcp.pixels_per_block = 1;
-                        tcp.block_size = 4;
-                        tcp.usage = PEN_USAGE_DEFAULT;
-                        tcp.flags = 0;
-                        tcp.num_mips = 1;
-                        tcp.num_arrays = 1;
-                        tcp.sample_count = 1;
-                        tcp.cpu_access_flags = PEN_CPU_ACCESS_READ;
-                        tcp.sample_quality = 0;
-                        tcp.bind_flags = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
-                        tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
-                        u32 h = pen::renderer_create_render_target(tcp);
-
-                        v.stashed_output_rt = h;
-                        v.stashed_rt_aspect = vp.width / vp.height;
-                        s_stash_rt.push_back({h, vp.width, vp.height, v.stashed_rt_aspect});
-                    }
-                }
-
-                // render
-                static u32                     pp_shader = pmfx::load_shader("post_process");
-                static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
-
-                pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
-                pen::renderer_set_viewport(vp);
-                pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-
-                u32 wlss = get_render_state(k_id_wrap_linear, RS_SAMPLER);
-
-                pen::renderer_set_texture(v.render_targets[0], wlss, 0, pen::TEXTURE_BIND_PS);
-
-                pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
-                pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
-
-                static hash_id id_technique = PEN_HASH("blit");
-                if (!pmfx::set_technique_perm(pp_shader, id_technique))
-                    PEN_ASSERT(0);
-
-                pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
-
-                v.stash_output = false;
-            }
+            
+            // for debug
+            stash_output(v, vp);
         }
 
         void resolve_targets(bool aux)

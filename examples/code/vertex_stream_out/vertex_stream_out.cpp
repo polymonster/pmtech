@@ -10,7 +10,7 @@ pen::window_creation_params pen_window{
     "vertex_stream_out" // window title / process name
 };
 
-void example_setup(ecs::ecs_scene* scene)
+void example_setup(ecs_scene* scene, camera& cam)
 {
     clear_scene(scene);
 
@@ -153,6 +153,6 @@ void example_setup(ecs::ecs_scene* scene)
     bake_material_handles();
 }
 
-void example_update(ecs::ecs_scene* scene)
+void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
 }
