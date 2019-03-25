@@ -409,6 +409,11 @@ namespace put
                 if (pen::renderer_viewport_vup())
                     shadow_vp = scale * (cam.proj * cam.view);
                 
+                
+                static hash_id id_ffc = PEN_HASH("default");
+                u32 ffc = pmfx::get_render_state(id_ffc, pmfx::RS_RASTERIZER);
+                pen::renderer_set_rasterizer_state(ffc);
+                
                 s_shadow_matrices[shadow_index-1] = shadow_vp;
                 
                 vv.cb_view = cb_view;
