@@ -1015,11 +1015,6 @@ namespace pen
     void direct::renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
                                       u32 colour_face, u32 depth_face)
     {
-        if (colour_face > 0)
-        {
-            u32 a = 0;
-        }
-
         g_context.active_depth_target = depth_target;
         g_context.num_active_colour_targets = num_colour_targets;
 
@@ -1173,6 +1168,11 @@ namespace pen
 
         ID3D11SamplerState**       sampler = &null_sampler;
         ID3D11ShaderResourceView** srv = &null_srv;
+
+        if (texture_index == 93)
+        {
+            u32 a = 0;
+        }
 
         if (sampler_index > 0)
         {

@@ -291,7 +291,7 @@ ps_output ps_cubemapped( vs_output input )
     
     float3 r = reflect(rd, normalize(input.normal.xyz));
     
-    output.colour = sample_texture(cubemap_texture, r);
+    output.colour = sample_texture( cubemap_texture, r );
     
     return output;
 }

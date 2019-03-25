@@ -395,7 +395,7 @@ namespace put
             scp.address_w = PEN_TEXTURE_ADDRESS_WRAP;
             scp.comparison_func = PEN_COMPARISON_ALWAYS;
             scp.min_lod = 0.0f;
-            scp.max_lod = 0.0f;
+            scp.max_lod = 1000.0f;
 
             g_imgui_rs.font_sampler_state = pen::renderer_create_sampler(scp);
 
