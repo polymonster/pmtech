@@ -11,9 +11,11 @@ A lightweight code base with powerful features that can be used for games and re
 - Supported Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
 - Lightweight: Simple apis, shallow call stacks, minimal dependencies.  
+- Fast - Handle large sceens with thousands or hundreds of thousands entities at fast framerates.
 - Multithreaded: Async render, physics, audio and entity component system.  
 - Data-oriented: [Entity component system](https://github.com/polymonster/pmtech/wiki/9.-Ecs-and-pmfx) and root motion animation system.
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/9.-Ecs-and-pmfx): High level data driven renderer, shader and post-processing system using json.
+- Flexible - pmtech does not force you into any fixed way of working, you can configure it to run however you want and bring along any rendering strategy you like (forward, deferred, fwd+ etc).  
 - Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
 - Hot loading: Reload configs, shaders, models and textures in real time for rapid development.
 - Tools: Graphical editor, volume texture / signed distance field generator.
