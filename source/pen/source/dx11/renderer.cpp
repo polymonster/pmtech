@@ -813,6 +813,11 @@ namespace pen
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
+        if (texture_desc.ArraySize > 1)
+        {
+            u32 a = 0;
+        }
+
         u32  array_size = texture_desc.ArraySize;
         bool texture2dms = texture_desc.SampleDesc.Count > 1;
 
@@ -830,9 +835,17 @@ namespace pen
 
         if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE)
             srv_dimension = D3D_SRV_DIMENSION_TEXTURECUBE;
+        else if (tcp.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
+            srv_dimension = D3D_SRV_DIMENSION_TEXTURE2DARRAY;
 
         if (texture_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
         {
+            // create shader resource view
+            resource_view_desc.Format = (DXGI_FORMAT)depth_texture_format_to_srv_format(texture_desc.Format);
+            resource_view_desc.ViewDimension = srv_dimension;
+            resource_view_desc.Texture2D.MipLevels = -1;
+            resource_view_desc.Texture2D.MostDetailedMip = 0;
+
             // depth target
             D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
             dsv_desc.Format = (DXGI_FORMAT)depth_texture_format_to_dsv_format(texture_desc.Format);
@@ -857,16 +870,25 @@ namespace pen
 
                     CHECK_CALL(s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &dsv[a]));
                 }
-            }
 
-            // create shader resource view
-            resource_view_desc.Format = (DXGI_FORMAT)depth_texture_format_to_srv_format(texture_desc.Format);
-            resource_view_desc.ViewDimension = srv_dimension;
-            resource_view_desc.Texture2D.MipLevels = -1;
-            resource_view_desc.Texture2D.MostDetailedMip = 0;
+                if (srv_dimension == D3D_SRV_DIMENSION_TEXTURE2DARRAY)
+                {
+                    resource_view_desc.Texture2DArray.ArraySize = array_size;
+                    resource_view_desc.Texture2DArray.FirstArraySlice = 0;
+                    resource_view_desc.Texture2DArray.MipLevels = -1;
+                    resource_view_desc.Texture2DArray.MostDetailedMip = 0;
+                }
+            }
         }
         else if (texture_desc.BindFlags & D3D11_BIND_RENDER_TARGET)
         {
+            // create shader resource view
+            resource_view_desc.Format = texture_desc.Format;
+            resource_view_desc.ViewDimension = srv_dimension;
+            resource_view_desc.Texture2D.MipLevels = -1;
+            resource_view_desc.Texture2D.MostDetailedMip = 0;
+
+
             // render target
             D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
             rtv_desc.Format = texture_desc.Format;
@@ -889,13 +911,15 @@ namespace pen
                     rtv_desc.Texture2DArray.ArraySize = 1;
                     CHECK_CALL(s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &rtv[a]));
                 }
-            }
 
-            // create shader resource view
-            resource_view_desc.Format = texture_desc.Format;
-            resource_view_desc.ViewDimension = srv_dimension;
-            resource_view_desc.Texture2D.MipLevels = -1;
-            resource_view_desc.Texture2D.MostDetailedMip = 0;
+                if (srv_dimension == D3D_SRV_DIMENSION_TEXTURE2DARRAY)
+                {
+                    resource_view_desc.Texture2DArray.ArraySize = array_size;
+                    resource_view_desc.Texture2DArray.FirstArraySlice = 0;
+                    resource_view_desc.Texture2DArray.MipLevels = -1;
+                    resource_view_desc.Texture2DArray.MostDetailedMip = 0;
+                }
+            }
         }
         else
         {
