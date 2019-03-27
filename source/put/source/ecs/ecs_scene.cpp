@@ -406,6 +406,8 @@ namespace put
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
                 
                 static mat4 scale = mat::create_scale(vec3f(1.0f, -1.0f, 1.0f));
+
+                // flip for gl viewport / texcoord space. 
                 if (pen::renderer_viewport_vup())
                     shadow_vp = scale * (cam.proj * cam.view);
                 

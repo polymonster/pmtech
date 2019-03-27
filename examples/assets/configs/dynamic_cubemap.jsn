@@ -33,6 +33,8 @@
         chrome1_cubemap_render:
         {
             inherit: "demo_main",
+			pmfx_shader : forward_render,
+			technique: "forward_lit",
             target : [chrome],
             camera : "chrome_camera"
         },
@@ -40,6 +42,8 @@
         chrome2_cubemap_render:
         {
             inherit: "demo_main",
+			pmfx_shader : forward_render,
+			technique: "forward_lit",
             target : [chrome2],
             camera : "chrome2_camera"
         }

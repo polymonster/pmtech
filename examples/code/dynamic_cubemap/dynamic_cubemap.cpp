@@ -213,10 +213,16 @@ void setup_scene(ecs_scene* scene)
     scene->material_resources[chorme_ball].id_technique = PEN_HASH("cubemap");
     scene->material_resources[chorme_ball].shader_name = "pmfx_utility";
     scene->material_resources[chorme_ball].id_shader = PEN_HASH("pmfx_utility");
+
+    scene->state_flags[chorme_ball] &= ~SF_SAMPLERS_INITIALISED;
+    bake_material_handles(scene, chorme_ball);
+
+    for (u32 s = 1; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+        scene->samplers[chorme_ball].sb[s].handle = 0;
+
     scene->samplers[chorme_ball].sb[0].handle = chrome_cubemap_handle;
     scene->samplers[chorme_ball].sb[0].sampler_unit = 3;
     scene->samplers[chorme_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
-    bake_material_handles(scene, chorme_ball);
 
     // add physics
     scene->physics_data[chorme_ball].rigid_body.shape = physics::SPHERE;
@@ -242,10 +248,16 @@ void setup_scene(ecs_scene* scene)
     scene->material_resources[chrome2_ball].id_technique = PEN_HASH("cubemap");
     scene->material_resources[chrome2_ball].shader_name = "pmfx_utility";
     scene->material_resources[chrome2_ball].id_shader = PEN_HASH("pmfx_utility");
+    scene->state_flags[chrome2_ball] &= ~SF_SAMPLERS_INITIALISED;
+
+    bake_material_handles(scene, chrome2_ball);
+
     scene->samplers[chrome2_ball].sb[0].handle = chrome2_cubemap_handle;
     scene->samplers[chrome2_ball].sb[0].sampler_unit = 3;
     scene->samplers[chrome2_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
-    bake_material_handles(scene, chrome2_ball);
+
+    for (u32 s = 1; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+        scene->samplers[chrome2_ball].sb[s].handle = 0;
 
     // add physics
     scene->physics_data[chrome2_ball].rigid_body.shape = physics::SPHERE;

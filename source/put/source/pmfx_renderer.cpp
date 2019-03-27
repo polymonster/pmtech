@@ -2744,7 +2744,7 @@ namespace put
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                     v.render_functions[rf](sv);
             }
-            
+
             // for debug
             stash_output(v, vp);
         }

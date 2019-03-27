@@ -19,9 +19,8 @@
             pmfx_shader        : forward_render,
             technique          : zonly,
             scene              : main_scene,
-            camera             : shadow_camera,
-            scene_views        : ["ces_render_scene"],
-            render_flags       : ["forward_lit"]
+            scene_views        : ["ces_render_shadow_maps"],
+            render_flags       : ["shadow_map"]
         },
         
         sss_main:
@@ -53,7 +52,7 @@
     view_sets: 
     {
         sss_view: [
-            multiple_shadow_views,
+            single_shadow_view,
             sss_main
         ]
     },

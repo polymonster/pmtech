@@ -15,8 +15,9 @@
     #define sample_texture( sampler_name, V ) texture( sampler_name, V )
     #define sample_texture_level( sampler_name, V, l ) textureLod( sampler_name, V, l )
     #define sample_texture_grad( sampler_name, V, vddx, vddy ) textureGrad( sampler_name, V, vddx, vddy )
-    #define sample_texture_array( sampler_name, V, l ) texture( sampler_name, vec3(V, l) );
-        
+    #define sample_texture_array( sampler_name, V, a ) texture( sampler_name, vec3(V, a) );
+	#define sample_texture_array_level( sampler_name, V, a, l ) textureLod( sampler_name, vec3(V, a), l );
+		
     #define to_3x3( M4 ) float3x3(M4)
     #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;
     #define to_data_matrix(mat) mat
@@ -56,10 +57,14 @@
     #define texture_3d( name, sampler_index ) Texture3D name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 
     #define texture_2dms( type, samples, name, sampler_index ) Texture2DMS<type, samples> name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 
     #define texture_cube( name, sampler_index )	TextureCube name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 
+	#define texture_2d_array( name, sampler_index ) Texture2DArray name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 
+	
     #define sample_texture_2dms( name, x, y, fragment ) name.Load( uint2(x, y), fragment )
     #define sample_texture( name, V ) name.Sample(sampler_##name, V)
     #define sample_texture_level( name, V, l ) name.SampleLevel(sampler_##name, V, l)
     #define sample_texture_grad( name, V, vddx, vddy ) name.SampleGrad(sampler_##name, V, vddx, vddy )
+	#define sample_texture_array( name, V, a ) name.Sample(sampler_##name, float3(V.xy, a) )
+	#define sample_texture_array_level( name, V, a, l ) name.SampleLevel(sampler_##name, float3(V.xy, a), l)
 
     #define to_3x3( M4 ) (float3x3)M4
     #define mul_tbn( A, B ) mul(A, B)
