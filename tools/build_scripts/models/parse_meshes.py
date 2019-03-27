@@ -58,11 +58,20 @@ class geometry_mesh:
     collision_vertices = []
     controller = None
 
-    semantic_ids = ["POSITION", "NORMAL", "TEXCOORD0", "TEXCOORD1", "TEXTANGENT1", "TEXBINORMAL1", "BLENDINDICES", "BLENDWEIGHTS"]
+    semantic_ids = [
+        "POSITION",
+        "NORMAL",
+        "TEXCOORD0",
+        "TEXCOORD1",
+        "TEXTANGENT1",
+        "TEXBINORMAL1",
+        "BLENDINDICES",
+        "BLENDWEIGHTS"
+    ]
     required_elements = [True, True, True, True, True, True, False, False]
     vertex_elements = []
 
-    def get_element_stream(self,sem_id):
+    def get_element_stream(self, sem_id):
         index = 0
         for s in self.semantic_ids:
             if s == sem_id:
@@ -200,11 +209,20 @@ def generate_vertex_buffer(mesh):
     # interleave streams
     num_floats = len(mesh.vertex_elements[0].float_values)
 
+    elem_stride = []
     for stream in mesh.vertex_elements:
+        stride = 0
         stream_len = len(stream.float_values)
-        if stream_len != num_floats and stream_len > 0:
-            print("error mismatched vertex size : ")
+        if stream_len == num_floats:
+            stride = 1
+        elif stream_len > 0:
+            print("error: mismatched vertex size")
+            print(len(mesh.controller.vec4_indices.float_values))
+            print(len(mesh.controller.vec4_weights.float_values))
             print(stream.semantic_id + " is " + str(stream_len) + " should be " + str(num_floats))
+            if stream_len % num_floats == 0:
+                stride = int(stream_len / num_floats)
+        elem_stride.append(stride)
 
     # pad out required streams
     for i in range(0, len(mesh.semantic_ids)):
@@ -239,14 +257,16 @@ def generate_vertex_buffer(mesh):
             # write texbinormal
             for f in range(0, 4, 1):
                 mesh.vertex_buffer.append(mesh.vertex_elements[5].float_values[i+f])
-        if len(mesh.vertex_elements[6].float_values) == num_floats:
+        if len(mesh.vertex_elements[6].float_values) == num_floats or elem_stride[6] > 0:
+            j = i * elem_stride[6]
             # write blendindices
             for f in range(0, 4, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[6].float_values[i+f])
-        if len(mesh.vertex_elements[7].float_values) == num_floats:
+                mesh.vertex_buffer.append(mesh.vertex_elements[6].float_values[j+f])
+        if len(mesh.vertex_elements[7].float_values) == num_floats or elem_stride[7] > 0:
+            j = i * elem_stride[7]
             # write blendweights
             for f in range(0, 4, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[7].float_values[i+f])
+                mesh.vertex_buffer.append(mesh.vertex_elements[7].float_values[j+f])
 
 
 def generate_index_buffer(mesh):
@@ -342,12 +362,20 @@ def parse_controller(controller_root, geom_name):
                 sc.vec4_weights.float_values = []
 
                 vpos = 0
+                warn = 0
                 for influences in sc.bones_per_vertex:
-                    indices = [0, 0, 0, 0, 0, 0, 0, 0]
-                    weights = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                    indices = []
+                    weights = []
+                    for i in range(0, 16):
+                        indices.append(0)
+                        weights.append(0.0)
                     strongest_index = 0
                     strongest_weight = 0.0
-                    for i in range(0,int(influences),1):
+                    if int(influences) > 4:
+                        warn += 1
+                    for i in range(0, int(influences), 1):
+                        if i >= 16:
+                            continue
                         indices[i] = sc.joint_weight_indices[vpos]
                         weight_index = sc.joint_weight_indices[vpos+1]
                         weights[i] = sc.weights[int(weight_index)]
@@ -355,14 +383,16 @@ def parse_controller(controller_root, geom_name):
                             strongest_weight = weights[i]
                             strongest_index = indices[i]
                         vpos += 2
-                    for i in range(int(influences),4,1):
+                    for i in range(int(influences), 4, 1):
                         indices[i] = strongest_index
                         weights[i] = 0.0
-                    for i in range(0,4,1):
+                    for i in range(0, 4, 1):
                         # print( "index = " + str(indices[i]) + " wght = " + str(weights[i]))
                         sc.vec4_indices.float_values.append(indices[i])
                         sc.vec4_weights.float_values.append(weights[i])
-
+                if warn > 0:
+                    print("warning: more than 4 bone influences found on " + str(warn) + " vertices")
+                    print("excess weights have been discarded and the remaining re-normalised")
                 return sc
             return None
     return None
