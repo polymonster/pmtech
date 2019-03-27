@@ -349,7 +349,7 @@ namespace put
                 rrp.width = 2048;
                 rrp.height = 2048;
                 rrp.format = nullptr;
-                rrp.num_arrays = num_shadows;
+                rrp.num_arrays = std::max<u32>(num_shadows, 1);
                 rrp.num_mips = 1;
                 rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
                 pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);

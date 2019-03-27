@@ -106,7 +106,7 @@ declare_texture_samplers
     texture_2d_array( shadowmap_texture, 15 );
 };
 
-vs_output_zonly vs_main_zonly( vs_input input, vs_instance_input instance_input )
+vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_input )
 {
     vs_output_zonly output;
     
@@ -129,8 +129,16 @@ vs_output_zonly vs_main_zonly( vs_input input, vs_instance_input instance_input 
     {
         wvp = mul( world_matrix, vp_matrix );
     }
-
-    output.position = mul( input.position, wvp );
+    
+    if:(SKINNED)
+    {
+        float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+        output.position = mul( sp, vp_matrix );
+    }
+    else:
+    {
+        output.position = mul( input.position, wvp );
+    }
       
     // for d3d 0 - 1 clip space
     output.position /= output.position.w;
@@ -351,7 +359,9 @@ ps_output ps_forward_lit( vs_output input )
             if:(SSS)
             {
                 // sss
-                float4 shrink_pos = float4(input.world_pos.xyz - n.xyz * 0.09, 1.0);
+                float sss_offset = 0.01;
+                float4 shrink_pos = float4(input.world_pos.xyz - input.normal.xyz * sss_offset, 1.0);
+                
                 sp = mul( shrink_pos, shadow_matrix[i] );
                 sp.xyz /= sp.w;
                 sp.y *= -1.0;
@@ -367,8 +377,8 @@ ps_output ps_forward_lit( vs_output input )
                 float d2 = sp.z;
                 d1 *= fp;
                 float sssd = m_sss_scale * abs(d1 - d2) * 0.5 + 0.5;
-            
-                float dd = -sssd * sssd;
+                            
+                float dd = -(sssd * sssd);
                 float3 profile = float3(0.233, 0.455, 0.649) * exp(dd / 0.0064) +
                      float3(0.1,   0.336, 0.344) * exp(dd / 0.0484) +
                      float3(0.118, 0.198, 0.0)   * exp(dd / 0.187)  +
@@ -377,10 +387,13 @@ ps_output ps_forward_lit( vs_output input )
                      float3(0.078, 0.0,   0.0)   * exp(dd / 7.41);
                             
                 float sss = saturate(0.5 + dot(light_dir, n));
-            
+                
+                profile *= albedo.rgb;
+                
                 lit_colour.rgb += profile * sss;
-            
                 lit_colour += albedo.rgb * 0.15;
+                
+                //lit_colour.rgb = float3(abs(dd),abs(dd), abs(dd));
             }
         }
     }
@@ -613,6 +626,7 @@ pmfx:
         
         "permutations":
         {
+            "SKINNED": [31, [0,1]],
             "INSTANCED": [30, [0,1]]
         }
     },
