@@ -140,7 +140,7 @@ def write_source_float_channel(p, src, sem_id, mesh):
     if stream != None:
         base_p = int(p) * int(src.stride)
         # always write 4 values per source / semantic so they occupy 1 vector register
-        #if sem_id == "POSITION" or sem_id == "NORMAL" or sem_id == "TEXTANGENT1" or sem_id == "TEXBINORMAL1":
+        # if sem_id == "POSITION" or sem_id == "NORMAL" or sem_id == "TEXTANGENT1" or sem_id == "TEXBINORMAL1":
 
         # correct cordspace
         vals = [0.0, 0.0, 0.0, 1.0]
@@ -185,11 +185,11 @@ def write_vertex_data(p, src_id, sem_id, mesh):
                 for src in mesh.sources:
                     if v_src == src.id:
                         write_source_float_channel(source_index, src, v.semantic_ids[itr], mesh)
-                        # also write WEIGHTS and JOINTS if we need them
-                        if mesh.controller != None:
-                            write_source_float_channel(source_index, mesh.controller.vec4_indices, "BLENDINDICES", mesh)
-                            write_source_float_channel(source_index, mesh.controller.vec4_weights, "BLENDWEIGHTS", mesh)
                 itr = itr + 1
+        # also write WEIGHTS and JOINTS if we need them
+        if mesh.controller != None:
+            write_source_float_channel(source_index, mesh.controller.vec4_indices, "BLENDINDICES", mesh)
+            write_source_float_channel(source_index, mesh.controller.vec4_weights, "BLENDWEIGHTS", mesh)
 
 
 def generate_vertex_buffer(mesh):
@@ -217,8 +217,6 @@ def generate_vertex_buffer(mesh):
             stride = 1
         elif stream_len > 0:
             print("error: mismatched vertex size")
-            print(len(mesh.controller.vec4_indices.float_values))
-            print(len(mesh.controller.vec4_weights.float_values))
             print(stream.semantic_id + " is " + str(stream_len) + " should be " + str(num_floats))
             if stream_len % num_floats == 0:
                 stride = int(stream_len / num_floats)
@@ -366,30 +364,36 @@ def parse_controller(controller_root, geom_name):
                 for influences in sc.bones_per_vertex:
                     indices = []
                     weights = []
-                    for i in range(0, 16):
+                    max_input_influence = 32
+                    for i in range(0, max_input_influence):
                         indices.append(0)
                         weights.append(0.0)
-                    strongest_index = 0
-                    strongest_weight = 0.0
                     if int(influences) > 4:
                         warn += 1
                     for i in range(0, int(influences), 1):
-                        if i >= 16:
+                        if i >= 32:
                             continue
                         indices[i] = sc.joint_weight_indices[vpos]
                         weight_index = sc.joint_weight_indices[vpos+1]
                         weights[i] = sc.weights[int(weight_index)]
-                        if float(strongest_weight) < float(weights[i]):
-                            strongest_weight = weights[i]
-                            strongest_index = indices[i]
                         vpos += 2
-                    for i in range(int(influences), 4, 1):
-                        indices[i] = strongest_index
-                        weights[i] = 0.0
+                    weight_index = []
+                    for i in range(max_input_influence):
+                        weight_index.append((float(weights[i]), float(indices[i])))
+                    weight_index.sort(reverse=True)
+                    total = 0.0
                     for i in range(0, 4, 1):
-                        # print( "index = " + str(indices[i]) + " wght = " + str(weights[i]))
-                        sc.vec4_indices.float_values.append(indices[i])
-                        sc.vec4_weights.float_values.append(weights[i])
+                        # print("index = " + str(indices[i]) + " wght = " + str(weights[i]))
+                        sc.vec4_indices.float_values.append(weight_index[i][1])
+                        sc.vec4_weights.float_values.append(weight_index[i][0])
+                        total += weight_index[i][0]
+                    norm_error = False
+                    if total < 0.9 and norm_error:
+                        print("warning: weights are not normalised")
+                        for i in range(0, 16, 1):
+                            if i == 5:
+                                print("discarded -------------")
+                            print(weight_index[i][0])
                 if warn > 0:
                     print("warning: more than 4 bone influences found on " + str(warn) + " vertices")
                     print("excess weights have been discarded and the remaining re-normalised")

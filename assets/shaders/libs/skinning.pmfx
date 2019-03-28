@@ -13,13 +13,13 @@ float4 skin_pos(float4 pos, float4 weights, float4 indices)
 
     float4 sp = float4( 0.0, 0.0, 0.0, 0.0 );
     float final_weight = 1.0;
-    for( int i = 0; i < 3; ++i)    
+    for(int i = 3; i >= 0; --i)    
     {
         sp += mul( pos, bones[bone_indices[i]] ) * weights[i];
         final_weight -= weights[i];
     }
         
-    sp += mul( pos, bones[bone_indices[3]] ) * final_weight;
+    sp += mul( pos, bones[bone_indices[0]] ) * final_weight;
     
     sp.w = 1.0;
         

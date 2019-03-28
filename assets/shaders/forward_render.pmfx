@@ -202,7 +202,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
         output.normal = input.normal.xyz;
     
         skin_tbn(output.tangent, output.bitangent, output.normal, input.blend_weights, input.blend_indices);
-    
+        
         output.position = mul( sp, vp_matrix );
         output.world_pos = sp;
     }

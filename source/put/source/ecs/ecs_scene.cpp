@@ -618,7 +618,6 @@ namespace put
                     }
 
                     static mat4 bb[85];
-
                     s32 joints_offset = scene->anim_controller[n].joints_offset;
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                     {

@@ -1153,6 +1153,7 @@ namespace put
             }
 
             // scene nodes
+            bool has_control_rig = false;
             s32 nodes_start, nodes_end;
             get_new_nodes_append(scene, num_import_nodes, nodes_start, nodes_end);
 
@@ -1200,9 +1201,17 @@ namespace put
                 scene->parents[current_node] = parent;
                 u32 transforms = *p_u32reader++;
 
-                // parent fix up
+                // parent fix up to contain control rig
                 if (scene->id_name[current_node] == ID_CONTROL_RIG)
+                {
+                    has_control_rig = true;
                     scene->parents[current_node] = node_zero_offset;
+                }
+                
+                // if we find a trajectory node with no control rig.. we can use that to identify a rig
+                if(!has_control_rig)
+                    if (scene->id_name[current_node] == ID_TRAJECTORY)
+                        scene->parents[current_node] = node_zero_offset;
 
                 vec3f translation;
                 vec4f rotations[3];

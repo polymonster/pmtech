@@ -368,5 +368,6 @@ struct gbuffer_uv_scale_instanced_skinned
     float m_reflectivity;
 };
 
+#define ZONLY_SKINNED 2147483648
 #define ZONLY_INSTANCED 1073741824
 
