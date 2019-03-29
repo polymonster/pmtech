@@ -43,7 +43,7 @@ namespace put
             // todo must make func
             u32 num_ext = sb_count(scene->extensions);
             for (u32 e = 0; e < num_ext; ++e)
-                delete scene->extensions[e].context;
+                scene->extensions[e].shutdown(scene->extensions[e]);
 
             sb_free(scene->extensions);
         }
@@ -620,9 +620,7 @@ namespace put
                     static mat4 bb[85];
                     s32 joints_offset = scene->anim_controller[n].joints_offset;
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
-                    {
                         bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
-                    }
 
                     pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
                     pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);

@@ -312,7 +312,7 @@ namespace put
         {
             if (child == parent)
                 return;
-
+            
             scene->parents[child] = parent;
 
             mat4 parent_mat = scene->world_matrices[parent];

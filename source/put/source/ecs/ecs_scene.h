@@ -369,11 +369,11 @@ namespace put
             u32                num_components;
 
             void* (*ext_func)(ecs_scene*) = nullptr;                    // must implement.. registers ext with scene
+            void (*shutdown)(ecs_extension&) = nullptr;                 // must implement.. frees mem
             void (*browser_func)(ecs_extension&, ecs_scene*) = nullptr; // component editor ui
             void (*load_func)(ecs_extension&, ecs_scene*) = nullptr;    // fix up any loaded resources and read lookup strings
             void (*save_func)(ecs_extension&, ecs_scene*) = nullptr;    // fix down any save info.. write lookup strings etc
             void (*update_func)(ecs_extension&, ecs_scene*, f32) = nullptr; // update with dt
-            void (*shutdown)(ecs_extension&) = nullptr;
         };
 
         struct ecs_controller
