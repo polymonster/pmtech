@@ -45,7 +45,8 @@ namespace physics
         CMD_ADD_CONSTRAINT,
         CMD_ADD_CENTRAL_FORCE,
         CMD_ADD_CENTRAL_IMPULSE,
-        CMD_CONTACT_TEST
+        CMD_CONTACT_TEST,
+        CMD_STEP
     };
 
     enum e_physics_shape : s32
@@ -365,6 +366,7 @@ namespace physics
                      bool immediate = false); // using non immediate may not be thread safe..
     void contact_test(const contact_test_params& ctp);
 
+    void step();
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
     void set_float(const u32& entity_index, const f32& fval, u32 cmd);
     void set_transform(const u32& entity_index, const vec3f& position, const quat& quaternion);

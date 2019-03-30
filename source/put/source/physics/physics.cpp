@@ -25,7 +25,7 @@ namespace physics
     static pen::slot_resources              s_physics_slot_resources;
     static pen::slot_resources              s_p2p_slot_resources;
 
-    void exec_cmd(const physics_cmd& cmd)
+    void exec_cmd(const physics_cmd& cmd, f32 dt_ms)
     {
         switch (cmd.command_index)
         {
@@ -163,6 +163,9 @@ namespace physics
             case CMD_CONTACT_TEST:
                 contact_test_internal(cmd.contact_test);
                 break;
+            case CMD_STEP:
+                physics_update(dt_ms * 1000.0f);
+                break;
 
             default:
                 break;
@@ -200,6 +203,7 @@ namespace physics
         for (;;)
         {
             f32 dt_ms = pen::timer_elapsed_ms(physics_timer);
+
             pen::timer_start(physics_timer);
 
             if (pen::semaphore_try_wait(p_physics_job_thread_info->p_sem_consume))
@@ -209,14 +213,12 @@ namespace physics
                 physics_cmd* cmd = s_cmd_buffer.get();
                 while (cmd)
                 {
-                    exec_cmd(*cmd);
+                    exec_cmd(*cmd, dt_ms);
                     cmd = s_cmd_buffer.get();
                 }
             }
-
-            physics_update(dt_ms * 1000.0f);
-
-            pen::thread_sleep_ms(16);
+            
+            //pen::thread_sleep_ms(16);
 
             if (pen::semaphore_try_wait(p_physics_job_thread_info->p_sem_exit))
                 break;
@@ -505,6 +507,13 @@ namespace physics
         physics_cmd pc;
         pc.command_index = CMD_CONTACT_TEST;
         pc.contact_test = ctp;
+        s_cmd_buffer.put(pc);
+    }
+    
+    void step()
+    {
+        physics_cmd pc;
+        pc.command_index = CMD_STEP;
         s_cmd_buffer.put(pc);
     }
 } // namespace physics

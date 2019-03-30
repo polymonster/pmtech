@@ -1485,6 +1485,7 @@ namespace put
             }
 
             // update physics running 1 frame behind to allow the sets to take effect
+            physics::step();
             physics::physics_consume_command_buffer();
 
             // controllers post update
