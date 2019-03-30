@@ -308,6 +308,7 @@ namespace put
             tree_to_node_index_list(tree, start_node, list_out);
         }
 
+        // just set parent and fixup matrix
         void set_node_parent(ecs_scene* scene, u32 parent, u32 child)
         {
             if (child == parent)
@@ -318,6 +319,24 @@ namespace put
             mat4 parent_mat = scene->world_matrices[parent];
 
             scene->local_matrices[child] = mat::inverse4x4(parent_mat) * scene->local_matrices[child];
+        }
+        
+        // set parent and also swap nodes to maintain valid heirarchy
+        void set_node_parent_validate(ecs_scene* scene, u32& parent, u32& child)
+        {
+            if (child == parent)
+                return;
+            
+            set_node_parent(scene, parent, child);
+            
+            // children must be below parents
+            if(child < parent)
+            {
+                swap_entities(scene, parent, child);
+                u32 temp = parent;
+                parent = child;
+                child = temp;
+            }
         }
 
         void clone_selection_hierarchical(ecs_scene* scene, u32** selection_list, const c8* suffix)

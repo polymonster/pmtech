@@ -195,7 +195,37 @@ namespace put
             free_scene_buffers(scene);
             resize_scene_buffers(scene);
         }
+        
+        // a component wise memcpy of all components and extension components
+        void entity_cpy(ecs_scene* scene, u32 dst, u32 src)
+        {
+            // will copy extensions and base
+            for (u32 i = 0; i < scene->num_components; ++i)
+            {
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                memcpy(cmp[dst], cmp[src], cmp.size);
+            }
+        }
 
+        void swap_entities(ecs_scene* scene, u32 a, s32 b)
+        {
+            u32 temp = get_new_node(scene);
+            entity_cpy(scene, temp, a);
+            entity_cpy(scene, a, b);
+            entity_cpy(scene, b, temp);
+            
+            // swap parents
+            for(u32 i = 0; i < scene->num_nodes; ++i)
+            {
+                if(scene->parents[i] == a)
+                    scene->parents[i] = b;
+                else if(scene->parents[i] == b)
+                    scene->parents[i] = a;
+            }
+            
+            zero_entity_components(scene, temp);
+        }
+        
         u32 clone_node(ecs_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
         {
             if (dst == -1)
@@ -216,7 +246,7 @@ namespace put
                 generic_cmp_array& cmp = p_sn->get_component_array(i);
                 memcpy(cmp[dst], cmp[src], cmp.size);
             }
-
+            
             // assign
             Str blank;
             memcpy(&p_sn->names[dst], &blank, sizeof(Str));
@@ -261,9 +291,6 @@ namespace put
             }
             else if (flags == CLONE_MOVE)
             {
-                p_sn->cbuffer[dst] = p_sn->cbuffer[src];
-                p_sn->physics_handles[dst] = p_sn->physics_handles[src];
-
                 zero_entity_components(scene, src);
             }
 
