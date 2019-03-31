@@ -441,7 +441,7 @@ namespace put
                 s_shadow_matrices[shadow_index-1] = shadow_vp;
                 
                 vv.cb_view = cb_view;
-                
+                                
                 render_scene_view(vv);
             }
         }
