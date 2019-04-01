@@ -69,9 +69,9 @@ namespace put
         void get_new_nodes_append(ecs_scene* scene, s32 num, s32& start, s32& end)
         {
             // o(1) - appends a bunch of nodes on the end
-
-            if (scene->num_nodes + num >= scene->nodes_size || !scene->free_list_head)
-                resize_scene_buffers(scene);
+            u32 max_num = scene->num_nodes + num;
+            if (max_num >= scene->nodes_size || !scene->free_list_head)
+                resize_scene_buffers(scene, max_num * 2);
 
             start = scene->num_nodes;
             end = start + num;
@@ -100,9 +100,9 @@ namespace put
         {
             // o(n) - has to find contiguous nodes within the free list, and worst case will allocate more mem and append the
             // new nodes
-
-            if (scene->num_nodes + num >= scene->nodes_size || !scene->free_list_head)
-                resize_scene_buffers(scene);
+            u32 max_num = scene->num_nodes + num;
+            if (max_num >= scene->nodes_size || !scene->free_list_head)
+                resize_scene_buffers(scene, max_num * 2);
 
             free_node_list* fnl_iter = scene->free_list_head;
             free_node_list* fnl_start = fnl_iter;
@@ -164,7 +164,7 @@ namespace put
             // o(1) using free list
 
             if (!scene->free_list_head)
-                resize_scene_buffers(scene);
+                resize_scene_buffers(scene, scene->nodes_size * 2);
 
             u32 ii = 0;
             ii = scene->free_list_head->node;

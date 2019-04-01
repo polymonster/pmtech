@@ -349,6 +349,7 @@ namespace put
             // anim
         }
         
+        // todo. move this into ecs_scene
         static u32 cbuffer_shadow = PEN_INVALID_HANDLE;
         mat4 s_shadow_matrices[100];
         void render_shadow_views(const scene_view& view)
@@ -441,7 +442,7 @@ namespace put
                 s_shadow_matrices[shadow_index-1] = shadow_vp;
                 
                 vv.cb_view = cb_view;
-                                
+                
                 render_scene_view(vv);
             }
         }
