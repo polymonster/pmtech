@@ -1,7 +1,7 @@
 
 pmtech is split into 2 static libraries, **pen** and **put**
 
-Read more about the source code and coding philosophy on this project [here](https://github.com/polymonster/pmtech/wiki/3.-Source-Code).
+Read more about the source code and coding philosophy on this project [here](https://github.com/polymonster/pmtech/wiki/Source-Code).
 
 **pen** contains platform specific code and abstractions for the following:
 - [console](https://github.com/polymonster/pmtech/blob/master/source/pen/include/console.h)
