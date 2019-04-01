@@ -443,8 +443,8 @@ namespace put
             ecs_controller* controllers = nullptr;
 
             // Scene Data
-            u32             num_nodes = 0;
-            u32             nodes_size = 0;
+            u32             num_entities = 0;
+            u32             soa_size = 0;
             free_node_list* free_list_head = nullptr;
             u32             forward_light_buffer = PEN_INVALID_HANDLE;
             u32             sdf_shadow_buffer = PEN_INVALID_HANDLE;

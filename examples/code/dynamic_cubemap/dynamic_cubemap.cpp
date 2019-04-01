@@ -56,7 +56,7 @@ void setup_scene(ecs_scene* scene)
     geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
 
     // front light
-    u32 light = get_new_node(scene);
+    u32 light = get_new_entity(scene);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
@@ -69,7 +69,7 @@ void setup_scene(ecs_scene* scene)
     scene->entities[light] |= CMP_TRANSFORM;
 
     // back light
-    light = get_new_node(scene);
+    light = get_new_entity(scene);
     scene->names[light] = "back_light";
     scene->id_name[light] = PEN_HASH("back_light");
     scene->lights[light].colour = vec3f(0.6f, 0.6f, 0.6f);
@@ -82,7 +82,7 @@ void setup_scene(ecs_scene* scene)
     scene->entities[light] |= CMP_TRANSFORM;
 
     // ground
-    u32 ground = get_new_node(scene);
+    u32 ground = get_new_entity(scene);
     scene->names[ground] = "ground";
     scene->transforms[ground].translation = vec3f(0.0f, -2.0f, 0.0f);
     scene->transforms[ground].rotation = quat();
@@ -118,7 +118,7 @@ void setup_scene(ecs_scene* scene)
         // ramp1
         quat ramp_rot;
         ramp_rot.euler_angles(ramp1_angle[i], 0.0f, 0.0f);
-        u32 ramp = get_new_node(scene);
+        u32 ramp = get_new_entity(scene);
         scene->names[ramp] = "ramp";
         scene->transforms[ramp].translation = vec3f(ramp1_x[i], 25.0f, zpos[i]);
         scene->transforms[ramp].rotation = ramp_rot;
@@ -134,7 +134,7 @@ void setup_scene(ecs_scene* scene)
 
         // ramp2
         ramp_rot.euler_angles(ramp2_angle[i], 0.0f, 0.0f);
-        ramp = get_new_node(scene);
+        ramp = get_new_entity(scene);
         scene->names[ramp] = "ramp";
         scene->transforms[ramp].translation = vec3f(ramp2_x[i], 10.0f, zpos[i]);
         scene->transforms[ramp].rotation = ramp_rot;
@@ -149,7 +149,7 @@ void setup_scene(ecs_scene* scene)
         instantiate_rigid_body(scene, ramp);
 
         // end block
-        u32 block = get_new_node(scene);
+        u32 block = get_new_entity(scene);
         scene->names[block] = "block";
         scene->transforms[block].translation = vec3f(block1_x[i], 1.0f, zpos[i]);
         scene->transforms[block].rotation = quat();
@@ -164,7 +164,7 @@ void setup_scene(ecs_scene* scene)
         instantiate_rigid_body(scene, block);
 
         // back block
-        block = get_new_node(scene);
+        block = get_new_entity(scene);
         scene->names[block] = "block";
         scene->transforms[block].translation = vec3f(block2_x[i], 0.0f, zpos[i]);
         scene->transforms[block].rotation = quat();
@@ -195,7 +195,7 @@ void setup_scene(ecs_scene* scene)
     }
 
     // chrome ball
-    chorme_ball = get_new_node(scene);
+    chorme_ball = get_new_entity(scene);
     scene->names[chorme_ball] = "chrome_ball";
     scene->transforms[chorme_ball].rotation = quat();
     scene->transforms[chorme_ball].scale = vec3f(2.0f, 2.0f, 2.0f);
@@ -230,7 +230,7 @@ void setup_scene(ecs_scene* scene)
     instantiate_rigid_body(scene, chorme_ball);
 
     // chrome2 ball
-    chrome2_ball = get_new_node(scene);
+    chrome2_ball = get_new_entity(scene);
     scene->names[chrome2_ball] = "chrome2_ball";
     scene->transforms[chrome2_ball].rotation = quat();
     scene->transforms[chrome2_ball].scale = vec3f(2.0f, 2.0f, 2.0f);

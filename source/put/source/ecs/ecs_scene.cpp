@@ -57,7 +57,7 @@ namespace put
         {
             scene->free_list_head = nullptr;
 
-            for (s32 i = scene->nodes_size - 1; i >= 0; --i)
+            for (s32 i = scene->soa_size - 1; i >= 0; --i)
             {
                 scene->free_list[i].node = i;
 
@@ -79,7 +79,7 @@ namespace put
 
         void resize_scene_buffers(ecs_scene* scene, s32 size)
         {
-            u32 new_size = scene->nodes_size + size;
+            u32 new_size = scene->soa_size + size;
 
             for (u32 i = 0; i < scene->num_components; ++i)
             {
@@ -92,7 +92,7 @@ namespace put
                     cmp.data = pen::memory_realloc(cmp.data, alloc_size);
 
                     // zero new mem
-                    u32 prev_size = scene->nodes_size * cmp.size;
+                    u32 prev_size = scene->soa_size * cmp.size;
                     u8* new_offset = (u8*)cmp.data + prev_size;
                     u32 zero_size = alloc_size - prev_size;
                     pen::memory_zero(new_offset, zero_size);
@@ -105,7 +105,7 @@ namespace put
                 pen::memory_zero(cmp.data, alloc_size);
             }
 
-            scene->nodes_size = new_size;
+            scene->soa_size = new_size;
             initialise_free_list(scene);
         }
 
@@ -114,10 +114,10 @@ namespace put
             // Remove entites for sub systems (physics, rendering, etc)
             if (!cmp_mem_only)
             {
-                for (s32 i = 0; i < scene->num_nodes; ++i)
+                for (s32 i = 0; i < scene->num_entities; ++i)
                     delete_entity_first_pass(scene, i);
 
-                for (s32 i = 0; i < scene->num_nodes; ++i)
+                for (s32 i = 0; i < scene->num_entities; ++i)
                     delete_entity_second_pass(scene, i);
             }
 
@@ -129,8 +129,8 @@ namespace put
                 cmp.data = nullptr;
             }
 
-            scene->nodes_size = 0;
-            scene->num_nodes = 0;
+            scene->soa_size = 0;
+            scene->num_entities = 0;
         }
 
         void zero_entity_components(ecs_scene* scene, u32 node_index)
@@ -209,13 +209,13 @@ namespace put
 
         void swap_entities(ecs_scene* scene, u32 a, s32 b)
         {
-            u32 temp = get_new_node(scene);
+            u32 temp = get_new_entity(scene);
             entity_cpy(scene, temp, a);
             entity_cpy(scene, a, b);
             entity_cpy(scene, b, temp);
             
             // swap parents
-            for(u32 i = 0; i < scene->num_nodes; ++i)
+            for(u32 i = 0; i < scene->num_entities; ++i)
             {
                 if(scene->parents[i] == a)
                     scene->parents[i] = b;
@@ -226,16 +226,16 @@ namespace put
             zero_entity_components(scene, temp);
         }
         
-        u32 clone_node(ecs_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
+        u32 clone_entity(ecs_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
         {
             if (dst == -1)
             {
-                dst = get_new_node(scene);
+                dst = get_new_entity(scene);
             }
             else
             {
-                if (dst >= scene->num_nodes)
-                    scene->num_nodes = dst + 1;
+                if (dst >= scene->num_entities)
+                    scene->num_entities = dst + 1;
             }
 
             ecs_scene* p_sn = scene;
@@ -358,7 +358,7 @@ namespace put
             
             // count shadow maps
             u32 num_shadows = 0;
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
@@ -410,7 +410,7 @@ namespace put
             }
             
             u32 shadow_index = 0;
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
@@ -472,7 +472,7 @@ namespace put
             static hash_id id_disable_depth = PEN_HASH("disabled");
             u32            depth_disabled = pmfx::get_render_state(id_disable_depth, pmfx::RS_DEPTH_STENCIL);
 
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
@@ -571,7 +571,7 @@ namespace put
 
             // sdf shadows
             pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (scene->entities[n] & CMP_SDF_SHADOW)
                 {
@@ -586,7 +586,7 @@ namespace put
             s32 draw_count = 0;
             s32 cull_count = 0;
 
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL))
                     continue;
@@ -738,7 +738,7 @@ namespace put
             //u32 timer = pen::timer_create("anim_v2");
             //pen::timer_start(timer);
 
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
                     continue;
@@ -941,7 +941,7 @@ namespace put
 
         void update_animations_baked(ecs_scene* scene, f32 dt)
         {
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
                     continue;
@@ -1086,7 +1086,7 @@ namespace put
             pen::timer_start(timer);
 
             // scene node transform
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 // force physics entity to sync and ignore controlled transform
                 if (scene->state_flags[n] & SF_SYNC_PHYSICS_TRANSFORM)
@@ -1165,7 +1165,7 @@ namespace put
             scene->renderable_extents.max = -vec3f::flt_max();
 
             // transform extents by transform
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 vec3f min = scene->bounding_volumes[n].min_extents;
                 vec3f max = scene->bounding_volumes[n].max_extents - min;
@@ -1202,7 +1202,7 @@ namespace put
             }
 
             // reverse iterate over scene and expand parents extents by children
-            for (s32 n = scene->num_nodes - 1; n > 0; --n)
+            for (s32 n = scene->num_entities - 1; n > 0; --n)
             {
                 if (!(scene->entities[n] & CMP_ALLOCATED))
                     continue;
@@ -1233,7 +1233,7 @@ namespace put
             }
 
             // update draw call data
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (scene->entities[n] & CMP_MATERIAL)
                 {
@@ -1270,7 +1270,7 @@ namespace put
             }
 
             // update instance buffers
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_MASTER_INSTANCE))
                     continue;
@@ -1293,7 +1293,7 @@ namespace put
 
             // directional lights
             s32 num_directions_lights = 0;
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
@@ -1322,7 +1322,7 @@ namespace put
 
             // point lights
             s32 num_point_lights = 0;
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
@@ -1354,7 +1354,7 @@ namespace put
 
             // spot lights
             s32 num_spot_lights = 0;
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (num_lights >= MAX_FORWARD_LIGHTS)
                     break;
@@ -1398,7 +1398,7 @@ namespace put
             pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
 
             // Distance field shadows
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_SDF_SHADOW))
                     continue;
@@ -1414,7 +1414,7 @@ namespace put
             }
 
             // Area box lights
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
@@ -1433,7 +1433,7 @@ namespace put
             }
 
             // Shadow maps
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
@@ -1445,7 +1445,7 @@ namespace put
 
             if (pmfx::set_technique_perm(shader, id_pre_skin_technique))
             {
-                for (s32 n = 0; n < scene->num_nodes; ++n)
+                for (s32 n = 0; n < scene->num_entities; ++n)
                 {
                     if (!(scene->entities[n] & CMP_PRE_SKINNED))
                         continue;
@@ -1603,7 +1603,7 @@ namespace put
                 if (ii == PEN_INVALID_HANDLE)
                     continue;
 
-                u32 ni = sub_scene.num_nodes;
+                u32 ni = sub_scene.num_entities;
 
                 for (u32 c = 0; c < scene->num_components; ++c)
                 {
@@ -1614,7 +1614,7 @@ namespace put
                 }
 
                 sub_scene.parents[ni] -= root;
-                sub_scene.num_nodes++;
+                sub_scene.num_entities++;
             }
 
             Str fn = "";
@@ -1639,13 +1639,13 @@ namespace put
             for (u32 i = 0; i < scene->num_components; ++i)
             {
                 generic_cmp_array& cmp = scene->get_component_array(i);
-                ofs.write((const c8*)cmp.data, cmp.size * scene->num_nodes);
+                ofs.write((const c8*)cmp.data, cmp.size * scene->num_entities);
             }
 
             // specialisations ------------------------------------------------------------------------------
 
             // names
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 write_lookup_string(scene->names[n].c_str(), ofs);
                 write_lookup_string(scene->geometry_names[n].c_str(), ofs);
@@ -1653,7 +1653,7 @@ namespace put
             }
 
             // geometry
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_GEOMETRY))
                     continue;
@@ -1667,7 +1667,7 @@ namespace put
             }
 
             // animations
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 s32 size = 0;
 
@@ -1684,7 +1684,7 @@ namespace put
             }
 
             // material
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_MATERIAL))
                     continue;
@@ -1701,7 +1701,7 @@ namespace put
             }
 
             // shadow
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_SDF_SHADOW))
                     continue;
@@ -1712,7 +1712,7 @@ namespace put
             }
 
             // sampler bindings
-            for (s32 n = 0; n < scene->num_nodes; ++n)
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_SAMPLERS))
                     continue;
@@ -1760,7 +1760,7 @@ namespace put
 
             // header
             scene_header sh;
-            sh.num_nodes = scene->num_nodes;
+            sh.num_nodes = scene->num_entities;
             sh.view_flags = scene->view_flags;
             sh.selected_index = scene->selected_index;
             sh.num_components = scene->num_components;
@@ -1845,18 +1845,18 @@ namespace put
 
             if (merge)
             {
-                zero_offset = scene->num_nodes;
-                new_num_nodes = scene->num_nodes + num_nodes;
+                zero_offset = scene->num_entities;
+                new_num_nodes = scene->num_entities + num_nodes;
             }
             else
             {
                 clear_scene(scene);
             }
 
-            if (new_num_nodes > scene->nodes_size)
+            if (new_num_nodes > scene->soa_size)
                 resize_scene_buffers(scene, num_nodes);
 
-            scene->num_nodes = new_num_nodes;
+            scene->num_entities = new_num_nodes;
 
             // read component sizes
             u32* component_sizes = nullptr;

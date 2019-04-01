@@ -19,7 +19,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
 
     // add light
-    u32 light = get_new_node(scene);
+    u32 light = get_new_entity(scene);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
@@ -34,7 +34,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     // add a hinge in the x-axis
     vec3f hinge_x_pos = vec3f(-30.0f, 0.0f, 0.0f);
 
-    u32 hinge_x_body = get_new_node(scene);
+    u32 hinge_x_body = get_new_entity(scene);
     scene->names[hinge_x_body] = "hinge_x_body";
     scene->parents[hinge_x_body] = hinge_x_body;
     scene->transforms[hinge_x_body].translation = hinge_x_pos;
@@ -48,7 +48,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[hinge_x_body].rigid_body.mass = 1.0f;
     instantiate_rigid_body(scene, hinge_x_body);
 
-    u32 hinge_x_constraint = get_new_node(scene);
+    u32 hinge_x_constraint = get_new_entity(scene);
     scene->names[hinge_x_constraint] = "hinge_x_constraint";
     scene->parents[hinge_x_constraint] = hinge_x_constraint;
     scene->transforms[hinge_x_constraint].translation = hinge_x_pos - vec3f(0.0f, 0.0f, -10.0f);
@@ -65,7 +65,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     // add hinge in the y-axis with rotational limits
     vec3f hinge_y_pos = vec3f(-30.0f, 10.0f, -30.0f);
 
-    u32 hinge_y_body = get_new_node(scene);
+    u32 hinge_y_body = get_new_entity(scene);
     scene->names[hinge_y_body] = "hinge_x_body";
     scene->parents[hinge_y_body] = hinge_y_body;
     scene->transforms[hinge_y_body].translation = hinge_y_pos;
@@ -79,7 +79,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[hinge_y_body].rigid_body.mass = 1.0f;
     instantiate_rigid_body(scene, hinge_y_body);
 
-    u32 hinge_y_constraint = get_new_node(scene);
+    u32 hinge_y_constraint = get_new_entity(scene);
     scene->names[hinge_y_constraint] = "hinge_y_constraint";
     scene->parents[hinge_y_constraint] = hinge_y_constraint;
     scene->transforms[hinge_y_constraint].translation = hinge_y_pos - vec3f(10.0f, 0.0f, 0.0f);
@@ -96,7 +96,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     // add box with a point to point constraint
     vec3f p2p_pos = vec3f(0.0f, 5.0f, -10.0f);
 
-    u32 p2p_body = get_new_node(scene);
+    u32 p2p_body = get_new_entity(scene);
     scene->names[p2p_body] = "p2p_body";
     scene->parents[p2p_body] = p2p_body;
     scene->transforms[p2p_body].translation = p2p_pos;
@@ -110,7 +110,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[p2p_body].rigid_body.mass = 1.0f;
     instantiate_rigid_body(scene, p2p_body);
 
-    u32 p2p_constraint = get_new_node(scene);
+    u32 p2p_constraint = get_new_entity(scene);
     scene->names[p2p_constraint] = "p2p_constraint";
     scene->parents[p2p_constraint] = p2p_constraint;
     scene->transforms[p2p_constraint].translation = p2p_pos + vec3f(0.0f, 10.0f, 0.0f);
@@ -124,7 +124,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     // add slider constraint (six degrees of freedom in an axis)
     vec3f slider_x_pos = vec3f(5.0f, 3.0f, 20.0f);
 
-    u32 slider_x_body = get_new_node(scene);
+    u32 slider_x_body = get_new_entity(scene);
     scene->names[slider_x_body] = "slider_x_body";
     scene->parents[slider_x_body] = slider_x_body;
     scene->transforms[slider_x_body].translation = slider_x_pos;
@@ -138,7 +138,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[slider_x_body].rigid_body.mass = 1.0f;
     instantiate_rigid_body(scene, slider_x_body);
 
-    u32 slider_x_constraint = get_new_node(scene);
+    u32 slider_x_constraint = get_new_entity(scene);
     scene->names[slider_x_constraint] = "slider_x_constraint";
     scene->parents[slider_x_constraint] = slider_x_constraint;
     scene->transforms[slider_x_constraint].translation = slider_x_pos;

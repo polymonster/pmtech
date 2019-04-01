@@ -25,7 +25,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     clear_scene(scene);
 
     // add light
-    u32 light = get_new_node(scene);
+    u32 light = get_new_entity(scene);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();

@@ -247,7 +247,7 @@ namespace put
             update_view_flags_ui(scene);
 
             // add light
-            u32 light = get_new_node(scene);
+            u32 light = get_new_entity(scene);
             scene->names[light] = "front_light";
             scene->id_name[light] = PEN_HASH("front_light");
             scene->lights[light].colour = vec3f::one();
@@ -389,7 +389,7 @@ namespace put
 
                 for (int i = 0; i < sel_count; ++i)
                     if (scene->parents[i] == scene->selection_list[i])
-                        set_node_parent(scene, parent, i);
+                        set_entity_parent(scene, parent, i);
             }
             else
             {
@@ -397,11 +397,11 @@ namespace put
                 dev_console_log("[parent] selection is not contiguous size %i", parent, last_index, selection_size);
 
                 s32 start, end;
-                get_new_nodes_append(scene, selection_size, start, end);
+                get_new_entities_append(scene, selection_size, start, end);
 
                 s32 nn = start;
                 for (int i = 0; i < sel_count; ++i)
-                    clone_node(scene, scene->selection_list[i], nn++, start, CLONE_MOVE, vec3f::zero(), "");
+                    clone_entity(scene, scene->selection_list[i], nn++, start, CLONE_MOVE, vec3f::zero(), "");
             }
 
             scene->flags |= INVALIDATE_SCENE_TREE;
@@ -428,7 +428,7 @@ namespace put
             else if (pen::input_is_key_down(PK_SHIFT))
                 select_mode = SELECT_ADD;
 
-            bool valid = index < scene->num_nodes;
+            bool valid = index < scene->num_entities;
 
             u32 sel_count = sb_count(scene->selection_list);
 
@@ -588,7 +588,7 @@ namespace put
                         pm = SELECT_ADD;
                     }
 
-                    for (s32 node = 0; node < scene->num_nodes; ++node)
+                    for (s32 node = 0; node < scene->num_entities; ++node)
                     {
                         if (!(scene->entities[node] & CMP_ALLOCATED))
                             continue;
@@ -617,16 +617,16 @@ namespace put
                     }
 
                     sb_clear(scene->selection_list);
-                    stb__sbgrow(scene->selection_list, scene->num_nodes);
+                    stb__sbgrow(scene->selection_list, scene->num_entities);
 
                     s32 pos = 0;
-                    for (s32 node = 0; node < scene->num_nodes; ++node)
+                    for (s32 node = 0; node < scene->num_entities; ++node)
                     {
                         if (scene->state_flags[node] & SF_SELECTED)
                             scene->selection_list[pos++] = node;
                     }
 
-                    stb__sbm(scene->selection_list) = scene->num_nodes;
+                    stb__sbm(scene->selection_list) = scene->num_entities;
                     stb__sbn(scene->selection_list) = pos;
 
                     u32 sls = sb_count(scene->selection_list);
@@ -722,7 +722,7 @@ namespace put
             }
 
             // set child selected
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 u32 p = scene->parents[n];
                 if (p == n)
@@ -919,11 +919,11 @@ namespace put
         void update_undo_stack(ecs_scene* scene, f32 dt)
         {
             // resize buffers
-            if (!k_editor_nodes || sb_count(k_editor_nodes) < scene->nodes_size)
+            if (!k_editor_nodes || sb_count(k_editor_nodes) < scene->soa_size)
             {
-                stb__sbgrow(k_editor_nodes, scene->nodes_size);
-                stb__sbm(k_editor_nodes) = scene->num_nodes;
-                stb__sbn(k_editor_nodes) = scene->nodes_size;
+                stb__sbgrow(k_editor_nodes, scene->soa_size);
+                stb__sbm(k_editor_nodes) = scene->num_entities;
+                stb__sbn(k_editor_nodes) = scene->soa_size;
             }
 
             static editor_action macro_begin;
@@ -934,7 +934,7 @@ namespace put
 
             bool first_item = true;
 
-            for (u32 i = 0; i < scene->nodes_size; ++i)
+            for (u32 i = 0; i < scene->soa_size; ++i)
             {
                 if (k_editor_nodes[i].action_state[REDO].components)
                 {
@@ -1080,7 +1080,7 @@ namespace put
 
                 if (ImGui::MenuItem("Hide All"))
                 {
-                    for (u32 i = 0; i < scene->num_nodes; ++i)
+                    for (u32 i = 0; i < scene->num_entities; ++i)
                     {
                         scene->state_flags[i] |= SF_HIDDEN;
                     }
@@ -1088,7 +1088,7 @@ namespace put
 
                 if (ImGui::MenuItem("Unhide All"))
                 {
-                    for (u32 i = 0; i < scene->num_nodes; ++i)
+                    for (u32 i = 0; i < scene->num_entities; ++i)
                     {
                         scene->state_flags[i] &= ~SF_HIDDEN;
                     }
@@ -1098,7 +1098,7 @@ namespace put
                 {
                     if (ImGui::MenuItem("Hide Selected"))
                     {
-                        for (u32 i = 0; i < scene->num_nodes; ++i)
+                        for (u32 i = 0; i < scene->num_entities; ++i)
                         {
                             if (scene->state_flags[i] & SF_SELECTED)
                                 scene->state_flags[i] |= SF_HIDDEN;
@@ -1107,7 +1107,7 @@ namespace put
 
                     if (ImGui::MenuItem("Hide Un-Selected"))
                     {
-                        for (u32 i = 0; i < scene->num_nodes; ++i)
+                        for (u32 i = 0; i < scene->num_entities; ++i)
                         {
                             if (!(scene->state_flags[i] & SF_SELECTED))
                                 scene->state_flags[i] |= SF_HIDDEN;
@@ -1230,7 +1230,7 @@ namespace put
             if (shortcut_key(PK_O))
             {
                 // reset physics positions
-                for (s32 i = 0; i < scene->num_nodes; ++i)
+                for (s32 i = 0; i < scene->num_entities; ++i)
                 {
                     if (scene->entities[i] & CMP_PHYSICS)
                     {
@@ -1589,7 +1589,7 @@ namespace put
 
             std::vector<u32>       index_lookup;
             std::vector<const c8*> rb_names;
-            for (s32 i = 0; i < scene->num_nodes; ++i)
+            for (s32 i = 0; i < scene->num_entities; ++i)
             {
                 if (scene->entities[i] & CMP_PHYSICS)
                 {
@@ -1914,7 +1914,7 @@ namespace put
                 ImGui::InputInt("Parent", &p);
 
                 if (p != scene->parents[si])
-                    set_node_parent(scene, p, si);
+                    set_entity_parent(scene, p, si);
             }
 
             return true;
@@ -2403,10 +2403,10 @@ namespace put
             {
                 if (ImGui::Button(ICON_FA_PLUS))
                 {
-                    u32 ni = ecs::get_next_node(scene);
+                    u32 ni = ecs::get_next_entity(scene);
                     store_node_state(scene, ni, UNDO);
 
-                    u32 nn = ecs::get_new_node(scene);
+                    u32 nn = ecs::get_new_entity(scene);
 
                     scene->entities[nn] |= CMP_ALLOCATED;
 
@@ -2477,13 +2477,13 @@ namespace put
                     }
                     ImGui::Unindent();
 
-                    ImGui::Text("Total Entities: %i", scene->num_nodes);
+                    ImGui::Text("Total Entities: %i", scene->num_entities);
                     ImGui::Text("Selected: %i", (s32)sb_count(scene->selection_list));
 
                     for (s32 i = 0; i < PEN_ARRAY_SIZE(dumps); ++i)
                         dumps[i].count = 0;
 
-                    for (s32 i = 0; i < scene->num_nodes; ++i)
+                    for (s32 i = 0; i < scene->num_entities; ++i)
                         for (s32 j = 0; j < PEN_ARRAY_SIZE(dumps); ++j)
                             if (scene->entities[i] & dumps[j].component)
                                 dumps[j].count++;
@@ -2498,7 +2498,7 @@ namespace put
 
                     if (list_view)
                     {
-                        for (u32 i = 0; i < scene->num_nodes; ++i)
+                        for (u32 i = 0; i < scene->num_entities; ++i)
                         {
                             if (!(scene->entities[i] & CMP_ALLOCATED))
                                 continue;
@@ -3095,7 +3095,7 @@ namespace put
             for (u32 i = 0; i < PEN_ARRAY_SIZE(id_volume); ++i)
                 volume[i] = get_geometry_resource(id_volume[i]);
 
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
@@ -3160,7 +3160,7 @@ namespace put
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
-            for (u32 n = 0; n < scene->num_nodes; ++n)
+            for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->state_flags[n] & SF_SELECTED) && !(scene->view_flags & DD_PHYSICS))
                     continue;
@@ -3238,7 +3238,7 @@ namespace put
 
             if (scene->view_flags & DD_MATRIX)
             {
-                for (u32 n = 0; n < scene->num_nodes; ++n)
+                for (u32 n = 0; n < scene->num_entities; ++n)
                 {
                     put::dbg::add_coord_space(scene->world_matrices[n], 2.0f);
                 }
@@ -3246,7 +3246,7 @@ namespace put
 
             if (scene->view_flags & DD_AABB)
             {
-                for (u32 n = 0; n < scene->num_nodes; ++n)
+                for (u32 n = 0; n < scene->num_entities; ++n)
                 {
                     dbg::add_aabb(scene->bounding_volumes[n].transformed_min_extents,
                                   scene->bounding_volumes[n].transformed_max_extents);
@@ -3363,7 +3363,7 @@ namespace put
 
             if (scene->view_flags & DD_SELECTED_CHILDREN)
             {
-                for (u32 n = 0; n < scene->num_nodes; ++n)
+                for (u32 n = 0; n < scene->num_entities; ++n)
                 {
                     vec4f col = vec4f::white();
                     bool  selected = false;
@@ -3393,7 +3393,7 @@ namespace put
 
             if (scene->view_flags & DD_BONES)
             {
-                for (u32 n = 0; n < scene->num_nodes; ++n)
+                for (u32 n = 0; n < scene->num_entities; ++n)
                 {
                     if (!(scene->entities[n] & CMP_BONE))
                         continue;

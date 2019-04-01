@@ -655,7 +655,7 @@ namespace put
             {
                 ecs_scene* scene = si.scene;
 
-                for (u32 n = 0; n < scene->nodes_size; ++n)
+                for (u32 n = 0; n < scene->soa_size; ++n)
                 {
                     if (scene->entities[n] & CMP_MATERIAL)
                         bake_material_handles(scene, n);
@@ -1155,7 +1155,7 @@ namespace put
             // scene nodes
             bool has_control_rig = false;
             s32 nodes_start, nodes_end;
-            get_new_nodes_append(scene, num_import_nodes, nodes_start, nodes_end);
+            get_new_entities_append(scene, num_import_nodes, nodes_start, nodes_end);
 
             u32 node_zero_offset = nodes_start;
             u32 current_node = node_zero_offset;
@@ -1344,7 +1344,7 @@ namespace put
                         if (submesh > 0)
                         {
                             inserted_nodes++;
-                            clone_node(scene, current_node, dest, current_node, CLONE_INSTANTIATE, vec3f::zero(),
+                            clone_entity(scene, current_node, dest, current_node, CLONE_INSTANTIATE, vec3f::zero(),
                                        (const c8*)node_suffix.c_str());
                             scene->local_matrices[dest] = mat4::create_identity();
 
@@ -1485,7 +1485,7 @@ namespace put
 
             vec3f pos = vec3f::zero();
 
-            u32 v = get_new_node(scene);
+            u32 v = get_new_entity(scene);
 
             scene->names[v] = "volume";
             scene->names[v].appendf("%i", v);

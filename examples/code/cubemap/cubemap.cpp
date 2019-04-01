@@ -24,7 +24,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
 
-    u32 new_prim = get_new_node(scene);
+    u32 new_prim = get_new_entity(scene);
     scene->names[new_prim] = "sphere";
     scene->names[new_prim].appendf("%i", new_prim);
     scene->transforms[new_prim].rotation = quat();

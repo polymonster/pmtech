@@ -163,7 +163,7 @@ void create_scene_objects(ecs::ecs_scene* scene, camera& main_camera)
             inv_uv_snap = 1.0f / (uv_snap);
             pos = floor(pos * inv_uv_snap) * uv_snap;
 
-            u32 pillar = get_new_node(scene);
+            u32 pillar = get_new_entity(scene);
             scene->transforms[pillar].rotation = quat();
             scene->transforms[pillar].scale = vec3f(rx, ry, rz);
             scene->transforms[pillar].translation = pos;
@@ -221,7 +221,7 @@ void create_scene_objects(ecs::ecs_scene* scene, camera& main_camera)
         
         col = _pallete[rand() % 5];
 
-        u32 light = get_new_node(scene);
+        u32 light = get_new_entity(scene);
         scene->names[light] = "light";
         scene->id_name[light] = PEN_HASH("light");
 

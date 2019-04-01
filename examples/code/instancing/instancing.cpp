@@ -18,7 +18,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
 
     // add light
-    u32 light = get_new_node(scene);
+    u32 light = get_new_entity(scene);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
@@ -37,7 +37,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     vec3f start_pos = vec3f(-start, -start, -start);
 
-    u32 master_node = get_new_node(scene);
+    u32 master_node = get_new_entity(scene);
     scene->names[master_node] = "master";
 
     scene->transforms[master_node].rotation = quat();
@@ -63,7 +63,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
             for (s32 k = 0; k < num; ++k)
             {
-                u32 new_prim = get_new_node(scene);
+                u32 new_prim = get_new_entity(scene);
                 scene->names[new_prim] = "box";
                 scene->names[new_prim].appendf("%i", new_prim);
 
@@ -99,7 +99,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         cur_pos.z += spacing;
     }
 
-    instance_node_range(scene, 1, pow(num, 3));
+    instance_entity_range(scene, 1, pow(num, 3));
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
@@ -110,7 +110,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     static u32 timer = pen::timer_create("perf");
 
     pen::timer_start(timer);
-    for (s32 i = 2; i < scene->num_nodes; ++i)
+    for (s32 i = 2; i < scene->num_entities; ++i)
     {
         scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
         scene->entities.data[i] |= CMP_TRANSFORM;

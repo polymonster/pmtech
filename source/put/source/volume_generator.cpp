@@ -964,7 +964,7 @@ namespace put
             vec3f scale = (s_rasteriser_job.visible_extents.max - s_rasteriser_job.visible_extents.min) / 2.0f;
             vec3f pos = s_rasteriser_job.visible_extents.min + scale;
 
-            u32 new_prim = get_new_node(scene);
+            u32 new_prim = get_new_entity(scene);
             scene->names[new_prim] = "volume";
             scene->names[new_prim].appendf("%i", new_prim);
             scene->transforms[new_prim].rotation = quat();
@@ -1125,7 +1125,7 @@ namespace put
 
             u32 index_offset = 0;
 
-            for (u32 n = 0; n < sdf_job->scene->nodes_size; ++n)
+            for (u32 n = 0; n < sdf_job->scene->soa_size; ++n)
             {
                 if (sdf_job->scene->entities[n] & CMP_GEOMETRY)
                 {
@@ -1305,7 +1305,7 @@ namespace put
                         // hide stuff we dont want
                         extents ve = {vec3f(FLT_MAX), vec3f(-FLT_MAX)};
 
-                        for (u32 n = 0; n < s_main_scene->num_nodes; ++n)
+                        for (u32 n = 0; n < s_main_scene->num_entities; ++n)
                         {
                             if (s_main_scene->state_flags[n] & SF_HIDDEN)
                                 continue;
@@ -1483,7 +1483,7 @@ namespace put
                     vec3f scale = vec3f(single_scale);
                     vec3f pos = s_sdf_job.scene_centre;
 
-                    u32 new_prim = get_new_node(s_main_scene);
+                    u32 new_prim = get_new_entity(s_main_scene);
                     s_main_scene->names[new_prim] = "volume";
                     s_main_scene->names[new_prim].appendf("%i", new_prim);
                     s_main_scene->transforms[new_prim].rotation = quat();
@@ -1579,7 +1579,7 @@ namespace put
 
                 // Volumes Generated
                 bool has_volumes = false;
-                for (u32 n = 0; n < s_main_scene->num_nodes; ++n)
+                for (u32 n = 0; n < s_main_scene->num_entities; ++n)
                     if (s_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME))
                         has_volumes = true;
 
@@ -1597,7 +1597,7 @@ namespace put
 
                     ImGui::Columns(3);
 
-                    for (u32 n = 0; n < s_main_scene->num_nodes; ++n)
+                    for (u32 n = 0; n < s_main_scene->num_entities; ++n)
                     {
                         if (!(s_main_scene->entities[n] & (CMP_SDF_SHADOW | CMP_VOLUME)))
                             continue;

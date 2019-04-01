@@ -66,14 +66,14 @@ namespace put
             }
         }
 
-        void get_new_nodes_append(ecs_scene* scene, s32 num, s32& start, s32& end)
+        void get_new_entities_append(ecs_scene* scene, s32 num, s32& start, s32& end)
         {
             // o(1) - appends a bunch of nodes on the end
-            u32 max_num = scene->num_nodes + num;
-            if (max_num >= scene->nodes_size || !scene->free_list_head)
+            u32 max_num = scene->num_entities + num;
+            if (max_num >= scene->soa_size || !scene->free_list_head)
                 resize_scene_buffers(scene, max_num * 2);
 
-            start = scene->num_nodes;
+            start = scene->num_entities;
             end = start + num;
 
             // iterate over nodes flagging allocated
@@ -93,15 +93,15 @@ namespace put
                 scene->free_list_head = scene->free_list[end].next;
             }
 
-            scene->num_nodes = end;
+            scene->num_entities = end;
         }
 
-        void get_new_nodes_contiguous(ecs_scene* scene, s32 num, s32& start, s32& end)
+        void get_new_entities_contiguous(ecs_scene* scene, s32 num, s32& start, s32& end)
         {
             // o(n) - has to find contiguous nodes within the free list, and worst case will allocate more mem and append the
             // new nodes
-            u32 max_num = scene->num_nodes + num;
-            if (max_num >= scene->nodes_size || !scene->free_list_head)
+            u32 max_num = scene->num_entities + num;
+            if (max_num >= scene->soa_size || !scene->free_list_head)
                 resize_scene_buffers(scene, max_num * 2);
 
             free_node_list* fnl_iter = scene->free_list_head;
@@ -147,11 +147,11 @@ namespace put
                     fnl_iter = fnl_iter->next;
                 }
 
-                scene->num_nodes = std::max<u32>(end, scene->num_nodes);
+                scene->num_entities = std::max<u32>(end, scene->num_entities);
             }
         }
 
-        u32 get_next_node(ecs_scene* scene)
+        u32 get_next_entity(ecs_scene* scene)
         {
             if (!scene->free_list_head)
                 resize_scene_buffers(scene);
@@ -159,12 +159,12 @@ namespace put
             return scene->free_list_head->node;
         }
 
-        u32 get_new_node(ecs_scene* scene)
+        u32 get_new_entity(ecs_scene* scene)
         {
             // o(1) using free list
 
             if (!scene->free_list_head)
-                resize_scene_buffers(scene, scene->nodes_size * 2);
+                resize_scene_buffers(scene, scene->soa_size * 2);
 
             u32 ii = 0;
             ii = scene->free_list_head->node;
@@ -174,7 +174,7 @@ namespace put
 
             scene->flags |= INVALIDATE_SCENE_TREE;
 
-            scene->num_nodes = std::max<u32>(i + 1, scene->num_nodes);
+            scene->num_entities = std::max<u32>(i + 1, scene->num_entities);
 
             scene->entities[i] = CMP_ALLOCATED;
             
@@ -187,12 +187,12 @@ namespace put
             return i;
         }
 
-        void scene_tree_add_node(scene_tree& tree, scene_tree& node, std::vector<s32>& heirarchy)
+        void scene_tree_add_entity(scene_tree& tree, scene_tree& node, std::vector<s32>& heirarchy)
         {
             if (heirarchy.empty())
                 return;
 
-            if (heirarchy[0] == tree.node_index)
+            if (heirarchy[0] == tree.entity_index)
             {
                 heirarchy.erase(heirarchy.begin());
 
@@ -204,7 +204,7 @@ namespace put
 
                 for (auto& child : tree.children)
                 {
-                    scene_tree_add_node(child, node, heirarchy);
+                    scene_tree_add_entity(child, node, heirarchy);
                 }
             }
         }
@@ -215,22 +215,22 @@ namespace put
             {
                 bool leaf = child.children.size() == 0;
 
-                bool               selected = scene->state_flags[child.node_index] & SF_SELECTED;
+                bool               selected = scene->state_flags[child.entity_index] & SF_SELECTED;
                 ImGuiTreeNodeFlags node_flags = selected ? ImGuiTreeNodeFlags_Selected : 0;
 
                 if (leaf)
                     node_flags |= ImGuiTreeNodeFlags_Leaf;
 
                 bool      node_open = false;
-                const c8* node_name = scene->names[child.node_index].c_str();
+                const c8* node_name = scene->names[child.entity_index].c_str();
                 if (node_name)
                 {
-                    node_open = ImGui::TreeNodeEx((void*)(intptr_t)child.node_index, node_flags, "%s", node_name);
+                    node_open = ImGui::TreeNodeEx((void*)(intptr_t)child.entity_index, node_flags, "%s", node_name);
                 }
 
                 if (ImGui::IsItemClicked())
                 {
-                    add_selection(scene, child.node_index);
+                    add_selection(scene, child.entity_index);
                 }
 
                 if (node_open)
@@ -244,13 +244,13 @@ namespace put
         void build_scene_tree(ecs_scene* scene, s32 start_node, scene_tree& tree_out)
         {
             // tree view
-            tree_out.node_index = -1;
+            tree_out.entity_index = -1;
 
             bool enum_all = start_node == -1;
             if (enum_all)
                 start_node = 0;
 
-            for (s32 n = start_node; n < scene->num_nodes; ++n)
+            for (s32 n = start_node; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_ALLOCATED))
                     continue;
@@ -263,7 +263,7 @@ namespace put
                 }
 
                 scene_tree node;
-                node.node_index = n;
+                node.entity_index = n;
 
                 if (scene->parents[n] == n || n == start_node)
                 {
@@ -285,18 +285,18 @@ namespace put
 
                     heirarchy.insert(heirarchy.begin(), -1);
 
-                    scene_tree_add_node(tree_out, node, heirarchy);
+                    scene_tree_add_entity(tree_out, node, heirarchy);
                 }
             }
         }
 
-        void tree_to_node_index_list(const scene_tree& tree, s32 start_node, std::vector<s32>& list_out)
+        void tree_to_entity_index_list(const scene_tree& tree, s32 start_node, std::vector<s32>& list_out)
         {
-            list_out.push_back(tree.node_index);
+            list_out.push_back(tree.entity_index);
 
             for (auto& child : tree.children)
             {
-                tree_to_node_index_list(child, start_node, list_out);
+                tree_to_entity_index_list(child, start_node, list_out);
             }
         }
 
@@ -305,11 +305,11 @@ namespace put
             scene_tree tree;
             build_scene_tree(scene, start_node, tree);
 
-            tree_to_node_index_list(tree, start_node, list_out);
+            tree_to_entity_index_list(tree, start_node, list_out);
         }
 
         // just set parent and fixup matrix
-        void set_node_parent(ecs_scene* scene, u32 parent, u32 child)
+        void set_entity_parent(ecs_scene* scene, u32 parent, u32 child)
         {
             if (child == parent)
                 return;
@@ -322,12 +322,12 @@ namespace put
         }
         
         // set parent and also swap nodes to maintain valid heirarchy
-        void set_node_parent_validate(ecs_scene* scene, u32& parent, u32& child)
+        void set_entity_parent_validate(ecs_scene* scene, u32& parent, u32& child)
         {
             if (child == parent)
                 return;
             
-            set_node_parent(scene, parent, child);
+            set_entity_parent(scene, parent, child);
             
             // children must be below parents
             if(child < parent)
@@ -363,10 +363,10 @@ namespace put
                 build_scene_tree(scene, i, tree);
 
                 std::vector<s32> node_index_list;
-                tree_to_node_index_list(tree, i, node_index_list);
+                tree_to_entity_index_list(tree, i, node_index_list);
 
                 s32 nodes_start, nodes_end;
-                get_new_nodes_contiguous(scene, node_index_list.size() - 1, nodes_start, nodes_end);
+                get_new_entities_contiguous(scene, node_index_list.size() - 1, nodes_start, nodes_end);
 
                 u32 src_parent = i;
                 u32 dst_parent = nodes_start;
@@ -382,7 +382,7 @@ namespace put
                     u32 parent = dst_parent + parent_offset;
 
                     u32 new_child =
-                        clone_node(scene, j, nodes_start + node_counter, parent, CLONE_INSTANTIATE, vec3f::zero(), "");
+                        clone_entity(scene, j, nodes_start + node_counter, parent, CLONE_INSTANTIATE, vec3f::zero(), "");
                     node_counter++;
 
                     if (new_child == parent)
@@ -399,7 +399,7 @@ namespace put
             scene->flags |= INVALIDATE_SCENE_TREE;
         }
 
-        void instance_node_range(ecs_scene* scene, u32 master_node, u32 num_nodes)
+        void instance_entity_range(ecs_scene* scene, u32 master_node, u32 num_nodes)
         {
             s32 master = master_node;
 
@@ -432,7 +432,7 @@ namespace put
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
         }
         
-        void bake_nodes_to_vb(ecs_scene* scene, u32 parent, u32* node_list)
+        void bake_entities_to_vb(ecs_scene* scene, u32 parent, u32* node_list)
         {            
             u32 num_nodes = sb_count(node_list);
             

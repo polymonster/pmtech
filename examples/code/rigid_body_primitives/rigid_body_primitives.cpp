@@ -23,7 +23,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* cone = get_geometry_resource(PEN_HASH("physics_cone"));
 
     // add light
-    u32 light = get_new_node(scene);
+    u32 light = get_new_entity(scene);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
@@ -36,7 +36,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->entities[light] |= CMP_TRANSFORM;
 
     // ground
-    u32 ground = get_new_node(scene);
+    u32 ground = get_new_entity(scene);
     scene->names[ground] = "ground";
     scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();
@@ -79,7 +79,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
                 for (s32 k = 0; k < 4; ++k)
                 {
-                    u32 new_prim = get_new_node(scene);
+                    u32 new_prim = get_new_entity(scene);
                     scene->names[new_prim] = primitive_names[p];
                     scene->names[new_prim].appendf("%i", new_prim);
                     scene->transforms[new_prim].rotation = quat();

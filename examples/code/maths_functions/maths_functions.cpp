@@ -99,7 +99,7 @@ vec3f random_vec_range(const debug_extents& extents)
 // Spawn a randomised point within range of extents
 void add_debug_point(const debug_extents& extents, ecs_scene* scene, debug_point& point)
 {
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "point";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
@@ -112,7 +112,7 @@ void add_debug_point(const debug_extents& extents, ecs_scene* scene, debug_point
 // Spawn a random plane which starts at a point within extents
 void add_debug_plane(const debug_extents& extents, ecs_scene* scene, debug_plane& plane)
 {
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "plane";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
@@ -125,7 +125,7 @@ void add_debug_plane(const debug_extents& extents, ecs_scene* scene, debug_plane
 // Spawn a random ray which contains point within extents
 void add_debug_ray(const debug_extents& extents, ecs_scene* scene, debug_ray& ray)
 {
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "ray";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
@@ -138,7 +138,7 @@ void add_debug_ray(const debug_extents& extents, ecs_scene* scene, debug_ray& ra
 // Spawn a random line which contains both points within extents
 void add_debug_line(const debug_extents& extents, ecs_scene* scene, debug_line& line)
 {
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "line";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
@@ -151,7 +151,7 @@ void add_debug_line(const debug_extents& extents, ecs_scene* scene, debug_line& 
 // Spawn a random AABB which contains centre within extents and size within extents
 void add_debug_aabb(const debug_extents& extents, ecs_scene* scene, debug_aabb& aabb)
 {
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "aabb";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;
@@ -170,7 +170,7 @@ void add_debug_sphere(const debug_extents& extents, ecs_scene* scene, debug_sphe
 
     vec3f size = fabs(random_vec_range(extents));
 
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "sphere";
 
     scene->transforms[node].rotation = quat();
@@ -195,7 +195,7 @@ void add_debug_solid_aabb(const debug_extents& extents, ecs_scene* scene, debug_
 
     vec3f size = fabs(random_vec_range(extents));
 
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "cube";
 
     scene->transforms[node].rotation = quat();
@@ -216,7 +216,7 @@ void add_debug_solid_aabb(const debug_extents& extents, ecs_scene* scene, debug_
 
 void add_debug_obb(const debug_extents& extents, ecs_scene* scene, debug_obb& obb)
 {
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "obb";
     scene->transforms[node].translation = random_vec_range(extents);
 
@@ -235,7 +235,7 @@ void add_debug_solid_obb(const debug_extents& extents, ecs_scene* scene, debug_o
 {
     geometry_resource* cube_res = get_geometry_resource(PEN_HASH("cube"));
 
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "obb";
     scene->transforms[node].translation = random_vec_range(extents);
 
@@ -258,7 +258,7 @@ void add_debug_solid_cone(const debug_extents& extents, ecs_scene* scene, debug_
 {
     geometry_resource* cone_res = get_geometry_resource(PEN_HASH("cone"));
 
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "cone";
     scene->transforms[node].translation = random_vec_range(extents);
 
@@ -279,7 +279,7 @@ void add_debug_solid_cone(const debug_extents& extents, ecs_scene* scene, debug_
 
 void add_debug_triangle(const debug_extents& extents, ecs_scene* scene, debug_triangle& tri)
 {
-    u32 node = ecs::get_new_node(scene);
+    u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "triangle";
     scene->transforms[node].translation = random_vec_range(extents);
     scene->entities[node] |= CMP_TRANSFORM;

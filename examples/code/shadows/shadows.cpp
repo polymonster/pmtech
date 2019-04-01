@@ -25,7 +25,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
 
     // add light
-    u32 light = get_new_node(scene);
+    u32 light = get_new_entity(scene);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
@@ -40,7 +40,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     // add ground
     f32 ground_size = 100.0f;
-    u32 ground = get_new_node(scene);
+    u32 ground = get_new_entity(scene);
     scene->transforms[ground].rotation = quat();
     scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);
     scene->transforms[ground].translation = vec3f::zero();
@@ -68,7 +68,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
         for (s32 j = 0; j < num_pillar_rows; ++j)
         {
-            u32 pillar = get_new_node(scene);
+            u32 pillar = get_new_entity(scene);
             scene->transforms[pillar].rotation = quat();
             scene->transforms[pillar].scale = vec3f(2.0f, pillar_size, 2.0f);
             scene->transforms[pillar].translation = pos;

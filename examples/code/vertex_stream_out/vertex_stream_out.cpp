@@ -37,7 +37,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     
     for(u32 l = 0; l < 4; ++l)
     {
-        u32 light = get_new_node(scene);
+        u32 light = get_new_entity(scene);
         scene->names[light] = "front_light";
         scene->id_name[light] = PEN_HASH("front_light");
         scene->lights[light].colour = light_cols[l];
@@ -52,7 +52,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     }
 
     // ground
-    u32 ground = get_new_node(scene);
+    u32 ground = get_new_entity(scene);
     scene->names[ground] = "ground";
     scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();
@@ -91,7 +91,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     // in order to instance stuff we must have a contiguous list of nodes.
     // this node aliases the geometry and materials from the skinned_char root node
-    u32 master_node = get_new_node(scene);
+    u32 master_node = get_new_entity(scene);
     scene->names[master_node] = "master skinned instance";
     scene->transforms[master_node].translation = vec3f::zero();
     scene->transforms[master_node].rotation = quat();
@@ -125,7 +125,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
         for (s32 j = 0; j < num; ++j)
         {
-            u32 new_prim = get_new_node(scene);
+            u32 new_prim = get_new_entity(scene);
             scene->names[new_prim] = "skinned instance";
             scene->names[new_prim].appendf("%i", new_prim);
 
@@ -148,7 +148,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         cur_pos.z += spacing;
     }
 
-    instance_node_range(scene, master_node, pow(num, 2));
+    instance_entity_range(scene, master_node, pow(num, 2));
     
     bake_material_handles();
 }

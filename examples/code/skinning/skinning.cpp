@@ -19,7 +19,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
 
     // add light
-    u32 light = get_new_node(scene);
+    u32 light = get_new_entity(scene);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
@@ -32,7 +32,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->entities[light] |= CMP_TRANSFORM;
 
     // ground
-    u32 ground = get_new_node(scene);
+    u32 ground = get_new_entity(scene);
     scene->names[ground] = "ground";
     scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();

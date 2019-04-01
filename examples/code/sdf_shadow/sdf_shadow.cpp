@@ -44,7 +44,7 @@ void animate_lights(ecs_scene* scene, f32 dt)
 
     u32 vel_index = 0;
 
-    for (u32 n = 0; n < scene->num_nodes; ++n)
+    for (u32 n = 0; n < scene->num_entities; ++n)
     {
         if (!(scene->entities[n] & CMP_LIGHT))
             continue;
