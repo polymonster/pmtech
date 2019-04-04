@@ -78,7 +78,7 @@ PEN_TRV pen::user_entry(void* params)
     
     pmfx::register_scene(main_scene, "main_scene");
     pmfx::register_camera(&main_camera, "model_viewer_camera");
-
+    
     pmfx::init("data/configs/editor_renderer.jsn");
     
     example_setup(main_scene, main_camera);
@@ -95,7 +95,7 @@ PEN_TRV pen::user_entry(void* params)
         pmfx::update();
 
         example_update(main_scene, main_camera, frame_timer / 1000.0f);
-
+        
         ecs::update();
 
         pmfx::render();

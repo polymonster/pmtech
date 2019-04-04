@@ -120,7 +120,7 @@ namespace put
                 camera_update_projection_matrix(sc->camera);
                 s_model_view_controller.invalidated = false;
             }
-
+            
             bool has_focus = dev_ui::want_capture() == dev_ui::NO_INPUT;
 
             switch (s_model_view_controller.camera_mode)
