@@ -11,15 +11,8 @@ pen::window_creation_params pen_window{
     "post_processing" // window title / process name
 };
 
-camera pp_camera;
-
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
-    put::camera_create_perspective(&pp_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
-    pp_camera.name = "pp_camera";
-    
-    pmfx::register_camera(&pp_camera, "pp_camera");
-    
     pmfx::init("data/configs/pp_demo.jsn");
 }
 
@@ -30,20 +23,18 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     
     if (start)
     {
-        pp_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
+        cam.pos = vec3f(0.0f, 0.0f, 0.0f);
         start = false;
     }
     
-    pp_camera.pos += vec3f::unit_x();
+    cam.pos += vec3f::unit_x();
     
-    pp_camera.view.set_row(2, vec4f(0.0f, 0.0f, 1.0f, pp_camera.pos.x));
-    pp_camera.view.set_row(1, vec4f(0.0f, 1.0f, 0.0f, pp_camera.pos.y));
-    pp_camera.view.set_row(0, vec4f(1.0f, 0.0f, 0.0f, pp_camera.pos.z));
-    pp_camera.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+    cam.view.set_row(2, vec4f(0.0f, 0.0f, 1.0f, cam.pos.x));
+    cam.view.set_row(1, vec4f(0.0f, 1.0f, 0.0f, cam.pos.y));
+    cam.view.set_row(0, vec4f(1.0f, 0.0f, 0.0f, cam.pos.z));
+    cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
     
-    pp_camera.flags |= CF_INVALIDATED;
-    
-    cam = pp_camera;
+    cam.flags |= CF_INVALIDATED;
 }
 
 #else
