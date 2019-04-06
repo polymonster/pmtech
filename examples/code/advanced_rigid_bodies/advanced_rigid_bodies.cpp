@@ -18,10 +18,11 @@ void triangle_normal_dbg(const vec3f& v0, const vec3f& v1, const vec3f& v2)
     
     vec3f vn = maths::get_normal(v0, v1, v2);
     
-    dbg::add_line(vc, vc + vn * 0.1f, vec4f::green());
+    dbg::add_line(vc, vc + vn * 1.0f, vec4f::green());
 }
 
 u32 convex;
+u32 concave;
 
 void gen_convex_shape(physics::collision_mesh_data& cmd)
 {
@@ -105,6 +106,47 @@ void gen_convex_shape(physics::collision_mesh_data& cmd)
     sb_free(verts);
 }
 
+void gen_concave_shape(physics::collision_mesh_data& cmd)
+{
+    vec3f* verts = nullptr;
+    
+    vec3f v0 = vec3f(0.0f, 0.0f, -50.0f);
+    vec3f v1 = vec3f(0.0f, 0.0f,  50.0f);
+    vec3f v2 = vec3f(50.0f, 20.0f,  50.0f);
+    
+    vec3f w0 = vec3f(0.0f, 0.0f, -50.0f);
+    vec3f w1 = vec3f(0.0f, 0.0f,  50.0f);
+    vec3f w2 = vec3f(-50.0f, 20.0f,  50.0f);
+    
+    sb_push(verts, v0);
+    sb_push(verts, v1);
+    sb_push(verts, v2);
+    
+    sb_push(verts, w0);
+    sb_push(verts, w1);
+    sb_push(verts, w2);
+    
+    // indices are just 1 to 1 with verts
+    u32 num_verts = sb_count(verts);
+    u32 vb_size = num_verts*3*sizeof(f32);
+    u32 ib_size = num_verts*sizeof(u32);
+    
+    cmd.vertices = (f32*)pen::memory_alloc(vb_size);
+    memcpy(cmd.vertices, verts, vb_size);
+    
+    cmd.indices = (u32*)pen::memory_alloc(ib_size);
+    for(u32 i = 0; i < num_verts; ++i)
+    {
+        cmd.indices[i] = i;
+    }
+    
+    cmd.num_floats = num_verts * 3;
+    cmd.num_indices = num_verts;
+    
+    // free sb
+    sb_free(verts);
+}
+
 void example_setup(ecs_scene* scene, camera& cam)
 {
     clear_scene(scene);
@@ -126,20 +168,26 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
 
-    // ground
-    u32 ground = get_new_entity(scene);
-    scene->names[ground] = "ground";
-    scene->transforms[ground].translation = vec3f::zero();
-    scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
-    scene->entities[ground] |= CMP_TRANSFORM;
-    scene->parents[ground] = ground;
-    scene->physics_data[ground].rigid_body.shape = physics::BOX;
-    scene->physics_data[ground].rigid_body.mass = 0.0f;
-    instantiate_geometry(box, scene, ground);
-    instantiate_material(default_material, scene, ground);
-    instantiate_model_cbuffer(scene, ground);
-    instantiate_rigid_body(scene, ground);
+    // boxes
+    vec3f bp = vec3f(-20.0f, 20.0f, 0.0f);
+    for(u32 i = 0; i < 10; ++i)
+    {
+        u32 bb = get_new_entity(scene);
+        scene->names[bb].setf("bpx_%i", i);
+        scene->transforms[bb].translation = bp;
+        scene->transforms[bb].rotation = quat();
+        scene->transforms[bb].scale = vec3f(0.5f, 0.5f, 0.5f);
+        scene->entities[bb] |= CMP_TRANSFORM;
+        scene->parents[bb] = bb;
+        scene->physics_data[bb].rigid_body.shape = physics::BOX;
+        scene->physics_data[bb].rigid_body.mass = 1.0f;
+        instantiate_geometry(box, scene, bb);
+        instantiate_material(default_material, scene, bb);
+        instantiate_model_cbuffer(scene, bb);
+        instantiate_rigid_body(scene, bb);
+        
+        bp += vec3f(40.0f / 10.0f, 0.0f, 0.0f);
+    }
     
     // convex rb
     convex = get_new_entity(scene);
@@ -152,12 +200,76 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[convex].rigid_body.shape = physics::HULL;
     scene->physics_data[convex].rigid_body.mass = 1.0f;
     
-    physics::collision_mesh_data& cmd = scene->physics_data[convex].rigid_body.mesh_data;
-    gen_convex_shape(cmd);
+    gen_convex_shape(scene->physics_data[convex].rigid_body.mesh_data);
 
     instantiate_rigid_body(scene, convex);
     
     // concave rb
+    concave = get_new_entity(scene);
+    scene->names[concave] = "concave";
+    scene->transforms[concave].translation = vec3f(0.0f, 0.0f, 0.0f);
+    scene->transforms[concave].rotation = quat();
+    scene->transforms[concave].scale = vec3f(1.0f, 1.0f, 1.0f);
+    scene->entities[concave] |= CMP_TRANSFORM;
+    scene->parents[concave] = concave;
+    scene->physics_data[concave].rigid_body.shape = physics::MESH;
+    scene->physics_data[concave].rigid_body.mass = 0.0f;
+
+    gen_concave_shape(scene->physics_data[concave].rigid_body.mesh_data);
+    
+    instantiate_rigid_body(scene, concave);
+    
+    // compound shape
+    u32 compound = get_new_entity(scene);
+    scene->names[compound] = "compound";
+    scene->transforms[compound].translation = vec3f(0.0f, 8.0f, 4.0f);
+    scene->transforms[compound].rotation = quat();
+    scene->transforms[compound].scale = vec3f(1.0f, 1.0f, 1.0f);
+    scene->entities[compound] |= CMP_TRANSFORM;
+    scene->parents[compound] = compound;
+    scene->physics_data[compound].rigid_body.shape = physics::COMPOUND;
+    scene->physics_data[compound].rigid_body.mass = 1.0f;
+    
+    instantiate_rigid_body(scene, compound);
+    
+    u32 cc = get_new_entity(scene);
+    scene->names[cc] = "compound";
+    scene->transforms[cc].translation = vec3f(0.0f, 8.0f, 4.0f);
+    scene->transforms[cc].rotation = quat();
+    scene->transforms[cc].scale = vec3f(0.5f, 2.0f, 0.5f);
+    scene->entities[cc] |= CMP_TRANSFORM;
+    scene->parents[cc] = cc;
+    scene->physics_data[cc].rigid_body.shape = physics::BOX;
+    scene->physics_data[cc].rigid_body.mass = 1.0f;
+    instantiate_geometry(box, scene, cc);
+    instantiate_material(default_material, scene, cc);
+    instantiate_model_cbuffer(scene, cc);
+    instantiate_rigid_body(scene, cc);
+    
+    physics::attach_to_compound_params arbc;
+    arbc.compound = compound;
+    arbc.rb = cc;
+    arbc.detach_index = -1;
+    physics::attach_rb_to_compound(arbc);
+    
+    cc = get_new_entity(scene);
+    scene->names[cc] = "compound";
+    scene->transforms[cc].translation = vec3f(0.0f, 8.0f, 4.0f);
+    scene->transforms[cc].rotation = quat();
+    scene->transforms[cc].scale = vec3f(2.0f, 0.5f, 0.5f);
+    scene->entities[cc] |= CMP_TRANSFORM;
+    scene->parents[cc] = cc;
+    scene->physics_data[cc].rigid_body.shape = physics::BOX;
+    scene->physics_data[cc].rigid_body.mass = 1.0f;
+    instantiate_geometry(box, scene, cc);
+    instantiate_material(default_material, scene, cc);
+    instantiate_model_cbuffer(scene, cc);
+    instantiate_rigid_body(scene, cc);
+    
+    arbc.compound = compound;
+    arbc.rb = cc;
+    arbc.detach_index = -1;
+    physics::attach_rb_to_compound(arbc);
     
     // load physics stuff before calling update
     physics::physics_consume_command_buffer();
@@ -181,4 +293,17 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
         
         triangle_normal_dbg(v0, v1, v2);
     }
+    
+    // concave mesh
+    vec3f v0 = vec3f(0.0f, 0.0f, -50.0f);
+    vec3f v1 = vec3f(0.0f, 0.0f,  50.0f);
+    vec3f v2 = vec3f(50.0f, 20.0f,  50.0f);
+    
+    triangle_normal_dbg(v0, v1, v2);
+    
+    vec3f w0 = vec3f(0.0f, 0.0f, -50.0f);
+    vec3f w1 = vec3f(0.0f, 0.0f,  50.0f);
+    vec3f w2 = vec3f(-50.0f, 20.0f,  50.0f);
+    
+    triangle_normal_dbg(w0, w1, w2);
 }

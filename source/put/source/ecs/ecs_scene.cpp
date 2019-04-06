@@ -1134,6 +1134,7 @@ namespace put
                     mat4 scale_mat = mat::create_scale(t.scale);
 
                     t.translation = physics_mat.get_translation();
+                    
                     t.rotation.from_matrix(physics_mat);
 
                     mat4 rot_mat;

@@ -797,6 +797,11 @@ namespace physics
         physics_entity& pe = s_entities.get(params.rb);
 
         rigid_body_entity rb = pe.rb;
+        
+        if(!compound.compound_shape)
+        {
+            
+        }
 
         if (compound.compound_shape && pe.type == ENTITY_RIGID_BODY)
         {
