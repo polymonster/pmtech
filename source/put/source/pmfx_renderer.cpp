@@ -2327,6 +2327,9 @@ namespace put
             // get views for view set
             pen::json j_view_set = j_view_sets[s_view_set_name.c_str()];
             u32       num_views_in_set = j_view_set.size();
+            
+            s_views.clear();
+            
             if (num_views_in_set > 0)
             {
                 // views from "view_set"
@@ -2431,8 +2434,6 @@ namespace put
 
         void init(const c8* filename)
         {
-            release_script_resources();
-            
             load_script_internal(filename);
 
             k_script_files.push_back(filename);
@@ -3055,14 +3056,24 @@ namespace put
                     static std::vector<c8*> chain_items;
                     static std::vector<c8*> process_items;
                     static std::vector<c8*> pass_items;
+                    static std::vector<s32> pp_view_indices;
 
                     bool invalidated = false;
 
                     // input views which has post processing
                     view_items.clear();
+                    pp_view_indices.clear();
+                    s32 c = 0;
                     for (auto& v : s_views)
+                    {
                         if (v.post_process_flags & PP_ENABLED)
+                        {
                             view_items.push_back(v.name.c_str());
+                            pp_view_indices.push_back(c);
+                        }
+                        
+                        ++c;
+                    }
 
                     if (view_items.size() == 0)
                     {
@@ -3073,9 +3084,11 @@ namespace put
                         ImGui::Combo("Input View", &s_selected_input_view, &view_items[0], view_items.size());
                     }
 
-                    std::vector<Str>&         s_post_process_chain = s_views[s_selected_input_view].post_process_chain;
-                    std::vector<view_params>& s_post_process_passes = s_views[s_selected_input_view].post_process_views;
-                    view_params&              edit_view = s_views[s_selected_input_view];
+                    s32 pp_view_index = pp_view_indices[s_selected_input_view];
+                    
+                    std::vector<Str>&         s_post_process_chain = s_views[pp_view_index].post_process_chain;
+                    std::vector<view_params>& s_post_process_passes = s_views[pp_view_index].post_process_views;
+                    view_params&              edit_view = s_views[pp_view_index];
 
                     // all available post processes from config (ie bloom, dof, colour_lut)
                     process_items.clear();

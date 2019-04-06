@@ -131,7 +131,7 @@ ps_output ps_high_pass( vs_output input )
     float lum = dot( float3(0.2126, 0.7152, 0.0722), output.colour.rgb);
     
     output.colour *= smoothstep(m_threshold, m_threshold + m_smoothness, lum);
-                    
+                 
     return output;
 }
 
@@ -413,7 +413,7 @@ ps_output_colour_depth ps_menger( vs_output input )
     }
     
     output.colour = lerp(sky, sd_col, sky_t);
-    
+        
     return output;
     
 }

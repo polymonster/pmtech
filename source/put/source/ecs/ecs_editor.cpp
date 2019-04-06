@@ -110,14 +110,14 @@ namespace put
             return pen::input_key(key);
         }
 
-        void update_model_viewer_camera(scene_controller* sc)
+        void update_editor_camera(camera* cam)
         {
             if (s_model_view_controller.invalidated)
             {
-                sc->camera->fov = s_model_view_controller.main_camera.fov;
-                sc->camera->near_plane = s_model_view_controller.main_camera.near_plane;
-                sc->camera->far_plane = s_model_view_controller.main_camera.far_plane;
-                camera_update_projection_matrix(sc->camera);
+                cam->fov = s_model_view_controller.main_camera.fov;
+                cam->near_plane = s_model_view_controller.main_camera.near_plane;
+                cam->far_plane = s_model_view_controller.main_camera.far_plane;
+                camera_update_projection_matrix(cam);
                 s_model_view_controller.invalidated = false;
             }
             
@@ -126,12 +126,12 @@ namespace put
             switch (s_model_view_controller.camera_mode)
             {
                 case CAMERA_MODELLING:
-                    put::camera_update_modelling(sc->camera, has_focus, s_model_view_controller.settings);
-                    s_model_view_controller.main_camera = *sc->camera;
+                    put::camera_update_modelling(cam, has_focus, s_model_view_controller.settings);
+                    s_model_view_controller.main_camera = *cam;
                     break;
                 case CAMERA_FLY:
-                    put::camera_update_fly(sc->camera, has_focus, s_model_view_controller.settings);
-                    s_model_view_controller.main_camera = *sc->camera;
+                    put::camera_update_fly(cam, has_focus, s_model_view_controller.settings);
+                    s_model_view_controller.main_camera = *cam;
                     break;
             }
         }
@@ -1120,29 +1120,30 @@ namespace put
         }
 
         static bool s_editor_enabled = true;
+        static bool s_editor_enable_camera = true;
         void editor_update(ecs_controller& ecsc, ecs_scene* scene, f32 dt)
         {
             if (!ecsc.camera)
                 return;
 
-            put::scene_controller sc;
-            sc.scene = scene;
-            sc.dt = dt;
-            sc.camera = ecsc.camera;
-            sc.deprecated = false;
-
             if(s_editor_enabled)
-                update_model_viewer_scene(&sc);
+                update_editor_scene(ecsc, scene, dt);
             
-            update_model_viewer_camera(&sc);
+            if(s_editor_enable_camera)
+                update_editor_camera(ecsc.camera);
         }
         
         void editor_enable(bool enable)
         {
             s_editor_enabled = enable;
         }
+        
+        void editor_enable_camera(bool enable)
+        {
+            s_editor_enable_camera = enable;
+        }
 
-        void update_model_viewer_scene(scene_controller* sc)
+        void update_editor_scene(ecs_controller& ecsc, ecs_scene* scene, f32 dt)
         {
             static bool open_scene_browser = false;
             static bool open_merge = false;
@@ -1155,8 +1156,6 @@ namespace put
             static bool selection_list = false;
             static bool view_menu = false;
             static bool settings_open = false;
-
-            ecs_scene* scene = sc->scene;
 
             // right click context menu
             context_menu_ui(scene);
@@ -1502,7 +1501,7 @@ namespace put
             // selection / picking
             if (!disable_picking)
             {
-                picking_update(scene, sc->camera);
+                picking_update(scene, ecsc.camera);
             }
 
             if (selection_list)
@@ -1530,7 +1529,8 @@ namespace put
                 view_ui(scene, &view_menu);
 
             // todo move this to main?
-            if (sc->deprecated)
+            //if (sc->deprecated)
+            if(0)
             {
                 static u32 timer_index = -1;
                 if (timer_index == -1)
@@ -1545,7 +1545,7 @@ namespace put
                 put::ecs::update_scene(scene, dt_ms);
             }
 
-            update_undo_stack(scene, sc->dt*1000.0);
+            update_undo_stack(scene, dt * 1000.0);
         }
 
         struct physics_preview

@@ -22,6 +22,7 @@ namespace put
         void editor_shutdown();
         void editor_update(ecs_controller&, ecs_scene* scene, f32 dt);
         void editor_enable(bool enable);
+        void editor_enable_camera(bool enable);
         
         void scene_browser_ui(ecs_scene* scene, bool* open);
         void enumerate_resources(bool* open);
@@ -29,8 +30,9 @@ namespace put
         void clear_selection(ecs_scene* scene);
 
         // todo.. these are being phased out
-        void update_model_viewer_camera(put::scene_controller* sc);
-        void update_model_viewer_scene(put::scene_controller* sc);
+        
+        void update_editor_camera(put::camera* cam);
+        void update_editor_scene(ecs_controller& ecsc, ecs_scene* scene, f32 dt);
 
         void apply_transform_to_selection(ecs_scene* scene, const vec3f move_axis);
 
