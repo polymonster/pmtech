@@ -1233,6 +1233,9 @@ namespace put
                 {
                     if (scene->entities[i] & CMP_PHYSICS)
                     {
+                        if(scene->physics_data[i].type != PHYSICS_TYPE_RIGID_BODY)
+                            continue;
+                        
                         vec3f t = scene->physics_data[i].rigid_body.position;
                         quat  q = scene->physics_data[i].rigid_body.rotation;
 

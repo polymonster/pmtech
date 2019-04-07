@@ -7,7 +7,7 @@ pen::window_creation_params pen_window{
     1280,                    // width
     720,                     // height
     4,                       // MSAA samples
-    "advanced_rigid_bodies"  // window title / process name
+    "complex_rigid_bodies"   // window title / process name
 };
 
 void triangle_normal_dbg(const vec3f& v0, const vec3f& v1, const vec3f& v2)
