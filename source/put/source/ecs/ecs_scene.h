@@ -116,7 +116,8 @@ namespace put
         enum e_physics_type
         {
             PHYSICS_TYPE_RIGID_BODY = 0,
-            PHYSICS_TYPE_CONSTRAINT
+            PHYSICS_TYPE_CONSTRAINT,
+            PHYSICS_TYPE_COMPOUND_CHILD
         };
 
         enum e_scene_limits

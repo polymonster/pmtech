@@ -18,7 +18,9 @@ void triangle_normal_dbg(const vec3f& v0, const vec3f& v1, const vec3f& v2)
     
     vec3f vn = maths::get_normal(v0, v1, v2);
     
-    dbg::add_line(vc, vc + vn * 1.0f, vec4f::green());
+    f32 ns = min(max(max(mag(v0-v1), mag(v1-v2)), mag(v2-v0)) * 0.1f, 1.0f);
+    
+    dbg::add_line(vc, vc + vn * ns, vec4f::green());
 }
 
 u32 convex;
@@ -222,7 +224,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     // compound shape
     u32 compound = get_new_entity(scene);
     scene->names[compound] = "compound";
-    scene->transforms[compound].translation = vec3f(0.0f, 8.0f, 4.0f);
+    scene->transforms[compound].translation = vec3f(1.0f, 8.0f, 4.0f);
     scene->transforms[compound].rotation = quat();
     scene->transforms[compound].scale = vec3f(1.0f, 1.0f, 1.0f);
     scene->entities[compound] |= CMP_TRANSFORM;
@@ -230,11 +232,11 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[compound].rigid_body.shape = physics::COMPOUND;
     scene->physics_data[compound].rigid_body.mass = 1.0f;
     
-    instantiate_rigid_body(scene, compound);
+    //instantiate_rigid_body(scene, compound);
     
     u32 cc = get_new_entity(scene);
-    scene->names[cc] = "compound";
-    scene->transforms[cc].translation = vec3f(0.0f, 8.0f, 4.0f);
+    scene->names[cc] = "compound_child0";
+    scene->transforms[cc].translation = vec3f(1.0f, 8.0f, 4.0f);
     scene->transforms[cc].rotation = quat();
     scene->transforms[cc].scale = vec3f(0.5f, 2.0f, 0.5f);
     scene->entities[cc] |= CMP_TRANSFORM;
@@ -244,17 +246,13 @@ void example_setup(ecs_scene* scene, camera& cam)
     instantiate_geometry(box, scene, cc);
     instantiate_material(default_material, scene, cc);
     instantiate_model_cbuffer(scene, cc);
-    instantiate_rigid_body(scene, cc);
     
-    physics::attach_to_compound_params arbc;
-    arbc.compound = compound;
-    arbc.rb = cc;
-    arbc.detach_index = -1;
-    physics::attach_rb_to_compound(arbc);
+    u32* compound_children = nullptr;
+    sb_push(compound_children, cc);
     
     cc = get_new_entity(scene);
-    scene->names[cc] = "compound";
-    scene->transforms[cc].translation = vec3f(0.0f, 8.0f, 4.0f);
+    scene->names[cc] = "compound_child1";
+    scene->transforms[cc].translation = vec3f(3.0f, 8.0f, 4.0f);
     scene->transforms[cc].rotation = quat();
     scene->transforms[cc].scale = vec3f(2.0f, 0.5f, 0.5f);
     scene->entities[cc] |= CMP_TRANSFORM;
@@ -264,12 +262,10 @@ void example_setup(ecs_scene* scene, camera& cam)
     instantiate_geometry(box, scene, cc);
     instantiate_material(default_material, scene, cc);
     instantiate_model_cbuffer(scene, cc);
-    instantiate_rigid_body(scene, cc);
     
-    arbc.compound = compound;
-    arbc.rb = cc;
-    arbc.detach_index = -1;
-    physics::attach_rb_to_compound(arbc);
+    sb_push(compound_children, cc);
+    
+    ecs::instantiate_compound_rigid_body(scene, compound, compound_children, 2);
     
     // load physics stuff before calling update
     physics::physics_consume_command_buffer();

@@ -241,11 +241,12 @@ namespace put
         void save_sub_scene(ecs_scene* scene, u32 root);
         void load_scene(const c8* filename, ecs_scene* scene, bool merge = false);
 
-        s32         load_pmm(const c8* model_scene_name, ecs_scene* scene = nullptr, u32 load_flags = PMM_ALL);
-        anim_handle load_pma(const c8* model_scene_name);
-        s32         load_pmv(const c8* filename, ecs_scene* scene);
+        s32 load_pmm(const c8* model_scene_name, ecs_scene* scene = nullptr, u32 load_flags = PMM_ALL);
+        s32 load_pma(const c8* model_scene_name);
+        s32 load_pmv(const c8* filename, ecs_scene* scene);
 
         void instantiate_rigid_body(ecs_scene* scene, u32 node_index);
+        void instantiate_compound_rigid_body(ecs_scene* scene, u32 parent, u32* children, u32 num_children);
         void instantiate_constraint(ecs_scene* scene, u32 node_index);
         void instantiate_geometry(geometry_resource* gr, ecs_scene* scene, s32 node_index);
         void instantiate_geometry_ref(geometry_resource* gr, ecs_scene* scene, s32 node_index);
@@ -260,6 +261,7 @@ namespace put
         void destroy_geometry(ecs_scene* scene, u32 node_index);
         void destroy_physics(ecs_scene* scene, s32 node_index);
 
+        void bake_rigid_body_params(ecs_scene* scene, u32 node_index);
         void bake_material_handles(ecs_scene* scene, u32 node_index);
         void bake_material_handles();
 

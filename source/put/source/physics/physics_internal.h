@@ -17,9 +17,6 @@
 #include "BulletDynamics/Featherstone/btMultiBodyPoint2Point.h"
 #include "btBulletDynamicsCommon.h"
 
-//#define MAX_PHYSICS_RESOURCES 2048
-//#define MAX_P2P_CONSTRAINTS 20
-
 namespace physics
 {
     enum e_entity_type
@@ -27,7 +24,9 @@ namespace physics
         ENTITY_NULL = 0,
         ENTITY_RIGID_BODY,
         ENTITY_MULTI_BODY,
-        ENTITY_CONSTRAINT
+        ENTITY_CONSTRAINT,
+        ENTITY_COMPOUND_RIGID_BODY,
+        ENTITY_COMPOUND_RIGID_BODY_CHILD
     };
 
     struct rigid_body_entity
@@ -132,7 +131,7 @@ namespace physics
                                     btCollisionShape* p_existing_shape = NULL);
 
     void add_rb_internal(const rigid_body_params& params, u32 resource_slot, bool ghost = false);
-    void add_compound_rb_internal(const compound_rb_params& params, u32 resource_slot);
+    void add_compound_rb_internal(const compound_rb_cmd& cmd, u32 resource_slot);
     void add_compound_shape_internal(const compound_rb_params& params, u32 resource_slot);
     void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body);
     void add_hinge_internal(const constraint_params& params, u32 resource_slot);

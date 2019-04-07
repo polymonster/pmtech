@@ -1112,11 +1112,13 @@ namespace put
 
                     if (scene->entities[n] & CMP_PHYSICS)
                     {
-                        cmp_transform& pt = scene->physics_offset[n];
-                        physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation);
-
-                        physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_ANGULAR_VELOCITY);
-                        physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
+                        if(scene->physics_data[n].type == PHYSICS_TYPE_RIGID_BODY)
+                        {
+                            cmp_transform& pt = scene->physics_offset[n];
+                            physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation);
+                            physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_ANGULAR_VELOCITY);
+                            physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
+                        }
                     }
 
                     // local matrix will be baked

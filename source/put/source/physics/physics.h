@@ -314,6 +314,12 @@ namespace physics
         u32 entity;
         void (*callback)(const contact_test_results& result);
     };
+    
+    struct compound_rb_cmd
+    {
+        compound_rb_params params;
+        u32*               children_handles;
+    };
 
     struct physics_cmd
     {
@@ -330,7 +336,7 @@ namespace physics
             constraint_params          add_constraint_params;
             multi_body_params          add_multi;
             set_multi_v3_params        set_multi_v3;
-            compound_rb_params         add_compound_rb;
+            compound_rb_cmd            add_compound_rb;
             sync_compound_multi_params sync_compound;
             sync_rb_params             sync_rb;
             u32                        entity_index;
@@ -354,7 +360,7 @@ namespace physics
     u32 add_ghost_rb(const rigid_body_params& rbp);
     u32 add_constraint(const constraint_params& crbp);
     u32 add_multibody(const multi_body_params& mbp);
-    u32 add_compound_rb(const compound_rb_params& crbp);
+    u32 add_compound_rb(const compound_rb_params& crbp, u32** child_handles_out);
     u32 add_compound_shape(const compound_rb_params& crbp);
     u32 attach_rb_to_compound(const attach_to_compound_params& params);
 

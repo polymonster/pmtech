@@ -77,53 +77,113 @@ namespace put
 
             scene->entities[node_index] |= CMP_CONSTRAINT;
         }
-
-        void instantiate_rigid_body(ecs_scene* scene, u32 node_index)
+        
+        void bake_rigid_body_params(ecs_scene* scene, u32 node_index)
         {
             u32 s = node_index;
-
+            
             physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
             cmp_transform&              pt = scene->physics_offset[s];
-
+            
             vec3f min = scene->bounding_volumes[s].min_extents;
             vec3f max = scene->bounding_volumes[s].max_extents;
             vec3f scale = scene->transforms[s].scale;
-
+            
             rb.position = scene->transforms[s].translation + pt.translation;
             rb.rotation = scene->transforms[s].rotation;
-
+            
             if (!(rb.create_flags & physics::CF_DIMENSIONS))
             {
                 rb.dimensions = (max - min) * scale * 0.5f;
-
+                
                 // capsule height is extents height + radius * 2 (for the capsule top and bottom)
                 if (rb.shape == physics::CAPSULE)
                     rb.dimensions.y -= rb.dimensions.x / 2.0f;
-
+                
                 // cone height is 1. (-0.5 to 0.5) but radius is 1.0;
                 if (rb.shape == physics::CONE)
                     rb.dimensions.y *= 2.0f;
             }
-
+            
             // fill the matrix array with the first matrix because of thread sync
             mat4 mrot;
             rb.rotation.get_matrix(mrot);
             mat4 start_transform = mrot * mat::create_translation(rb.position);
-
+            
             // mask 0 and group 0 are invalid
             if (rb.mask == 0)
                 rb.mask = 0xffffffff;
-
+            
             if (rb.group == 0)
                 rb.group = 1;
-
+            
             rb.shape_up_axis = physics::UP_Y;
             rb.start_matrix = start_transform;
+        }
 
-            scene->physics_handles[s] = physics::add_rb(rb);
+        void instantiate_rigid_body(ecs_scene* scene, u32 node_index)
+        {
+            u32 s = node_index;
+            
+            bake_rigid_body_params(scene, node_index);
+            
+            physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
+
+            if(rb.shape == physics::COMPOUND)
+            {
+                physics::compound_rb_params cbpr;
+                cbpr.rb = nullptr;
+                cbpr.base = rb;
+                cbpr.num_shapes = 0;
+                
+                u32* child_handles = nullptr;
+                scene->physics_handles[s] = physics::add_compound_rb(cbpr, &child_handles);
+            }
+            else
+            {
+                scene->physics_handles[s] = physics::add_rb(rb);
+            }
+            
             scene->physics_data[node_index].type = PHYSICS_TYPE_RIGID_BODY;
-
             scene->entities[s] |= CMP_PHYSICS;
+        }
+        
+        using physics::rigid_body_params;
+        void instantiate_compound_rigid_body(ecs_scene* scene, u32 parent, u32* children, u32 num_children)
+        {
+            bake_rigid_body_params(scene, parent);
+            
+            rigid_body_params* rbchild = (rigid_body_params*)pen::memory_alloc(sizeof(rigid_body_params)*num_children);
+            
+            for(u32 i = 0; i < num_children; ++i)
+            {
+                u32 ci = children[i];
+                bake_rigid_body_params(scene, ci);
+                rbchild[i] = scene->physics_data[ci].rigid_body;
+            }
+            
+            physics::rigid_body_params& rb = scene->physics_data[parent].rigid_body;
+            
+            physics::compound_rb_params cbpr;
+            cbpr.rb = nullptr;
+            cbpr.base = rb;
+            cbpr.rb = rbchild;
+            cbpr.num_shapes = num_children;
+            
+            u32* child_handles = nullptr;
+            scene->physics_handles[parent] = physics::add_compound_rb(cbpr, &child_handles);
+            scene->physics_data[parent].type = PHYSICS_TYPE_RIGID_BODY;
+            scene->entities[parent] |= CMP_PHYSICS;
+            
+            // fixup children
+            PEN_ASSERT(sb_count(child_handles) == num_children);
+            for(u32 i = 0; i < num_children; ++i)
+            {
+                u32 ci = children[i];
+                scene->physics_handles[ci] = child_handles[i];
+                scene->physics_data[ci].type = PHYSICS_TYPE_COMPOUND_CHILD;
+                scene->entities[ci] |= CMP_PHYSICS;
+            }
         }
 
         void destroy_physics(ecs_scene* scene, s32 node_index)

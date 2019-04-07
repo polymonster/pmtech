@@ -122,7 +122,7 @@ namespace physics
                 break;
 
             case CMD_ADD_COMPOUND_SHAPE:
-                add_compound_shape_internal(cmd.add_compound_rb, cmd.resource_slot);
+                add_compound_shape_internal(cmd.add_compound_rb.params, cmd.resource_slot);
                 break;
 
             case CMD_ATTACH_RB_TO_COMPOUND:
@@ -340,16 +340,25 @@ namespace physics
         s_cmd_buffer.put(pc);
     }
 
-    u32 add_compound_rb(const compound_rb_params& crbp)
+    u32 add_compound_rb(const compound_rb_params& crbp, u32** child_handles_out)
     {
         physics_cmd pc;
 
         pc.command_index = CMD_ADD_COMPOUND_RB;
-        pc.add_compound_rb = crbp;
+        pc.add_compound_rb.params = crbp;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
         pc.resource_slot = resource_slot;
-
+        
+        pc.add_compound_rb.children_handles = nullptr;
+        *child_handles_out = nullptr;
+        for(u32 i = 0; i < crbp.num_shapes; ++i)
+        {
+            u32 cs = pen::slot_resources_get_next(&s_physics_slot_resources);
+            sb_push(pc.add_compound_rb.children_handles, cs);
+            sb_push(*child_handles_out, cs);
+        }
+        
         s_cmd_buffer.put(pc);
 
         return resource_slot;
@@ -411,11 +420,11 @@ namespace physics
         physics_cmd pc;
 
         pc.command_index = CMD_ADD_COMPOUND_SHAPE;
-        pc.add_compound_rb = crbp;
+        pc.add_compound_rb.params = crbp;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
         pc.resource_slot = resource_slot;
-
+        
         s_cmd_buffer.put(pc);
 
         return resource_slot;

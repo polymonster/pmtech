@@ -111,10 +111,12 @@ namespace physics
                 break;
             case physics::MESH:
             {
-                u32                         num_tris = params.mesh_data.num_indices / 3;
+                u32 num_tris = params.mesh_data.num_indices / 3;
+                
                 btTriangleIndexVertexArray* mesh = new btTriangleIndexVertexArray(
                     num_tris, (s32*)params.mesh_data.indices, sizeof(u32) * 3, params.mesh_data.num_floats / 3,
                     params.mesh_data.vertices, sizeof(f32) * 3);
+                
                 btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape(mesh, true);
                 shape = concave_mesh;
             }
@@ -124,15 +126,19 @@ namespace physics
                 if (p_compound)
                 {
                     u32 num_shapes = p_compound->num_shapes;
-
+                    
                     btCompoundShape* compound = new btCompoundShape(true);
-
+                    
+                    btTransform basetrans = get_bttransform_from_params(p_compound->base);
+                    
                     for (u32 s = 0; s < num_shapes; ++s)
                     {
                         btCollisionShape* p_sub_shape = create_collision_shape(entity, p_compound->rb[s]);
 
                         btTransform trans = get_bttransform_from_params(p_compound->rb[s]);
-
+                        
+                        trans = trans * basetrans.inverse();
+                        
                         compound->addChildShape(trans, p_sub_shape);
                     }
 
@@ -235,8 +241,6 @@ namespace physics
         mat4*& backbuffer = g_readable_data.output_matrices.backbuffer();
         u32    num = sb_count(backbuffer);
         
-        u32 cap = s_entities._capacity;
-
         for (u32 i = 0; i < s_entities._capacity; i++)
         {
             if (i >= num)
@@ -246,7 +250,7 @@ namespace physics
             }
 
             physics_entity& entity = s_entities.get(i);
-
+            
             switch (entity.type)
             {
                 case ENTITY_RIGID_BODY:
@@ -267,6 +271,53 @@ namespace physics
                     backbuffer[i].transpose();
                 }
                 break;
+                    
+                case ENTITY_COMPOUND_RIGID_BODY:
+                {
+                    btCompoundShape* p_compound = entity.compound_shape;
+                    btRigidBody* p_rb = entity.rb.rigid_body;
+                    
+                    btTransform rb_transform = p_rb->getWorldTransform();
+                    
+                    btScalar _mm[16];
+                    
+                    rb_transform.getOpenGLMatrix(_mm);
+                    
+                    for (s32 m = 0; m < 16; ++m)
+                        backbuffer[i].m[m] = _mm[m];
+                    
+                    backbuffer[i].transpose();
+                    
+                    if (p_compound)
+                    {
+                        u32 num_shapes = p_compound->getNumChildShapes( );
+                        for (u32 j = 0; j < num_shapes; ++j)
+                        {
+                            if (p_rb)
+                            {
+                                btTransform base = p_rb->getWorldTransform();
+                                btTransform child = p_compound->getChildTransform(j);
+                                btCollisionShape* shape = p_compound->getChildShape(j);
+                                u32 ph = shape->getUserIndex();
+                                
+                                if(!is_valid(ph))
+                                    continue;
+                                
+                                btTransform child_world = base * child;
+                                
+                                btScalar _mm[16];
+                                
+                                child_world.getOpenGLMatrix(_mm);
+                                
+                                for (s32 m = 0; m < 16; ++m)
+                                    backbuffer[ph].m[m] = _mm[m];
+
+                                backbuffer[ph].transpose();
+                            }
+                        }
+                    }
+                }
+                break;
 
                 default:
                     break;
@@ -275,51 +326,6 @@ namespace physics
 
         g_readable_data.output_matrices.swap_buffers();
     }
-
-#if 0 // todo ressurect compounds
-	void update_output_matrices( )
-	{
-		for (u32 i = 0; i < g_bullet_objects.num_entities; i++)
-		{
-			btCompoundShape* p_compound = g_bullet_objects.entities[i].compound_shape;
-
-			if (p_compound)
-			{
-				g_readable_data.multi_output_matrices[current_ouput_backbuffer][i][0] = g_readable_data.output_matrices[current_ouput_backbuffer][i];
-
-				u32 num_shapes = p_compound->getNumChildShapes( );
-				for (u32 j = 0; j < num_shapes; ++j)
-				{
-					if (p_rb)
-					{
-						btTransform base = p_rb->getWorldTransform( );
-						btTransform child = p_compound->getChildTransform( j );
-
-						btTransform child_world = base * child;
-
-						mat4 out_mat;
-						child_world.getOpenGLMatrix( out_mat.m );
-
-						g_readable_data.multi_output_matrices[current_ouput_backbuffer][i][j + 1] = out_mat;
-					}
-					else
-					{
-						p_compound->getChildTransform( j ).getOpenGLMatrix( g_readable_data.multi_output_matrices[current_ouput_backbuffer][i][j + 1].m );
-					}
-
-					g_readable_data.multi_output_matrices[current_ouput_backbuffer][i][j + 1] = g_readable_data.multi_output_matrices[current_ouput_backbuffer][i][j + 1].transpose( );
-				}
-			}
-
-			if (g_bullet_objects.entities[i].call_attach)
-			{
-				g_bullet_objects.entities[i].call_attach = 0;
-
-				g_bullet_objects.entities[i].attach_function( g_bullet_objects.entities[i].p_attach_user_data, g_bullet_objects.entities[i].attach_shape_index );
-			}
-		}
-	}
-#endif
 
     void physics_update(f32 dt)
     {
@@ -351,22 +357,33 @@ namespace physics
         entity.type = ENTITY_RIGID_BODY;
     }
 
-    void add_compound_rb_internal(const compound_rb_params& params, u32 resource_slot)
+    void add_compound_rb_internal(const compound_rb_cmd& cmd, u32 resource_slot)
     {
         s_entities.grow(resource_slot);
         physics_entity& entity = s_entities.get(resource_slot);
 
-        btCollisionShape* col = create_collision_shape(entity, params.base, &params);
+        btCollisionShape* col = create_collision_shape(entity, cmd.params.base, &cmd.params);
         btCompoundShape*  compound = (btCompoundShape*)col;
+        
+        u32 num = cmd.params.num_shapes;
+        for(u32 i = 0; i < num; ++i)
+        {
+            u32 ch = cmd.children_handles[i];
+            s_entities.grow(ch);
+            compound->getChildShape(i)->setUserIndex(ch);
+        }
 
         entity.compound_shape = compound;
-        entity.num_base_compound_shapes = params.num_shapes;
+        entity.num_base_compound_shapes = cmd.params.num_shapes;
 
-        entity.rb.rigid_body = create_rb_internal(entity, params.base, 0, compound);
+        entity.rb.rigid_body = create_rb_internal(entity, cmd.params.base, 0, compound);
+        entity.rb.rigid_body->setUserIndex(resource_slot);
 
         entity.rb.rigid_body_in_world = 1;
-        entity.group = params.base.group;
-        entity.mask = params.base.mask;
+        entity.group = cmd.params.base.group;
+        entity.mask = cmd.params.base.mask;
+        
+        entity.type = ENTITY_COMPOUND_RIGID_BODY;
     }
 
     void add_compound_shape_internal(const compound_rb_params& params, u32 resource_slot)
@@ -797,11 +814,6 @@ namespace physics
         physics_entity& pe = s_entities.get(params.rb);
 
         rigid_body_entity rb = pe.rb;
-        
-        if(!compound.compound_shape)
-        {
-            
-        }
 
         if (compound.compound_shape && pe.type == ENTITY_RIGID_BODY)
         {
@@ -822,6 +834,8 @@ namespace physics
                 compound.compound_shape->removeChildShapeByIndex(params.detach_index);
 
                 s_bullet_systems.dynamics_world->addRigidBody(rb.rigid_body, pe.group, pe.mask);
+                
+                pe.type = ENTITY_RIGID_BODY;
 
                 rb.rigid_body->setWorldTransform(base * compound_child);
             }
@@ -832,15 +846,36 @@ namespace physics
                 rb.attach_function = params.function;
                 rb.attach_shape_index = compound.compound_shape->getNumChildShapes();
                 rb.call_attach = 1;
+                
+                btCompoundShape* compound2 = new btCompoundShape();
 
                 rb.rigid_body_in_world = 0;
 
                 btTransform new_child = rb.rigid_body->getWorldTransform();
+                
+                if(0)
+                {
+                    btScalar masses[3] = {1, 1, 1};
+                    btTransform principal;
+                    btVector3 inertia;
+                    compound.compound_shape->calculatePrincipalAxisTransform(masses, principal, inertia);
+                    
+                    for (int i = 0; i <  compound.compound_shape->getNumChildShapes(); i++)
+                        compound2->addChildShape(compound.compound_shape->getChildTransform(i) * principal.inverse(),
+                                                 compound.compound_shape->getChildShape(i));
+                }
+                else
+                {
+                    btTransform offset = base.inverse() * new_child;
+                    
+                    u32 ci = compound.compound_shape->getNumChildShapes();
+                    compound.compound_shape->addChildShape(offset, rb.rigid_body->getCollisionShape());
+                    compound.compound_shape->getChildShape(ci)->setUserIndex(params.rb);
+                }
 
-                btTransform offset = base.inverse() * new_child;
-
-                compound.compound_shape->addChildShape(offset, rb.rigid_body->getCollisionShape());
-
+                pe.type = ENTITY_COMPOUND_RIGID_BODY_CHILD;
+                
+                //s_bullet_systems.dynamics_world->removeRigidBody(compound.rb.rigid_body);
                 s_bullet_systems.dynamics_world->removeRigidBody(rb.rigid_body);
             }
         }
@@ -986,7 +1021,7 @@ namespace physics
     }
 } // namespace physics
 
-#if 0 // reference
+#if PICKING_REFERENCE // reference
 virtual void removePickingConstraint()
 {
     if (m_pickedConstraint)
@@ -999,5 +1034,4 @@ virtual void removePickingConstraint()
         m_pickedBody = 0;
     }
 }
-
 #endif
