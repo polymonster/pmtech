@@ -266,6 +266,12 @@ namespace physics
         mat4* const& fb = g_readable_data.output_matrices.frontbuffer();
         return fb[entity_index];
     }
+    
+    maths::transform get_rb_transform(const u32& entity_index)
+    {
+        maths::transform* const& fb = g_readable_data.output_transforms.frontbuffer();
+        return fb[entity_index];
+    }
 
     bool has_rb_matrix(const u32& entity_index)
     {

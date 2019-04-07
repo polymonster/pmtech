@@ -19,6 +19,26 @@ namespace physics
     {
         return vec3f(bt.getX(), bt.getY(), bt.getZ());
     }
+    
+    inline quat from_btquat(const btQuaternion& bt)
+    {
+        quat q;
+        q.x = bt.getX();
+        q.y = bt.getY();
+        q.z = bt.getZ();
+        q.w = bt.getW();
+        
+        return q;
+    }
+    
+    inline maths::transform from_bttransform(const btTransform& bt)
+    {
+        maths::transform t;
+        t.translation = from_btvector(bt.getOrigin());
+        t.rotation = from_btquat(bt.getRotation());
+        t.scale = vec3f::one();
+        return t;
+    }
 
     readable_data                        g_readable_data;
     static bullet_systems                s_bullet_systems;
@@ -222,8 +242,11 @@ namespace physics
     void physics_initialise()
     {
         s_entities.init(1024);
+        
         g_readable_data.output_matrices._data[0] = nullptr;
         g_readable_data.output_matrices._data[1] = nullptr;
+        g_readable_data.output_transforms._data[0] = nullptr;
+        g_readable_data.output_transforms._data[1] = nullptr;
 
         s_bullet_systems.collision_config = new btDefaultCollisionConfiguration();
         s_bullet_systems.dispatcher = new btCollisionDispatcher(s_bullet_systems.collision_config);
@@ -238,15 +261,18 @@ namespace physics
 
     void update_output_matrices()
     {
-        mat4*& backbuffer = g_readable_data.output_matrices.backbuffer();
-        u32    num = sb_count(backbuffer);
+        mat4*& bb_mats = g_readable_data.output_matrices.backbuffer();
+        maths::transform*& bb_transforms = g_readable_data.output_transforms.backbuffer();
+        
+        u32    num = sb_count(bb_mats);
         
         for (u32 i = 0; i < s_entities._capacity; i++)
         {
             if (i >= num)
             {
                 ++num;
-                sb_push(backbuffer, mat4::create_identity());
+                sb_push(bb_mats, mat4::create_identity());
+                sb_push(bb_transforms, maths::transform());
             }
 
             physics_entity& entity = s_entities.get(i);
@@ -266,9 +292,10 @@ namespace physics
                     rb_transform.getOpenGLMatrix(_mm);
 
                     for (s32 m = 0; m < 16; ++m)
-                        backbuffer[i].m[m] = _mm[m];
+                        bb_mats[i].m[m] = _mm[m];
 
-                    backbuffer[i].transpose();
+                    bb_mats[i].transpose();
+                    bb_transforms[i] = from_bttransform(rb_transform);
                 }
                 break;
                     
@@ -284,9 +311,9 @@ namespace physics
                     rb_transform.getOpenGLMatrix(_mm);
                     
                     for (s32 m = 0; m < 16; ++m)
-                        backbuffer[i].m[m] = _mm[m];
+                        bb_mats[i].m[m] = _mm[m];
                     
-                    backbuffer[i].transpose();
+                    bb_mats[i].transpose();
                     
                     if (p_compound)
                     {
@@ -310,9 +337,10 @@ namespace physics
                                 child_world.getOpenGLMatrix(_mm);
                                 
                                 for (s32 m = 0; m < 16; ++m)
-                                    backbuffer[ph].m[m] = _mm[m];
+                                    bb_mats[ph].m[m] = _mm[m];
 
-                                backbuffer[ph].transpose();
+                                bb_mats[ph].transpose();
+                                bb_transforms[ph] = from_bttransform(child_world);
                             }
                         }
                     }
@@ -325,6 +353,7 @@ namespace physics
         }
 
         g_readable_data.output_matrices.swap_buffers();
+        g_readable_data.output_transforms.swap_buffers();
     }
 
     void physics_update(f32 dt)

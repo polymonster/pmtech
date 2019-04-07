@@ -287,12 +287,7 @@ namespace put
             bool shadow_map = false;
         };
 
-        struct cmp_transform
-        {
-            vec3f translation = vec3f::zero();
-            quat  rotation = quat();
-            vec3f scale = vec3f::one();
-        };
+        typedef maths::transform cmp_transform;
 
         struct cmp_shadow
         {

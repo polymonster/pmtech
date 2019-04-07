@@ -384,6 +384,7 @@ namespace physics
 
     bool has_rb_matrix(const u32& entity_index);
     mat4 get_rb_matrix(const u32& entity_index);
+    maths::transform get_rb_transform(const u32& entity_index);
     void release_entity(const u32& entity_index);
 
 } // namespace physics

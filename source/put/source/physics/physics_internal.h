@@ -118,8 +118,9 @@ namespace physics
             b_paused = 0;
         }
 
-        a_u32                       b_paused;
-        pen::multi_buffer<mat4*, 2> output_matrices;
+        a_u32                                    b_paused;
+        pen::multi_buffer<mat4*, 2>              output_matrices;
+        pen::multi_buffer<maths::transform*, 2>  output_transforms;
     };
 
     extern readable_data g_readable_data;

@@ -1134,10 +1134,10 @@ namespace put
 
                     mat4 physics_mat = physics::get_rb_matrix(scene->physics_handles[n]);
                     mat4 scale_mat = mat::create_scale(t.scale);
-
-                    t.translation = physics_mat.get_translation();
                     
-                    t.rotation.from_matrix(physics_mat);
+                    vec3f os = t.scale;
+                    t = physics::get_rb_transform(scene->physics_handles[n]);
+                    t.scale = os;
 
                     mat4 rot_mat;
                     t.rotation.get_matrix(rot_mat);
@@ -1222,7 +1222,6 @@ namespace put
 
                 if (scene->entities[p] & CMP_ANIM_CONTROLLER)
                 {
-                    //vec3f pad = (parent_tmax - parent_tmin) * 0.5f;
                     vec3f pad = vec3f(0.0f);
 
                     parent_tmin = vec3f::vmin(parent_tmin, tmin - pad);
