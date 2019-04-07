@@ -10,19 +10,6 @@ pen::window_creation_params pen_window{
     "complex_rigid_bodies"   // window title / process name
 };
 
-void triangle_normal_dbg(const vec3f& v0, const vec3f& v1, const vec3f& v2)
-{
-    vec3f vc = (v0 + v1 + v2) / 3.0f;
-    
-    dbg::add_triangle(v0, v1, v2);
-    
-    vec3f vn = maths::get_normal(v0, v1, v2);
-    
-    f32 ns = min(max(max(mag(v0-v1), mag(v1-v2)), mag(v2-v0)) * 0.1f, 1.0f);
-    
-    dbg::add_line(vc, vc + vn * ns, vec4f::green());
-}
-
 u32 convex;
 u32 concave;
 
@@ -287,7 +274,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
         vec3f v1 = convex_mat.transform_vector(verts[1]);
         vec3f v2 = convex_mat.transform_vector(verts[2]);
         
-        triangle_normal_dbg(v0, v1, v2);
+        dbg::add_triangle_with_normal(v0, v1, v2);
     }
     
     // concave mesh
@@ -295,11 +282,11 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     vec3f v1 = vec3f(0.0f, 0.0f,  50.0f);
     vec3f v2 = vec3f(50.0f, 20.0f,  50.0f);
     
-    triangle_normal_dbg(v0, v1, v2);
+    dbg::add_triangle_with_normal(v0, v1, v2);
     
     vec3f w0 = vec3f(0.0f, 0.0f, -50.0f);
     vec3f w1 = vec3f(0.0f, 0.0f,  50.0f);
     vec3f w2 = vec3f(-50.0f, 20.0f,  50.0f);
     
-    triangle_normal_dbg(w0, w1, w2);
+    dbg::add_triangle_with_normal(w0, w1, w2);
 }

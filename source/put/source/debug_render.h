@@ -34,6 +34,7 @@ namespace put
                                 const vec4f& col = vec4f::white());
         void add_frustum(const vec3f* near_corners, const vec3f* far_corners, const vec4f& col = vec4f::white());
         void add_triangle(const vec3f& v1, const vec3f& v2, const vec3f& v3, const vec4f& col = vec4f::white());
+        void add_triangle_with_normal(const vec3f& v1, const vec3f& v2, const vec3f& v3, const vec4f& col = vec4f::white());
         void add_plane(const vec3f& point, const vec3f& normal, f32 size = 50.0f, vec4f colour = vec4f::white());
         void add_obb(const mat4& matrix, vec4f colour = vec4f::white());
 
