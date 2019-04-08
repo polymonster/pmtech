@@ -14,6 +14,9 @@ static u32 master_node = 0;
 
 void example_setup(ecs_scene* scene, camera& cam)
 {
+    cam.zoom = 180;
+    cam.rot = vec2f(-0.6, 2.2);
+    
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
