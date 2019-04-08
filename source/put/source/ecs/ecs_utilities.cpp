@@ -338,6 +338,20 @@ namespace put
                 child = temp;
             }
         }
+        
+        void trim_entities(ecs_scene* scene)
+        {
+            u32 new_num = scene->num_entities;
+            for(u32 n = scene->num_entities-1; n >= 0; --n)
+            {
+                if(scene->entities[n] & CMP_ALLOCATED)
+                    break;
+                
+                new_num--;
+            }
+            
+            scene->num_entities = new_num;
+        }
 
         void clone_selection_hierarchical(ecs_scene* scene, u32** selection_list, const c8* suffix)
         {
