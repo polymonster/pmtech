@@ -124,7 +124,7 @@ namespace pen
         T& operator[](u32 slot);
     };
 
-    // single produce multiple consumer - thread safe multi buffer
+    // single producer multiple consumer - thread safe multi buffer
     template <typename T, u32 N>
     struct multi_buffer
     {
@@ -138,6 +138,28 @@ namespace pen
         T& backbuffer();
         const T& frontbuffer();
         void swap_buffers();
+    };
+    
+    // single producer multiple consumer - thread safe multi buffer of arrays
+    template <typename T, size_t N>
+    struct multi_array_buffer
+    {
+        T* _data[N] = { 0 };
+        a_size_t _capacity[N];
+        
+        size_t _num_buffers = N;
+        a_size_t _fb;
+        a_size_t _bb;
+        
+        multi_array_buffer();
+        ~multi_array_buffer();
+        
+        T* backbuffer();
+        const T* frontbuffer();
+        void swap_buffers();
+        
+        void init(size_t size);
+        void grow(size_t size);
     };
     
     // function impls with always inline for fast data structs
@@ -301,6 +323,65 @@ namespace pen
     {
         _fb = _bb.load();
         _bb = (_bb + 1) % _num_buffers;
+    }
+    
+    template <typename T, size_t N>
+    pen_inline multi_array_buffer<T, N>::multi_array_buffer()
+    {
+        _bb = 0;
+        _fb = 1;
+    }
+    
+    template <typename T, size_t N>
+    pen_inline multi_array_buffer<T, N>::~multi_array_buffer()
+    {
+        for(size_t i = 0; i < N; ++i)
+            pen::memory_free(_data[i]);
+    }
+    
+    template <typename T, size_t N>
+    pen_inline T* multi_array_buffer<T, N>::backbuffer()
+    {
+        return _data[_bb];
+    }
+    
+    template <typename T, size_t N>
+    pen_inline const T* multi_array_buffer<T, N>::frontbuffer()
+    {
+        return _data[_fb];
+    }
+    
+    template <typename T, size_t N>
+    pen_inline void multi_array_buffer<T, N>::swap_buffers()
+    {
+        _fb = _bb.load();
+        _bb = (_bb + 1) % _num_buffers;
+    }
+    
+    template <typename T, size_t N>
+    pen_inline void multi_array_buffer<T, N>::init(size_t size)
+    {
+        for(size_t i = 0; i < N; ++i)
+        {
+            _data[i] = (T*)pen::memory_alloc(sizeof(T)*size);
+            memset(_data[i], 0x00, sizeof(T)*size);
+            _capacity[i] = size;
+        }
+    }
+    
+    template <typename T, size_t N>
+    pen_inline void multi_array_buffer<T, N>::grow(size_t size)
+    {
+        if(_capacity[_bb].load() >= size)
+            return;
+        
+        _data[_bb] = (T*)pen::memory_realloc(_data[_bb], sizeof(T)*size);
+        
+        // zero the rest
+        size_t cur = _capacity[_bb].load();
+        size_t diff = size - cur;
+        memset(&_data[cur], 0x00, sizeof(T)*diff);
+        _capacity[_bb] = size;
     }
     
 } // namespace pen

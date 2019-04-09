@@ -16,8 +16,6 @@ namespace put
     // Dedicated thread will wait on a semaphore until audio_consume_command_buffer is called
     // command buffer will be consumed passing arguments to the direct:: functions.
 
-#define MAX_AUDIO_RESOURCES 100
-
     enum audio_play_state : s32
     {
         NOT_PLAYING = 0,

@@ -13,10 +13,6 @@
 
 using namespace put;
 
-#define MAX_CHANNELS 32
-#define NUM_AUDIO_STATE_BUFFERS 2
-#define INVALID_SOUND (u32) - 1
-
 namespace
 {
     enum audio_resource_type : s32
@@ -52,11 +48,11 @@ namespace
         };
     };
     
-    FMOD::System*                            _sound_system;
-    pen::res_pool<audio_resource_allocation> _audio_resources;
-    pen::multi_buffer<resource_state*, 2>    _resource_states;
-    pen::res_pool<std::atomic<bool>>         _sound_file_info_ready;
-    pen::res_pool<audio_sound_file_info>     _sound_file_info;
+    FMOD::System*                               _sound_system;
+    pen::res_pool<audio_resource_allocation>    _audio_resources;
+    pen::multi_array_buffer<resource_state, 2>  _resource_states;
+    pen::res_pool<std::atomic<bool>>            _sound_file_info_ready;
+    pen::res_pool<audio_sound_file_info>        _sound_file_info;
 }
 
 namespace put
@@ -68,19 +64,15 @@ namespace put
 
         result = FMOD::System_Create(&_sound_system);
 
-        result = _sound_system->init(MAX_CHANNELS, FMOD_INIT_NORMAL, NULL);
+        static const u32 max_channels = 32;
+        result = _sound_system->init(max_channels, FMOD_INIT_NORMAL, NULL);
         
         static u32 reserved = 128;
         
         _audio_resources.init(reserved);
         _sound_file_info_ready.init(reserved);
         _sound_file_info.init(reserved);
-        
-        size_t rs_size = sizeof(resource_state) * reserved;
-        _resource_states._data[0] = (resource_state*)pen::memory_alloc(sizeof(resource_state) * reserved);
-        _resource_states._data[1] = (resource_state*)pen::memory_alloc(sizeof(resource_state) * reserved);
-        memset(_resource_states._data[0], 0x00, rs_size);
-        memset(_resource_states._data[1], 0x00, rs_size);
+        _resource_states.init(reserved);
 
         PEN_ASSERT(result == FMOD_OK);
     }
@@ -96,8 +88,10 @@ namespace put
 
     void update_channel_state(u32 resource_index)
     {
+        _resource_states.grow(resource_index);
+        
         audio_resource_allocation& res = _audio_resources[resource_index];
-
+        
         resource_state& rs = _resource_states.backbuffer()[resource_index];
         
         audio_channel_state* state = &rs.channel_state;
@@ -131,6 +125,8 @@ namespace put
 
     void update_group_state(u32 resource_index)
     {
+        _resource_states.grow(resource_index);
+        
         audio_resource_allocation& res = _audio_resources[resource_index];
 
         resource_state& rs = _resource_states.backbuffer()[resource_index];
@@ -166,6 +162,8 @@ namespace put
 
     void update_fft(u32 resource_index)
     {
+        _resource_states.grow(resource_index);
+        
         audio_resource_allocation& res = _audio_resources[resource_index];
 
         resource_state& rs = _resource_states.backbuffer()[resource_index];
@@ -181,6 +179,8 @@ namespace put
 
     void update_three_band_eq(u32 resource_index)
     {
+        _resource_states.grow(resource_index);
+        
         FMOD::DSP* eq_dsp = (FMOD::DSP*)_audio_resources[resource_index].resource;
         
         resource_state& rs = _resource_states.backbuffer()[resource_index];
@@ -192,6 +192,8 @@ namespace put
 
     void update_gain(u32 resource_index)
     {
+        _resource_states.grow(resource_index);
+        
         resource_state& rs = _resource_states.backbuffer()[resource_index];
         
         FMOD::DSP* gain_dsp = (FMOD::DSP*)_audio_resources[resource_index].resource;
@@ -505,7 +507,7 @@ namespace put
         {
             if (_audio_resources[channel_index].type == AUDIO_RESOURCE_CHANNEL)
             {
-                resource_state& rs = _resource_states.frontbuffer()[channel_index];
+                const resource_state& rs = _resource_states.frontbuffer()[channel_index];
                 
                 *state = rs.channel_state;
 
@@ -541,7 +543,7 @@ namespace put
         {
             if (_audio_resources[group_index].type == AUDIO_RESOURCE_GROUP)
             {
-                resource_state& rs = _resource_states.frontbuffer()[group_index];
+                const resource_state& rs = _resource_states.frontbuffer()[group_index];
                 
                 *state = rs.group_state;
 
@@ -560,7 +562,7 @@ namespace put
         {
             if (_audio_resources[spectrum_dsp].type == AUDIO_RESOURCE_DSP_FFT)
             {
-                resource_state& rs = _resource_states.frontbuffer()[spectrum_dsp];
+                const resource_state& rs = _resource_states.frontbuffer()[spectrum_dsp];
                 
                 if (rs.fft_spectrum != nullptr)
                 {
@@ -582,7 +584,7 @@ namespace put
         {
             if (_audio_resources[eq_dsp].type == AUDIO_RESOURCE_DSP_EQ)
             {
-                resource_state& rs = _resource_states.frontbuffer()[eq_dsp];
+                const resource_state& rs = _resource_states.frontbuffer()[eq_dsp];
                 
                 *eq_state = rs.eq_state;
 
@@ -601,7 +603,7 @@ namespace put
         {
             if (_audio_resources[dsp_index].type == AUDIO_RESOURCE_DSP_GAIN)
             {
-                resource_state& rs = _resource_states.frontbuffer()[dsp_index];
+                const resource_state& rs = _resource_states.frontbuffer()[dsp_index];
                 
                 *gain = rs.gain_value;
 

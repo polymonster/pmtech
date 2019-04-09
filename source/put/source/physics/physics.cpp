@@ -217,8 +217,6 @@ namespace physics
                     cmd = s_cmd_buffer.get();
                 }
             }
-            
-            //pen::thread_sleep_ms(16);
 
             if (pen::semaphore_try_wait(p_physics_job_thread_info->p_sem_exit))
                 break;

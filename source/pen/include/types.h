@@ -36,6 +36,7 @@ typedef unsigned long dword; // for win32
 typedef std::atomic<uint8_t>  a_u8;
 typedef std::atomic<uint32_t> a_u32;
 typedef std::atomic<uint64_t> a_u64;
+typedef std::atomic<size_t>   a_size_t;
 
 // Thread return value just for win32 portability
 #ifdef _WIN32
