@@ -59,9 +59,6 @@ PEN_TRV pen::user_entry(void* params)
     u32 group_index = put::audio_create_channel_group();
 
     put::audio_add_channel_to_group(channel_index, group_index);
-
-    put::audio_group_set_pitch(group_index, 0.5f);
-
     put::audio_group_set_volume(group_index, 1.0f);
 
     // cb
@@ -91,7 +88,7 @@ PEN_TRV pen::user_entry(void* params)
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_clear(clear_state_grey);
 
-        put::dbg::add_text_2f(10.0f, 10.0f, vp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Debug Text");
+        put::dbg::add_text_2f(10.0f, 10.0f, vp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Play Sound: data/audio/singing.wav");
 
         put::dbg::render_2d(cb_2d_view);
 
