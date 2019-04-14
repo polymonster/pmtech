@@ -91,7 +91,7 @@
     #define sample_texture_2dms( name, x, y, fragment ) name.read(uint2(x, y), fragment);
     #define sample_texture_level( name, tc, l ) name.sample(sampler_##name, tc, level(l))
     #define sample_texture_grad( name, tc, vddx, vddy ) name.sample(sampler_##name, tc, gradient3d(vddx, vddy))
-    #define to_3x3( M4 ) (float3x3)M4
+    #define to_3x3( M4 ) float3x3(M4[0].xyz, M4[1].xyz, M4[2].xyz)
     #define mul( A, B ) (A * B)
     #define mul_tbn( A, B ) (B * A)
     

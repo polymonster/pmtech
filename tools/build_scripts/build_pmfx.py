@@ -1231,6 +1231,40 @@ def get_metal_packed_decl(input, semantic):
     return packed_decl
 
 
+def metal_functions(functions):
+    fl = find_functions(functions)
+    final_funcs = ""
+    for f in fl:
+        bp = f.find("(")
+        ep = f.find(")")
+        fb = f[ep:]
+        sig = f[:bp+1]
+        if bp != -1 and ep != -1:
+            args = f[bp+1:ep]
+            arg_list = args.split(",")
+            count = 0
+            for arg in arg_list:
+                if count > 0:
+                    sig += ", "
+                count += 1
+                toks = arg.split(" ")
+                if '' in toks:
+                    toks.remove('')
+                if '\n' in toks:
+                    toks.remove('\n')
+                ref = False
+                for t in toks:
+                    if t == "out" or t == "inout":
+                        ref = True
+                if not ref:
+                    sig += arg
+                else:
+                    sig += "device " + toks[1] + "& " + toks[2]
+        func = sig + fb
+        final_funcs += func
+    return final_funcs
+
+
 # compile shader for apple metal
 def compile_metal(_info, pmfx_name, _tp, _shader):
     # parse inputs and outputs into semantics
@@ -1308,7 +1342,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     }
 
     # functions
-    shader_source += _shader.functions_source
+    shader_source += metal_functions(_shader.functions_source)
 
     # main decl
     shader_source += main_type[_shader.shader_type] + " "
