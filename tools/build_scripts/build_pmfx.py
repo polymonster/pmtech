@@ -1259,7 +1259,7 @@ def metal_functions(functions):
                 if not ref:
                     sig += arg
                 else:
-                    sig += "device " + toks[1] + "& " + toks[2]
+                    sig += "thread " + toks[1] + "& " + toks[2]
         func = sig + fb
         final_funcs += func
     return final_funcs

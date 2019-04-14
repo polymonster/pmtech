@@ -100,6 +100,7 @@
     #define ddx dfdx
     #define ddy dfdy
     #define discard discard_fragment
+    #define lerp mix
     
     #define _pmfx_unroll
 #endif //METAL
