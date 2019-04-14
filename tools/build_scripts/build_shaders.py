@@ -147,6 +147,7 @@ def generate_shader_info(
         constant_buffers):
 
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, shader_build_dir)
+    print(info_filename)
 
     shader_info = dict()
     shader_info["files"] = []

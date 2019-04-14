@@ -440,6 +440,7 @@ namespace pen
         u32  renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res);
         void renderer_shutdown();
         void renderer_make_context_current();
+        void renderer_sync();
 
         // clears
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot);

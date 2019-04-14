@@ -9,9 +9,11 @@
 #include "data_struct.h"
 #include "renderer.h"
 #include "str/Str.h"
+#include "threads.h"
 
 // globals
 a_u8 g_window_resize;
+extern a_u64 g_frame_index;
 
 using namespace pen;
 
@@ -113,6 +115,7 @@ namespace // structs and static vars
     MTKView*           _metal_view;
     id<MTLDevice>      _metal_device;
     current_state      _state;
+    a_u64              _frame_sync;
 }
 
 namespace // pen consts -> metal consts
@@ -455,6 +458,7 @@ namespace pen
 
             //reserve space for some resources
             _res_pool.init(1);
+            _frame_sync = 0;
 
             return 1;
         }
@@ -466,7 +470,13 @@ namespace pen
 
         void renderer_make_context_current()
         {
-            // stub. used for gl implementation
+            _frame_sync = g_frame_index.load();
+        }
+        
+        void renderer_sync()
+        {
+            while(_frame_sync == g_frame_index.load())
+                thread_sleep_us(100);
         }
 
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
@@ -875,7 +885,7 @@ namespace pen
                 // backbuffer colour target
                 _state.drawable = _metal_view.currentDrawable;
                 id<MTLTexture> texture = _state.drawable.texture;
-
+                
                 _state.pass.colorAttachments[0].texture = texture;
                 _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
                 _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;

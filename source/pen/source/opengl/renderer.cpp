@@ -561,6 +561,11 @@ namespace pen
     {
         pen_make_gl_context_current();
     }
+    
+    void direct::renderer_sync()
+    {
+        // unused for opengl, required to sync for metal
+    }
 
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {

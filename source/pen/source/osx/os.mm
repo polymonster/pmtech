@@ -24,6 +24,7 @@
 extern pen::window_creation_params pen_window;
 extern a_u8                        g_window_resize;
 int                                g_rs = 0;
+a_u64                              g_frame_index;
 
 // pen required externs
 pen::user_info pen_user_info;
@@ -103,6 +104,8 @@ namespace
 {
     if (!pen::renderer_dispatch())
         pen::thread_sleep_us(100);
+    
+    g_frame_index++;
 }
 
 @end
@@ -569,6 +572,8 @@ int        main(int argc, char** argv)
     working_dir = pen::str_normalise_filepath(working_dir);
 
     s_cmd_buffer.create(32);
+    
+    g_frame_index = 0;
 
     // strip exe and go back 2 \contents\macos\exe
     for (u32 i = 0, pos = 0; i < 4; ++i)

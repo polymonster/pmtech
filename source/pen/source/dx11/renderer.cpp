@@ -463,7 +463,12 @@ namespace pen
     {
         // unused on dx11 so far
     }
-
+    
+    void direct::renderer_sync()
+    {
+        // unused for d3d, required to sync for metal
+    }
+    
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
         u32 flags = _res_pool[clear_state_index].clear_state->flags;

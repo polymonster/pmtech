@@ -206,6 +206,7 @@ def get_macros_for_platform(platform, macros_source):
 # get info filename for dependency checking
 def get_resource_info_filename(filename, build_dir):
     global _info
+    global _info
     base_filename = os.path.basename(filename)
     dir_path = os.path.dirname(filename)
     info_filename = os.path.join(_info.output_dir, os.path.splitext(base_filename)[0], "info.json")
@@ -1390,7 +1391,8 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     temp_shader_source.write(shader_source)
     temp_shader_source.close()
 
-    return True
+    # 0 is error code
+    return 0
 
     # todo precompile
     if pmfx_name != "basictri":
@@ -1649,6 +1651,7 @@ def parse_pmfx(file, root):
                     print("error: invalid shader platform " + _info.shader_platform)
 
                 if ss != 0:
+                    print("failed: " + pmfx_name)
                     success = False
 
             pmfx_output_info["techniques"].append(generate_technique_permutation_info(_tp))

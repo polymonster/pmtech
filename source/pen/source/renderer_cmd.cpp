@@ -481,16 +481,19 @@ namespace pen
             semaphore_post(p_consume_semaphore, 1);
             semaphore_wait(p_continue_semaphore);
         }
+        
+        // sync on rt
+        direct::renderer_sync();
     }
 
     bool renderer_dispatch()
     {
         if (semaphore_try_wait(p_consume_semaphore))
         {
-            semaphore_post(p_continue_semaphore, 1);
-
             // some api's need to set the current context on the caller thread.
             direct::renderer_make_context_current();
+            
+            semaphore_post(p_continue_semaphore, 1);
 
             renderer_cmd* cmd = s_cmd_buffer.get();
             while (cmd)

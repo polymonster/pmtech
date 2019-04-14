@@ -5,12 +5,10 @@
 #ifndef _pen_data_struct_h
 #define _pen_data_struct_h
 
-// Minimalist, fast, bloat free data structures with thread safe versions
+// Minimalist, fast, bloat free data structures with lockless thread safe versions
 
 #include "memory.h"
 #include "console.h"
-
-// Stretchy buffer itself akin to vector.. shoutout stb.
 
 #ifndef NO_STRETCHY_BUFFER_SHORT_NAMES
 #define sb_free stb_sb_free
@@ -88,7 +86,7 @@ namespace pen
         int size();
     };
 
-    // single producer single consumer - thread safe ring buffer
+    // lockless single producer single consumer - thread safe ring buffer
     template <typename T>
     struct ring_buffer
     {
@@ -107,7 +105,7 @@ namespace pen
         
     };
     
-    // single producer multiple consumer - thread safe resource pool which will grow to accomodate contents
+    // lockless single producer multiple consumer - thread safe resource pool which will grow to accomodate contents
     template <typename T>
     struct res_pool
     {
@@ -124,7 +122,7 @@ namespace pen
         T& operator[](u32 slot);
     };
 
-    // single producer multiple consumer - thread safe multi buffer
+    // lockless single producer multiple consumer -thread safe multi buffer
     template <typename T, u32 N>
     struct multi_buffer
     {
@@ -140,7 +138,7 @@ namespace pen
         void swap_buffers();
     };
     
-    // single producer multiple consumer - thread safe multi buffer of arrays
+    // lockless single producer multiple consumer - thread safe multi buffer of arrays
     template <typename T, size_t N>
     struct multi_array_buffer
     {
