@@ -114,6 +114,7 @@ void create_metal_context()
 {
     NSRect frame = [[_window contentView] bounds];
     _metal_view = [[MTKView alloc] initWithFrame:frame device:MTLCreateSystemDefaultDevice()];
+    _metal_view.depthStencilPixelFormat = MTLPixelFormatDepth24Unorm_Stencil8;
 
     metal_delegate* dg = [[metal_delegate alloc] initWithMetalKitView:_metal_view];
     _metal_view.delegate = dg;

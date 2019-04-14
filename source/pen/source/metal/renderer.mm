@@ -37,6 +37,7 @@ namespace // structs and static vars
     struct pixel_formats
     {
         MTLPixelFormat colour_attachments[pen::MAX_MRT];
+        MTLPixelFormat depth_attachment;
     };
 
     struct current_state
@@ -206,8 +207,19 @@ namespace // pen consts -> metal consts
 
         if (bind_flags & PEN_BIND_RENDER_TARGET)
             usage |= MTLTextureUsageRenderTarget;
+        
+        if(bind_flags & PEN_BIND_DEPTH_STENCIL)
+            usage |= MTLTextureUsageRenderTarget;
 
         return usage;
+    }
+    
+    pen_inline MTLStorageMode to_metal_storage_mode(const texture_creation_params& tcp)
+    {
+        if(tcp.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT || tcp.sample_count > 1)
+            return MTLStorageModePrivate;
+
+        return MTLStorageModeManaged;
     }
 
     pen_inline MTLSamplerAddressMode to_metal_sampler_address_mode(u32 address_mode)
@@ -361,10 +373,6 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLBlendFactorZero;
     }
-}
-
-pen_inline void pool_grow(resource* pool, u32 size)
-{
 }
 
 namespace pen
@@ -656,6 +664,9 @@ namespace pen
 
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
         {
+            if(tcp.width == PEN_INVALID_HANDLE)
+                return;
+            
             MTLTextureDescriptor* td = nil;
             id<MTLTexture>        texture = nil;
 
@@ -666,10 +677,11 @@ namespace pen
                 td = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:fmt
                                                                         width:tcp.width
                                                                        height:tcp.height
-                                                                    mipmapped:tcp.num_mips > 1];
+                                                                    mipmapped:tcp.num_mips > 1 ];
 
                 td.usage = to_metal_texture_usage(tcp.bind_flags);
-
+                td.storageMode = to_metal_storage_mode(tcp);
+                
                 texture = [_metal_device newTextureWithDescriptor:td];
 
                 if (tcp.data)
@@ -892,10 +904,9 @@ namespace pen
             }
             else
             {
-                // render target
+                // multiple render targets
                 for (u32 i = 0; i < num_colour_targets; ++i)
                 {
-                    // render target
                     id<MTLTexture> texture = _res_pool.get(colour_targets[i]).texture.tex;
 
                     _state.pass.colorAttachments[i].texture = texture;
@@ -904,6 +915,23 @@ namespace pen
 
                     _state.formats.colour_attachments[i] = _res_pool.get(colour_targets[i]).texture.fmt;
                 }
+            }
+            
+            if(depth_target == PEN_BACK_BUFFER_DEPTH)
+            {
+                _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
+                _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
+                _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
+                _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
+            }
+            if(is_valid(depth_target))
+            {
+                _state.pass.depthAttachment.texture = _res_pool.get(depth_target).texture.tex;
+
+                _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
+                _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
+                
+                _state.formats.depth_attachment = _res_pool.get(depth_target).texture.fmt;
             }
         }
 

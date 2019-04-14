@@ -2753,6 +2753,9 @@ namespace put
         void resolve_targets(bool aux)
         {
             // resolve.. todo only resolve if we have rendered
+            pen::viewport vp = {0, 0, (f32)pen_window.width, (f32)pen_window.height};
+            pen::renderer_set_viewport(vp);
+            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
