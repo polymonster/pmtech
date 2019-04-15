@@ -361,7 +361,7 @@ ps_output ps_forward_lit( vs_output input )
             if:(SSS)
             {
                 // sss
-                float sss_offset = 0.01;
+                float sss_offset = 0.1;
                 float4 shrink_pos = float4(input.world_pos.xyz - input.normal.xyz * sss_offset, 1.0);
                 
                 sp = mul( shrink_pos, shadow_matrix[i] );
