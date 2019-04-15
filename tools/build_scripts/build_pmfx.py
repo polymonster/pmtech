@@ -473,7 +473,7 @@ def generate_technique_texture_variables(_tp):
 # generate cbuffer meta data, c structs for access in code
 def generate_technique_constant_buffers(pmfx_json, _tp):
     offset = 0
-    constant_info = [["float", 1], ["float2", 2], ["float3", 3], ["float4", 4], ["float4x4", 16]]
+    constant_info = [["", 0], ["float", 1], ["float2", 2], ["float3", 3], ["float4", 4], ["float4x4", 16]]
 
     technique_constants = [_tp.technique]
     technique_json = _tp.technique

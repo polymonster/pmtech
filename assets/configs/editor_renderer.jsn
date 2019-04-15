@@ -99,6 +99,10 @@
     
     view_sets: 
     {
+        editor_d: [
+            main_view
+        ],
+        
         editor: [
             multiple_shadow_views,
             main_view,

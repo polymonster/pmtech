@@ -2637,7 +2637,7 @@ namespace put
                 bcp.usage_flags = PEN_USAGE_DYNAMIC;
                 bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size = sizeof(float) * 16;
+                bcp.buffer_size = sizeof(float) * 20;
                 bcp.data = (void*)nullptr;
 
                 cb_2d = pen::renderer_create_buffer(bcp);

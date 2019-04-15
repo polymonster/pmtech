@@ -88,13 +88,13 @@
     #define texture_2dms( type, samples, name, sampler_index ) texture2d_ms<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
     #define texture_cube( name, sampler_index ) texturecube<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
     #define texture_2d_array( name, sampler_index ) texture2d_array<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
-    
+
     #define sample_texture( name, tc ) name.sample(sampler_##name, tc)
     #define sample_texture_2dms( name, x, y, fragment ) name.read(uint2(x, y), fragment)
     #define sample_texture_level( name, tc, l ) name.sample(sampler_##name, tc, level(l))
     #define sample_texture_grad( name, tc, vddx, vddy ) name.sample(sampler_##name, tc, gradient3d(vddx, vddy))
     #define sample_texture_array( name, tc, a ) name.sample(sampler_##name, tc, uint(a))
-	#define sample_texture_array_level( name, tc, a, l ) name.sample(sampler_##name, tc, uint(a), level(l))
+    #define sample_texture_array_level( name, tc, a, l ) name.sample(sampler_##name, tc, uint(a), level(l))
     
     #define to_3x3( M4 ) float3x3(M4[0].xyz, M4[1].xyz, M4[2].xyz)
     #define mul( A, B ) (A * B)

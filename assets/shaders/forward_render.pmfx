@@ -341,6 +341,9 @@ ps_output ps_forward_lit( vs_output input )
         }
         else
         {
+            float shadow = 1.0;
+            float d = 1.0;
+            
             // shadow map
             float4 offset_pos = float4(input.world_pos.xyz + n.xyz * 0.01, 1.0);
             float4 sp = mul( offset_pos, shadow_matrix[i] );
@@ -348,11 +351,10 @@ ps_output ps_forward_lit( vs_output input )
             sp.y *= -1.0;
             sp.xyz = sp.xyz * 0.5 + 0.5;
 
-            float d = 1.0;
             float4 sm = sample_texture_array_level( shadowmap_texture, sp.xy, float(i), 0 );
             d = sm.r;
-
-            float shadow = sp.z < d ? 1.0 : 0.0;
+            
+            shadow = sp.z < d ? 1.0 : 0.0;
 
             lit_colour += light_col * shadow;
             

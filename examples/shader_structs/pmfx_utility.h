@@ -3,13 +3,13 @@
 struct skinning_debug
 {
     float m_index_range;
-    float4 m_padding;
+    float3 m_padding;
 };
 
 struct skinning_debug_skinned_weights
 {
     float m_index_range;
-    float4 m_padding;
+    float3 m_padding;
 };
 
 #define PICKING_SKINNED 2147483648

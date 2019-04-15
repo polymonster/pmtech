@@ -291,7 +291,7 @@ ps_output ps_colour_lut( vs_output input )
     return output;
 }
 
-float map( in float3 p )
+float map( float3 p )
 {
     float scale = 10.0;
     float rep = 30.0;
@@ -317,7 +317,7 @@ float map( in float3 p )
     return d * scale;
 }
 
-float3 calc_normal(in float3 pos)
+float3 calc_normal(float3 pos)
 {
     float3 eps = float3(0.001, 0.0, 0.0);
     float3 nor;
@@ -329,7 +329,7 @@ float3 calc_normal(in float3 pos)
     return normalize(nor);
 }
 
-float intersect(in float3 ro, in float3 rd, out float3 pos)
+float intersect(float3 ro, float3 rd, out float3 pos)
 {
     for(float t = 0.0; t < 150.0;)
     {
@@ -448,32 +448,32 @@ ps_output ps_crt( vs_output input )
 
 ps_output ps_sss_reflectance( vs_output input )
 {
-    float4 kernel[25];
-    kernel[0] = float4(0.530605, 0.613514, 0.739601, 0);
-    kernel[1] = float4(0.000973794, 1.11862e-005, 9.43437e-007, -3);
-    kernel[2] = float4(0.00333804, 7.85443e-005, 1.2945e-005, -2.52083);
-    kernel[3] = float4(0.00500364, 0.00020094, 5.28848e-005, -2.08333);
-    kernel[4] = float4(0.00700976, 0.00049366, 0.000151938, -1.6875);
-    kernel[5] = float4(0.0094389, 0.00139119, 0.000416598, -1.33333);
-    kernel[6] = float4(0.0128496, 0.00356329, 0.00132016, -1.02083);
-    kernel[7] = float4(0.017924, 0.00711691, 0.00347194, -0.75);
-    kernel[8] = float4(0.0263642, 0.0119715, 0.00684598, -0.520833);
-    kernel[9] = float4(0.0410172, 0.0199899, 0.0118481, -0.333333);
-    kernel[10] = float4(0.0493588, 0.0367726, 0.0219485, -0.1875);
-    kernel[11] = float4(0.0402784, 0.0657244, 0.04631, -0.0833333);
-    kernel[12] = float4(0.0211412, 0.0459286, 0.0378196, -0.0208333);
-    kernel[13] = float4(0.0211412, 0.0459286, 0.0378196, 0.0208333);
-    kernel[14] = float4(0.0402784, 0.0657244, 0.04631, 0.0833333);
-    kernel[15] = float4(0.0493588, 0.0367726, 0.0219485, 0.1875);
-    kernel[16] = float4(0.0410172, 0.0199899, 0.0118481, 0.333333);
-    kernel[17] = float4(0.0263642, 0.0119715, 0.00684598, 0.520833);
-    kernel[18] = float4(0.017924, 0.00711691, 0.00347194, 0.75);
-    kernel[19] = float4(0.0128496, 0.00356329, 0.00132016, 1.02083);
-    kernel[20] = float4(0.0094389, 0.00139119, 0.000416598, 1.33333);
-    kernel[21] = float4(0.00700976, 0.00049366, 0.000151938, 1.6875);
-    kernel[22] = float4(0.00500364, 0.00020094, 5.28848e-005, 2.08333);
-    kernel[23] = float4(0.00333804, 7.85443e-005, 1.2945e-005, 2.52083);
-    kernel[24] = float4(0.000973794, 1.11862e-005, 9.43437e-007, 3);
+    float4 sss_kernel[25];
+    sss_kernel[0] = float4(0.530605, 0.613514, 0.739601, 0);
+    sss_kernel[1] = float4(0.000973794, 1.11862e-005, 9.43437e-007, -3);
+    sss_kernel[2] = float4(0.00333804, 7.85443e-005, 1.2945e-005, -2.52083);
+    sss_kernel[3] = float4(0.00500364, 0.00020094, 5.28848e-005, -2.08333);
+    sss_kernel[4] = float4(0.00700976, 0.00049366, 0.000151938, -1.6875);
+    sss_kernel[5] = float4(0.0094389, 0.00139119, 0.000416598, -1.33333);
+    sss_kernel[6] = float4(0.0128496, 0.00356329, 0.00132016, -1.02083);
+    sss_kernel[7] = float4(0.017924, 0.00711691, 0.00347194, -0.75);
+    sss_kernel[8] = float4(0.0263642, 0.0119715, 0.00684598, -0.520833);
+    sss_kernel[9] = float4(0.0410172, 0.0199899, 0.0118481, -0.333333);
+    sss_kernel[10] = float4(0.0493588, 0.0367726, 0.0219485, -0.1875);
+    sss_kernel[11] = float4(0.0402784, 0.0657244, 0.04631, -0.0833333);
+    sss_kernel[12] = float4(0.0211412, 0.0459286, 0.0378196, -0.0208333);
+    sss_kernel[13] = float4(0.0211412, 0.0459286, 0.0378196, 0.0208333);
+    sss_kernel[14] = float4(0.0402784, 0.0657244, 0.04631, 0.0833333);
+    sss_kernel[15] = float4(0.0493588, 0.0367726, 0.0219485, 0.1875);
+    sss_kernel[16] = float4(0.0410172, 0.0199899, 0.0118481, 0.333333);
+    sss_kernel[17] = float4(0.0263642, 0.0119715, 0.00684598, 0.520833);
+    sss_kernel[18] = float4(0.017924, 0.00711691, 0.00347194, 0.75);
+    sss_kernel[19] = float4(0.0128496, 0.00356329, 0.00132016, 1.02083);
+    sss_kernel[20] = float4(0.0094389, 0.00139119, 0.000416598, 1.33333);
+    sss_kernel[21] = float4(0.00700976, 0.00049366, 0.000151938, 1.6875);
+    sss_kernel[22] = float4(0.00500364, 0.00020094, 5.28848e-005, 2.08333);
+    sss_kernel[23] = float4(0.00333804, 7.85443e-005, 1.2945e-005, 2.52083);
+    sss_kernel[24] = float4(0.000973794, 1.11862e-005, 9.43437e-007, 3);
 
     ps_output output;
     float2 tc = input.texcoord.xy;
@@ -493,14 +493,14 @@ ps_output ps_sss_reflectance( vs_output input )
     
     // Calculate the final step to fetch the surrounding pixels:
     float2 final_step = w * scale * filter_info.xy;
-    final_step *= 1.0 / 3.0; // Divide by 3 as the kernels range from -3 to 3.
+    final_step *= 1.0 / 3.0; // Divide by 3 as the sss_kernels range from -3 to 3.
         
-    float3 col = sample_texture(src_texture_0, tc).rgb * kernel[0].rgb;
+    float3 col = sample_texture(src_texture_0, tc).rgb * sss_kernel[0].rgb;
     
     for(int i = 1; i < 25; ++i)
     {
-        float2 offset = kernel[i].a * final_step * inv_texel_size[0].xy;
-        col += sample_texture(src_texture_0, tc + offset).rgb * kernel[i].rgb;
+        float2 offset = sss_kernel[i].a * final_step * inv_texel_size[0].xy;
+        col += sample_texture(src_texture_0, tc + offset).rgb * sss_kernel[i].rgb;
     }
     
     output.colour.rgb = col;

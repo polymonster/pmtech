@@ -745,7 +745,7 @@ namespace pen
     }
 
     void renderer_set_shader(u32 shader_index, u32 shader_type)
-    {
+    {        
         renderer_cmd cmd;
 
         cmd.command_index = CMD_SET_SHADER;

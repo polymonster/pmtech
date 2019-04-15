@@ -42,7 +42,7 @@ cbuffer per_pass_view : register(b0)
 cbuffer per_pass_view_2d : register(b1)
 {
     float4x4 projection_matrix;
-    float4      user_data;
+    float4   user_data;
 };
 
 declare_texture_samplers

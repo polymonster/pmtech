@@ -542,7 +542,7 @@ namespace pen
                 if (err.code == 3)
                     NSLog(@" error => %@ ", err);
             }
-
+            
             _res_pool.insert(resource(), resource_slot);
             _res_pool.get(resource_slot).shader = {lib, params.type};
         }
@@ -555,6 +555,7 @@ namespace pen
             {
                 case PEN_SHADER_TYPE_VS:
                     _state.vertex_shader = [res.lib newFunctionWithName:@"vs_main"];
+                    PEN_ASSERT(_state.vertex_shader);
                     break;
                 case PEN_SHADER_TYPE_PS:
                     _state.fragment_shader = [res.lib newFunctionWithName:@"ps_main"];
@@ -649,9 +650,13 @@ namespace pen
         {
             validate_encoder();
 
-            // todo ps
-
-            [_state.render_encoder setVertexBuffer:_res_pool.get(buffer_index).buffer offset:0 atIndex:resource_slot + 8];
+            u32 bi = buffer_index;
+            
+            if(flags & pen::CBUFFER_BIND_VS)
+                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer offset:0 atIndex:resource_slot + 8];
+            
+            if(flags & pen::CBUFFER_BIND_PS)
+                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer offset:0 atIndex:resource_slot + 8];
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
@@ -708,6 +713,8 @@ namespace pen
             else
             {
                 // todo cube, 3d volume, arrays etc
+            
+                u32 a = 0;
             }
 
             _res_pool.insert(resource(), resource_slot);
@@ -914,6 +921,11 @@ namespace pen
                     _state.pass.colorAttachments[i].storeAction = MTLStoreActionStore;
 
                     _state.formats.colour_attachments[i] = _res_pool.get(colour_targets[i]).texture.fmt;
+                    
+                    if(texture == nil)
+                    {
+                        u32 a = 0;
+                    }
                 }
             }
             
