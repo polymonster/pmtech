@@ -1231,22 +1231,77 @@ def get_metal_packed_decl(input, semantic):
     return packed_decl
 
 
-def metal_functions(functions):
+def find_token(token, string):
+    delimiters = [",", " ", "\n", "\t", ")", "(", "=", "!", ">", "<", ";", "[", "]"]
+    fp = string.find(token)
+    if fp != -1:
+        left = False
+        right = False
+        # check left
+        if fp > 0:
+            for d in delimiters:
+                if string[fp-1] == d:
+                    left = True
+                    break
+        else:
+            left = True
+        # check right
+        ep = fp + len(token)
+        if fp < ep-1:
+            for d in delimiters:
+                if string[ep] == d:
+                    right = True
+                    break
+        else:
+            right = True
+        if left and right:
+            return fp
+    return -1
+
+
+def metal_functions(functions, cbuffers, textures):
+    cbuf_members_list = []
+    for c in cbuffers:
+        cbuf_members = parse_and_split_block(c)
+        cbuf_members_list.append(cbuf_members)
     fl = find_functions(functions)
     final_funcs = ""
+    func_sig_additions = dict()
     for f in fl:
         bp = f.find("(")
         ep = f.find(")")
         fb = f[ep:]
+        fn = f.find(" ")
+        fn = f[fn+1:bp]
         sig = f[:bp+1]
+        count = 0
+        # insert cbuf members
+        for c in cbuf_members_list:
+            for i in range(0, len(c), 2):
+                ap = c[i+1].find("[")
+                member = c[i+1]
+                if ap != -1:
+                    member = member[:ap]
+                if find_token(member, fb) != -1:
+                    if count > 0:
+                        sig += ",\n"
+                    if fn in func_sig_additions.keys():
+                        func_sig_additions[fn].append(member)
+                    else:
+                        func_sig_additions[fn] = [member]
+                    ref_type = "& "
+                    if ap != -1:
+                        ref_type = "* "
+                    sig += "constant " + c[i] + ref_type + member
+                    count += 1
         if bp != -1 and ep != -1:
             args = f[bp+1:ep]
             arg_list = args.split(",")
-            count = 0
             for arg in arg_list:
                 if count > 0:
-                    sig += ", "
+                    sig += ",\n"
                 count += 1
+                address_space = "thread"
                 toks = arg.split(" ")
                 if '' in toks:
                     toks.remove('')
@@ -1256,13 +1311,30 @@ def metal_functions(functions):
                 for t in toks:
                     if t == "out" or t == "inout":
                         ref = True
+                    if t == "in":
+                        address_space = "constant"
+                        ref = True
                 if not ref:
                     sig += arg
                 else:
-                    sig += "thread " + toks[1] + "& " + toks[2]
+                    sig += address_space + " " + toks[1] + "& " + toks[2]
+        # find used cbuf memb
         func = sig + fb
         final_funcs += func
-    return final_funcs
+    return final_funcs, func_sig_additions
+
+
+def insert_function_sig_additions(function_body, function_sig_additions):
+    for k in function_sig_additions.keys():
+        fp = find_token(k, function_body)
+        if fp != -1:
+            fp += len(k)
+            insert_string = function_body[:fp+1]
+            for a in function_sig_additions[k]:
+                insert_string += a + ", "
+            insert_string += function_body[fp+1:]
+            function_body = insert_string
+    return function_body
 
 
 # compile shader for apple metal
@@ -1333,6 +1405,12 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
             shader_source += outputs[i]
             if output_semantics[i].find("SV_POSITION") != -1:
                 shader_source += " [[position]]"
+            # mrt
+            sv_pos = output_semantics[i].find("SV_Target")
+            if sv_pos != -1:
+                channel_pos = sv_pos + len("SV_Target")
+                if channel_pos < len(output_semantics[i]):
+                    shader_source += " [[color(" + output_semantics[i][channel_pos] + ")]]"
             shader_source += ";\n"
         shader_source += "};\n"
 
@@ -1342,7 +1420,8 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     }
 
     # functions
-    shader_source += metal_functions(_shader.functions_source)
+    function_source, function_sig_additions = metal_functions(_shader.functions_source, _shader.cbuffers, _shader.texture_decl)
+    shader_source += function_source
 
     # main decl
     shader_source += main_type[_shader.shader_type] + " "
@@ -1394,13 +1473,25 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     for c in range(0, len(_shader.cbuffers)):
         cbuf_members = parse_and_split_block(_shader.cbuffers[c])
         for i in range(0, len(cbuf_members), 2):
-            shader_source += "constant " + cbuf_members[i] + "& " + cbuf_members[i + 1]
-            shader_source += " = " + metal_cbuffers[c][0] + "." + cbuf_members[i + 1]
+            ref_type = "& "
+            point = ""
+            decl = cbuf_members[i + 1]
+            assign = decl
+            array_pos = cbuf_members[i + 1].find("[")
+            if array_pos != -1:
+                decl = decl[:array_pos]
+                ref_type = "* "
+                assign = decl + "[0]"
+                point = "&"
+            shader_source += "constant " + cbuf_members[i] + ref_type + decl
+            shader_source += " = " + point + metal_cbuffers[c][0] + "." + assign
             shader_source += ";\n"
 
     main_func_body = _shader.main_func_source.find("{") + 1
-    shader_source += _shader.main_func_source[main_func_body:]
+    main_body_source =  _shader.main_func_source[main_func_body:]
+    main_body_source = insert_function_sig_additions(main_body_source, function_sig_additions)
 
+    shader_source += main_body_source
     shader_source = format_source(shader_source, 4)
 
     temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
@@ -1429,8 +1520,12 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     return 0
 
     # todo precompile
-    if pmfx_name != "basictri":
-        return
+    if pmfx_name != "forward_render":
+        return 0
+
+    temp_shader_source = open(temp_file_and_path, "w")
+    temp_shader_source.write(shader_source)
+    temp_shader_source.close()
 
     # compile .air
     cmdline = "xcrun -sdk macosx metal -c "

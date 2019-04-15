@@ -15,8 +15,8 @@
     #define sample_texture( sampler_name, V ) texture( sampler_name, V )
     #define sample_texture_level( sampler_name, V, l ) textureLod( sampler_name, V, l )
     #define sample_texture_grad( sampler_name, V, vddx, vddy ) textureGrad( sampler_name, V, vddx, vddy )
-    #define sample_texture_array( sampler_name, V, a ) texture( sampler_name, vec3(V, a) );
-	#define sample_texture_array_level( sampler_name, V, a, l ) textureLod( sampler_name, vec3(V, a), l );
+    #define sample_texture_array( sampler_name, V, a ) texture( sampler_name, vec3(V, a) )
+	#define sample_texture_array_level( sampler_name, V, a, l ) textureLod( sampler_name, vec3(V, a), l )
 		
     #define to_3x3( M4 ) float3x3(M4)
     #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3;
@@ -87,13 +87,20 @@
     #define texture_3d( name, sampler_index ) texture3d<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
     #define texture_2dms( type, samples, name, sampler_index ) texture2d_ms<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
     #define texture_cube( name, sampler_index ) texturecube<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
+    #define texture_2d_array( name, sampler_index ) texture2d_array<float> name [[texture(sampler_index)]], sampler sampler_##name [[sampler(sampler_index)]]
+    
     #define sample_texture( name, tc ) name.sample(sampler_##name, tc)
-    #define sample_texture_2dms( name, x, y, fragment ) name.read(uint2(x, y), fragment);
+    #define sample_texture_2dms( name, x, y, fragment ) name.read(uint2(x, y), fragment)
     #define sample_texture_level( name, tc, l ) name.sample(sampler_##name, tc, level(l))
     #define sample_texture_grad( name, tc, vddx, vddy ) name.sample(sampler_##name, tc, gradient3d(vddx, vddy))
+    #define sample_texture_array( name, tc, a ) name.sample(sampler_##name, tc, uint(a))
+	#define sample_texture_array_level( name, tc, a, l ) name.sample(sampler_##name, tc, uint(a), level(l))
+    
     #define to_3x3( M4 ) float3x3(M4[0].xyz, M4[1].xyz, M4[2].xyz)
     #define mul( A, B ) (A * B)
     #define mul_tbn( A, B ) (B * A)
+    #define unpack_vb_instance_mat( mat, r0, r1, r2, r3 ) mat[0] = r0; mat[1] = r1; mat[2] = r2; mat[3] = r3; 
+    #define to_data_matrix(mat) mat
     
     #define remap_ndc_ray( r ) float2(r.x, r.y)  
     

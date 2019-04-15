@@ -26,7 +26,7 @@ float4 skin_pos(float4 pos, float4 weights, float4 indices)
     return sp;
 }
 
-void skin_tbn(inout float3 t, inout float3 b, inout float3 n, float4 weights, float4 indices )
+void skin_tbn(inout float3 t, inout float3 b, inout float3 n, float4 weights, float4 indices)
 {
     int bone_indices[4];
     bone_indices[0] = int(indices.x);
@@ -60,7 +60,7 @@ void skin_tbn(inout float3 t, inout float3 b, inout float3 n, float4 weights, fl
     n = rn;
 }
 
-void skin_pos_tbn(inout float4 pos, inout float3 t, inout float3 b, inout float3 n, float4 weights, float4 indices )
+void skin_pos_tbn(inout float4 pos, inout float3 t, inout float3 b, inout float3 n, float4 weights, float4 indices)
 {
     int bone_indices[4];
     bone_indices[0] = int(indices.x);

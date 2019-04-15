@@ -921,8 +921,7 @@ namespace pen
             {
                 _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
                 _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
-                _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
-                _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
+                
             }
             if(is_valid(depth_target))
             {
