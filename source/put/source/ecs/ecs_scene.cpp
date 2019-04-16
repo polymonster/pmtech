@@ -381,7 +381,6 @@ namespace put
                 rrp.num_mips = 1;
                 rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
                 pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
-                return;
             }
             
             if(!is_valid(cbuffer_shadow))
