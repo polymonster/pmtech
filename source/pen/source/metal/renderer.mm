@@ -2,23 +2,23 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#import <Metal/Metal.h>
-#import <MetalKit/MetalKit.h>
-
 #include "console.h"
 #include "data_struct.h"
 #include "renderer.h"
 #include "str/Str.h"
 #include "threads.h"
 
-// globals
-a_u8 g_window_resize;
-extern a_u64 g_frame_index;
-extern pen::window_creation_params pen_window;
+#import <Metal/Metal.h>
+#import <MetalKit/MetalKit.h>
 
 using namespace pen;
 
-namespace // structs and static vars
+// globals / externs
+a_u8 g_window_resize;
+extern a_u64 g_frame_index;
+extern window_creation_params pen_window;
+
+namespace // internal structs and static vars
 {
     struct clear_cmd
     {
@@ -78,8 +78,11 @@ namespace // structs and static vars
 
     struct metal_clear_state
     {
-        MTLLoadAction colour_load_action;
+        u32           num_colour_targets;
         MTLClearColor colour[pen::MAX_MRT];
+        MTLLoadAction colour_load_action[pen::MAX_MRT];
+        f32           depth_clear;
+        MTLLoadAction depth_load_action;
     };
 
     struct metal_target_blend
@@ -458,7 +461,7 @@ namespace pen
 
         void bind_pipeline()
         {
-            // todo cache this. based on
+            // todo cache this. based on better info
             static id<MTLFunction> prev = 0;
             if(_state.vertex_shader == prev)
                 return;
@@ -534,15 +537,24 @@ namespace pen
         {
             _res_pool.insert(resource(), resource_slot);
             metal_clear_state& mc = _res_pool.get(resource_slot).clear;
+            
+            mc.num_colour_targets = cs.num_colour_targets;
 
             // flags
-            mc.colour_load_action = MTLLoadActionLoad;
+            mc.colour_load_action[0] = MTLLoadActionLoad;
             if (cs.flags & PEN_CLEAR_COLOUR_BUFFER)
-                mc.colour_load_action = MTLLoadActionClear;
-
+            {
+                mc.colour_load_action[0] = MTLLoadActionClear;
+                
+                // single
+                if(mc.num_colour_targets == 0)
+                    mc.num_colour_targets = 1;
+            }
+            
             // colour
             mc.colour[0] = MTLClearColorMake(cs.r, cs.g, cs.b, cs.a);
 
+            // mrt
             for (u32 i = 0; i < cs.num_colour_targets; ++i)
             {
                 const mrt_clear& m = cs.mrt[i];
@@ -559,14 +571,28 @@ namespace pen
             }
 
             // depth stencil
+            mc.depth_load_action = MTLLoadActionLoad;
+            if (cs.flags & PEN_CLEAR_DEPTH_BUFFER)
+                mc.depth_load_action = MTLLoadActionClear;
+            
+            mc.depth_clear = cs.depth;
         }
 
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
         {
             metal_clear_state& clear = _res_pool.get(clear_state_index).clear;
-
-            _state.pass.colorAttachments[0].loadAction = clear.colour_load_action;
-            _state.pass.colorAttachments[0].clearColor = clear.colour[0];
+            
+            for(u32 c = 0; c < clear.num_colour_targets; ++c)
+            {
+                _state.pass.colorAttachments[c].loadAction = clear.colour_load_action[c];
+                _state.pass.colorAttachments[c].clearColor = clear.colour[c];
+            }
+            
+            if(_state.pass.depthAttachment)
+            {
+                _state.pass.depthAttachment.loadAction = clear.depth_load_action;
+                _state.pass.depthAttachment.clearDepth = clear.depth_clear;
+            }
 
             validate_encoder();
         }
@@ -1010,6 +1036,9 @@ namespace pen
             {
                 _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
                 _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
+                
+                _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
+                _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
             }
             else if(is_valid(depth_target))
             {
