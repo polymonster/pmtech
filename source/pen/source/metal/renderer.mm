@@ -7,6 +7,7 @@
 #include "renderer.h"
 #include "str/Str.h"
 #include "threads.h"
+#include "hash.h"
 
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
@@ -51,17 +52,22 @@ namespace // internal structs and static vars
         id<MTLDepthStencilState>    depth_stencil;
         id<CAMetalDrawable>         drawable;
         MTLRenderPassDescriptor*    pass;
-        pixel_formats               formats;
 
         // pen -> metal
         MTLViewport          viewport;
         MTLScissorRect       scissor;
+        index_buffer_cmd     index_buffer;
+        u32                  input_layout;
+        
+        // hashable to rebuild pipe
+        pixel_formats        formats;
         MTLVertexDescriptor* vertex_descriptor;
         id<MTLFunction>      vertex_shader;
         id<MTLFunction>      fragment_shader;
-        index_buffer_cmd     index_buffer;
-        u32                  input_layout;
         u32                  blend_state;
+        
+        // cache
+        hash_id              pipeline_hash;
     };
 
     struct shader_resource
@@ -103,19 +109,21 @@ namespace // internal structs and static vars
         u32                num_render_targets;
         metal_target_blend attachment[pen::MAX_MRT];
     };
-
+    
     struct resource
     {
         union {
-            id<MTLBuffer>               buffer;
-            texture_resource            texture;
-            id<MTLSamplerState>         sampler;
-            shader_resource             shader;
-            metal_clear_state           clear;
-            MTLVertexDescriptor*        vertex_descriptor;
-            metal_blend_state           blend;
-            id<MTLDepthStencilState>    depth_stencil;
+            pen::multi_buffer<id<MTLBuffer>, 2> buffer;
+            texture_resource                    texture;
+            id<MTLSamplerState>                 sampler;
+            shader_resource                     shader;
+            metal_clear_state                   clear;
+            MTLVertexDescriptor*                vertex_descriptor;
+            metal_blend_state                   blend;
+            id<MTLDepthStencilState>            depth_stencil;
         };
+        
+        resource() {};
     };
     
     struct managed_rt
@@ -456,17 +464,24 @@ namespace pen
 
             [_state.render_encoder setViewport:_state.viewport];
             [_state.render_encoder setScissorRect:_state.scissor];
-            [_state.render_encoder setDepthStencilState:_state.depth_stencil];
+            
+            if(_state.depth_stencil)
+                [_state.render_encoder setDepthStencilState:_state.depth_stencil];
         }
 
         void bind_pipeline()
         {
-            // todo cache this. based on better info
-            static id<MTLFunction> prev = 0;
-            if(_state.vertex_shader == prev)
+            // pipeline hash
+            HashMurmur2A hh;
+            hh.begin();
+            static const size_t off = (u8*)&_state.pipeline_hash - (u8*)&_state.formats;
+            hh.add(&_state.formats, off);
+            
+            hash_id cur = hh.end();
+            if(cur == _state.pipeline_hash)
                 return;
             
-            prev = _state.vertex_shader;
+            _state.pipeline_hash = cur;
 
             // create pipeline
             MTLRenderPipelineDescriptor* pipeline_desc = [MTLRenderPipelineDescriptor new];
@@ -665,25 +680,40 @@ namespace pen
 
         void renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot)
         {
-            id<MTLBuffer> buf;
+            id<MTLBuffer> buf[2];
 
             u32 options = 0;
+            u32 num_bufs = 1;
+            
             if (params.cpu_access_flags & PEN_CPU_ACCESS_READ)
+            {
                 options |= MTLResourceOptionCPUCacheModeDefault;
-            else if (params.cpu_access_flags & PEN_CPU_ACCESS_WRITE)
-                options |= MTLResourceCPUCacheModeWriteCombined;
-
-            if (params.data)
-            {
-                buf = [_metal_device newBufferWithBytes:params.data length:params.buffer_size options:options];
             }
-            else
+            else if (params.cpu_access_flags & PEN_CPU_ACCESS_WRITE)
             {
-                buf = [_metal_device newBufferWithLength:params.buffer_size options:options];
+                options |= MTLResourceCPUCacheModeWriteCombined;
+                num_bufs = 2;
+            }
+
+            for(u32 i = 0; i < num_bufs; ++i)
+            {
+                if (params.data)
+                {
+                    buf[i] = [_metal_device newBufferWithBytes:params.data length:params.buffer_size options:options];
+                }
+                else
+                {
+                    buf[i] = [_metal_device newBufferWithLength:params.buffer_size options:options];
+                }
             }
 
             _res_pool.insert(resource(), resource_slot);
-            _res_pool.get(resource_slot).buffer = {buf};
+            
+            _res_pool.get(resource_slot).buffer._fb = 0;
+            _res_pool.get(resource_slot).buffer._bb = 1;
+            
+            for(u32 i = 0; i < num_bufs; ++i)
+                _res_pool.get(resource_slot).buffer._data[i] = {buf[i]};
         }
 
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
@@ -696,7 +726,7 @@ namespace pen
                 u32 ri = buffer_indices[i];
                 u32 stride = strides[i];
 
-                [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer offset:offsets[i] atIndex:start_slot + i];
+                [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer.frontbuffer() offset:offsets[i] atIndex:start_slot + i];
 
                 MTLVertexBufferLayoutDescriptor* layout = [MTLVertexBufferLayoutDescriptor new];
                 layout.stride = stride;
@@ -709,7 +739,7 @@ namespace pen
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
         {
             index_buffer_cmd& ib = _state.index_buffer;
-            ib.buffer = _res_pool.get(buffer_index).buffer;
+            ib.buffer = _res_pool.get(buffer_index).buffer.frontbuffer();
             ib.type = to_metal_index_format(format);
             ib.offset = offset;
             ib.size_bytes = index_size_bytes(format);
@@ -722,18 +752,23 @@ namespace pen
             u32 bi = buffer_index;
             
             if(flags & pen::CBUFFER_BIND_VS)
-                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer offset:0 atIndex:resource_slot + 8];
+                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.frontbuffer() offset:0 atIndex:resource_slot + 8];
             
             if(flags & pen::CBUFFER_BIND_PS)
-                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer offset:0 atIndex:resource_slot + 8];
+                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.frontbuffer() offset:0 atIndex:resource_slot + 8];
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
         {
-            u8* pdata = (u8*)[_res_pool.get(buffer_index).buffer contents];
+            resource& r = _res_pool.get(buffer_index);
+            id<MTLBuffer>& bb = r.buffer.backbuffer();
+            
+            u8* pdata = (u8*)[bb contents];
             pdata = pdata + offset;
 
             memcpy(pdata, data, data_size);
+            
+            r.buffer.swap_buffers();
         }
 
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
@@ -1102,6 +1137,7 @@ namespace pen
 
             // null state for next frame
             _state.cmd_buffer = nil;
+            _state.pipeline_hash = 0;
         }
 
         void renderer_push_perf_marker(const c8* name)
@@ -1135,7 +1171,7 @@ namespace pen
                     break;
             }
             
-            _res_pool[dest] = _res_pool[src];
+            memcpy(&_res_pool[dest], &_res_pool[src], sizeof(resource));
         }
 
         void renderer_release_shader(u32 shader_index, u32 shader_type)
@@ -1149,7 +1185,8 @@ namespace pen
 
         void renderer_release_buffer(u32 buffer_index)
         {
-            _res_pool.get(buffer_index).buffer = nil;
+            _res_pool.get(buffer_index).buffer._data[0] = nil;
+            _res_pool.get(buffer_index).buffer._data[1] = nil;
         }
 
         void renderer_release_texture(u32 texture_index)

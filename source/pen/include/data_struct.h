@@ -127,7 +127,6 @@ namespace pen
     struct multi_buffer
     {
         T _data[N];
-        u32   _num_buffers = N;
         a_u32 _fb;
         a_u32 _bb;
 
@@ -145,7 +144,6 @@ namespace pen
         T* _data[N] = { 0 };
         a_size_t _capacity[N];
         
-        size_t _num_buffers = N;
         a_size_t _fb;
         a_size_t _bb;
         
@@ -282,7 +280,8 @@ namespace pen
     pen_inline void res_pool<T>::insert(const T& resource, u32 slot)
     {
         grow(slot);
-        _resources[slot] = resource;
+        memcpy(&_resources[slot], &resource, sizeof(T));
+        //_resources[slot] = resource;
     }
     
     template <typename T>
@@ -320,7 +319,7 @@ namespace pen
     pen_inline void multi_buffer<T, N>::swap_buffers()
     {
         _fb = _bb.load();
-        _bb = (_bb + 1) % _num_buffers;
+        _bb = (_bb + 1) % N;
     }
     
     template <typename T, size_t N>
@@ -353,7 +352,7 @@ namespace pen
     pen_inline void multi_array_buffer<T, N>::swap_buffers()
     {
         _fb = _bb.load();
-        _bb = (_bb + 1) % _num_buffers;
+        _bb = (_bb + 1) % N;
     }
     
     template <typename T, size_t N>
