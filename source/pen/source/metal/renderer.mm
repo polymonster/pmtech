@@ -753,6 +753,7 @@ namespace pen
             MTLPixelFormat fmt = to_metal_pixel_format(tcp.format);
 
             u32 num_slices = 1;
+            u32 num_arrays = 1;
             
             if (tcp.collection_type == TEXTURE_COLLECTION_NONE ||
                 tcp.collection_type == TEXTURE_COLLECTION_ARRAY)
@@ -765,6 +766,7 @@ namespace pen
                 if(tcp.collection_type == TEXTURE_COLLECTION_ARRAY)
                 {
                     td.textureType = MTLTextureType2DArray;
+                    num_arrays = _tcp.num_arrays;
                 }
             }
             else if(tcp.collection_type == TEXTURE_COLLECTION_CUBE)
@@ -772,6 +774,22 @@ namespace pen
                 td = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat:fmt
                                                                            size:_tcp.width
                                                                       mipmapped:_tcp.num_mips > 1];
+            }
+            else if(tcp.collection_type == TEXTURE_COLLECTION_VOLUME)
+            {
+                td = [MTLTextureDescriptor alloc];
+                
+                td.pixelFormat = fmt;
+                td.width = _tcp.width;
+                td.height = _tcp.height;
+                td.depth = _tcp.num_arrays;
+                td.textureType = MTLTextureType3D;
+                td.mipmapLevelCount = _tcp.num_mips;
+                td.arrayLength = 1;
+                td.sampleCount = _tcp.sample_count;
+                
+                // arrays become slices
+                num_slices = td.depth;
             }
             
             td.usage = to_metal_texture_usage(_tcp.bind_flags);
@@ -783,7 +801,7 @@ namespace pen
             {
                 u8* mip_data = (u8*)tcp.data;
                 
-                for(u32 a = 0; a < tcp.num_arrays; ++a)
+                for(u32 a = 0; a <  num_arrays; ++a)
                 {
                     u32 mip_w = tcp.width;
                     u32 mip_h = tcp.height;

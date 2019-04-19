@@ -269,7 +269,7 @@ def generate_vertex_buffer(mesh):
 
 def generate_index_buffer(mesh):
     mesh.index_buffer = []
-    vert_count = int(len(mesh.vertex_buffer)) / (int(4) * int(5))
+    vert_count = int(len(mesh.vertex_elements[0].float_values) / 4)
     for i in range(0, int(vert_count), 3):
         mesh.index_buffer.append(i + 2)
         mesh.index_buffer.append(i + 1)
@@ -474,6 +474,9 @@ def write_geometry_file(geom_instance):
         skinned = 0
         if geom_instance.controller != None:
             skinned = 1
+
+        num_floats = len(mesh.vertex_elements[0].float_values)
+        num_vertices = num_floats / 4
 
         mesh_data.append(struct.pack("i", int(skinned)))
 

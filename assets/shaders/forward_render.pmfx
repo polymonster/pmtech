@@ -216,7 +216,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
         wrm[1] = normalize(wrm[1]);
         wrm[2] = normalize(wrm[2]);
                     
-        output.normal = mul( input.normal.xyz, wrm );
+        output.normal = mul( input.normal.xyz, wrm ); 
         output.tangent = mul( input.tangent.xyz, wrm );
         output.bitangent = mul( input.bitangent.xyz, wrm );
     }
