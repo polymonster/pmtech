@@ -40,6 +40,7 @@ namespace // internal structs and static vars
     {
         MTLPixelFormat colour_attachments[pen::MAX_MRT];
         MTLPixelFormat depth_attachment;
+        u32            sample_count;
     };
 
     struct current_state
@@ -465,7 +466,7 @@ namespace pen
             [_state.render_encoder setViewport:_state.viewport];
             [_state.render_encoder setScissorRect:_state.scissor];
             
-            if(_state.depth_stencil)
+            if(_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
                 [_state.render_encoder setDepthStencilState:_state.depth_stencil];
         }
 
@@ -488,6 +489,7 @@ namespace pen
 
             pipeline_desc.vertexFunction = _state.vertex_shader;
             pipeline_desc.fragmentFunction = _state.fragment_shader;
+            pipeline_desc.sampleCount = _state.formats.sample_count;
             pipeline_desc.colorAttachments[0].pixelFormat = _state.formats.colour_attachments[0];
             pipeline_desc.depthAttachmentPixelFormat = _state.formats.depth_attachment;
 
@@ -1059,15 +1061,31 @@ namespace pen
             }
 
             _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
-
+            
+            _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
+            _state.formats.depth_attachment = MTLPixelFormatInvalid;
+            _state.formats.sample_count = 1;
+            
             if (num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
             {
                 // backbuffer colour target
                 _state.drawable = _metal_view.currentDrawable;
-                id<MTLTexture> texture = _state.drawable.texture;
+                _state.formats.sample_count = _metal_view.sampleCount;
+
+                if(_state.formats.sample_count > 1)
+                {
+                    // msaa
+                    _state.pass.colorAttachments[0].texture = _metal_view.multisampleColorTexture;
+                    _state.pass.colorAttachments[0].storeAction = MTLStoreActionStoreAndMultisampleResolve;
+                    _state.pass.colorAttachments[0].resolveTexture = _state.drawable.texture;
+                }
+                else
+                {
+                    // non msaa
+                    _state.pass.colorAttachments[0].texture = _state.drawable.texture;
+                    _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+                }
                 
-                _state.pass.colorAttachments[0].texture = texture;
-                _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
                 _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;
             }
             else
@@ -1083,6 +1101,8 @@ namespace pen
 
                     _state.formats.colour_attachments[i] = _res_pool.get(colour_targets[i]).texture.fmt;
                 }
+                
+                // todo msaa rt
             }
             
             if(depth_target == PEN_BACK_BUFFER_DEPTH)

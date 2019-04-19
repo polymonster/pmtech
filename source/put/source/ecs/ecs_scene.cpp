@@ -402,7 +402,7 @@ namespace put
                 bcp.usage_flags = PEN_USAGE_DYNAMIC;
                 bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size = sizeof(mat4);
+                bcp.buffer_size = sizeof(camera_cbuffer);
                 bcp.data = nullptr;
                 
                 cb_view = pen::renderer_create_buffer(bcp);
