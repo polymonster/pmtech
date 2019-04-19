@@ -32,7 +32,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     f32 spacing = 4.0f;
     s32 num = 32; // 32768 instances;
-
+    
     f32 start = (spacing * (num - 1)) * 0.5f;
 
     vec3f start_pos = vec3f(-start, -start, -start);

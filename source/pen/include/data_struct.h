@@ -5,7 +5,7 @@
 #ifndef _pen_data_struct_h
 #define _pen_data_struct_h
 
-// Minimalist, fast, bloat free data structures with lockless thread safe versions
+// Minimalist, fast, lockless, thread safe, bloat free data structures
 
 #include "memory.h"
 #include "console.h"

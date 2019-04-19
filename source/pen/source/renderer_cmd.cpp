@@ -482,7 +482,7 @@ namespace pen
             semaphore_wait(p_continue_semaphore);
         }
         
-        // sync on rt
+        // sync on window surface
         direct::renderer_sync();
     }
 

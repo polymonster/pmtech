@@ -107,8 +107,7 @@
             multiple_shadow_views,
             main_view,
             editor_view, 
-            picking_view, 
-            volume_rasteriser
+            picking_view
         ],
         
         editor_post_processed: [

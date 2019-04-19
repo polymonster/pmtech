@@ -1264,6 +1264,20 @@ def metal_functions(functions, cbuffers, textures):
     for c in cbuffers:
         cbuf_members = parse_and_split_block(c)
         cbuf_members_list.append(cbuf_members)
+    texture_list = textures.split(";")
+    texture_args = []
+    for t in texture_list:
+        cpos = t.find(",")
+        if cpos == -1:
+            continue
+        spos = t.find("(")
+        macro_args = t[spos + 1:].split(",")
+        tex_type = t[:spos] + "_arg"
+        name_pos = 0
+        if t.find("texture_2dms") != -1:
+            name_pos = 2
+        name = macro_args[name_pos].strip()
+        texture_args.append((name, tex_type + "(" + name + ")"))
     fl = find_functions(functions)
     final_funcs = ""
     func_sig_additions = dict()
@@ -1294,6 +1308,19 @@ def metal_functions(functions, cbuffers, textures):
                         ref_type = "* "
                     sig += "constant " + c[i] + ref_type + member
                     count += 1
+        # insert texture members
+        for t in texture_args:
+            if find_token(t[0], fb) != -1:
+                if count > 0:
+                    sig += ",\n"
+                sig += t[1]
+                count += 1
+                if fn in func_sig_additions.keys():
+                    func_sig_additions[fn].append(t[0])
+                    func_sig_additions[fn].append("sampler_" + t[0])
+                else:
+                    func_sig_additions[fn] = [t[0]]
+                    func_sig_additions[fn].append("sampler_" + t[0])
         if bp != -1 and ep != -1:
             args = f[bp+1:ep]
             arg_list = args.split(",")
@@ -1326,14 +1353,19 @@ def metal_functions(functions, cbuffers, textures):
 
 def insert_function_sig_additions(function_body, function_sig_additions):
     for k in function_sig_additions.keys():
-        fp = find_token(k, function_body)
-        if fp != -1:
-            fp += len(k)
-            insert_string = function_body[:fp+1]
-            for a in function_sig_additions[k]:
-                insert_string += a + ", "
-            insert_string += function_body[fp+1:]
-            function_body = insert_string
+        op = 0
+        fp = 0
+        while fp != -1:
+            fp = find_token(k, function_body[op:])
+            if fp != -1:
+                fp = op + fp
+                fp += len(k)
+                insert_string = function_body[:fp+1]
+                for a in function_sig_additions[k]:
+                    insert_string += a + ", "
+                insert_string += function_body[fp+1:]
+                function_body = insert_string
+                op = fp
     return function_body
 
 
@@ -1431,7 +1463,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         shader_source += "\n  device packed_" + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
         shader_source += "\n, uint vid [[vertex_id]]"
         if _shader.instance_input_struct_name:
-            shader_source += "\n, device " + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
+            shader_source += "\n, device packed_" + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
             shader_source += "\n, uint iid [[instance_id]]"
     else:
         shader_source += _shader.input_struct_name + " input [[stage_in]]"
@@ -1454,20 +1486,23 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     from_ubyte = "0.00392156862"
     if _shader.shader_type == "vs":
         shader_source += _shader.input_struct_name + " input;\n"
-        for i in range(0, len(inputs)):
-            split_input = inputs[i].split(" ")
-            input_name = split_input[1]
-            input_unpack_type = split_input[0]
-            shader_source += "input." + input_name + " = "
-            shader_source += input_unpack_type
-            shader_source += "(vertices[vid]." + input_name
-            # convert ubyte to float
-            if convert_ubyte_to_float(input_semantics[i]):
-                shader_source += ") * " + from_ubyte + ";"
-            else:
-                shader_source += ");\n"
+        v_inputs = [(inputs, input_semantics, "input.", "(vertices[vid].")]
         if _shader.instance_input_struct_name:
-            shader_source += _shader.instance_input_struct_name + " instance_input = " + "instances[iid];"
+            shader_source += _shader.instance_input_struct_name + " instance_input;\n"
+            v_inputs.append((instance_inputs, instance_input_semantics, "instance_input.", "(instances[iid]."))
+        for vi in v_inputs:
+            for i in range(0, len(vi[0])):
+                split_input = vi[0][i].split(" ")
+                input_name = split_input[1]
+                input_unpack_type = split_input[0]
+                shader_source += vi[2] + input_name + " = "
+                shader_source += input_unpack_type
+                shader_source += vi[3] + input_name
+                # convert ubyte to float
+                if convert_ubyte_to_float(vi[1][i]):
+                    shader_source += ") * " + from_ubyte + ";"
+                else:
+                    shader_source += ");\n"
 
     # create a function prologue for cbuffer assignment
     for c in range(0, len(_shader.cbuffers)):

@@ -436,10 +436,16 @@ namespace put
             scene->geometries[master].vertex_shader_class = ID_VERTEX_CLASS_INSTANCED;
 
             // vertex class has changed which changes shader technique
+            u32 flush = 0;
             for (u32 i = master_node; i < master_node + num_nodes; ++i)
             {
                 bake_material_handles(scene, i);
-                pen::renderer_consume_cmd_buffer();
+                
+                if(flush > 100)
+                {
+                    flush = 0;
+                    pen::renderer_consume_cmd_buffer();
+                }
             }
 
             // todo - must ensure list is contiguous.

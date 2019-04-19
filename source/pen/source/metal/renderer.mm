@@ -626,7 +626,9 @@ namespace pen
             if (err)
             {
                 if (err.code == 3)
+                {
                     NSLog(@" error => %@ ", err);
+                }
             }
             
             _res_pool.insert(resource(), resource_slot);
@@ -648,7 +650,7 @@ namespace pen
                     break;
             };
         }
-
+        
         void renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
         {
             MTLVertexDescriptor* vd = [[MTLVertexDescriptor alloc] init];
@@ -661,7 +663,7 @@ namespace pen
                 ad.format = to_metal_vertex_format(il.format);
                 ad.offset = il.aligned_byte_offset;
                 ad.bufferIndex = il.input_slot;
-
+                
                 [vd.attributes setObject:ad atIndexedSubscript:i];
             }
 
@@ -728,12 +730,15 @@ namespace pen
                 u32 ri = buffer_indices[i];
                 u32 stride = strides[i];
 
-                [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer.frontbuffer() offset:offsets[i] atIndex:start_slot + i];
+                [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer.frontbuffer()
+                                                offset:offsets[i] atIndex:start_slot + i];
 
                 MTLVertexBufferLayoutDescriptor* layout = [MTLVertexBufferLayoutDescriptor new];
+                
                 layout.stride = stride;
-                layout.stepFunction = MTLVertexStepFunctionPerVertex;
+                layout.stepFunction = i == 0 ? MTLVertexStepFunctionPerVertex : MTLVertexStepFunctionPerInstance;
                 layout.stepRate = 1;
+                
                 [_state.vertex_descriptor.layouts setObject:layout atIndexedSubscript:start_slot + i];
             }
         }
@@ -754,10 +759,12 @@ namespace pen
             u32 bi = buffer_index;
             
             if(flags & pen::CBUFFER_BIND_VS)
-                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.frontbuffer() offset:0 atIndex:resource_slot + 8];
+                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.frontbuffer()
+                                                offset:0 atIndex:resource_slot + 8];
             
             if(flags & pen::CBUFFER_BIND_PS)
-                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.frontbuffer() offset:0 atIndex:resource_slot + 8];
+                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.frontbuffer()
+                                                  offset:0 atIndex:resource_slot + 8];
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
@@ -811,6 +818,8 @@ namespace pen
                 td = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat:fmt
                                                                            size:_tcp.width
                                                                       mipmapped:_tcp.num_mips > 1];
+                
+                num_arrays = _tcp.num_arrays;
             }
             else if(tcp.collection_type == TEXTURE_COLLECTION_VOLUME)
             {
@@ -1201,6 +1210,7 @@ namespace pen
 
         void renderer_release_clear_state(u32 clear_state)
         {
+            // no allocs
         }
 
         void renderer_release_buffer(u32 buffer_index)

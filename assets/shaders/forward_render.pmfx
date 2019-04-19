@@ -34,6 +34,10 @@ struct vs_instance_input
         float4 world_matrix_3 : TEXCOORD9;
         float4 user_data : TEXCOORD10;
         float4 user_data2 : TEXCOORD11;
+        float4 inv_world_matrix_0 : TEXCOORD12;
+        float4 inv_world_matrix_1 : TEXCOORD13;
+        float4 inv_world_matrix_2 : TEXCOORD14;
+        float4 inv_world_matrix_3 : TEXCOORD15;
     }
 };
 
@@ -122,7 +126,7 @@ vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_
             instance_input.world_matrix_2, 
             instance_input.world_matrix_3
         );
-        
+
         wvp = mul( instance_world_mat, vp_matrix );
     }
     else:
@@ -232,7 +236,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
     
         output.texcoord *= float4(m_uv_scale.x * xs, m_uv_scale.y * ys, m_uv_scale.x, m_uv_scale.y);
     }
-                
+        
     return output;
 }
 
