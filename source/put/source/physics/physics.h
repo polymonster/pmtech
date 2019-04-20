@@ -387,5 +387,5 @@ namespace physics
     maths::transform get_rb_transform(const u32& entity_index);
     void release_entity(const u32& entity_index);
 
-} // namespace physics
+} // namespace physicscd 
 #endif

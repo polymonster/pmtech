@@ -848,7 +848,7 @@ namespace pen
             // create shader resource view
             resource_view_desc.Format = (DXGI_FORMAT)depth_texture_format_to_srv_format(texture_desc.Format);
             resource_view_desc.ViewDimension = srv_dimension;
-            resource_view_desc.Texture2D.MipLevels = -1;
+            resource_view_desc.Texture2D.MipLevels = 1;
             resource_view_desc.Texture2D.MostDetailedMip = 0;
 
             // depth target
@@ -857,8 +857,9 @@ namespace pen
             dsv_desc.Flags = 0;
 
             // Create the render target view.
-            if (array_size == 1)
+            if (srv_dimension != D3D_SRV_DIMENSION_TEXTURE2DARRAY)
             {
+                // single rt
                 dsv_desc.ViewDimension = texture2dms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
                 dsv_desc.Texture2D.MipSlice = 0;
 
@@ -866,6 +867,7 @@ namespace pen
             }
             else
             {
+                // array or cubemap rt
                 for (u32 a = 0; a < array_size; ++a)
                 {
                     dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
@@ -894,13 +896,14 @@ namespace pen
             resource_view_desc.Texture2D.MostDetailedMip = 0;
 
 
-            // render target
+            // d3d render target
             D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
             rtv_desc.Format = texture_desc.Format;
 
             // Create the render target view.
-            if (array_size == 1)
+            if (srv_dimension != D3D_SRV_DIMENSION_TEXTURE2DARRAY)
             {
+                // single rt
                 rtv_desc.ViewDimension = texture2dms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
                 rtv_desc.Texture2D.MipSlice = 0;
 
@@ -908,6 +911,7 @@ namespace pen
             }
             else
             {
+                // array or cubemap rt
                 for (u32 a = 0; a < array_size; ++a)
                 {
                     rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
