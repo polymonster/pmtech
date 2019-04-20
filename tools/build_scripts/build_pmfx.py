@@ -72,6 +72,8 @@ def parse_args():
             _info.shader_platform = sys.argv[i + 1]
         if "-platform" in sys.argv[i]:
             _info.os_platform = sys.argv[i + 1]
+        if "-shader_version" in sys.argv[i]:
+            _info.shader_version = sys.argv[i + 1]
 
 
 # convert signed to unsigned integer in a c like manner, to do c like things
@@ -940,15 +942,23 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
     shader_source += _shader.output_decl
     shader_source += _shader.texture_decl
     shader_source += _shader.functions_source
+    if _shader.shader_type == "cs":
+        shader_source += "[numthreads(16, 16, 1)]"
     shader_source += _shader.main_func_source
     shader_source = format_source(shader_source, 4)
 
     exe = os.path.join(_info.tools_dir, "bin", "fxc", "fxc")
 
+    # default sm 4
+    if _info.shader_version == "":
+        _info.shader_version = "4_0"
+
+    sm = str(_info.shader_version)
+
     shader_model = {
-        "vs": "vs_4_0",
-        "ps": "ps_4_0",
-        "cs": "cs_4_0"
+        "vs": "vs_" + sm,
+        "ps": "ps_" + sm,
+        "cs": "cs_" + sm
     }
 
     extension = {

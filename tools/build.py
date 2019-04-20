@@ -10,6 +10,11 @@ import platform
 import build_scripts.util as util
 
 
+class build_info:
+    shader_version = ""
+    v2 = ""
+
+
 def display_help():
     print("run with no arguments for prompted input")
     print("commandline arguments:")
@@ -53,13 +58,21 @@ def display_prompted_input():
             execute_actions.append(action_strings[index])
 
 
+def with_default(val, default):
+    if val == "":
+        return default
+    return val
+
+
 def parse_args(args):
+    global _info
     global ide
     global renderer
     global platform_name
     global clean_destinations
     global toolset
     global v2
+    _info = build_info()
     for index in range(0, len(sys.argv)):
         is_action = False
         for action in action_strings:
@@ -98,6 +111,8 @@ def parse_args(args):
             index += 1
         elif sys.argv[index] == "-v2":
             v2 = True
+        elif sys.argv[index] == "-shader_version":
+            _info.shader_version = sys.argv[index+1]
 
 
 def get_platform_info():
@@ -112,6 +127,7 @@ def get_platform_info():
     global extra_build_steps
     global tools_dir
     global extra_target_info
+    global _info
 
     # platform / renderer auto setup
     if ide == "android-studio":
@@ -155,17 +171,21 @@ def get_platform_info():
     project_options = ide + " --renderer=" + renderer + " " + extra_target_info
 
     if renderer == "dx11":
-        shader_options = "-shader_platform hlsl -platform win32"
+        shader_options = "-shader_platform hlsl -platform win32 "
+        shader_options += "-shader_version " + str(with_default(_info.shader_version, "4_0"))
+        print(_info.shader_version)
+        print(shader_options)
     elif renderer == "metal":
         shader_options = "-shader_platform metal -platform osx"
     else:
         # opengl / glsl
         if platform_name == "ios":
-            shader_options = "-shader_platform glsl -platform ios"
+            shader_options = "-shader_platform glsl -platform ios -shader_version 330"
         elif platform_name == "linux":
-            shader_options = "-shader_platform glsl -platform linux"
+            shader_options = "-shader_platform glsl -platform linux -shader_version 330"
         else:
             shader_options = "-shader_platform glsl -platform osx"
+        shader_options += "-shader_version " + str(with_default(_info.shader_version, "330"))
 
     data_dir = os.path.join("bin", platform_name, "data")
 

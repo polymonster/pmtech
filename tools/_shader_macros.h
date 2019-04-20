@@ -53,6 +53,12 @@
 #endif //GLSL
 
 #ifdef HLSL
+    #define texture2d_rw( name, index ) RWTexture2D<float> name : register(u##index)
+    #define texture2d_r( name, index ) texture2d_rw( name, index )
+    #define texture2d_w( name, index ) texture2d_rw( name, index )
+    #define read_texture( name, gid ) name[gid.xy]
+    #define write_texture( name, val, gid ) name[gid.xy] = val
+
     #define texture_2d( name, sampler_index ) Texture2D name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 
     #define texture_3d( name, sampler_index ) Texture3D name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 
     #define texture_2dms( type, samples, name, sampler_index ) Texture2DMS<type, samples> name : register(t##sampler_index); ; SamplerState sampler_##name : register(s##sampler_index); 

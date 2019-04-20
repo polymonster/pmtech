@@ -4,7 +4,7 @@ declare_texture_samplers
     texture2d_w( output_l, 1 );
 };
 
-void cs_main_greyscale(uint3 gid : SV_DispatchThreadID)
+void cs_main_greyscale(uint3 gid : SV_DispatchThreadID) 
 {
     float4 col = read_texture(input_rgb, gid);
     
@@ -17,7 +17,8 @@ pmfx:
 {    
     "greyscale":
     {
-        "cs" : "cs_main_greyscale"
+        "cs" : "cs_main_greyscale",
+		"threads": [16, 16, 1]
     }
 }
 
