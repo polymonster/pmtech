@@ -1123,7 +1123,8 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     # global structs for access to inputs or outputs from any function
     shader_source += generate_global_io_struct(inputs, "struct " + _shader.input_struct_name)
     if _shader.instance_input_struct_name:
-        shader_source += generate_global_io_struct(instance_inputs, "struct " + _shader.instance_input_struct_name)
+        if len(instance_inputs) > 0:
+            shader_source += generate_global_io_struct(instance_inputs, "struct " + _shader.instance_input_struct_name)
     if len(outputs) > 0:
         shader_source += generate_global_io_struct(outputs, "struct " + _shader.output_struct_name)
 
@@ -1149,8 +1150,9 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
 
     pre_assign = generate_input_assignment(inputs, _shader.input_struct_name, "_input", input_name[_shader.shader_type])
     if _shader.instance_input_struct_name:
-        pre_assign += generate_input_assignment(instance_inputs,
-                                                _shader.instance_input_struct_name, "instance_input", "_instance_input")
+        if len(instance_inputs) > 0:
+            pre_assign += generate_input_assignment(instance_inputs,
+                                                    _shader.instance_input_struct_name, "instance_input", "_instance_input")
     post_assign = generate_output_assignment(outputs, "_output", output_name[_shader.shader_type])
 
     shader_source += "void main()\n{\n"
