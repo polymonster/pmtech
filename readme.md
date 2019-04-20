@@ -14,7 +14,6 @@ A lightweight code base with powerful features that can be used for games and re
 - Lightweight: Simple apis, shallow call stacks, minimal dependencies.  
 - Data-Oriented: Instruction and data cache friendly code for optimal performance. 
 - Multithreaded: Async render, physics, audio and entity component system.  
-- Fast: Handle large sceens with thousands or hundreds of thousands entities at fast framerates.
 - [Ecs](https://github.com/polymonster/pmtech/wiki/Ecs): Entity component system and root motion animation system.
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/Pmfx): High level data driven renderer, shader and post-processing system using json.
 - Tools: Graphical editor, volume texture / signed distance field generator.
