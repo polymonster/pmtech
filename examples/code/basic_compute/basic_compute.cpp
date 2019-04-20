@@ -38,7 +38,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
     static pen::clear_state cs = {
-        0.0f, 0.0f, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
     u32 clear_state = pen::renderer_create_clear_state(cs);
@@ -66,6 +66,7 @@ PEN_TRV pen::user_entry(void* params)
     texture_info ti;
     put::get_texture_info(test_texture, ti);
     ti.data = nullptr;
+    ti.num_mips = 1;
     ti.bind_flags |= PEN_BIND_SHADER_WRITE;
     u32 test_output = pen::renderer_create_texture(ti);
     

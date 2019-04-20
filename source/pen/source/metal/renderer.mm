@@ -172,22 +172,22 @@ namespace // pen consts -> metal consts
         return MTLVertexFormatInvalid;
     }
 
-    pen_inline MTLIndexType to_metal_index_format(u32 pen_vertex_format)
+    pen_inline MTLIndexType to_metal_index_format(u32 pen_index_format)
     {
-        return pen_vertex_format == PEN_FORMAT_R16_UINT ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
+        return pen_index_format == PEN_FORMAT_R16_UINT ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
     }
 
-    pen_inline u32 index_size_bytes(u32 pen_vertex_format)
+    pen_inline u32 index_size_bytes(u32 pen_index_type)
     {
-        if (pen_vertex_format == PEN_FORMAT_R16_UINT)
+        if (pen_index_type == PEN_FORMAT_R16_UINT)
             return 2;
 
         return 4;
     }
 
-    pen_inline MTLPixelFormat to_metal_pixel_format(u32 pen_vertex_format)
+    pen_inline MTLPixelFormat to_metal_pixel_format(u32 pen_pixel_format)
     {
-        switch (pen_vertex_format)
+        switch (pen_pixel_format)
         {
             case PEN_TEX_FORMAT_RGBA8_UNORM:
                 return MTLPixelFormatRGBA8Unorm;
