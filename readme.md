@@ -10,7 +10,7 @@ A lightweight code base with powerful features that can be used for games and re
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
 - Supported Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
-- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
+- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal.   
 - Lightweight: Simple apis, shallow call stacks, minimal dependencies.  
 - Data-Oriented: Instruction and data cache friendly code for optimal performance. 
 - Multithreaded: Async render, physics, audio and entity component system.  
