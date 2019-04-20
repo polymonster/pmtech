@@ -1361,7 +1361,7 @@ namespace put
             // clear depth
             pen::json clear_depth = view["clear_depth"];
 
-            f32 clear_depth_f;
+			f32 clear_depth_f = 0.0f;
 
             if (clear_depth.type() != JSMN_UNDEFINED)
             {

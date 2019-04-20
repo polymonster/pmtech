@@ -947,12 +947,14 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
 
     shader_model = {
         "vs": "vs_4_0",
-        "ps": "ps_4_0"
+        "ps": "ps_4_0",
+        "cs": "cs_4_0"
     }
 
     extension = {
         "vs": ".vs",
-        "ps": ".ps"
+        "ps": ".ps",
+        "cs": ".cs"
     }
 
     temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
@@ -1802,7 +1804,7 @@ def parse_pmfx(file, root):
             shader_types = ["vs", "ps", "cs"]
             for s in shader_types:
                 if s in _tp.technique.keys():
-                    if _info.shader_platform == "hlsl" or _info.shader_platform == "glsl":
+                    if _info.shader_platform == "glsl":
                         if s == "cs":
                             print("[warning] compute shaders not implemented for platform: " + _info.shader_platform)
                             valid = False
