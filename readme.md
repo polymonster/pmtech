@@ -8,6 +8,7 @@ A lightweight code base with powerful features that can be used for games and re
 
 **Features**  
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
+- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
 - Supported Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal ([wip](https://trello.com/b/ciujzpUT)).   
 - Lightweight: Simple apis, shallow call stacks, minimal dependencies.  
@@ -16,7 +17,6 @@ A lightweight code base with powerful features that can be used for games and re
 - Fast: Handle large sceens with thousands or hundreds of thousands entities at fast framerates.
 - [Ecs](https://github.com/polymonster/pmtech/wiki/Ecs): Entity component system and root motion animation system.
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/Pmfx): High level data driven renderer, shader and post-processing system using json.
-- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
 - Tools: Graphical editor, volume texture / signed distance field generator.
 - [Examples](https://github.com/polymonster/pmtech/wiki/Examples): Show how to use the apis from basic usage to rendering techniques (forward, deferred, subsurface scattering, signed distance fields, volume textures), audio, physics and more.
 - [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Build-Pipeline): IDE project generation, Binary model and skeleton format, texture compression, platform agnostic shader compilation. 
