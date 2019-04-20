@@ -97,7 +97,9 @@ namespace
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size
 {
-    // todo resize
+    g_window_resize = 1;
+    pen_window.width = size.width;
+    pen_window.height = size.height;
 }
 
 - (void)drawInMTKView:(nonnull MTKView*)view

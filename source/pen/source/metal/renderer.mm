@@ -113,6 +113,8 @@ namespace // internal structs and static vars
     
     struct resource
     {
+        u32 type;
+        
         union {
             pen::multi_buffer<id<MTLBuffer>, 2> buffer;
             texture_resource                    texture;
@@ -462,9 +464,11 @@ namespace pen
             {
                 _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:_state.pass];
             }
-
+            
             [_state.render_encoder setViewport:_state.viewport];
-            [_state.render_encoder setScissorRect:_state.scissor];
+            
+            if(!g_window_resize)
+                [_state.render_encoder setScissorRect:_state.scissor];
             
             if(_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
                 [_state.render_encoder setDepthStencilState:_state.depth_stencil];
@@ -718,6 +722,8 @@ namespace pen
             
             for(u32 i = 0; i < num_bufs; ++i)
                 _res_pool.get(resource_slot).buffer._data[i] = {buf[i]};
+            
+             _res_pool[resource_slot].type = RESOURCE_BUFFER;
         }
 
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
@@ -783,7 +789,7 @@ namespace pen
             r.buffer.swap_buffers();
         }
 
-        void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
+        pen_inline void create_texture(const texture_creation_params& tcp, u32 resource_slot, bool track)
         {
             texture_creation_params _tcp = tcp;
             if(tcp.width == PEN_INVALID_HANDLE)
@@ -791,7 +797,12 @@ namespace pen
                 _tcp.width = pen_window.width;
                 _tcp.height = pen_window.height;
                 
-                // todo track rt
+                // track rt
+                if(track)
+                {
+                    managed_rt manrt = { _tcp, resource_slot };
+                    sb_push(_managed_rts, manrt);
+                }
             }
             
             MTLTextureDescriptor* td = nil;
@@ -887,6 +898,12 @@ namespace pen
 
             _res_pool.insert(resource(), resource_slot);
             _res_pool.get(resource_slot).texture = {texture, fmt};
+        }
+        
+        void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
+        {
+            create_texture(tcp, resource_slot, false);
+            _res_pool[resource_slot].type = RESOURCE_TEXTURE;
         }
 
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
@@ -1058,7 +1075,8 @@ namespace pen
 
         void renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
         {
-            renderer_create_texture(tcp, resource_slot);
+            create_texture(tcp, resource_slot, track);
+            _res_pool[resource_slot].type = RESOURCE_RENDER_TARGET;
         }
 
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face,
@@ -1157,6 +1175,49 @@ namespace pen
         {
             if (rrbp.resource_index == 0)
             {
+                // backbuffer
+            }
+            else
+            {
+                resource& res = _res_pool[rrbp.resource_index];
+                if(res.type == RESOURCE_TEXTURE || res.type == RESOURCE_RENDER_TARGET)
+                {
+                    
+                }
+            }
+        }
+        
+        static void resize_managed_targets()
+        {
+            static u32 count = 0;
+            static bool need_resize = false;
+            if( g_window_resize > 0 )
+            {
+                need_resize = true;
+            }
+            
+            if(need_resize)
+            {
+                count++;
+            }
+            else
+            {
+                count = 0;
+                return;
+            }
+            
+            if(count < 5)
+                return;
+            
+            u32 num_man_rt = sb_count(_managed_rts);
+            for (u32 i = 0; i < num_man_rt; ++i)
+            {
+                auto& manrt = _managed_rts[i];
+                
+                resource& res = _res_pool[manrt.rt];
+                res.texture.tex = nil;
+                
+                direct::renderer_create_render_target(manrt.tcp, manrt.rt, false);
             }
         }
 
@@ -1175,6 +1236,9 @@ namespace pen
             // null state for next frame
             _state.cmd_buffer = nil;
             _state.pipeline_hash = 0;
+            
+            // resize window and managed rt
+            resize_managed_targets();
         }
 
         void renderer_push_perf_marker(const c8* name)
