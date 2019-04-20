@@ -19,6 +19,7 @@ A lightweight code base with powerful features that can be used for games and re
 - Tools: Graphical editor, volume texture / signed distance field generator.
 - [Examples](https://github.com/polymonster/pmtech/wiki/Examples): Show how to use the apis from basic usage to rendering techniques (forward, deferred, subsurface scattering, signed distance fields, volume textures), audio, physics and more.
 - [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Build-Pipeline): IDE project generation, Binary model and skeleton format, texture compression, platform agnostic shader compilation. 
+- Future Plans: Direct3D12, Vulkan.
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information.
 
 **Usage**  
