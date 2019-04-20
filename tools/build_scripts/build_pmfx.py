@@ -536,9 +536,12 @@ def generate_technique_constant_buffers(pmfx_json, _tp):
     cb_str += "};\n"
 
     # append permutation string to shader c struct
+    skips = [_info.shader_platform.upper(), _info.shader_sub_platform.upper()]
     permutation_name = ""
     if int(_tp.id) != 0:
         for p in _tp.permutation:
+            if p[0] in skips:
+                continue
             if p[1] == 1:
                 permutation_name += "_" + p[0].lower()
             if p[1] > 1:
@@ -719,6 +722,7 @@ def generate_permutations(technique, technique_json):
         else:
             default_permute = [("SINGLE_PERMUTATION", 1)]
         tp.append(default_permute)
+
     return tp, permutation_options, permutation_option_mask, define_list, define_string
 
 
