@@ -1554,7 +1554,7 @@ namespace pen
         s_immediate_context->DrawAuto();
     }
     
-    void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
+    void direct::renderer_dispatch_compute(uint3 grid, uint3 num_threads)
     {
     }
 
