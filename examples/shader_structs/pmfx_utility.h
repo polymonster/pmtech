@@ -6,7 +6,7 @@ struct skinning_debug
     float3 m_padding;
 };
 
-struct skinning_debug_skinned_weights
+struct skinning_debug_skinned_weights__metal
 {
     float m_index_range;
     float3 m_padding;

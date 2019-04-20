@@ -765,6 +765,9 @@ namespace pen
             if(flags & pen::CBUFFER_BIND_PS)
                 [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.frontbuffer()
                                                   offset:0 atIndex:resource_slot + 8];
+            
+            // flags & cs
+            // compute command encoder
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
@@ -927,6 +930,9 @@ namespace pen
                 [_state.render_encoder setVertexTexture:_res_pool.get(texture_index).texture.tex atIndex:resource_slot];
                 [_state.render_encoder setVertexSamplerState:_res_pool.get(sampler_index).sampler atIndex:resource_slot];
             }
+            
+            // if bind_flags & pen::TEXUTURE_CS
+            // _state.compute_encoder etc
         }
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
@@ -1124,6 +1130,8 @@ namespace pen
             }
             else if(is_valid(depth_target))
             {
+                // todo msaa
+                
                 _state.pass.depthAttachment.texture = _res_pool.get(depth_target).texture.tex;
 
                 _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
