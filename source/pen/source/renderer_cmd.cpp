@@ -80,7 +80,8 @@ namespace pen
         CMD_REPLACE_RESOURCE,
         CMD_CREATE_CLEAR_STATE,
         CMD_PUSH_PERF_MARKER,
-        CMD_POP_PERF_MARKER
+        CMD_POP_PERF_MARKER,
+        CMD_DISPATCH_COMPUTE
     };
 
     struct set_shader_cmd
@@ -181,6 +182,12 @@ namespace pen
         u32                 src_handle;
         e_renderer_resource type;
     };
+    
+    struct compute_dispatch_params
+    {
+        uint3 grid;
+        uint3 num_threads;
+    };
 
     struct renderer_cmd
     {
@@ -217,6 +224,8 @@ namespace pen
             replace_resource                 replace_resource_params;
             clear_state                      clear_state_params;
             c8*                              name;
+            compute_dispatch_params          cs_dispatch;
+            
         };
 
         renderer_cmd(){};
@@ -454,6 +463,10 @@ namespace pen
 
             case CMD_POP_PERF_MARKER:
                 direct::renderer_pop_perf_marker();
+                break;
+                
+            case CMD_DISPATCH_COMPUTE:
+                direct::renderer_dispatch_compute(cmd.cs_dispatch.grid, cmd.cs_dispatch.num_threads);
                 break;
         }
     }
@@ -1328,6 +1341,17 @@ namespace pen
 
         cmd.command_index = CMD_DRAW_AUTO;
 
+        s_cmd_buffer.put(cmd);
+    }
+    
+    void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
+    {
+        renderer_cmd cmd;
+        
+        cmd.command_index = CMD_DISPATCH_COMPUTE;
+        cmd.cs_dispatch.grid = grid;
+        cmd.cs_dispatch.num_threads = num_threads;
+        
         s_cmd_buffer.put(cmd);
     }
 

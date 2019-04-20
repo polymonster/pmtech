@@ -815,6 +815,10 @@ namespace pen
     void direct::renderer_draw_auto()
     {
     }
+    
+    void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
+    {
+    }
 
     void direct::renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
     {

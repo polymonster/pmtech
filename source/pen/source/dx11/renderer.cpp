@@ -1553,6 +1553,10 @@ namespace pen
         s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)PEN_PT_POINTLIST);
         s_immediate_context->DrawAuto();
     }
+    
+    void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
+    {
+    }
 
     void direct::renderer_set_scissor_rect(const rect& r)
     {

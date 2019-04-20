@@ -65,6 +65,7 @@ enum shader_type
     PEN_SHADER_TYPE_PS = GL_FRAGMENT_SHADER,
     PEN_SHADER_TYPE_GS = GL_GEOMETRY_SHADER,
     PEN_SHADER_TYPE_SO
+    PEN_SHADER_TYPE_CS
 };
 
 enum fill_mode : s32

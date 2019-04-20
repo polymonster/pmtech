@@ -19,7 +19,8 @@ enum shader_type
     PEN_SHADER_TYPE_VS = 0x03,
     PEN_SHADER_TYPE_PS = 0x04,
     PEN_SHADER_TYPE_GS = 0x05,
-    PEN_SHADER_TYPE_SO = 0x06
+    PEN_SHADER_TYPE_SO = 0x06,
+    PEN_SHADER_TYPE_CS = 0x07
 };
 
 enum raster_state : s32

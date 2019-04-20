@@ -758,10 +758,15 @@ def find_used_textures(shader_source, texture_decl):
     if not texture_decl:
         return
     # find texture uses
+    uses = ["sample_texture", "read_texture", "write_texture"]
     texture_uses = []
     pos = 0
     while True:
-        sampler = shader_source.find("sample_texture", pos)
+        sampler = -1
+        for u in uses:
+            sampler = shader_source.find(u, pos)
+            if sampler != -1:
+                break
         if sampler == -1:
             break;
         start = shader_source.find("(", sampler)
@@ -1467,7 +1472,8 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
 
     main_type = {
         "vs": "vertex",
-        "ps": "fragment"
+        "ps": "fragment",
+        "cs": "kernel"
     }
 
     # functions
@@ -1490,8 +1496,10 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         if _shader.instance_input_struct_name:
             if len(instance_inputs) > 0:
                 shader_source += "\n, packed_" + _shader.instance_input_struct_name + " in_instance [[stage_in]]"
-    else:
+    elif _shader.shader_type == "ps":
         shader_source += _shader.input_struct_name + " input [[stage_in]]"
+    elif _shader.shader_type == "cs":
+        shader_source += "uint2 gid[[thread_position_in_grid]]"
 
     # pass in textures
     invalid = ["", "\n"]
@@ -1569,12 +1577,14 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
 
     extension = {
         "vs": "_vs.metal",
-        "ps": "_ps.metal"
+        "ps": "_ps.metal",
+        "cs": "_cs.metal"
     }
 
     output_extension = {
         "vs": ".vsc",
-        "ps": ".psc"
+        "ps": ".psc",
+        "cs": ".csc"
     }
 
     temp_file_and_path = os.path.join(temp_path, _tp.name + extension[_shader.shader_type])
@@ -1723,6 +1733,7 @@ def generate_technique_permutation_info(_tp):
     # vs and ps files
     _tp.technique["vs_file"] = _tp.name + ".vsc"
     _tp.technique["ps_file"] = _tp.name + ".psc"
+    _tp.technique["cs_file"] = _tp.name + ".csc"
     # permutation
     _tp.technique["permutations"] = _tp.permutation_options
     _tp.technique["permutation_id"] = _tp.id
@@ -1786,6 +1797,18 @@ def parse_pmfx(file, root):
             _tp.technique = inherit_technique(pmfx_json[technique], pmfx_json)
             _tp.mask = mask
             _tp.permutation_options = permutation_options
+
+            valid = True
+            shader_types = ["vs", "ps", "cs"]
+            for s in shader_types:
+                if s in _tp.technique.keys():
+                    if _info.shader_platform == "hlsl" or _info.shader_platform == "glsl":
+                        if s == "cs":
+                            print("[warning] compute shaders not implemented for platform: " + _info.shader_platform)
+                            valid = False
+
+            if not valid:
+                continue
 
             if _tp.id != 0:
                 _tp.name = _tp.technique_name + "__" + str(_tp.id) + "__"

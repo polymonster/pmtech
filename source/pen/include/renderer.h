@@ -92,6 +92,11 @@ namespace pen
         mrt_clear mrt[MAX_MRT];
         u32       num_colour_targets;
     };
+    
+    struct uint3
+    {
+        u32 x, y, z;
+    };
 
     struct stream_out_decl_entry
     {
@@ -166,6 +171,7 @@ namespace pen
         u32 vertex_shader;
         u32 pixel_shader;
         u32 input_layout;
+        u32 compute_shader;
 
         c8** stream_out_names;
         u32  num_stream_out_names;
@@ -303,14 +309,16 @@ namespace pen
         TEXTURE_BIND_NO_FLAGS = 0,
         TEXTURE_BIND_MSAA = 1,
         TEXTURE_BIND_PS = 1 << 1,
-        TEXTURE_BIND_VS = 1 << 2
+        TEXTURE_BIND_VS = 1 << 2,
+        TEXTURE_BIND_CS = 1 << 3
     };
 
     enum e_cbuffer_bind_flags
     {
         CBUFFER_BIND_NO_FLAGS = 0,
         CBUFFER_BIND_PS = 1 << 1,
-        CBUFFER_BIND_VS = 1 << 2
+        CBUFFER_BIND_VS = 1 << 2,
+        CBUFFER_BIND_CS = 1 << 3
     };
 
     enum e_msaa_resolve_type
@@ -396,6 +404,7 @@ namespace pen
     void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                          u32 base_vertex, u32 primitive_topology);
     void renderer_draw_auto();
+    void renderer_dispatch_compute(uint3 grid, uint3 num_threads);
 
     // render targets
     u32  renderer_create_render_target(const texture_creation_params& tcp);
@@ -486,6 +495,7 @@ namespace pen
         void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                              u32 base_vertex, u32 primitive_topology);
         void renderer_draw_auto();
+        void renderer_dispatch_compute(uint3 grid, uint3 num_threads);
 
         // render targets
         void renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track = true);

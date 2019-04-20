@@ -1,0 +1,27 @@
+declare_texture_samplers
+{
+    texture2d_r( input_rgb, 0 );
+    texture2d_w( output_l, 1 );
+};
+
+void cs_main_greyscale(uint3 gid : SV_DispatchThreadID)
+{
+    float4 col = read_texture(input_rgb, gid);
+    
+    float  grey = dot(col.rgb, float3(0.2126, 0.7152, 0.0722));
+    
+    write_texture(output_l, float4(grey, grey, grey, 1.0), gid);
+
+    return;
+}
+
+pmfx:
+{    
+    "greyscale":
+    {
+        "cs" : "cs_main_greyscale"
+    }
+}
+
+
+

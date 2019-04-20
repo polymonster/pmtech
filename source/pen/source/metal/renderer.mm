@@ -46,13 +46,14 @@ namespace // internal structs and static vars
     struct current_state
     {
         // metal
-        id<MTLRenderPipelineState>  pipeline;
-        id<MTLCommandQueue>         command_queue;
-        id<MTLRenderCommandEncoder> render_encoder;
-        id<MTLCommandBuffer>        cmd_buffer;
-        id<MTLDepthStencilState>    depth_stencil;
-        id<CAMetalDrawable>         drawable;
-        MTLRenderPassDescriptor*    pass;
+        id<MTLRenderPipelineState>   pipeline;
+        id<MTLCommandQueue>          command_queue;
+        id<MTLRenderCommandEncoder>  render_encoder;
+        id<MTLComputeCommandEncoder> compute_encoder;
+        id<MTLCommandBuffer>         cmd_buffer;
+        id<MTLDepthStencilState>     depth_stencil;
+        id<CAMetalDrawable>          drawable;
+        MTLRenderPassDescriptor*     pass;
 
         // pen -> metal
         MTLViewport          viewport;
@@ -65,6 +66,7 @@ namespace // internal structs and static vars
         MTLVertexDescriptor* vertex_descriptor;
         id<MTLFunction>      vertex_shader;
         id<MTLFunction>      fragment_shader;
+        id<MTLFunction>      compute_shader;
         u32                  blend_state;
         
         // cache
@@ -234,6 +236,9 @@ namespace // pen consts -> metal consts
         
         if(bind_flags & PEN_BIND_DEPTH_STENCIL)
             usage |= MTLTextureUsageRenderTarget;
+        
+        if(bind_flags & PEN_BIND_SHADER_WRITE)
+            usage |= MTLTextureUsageShaderWrite;
 
         return usage;
     }
@@ -458,7 +463,7 @@ namespace pen
 
     namespace direct
     {
-        void validate_encoder()
+        void validate_render_encoder()
         {
             if (!_state.render_encoder)
             {
@@ -473,8 +478,17 @@ namespace pen
             if(_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
                 [_state.render_encoder setDepthStencilState:_state.depth_stencil];
         }
+        
+        void validate_compute_encoder()
+        {
+            if (_state.cmd_buffer == nil)
+                _state.cmd_buffer = [_state.command_queue commandBuffer];
+            
+            if(!_state.compute_encoder)
+                _state.compute_encoder = [_state.cmd_buffer computeCommandEncoder];
+        }
 
-        void bind_pipeline()
+        void bind_render_pipeline()
         {
             // pipeline hash
             HashMurmur2A hh;
@@ -516,11 +530,20 @@ namespace pen
 
             pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
 
-            NSError*                   error = nil;
+            NSError* error = nil;
             id<MTLRenderPipelineState> pipeline =
                 [_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc error:&error];
 
             [_state.render_encoder setRenderPipelineState:pipeline];
+        }
+        
+        void bind_compute_pipeline()
+        {
+            NSError* error = nil;
+            id<MTLComputePipelineState> pipeline = [_metal_device newComputePipelineStateWithFunction:_state.compute_shader
+                                                                           error:&error];
+            
+            [_state.compute_encoder setComputePipelineState:pipeline];
         }
 
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
@@ -615,7 +638,7 @@ namespace pen
                 _state.pass.depthAttachment.clearDepth = clear.depth_clear;
             }
 
-            validate_encoder();
+            validate_render_encoder();
         }
 
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
@@ -651,6 +674,9 @@ namespace pen
                     break;
                 case PEN_SHADER_TYPE_PS:
                     _state.fragment_shader = [res.lib newFunctionWithName:@"ps_main"];
+                    break;
+                case PEN_SHADER_TYPE_CS:
+                    _state.compute_shader = [res.lib newFunctionWithName:@"cs_main"];
                     break;
             };
         }
@@ -729,7 +755,7 @@ namespace pen
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
                                          const u32* offsets)
         {
-            validate_encoder();
+            validate_render_encoder();
 
             for (u32 i = 0; i < num_buffers; ++i)
             {
@@ -760,7 +786,7 @@ namespace pen
 
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
-            validate_encoder();
+            validate_render_encoder();
 
             u32 bi = buffer_index;
             
@@ -929,27 +955,32 @@ namespace pen
 
         void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
         {
-            validate_encoder();
-
             if (texture_index == 0)
                 return;
 
-            PEN_ASSERT(_state.render_encoder);
-
-            if (bind_flags & pen::TEXTURE_BIND_PS)
+            if(bind_flags & pen::TEXTURE_BIND_PS || bind_flags & pen::TEXTURE_BIND_VS)
             {
-                [_state.render_encoder setFragmentTexture:_res_pool.get(texture_index).texture.tex atIndex:resource_slot];
-                [_state.render_encoder setFragmentSamplerState:_res_pool.get(sampler_index).sampler atIndex:resource_slot];
+                // render encoder
+                validate_render_encoder();
+                PEN_ASSERT(_state.render_encoder);
+                
+                if (bind_flags & pen::TEXTURE_BIND_PS)
+                {
+                    [_state.render_encoder setFragmentTexture:_res_pool.get(texture_index).texture.tex atIndex:resource_slot];
+                    [_state.render_encoder setFragmentSamplerState:_res_pool.get(sampler_index).sampler atIndex:resource_slot];
+                }
+                
+                if (bind_flags & pen::TEXTURE_BIND_VS)
+                {
+                    [_state.render_encoder setVertexTexture:_res_pool.get(texture_index).texture.tex atIndex:resource_slot];
+                    [_state.render_encoder setVertexSamplerState:_res_pool.get(sampler_index).sampler atIndex:resource_slot];
+                }
             }
-
-            if (bind_flags & pen::TEXTURE_BIND_VS)
+            else if (bind_flags & pen::TEXTURE_BIND_CS)
             {
-                [_state.render_encoder setVertexTexture:_res_pool.get(texture_index).texture.tex atIndex:resource_slot];
-                [_state.render_encoder setVertexSamplerState:_res_pool.get(sampler_index).sampler atIndex:resource_slot];
+                validate_compute_encoder();
+                [_state.compute_encoder setTexture:_res_pool.get(texture_index).texture.tex atIndex:resource_slot];
             }
-            
-            // if bind_flags & pen::TEXUTURE_CS
-            // _state.compute_encoder etc
         }
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
@@ -1030,8 +1061,8 @@ namespace pen
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
         {
-            validate_encoder();
-            bind_pipeline();
+            validate_render_encoder();
+            bind_render_pipeline();
 
             // draw calls
             [_state.render_encoder drawPrimitives:to_metal_primitive_type(primitive_topology)
@@ -1042,8 +1073,8 @@ namespace pen
         static pen_inline void _indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                                   u32 base_vertex, u32 primitive_topology)
         {
-            validate_encoder();
-            bind_pipeline();
+            validate_render_encoder();
+            bind_render_pipeline();
 
             u32 offset = (start_index * _state.index_buffer.size_bytes);
             
@@ -1071,6 +1102,28 @@ namespace pen
 
         void renderer_draw_auto()
         {
+        }
+        
+        void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
+        {
+            validate_compute_encoder();
+            bind_compute_pipeline();
+            
+            MTLSize tgs = MTLSizeMake(num_threads.x, num_threads.y, num_threads.z);
+            
+            MTLSize tgc;
+            tgc.width  = (grid.x  + num_threads.x -  1) / num_threads.x;
+            tgc.height = (grid.y + num_threads.y - 1) / num_threads.y;
+            tgc.depth = (grid.z + num_threads.z - 1) / num_threads.z;
+            
+            [_state.compute_encoder dispatchThreadgroups:tgc
+                                   threadsPerThreadgroup:tgs];
+            
+            if (_state.compute_encoder)
+            {
+                [_state.compute_encoder endEncoding];
+                _state.compute_encoder = nil;
+            }
         }
 
         void renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
@@ -1182,7 +1235,6 @@ namespace pen
                 resource& res = _res_pool[rrbp.resource_index];
                 if(res.type == RESOURCE_TEXTURE || res.type == RESOURCE_RENDER_TARGET)
                 {
-                    
                 }
             }
         }

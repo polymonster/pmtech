@@ -188,6 +188,7 @@ namespace put
             u32 vertex_shader;
             u32 pixel_shader;
             u32 stream_out_shader;
+            u32 compute_shader;
             u32 input_layout;
             u32 program_index;
             u32 technique_constant_size; // bytes
