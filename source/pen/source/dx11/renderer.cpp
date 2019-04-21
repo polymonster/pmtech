@@ -325,20 +325,23 @@ namespace pen
 
     struct texture2d_internal
     {
-        ID3D11Texture2D*          texture = nullptr;
-        ID3D11ShaderResourceView* srv = nullptr;
+        ID3D11Texture2D*           texture = nullptr;
+        ID3D11ShaderResourceView*  srv = nullptr;
+		ID3D11UnorderedAccessView* uav = nullptr;
     };
 
     struct texture3d_internal
     {
-        ID3D11Texture3D*          texture = nullptr;
-        ID3D11ShaderResourceView* srv = nullptr;
+        ID3D11Texture3D*           texture = nullptr;
+        ID3D11ShaderResourceView*  srv = nullptr;
+		ID3D11UnorderedAccessView* uav = nullptr;
     };
 
     struct texture_resource
     {
-        ID3D11Resource*           resource = nullptr;
-        ID3D11ShaderResourceView* srv = nullptr;
+        ID3D11Resource*				resource = nullptr;
+        ID3D11ShaderResourceView*	srv = nullptr;
+		ID3D11UnorderedAccessView*	uav = nullptr;
     };
 
     struct render_target_internal
@@ -402,6 +405,7 @@ namespace pen
             ID3D11VertexShader*            vertex_shader;
             ID3D11InputLayout*             input_layout;
             ID3D11PixelShader*             pixel_shader;
+			ID3D11ComputeShader*           compute_shader;
             ID3D11GeometryShader*          geometry_shader;
             stream_out_shader              stream_out_shader;
             ID3D11Buffer*                  generic_buffer;
@@ -626,12 +630,18 @@ namespace pen
 
             u32 resource_index = resource_slot;
 
+			// Create a vertex shader + stream out geometry shader
             CHECK_CALL(s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr, &sos.vs));
-
             CHECK_CALL(s_device->CreateGeometryShaderWithStreamOutput(
                 params.byte_code, params.byte_code_size, (const D3D11_SO_DECLARATION_ENTRY*)params.so_decl_entries,
                 params.so_num_entries, NULL, 0, 0, NULL, &sos.gs));
         }
+		else if (params.type == PEN_SHADER_TYPE_CS)
+		{
+			// Create a compute shader
+			CHECK_CALL(s_device->CreateComputeShader(params.byte_code, params.byte_code_size, nullptr,
+				&_res_pool[resource_index].compute_shader));
+		}
     }
 
     void direct::renderer_set_shader(u32 shader_index, u32 shader_type)
@@ -669,6 +679,10 @@ namespace pen
 
             s_immediate_context->OMSetDepthStencilState(dss, 0);
         }
+		else if (shader_type == PEN_SHADER_TYPE_CS)
+		{
+			s_immediate_context->CSSetShader(_res_pool[shader_index].compute_shader, nullptr, 0);
+		}
     }
 
     void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
@@ -1159,6 +1173,42 @@ namespace pen
         resource_view_desc.Texture2D.MostDetailedMip = 0;
 
         CHECK_CALL(s_device->CreateShaderResourceView(tex_res->resource, &resource_view_desc, &tex_res->srv));
+
+		tex_res->uav = nullptr;
+
+		if (tcp.bind_flags & PEN_BIND_SHADER_WRITE)
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+			ZeroMemory(&uav_desc, sizeof(uav_desc));
+			uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+			uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+			uav_desc.Texture2D.MipSlice = 0;
+
+			CHECK_CALL(s_device->CreateUnorderedAccessView(tex_res->resource, &uav_desc, &tex_res->uav));
+		}
+
+		// reference for structured bufffers
+		/*
+		if ( descBuf.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS )
+		{
+			// This is a Raw Buffer
+
+			desc.Format = DXGI_FORMAT_R32_TYPELESS; // Format must be DXGI_FORMAT_R32_TYPELESS, when creating Raw Unordered Access View
+			desc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
+			desc.Buffer.NumElements = descBuf.ByteWidth / 4; 
+		} 
+		else if ( descBuf.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED )
+		{
+			// This is a Structured Buffer
+
+			desc.Format = DXGI_FORMAT_UNKNOWN;      // Format must be must be DXGI_FORMAT_UNKNOWN, when creating a View of a Structured Buffer
+			desc.Buffer.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride; 
+		} 
+		else
+		{
+			return E_INVALIDARG;
+		}
+		*/
     }
 
     void direct::renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
@@ -1172,16 +1222,13 @@ namespace pen
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
     {
-        static ID3D11SamplerState*       null_sampler = nullptr;
-        static ID3D11ShaderResourceView* null_srv = nullptr;
+        static ID3D11SamplerState*			null_sampler = nullptr;
+        static ID3D11ShaderResourceView*	null_srv = nullptr;
+		static ID3D11UnorderedAccessView*	null_uav = nullptr;
 
-        ID3D11SamplerState**       sampler = &null_sampler;
-        ID3D11ShaderResourceView** srv = &null_srv;
-
-        if (texture_index == 93)
-        {
-            u32 a = 0;
-        }
+        ID3D11SamplerState**				sampler = &null_sampler;
+        ID3D11ShaderResourceView**			srv = &null_srv;
+		ID3D11UnorderedAccessView**			uav = &null_uav;
 
         if (sampler_index > 0)
         {
@@ -1199,6 +1246,12 @@ namespace pen
             {
                 srv = &_res_pool[texture_index].texture_resource->srv;
             }
+
+			auto* tex_res = _res_pool[texture_index].texture_resource;			
+			if (tex_res->uav)
+			{
+				uav = &tex_res->uav;
+			}
         }
 
         if (bind_flags & TEXTURE_BIND_PS)
@@ -1212,6 +1265,14 @@ namespace pen
             s_immediate_context->VSSetSamplers(resource_slot, 1, sampler);
             s_immediate_context->VSSetShaderResources(resource_slot, 1, srv);
         }
+
+		if (bind_flags & TEXTURE_BIND_CS)
+		{
+			s_immediate_context->CSSetUnorderedAccessViews(resource_slot, 1, uav, nullptr);
+
+			if(!(*uav))
+				s_immediate_context->CSSetShaderResources(resource_slot, 1, srv);
+		}
     }
 
     void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
@@ -1560,6 +1621,9 @@ namespace pen
     
     void direct::renderer_dispatch_compute(uint3 grid, uint3 num_threads)
     {
+		static ID3D11UnorderedAccessView* uav_null[8] = { nullptr };
+
+		s_immediate_context->Dispatch(grid.x, grid.y, grid.z);
     }
 
     void direct::renderer_set_scissor_rect(const rect& r)

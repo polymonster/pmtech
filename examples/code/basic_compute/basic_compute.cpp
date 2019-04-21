@@ -65,6 +65,7 @@ PEN_TRV pen::user_entry(void* params)
     // create a texture to write into
     texture_info ti;
     put::get_texture_info(test_texture, ti);
+
     ti.data = nullptr;
     ti.num_mips = 1;
     ti.bind_flags |= PEN_BIND_SHADER_WRITE;
@@ -133,13 +134,17 @@ PEN_TRV pen::user_entry(void* params)
     {
         // do a compute job to make the image greyscale
         pmfx::set_technique_perm(compute_shader, PEN_HASH("greyscale"), 0);
-        pen::renderer_set_texture(test_texture, 0, 0, pen::TEXTURE_BIND_CS); // read
-        pen::renderer_set_texture(test_output, 0, 1, pen::TEXTURE_BIND_CS); // write
+        pen::renderer_set_texture(test_texture, 0, 0, pen::TEXTURE_BIND_CS);	// read
+        pen::renderer_set_texture(test_output, 0, 1, pen::TEXTURE_BIND_CS);		// write
         
         uint3 grid = { ti.width, ti.height, 1 };
         uint3 threads = { 16, 16, 1 };
         
         pen::renderer_dispatch_compute(grid, threads);
+
+		// unbind
+		pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
+		pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
         
         pen::renderer_set_rasterizer_state(raster_state);
 
@@ -166,6 +171,9 @@ PEN_TRV pen::user_entry(void* params)
             // draw
             pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
         }
+
+		// unbind textures
+		pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_PS);
 
         // present
         pen::renderer_present();
