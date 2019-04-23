@@ -220,7 +220,8 @@ function create_app(project_name, source_directory, root_directory)
 						
 		configuration "Release"
 			defines { "NDEBUG" }
-			flags { "WinMain", "OptimizeSpeed" }
+			entrypoint "WinMainCRTStartup"
+			optimize "Speed"
 			targetname (project_name)
 			architecture "x64"
 			libdirs
@@ -231,7 +232,7 @@ function create_app(project_name, source_directory, root_directory)
 		
 		configuration "Debug"
 			defines { "DEBUG" }
-			flags { "WinMain" }
+			entrypoint "WinMainCRTStartup"
 			symbols "On"
 			targetname (project_name .. "_d")
 			architecture "x64"
