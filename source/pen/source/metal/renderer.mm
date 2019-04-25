@@ -1167,6 +1167,7 @@ namespace pen
             {
                 [_state.render_encoder endEncoding];
                 _state.render_encoder = nil;
+                _state.pipeline_hash = 0;
             }
 
             _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];

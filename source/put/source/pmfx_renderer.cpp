@@ -2665,25 +2665,6 @@ namespace put
             float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
 
-            // bind any per view cbuffers
-            u32 num_samplers = v.sampler_bindings.size();
-            if (num_samplers > 0)
-            {
-                pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers * sizeof(vec4f));
-                pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, pen::CBUFFER_BIND_PS);
-            }
-
-            // filters
-            if (is_valid(v.cbuffer_filter))
-                pen::renderer_set_constant_buffer(v.cbuffer_filter, CB_FILTER_KERNEL, pen::CBUFFER_BIND_PS);
-
-            // technique cbuffer
-            if (is_valid(v.cbuffer_technique))
-            {
-                pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data, sizeof(technique_constant_data));
-                pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, pen::CBUFFER_BIND_PS);
-            }
-
             // build scene view info
             scene_view sv;
             sv.scene = v.scene;
@@ -2739,6 +2720,25 @@ namespace put
                         continue;
 
                     pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
+                }
+                
+                // bind any per view cbuffers
+                u32 num_samplers = v.sampler_bindings.size();
+                if (num_samplers > 0)
+                {
+                    pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers * sizeof(vec4f));
+                    pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, pen::CBUFFER_BIND_PS);
+                }
+                
+                // filters
+                if (is_valid(v.cbuffer_filter))
+                    pen::renderer_set_constant_buffer(v.cbuffer_filter, CB_FILTER_KERNEL, pen::CBUFFER_BIND_PS);
+                
+                // technique cbuffer
+                if (is_valid(v.cbuffer_technique))
+                {
+                    pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data, sizeof(technique_constant_data));
+                    pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, pen::CBUFFER_BIND_PS);
                 }
 
                 // call render functions and make draw calls
