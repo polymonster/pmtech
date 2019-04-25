@@ -20,6 +20,12 @@ struct vs_input
     float4 bitangent        : TEXCOORD3;
 };
 
+struct vs_input_2d
+{
+    float4 position         : POSITION;
+    float4 texcoord         : TEXCOORD0;
+};
+
 struct ps_output
 {
     float4 colour : SV_Target;
@@ -47,7 +53,7 @@ void unpack_light_data(inout vs_output output)
     output.light_data = ld[3];
 }
 
-vs_output vs_directional_light(vs_input input)
+vs_output vs_directional_light(vs_input_2d input)
 {
     vs_output output;
     

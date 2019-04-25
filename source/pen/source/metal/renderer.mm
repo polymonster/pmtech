@@ -38,6 +38,7 @@ namespace // internal structs and static vars
 
     struct pixel_formats
     {
+        u32            num_targets;
         MTLPixelFormat colour_attachments[pen::MAX_MRT];
         MTLPixelFormat depth_attachment;
         u32            sample_count;
@@ -75,8 +76,9 @@ namespace // internal structs and static vars
 
     struct shader_resource
     {
-        id<MTLLibrary> lib;
-        u32            type;
+        id<MTLLibrary>  lib;
+        u32             type;
+        id<MTLFunction> func;
     };
 
     struct texture_resource
@@ -508,13 +510,19 @@ namespace pen
             pipeline_desc.vertexFunction = _state.vertex_shader;
             pipeline_desc.fragmentFunction = _state.fragment_shader;
             pipeline_desc.sampleCount = _state.formats.sample_count;
-            pipeline_desc.colorAttachments[0].pixelFormat = _state.formats.colour_attachments[0];
+            
+            for(u32 i = 0; i < _state.formats.num_targets; ++i)
+                pipeline_desc.colorAttachments[i].pixelFormat = _state.formats.colour_attachments[i];
+            
             pipeline_desc.depthAttachmentPixelFormat = _state.formats.depth_attachment;
 
             // apply blend state
             metal_blend_state& blend = _res_pool.get(_state.blend_state).blend;
             for (u32 i = 0; i < blend.num_render_targets; ++i)
             {
+                if(i >= _state.formats.num_targets)
+                    continue;
+                
                 MTLRenderPipelineColorAttachmentDescriptor* ca = pipeline_desc.colorAttachments[i];
                 metal_target_blend&                         tb = blend.attachment[i];
 
@@ -601,6 +609,8 @@ namespace pen
             // mrt
             for (u32 i = 0; i < cs.num_colour_targets; ++i)
             {
+                mc.colour_load_action[i] = mc.colour_load_action[0];
+                
                 const mrt_clear& m = cs.mrt[i];
 
                 switch (m.type)
@@ -648,6 +658,8 @@ namespace pen
 
             NSError*           err = nil;
             MTLCompileOptions* opts = [MTLCompileOptions alloc];
+            opts.fastMathEnabled = YES;
+            
             id<MTLLibrary>     lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
 
             if (err)
@@ -659,7 +671,7 @@ namespace pen
             }
             
             _res_pool.insert(resource(), resource_slot);
-            _res_pool.get(resource_slot).shader = {lib, params.type};
+            _res_pool.get(resource_slot).shader = {lib, params.type, nil};
         }
 
         void renderer_set_shader(u32 shader_index, u32 shader_type)
@@ -669,14 +681,20 @@ namespace pen
             switch (shader_type)
             {
                 case PEN_SHADER_TYPE_VS:
-                    _state.vertex_shader = [res.lib newFunctionWithName:@"vs_main"];
+                    if(!res.func)
+                        res.func = [res.lib newFunctionWithName:@"vs_main"];
+                    _state.vertex_shader = res.func;
                     PEN_ASSERT(_state.vertex_shader);
                     break;
                 case PEN_SHADER_TYPE_PS:
-                    _state.fragment_shader = [res.lib newFunctionWithName:@"ps_main"];
+                    if(!res.func)
+                        res.func = [res.lib newFunctionWithName:@"ps_main"];
+                    _state.fragment_shader = res.func;
                     break;
                 case PEN_SHADER_TYPE_CS:
-                    _state.compute_shader = [res.lib newFunctionWithName:@"cs_main"];
+                    if(!res.func)
+                        _state.compute_shader = [res.lib newFunctionWithName:@"cs_main"];
+                    _state.compute_shader = res.func;
                     break;
             };
         }
@@ -1151,6 +1169,7 @@ namespace pen
             _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
             _state.formats.depth_attachment = MTLPixelFormatInvalid;
             _state.formats.sample_count = 1;
+            _state.formats.num_targets = 1;
             
             if (num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
             {
@@ -1187,6 +1206,7 @@ namespace pen
 
                     _state.formats.colour_attachments[i] = _res_pool.get(colour_targets[i]).texture.fmt;
                 }
+                _state.formats.num_targets = num_colour_targets;
                 
                 // todo msaa rt
             }

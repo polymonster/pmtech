@@ -118,6 +118,7 @@ void example_setup(ecs::ecs_scene* scene, camera& main_camera)
     f32   s = -d * (f32)num_pillar_rows;
     vec3f start_pos = vec3f(s, pillar_size, s);
     vec3f pos = start_pos;
+    
     for (s32 i = 0; i < num_pillar_rows; ++i)
     {
         pos.z = start_pos.z;
