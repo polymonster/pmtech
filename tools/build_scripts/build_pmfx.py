@@ -1479,6 +1479,11 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
                 channel_pos = sv_pos + len("SV_Target")
                 if channel_pos < len(output_semantics[i]):
                     shader_source += " [[color(" + output_semantics[i][channel_pos] + ")]]"
+                else:
+                    shader_source += " [[color(0)]]"
+            sv_pos = output_semantics[i].find("SV_Depth")
+            if sv_pos != -1:
+                shader_source += " [[depth(any)]]"
             shader_source += ";\n"
         shader_source += "};\n"
 

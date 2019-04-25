@@ -774,7 +774,7 @@ namespace pen
                                          const u32* offsets)
         {
             validate_render_encoder();
-
+            
             for (u32 i = 0; i < num_buffers; ++i)
             {
                 u32 ri = buffer_indices[i];
@@ -819,18 +819,23 @@ namespace pen
             // flags & cs
             // compute command encoder
         }
-
+ 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
         {
             resource& r = _res_pool.get(buffer_index);
-            id<MTLBuffer>& bb = r.buffer.backbuffer();
             
-            u8* pdata = (u8*)[bb contents];
-            pdata = pdata + offset;
-
-            memcpy(pdata, data, data_size);
-            
-            r.buffer.swap_buffers();
+            u32 copies = r.buffer._swaps > 1 ? 1 : 2;
+            for(u32 c = 0; c < copies; ++c)
+            {
+                id<MTLBuffer>& bb = r.buffer.backbuffer();
+                
+                u8* pdata = (u8*)[bb contents];
+                pdata = pdata + offset;
+                
+                memcpy(pdata, data, data_size);
+                
+                r.buffer.swap_buffers();
+            }
         }
 
         pen_inline void create_texture(const texture_creation_params& tcp, u32 resource_slot, bool track)

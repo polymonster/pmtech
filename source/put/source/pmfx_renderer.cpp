@@ -2533,14 +2533,14 @@ namespace put
             if (!is_valid(sv.pmfx_shader))
                 return;
 
-            pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-
-            pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
-            pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
-
             if (!pmfx::set_technique_perm(sv.pmfx_shader, sv.technique))
                 PEN_ASSERT(0);
 
+            pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+            
+            pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
+            pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
+            
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 

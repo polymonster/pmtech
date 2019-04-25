@@ -129,6 +129,7 @@ namespace pen
         T _data[N];
         a_u32 _fb;
         a_u32 _bb;
+        a_u32 _swaps;
 
         multi_buffer();
 
@@ -146,6 +147,7 @@ namespace pen
         
         a_size_t _fb;
         a_size_t _bb;
+        a_u32   _swaps;
         
         multi_array_buffer();
         ~multi_array_buffer();
@@ -320,6 +322,7 @@ namespace pen
     {
         _fb = _bb.load();
         _bb = (_bb + 1) % N;
+        _swaps++;
     }
     
     template <typename T, size_t N>
@@ -353,6 +356,7 @@ namespace pen
     {
         _fb = _bb.load();
         _bb = (_bb + 1) % N;
+        _swaps++;
     }
     
     template <typename T, size_t N>
