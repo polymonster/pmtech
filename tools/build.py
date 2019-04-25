@@ -173,8 +173,6 @@ def get_platform_info():
     if renderer == "dx11":
         shader_options = "-shader_platform hlsl -platform win32 "
         shader_options += "-shader_version " + str(with_default(_info.shader_version, "4_0"))
-        print(_info.shader_version)
-        print(shader_options)
     elif renderer == "metal":
         shader_options = "-shader_platform metal -platform osx"
     else:
