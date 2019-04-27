@@ -2664,7 +2664,6 @@ namespace put
             // render state
             pen::viewport vp = {0};
             get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
-            pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
             pen::renderer_set_rasterizer_state(v.raster_state);
@@ -2718,6 +2717,7 @@ namespace put
                 // so that ping-pong buffers get unbound from rt before being bound on samplers
                 pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, a);
                 pen::renderer_clear(v.clear_state, a);
+                pen::renderer_set_viewport(vp);
 
                 // bind view samplers.. render targets, global textures
                 for (auto& sb : v.sampler_bindings)

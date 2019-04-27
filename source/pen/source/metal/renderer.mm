@@ -19,7 +19,7 @@ a_u8 g_window_resize;
 extern a_u64 g_frame_index;
 extern window_creation_params pen_window;
 
-#define NBB 3
+#define NBB 4
 
 namespace // internal structs and static vars
 {
@@ -54,16 +54,16 @@ namespace // internal structs and static vars
         id<MTLRenderCommandEncoder>  render_encoder;
         id<MTLComputeCommandEncoder> compute_encoder;
         id<MTLCommandBuffer>         cmd_buffer;
-        id<MTLDepthStencilState>     depth_stencil;
         id<CAMetalDrawable>          drawable;
         MTLRenderPassDescriptor*     pass;
         dispatch_semaphore_t         completion;
-
-        // pen -> metal
-        MTLViewport          viewport;
-        MTLScissorRect       scissor;
-        index_buffer_cmd     index_buffer;
-        u32                  input_layout;
+        index_buffer_cmd             index_buffer;
+        u32                          input_layout;
+        
+        // hashable to set on command encoder
+        MTLViewport                 viewport;
+        MTLScissorRect              scissor;
+        id<MTLDepthStencilState>    depth_stencil;
         
         // hashable to rebuild pipe
         pixel_formats        formats;
@@ -75,6 +75,7 @@ namespace // internal structs and static vars
         
         // cache
         hash_id              pipeline_hash;
+        hash_id              encoder_hash;
     };
 
     struct shader_resource
@@ -152,6 +153,7 @@ namespace // internal structs and static vars
     current_state      _state;
     a_u64              _frame_sync;
     managed_rt*        _managed_rts = nullptr;
+    u32                _frame = 0;
 }
 
 namespace // pen consts -> metal consts
@@ -477,7 +479,22 @@ namespace pen
             if (!_state.render_encoder)
             {
                 _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:_state.pass];
+                _state.encoder_hash = 0;
             }
+            
+            // only set if we need to dss, vp and scissor..
+            // todo raster state
+            
+            HashMurmur2A hh;
+            hh.begin();
+            static const size_t off = (u8*)&_state.formats - (u8*)&_state.viewport;
+            hh.add(&_state.viewport, off);
+            
+            hash_id cur = hh.end();
+            if(cur == _state.encoder_hash)
+                return;
+            
+            _state.encoder_hash = cur;
             
             [_state.render_encoder setViewport:_state.viewport];
             
@@ -841,9 +858,9 @@ namespace pen
             u32 c = r.buffer._swaps == 0 ? NBB : 1;
             
             // swap once a frame
-            if(g_frame_index != r.buffer._frame)
+            if(_frame != r.buffer._frame)
             {
-                r.buffer._frame = g_frame_index;
+                r.buffer._frame = _frame;
                 r.buffer.swap_buffers();
             }
 
@@ -867,8 +884,8 @@ namespace pen
             texture_creation_params _tcp = tcp;
             if(tcp.width == PEN_INVALID_HANDLE)
             {
-                _tcp.width = pen_window.width;
-                _tcp.height = pen_window.height;
+                _tcp.width = pen_window.width / tcp.height;
+                _tcp.height = pen_window.height / tcp.height;
                 
                 // track rt
                 if(track)
@@ -960,9 +977,11 @@ namespace pen
                     for (u32 i = 0; i < tcp.num_mips; ++i)
                     {
                         u32       pitch = _tcp.block_size * _tcp.pixels_per_block * mip_w;
-                        u32       depth_pitch = pitch * mip_h * mip_d;
+                        u32       depth_pitch = pitch * mip_h;
                         
-                        MTLRegion region = MTLRegionMake2D(0, 0, mip_w, mip_h);
+                        MTLRegion region;
+                        
+                        region = MTLRegionMake3D(0, 0, 0, mip_w, mip_h, mip_d);
                         
                         [texture replaceRegion:region
                                    mipmapLevel:i
@@ -976,13 +995,12 @@ namespace pen
                         // images may be non-pot
                         mip_w /= 2;
                         mip_h /= 2;
+                        mip_d /= 2;
                         
                         mip_w = max<u32>(1, mip_w);
                         mip_h = max<u32>(1, mip_h);
+                        mip_d = max<u32>(1, mip_d);
                     }
-                    
-                    mip_d /= 2;
-                    mip_d = max<u32>(1, mip_d);
                 }
             }
             
@@ -1070,7 +1088,7 @@ namespace pen
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
         {
-            // todo...
+            // rscp.c
         }
 
         void renderer_set_rasterizer_state(u32 rasterizer_state_index)
@@ -1160,7 +1178,7 @@ namespace pen
         {
             validate_render_encoder();
             bind_render_pipeline();
-
+            
             u32 offset = (start_index * _state.index_buffer.size_bytes);
             
             // draw calls
@@ -1420,15 +1438,42 @@ namespace pen
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
         {
+            if (_state.cmd_buffer == nil)
+                _state.cmd_buffer = [_state.command_queue commandBuffer];
+            
             if (rrbp.resource_index == 0)
             {
-                // backbuffer
+                // todo backbuffer
             }
             else
             {
                 resource& res = _res_pool[rrbp.resource_index];
                 if(res.type == RESOURCE_TEXTURE || res.type == RESOURCE_RENDER_TARGET)
                 {
+                    texture_resource& tr = res.texture;
+                    
+                    id<MTLBuffer> stage = [_metal_device newBufferWithLength:(rrbp.data_size)
+                                                                     options:MTLResourceOptionCPUCacheModeDefault];
+                    
+                    id<MTLBlitCommandEncoder> bce = [_state.cmd_buffer blitCommandEncoder];
+                    
+                        [bce copyFromTexture:tr.tex
+                                 sourceSlice:0
+                                 sourceLevel:0
+                                sourceOrigin:MTLOriginMake(0, 0, 0)
+                                  sourceSize:MTLSizeMake(tr.tcp.width, tr.tcp.height, 1)
+                                    toBuffer:stage
+                           destinationOffset:0
+                      destinationBytesPerRow:rrbp.row_pitch
+                    destinationBytesPerImage:rrbp.depth_pitch];
+                    
+                    [bce endEncoding];
+                    
+                    [_state.cmd_buffer commit];
+                    [_state.cmd_buffer waitUntilCompleted];
+                    _state.cmd_buffer = nil;
+                    
+                    rrbp.call_back_function([stage contents], rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
                 }
             }
         }
@@ -1495,6 +1540,7 @@ namespace pen
             resize_managed_targets();
             
             dispatch_semaphore_wait(_state.completion, DISPATCH_TIME_FOREVER);
+            _frame++;
         }
 
         void renderer_push_perf_marker(const c8* name)

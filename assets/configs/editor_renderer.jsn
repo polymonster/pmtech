@@ -58,7 +58,7 @@
             {
                 picking:
                 {
-                    clear_colour_u:[10000, 10000, 10000, 10000]
+                    clear_colour_u:[-1, -1, -1, -1]
                 }
             },
             clear_depth        : 1.0,
