@@ -478,7 +478,7 @@ ps_output ps_sss_reflectance( vs_output input )
     ps_output output;
     float2 tc = input.texcoord.xy;
     
-    float z = sample_texture(src_texture_1, tc).r;
+    float z = sample_texture(src_texture_1, tc).r * 0.5 + 0.5;
     
     float n = camera_view_pos.w;
     float f = camera_view_dir.w;
@@ -494,13 +494,14 @@ ps_output ps_sss_reflectance( vs_output input )
     // Calculate the final step to fetch the surrounding pixels:
     float2 final_step = w * scale * filter_info.xy;
     final_step *= 1.0 / 3.0; // Divide by 3 as the sss_kernels range from -3 to 3.
-        
-    float3 col = sample_texture(src_texture_0, tc).rgb * sss_kernel[0].rgb;
     
+    float3 col = sample_texture(src_texture_0, tc).rgb * sss_kernel[0].rgb;
+
+    float2 it = inv_texel_size[0];
     for(int i = 1; i < 25; ++i)
     {
-        float2 offset = sss_kernel[i].a * final_step * inv_texel_size[0].xy;
-        col += sample_texture(src_texture_0, tc + offset).rgb * sss_kernel[i].rgb;
+        float2 offset = sss_kernel[i].a * it.xy * final_step;
+        col += sample_texture(src_texture_0, (tc + offset)).rgb * sss_kernel[i].rgb;
     }
     
     output.colour.rgb = col;

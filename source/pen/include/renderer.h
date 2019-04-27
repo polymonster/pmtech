@@ -503,7 +503,7 @@ namespace pen
                                   u32 colour_face = 0, u32 depth_face = 0);
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target);
         void renderer_set_stream_out_target(u32 buffer_index);
-        void renderer_resolve_target(u32 target, e_msaa_resolve_type type);
+        void renderer_resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res);
 
         // resource
         void renderer_read_back_resource(const resource_read_back_params& rrbp);

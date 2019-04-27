@@ -130,6 +130,7 @@ namespace pen
         a_u32 _fb;
         a_u32 _bb;
         a_u32 _swaps;
+        u32   _frame;
 
         multi_buffer();
 
@@ -148,6 +149,7 @@ namespace pen
         a_size_t _fb;
         a_size_t _bb;
         a_u32   _swaps;
+        u32     _frame;
         
         multi_array_buffer();
         ~multi_array_buffer();
@@ -320,7 +322,7 @@ namespace pen
     template <typename T, u32 N>
     pen_inline void multi_buffer<T, N>::swap_buffers()
     {
-        _fb = _bb.load();
+        _fb = (_fb + 1) % N;
         _bb = (_bb + 1) % N;
         _swaps++;
     }
@@ -354,7 +356,7 @@ namespace pen
     template <typename T, size_t N>
     pen_inline void multi_array_buffer<T, N>::swap_buffers()
     {
-        _fb = _bb.load();
+        _fb = (_fb + 1) % N;
         _bb = (_bb + 1) % N;
         _swaps++;
     }

@@ -1182,10 +1182,12 @@ namespace put
             
             render_target* current_target = nullptr;
             size_t         num = s_render_targets.size();
+            u32 ii = 0;
             for (u32 i = 0; i < num; ++i)
             {
                 if (s_render_targets[i].id_name == target)
                 {
+                    ii = i;
                     current_target = &s_render_targets[i];
                     break;
                 }
@@ -1256,6 +1258,15 @@ namespace put
             current_target->num_arrays = params.num_arrays;
             current_target->num_mips = params.num_mips;
             current_target->collection = tcp.collection_type;
+            
+            for (u32 i = 0; i < num; ++i)
+            {
+                if (s_render_targets[i].id_name == target)
+                {
+                    s_render_targets[i] = *current_target;
+                    break;
+                }
+            }
             
             // update array count for views
             for(auto& v : s_views)
@@ -2534,7 +2545,7 @@ namespace put
                 return;
 
             if (!pmfx::set_technique_perm(sv.pmfx_shader, sv.technique))
-                PEN_ASSERT(0);
+                return;
 
             pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
             

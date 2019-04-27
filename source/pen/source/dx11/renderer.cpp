@@ -1537,8 +1537,7 @@ namespace pen
         }
     }
 
-    extern resolve_resources g_resolve_resources;
-    void                     direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type)
+    void direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res)
     {
         render_target_internal* rti = _res_pool[target].render_target;
 
@@ -1586,16 +1585,16 @@ namespace pen
 
             direct::renderer_set_resolve_targets(target, 0);
 
-            direct::renderer_update_buffer(g_resolve_resources.constant_buffer, &cbuf, sizeof(cbuf), 0);
-            direct::renderer_set_constant_buffer(g_resolve_resources.constant_buffer, 0, pen::CBUFFER_BIND_PS);
+            direct::renderer_update_buffer(res.constant_buffer, &cbuf, sizeof(cbuf), 0);
+            direct::renderer_set_constant_buffer(res.constant_buffer, 0, pen::CBUFFER_BIND_PS);
 
             pen::viewport vp = {0.0f, 0.0f, w, h, 0.0f, 1.0f};
             direct::renderer_set_viewport(vp);
 
             u32 stride = 24;
             u32 offset = 0;
-            direct::renderer_set_vertex_buffers(&g_resolve_resources.vertex_buffer, 1, 0, &stride, &offset);
-            direct::renderer_set_index_buffer(g_resolve_resources.index_buffer, PEN_FORMAT_R16_UINT, 0);
+            direct::renderer_set_vertex_buffers(&res.vertex_buffer, 1, 0, &stride, &offset);
+            direct::renderer_set_index_buffer(res.index_buffer, PEN_FORMAT_R16_UINT, 0);
 
             direct::renderer_set_texture(target, 0, 0, pen::TEXTURE_BIND_MSAA | pen::TEXTURE_BIND_PS);
 

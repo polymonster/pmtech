@@ -20,15 +20,14 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
-extern pen::window_creation_params pen_window;
-
-namespace pen
-{
-    static u32 present_timer;
-    static f32 present_time;
-
 #define MAX_COMMANDS (1 << 21)
 
+extern pen::window_creation_params pen_window;
+
+using namespace pen;
+
+namespace
+{
     enum commands : u32
     {
         CMD_NONE = 0,
@@ -83,13 +82,13 @@ namespace pen
         CMD_POP_PERF_MARKER,
         CMD_DISPATCH_COMPUTE
     };
-
+    
     struct set_shader_cmd
     {
         u32 shader_index;
         u32 shader_type;
     };
-
+    
     static const u32 k_max_colour_targets = 8;
     struct set_target_cmd
     {
@@ -98,13 +97,13 @@ namespace pen
         u32 depth;
         u32 array_index;
     };
-
+    
     struct clear_cmd
     {
         u32 clear_state;
         u32 array_index;
     };
-
+    
     struct set_vertex_buffer_cmd
     {
         u32  buffer_index;
@@ -114,21 +113,21 @@ namespace pen
         u32* strides;
         u32* offsets;
     };
-
+    
     struct set_index_buffer_cmd
     {
         u32 buffer_index;
         u32 format;
         u32 offset;
     };
-
+    
     struct draw_cmd
     {
         u32 vertex_count;
         u32 start_vertex;
         u32 primitive_topology;
     };
-
+    
     struct draw_indexed_cmd
     {
         u32 index_count;
@@ -136,7 +135,7 @@ namespace pen
         u32 base_vertex;
         u32 primitive_topology;
     };
-
+    
     struct draw_indexed_instanced_cmd
     {
         u32 instance_count;
@@ -146,7 +145,7 @@ namespace pen
         u32 base_vertex;
         u32 primitive_topology;
     };
-
+    
     struct set_texture_cmd
     {
         u32 texture_index;
@@ -154,14 +153,14 @@ namespace pen
         u32 resource_slot;
         u32 bind_flags;
     };
-
+    
     struct set_constant_buffer_cmd
     {
         u32 buffer_index;
         u32 resource_slot;
         u32 flags;
     };
-
+    
     struct update_buffer_cmd
     {
         u32   buffer_index;
@@ -169,13 +168,13 @@ namespace pen
         u32   data_size;
         u32   offset;
     };
-
+    
     struct msaa_resolve_params
     {
         u32                 render_target;
         e_msaa_resolve_type resolve_type;
     };
-
+    
     struct replace_resource
     {
         u32                 dest_handle;
@@ -188,12 +187,12 @@ namespace pen
         uint3 grid;
         uint3 num_threads;
     };
-
+    
     struct renderer_cmd
     {
         u32 command_index;
         u32 resource_slot;
-
+        
         union {
             u32                              command_data_index;
             shader_load_params               shader_load;
@@ -227,16 +226,23 @@ namespace pen
             compute_dispatch_params          cs_dispatch;
             
         };
-
+        
         renderer_cmd(){};
     };
-    static ring_buffer<renderer_cmd> s_cmd_buffer;
+    
+    u32                         _present_timer;
+    f32                         _present_time;
+    pen::resolve_resources      _resolve_resources;
+    ring_buffer<renderer_cmd>   _cmd_buffer;
+}
 
+namespace pen
+{
     void renderer_get_present_time(f32& cpu_ms, f32& gpu_ms)
     {
         extern a_u64 g_gpu_total;
 
-        cpu_ms = present_time;
+        cpu_ms = _present_time;
         gpu_ms = (f64)g_gpu_total / 1000.0 / 1000.0;
     }
 
@@ -250,8 +256,8 @@ namespace pen
 
             case CMD_PRESENT:
                 direct::renderer_present();
-                present_time = timer_elapsed_ms(present_timer);
-                timer_start(present_timer);
+                _present_time = timer_elapsed_ms(_present_timer);
+                timer_start(_present_timer);
                 break;
 
             case CMD_LOAD_SHADER:
@@ -437,7 +443,8 @@ namespace pen
                 break;
 
             case CMD_RESOLVE_TARGET:
-                direct::renderer_resolve_target(cmd.resolve_params.render_target, cmd.resolve_params.resolve_type);
+                direct::renderer_resolve_target(cmd.resolve_params.render_target,
+                                                cmd.resolve_params.resolve_type, _resolve_resources);
                 break;
 
             case CMD_DRAW_AUTO:
@@ -508,13 +515,13 @@ namespace pen
             
             semaphore_post(p_continue_semaphore, 1);
 
-            renderer_cmd* cmd = s_cmd_buffer.get();
+            renderer_cmd* cmd = _cmd_buffer.get();
             while (cmd)
             {
                 renderer_cmd foff = *cmd;
                 exec_cmd(foff);
                 
-                cmd = s_cmd_buffer.get();
+                cmd = _cmd_buffer.get();
             }
 
             return true;
@@ -538,16 +545,14 @@ namespace pen
         }
     }
 
-    resolve_resources g_resolve_resources;
-
-    struct textured_vertex
-    {
-        float x, y, z, w;
-        float u, v;
-    };
-
     void init_resolve_resources()
     {
+        struct textured_vertex
+        {
+            float x, y, z, w;
+            float u, v;
+        };
+
         textured_vertex quad_vertices[] = {
             -1.0f, -1.0f, 0.5f, 1.0f, // p1
             0.0f,  1.0f,              // uv1
@@ -576,7 +581,7 @@ namespace pen
         bcp.buffer_size = sizeof(textured_vertex) * 4;
         bcp.data = (void*)&quad_vertices[0];
 
-        g_resolve_resources.vertex_buffer = renderer_create_buffer(bcp);
+        _resolve_resources.vertex_buffer = renderer_create_buffer(bcp);
 
         // create index buffer
         u16 indices[] = {0, 1, 2, 2, 3, 0};
@@ -587,7 +592,7 @@ namespace pen
         bcp.buffer_size = sizeof(u16) * 6;
         bcp.data = (void*)&indices[0];
 
-        g_resolve_resources.index_buffer = renderer_create_buffer(bcp);
+        _resolve_resources.index_buffer = renderer_create_buffer(bcp);
 
         // create cbuffer
         bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -596,7 +601,7 @@ namespace pen
         bcp.buffer_size = sizeof(resolve_cbuffer);
         bcp.data = nullptr;
 
-        g_resolve_resources.constant_buffer = renderer_create_buffer(bcp);
+        _resolve_resources.constant_buffer = renderer_create_buffer(bcp);
     }
 
     void renderer_init(void* user_data, bool wait_for_jobs)
@@ -607,7 +612,7 @@ namespace pen
         if (!p_continue_semaphore)
             p_continue_semaphore = semaphore_create(0, 1);
 
-        s_cmd_buffer.create(MAX_COMMANDS);
+        _cmd_buffer.create(MAX_COMMANDS);
         slot_resources_init(&s_renderer_slot_resources, 2048);
 
         // initialise renderer
@@ -619,10 +624,10 @@ namespace pen
         init_resolve_resources();
 
         // create present timer for cpu perf result
-        present_timer = timer_create("renderer_present_timer");
-        timer_start(present_timer);
+        _present_timer = timer_create("renderer_present_timer");
+        timer_start(_present_timer);
 
-        present_time = 0.0f;
+        _present_time = 0.0f;
 
         if (wait_for_jobs)
             renderer_wait_for_jobs();
@@ -650,7 +655,7 @@ namespace pen
         renderer_cmd cmd;
 
         cmd.command_index = CMD_UPDATE_QUERIES;
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_clear(u32 clear_state_index, u32 array_index)
@@ -661,7 +666,7 @@ namespace pen
         cmd.clear.clear_state = clear_state_index;
         cmd.clear.array_index = array_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_present()
@@ -670,7 +675,7 @@ namespace pen
 
         cmd.command_index = CMD_PRESENT;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_load_shader(const shader_load_params& params)
@@ -702,7 +707,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -752,7 +757,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
         
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -766,7 +771,7 @@ namespace pen
         cmd.set_shader.shader_index = shader_index;
         cmd.set_shader.shader_type = shader_type;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_input_layout(const input_layout_creation_params& params)
@@ -792,7 +797,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -805,7 +810,7 @@ namespace pen
 
         cmd.command_data_index = layout_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_buffer(const buffer_creation_params& params)
@@ -826,7 +831,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -857,7 +862,7 @@ namespace pen
             cmd.set_vertex_buffer.offsets[i] = offsets[i];
         }
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
@@ -869,7 +874,7 @@ namespace pen
         cmd.set_index_buffer.format = format;
         cmd.set_index_buffer.offset = offset;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
@@ -881,7 +886,7 @@ namespace pen
         cmd.draw.start_vertex = start_vertex;
         cmd.draw.primitive_topology = primitive_topology;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
@@ -894,7 +899,7 @@ namespace pen
         cmd.draw_indexed.base_vertex = base_vertex;
         cmd.draw_indexed.primitive_topology = primitive_topology;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
@@ -910,7 +915,7 @@ namespace pen
         cmd.draw_indexed_instanced.base_vertex = base_vertex;
         cmd.draw_indexed_instanced.primitive_topology = primitive_topology;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_render_target(const texture_creation_params& tcp)
@@ -926,7 +931,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -964,7 +969,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -981,7 +986,7 @@ namespace pen
         cmd.set_shader.shader_index = shader_index;
         cmd.set_shader.shader_type = shader_type;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_buffer(u32 buffer_index)
@@ -995,7 +1000,7 @@ namespace pen
 
         cmd.command_data_index = buffer_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_texture(u32 texture_index)
@@ -1009,7 +1014,7 @@ namespace pen
 
         cmd.command_data_index = texture_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_sampler(const sampler_creation_params& scp)
@@ -1023,7 +1028,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1039,7 +1044,7 @@ namespace pen
         cmd.set_texture.resource_slot = resource_slot;
         cmd.set_texture.bind_flags = bind_flags;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp)
@@ -1053,7 +1058,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1066,7 +1071,7 @@ namespace pen
 
         cmd.command_data_index = rasterizer_state_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_set_viewport(const viewport& vp)
@@ -1077,7 +1082,7 @@ namespace pen
 
         memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_set_scissor_rect(const rect& r)
@@ -1088,7 +1093,7 @@ namespace pen
 
         memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_raster_state(u32 raster_state_index)
@@ -1102,7 +1107,7 @@ namespace pen
 
         cmd.command_data_index = raster_state_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_blend_state(const blend_creation_params& bcp)
@@ -1123,7 +1128,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1136,7 +1141,7 @@ namespace pen
 
         cmd.command_data_index = blend_state_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
@@ -1149,7 +1154,7 @@ namespace pen
         cmd.set_constant_buffer.resource_slot = resource_slot;
         cmd.set_constant_buffer.flags = flags;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
@@ -1167,7 +1172,7 @@ namespace pen
         cmd.update_buffer.data = memory_alloc(data_size);
         memcpy(cmd.update_buffer.data, data, data_size);
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp)
@@ -1184,7 +1189,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1197,7 +1202,7 @@ namespace pen
 
         cmd.command_data_index = depth_stencil_state;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target, u32 array_index)
@@ -1210,7 +1215,7 @@ namespace pen
         cmd.set_targets.depth = depth_target;
         cmd.set_targets.array_index = array_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_set_targets(u32 colour_target, u32 depth_target)
@@ -1223,7 +1228,7 @@ namespace pen
         cmd.set_targets.depth = depth_target;
         cmd.set_targets.array_index = 0;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_blend_state(u32 blend_state)
@@ -1236,7 +1241,7 @@ namespace pen
         cmd.command_index = CMD_RELEASE_BLEND_STATE;
         cmd.command_data_index = blend_state;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_render_target(u32 render_target)
@@ -1250,7 +1255,7 @@ namespace pen
 
         cmd.command_data_index = render_target;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_clear_state(u32 clear_state)
@@ -1264,7 +1269,7 @@ namespace pen
 
         cmd.command_data_index = clear_state;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_input_layout(u32 input_layout)
@@ -1278,7 +1283,7 @@ namespace pen
 
         cmd.command_data_index = input_layout;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_sampler(u32 sampler)
@@ -1292,7 +1297,7 @@ namespace pen
 
         cmd.command_data_index = sampler;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_release_depth_stencil_state(u32 depth_stencil_state)
@@ -1306,7 +1311,7 @@ namespace pen
 
         cmd.command_data_index = depth_stencil_state;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_set_stream_out_target(u32 buffer_index)
@@ -1317,7 +1322,7 @@ namespace pen
 
         cmd.command_data_index = buffer_index;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_resolve_target(u32 target, e_msaa_resolve_type type)
@@ -1329,7 +1334,7 @@ namespace pen
         cmd.resolve_params.render_target = target;
         cmd.resolve_params.resolve_type = type;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_draw_auto()
@@ -1338,7 +1343,7 @@ namespace pen
 
         cmd.command_index = CMD_DRAW_AUTO;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
     
     void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
@@ -1349,7 +1354,7 @@ namespace pen
         cmd.cs_dispatch.grid = grid;
         cmd.cs_dispatch.num_threads = num_threads;
         
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_read_back_resource(const resource_read_back_params& rrbp)
@@ -1360,7 +1365,7 @@ namespace pen
 
         cmd.rrb_params = rrbp;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
@@ -1371,7 +1376,7 @@ namespace pen
 
         cmd.replace_resource_params = {dest, src, type};
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_clear_state(const clear_state& cs)
@@ -1384,7 +1389,7 @@ namespace pen
         cmd.clear_state_params = cs;
         cmd.resource_slot = resource_slot;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1401,7 +1406,7 @@ namespace pen
         memcpy(cmd.name, name, len);
         cmd.name[len] = '\0';
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_pop_perf_marker()
@@ -1410,7 +1415,7 @@ namespace pen
 
         cmd.command_index = CMD_POP_PERF_MARKER;
 
-        s_cmd_buffer.put(cmd);
+        _cmd_buffer.put(cmd);
     }
 
     // graphics test
