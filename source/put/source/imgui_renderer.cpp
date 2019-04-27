@@ -340,7 +340,6 @@ namespace put
 
             pen::renderer_set_vertex_buffer(g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
             pen::renderer_set_index_buffer(g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);
-
             pen::renderer_set_constant_buffer(g_imgui_rs.constant_buffer, 1, pen::CBUFFER_BIND_VS);
 
             int vtx_offset = 0;

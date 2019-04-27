@@ -1338,7 +1338,7 @@ namespace pen
         
         void renderer_resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res)
         {
-            resource& res_target = _res_pool[target];
+            resource& res_target = _res_pool.get(target);
             texture_resource& t = res_target.texture;
             
             if (!t.tex_msaa)
@@ -1465,24 +1465,26 @@ namespace pen
                 
                 direct::renderer_create_render_target(manrt.tcp, manrt.rt, false);
             }
+            
+            g_window_resize = 0;
+            need_resize = false;
         }
 
         void renderer_present()
         {
-            dispatch_semaphore_wait(_state.completion, DISPATCH_TIME_FOREVER);
-            
             if (_state.render_encoder)
             {
                 [_state.render_encoder endEncoding];
                 _state.render_encoder = nil;
-                
-                [_state.cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
-                    dispatch_semaphore_signal(_state.completion);
-                }];
             }
 
             // flush cmd buf and present
             [_state.cmd_buffer presentDrawable:_state.drawable];
+            
+            [_state.cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
+                dispatch_semaphore_signal(_state.completion);
+            }];
+            
             [_state.cmd_buffer commit];
 
             // null state for next frame
@@ -1491,6 +1493,8 @@ namespace pen
             
             // resize window and managed rt
             resize_managed_targets();
+            
+            dispatch_semaphore_wait(_state.completion, DISPATCH_TIME_FOREVER);
         }
 
         void renderer_push_perf_marker(const c8* name)
