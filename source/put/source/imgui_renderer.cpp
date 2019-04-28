@@ -353,10 +353,6 @@ namespace put
                     if (pcmd->UserCallback)
                     {
                         pcmd->UserCallback(cmd_list, pcmd);
-                        
-                        pen::renderer_set_vertex_buffer(g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
-                        pen::renderer_set_index_buffer(g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);
-                        pen::renderer_set_constant_buffer(g_imgui_rs.constant_buffer, 1, pen::CBUFFER_BIND_VS);
                     }
                     else
                     {
@@ -366,6 +362,10 @@ namespace put
                         pen::rect r = {pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w};
 
                         pen::renderer_set_scissor_rect(r);
+                        
+                        pen::renderer_set_vertex_buffer(g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
+                        pen::renderer_set_index_buffer(g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);
+                        pen::renderer_set_constant_buffer(g_imgui_rs.constant_buffer, 1, pen::CBUFFER_BIND_VS);
 
                         pen::renderer_draw_indexed(pcmd->ElemCount, idx_offset, vtx_offset, PEN_PT_TRIANGLELIST);
                     }

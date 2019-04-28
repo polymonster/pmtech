@@ -478,7 +478,7 @@ ps_output ps_sss_reflectance( vs_output input )
     ps_output output;
     float2 tc = input.texcoord.xy;
     
-    float z = sample_texture(src_texture_1, tc).r * 0.5 + 0.5;
+    float z = sample_texture(src_texture_1, tc).r;
     
     float n = camera_view_pos.w;
     float f = camera_view_dir.w;

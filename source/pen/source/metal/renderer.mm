@@ -64,6 +64,7 @@ namespace // internal structs and static vars
         MTLViewport                 viewport;
         MTLScissorRect              scissor;
         id<MTLDepthStencilState>    depth_stencil;
+        u32                         raster_state;
         
         // hashable to rebuild pipe
         pixel_formats        formats;
@@ -123,6 +124,14 @@ namespace // internal structs and static vars
         metal_target_blend attachment[pen::MAX_MRT];
     };
     
+    struct metal_raster_state
+    {
+        MTLCullMode cull_mode;
+        MTLTriangleFillMode fill_mode;
+        MTLWinding winding;
+        bool scissor_enabled;
+    };
+    
     struct resource
     {
         u32 type;
@@ -136,6 +145,7 @@ namespace // internal structs and static vars
             MTLVertexDescriptor*                    vertex_descriptor;
             metal_blend_state                       blend;
             id<MTLDepthStencilState>                depth_stencil;
+            metal_raster_state                      raster_state;
         };
         
         resource() {};
@@ -439,6 +449,44 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLCompareFunctionAlways;
     }
+    
+    pen_inline MTLCullMode to_metal_cull_mode(u32 cull_mode)
+    {
+        switch(cull_mode)
+        {
+            case PEN_CULL_FRONT:
+                return MTLCullModeFront;
+            case PEN_CULL_BACK:
+                return MTLCullModeBack;
+            case PEN_CULL_NONE:
+                return MTLCullModeNone;
+        }
+        
+        PEN_ASSERT(0);
+        return MTLCullModeNone;
+    }
+    
+    pen_inline MTLTriangleFillMode to_metal_fill_mode(u32 fill_mode)
+    {
+        switch(fill_mode)
+        {
+            case PEN_FILL_SOLID:
+                return MTLTriangleFillModeFill;
+            case PEN_FILL_WIREFRAME:
+                return MTLTriangleFillModeLines;
+        }
+        
+        PEN_ASSERT(0);
+        return MTLTriangleFillModeFill;
+    }
+    
+    pen_inline MTLWinding to_metal_winding(u32 front_ccw)
+    {
+        if(front_ccw)
+            return MTLWindingCounterClockwise;
+        
+        return MTLWindingClockwise;
+    }
 }
 
 namespace pen
@@ -482,8 +530,7 @@ namespace pen
                 _state.encoder_hash = 0;
             }
             
-            // only set if we need to dss, vp and scissor..
-            // todo raster state
+            // only set if we need to: dss, vp, raster and scissor..
             
             HashMurmur2A hh;
             hh.begin();
@@ -498,11 +545,16 @@ namespace pen
             
             [_state.render_encoder setViewport:_state.viewport];
             
-            if(!g_window_resize)
-                [_state.render_encoder setScissorRect:_state.scissor];
-            
             if(_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
                 [_state.render_encoder setDepthStencilState:_state.depth_stencil];
+            
+            metal_raster_state& rs = _res_pool.get(_state.raster_state).raster_state;
+            [_state.render_encoder setCullMode: rs.cull_mode];
+            [_state.render_encoder setTriangleFillMode: rs.fill_mode];
+            [_state.render_encoder setFrontFacingWinding:rs.winding];
+            
+            if(!g_window_resize && rs.scissor_enabled)
+                [_state.render_encoder setScissorRect:_state.scissor];
         }
         
         void validate_compute_encoder()
@@ -1088,12 +1140,17 @@ namespace pen
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
         {
-            // rscp.c
+            _res_pool.insert(resource(), resource_slot);
+            metal_raster_state& rs = _res_pool.get(resource_slot).raster_state;
+            
+            rs.cull_mode = to_metal_cull_mode(rscp.cull_mode);
+            rs.fill_mode = to_metal_fill_mode(rscp.fill_mode);
+            rs.winding = to_metal_winding(rscp.front_ccw);
         }
 
         void renderer_set_rasterizer_state(u32 rasterizer_state_index)
         {
-            // todo...
+            _state.raster_state = rasterizer_state_index;
         }
 
         void renderer_set_viewport(const viewport& vp)
@@ -1112,9 +1169,7 @@ namespace pen
             _res_pool.insert(resource(), resource_slot);
             metal_blend_state& blend = _res_pool.get(resource_slot).blend;
 
-            // todo is this the right place?
             blend.alpha_to_coverage_enable = bcp.alpha_to_coverage_enable;
-
             blend.num_render_targets = bcp.num_render_targets;
 
             for (u32 i = 0; i < blend.num_render_targets; ++i)
@@ -1433,7 +1488,7 @@ namespace pen
 
         void renderer_set_stream_out_target(u32 buffer_index)
         {
-            
+            // todo vertex stream out
         }
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
@@ -1457,15 +1512,22 @@ namespace pen
                     
                     id<MTLBlitCommandEncoder> bce = [_state.cmd_buffer blitCommandEncoder];
                     
-                        [bce copyFromTexture:tr.tex
-                                 sourceSlice:0
-                                 sourceLevel:0
-                                sourceOrigin:MTLOriginMake(0, 0, 0)
-                                  sourceSize:MTLSizeMake(tr.tcp.width, tr.tcp.height, 1)
-                                    toBuffer:stage
-                           destinationOffset:0
-                      destinationBytesPerRow:rrbp.row_pitch
-                    destinationBytesPerImage:rrbp.depth_pitch];
+                    u32 w = tr.tcp.width;
+                    u32 h = tr.tcp.height;
+                    
+                    if(w == -1)
+                    {
+                        w = pen_window.width / h;
+                        h = pen_window.height / h;
+                    }
+                    
+                    [bce copyFromTexture:tr.tex
+                             sourceSlice:0
+                             sourceLevel:0
+                            sourceOrigin:MTLOriginMake(0, 0, 0)
+                              sourceSize:MTLSizeMake(w, h, 1)
+                                toBuffer:stage
+                       destinationOffset:0 destinationBytesPerRow:rrbp.row_pitch destinationBytesPerImage:rrbp.depth_pitch];
                     
                     [bce endEncoding];
                     
