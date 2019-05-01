@@ -27,7 +27,8 @@ namespace
     {
         DDS_RGBA = 0x01,
         DDS_BC = 0x04,
-        DDS_R32_FLOAT = 114
+        DDS_R32_FLOAT = 114,
+        DDS_DX10 = PEN_FOURCC('D', 'X', '1', '0')
     };
 
     enum compression_format
@@ -108,6 +109,15 @@ namespace
         u32   caps4;
         u32   reserved2;
     };
+    
+    struct dx10_header
+    {
+        u32 dxgi_format;
+        u32 resource_dimension;
+        u32 misc_flag;
+        u32 array_size;
+        u32 misc_flags2;
+    };
 
     struct texture_reference
     {
@@ -144,6 +154,22 @@ namespace
 
         return width * height * block_size;
     }
+    
+    u32 dxgi_format_to_texture_format(const dx10_header* dxh, u32& block_size)
+    {
+        switch (dxh->dxgi_format)
+        {
+            case 2:
+                block_size = 16;
+                return PEN_TEX_FORMAT_R32G32B32A32_FLOAT;
+            case 16:
+                block_size = 8;
+                return PEN_TEX_FORMAT_R32G32_FLOAT;
+        }
+        
+        PEN_ASSERT_MSG(0, "Unsupported Image Format");
+        return 0;
+    }
 
     u32 dds_pixel_format_to_texture_format(const dds_header* ddsh, bool& compressed, u32& block_size,
                                            bool& dx10_header_present)
@@ -155,7 +181,6 @@ namespace
 
         if (pixel_format.four_cc)
         {
-
             switch (pixel_format.four_cc)
             {
                 case BC1:
@@ -181,6 +206,9 @@ namespace
                 case DDS_R32_FLOAT:
                     block_size = 4;
                     return PEN_TEX_FORMAT_R32_FLOAT;
+                case DDS_DX10:
+                    dx10_header_present = true;
+                    return DDS_DX10;
             }
         }
         else
@@ -251,6 +279,16 @@ namespace
         u32  block_size;
 
         u32 format = dds_pixel_format_to_texture_format(ddsh, compressed, block_size, dx10_header_present);
+        
+        u8* top_image_start = (u8*)file_data + sizeof(dds_header);
+        if(dx10_header_present)
+        {
+            dx10_header* dxh = (dx10_header*)top_image_start;
+            
+            format = dxgi_format_to_texture_format(dxh, block_size);
+            
+            top_image_start += sizeof(dx10_header);
+        }
 
         // fill out texture_creation_params
         tcp.width = ddsh->width;
@@ -313,7 +351,6 @@ namespace
         tcp.data = pen::memory_alloc(tcp.data_size);
 
         // copy texture data into the tcp storage
-        u8* top_image_start = (u8*)file_data + sizeof(dds_header);
         memcpy(tcp.data, top_image_start, tcp.data_size);
 
         // free the files contents

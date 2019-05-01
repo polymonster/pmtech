@@ -19,10 +19,13 @@ a_u8 g_window_resize;
 extern a_u64 g_frame_index;
 extern window_creation_params pen_window;
 
-#define NBB 4
+#define NBB 6
 
 namespace // internal structs and static vars
 {
+    u32             _frame = 0;
+    id<MTLDevice>   _metal_device;
+    
     struct clear_cmd
     {
         u32 clear_state;
@@ -73,6 +76,7 @@ namespace // internal structs and static vars
         id<MTLFunction>      fragment_shader;
         id<MTLFunction>      compute_shader;
         u32                  blend_state;
+        bool                 stream_out;
         
         // cache
         hash_id              pipeline_hash;
@@ -132,12 +136,122 @@ namespace // internal structs and static vars
         bool scissor_enabled;
     };
     
+    struct dynamic_buffer
+    {
+        id<MTLBuffer> static_buffer;
+        pen::multi_buffer<id<MTLBuffer>, NBB> dynamic_buffers[32];
+        s32 _dynamic_pos;
+        u32 _buffer_size;
+        u32 _options;
+        u32 frame;
+        u32 num_dynamic;
+        
+        id<MTLBuffer> read()
+        {
+            if(_dynamic_pos == -1)
+                return static_buffer;
+
+            return dynamic_buffers[_dynamic_pos].backbuffer();
+        }
+        
+        void alloc_dynamic(u32 slot)
+        {
+            pen::multi_buffer<id<MTLBuffer>, NBB>& db = dynamic_buffers[slot];
+            db._fb = 0;
+            db._bb = NBB-1;
+            db._swaps = 0;
+            db._frame = 0;
+            
+            for(u32 i = 0; i < NBB; ++i)
+                db._data[i] = [_metal_device newBufferWithLength:_buffer_size options:_options];
+            
+            num_dynamic++;
+        }
+        
+        void init(id<MTLBuffer>* bufs, u32 num_buffers, u32 buffer_size, u32 options)
+        {
+            _buffer_size = buffer_size;
+            _options = options;
+            _frame = 0;
+            num_dynamic = 1;
+            
+            if(num_buffers == 1)
+            {
+                static_buffer = bufs[0];
+                _dynamic_pos = -1;
+            }
+            else
+            {
+                _dynamic_pos = 0;
+                
+                pen::multi_buffer<id<MTLBuffer>, NBB>& db = dynamic_buffers[0];
+                db._fb = 0;
+                db._bb = num_buffers-1;
+                db._swaps = 0;
+                db._frame = 0;
+                
+                for(u32 i = 0; i < num_buffers; ++i)
+                    db._data[i] = {bufs[i]};
+            }
+        }
+        
+        void release()
+        {
+            static_buffer = nil;
+            for(u32 i = 0; i < 10; ++i)
+                for(u32 j = 0; j < NBB; ++j)
+                    dynamic_buffers[i]._data[j] = nil;
+        }
+        
+        void update(const void* data, u32 data_size, u32 offset)
+        {
+            if(frame != _frame)
+            {
+                _dynamic_pos = 0;
+                frame = _frame;
+            }
+            else
+            {
+                _dynamic_pos++;
+            }
+            
+            if(_dynamic_pos >= num_dynamic)
+                alloc_dynamic(_dynamic_pos);
+            
+            auto& db = dynamic_buffers[_dynamic_pos];
+            
+            u32 c = db._swaps == 0 ? NBB : 1;
+            
+            // swap once a frame
+            if(_frame != db._frame)
+            {
+                db._frame = _frame;
+                db.swap_buffers();
+            }
+            
+            for(u32 i = 0; i < c; ++i)
+            {
+                id<MTLBuffer>& bb = db.backbuffer();
+                
+                u8* pdata = (u8*)[bb contents];
+                pdata = pdata + offset;
+                
+                memcpy(pdata, data, data_size);
+                
+                // first update
+                if(c == NBB)
+                    db.swap_buffers();
+            }
+        }
+    };
+    
     struct resource
     {
         u32 type;
         
         union {
-            pen::multi_buffer<id<MTLBuffer>, NBB>   buffer;
+            dynamic_buffer                          buffer;
+            //pen::multi_buffer<id<MTLBuffer>, NBB>   buffer;
             texture_resource                        texture;
             id<MTLSamplerState>                     sampler;
             shader_resource                         shader;
@@ -159,11 +273,9 @@ namespace // internal structs and static vars
 
     res_pool<resource> _res_pool;
     MTKView*           _metal_view;
-    id<MTLDevice>      _metal_device;
     current_state      _state;
     a_u64              _frame_sync;
     managed_rt*        _managed_rts = nullptr;
-    u32                _frame = 0;
 }
 
 namespace // pen consts -> metal consts
@@ -216,6 +328,8 @@ namespace // pen consts -> metal consts
                 return MTLPixelFormatBGRA8Unorm;
             case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
                 return MTLPixelFormatRGBA32Float;
+            case PEN_TEX_FORMAT_R32G32_FLOAT:
+                return MTLPixelFormatRG32Float;
             case PEN_TEX_FORMAT_R32_FLOAT:
                 return MTLPixelFormatR32Float;
             case PEN_TEX_FORMAT_R16G16B16A16_FLOAT:
@@ -611,6 +725,11 @@ namespace pen
                 ca.destinationAlphaBlendFactor = tb.dst_alpha_factor;
                 ca.writeMask = tb.write_mask;
             }
+            
+            if(_state.stream_out)
+            {
+                pipeline_desc.rasterizationEnabled = NO;
+            }
 
             pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
 
@@ -757,6 +876,8 @@ namespace pen
         void renderer_set_shader(u32 shader_index, u32 shader_type)
         {
             shader_resource& res = _res_pool.get(shader_index).shader;
+            
+            _state.stream_out = false;
 
             switch (shader_type)
             {
@@ -773,8 +894,16 @@ namespace pen
                     break;
                 case PEN_SHADER_TYPE_CS:
                     if(!res.func)
-                        _state.compute_shader = [res.lib newFunctionWithName:@"cs_main"];
+                        res.func = [res.lib newFunctionWithName:@"cs_main"];
                     _state.compute_shader = res.func;
+                    break;
+                case PEN_SHADER_TYPE_SO:
+                    if(!res.func)
+                        res.func = [res.lib newFunctionWithName:@"vs_main"];
+                    _state.vertex_shader = res.func;
+                    _state.compute_shader = nil;
+                    _state.fragment_shader = nil;
+                    _state.stream_out = true;
                     break;
             };
         }
@@ -841,13 +970,8 @@ namespace pen
 
             _res_pool.insert(resource(), resource_slot);
             
-            _res_pool.get(resource_slot).buffer._fb = 0;
-            _res_pool.get(resource_slot).buffer._bb = NBB-1;
-            _res_pool.get(resource_slot).buffer._swaps = 0;
-            _res_pool.get(resource_slot).buffer._frame = 0;
-            
-            for(u32 i = 0; i < num_bufs; ++i)
-                _res_pool.get(resource_slot).buffer._data[i] = {buf[i]};
+            dynamic_buffer& db = _res_pool.get(resource_slot).buffer;
+            db.init(&buf[0], num_bufs, params.buffer_size, options);
             
              _res_pool[resource_slot].type = RESOURCE_BUFFER;
         }
@@ -862,7 +986,7 @@ namespace pen
                 u32 ri = buffer_indices[i];
                 u32 stride = strides[i];
 
-                [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer.frontbuffer()
+                [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer.read()
                                                 offset:offsets[i] atIndex:start_slot + i];
 
                 MTLVertexBufferLayoutDescriptor* layout = [MTLVertexBufferLayoutDescriptor new];
@@ -878,7 +1002,7 @@ namespace pen
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
         {
             index_buffer_cmd& ib = _state.index_buffer;
-            ib.buffer = _res_pool.get(buffer_index).buffer.frontbuffer();
+            ib.buffer = _res_pool.get(buffer_index).buffer.read();
             ib.type = to_metal_index_format(format);
             ib.offset = offset;
             ib.size_bytes = index_size_bytes(format);
@@ -891,11 +1015,11 @@ namespace pen
             u32 bi = buffer_index;
             
             if(flags & pen::CBUFFER_BIND_VS)
-                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.frontbuffer()
+                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.read()
                                                 offset:0 atIndex:resource_slot + 8];
             
             if(flags & pen::CBUFFER_BIND_PS)
-                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.frontbuffer()
+                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.read()
                                                   offset:0 atIndex:resource_slot + 8];
             
             // flags & cs
@@ -906,29 +1030,7 @@ namespace pen
         {
             resource& r = _res_pool.get(buffer_index);
 
-            // copy to all buffers first update
-            u32 c = r.buffer._swaps == 0 ? NBB : 1;
-            
-            // swap once a frame
-            if(_frame != r.buffer._frame)
-            {
-                r.buffer._frame = _frame;
-                r.buffer.swap_buffers();
-            }
-
-            for(u32 i = 0; i < c; ++i)
-            {
-                id<MTLBuffer>& bb = r.buffer.backbuffer();
-                
-                u8* pdata = (u8*)[bb contents];
-                pdata = pdata + offset;
-                
-                memcpy(pdata, data, data_size);
-                
-                // first update
-                if(c == NBB)
-                    r.buffer.swap_buffers();
-            }
+            r.buffer.update(data, data_size, offset);
         }
 
         pen_inline texture_resource create_texture_internal(const texture_creation_params& tcp, u32 resource_slot, bool track)
@@ -1146,6 +1248,7 @@ namespace pen
             rs.cull_mode = to_metal_cull_mode(rscp.cull_mode);
             rs.fill_mode = to_metal_fill_mode(rscp.fill_mode);
             rs.winding = to_metal_winding(rscp.front_ccw);
+            rs.scissor_enabled = rscp.scissor_enable == 1;
         }
 
         void renderer_set_rasterizer_state(u32 rasterizer_state_index)
@@ -1488,11 +1591,21 @@ namespace pen
 
         void renderer_set_stream_out_target(u32 buffer_index)
         {
-            // todo vertex stream out
+            resource& ri = _res_pool.get(buffer_index);
+            
+            u32 bi = PEN_BACK_BUFFER_COLOUR;
+            renderer_set_targets(&bi, 1, 0);
+            
+            validate_render_encoder();
+            
+            [_state.render_encoder setVertexBuffer:ri.buffer.read() offset:0 atIndex:7];
         }
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
         {
+            if(g_window_resize)
+                return;
+            
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
             
@@ -1588,8 +1701,16 @@ namespace pen
             // flush cmd buf and present
             [_state.cmd_buffer presentDrawable:_state.drawable];
             
+            static a_u32 wait;
+            static bool start = true;
+            if(start)
+            {
+                start = false;
+                wait = 0;
+            }
+            
             [_state.cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
-                dispatch_semaphore_signal(_state.completion);
+                wait++;
             }];
             
             [_state.cmd_buffer commit];
@@ -1601,7 +1722,6 @@ namespace pen
             // resize window and managed rt
             resize_managed_targets();
             
-            dispatch_semaphore_wait(_state.completion, DISPATCH_TIME_FOREVER);
             _frame++;
         }
 
@@ -1652,7 +1772,7 @@ namespace pen
         void renderer_release_buffer(u32 buffer_index)
         {
             for(u32 i = 0; i < NBB; ++i)
-                _res_pool.get(buffer_index).buffer._data[i] = nil;
+                _res_pool.get(buffer_index).buffer.release();
         }
 
         void renderer_release_texture(u32 texture_index)

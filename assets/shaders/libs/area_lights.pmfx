@@ -1,0 +1,206 @@
+float integrate_edge(float3 v1, float3 v2)
+{
+    float cos_theta = dot(v1, v2);
+    float theta = acos(cos_theta);    
+    float res = cross(v1, v2).z * ((theta > 0.001) ? theta/sin(theta) : 1.0);
+    return res;
+}
+
+
+void clip_quad_to_horizon(inout float3 L[5], out int n)
+{
+    // detect clipping config
+    int config = 0;
+    if (L[0].z > 0.0) config += 1;
+    if (L[1].z > 0.0) config += 2;
+    if (L[2].z > 0.0) config += 4;
+    if (L[3].z > 0.0) config += 8;
+
+    // clip
+    n = 0;
+
+    if (config == 0)
+    {
+        // clip all
+    }
+    else if (config == 1) // V1 clip V2 V3 V4
+    {
+        n = 3;
+        L[1] = -L[1].z * L[0] + L[0].z * L[1];
+        L[2] = -L[3].z * L[0] + L[0].z * L[3];
+    }
+    else if (config == 2) // V2 clip V1 V3 V4
+    {
+        n = 3;
+        L[0] = -L[0].z * L[1] + L[1].z * L[0];
+        L[2] = -L[2].z * L[1] + L[1].z * L[2];
+    }
+    else if (config == 3) // V1 V2 clip V3 V4
+    {
+        n = 4;
+        L[2] = -L[2].z * L[1] + L[1].z * L[2];
+        L[3] = -L[3].z * L[0] + L[0].z * L[3];
+    }
+    else if (config == 4) // V3 clip V1 V2 V4
+    {
+        n = 3;
+        L[0] = -L[3].z * L[2] + L[2].z * L[3];
+        L[1] = -L[1].z * L[2] + L[2].z * L[1];
+    }
+    else if (config == 5) // V1 V3 clip V2 V4) impossible
+    {
+        n = 0;
+    }
+    else if (config == 6) // V2 V3 clip V1 V4
+    {
+        n = 4;
+        L[0] = -L[0].z * L[1] + L[1].z * L[0];
+        L[3] = -L[3].z * L[2] + L[2].z * L[3];
+    }
+    else if (config == 7) // V1 V2 V3 clip V4
+    {
+        n = 5;
+        L[4] = -L[3].z * L[0] + L[0].z * L[3];
+        L[3] = -L[3].z * L[2] + L[2].z * L[3];
+    }
+    else if (config == 8) // V4 clip V1 V2 V3
+    {
+        n = 3;
+        L[0] = -L[0].z * L[3] + L[3].z * L[0];
+        L[1] = -L[2].z * L[3] + L[3].z * L[2];
+        L[2] =  L[3];
+    }
+    else if (config == 9) // V1 V4 clip V2 V3
+    {
+        n = 4;
+        L[1] = -L[1].z * L[0] + L[0].z * L[1];
+        L[2] = -L[2].z * L[3] + L[3].z * L[2];
+    }
+    else if (config == 10) // V2 V4 clip V1 V3) impossible
+    {
+        n = 0;
+    }
+    else if (config == 11) // V1 V2 V4 clip V3
+    {
+        n = 5;
+        L[4] = L[3];
+        L[3] = -L[2].z * L[3] + L[3].z * L[2];
+        L[2] = -L[2].z * L[1] + L[1].z * L[2];
+    }
+    else if (config == 12) // V3 V4 clip V1 V2
+    {
+        n = 4;
+        L[1] = -L[1].z * L[2] + L[2].z * L[1];
+        L[0] = -L[0].z * L[3] + L[3].z * L[0];
+    }
+    else if (config == 13) // V1 V3 V4 clip V2
+    {
+        n = 5;
+        L[4] = L[3];
+        L[3] = L[2];
+        L[2] = -L[1].z * L[2] + L[2].z * L[1];
+        L[1] = -L[1].z * L[0] + L[0].z * L[1];
+    }
+    else if (config == 14) // V2 V3 V4 clip V1
+    {
+        n = 5;
+        L[4] = -L[0].z * L[3] + L[3].z * L[0];
+        L[0] = -L[0].z * L[1] + L[1].z * L[0];
+    }
+    else if (config == 15) // V1 V2 V3 V4
+    {
+        n = 4;
+    }
+    
+    if (n == 3)
+        L[3] = L[0];
+    if (n == 4)
+        L[4] = L[0];
+}
+
+float2 ltc_uv_coord(float3 p[4])
+{
+    // area light plane basis
+    float3 v1 = p[1] - p[0];
+    float3 v2 = p[3] - p[0];
+    float3 plane_ortho = (cross(v1, v2));
+    
+    float plane_area_squared = dot(plane_ortho, plane_ortho);
+    float plane_distx_plane_area = dot(plane_ortho, p[0]);
+    
+    // orthonormal projection of (0,0,0) in area light space
+    float3 pp = plane_distx_plane_area * plane_ortho / plane_area_squared - p[0];
+
+    // find tex coords of pp
+    float v1_dot_v2 = dot(v1, v2);
+    float inv_v1_dot_v1 = 1.0 / dot(v1, v1);
+    float3 vv2 = v2 - v1 * v1_dot_v2 * inv_v1_dot_v1;
+    
+    float2 puv;
+    puv.y = dot(vv2, pp) / dot(vv2, vv2);
+    puv.x = dot(v1, pp) * inv_v1_dot_v1 - v1_dot_v2 * inv_v1_dot_v1 * puv.y;
+
+    // LOD
+    float d = abs(plane_distx_plane_area) / pow(plane_area_squared, 0.75);
+    
+    return puv;
+}
+
+float3 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4], bool two_sided)
+{
+    // construct orthonormal basis around N
+    float3 t1, t2;
+    t1 = normalize(v - n * dot(v, n));
+    t2 = cross(n, t1);
+
+    // rotate area light in (T1, T2, N) basis
+    minv = mul(minv, transpose(float3x3(t1, t2, n)));
+
+    // polygon (allocate 5 vertices for clipping)
+    float3 l[5];
+    l[0] = mul(minv, points[0] - p);
+    l[1] = mul(minv, points[1] - p);
+    l[2] = mul(minv, points[2] - p);
+    l[3] = mul(minv, points[3] - p);
+    
+    //uv
+    float3 ll[4];
+    ll[0] = l[0];
+    ll[1] = l[1];
+    ll[2] = l[2];
+    ll[3] = l[3];
+    
+    float2 uv = ltc_uv_coord(ll);
+
+    int nc;
+    clip_quad_to_horizon(l, nc);
+    
+    if (nc == 0)
+        return float3(0, 0, 0);
+    
+    l[0] = normalize(l[0]);
+    l[1] = normalize(l[1]);
+    l[2] = normalize(l[2]);
+    l[3] = normalize(l[3]);
+    l[4] = normalize(l[4]);
+    
+    float sum = 0.0;
+
+    sum += integrate_edge(l[0], l[1]);
+    sum += integrate_edge(l[1], l[2]);
+    sum += integrate_edge(l[2], l[3]);
+    
+    if (nc >= 4)
+        sum += integrate_edge(l[3], l[4]);
+        
+    if (nc == 5)
+        sum += integrate_edge(l[4], l[0]);
+
+    sum = two_sided ? abs(sum) : max(0.0, sum);
+
+    float3 lo_i = float3(sum, sum, sum);
+    
+    lo_i = float3(uv.x, uv.y, sum);
+    
+    return lo_i;
+}

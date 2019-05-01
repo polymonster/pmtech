@@ -323,6 +323,8 @@ namespace put
 
         void render(ImDrawData* draw_data)
         {
+            update_dynamic_buffers(draw_data);
+            
             // set to main viewport
             pen::viewport vp = {0.0f, 0.0f, (f32)ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, 0.0f, 1.0};
 
@@ -330,17 +332,11 @@ namespace put
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
 
-            update_dynamic_buffers(draw_data);
-
             pen::renderer_set_rasterizer_state(g_imgui_rs.raster_state);
             pen::renderer_set_blend_state(g_imgui_rs.blend_state);
             pen::renderer_set_depth_stencil_state(g_imgui_rs.depth_stencil_state);
 
             pmfx::set_technique(g_imgui_rs.imgui_shader, 0);
-
-            pen::renderer_set_vertex_buffer(g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
-            pen::renderer_set_index_buffer(g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);
-            pen::renderer_set_constant_buffer(g_imgui_rs.constant_buffer, 1, pen::CBUFFER_BIND_VS);
 
             int vtx_offset = 0;
             int idx_offset = 0;

@@ -566,6 +566,14 @@ namespace put
                     pen::renderer_update_buffer(cbuffer_shadow, &s_shadow_matrices[0], sizeof(mat4) * 100);
                     pen::renderer_set_constant_buffer(cbuffer_shadow, 4, pen::CBUFFER_BIND_PS);
                 }
+                
+                // ltc lookups
+                static u32 ltc_mat = put::load_texture("data/textures/util/ltc_mat_x.dds");
+                static u32 ltc_mag = put::load_texture("data/textures/util/ltc_amp_d.dds");
+                static u32 clamp_linear = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+                
+                pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
+                pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
             }
 
             // sdf shadows
@@ -1471,17 +1479,15 @@ namespace put
                         bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
 
                     pen::renderer_update_buffer(geom.p_skin->bone_cbuffer, bb, sizeof(bb));
-                    pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
-
+                    
                     // bind stream out targets
                     cmp_pre_skin& pre_skin = scene->pre_skin[n];
                     pen::renderer_set_stream_out_target(geom.vertex_buffer);
-
+                    pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
                     pen::renderer_set_vertex_buffer(pre_skin.vertex_buffer, 0, pre_skin.vertex_size, 0);
 
                     // render point list
                     pen::renderer_draw(pre_skin.num_verts, 0, PEN_PT_POINTLIST);
-
                     pen::renderer_set_stream_out_target(0);
                 }
             }

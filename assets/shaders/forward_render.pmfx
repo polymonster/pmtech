@@ -2,6 +2,7 @@
 #include "libs/skinning.pmfx"
 #include "libs/globals.pmfx"
 #include "libs/sdf.pmfx"
+#include "libs/area_lights.pmfx"
 
 // vs inputs
 struct vs_input
@@ -111,6 +112,9 @@ declare_texture_samplers
     texture_2d( specular_texture, 2 );    
     texture_3d( sdf_volume, 14 );
     texture_2d_array( shadowmap_texture, 15 );
+    
+    texture_2d( ltc_mat, 13 );
+    texture_2d( ltc_mag, 12 );
 };
 
 vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_input )
@@ -491,6 +495,59 @@ ps_output ps_forward_lit( vs_output input )
         
         
         lit_colour += light_col;
+    }
+    
+    // area lights
+    if:(0)
+    {
+        const float pi = 3.14159265359;
+        
+        float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
+        //v = camera_view_dir.xyz;
+        
+        float3 pos = input.world_pos.xyz;
+        
+        float3 points[4];
+        points[0] = float3(-20.0, 2.0, -20.0);
+        points[1] = float3( 20.0, 2.0, -20.0);
+        points[2] = float3( 20.0, 12.0, -20.0);
+        points[3] = float3( -20.0, 12.0,- 20.0);
+    
+        float LUT_SIZE  = 64.0;
+        float LUT_SCALE = (LUT_SIZE - 1.0)/LUT_SIZE;
+        float LUT_BIAS  = 0.5/LUT_SIZE;
+
+        float theta = acos(dot(n, v));
+        float2 uv = float2(0.2, theta / (0.5 * pi));
+        uv = uv * LUT_SCALE + LUT_BIAS;
+        
+        float4 tt = sample_texture(ltc_mat, uv);
+        
+        float3x3 minv = float3x3(
+            float3(1.0, 0.0, tt.y),
+            float3(0.0, tt.z, 0.0),
+            float3(tt.w, 0.0, tt.x)
+        );
+        
+        float3 spec = ltc_evaluate(n, v, pos, minv, points, true);
+        
+        float3 ss = sample_texture( diffuse_texture, spec.xy ).rgb * spec.z;
+        
+        spec = ss * sample_texture(ltc_mag, uv).w;
+        
+        float3 diff = ltc_evaluate(n, v, pos, float3x3(1), points, true) * albedo.rgb;
+        
+        float3 ds = sample_texture( diffuse_texture, diff.xy ).rgb * diff.z;
+        
+        diff = ds;
+        
+        lit_colour = (spec + diff) / (2.0 * pi);
+        
+        float3 lp = (points[0] + points[1] * diff.x);
+        lp += (points[0] + points[3] * diff.y);
+        
+        float s = sdf_shadow_trace(max_samples, lp, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
+        lit_colour *= smoothstep( 0.0, 0.1, s);
     }
 
     output.colour.rgb = lit_colour.rgb;    

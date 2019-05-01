@@ -1372,7 +1372,11 @@ def metal_functions(functions, cbuffers, textures):
                 if not ref:
                     sig += arg
                 else:
-                    sig += address_space + " " + toks[1] + "& " + toks[2]
+                    array = toks[2].find("[")
+                    if array == -1:
+                        sig += address_space + " " + toks[1] + "& " + toks[2]
+                    else:
+                        sig += address_space + " " + toks[1] + "* " + toks[2][:array]
         # find used cbuf memb
         func = sig + fb
         final_funcs += func
@@ -1409,6 +1413,11 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
 
     # struct decls
     shader_source += _tp.struct_decls
+
+    stream_out = False
+    if "stream_out" in _tp.technique.keys():
+        if _tp.technique["stream_out"]:
+            stream_out = True
 
     # cbuffer decls
     metal_cbuffers = []
@@ -1498,6 +1507,10 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     shader_source += function_source
 
     # main decl
+    stream_out_name = _shader.output_struct_name
+    if stream_out:
+        _shader.output_struct_name = "void"
+
     shader_source += main_type[_shader.shader_type] + " "
     shader_source += _shader.output_struct_name + " " + _shader.shader_type + "_main" + "("
 
@@ -1517,6 +1530,10 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         shader_source += _shader.input_struct_name + " input [[stage_in]]"
     elif _shader.shader_type == "cs":
         shader_source += "uint2 gid[[thread_position_in_grid]]"
+
+    # vertex stream out
+    if stream_out:
+        shader_source += "\n,  device " + stream_out_name + "* stream_out_vertices" + "[[buffer(7)]]"
 
     # pass in textures
     invalid = ["", "\n"]
@@ -1581,11 +1598,14 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
             shader_source += ";\n"
 
     main_func_body = _shader.main_func_source.find("{") + 1
-    main_body_source =  _shader.main_func_source[main_func_body:]
+    main_body_source = _shader.main_func_source[main_func_body:]
     main_body_source = insert_function_sig_additions(main_body_source, function_sig_additions)
 
     shader_source += main_body_source
     shader_source = format_source(shader_source, 4)
+
+    if stream_out:
+        shader_source = shader_source.replace("return output;", "stream_out_vertices[vid] = output;")
 
     temp_path = os.path.join(_info.root_dir, "temp", pmfx_name)
     output_path = os.path.join(_info.output_dir, pmfx_name)

@@ -660,7 +660,6 @@ namespace put
 
             // technique / permutation
             material->technique_index = pmfx::get_technique_index_perm(material->shader, resource->id_technique, permutation);
-
             PEN_ASSERT(is_valid(material->technique_index));
 
             // material / technique constant buffers
