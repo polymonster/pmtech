@@ -327,15 +327,24 @@ namespace put
             bcp.data = nullptr;
 
             new_instance.scene->sdf_shadow_buffer = pen::renderer_create_buffer(bcp);
-
+            
+            // shadow maps
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = sizeof(mat4) * MAX_SHADOW_MAPS;
+            bcp.data = nullptr;
+            
+            new_instance.scene->shadow_map_buffer = pen::renderer_create_buffer(bcp);
+            
             // area lights
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size = sizeof(area_box_light_buffer);
+            bcp.buffer_size = sizeof(area_light_buffer);
             bcp.data = nullptr;
-
-            new_instance.scene->area_box_light_buffer = pen::renderer_create_buffer(bcp);
+            
+            new_instance.scene->area_light_buffer = pen::renderer_create_buffer(bcp);
 
             return new_instance.scene;
         }
@@ -348,15 +357,12 @@ namespace put
             // geom
             // anim
         }
-        
-        // todo. move this into ecs_scene
-        static u32 cbuffer_shadow = PEN_INVALID_HANDLE;
-        mat4 s_shadow_matrices[100];
+
         void render_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
             
-            // count shadow maps
+            // count shadow maps and resize buffers
             u32 num_shadows = 0;
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
@@ -383,18 +389,6 @@ namespace put
                 pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
             }
             
-            if(!is_valid(cbuffer_shadow))
-            {
-                pen::buffer_creation_params bcp;
-                bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size = sizeof(mat4) * 100;
-                bcp.data = nullptr;
-                
-                cbuffer_shadow = pen::renderer_create_buffer(bcp);
-            }
-            
             static u32 cb_view = PEN_INVALID_HANDLE;
             if(!is_valid(cb_view))
             {
@@ -408,6 +402,7 @@ namespace put
                 cb_view = pen::renderer_create_buffer(bcp);
             }
             
+            static mat4 shadow_matrices[MAX_SHADOW_MAPS];
             u32 shadow_index = 0;
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
@@ -438,11 +433,17 @@ namespace put
                 if (pen::renderer_viewport_vup())
                     shadow_vp = scale * (cam.proj * cam.view);
                 
-                s_shadow_matrices[shadow_index-1] = shadow_vp;
+                shadow_matrices[shadow_index-1] = shadow_vp;
                 
                 vv.cb_view = cb_view;
                 
                 render_scene_view(vv);
+            }
+            
+            // update cbuffer
+            if(is_valid(scene->shadow_map_buffer))
+            {
+                pen::renderer_update_buffer(scene->shadow_map_buffer, &shadow_matrices[0], sizeof(mat4) * MAX_SHADOW_MAPS);
             }
         }
 
@@ -560,12 +561,7 @@ namespace put
             if (view.render_flags & RENDER_FORWARD_LIT)
             {
                 pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
-                
-                if(is_valid(cbuffer_shadow))
-                {
-                    pen::renderer_update_buffer(cbuffer_shadow, &s_shadow_matrices[0], sizeof(mat4) * 100);
-                    pen::renderer_set_constant_buffer(cbuffer_shadow, 4, pen::CBUFFER_BIND_PS);
-                }
+                pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
                 
                 // ltc lookups
                 static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
@@ -1139,7 +1135,6 @@ namespace put
                     cmp_transform& t = scene->transforms[n];
                     cmp_transform& pt = scene->physics_offset[n];
 
-                    mat4 physics_mat = physics::get_rb_matrix(scene->physics_handles[n]);
                     mat4 scale_mat = mat::create_scale(t.scale);
                     
                     vec3f os = t.scale;
@@ -1421,26 +1416,7 @@ namespace put
 
                 pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
             }
-
-            // Area box lights
-            for (s32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (!(scene->entities[n] & CMP_LIGHT))
-                    continue;
-
-                if (scene->lights[n].type != LIGHT_TYPE_AREA_BOX)
-                    continue;
-
-                static area_box_light_buffer abl_buffer;
-
-                abl_buffer.area_lights.world_matrix = scene->world_matrices[n];
-                abl_buffer.area_lights.world_matrix_inverse = mat::inverse4x4(scene->world_matrices[n]);
-
-                pen::renderer_update_buffer(scene->area_box_light_buffer, &abl_buffer, sizeof(abl_buffer));
-
-                pen::renderer_set_constant_buffer(scene->area_box_light_buffer, 6, pen::CBUFFER_BIND_PS);
-            }
-
+            
             // Shadow maps
             for (s32 n = 0; n < scene->num_entities; ++n)
             {

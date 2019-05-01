@@ -123,7 +123,8 @@ namespace put
         enum e_scene_limits
         {
             MAX_FORWARD_LIGHTS = 100,
-            MAX_SHADOW_MAPS = 1,
+            MAX_AREA_LIGHTS = 10,
+            MAX_SHADOW_MAPS = 100,
             MAX_SDF_SHADOWS = 1
         };
 
@@ -319,16 +320,17 @@ namespace put
         {
             distance_field_shadow shadows;
         };
-
-        struct area_box_light
+        
+        struct area_light
         {
-            mat4 world_matrix;
-            mat4 world_matrix_inverse;
+            vec4f corners[4];
+            vec4f colour;      // w can hold the index of a texture array slice to sample.
         };
-
-        struct area_box_light_buffer
+        
+        struct area_light_buffer
         {
-            area_box_light area_lights;
+            vec4f info;
+            area_light lights[MAX_AREA_LIGHTS];
         };
 
         struct free_node_list
@@ -444,7 +446,8 @@ namespace put
             free_node_list* free_list_head = nullptr;
             u32             forward_light_buffer = PEN_INVALID_HANDLE;
             u32             sdf_shadow_buffer = PEN_INVALID_HANDLE;
-            u32             area_box_light_buffer = PEN_INVALID_HANDLE;
+            u32             area_light_buffer = PEN_INVALID_HANDLE;
+            u32             shadow_map_buffer = PEN_INVALID_HANDLE;
             s32             selected_index = -1;
             u32             flags = 0;
             u32             view_flags = 0;

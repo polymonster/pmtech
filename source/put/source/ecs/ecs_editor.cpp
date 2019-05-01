@@ -2255,7 +2255,7 @@ namespace put
                 if (scene->entities[selected_index] & CMP_LIGHT)
                 {
                     bool changed = ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type,
-                                                "Directional\0Point\0Spot\0Area Box (wip)\0", 4);
+                                                "Directional\0Point\0Spot\0Area\0", 4);
 
                     if (snl.azimuth == 0.0f && snl.altitude == 0.0f)
                         maths::xyz_to_azimuth_altitude(snl.direction, snl.azimuth, snl.altitude);
@@ -2286,6 +2286,8 @@ namespace put
                             break;
 
                         case LIGHT_TYPE_AREA_BOX:
+                            edited |= ImGui::SliderFloat("Width", &snl.radius, 0.0f, 100.0f);
+                            edited |= ImGui::SliderFloat("Height", &snl.spot_falloff, 0.0f, 100.0f);
                             break;
                     }
 
