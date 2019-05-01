@@ -568,8 +568,8 @@ namespace put
                 }
                 
                 // ltc lookups
-                static u32 ltc_mat = put::load_texture("data/textures/util/ltc_mat_x.dds");
-                static u32 ltc_mag = put::load_texture("data/textures/util/ltc_amp_d.dds");
+                static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
+                static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
                 static u32 clamp_linear = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
                 
                 pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
