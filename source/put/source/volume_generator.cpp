@@ -1475,8 +1475,6 @@ namespace put
                     sdf_material->shader_name = "pmfx_utility";
                     sdf_material->id_shader = PEN_HASH("pmfx_utility");
                     sdf_material->id_technique = PEN_HASH("volume_sdf");
-                    sdf_material->id_sampler_state[SN_VOLUME_TEXTURE] = ss;
-                    sdf_material->texture_handles[SN_VOLUME_TEXTURE] = gv.texture;
                     add_material_resource(sdf_material);
 
                     f32 single_scale = component_wise_max((s_sdf_job.scene_extents.max - s_sdf_job.scene_extents.min) / 2.0f);
@@ -1491,6 +1489,9 @@ namespace put
                     s_main_scene->transforms[new_prim].translation = pos;
                     s_main_scene->entities[new_prim] |= CMP_TRANSFORM | CMP_SDF_SHADOW;
                     s_main_scene->parents[new_prim] = new_prim;
+                    s_main_scene->samplers[new_prim].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
+                    s_main_scene->samplers[new_prim].sb[0].handle = gv.texture;
+                    s_main_scene->samplers[new_prim].sb[0].sampler_state = ss;
 
                     instantiate_geometry(cube, s_main_scene, new_prim);
                     instantiate_material(sdf_material, s_main_scene, new_prim);

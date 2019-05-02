@@ -633,6 +633,27 @@ namespace put
                 cmp_geometry* p_geom = &scene->geometries[n];
                 cmp_material* p_mat = &scene->materials[n];
                 u32           permutation = scene->material_permutation[n];
+                
+                // set shader / technique
+                if (!is_valid(view.pmfx_shader))
+                {
+                    // material shader / technique
+                    pmfx::set_technique(p_mat->shader, p_mat->technique_index);
+                }
+                else
+                {
+                    bool set = pmfx::set_technique_perm(view.pmfx_shader, view.technique, permutation);
+                    if (!set)
+                    {
+                        if (scene->entities[n] & CMP_MASTER_INSTANCE)
+                        {
+                            u32 num_instances = scene->master_instances[n].num_instances;
+                            n += num_instances;
+                        }
+                        PEN_ASSERT(0);
+                        continue;
+                    }
+                }
 
                 // update skin
                 if (scene->entities[n] & CMP_SKINNED && !(scene->entities[n] & CMP_SUB_GEOMETRY))
@@ -656,27 +677,6 @@ namespace put
                     
                     pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
                     pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
-                }
-
-                // set shader / technique
-                if (!is_valid(view.pmfx_shader))
-                {
-                    // material shader / technique
-                    pmfx::set_technique(p_mat->shader, p_mat->technique_index);
-                }
-                else
-                {
-                    bool set = pmfx::set_technique_perm(view.pmfx_shader, view.technique, permutation);
-                    if (!set)
-                    {
-                        if (scene->entities[n] & CMP_MASTER_INSTANCE)
-                        {
-                            u32 num_instances = scene->master_instances[n].num_instances;
-                            n += num_instances;
-                        }
-                        PEN_ASSERT(0);
-                        continue;
-                    }
                 }
 
                 // set material cbs
@@ -714,6 +714,9 @@ namespace put
                     {
                         if (!samplers.sb[s].handle)
                             continue;
+                        
+                        if(samplers.sb[s].sampler_unit == 4)
+                            PEN_LOG("hit");
 
                         pen::renderer_set_texture(samplers.sb[s].handle, samplers.sb[s].sampler_state,
                                                   samplers.sb[s].sampler_unit, pen::TEXTURE_BIND_PS);
