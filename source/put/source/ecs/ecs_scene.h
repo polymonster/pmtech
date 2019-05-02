@@ -82,7 +82,7 @@ namespace put
             LIGHT_TYPE_DIR = 0,
             LIGHT_TYPE_POINT = 1,
             LIGHT_TYPE_SPOT = 2,
-            LIGHT_TYPE_AREA_BOX = 3
+            LIGHT_TYPE_AREA = 3
         };
         static const f32 k_dir_light_offset = 1000000.0f;
 

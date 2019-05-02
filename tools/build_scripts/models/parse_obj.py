@@ -131,7 +131,7 @@ def calc_normals(vb):
 
 
 def grow_extents(v, min, max):
-    for i in range(0,3,1):
+    for i in range(0, 3, 1):
         if float(v[i]) < min[i]:
             min[i] = float(v[i])
         if float(v[i]) > max[i]:
@@ -170,7 +170,14 @@ def write_geometry(file, root):
     for line in obj_data:
         if line.find("pmtech_flip_winding") != -1:
             flip_winding = True
-        element = line.split(' ')
+        element_raw = line.split(' ')
+        element = []
+        # strip dead elems
+        for e in element_raw:
+            if e != '':
+                element.append(e)
+        if len(element) == 0:
+            continue
         for vv in vertex_info:
             if element[0] == 'v':
                 grow_extents(element[1:], min_extents, max_extents)
@@ -237,8 +244,6 @@ def write_geometry(file, root):
         if element[0] == 'usemtl':
             if not cur_mesh:
                 cur_mesh = (basename, element[0], [], [], [], [])
-            else:
-                cur_mesh[mat_name] = element[0]
 
     if cur_mesh:
         meshes.append(cur_mesh)

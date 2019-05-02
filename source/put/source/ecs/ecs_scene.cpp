@@ -557,11 +557,12 @@ namespace put
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
-            // fwd lights
+            // fwd lights¯
             if (view.render_flags & RENDER_FORWARD_LIT)
             {
                 pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
                 pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
+                pen::renderer_set_constant_buffer(scene->area_light_buffer, 6, pen::CBUFFER_BIND_PS);
                 
                 // ltc lookups
                 static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
@@ -1400,7 +1401,43 @@ namespace put
             light_buffer.info = vec4f(num_directions_lights, num_point_lights, num_spot_lights, 0.0f);
 
             pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
-
+            
+            // Area light buffer
+            static area_light_buffer al_buffer;
+            
+            u32 num_area_lights = 0;
+            for (s32 n = 0; n < scene->num_entities; ++n)
+            {
+                if (num_lights >= MAX_FORWARD_LIGHTS)
+                    break;
+                
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                cmp_light& l = scene->lights[n];
+                mat4& wm = scene->world_matrices[n];
+                
+                if (l.type != LIGHT_TYPE_AREA)
+                    continue;
+                
+                static vec4f corners[] = {
+                    vec4f(-1.0, 0.0, -1.0, 1.0),
+                    vec4f(1.0, 0.0, -1.0, 1.0),
+                    vec4f(1.0, 0.0, 1.0, 1.0),
+                    vec4f(-1.0, 0.0, 1.0, 1.0)
+                };
+                
+                for(u32 c = 0; c < 4; ++c)
+                    al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners[c]);
+                
+                al_buffer.lights[num_area_lights].colour = vec4f(1.0, 0.0, 1.0, 1.0);
+                ++num_area_lights;
+            }
+            
+            al_buffer.info.x = num_area_lights;
+            
+            pen::renderer_update_buffer(scene->area_light_buffer, &al_buffer, sizeof(al_buffer));
+            
             // Distance field shadows
             for (s32 n = 0; n < scene->num_entities; ++n)
             {

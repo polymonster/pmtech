@@ -2285,7 +2285,7 @@ namespace put
                             snl.spot_falloff = max(snl.spot_falloff, 0.001f);
                             break;
 
-                        case LIGHT_TYPE_AREA_BOX:
+                        case LIGHT_TYPE_AREA:
                             edited |= ImGui::SliderFloat("Width", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::SliderFloat("Height", &snl.spot_falloff, 0.0f, 100.0f);
                             break;
@@ -2321,7 +2321,7 @@ namespace put
 
                         scene->world_matrices[s] = mat4::create_identity();
 
-                        // basic defaultsa
+                        // basic defaults
                         snl.colour = vec3f::white();
                         snl.radius = 1.0f;
                         snl.spot_falloff = 0.001f;
@@ -3121,7 +3121,7 @@ namespace put
                     }
                     break;
 
-                    case LIGHT_TYPE_AREA_BOX:
+                    case LIGHT_TYPE_AREA:
                     {
                         dbg::add_obb(scene->world_matrices[n], vec4f(snl.colour, 1.0f));
                     }

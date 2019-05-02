@@ -428,6 +428,12 @@ namespace put
             scene->transforms[node_index].scale = vec3f(rad, rad, rad);
             scene->entities[node_index] |= CMP_TRANSFORM;
         }
+        
+        void instantiate_area_light(ecs_scene* scene, u32 node_index)
+        {
+            geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
+            instantiate_geometry(gr, scene, node_index);
+        }
 
         void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)
         {

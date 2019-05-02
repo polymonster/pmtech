@@ -677,13 +677,7 @@ pmfx:
         "vs": "vs_main_volume_texture",
         "ps": "ps_shadow_sdf"
     },
-    
-    "area_box_light":
-    {
-        "vs": "vs_main_volume_texture",
-        "ps": "ps_area_box_light"
-    },
-    
+
     "picking":
     {
         "vs": "vs_picking",
