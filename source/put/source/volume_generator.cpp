@@ -1492,6 +1492,8 @@ namespace put
                     s_main_scene->samplers[new_prim].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
                     s_main_scene->samplers[new_prim].sb[0].handle = gv.texture;
                     s_main_scene->samplers[new_prim].sb[0].sampler_state = ss;
+                    s_main_scene->shadows[new_prim].texture_handle = gv.texture;
+                    s_main_scene->shadows[new_prim].sampler_state = ss;
 
                     instantiate_geometry(cube, s_main_scene, new_prim);
                     instantiate_material(sdf_material, s_main_scene, new_prim);

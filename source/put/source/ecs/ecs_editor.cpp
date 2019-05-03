@@ -2364,13 +2364,17 @@ namespace put
             {
                 s32 caster_type = 0;
                 if (scene->entities[si] & CMP_SDF_SHADOW)
+                {
                     caster_type = 2;
-
-                if (scene->entities[si] & CMP_GEOMETRY)
-                    caster_type = 1;
-
-                if (scene->state_flags[si] & SF_NO_SHADOW)
-                    caster_type = 0;
+                }
+                else
+                {
+                    if (scene->entities[si] & CMP_GEOMETRY)
+                        caster_type = 1;
+                    
+                    if (scene->state_flags[si] & SF_NO_SHADOW)
+                        caster_type = 0;
+                }
 
                 if (ImGui::Combo("Shadow Caster", &caster_type, "None\0Geometry\0Signed Distance Field\0"))
                 {

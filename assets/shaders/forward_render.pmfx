@@ -529,6 +529,7 @@ ps_output ps_forward_lit( vs_output input )
         );
         
         float3 spec = ltc_evaluate(n, v, pos, minv, points, true);
+        float2 suv = spec.xy;
         
         //float3 ss = sample_texture( diffuse_texture, spec.xy ).rgb * spec.z;
         float3 ss = area_lights[i].colour.rgb * spec.z;
@@ -536,6 +537,7 @@ ps_output ps_forward_lit( vs_output input )
         spec = ss * sample_texture(ltc_mag, uv).w;
         
         float3 diff = ltc_evaluate(n, v, pos, float3x3(1), points, true) * albedo.rgb;
+        float2 duv = clamp(diff.xy, 0.0, 1.0);
         
         //float3 ds = sample_texture( diffuse_texture, diff.xy ).rgb * diff.z;
         float3 ds = area_lights[i].colour.rgb * diff.z;
@@ -546,9 +548,9 @@ ps_output ps_forward_lit( vs_output input )
                 
         if:(SDF_SHADOW)
         {
-            float3 lp = (points[0] + points[1] * diff.x);
-            lp += (points[0] + points[3] * diff.y);
-        
+            float3 v1 = (points[1] - points[0]);
+            float3 v2 = (points[3] - points[0]);
+            float3 lp = (points[0] + v1 * 0.5 + v2 * 0.5);
             float s = sdf_shadow_trace(max_samples, lp, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
             light_col *= smoothstep( 0.0, 0.1, s);
         }

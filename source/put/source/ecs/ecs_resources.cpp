@@ -1522,10 +1522,11 @@ namespace put
             hash_id id_type = pmv["volume_type"].as_hash_id();
 
             static volume_instance vi[] = {
-                {PEN_HASH("volume_texture"), PEN_HASH("volume_texture"), PEN_HASH("clamp_point_sampler_state"), CMP_VOLUME},
+                {PEN_HASH("volume_texture"), PEN_HASH("volume_texture"), PEN_HASH("clamp_point"), CMP_VOLUME},
 
-                {PEN_HASH("signed_distance_field"), PEN_HASH("volume_sdf"), PEN_HASH("clamp_linear_sampler_state"),
-                 CMP_SDF_SHADOW}};
+                {PEN_HASH("signed_distance_field"), PEN_HASH("volume_sdf"), PEN_HASH("clamp_linear"),
+                 CMP_SDF_SHADOW}
+            };
 
             int i = 0;
             for (auto& v : vi)
@@ -1542,8 +1543,7 @@ namespace put
             material->shader_name = "pmfx_utility";
             material->id_shader = PEN_HASH("pmfx_utility");
             material->id_technique = vi[i].id_technique;
-            material->id_sampler_state[SN_VOLUME_TEXTURE] = vi[i].id_sampler_state;
-            material->texture_handles[SN_VOLUME_TEXTURE] = volume_texture;
+            
             add_material_resource(material);
 
             geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
@@ -1559,6 +1559,10 @@ namespace put
             scene->transforms[v].translation = pos;
             scene->entities[v] |= CMP_TRANSFORM;
             scene->parents[v] = v;
+            
+            scene->samplers[v].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
+            scene->samplers[v].sb[0].handle = volume_texture;
+            scene->samplers[v].sb[0].sampler_state = pmfx::get_render_state(vi[i].id_sampler_state, pmfx::RS_SAMPLER) ;
 
             instantiate_geometry(cube, scene, v);
             instantiate_material(material, scene, v);

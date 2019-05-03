@@ -555,38 +555,6 @@ namespace put
             if (scene->view_flags & SV_HIDE)
                 return;
 
-            pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-
-            // fwd lights¯
-            if (view.render_flags & RENDER_FORWARD_LIT)
-            {
-                pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
-                pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
-                pen::renderer_set_constant_buffer(scene->area_light_buffer, 6, pen::CBUFFER_BIND_PS);
-                
-                // ltc lookups
-                static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
-                static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
-                static u32 clamp_linear = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
-                
-                pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
-                pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
-            }
-
-            // sdf shadows
-            pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
-            for (u32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (scene->entities[n] & CMP_SDF_SHADOW)
-                {
-                    cmp_shadow& shadow = scene->shadows[n];
-
-                    if (is_valid(shadow.texture_handle))
-                        pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT,
-                                                  pen::TEXTURE_BIND_PS);
-                }
-            }
-
             s32 draw_count = 0;
             s32 cull_count = 0;
 
@@ -692,9 +660,7 @@ namespace put
                 if (scene->entities[n] & CMP_MASTER_INSTANCE)
                 {
                     u32 vbs[2] = {p_geom->vertex_buffer, scene->master_instances[n].instance_buffer};
-
                     u32 strides[2] = {p_geom->vertex_size, scene->master_instances[n].instance_stride};
-
                     u32 offsets[2] = {0};
 
                     pen::renderer_set_vertex_buffers(vbs, 2, 0, strides, offsets);
@@ -714,16 +680,48 @@ namespace put
                     {
                         if (!samplers.sb[s].handle)
                             continue;
-                        
-                        if(samplers.sb[s].sampler_unit == 4)
-                            PEN_LOG("hit");
 
                         pen::renderer_set_texture(samplers.sb[s].handle, samplers.sb[s].sampler_state,
                                                   samplers.sb[s].sampler_unit, pen::TEXTURE_BIND_PS);
                     }
                 }
+                
+                // view
+                pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+                
+                // fwd lights
+                if (view.render_flags & RENDER_FORWARD_LIT)
+                {
+                    pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
+                    pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
+                    pen::renderer_set_constant_buffer(scene->area_light_buffer, 6, pen::CBUFFER_BIND_PS);
+                    
+                    // ltc lookups
+                    static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
+                    static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
+                    static u32 clamp_linear = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+                    
+                    pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
+                    pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
+                }
+                
+                // sdf shadows
+                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
+                for (u32 n = 0; n < scene->num_entities; ++n)
+                {
+                    if (scene->entities[n] & CMP_SDF_SHADOW)
+                    {
+                        cmp_shadow& shadow = scene->shadows[n];
+                        
+                        if (is_valid(shadow.texture_handle))
+                            pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT,
+                                                      pen::TEXTURE_BIND_PS);
+                    }
+                }
 
-                // stride over instances
+                // draw
+                
+                // instances
                 if (scene->entities[n] & CMP_MASTER_INSTANCE)
                 {
                     u32 num_instances = scene->master_instances[n].num_instances;
@@ -733,7 +731,7 @@ namespace put
                     continue;
                 }
 
-                // draw
+                // single
                 pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
         }
