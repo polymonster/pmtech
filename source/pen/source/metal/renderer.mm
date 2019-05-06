@@ -19,7 +19,7 @@ a_u8 g_window_resize;
 extern a_u64 g_frame_index;
 extern window_creation_params pen_window;
 
-#define NBB 6
+#define NBB 6 // buffers to prevent locking gpu / cpu on dynamic buffers. 6 is excessive but works well.
 
 namespace // internal structs and static vars
 {
