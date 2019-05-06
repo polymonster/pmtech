@@ -631,11 +631,13 @@ namespace pen
         info.renderer = device_name.c_str();
         info.vendor = device_name.c_str();
         
+        // macos caps.. todo ios
         info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
         info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
         info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
         info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
         info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
+        info.caps |= PEN_CAPS_COMPUTE;
         
         return info;
     }

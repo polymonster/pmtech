@@ -9,7 +9,7 @@
 // Currently implementations are in:
 //      Direct3D11 (win32)
 //      OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios, android)
-//      Metal (osx, ios) (wip)
+//      Metal (osx, ios)
 
 // Public api used by the user thread will store function call arguments in a command buffer
 // Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
