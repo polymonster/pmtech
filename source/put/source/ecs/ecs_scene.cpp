@@ -1431,7 +1431,7 @@ namespace put
                 for(u32 c = 0; c < 4; ++c)
                     al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners[c]);
                 
-                al_buffer.lights[num_area_lights].colour = vec4f(1.0, 0.0, 1.0, 1.0);
+                al_buffer.lights[num_area_lights].colour = vec4f(l.colour, 1.0f);
                 ++num_area_lights;
             }
             

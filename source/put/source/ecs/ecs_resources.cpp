@@ -410,6 +410,7 @@ namespace put
             scene->transforms[node_index].scale = scale;
             scene->shadows[node_index].texture_handle = volume_texture;
             scene->shadows[node_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::RS_SAMPLER);
+            scene->entities[node_index] |= CMP_SDF_SHADOW;
         }
 
         void instantiate_light(ecs_scene* scene, u32 node_index)

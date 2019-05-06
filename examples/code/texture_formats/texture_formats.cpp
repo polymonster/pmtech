@@ -47,7 +47,7 @@ u32 create_float_texture(u32 w, u32 h, texture_format fmt, T r, T g, T b, T a)
     tcp.bind_flags = PEN_BIND_SHADER_RESOURCE;
     tcp.cpu_access_flags = 0;
     tcp.flags = 0;
-    tcp.block_size = 4;
+    tcp.block_size = sizeof(T) * 4;
     tcp.pixels_per_block = 1;
     tcp.data = pen::memory_alloc(data_size);
     tcp.data_size = data_size;

@@ -517,7 +517,7 @@ ps_output ps_forward_lit( vs_output input )
         points[3] = area_lights[i].corners[3].xyz;
 
         float theta = acos(dot(n, v));
-        float2 uv = float2(0.2, theta / (0.5 * pi));
+        float2 uv = float2(roughness, theta / (0.5 * pi));
         uv = uv * LUT_SCALE + LUT_BIAS;
         
         float4 tt = sample_texture(ltc_mat, uv);
@@ -547,12 +547,30 @@ ps_output ps_forward_lit( vs_output input )
         float3 light_col = (spec + diff) / (2.0 * pi);
                 
         if:(SDF_SHADOW)
-        {
-            float3 v1 = (points[1] - points[0]);
-            float3 v2 = (points[3] - points[0]);
-            float3 lp = (points[0] + v1 * 0.5 + v2 * 0.5);
-            float s = sdf_shadow_trace(max_samples, lp, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
-            light_col *= smoothstep( 0.0, 0.1, s);
+        {            
+            int ns = 1;
+            float2 so[8];
+            so[0] = float2(0.5, 0.5);
+            so[1] = float2(0.0, 0.5);
+            so[2] = float2(1.0, 0.5);
+            so[3] = float2(0.5, 1.0);
+            so[4] = float2(0.25, 1.0);
+            so[5] = float2(0.5, 0.25);
+            so[6] = float2(0.25, 0.25);
+            so[7] = float2(0.25, 0.5);
+            
+            float shad = 0.0;
+            for(int j = 0; j < ns; ++j)
+            {
+                float3 v1 = (points[1] - points[0]);
+                float3 v2 = (points[3] - points[0]);
+                float3 lp = (points[0] + v1 * so[j].x + v2 * so[j].y);
+                
+                float s = sdf_shadow_trace(max_samples, lp, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
+                shad += smoothstep( 0.0, 0.1, s);
+            }
+            
+            light_col *= (shad/ns);
         }
         
         lit_colour += light_col;

@@ -158,7 +158,7 @@
         main_view:
         {
             target             : [main_colour, main_depth],
-            clear_colour       : [0.5, 0.5, 0.5, 1.0],
+            clear_colour       : [0.0, 0.0, 0.0, 1.0],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
             blend_state        : disabled,

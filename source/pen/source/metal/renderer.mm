@@ -627,10 +627,16 @@ namespace pen
 
         info.api_version = version_name.c_str();
         info.shader_version = "metal";
-        info.renderer_cmd = "metal";
+        info.renderer_cmd = "-renderer metal";
         info.renderer = device_name.c_str();
         info.vendor = device_name.c_str();
-
+        
+        info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
+        info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
+        info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
+        info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
+        info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
+        
         return info;
     }
 
@@ -1130,8 +1136,8 @@ namespace pen
                     
                     for (u32 i = 0; i < tcp.num_mips; ++i)
                     {
-                        u32       pitch = _tcp.block_size * _tcp.pixels_per_block * mip_w;
-                        u32       depth_pitch = pitch * mip_h;
+                        u32       pitch = _tcp.block_size * (mip_w / tcp.pixels_per_block);
+                        u32       depth_pitch = pitch * (mip_h / tcp.pixels_per_block);
                         
                         MTLRegion region;
                         
