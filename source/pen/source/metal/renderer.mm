@@ -1455,6 +1455,7 @@ namespace pen
 
                     _state.formats.sample_count = r.texture.samples;
                     
+                    _state.pass.colorAttachments[i].slice = colour_face;
                     _state.pass.colorAttachments[i].texture = texture;
                     _state.pass.colorAttachments[i].loadAction = MTLLoadActionDontCare;
                     _state.pass.colorAttachments[i].storeAction = MTLStoreActionStore;
@@ -1481,8 +1482,8 @@ namespace pen
                 
                 _state.formats.sample_count = r.texture.samples;
                 
+                _state.pass.depthAttachment.slice = depth_face;
                 _state.pass.depthAttachment.texture = texture;
-
                 _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
                 _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
                 
