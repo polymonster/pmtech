@@ -6,7 +6,6 @@ float integrate_edge(float3 v1, float3 v2)
     return res;
 }
 
-
 void clip_quad_to_horizon(inout float3 L[5], out int n)
 {
     // detect clipping config

@@ -501,10 +501,10 @@ ps_output ps_forward_lit( vs_output input )
     int num_area_lights = int(area_light_info.x);
     for(int i = 0; i < num_area_lights; ++i)
     {
-        const float pi = 3.14159265359;
-        const float LUT_SIZE  = 64.0;
-        const float LUT_SCALE = (LUT_SIZE - 1.0)/LUT_SIZE;
-        const float LUT_BIAS  = 0.5/LUT_SIZE;
+        float pi = 3.14159265359;
+        float LUT_SIZE  = 64.0;
+        float LUT_SCALE = (LUT_SIZE - 1.0)/LUT_SIZE;
+        float LUT_BIAS  = 0.5/LUT_SIZE;
 
         float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
         
@@ -550,7 +550,7 @@ ps_output ps_forward_lit( vs_output input )
         
         diff = ds;
         
-        float3 light_col = (spec + diff) / (2.0 * pi);
+        float3 light_col = saturate(spec + diff) / (2.0 * pi);
                 
         if:(SDF_SHADOW)
         {            
