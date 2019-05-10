@@ -60,19 +60,6 @@ namespace put
         bool            viewport_correction = false;
     };
 
-    struct scene_controller
-    {
-        Str             name;
-        hash_id         id_name = 0;
-        ecs::ecs_scene* scene = nullptr;
-        put::camera*    camera = nullptr;
-        e_update_order  order = MAIN_UPDATE;
-        f32             dt = 0.0f;
-        bool            deprecated = true; // this is now depracated and will be moved to ecs_controller
-
-        void (*update_function)(scene_controller*) = nullptr;
-    };
-
     struct scene_view_renderer
     {
         Str     name;
@@ -252,14 +239,12 @@ namespace put
         void init(const c8* filename);
         void shutdown();
         void release_script_resources();
-        void update();
         void render();
         void show_dev_ui();
 
         void register_scene(ecs::ecs_scene* scene, const char* name);
         void register_camera(camera* cam, const char* name);
 
-        void register_scene_controller(const scene_controller& controller);
         void register_scene_view_renderer(const scene_view_renderer& svr);
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
         void resize_render_target(hash_id target, const rt_resize_params& params);

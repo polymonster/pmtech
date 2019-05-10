@@ -92,8 +92,6 @@ PEN_TRV pen::user_entry(void* params)
 
         put::dev_ui::new_frame();
 
-        pmfx::update();
-
         example_update(main_scene, main_camera, frame_timer / 1000.0f);
         
         ecs::update();

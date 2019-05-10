@@ -1002,7 +1002,7 @@ namespace put
             s_rasteriser_job.combine_in_progress = 0;
         }
 
-        void volume_rasteriser_update(put::scene_controller* sc)
+        void volume_rasteriser_update(ecs_controller& ecsc, ecs_scene* scene, f32 dt)
         {
             if (g_cancel_volume_job)
             {
@@ -1029,7 +1029,7 @@ namespace put
 
             if (s_rasteriser_job.current_axis > 5)
             {
-                volume_raster_completed(sc->scene);
+                volume_raster_completed(scene);
                 return;
             }
 
@@ -1514,14 +1514,13 @@ namespace put
         void init(ecs::ecs_scene* scene)
         {
             s_main_scene = scene;
-            put::scene_controller cc;
-            cc.camera = &s_volume_raster_ortho;
-            cc.update_function = &volume_rasteriser_update;
-            cc.name = "volume_rasteriser_camera";
-            cc.id_name = PEN_HASH(cc.name.c_str());
-            cc.scene = scene;
+			ecs::ecs_controller ec;
+			ec.camera = &s_volume_raster_ortho;
+			ec.update_func = &volume_rasteriser_update;
+			ec.name = "volume_rasteriser_camera";
+			ec.id_name = PEN_HASH(ec.name.c_str());
 
-            pmfx::register_scene_controller(cc);
+			ecs::register_ecs_controller(scene, ec);
         }
 
         void show_dev_ui()

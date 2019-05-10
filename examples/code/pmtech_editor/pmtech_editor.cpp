@@ -97,8 +97,6 @@ PEN_TRV pen::user_entry(void* params)
 
         put::dev_ui::new_frame();
 
-        pmfx::update();
-
         ecs::update();
 
         pmfx::render();

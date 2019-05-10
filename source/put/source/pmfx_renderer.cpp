@@ -300,7 +300,6 @@ namespace
     std::vector<edited_post_process> s_edited_post_processes; // User edited post processes
 
     // Render Resources
-    std::vector<scene_controller>        s_controllers;
     std::vector<reg_scene>               s_scenes;
     std::vector<reg_camera>              s_cameras;
     std::vector<scene_view_renderer>     s_scene_view_renderers;
@@ -319,12 +318,6 @@ namespace put
 {
     namespace pmfx
     {
-        void register_scene_controller(const scene_controller& controller)
-        {
-            s_controllers.push_back(controller);
-            s_controllers.back().camera->name = controller.name;
-        }
-
         void register_scene_view_renderer(const scene_view_renderer& svr)
         {
             s_scene_view_renderers.push_back(svr);
@@ -1622,16 +1615,6 @@ namespace put
 
                     // todo deprecate
                     bool found_scene = false;
-                    for (auto& s : s_controllers)
-                    {
-                        if (s.id_name == scene_id)
-                        {
-                            new_view.scene = s.scene;
-                            found_scene = true;
-                            break;
-                        }
-                    }
-
                     if (!found_scene)
                     {
                         for (auto& s : s_scenes)
@@ -1663,16 +1646,6 @@ namespace put
 
                     // todo deprecate
                     bool found_camera = false;
-                    for (auto& c : s_controllers)
-                    {
-                        if (c.id_name == camera_id)
-                        {
-                            new_view.camera = c.camera;
-                            found_camera = true;
-                            break;
-                        }
-                    }
-
                     if (!found_camera)
                     {
                         for (auto& c : s_cameras)
@@ -2511,25 +2484,7 @@ namespace put
             release_script_resources();
 
             // clear vectors of remaining stuff
-            s_controllers.clear();
             s_scene_view_renderers.clear();
-        }
-
-        void update()
-        {
-            static u32 dt_timer = pen::timer_create("sc_dt");
-            f32        dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
-            pen::timer_start(dt_timer);
-
-            size_t num_controllers = s_controllers.size();
-            for (u32 u = 0; u < put::UPDATES_NUM; ++u)
-                for (u32 i = 0; i < num_controllers; ++i)
-                    if (s_controllers[i].order == u)
-                        if (s_controllers[i].update_function)
-                        {
-                            s_controllers[i].dt = dt;
-                            s_controllers[i].update_function(&s_controllers[i]);
-                        }
         }
 
         struct post_process_per_view
@@ -3308,10 +3263,10 @@ namespace put
 
         camera* get_camera(hash_id id_name)
         {
-            for (auto& c : s_controllers)
+            for (auto& c : s_cameras)
             {
                 if (c.id_name == id_name)
-                    return c.camera;
+                    return c.cam;
             }
 
             return nullptr;
@@ -3321,8 +3276,8 @@ namespace put
         {
             camera** list = nullptr;
 
-            for (auto& c : s_controllers)
-                sb_push(list, c.camera);
+            for (auto& c : s_cameras)
+                sb_push(list, c.cam);
 
             return list;
         }
