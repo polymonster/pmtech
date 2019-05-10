@@ -161,7 +161,7 @@ float3 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4
     l[1] = mul(minv, points[1] - p);
     l[2] = mul(minv, points[2] - p);
     l[3] = mul(minv, points[3] - p);
-	l[4] = 0.0;
+	l[4] = float3(0.0, 0.0, 0.0);
     
     //uv
     float3 ll[4];
