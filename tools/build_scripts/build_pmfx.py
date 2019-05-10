@@ -1844,6 +1844,17 @@ def parse_pmfx(file, root):
                             print("[warning] compute shaders not implemented for platform: " + _info.shader_platform)
                             valid = False
 
+            if "supported_platforms" in _tp.technique:
+                sp = _tp.technique["supported_platforms"]
+                if _info.shader_platform not in sp:
+                    valid = False
+                else:
+                    sv = sp[_info.shader_platform]
+                    if "all" in sv:
+                        pass
+                    elif _info.shader_version not in sv:
+                        valid = False
+
             if not valid:
                 continue
 

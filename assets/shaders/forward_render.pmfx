@@ -535,8 +535,14 @@ ps_output ps_forward_lit( vs_output input )
         float3 ss = area_lights[i].colour.rgb * spec.z;
         
         spec = ss * sample_texture(ltc_mag, uv).w;
+		
+		float3x3 difv = float3x3(
+            float3(1.0, 1.0, 1.0),
+            float3(1.0, 1.0, 1.0),
+            float3(1.0, 1.0, 1.0)
+        );
         
-        float3 diff = ltc_evaluate(n, v, pos, float3x3(1), points, true) * albedo.rgb;
+        float3 diff = ltc_evaluate(n, v, pos, difv, points, true) * albedo.rgb;
         float2 duv = clamp(diff.xy, 0.0, 1.0);
         
         //float3 ds = sample_texture( diffuse_texture, diff.xy ).rgb * diff.z;
