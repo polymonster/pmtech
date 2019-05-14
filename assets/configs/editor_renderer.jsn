@@ -105,6 +105,7 @@
         
         editor: [
             multiple_shadow_views,
+            multiple_area_light_views,
             main_view,
             editor_view, 
             picking_view

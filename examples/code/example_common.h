@@ -70,11 +70,17 @@ PEN_TRV pen::user_entry(void* params)
     svr_shadow_maps.name = "ces_render_shadow_maps";
     svr_shadow_maps.id_name = PEN_HASH(svr_shadow_maps.name.c_str());
     svr_shadow_maps.render_function = &ecs::render_shadow_views;
+    
+    put::scene_view_renderer svr_area_light_textures;
+    svr_area_light_textures.name = "ces_render_area_light_textures";
+    svr_area_light_textures.id_name = PEN_HASH(svr_area_light_textures.name.c_str());
+    svr_area_light_textures.render_function = &ecs::render_area_light_textures;
 
     pmfx::register_scene_view_renderer(svr_main);
     pmfx::register_scene_view_renderer(svr_light_volumes);
     pmfx::register_scene_view_renderer(svr_shadow_maps);
     pmfx::register_scene_view_renderer(svr_editor);
+    pmfx::register_scene_view_renderer(svr_area_light_textures);
     
     pmfx::register_scene(main_scene, "main_scene");
     pmfx::register_camera(&main_camera, "model_viewer_camera");

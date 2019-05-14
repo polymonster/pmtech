@@ -1096,7 +1096,7 @@ namespace put
                             else if (type == "array")
                             {
                                 new_info.collection = pen::TEXTURE_COLLECTION_ARRAY;
-                                tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE;
+                                tcp.collection_type = pen::TEXTURE_COLLECTION_ARRAY;
                                 tcp.num_arrays = r["num_arrays"].as_u32(1);
                             }
                         }

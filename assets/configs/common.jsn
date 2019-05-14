@@ -149,8 +149,16 @@
         shadow_map:
         {
             size  : [2048, 2048],
-            format: d24s8
-        }
+            format: d24s8,
+            type: array
+        },
+        
+        area_light_textures:
+        {
+            size: [640, 480],
+            format: rgba8,
+            type: array
+        },
     },
     
     views:
@@ -173,6 +181,7 @@
             sampler_bindings:
             [
                 { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
             ],
         },
         
@@ -190,6 +199,23 @@
             scene              : main_scene,
             scene_views        : ["ces_render_shadow_maps"],
             render_flags       : ["shadow_map"]
+        },
+        
+        multiple_area_light_views:
+        {
+            target             : [area_light_textures],
+            clear_colour       : [0.0, 1.0, 0.0, 1.0],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : front_face_cull,
+            depth_stencil_state: default,
+            pmfx_shader        : forward_render,
+            technique          : zonly,
+            scene              : main_scene,
+            scene_views        : ["ces_render_area_light_textures"],
+            render_flags       : ["area_light_textures"]
         },
         
         main_view_post_processed:

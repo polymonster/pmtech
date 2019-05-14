@@ -111,10 +111,12 @@ declare_texture_samplers
     texture_2d( normal_texture, 1 );
     texture_2d( specular_texture, 2 );    
     texture_3d( sdf_volume, 14 );
-    texture_2d_array( shadowmap_texture, 15 );
-    
+        
     texture_2d( ltc_mat, 13 );
     texture_2d( ltc_mag, 12 );
+    
+    texture_2d_array( shadowmap_texture, 15 );
+    texture_2d_array( area_light_textures, 11 );
 };
 
 vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_input )
@@ -517,7 +519,7 @@ ps_output ps_forward_lit( vs_output input )
         points[3] = area_lights[i].corners[3].xyz;
 
         float theta = acos(dot(n, v));
-        float2 uv = float2(roughness, theta / (0.5 * pi));
+        float2 uv = float2((1.0 - roughness) + 0.1, theta / (0.5 * pi));
         uv = uv * LUT_SCALE + LUT_BIAS;
         
         float4 tt = sample_texture(ltc_mat, uv);
@@ -531,26 +533,29 @@ ps_output ps_forward_lit( vs_output input )
         float3 spec = ltc_evaluate(n, v, pos, minv, points, true);
         float2 suv = spec.xy;
         
-        //float3 ss = sample_texture( diffuse_texture, spec.xy ).rgb * spec.z;
-        float3 ss = area_lights[i].colour.rgb * spec.z;
+        float3 ss = sample_texture_array_level( area_light_textures, spec.xy, float(i), 0).rgb;
+        //float3 ss = area_lights[i].colour.rgb;
         
-        spec = ss * sample_texture(ltc_mag, uv).w;
+        spec = ss * sample_texture(ltc_mag, uv).w * spec.z;
 		
 		float3x3 difv = float3x3(
-            float3(1.0, 1.0, 1.0),
-            float3(1.0, 1.0, 1.0),
-            float3(1.0, 1.0, 1.0)
+            float3(1.0, 0.0, 1.0),
+            float3(0.0, 1.0, 0.0),
+            float3(0.0, 0.0, 1.0)
         );
         
         float3 diff = ltc_evaluate(n, v, pos, difv, points, true) * albedo.rgb;
         float2 duv = clamp(diff.xy, 0.0, 1.0);
         
-        //float3 ds = sample_texture( diffuse_texture, diff.xy ).rgb * diff.z;
-        float3 ds = area_lights[i].colour.rgb * diff.z;
         
-        diff = ds;
+        float3 ds = sample_texture_array_level( area_light_textures, diff.xy, float(i), 0).rgb;
+        //float3 ds = area_lights[i].colour.rgb;
         
-        float3 light_col = saturate(spec + diff) / (2.0 * pi);
+        diff = ds * diff.z;
+        
+        float3 light_col = (spec + diff) / (2.0 * pi);
+        
+        //light_col = float3(diff.z, diff.z, diff.z);
                 
         if:(SDF_SHADOW)
         {            

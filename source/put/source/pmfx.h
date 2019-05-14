@@ -259,7 +259,9 @@ namespace put
         u32                  get_render_state(hash_id id_name, u32 type);
         Str                  get_render_state_name(u32 handle);
         c8**                 get_render_state_list(u32 type);    // call sb_free on return value when done
-        hash_id*             get_render_state_id_list(u32 type); // call sb_free on return value when done
+        hash_id*             get_render_state_id_list(u32 type); // call sb_free on return value when don
+        
+        void                 fullscreen_quad(const scene_view& sv);
 
         // pmfx shader -----------------------------------------------------------------------------------------------------
 
