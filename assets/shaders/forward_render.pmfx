@@ -533,7 +533,7 @@ ps_output ps_forward_lit( vs_output input )
         float3 spec = ltc_evaluate(n, v, pos, minv, points, true);
         float2 suv = spec.xy;
         
-        float3 ss = sample_texture_array_level( area_light_textures, spec.xy, float(i), 0).rgb;
+        float3 ss = sample_texture_array_level( area_light_textures, spec.xy, float(0), 0).rgb;
         //float3 ss = area_lights[i].colour.rgb;
         
         spec = ss * sample_texture(ltc_mag, uv).w * spec.z;
@@ -548,7 +548,7 @@ ps_output ps_forward_lit( vs_output input )
         float2 duv = clamp(diff.xy, 0.0, 1.0);
         
         
-        float3 ds = sample_texture_array_level( area_light_textures, diff.xy, float(i), 0).rgb;
+        float3 ds = sample_texture_array_level( area_light_textures, diff.xy, float(0), 0).rgb;
         //float3 ds = area_lights[i].colour.rgb;
         
         diff = ds * diff.z;

@@ -93,6 +93,15 @@ ps_output ps_blit( vs_output input )
     return output;
 }
 
+ps_output ps_debug( vs_output input ) 
+{
+    ps_output output;
+    
+    output.colour = float4(1.0, 0.0, 1.0, 1.0);
+        
+    return output;
+}
+
 ps_output ps_blit_rgb( vs_output input ) 
 {
     ps_output output;
@@ -532,6 +541,12 @@ pmfx:
     {
         "vs": "vs_ndc_quad",
         "ps": "ps_blit_colour_depth"
+    },
+    
+    "debug":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_debug"
     },
     
     "colour_lut":

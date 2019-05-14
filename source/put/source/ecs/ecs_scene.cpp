@@ -362,34 +362,9 @@ namespace put
         {
             ecs_scene* scene = view.scene;
             
-            // count number of textured area lights and resize;
-            u32 num_area_lights = 0;
-            for (u32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (!(scene->entities[n] & CMP_LIGHT))
-                    continue;
-                
-                if(scene->lights[n].type != LIGHT_TYPE_AREA)
-                    continue;
-                
-                ++num_area_lights;
-            }
-            
-            if(view.num_arrays < num_area_lights)
-            {
-                pmfx::rt_resize_params rrp;
-                rrp.width = 640;
-                rrp.height = 480;
-                rrp.format = nullptr;
-                rrp.num_arrays = std::max<u32>(num_area_lights, 1);
-                rrp.num_mips = 1;
-                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
-                pmfx::resize_render_target(PEN_HASH("area_light_textures"), rrp);
-            }
-            
             scene_view sub = view;
             sub.pmfx_shader = pmfx::load_shader("post_process");
-            sub.technique = PEN_HASH("menger_sponge");
+            sub.technique = PEN_HASH("debug");
             
             pmfx::fullscreen_quad(sub);
         }
@@ -397,31 +372,6 @@ namespace put
         void render_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
-            
-            // count shadow maps and resize buffers
-            u32 num_shadows = 0;
-            for (u32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (!(scene->entities[n] & CMP_LIGHT))
-                    continue;
-                
-                if(!scene->lights[n].shadow_map)
-                    continue;
-                
-                ++num_shadows;
-            }
-            
-            if(view.num_arrays < num_shadows)
-            {
-                pmfx::rt_resize_params rrp;
-                rrp.width = 2048;
-                rrp.height = 2048;
-                rrp.format = nullptr;
-                rrp.num_arrays = std::max<u32>(num_shadows, 1);
-                rrp.num_mips = 1;
-                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
-                pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
-            }
             
             static u32 cb_view = PEN_INVALID_HANDLE;
             if(!is_valid(cb_view))
@@ -1473,6 +1423,20 @@ namespace put
             
             pen::renderer_update_buffer(scene->area_light_buffer, &al_buffer, sizeof(al_buffer));
             
+            const pmfx::render_target* alrt = pmfx::get_render_target(PEN_HASH("area_light_textures"));
+        
+            if(alrt->num_arrays < num_area_lights)
+            {
+                pmfx::rt_resize_params rrp;
+                rrp.width = 640;
+                rrp.height = 480;
+                rrp.format = nullptr;
+                rrp.num_arrays = std::max<u32>(num_area_lights, 1);
+                rrp.num_mips = 1;
+                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                pmfx::resize_render_target(PEN_HASH("area_light_textures"), rrp);
+            }
+            
             // Distance field shadows
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
@@ -1490,10 +1454,31 @@ namespace put
             }
             
             // Shadow maps
+            u32 num_shadow_maps = 0;
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
+                
+                cmp_light& l = scene->lights[n];
+                if(!l.shadow_map)
+                    continue;
+                
+                ++num_shadow_maps;
+            }
+            
+            const pmfx::render_target* sm = pmfx::get_render_target(PEN_HASH("shadow_map"));
+            
+            if(sm->num_arrays < num_shadow_maps)
+            {
+                pmfx::rt_resize_params rrp;
+                rrp.width = 2048;
+                rrp.height = 2048;
+                rrp.format = nullptr;
+                rrp.num_arrays = num_shadow_maps;
+                rrp.num_mips = 1;
+                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
             }
 
             // Update pre skinned vertex buffers

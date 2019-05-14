@@ -1082,6 +1082,7 @@ namespace pen
                 {
                     td.textureType = MTLTextureType2DArray;
                     num_arrays = _tcp.num_arrays;
+                    td.arrayLength = num_arrays;
                     
                     if(msaa)
                         td.textureType = MTLTextureType2DMultisampleArray;
@@ -1403,7 +1404,7 @@ namespace pen
 
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face,
                                   u32 depth_face)
-        {
+        {            
             // create new cmd buffer
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
