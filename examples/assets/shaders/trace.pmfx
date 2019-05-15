@@ -35,7 +35,7 @@ vs_output vs_ndc_quad( vs_input input )
 float hash( float p )
 {
     float2 MOD2 = float2(3.07965, 7.4235);
-	float2 p2 = fract(float2(p) / MOD2);
+	float2 p2 = fract(float2(p, p) / MOD2);
     p2 += dot(p2.yx, p2.xy+19.19);
 	return fract(p2.x * p2.y);
 }
@@ -54,8 +54,8 @@ float noise( float2 x )
     float2 f = fract(x);
     f = f*f*(3.0-2.0*f);
     float n = p.x + p.y*57.0;
-    float res = mix(mix( hash(n+  0.0), hash(n+  1.0),f.x),
-                    mix( hash(n+ 57.0), hash(n+ 58.0),f.x),f.y);
+    float res = lerp(lerp( hash(n+  0.0), hash(n+  1.0),f.x),
+                    lerp( hash(n+ 57.0), hash(n+ 58.0),f.x),f.y);
     return res;
 }
 
@@ -92,8 +92,8 @@ float map(float3 p)
     float3 c = mod(p, float3(0.0, 0.0, pyr_rep)) - 0.5 * float3(0.0, 0.0, pyr_rep);
     
  	float terrain = 1000; //sd_box(q - float3(0.0, 5.0, 0.0), float3(2.5));
-    float pillars_left = sd_box(b - float3(40.0, 0.0, 0.0), float3(10.0));
-    float pillars_right = sd_box(b - float3(-40.0, 0.0, 0.0), float3(10.0));
+    float pillars_left = sd_box(b - float3(40.0, 0.0, 0.0), float3(10.0, 10.0, 10.0));
+    float pillars_right = sd_box(b - float3(-40.0, 0.0, 0.0), float3(10.0, 10.0, 10.0));
     float pyramids_left = sd_octahedron(c - float3(-400.0, 0.0, 0.0), 100.0);
     float pyramids_right = sd_octahedron(c - float3(400.0, 0.0, 0.0), 100.0);
     
@@ -117,7 +117,7 @@ float3 sky(float3 v)
     
     float grad_t = v.y * 0.5 + 0.5;
     
-    return mix(grad_b, grad_a, grad_t);
+    return lerp(grad_b, grad_a, grad_t);
 }
 
 float3 calc_normal(float3 pos)
@@ -155,7 +155,7 @@ ps_output ps_egpyt( vs_output input )
 	
 	float2 p = (uv * 2.0) - 1.0;
     
-    float3 rd = cam * normalize( float3(p.xy,2.0) );
+    float3 rd = mul(normalize( float3(p.x, p.y, 2.0) ), cam);
     
     float d = 10.0;
     float xt = 0.0;

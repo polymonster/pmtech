@@ -83,8 +83,9 @@
     #define remap_depth( d ) (d)
     #define remap_ndc_ray( r ) float2(r.x, r.y * -1.0)
 
-    // glsl style mod
+    // glsl style
     #define mod(x, y) x - y * floor(x/y) 
+	#define fract frac
 
     #define _pmfx_unroll [unroll]
 #endif //HLSL
