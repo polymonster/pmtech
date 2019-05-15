@@ -9,14 +9,14 @@ cbuffer per_pass_view : register(b0)
     
     float4 camera_view_pos; // w = near
     float4 camera_view_dir; // w = far
-    float4 viewport_correction;
+    float4 viewport_correction; // w = time
 };
 
 cbuffer per_draw_call : register(b1)
 {
     float4x4 world_matrix;    
-    float4   user_data;     //x = id, yzw = reserved
-    float4   user_data2;     //instance colour
+    float4   user_data;     //x = id, y = time
+    float4   user_data2;    //instance colour
     float4x4 world_matrix_inv_transpose;
 };
 

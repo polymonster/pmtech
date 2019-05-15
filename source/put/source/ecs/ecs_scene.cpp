@@ -360,6 +360,29 @@ namespace put
         
         void render_area_light_textures(const scene_view& view)
         {
+            ecs_scene* scene = view.scene;
+            
+            u32 count = 0;
+            u32 area_light = -1;
+            for(u32 i = 0; i < scene->num_entities; ++i)
+            {
+                if(!(scene->entities[i] & CMP_LIGHT))
+                    continue;
+                
+                if(!(scene->lights[i].type == LIGHT_TYPE_AREA))
+                    continue;
+                
+                if(count == view.array_index)
+                {
+                    area_light = i;
+                    break;
+                }
+                
+                ++count;
+            }
+
+            pen::renderer_set_constant_buffer(scene->cbuffer[count], 1, pen::CBUFFER_BIND_PS);
+            
             scene_view sub = view;
             sub.pmfx_shader = pmfx::load_shader("trace");
             sub.technique = PEN_HASH("egypt");
@@ -1221,6 +1244,9 @@ namespace put
             }
 
             // update draw call data
+            static f32 anim_time = 0.0f;
+            anim_time += dt;
+            
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (scene->entities[n] & CMP_MATERIAL)
@@ -1235,6 +1261,7 @@ namespace put
 
                 // store node index in v1.x
                 scene->draw_call_data[n].v1.x = (f32)n;
+                scene->draw_call_data[n].v1.y = (f32)anim_time; // time
 
                 if (is_invalid_or_null(scene->cbuffer[n]))
                     continue;

@@ -519,7 +519,7 @@ ps_output ps_forward_lit( vs_output input )
         points[3] = area_lights[i].corners[3].xyz;
 
         float theta = acos(dot(n, v));
-        float2 uv = float2(1.0 - ro_sample.x + 0.3, theta / (0.5 * pi));
+        float2 uv = float2(ro_sample.x, theta / (0.5 * pi));
         uv = uv * LUT_SCALE + LUT_BIAS;
         
         float4 tt = sample_texture(ltc_mat, uv);
@@ -531,7 +531,7 @@ ps_output ps_forward_lit( vs_output input )
         );
         
         float3 spec = ltc_evaluate(n, v, pos, minv, points, true);
-        float2 suv = saturate(spec.xy);
+        float2 suv = clamp(spec.xy, float2(0.01, 0.01), float2(0.99, 0.99));
         
         float3 ss = sample_texture_array_level( area_light_textures, suv, float(0), 0).rgb;
         //float3 ss = area_lights[i].colour.rgb;
@@ -545,7 +545,7 @@ ps_output ps_forward_lit( vs_output input )
         );
         
         float3 diff = ltc_evaluate(n, v, pos, difv, points, true) * albedo.rgb;
-        float2 duv = saturate(diff.xy);
+        float2 duv = clamp(diff.xy, float2(0.01, 0.01), float2(0.99, 0.99));
         
         float3 ds = sample_texture_array_level( area_light_textures, duv, float(0), 0).rgb;
         //float3 ds = area_lights[i].colour.rgb;
@@ -553,9 +553,7 @@ ps_output ps_forward_lit( vs_output input )
         diff = ds * diff.z;
         
         float3 light_col = (spec + diff) / (2.0 * pi);
-        
-        //light_col = float3(diff.z, diff.z, diff.z);
-                
+                       
         if:(SDF_SHADOW)
         {            
             int ns = 1;

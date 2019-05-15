@@ -105,15 +105,13 @@ float map(float3 p)
     return res;
 }
 
-float3 sky(float3 v)
-{
-    float iTime = 0.0;
-    
+float3 sky(float3 v, float time)
+{    
     float3 grad_a = float3(0.5, 0.5, 0.0);
     float3 grad_b = float3(0.5, 0.0, 1.0);
     
-    grad_a = float3(bcos(iTime), 0.2, bcos(-iTime));
-    grad_b = float3(bsin(iTime), bsin(-iTime), 0.2);
+    grad_a = float3(bcos(time), 0.2, bcos(-time));
+    grad_b = float3(bsin(time), bsin(-time), 0.2);
     
     float grad_t = v.y * 0.5 + 0.5;
     
@@ -137,7 +135,7 @@ ps_output ps_egpyt( vs_output input )
     float2 uv = input.texcoord.xy;
     float eps = 0.005;
     
-    float iTime = 0.0;
+    float iTime = mod(user_data.y * 3, 200);
     float2 iResolution = float2(640.0, 480.0);
     
 	float time = 15.0 + iTime;
@@ -154,8 +152,7 @@ ps_output ps_egpyt( vs_output input )
     float3 col = float3(0.0, 0.0, 0.0);
 	
 	float2 p = (uv * 2.0) - 1.0;
-    
-    float3 rd = mul(normalize( float3(p.x, p.y, 2.0) ), cam);
+    float3 rd = mul( normalize( float3(p.x, p.y, 2.0) ), cam);
     
     float d = 10.0;
     float xt = 0.0;
@@ -163,7 +160,7 @@ ps_output ps_egpyt( vs_output input )
    
     float3 l = normalize(float3(0.0, 1.0, 1.0));
     
-    for(float t = 0.0; t < 500.0; ++t)
+    for(float t = 0.0; t < 100.0; ++t)
     {
         pp = ro + rd * xt;
         
@@ -176,8 +173,7 @@ ps_output ps_egpyt( vs_output input )
         xt += d;
     }
     
-    float3 n = calc_normal(pp);
-    
+    float3 n = calc_normal(pp) * 0.5 + 0.5;
     float nv = dot(n, -rd);
 
     col += sin(nv * float3(0.0, 1.0, 0.0) * 10.0 * 1.5) * 0.5 + 0.5;  
@@ -188,7 +184,7 @@ ps_output ps_egpyt( vs_output input )
     float mask = step(d, eps);
     float inv_mask = 1.0 - mask;
     
-    float3 csky = sky(rd);
+    float3 csky = sky(rd, time);
     
     ps_output output;
     output.colour = float4(csky * inv_mask + col * mask, 1.0);

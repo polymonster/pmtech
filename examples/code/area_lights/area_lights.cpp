@@ -34,16 +34,21 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     u32 ground = get_new_entity(scene);
     scene->names[ground] = "ground";
     scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(30.0f);
+    scene->transforms[ground].scale = vec3f(60.0f);
     scene->transforms[ground].translation = vec3f::zero();
     scene->entities[ground] |= CMP_TRANSFORM;
     scene->parents[ground] = ground;
+    
+    scene->material_permutation[ground] |= FORWARD_LIT_SDF_SHADOW | FORWARD_LIT_UV_SCALE;
     
     instantiate_geometry(quad, scene, ground);
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
     
-    scene->material_permutation[ground] |= FORWARD_LIT_SDF_SHADOW;
+    // checkerboard roughness
+    scene->samplers[ground].sb[2].handle = put::load_texture("data/textures/roughness_checker.dds");
+    forward_lit_sdf_shadow_uv_scale* mat = (forward_lit_sdf_shadow_uv_scale*)&scene->material_data[ground];
+    mat->m_uv_scale = float2(0.1, 0.1);
     
     // area lights
     u32 left = get_new_entity(scene);
