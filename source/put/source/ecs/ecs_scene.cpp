@@ -360,11 +360,9 @@ namespace put
         
         void render_area_light_textures(const scene_view& view)
         {
-            ecs_scene* scene = view.scene;
-            
             scene_view sub = view;
-            sub.pmfx_shader = pmfx::load_shader("post_process");
-            sub.technique = PEN_HASH("debug");
+            sub.pmfx_shader = pmfx::load_shader("trace");
+            sub.technique = PEN_HASH("egypt");
             
             pmfx::fullscreen_quad(sub);
         }

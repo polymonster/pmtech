@@ -209,7 +209,7 @@
             colour_write_mask  : 0xf,
             blend_state        : disabled,
             viewport           : [0.0, 0.0, 1.0, 1.0],
-            raster_state       : front_face_cull,
+            raster_state       : post_process,
             depth_stencil_state: default,
             pmfx_shader        : forward_render,
             technique          : zonly,

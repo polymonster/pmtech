@@ -519,7 +519,7 @@ ps_output ps_forward_lit( vs_output input )
         points[3] = area_lights[i].corners[3].xyz;
 
         float theta = acos(dot(n, v));
-        float2 uv = float2((1.0 - roughness) + 0.1, theta / (0.5 * pi));
+        float2 uv = float2(1.0 - ro_sample.x + 0.3, theta / (0.5 * pi));
         uv = uv * LUT_SCALE + LUT_BIAS;
         
         float4 tt = sample_texture(ltc_mat, uv);
@@ -531,9 +531,9 @@ ps_output ps_forward_lit( vs_output input )
         );
         
         float3 spec = ltc_evaluate(n, v, pos, minv, points, true);
-        float2 suv = spec.xy;
+        float2 suv = saturate(spec.xy);
         
-        float3 ss = sample_texture_array_level( area_light_textures, spec.xy, float(0), 0).rgb;
+        float3 ss = sample_texture_array_level( area_light_textures, suv, float(0), 0).rgb;
         //float3 ss = area_lights[i].colour.rgb;
         
         spec = ss * sample_texture(ltc_mag, uv).w * spec.z;
@@ -545,10 +545,9 @@ ps_output ps_forward_lit( vs_output input )
         );
         
         float3 diff = ltc_evaluate(n, v, pos, difv, points, true) * albedo.rgb;
-        float2 duv = clamp(diff.xy, 0.0, 1.0);
+        float2 duv = saturate(diff.xy);
         
-        
-        float3 ds = sample_texture_array_level( area_light_textures, diff.xy, float(0), 0).rgb;
+        float3 ds = sample_texture_array_level( area_light_textures, duv, float(0), 0).rgb;
         //float3 ds = area_lights[i].colour.rgb;
         
         diff = ds * diff.z;
@@ -589,6 +588,8 @@ ps_output ps_forward_lit( vs_output input )
 
     output.colour.rgb = lit_colour.rgb;    
     output.colour.a = albedo.a;
+    
+    // output.colour.rgb = ro_sample.rgb;
             
     return output;
 }

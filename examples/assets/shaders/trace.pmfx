@@ -1,0 +1,206 @@
+#include "../../../assets/shaders/libs/globals.pmfx"
+#include "../../../assets/shaders/libs/maths.pmfx"
+#include "../../../assets/shaders/libs/lighting.pmfx"
+#include "../../../assets/shaders/ray_march.pmfx"
+
+struct vs_output
+{
+    float4 position : SV_POSITION;
+    float4 texcoord : TEXCOORD0;
+};
+
+struct vs_input
+{
+    float4 position : POSITION;
+    float4 texcoord : TEXCOORD0;
+};
+
+struct ps_output
+{
+    float4 colour : SV_Target;
+};
+
+vs_output vs_ndc_quad( vs_input input )
+{
+    vs_output output;
+
+    output.position = input.position;
+    output.texcoord = input.texcoord;
+    
+    output.position.y = output.position.y * viewport_correction.x;
+    
+    return output;
+}
+
+float hash( float p )
+{
+    float2 MOD2 = float2(3.07965, 7.4235);
+	float2 p2 = fract(float2(p) / MOD2);
+    p2 += dot(p2.yx, p2.xy+19.19);
+	return fract(p2.x * p2.y);
+}
+
+float hash( float2 p )
+{
+    float2 MOD2 = float2(3.07965, 7.4235);
+	p  = fract(p / MOD2);
+    p += dot(p.xy, p.yx+19.19);
+    return fract(p.x * p.y);
+}
+
+float noise( float2 x )
+{
+    float2 p = floor(x);
+    float2 f = fract(x);
+    f = f*f*(3.0-2.0*f);
+    float n = p.x + p.y*57.0;
+    float res = mix(mix( hash(n+  0.0), hash(n+  1.0),f.x),
+                    mix( hash(n+ 57.0), hash(n+ 58.0),f.x),f.y);
+    return res;
+}
+
+float3x3 create_camera( float3 ro, float3 ta, float cr )
+{
+	float3 cw = normalize(ta-ro);
+	float3 cp = float3(sin(cr), cos(cr),0.0);
+	float3 cu = normalize( cross(cw,cp) );
+	float3 cv = cross(cu,cw);
+    
+    return float3x3( cu, cv, cw );
+}
+
+float bsin(float v)
+{
+    return sin(v) * 0.5 + 1.0;
+}
+
+float bcos(float v)
+{
+    return cos(v) * 0.5 + 1.0;
+}
+
+float map(float3 p)
+{
+	float scale = 10.0;
+    float rep = 2.0;
+    float pyr_rep = 300.0;
+    
+    float y = noise(p.xz / 20.0) * 8.0;
+    
+    float3 q = mod(p - float3(0.0, y, 0.0), float3(rep, 0.0, rep)) - 0.5 * rep;
+    float3 b = mod(p / float3(1.0, 10.0, 1.0), float3(0.0, 0.0, 200.0)) - 0.5 * float3(0.0, 0.0, 200.0);
+    float3 c = mod(p, float3(0.0, 0.0, pyr_rep)) - 0.5 * float3(0.0, 0.0, pyr_rep);
+    
+ 	float terrain = 1000; //sd_box(q - float3(0.0, 5.0, 0.0), float3(2.5));
+    float pillars_left = sd_box(b - float3(40.0, 0.0, 0.0), float3(10.0));
+    float pillars_right = sd_box(b - float3(-40.0, 0.0, 0.0), float3(10.0));
+    float pyramids_left = sd_octahedron(c - float3(-400.0, 0.0, 0.0), 100.0);
+    float pyramids_right = sd_octahedron(c - float3(400.0, 0.0, 0.0), 100.0);
+    
+    float res = op_union(terrain, pillars_left);
+    res = op_union(res, pillars_right);
+    res = op_union(res, pyramids_left);
+    res = op_union(res, pyramids_right);
+        
+    return res;
+}
+
+float3 sky(float3 v)
+{
+    float iTime = 0.0;
+    
+    float3 grad_a = float3(0.5, 0.5, 0.0);
+    float3 grad_b = float3(0.5, 0.0, 1.0);
+    
+    grad_a = float3(bcos(iTime), 0.2, bcos(-iTime));
+    grad_b = float3(bsin(iTime), bsin(-iTime), 0.2);
+    
+    float grad_t = v.y * 0.5 + 0.5;
+    
+    return mix(grad_b, grad_a, grad_t);
+}
+
+float3 calc_normal(float3 pos)
+{
+    float3 eps = float3(0.001, 0.0, 0.0);
+    float3 nor;
+    
+    nor.x = map(pos+eps.xyy) - map(pos-eps.xyy);
+    nor.y = map(pos+eps.yxy) - map(pos-eps.yxy);
+    nor.z = map(pos+eps.yyx) - map(pos-eps.yyx);
+    
+    return normalize(nor);
+}
+
+ps_output ps_egpyt( vs_output input )
+{
+    float2 uv = input.texcoord.xy;
+    float eps = 0.005;
+    
+    float iTime = 0.0;
+    float2 iResolution = float2(640.0, 480.0);
+    
+	float time = 15.0 + iTime;
+    
+    float yp = 20.0;
+    float xp = -0.0;
+    float zp = -10.0 + iTime * 50.0;
+
+    float3 ro = float3(xp, yp, zp);
+    
+    float3 ta = float3( xp, yp, zp + 10.0);
+    float3x3 cam = create_camera( ro, ta, 0.0 );
+        
+    float3 col = float3(0.0, 0.0, 0.0);
+	
+	float2 p = (uv * 2.0) - 1.0;
+    
+    float3 rd = cam * normalize( float3(p.xy,2.0) );
+    
+    float d = 10.0;
+    float xt = 0.0;
+    float3 pp = ro;
+   
+    float3 l = normalize(float3(0.0, 1.0, 1.0));
+    
+    for(float t = 0.0; t < 500.0; ++t)
+    {
+        pp = ro + rd * xt;
+        
+        float3 qq = pp;
+        d = map(qq);
+        
+        if(d < eps)
+            break;
+        
+        xt += d;
+    }
+    
+    float3 n = calc_normal(pp);
+    
+    float nv = dot(n, -rd);
+
+    col += sin(nv * float3(0.0, 1.0, 0.0) * 10.0 * 1.5) * 0.5 + 0.5;  
+    col += sin(nv * float3(1.0, 0.0, 0.0) * 20.0 * 1.5) * 0.5 + 0.5;  
+    col += sin(nv * float3(0.0, 0.0, 1.0) * 5.0 * 1.5) * 0.5 + 0.5;
+    col = clamp(normalize(col), 0.0, 1.0);
+    
+    float mask = step(d, eps);
+    float inv_mask = 1.0 - mask;
+    
+    float3 csky = sky(rd);
+    
+    ps_output output;
+    output.colour = float4(csky * inv_mask + col * mask, 1.0);
+    
+    return output;
+}
+
+pmfx:
+{    
+    "egypt":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_egpyt"
+    }
+}

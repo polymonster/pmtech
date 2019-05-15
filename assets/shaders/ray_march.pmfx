@@ -31,6 +31,12 @@ float sd_box(float3 p, float3 b)
     return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
 }
 
+float sd_octahedron(float3 p, float s ) 
+{
+    p = abs(p);
+    return (p.x + p.y + p.z - s)*0.57735027;
+}
+
 float ud_box(float3 p, float3 b)
 {
     return length(max(abs(p) - b, 0.0));
