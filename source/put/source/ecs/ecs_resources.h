@@ -258,6 +258,7 @@ namespace put
         void instantiate_sdf_shadow(const c8* pmv_filename, ecs_scene* scene, u32 node_index);
         void instantiate_light(ecs_scene* scene, u32 node_index);
         void instantiate_area_light(ecs_scene* scene, u32 node_index);
+        void instantiate_area_light_ex(ecs_scene* scene, u32 node_index, area_light_resource& alr);
 
         void destroy_geometry(ecs_scene* scene, u32 node_index);
         void destroy_physics(ecs_scene* scene, s32 node_index);

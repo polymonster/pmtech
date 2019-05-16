@@ -190,6 +190,95 @@ ps_output ps_egpyt( vs_output input )
     output.colour = float4(csky * inv_mask + col * mask, 1.0);
     
     return output;
+    
+    /*
+    ps_output output;
+    output.colour = float4(1.0, 0.0, 0.0, 1.0);
+    return output;
+    */
+}
+
+ps_output ps_octahedron( vs_output input )
+{
+    ps_output output;
+    output.colour = float4(1.0, 0.0, 1.0, 1.0);
+    return output;
+}
+
+float map_box(float3 p)
+{
+    return sd_box(p, float3(2.5, 2.5, 2.5));
+}
+
+float3 calc_normal_box(float3 pos)
+{
+    float3 eps = float3(0.001, 0.0, 0.0);
+    float3 nor;
+    
+    nor.x = map_box(pos+eps.xyy) - map_box(pos-eps.xyy);
+    nor.y = map_box(pos+eps.yxy) - map_box(pos-eps.yxy);
+    nor.z = map_box(pos+eps.yyx) - map_box(pos-eps.yyx);
+    
+    return normalize(nor);
+}
+
+ps_output ps_box( vs_output input )
+{
+    float2 uv = input.texcoord.xy;
+    float eps = 0.005;
+    
+    float iTime = mod(user_data.y * 3, 200);
+    float2 iResolution = float2(640.0, 480.0);
+
+    float3 ro = float3(cos(iTime) * 10.0, 0.0, sin(iTime) * 10.0);
+    float3 ta = float3( -0.5, -0.4, 0.5 );
+    float3x3 cam = create_camera( ro, ta, 0.0 );
+    float3 col = float3(0.0, 0.0, 0.0);
+    
+    float2 p = (uv * 2.0) - 1.0;
+	float3 rd = mul( normalize( float3(p.x, p.y, 2.0) ), cam); 
+    
+    float d = 10.0;
+    float xt = 0.0;
+    float3 pp = ro;
+   
+    float3 l = normalize(float3(0.0, 1.0, 1.0));
+    
+    for(float t = 0.0; t < 20.0; ++t)
+    {
+        pp = ro + rd * xt;
+        d = map_box(pp);
+        
+        if(d < eps)
+            break;
+        
+        xt += d;
+    }
+    
+    float3 n = calc_normal(pp);
+    
+    float nv = dot(n, -rd);
+
+    col += sin(nv * float3(0.0, 1.0, 0.0) * 10.0 * 1.5) * 0.5 + 0.5;  
+    col += sin(nv * float3(1.0, 0.0, 0.0) * 20.0 * 1.5) * 0.5 + 0.5;  
+    col += sin(nv * float3(0.0, 0.0, 1.0) * 5.0 * 1.5) * 0.5 + 0.5;
+    col = clamp(normalize(col), 0.0, 1.0);
+    
+    float mask = step(d, eps);
+    float inv_mask = 1.0 - mask;
+    
+    float3 csky = sky(rd, iTime + 10);
+        
+    ps_output output;
+    output.colour = float4(csky * inv_mask + col * mask, 1.0);
+    return output;
+}
+
+ps_output ps_torus( vs_output input )
+{
+    ps_output output;
+    output.colour = float4(1.0, 1.0, 0.0, 1.0);
+    return output;
 }
 
 pmfx:
@@ -198,5 +287,23 @@ pmfx:
     {
         "vs": "vs_ndc_quad",
         "ps": "ps_egpyt"
+    },
+    
+    "box":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_box"
+    },
+    
+    "octahedron":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_octahedron"
+    },
+    
+    "torus":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_torus"
     }
 }

@@ -76,11 +76,10 @@ declare_texture_samplers
     texture_2d( diffuse_texture, 0 );
     texture_2d( normal_texture, 1 );
     texture_2d( specular_texture, 2 );
-    
     texture_cube( cubemap_texture, 3 );
     texture_3d( volume_texture, 4 );
-    
     texture_3d( sdf_volume, 14 );
+    texture_2d_array( area_light_textures, 11 );
 };
 
 vs_output vs_main_skinned( vs_input input )
@@ -334,6 +333,21 @@ ps_output ps_constant_colour( vs_output input )
     ps_output output;
     output.colour = float4( user_data2.rgb, 1.0 );
         
+    return output;    
+}
+
+ps_output ps_area_light_texture( vs_output input ) 
+{
+    ps_output output;
+    output.colour = sample_texture_array_level( area_light_textures, input.texcoord.xy, user_data.z, 0);
+        
+    return output;    
+}
+
+ps_output ps_area_light_colour( vs_output input ) 
+{
+    ps_output output;
+    output.colour = area_lights[int(user_data.z)].colour;
     return output;    
 }
 
@@ -694,6 +708,18 @@ pmfx:
     {
         "vs": "vs_main",
         "ps": "ps_diffuse"
+    },
+    
+    "area_light_texture":
+    {
+        "vs": "vs_main",
+        "ps": "ps_area_light_texture"
+    },
+    
+    "area_light_colour":
+    {
+        "vs": "vs_main",
+        "ps": "ps_area_light_colour"
     }
 }
 

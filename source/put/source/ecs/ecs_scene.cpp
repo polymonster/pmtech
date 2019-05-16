@@ -380,14 +380,22 @@ namespace put
                 
                 ++count;
             }
+            
+            cmp_area_light& al = scene->area_light[area_light];
 
-            pen::renderer_set_constant_buffer(scene->cbuffer[count], 1, pen::CBUFFER_BIND_PS);
+            pen::renderer_set_constant_buffer(scene->cbuffer[area_light], 1, pen::CBUFFER_BIND_PS);
             
-            scene_view sub = view;
-            sub.pmfx_shader = pmfx::load_shader("trace");
-            sub.technique = PEN_HASH("egypt");
-            
-            pmfx::fullscreen_quad(sub);
+            if(is_valid(al.shader))
+            {
+                if(is_valid(al.texture_handle))
+                    pen::renderer_set_texture(al.texture_handle, al.sampler_state, 0, pen::TEXTURE_BIND_PS);
+                
+                scene_view sub = view;
+                sub.pmfx_shader = al.shader;
+                sub.technique = al.technique;
+                
+                pmfx::fullscreen_quad(sub);
+            }
         }
 
         void render_shadow_views(const scene_view& view)
@@ -1069,6 +1077,10 @@ namespace put
 
         void update_scene(ecs_scene* scene, f32 dt)
         {
+            // static anim time to pass into draw calls etc..
+            static f32 anim_time = 0.0f;
+            anim_time += dt;
+            
             u32 num_controllers = sb_count(scene->controllers);
             u32 num_extensions = sb_count(scene->extensions);
 
@@ -1242,63 +1254,7 @@ namespace put
                     parent_tmax = vec3f::vmax(parent_tmax, tmax);
                 }
             }
-
-            // update draw call data
-            static f32 anim_time = 0.0f;
-            anim_time += dt;
             
-            for (s32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (scene->entities[n] & CMP_MATERIAL)
-                {
-                    // per node material cbuffer
-                    if (is_valid(scene->materials[n].material_cbuffer))
-                        pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0],
-                                                    scene->materials[n].material_cbuffer_size);
-                }
-
-                scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
-
-                // store node index in v1.x
-                scene->draw_call_data[n].v1.x = (f32)n;
-                scene->draw_call_data[n].v1.y = (f32)anim_time; // time
-
-                if (is_invalid_or_null(scene->cbuffer[n]))
-                    continue;
-
-                if (scene->entities[n] & CMP_SUB_INSTANCE)
-                    continue;
-
-                // skinned meshes have the world matrix baked into the bones
-                if (scene->entities[n] & CMP_SKINNED || scene->entities[n] & CMP_PRE_SKINNED)
-                    scene->draw_call_data[n].world_matrix = mat4::create_identity();
-
-                mat4 invt = scene->world_matrices[n];
-
-                invt = invt.transposed();
-                invt = mat::inverse4x4(invt);
-
-                scene->draw_call_data[n].world_matrix_inv_transpose = invt;
-
-                // todo mark dirty?
-                pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
-            }
-
-            // update instance buffers
-            for (s32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (!(scene->entities[n] & CMP_MASTER_INSTANCE))
-                    continue;
-
-                cmp_master_instance& master = scene->master_instances[n];
-
-                u32 instance_data_size = master.num_instances * master.instance_stride;
-                pen::renderer_update_buffer(master.instance_buffer, &scene->draw_call_data[n + 1], instance_data_size);
-
-                // stride over sub instances
-                n += scene->master_instances[n].num_instances;
-            }
-
             // Forward light buffer
             static forward_light_buffer light_buffer;
             s32                         pos = 0;
@@ -1440,6 +1396,10 @@ namespace put
                 for(u32 c = 0; c < 4; ++c)
                     al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners[c]);
                 
+                // data for draw calls
+                scene->draw_call_data[n].v1.y = (f32)anim_time;         // time
+                scene->draw_call_data[n].v1.z = (f32)num_area_lights;   // area light texture array index
+                
                 al_buffer.lights[num_area_lights].colour = vec4f(l.colour, 1.0f);
                 ++num_area_lights;
             }
@@ -1548,6 +1508,58 @@ namespace put
                     pen::renderer_draw(pre_skin.num_verts, 0, PEN_PT_POINTLIST);
                     pen::renderer_set_stream_out_target(0);
                 }
+            }
+            
+            // update draw call data
+            for (s32 n = 0; n < scene->num_entities; ++n)
+            {
+                if (scene->entities[n] & CMP_MATERIAL)
+                {
+                    // per node material cbuffer
+                    if (is_valid(scene->materials[n].material_cbuffer))
+                        pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0],
+                                                    scene->materials[n].material_cbuffer_size);
+                }
+                
+                scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
+                
+                // store node index in v1.x
+                scene->draw_call_data[n].v1.x = (f32)n;
+                
+                if (is_invalid_or_null(scene->cbuffer[n]))
+                    continue;
+                
+                if (scene->entities[n] & CMP_SUB_INSTANCE)
+                    continue;
+                
+                // skinned meshes have the world matrix baked into the bones
+                if (scene->entities[n] & CMP_SKINNED || scene->entities[n] & CMP_PRE_SKINNED)
+                    scene->draw_call_data[n].world_matrix = mat4::create_identity();
+                
+                mat4 invt = scene->world_matrices[n];
+                
+                invt = invt.transposed();
+                invt = mat::inverse4x4(invt);
+                
+                scene->draw_call_data[n].world_matrix_inv_transpose = invt;
+                
+                // todo mark dirty?
+                pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
+            }
+            
+            // update instance buffers
+            for (s32 n = 0; n < scene->num_entities; ++n)
+            {
+                if (!(scene->entities[n] & CMP_MASTER_INSTANCE))
+                    continue;
+                
+                cmp_master_instance& master = scene->master_instances[n];
+                
+                u32 instance_data_size = master.num_instances * master.instance_stride;
+                pen::renderer_update_buffer(master.instance_buffer, &scene->draw_call_data[n + 1], instance_data_size);
+                
+                // stride over sub instances
+                n += scene->master_instances[n].num_instances;
             }
 
             // update physics running 1 frame behind to allow the sets to take effect

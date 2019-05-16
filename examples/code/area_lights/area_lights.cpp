@@ -17,15 +17,10 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     
     // add model
     u32 model = load_pmm("data/models/lucy.pmm", scene, PMM_ALL);
-    scene->transforms[model].scale = vec3f(0.05f);
+    scene->transforms[model].scale = vec3f(0.07f);
+    scene->transforms[model].rotation = quat(0.0f, -M_PI/4.0f, 0.0f);
+    scene->transforms[model].translation = vec3f(0.0f, -0.35f, 0.0f);
     scene->entities[model] |= CMP_TRANSFORM;
-    
-    // sdf
-    u32 model_sdf = get_new_entity(scene);
-    instantiate_sdf_shadow("data/models/lucy-volume.pmv", scene, model_sdf);
-    scene->transforms[model_sdf].translation = vec3f::zero();
-    scene->transforms[model_sdf].rotation = quat();
-    scene->entities[model_sdf] |= CMP_TRANSFORM;
     
     // ground
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
@@ -38,8 +33,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->transforms[ground].translation = vec3f::zero();
     scene->entities[ground] |= CMP_TRANSFORM;
     scene->parents[ground] = ground;
-    
-    scene->material_permutation[ground] |= FORWARD_LIT_SDF_SHADOW | FORWARD_LIT_UV_SCALE;
+    scene->material_permutation[ground] |= FORWARD_LIT_UV_SCALE;
     
     instantiate_geometry(quad, scene, ground);
     instantiate_material(default_material, scene, ground);
@@ -47,40 +41,54 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     
     // checkerboard roughness
     scene->samplers[ground].sb[2].handle = put::load_texture("data/textures/roughness_checker.dds");
-    forward_lit_sdf_shadow_uv_scale* mat = (forward_lit_sdf_shadow_uv_scale*)&scene->material_data[ground];
+    forward_lit_uv_scale* mat = (forward_lit_uv_scale*)&scene->material_data[ground];
     mat->m_uv_scale = float2(0.1, 0.1);
     
     // area lights
-    u32 left = get_new_entity(scene);
-    scene->names[left] = "left_light";
-    scene->transforms[left].rotation = quat(-M_PI/8.0f, M_PI/4.0f, M_PI/2.0f);
-    scene->transforms[left].scale = vec3f(10.0f, 1.0f, 10.0f);
-    scene->transforms[left].translation = vec3f(-20.0f, 20.0f, -20.0f);
-    scene->entities[left] |= CMP_TRANSFORM;
-    scene->parents[left] = left;
+    material_resource area_light_material;
+    area_light_material.id_shader = PEN_HASH("pmfx_utility");
+    area_light_material.id_technique = PEN_HASH("area_light_texture");
+    area_light_material.material_name = "area_light_texture";
+    area_light_material.shader_name = "pmfx_utility";
     
-    instantiate_geometry(quad, scene, left);
-    instantiate_material(default_material, scene, left);
-    instantiate_model_cbuffer(scene, left);
+    quat al_rots[] = {
+        quat(0.0f, 0.0f, M_PI/2.0f) * quat(-M_PI/4.0f, 0.0f, 0.0f),
+        quat(0.0f, 0.0f, M_PI/2.0f),
+        quat(0.0f, 0.0f, M_PI/2.0f) * quat( M_PI/4.0f, 0.0f, 0.0f),
+    };
     
-    scene->entities[left] |= CMP_LIGHT;
-    scene->lights[left].type = LIGHT_TYPE_AREA;
+    vec3f al_scales[] = {
+        vec3f(10.0f, 1.0f, 10.0f),
+        vec3f(10.0f, 1.0f, 10.0f),
+        vec3f(10.0f, 1.0f, 10.0f)
+    };
     
-    u32 right = get_new_entity(scene);
-    scene->names[right] = "left_right";
-    scene->transforms[right].rotation = quat(M_PI/8.0f, -M_PI/4.0f, M_PI/2.0f);
-    scene->transforms[right].scale = vec3f(10.0f, 1.0f, 10.0f);
-    scene->transforms[right].translation = vec3f(20.0f, 20.0f, -20.0f);
-    scene->entities[right] |= CMP_TRANSFORM;
-    scene->parents[right] = right;
+    vec3f al_trans[] = {
+        vec3f(-25.0f, 20.0f, -20.0f),
+        vec3f(0.0f, 20.0f, -30.0f),
+        vec3f(25.0f, 20.0f, -20.0f)
+    };
     
-    instantiate_geometry(quad, scene, right);
-    instantiate_material(default_material, scene, right);
-    instantiate_model_cbuffer(scene, right);
+    area_light_resource alrs[] = {
+        {"trace", "box", "", ""},
+        {"trace", "egypt", "", ""},
+        {"trace", "octahedron", "", ""},
+    };
     
-    scene->entities[right] |= CMP_LIGHT;
-    scene->lights[right].type = LIGHT_TYPE_AREA;
-    
+    for(u32 i = 0; i < 3; ++i)
+    {
+        u32 al = get_new_entity(scene);
+        scene->names[al].setf("area_light_%i", i);
+        
+        scene->transforms[al].rotation = al_rots[i];
+        scene->transforms[al].scale = al_scales[i];
+        scene->transforms[al].translation = al_trans[i];
+        scene->entities[al] |= CMP_TRANSFORM;
+        scene->parents[al] = al;
+        
+        instantiate_area_light_ex(scene, al, alrs[i]);
+    }
+
     bake_material_handles();
 }
 

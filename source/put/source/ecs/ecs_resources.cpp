@@ -432,10 +432,61 @@ namespace put
         
         void instantiate_area_light(ecs_scene* scene, u32 node_index)
         {
-            geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
+            geometry_resource* gr = get_geometry_resource(PEN_HASH("quad"));
+            
+            material_resource area_light_material;
+            area_light_material.id_shader = PEN_HASH("pmfx_utility");
+            area_light_material.id_technique = PEN_HASH("area_light_colour");
+            area_light_material.material_name = "area_light_colour";
+            area_light_material.shader_name = "pmfx_utility";
+            
             instantiate_geometry(gr, scene, node_index);
+            instantiate_material(&area_light_material, scene, node_index);
+            instantiate_model_cbuffer(scene, node_index);
+            
+            scene->entities[node_index] |= CMP_LIGHT;
+            scene->lights[node_index].type = LIGHT_TYPE_AREA;
         }
-
+        
+        void instantiate_area_light_ex(ecs_scene* scene, u32 node_index, area_light_resource& alr)
+        {
+            geometry_resource* gr = get_geometry_resource(PEN_HASH("quad"));
+            
+            material_resource area_light_material;
+            area_light_material.id_shader = PEN_HASH("pmfx_utility");
+            area_light_material.id_technique = PEN_HASH("area_light_texture");
+            area_light_material.material_name = "area_light_texture";
+            area_light_material.shader_name = "pmfx_utility";
+            
+            instantiate_geometry(gr, scene, node_index);
+            instantiate_material(&area_light_material, scene, node_index);
+            instantiate_model_cbuffer(scene, node_index);
+            
+            scene->entities[node_index] |= CMP_LIGHT;
+            scene->lights[node_index].type = LIGHT_TYPE_AREA;
+            
+            if(!alr.texture_name.empty())
+            {
+                scene->area_light[node_index].texture_handle = put::load_texture(alr.texture_name.c_str());
+            }
+            
+            if(!alr.shader_name.empty())
+            {
+                scene->area_light[node_index].shader = pmfx::load_shader(alr.shader_name.c_str());
+                scene->area_light[node_index].technique = PEN_HASH(alr.technique_name.c_str());
+            }
+            else
+            {
+                if(!alr.texture_name.empty())
+                {
+                    // default to basic texture
+                }
+            }
+            
+            // store for later for save load.
+            scene->area_light_resource[node_index] = alr;
+        }
+        
         void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)
         {
             // generate hash

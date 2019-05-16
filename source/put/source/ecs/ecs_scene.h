@@ -287,6 +287,24 @@ namespace put
 
             bool shadow_map = false;
         };
+        
+        // run time shader / texture for area light textures
+        struct cmp_area_light
+        {
+            u32 texture_handle = PEN_INVALID_HANDLE;
+            u32 sampler_state = PEN_INVALID_HANDLE;
+            u32 shader = PEN_INVALID_HANDLE;
+            hash_id technique = PEN_INVALID_HANDLE;
+        };
+        
+        // data to save / load and reconstruct area light textures
+        struct area_light_resource
+        {
+            Str shader_name;
+            Str technique_name;
+            Str texture_name;
+            Str sampler_state_name;
+        };
 
         typedef maths::transform cmp_transform;
 
@@ -431,6 +449,8 @@ namespace put
             cmp_array<cmp_anim_controller_v2> anim_controller_v2;
             cmp_array<cmp_transform>          physics_offset;
             cmp_array<u32>                    physics_debug_cbuffer;
+            cmp_array<cmp_area_light>         area_light;
+            cmp_array<area_light_resource>    area_light_resource;
 
             // num base components calculates value based on its address - entities address.
             u32 num_base_components;
