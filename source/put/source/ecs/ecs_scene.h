@@ -450,7 +450,7 @@ namespace put
             cmp_array<cmp_transform>          physics_offset;
             cmp_array<u32>                    physics_debug_cbuffer;
             cmp_array<cmp_area_light>         area_light;
-            cmp_array<area_light_resource>    area_light_resource;
+            cmp_array<area_light_resource>    area_light_resources;
 
             // num base components calculates value based on its address - entities address.
             u32 num_base_components;

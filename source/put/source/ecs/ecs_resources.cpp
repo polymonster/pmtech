@@ -484,7 +484,7 @@ namespace put
             }
             
             // store for later for save load.
-            scene->area_light_resource[node_index] = alr;
+            scene->area_light_resources[node_index] = alr;
         }
         
         void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)

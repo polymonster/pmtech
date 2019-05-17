@@ -99,30 +99,27 @@ void cam_anim(float2 uv, float time, out float3 ro, out float3 rd)
 	rd = mul( normalize( float3(p.x, p.y, 2.0) ), cam); 
 }
 
-float map(float3 p)
+float2 bend_tc(float2 uv)
 {
-	float scale = 10.0;
-    float rep = 2.0;
-    float pyr_rep = 300.0;
+    float2 tc = uv;
     
-    float y = noise(p.xz / 20.0) * 8.0;
+    float2 cc = tc - 0.5;
+    float dist = dot(cc, cc) * 0.07;
     
-    float3 q = mod(p - float3(0.0, y, 0.0), float3(rep, 0.0, rep)) - 0.5 * rep;
-    float3 b = mod(p / float3(1.0, 10.0, 1.0), float3(0.0, 0.0, 200.0)) - 0.5 * float3(0.0, 0.0, 200.0);
-    float3 c = mod(p, float3(0.0, 0.0, pyr_rep)) - 0.5 * float3(0.0, 0.0, pyr_rep);
+    tc = tc * (tc + cc * (1.0 + dist) * dist) / tc;
     
- 	float terrain = 1000; //sd_box(q - float3(0.0, 5.0, 0.0), float3(2.5));
-    float pillars_left = sd_box(b - float3(40.0, 0.0, 0.0), float3(10.0, 10.0, 10.0));
-    float pillars_right = sd_box(b - float3(-40.0, 0.0, 0.0), float3(10.0, 10.0, 10.0));
-    float pyramids_left = sd_octahedron(c - float3(-400.0, 0.0, 0.0), 100.0);
-    float pyramids_right = sd_octahedron(c - float3(400.0, 0.0, 0.0), 100.0);
-    
-    float res = op_union(terrain, pillars_left);
-    res = op_union(res, pillars_right);
-    res = op_union(res, pyramids_left);
-    res = op_union(res, pyramids_right);
+    return tc;
+}
 
-    return res; //sd_octahedron(p, 2.5);
+float3 crt_c(float3 src, float2 tc)
+{
+    float2 inv_texel = float2(1.0/640.0, 1.0/480.0);
+    
+    float2 ca = float2(inv_texel.x * 2.0, 0.0);
+    
+    src.rgb *= saturate(abs(sin(tc.y / inv_texel.y/2.0)) + 0.5);
+    
+    return src;
 }
 
 float3 sky(float3 v, float time)
@@ -136,87 +133,6 @@ float3 sky(float3 v, float time)
     float grad_t = v.y * 0.5 + 0.5;
     
     return lerp(grad_b, grad_a, grad_t);
-}
-
-float3 calc_normal(float3 pos)
-{
-    float3 eps = float3(0.001, 0.0, 0.0);
-    float3 nor;
-    
-    nor.x = map(pos+eps.xyy) - map(pos-eps.xyy);
-    nor.y = map(pos+eps.yxy) - map(pos-eps.yxy);
-    nor.z = map(pos+eps.yyx) - map(pos-eps.yyx);
-    
-    return normalize(nor);
-}
-
-ps_output ps_egpyt( vs_output input )
-{
-    float2 uv = input.texcoord.xy;
-    float eps = 0.005;
-    
-    float iTime = mod(user_data.y * 3, 200);
-    float2 iResolution = float2(640.0, 480.0);
-    
-	float time = 15.0 + iTime;
-    
-    float yp = 20.0;
-    float xp = -0.0;
-    float zp = -10.0 + iTime * 50.0;
-
-    float3 ro = float3(xp, yp, zp);
-    
-    float3 ta = float3( xp, yp, zp + 10.0);
-    float3x3 cam = create_camera( ro, ta, 0.0 );
-        
-    float3 col = float3(0.0, 0.0, 0.0);
-	
-	float2 p = (uv * 2.0) - 1.0;
-    float3 rd = mul( normalize( float3(p.x, p.y, 2.0) ), cam);
-    
-    float d = 10.0;
-    float xt = 0.0;
-    float3 pp = ro;
-   
-    float3 l = normalize(float3(0.0, 1.0, 1.0));
-    
-    for(float t = 0.0; t < 100.0; ++t)
-    {
-        pp = ro + rd * xt;
-        
-        float3 qq = pp;
-        d = map(qq);
-        
-        if(d < eps)
-            break;
-        
-        xt += d;
-    }
-
-    float3 n = calc_normal(pp);
-	//float3 n = float3(0.0, 0.0, 0.0);
-	
-    float nv = dot(n, -rd);
-    col += sin(nv * float3(0.0, 1.0, 0.0) * 10.0 * 1.5) * 0.5 + 0.5;  
-    col += sin(nv * float3(1.0, 0.0, 0.0) * 20.0 * 1.5) * 0.5 + 0.5;  
-    col += sin(nv * float3(0.0, 0.0, 1.0) * 5.0 * 1.5) * 0.5 + 0.5;
-    col = clamp(normalize(col), 0.0, 1.0);
-    
-    float mask = step(d, eps);
-    float inv_mask = 1.0 - mask;
-    
-    float3 csky = sky(rd, time);
-    
-    ps_output output;
-    output.colour = float4(csky * inv_mask + col * mask, 1.0);
-    
-    return output;
-    
-    /*
-    ps_output output;
-    output.colour = float4(1.0, 0.0, 0.0, 1.0);
-    return output;
-    */
 }
 
 float map_octahedron(float3 p)
@@ -238,7 +154,7 @@ float3 calc_normal_octahedron(float3 pos)
 
 ps_output ps_octahedron( vs_output input )
 {
-    float2 uv = input.texcoord.xy;
+    float2 uv = bend_tc(input.texcoord.xy);
     float eps = 0.005;
     
     float iTime = mod(user_data.y * 3, 200);
@@ -272,8 +188,9 @@ ps_output ps_octahedron( vs_output input )
     float3 csky = sky(rd, iTime + 10);
 	csky = csky.zyx;
         
-    ps_output output;
-    output.colour = float4(csky * inv_mask + col * mask, 1.0);
+    float3 cc = crt_c(csky * inv_mask + col * mask, uv);
+    ps_output output;    
+    output.colour = float4(cc, 1.0);
     return output;
 }
 
@@ -296,7 +213,7 @@ float3 calc_normal_box(float3 pos)
 
 ps_output ps_box( vs_output input )
 {
-    float2 uv = input.texcoord.xy;
+    float2 uv = bend_tc(input.texcoord.xy);
     float eps = 0.005;
     
     float iTime = mod(user_data.y * 3, 200);
@@ -329,8 +246,9 @@ ps_output ps_box( vs_output input )
     
     float3 csky = sky(rd, iTime + 10);
         
-    ps_output output;
-    output.colour = float4(csky * inv_mask + col * mask, 1.0);
+    float3 cc = crt_c(csky * inv_mask + col * mask, uv);
+    ps_output output;    
+    output.colour = float4(cc, 1.0);
     return output;
 }
 
@@ -353,7 +271,7 @@ float3 calc_normal_torus(float3 pos)
 
 ps_output ps_torus( vs_output input )
 {
-    float2 uv = input.texcoord.xy;
+    float2 uv = bend_tc(input.texcoord.xy);
     float eps = 0.005;
     
     float iTime = mod(user_data.y * 3, 200);
@@ -386,11 +304,13 @@ ps_output ps_torus( vs_output input )
     
     float3 csky = sky(rd, iTime + 10);
 	csky = csky.zxy;
-        
-    ps_output output;
-    output.colour = float4(csky * inv_mask + col * mask, 1.0);
+	
+    float3 cc = crt_c(csky * inv_mask + col * mask, uv);
+    ps_output output;    
+    output.colour = float4(cc, 1.0);
     return output;
 }
+
 
 pmfx:
 {    
