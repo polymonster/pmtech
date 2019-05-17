@@ -153,12 +153,8 @@ float3 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4
     t2 = cross(n, t1);
 
     // rotate area light in (T1, T2, N) basis
-    float3x3 ttn;
-    ttn[0] = t1;
-    ttn[1] = t2;
-    ttn[2] = n;
-    
-    minv = mul(minv, transpose(ttn));
+    float3x3 ttn = from_columns_3x3(t1, t2, n);    
+    minv = mul(minv, ttn);
 
     // polygon (allocate 5 vertices for clipping)
     float3 l[5];

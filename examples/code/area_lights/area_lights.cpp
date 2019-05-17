@@ -71,7 +71,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     
     area_light_resource alrs[] = {
         {"trace", "box", "", ""},
-        {"trace", "egypt", "", ""},
+        {"trace", "torus", "", ""},
         {"trace", "octahedron", "", ""},
     };
     

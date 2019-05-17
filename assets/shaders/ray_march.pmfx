@@ -58,7 +58,7 @@ float sd_cross(float3 p, float2 s)
 
 float sd_torus(float3 p, float2 t)
 {
-    float2 q = float2(length(p.xz) - t.x,p.y);
+    float2 q = float2(length(p.xy) - t.x,p.z);
     return length(q)-t.y;
 }
 

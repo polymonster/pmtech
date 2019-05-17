@@ -523,7 +523,7 @@ ps_output ps_forward_lit( vs_output input )
         
         float4 tt = sample_texture(ltc_mat, uv);
         
-        float3x3 minv = float3x3(
+        float3x3 minv = from_rows_3x3(
             float3(1.0, 0.0, tt.y),
             float3(0.0, tt.z, 0.0),
             float3(tt.w, 0.0, tt.x)
