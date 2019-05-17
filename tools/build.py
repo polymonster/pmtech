@@ -182,7 +182,7 @@ def get_platform_info():
         elif platform_name == "linux":
             shader_options = "-shader_platform glsl -platform linux -shader_version 330"
         else:
-            shader_options = "-shader_platform glsl -platform osx"
+            shader_options = "-shader_platform glsl -platform osx "
         shader_options += "-shader_version " + str(with_default(_info.shader_version, "330"))
 
     data_dir = os.path.join("bin", platform_name, "data")
