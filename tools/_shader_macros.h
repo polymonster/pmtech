@@ -45,6 +45,7 @@
     #define ddy dFdy
     #define _pmfx_unroll
 #endif //GLSL
+
 #ifdef HLSL
 	// texture
     #define texture2d_rw( name, index ) RWTexture2D<float4> name : register(u##index)
@@ -80,6 +81,7 @@
 	#define fract frac
     #define _pmfx_unroll [unroll]
 #endif //HLSL
+
 #ifdef METAL
 	// texture
     #define texture2d_rw( name, index ) texture2d<float, access::read_write> name [[texture(index)]]
@@ -125,6 +127,7 @@
     #define mod(x, y) x - y * floor(x/y) 
     #define _pmfx_unroll
 #endif //METAL
+
 // generic
 #define chebyshev_normalize( V ) (V.xyz / max( max(abs(V.x), abs(V.y)), abs(V.z) ))	
 #define max3(v) max(max(v.x, v.y),v.z)
