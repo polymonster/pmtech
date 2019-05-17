@@ -380,6 +380,9 @@ namespace put
                 
                 ++count;
             }
+
+            if (!is_valid(area_light))
+                return;
             
             cmp_area_light& al = scene->area_light[area_light];
 
@@ -1409,6 +1412,8 @@ namespace put
             pen::renderer_update_buffer(scene->area_light_buffer, &al_buffer, sizeof(al_buffer));
             
             const pmfx::render_target* alrt = pmfx::get_render_target(PEN_HASH("area_light_textures"));
+            if (!alrt)
+                return;
         
             if(alrt->num_arrays < num_area_lights)
             {

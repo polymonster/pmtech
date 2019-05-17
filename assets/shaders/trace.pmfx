@@ -1,7 +1,7 @@
-#include "../../../assets/shaders/libs/globals.pmfx"
-#include "../../../assets/shaders/libs/maths.pmfx"
-#include "../../../assets/shaders/libs/lighting.pmfx"
-#include "../../../assets/shaders/ray_march.pmfx"
+#include "libs/globals.pmfx"
+#include "libs/maths.pmfx"
+#include "libs/lighting.pmfx"
+#include "ray_march.pmfx"
 
 struct vs_output
 {

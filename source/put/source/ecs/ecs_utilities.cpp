@@ -466,6 +466,7 @@ namespace put
             vbcp.usage_flags = PEN_USAGE_DEFAULT;
             vbcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             vbcp.cpu_access_flags = 0;
+            vbcp.buffer_size = 0;
             
             u32 vertex_size = 0;
             u32 num_vertices = 0;
