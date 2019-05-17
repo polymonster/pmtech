@@ -81,6 +81,7 @@ float bcos(float v)
 
 float map(float3 p)
 {
+	/*
 	float scale = 10.0;
     float rep = 2.0;
     float pyr_rep = 300.0;
@@ -101,8 +102,9 @@ float map(float3 p)
     res = op_union(res, pillars_right);
     res = op_union(res, pyramids_left);
     res = op_union(res, pyramids_right);
+	*/
         
-    return res;
+    return sd_octahedron(p - float3(-400.0, 0.0, 0.0), 2.5);
 }
 
 float3 sky(float3 v, float time)
@@ -132,6 +134,7 @@ float3 calc_normal(float3 pos)
 
 ps_output ps_egpyt( vs_output input )
 {
+	
     float2 uv = input.texcoord.xy;
     float eps = 0.005;
     
@@ -172,10 +175,11 @@ ps_output ps_egpyt( vs_output input )
         
         xt += d;
     }
-    
-    float3 n = calc_normal(pp) * 0.5 + 0.5;
-    float nv = dot(n, -rd);
 
+    float3 n = calc_normal(pp);
+	//float3 n = float3(0.0, 0.0, 0.0);
+	
+    float nv = dot(n, -rd);
     col += sin(nv * float3(0.0, 1.0, 0.0) * 10.0 * 1.5) * 0.5 + 0.5;  
     col += sin(nv * float3(1.0, 0.0, 0.0) * 20.0 * 1.5) * 0.5 + 0.5;  
     col += sin(nv * float3(0.0, 0.0, 1.0) * 5.0 * 1.5) * 0.5 + 0.5;
@@ -255,8 +259,7 @@ ps_output ps_box( vs_output input )
         xt += d;
     }
     
-    float3 n = calc_normal(pp);
-    
+    float3 n = calc_normal_box(pp);    
     float nv = dot(n, -rd);
 
     col += sin(nv * float3(0.0, 1.0, 0.0) * 10.0 * 1.5) * 0.5 + 0.5;  
@@ -279,11 +282,13 @@ ps_output ps_torus( vs_output input )
     ps_output output;
     output.colour = float4(1.0, 1.0, 0.0, 1.0);
     return output;
+	
 }
 
 pmfx:
 {    
     "egypt":
+	
     {
         "vs": "vs_ndc_quad",
         "ps": "ps_egpyt"
