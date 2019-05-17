@@ -509,7 +509,6 @@ ps_output ps_forward_lit( vs_output input )
         float LUT_BIAS  = 0.5/LUT_SIZE;
 
         float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
-        
         float3 pos = input.world_pos.xyz;
         
         float3 points[4];
@@ -535,24 +534,22 @@ ps_output ps_forward_lit( vs_output input )
         
         float3 ss = sample_texture_array_level( area_light_textures, suv, float(i), 0).rgb;
         //float3 ss = area_lights[i].colour.rgb;
-        
         spec = ss * sample_texture(ltc_mag, uv).w * spec.z;
-		
-		float3x3 difv = float3x3(
-            float3(1.0, 0.0, 1.0),
-            float3(0.0, 1.0, 0.0),
-            float3(0.0, 0.0, 1.0)
-        );
         
-        float3 diff = ltc_evaluate(n, v, pos, difv, points, true) * albedo.rgb;
+        float3x3 difv;
+        difv[0] = float3(1.0, 0.0, 0.0);
+        difv[1] = float3(0.0, 1.0, 0.0);
+        difv[2] = float3(0.0, 0.0, 1.0);
+        
+        float3 diff = ltc_evaluate(n, v, pos, difv, points, true);
         float2 duv = clamp(diff.xy, float2(0.01, 0.01), float2(0.99, 0.99));
         
         float3 ds = sample_texture_array_level( area_light_textures, duv, float(i), 0).rgb;
         //float3 ds = area_lights[i].colour.rgb;
-        
         diff = ds * diff.z;
         
         float3 light_col = (spec + diff) / (2.0 * pi);
+        
                        
         if:(SDF_SHADOW)
         {            
@@ -586,8 +583,6 @@ ps_output ps_forward_lit( vs_output input )
 
     output.colour.rgb = lit_colour.rgb;    
     output.colour.a = albedo.a;
-    
-    // output.colour.rgb = ro_sample.rgb;
             
     return output;
 }
