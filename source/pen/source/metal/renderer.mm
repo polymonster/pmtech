@@ -56,6 +56,7 @@ namespace // internal structs and static vars
         id<MTLCommandQueue>          command_queue;
         id<MTLRenderCommandEncoder>  render_encoder;
         id<MTLComputeCommandEncoder> compute_encoder;
+        id<MTLBlitCommandEncoder>    blit_encoder;
         id<MTLCommandBuffer>         cmd_buffer;
         id<CAMetalDrawable>          drawable;
         MTLRenderPassDescriptor*     pass;
@@ -98,6 +99,8 @@ namespace // internal structs and static vars
         MTLPixelFormat          resolve_fmt;
         u32                     samples;
         texture_creation_params tcp;
+        u32                     num_mips;
+        u32                     invalidate;
     };
 
     struct metal_clear_state
@@ -644,6 +647,17 @@ namespace pen
 
     namespace direct
     {
+        void validate_blit_encoder()
+        {
+            if (_state.cmd_buffer == nil)
+                _state.cmd_buffer = [_state.command_queue commandBuffer];
+            
+            if(!_state.blit_encoder)
+            {
+                _state.blit_encoder = [_state.cmd_buffer blitCommandEncoder];
+            }
+        }
+        
         void validate_render_encoder()
         {
             if (!_state.render_encoder)
@@ -1057,6 +1071,11 @@ namespace pen
                 }
             }
             
+            if(tcp.num_mips == -1)
+            {
+                _tcp.num_mips = calc_num_mips(_tcp.width, _tcp.height);
+            }
+            
             MTLTextureDescriptor* td = nil;
             id<MTLTexture>        texture = nil;
             id<MTLTexture>        texture_msaa = nil;
@@ -1177,7 +1196,7 @@ namespace pen
             }
             
             texture_resource tr;
-            tr =  {texture, texture_msaa, fmt, fmt_msaa, _tcp.sample_count, tcp};
+            tr =  {texture, texture_msaa, fmt, fmt_msaa, _tcp.sample_count, tcp, (u32)_tcp.num_mips, 0};
             
             return tr;
         }
@@ -1220,9 +1239,25 @@ namespace pen
             if (texture_index == 0)
                 return;
             
+            texture_resource& t = _res_pool.get(texture_index).texture;
             id<MTLTexture> tex = _res_pool.get(texture_index).texture.tex;
             if(bind_flags & pen::TEXTURE_BIND_MSAA)
                 tex = _res_pool.get(texture_index).texture.tex_msaa;
+            
+            if(t.num_mips > 1 && t.invalidate)
+            {
+                t.invalidate = 0;
+                
+                [_state.render_encoder endEncoding];
+                _state.render_encoder = nil;
+                _state.pipeline_hash = 0;
+                
+                validate_blit_encoder();
+                
+                [_state.blit_encoder generateMipmapsForTexture:tex];
+                [_state.blit_encoder endEncoding];
+                _state.blit_encoder = nil;
+            }
 
             if(bind_flags & pen::TEXTURE_BIND_PS || bind_flags & pen::TEXTURE_BIND_VS)
             {
@@ -1452,6 +1487,9 @@ namespace pen
                 for (u32 i = 0; i < num_colour_targets; ++i)
                 {
                     resource& r =_res_pool.get(colour_targets[i]);
+                    if(r.texture.num_mips > 1)
+                        r.texture.invalidate = 1;
+                    
                     id<MTLTexture> texture = r.texture.tex;
                     if(r.texture.samples > 1)
                         texture = r.texture.tex_msaa;
@@ -1482,6 +1520,9 @@ namespace pen
                 id<MTLTexture> texture = r.texture.tex;
                 if(r.texture.samples > 1)
                     texture = r.texture.tex_msaa;
+                
+                if(r.texture.num_mips > 1)
+                    r.texture.invalidate = 1;
                 
                 _state.formats.sample_count = r.texture.samples;
                 
