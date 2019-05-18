@@ -15,24 +15,17 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
     clear_scene(scene);
     
-    geometry_resource* sphere_res = get_geometry_resource(PEN_HASH("sphere"));
+    // add model
+    u32 model = load_pmm("data/models/lucy.pmm", scene, PMM_ALL);
+    scene->transforms[model].scale = vec3f(0.07f);
+    scene->transforms[model].rotation = quat(0.0f, -M_PI/4.0f, 0.0f);
+    scene->transforms[model].translation = vec3f(0.0f, -0.35f, 0.0f);
+    scene->entities[model] |= CMP_TRANSFORM;
+    
+    // ground
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     geometry_resource* quad = get_geometry_resource(PEN_HASH("quad"));
     
-    // add sphere
-    u32 sphere = get_new_entity(scene);
-    scene->names[sphere] = "sphere";
-    scene->transforms[sphere].rotation = quat();
-    scene->transforms[sphere].scale = vec3f(4.0f);
-    scene->transforms[sphere].translation = vec3f(0.0f, 2.0f, 0.0f);
-    scene->entities[sphere] |= CMP_TRANSFORM;
-    scene->parents[sphere] = sphere;
-    
-    instantiate_geometry(sphere_res, scene, sphere);
-    instantiate_material(default_material, scene, sphere);
-    instantiate_model_cbuffer(scene, sphere);
-    
-    // ground
     u32 ground = get_new_entity(scene);
     scene->names[ground] = "ground";
     scene->transforms[ground].rotation = quat();
