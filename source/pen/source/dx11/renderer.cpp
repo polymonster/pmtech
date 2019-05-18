@@ -358,6 +358,9 @@ namespace pen
 
         DXGI_FORMAT              format;
         texture_creation_params* tcp;
+
+        u32                     invalidate;
+        bool                    has_mips = false;
     };
 
     struct depth_stencil_target_internal
@@ -372,6 +375,9 @@ namespace pen
 
         DXGI_FORMAT              format;
         texture_creation_params* tcp;
+
+        u32                     invalidate;
+        bool                    has_mips = false;
     };
 
     struct shader_program
@@ -449,6 +455,7 @@ namespace pen
 
         _res_pool[resource_slot].clear_state->num_colour_targets = cs.num_colour_targets;
 
+        memcpy(_res_pool[resource_slot].clear_state->mrt, cs.mrt, sizeof(mrt_clear) * cs.num_colour_targets);
         memcpy(_res_pool[resource_slot].clear_state->mrt, cs.mrt, sizeof(mrt_clear) * cs.num_colour_targets);
 
         mrt_clear* mrt = _res_pool[resource_slot].clear_state->mrt;
@@ -832,11 +839,6 @@ namespace pen
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
-        if (texture_desc.ArraySize > 1)
-        {
-            u32 a = 0;
-        }
-
         u32  array_size = texture_desc.ArraySize;
         bool texture2dms = texture_desc.SampleDesc.Count > 1;
 
@@ -845,6 +847,8 @@ namespace pen
             // arrays and cubes don't support msaa yet
             PEN_ASSERT(0);
         }
+
+        u32 num_mips = tcp.num_mips;
 
         CHECK_CALL(s_device->CreateTexture2D(&texture_desc, nullptr, &texture_container->texture));
 
@@ -862,7 +866,7 @@ namespace pen
             // create shader resource view
             resource_view_desc.Format = (DXGI_FORMAT)depth_texture_format_to_srv_format(texture_desc.Format);
             resource_view_desc.ViewDimension = srv_dimension;
-            resource_view_desc.Texture2D.MipLevels = 1;
+            resource_view_desc.Texture2D.MipLevels = num_mips;
             resource_view_desc.Texture2D.MostDetailedMip = 0;
 
             // depth target
@@ -896,7 +900,7 @@ namespace pen
                 {
                     resource_view_desc.Texture2DArray.ArraySize = array_size;
                     resource_view_desc.Texture2DArray.FirstArraySlice = 0;
-                    resource_view_desc.Texture2DArray.MipLevels = -1;
+                    resource_view_desc.Texture2DArray.MipLevels = num_mips;
                     resource_view_desc.Texture2DArray.MostDetailedMip = 0;
                 }
             }
@@ -906,9 +910,8 @@ namespace pen
             // create shader resource view
             resource_view_desc.Format = texture_desc.Format;
             resource_view_desc.ViewDimension = srv_dimension;
-            resource_view_desc.Texture2D.MipLevels = -1;
+            resource_view_desc.Texture2D.MipLevels = num_mips;
             resource_view_desc.Texture2D.MostDetailedMip = 0;
-
 
             // d3d render target
             D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
@@ -939,7 +942,7 @@ namespace pen
                 {
                     resource_view_desc.Texture2DArray.ArraySize = array_size;
                     resource_view_desc.Texture2DArray.FirstArraySlice = 0;
-                    resource_view_desc.Texture2DArray.MipLevels = -1;
+                    resource_view_desc.Texture2DArray.MipLevels = num_mips;
                     resource_view_desc.Texture2DArray.MostDetailedMip = 0;
                 }
             }
@@ -983,6 +986,18 @@ namespace pen
                 managed_rt man_rt = {resource_index, tcp};
                 sb_push(s_managed_render_targets, man_rt);
             }
+        }
+
+        // rt mip maps
+        _tcp.num_mips = tcp.num_mips;
+        if (_tcp.num_mips == -1)
+            _tcp.num_mips = calc_num_mips(_tcp.width, _tcp.height);
+
+        if (_tcp.num_mips > 1)
+        {
+            _tcp.flags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+            _res_pool[resource_index].depth_target->has_mips = true;
+            _res_pool[resource_index].render_target->has_mips = true;
         }
 
         if (_tcp.cpu_access_flags != 0)
@@ -1043,6 +1058,7 @@ namespace pen
 
         u32                     num_views = num_colour_targets;
         ID3D11RenderTargetView* colour_rtv[MAX_MRT] = {0};
+
         for (s32 i = 0; i < num_colour_targets; ++i)
         {
             u32 colour_target = colour_targets[i];
@@ -1054,6 +1070,9 @@ namespace pen
                     colour_rtv[i] = _res_pool[colour_target].render_target->rt_msaa[colour_face];
                 else
                     colour_rtv[i] = _res_pool[colour_target].render_target->rt[colour_face];
+
+                if (_res_pool[colour_target].render_target->has_mips)
+                    _res_pool[colour_target].render_target->invalidate = 1;
             }
             else
             {
@@ -1068,6 +1087,9 @@ namespace pen
                 dsv = _res_pool[depth_target].depth_target->ds_msaa[depth_face];
             else
                 dsv = _res_pool[depth_target].depth_target->ds[depth_face];
+
+            if (_res_pool[depth_target].depth_target->has_mips)
+                _res_pool[depth_target].depth_target->invalidate = 1;
         }
         else
         {
@@ -1237,6 +1259,16 @@ namespace pen
 
         if (texture_index > 0)
         {
+            // auto gen mip maps
+            bool gen_mips = false;
+            if (_res_pool[texture_index].type == RES_RENDER_TARGET)
+            {
+                if (_res_pool[texture_index].render_target->has_mips)
+                    if (_res_pool[texture_index].render_target->invalidate)
+                        gen_mips = true;
+            }
+
+
             if (_res_pool[texture_index].type == RES_RENDER_TARGET && bind_flags & TEXTURE_BIND_MSAA)
             {
                 render_target_internal* rt = _res_pool[texture_index].render_target;
@@ -1245,6 +1277,12 @@ namespace pen
             else
             {
                 srv = &_res_pool[texture_index].texture_resource->srv;
+            }
+
+            if (gen_mips)
+            {
+                s_immediate_context->GenerateMips(*srv);
+                _res_pool[texture_index].render_target->invalidate = 0;
             }
 
 			auto* tex_res = _res_pool[texture_index].texture_resource;			
