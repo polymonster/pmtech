@@ -1322,7 +1322,13 @@ namespace pen
             for (u32 i = 0; i < blend.num_render_targets; ++i)
             {
                 blend.attachment[i].enabled = bcp.render_targets[i].blend_enable;
-                blend.attachment[i].write_mask = bcp.render_targets[i].render_target_write_mask;
+                blend.attachment[i].write_mask = 0;
+                
+                // swizzle mask rgba to abgr
+                u32 wm = bcp.render_targets[i].render_target_write_mask;
+                for(u32 a = 0, b = 3; a < 4; ++a, --b)
+                    if(wm & (1<<a))
+                        blend.attachment[i].write_mask |= (1<<b);
 
                 blend.attachment[i].rgb_op = to_metal_blend_op(bcp.render_targets[i].blend_op);
                 blend.attachment[i].src_rgb_factor = to_metal_blend_factor(bcp.render_targets[i].src_blend);
