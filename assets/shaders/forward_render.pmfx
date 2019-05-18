@@ -315,8 +315,9 @@ ps_output ps_forward_lit( vs_output input )
     float t = 1.0;
     
     //for directional lights
+    float3 lll = float3(0.0, 0.0, 0.0);
     for( int i = 0; i < int(light_info.x); ++i )
-    {
+    {        
         float3 light_col = float3( 0.0, 0.0, 0.0 );
         
         light_col += cook_torrence( 
@@ -339,21 +340,21 @@ ps_output ps_forward_lit( vs_output input )
             camera_view_pos.xyz,
             roughness,
             albedo.rgb
-        );        
+        );
         
         if:(SDF_SHADOW)
         {
             float s = sdf_shadow_trace(max_samples, lights[i].pos_radius.xyz, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
             light_col *= smoothstep( 0.0, 0.1, s);
         }
-        
+                
         if( lights[i].colour.a == 0.0 )
         {
             lit_colour += light_col;
             continue;
         }
         else
-        {
+        {            
             float shadow = 1.0;
             float d = 1.0;
             

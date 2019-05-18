@@ -376,6 +376,7 @@ namespace pen
         u32                      uid;
         u32                      collection_type;
         texture_creation_params* tcp;
+        u32                      invalidate;
     };
 
     struct framebuffer
@@ -1108,22 +1109,6 @@ namespace pen
                                                      instance_count, base_vertex));
     }
 
-    u32 calc_mip_level_size(u32 w, u32 h, u32 d, u32 block_size, u32 pixels_per_block)
-    {
-        if (block_size != 1)
-        {
-            u32 block_width = max<u32>(1, ((w + (pixels_per_block - 1)) / pixels_per_block));
-            u32 block_height = max<u32>(1, ((h + (pixels_per_block - 1)) / pixels_per_block));
-            u32 block_depth = max<u32>(1, ((d + (pixels_per_block - 1)) / pixels_per_block));
-
-            return block_width * block_height * block_depth * block_size;
-        }
-
-        u32 num_blocks = (w * h * d) / pixels_per_block;
-        u32 size = num_blocks * block_size;
-        return size;
-    }
-
     struct tex_format_map
     {
         u32 pen_format;
@@ -1315,13 +1300,20 @@ namespace pen
         {
             _tcp.width = pen_window.width / tcp.height;
             _tcp.height = pen_window.height / tcp.height;
-
+            
+            if(tcp.num_mips == -1)
+                _tcp.num_mips = calc_num_mips(_tcp.width, _tcp.height);
+            
             if (track)
             {
                 managed_render_target man_rt = {tcp, resource_slot};
                 sb_push(s_managed_render_targets, man_rt);
             }
         }
+        
+        // generate mips or resolve
+        if(tcp.num_mips > 1)
+            res.render_target.invalidate = 1;
 
         // null handles
         res.render_target.texture_msaa.handle = 0;
@@ -1384,6 +1376,7 @@ namespace pen
         {
             resource_allocation& depth_res = _res_pool[depth_target];
             hh.add(depth_res.render_target.uid);
+            depth_res.render_target.invalidate = 1;
         }
 
         for (s32 i = 0; i < num_colour_targets; ++i)
@@ -1391,6 +1384,7 @@ namespace pen
             resource_allocation& colour_res = _res_pool[colour_targets[i]];
             hh.add(colour_res.render_target.uid);
             hh.add(colour_targets[i]);
+            colour_res.render_target.invalidate = 1;
 
             if (colour_res.type == RES_RENDER_TARGET_MSAA)
                 msaa = true;
@@ -1637,13 +1631,27 @@ namespace pen
             {
                 target = GL_TEXTURE_2D_MULTISAMPLE;
                 CHECK_CALL(glBindTexture(target, res.render_target.texture_msaa.handle));
+                max_mip = res.render_target.texture_msaa.max_mip_level;
+                
+                // auto mip map
+                if(max_mip > 1 && res.render_target.invalidate)
+                {
+                    res.render_target.invalidate = 0;
+                    CHECK_CALL(glGenerateMipmap(GL_TEXTURE_2D_MULTISAMPLE));
+                }
             }
             else
             {
                 CHECK_CALL(glBindTexture(target, res.render_target.texture.handle));
+                max_mip = res.render_target.texture.max_mip_level;
+                
+                // auto mip map
+                if(max_mip > 1 && res.render_target.invalidate)
+                {
+                    res.render_target.invalidate = 0;
+                    CHECK_CALL(glGenerateMipmap(GL_TEXTURE_2D));
+                }
             }
-
-            max_mip = res.render_target.texture_msaa.max_mip_level;
         }
 
         if (sampler_index == 0)

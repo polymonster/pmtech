@@ -1,0 +1,40 @@
+{            
+    include: [
+        common.jsn
+    ],
+    
+    render_targets:
+    {
+        mip_mapped:
+        {
+            size    : equal,
+            format  : rgba8,
+            mips    : true
+        },
+    }
+    
+    views:
+    {    
+        rtmm:
+        {
+            inherit: main_view,
+            target : [mip_mapped],
+            clear_colour : [0.0, 1.0, 0.0, 1.0],
+            clear_depth : 1.0,
+            colour_write_mask : 0xf,
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : default,
+            depth_stencil_state: default,
+            scene : main_scene,
+            camera : model_viewer_camera
+        }
+    },
+    
+    view_sets: 
+    {
+        rtmm_view_set: [rtmm, main_view] 
+    },
+    
+    view_set: rtmm_view_set
+}

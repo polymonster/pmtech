@@ -343,24 +343,6 @@ namespace put
             s_cameras.push_back(rc);
         }
 
-        s32 calc_num_mips(s32 width, s32 height)
-        {
-            s32 num = 0;
-
-            while (width > 1 && height > 1)
-            {
-                ++num;
-
-                width /= 2;
-                height /= 2;
-
-                width = std::max<s32>(1, width);
-                height = std::max<s32>(1, height);
-            }
-
-            return num;
-        }
-
         void get_rt_dimensions(s32 rt_w, s32 rt_h, f32 rt_r, f32& w, f32& h)
         {
             w = (f32)pen_window.width;
@@ -1078,7 +1060,7 @@ namespace put
                         // mips
                         if (r["mips"].as_bool(false))
                         {
-                            new_info.num_mips = calc_num_mips(new_info.width, new_info.height);
+                            new_info.num_mips = pen::calc_num_mips(new_info.width, new_info.height);
                             tcp.num_mips = new_info.num_mips;
                         }
 
