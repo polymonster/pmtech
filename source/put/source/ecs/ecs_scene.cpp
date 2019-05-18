@@ -372,12 +372,16 @@ namespace put
                 if(!(scene->lights[i].type == LIGHT_TYPE_AREA))
                     continue;
                 
+                cmp_area_light& al = scene->area_light[i];
+                if(!is_valid(al.shader))
+                    continue;
+                
                 if(count == view.array_index)
                 {
                     area_light = i;
                     break;
                 }
-                
+
                 ++count;
             }
 
@@ -1081,8 +1085,7 @@ namespace put
         void update_scene(ecs_scene* scene, f32 dt)
         {
             // static anim time to pass into draw calls etc..
-            static f32 anim_time = 0.0f;
-            anim_time += dt;
+            f32 anim_time = pen::get_time_ms() / 1000.0;
             
             u32 num_controllers = sb_count(scene->controllers);
             u32 num_extensions = sb_count(scene->extensions);
@@ -1374,40 +1377,62 @@ namespace put
             // Area light buffer
             static area_light_buffer al_buffer;
             
-            u32 num_area_lights = 0;
-            for (s32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (num_lights >= MAX_FORWARD_LIGHTS)
-                    break;
-                
-                if (!(scene->entities[n] & CMP_LIGHT))
-                    continue;
-                
-                cmp_light& l = scene->lights[n];
-                mat4& wm = scene->world_matrices[n];
-                
-                if (l.type != LIGHT_TYPE_AREA)
-                    continue;
-                
-                static vec4f corners[] = {
-                    vec4f(-1.0, 0.0, -1.0, 1.0),
-                    vec4f(1.0, 0.0, -1.0, 1.0),
-                    vec4f(1.0, 0.0, 1.0, 1.0),
-                    vec4f(-1.0, 0.0, 1.0, 1.0)
-                };
-                
-                for(u32 c = 0; c < 4; ++c)
-                    al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners[c]);
-                
-                // data for draw calls
-                scene->draw_call_data[n].v1.y = (f32)anim_time;         // time
-                scene->draw_call_data[n].v1.z = (f32)num_area_lights;   // area light texture array index
-                
-                al_buffer.lights[num_area_lights].colour = vec4f(l.colour, 1.0f);
-                ++num_area_lights;
-            }
+            static vec4f corners_al[] = {
+                vec4f(-1.0, 0.0, -1.0, 1.0),
+                vec4f(1.0, 0.0, -1.0, 1.0),
+                vec4f(1.0, 0.0, 1.0, 1.0),
+                vec4f(-1.0, 0.0, 1.0, 1.0)
+            };
             
-            al_buffer.info.x = num_area_lights;
+            u32 num_area_lights = 0;
+            u32 num_constant_colour_area_lights = 0;
+            u32 num_textured_area_lights = 0;
+            for(u32 alt = 0; alt < 2; ++alt)
+            {
+                for (s32 n = 0; n < scene->num_entities; ++n)
+                {
+                    if (num_lights >= MAX_FORWARD_LIGHTS)
+                        break;
+                    
+                    if (!(scene->entities[n] & CMP_LIGHT))
+                        continue;
+                    
+                    cmp_light& l = scene->lights[n];
+                    
+                    if (l.type != LIGHT_TYPE_AREA)
+                        continue;
+                    
+                    mat4& wm = scene->world_matrices[n];
+                    for(u32 c = 0; c < 4; ++c)
+                        al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners_al[c]);
+                    
+                    if(alt == 0)
+                    {
+                        if(is_valid(scene->area_light[n].shader))
+                            continue;
+                        
+                        // constant colour area light
+                        al_buffer.lights[num_area_lights].colour = vec4f(l.colour, num_textured_area_lights);
+                        ++num_constant_colour_area_lights;
+                    }
+                    else
+                    {
+                        if(!is_valid(scene->area_light[n].shader))
+                            continue;
+                        
+                        // textured / animated area light
+                        scene->draw_call_data[n].v1.y = (f32)anim_time; // time
+                        al_buffer.lights[num_area_lights].colour = vec4f(l.colour, num_textured_area_lights);
+                        scene->draw_call_data[n].v1.z = (f32)num_textured_area_lights;
+                        ++num_textured_area_lights;
+                    }
+
+                    ++num_area_lights;
+                }
+            }
+
+            al_buffer.info.x = num_constant_colour_area_lights;
+            al_buffer.info.y = num_textured_area_lights;
             
             pen::renderer_update_buffer(scene->area_light_buffer, &al_buffer, sizeof(al_buffer));
             

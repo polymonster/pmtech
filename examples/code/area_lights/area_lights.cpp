@@ -32,16 +32,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     instantiate_material(default_material, scene, sphere);
     instantiate_model_cbuffer(scene, sphere);
     
-    /*
-    u32 model = load_pmm("data/models/lucy.pmm", scene, PMM_ALL);
-    scene->transforms[model].scale = vec3f(0.07f);
-    scene->transforms[model].rotation = quat(0.0f, -M_PI/4.0f, 0.0f);
-    scene->transforms[model].translation = vec3f(0.0f, -0.35f, 0.0f);
-    scene->entities[model] |= CMP_TRANSFORM;
-     */
-    
     // ground
-    
     u32 ground = get_new_entity(scene);
     scene->names[ground] = "ground";
     scene->transforms[ground].rotation = quat();

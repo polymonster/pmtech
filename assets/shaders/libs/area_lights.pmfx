@@ -1,3 +1,6 @@
+// the original implementation comes from real time area lights with linearly transformed cosines
+// https://blog.selfshadow.com/publications/s2016-advances/
+
 float integrate_edge(float3 v1, float3 v2)
 {
     float cos_theta = dot(v1, v2);
@@ -146,7 +149,13 @@ float3 ltc_uv_coord(float3 p[4])
 }
 
 // returns uv, mip level, attenuation.. for textured lights
-float4 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4], bool two_sided)
+float4 ltc_evaluate(
+float3 n, 
+float3 v, 
+float3 p, 
+float3x3 minv, 
+float3 points[4], 
+bool two_sided)
 {
     // construct orthonormal basis around N
     float3 t1, t2;
@@ -203,4 +212,145 @@ float4 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4
     float3 lo_i = float3(sum, sum, sum);
     
     return float4(uvl.x, uvl.y, uvl.z, sum);
+}
+
+float ltc_evaluate_cc(
+float3 n, 
+float3 v, 
+float3 p, 
+float3x3 minv, 
+float3 points[4], 
+bool two_sided)
+{
+        // construct orthonormal basis around N
+    float3 t1, t2;
+    t1 = normalize(v - n * dot(v, n));
+    t2 = cross(n, t1);
+
+    // rotate area light in (T1, T2, N) basis
+    float3x3 ttn = from_columns_3x3(t1, t2, n);    
+    minv = mul(minv, ttn);
+
+    // polygon (allocate 5 vertices for clipping)
+    float3 l[5];
+    for(int i = 0; i < 4; ++i)
+        l[i] = mul(minv, points[i] - p);
+	l[4] = l[3];
+    
+    int nc;
+    clip_quad_to_horizon(l, nc);
+    
+    if (nc == 0)
+        return 0.0;
+    
+    for(int i = 0; i < 5; ++i)
+        l[i] = normalize(l[i]);
+    
+    float sum = 0.0;
+
+    sum += integrate_edge(l[0], l[1]);
+    sum += integrate_edge(l[1], l[2]);
+    sum += integrate_edge(l[2], l[3]);
+    
+    if (nc >= 4)
+        sum += integrate_edge(l[3], l[4]);
+        
+    if (nc == 5)
+        sum += integrate_edge(l[4], l[0]);
+
+    sum = two_sided ? abs(sum) : max(0.0, sum);
+    return sum;
+}
+
+float4 area_light_specular_uv(
+float3 points[4],
+float3 pos, 
+float roughness, 
+float3 n, 
+float3 v)
+{
+    float pi = 3.14159265359;
+        
+    float lut_size  = 64.0;
+    float lut_scale = (lut_size - 1.0)/lut_size;
+    float lut_bias  = 0.5/lut_size;
+
+    float theta = acos(dot(n, v));
+    float2 uv = float2(roughness, theta / (0.5 * pi));
+    uv = uv * lut_scale + lut_bias;
+    
+    float4 mat = sample_texture(ltc_mat, uv);
+    float  mag = sample_texture(ltc_mag, uv).w;
+    
+    float3x3 minv = from_rows_3x3(
+        float3(1.0, 0.0, mat.y),
+        float3(0.0, mat.z, 0.0),
+        float3(mat.w, 0.0, mat.x)
+    );
+    
+    float4 spec = ltc_evaluate(n, v, pos, minv, points, true);
+    return spec;
+}
+
+float area_light_specular(
+float3 points[4], 
+float3 pos, 
+float roughness, 
+float3 n, 
+float3 v)
+{
+    float pi = 3.14159265359;
+        
+    float lut_size  = 64.0;
+    float lut_scale = (lut_size - 1.0)/lut_size;
+    float lut_bias  = 0.5/lut_size;
+
+    float theta = acos(dot(n, v));
+    float2 uv = float2(roughness, theta / (0.5 * pi));
+    uv = uv * lut_scale + lut_bias;
+    
+    float4 mat = sample_texture(ltc_mat, uv);
+    float  mag = sample_texture(ltc_mag, uv).w;
+    
+    float3x3 minv = from_rows_3x3(
+        float3(1.0, 0.0, mat.y),
+        float3(0.0, mat.z, 0.0),
+        float3(mat.w, 0.0, mat.x)
+    );
+    
+    float spec = ltc_evaluate_cc(n, v, pos, minv, points, true);
+    return spec;
+}
+
+
+float4 area_light_diffuse_uv(
+float3 points[4],
+float3 pos, 
+float3 n, 
+float3 v)
+{
+    float3x3 difv = float3x3(
+        float3(1.0, 0.0, 0.0),
+        float3(0.0, 1.0, 0.0),
+        float3(0.0, 0.0, 1.0)
+    );
+    
+    float4 diff = ltc_evaluate(n, v, pos, difv, points, true);    
+    return diff;
+}
+
+float area_light_diffuse(
+float3 points[4], 
+float3 pos, 
+float3 n, 
+float3 v)
+{
+    float3x3 difv = float3x3(
+        float3(1.0, 0.0, 0.0),
+        float3(0.0, 1.0, 0.0),
+        float3(0.0, 0.0, 1.0)
+    );
+    
+    float diff = ltc_evaluate_cc(n, v, pos, difv, points, true);    
+    return diff;
 }

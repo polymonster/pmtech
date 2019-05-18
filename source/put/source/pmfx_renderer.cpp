@@ -3034,6 +3034,9 @@ namespace put
                     {
                         ImGui::Combo("Input View", &s_selected_input_view, &view_items[0], view_items.size());
                     }
+                    
+                    if(pp_view_indices.size() == 0)
+                        return;
 
                     s32 pp_view_index = pp_view_indices[s_selected_input_view];
                     

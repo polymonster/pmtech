@@ -500,85 +500,58 @@ ps_output ps_forward_lit( vs_output input )
         lit_colour += light_col;
     }
     
-    // area lights
+    // area lights constant colour
+    float pi = 3.14159265359;
     int num_area_lights = int(area_light_info.x);
     for(int i = 0; i < num_area_lights; ++i)
     {
-        float pi = 3.14159265359;
-        
-        float LUT_SIZE  = 64.0;
-        float LUT_SCALE = (LUT_SIZE - 1.0)/LUT_SIZE;
-        float LUT_BIAS  = 0.5/LUT_SIZE;
-
         float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
         float3 pos = input.world_pos.xyz;
         
         float3 points[4];
-        points[0] = area_lights[i].corners[0].xyz;
-        points[1] = area_lights[i].corners[1].xyz;
-        points[2] = area_lights[i].corners[2].xyz;
-        points[3] = area_lights[i].corners[3].xyz;
+        for(int j = 0; j < 4; ++j)
+            points[j] = area_lights[i].corners[j].xyz;
+        
+        // diffuse
+        float diff_sum = area_light_diffuse(points, pos, n, v);
+        float3 diff = area_lights[i].colour.rgb * diff_sum;
+        
+        // specular 
+        float spec_sum = area_light_specular(points, pos, ro_sample.x, n, v);
+        float3 spec = area_lights[i].colour.rgb * spec_sum;
+        
+        float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);        
+        lit_colour += light_col;
+    }
+    
+    // area lights textured
+    int ts = num_area_lights;
+    int num_area_lights_textured = int(area_light_info.y);
+    for(int i = ts; i < ts + num_area_lights_textured; ++i)
+    {
+        float slice = area_lights[i].colour.w;
+        float levels = 8.0;
+        float2 inv_texel = float2(1.0/640.0, 1.0/480.0);
+        float2 inv_texel_x = float2(1.0, 1.0) - inv_texel;
+        
+        float3 points[4];
+        for(int j = 0; j < 4; ++j)
+            points[j] = area_lights[i].corners[j].xyz;
 
-        float theta = acos(dot(n, v));
-        float2 uv = float2(ro_sample.x, theta / (0.5 * pi));
-        uv = uv * LUT_SCALE + LUT_BIAS;
+        float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
+        float3 pos = input.world_pos.xyz;
         
-        float4 tt = sample_texture(ltc_mat, uv);
+        // diffuse
+        float4 diff_uv = area_light_diffuse_uv(points, pos, n, v);
+        float2 duv = clamp(diff_uv.xy, inv_texel, inv_texel_x);
+        float3 diff = sample_texture_array_level( area_light_textures, duv, slice, diff_uv.z * levels).rgb * diff_uv.w;
         
-        float3x3 minv = from_rows_3x3(
-            float3(1.0, 0.0, tt.y),
-            float3(0.0, tt.z, 0.0),
-            float3(tt.w, 0.0, tt.x)
-        );
+        // specular 
+        float4 spec_uv = area_light_specular_uv(points, pos, ro_sample.x, n, v);
+        float2 suv = clamp(spec_uv.xy, inv_texel, inv_texel_x);
+        float3 spec = sample_texture_array_level(area_light_textures, suv, slice, spec_uv.z * levels).rgb * spec_uv.w; 
         
-        float4 spec = ltc_evaluate(n, v, pos, minv, points, true);
-        float2 suv = clamp(spec.xy, float2(0.01, 0.01), float2(0.99, 0.99));
-        
-        float3 ss = sample_texture_array_level( area_light_textures, suv, float(i), spec.z * 8.0).rgb;
-        //float3 ss = area_lights[i].colour.rgb;
-        spec.rgb = ss * sample_texture(ltc_mag, uv).w * spec.w;
-        
-        float3x3 difv;
-        difv[0] = float3(1.0, 0.0, 0.0);
-        difv[1] = float3(0.0, 1.0, 0.0);
-        difv[2] = float3(0.0, 0.0, 1.0);
-        
-        float4 diff = ltc_evaluate(n, v, pos, difv, points, true);
-        float2 duv = clamp(diff.xy, float2(0.01, 0.01), float2(0.99, 0.99));
-        
-        float3 ds = sample_texture_array_level( area_light_textures, duv, float(i), diff.z * 8.0).rgb;
-        //float3 ds = area_lights[i].colour.rgb;
-        diff.rgb = ds * diff.w;
-        
-        float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);
-        
-        if:(SDF_SHADOW)
-        {            
-            int ns = 1;
-            float2 so[8];
-            so[0] = float2(0.5, 0.5);
-            so[1] = float2(0.0, 0.5);
-            so[2] = float2(1.0, 0.5);
-            so[3] = float2(0.5, 1.0);
-            so[4] = float2(0.25, 1.0);
-            so[5] = float2(0.5, 0.25);
-            so[6] = float2(0.25, 0.25);
-            so[7] = float2(0.25, 0.5);
-            
-            float shad = 0.0;
-            for(int j = 0; j < ns; ++j)
-            {
-                float3 v1 = (points[1] - points[0]);
-                float3 v2 = (points[3] - points[0]);
-                float3 lp = (points[0] + v1 * so[j].x + v2 * so[j].y);
-                
-                float s = sdf_shadow_trace(max_samples, lp, input.world_pos.xyz, scale, tr1, sdf_shadow.world_matrix_inv, inv_rot);
-                shad += smoothstep( 0.0, 0.1, s);
-            }
-            
-            light_col *= (shad/ns);
-        }
-        
+        float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);        
         lit_colour += light_col;
     }
 

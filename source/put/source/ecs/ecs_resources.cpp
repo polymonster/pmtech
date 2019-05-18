@@ -446,6 +446,7 @@ namespace put
             
             scene->entities[node_index] |= CMP_LIGHT;
             scene->lights[node_index].type = LIGHT_TYPE_AREA;
+            scene->area_light[node_index].shader = PEN_INVALID_HANDLE;
         }
         
         void instantiate_area_light_ex(ecs_scene* scene, u32 node_index, area_light_resource& alr)
