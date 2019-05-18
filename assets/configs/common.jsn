@@ -157,7 +157,8 @@
         {
             size: [640, 480],
             format: rgba8,
-            type: array
+            type: array,
+            mips: true
         },
     },
     

@@ -1273,7 +1273,7 @@ namespace pen
         ti.handle = handle;
         ti.max_mip_level = tcp.num_mips - 1;
         ti.target = texture_target;
-
+        
         if (tcp.width != tcp.height && ti.max_mip_level > 0)
         {
             ti.max_mip_level = tcp.num_mips - 2;
@@ -1301,15 +1301,15 @@ namespace pen
             _tcp.width = pen_window.width / tcp.height;
             _tcp.height = pen_window.height / tcp.height;
             
-            if(tcp.num_mips == -1)
-                _tcp.num_mips = calc_num_mips(_tcp.width, _tcp.height);
-            
             if (track)
             {
                 managed_render_target man_rt = {tcp, resource_slot};
                 sb_push(s_managed_render_targets, man_rt);
             }
         }
+        
+        if(tcp.num_mips == -1)
+            _tcp.num_mips = calc_num_mips(_tcp.width, _tcp.height);
         
         // generate mips or resolve
         if(tcp.num_mips > 1)

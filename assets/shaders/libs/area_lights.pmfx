@@ -117,7 +117,7 @@ void clip_quad_to_horizon(inout float3 L[5], out int n)
         L[4] = L[0];
 }
 
-float2 ltc_uv_coord(float3 p[4])
+float3 ltc_uv_coord(float3 p[4])
 {
     // area light plane basis
     float3 v1 = p[1] - p[0];
@@ -142,10 +142,11 @@ float2 ltc_uv_coord(float3 p[4])
     // LOD
     float d = abs(plane_distx_plane_area) / pow(plane_area_squared, 0.75);
     
-    return puv;
+    return float3(puv, d);
 }
 
-float3 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4], bool two_sided)
+// returns uv, mip level, attenuation.. for textured lights
+float4 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4], bool two_sided)
 {
     // construct orthonormal basis around N
     float3 t1, t2;
@@ -171,13 +172,13 @@ float3 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4
     ll[2] = l[2];
     ll[3] = l[3];
     
-    float2 uv = ltc_uv_coord(ll);
+    float3 uvl = ltc_uv_coord(ll); // l = level
 
     int nc;
     clip_quad_to_horizon(l, nc);
     
     if (nc == 0)
-        return float3(0, 0, 0);
+        return float4(0, 0, 0, 0.0);
     
     l[0] = normalize(l[0]);
     l[1] = normalize(l[1]);
@@ -201,7 +202,5 @@ float3 ltc_evaluate(float3 n, float3 v, float3 p, float3x3 minv, float3 points[4
 
     float3 lo_i = float3(sum, sum, sum);
     
-    lo_i = float3(uv.x, uv.y, sum);
-    
-    return lo_i;
+    return float4(uvl.x, uvl.y, uvl.z, sum);
 }

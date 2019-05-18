@@ -505,6 +505,7 @@ ps_output ps_forward_lit( vs_output input )
     for(int i = 0; i < num_area_lights; ++i)
     {
         float pi = 3.14159265359;
+        
         float LUT_SIZE  = 64.0;
         float LUT_SCALE = (LUT_SIZE - 1.0)/LUT_SIZE;
         float LUT_BIAS  = 0.5/LUT_SIZE;
@@ -530,28 +531,27 @@ ps_output ps_forward_lit( vs_output input )
             float3(tt.w, 0.0, tt.x)
         );
         
-        float3 spec = ltc_evaluate(n, v, pos, minv, points, true);
+        float4 spec = ltc_evaluate(n, v, pos, minv, points, true);
         float2 suv = clamp(spec.xy, float2(0.01, 0.01), float2(0.99, 0.99));
         
-        float3 ss = sample_texture_array_level( area_light_textures, suv, float(i), 0).rgb;
+        float3 ss = sample_texture_array_level( area_light_textures, suv, float(i), spec.z * 8.0).rgb;
         //float3 ss = area_lights[i].colour.rgb;
-        spec = ss * sample_texture(ltc_mag, uv).w * spec.z;
+        spec.rgb = ss * sample_texture(ltc_mag, uv).w * spec.w;
         
         float3x3 difv;
         difv[0] = float3(1.0, 0.0, 0.0);
         difv[1] = float3(0.0, 1.0, 0.0);
         difv[2] = float3(0.0, 0.0, 1.0);
         
-        float3 diff = ltc_evaluate(n, v, pos, difv, points, true);
+        float4 diff = ltc_evaluate(n, v, pos, difv, points, true);
         float2 duv = clamp(diff.xy, float2(0.01, 0.01), float2(0.99, 0.99));
         
-        float3 ds = sample_texture_array_level( area_light_textures, duv, float(i), 0).rgb;
+        float3 ds = sample_texture_array_level( area_light_textures, duv, float(i), diff.z * 8.0).rgb;
         //float3 ds = area_lights[i].colour.rgb;
-        diff = ds * diff.z;
+        diff.rgb = ds * diff.w;
         
-        float3 light_col = (spec + diff) / (2.0 * pi);
+        float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);
         
-                       
         if:(SDF_SHADOW)
         {            
             int ns = 1;
