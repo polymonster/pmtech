@@ -8,9 +8,9 @@ A lightweight code base with powerful features that can be used for games and re
 
 **Features**  
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
-- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
 - Supported Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
-- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal.   
+- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal. 
+- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
 - Lightweight: Simple apis, shallow call stacks, minimal dependencies.  
 - Data-Oriented: Instruction and data cache friendly code for optimal performance. 
 - Multithreaded: Async render, physics, audio and entity component system.  
@@ -30,9 +30,9 @@ Take a look at the getting started [instructions](https://github.com/polymonster
 
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/area-lights.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/area_lights/area_lights.cpp)
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sss.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/sss/sss.cpp)
+[<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sdf-shadow.gif" width="1280" />](https://www.youtube.com/watch?v=369cPinAhdo)
 [![Renderer](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/pmfx-renderer.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/pmfx_renderer/pmfx_renderer_demo.cpp)
 [![Post Processing](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/post-pro.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/post_processing/post_processing.cpp)
-[<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sdf-shadow.gif" width="1280" />](https://www.youtube.com/watch?v=369cPinAhdo)
 <img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/tourus.gif" width="1280" />
 [![Vertex Stream Out](https://github.com/polymonster/polymonster.github.io/raw/master/assets/demos/vertex-stream-pbr.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/vertex_stream_out/vertex_stream_out.cpp)
 
