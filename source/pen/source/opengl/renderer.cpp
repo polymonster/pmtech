@@ -1649,7 +1649,7 @@ namespace pen
                 if(max_mip > 1 && res.render_target.invalidate)
                 {
                     res.render_target.invalidate = 0;
-                    CHECK_CALL(glGenerateMipmap(GL_TEXTURE_2D));
+                    CHECK_CALL(glGenerateMipmap(target));
                 }
             }
         }
