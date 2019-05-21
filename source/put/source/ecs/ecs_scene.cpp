@@ -369,7 +369,7 @@ namespace put
                 if(!(scene->entities[i] & CMP_LIGHT))
                     continue;
                 
-                if(!(scene->lights[i].type == LIGHT_TYPE_AREA))
+                if(!(scene->lights[i].type == LIGHT_TYPE_AREA_EX))
                     continue;
                 
                 cmp_area_light& al = scene->area_light[i];
@@ -1387,50 +1387,53 @@ namespace put
             u32 num_area_lights = 0;
             u32 num_constant_colour_area_lights = 0;
             u32 num_textured_area_lights = 0;
-            for(u32 alt = 0; alt < 2; ++alt)
+            // constant colour area light
+            for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                for (s32 n = 0; n < scene->num_entities; ++n)
-                {
-                    if (num_lights >= MAX_FORWARD_LIGHTS)
-                        break;
-                    
-                    if (!(scene->entities[n] & CMP_LIGHT))
-                        continue;
-                    
-                    cmp_light& l = scene->lights[n];
-                    
-                    if (l.type != LIGHT_TYPE_AREA)
-                        continue;
-                    
-                    mat4& wm = scene->world_matrices[n];
-                    for(u32 c = 0; c < 4; ++c)
-                        al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners_al[c]);
-                    
-                    if(alt == 0)
-                    {
-                        if(is_valid(scene->area_light[n].shader))
-                            continue;
-                        
-                        // constant colour area light
-                        al_buffer.lights[num_area_lights].colour = vec4f(l.colour, num_textured_area_lights);
-                        ++num_constant_colour_area_lights;
-                    }
-                    else
-                    {
-                        if(!is_valid(scene->area_light[n].shader))
-                            continue;
-                        
-                        // textured / animated area light
-                        scene->draw_call_data[n].v1.y = (f32)anim_time; // time
-                        al_buffer.lights[num_area_lights].colour = vec4f(l.colour, num_textured_area_lights);
-                        scene->draw_call_data[n].v1.z = (f32)num_textured_area_lights;
-                        ++num_textured_area_lights;
-                    }
-
-                    ++num_area_lights;
-                }
+                if (num_lights >= MAX_FORWARD_LIGHTS)
+                    break;
+                
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                cmp_light& l = scene->lights[n];
+                if (l.type != LIGHT_TYPE_AREA)
+                    continue;
+                
+                mat4& wm = scene->world_matrices[n];
+                for(u32 c = 0; c < 4; ++c)
+                    al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners_al[c]);
+                
+                al_buffer.lights[num_area_lights].colour = vec4f(l.colour, num_textured_area_lights);
+                ++num_constant_colour_area_lights;
+                
+                ++num_area_lights;
             }
-
+            // textured / shader / animated area light
+            for (s32 n = 0; n < scene->num_entities; ++n)
+            {
+                if (num_lights >= MAX_FORWARD_LIGHTS)
+                    break;
+                
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+                
+                cmp_light& l = scene->lights[n];
+                if (l.type != LIGHT_TYPE_AREA_EX)
+                    continue;
+                
+                mat4& wm = scene->world_matrices[n];
+                for(u32 c = 0; c < 4; ++c)
+                    al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners_al[c]);
+                
+                scene->draw_call_data[n].v1.y = (f32)anim_time; // time
+                al_buffer.lights[num_area_lights].colour = vec4f(l.colour, num_textured_area_lights);
+                scene->draw_call_data[n].v1.z = (f32)num_textured_area_lights;
+                ++num_textured_area_lights;
+                
+                ++num_area_lights;
+            }
+            
             al_buffer.info.x = num_constant_colour_area_lights;
             al_buffer.info.y = num_textured_area_lights;
             

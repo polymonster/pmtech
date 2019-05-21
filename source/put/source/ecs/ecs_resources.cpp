@@ -425,9 +425,23 @@ namespace put
             scene->bounding_volumes[node_index].min_extents = -vec3f::one();
             scene->bounding_volumes[node_index].max_extents = vec3f::one();
 
+            scene->world_matrices[node_index] = mat4::create_identity();
             f32 rad = std::max<f32>(scene->lights[node_index].radius, 1.0f);
             scene->transforms[node_index].scale = vec3f(rad, rad, rad);
             scene->entities[node_index] |= CMP_TRANSFORM;
+            
+            // basic defaults
+            cmp_light& snl = scene->lights[node_index];
+            snl.colour = vec3f::white();
+            snl.radius = 1.0f;
+            snl.spot_falloff = 0.001f;
+            snl.cos_cutoff = 0.1f;
+            
+            area_light_resource& alr = scene->area_light_resources[node_index];
+            alr.sampler_state_name = "";
+            alr.texture_name = "";
+            alr.shader_name = "";
+            alr.technique_name = "";
         }
         
         void instantiate_area_light(ecs_scene* scene, u32 node_index)
@@ -464,7 +478,7 @@ namespace put
             instantiate_model_cbuffer(scene, node_index);
             
             scene->entities[node_index] |= CMP_LIGHT;
-            scene->lights[node_index].type = LIGHT_TYPE_AREA;
+            scene->lights[node_index].type = LIGHT_TYPE_AREA_EX;
             
             if(!alr.texture_name.empty())
             {

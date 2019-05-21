@@ -2255,7 +2255,7 @@ namespace put
                 if (scene->entities[selected_index] & CMP_LIGHT)
                 {
                     bool changed = ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type,
-                                                "Directional\0Point\0Spot\0Area\0", 4);
+                                                "Directional\0Point\0Spot\0Area\0Area Ex\0", 4);
 
                     if (snl.azimuth == 0.0f && snl.altitude == 0.0f)
                         maths::xyz_to_azimuth_altitude(snl.direction, snl.azimuth, snl.altitude);
@@ -2286,9 +2286,47 @@ namespace put
                             break;
 
                         case LIGHT_TYPE_AREA:
-                            edited |= ImGui::SliderFloat("Width", &snl.radius, 0.0f, 100.0f);
-                            edited |= ImGui::SliderFloat("Height", &snl.spot_falloff, 0.0f, 100.0f);
+                            if(changed)
+                                instantiate_area_light(scene, selected_index);
                             break;
+                        case LIGHT_TYPE_AREA_EX:
+                        {
+                            if(changed)
+                            {
+                                area_light_resource alr;
+                                alr.shader_name = "trace";
+                                alr.technique_name = "box";
+                                instantiate_area_light_ex(scene, selected_index, alr);
+                            }
+                            
+                            area_light_resource& alr = scene->area_light_resources[selected_index];
+                            
+                            u32 shader = 0;
+                            u32 technique_list_index = 0;
+                            
+                            u32 num_shaders;
+                            const c8** shader_list = pmfx::get_shader_list(num_shaders);
+                            
+                            // find shader in list
+                            hash_id id_shader = PEN_HASH(alr.shader_name);
+                            for(shader = 0; shader < num_shaders; ++shader)
+                                if(PEN_HASH(shader_list[shader]) == id_shader)
+                                    break;
+                            
+                            u32 num_techniques;
+                            const c8** technique_list = pmfx::get_technique_list(shader, num_techniques);
+                            
+                            // find technique in list
+                            hash_id id_technique = PEN_HASH(alr.technique_name);
+                            for(technique_list_index = 0; technique_list_index < num_techniques; ++technique_list_index)
+                                if(PEN_HASH(technique_list[technique_list_index]) == id_technique)
+                                    break;
+                            
+                            edited |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
+                            edited |= ImGui::Combo("Technique", (s32*)&technique_list_index, technique_list, num_techniques);
+                            
+                        }
+                        break;
                     }
 
                     snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth, snl.altitude);
@@ -2310,26 +2348,7 @@ namespace put
                 else
                 {
                     if (ImGui::Button("Add Light"))
-                    {
-                        s32 s = selected_index;
-
-                        // todo move to resources
-                        scene->entities[s] |= CMP_LIGHT;
-
-                        scene->bounding_volumes[s].min_extents = -vec3f::one();
-                        scene->bounding_volumes[s].max_extents = vec3f::one();
-
-                        scene->world_matrices[s] = mat4::create_identity();
-
-                        // basic defaults
-                        snl.colour = vec3f::white();
-                        snl.radius = 1.0f;
-                        snl.spot_falloff = 0.001f;
-                        snl.cos_cutoff = 0.1f;
-
-                        // cbuffer for rendering light volume, for debug/editor or for deferred
-                        instantiate_model_cbuffer(scene, s);
-                    }
+                        instantiate_light(scene, selected_index);
                 }
             }
 
@@ -2360,7 +2379,7 @@ namespace put
                 CAST_SDF
             };
 
-            if (ImGui::CollapsingHeader("Shadow"))
+            if (ImGui::CollapsingHeader("Shadow Caster"))
             {
                 s32 caster_type = 0;
                 if (scene->entities[si] & CMP_SDF_SHADOW)
