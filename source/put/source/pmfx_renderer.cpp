@@ -1651,8 +1651,10 @@ namespace put
 
                 // shader and technique
                 Str technique_str = view["technique"].as_str();
+                Str shader_str = view["pmfx_shader"].as_str();
+                
                 new_view.technique = PEN_HASH(technique_str.c_str());
-                new_view.pmfx_shader = pmfx::load_shader(view["pmfx_shader"].as_cstr());
+                new_view.pmfx_shader = pmfx::load_shader(shader_str.c_str());
                 new_view.technique_permutation = view["permutation"].as_u32();
 
                 if (view["pmfx_shader"].as_cstr() && !is_valid(new_view.pmfx_shader))

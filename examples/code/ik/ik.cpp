@@ -21,6 +21,7 @@ namespace {
     Node* ik_nodes[8];
     Jacobian* ik_jacobian;
     u32 root;
+    u32 effector;
 }
 
 vec3f ik_v3(const VectorR3& v)
@@ -89,6 +90,11 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     ik_jacobian = new Jacobian(&ik_tree);
     reset(ik_tree, ik_jacobian);
     
+    effector = ecs::get_new_entity(scene);
+    scene->transforms[effector].translation = vec3f(0.0f, 0.0f, 2.0f);
+    scene->transforms[effector].scale = vec3f::one();
+    scene->transforms[effector].rotation = quat();
+    scene->entities[effector] |= CMP_TRANSFORM;
     
     for(u32 i = 0; i < 8; ++i)
     {
@@ -114,4 +120,60 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
         get_local_transform(ik_nodes[i], scene->transforms[ii]);
         scene->entities[ii] |= CMP_TRANSFORM;
     }
+    
+    //ik_jacobian->SetJtargetActive();
+    ik_jacobian->SetJendActive();
+    
+    VectorR3 targ = v3_ik(scene->world_matrices[effector].get_translation());
+    ik_jacobian->ComputeJacobian(&targ);
+    ik_jacobian->CalcDeltaThetasSDLS();
+    
+    ik_jacobian->UpdateThetas();
+    ik_jacobian->UpdatedSClampValue(&targ);
+    
+    /*
+     if (UseJacobianTargets1)
+     {
+     jacob->SetJtargetActive();
+     }
+     else
+     {
+     jacob->SetJendActive();
+     }
+     jacob->ComputeJacobian(targetaa);  // Set up Jacobian and deltaS vectors
+     
+     // Calculate the change in theta values
+     switch (ikMethod)
+     {
+     case IK_JACOB_TRANS:
+     jacob->CalcDeltaThetasTranspose();  // Jacobian transpose method
+     break;
+     case IK_DLS:
+     jacob->CalcDeltaThetasDLS();  // Damped least squares method
+     break;
+     case IK_DLS_SVD:
+     jacob->CalcDeltaThetasDLSwithSVD();
+     break;
+     case IK_PURE_PSEUDO:
+     jacob->CalcDeltaThetasPseudoinverse();  // Pure pseudoinverse method
+     break;
+     case IK_SDLS:
+     jacob->CalcDeltaThetasSDLS();  // Selectively damped least squares method
+     break;
+     default:
+     jacob->ZeroDeltaThetas();
+     break;
+     }
+     
+     if (SleepCounter == 0)
+     {
+     jacob->UpdateThetas();  // Apply the change in the theta values
+     jacob->UpdatedSClampValue(targetaa);
+     SleepCounter = SleepsPerStep;
+     }
+     else
+     {
+     SleepCounter--;
+     }
+     */
 }

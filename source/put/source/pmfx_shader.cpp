@@ -823,8 +823,12 @@ namespace put
                     return ph;
                 else
                     ph++;
-
+            
             pmfx_shader new_pmfx = load_internal(pmfx_name);
+            
+            // check shader worked
+            if(new_pmfx.techniques == nullptr)
+                return PEN_INVALID_HANDLE;
 
             ph = 0;
             for (u32 i = 0; i < num_pmfx; ++i)

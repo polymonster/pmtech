@@ -1,0 +1,26 @@
+{
+    include: [
+        common.jsn
+    ],
+                
+    views:
+    {
+        stencil_shadow_main:
+        {
+            inherit : "main_view",
+            clear_colour : [0.0, 0.0, 0.0, 1.0],
+            clear_depth : 1.0,
+            pmfx_shader: "forward_render",
+            technique: "shadow_extrude"
+        }
+    },
+    
+    view_sets: 
+    {
+        stencil_shadow: [
+            stencil_shadow_main,
+        ]
+    },
+    
+    view_set: stencil_shadow
+}

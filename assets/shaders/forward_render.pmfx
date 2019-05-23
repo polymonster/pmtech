@@ -160,6 +160,41 @@ vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_
     return output;
 }
 
+vs_output vs_main_extrude( vs_input_multi input, vs_instance_input instance_input )
+{
+    vs_output output;
+    
+    float4x4 wvp = mul( world_matrix, vp_matrix );
+    float4x4 wm = world_matrix;
+    
+    output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
+                             input.texcoord.z, 1.0 - input.texcoord.w );
+    
+    float4 ip = input.position;
+    float3 ld = normalize(float3(-1.0, -1.0, -1.0));
+    float ldp = saturate(dot(-ld, input.normal.xyz));
+    
+    if(ip.z < 0.0 && ip.x < 0)
+        ip.xyz += ld * 100.0;
+
+    output.position = mul( ip, wvp );
+    output.world_pos = mul( input.position, wm );
+
+    float3x3 wrm = to_3x3(wm);
+    wrm[0] = normalize(wrm[0]);
+    wrm[1] = normalize(wrm[1]);
+    wrm[2] = normalize(wrm[2]);
+                
+    output.normal = mul( input.normal.xyz, wrm ); 
+    
+    output.normal.xyz = float3(ldp, 0.0, 1.0);
+    
+    output.tangent = mul( input.tangent.xyz, wrm );
+    output.bitangent = mul( input.bitangent.xyz, wrm );
+    
+    return output;
+}
+
 vs_output_pre_skin vs_main_pre_skin( vs_input_skinned input )
 {
     vs_output_pre_skin output;
@@ -597,6 +632,13 @@ void ps_null( vs_output_zonly input )
     return;
 }
 
+ps_output ps_dbg( vs_output input )
+{
+    ps_output output;
+    output.colour = float4(input.normal.xyz, 1.0);
+    return output;
+}
+
 pmfx:
 {    
     "forward_lit":
@@ -706,6 +748,12 @@ pmfx:
     {
         "vs"        : "vs_main_pre_skin",
         "stream_out": "true"
+    },
+    
+    "shadow_extrude":
+    {
+        "vs": "vs_main_extrude",
+        "ps": "ps_dbg"
     }
 }
 
