@@ -170,14 +170,14 @@ vs_output vs_main_extrude( vs_input_multi input, vs_instance_input instance_inpu
     output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
                              input.texcoord.z, 1.0 - input.texcoord.w );
     
-    float4 ip = input.position;
+    float4 ip = mul( input.position, wm );
     float3 ld = normalize(float3(-1.0, -1.0, -1.0));
     float ldp = saturate(dot(-ld, input.normal.xyz));
     
     if(ip.z < 0.0 && ip.x < 0)
-        ip.xyz += ld * 100.0;
+        ip.xyz += ld * 10000.0;
 
-    output.position = mul( ip, wvp );
+    output.position = mul( ip, vp_matrix );
     output.world_pos = mul( input.position, wm );
 
     float3x3 wrm = to_3x3(wm);
@@ -187,7 +187,7 @@ vs_output vs_main_extrude( vs_input_multi input, vs_instance_input instance_inpu
                 
     output.normal = mul( input.normal.xyz, wrm ); 
     
-    output.normal.xyz = float3(ldp, 0.0, 1.0);
+    output.normal.xyz = float3(1.0, 0.0, ldp);
     
     output.tangent = mul( input.tangent.xyz, wrm );
     output.bitangent = mul( input.bitangent.xyz, wrm );
