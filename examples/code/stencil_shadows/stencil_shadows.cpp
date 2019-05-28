@@ -164,13 +164,16 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     }
     
     static s32 edge = 0;
+    static bool isolate = false;
+    ImGui::Checkbox("Isolate", &isolate);
     ImGui::InputInt("Edge", &edge);
     
     u32 ne = sb_count(s_sve);
     for(u32 j = 0; j < ne; ++j)
     {
-        //if(j != edge)
-            //continue;
+        if(isolate)
+            if(j != edge)
+                continue;
         
         vec4f p0 = wm.transform_vector(s_sve[j].pos_0);
         vec4f p1 = wm.transform_vector(s_sve[j].pos_1);
@@ -181,8 +184,8 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
         dbg::add_line(c, c + s_sve[j].face_normal_1.xyz, vec4f::magenta());
         
         vec3f ld = -vec3f::one();
-        f32 d0 = dot(ld, p0.xyz);
-        f32 d1 = dot(ld, p1.xyz);
+        f32 d0 = dot(ld, s_sve[j].face_normal_0.xyz);
+        f32 d1 = dot(ld, s_sve[j].face_normal_1.xyz);
         
         if((d0 > 0.0f && d1 < 0.0f) || (d1 > 0.0f && d0 < 0.0f))
         {
