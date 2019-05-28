@@ -174,8 +174,8 @@ vs_output vs_main_extrude( vs_input_multi input, vs_instance_input instance_inpu
     float3 ld = normalize(float3(-1.0, -1.0, -1.0));
     float ldp = saturate(dot(-ld, input.normal.xyz));
     
-    if(ip.z < 0.0 && ip.x < 0)
-        ip.xyz += ld * 10000.0;
+    if(ip.z < 0.0 && ip.x < 0 && ip.y < 3)
+        ip.xyz += ld * 100.0;
 
     output.position = mul( ip, vp_matrix );
     output.world_pos = mul( input.position, wm );

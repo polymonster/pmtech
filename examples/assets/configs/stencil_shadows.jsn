@@ -1,24 +1,34 @@
 {
     include: [
-        common.jsn
+        common.jsn,
+        editor_renderer.jsn
     ],
                 
     views:
     {
         stencil_shadow_main:
         {
-            inherit : "main_view",
-            clear_colour : [0.0, 0.0, 0.0, 1.0],
-            clear_depth : 1.0,
-            pmfx_shader: "forward_render",
-            technique: "shadow_extrude"
+            target : [main_colour, main_depth],
+            colour_write_mask  : 0xf,
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : default,
+            depth_stencil_state: default,
+            scene : main_scene,
+            camera : model_viewer_camera,
+            scene_views : ["ces_render_scene"],
+            render_flags : ["forward_lit"],
+            pmfx_shader : "forward_render",
+            technique : "shadow_extrude"
+            
         }
     },
     
     view_sets: 
     {
         stencil_shadow: [
-            stencil_shadow_main,
+            main_view,
+            editor_view
         ]
     },
     
