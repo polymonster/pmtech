@@ -14,6 +14,13 @@ struct vs_input
     float4 bitangent : TEXCOORD3;
 };
 
+struct vs_input_stencil_shadow
+{
+    float4 position : POSITION;
+    float4 face_normal_0 : TEXCOORD0;
+    float4 face_normal_1 : TEXCOORD1;
+};
+
 struct vs_input_skinned
 {
     float4 position : POSITION;
@@ -160,38 +167,31 @@ vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_
     return output;
 }
 
-vs_output vs_main_extrude( vs_input_multi input, vs_instance_input instance_input )
+vs_output vs_main_extrude( vs_input_stencil_shadow input )
 {
-    vs_output output;
+    vs_output output; 
+    float4 wp = mul( input.position, world_matrix );
     
-    float4x4 wvp = mul( world_matrix, vp_matrix );
-    float4x4 wm = world_matrix;
-    
-    output.texcoord = float4(input.texcoord.x, 1.0 - input.texcoord.y, 
-                             input.texcoord.z, 1.0 - input.texcoord.w );
-    
-    float4 ip = mul( input.position, wm );
-    float3 ld = normalize(float3(-1.0, -1.0, -1.0));
-    float ldp = saturate(dot(-ld, input.normal.xyz));
-    
-    if(ip.z < 0.0 && ip.x < 0 && ip.y < 3)
-        ip.xyz += ld * 100.0;
-
-    output.position = mul( ip, vp_matrix );
-    output.world_pos = mul( input.position, wm );
-
-    float3x3 wrm = to_3x3(wm);
+    float3x3 wrm = to_3x3(world_matrix);
     wrm[0] = normalize(wrm[0]);
     wrm[1] = normalize(wrm[1]);
     wrm[2] = normalize(wrm[2]);
-                
-    output.normal = mul( input.normal.xyz, wrm ); 
     
-    output.normal.xyz = float3(1.0, 0.0, ldp);
+    float3 wn_0 = mul( input.face_normal_0.xyz, wrm );
+    float3 wn_1 = mul( input.face_normal_1.xyz, wrm );
     
-    output.tangent = mul( input.tangent.xyz, wrm );
-    output.bitangent = mul( input.bitangent.xyz, wrm );
+    // detect silhouette edges
+    float3 ld = float3(-1.0, -1.0, -1.0);
+    float d0 = dot(ld, wn_0.xyz);
+    float d1 = dot(ld, wn_1.xyz);
+        
+    if(d0 > 0.0 && d1 < 0.0)
+    {
+        wp.xyz += ld * 100.0;   
+    }
     
+    output.position = mul( wp, vp_matrix);
+        
     return output;
 }
 
@@ -635,7 +635,7 @@ void ps_null( vs_output_zonly input )
 ps_output ps_dbg( vs_output input )
 {
     ps_output output;
-    output.colour = float4(input.normal.xyz, 1.0);
+    output.colour = float4(1.0, 0.0, 1.0, 1.0);
     return output;
 }
 

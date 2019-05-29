@@ -6,7 +6,25 @@
                 
     views:
     {
-        stencil_shadow_main:
+        stencil_shadow_front_face:
+        {
+            target : [main_colour, main_depth],
+            clear_depth: 1.0,
+            clear_colour: [0.0, 0.0, 0.0, 1.0],
+            colour_write_mask  : 0xf,
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : default,
+            depth_stencil_state: default,
+            scene : main_scene,
+            camera : model_viewer_camera,
+            scene_views : ["ces_stencil_shadow_volumes"],
+            render_flags : ["front_face"],
+            pmfx_shader : "forward_render",
+            technique : "shadow_extrude"
+        },
+        
+        stencil_shadow_back_face:
         {
             target : [main_colour, main_depth],
             colour_write_mask  : 0xf,
@@ -16,18 +34,17 @@
             depth_stencil_state: default,
             scene : main_scene,
             camera : model_viewer_camera,
-            scene_views : ["ces_render_scene"],
-            render_flags : ["forward_lit"],
+            scene_views : ["ces_stencil_shadow_volumes"],
+            render_flags : ["front_face"],
             pmfx_shader : "forward_render",
             technique : "shadow_extrude"
-            
-        }
+        },
     },
     
     view_sets: 
     {
         stencil_shadow: [
-            main_view,
+            stencil_shadow_front_face,
             editor_view
         ]
     },

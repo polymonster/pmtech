@@ -37,10 +37,27 @@ namespace {
     
     u32 cube_entity = 0;
     u32 light_0 = 0;
+    
     shadow_volume_edge* s_sve;
+    geometry_resource s_sgr;
 }
 
-void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out)
+void render_stencil_shadows(const scene_view& view)
+{
+    ecs_scene* scene = view.scene;
+    geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
+    gr = &s_sgr;
+    
+    pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+    pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+    pen::renderer_set_constant_buffer(scene->cbuffer[cube_entity], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+    pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
+    pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
+    pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
+    pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+}
+
+void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geometry_resource* gr_out)
 {
     vertex_model* vm = (vertex_model*)gr->cpu_vertex_buffer;
     u16* ib = (u16*)gr->cpu_index_buffer;
@@ -96,11 +113,102 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out)
         }
     }
     
+    // for each edge add 4 vertices and 6 indices to make an extrable edge
+    // the normals for each pair of verts are swapped to differentiate between them when extruding
+
+    //     |
+    // 0 ----- 1
+    //
+    // 2 ----- 3
+    //     |
+
+    shadow_volume_vertex* svv = nullptr;
+    u16* sib = nullptr;
+    
+    u32 ne = sb_count(sve);
+    u16 base_index = 0;
+    for(u32 e = 0; e < ne; ++e)
+    {
+        shadow_volume_vertex v0;
+        v0.pos = sve[e].pos_0;
+        v0.face_normal_0 = sve[e].face_normal_0;
+        v0.face_normal_1 = sve[e].face_normal_1;
+        
+        shadow_volume_vertex v1;
+        v1.pos = sve[e].pos_1;
+        v1.face_normal_0 = sve[e].face_normal_0;
+        v1.face_normal_1 = sve[e].face_normal_1;
+        
+        shadow_volume_vertex v2;
+        v2.pos = sve[e].pos_0;
+        v2.face_normal_0 = sve[e].face_normal_1;
+        v2.face_normal_1 = sve[e].face_normal_0;
+        
+        shadow_volume_vertex v3;
+        v3.pos = sve[e].pos_1;
+        v3.face_normal_0 = sve[e].face_normal_1;
+        v3.face_normal_1 = sve[e].face_normal_0;
+        
+        sb_push(svv, v0);
+        sb_push(svv, v1);
+        sb_push(svv, v2);
+        sb_push(svv, v3);
+        
+        sb_push(sib, base_index + 2);
+        sb_push(sib, base_index + 1);
+        sb_push(sib, base_index + 0);
+        
+        sb_push(sib, base_index + 2);
+        sb_push(sib, base_index + 3);
+        sb_push(sib, base_index + 1);
+        
+        base_index += 4;
+    }
+    
+    // vb
+    u32 num_verts = sb_count(svv);
+    pen::buffer_creation_params bcp;
+    bcp.usage_flags = PEN_USAGE_DEFAULT;
+    bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+    bcp.cpu_access_flags = 0;
+    bcp.buffer_size = sizeof(shadow_volume_vertex) * num_verts;
+    bcp.data = (void*)svv;
+    gr_out->vertex_buffer = pen::renderer_create_buffer(bcp);
+    
+    // ib
+    u32 num_indices = sb_count(sib);
+    bcp.usage_flags = PEN_USAGE_DEFAULT;
+    bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+    bcp.cpu_access_flags = 0;
+    bcp.buffer_size = 2 * num_indices;
+    bcp.data = (void*)sib;
+    gr_out->index_buffer = pen::renderer_create_buffer(bcp);
+    
+    // info
+    gr_out->num_indices = num_indices;
+    gr_out->num_vertices = num_verts;
+    gr_out->vertex_size = sizeof(shadow_volume_vertex);
+    gr_out->index_type = PEN_FORMAT_R16_UINT;
+    gr_out->min_extents = -vec3f::flt_max();
+    gr_out->max_extents = vec3f::flt_max();
+    gr_out->geometry_name = "shadow_mesh";
+    gr_out->hash = PEN_HASH("shadow_mesh");
+    gr_out->file_hash = PEN_HASH("shadow_mesh");
+    gr_out->filename = "shadow_mesh";
+    gr_out->p_skin = nullptr;
+    
+    // for debug purposes
     *sve_out = sve;
 }
 
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
+    put::scene_view_renderer svr_stencil_shadow_volumes;
+    svr_stencil_shadow_volumes.name = "ces_stencil_shadow_volumes";
+    svr_stencil_shadow_volumes.id_name = PEN_HASH(svr_stencil_shadow_volumes.name.c_str());
+    svr_stencil_shadow_volumes.render_function = &render_stencil_shadows;
+    pmfx::register_scene_view_renderer(svr_stencil_shadow_volumes);
+    
     pmfx::init("data/configs/stencil_shadows.jsn");
     
     clear_scene(scene);
@@ -147,7 +255,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     instantiate_material(default_material, scene, cube_entity);
     instantiate_model_cbuffer(scene, cube_entity);
     
-    generate_edge_mesh(box, &s_sve);
+    generate_edge_mesh(box, &s_sve, &s_sgr);
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
