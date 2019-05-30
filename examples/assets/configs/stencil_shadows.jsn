@@ -3,49 +3,89 @@
         common.jsn,
         editor_renderer.jsn
     ],
-                
-    views:
+    
+    depth_stencil_states:
     {
-        stencil_shadow_front_face:
+        stencil_write:
         {
-            target : [main_colour, main_depth],
-            clear_depth: 1.0,
-            clear_colour: [0.0, 0.0, 0.0, 1.0],
-            colour_write_mask  : 0xf,
-            blend_state : disabled,
-            viewport : [0.0, 0.0, 1.0, 1.0],
-            raster_state : default,
-            depth_stencil_state: default,
-            scene : main_scene,
-            camera : model_viewer_camera,
-            scene_views : ["ces_stencil_shadow_volumes"],
-            render_flags : ["front_face"],
-            pmfx_shader : "forward_render",
-            technique : "shadow_extrude"
+            depth_enable : false,
+            depth_write : false,
+            depth_func : default,
+            stencil_enable : true,
+            stencil_write_mask : 0xff,
+            stencil_read_mask : 0xff,
+            
+            stencil_op:
+            {
+                stencil_fail : "replace",
+                depth_fail : "replace",
+                stencil_pass : "replace",
+                stencil_func : "always"
+            }
         },
         
-        stencil_shadow_back_face:
+        stencil_test:
+        {
+            depth_enable: true,
+            depth_write : true,
+            depth_func  : "less",
+            stencil_enable : true,
+            stencil_write_mask : 0x00,
+            stencil_read_mask : 0xff,
+            
+            stencil_op:
+            {
+                stencil_fail : "keep",
+                depth_fail : "keep",
+                stencil_pass : "keep",
+                stencil_func : "equal"
+            }
+        }
+    },
+    
+    views:
+    {
+        v_stencil_write:
         {
             target : [main_colour, main_depth],
-            colour_write_mask  : 0xf,
+            clear_colour : [0.0, 0.0, 0.0, 1.0],
+            clear_depth : 1.0,
+            colour_write_mask : 0xff,
             blend_state : disabled,
             viewport : [0.0, 0.0, 1.0, 1.0],
-            raster_state : default,
-            depth_stencil_state: default,
+            raster_state : no_cull,
+            depth_stencil_state: stencil_write,
             scene : main_scene,
             camera : model_viewer_camera,
             scene_views : ["ces_stencil_shadow_volumes"],
             render_flags : ["front_face"],
             pmfx_shader : "forward_render",
-            technique : "shadow_extrude"
+            technique : "shadow_extrude",
+            stencil_ref: 0x1
         },
+        
+        v_stencil_test:
+        {
+            target : [main_colour, main_depth],
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : default,
+            depth_stencil_state: stencil_test,
+            scene : main_scene,
+            camera : model_viewer_camera,
+            scene_views : ["ces_render_scene"],
+            render_flags : ["forward_lit"],
+            pmfx_shader : "forward_render",
+            technique : "forward_lit",
+            stencil_ref: 0x2
+        }
     },
-    
+              
     view_sets: 
     {
         stencil_shadow: [
-            stencil_shadow_front_face,
-            editor_view
+            v_stencil_write,
+            v_stencil_test
         ]
     },
     

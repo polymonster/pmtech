@@ -209,6 +209,7 @@ namespace
         u32 blend_state = 0;
         u32 cbuffer_filter = PEN_INVALID_HANDLE;
         u32 cbuffer_technique = PEN_INVALID_HANDLE;
+        u32 stencil_ref = 0; // is 8bit but 32bit here for alignment
 
         // shader and technique
         u32     pmfx_shader;
@@ -735,13 +736,16 @@ namespace put
                 dscp.stencil_write_mask = state["stencil_write_mask"].as_u8_hex(0);
 
                 pen::json op = state["stencil_op"];
-                parse_stencil_state(op, &dscp.front_face, &dscp.back_face);
+                if(!op.is_null())
+                    parse_stencil_state(op, &dscp.front_face, &dscp.back_face);
 
                 pen::json op_front = state["stencil_op_front"];
-                parse_stencil_state(op_front, &dscp.front_face, nullptr);
+                if(!op_front.is_null())
+                    parse_stencil_state(op_front, &dscp.front_face, nullptr);
 
                 pen::json op_back = state["stencil_op_back"];
-                parse_stencil_state(op_back, nullptr, &dscp.back_face);
+                if(!op_back.is_null())
+                    parse_stencil_state(op_back, nullptr, &dscp.back_face);
 
                 hash_id hh = PEN_HASH(dscp);
 
@@ -1578,6 +1582,9 @@ namespace put
                 state = _get_render_state(PEN_HASH(depth_stencil_state.c_str()), RS_DEPTH_STENCIL);
                 if (state)
                     new_view.depth_stencil_state = state->handle;
+                
+                // stencil ref
+                new_view.stencil_ref = (u32)view["stencil_ref"].as_u8_hex();
 
                 // blend
                 bool      alpha_to_coverage = view["alpha_to_coverage"].as_bool();
@@ -2605,6 +2612,7 @@ namespace put
             get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
+            pen::renderer_set_stencil_ref(v.stencil_ref);
             pen::renderer_set_rasterizer_state(v.raster_state);
             pen::renderer_set_blend_state(v.blend_state);
 

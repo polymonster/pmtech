@@ -394,9 +394,10 @@ namespace pen
     u32  renderer_create_blend_state(const blend_creation_params& bcp);
     void renderer_set_blend_state(u32 blend_state_index);
 
-    // depth state
+    // depth / stencil state
     u32  renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp);
     void renderer_set_depth_stencil_state(u32 depth_stencil_state);
+    void renderer_set_stencil_ref(u8 ref);
 
     // draw calls
     void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology);
@@ -485,9 +486,10 @@ namespace pen
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot);
         void renderer_set_blend_state(u32 blend_state_index);
 
-        // depth state
+        // depth stencil state
         void renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot);
         void renderer_set_depth_stencil_state(u32 depth_stencil_state);
+        void renderer_set_stencil_ref(u8 ref);
 
         // draw calls
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology);

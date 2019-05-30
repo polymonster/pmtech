@@ -1935,6 +1935,11 @@ namespace pen
         CHECK_CALL(glDepthFunc(res.depth_stencil->depth_func));
         CHECK_CALL(glDepthMask(res.depth_stencil->depth_write_mask));
     }
+    
+    void renderer_set_stencil_ref(u8 ref)
+    {
+        // todo
+    }
 
     void direct::renderer_release_shader(u32 shader_index, u32 shader_type)
     {

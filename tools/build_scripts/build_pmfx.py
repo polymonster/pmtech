@@ -11,7 +11,7 @@ import subprocess
 class build_info:
     shader_platform = ""                                                # hlsl, glsl, metal
     shader_sub_platform = ""                                            # gles
-    shader_version = ""                                                 # 4_0 (sm 4.0), 330 (glsl 330), 450 (glsl
+    shader_version = ""                                                 # 4_0, 5_0 (hlsl), 330, 450 (glsl)
     os_platform = ""                                                    # win32, osx, linux, ios, android
     root_dir = ""                                                       # cwd dir to run from
     build_config = ""                                                   # json contents of build_config.json

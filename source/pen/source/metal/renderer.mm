@@ -69,6 +69,7 @@ namespace // internal structs and static vars
         MTLScissorRect              scissor;
         id<MTLDepthStencilState>    depth_stencil;
         u32                         raster_state;
+        u8                          stencil_ref;
         
         // hashable to rebuild pipe
         pixel_formats        formats;
@@ -604,6 +605,32 @@ namespace // pen consts -> metal consts
         
         return MTLWindingClockwise;
     }
+    
+    pen_inline MTLStencilOperation to_metal_stencil_op(u32 stencil_op)
+    {
+        switch(stencil_op)
+        {
+            case PEN_STENCIL_OP_DECR:
+                return MTLStencilOperationDecrementWrap;
+            case PEN_STENCIL_OP_INCR:
+                return MTLStencilOperationIncrementWrap;
+            case PEN_STENCIL_OP_DECR_SAT:
+                return MTLStencilOperationDecrementClamp;
+            case PEN_STENCIL_OP_INCR_SAT:
+                return MTLStencilOperationIncrementClamp;
+            case PEN_STENCIL_OP_INVERT:
+                return MTLStencilOperationInvert;
+            case PEN_STENCIL_OP_KEEP:
+                return MTLStencilOperationKeep;
+            case PEN_STENCIL_OP_REPLACE:
+                return MTLStencilOperationReplace;
+            case PEN_STENCIL_OP_ZERO:
+                return MTLStencilOperationZero;
+        }
+        
+        PEN_ASSERT(0);
+        return MTLStencilOperationKeep;
+    }
 }
 
 namespace pen
@@ -667,7 +694,6 @@ namespace pen
             }
             
             // only set if we need to: dss, vp, raster and scissor..
-            
             HashMurmur2A hh;
             hh.begin();
             static const size_t off = (u8*)&_state.formats - (u8*)&_state.viewport;
@@ -679,16 +705,20 @@ namespace pen
             
             _state.encoder_hash = cur;
             
+            // vp
             [_state.render_encoder setViewport:_state.viewport];
-            
+            // dss
             if(_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
+            {
                 [_state.render_encoder setDepthStencilState:_state.depth_stencil];
-            
+                [_state.render_encoder setStencilReferenceValue:_state.stencil_ref];
+            }
+            // raster
             metal_raster_state& rs = _res_pool.get(_state.raster_state).raster_state;
             [_state.render_encoder setCullMode: rs.cull_mode];
             [_state.render_encoder setTriangleFillMode: rs.fill_mode];
             [_state.render_encoder setFrontFacingWinding:rs.winding];
-            
+            // scissor
             if(!g_window_resize && rs.scissor_enabled)
                 [_state.render_encoder setScissorRect:_state.scissor];
         }
@@ -1362,12 +1392,35 @@ namespace pen
             dsd.depthCompareFunction = to_metal_compare_function(dscp.depth_func);
             dsd.depthWriteEnabled = dscp.depth_write_mask > 0 ? YES : NO;
             
+            // stencil
+            if(dscp.stencil_enable)
+            {
+                [dsd.backFaceStencil setStencilFailureOperation : to_metal_stencil_op(dscp.back_face.stencil_failop)];
+                [dsd.backFaceStencil setDepthFailureOperation : to_metal_stencil_op(dscp.back_face.stencil_depth_failop)];
+                [dsd.backFaceStencil setDepthStencilPassOperation : to_metal_stencil_op(dscp.back_face.stencil_passop)];
+                [dsd.backFaceStencil setStencilCompareFunction : to_metal_compare_function(dscp.back_face.stencil_func)];
+                [dsd.backFaceStencil setWriteMask: dscp.stencil_write_mask];
+                [dsd.backFaceStencil setReadMask: dscp.stencil_read_mask];
+                
+                [dsd.frontFaceStencil setStencilFailureOperation : to_metal_stencil_op(dscp.front_face.stencil_failop)];
+                [dsd.frontFaceStencil setDepthFailureOperation : to_metal_stencil_op(dscp.front_face.stencil_depth_failop)];
+                [dsd.frontFaceStencil setDepthStencilPassOperation : to_metal_stencil_op(dscp.front_face.stencil_passop)];
+                [dsd.frontFaceStencil setStencilCompareFunction : to_metal_compare_function(dscp.front_face.stencil_func)];
+                [dsd.frontFaceStencil setWriteMask: dscp.stencil_write_mask];
+                [dsd.frontFaceStencil setReadMask: dscp.stencil_read_mask];
+            }
+            
             _res_pool.get(resource_slot).depth_stencil = [_metal_device newDepthStencilStateWithDescriptor:dsd];
         }
 
         void renderer_set_depth_stencil_state(u32 depth_stencil_state)
         {
             _state.depth_stencil = _res_pool.get(depth_stencil_state).depth_stencil;
+        }
+        
+        void renderer_set_stencil_ref(u8 ref)
+        {
+            _state.stencil_ref = ref;
         }
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)

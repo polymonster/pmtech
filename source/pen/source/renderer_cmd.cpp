@@ -80,7 +80,8 @@ namespace
         CMD_CREATE_CLEAR_STATE,
         CMD_PUSH_PERF_MARKER,
         CMD_POP_PERF_MARKER,
-        CMD_DISPATCH_COMPUTE
+        CMD_DISPATCH_COMPUTE,
+        CMD_SET_STENCIL_REF
     };
     
     struct set_shader_cmd
@@ -224,7 +225,7 @@ namespace
             clear_state                      clear_state_params;
             c8*                              name;
             compute_dispatch_params          cs_dispatch;
-            
+            u8                               stencil_ref;
         };
         
         renderer_cmd(){};
@@ -474,6 +475,10 @@ namespace pen
                 
             case CMD_DISPATCH_COMPUTE:
                 direct::renderer_dispatch_compute(cmd.cs_dispatch.grid, cmd.cs_dispatch.num_threads);
+                break;
+                
+            case CMD_SET_STENCIL_REF:
+                direct::renderer_set_stencil_ref(cmd.stencil_ref);
                 break;
         }
     }
@@ -1395,6 +1400,16 @@ namespace pen
         _cmd_buffer.put(cmd);
 
         return resource_slot;
+    }
+    
+    void renderer_set_stencil_ref(u8 ref)
+    {
+        renderer_cmd cmd;
+        
+        cmd.command_index = CMD_SET_STENCIL_REF;
+        cmd.stencil_ref = ref;
+        
+        _cmd_buffer.put(cmd);
     }
 
     void renderer_push_perf_marker(const c8* name)
