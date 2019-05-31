@@ -1461,7 +1461,7 @@ namespace pen
         s_immediate_context->OMSetDepthStencilState(_res_pool[depth_stencil_state].depth_stencil_state, 0xffffffff);
     }
     
-    void renderer_set_stencil_ref(u8 ref)
+    void direct::renderer_set_stencil_ref(u8 ref)
     {
         // todo
     }

@@ -712,6 +712,8 @@ namespace pen
             {
                 [_state.render_encoder setDepthStencilState:_state.depth_stencil];
                 [_state.render_encoder setStencilReferenceValue:_state.stencil_ref];
+                [_state.render_encoder setStencilFrontReferenceValue:_state.stencil_ref
+                                                  backReferenceValue:_state.stencil_ref];
             }
             // raster
             metal_raster_state& rs = _res_pool.get(_state.raster_state).raster_state;
@@ -757,6 +759,7 @@ namespace pen
                 pipeline_desc.colorAttachments[i].pixelFormat = _state.formats.colour_attachments[i];
             
             pipeline_desc.depthAttachmentPixelFormat = _state.formats.depth_attachment;
+            pipeline_desc.stencilAttachmentPixelFormat = _state.formats.depth_attachment;
 
             // apply blend state
             metal_blend_state& blend = _res_pool.get(_state.blend_state).blend;
@@ -1567,11 +1570,15 @@ namespace pen
             
             if(depth_target == PEN_BACK_BUFFER_DEPTH)
             {
-                _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
                 _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
                 
+                _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
                 _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
                 _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
+
+                _state.pass.stencilAttachment.texture = _metal_view.depthStencilTexture;;
+                _state.pass.stencilAttachment.loadAction = MTLLoadActionDontCare;
+                _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
             }
             else if(is_valid(depth_target))
             {
@@ -1589,6 +1596,11 @@ namespace pen
                 _state.pass.depthAttachment.texture = texture;
                 _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
                 _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
+                
+                _state.pass.stencilAttachment.slice = depth_face;
+                _state.pass.stencilAttachment.texture = texture;
+                _state.pass.stencilAttachment.loadAction = MTLLoadActionDontCare;
+                _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
                 
                 _state.formats.depth_attachment = r.texture.fmt;
             }

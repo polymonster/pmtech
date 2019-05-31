@@ -1936,7 +1936,7 @@ namespace pen
         CHECK_CALL(glDepthMask(res.depth_stencil->depth_write_mask));
     }
     
-    void renderer_set_stencil_ref(u8 ref)
+    void direct::renderer_set_stencil_ref(u8 ref)
     {
         // todo
     }
