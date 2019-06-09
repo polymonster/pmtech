@@ -6,25 +6,7 @@
     
     depth_stencil_states:
     {
-        stencil_write:
-        {
-            depth_enable : false,
-            depth_write : false,
-            depth_func : default,
-            stencil_enable : false,
-            stencil_write_mask : 0xff,
-            stencil_read_mask : 0xff,
-            
-            stencil_op:
-            {
-                stencil_fail : "replace",
-                depth_fail : "replace",
-                stencil_pass : "replace",
-                stencil_func : "always"
-            }
-        },
-        
-        boop:
+        stencil_ref_equal:
         {
             depth_enable: true,
             depth_write : true,
@@ -45,29 +27,29 @@
     
     views:
     {
-        v_stencil_clear:
+        view_stencil_clear:
         {
             target : [main_colour, main_depth],
             clear_colour : [0.0, 0.0, 0.0, 1.0],
             clear_depth : 1.0,
-            clear_stencil : 0x1,
+            clear_stencil : 0x22,
             colour_write_mask : 0xff,
         },
         
-        v_stencil_test:
+        view_stencil_test:
         {
             target : [main_colour, main_depth],
             blend_state : disabled,
             viewport : [0.0, 0.0, 1.0, 1.0],
             raster_state : no_cull,
-            depth_stencil_state: boop,
+            depth_stencil_state: stencil_ref_equal,
             scene : main_scene,
             camera : model_viewer_camera,
             scene_views : ["ces_render_scene"],
             render_flags : ["forward_lit"],
             pmfx_shader : "forward_render",
             technique : "forward_lit",
-            stencil_ref: 0x1,
+            stencil_ref: 0x22,
             
             sampler_bindings:
             [
@@ -79,12 +61,11 @@
               
     view_sets: 
     {
-        stencil_shadow: [
-            v_stencil_clear,
-            v_stencil_test,
-            editor_view
+        stencil_buffer_test: [
+            view_stencil_clear,
+            view_stencil_test
         ]
     },
     
-    view_set: stencil_shadow
+    view_set: stencil_buffer_test
 }

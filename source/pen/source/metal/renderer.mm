@@ -110,6 +110,7 @@ namespace // internal structs and static vars
         MTLClearColor colour[pen::MAX_MRT];
         MTLLoadAction colour_load_action[pen::MAX_MRT];
         f32           depth_clear;
+        u32           stencil_clear;
         MTLLoadAction depth_load_action;
     };
 
@@ -884,6 +885,7 @@ namespace pen
                 mc.depth_load_action = MTLLoadActionClear;
             
             mc.depth_clear = cs.depth;
+            mc.stencil_clear = (u32)cs.stencil;
         }
 
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
@@ -900,6 +902,8 @@ namespace pen
             {
                 _state.pass.depthAttachment.loadAction = clear.depth_load_action;
                 _state.pass.depthAttachment.clearDepth = clear.depth_clear;
+                _state.pass.stencilAttachment.loadAction = clear.depth_load_action;
+                _state.pass.stencilAttachment.clearStencil = clear.stencil_clear;
             }
 
             validate_render_encoder();
