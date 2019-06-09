@@ -260,6 +260,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
+#if 0 //debug
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
     
     vertex_model* vm = (vertex_model*)box->cpu_vertex_buffer;
@@ -306,4 +307,5 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
             dbg::add_line(p0.xyz, p1.xyz, vec4f::green());
         }
     }
+#endif
 }

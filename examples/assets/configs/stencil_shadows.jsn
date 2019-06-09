@@ -71,12 +71,17 @@
     
     views:
     {
-        view_fill_depth:
+        view_clear:
         {
             target : [main_colour, main_depth],
             clear_colour : [0.0, 0.0, 0.0, 1.0],
             clear_depth : 1.0,
-            clear_stencil : 0x0,
+            clear_stencil : 0x0
+        },
+        
+        view_fill_depth:
+        {
+            target : [main_colour, main_depth],
             colour_write_mask: 0x00,
             blend_state : disabled,
             viewport : [0.0, 0.0, 1.0, 1.0],
@@ -138,6 +143,7 @@
     view_sets: 
     {
         stencil_shadow: [
+            view_clear,
             view_fill_depth,
             view_shadow_volumes,
             view_lit,

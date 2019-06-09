@@ -450,6 +450,8 @@ namespace pen
         bool backbuffer_bound = false;
         u8   constant_buffer_bindings[MAX_UNIFORM_BUFFERS] = {0};
         u32  index_format = GL_UNSIGNED_SHORT;
+        u32  depth_stencil_state;
+        u8   stencil_ref;
     };
 
     active_state g_bound_state;
@@ -462,6 +464,57 @@ namespace pen
     }
 
     context_state g_context;
+    
+    void _set_depth_stencil_state(u32 dss, u8 ref)
+    {
+        resource_allocation& res = _res_pool[dss];
+        
+        // depth
+        if (res.depth_stencil->depth_enable)
+        {
+            CHECK_CALL(glEnable(GL_DEPTH_TEST));
+        }
+        else
+        {
+            CHECK_CALL(glDisable(GL_DEPTH_TEST));
+        }
+        
+        // stencil
+        CHECK_CALL(glDepthFunc(res.depth_stencil->depth_func));
+        CHECK_CALL(glDepthMask(res.depth_stencil->depth_write_mask));
+        
+        if(res.depth_stencil->stencil_enable)
+        {
+            CHECK_CALL(glEnable(GL_STENCIL_TEST));
+            CHECK_CALL(glStencilMask(res.depth_stencil->stencil_write_mask));
+            
+            // front
+            CHECK_CALL(glStencilOpSeparate(GL_FRONT,
+                                           res.depth_stencil->front_face.stencil_failop,
+                                           res.depth_stencil->front_face.stencil_depth_failop,
+                                           res.depth_stencil->front_face.stencil_passop));
+            
+            CHECK_CALL(glStencilFuncSeparate(GL_FRONT,
+                                             res.depth_stencil->front_face.stencil_func,
+                                             ref,
+                                             res.depth_stencil->stencil_read_mask));
+            
+            // back
+            CHECK_CALL(glStencilOpSeparate(GL_BACK,
+                                           res.depth_stencil->back_face.stencil_failop,
+                                           res.depth_stencil->back_face.stencil_depth_failop,
+                                           res.depth_stencil->back_face.stencil_passop));
+            
+            CHECK_CALL(glStencilFuncSeparate(GL_BACK,
+                                             res.depth_stencil->back_face.stencil_func,
+                                             ref,
+                                             res.depth_stencil->stencil_read_mask));
+        }
+        else
+        {
+            CHECK_CALL(glDisable(GL_STENCIL_TEST));
+        }
+    }
 
     void direct::renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
     {
@@ -1055,6 +1108,14 @@ namespace pen
                 CHECK_CALL(glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, so_buffer));
                 CHECK_CALL(glBeginTransformFeedback(primitive_topology));
             }
+        }
+        
+        if(g_bound_state.depth_stencil_state != g_current_state.depth_stencil_state ||
+           g_bound_state.stencil_ref != g_current_state.stencil_ref)
+        {
+            _set_depth_stencil_state(g_current_state.depth_stencil_state, g_current_state.stencil_ref);
+            g_bound_state.depth_stencil_state = g_current_state.depth_stencil_state;
+            g_bound_state.stencil_ref = g_current_state.stencil_ref;
         }
     }
 
@@ -1921,24 +1982,12 @@ namespace pen
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-        resource_allocation& res = _res_pool[depth_stencil_state];
-
-        if (res.depth_stencil->depth_enable)
-        {
-            CHECK_CALL(glEnable(GL_DEPTH_TEST));
-        }
-        else
-        {
-            CHECK_CALL(glDisable(GL_DEPTH_TEST));
-        }
-
-        CHECK_CALL(glDepthFunc(res.depth_stencil->depth_func));
-        CHECK_CALL(glDepthMask(res.depth_stencil->depth_write_mask));
+        g_current_state.depth_stencil_state = depth_stencil_state;
     }
     
     void direct::renderer_set_stencil_ref(u8 ref)
     {
-        // todo
+        g_current_state.stencil_ref = ref;
     }
 
     void direct::renderer_release_shader(u32 shader_index, u32 shader_type)
