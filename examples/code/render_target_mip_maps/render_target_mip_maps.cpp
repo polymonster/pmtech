@@ -10,7 +10,7 @@ pen::window_creation_params pen_window{
     "render_target_mip_maps"  // window title / process name
 };
 
-void blend_mode_ui()
+void mip_ui()
 {
     bool opened = true;
     ImGui::Begin("Render Target Mip Maps", &opened, ImGuiWindowFlags_AlwaysAutoResize);
@@ -97,5 +97,5 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
-    blend_mode_ui();
+    mip_ui();
 }

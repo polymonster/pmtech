@@ -24,11 +24,37 @@
             }
         },
         
-        boop:
+        stencil_shadow_volume:
         {
             depth_enable: true,
-            depth_write : true,
+            depth_write : false,
             depth_func  : "less",
+            stencil_enable : true,
+            stencil_write_mask : 0xff,
+            stencil_read_mask : 0xff,
+            
+            stencil_op_front:
+            {
+                stencil_fail : "keep",
+                depth_fail : "keep",
+                stencil_pass : "decr",
+                stencil_func : "always"
+            },
+            
+            stencil_op_back:
+            {
+                stencil_fail : "keep",
+                depth_fail : "keep",
+                stencil_pass : "incr",
+                stencil_func : "always"
+            }
+        },
+        
+        stencil_shadow_test:
+        {
+            depth_enable : true,
+            depth_write : false,
+            depth_func : "equal",
             stencil_enable : true,
             stencil_write_mask : 0xff,
             stencil_read_mask : 0xff,
@@ -40,34 +66,66 @@
                 stencil_pass : "replace",
                 stencil_func : "equal"
             }
-        }
+        },
     },
     
     views:
     {
-        v_stencil_clear:
+        view_fill_depth:
         {
             target : [main_colour, main_depth],
             clear_colour : [0.0, 0.0, 0.0, 1.0],
             clear_depth : 1.0,
-            clear_stencil : 0x1,
-            colour_write_mask : 0xff,
-        },
-        
-        v_stencil_test:
-        {
-            target : [main_colour, main_depth],
+            clear_stencil : 0x0,
+            colour_write_mask: 0x00,
             blend_state : disabled,
             viewport : [0.0, 0.0, 1.0, 1.0],
-            raster_state : no_cull,
-            depth_stencil_state: boop,
+            raster_state : default,
+            depth_stencil_state: default,
             scene : main_scene,
             camera : model_viewer_camera,
             scene_views : ["ces_render_scene"],
             render_flags : ["forward_lit"],
             pmfx_shader : "forward_render",
             technique : "forward_lit",
-            stencil_ref: 0x1,
+            
+            sampler_bindings:
+            [
+                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
+            ],
+        },
+        
+        view_shadow_volumes:
+        {
+            target : [main_colour, main_depth],
+            colour_write_mask: 0x00,
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : no_cull,
+            depth_stencil_state: stencil_shadow_volume,
+            scene : main_scene,
+            camera : model_viewer_camera,
+            scene_views : ["ces_stencil_shadow_volumes"],
+            render_flags : ["forward_lit"],
+            pmfx_shader : "forward_render",
+            technique : "shadow_extrude"
+        },
+        
+        view_lit:
+        {
+            target : [main_colour, main_depth],
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : default,
+            depth_stencil_state: stencil_shadow_test,
+            scene : main_scene,
+            camera : model_viewer_camera,
+            scene_views : ["ces_render_scene"],
+            render_flags : ["forward_lit"],
+            pmfx_shader : "forward_render",
+            technique : "forward_lit",
+            stencil_ref: 0x0,
             
             sampler_bindings:
             [
@@ -80,8 +138,9 @@
     view_sets: 
     {
         stencil_shadow: [
-            v_stencil_clear,
-            v_stencil_test,
+            view_fill_depth,
+            view_shadow_volumes,
+            view_lit,
             editor_view
         ]
     },
