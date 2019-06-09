@@ -34,8 +34,7 @@
     view_sets: 
     {
         rasterizer_state: [
-            view_rasterizer_state,
-            editor_view
+            view_rasterizer_state
         ]
     },
     

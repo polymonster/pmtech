@@ -5,10 +5,11 @@
 #ifndef _pen_data_struct_h
 #define _pen_data_struct_h
 
-// Minimalist, fast, lockless, thread safe, bloat free data structures
+// Minimalist, thread safe, bloat free data structures.. check description for thread safety, lock / lockless, etc
 
 #include "memory.h"
 #include "console.h"
+#include "threads.h"
 
 #ifndef NO_STRETCHY_BUFFER_SHORT_NAMES
 #define sb_free stb_sb_free
@@ -160,6 +161,25 @@ namespace pen
         
         void init(size_t size);
         void grow(size_t size);
+    };
+    
+    // multiple producer, multiple consumer buffer - partially lock-free but will lock when re-sizing.
+    template <typename T>
+    struct mpmc_stretchy_buffer
+    {
+        T*          _data[2] = { nullptr, nullptr };
+        a_size_t    _fb = { 0 };
+        pen::mutex* _mut = nullptr;
+        
+        mpmc_stretchy_buffer()
+        {
+            _mut = pen::mutex_create();
+            _fb = 0;
+        }
+        
+        size_t size();
+        void push_back(T item);
+        T& operator[](size_t slot);
     };
     
     // function impls with always inline for fast data structs
@@ -385,6 +405,52 @@ namespace pen
         size_t diff = size - cur;
         memset(&_data[cur], 0x00, sizeof(T)*diff);
         _capacity[_bb] = size;
+    }
+    
+    template <typename T>
+    pen_inline void mpmc_stretchy_buffer<T>::push_back(T item)
+    {
+        u32 cc = sb_count(_data[_fb]);
+        if(cc > 0 && cc < stb__sbm(_data[_fb]))
+        {
+            sb_push(_data[_fb], item);
+        }
+        else
+        {
+            // lock and resize
+            pen::mutex_lock(_mut);
+            
+            if(cc == 0 || cc >= stb__sbm(_data[_fb]))
+            {
+                u32 bb = _fb ^ 1;
+                sb_free(_data[bb]);
+                _data[bb] = nullptr;
+                
+                // todo: this could be improved with memcpy
+                for(u32 i = 0; i < cc; ++i)
+                    sb_push(_data[bb], _data[_fb][i]);
+                
+                // swap buffers
+                _fb ^= 1;
+            }
+
+            pen::mutex_unlock(_mut);
+            
+            // push new entry
+            sb_push(_data[_fb], item);
+        }
+    }
+    
+    template <typename T>
+    pen_inline size_t mpmc_stretchy_buffer<T>::size()
+    {
+        return sb_count(_data[_fb]);
+    }
+    
+    template <typename T>
+    pen_inline T& mpmc_stretchy_buffer<T>::operator[](size_t slot)
+    {
+        return _data[_fb][slot];
     }
     
 } // namespace pen

@@ -218,10 +218,10 @@ void example_setup(ecs::ecs_scene* scene, camera& main_camera)
         scene->transforms[light].scale = vec3f::one();
         scene->entities[light] |= CMP_TRANSFORM;
         
+        instantiate_light(scene, light);
         scene->lights[light].colour = col.xyz;
         scene->lights[light].radius = light_radius;
         scene->lights[light].type = LIGHT_TYPE_POINT;
-        instantiate_light(scene, light);
         
         anim_dir[i] = vec3f(rrx, rry, rrz) * vec3f(2.0f) - vec3f(1.0);
         
