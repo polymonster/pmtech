@@ -69,6 +69,7 @@ PEN_TRV pen::user_entry(void* params)
     ti.data = nullptr;
     ti.num_mips = 1;
     ti.bind_flags |= PEN_BIND_SHADER_WRITE;
+    ti.format = PEN_TEX_FORMAT_RGBA8_UNORM;
     u32 test_output = pen::renderer_create_texture(ti);
     
     // manually scale 16:9 to 1:1
