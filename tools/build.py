@@ -72,7 +72,6 @@ def parse_args(args):
     global clean_destinations
     global toolset
     global v2
-    _info = build_info()
     for index in range(0, len(sys.argv)):
         is_action = False
         for action in action_strings:
@@ -265,6 +264,7 @@ def build_thirdparty_libs():
 
 
 if __name__ == "__main__":
+    global _info
     print("--------------------------------------------------------------------------------")
     print("pmtech build -------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
@@ -272,6 +272,8 @@ if __name__ == "__main__":
     # for experimental new versions of build components
     global v2
     v2 = False
+
+    _info = build_info()
 
     stats_start = time.time()
 

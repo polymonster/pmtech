@@ -1813,6 +1813,7 @@ def parse_pmfx(file, root):
 
     # for techniques in pmfx
     success = True
+    default_shader_version = _info.shader_version
     for technique in _pmfx.json:
         pmfx_json = json.loads(_pmfx.json_text)
         technique_json = pmfx_json[technique].copy()
@@ -1844,6 +1845,7 @@ def parse_pmfx(file, root):
                             print("[warning] compute shaders not implemented for platform: " + _info.shader_platform)
                             valid = False
 
+            _info.shader_version = default_shader_version
             if "supported_platforms" in _tp.technique:
                 sp = _tp.technique["supported_platforms"]
                 if _info.shader_platform not in sp:
@@ -1853,7 +1855,8 @@ def parse_pmfx(file, root):
                     if "all" in sv:
                         pass
                     elif _info.shader_version not in sv:
-                        valid = False
+                        # force shader version to specified
+                        _info.shader_version = sv[0]
 
             if not valid:
                 continue
