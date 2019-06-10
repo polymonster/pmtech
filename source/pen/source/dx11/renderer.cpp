@@ -308,6 +308,8 @@ namespace pen
         u32 active_colour_target[8] = {0};
         u32 active_depth_target = 0;
         u32 num_active_colour_targets = 1;
+		u32 depth_stencil_state = 0;
+		u8 stencil_ref = 0;
 
         u32 active_query_index;
     };
@@ -1458,12 +1460,15 @@ namespace pen
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-        s_immediate_context->OMSetDepthStencilState(_res_pool[depth_stencil_state].depth_stencil_state, 0xffffffff);
+		g_context.depth_stencil_state = depth_stencil_state;
+        s_immediate_context->OMSetDepthStencilState(_res_pool[g_context.depth_stencil_state].depth_stencil_state, g_context.stencil_ref);
     }
     
     void direct::renderer_set_stencil_ref(u8 ref)
     {
-        // todo
+		g_context.stencil_ref = ref;
+		if(g_context.depth_stencil_state)
+			s_immediate_context->OMSetDepthStencilState(_res_pool[g_context.depth_stencil_state].depth_stencil_state, g_context.stencil_ref);
     }
 
     void direct::renderer_release_shader(u32 shader_index, u32 shader_type)
