@@ -101,7 +101,7 @@
             ],
         },
         
-        view_shadow_volumes:
+        view_shadow_volume:
         {
             target : [main_colour, main_depth],
             colour_write_mask: 0x00,
@@ -111,13 +111,13 @@
             depth_stencil_state: stencil_shadow_volume,
             scene : main_scene,
             camera : model_viewer_camera,
-            scene_views : ["ces_stencil_shadow_volumes"],
-            render_flags : ["forward_lit"],
+            scene_views : ["stencil_shadow_volumes"],
             pmfx_shader : "forward_render",
-            technique : "shadow_extrude"
+            technique : "shadow_extrude",
+            template: "true"
         },
         
-        view_lit:
+        view_single_light:
         {
             target : [main_colour, main_depth],
             blend_state : disabled,
@@ -126,17 +126,23 @@
             depth_stencil_state: stencil_shadow_test,
             scene : main_scene,
             camera : model_viewer_camera,
-            scene_views : ["ces_render_scene"],
-            render_flags : ["forward_lit"],
+            scene_views : ["scene_stencil_tested"],
             pmfx_shader : "forward_render",
             technique : "forward_lit",
             stencil_ref: 0x0,
+            template: "true",
             
             sampler_bindings:
             [
                 { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
                 { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
             ],
+        },
+        
+        view_multi_pass_lights:
+        {
+            scene : main_scene,
+            scene_views: ["render_multi_pass_lights"]
         }
     },
               
@@ -145,8 +151,9 @@
         stencil_shadow: [
             view_clear,
             view_fill_depth,
-            view_shadow_volumes,
-            view_lit,
+            view_shadow_volume,
+            view_single_light,
+            view_multi_pass_lights,
             editor_view
         ]
     },

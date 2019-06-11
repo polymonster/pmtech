@@ -456,6 +456,7 @@ namespace pen
 
     active_state g_bound_state;
     active_state g_current_state;
+    viewport     g_current_vp;
 
     void clear_resource_table()
     {
@@ -1806,8 +1807,7 @@ namespace pen
         g_current_state.raster_state = rasterizer_state_index;
     }
 
-    viewport g_current_vp;
-    void     direct::renderer_set_viewport(const viewport& vp)
+    void direct::renderer_set_viewport(const viewport& vp)
     {
         g_current_vp = vp;
 

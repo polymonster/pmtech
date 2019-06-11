@@ -238,14 +238,16 @@ namespace put
 
         void init(const c8* filename);
         void shutdown();
+        void show_dev_ui();
+        
         void release_script_resources();
         void render();
-        void show_dev_ui();
+        void render_view(hash_id id_name);
 
         void register_scene(ecs::ecs_scene* scene, const char* name);
         void register_camera(camera* cam, const char* name);
-
         void register_scene_view_renderer(const scene_view_renderer& svr);
+        
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
         void resize_render_target(hash_id target, const rt_resize_params& params);
         void resize_viewports();

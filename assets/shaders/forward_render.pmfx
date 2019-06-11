@@ -181,14 +181,12 @@ vs_output vs_main_extrude( vs_input_stencil_shadow input )
     float3 wn_1 = mul( input.face_normal_1.xyz, wrm );
     
     // detect silhouette edges
-    float3 ld = float3(-1.0, -1.0, -1.0);
+    float3 ld = wp.xyz - lights[0].pos_radius.xyz;
     float d0 = dot(ld, wn_0.xyz);
     float d1 = dot(ld, wn_1.xyz);
         
     if(d0 > 0.0 && d1 < 0.0)
-    {
-        wp.xyz += ld * 100.0;   
-    }
+        wp.xyz += ld * 100.0;
     
     output.position = mul( wp, vp_matrix);
         

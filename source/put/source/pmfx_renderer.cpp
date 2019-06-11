@@ -156,7 +156,8 @@ namespace
     
     enum e_view_flags
     {
-        VF_CUBEMAP = 1
+        VF_CUBEMAP = (1<<0),
+        VF_TEMPLATE = (1<<1) // dont automatically render. but build the view to be rendered from elsewhere.
     };
 
     struct view_params
@@ -213,7 +214,7 @@ namespace
 
         // shader and technique
         u32     pmfx_shader;
-        hash_id technique; // todo rename to id_technique
+        hash_id id_technique;
         u32     render_flags;
 
         technique_constant_data technique_constants;
@@ -1479,6 +1480,9 @@ namespace put
 
                 new_view.depth_target = PEN_INVALID_HANDLE;
                 new_view.info_json = view.dumps();
+                
+                if(view["template"].as_bool(false))
+                    new_view.view_flags |= VF_TEMPLATE;
 
                 for (s32 t = 0; t < num_targets; ++t)
                 {
@@ -1660,7 +1664,7 @@ namespace put
                 Str technique_str = view["technique"].as_str();
                 Str shader_str = view["pmfx_shader"].as_str();
                 
-                new_view.technique = PEN_HASH(technique_str.c_str());
+                new_view.id_technique = PEN_HASH(technique_str.c_str());
                 new_view.pmfx_shader = pmfx::load_shader(shader_str.c_str());
                 new_view.technique_permutation = view["permutation"].as_u32();
 
@@ -1768,7 +1772,7 @@ namespace put
 
                 if (is_valid(new_view.pmfx_shader))
                 {
-                    u32 ti = get_technique_index_perm(new_view.pmfx_shader, new_view.technique);
+                    u32 ti = get_technique_index_perm(new_view.pmfx_shader, new_view.id_technique);
                     if (has_technique_constants(new_view.pmfx_shader, ti))
                     {
                         pen::buffer_creation_params bcp;
@@ -2013,7 +2017,7 @@ namespace put
                         sb.handle = get_virtual_target(sb.id_texture, VRT_READ, false);
 
                     // material for pass
-                    pmfx::initialise_constant_defaults(p.pmfx_shader, p.technique, p.technique_constants.data);
+                    pmfx::initialise_constant_defaults(p.pmfx_shader, p.id_technique, p.technique_constants.data);
 
                     // swap buffers
                     if (!non_aux)
@@ -2025,7 +2029,7 @@ namespace put
                 // get technique sampler bindings
                 for (auto& p : pp_views)
                 {
-                    u32 ti = get_technique_index_perm(p.pmfx_shader, p.technique);
+                    u32 ti = get_technique_index_perm(p.pmfx_shader, p.id_technique);
                     if (has_technique_samplers(p.pmfx_shader, ti))
                     {
                         technique_sampler* ts = get_technique_samplers(p.pmfx_shader, ti);
@@ -2179,7 +2183,7 @@ namespace put
                     pen::json tech_params = params[i];
                     if (pv.id_name == PEN_HASH(tech_params.key()))
                     {
-                        u32 ti = get_technique_index_perm(pv.pmfx_shader, pv.technique);
+                        u32 ti = get_technique_index_perm(pv.pmfx_shader, pv.id_technique);
 
                         u32 num_c = tech_params.size();
                         for (u32 c = 0; c < num_c; ++c)
@@ -2584,7 +2588,15 @@ namespace put
         {
             // early out.. nothing to render
             if (v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
+            {
+                // call sv functions to use this as a controller. todo: improve
+                scene_view sv;
+                sv.scene = v.scene;
+                for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
+                    v.render_functions[rf](sv);
+                
                 return;
+            }
 
             static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
@@ -2610,6 +2622,7 @@ namespace put
             // render state
             pen::viewport vp = {0};
             get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
+            pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
             pen::renderer_set_stencil_ref(v.stencil_ref);
@@ -2626,7 +2639,7 @@ namespace put
             scene_view sv;
             sv.scene = v.scene;
             sv.render_flags = v.render_flags;
-            sv.technique = v.technique;
+            sv.technique = v.id_technique;
             sv.raster_state = v.raster_state;
             sv.depth_stencil_state = v.depth_stencil_state;
             sv.blend_state = v.blend_state;
@@ -2664,7 +2677,6 @@ namespace put
                 // so that ping-pong buffers get unbound from rt before being bound on samplers
                 pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, a);
                 pen::renderer_clear(v.clear_state, a);
-                pen::renderer_set_viewport(vp);
 
                 // bind view samplers.. render targets, global textures
                 for (auto& sb : v.sampler_bindings)
@@ -2742,27 +2754,46 @@ namespace put
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             }
         }
-
+        
+        void render_single_view(view_params& v)
+        {
+            render_view(v);
+            resolve_targets(false);
+            
+            if (v.post_process_flags & PP_ENABLED)
+            {
+                virtual_rt_reset();
+                
+                for (auto& v : v.post_process_views)
+                {
+                    v.render_functions.clear();
+                    v.render_functions.push_back(&fullscreen_quad);
+                    
+                    render_view(v);
+                }
+            }
+        }
+        
+        void render_view(hash_id view)
+        {
+            for (auto& v : s_views)
+            {
+                if(v.id_name == view)
+                {
+                    render_single_view(v);
+                    return;
+                }
+            }
+        }
+        
         void render()
         {
             for (auto& v : s_views)
             {
-                render_view(v);
-
-                resolve_targets(false);
-
-                if (v.post_process_flags & PP_ENABLED)
-                {
-                    virtual_rt_reset();
-
-                    for (auto& v : v.post_process_views)
-                    {
-                        v.render_functions.clear();
-                        v.render_functions.push_back(&fullscreen_quad);
-
-                        render_view(v);
-                    }
-                }
+                if(v.view_flags & VF_TEMPLATE)
+                    continue;
+                
+                render_single_view(v);
             }
 
             resolve_targets(true);
@@ -2836,7 +2867,7 @@ namespace put
 
             for (auto& pp : pp_views)
             {
-                u32 ti = get_technique_index_perm(pp.pmfx_shader, pp.technique);
+                u32 ti = get_technique_index_perm(pp.pmfx_shader, pp.id_technique);
 
                 if (!has_technique_params(pp.pmfx_shader, ti))
                     continue;
@@ -3202,7 +3233,7 @@ namespace put
 
                         for (auto& pp : s_post_process_passes)
                         {
-                            u32 ti = get_technique_index_perm(pp.pmfx_shader, pp.technique);
+                            u32 ti = get_technique_index_perm(pp.pmfx_shader, pp.id_technique);
 
                             if (has_technique_params(pp.pmfx_shader, ti))
                             {

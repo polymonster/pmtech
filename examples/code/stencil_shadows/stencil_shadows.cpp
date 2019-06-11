@@ -36,8 +36,6 @@ namespace {
     }
     
     u32 cube_entity = 0;
-    u32 light_0 = 0;
-    
     shadow_volume_edge* s_sve;
     geometry_resource s_sgr;
 }
@@ -55,6 +53,61 @@ void render_stencil_shadows(const scene_view& view)
     pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
     pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
     pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+}
+
+void render_stencil_tested(const scene_view& view)
+{
+    // bind cbuffer
+    
+    // draw
+    ecs::render_scene_view(view);
+}
+
+void render_multi_pass_lights(const scene_view& view)
+{
+    ecs_scene* scene = view.scene;
+    for (u32 n = 0; n < scene->num_entities; ++n)
+    {
+        if (!(scene->entities[n] & CMP_LIGHT))
+            continue;
+        
+        u32 t = scene->lights[n].type;
+        
+        cmp_draw_call dc;
+        dc.world_matrix = scene->world_matrices[n];
+
+        vec3f pos = dc.world_matrix.get_translation();
+        
+        light_data ld = {};
+        
+        switch (t)
+        {
+            case LIGHT_TYPE_DIR:
+                ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
+                ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
+                ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                break;
+            case LIGHT_TYPE_POINT:
+                ld.pos_radius = vec4f(pos, scene->lights[n].radius);
+                ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
+                ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                break;
+            case LIGHT_TYPE_SPOT:
+                ld.pos_radius = vec4f(pos, scene->lights[n].radius);
+                ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
+                ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                ld.data = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
+                break;
+            default:
+                continue;
+        }
+        
+        // render volume
+        pmfx::render_view(PEN_HASH("view_shadow_volume"));
+        
+        // render lights
+        pmfx::render_view(PEN_HASH("view_single_light"));
+    }
 }
 
 void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geometry_resource* gr_out)
@@ -204,10 +257,22 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
     put::scene_view_renderer svr_stencil_shadow_volumes;
-    svr_stencil_shadow_volumes.name = "ces_stencil_shadow_volumes";
+    svr_stencil_shadow_volumes.name = "stencil_shadow_volumes";
     svr_stencil_shadow_volumes.id_name = PEN_HASH(svr_stencil_shadow_volumes.name.c_str());
     svr_stencil_shadow_volumes.render_function = &render_stencil_shadows;
     pmfx::register_scene_view_renderer(svr_stencil_shadow_volumes);
+    
+    put::scene_view_renderer svr_stencil_tested;
+    svr_stencil_tested.name = "scene_stencil_tested";
+    svr_stencil_tested.id_name = PEN_HASH(svr_stencil_tested.name.c_str());
+    svr_stencil_tested.render_function = &render_stencil_tested;
+    pmfx::register_scene_view_renderer(svr_stencil_tested);
+    
+    put::scene_view_renderer svr_multi_pass_lights;
+    svr_multi_pass_lights.name = "render_multi_pass_lights";
+    svr_multi_pass_lights.id_name = PEN_HASH(svr_multi_pass_lights.name.c_str());
+    svr_multi_pass_lights.render_function = &render_multi_pass_lights;
+    pmfx::register_scene_view_renderer(svr_multi_pass_lights);
     
     pmfx::init("data/configs/stencil_shadows.jsn");
     
@@ -229,7 +294,6 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-    light_0 = light;
     
     // ground
     u32 ground = get_new_entity(scene);
