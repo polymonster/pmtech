@@ -2400,6 +2400,13 @@ namespace put
 
         void pmfx_config_hotload()
         {
+            // wait a bit and flush
+            for(u32 i = 0; i < 6; ++i)
+            {
+                pen::renderer_present();
+                pen::renderer_dispatch();
+            }
+
             release_script_resources();
 
             for (auto& s : k_script_files)
