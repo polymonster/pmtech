@@ -143,7 +143,6 @@ def get_platform_info():
                 ide = "xcode4"
             if platform_name == "":
                 platform_name = "osx"
-
         python_exec = "python3"
     else:
         if ide == "":
@@ -152,6 +151,7 @@ def get_platform_info():
             renderer = "dx11"
         if platform_name == "":
             platform_name = "win32"
+        python_exec = "py -3"
 
     extra_target_info = "--platform_dir=" + platform_name
 

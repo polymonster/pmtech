@@ -226,7 +226,7 @@ def check_dependencies(filename, included_files):
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, _info.output_dir)
     for f in included_files:
         file_list.append(dependencies.sanitize_filename(os.path.join(_info.root_dir, f)))
-    if os.path.exists(info_filename):
+    if os.path.exists(info_filename) and os.path.getsize(info_filename) > 0:
         info_file = open(info_filename, "r")
         info = json.loads(info_file.read())
         for prev_built_with_file in info["files"]:
