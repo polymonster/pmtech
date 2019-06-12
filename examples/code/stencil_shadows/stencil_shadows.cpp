@@ -35,6 +35,7 @@ namespace {
         return false;
     }
     
+    u32 cb_single_light;
     u32 cube_entity = 0;
     shadow_volume_edge* s_sve;
     geometry_resource s_sgr;
@@ -45,6 +46,9 @@ void render_stencil_shadows(const scene_view& view)
     ecs_scene* scene = view.scene;
     geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
     gr = &s_sgr;
+    
+    // bind cbuffer
+    pen::renderer_set_constant_buffer(cb_single_light, 10, pen::CBUFFER_BIND_VS | pen::CBUFFER_BIND_PS);
     
     pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
     pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
@@ -58,6 +62,7 @@ void render_stencil_shadows(const scene_view& view)
 void render_stencil_tested(const scene_view& view)
 {
     // bind cbuffer
+    pen::renderer_set_constant_buffer(cb_single_light, 10, pen::CBUFFER_BIND_VS | pen::CBUFFER_BIND_PS);
     
     // draw
     ecs::render_scene_view(view);
@@ -66,6 +71,7 @@ void render_stencil_tested(const scene_view& view)
 void render_multi_pass_lights(const scene_view& view)
 {
     ecs_scene* scene = view.scene;
+    u32 count = 0;
     for (u32 n = 0; n < scene->num_entities; ++n)
     {
         if (!(scene->entities[n] & CMP_LIGHT))
@@ -102,10 +108,18 @@ void render_multi_pass_lights(const scene_view& view)
                 continue;
         }
         
-        // render volume
+        count++;
+        
+        // update light for this pass
+        pen::renderer_update_buffer(cb_single_light, &ld, sizeof(light_data));
+        
+        // clear stencil
+        pmfx::render_view(PEN_HASH("view_clear_stencil"));
+        
+        // render volumes
         pmfx::render_view(PEN_HASH("view_shadow_volume"));
         
-        // render lights
+        // render scene stencil tested by shadow
         pmfx::render_view(PEN_HASH("view_single_light"));
     }
 }
@@ -320,6 +334,15 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     instantiate_model_cbuffer(scene, cube_entity);
     
     generate_edge_mesh(box, &s_sve, &s_sgr);
+    
+    // generate cbuffer for light passes
+    pen::buffer_creation_params bcp;
+    bcp.usage_flags = PEN_USAGE_DYNAMIC;
+    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+    bcp.buffer_size = sizeof(light_data);
+    bcp.data = nullptr;
+    cb_single_light = pen::renderer_create_buffer(bcp);
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)

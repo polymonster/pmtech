@@ -842,10 +842,7 @@ namespace pen
     }
 
     void renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 stride, u32 offset)
-    {
-        if(buffer_index == 63)
-            u32 a = 0;
-        
+    {        
         renderer_set_vertex_buffers(&buffer_index, 1, start_slot, &stride, &offset);
     }
 

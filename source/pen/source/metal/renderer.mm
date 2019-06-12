@@ -112,6 +112,7 @@ namespace // internal structs and static vars
         f32           depth_clear;
         u32           stencil_clear;
         MTLLoadAction depth_load_action;
+        MTLLoadAction stencil_load_action;
     };
 
     struct metal_target_blend
@@ -256,7 +257,6 @@ namespace // internal structs and static vars
         
         union {
             dynamic_buffer                          buffer;
-            //pen::multi_buffer<id<MTLBuffer>, NBB>   buffer;
             texture_resource                        texture;
             id<MTLSamplerState>                     sampler;
             shader_resource                         shader;
@@ -884,6 +884,10 @@ namespace pen
             if (cs.flags & PEN_CLEAR_DEPTH_BUFFER)
                 mc.depth_load_action = MTLLoadActionClear;
             
+            mc.stencil_load_action = MTLLoadActionLoad;
+            if(cs.flags & PEN_CLEAR_STENCIL_BUFFER)
+                mc.stencil_load_action = MTLLoadActionClear;
+            
             mc.depth_clear = cs.depth;
             mc.stencil_clear = (u32)cs.stencil;
         }
@@ -902,7 +906,7 @@ namespace pen
             {
                 _state.pass.depthAttachment.loadAction = clear.depth_load_action;
                 _state.pass.depthAttachment.clearDepth = clear.depth_clear;
-                _state.pass.stencilAttachment.loadAction = clear.depth_load_action;
+                _state.pass.stencilAttachment.loadAction = clear.stencil_load_action;
                 _state.pass.stencilAttachment.clearStencil = clear.stencil_clear;
             }
 
@@ -999,7 +1003,7 @@ namespace pen
         }
 
         void renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot)
-        {
+        {            
             id<MTLBuffer> buf[NBB];
 
             u32 options = 0;
@@ -1032,7 +1036,7 @@ namespace pen
             dynamic_buffer& db = _res_pool.get(resource_slot).buffer;
             db.init(&buf[0], num_bufs, params.buffer_size, options);
             
-             _res_pool[resource_slot].type = RESOURCE_BUFFER;
+            _res_pool[resource_slot].type = RESOURCE_BUFFER;
         }
 
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,

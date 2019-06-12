@@ -967,7 +967,6 @@ namespace put
         void parse_render_targets(const pen::json& render_config, Str* include_targets)
         {
             pen::json j_render_targets = render_config["render_targets"];
-
             s32 num = j_render_targets.size();
 
             for (s32 i = 0; i < num; ++i)
@@ -2056,14 +2055,11 @@ namespace put
 
             json rts = render_config["render_targets"];
             for (u32 i = 0; i < rts.size(); ++i)
-            {
                 if (rts[i]["always_create"].as_bool() == true)
-                {
                     sb_push(targets, rts[i].key());
-                }
-            }
-
-            parse_render_targets(render_config, targets);
+            
+            if(targets)
+                parse_render_targets(render_config, targets);
         }
 
         void load_view_render_targets(const pen::json& render_config, const pen::json& view)
@@ -2238,7 +2234,6 @@ namespace put
         void load_script_internal(const c8* filename)
         {
             pen::renderer_consume_cmd_buffer();
-
             create_geometry_utilities();
 
             void* config_data;
@@ -2400,7 +2395,7 @@ namespace put
 
         void pmfx_config_hotload()
         {
-            // wait a bit and flush
+            // wait a bit and flush the gpu
             for(u32 i = 0; i < 6; ++i)
             {
                 pen::renderer_present();
@@ -2419,7 +2414,7 @@ namespace put
         }
 
         void init(const c8* filename)
-        {
+        {            
             load_script_internal(filename);
 
             k_script_files.push_back(filename);
@@ -2736,10 +2731,8 @@ namespace put
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
-            {
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
-            }
-
+            
             for (auto& rt : s_render_targets)
             {
                 if (!(rt.flags & RT_AUX) && aux)
@@ -2749,36 +2742,14 @@ namespace put
                 {
                     static u32 pmfx_resolve = pmfx::load_shader("msaa_resolve");
                     pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("average_4x"));
-
                     pen::renderer_resolve_target(rt.handle, pen::RESOLVE_CUSTOM);
                 }
             }
 
+            // set textures and buffers back to prevent d3d validation layer complaining
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
-            {
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
-            }
-        }
-        
-        void render_single_view(view_params& v)
-        {
-            render_view(v);
-            resolve_targets(false);
-            
-            if (v.post_process_flags & PP_ENABLED)
-            {
-                virtual_rt_reset();
-                
-                for (auto& v : v.post_process_views)
-                {
-                    v.render_functions.clear();
-                    v.render_functions.push_back(&fullscreen_quad);
-                    
-                    render_view(v);
-                }
-            }
         }
         
         void render_view(hash_id view)
@@ -2787,7 +2758,7 @@ namespace put
             {
                 if(v.id_name == view)
                 {
-                    render_single_view(v);
+                    render_view(v);
                     return;
                 }
             }
@@ -2800,7 +2771,21 @@ namespace put
                 if(v.view_flags & VF_TEMPLATE)
                     continue;
                 
-                render_single_view(v);
+                render_view(v);
+                resolve_targets(false);
+                
+                if (v.post_process_flags & PP_ENABLED)
+                {
+                    virtual_rt_reset();
+                    
+                    for (auto& v : v.post_process_views)
+                    {
+                        v.render_functions.clear();
+                        v.render_functions.push_back(&fullscreen_quad);
+                        
+                        render_view(v);
+                    }
+                }
             }
 
             resolve_targets(true);
