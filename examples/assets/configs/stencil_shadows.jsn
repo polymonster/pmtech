@@ -121,7 +121,7 @@
             scene_views : ["stencil_shadow_volumes"],
             pmfx_shader : "forward_render",
             technique : "shadow_extrude",
-            template: "true"
+            type: "template"
         },
         
         view_single_light:
@@ -138,7 +138,7 @@
             pmfx_shader : "forward_render",
             technique : "forward_lit",
             stencil_ref: 0x0,
-            template: "true",
+            type: "template",
             
             sampler_bindings:
             [
@@ -150,8 +150,9 @@
         view_multi_pass_lights:
         {
             scene : main_scene,
-            scene_views: ["render_multi_pass_lights"]
-        }
+            scene_views: ["render_multi_pass_lights"],
+            type: "abstract"
+        },
     },
               
     view_sets: 

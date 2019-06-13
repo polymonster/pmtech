@@ -33,6 +33,23 @@ namespace
     const hash_id k_id_main_colour = PEN_HASH("main_colour");
     const hash_id k_id_main_depth  = PEN_HASH("main_depth");
     const hash_id k_id_wrap_linear = PEN_HASH("wrap_linear"); // todo rename
+    
+    enum e_post_process_flags
+    {
+        PP_NONE = 0,
+        PP_ENABLED = (1 << 0),
+        PP_EDITED = (1 << 1),
+        PP_WRITE_NON_AUX = (1 << 2) // writes directly to the specified target bypassing aux / virtual buffers
+    };
+    
+    enum e_view_flags
+    {
+        VF_SCENE_VIEW = (1<<0), // view has scene view to dispatch, if not we may just want to clear or abstract render..
+        VF_CUBEMAP = (1<<1),    // view will be dispatched into a cubemap texture array, 6 times. 1 per face.
+        VF_TEMPLATE = (1<<2),   // dont automatically render. but build the view to be rendered from elsewhere.
+        VF_ABSTRACT = (1<<3),   // abstract views can be used to render view templates, to perform multi-pass rendering.
+        VF_RESOLVE = (1<<4)     // after view has completed, render targets are resolved.
+    };
 
     struct mode_map
     {
@@ -144,21 +161,13 @@ namespace
         "msaa", pen::TEXTURE_BIND_MSAA,
         nullptr, 0
     };
-    // clang-format on
-
-    enum e_post_process_flags
-    {
-        PP_NONE = 0,
-        PP_ENABLED = (1 << 0),
-        PP_EDITED = (1 << 1),
-        PP_WRITE_NON_AUX = (1 << 2) // writes directly to the specified target bypassing aux / virtual buffers
-    };
     
-    enum e_view_flags
-    {
-        VF_CUBEMAP = (1<<0),
-        VF_TEMPLATE = (1<<1) // dont automatically render. but build the view to be rendered from elsewhere.
+    const mode_map k_view_types[] = {
+        "normal", 0,
+        "template", VF_TEMPLATE,
+        "abstract", VF_ABSTRACT
     };
+    // clang-format on
 
     struct view_params
     {
@@ -178,7 +187,6 @@ namespace
         std::vector<void (*)(const put::scene_view&)> render_functions;
 
         // targets
-        // clang-format off
         u32 render_targets[pen::MAX_MRT] = {
             PEN_INVALID_HANDLE,
             PEN_INVALID_HANDLE,
@@ -189,9 +197,10 @@ namespace
             PEN_INVALID_HANDLE,
             PEN_INVALID_HANDLE
         };
-        // clang-format on
+        hash_id resolve_method[pen::MAX_MRT] = { 0 };
 
         u32 depth_target = PEN_INVALID_HANDLE;
+        hash_id depth_resolve_method = 0;
 
         // viewport
         s32 rt_width;
@@ -1480,9 +1489,9 @@ namespace put
                 new_view.depth_target = PEN_INVALID_HANDLE;
                 new_view.info_json = view.dumps();
                 
-                if(view["template"].as_bool(false))
-                    new_view.view_flags |= VF_TEMPLATE;
-
+                new_view.view_flags |= mode_from_string(k_view_types, view["type"].as_cstr(), 0);
+                                
+                u32 depth_target_index = -1;
                 for (s32 t = 0; t < num_targets; ++t)
                 {
                     Str     target_str = targets[t].as_str();
@@ -1530,6 +1539,7 @@ namespace put
 
                             if (r.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
                             {
+                                depth_target_index = t;
                                 new_view.depth_target = r.handle;
                                 new_view.id_depth_target = target_hash;
                             }
@@ -1554,6 +1564,28 @@ namespace put
                 }
 
                 parse_clear_colour(view, new_view, num_targets);
+                
+                // resolve
+                u32 num_resolve = view["resolve"].size();
+                for(u32 i = 0; i < num_resolve; ++i)
+                {
+                    if(i == depth_target_index)
+                    {
+                        new_view.depth_resolve_method = view["resolve"][i].as_hash_id();
+                    }
+                    else
+                    {
+                        new_view.resolve_method[i] = view["resolve"][i].as_hash_id();
+                    }
+                }
+                
+                if(num_resolve > 0)
+                {
+                    new_view.view_flags |= VF_RESOLVE;
+                    
+                    if(num_resolve != num_targets)
+                        dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - view %s number of resolves %i do not match number of targets %i'", new_view.name.c_str(), num_resolve, num_targets);
+                }
 
                 // viewport
                 pen::json viewport = view["viewport"];
@@ -1704,6 +1736,9 @@ namespace put
                                               scene_views[ii].as_cstr(), new_view.name.c_str());
                     }
                 }
+                
+                if(scene_views.size() > 0)
+                    new_view.view_flags |= VF_SCENE_VIEW;
 
                 // sampler bindings
                 parse_sampler_bindings(view, new_view);
@@ -2414,7 +2449,7 @@ namespace put
         }
 
         void init(const c8* filename)
-        {            
+        {
             load_script_internal(filename);
 
             k_script_files.push_back(filename);
@@ -2586,19 +2621,60 @@ namespace put
             v.stash_output = false;
         }
         
+        void render_abstract_view(view_params& v)
+        {
+            scene_view sv;
+            sv.scene = v.scene;
+            for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
+                v.render_functions[rf](sv);
+        }
+        
+        void resolve_view_targets(view_params& v)
+        {
+            static u32 pmfx_resolve = pmfx::load_shader("msaa_resolve");
+            
+            // rt texture may still be bound on output
+            // todo.. remove this? need to check with d3d11 validation layer
+            pen::viewport vp = {0, 0, (f32)pen_window.width, (f32)pen_window.height};
+            pen::renderer_set_viewport(vp);
+            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
+            pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
+            
+            // rt texture may still be bound on input
+            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
+                pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
+            
+            // resolve colour
+            for(u32 i = 0; i < v.num_colour_targets; ++i)
+            {
+                if(v.resolve_method[i] == 0)
+                    continue;
+
+                pmfx::set_technique_perm(pmfx_resolve, v.resolve_method[i]);
+                pen::renderer_resolve_target(v.render_targets[i], pen::RESOLVE_CUSTOM);
+            }
+            
+            // resolve depth
+            if(is_valid_non_null(v.depth_target))
+            {
+                //pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("depth4x"));
+                //pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_CUSTOM);
+                
+                pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("average_4x"));
+                pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_CUSTOM);
+            }
+            
+            // set textures and buffers back to prevent d3d validation layer complaining
+            pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
+            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
+                pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
+        }
+        
         void render_view(view_params& v)
         {
             // early out.. nothing to render
             if (v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
-            {
-                // call sv functions to use this as a controller. todo: improve
-                scene_view sv;
-                sv.scene = v.scene;
-                for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
-                    v.render_functions[rf](sv);
-                
                 return;
-            }
 
             static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
@@ -2617,7 +2693,7 @@ namespace put
                 cb_sampler_info = pen::renderer_create_buffer(bcp);
             }
 
-            // unbind samplers to stop d3d debug layer moaning
+            // unbind samplers to stop validation layers complaining, render targets may still be bound on output.
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
 
@@ -2679,7 +2755,7 @@ namespace put
                 // so that ping-pong buffers get unbound from rt before being bound on samplers
                 pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, a);
                 pen::renderer_clear(v.clear_state, a);
-
+                
                 // bind view samplers.. render targets, global textures
                 for (auto& sb : v.sampler_bindings)
                     pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
@@ -2717,39 +2793,12 @@ namespace put
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                     v.render_functions[rf](sv);
             }
-
+            
+            if(v.view_flags & VF_RESOLVE)
+                resolve_view_targets(v);
+            
             // for debug
             stash_output(v, vp);
-        }
-
-        void resolve_targets(bool aux)
-        {
-            // resolve.. todo only resolve if we have rendered
-            pen::viewport vp = {0, 0, (f32)pen_window.width, (f32)pen_window.height};
-            pen::renderer_set_viewport(vp);
-            pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-            pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-
-            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
-                pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
-            
-            for (auto& rt : s_render_targets)
-            {
-                if (!(rt.flags & RT_AUX) && aux)
-                    continue;
-
-                if (rt.samples > 1)
-                {
-                    static u32 pmfx_resolve = pmfx::load_shader("msaa_resolve");
-                    pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("average_4x"));
-                    pen::renderer_resolve_target(rt.handle, pen::RESOLVE_CUSTOM);
-                }
-            }
-
-            // set textures and buffers back to prevent d3d validation layer complaining
-            pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
-                pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
         }
         
         void render_view(hash_id view)
@@ -2764,6 +2813,19 @@ namespace put
             }
         }
         
+        void render_post_process(view_params& v)
+        {
+            virtual_rt_reset();
+            
+            for (auto& v : v.post_process_views)
+            {
+                v.render_functions.clear();
+                v.render_functions.push_back(&fullscreen_quad);
+                
+                render_view(v);
+            }
+        }
+        
         void render()
         {
             for (auto& v : s_views)
@@ -2771,24 +2833,18 @@ namespace put
                 if(v.view_flags & VF_TEMPLATE)
                     continue;
                 
-                render_view(v);
-                resolve_targets(false);
-                
-                if (v.post_process_flags & PP_ENABLED)
+                if(v.view_flags & VF_ABSTRACT)
                 {
-                    virtual_rt_reset();
+                    render_abstract_view(v);
+                }
+                else
+                {
+                    render_view(v);
                     
-                    for (auto& v : v.post_process_views)
-                    {
-                        v.render_functions.clear();
-                        v.render_functions.push_back(&fullscreen_quad);
-                        
-                        render_view(v);
-                    }
+                    if (v.post_process_flags & PP_ENABLED)
+                        render_post_process(v);
                 }
             }
-
-            resolve_targets(true);
         }
 
         void render_target_info_ui(const render_target& rt)
