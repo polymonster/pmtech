@@ -1,5 +1,6 @@
-#include "../../shader_structs/forward_render.h"
 #include "../example_common.h"
+
+#include "../../shader_structs/forward_render.h"
 
 using namespace put;
 using namespace put::ecs;
