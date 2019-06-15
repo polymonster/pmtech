@@ -86,15 +86,15 @@ project "pen"
             
     configuration "Release"
         defines { "NDEBUG" }
-		entrypoint "WinMainCRTStartup"
-		optimize "Speed"
+        entrypoint "WinMainCRTStartup"
+        optimize "Speed"
         targetdir ("lib/" .. platform_dir .. "/release")
         targetname "pen"
         architecture "x64"
         
     configuration "Debug"
         defines { "DEBUG" }
-		entrypoint "WinMainCRTStartup"
+        entrypoint "WinMainCRTStartup"
         symbols "On"
         targetdir ("lib/" .. platform_dir .. "/debug")
         targetname "pen"

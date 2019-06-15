@@ -72,12 +72,12 @@ PEN_TRV pen::user_entry(void* params)
     svr_editor.name = "ces_render_editor";
     svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ecs::render_scene_editor;
-    
+
     put::scene_view_renderer svr_shadow_maps;
     svr_shadow_maps.name = "ces_render_shadow_maps";
     svr_shadow_maps.id_name = PEN_HASH(svr_shadow_maps.name.c_str());
     svr_shadow_maps.render_function = &ecs::render_shadow_views;
-    
+
     put::scene_view_renderer svr_area_light_textures;
     svr_area_light_textures.name = "ces_render_area_light_textures";
     svr_area_light_textures.id_name = PEN_HASH(svr_area_light_textures.name.c_str());

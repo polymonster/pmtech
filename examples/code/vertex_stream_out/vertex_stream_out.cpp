@@ -19,23 +19,13 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
 
     // add lights
-    vec3f light_cols[] =
-    {
-        vec3f(143.0f, 45.0f, 86.0f) / 255.0f,
-        vec3f(255.0f, 149.0f, 0.0f) / 255.0f,
-        vec3f(255.0f, 102.0f, 0.0f) / 255.0f,
-        vec3f(216.0f, 17.0f, 89.0f) / 255.0f
-    };
-    
-    vec3f light_pos[] =
-    {
-        vec3f(-50.0f, 20.0f, -50.0f),
-        vec3f( 50.0f, 20.0f, -50.0f),
-        vec3f( 50.0f, 20.0f,  50.0f),
-        vec3f(-50.0f, 20.0f,  50.0f)
-    };
-    
-    for(u32 l = 0; l < 4; ++l)
+    vec3f light_cols[] = {vec3f(143.0f, 45.0f, 86.0f) / 255.0f, vec3f(255.0f, 149.0f, 0.0f) / 255.0f,
+                          vec3f(255.0f, 102.0f, 0.0f) / 255.0f, vec3f(216.0f, 17.0f, 89.0f) / 255.0f};
+
+    vec3f light_pos[] = {vec3f(-50.0f, 20.0f, -50.0f), vec3f(50.0f, 20.0f, -50.0f), vec3f(50.0f, 20.0f, 50.0f),
+                         vec3f(-50.0f, 20.0f, 50.0f)};
+
+    for (u32 l = 0; l < 4; ++l)
     {
         u32 light = get_new_entity(scene);
         scene->names[light] = "front_light";
@@ -113,9 +103,9 @@ void example_setup(ecs_scene* scene, camera& cam)
     vec3f start_pos = vec3f(-start, 0, -start);
 
     vec3f cur_pos = start_pos;
-    
+
     u32 total = 20 * 20;
-    
+
     f32 roughness = 0.0f;
     f32 roughness_step = 1.0f / (f32)total;
 
@@ -140,7 +130,7 @@ void example_setup(ecs_scene* scene, camera& cam)
             scene->entities[new_prim] |= CMP_SUB_INSTANCE;
 
             scene->draw_call_data[new_prim].v2 = vec4f(0.5f, 0.5f, 0.5f, 1.0f - roughness);
-            
+
             roughness += roughness_step;
             cur_pos.x += spacing;
         }
@@ -149,7 +139,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     }
 
     instance_entity_range(scene, master_node, pow(num, 2));
-    
+
     bake_material_handles();
 }
 

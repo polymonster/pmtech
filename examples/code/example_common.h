@@ -65,12 +65,12 @@ PEN_TRV pen::user_entry(void* params)
     svr_editor.name = "ces_render_editor";
     svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
     svr_editor.render_function = &ecs::render_scene_editor;
-    
+
     put::scene_view_renderer svr_shadow_maps;
     svr_shadow_maps.name = "ces_render_shadow_maps";
     svr_shadow_maps.id_name = PEN_HASH(svr_shadow_maps.name.c_str());
     svr_shadow_maps.render_function = &ecs::render_shadow_views;
-    
+
     put::scene_view_renderer svr_area_light_textures;
     svr_area_light_textures.name = "ces_render_area_light_textures";
     svr_area_light_textures.id_name = PEN_HASH(svr_area_light_textures.name.c_str());
@@ -81,12 +81,12 @@ PEN_TRV pen::user_entry(void* params)
     pmfx::register_scene_view_renderer(svr_shadow_maps);
     pmfx::register_scene_view_renderer(svr_editor);
     pmfx::register_scene_view_renderer(svr_area_light_textures);
-    
+
     pmfx::register_scene(main_scene, "main_scene");
     pmfx::register_camera(&main_camera, "model_viewer_camera");
-    
+
     pmfx::init("data/configs/editor_renderer.jsn");
-    
+
     example_setup(main_scene, main_camera);
 
     f32 frame_time = 0.0f;
@@ -99,7 +99,7 @@ PEN_TRV pen::user_entry(void* params)
         put::dev_ui::new_frame();
 
         example_update(main_scene, main_camera, frame_timer / 1000.0f);
-        
+
         ecs::update();
 
         pmfx::render();

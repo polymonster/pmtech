@@ -288,16 +288,16 @@ namespace put
 
             bool shadow_map = false;
         };
-        
+
         // run time shader / texture for area light textures
         struct cmp_area_light
         {
-            u32 texture_handle = PEN_INVALID_HANDLE;
-            u32 sampler_state = PEN_INVALID_HANDLE;
-            u32 shader = PEN_INVALID_HANDLE;
+            u32     texture_handle = PEN_INVALID_HANDLE;
+            u32     sampler_state = PEN_INVALID_HANDLE;
+            u32     shader = PEN_INVALID_HANDLE;
             hash_id technique = PEN_INVALID_HANDLE;
         };
-        
+
         // data to save / load and reconstruct area light textures
         struct area_light_resource
         {
@@ -339,16 +339,16 @@ namespace put
         {
             distance_field_shadow shadows;
         };
-        
+
         struct area_light
         {
             vec4f corners[4];
-            vec4f colour;      // w can hold the index of a texture array slice to sample.
+            vec4f colour; // w can hold the index of a texture array slice to sample.
         };
-        
+
         struct area_light_buffer
         {
-            vec4f info;
+            vec4f      info;
             area_light lights[MAX_AREA_LIGHTS];
         };
 

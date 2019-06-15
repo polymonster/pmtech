@@ -21,7 +21,7 @@ namespace physics
 void example_setup(ecs_scene* scene, camera& cam)
 {
     pmfx::init("data/configs/sss_demo.jsn");
-    
+
     clear_scene(scene);
 
     // add light
@@ -70,11 +70,10 @@ void example_setup(ecs_scene* scene, camera& cam)
     memcpy(scene->material_data[head_model].data, &mat_data, sizeof(forward_lit_sss));
 
     bake_material_handles();
-    
+
     cam.focus = vec3f(0.0, 10.0, 0.0);
     cam.zoom = 27.0f;
     cam.flags |= CF_INVALIDATED;
-    
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)

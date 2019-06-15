@@ -177,7 +177,7 @@ namespace put
             scene->num_entities = std::max<u32>(i + 1, scene->num_entities);
 
             scene->entities[i] = CMP_ALLOCATED;
-            
+
             scene->names[i] = "";
             scene->names[i].appendf("entity_%i", i);
 
@@ -313,24 +313,24 @@ namespace put
         {
             if (child == parent)
                 return;
-            
+
             scene->parents[child] = parent;
 
             mat4 parent_mat = scene->world_matrices[parent];
 
             scene->local_matrices[child] = mat::inverse4x4(parent_mat) * scene->local_matrices[child];
         }
-        
+
         // set parent and also swap nodes to maintain valid heirarchy
         void set_entity_parent_validate(ecs_scene* scene, u32& parent, u32& child)
         {
             if (child == parent)
                 return;
-            
+
             set_entity_parent(scene, parent, child);
-            
+
             // children must be below parents
-            if(child < parent)
+            if (child < parent)
             {
                 swap_entities(scene, parent, child);
                 u32 temp = parent;
@@ -338,18 +338,18 @@ namespace put
                 child = temp;
             }
         }
-        
+
         void trim_entities(ecs_scene* scene)
         {
             u32 new_num = scene->num_entities;
-            for(u32 n = scene->num_entities-1; n >= 0; --n)
+            for (u32 n = scene->num_entities - 1; n >= 0; --n)
             {
-                if(scene->entities[n] & CMP_ALLOCATED)
+                if (scene->entities[n] & CMP_ALLOCATED)
                     break;
-                
+
                 new_num--;
             }
-            
+
             scene->num_entities = new_num;
         }
 
@@ -440,8 +440,8 @@ namespace put
             for (u32 i = master_node; i < master_node + num_nodes; ++i)
             {
                 bake_material_handles(scene, i);
-                
-                if(flush > 100)
+
+                if (flush > 100)
                 {
                     flush = 0;
                     pen::renderer_consume_cmd_buffer();
@@ -451,85 +451,85 @@ namespace put
             // todo - must ensure list is contiguous.
             dev_console_log("[instance] master instance: %i with %i sub instances", master, num_nodes);
         }
-        
+
         void bake_entities_to_vb(ecs_scene* scene, u32 parent, u32* node_list)
-        {            
+        {
             u32 num_nodes = sb_count(node_list);
-            
+
             // vb / ib
             pen::buffer_creation_params ibcp;
             ibcp.usage_flags = PEN_USAGE_DEFAULT;
             ibcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
             ibcp.cpu_access_flags = 0;
-            
+
             pen::buffer_creation_params vbcp;
             vbcp.usage_flags = PEN_USAGE_DEFAULT;
             vbcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             vbcp.cpu_access_flags = 0;
             vbcp.buffer_size = 0;
-            
+
             u32 vertex_size = 0;
             u32 num_vertices = 0;
             u32 num_indices = 0;
-            
+
             // calc size
-            for(u32 i = 0; i < num_nodes; ++i)
+            for (u32 i = 0; i < num_nodes; ++i)
             {
                 u32 n = node_list[i];
-                
+
                 geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->geometry_names[n]), 0);
-                
-                if(vertex_size && gr->vertex_size != vertex_size)
+
+                if (vertex_size && gr->vertex_size != vertex_size)
                 {
                     dev_console_log("[error] can't bake vertex buffer with different vertex types.");
                     return;
                 }
-                
+
                 vertex_size = gr->vertex_size;
                 num_vertices += gr->num_vertices;
                 num_indices += gr->num_indices;
-                
+
                 vbcp.buffer_size += gr->num_vertices * gr->vertex_size;
             }
-            
+
             // determine output index type
             u32 output_index_size = 2;
             u32 index_type = PEN_FORMAT_R16_UINT;
-            if(num_vertices >= 65535)
+            if (num_vertices >= 65535)
             {
                 index_type = PEN_FORMAT_R32_UINT;
                 output_index_size = 4;
             }
-            
+
             // ib buffer size
             ibcp.buffer_size = output_index_size * num_indices;
-            
+
             // alloc
             vbcp.data = pen::memory_alloc(vbcp.buffer_size);
             ibcp.data = pen::memory_alloc(ibcp.buffer_size);
-            
+
             // transform verts and bake into buffer
             u8* vb_data_pos = (u8*)vbcp.data;
             u8* ib_data_pos = (u8*)ibcp.data;
             u32 index_offset = 0;
-            for(u32 i = 0; i < num_nodes; ++i)
+            for (u32 i = 0; i < num_nodes; ++i)
             {
                 u32 n = node_list[i];
 
                 geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->geometry_names[n]), 0);
-                
+
                 u32 input_index_size = gr->index_type == PEN_FORMAT_R32_UINT ? 4 : 2;
                 u32 vb_stride = gr->num_vertices * gr->vertex_size;
                 u32 ib_stride = gr->num_indices * output_index_size;
-                
+
                 memcpy(vb_data_pos, gr->cpu_vertex_buffer, vb_stride);
 
                 // offset indices
-                for(u32 i = 0; i < gr->num_indices; ++i)
+                for (u32 i = 0; i < gr->num_indices; ++i)
                 {
                     // get raw index out of ib
                     u32 raw_i = 0;
-                    if(input_index_size == 2)
+                    if (input_index_size == 2)
                     {
                         u16 ii = ((u16*)gr->cpu_index_buffer)[i];
                         raw_i = (u32)ii;
@@ -539,12 +539,12 @@ namespace put
                         u32 ii = ((u32*)gr->cpu_index_buffer)[i];
                         raw_i = (u32)ii;
                     }
-                    
+
                     //offset into new ib
                     raw_i += index_offset;
-                    
+
                     // store in sized format
-                    if(output_index_size == 2)
+                    if (output_index_size == 2)
                     {
                         u16* ii = &((u16*)ib_data_pos)[i];
                         *ii = (u16)raw_i;
@@ -555,33 +555,33 @@ namespace put
                         *ii = (u32)raw_i;
                     }
                 }
-                
+
                 // transform verts
                 mat4 wm = scene->world_matrices[n];
                 mat4 rm;
                 scene->transforms[n].rotation.get_matrix(rm);
-                
-                for(u32 v = 0; v < gr->num_vertices; ++v)
+
+                for (u32 v = 0; v < gr->num_vertices; ++v)
                 {
                     vertex_model* vm = (vertex_model*)vb_data_pos;
-                    
+
                     vm[v].pos = wm.transform_vector(vm[v].pos);
                     vm[v].normal.xyz = rm.transform_vector(vm[v].normal.xyz);
                     vm[v].tangent.xyz = rm.transform_vector(vm[v].tangent.xyz);
                     vm[v].bitangent.xyz = rm.transform_vector(vm[v].bitangent.xyz);
                 }
-                
+
                 vb_data_pos += vb_stride;
                 ib_data_pos += ib_stride;
-                
+
                 index_offset += gr->num_indices;
-                
+
                 delete_entity(scene, n);
             }
-            
+
             // get new node
             u32 nn = parent;
-            
+
             // instantiate
             scene->entities[nn] |= CMP_GEOMETRY;
             scene->geometries[nn].vertex_buffer = pen::renderer_create_buffer(vbcp);
@@ -592,19 +592,19 @@ namespace put
             scene->geometries[nn].vertex_size = vertex_size;
             scene->geometries[nn].vertex_shader_class = 0;
             scene->geometries[nn].p_skin = nullptr;
-            
+
             scene->transforms[nn].scale = vec3f::one();
             scene->transforms[nn].translation = vec3f::zero();
             scene->transforms[nn].rotation = quat();
             scene->entities[nn] |= CMP_TRANSFORM;
-            
+
             scene->bounding_volumes[nn].min_extents = scene->bounding_volumes[nn].transformed_min_extents;
             scene->bounding_volumes[nn].max_extents = scene->bounding_volumes[nn].transformed_max_extents;
-            
+
             // todo.. use material.
             material_resource* mr = get_material_resource(PEN_HASH("default_material"));
             instantiate_material(mr, scene, nn);
-            
+
             instantiate_model_cbuffer(scene, nn);
         }
 

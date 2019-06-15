@@ -193,13 +193,8 @@ namespace put
                 cc++;
             }
 
-            static Str sampler_type_names[] = {
-                "texture_2d",
-                "texture_3d",
-                "texture_cube",
-                "texture_2dms",
-                "texture_2d_array"
-            };
+            static Str sampler_type_names[] = {"texture_2d", "texture_3d", "texture_cube", "texture_2dms",
+                                               "texture_2d_array"};
 
             const pen::json& j_samplers = j_technique["texture_sampler_bindings"];
 
@@ -304,30 +299,30 @@ namespace put
             program.permutation_option_mask = j_technique["permutation_option_mask"].as_u32();
 
             const c8* sfp = pen::renderer_get_shader_platform();
-            
+
             // compute shader
             Str cs_name = j_technique["cs"].as_str();
-            if(!cs_name.empty())
+            if (!cs_name.empty())
             {
                 c8* cs_file_buf = (c8*)pen::memory_alloc(256);
                 Str cs_filename_str = j_technique["cs_file"].as_str();
                 pen::string_format(cs_file_buf, 256, "data/pmfx/%s/%s/%s", sfp, fx_filename, cs_filename_str.c_str());
-                
+
                 pen::shader_load_params cs_slp;
                 cs_slp.type = PEN_SHADER_TYPE_CS;
-                
+
                 pen_error err = pen::filesystem_read_file_to_buffer(cs_file_buf, &cs_slp.byte_code, cs_slp.byte_code_size);
-                
+
                 pen::memory_free(cs_file_buf);
-                
+
                 if (err != PEN_ERR_OK)
                 {
                     pen::memory_free(cs_slp.byte_code);
                     return program;
                 }
-                
+
                 program.compute_shader = pen::renderer_load_shader(cs_slp);
-                
+
                 return program;
             }
 
@@ -823,11 +818,11 @@ namespace put
                     return ph;
                 else
                     ph++;
-            
+
             pmfx_shader new_pmfx = load_internal(pmfx_name);
-            
+
             // check shader worked
-            if(new_pmfx.techniques == nullptr)
+            if (new_pmfx.techniques == nullptr)
                 return PEN_INVALID_HANDLE;
 
             ph = 0;

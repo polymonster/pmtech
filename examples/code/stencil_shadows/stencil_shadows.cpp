@@ -1,24 +1,25 @@
-#include "../example_common.h"
 #include "../../shader_structs/forward_render.h"
+#include "../example_common.h"
 
 using namespace put;
 using namespace put::ecs;
 
 pen::window_creation_params pen_window{
-    1280,               // width
-    720,                // height
-    4,                  // MSAA samples
-    "stencil_shadows"   // window title / process name
+    1280,             // width
+    720,              // height
+    4,                // MSAA samples
+    "stencil_shadows" // window title / process name
 };
 
-namespace {
+namespace
+{
     struct shadow_volume_vertex
     {
         vec4f pos;
         vec4f face_normal_0;
         vec4f face_normal_1;
     };
-    
+
     struct shadow_volume_edge
     {
         vec4f pos_0;
@@ -26,38 +27,38 @@ namespace {
         vec4f face_normal_0;
         vec4f face_normal_1;
     };
-    
+
     bool almost_equalf(vec4f v1, vec4f v2, f32 epsilon_sq)
     {
-        if(dist2(v1, v2) < epsilon_sq)
+        if (dist2(v1, v2) < epsilon_sq)
             return true;
-        
+
         return false;
     }
-    
+
     u32 cb_single_light;
     u32 cube_entity = 0;
     u32 cube_start = -1;
     u32 cube_end = 0;
-    
+
     shadow_volume_edge* s_sve;
-    geometry_resource s_sgr;
-}
+    geometry_resource   s_sgr;
+} // namespace
 
 void render_stencil_shadows(const scene_view& view)
 {
-    ecs_scene* scene = view.scene;
+    ecs_scene*         scene = view.scene;
     geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
     gr = &s_sgr;
-    
+
     // bind cbuffer
     pen::renderer_set_constant_buffer(cb_single_light, 10, pen::CBUFFER_BIND_VS | pen::CBUFFER_BIND_PS);
     pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
     pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
     pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
     pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
-    
-    for(u32 i = cube_start; i <= cube_end; ++i)
+
+    for (u32 i = cube_start; i <= cube_end; ++i)
     {
         pen::renderer_set_constant_buffer(scene->cbuffer[i], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
         pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
@@ -68,7 +69,7 @@ void render_stencil_tested(const scene_view& view)
 {
     // bind cbuffer
     pen::renderer_set_constant_buffer(cb_single_light, 10, pen::CBUFFER_BIND_VS | pen::CBUFFER_BIND_PS);
-    
+
     // draw
     ecs::render_scene_view(view);
 }
@@ -76,21 +77,21 @@ void render_stencil_tested(const scene_view& view)
 void render_multi_pass_lights(const scene_view& view)
 {
     ecs_scene* scene = view.scene;
-    u32 count = 0;
+    u32        count = 0;
     for (u32 n = 0; n < scene->num_entities; ++n)
     {
         if (!(scene->entities[n] & CMP_LIGHT))
             continue;
-        
+
         u32 t = scene->lights[n].type;
-        
+
         cmp_draw_call dc;
         dc.world_matrix = scene->world_matrices[n];
 
         vec3f pos = dc.world_matrix.get_translation();
-        
+
         light_data ld = {};
-        
+
         switch (t)
         {
             case LIGHT_TYPE_DIR:
@@ -112,18 +113,18 @@ void render_multi_pass_lights(const scene_view& view)
             default:
                 continue;
         }
-        
+
         count++;
-        
+
         // update light for this pass
         pen::renderer_update_buffer(cb_single_light, &ld, sizeof(light_data));
-        
+
         // clear stencil
         pmfx::render_view(PEN_HASH("view_clear_stencil"));
-        
+
         // render volumes
         pmfx::render_view(PEN_HASH("view_shadow_volume"));
-        
+
         // render scene stencil tested by shadow
         pmfx::render_view(PEN_HASH("view_single_light"));
     }
@@ -132,48 +133,48 @@ void render_multi_pass_lights(const scene_view& view)
 void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geometry_resource* gr_out)
 {
     vertex_model* vm = (vertex_model*)gr->cpu_vertex_buffer;
-    u16* ib = (u16*)gr->cpu_index_buffer;
-    
-    static u32 k[] = {
-        1, 2, 0
-    };
-    
+    u16*          ib = (u16*)gr->cpu_index_buffer;
+
+    static u32 k[] = {1, 2, 0};
+
     shadow_volume_edge* sve = nullptr;
-    
+
     static const f32 epsilon = 0.1f;
-    for(u32 i = 0; i < gr->num_indices; i+=3)
+    for (u32 i = 0; i < gr->num_indices; i += 3)
     {
         shadow_volume_edge e[3];
-        for(u32 j = 0; j < 3; ++j)
+        for (u32 j = 0; j < 3; ++j)
         {
-            e[j].pos_0 = vm[ib[i+j]].pos;
-            e[j].pos_1 = vm[ib[i+k[j]]].pos;
+            e[j].pos_0 = vm[ib[i + j]].pos;
+            e[j].pos_1 = vm[ib[i + k[j]]].pos;
         }
-        
+
         vec3f fn = maths::get_normal(e[0].pos_0.xyz, e[1].pos_0.xyz, e[2].pos_0.xyz);
         vec4f fn4 = vec4f(-fn, 1.0f);
-        
-        for(u32 j = 0; j < 3; ++j)
+
+        for (u32 j = 0; j < 3; ++j)
         {
-            e[j].pos_0 = vm[ib[i+j]].pos;
-            e[j].pos_1 = vm[ib[i+k[j]]].pos;
-            
+            e[j].pos_0 = vm[ib[i + j]].pos;
+            e[j].pos_1 = vm[ib[i + k[j]]].pos;
+
             s32 found = -1;
             u32 ne = sb_count(sve);
-            for(u32 x = 0; x < ne; ++x)
+            for (u32 x = 0; x < ne; ++x)
             {
-                if(almost_equal(sve[x].pos_0, e[j].pos_0, epsilon) && almost_equal(sve[x].pos_1, e[j].pos_1, epsilon)) {
+                if (almost_equal(sve[x].pos_0, e[j].pos_0, epsilon) && almost_equal(sve[x].pos_1, e[j].pos_1, epsilon))
+                {
                     found = x;
                     break;
                 }
-                
-                if(almost_equal(sve[x].pos_1, e[j].pos_0, epsilon) && almost_equal(sve[x].pos_0, e[j].pos_1, epsilon)) {
+
+                if (almost_equal(sve[x].pos_1, e[j].pos_0, epsilon) && almost_equal(sve[x].pos_0, e[j].pos_1, epsilon))
+                {
                     found = x;
                     break;
                 }
             }
-            
-            if(found == -1)
+
+            if (found == -1)
             {
                 e[j].face_normal_0 = fn4;
                 sb_push(sve, e[j]);
@@ -184,7 +185,7 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
             }
         }
     }
-    
+
     // for each edge add 4 vertices and 6 indices to make an extrable edge
     // the normals for each pair of verts are swapped to differentiate between them when extruding
 
@@ -195,50 +196,50 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
     //     |
 
     shadow_volume_vertex* svv = nullptr;
-    u16* sib = nullptr;
-    
+    u16*                  sib = nullptr;
+
     u32 ne = sb_count(sve);
     u16 base_index = 0;
-    for(u32 e = 0; e < ne; ++e)
+    for (u32 e = 0; e < ne; ++e)
     {
         shadow_volume_vertex v0;
         v0.pos = sve[e].pos_0;
         v0.face_normal_0 = sve[e].face_normal_0;
         v0.face_normal_1 = sve[e].face_normal_1;
-        
+
         shadow_volume_vertex v1;
         v1.pos = sve[e].pos_1;
         v1.face_normal_0 = sve[e].face_normal_0;
         v1.face_normal_1 = sve[e].face_normal_1;
-        
+
         shadow_volume_vertex v2;
         v2.pos = sve[e].pos_0;
         v2.face_normal_0 = sve[e].face_normal_1;
         v2.face_normal_1 = sve[e].face_normal_0;
-        
+
         shadow_volume_vertex v3;
         v3.pos = sve[e].pos_1;
         v3.face_normal_0 = sve[e].face_normal_1;
         v3.face_normal_1 = sve[e].face_normal_0;
-        
+
         sb_push(svv, v0);
         sb_push(svv, v1);
         sb_push(svv, v2);
         sb_push(svv, v3);
-        
+
         sb_push(sib, base_index + 2);
         sb_push(sib, base_index + 1);
         sb_push(sib, base_index + 0);
-        
+
         sb_push(sib, base_index + 2);
         sb_push(sib, base_index + 3);
         sb_push(sib, base_index + 1);
-        
+
         base_index += 4;
     }
-    
+
     // vb
-    u32 num_verts = sb_count(svv);
+    u32                         num_verts = sb_count(svv);
     pen::buffer_creation_params bcp;
     bcp.usage_flags = PEN_USAGE_DEFAULT;
     bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
@@ -246,7 +247,7 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
     bcp.buffer_size = sizeof(shadow_volume_vertex) * num_verts;
     bcp.data = (void*)svv;
     gr_out->vertex_buffer = pen::renderer_create_buffer(bcp);
-    
+
     // ib
     u32 num_indices = sb_count(sib);
     bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -255,7 +256,7 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
     bcp.buffer_size = 2 * num_indices;
     bcp.data = (void*)sib;
     gr_out->index_buffer = pen::renderer_create_buffer(bcp);
-    
+
     // info
     gr_out->num_indices = num_indices;
     gr_out->num_vertices = num_verts;
@@ -268,7 +269,7 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
     gr_out->file_hash = PEN_HASH("shadow_mesh");
     gr_out->filename = "shadow_mesh";
     gr_out->p_skin = nullptr;
-    
+
     // for debug purposes
     *sve_out = sve;
 }
@@ -280,27 +281,27 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     svr_stencil_shadow_volumes.id_name = PEN_HASH(svr_stencil_shadow_volumes.name.c_str());
     svr_stencil_shadow_volumes.render_function = &render_stencil_shadows;
     pmfx::register_scene_view_renderer(svr_stencil_shadow_volumes);
-    
+
     put::scene_view_renderer svr_stencil_tested;
     svr_stencil_tested.name = "scene_stencil_tested";
     svr_stencil_tested.id_name = PEN_HASH(svr_stencil_tested.name.c_str());
     svr_stencil_tested.render_function = &render_stencil_tested;
     pmfx::register_scene_view_renderer(svr_stencil_tested);
-    
+
     put::scene_view_renderer svr_multi_pass_lights;
     svr_multi_pass_lights.name = "render_multi_pass_lights";
     svr_multi_pass_lights.id_name = PEN_HASH(svr_multi_pass_lights.name.c_str());
     svr_multi_pass_lights.render_function = &render_multi_pass_lights;
     pmfx::register_scene_view_renderer(svr_multi_pass_lights);
-    
+
     pmfx::init("data/configs/stencil_shadows.jsn");
-    
+
     clear_scene(scene);
-    
+
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
-    
+
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
-    
+
     // add lights
     u32 light = get_new_entity(scene);
     scene->names[light] = "front_light0";
@@ -308,52 +309,57 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f(0.2f, 0.8f, 0.1f);
     scene->lights[light].direction = vec3f::one() * vec3f(1.0f, 0.7f, 1.0f);
     scene->lights[light].type = LIGHT_TYPE_DIR;
-    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth, scene->lights[light].altitude);
+    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth,
+                                   scene->lights[light].altitude);
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-    
+
     light = get_new_entity(scene);
     scene->names[light] = "front_light1";
     scene->id_name[light] = PEN_HASH("front_light1");
-    scene->lights[light].colour = vec3f(0.8f, 0.2f, 0.2f);;
+    scene->lights[light].colour = vec3f(0.8f, 0.2f, 0.2f);
+    ;
     scene->lights[light].direction = vec3f::one() * vec3f(-1.0f, 0.7f, 1.0f);
     scene->lights[light].type = LIGHT_TYPE_DIR;
-    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth, scene->lights[light].altitude);
+    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth,
+                                   scene->lights[light].altitude);
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-    
+
     light = get_new_entity(scene);
     scene->names[light] = "front_light2";
     scene->id_name[light] = PEN_HASH("front_light2");
     scene->lights[light].colour = vec3f(0.1f, 0.2f, 0.8f);
     scene->lights[light].direction = vec3f::one() * vec3f(-1.0f, 0.7f, -1.0f);
     scene->lights[light].type = LIGHT_TYPE_DIR;
-    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth, scene->lights[light].altitude);
+    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth,
+                                   scene->lights[light].altitude);
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-    
+
     light = get_new_entity(scene);
     scene->names[light] = "front_light4";
     scene->id_name[light] = PEN_HASH("front_light4");
     scene->lights[light].colour = vec3f(0.6f, 0.1f, 0.8f);
     scene->lights[light].direction = vec3f::one() * vec3f(1.0f, 0.7f, -1.0f);
     scene->lights[light].type = LIGHT_TYPE_DIR;
-    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth, scene->lights[light].altitude);
+    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth,
+                                   scene->lights[light].altitude);
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-    
+
     // ground
     u32 ground = get_new_entity(scene);
     scene->names[ground] = "ground";
@@ -368,25 +374,25 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
     instantiate_rigid_body(scene, ground);
-    
+
     // cubes
     vec3f start_pos = vec3f(-6.0f, 6.0f, -6.0f);
     vec3f cur_pos = start_pos;
-    
+
     for (s32 i = 0; i < 6; ++i)
     {
         cur_pos.y = start_pos.y;
-        
+
         for (s32 j = 0; j < 6; ++j)
         {
             cur_pos.x = start_pos.x;
-            
+
             for (s32 k = 0; k < 6; ++k)
             {
-                f32 rx = ((f32)(rand()%255)/255.0f) * M_PI * 2.0f;
-                f32 ry = ((f32)(rand()%255)/255.0f) * M_PI * 2.0f;
-                f32 rz = ((f32)(rand()%255)/255.0f) * M_PI * 2.0f;
-                
+                f32 rx = ((f32)(rand() % 255) / 255.0f) * M_PI * 2.0f;
+                f32 ry = ((f32)(rand() % 255) / 255.0f) * M_PI * 2.0f;
+                f32 rz = ((f32)(rand() % 255) / 255.0f) * M_PI * 2.0f;
+
                 u32 new_prim = get_new_entity(scene);
                 scene->names[new_prim] = "box";
                 scene->names[new_prim].appendf("%i", new_prim);
@@ -398,25 +404,25 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
                 instantiate_geometry(box, scene, new_prim);
                 instantiate_material(default_material, scene, new_prim);
                 instantiate_model_cbuffer(scene, new_prim);
-                
+
                 scene->physics_data[new_prim].rigid_body.shape = physics::BOX;
                 scene->physics_data[new_prim].rigid_body.mass = 1.0f;
                 instantiate_rigid_body(scene, new_prim);
-                
+
                 cube_start = min(new_prim, cube_start);
                 cube_end = max(new_prim, cube_end);
-                
+
                 cur_pos.x += 2.5f;
             }
-            
+
             cur_pos.y += 2.5f;
         }
-        
+
         cur_pos.z += 2.5f;
     }
-    
+
     generate_edge_mesh(box, &s_sve, &s_sgr);
-    
+
     // generate cbuffer for light passes
     pen::buffer_creation_params bcp;
     bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -430,19 +436,18 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     // rotate lights
-    for(u32 i = 0; i < 4; ++i)
+    for (u32 i = 0; i < 4; ++i)
     {
         cmp_light& snl = scene->lights[i];
         snl.azimuth += dt * 10.0f;
-        
+
         f32 dir = 1.0f;
-        if(i >= 2)
+        if (i >= 2)
             dir = -1.0f;
-            
+
         snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth * dir, fabs(snl.altitude));
     }
-    
-    
+
 #if 0 //debug
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
     

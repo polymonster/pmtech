@@ -30,7 +30,7 @@ namespace pen
     {
         free_slot_list* slots;
         free_slot_list* head;
-        u32 _capacity;
+        u32             _capacity;
     };
 
     // Function decl
@@ -44,24 +44,24 @@ namespace pen
     {
         u32 cur_cap = resources->_capacity;
         u32 new_cap = resources->_capacity * 2;
-        
+
         resources->slots = (free_slot_list*)pen::memory_realloc(resources->slots, sizeof(free_slot_list) * new_cap);
-        
+
         // init free list
         for (s32 i = new_cap - 1; i > cur_cap; --i)
         {
             resources->slots[i].index = i;
-            
+
             if (i >= new_cap - 1)
                 resources->slots[i].next = nullptr;
             else
                 resources->slots[i].next = resources->head;
-            
+
             resources->head = &resources->slots[i];
-            
+
             resources->slots[i].flags |= RESOURCE_FREE;
         }
-        
+
         resources->_capacity = new_cap;
     }
 
@@ -89,9 +89,9 @@ namespace pen
 
     inline u32 slot_resources_get_next(slot_resources* resources)
     {
-        if(!resources->head)
+        if (!resources->head)
             slot_resources_grow(resources);
-            
+
         u32 r = resources->head->index;
         resources->head->flags &= ~RESOURCE_FREE;
         resources->head->flags |= RESOURCE_USED;

@@ -109,7 +109,7 @@ namespace
         u32   caps4;
         u32   reserved2;
     };
-    
+
     struct dx10_header
     {
         u32 dxgi_format;
@@ -154,7 +154,7 @@ namespace
 
         return width * height * block_size;
     }
-    
+
     u32 dxgi_format_to_texture_format(const dx10_header* dxh, u32& block_size)
     {
         switch (dxh->dxgi_format)
@@ -166,7 +166,7 @@ namespace
                 block_size = 8;
                 return PEN_TEX_FORMAT_R32G32_FLOAT;
         }
-        
+
         PEN_ASSERT_MSG(0, "Unsupported Image Format");
         return 0;
     }
@@ -279,14 +279,14 @@ namespace
         u32  block_size;
 
         u32 format = dds_pixel_format_to_texture_format(ddsh, compressed, block_size, dx10_header_present);
-        
+
         u8* top_image_start = (u8*)file_data + sizeof(dds_header);
-        if(dx10_header_present)
+        if (dx10_header_present)
         {
             dx10_header* dxh = (dx10_header*)top_image_start;
-            
+
             format = dxgi_format_to_texture_format(dxh, block_size);
-            
+
             top_image_start += sizeof(dx10_header);
         }
 

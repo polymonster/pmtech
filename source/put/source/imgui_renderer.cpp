@@ -324,7 +324,7 @@ namespace put
         void render(ImDrawData* draw_data)
         {
             update_dynamic_buffers(draw_data);
-            
+
             // set to main viewport
             pen::viewport vp = {0.0f, 0.0f, (f32)ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, 0.0f, 1.0};
 
@@ -358,7 +358,7 @@ namespace put
                         pen::rect r = {pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w};
 
                         pen::renderer_set_scissor_rect(r);
-                        
+
                         pen::renderer_set_vertex_buffer(g_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
                         pen::renderer_set_index_buffer(g_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);
                         pen::renderer_set_constant_buffer(g_imgui_rs.constant_buffer, 1, pen::CBUFFER_BIND_VS);
@@ -503,12 +503,8 @@ namespace put
             custom_draw_call cd = *(custom_draw_call*)cmd->UserCallbackData;
             delete (custom_draw_call*)cmd->UserCallbackData;
 
-            static hash_id ids[] = {
-                PEN_HASH("tex_2d"),
-                PEN_HASH("tex_cube"),
-                PEN_HASH("tex_volume"),
-                PEN_HASH("tex_2d_array")
-            };
+            static hash_id ids[] = {PEN_HASH("tex_2d"), PEN_HASH("tex_cube"), PEN_HASH("tex_volume"),
+                                    PEN_HASH("tex_2d_array")};
 
             if (cd.shader == SHADER_DEFAULT)
             {
@@ -517,7 +513,7 @@ namespace put
             }
 
             pmfx::set_technique_perm(g_imgui_rs.imgui_ex_shader, ids[cd.shader]);
-            
+
             pen::renderer_set_constant_buffer(cd.cbuffer, 7, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
         }
 

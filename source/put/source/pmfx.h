@@ -222,15 +222,15 @@ namespace put
             u32 pp_read = PEN_INVALID_HANDLE;
             u32 collection = pen::TEXTURE_COLLECTION_NONE;
         };
-        
+
         struct rt_resize_params
         {
-            u32 width = 0;
-            u32 height = 0;
-            u32 num_mips = 0;
-            u32 num_arrays = 0; // num array slices
-            u32 collection = pen::TEXTURE_COLLECTION_NONE;
-            u32 flags = 0;
+            u32       width = 0;
+            u32       height = 0;
+            u32       num_mips = 0;
+            u32       num_arrays = 0; // num array slices
+            u32       collection = pen::TEXTURE_COLLECTION_NONE;
+            u32       flags = 0;
             const c8* format = nullptr;
         };
 
@@ -239,7 +239,7 @@ namespace put
         void init(const c8* filename);
         void shutdown();
         void show_dev_ui();
-        
+
         void release_script_resources();
         void render();
         void render_view(hash_id id_name);
@@ -247,7 +247,7 @@ namespace put
         void register_scene(ecs::ecs_scene* scene, const char* name);
         void register_camera(camera* cam, const char* name);
         void register_scene_view_renderer(const scene_view_renderer& svr);
-        
+
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
         void resize_render_target(hash_id target, const rt_resize_params& params);
         void resize_viewports();
@@ -262,8 +262,8 @@ namespace put
         Str                  get_render_state_name(u32 handle);
         c8**                 get_render_state_list(u32 type);    // call sb_free on return value when done
         hash_id*             get_render_state_id_list(u32 type); // call sb_free on return value when don
-        
-        void                 fullscreen_quad(const scene_view& sv);
+
+        void fullscreen_quad(const scene_view& sv);
 
         // pmfx shader -----------------------------------------------------------------------------------------------------
 

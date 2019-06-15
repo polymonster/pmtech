@@ -53,14 +53,14 @@ namespace put
 
             return nullptr;
         }
-        
+
         geometry_resource* get_geometry_resource_by_index(hash_id id_filename, u32 index)
         {
             for (auto* g : s_geometry_resources)
                 if (id_filename == g->file_hash)
-                    if(g->submesh_index == index)
+                    if (g->submesh_index == index)
                         return g;
-            
+
             return nullptr;
         }
 
@@ -77,46 +77,46 @@ namespace put
 
             scene->entities[node_index] |= CMP_CONSTRAINT;
         }
-        
+
         void bake_rigid_body_params(ecs_scene* scene, u32 node_index)
         {
             u32 s = node_index;
-            
+
             physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
             cmp_transform&              pt = scene->physics_offset[s];
-            
+
             vec3f min = scene->bounding_volumes[s].min_extents;
             vec3f max = scene->bounding_volumes[s].max_extents;
             vec3f scale = scene->transforms[s].scale;
-            
+
             rb.position = scene->transforms[s].translation + pt.translation;
             rb.rotation = scene->transforms[s].rotation;
-            
+
             if (!(rb.create_flags & physics::CF_DIMENSIONS))
             {
                 rb.dimensions = (max - min) * scale * 0.5f;
-                
+
                 // capsule height is extents height + radius * 2 (for the capsule top and bottom)
                 if (rb.shape == physics::CAPSULE)
                     rb.dimensions.y -= rb.dimensions.x / 2.0f;
-                
+
                 // cone height is 1. (-0.5 to 0.5) but radius is 1.0;
                 if (rb.shape == physics::CONE)
                     rb.dimensions.y *= 2.0f;
             }
-            
+
             // fill the matrix array with the first matrix because of thread sync
             mat4 mrot;
             rb.rotation.get_matrix(mrot);
             mat4 start_transform = mrot * mat::create_translation(rb.position);
-            
+
             // mask 0 and group 0 are invalid
             if (rb.mask == 0)
                 rb.mask = 0xffffffff;
-            
+
             if (rb.group == 0)
                 rb.group = 1;
-            
+
             rb.shape_up_axis = physics::UP_Y;
             rb.start_matrix = start_transform;
         }
@@ -124,18 +124,18 @@ namespace put
         void instantiate_rigid_body(ecs_scene* scene, u32 node_index)
         {
             u32 s = node_index;
-            
+
             bake_rigid_body_params(scene, node_index);
-            
+
             physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
 
-            if(rb.shape == physics::COMPOUND)
+            if (rb.shape == physics::COMPOUND)
             {
                 physics::compound_rb_params cbpr;
                 cbpr.rb = nullptr;
                 cbpr.base = rb;
                 cbpr.num_shapes = 0;
-                
+
                 u32* child_handles = nullptr;
                 scene->physics_handles[s] = physics::add_compound_rb(cbpr, &child_handles);
             }
@@ -143,41 +143,41 @@ namespace put
             {
                 scene->physics_handles[s] = physics::add_rb(rb);
             }
-            
+
             scene->physics_data[node_index].type = PHYSICS_TYPE_RIGID_BODY;
             scene->entities[s] |= CMP_PHYSICS;
         }
-        
+
         using physics::rigid_body_params;
         void instantiate_compound_rigid_body(ecs_scene* scene, u32 parent, u32* children, u32 num_children)
         {
             bake_rigid_body_params(scene, parent);
-            
-            rigid_body_params* rbchild = (rigid_body_params*)pen::memory_alloc(sizeof(rigid_body_params)*num_children);
-            
-            for(u32 i = 0; i < num_children; ++i)
+
+            rigid_body_params* rbchild = (rigid_body_params*)pen::memory_alloc(sizeof(rigid_body_params) * num_children);
+
+            for (u32 i = 0; i < num_children; ++i)
             {
                 u32 ci = children[i];
                 bake_rigid_body_params(scene, ci);
                 rbchild[i] = scene->physics_data[ci].rigid_body;
             }
-            
+
             physics::rigid_body_params& rb = scene->physics_data[parent].rigid_body;
-            
+
             physics::compound_rb_params cbpr;
             cbpr.rb = nullptr;
             cbpr.base = rb;
             cbpr.rb = rbchild;
             cbpr.num_shapes = num_children;
-            
+
             u32* child_handles = nullptr;
             scene->physics_handles[parent] = physics::add_compound_rb(cbpr, &child_handles);
             scene->physics_data[parent].type = PHYSICS_TYPE_RIGID_BODY;
             scene->entities[parent] |= CMP_PHYSICS;
-            
+
             // fixup children
             PEN_ASSERT(sb_count(child_handles) == num_children);
-            for(u32 i = 0; i < num_children; ++i)
+            for (u32 i = 0; i < num_children; ++i)
             {
                 u32 ci = children[i];
                 scene->physics_handles[ci] = child_handles[i];
@@ -429,79 +429,79 @@ namespace put
             f32 rad = std::max<f32>(scene->lights[node_index].radius, 1.0f);
             scene->transforms[node_index].scale = vec3f(rad, rad, rad);
             scene->entities[node_index] |= CMP_TRANSFORM;
-            
+
             // basic defaults
             cmp_light& snl = scene->lights[node_index];
             snl.colour = vec3f::white();
             snl.radius = 1.0f;
             snl.spot_falloff = 0.001f;
             snl.cos_cutoff = 0.1f;
-            
+
             area_light_resource& alr = scene->area_light_resources[node_index];
             alr.sampler_state_name = "";
             alr.texture_name = "";
             alr.shader_name = "";
             alr.technique_name = "";
         }
-        
+
         void instantiate_area_light(ecs_scene* scene, u32 node_index)
         {
             geometry_resource* gr = get_geometry_resource(PEN_HASH("quad"));
-            
+
             material_resource area_light_material;
             area_light_material.id_shader = PEN_HASH("pmfx_utility");
             area_light_material.id_technique = PEN_HASH("area_light_colour");
             area_light_material.material_name = "area_light_colour";
             area_light_material.shader_name = "pmfx_utility";
-            
+
             instantiate_geometry(gr, scene, node_index);
             instantiate_material(&area_light_material, scene, node_index);
             instantiate_model_cbuffer(scene, node_index);
-            
+
             scene->entities[node_index] |= CMP_LIGHT;
             scene->lights[node_index].type = LIGHT_TYPE_AREA;
             scene->area_light[node_index].shader = PEN_INVALID_HANDLE;
         }
-        
+
         void instantiate_area_light_ex(ecs_scene* scene, u32 node_index, area_light_resource& alr)
         {
             geometry_resource* gr = get_geometry_resource(PEN_HASH("quad"));
-            
+
             material_resource area_light_material;
             area_light_material.id_shader = PEN_HASH("pmfx_utility");
             area_light_material.id_technique = PEN_HASH("area_light_texture");
             area_light_material.material_name = "area_light_texture";
             area_light_material.shader_name = "pmfx_utility";
-            
+
             instantiate_geometry(gr, scene, node_index);
             instantiate_material(&area_light_material, scene, node_index);
             instantiate_model_cbuffer(scene, node_index);
-            
+
             scene->entities[node_index] |= CMP_LIGHT;
             scene->lights[node_index].type = LIGHT_TYPE_AREA_EX;
-            
-            if(!alr.texture_name.empty())
+
+            if (!alr.texture_name.empty())
             {
                 scene->area_light[node_index].texture_handle = put::load_texture(alr.texture_name.c_str());
             }
-            
-            if(!alr.shader_name.empty())
+
+            if (!alr.shader_name.empty())
             {
                 scene->area_light[node_index].shader = pmfx::load_shader(alr.shader_name.c_str());
                 scene->area_light[node_index].technique = PEN_HASH(alr.technique_name.c_str());
             }
             else
             {
-                if(!alr.texture_name.empty())
+                if (!alr.texture_name.empty())
                 {
                     // default to basic texture
                 }
             }
-            
+
             // store for later for save load.
             scene->area_light_resources[node_index] = alr;
         }
-        
+
         void load_geometry_resource(const c8* filename, const c8* geometry_name, const c8* data)
         {
             // generate hash
@@ -515,7 +515,7 @@ namespace put
             for (s32 g = 0; g < s_geometry_resources.size(); ++g)
                 if (geom_hash == s_geometry_resources[g]->geom_hash)
                     return;
-            
+
             u32* p_reader = (u32*)data;
             u32  version = *p_reader++;
             u32  num_meshes = *p_reader++;
@@ -630,10 +630,10 @@ namespace put
 
                 bcp.buffer_size = vertex_size * num_verts;
                 bcp.data = (void*)p_reader;
-                
+
                 p_geometry->cpu_vertex_buffer = pen::memory_alloc(bcp.buffer_size);
                 memcpy(p_geometry->cpu_vertex_buffer, bcp.data, bcp.buffer_size);
-                
+
                 p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
 
                 p_reader += bcp.buffer_size / sizeof(u32);
@@ -1286,7 +1286,7 @@ namespace put
 
             // scene nodes
             bool has_control_rig = false;
-            s32 nodes_start, nodes_end;
+            s32  nodes_start, nodes_end;
             get_new_entities_append(scene, num_import_nodes, nodes_start, nodes_end);
 
             u32 node_zero_offset = nodes_start;
@@ -1339,9 +1339,9 @@ namespace put
                     has_control_rig = true;
                     scene->parents[current_node] = node_zero_offset;
                 }
-                
+
                 // if we find a trajectory node with no control rig.. we can use that to identify a rig
-                if(!has_control_rig)
+                if (!has_control_rig)
                     if (scene->id_name[current_node] == ID_TRAJECTORY)
                         scene->parents[current_node] = node_zero_offset;
 
@@ -1477,7 +1477,7 @@ namespace put
                         {
                             inserted_nodes++;
                             clone_entity(scene, current_node, dest, current_node, CLONE_INSTANTIATE, vec3f::zero(),
-                                       (const c8*)node_suffix.c_str());
+                                         (const c8*)node_suffix.c_str());
                             scene->local_matrices[dest] = mat4::create_identity();
 
                             // child geometry which will inherit any skinning from its parent
@@ -1591,9 +1591,7 @@ namespace put
             static volume_instance vi[] = {
                 {PEN_HASH("volume_texture"), PEN_HASH("volume_texture"), PEN_HASH("clamp_point"), CMP_VOLUME},
 
-                {PEN_HASH("signed_distance_field"), PEN_HASH("volume_sdf"), PEN_HASH("clamp_linear"),
-                 CMP_SDF_SHADOW}
-            };
+                {PEN_HASH("signed_distance_field"), PEN_HASH("volume_sdf"), PEN_HASH("clamp_linear"), CMP_SDF_SHADOW}};
 
             int i = 0;
             for (auto& v : vi)
@@ -1610,7 +1608,7 @@ namespace put
             material->shader_name = "pmfx_utility";
             material->id_shader = PEN_HASH("pmfx_utility");
             material->id_technique = vi[i].id_technique;
-            
+
             add_material_resource(material);
 
             geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
@@ -1626,10 +1624,10 @@ namespace put
             scene->transforms[v].translation = pos;
             scene->entities[v] |= CMP_TRANSFORM;
             scene->parents[v] = v;
-            
+
             scene->samplers[v].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
             scene->samplers[v].sb[0].handle = volume_texture;
-            scene->samplers[v].sb[0].sampler_state = pmfx::get_render_state(vi[i].id_sampler_state, pmfx::RS_SAMPLER) ;
+            scene->samplers[v].sb[0].sampler_state = pmfx::get_render_state(vi[i].id_sampler_state, pmfx::RS_SAMPLER);
 
             instantiate_geometry(cube, scene, v);
             instantiate_material(material, scene, v);

@@ -44,7 +44,7 @@ void blend_mode_ui()
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
     pmfx::init("data/configs/mrt_example.jsn");
-    
+
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));

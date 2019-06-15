@@ -1,26 +1,26 @@
-#include "../example_common.h"
 #include "../../shader_structs/forward_render.h"
+#include "../example_common.h"
 
 using namespace put;
 using namespace put::ecs;
 
 pen::window_creation_params pen_window{
-    1280,               // width
-    720,                // height
-    4,                  // MSAA samples
-    "stencil_buffer"    // window title / process name
+    1280,            // width
+    720,             // height
+    4,               // MSAA samples
+    "stencil_buffer" // window title / process name
 };
 
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
     pmfx::init("data/configs/stencil_buffer.jsn");
-    
+
     clear_scene(scene);
-    
+
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
-    
+
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
-    
+
     // add light
     u32 light = get_new_entity(scene);
     scene->names[light] = "front_light";
@@ -33,7 +33,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-    
+
     // cube
     u32 cube_entity = get_new_entity(scene);
     scene->names[cube_entity] = "cube";

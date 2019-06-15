@@ -106,7 +106,7 @@ namespace
 {
     if (!pen::renderer_dispatch())
         pen::thread_sleep_us(100);
-    
+
     g_frame_index++;
 }
 
@@ -576,7 +576,7 @@ int        main(int argc, char** argv)
     working_dir = pen::str_normalise_filepath(working_dir);
 
     s_cmd_buffer.create(32);
-    
+
     g_frame_index = 0;
 
     // strip exe and go back 2 \contents\macos\exe

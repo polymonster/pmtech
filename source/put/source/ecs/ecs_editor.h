@@ -23,14 +23,14 @@ namespace put
         void editor_update(ecs_controller&, ecs_scene* scene, f32 dt);
         void editor_enable(bool enable);
         void editor_enable_camera(bool enable);
-        
+
         void scene_browser_ui(ecs_scene* scene, bool* open);
         void enumerate_resources(bool* open);
         void add_selection(ecs_scene* scene, u32 index, u32 select_mode = 0);
         void clear_selection(ecs_scene* scene);
 
         // todo.. these are being phased out
-        
+
         void update_editor_camera(put::camera* cam);
         void update_editor_scene(ecs_controller& ecsc, ecs_scene* scene, f32 dt);
 

@@ -35,15 +35,15 @@ vs_output vs_ndc_quad( vs_input input )
 float hash( float p )
 {
     float2 MOD2 = float2(3.07965, 7.4235);
-	float2 p2 = fract(float2(p, p) / MOD2);
+    float2 p2 = fract(float2(p, p) / MOD2);
     p2 += dot(p2.yx, p2.xy+19.19);
-	return fract(p2.x * p2.y);
+    return fract(p2.x * p2.y);
 }
 
 float hash( float2 p )
 {
     float2 MOD2 = float2(3.07965, 7.4235);
-	p  = fract(p / MOD2);
+    p  = fract(p / MOD2);
     p += dot(p.xy, p.yx+19.19);
     return fract(p.x * p.y);
 }
@@ -61,10 +61,10 @@ float noise( float2 x )
 
 float3x3 create_camera( float3 ro, float3 ta, float cr )
 {
-	float3 cw = normalize(ta-ro);
-	float3 cp = float3(sin(cr), cos(cr),0.0);
-	float3 cu = normalize( cross(cw,cp) );
-	float3 cv = cross(cu,cw);
+    float3 cw = normalize(ta-ro);
+    float3 cp = float3(sin(cr), cos(cr),0.0);
+    float3 cu = normalize( cross(cw,cp) );
+    float3 cv = cross(cu,cw);
     
     return from_columns_3x3( cu, cv, cw );
 }
@@ -81,8 +81,8 @@ float bcos(float v)
 
 float3 irrid(float3 n, float3 rd)
 {
-	float nv = dot(n, -rd);
-	float3 col = float3(0.0, 0.0, 0.0);
+    float nv = dot(n, -rd);
+    float3 col = float3(0.0, 0.0, 0.0);
     col += sin(nv * float3(0.0, 1.0, 0.0) * 10.0 * 1.5) * 0.5 + 0.5;  
     col += sin(nv * float3(1.0, 0.0, 0.0) * 20.0 * 1.5) * 0.5 + 0.5;  
     col += sin(nv * float3(0.0, 0.0, 1.0) * 5.0 * 1.5) * 0.5 + 0.5;
@@ -95,8 +95,8 @@ void cam_anim(float2 uv, float time, out float3 ro, out float3 rd)
     float3 ta = float3( -0.5, -0.4, 0.5 );
     float3x3 cam = create_camera( ro, ta, time );
     float2 p = (uv * 2.0) - 1.0;
-	
-	rd = mul( normalize( float3(p.x, p.y, 2.0) ), cam); 
+    
+    rd = mul( normalize( float3(p.x, p.y, 2.0) ), cam); 
 }
 
 float2 bend_tc(float2 uv)
@@ -160,9 +160,9 @@ ps_output ps_octahedron( vs_output input )
     float iTime = mod(user_data.y * 3, 200);
     float2 iResolution = float2(640.0, 480.0);
 
-	float3 ro;
-	float3 rd;
-	cam_anim(uv, iTime, ro, rd);
+    float3 ro;
+    float3 rd;
+    cam_anim(uv, iTime, ro, rd);
     
     float d = 10.0;
     float xt = 0.0;
@@ -180,13 +180,13 @@ ps_output ps_octahedron( vs_output input )
     }
     
     float3 n = calc_normal_octahedron(pp);    
-	float3 col = irrid(n, rd);
+    float3 col = irrid(n, rd);
     
     float mask = step(d, eps);
     float inv_mask = 1.0 - mask;
     
     float3 csky = sky(rd, iTime + 10);
-	csky = csky.zyx;
+    csky = csky.zyx;
         
     float3 cc = crt_c(csky * inv_mask + col * mask, uv);
     ps_output output;    
@@ -219,9 +219,9 @@ ps_output ps_box( vs_output input )
     float iTime = mod(user_data.y * 3, 200);
     float2 iResolution = float2(640.0, 480.0);
 
-	float3 ro;
-	float3 rd;
-	cam_anim(uv, iTime, ro, rd);
+    float3 ro;
+    float3 rd;
+    cam_anim(uv, iTime, ro, rd);
     
     float d = 10.0;
     float xt = 0.0;
@@ -239,7 +239,7 @@ ps_output ps_box( vs_output input )
     }
     
     float3 n = calc_normal_box(pp);    
-	float3 col = irrid(n, rd);
+    float3 col = irrid(n, rd);
     
     float mask = step(d, eps);
     float inv_mask = 1.0 - mask;
@@ -277,9 +277,9 @@ ps_output ps_torus( vs_output input )
     float iTime = mod(user_data.y * 3, 200);
     float2 iResolution = float2(640.0, 480.0);
 
-	float3 ro;
-	float3 rd;
-	cam_anim(uv, iTime, ro, rd);
+    float3 ro;
+    float3 rd;
+    cam_anim(uv, iTime, ro, rd);
     
     float d = 10.0;
     float xt = 0.0;
@@ -297,14 +297,14 @@ ps_output ps_torus( vs_output input )
     }
     
     float3 n = calc_normal_torus(pp);    
-	float3 col = irrid(n, rd);
+    float3 col = irrid(n, rd);
     
     float mask = step(d, eps);
     float inv_mask = 1.0 - mask;
     
     float3 csky = sky(rd, iTime + 10);
-	csky = csky.zxy;
-	
+    csky = csky.zxy;
+    
     float3 cc = crt_c(csky * inv_mask + col * mask, uv);
     ps_output output;    
     output.colour = float4(cc, 1.0);

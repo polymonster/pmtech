@@ -320,17 +320,17 @@ namespace put
             put::dbg::add_line(v2, v3, col);
             put::dbg::add_line(v3, v1, col);
         }
-        
+
         void add_triangle_with_normal(const vec3f& v0, const vec3f& v1, const vec3f& v2, const vec4f& col)
         {
             vec3f vc = (v0 + v1 + v2) / 3.0f;
-            
+
             dbg::add_triangle(v0, v1, v2, col);
-            
+
             vec3f vn = maths::get_normal(v0, v1, v2);
-            
-            f32 ns = min(max(max(mag(v0-v1), mag(v1-v2)), mag(v2-v0)) * 0.1f, 1.0f);
-            
+
+            f32 ns = min(max(max(mag(v0 - v1), mag(v1 - v2)), mag(v2 - v0)) * 0.1f, 1.0f);
+
             dbg::add_line(vc, vc + vn * ns, col);
         }
 

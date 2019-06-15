@@ -72,8 +72,8 @@ namespace put
                     scene->free_list_head = l;
                 }
             }
-            
-            if(!scene->free_list_head)
+
+            if (!scene->free_list_head)
                 PEN_ASSERT(0);
         }
 
@@ -195,7 +195,7 @@ namespace put
             free_scene_buffers(scene);
             resize_scene_buffers(scene);
         }
-        
+
         // a component wise memcpy of all components and extension components
         void entity_cpy(ecs_scene* scene, u32 dst, u32 src)
         {
@@ -213,19 +213,19 @@ namespace put
             entity_cpy(scene, temp, a);
             entity_cpy(scene, a, b);
             entity_cpy(scene, b, temp);
-            
+
             // swap parents
-            for(u32 i = 0; i < scene->num_entities; ++i)
+            for (u32 i = 0; i < scene->num_entities; ++i)
             {
-                if(scene->parents[i] == a)
+                if (scene->parents[i] == a)
                     scene->parents[i] = b;
-                else if(scene->parents[i] == b)
+                else if (scene->parents[i] == b)
                     scene->parents[i] = a;
             }
-            
+
             zero_entity_components(scene, temp);
         }
-        
+
         u32 clone_entity(ecs_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
         {
             if (dst == -1)
@@ -246,7 +246,7 @@ namespace put
                 generic_cmp_array& cmp = p_sn->get_component_array(i);
                 memcpy(cmp[dst], cmp[src], cmp.size);
             }
-            
+
             // assign
             Str blank;
             memcpy(&p_sn->names[dst], &blank, sizeof(Str));
@@ -327,23 +327,23 @@ namespace put
             bcp.data = nullptr;
 
             new_instance.scene->sdf_shadow_buffer = pen::renderer_create_buffer(bcp);
-            
+
             // shadow maps
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             bcp.buffer_size = sizeof(mat4) * MAX_SHADOW_MAPS;
             bcp.data = nullptr;
-            
+
             new_instance.scene->shadow_map_buffer = pen::renderer_create_buffer(bcp);
-            
+
             // area lights
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
             bcp.buffer_size = sizeof(area_light_buffer);
             bcp.data = nullptr;
-            
+
             new_instance.scene->area_light_buffer = pen::renderer_create_buffer(bcp);
 
             return new_instance.scene;
@@ -357,26 +357,26 @@ namespace put
             // geom
             // anim
         }
-        
+
         void render_area_light_textures(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
-            
+
             u32 count = 0;
             u32 area_light = -1;
-            for(u32 i = 0; i < scene->num_entities; ++i)
+            for (u32 i = 0; i < scene->num_entities; ++i)
             {
-                if(!(scene->entities[i] & CMP_LIGHT))
+                if (!(scene->entities[i] & CMP_LIGHT))
                     continue;
-                
-                if(!(scene->lights[i].type == LIGHT_TYPE_AREA_EX))
+
+                if (!(scene->lights[i].type == LIGHT_TYPE_AREA_EX))
                     continue;
-                
+
                 cmp_area_light& al = scene->area_light[i];
-                if(!is_valid(al.shader))
+                if (!is_valid(al.shader))
                     continue;
-                
-                if(count == view.array_index)
+
+                if (count == view.array_index)
                 {
                     area_light = i;
                     break;
@@ -387,20 +387,20 @@ namespace put
 
             if (!is_valid(area_light))
                 return;
-            
+
             cmp_area_light& al = scene->area_light[area_light];
 
             pen::renderer_set_constant_buffer(scene->cbuffer[area_light], 1, pen::CBUFFER_BIND_PS);
-            
-            if(is_valid(al.shader))
+
+            if (is_valid(al.shader))
             {
-                if(is_valid(al.texture_handle))
+                if (is_valid(al.texture_handle))
                     pen::renderer_set_texture(al.texture_handle, al.sampler_state, 0, pen::TEXTURE_BIND_PS);
-                
+
                 scene_view sub = view;
                 sub.pmfx_shader = al.shader;
                 sub.technique = al.technique;
-                
+
                 pmfx::fullscreen_quad(sub);
             }
         }
@@ -408,9 +408,9 @@ namespace put
         void render_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
-            
+
             static u32 cb_view = PEN_INVALID_HANDLE;
-            if(!is_valid(cb_view))
+            if (!is_valid(cb_view))
             {
                 pen::buffer_creation_params bcp;
                 bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -418,50 +418,49 @@ namespace put
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
                 bcp.buffer_size = sizeof(camera_cbuffer);
                 bcp.data = nullptr;
-                
+
                 cb_view = pen::renderer_create_buffer(bcp);
             }
-            
+
             static mat4 shadow_matrices[MAX_SHADOW_MAPS];
-            u32 shadow_index = 0;
+            u32         shadow_index = 0;
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
-                
-                if(!scene->lights[n].shadow_map)
+
+                if (!scene->lights[n].shadow_map)
                     continue;
-                
-                if(shadow_index++ != view.array_index)
+
+                if (shadow_index++ != view.array_index)
                     continue;
-                
+
                 camera cam;
-                vec3f light_dir = normalised(-scene->lights[n].direction);
-                camera_update_shadow_frustum(&cam, light_dir,
-                                             scene->renderable_extents.min - vec3f(0.1f),
+                vec3f  light_dir = normalised(-scene->lights[n].direction);
+                camera_update_shadow_frustum(&cam, light_dir, scene->renderable_extents.min - vec3f(0.1f),
                                              scene->renderable_extents.max + vec3f(0.1f));
-                
+
                 scene_view vv = view;
                 vv.camera = &cam;
-                
+
                 mat4 shadow_vp = cam.proj * cam.view;
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
-                
+
                 static mat4 scale = mat::create_scale(vec3f(1.0f, -1.0f, 1.0f));
 
-                // flip for gl viewport / texcoord space. 
+                // flip for gl viewport / texcoord space.
                 if (pen::renderer_viewport_vup())
                     shadow_vp = scale * (cam.proj * cam.view);
-                
-                shadow_matrices[shadow_index-1] = shadow_vp;
-                
+
+                shadow_matrices[shadow_index - 1] = shadow_vp;
+
                 vv.cb_view = cb_view;
-                
+
                 render_scene_view(vv);
             }
-            
+
             // update cbuffer
-            if(is_valid(scene->shadow_map_buffer))
+            if (is_valid(scene->shadow_map_buffer))
             {
                 pen::renderer_update_buffer(scene->shadow_map_buffer, &shadow_matrices[0], sizeof(mat4) * MAX_SHADOW_MAPS);
             }
@@ -621,7 +620,7 @@ namespace put
                 cmp_geometry* p_geom = &scene->geometries[n];
                 cmp_material* p_mat = &scene->materials[n];
                 u32           permutation = scene->material_permutation[n];
-                
+
                 // set shader / technique
                 if (!is_valid(view.pmfx_shader))
                 {
@@ -659,10 +658,10 @@ namespace put
                     }
 
                     static mat4 bb[85];
-                    s32 joints_offset = scene->anim_controller[n].joints_offset;
+                    s32         joints_offset = scene->anim_controller[n].joints_offset;
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                         bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
-                    
+
                     pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
                     pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
                 }
@@ -705,26 +704,26 @@ namespace put
                                                   samplers.sb[s].sampler_unit, pen::TEXTURE_BIND_PS);
                     }
                 }
-                
+
                 // view
                 pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-                
+
                 // fwd lights
                 if (view.render_flags & RENDER_FORWARD_LIT)
                 {
                     pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
                     pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
                     pen::renderer_set_constant_buffer(scene->area_light_buffer, 6, pen::CBUFFER_BIND_PS);
-                    
+
                     // ltc lookups
                     static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
                     static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
                     static u32 clamp_linear = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
-                    
+
                     pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
                     pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
                 }
-                
+
                 // sdf shadows
                 pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
                 for (u32 n = 0; n < scene->num_entities; ++n)
@@ -732,7 +731,7 @@ namespace put
                     if (scene->entities[n] & CMP_SDF_SHADOW)
                     {
                         cmp_shadow& shadow = scene->shadows[n];
-                        
+
                         if (is_valid(shadow.texture_handle))
                             pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT,
                                                       pen::TEXTURE_BIND_PS);
@@ -740,7 +739,7 @@ namespace put
                 }
 
                 // draw
-                
+
                 // instances
                 if (scene->entities[n] & CMP_MASTER_INSTANCE)
                 {
@@ -774,8 +773,8 @@ namespace put
                 for (u32 ai = 0; ai < num_anims; ++ai)
                 {
                     anim_instance& instance = controller.anim_instances[ai];
-                    
-                    if(instance.flags & anim_flags::PAUSED)
+
+                    if (instance.flags & anim_flags::PAUSED)
                         continue;
 
                     soa_anim& soa = instance.soa;
@@ -791,8 +790,8 @@ namespace put
                         instance.time = 0.0f;
                         looped = true;
                     }
-                    
-                    if(instance.flags & anim_flags::LOOPED)
+
+                    if (instance.flags & anim_flags::LOOPED)
                     {
                         instance.flags &= ~anim_flags::LOOPED;
                         looped = true;
@@ -858,9 +857,9 @@ namespace put
 
                                 memcpy(&q1.v[0], &d1[e], 16);
                                 memcpy(&q2.v[0], &d2[e], 16);
-                                
+
                                 quat ql = slerp(q1, q2, it);
- 
+
                                 instance.targets[sampler.joint].q = ql * instance.targets[sampler.joint].q;
                                 instance.targets[sampler.joint].flags |= channel.flags;
                                 e += 3;
@@ -1061,16 +1060,16 @@ namespace put
             static u32 dt_timer = pen::timer_create("sc_dt");
             f32        dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
             pen::timer_start(dt_timer);
-            
-            static f32 fft = 1.0f/60.0f;
-            bool bdt = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
-            f32 ft = dev_ui::get_program_preference("fixed_timestep").as_f32(fft);
-            
-            if(!bdt)
+
+            static f32 fft = 1.0f / 60.0f;
+            bool       bdt = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
+            f32        ft = dev_ui::get_program_preference("fixed_timestep").as_f32(fft);
+
+            if (!bdt)
             {
                 dt = ft;
             }
-            
+
             for (auto& si : s_scenes)
             {
                 update_scene(si.scene, dt);
@@ -1086,7 +1085,7 @@ namespace put
         {
             // static anim time to pass into draw calls etc..
             f32 anim_time = pen::get_time_ms() / 1000.0;
-            
+
             u32 num_controllers = sb_count(scene->controllers);
             u32 num_extensions = sb_count(scene->extensions);
 
@@ -1140,7 +1139,7 @@ namespace put
 
                     if (scene->entities[n] & CMP_PHYSICS)
                     {
-                        if(scene->physics_data[n].type == PHYSICS_TYPE_RIGID_BODY)
+                        if (scene->physics_data[n].type == PHYSICS_TYPE_RIGID_BODY)
                         {
                             cmp_transform& pt = scene->physics_offset[n];
                             physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation);
@@ -1161,7 +1160,7 @@ namespace put
                     cmp_transform& pt = scene->physics_offset[n];
 
                     mat4 scale_mat = mat::create_scale(t.scale);
-                    
+
                     vec3f os = t.scale;
                     t = physics::get_rb_transform(scene->physics_handles[n]);
                     t.scale = os;
@@ -1260,7 +1259,7 @@ namespace put
                     parent_tmax = vec3f::vmax(parent_tmax, tmax);
                 }
             }
-            
+
             // Forward light buffer
             static forward_light_buffer light_buffer;
             s32                         pos = 0;
@@ -1373,17 +1372,13 @@ namespace put
             light_buffer.info = vec4f(num_directions_lights, num_point_lights, num_spot_lights, 0.0f);
 
             pen::renderer_update_buffer(scene->forward_light_buffer, &light_buffer, sizeof(light_buffer));
-            
+
             // Area light buffer
             static area_light_buffer al_buffer;
-            
-            static vec4f corners_al[] = {
-                vec4f(-1.0, 0.0, -1.0, 1.0),
-                vec4f(1.0, 0.0, -1.0, 1.0),
-                vec4f(1.0, 0.0, 1.0, 1.0),
-                vec4f(-1.0, 0.0, 1.0, 1.0)
-            };
-            
+
+            static vec4f corners_al[] = {vec4f(-1.0, 0.0, -1.0, 1.0), vec4f(1.0, 0.0, -1.0, 1.0), vec4f(1.0, 0.0, 1.0, 1.0),
+                                         vec4f(-1.0, 0.0, 1.0, 1.0)};
+
             u32 num_area_lights = 0;
             u32 num_constant_colour_area_lights = 0;
             u32 num_textured_area_lights = 0;
@@ -1392,21 +1387,21 @@ namespace put
             {
                 if (num_lights >= MAX_FORWARD_LIGHTS)
                     break;
-                
+
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
-                
+
                 cmp_light& l = scene->lights[n];
                 if (l.type != LIGHT_TYPE_AREA)
                     continue;
-                
+
                 mat4& wm = scene->world_matrices[n];
-                for(u32 c = 0; c < 4; ++c)
+                for (u32 c = 0; c < 4; ++c)
                     al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners_al[c]);
-                
+
                 al_buffer.lights[num_area_lights].colour = vec4f(l.colour, num_textured_area_lights);
                 ++num_constant_colour_area_lights;
-                
+
                 ++num_area_lights;
             }
             // textured / shader / animated area light
@@ -1414,36 +1409,36 @@ namespace put
             {
                 if (num_lights >= MAX_FORWARD_LIGHTS)
                     break;
-                
+
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
-                
+
                 cmp_light& l = scene->lights[n];
                 if (l.type != LIGHT_TYPE_AREA_EX)
                     continue;
-                
+
                 mat4& wm = scene->world_matrices[n];
-                for(u32 c = 0; c < 4; ++c)
+                for (u32 c = 0; c < 4; ++c)
                     al_buffer.lights[num_area_lights].corners[c] = wm.transform_vector(corners_al[c]);
-                
+
                 scene->draw_call_data[n].v1.y = (f32)anim_time; // time
                 al_buffer.lights[num_area_lights].colour = vec4f(l.colour, num_textured_area_lights);
                 scene->draw_call_data[n].v1.z = (f32)num_textured_area_lights;
                 ++num_textured_area_lights;
-                
+
                 ++num_area_lights;
             }
-            
+
             al_buffer.info.x = num_constant_colour_area_lights;
             al_buffer.info.y = num_textured_area_lights;
-            
+
             pen::renderer_update_buffer(scene->area_light_buffer, &al_buffer, sizeof(al_buffer));
-            
+
             const pmfx::render_target* alrt = pmfx::get_render_target(PEN_HASH("area_light_textures"));
             if (!alrt)
                 return;
-        
-            if(alrt->num_arrays < num_area_lights)
+
+            if (alrt->num_arrays < num_area_lights)
             {
                 pmfx::rt_resize_params rrp;
                 rrp.width = 640;
@@ -1454,7 +1449,7 @@ namespace put
                 rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
                 pmfx::resize_render_target(PEN_HASH("area_light_textures"), rrp);
             }
-            
+
             // Distance field shadows
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
@@ -1470,24 +1465,24 @@ namespace put
 
                 pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
             }
-            
+
             // Shadow maps
             u32 num_shadow_maps = 0;
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
-                
+
                 cmp_light& l = scene->lights[n];
-                if(!l.shadow_map)
+                if (!l.shadow_map)
                     continue;
-                
+
                 ++num_shadow_maps;
             }
-            
+
             const pmfx::render_target* sm = pmfx::get_render_target(PEN_HASH("shadow_map"));
-            
-            if(sm->num_arrays < num_shadow_maps)
+
+            if (sm->num_arrays < num_shadow_maps)
             {
                 pmfx::rt_resize_params rrp;
                 rrp.width = 2048;
@@ -1530,7 +1525,7 @@ namespace put
                         bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
 
                     pen::renderer_update_buffer(geom.p_skin->bone_cbuffer, bb, sizeof(bb));
-                    
+
                     // bind stream out targets
                     cmp_pre_skin& pre_skin = scene->pre_skin[n];
                     pen::renderer_set_stream_out_target(geom.vertex_buffer);
@@ -1542,7 +1537,7 @@ namespace put
                     pen::renderer_set_stream_out_target(0);
                 }
             }
-            
+
             // update draw call data
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
@@ -1553,44 +1548,44 @@ namespace put
                         pen::renderer_update_buffer(scene->materials[n].material_cbuffer, &scene->material_data[n].data[0],
                                                     scene->materials[n].material_cbuffer_size);
                 }
-                
+
                 scene->draw_call_data[n].world_matrix = scene->world_matrices[n];
-                
+
                 // store node index in v1.x
                 scene->draw_call_data[n].v1.x = (f32)n;
-                
+
                 if (is_invalid_or_null(scene->cbuffer[n]))
                     continue;
-                
+
                 if (scene->entities[n] & CMP_SUB_INSTANCE)
                     continue;
-                
+
                 // skinned meshes have the world matrix baked into the bones
                 if (scene->entities[n] & CMP_SKINNED || scene->entities[n] & CMP_PRE_SKINNED)
                     scene->draw_call_data[n].world_matrix = mat4::create_identity();
-                
+
                 mat4 invt = scene->world_matrices[n];
-                
+
                 invt = invt.transposed();
                 invt = mat::inverse4x4(invt);
-                
+
                 scene->draw_call_data[n].world_matrix_inv_transpose = invt;
-                
+
                 // todo mark dirty?
                 pen::renderer_update_buffer(scene->cbuffer[n], &scene->draw_call_data[n], sizeof(cmp_draw_call));
             }
-            
+
             // update instance buffers
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_MASTER_INSTANCE))
                     continue;
-                
+
                 cmp_master_instance& master = scene->master_instances[n];
-                
+
                 u32 instance_data_size = master.num_instances * master.instance_stride;
                 pen::renderer_update_buffer(master.instance_buffer, &scene->draw_call_data[n + 1], instance_data_size);
-                
+
                 // stride over sub instances
                 n += scene->master_instances[n].num_instances;
             }

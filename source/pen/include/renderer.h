@@ -92,7 +92,7 @@ namespace pen
         mrt_clear mrt[MAX_MRT];
         u32       num_colour_targets;
     };
-    
+
     struct uint3
     {
         u32 x, y, z;
@@ -193,7 +193,7 @@ namespace pen
         u32   width;
         u32   height;
         s32   num_mips;
-        u32   num_arrays;     // num array slices
+        u32   num_arrays; // num array slices
         u32   format;
         u32   sample_count;
         u32   sample_quality;
@@ -530,31 +530,31 @@ namespace pen
         void renderer_release_input_layout(u32 input_layout);
         void renderer_release_depth_stencil_state(u32 depth_stencil_state);
     } // namespace direct
-    
+
     // some utility functions
     inline s32 calc_num_mips(s32 width, s32 height)
     {
         // -1 width signifies window ratio
         // -1 mips will be resolved when rt is resized
-        if(width == PEN_INVALID_HANDLE)
+        if (width == PEN_INVALID_HANDLE)
             return -1;
-        
+
         s32 num = 0;
-        
+
         while (width > 1 && height > 1)
         {
             ++num;
-            
+
             width /= 2;
             height /= 2;
-            
+
             width = std::max<s32>(1, width);
             height = std::max<s32>(1, height);
         }
-        
+
         return num;
     }
-    
+
     inline u32 calc_mip_level_size(u32 w, u32 h, u32 d, u32 block_size, u32 pixels_per_block)
     {
         if (block_size != 1)
@@ -562,15 +562,15 @@ namespace pen
             u32 block_width = max<u32>(1, ((w + (pixels_per_block - 1)) / pixels_per_block));
             u32 block_height = max<u32>(1, ((h + (pixels_per_block - 1)) / pixels_per_block));
             u32 block_depth = max<u32>(1, ((d + (pixels_per_block - 1)) / pixels_per_block));
-            
+
             return block_width * block_height * block_depth * block_size;
         }
-        
+
         u32 num_blocks = (w * h * d) / pixels_per_block;
         u32 size = num_blocks * block_size;
         return size;
     }
-    
+
 } // namespace pen
 
 #endif

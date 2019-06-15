@@ -314,7 +314,7 @@ namespace physics
         u32 entity;
         void (*callback)(const contact_test_results& result);
     };
-    
+
     struct compound_rb_cmd
     {
         compound_rb_params params;
@@ -369,7 +369,7 @@ namespace physics
 
     void cast_ray(const ray_cast_params& rcp, bool immediate = false); // non immedite will put a cast command in the buffer.
     void cast_sphere(const sphere_cast_params& rcp,
-                     bool immediate = false); // using non immediate may not be thread safe..
+                     bool                      immediate = false); // using non immediate may not be thread safe..
     void contact_test(const contact_test_params& ctp);
 
     void step();
@@ -382,10 +382,10 @@ namespace physics
     void sync_compound_multi(const u32& compound_index, const u32& multi_index);
     void sync_rigid_bodies(const u32& master, const u32& slave, const s32& link_index, u32 cmd);
 
-    bool has_rb_matrix(const u32& entity_index);
-    mat4 get_rb_matrix(const u32& entity_index);
+    bool             has_rb_matrix(const u32& entity_index);
+    mat4             get_rb_matrix(const u32& entity_index);
     maths::transform get_rb_transform(const u32& entity_index);
-    void release_entity(const u32& entity_index);
+    void             release_entity(const u32& entity_index);
 
-} // namespace physicscd 
+} // namespace physics
 #endif

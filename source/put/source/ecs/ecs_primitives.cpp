@@ -23,7 +23,7 @@ namespace put
             p_geometry->cpu_position_buffer = pen::memory_alloc(sizeof(vec4f) * num_verts);
             p_geometry->cpu_index_buffer = pen::memory_alloc(sizeof(u16) * num_indices);
             p_geometry->cpu_vertex_buffer = pen::memory_alloc(sizeof(vertex_model) * num_verts);
-            
+
             memcpy(p_geometry->cpu_vertex_buffer, v, sizeof(vertex_model) * num_verts);
 
             vec4f* cpu_positions = (vec4f*)p_geometry->cpu_position_buffer;

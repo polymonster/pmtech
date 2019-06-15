@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "console.h"
+#include "data_struct.h"
 #include "file_system.h"
 #include "memory.h"
 #include "os.h"
@@ -15,7 +16,6 @@
 #include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
-#include "data_struct.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
@@ -83,13 +83,13 @@ namespace
         CMD_DISPATCH_COMPUTE,
         CMD_SET_STENCIL_REF
     };
-    
+
     struct set_shader_cmd
     {
         u32 shader_index;
         u32 shader_type;
     };
-    
+
     static const u32 k_max_colour_targets = 8;
     struct set_target_cmd
     {
@@ -98,13 +98,13 @@ namespace
         u32 depth;
         u32 array_index;
     };
-    
+
     struct clear_cmd
     {
         u32 clear_state;
         u32 array_index;
     };
-    
+
     struct set_vertex_buffer_cmd
     {
         u32  buffer_index;
@@ -114,21 +114,21 @@ namespace
         u32* strides;
         u32* offsets;
     };
-    
+
     struct set_index_buffer_cmd
     {
         u32 buffer_index;
         u32 format;
         u32 offset;
     };
-    
+
     struct draw_cmd
     {
         u32 vertex_count;
         u32 start_vertex;
         u32 primitive_topology;
     };
-    
+
     struct draw_indexed_cmd
     {
         u32 index_count;
@@ -136,7 +136,7 @@ namespace
         u32 base_vertex;
         u32 primitive_topology;
     };
-    
+
     struct draw_indexed_instanced_cmd
     {
         u32 instance_count;
@@ -146,7 +146,7 @@ namespace
         u32 base_vertex;
         u32 primitive_topology;
     };
-    
+
     struct set_texture_cmd
     {
         u32 texture_index;
@@ -154,14 +154,14 @@ namespace
         u32 resource_slot;
         u32 bind_flags;
     };
-    
+
     struct set_constant_buffer_cmd
     {
         u32 buffer_index;
         u32 resource_slot;
         u32 flags;
     };
-    
+
     struct update_buffer_cmd
     {
         u32   buffer_index;
@@ -169,31 +169,31 @@ namespace
         u32   data_size;
         u32   offset;
     };
-    
+
     struct msaa_resolve_params
     {
         u32                 render_target;
         e_msaa_resolve_type resolve_type;
     };
-    
+
     struct replace_resource
     {
         u32                 dest_handle;
         u32                 src_handle;
         e_renderer_resource type;
     };
-    
+
     struct compute_dispatch_params
     {
         uint3 grid;
         uint3 num_threads;
     };
-    
+
     struct renderer_cmd
     {
         u32 command_index;
         u32 resource_slot;
-        
+
         union {
             u32                              command_data_index;
             shader_load_params               shader_load;
@@ -227,15 +227,15 @@ namespace
             compute_dispatch_params          cs_dispatch;
             u8                               stencil_ref;
         };
-        
+
         renderer_cmd(){};
     };
-    
-    u32                         _present_timer;
-    f32                         _present_time;
-    pen::resolve_resources      _resolve_resources;
-    ring_buffer<renderer_cmd>   _cmd_buffer;
-}
+
+    u32                       _present_timer;
+    f32                       _present_time;
+    pen::resolve_resources    _resolve_resources;
+    ring_buffer<renderer_cmd> _cmd_buffer;
+} // namespace
 
 namespace pen
 {
@@ -444,8 +444,8 @@ namespace pen
                 break;
 
             case CMD_RESOLVE_TARGET:
-                direct::renderer_resolve_target(cmd.resolve_params.render_target,
-                                                cmd.resolve_params.resolve_type, _resolve_resources);
+                direct::renderer_resolve_target(cmd.resolve_params.render_target, cmd.resolve_params.resolve_type,
+                                                _resolve_resources);
                 break;
 
             case CMD_DRAW_AUTO:
@@ -472,11 +472,11 @@ namespace pen
             case CMD_POP_PERF_MARKER:
                 direct::renderer_pop_perf_marker();
                 break;
-                
+
             case CMD_DISPATCH_COMPUTE:
                 direct::renderer_dispatch_compute(cmd.cs_dispatch.grid, cmd.cs_dispatch.num_threads);
                 break;
-                
+
             case CMD_SET_STENCIL_REF:
                 direct::renderer_set_stencil_ref(cmd.stencil_ref);
                 break;
@@ -506,7 +506,7 @@ namespace pen
             semaphore_post(p_consume_semaphore, 1);
             semaphore_wait(p_continue_semaphore);
         }
-        
+
         // sync on window surface
         direct::renderer_sync();
     }
@@ -517,7 +517,7 @@ namespace pen
         {
             // some api's need to set the current context on the caller thread.
             direct::renderer_make_context_current();
-            
+
             semaphore_post(p_continue_semaphore, 1);
 
             renderer_cmd* cmd = _cmd_buffer.get();
@@ -525,7 +525,7 @@ namespace pen
             {
                 renderer_cmd foff = *cmd;
                 exec_cmd(foff);
-                
+
                 cmd = _cmd_buffer.get();
             }
 
@@ -761,14 +761,14 @@ namespace pen
 
         u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
         cmd.resource_slot = resource_slot;
-        
+
         _cmd_buffer.put(cmd);
 
         return resource_slot;
     }
 
     void renderer_set_shader(u32 shader_index, u32 shader_type)
-    {        
+    {
         renderer_cmd cmd;
 
         cmd.command_index = CMD_SET_SHADER;
@@ -842,7 +842,7 @@ namespace pen
     }
 
     void renderer_set_vertex_buffer(u32 buffer_index, u32 start_slot, u32 stride, u32 offset)
-    {        
+    {
         renderer_set_vertex_buffers(&buffer_index, 1, start_slot, &stride, &offset);
     }
 
@@ -1350,15 +1350,15 @@ namespace pen
 
         _cmd_buffer.put(cmd);
     }
-    
+
     void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
     {
         renderer_cmd cmd;
-        
+
         cmd.command_index = CMD_DISPATCH_COMPUTE;
         cmd.cs_dispatch.grid = grid;
         cmd.cs_dispatch.num_threads = num_threads;
-        
+
         _cmd_buffer.put(cmd);
     }
 
@@ -1398,14 +1398,14 @@ namespace pen
 
         return resource_slot;
     }
-    
+
     void renderer_set_stencil_ref(u8 ref)
     {
         renderer_cmd cmd;
-        
+
         cmd.command_index = CMD_SET_STENCIL_REF;
         cmd.stencil_ref = ref;
-        
+
         _cmd_buffer.put(cmd);
     }
 

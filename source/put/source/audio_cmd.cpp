@@ -4,11 +4,11 @@
 
 #include "audio.h"
 
+#include "data_struct.h"
 #include "memory.h"
 #include "pen_string.h"
 #include "slot_resource.h"
 #include "threads.h"
-#include "data_struct.h"
 
 #include "fmod.hpp"
 
@@ -26,59 +26,59 @@ namespace
         CMD_AUDIO_CREATE_GROUP,
         CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND,
         CMD_AUDIO_RELEASE_RESOURCE,
-        
+
         CMD_AUDIO_ADD_CHANNEL_TO_GROUP,
         CMD_AUDIO_ADD_DSP_TO_GROUP,
-        
+
         CMD_AUDIO_CHANNEL_SET_POSITION,
         CMD_AUDIO_CHANNEL_SET_FREQUENCY,
         CMD_AUDIO_CHANNEL_STOP,
-        
+
         CMD_AUDIO_GROUP_SET_PAUSE,
         CMD_AUDIO_GROUP_SET_MUTE,
         CMD_AUDIO_GROUP_SET_PITCH,
         CMD_AUDIO_GROUP_SET_VOLUME,
-        
+
         CMD_AUDIO_DSP_SET_THREE_BAND_EQ,
         CMD_AUDIO_DSP_SET_GAIN
     };
-    
+
     struct set_valuei
     {
         u32 resource_index;
         s32 value;
     };
-    
+
     struct set_valuef
     {
         u32 resource_index;
         f32 value;
     };
-    
+
     struct set_value3f
     {
         u32 resource_index;
         f32 value[3];
     };
-    
+
     struct audio_cmd
     {
         u32 command_index;
         u32 resource_slot;
-        
+
         union {
-            c8*             filename;
-            u32             resource_index;
-            ::set_valuei    set_valuei;
-            ::set_valuef    set_valuef;
-            ::set_value3f   set_value3f;
+            c8*           filename;
+            u32           resource_index;
+            ::set_valuei  set_valuei;
+            ::set_valuef  set_valuef;
+            ::set_value3f set_value3f;
         };
     };
-    
+
     pen::job*                   _audio_job_thread_info;
     pen::slot_resources         _audio_slot_resources;
     pen::ring_buffer<audio_cmd> _cmd_buffer;
-}
+} // namespace
 
 namespace put
 {
@@ -173,7 +173,7 @@ namespace put
                     audio_exec_command(*cmd);
                     cmd = _cmd_buffer.get();
                 }
-                
+
                 direct::audio_system_update();
             }
             else
@@ -196,7 +196,7 @@ namespace put
     void create_file_command(const c8* filename, u32 command, u32 resource_slot)
     {
         audio_cmd ac;
-        
+
         // allocate filename and copy the buffer and null terminate it
         u32 filename_length = pen::string_length(filename);
         ac.filename = (c8*)pen::memory_alloc(filename_length + 1);
@@ -232,9 +232,9 @@ namespace put
     u32 audio_create_channel_group()
     {
         audio_cmd ac;
-        
+
         u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
-        
+
         ac.command_index = CMD_AUDIO_CREATE_GROUP;
         ac.resource_slot = res;
 
@@ -253,7 +253,7 @@ namespace put
         u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
 
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND;
         ac.resource_index = sound_index;
         ac.resource_slot = res;
@@ -266,7 +266,7 @@ namespace put
     void audio_channel_set_position(const u32 channel_index, const u32 position_ms)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_CHANNEL_SET_POSITION;
         ac.set_valuei.resource_index = channel_index;
         ac.set_valuei.value = position_ms;
@@ -277,7 +277,7 @@ namespace put
     void audio_channel_set_frequency(const u32 channel_index, const f32 frequency)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_CHANNEL_SET_FREQUENCY;
         ac.set_valuef.resource_index = channel_index;
         ac.set_valuef.value = frequency;
@@ -288,7 +288,7 @@ namespace put
     void audio_group_set_pause(const u32 group_index, const bool val)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_GROUP_SET_PAUSE;
         ac.set_valuei.resource_index = group_index;
         ac.set_valuei.value = (s32)val;
@@ -299,7 +299,7 @@ namespace put
     void audio_group_set_mute(const u32 group_index, const bool val)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_GROUP_SET_MUTE;
         ac.set_valuei.resource_index = group_index;
         ac.set_valuei.value = (s32)val;
@@ -310,7 +310,7 @@ namespace put
     void audio_group_set_pitch(const u32 group_index, const f32 pitch)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_GROUP_SET_PITCH;
         ac.set_valuef.resource_index = group_index;
         ac.set_valuef.value = pitch;
@@ -321,7 +321,7 @@ namespace put
     void audio_group_set_volume(const u32 group_index, const f32 volume)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_GROUP_SET_VOLUME;
         ac.set_valuef.resource_index = group_index;
         ac.set_valuef.value = volume;
@@ -337,7 +337,7 @@ namespace put
         }
 
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_ADD_CHANNEL_TO_GROUP;
         ac.set_valuei.resource_index = channel_index;
         ac.set_valuei.value = group_index;
@@ -351,7 +351,7 @@ namespace put
             return;
 
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_RELEASE_RESOURCE;
         ac.resource_index = index;
 
@@ -363,7 +363,7 @@ namespace put
         u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
 
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_ADD_DSP_TO_GROUP;
         ac.set_valuei.resource_index = group_index;
         ac.set_valuei.value = type;
@@ -377,7 +377,7 @@ namespace put
     void audio_dsp_set_three_band_eq(const u32 eq_index, const f32 low, const f32 med, const f32 high)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_DSP_SET_THREE_BAND_EQ;
         ac.set_value3f.resource_index = eq_index;
         ac.set_value3f.value[0] = low;
@@ -390,7 +390,7 @@ namespace put
     void audio_dsp_set_gain(const u32 dsp_index, const f32 gain)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_DSP_SET_GAIN;
         ac.set_valuef.resource_index = dsp_index;
         ac.set_valuef.value = gain;
@@ -401,7 +401,7 @@ namespace put
     void audio_channel_stop(const u32 channel_index)
     {
         audio_cmd ac;
-        
+
         ac.command_index = CMD_AUDIO_CHANNEL_STOP;
         ac.resource_index = channel_index;
 

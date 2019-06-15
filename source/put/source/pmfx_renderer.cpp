@@ -187,19 +187,11 @@ namespace
         std::vector<void (*)(const put::scene_view&)> render_functions;
 
         // targets
-        u32 render_targets[pen::MAX_MRT] = {
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE
-        };
-        hash_id resolve_method[pen::MAX_MRT] = { 0 };
+        u32 render_targets[pen::MAX_MRT] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+                                            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
+        hash_id resolve_method[pen::MAX_MRT] = {0};
 
-        u32 depth_target = PEN_INVALID_HANDLE;
+        u32     depth_target = PEN_INVALID_HANDLE;
         hash_id depth_resolve_method = 0;
 
         // viewport
@@ -746,15 +738,15 @@ namespace put
                 dscp.stencil_write_mask = state["stencil_write_mask"].as_u8_hex(0);
 
                 pen::json op = state["stencil_op"];
-                if(!op.is_null())
+                if (!op.is_null())
                     parse_stencil_state(op, &dscp.front_face, &dscp.back_face);
 
                 pen::json op_front = state["stencil_op_front"];
-                if(!op_front.is_null())
+                if (!op_front.is_null())
                     parse_stencil_state(op_front, &dscp.front_face, nullptr);
 
                 pen::json op_back = state["stencil_op_back"];
-                if(!op_back.is_null())
+                if (!op_back.is_null())
                     parse_stencil_state(op_back, nullptr, &dscp.back_face);
 
                 hash_id hh = PEN_HASH(dscp);
@@ -976,7 +968,7 @@ namespace put
         void parse_render_targets(const pen::json& render_config, Str* include_targets)
         {
             pen::json j_render_targets = render_config["render_targets"];
-            s32 num = j_render_targets.size();
+            s32       num = j_render_targets.size();
 
             for (s32 i = 0; i < num; ++i)
             {
@@ -1161,16 +1153,16 @@ namespace put
 
             return nullptr;
         }
-        
+
         void resize_render_target(hash_id target, const rt_resize_params& params)
         {
-            u32 width = params.width;
-            u32 height = params.height;
+            u32       width = params.width;
+            u32       height = params.height;
             const c8* format = params.format;
-            
+
             render_target* current_target = nullptr;
             size_t         num = s_render_targets.size();
-            u32 ii = 0;
+            u32            ii = 0;
             for (u32 i = 0; i < num; ++i)
             {
                 if (s_render_targets[i].id_name == target)
@@ -1180,10 +1172,10 @@ namespace put
                     break;
                 }
             }
-            
+
             s32 new_format = current_target->format;
             u32 format_index = 0;
-            
+
             if (format)
             {
                 hash_id id_format = PEN_HASH(format);
@@ -1194,7 +1186,7 @@ namespace put
                         new_format = fmt.format;
                         break;
                     }
-                    
+
                     format_index++;
                 }
             }
@@ -1204,22 +1196,19 @@ namespace put
                 {
                     if (fmt.format == new_format)
                         break;
-                    
+
                     format_index++;
                 }
             }
-            
+
             // check if is already equal
-            if (current_target->width == width &&
-                current_target->height == height &&
-                current_target->format == new_format &&
-                current_target->num_arrays == params.num_arrays &&
-                current_target->num_mips == params.num_mips &&
+            if (current_target->width == width && current_target->height == height && current_target->format == new_format &&
+                current_target->num_arrays == params.num_arrays && current_target->num_mips == params.num_mips &&
                 current_target->collection == params.collection)
             {
                 return;
             }
-            
+
             pen::texture_creation_params tcp;
             tcp.data = nullptr;
             tcp.width = width;
@@ -1236,17 +1225,17 @@ namespace put
             tcp.sample_quality = 0;
             tcp.bind_flags = rt_format[format_index].flags | PEN_BIND_SHADER_RESOURCE;
             tcp.collection_type = params.collection;
-            
+
             u32 h = pen::renderer_create_render_target(tcp);
             pen::renderer_replace_resource(current_target->handle, h, pen::RESOURCE_RENDER_TARGET);
-            
+
             current_target->width = width;
             current_target->height = height;
             current_target->format = new_format;
             current_target->num_arrays = params.num_arrays;
             current_target->num_mips = params.num_mips;
             current_target->collection = tcp.collection_type;
-            
+
             for (u32 i = 0; i < num; ++i)
             {
                 if (s_render_targets[i].id_name == target)
@@ -1255,15 +1244,15 @@ namespace put
                     break;
                 }
             }
-            
+
             // update array count for views
-            for(auto& v : s_views)
+            for (auto& v : s_views)
             {
-                for(auto& rt : v.render_targets)
-                    if(rt == current_target->handle)
+                for (auto& rt : v.render_targets)
+                    if (rt == current_target->handle)
                         v.num_arrays = params.num_arrays;
-                
-                if(v.depth_target == current_target->handle)
+
+                if (v.depth_target == current_target->handle)
                     v.num_arrays = params.num_arrays;
             }
         }
@@ -1360,7 +1349,7 @@ namespace put
             // clear depth
             pen::json clear_depth = view["clear_depth"];
 
-			f32 clear_depth_f = 0.0f;
+            f32 clear_depth_f = 0.0f;
 
             if (clear_depth.type() != JSMN_UNDEFINED)
             {
@@ -1488,9 +1477,9 @@ namespace put
 
                 new_view.depth_target = PEN_INVALID_HANDLE;
                 new_view.info_json = view.dumps();
-                
+
                 new_view.view_flags |= mode_from_string(k_view_types, view["type"].as_cstr(), 0);
-                                
+
                 u32 depth_target_index = -1;
                 for (s32 t = 0; t < num_targets; ++t)
                 {
@@ -1564,12 +1553,12 @@ namespace put
                 }
 
                 parse_clear_colour(view, new_view, num_targets);
-                
+
                 // resolve
                 u32 num_resolve = view["resolve"].size();
-                for(u32 i = 0; i < num_resolve; ++i)
+                for (u32 i = 0; i < num_resolve; ++i)
                 {
-                    if(i == depth_target_index)
+                    if (i == depth_target_index)
                     {
                         new_view.depth_resolve_method = view["resolve"][i].as_hash_id();
                     }
@@ -1578,13 +1567,16 @@ namespace put
                         new_view.resolve_method[i] = view["resolve"][i].as_hash_id();
                     }
                 }
-                
-                if(num_resolve > 0)
+
+                if (num_resolve > 0)
                 {
                     new_view.view_flags |= VF_RESOLVE;
-                    
-                    if(num_resolve != num_targets)
-                        dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - view %s number of resolves %i do not match number of targets %i'", new_view.name.c_str(), num_resolve, num_targets);
+
+                    if (num_resolve != num_targets)
+                        dev_console_log_level(
+                            dev_ui::CONSOLE_ERROR,
+                            "[error] pmfx - view %s number of resolves %i do not match number of targets %i'",
+                            new_view.name.c_str(), num_resolve, num_targets);
                 }
 
                 // viewport
@@ -1617,7 +1609,7 @@ namespace put
                 state = _get_render_state(PEN_HASH(depth_stencil_state.c_str()), RS_DEPTH_STENCIL);
                 if (state)
                     new_view.depth_stencil_state = state->handle;
-                
+
                 // stencil ref
                 new_view.stencil_ref = (u32)view["stencil_ref"].as_u8_hex();
 
@@ -1694,7 +1686,7 @@ namespace put
                 // shader and technique
                 Str technique_str = view["technique"].as_str();
                 Str shader_str = view["pmfx_shader"].as_str();
-                
+
                 new_view.id_technique = PEN_HASH(technique_str.c_str());
                 new_view.pmfx_shader = pmfx::load_shader(shader_str.c_str());
                 new_view.technique_permutation = view["permutation"].as_u32();
@@ -1736,8 +1728,8 @@ namespace put
                                               scene_views[ii].as_cstr(), new_view.name.c_str());
                     }
                 }
-                
-                if(scene_views.size() > 0)
+
+                if (scene_views.size() > 0)
                     new_view.view_flags |= VF_SCENE_VIEW;
 
                 // sampler bindings
@@ -1918,7 +1910,7 @@ namespace put
                     match &= rt->format == s_render_targets[i].format;
                     match &= rt->samples == s_render_targets[i].samples;
                     match &= rt->num_arrays == s_render_targets[i].num_arrays;
-                    
+
                     if (match)
                     {
                         s_render_targets[i].flags |= RT_AUX_USED;
@@ -2092,8 +2084,8 @@ namespace put
             for (u32 i = 0; i < rts.size(); ++i)
                 if (rts[i]["always_create"].as_bool() == true)
                     sb_push(targets, rts[i].key());
-            
-            if(targets)
+
+            if (targets)
                 parse_render_targets(render_config, targets);
         }
 
@@ -2336,9 +2328,9 @@ namespace put
             // get views for view set
             pen::json j_view_set = j_view_sets[s_view_set_name.c_str()];
             u32       num_views_in_set = j_view_set.size();
-            
+
             s_views.clear();
-            
+
             if (num_views_in_set > 0)
             {
                 // views from "view_set"
@@ -2431,7 +2423,7 @@ namespace put
         void pmfx_config_hotload()
         {
             // wait a bit and flush the gpu
-            for(u32 i = 0; i < 6; ++i)
+            for (u32 i = 0; i < 6; ++i)
             {
                 pen::renderer_present();
                 pen::renderer_dispatch();
@@ -2535,10 +2527,10 @@ namespace put
                 return;
 
             pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-            
+
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
-            
+
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
@@ -2547,7 +2539,7 @@ namespace put
             // stash output for debug
             if (!v.stash_output || v.render_targets[0] == PEN_INVALID_HANDLE)
                 return;
-            
+
             struct stash_rt
             {
                 u32 handle;
@@ -2555,9 +2547,9 @@ namespace put
                 f32 height;
                 f32 aspect;
             };
-            
+
             static std::vector<stash_rt> s_stash_rt;
-            
+
             if (v.stashed_output_rt == PEN_INVALID_HANDLE)
             {
                 for (auto& r : s_stash_rt)
@@ -2567,10 +2559,10 @@ namespace put
                         v.stashed_output_rt = r.handle;
                         v.stashed_rt_aspect = r.aspect;
                     }
-                    
+
                     break;
                 }
-                
+
                 if (v.stashed_output_rt == PEN_INVALID_HANDLE)
                 {
                     pen::texture_creation_params tcp;
@@ -2590,37 +2582,37 @@ namespace put
                     tcp.bind_flags = PEN_BIND_RENDER_TARGET | PEN_BIND_SHADER_RESOURCE;
                     tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
                     u32 h = pen::renderer_create_render_target(tcp);
-                    
+
                     v.stashed_output_rt = h;
                     v.stashed_rt_aspect = vp.width / vp.height;
                     s_stash_rt.push_back({h, vp.width, vp.height, v.stashed_rt_aspect});
                 }
             }
-            
+
             // render
             static u32                     pp_shader = pmfx::load_shader("post_process");
             static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
-            
+
             pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-            
+
             u32 wlss = get_render_state(k_id_wrap_linear, RS_SAMPLER);
-            
+
             pen::renderer_set_texture(v.render_targets[0], wlss, 0, pen::TEXTURE_BIND_PS);
-            
+
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
-            
+
             static hash_id id_technique = PEN_HASH("blit");
             if (!pmfx::set_technique_perm(pp_shader, id_technique))
                 PEN_ASSERT(0);
-            
+
             pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
-            
+
             v.stash_output = false;
         }
-        
+
         void render_abstract_view(view_params& v)
         {
             scene_view sv;
@@ -2628,48 +2620,48 @@ namespace put
             for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                 v.render_functions[rf](sv);
         }
-        
+
         void resolve_view_targets(view_params& v)
         {
             static u32 pmfx_resolve = pmfx::load_shader("msaa_resolve");
-            
+
             // rt texture may still be bound on output
             // todo.. remove this? need to check with d3d11 validation layer
             pen::viewport vp = {0, 0, (f32)pen_window.width, (f32)pen_window.height};
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-            
+
             // rt texture may still be bound on input
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
-            
+
             // resolve colour
-            for(u32 i = 0; i < v.num_colour_targets; ++i)
+            for (u32 i = 0; i < v.num_colour_targets; ++i)
             {
-                if(v.resolve_method[i] == 0)
+                if (v.resolve_method[i] == 0)
                     continue;
 
                 pmfx::set_technique_perm(pmfx_resolve, v.resolve_method[i]);
                 pen::renderer_resolve_target(v.render_targets[i], pen::RESOLVE_CUSTOM);
             }
-            
+
             // resolve depth
-            if(is_valid_non_null(v.depth_target))
+            if (is_valid_non_null(v.depth_target))
             {
                 //pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("depth4x"));
                 //pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_CUSTOM);
-                
+
                 pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("average_4x"));
                 pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_CUSTOM);
             }
-            
+
             // set textures and buffers back to prevent d3d validation layer complaining
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
         }
-        
+
         void render_view(view_params& v)
         {
             // early out.. nothing to render
@@ -2733,7 +2725,7 @@ namespace put
             {
                 sv.array_index = a;
                 sv.num_arrays = v.num_arrays;
-                
+
                 // generate 3d view proj matrix
                 if (v.camera)
                 {
@@ -2755,7 +2747,7 @@ namespace put
                 // so that ping-pong buffers get unbound from rt before being bound on samplers
                 pen::renderer_set_targets(v.render_targets, v.num_colour_targets, v.depth_target, a);
                 pen::renderer_clear(v.clear_state, a);
-                
+
                 // bind view samplers.. render targets, global textures
                 for (auto& sb : v.sampler_bindings)
                     pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
@@ -2769,7 +2761,7 @@ namespace put
 
                     pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
                 }
-                
+
                 // bind any per view cbuffers
                 u32 num_samplers = v.sampler_bindings.size();
                 if (num_samplers > 0)
@@ -2777,15 +2769,16 @@ namespace put
                     pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers * sizeof(vec4f));
                     pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, pen::CBUFFER_BIND_PS);
                 }
-                
+
                 // filters
                 if (is_valid(v.cbuffer_filter))
                     pen::renderer_set_constant_buffer(v.cbuffer_filter, CB_FILTER_KERNEL, pen::CBUFFER_BIND_PS);
-                
+
                 // technique cbuffer
                 if (is_valid(v.cbuffer_technique))
                 {
-                    pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data, sizeof(technique_constant_data));
+                    pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data,
+                                                sizeof(technique_constant_data));
                     pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, pen::CBUFFER_BIND_PS);
                 }
 
@@ -2793,54 +2786,54 @@ namespace put
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                     v.render_functions[rf](sv);
             }
-            
-            if(v.view_flags & VF_RESOLVE)
+
+            if (v.view_flags & VF_RESOLVE)
                 resolve_view_targets(v);
-            
+
             // for debug
             stash_output(v, vp);
         }
-        
+
         void render_view(hash_id view)
         {
             for (auto& v : s_views)
             {
-                if(v.id_name == view)
+                if (v.id_name == view)
                 {
                     render_view(v);
                     return;
                 }
             }
         }
-        
+
         void render_post_process(view_params& v)
         {
             virtual_rt_reset();
-            
+
             for (auto& v : v.post_process_views)
             {
                 v.render_functions.clear();
                 v.render_functions.push_back(&fullscreen_quad);
-                
+
                 render_view(v);
             }
         }
-        
+
         void render()
         {
             for (auto& v : s_views)
             {
-                if(v.view_flags & VF_TEMPLATE)
+                if (v.view_flags & VF_TEMPLATE)
                     continue;
-                
-                if(v.view_flags & VF_ABSTRACT)
+
+                if (v.view_flags & VF_ABSTRACT)
                 {
                     render_abstract_view(v);
                 }
                 else
                 {
                     render_view(v);
-                    
+
                     if (v.post_process_flags & PP_ENABLED)
                         render_post_process(v);
                 }
@@ -3111,7 +3104,7 @@ namespace put
                             view_items.push_back(v.name.c_str());
                             pp_view_indices.push_back(c);
                         }
-                        
+
                         ++c;
                     }
 
@@ -3123,12 +3116,12 @@ namespace put
                     {
                         ImGui::Combo("Input View", &s_selected_input_view, &view_items[0], view_items.size());
                     }
-                    
-                    if(pp_view_indices.size() == 0)
+
+                    if (pp_view_indices.size() == 0)
                         return;
 
                     s32 pp_view_index = pp_view_indices[s_selected_input_view];
-                    
+
                     std::vector<Str>&         s_post_process_chain = s_views[pp_view_index].post_process_chain;
                     std::vector<view_params>& s_post_process_passes = s_views[pp_view_index].post_process_views;
                     view_params&              edit_view = s_views[pp_view_index];

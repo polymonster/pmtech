@@ -1,4 +1,5 @@
 #include "file_system.h"
+#include "hash.h"
 #include "loader.h"
 #include "memory.h"
 #include "os.h"
@@ -8,7 +9,6 @@
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
-#include "hash.h"
 
 using namespace put;
 
@@ -61,7 +61,7 @@ PEN_TRV pen::user_entry(void* params)
     u32 compute_shader = pmfx::load_shader("compute");
 
     u32 test_texture = put::load_texture("data/textures/formats/texfmt_rgba8.dds");
-    
+
     // create a texture to write into
     texture_info ti;
     put::get_texture_info(test_texture, ti);
@@ -71,7 +71,7 @@ PEN_TRV pen::user_entry(void* params)
     ti.bind_flags |= PEN_BIND_SHADER_WRITE;
     ti.format = PEN_TEX_FORMAT_RGBA8_UNORM;
     u32 test_output = pen::renderer_create_texture(ti);
-    
+
     // manually scale 16:9 to 1:1
     f32 x_size = 0.5f / ((f32)pen_window.width / pen_window.height);
 
@@ -135,18 +135,18 @@ PEN_TRV pen::user_entry(void* params)
     {
         // do a compute job to make the image greyscale
         pmfx::set_technique_perm(compute_shader, PEN_HASH("greyscale"), 0);
-        pen::renderer_set_texture(test_texture, 0, 0, pen::TEXTURE_BIND_CS);	// read
-        pen::renderer_set_texture(test_output, 0, 1, pen::TEXTURE_BIND_CS);		// write
-        
-        uint3 grid = { ti.width, ti.height, 1 };
-        uint3 threads = { 16, 16, 1 };
-        
+        pen::renderer_set_texture(test_texture, 0, 0, pen::TEXTURE_BIND_CS); // read
+        pen::renderer_set_texture(test_output, 0, 1, pen::TEXTURE_BIND_CS);  // write
+
+        uint3 grid = {ti.width, ti.height, 1};
+        uint3 threads = {16, 16, 1};
+
         pen::renderer_dispatch_compute(grid, threads);
 
-		// unbind
-		pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
-		pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
-        
+        // unbind
+        pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
+        pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
+
         pen::renderer_set_rasterizer_state(raster_state);
 
         // bind back buffer and clear
@@ -173,8 +173,8 @@ PEN_TRV pen::user_entry(void* params)
             pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
-		// unbind textures
-		pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_PS);
+        // unbind textures
+        pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_PS);
 
         // present
         pen::renderer_present();

@@ -21,9 +21,9 @@
 
 namespace physics
 {
-    static pen::ring_buffer<physics_cmd>    s_cmd_buffer;
-    static pen::slot_resources              s_physics_slot_resources;
-    static pen::slot_resources              s_p2p_slot_resources;
+    static pen::ring_buffer<physics_cmd> s_cmd_buffer;
+    static pen::slot_resources           s_physics_slot_resources;
+    static pen::slot_resources           s_p2p_slot_resources;
 
     void exec_cmd(const physics_cmd& cmd, f32 dt_ms)
     {
@@ -264,7 +264,7 @@ namespace physics
         mat4* const& fb = g_readable_data.output_matrices.frontbuffer();
         return fb[entity_index];
     }
-    
+
     maths::transform get_rb_transform(const u32& entity_index)
     {
         maths::transform* const& fb = g_readable_data.output_transforms.frontbuffer();
@@ -353,16 +353,16 @@ namespace physics
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
         pc.resource_slot = resource_slot;
-        
+
         pc.add_compound_rb.children_handles = nullptr;
         *child_handles_out = nullptr;
-        for(u32 i = 0; i < crbp.num_shapes; ++i)
+        for (u32 i = 0; i < crbp.num_shapes; ++i)
         {
             u32 cs = pen::slot_resources_get_next(&s_physics_slot_resources);
             sb_push(pc.add_compound_rb.children_handles, cs);
             sb_push(*child_handles_out, cs);
         }
-        
+
         s_cmd_buffer.put(pc);
 
         return resource_slot;
@@ -428,7 +428,7 @@ namespace physics
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
         pc.resource_slot = resource_slot;
-        
+
         s_cmd_buffer.put(pc);
 
         return resource_slot;
@@ -522,7 +522,7 @@ namespace physics
         pc.contact_test = ctp;
         s_cmd_buffer.put(pc);
     }
-    
+
     void step()
     {
         physics_cmd pc;

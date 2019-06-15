@@ -1514,13 +1514,13 @@ namespace put
         void init(ecs::ecs_scene* scene)
         {
             s_main_scene = scene;
-			ecs::ecs_controller ec;
-			ec.camera = &s_volume_raster_ortho;
-			ec.update_func = &volume_rasteriser_update;
-			ec.name = "volume_rasteriser_camera";
-			ec.id_name = PEN_HASH(ec.name.c_str());
+            ecs::ecs_controller ec;
+            ec.camera = &s_volume_raster_ortho;
+            ec.update_func = &volume_rasteriser_update;
+            ec.name = "volume_rasteriser_camera";
+            ec.id_name = PEN_HASH(ec.name.c_str());
 
-			ecs::register_ecs_controller(scene, ec);
+            ecs::register_ecs_controller(scene, ec);
         }
 
         void show_dev_ui()
@@ -1701,7 +1701,7 @@ namespace put
                 rrp.num_mips = 1;
                 rrp.format = "rgba8";
                 pmfx::resize_render_target(id_volume_raster_rt, rrp);
-                
+
                 rrp.format = "d24s8";
                 pmfx::resize_render_target(id_volume_raster_rt, rrp);
 

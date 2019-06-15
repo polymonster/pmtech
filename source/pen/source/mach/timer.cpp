@@ -31,7 +31,7 @@ namespace pen
     f32 ticks_to_ns;
 
     //timer* timers;
-    
+
     mpmc_stretchy_buffer<timer> timers;
 
     u32 next_free = 0;
@@ -52,12 +52,12 @@ namespace pen
 
     u32 timer_create(const c8* name)
     {
-        u32 index = timers.size();
+        u32   index = timers.size();
         timer nt;
         nt.name = name;
         timers.push_back(nt);
         return index;
-        
+
         /*
         int index = sb_count(timers);
 

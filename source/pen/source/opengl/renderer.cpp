@@ -465,11 +465,11 @@ namespace pen
     }
 
     context_state g_context;
-    
+
     void _set_depth_stencil_state(u32 dss, u8 ref)
     {
         resource_allocation& res = _res_pool[dss];
-        
+
         // depth
         if (res.depth_stencil->depth_enable)
         {
@@ -479,36 +479,30 @@ namespace pen
         {
             CHECK_CALL(glDisable(GL_DEPTH_TEST));
         }
-        
+
         // stencil
         CHECK_CALL(glDepthFunc(res.depth_stencil->depth_func));
         CHECK_CALL(glDepthMask(res.depth_stencil->depth_write_mask));
-        
-        if(res.depth_stencil->stencil_enable)
+
+        if (res.depth_stencil->stencil_enable)
         {
             CHECK_CALL(glEnable(GL_STENCIL_TEST));
             CHECK_CALL(glStencilMask(res.depth_stencil->stencil_write_mask));
-            
+
             // front
-            CHECK_CALL(glStencilOpSeparate(GL_FRONT,
-                                           res.depth_stencil->front_face.stencil_failop,
+            CHECK_CALL(glStencilOpSeparate(GL_FRONT, res.depth_stencil->front_face.stencil_failop,
                                            res.depth_stencil->front_face.stencil_depth_failop,
                                            res.depth_stencil->front_face.stencil_passop));
-            
-            CHECK_CALL(glStencilFuncSeparate(GL_FRONT,
-                                             res.depth_stencil->front_face.stencil_func,
-                                             ref,
+
+            CHECK_CALL(glStencilFuncSeparate(GL_FRONT, res.depth_stencil->front_face.stencil_func, ref,
                                              res.depth_stencil->stencil_read_mask));
-            
+
             // back
-            CHECK_CALL(glStencilOpSeparate(GL_BACK,
-                                           res.depth_stencil->back_face.stencil_failop,
+            CHECK_CALL(glStencilOpSeparate(GL_BACK, res.depth_stencil->back_face.stencil_failop,
                                            res.depth_stencil->back_face.stencil_depth_failop,
                                            res.depth_stencil->back_face.stencil_passop));
-            
-            CHECK_CALL(glStencilFuncSeparate(GL_BACK,
-                                             res.depth_stencil->back_face.stencil_func,
-                                             ref,
+
+            CHECK_CALL(glStencilFuncSeparate(GL_BACK, res.depth_stencil->back_face.stencil_func, ref,
                                              res.depth_stencil->stencil_read_mask));
         }
         else
@@ -520,7 +514,7 @@ namespace pen
     void direct::renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         _res_pool[resource_slot].clear_state.rgba[0] = cs.r;
         _res_pool[resource_slot].clear_state.rgba[1] = cs.g;
         _res_pool[resource_slot].clear_state.rgba[2] = cs.b;
@@ -616,7 +610,7 @@ namespace pen
     {
         pen_make_gl_context_current();
     }
-    
+
     void direct::renderer_sync()
     {
         // unused for opengl, required to sync for metal
@@ -724,7 +718,7 @@ namespace pen
     void direct::renderer_load_shader(const shader_load_params& params, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         resource_allocation& res = _res_pool[resource_slot];
 
         u32 internal_type = params.type;
@@ -797,7 +791,7 @@ namespace pen
     void direct::renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         resource_allocation& res = _res_pool[resource_slot];
 
         CHECK_CALL(glGenBuffers(1, &res.handle));
@@ -812,7 +806,7 @@ namespace pen
     void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         shader_link_params slp = params;
         u32                program_index = link_program_internal(0, 0, &slp);
 
@@ -870,7 +864,7 @@ namespace pen
     void direct::renderer_draw_auto()
     {
     }
-    
+
     void direct::renderer_dispatch_compute(uint3 grid, uint3 num_threads)
     {
     }
@@ -878,7 +872,7 @@ namespace pen
     void direct::renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         resource_allocation& res = _res_pool[resource_slot];
 
         res.input_layout = new input_layout;
@@ -1110,9 +1104,9 @@ namespace pen
                 CHECK_CALL(glBeginTransformFeedback(primitive_topology));
             }
         }
-        
-        if(g_bound_state.depth_stencil_state != g_current_state.depth_stencil_state ||
-           g_bound_state.stencil_ref != g_current_state.stencil_ref)
+
+        if (g_bound_state.depth_stencil_state != g_current_state.depth_stencil_state ||
+            g_bound_state.stencil_ref != g_current_state.stencil_ref)
         {
             _set_depth_stencil_state(g_current_state.depth_stencil_state, g_current_state.stencil_ref);
             g_bound_state.depth_stencil_state = g_current_state.depth_stencil_state;
@@ -1335,7 +1329,7 @@ namespace pen
         ti.handle = handle;
         ti.max_mip_level = tcp.num_mips - 1;
         ti.target = texture_target;
-        
+
         if (tcp.width != tcp.height && ti.max_mip_level > 0)
         {
             ti.max_mip_level = tcp.num_mips - 2;
@@ -1347,7 +1341,7 @@ namespace pen
     void direct::renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
     {
         _res_pool.grow(resource_slot);
-        
+
         resource_allocation& res = _res_pool[resource_slot];
 
         res.type = RES_RENDER_TARGET;
@@ -1362,19 +1356,19 @@ namespace pen
         {
             _tcp.width = pen_window.width / tcp.height;
             _tcp.height = pen_window.height / tcp.height;
-            
+
             if (track)
             {
                 managed_render_target man_rt = {tcp, resource_slot};
                 sb_push(s_managed_render_targets, man_rt);
             }
         }
-        
-        if(tcp.num_mips == -1)
+
+        if (tcp.num_mips == -1)
             _tcp.num_mips = calc_num_mips(_tcp.width, _tcp.height);
-        
+
         // generate mips or resolve
-        if(tcp.num_mips > 1)
+        if (tcp.num_mips > 1)
             res.render_target.invalidate = 1;
 
         // null handles
@@ -1479,17 +1473,17 @@ namespace pen
         {
             resource_allocation& depth_res = _res_pool[depth_target];
 
-            if(depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
+            if (depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
             {
-                glFramebufferTextureLayer(GL_FRAMEBUFFER,
-                                          GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle, 0, depth_face);
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle,
+                                          0, depth_face);
             }
             else
             {
                 u32 target = GL_TEXTURE_2D;
                 if (depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE)
                     target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + depth_face;
-                
+
                 if (msaa)
                 {
                     CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE,
@@ -1507,17 +1501,17 @@ namespace pen
         {
             resource_allocation& colour_res = _res_pool[colour_targets[i]];
 
-            if(colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
+            if (colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
             {
-                glFramebufferTextureLayer(GL_FRAMEBUFFER,
-                                          k_draw_buffers[i], colour_res.render_target.texture.handle, 0, colour_face);
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0,
+                                          colour_face);
             }
             else
             {
                 u32 target = GL_TEXTURE_2D;
                 if (colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE)
                     target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + colour_face;
-                
+
                 if (msaa)
                 {
                     CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, k_draw_buffers[i], GL_TEXTURE_2D_MULTISAMPLE,
@@ -1650,7 +1644,7 @@ namespace pen
     void direct::renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         _res_pool[resource_slot].type = RES_TEXTURE;
 
         if (tcp.collection_type == TEXTURE_COLLECTION_VOLUME)
@@ -1662,7 +1656,7 @@ namespace pen
     void direct::renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         _res_pool[resource_slot].sampler_state = (sampler_creation_params*)memory_alloc(sizeof(scp));
 
         memcpy(_res_pool[resource_slot].sampler_state, &scp, sizeof(scp));
@@ -1694,9 +1688,9 @@ namespace pen
                 target = GL_TEXTURE_2D_MULTISAMPLE;
                 CHECK_CALL(glBindTexture(target, res.render_target.texture_msaa.handle));
                 max_mip = res.render_target.texture_msaa.max_mip_level;
-                
+
                 // auto mip map
-                if(max_mip > 1 && res.render_target.invalidate)
+                if (max_mip > 1 && res.render_target.invalidate)
                 {
                     res.render_target.invalidate = 0;
                     CHECK_CALL(glGenerateMipmap(GL_TEXTURE_2D_MULTISAMPLE));
@@ -1706,9 +1700,9 @@ namespace pen
             {
                 CHECK_CALL(glBindTexture(target, res.render_target.texture.handle));
                 max_mip = res.render_target.texture.max_mip_level;
-                
+
                 // auto mip map
-                if(max_mip > 1 && res.render_target.invalidate)
+                if (max_mip > 1 && res.render_target.invalidate)
                 {
                     res.render_target.invalidate = 0;
                     CHECK_CALL(glGenerateMipmap(target));
@@ -1757,9 +1751,9 @@ namespace pen
         };
 
         // address mode
-        if(target == GL_TEXTURE_2D_ARRAY)
+        if (target == GL_TEXTURE_2D_ARRAY)
             CHECK_CALL(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0));
-        
+
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_S, sampler_state->address_u));
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_T, sampler_state->address_v));
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_R, sampler_state->address_w));
@@ -1783,7 +1777,7 @@ namespace pen
     void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         auto& rs = _res_pool[resource_slot].raster_state;
 
         rs = {0};
@@ -1824,7 +1818,7 @@ namespace pen
     void direct::renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         _res_pool[resource_slot].blend_state = (blend_creation_params*)memory_alloc(sizeof(blend_creation_params));
 
         blend_creation_params* blend_state = _res_pool[resource_slot].blend_state;
@@ -1974,7 +1968,7 @@ namespace pen
     void direct::renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
-        
+
         _res_pool[resource_slot].depth_stencil = (depth_stencil_creation_params*)memory_alloc(sizeof(dscp));
 
         memcpy(_res_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
@@ -1984,7 +1978,7 @@ namespace pen
     {
         g_current_state.depth_stencil_state = depth_stencil_state;
     }
-    
+
     void direct::renderer_set_stencil_ref(u8 ref)
     {
         g_current_state.stencil_ref = ref;
@@ -2124,7 +2118,7 @@ namespace pen
     u32 direct::renderer_initialise(void*, u32, u32)
     {
         _res_pool.init(2048);
-        
+
         static Str str_glsl_version;
         static Str str_gl_version;
         static Str str_gl_renderer;

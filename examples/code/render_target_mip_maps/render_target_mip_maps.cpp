@@ -4,10 +4,10 @@ using namespace put;
 using namespace ecs;
 
 pen::window_creation_params pen_window{
-    1280,                     // width
-    720,                      // height
-    4,                        // MSAA samples
-    "render_target_mip_maps"  // window title / process name
+    1280,                    // width
+    720,                     // height
+    4,                       // MSAA samples
+    "render_target_mip_maps" // window title / process name
 };
 
 void mip_ui()
@@ -18,29 +18,28 @@ void mip_ui()
     const pmfx::render_target* r = pmfx::get_render_target(PEN_HASH("mip_mapped"));
     if (!r)
         return;
-    
+
     f32 w, h;
     u32 div = 2;
-    for(u32 i = 0; i < 8; ++i)
+    for (u32 i = 0; i < 8; ++i)
     {
         pmfx::get_render_target_dimensions(r, w, h);
         ImVec2 size(w / div, h / div);
         ImGui::Image(IMG(r->handle), size);
-        
-        if(i % 4 != 0)
+
+        if (i % 4 != 0)
             ImGui::SameLine();
-        
+
         div <<= 1;
     }
-    
-    ImGui::End();
 
+    ImGui::End();
 }
 
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
     pmfx::init("data/configs/render_target_mip_maps.jsn");
-    
+
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
@@ -90,7 +89,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 
             pos.x += d / 2;
         }
-        
+
         pos.y += d / 2;
     }
 }

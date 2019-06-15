@@ -172,7 +172,7 @@ bool two_sided)
     l[1] = mul(minv, points[1] - p);
     l[2] = mul(minv, points[2] - p);
     l[3] = mul(minv, points[3] - p);
-	l[4] = l[3];
+    l[4] = l[3];
     
     //uv
     float3 ll[4];
@@ -235,7 +235,7 @@ bool two_sided)
     float3 l[5];
     for(int i = 0; i < 4; ++i)
         l[i] = mul(minv, points[i] - p);
-	l[4] = l[3];
+    l[4] = l[3];
     
     int nc;
     clip_quad_to_horizon(l, nc);

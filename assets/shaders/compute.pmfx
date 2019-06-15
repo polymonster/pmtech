@@ -16,14 +16,14 @@ pmfx:
 {    
     "greyscale":
     {
-		"supported_platforms":
-		{
-			"hlsl": ["5_0"],
-			"metal": ["all"]
-		},
-		
+        "supported_platforms":
+        {
+            "hlsl": ["5_0"],
+            "metal": ["all"]
+        },
+        
         "cs" : "cs_main_greyscale",
-		"threads": [16, 16, 1]
+        "threads": [16, 16, 1]
     }
 }
 

@@ -308,8 +308,8 @@ namespace pen
         u32 active_colour_target[8] = {0};
         u32 active_depth_target = 0;
         u32 num_active_colour_targets = 1;
-		u32 depth_stencil_state = 0;
-		u8 stencil_ref = 0;
+        u32 depth_stencil_state = 0;
+        u8  stencil_ref = 0;
 
         u32 active_query_index;
     };
@@ -329,49 +329,49 @@ namespace pen
     {
         ID3D11Texture2D*           texture = nullptr;
         ID3D11ShaderResourceView*  srv = nullptr;
-		ID3D11UnorderedAccessView* uav = nullptr;
+        ID3D11UnorderedAccessView* uav = nullptr;
     };
 
     struct texture3d_internal
     {
         ID3D11Texture3D*           texture = nullptr;
         ID3D11ShaderResourceView*  srv = nullptr;
-		ID3D11UnorderedAccessView* uav = nullptr;
+        ID3D11UnorderedAccessView* uav = nullptr;
     };
 
     struct texture_resource
     {
-        ID3D11Resource*				resource = nullptr;
-        ID3D11ShaderResourceView*	srv = nullptr;
-		ID3D11UnorderedAccessView*	uav = nullptr;
+        ID3D11Resource*            resource = nullptr;
+        ID3D11ShaderResourceView*  srv = nullptr;
+        ID3D11UnorderedAccessView* uav = nullptr;
     };
 
     struct render_target_internal
     {
-        texture2d_internal      tex;
+        texture2d_internal       tex;
         ID3D11RenderTargetView** rt;
 
-        texture2d_internal      tex_msaa;
+        texture2d_internal       tex_msaa;
         ID3D11RenderTargetView** rt_msaa;
 
-        texture2d_internal      tex_read_back;
-        texture2d_internal      tex_resolve;
-        bool                    msaa_resolve_readback = false;
+        texture2d_internal tex_read_back;
+        texture2d_internal tex_resolve;
+        bool               msaa_resolve_readback = false;
 
         DXGI_FORMAT              format;
         texture_creation_params* tcp;
 
-        u32                     invalidate;
-        u32                     num_arrays = 1;
-        bool                    has_mips = false;
+        u32  invalidate;
+        u32  num_arrays = 1;
+        bool has_mips = false;
     };
 
     struct depth_stencil_target_internal
     {
-        texture2d_internal      tex;
+        texture2d_internal       tex;
         ID3D11DepthStencilView** ds;
 
-        texture2d_internal      tex_msaa;
+        texture2d_internal       tex_msaa;
         ID3D11DepthStencilView** ds_msaa;
 
         texture2d_internal tex_read_back;
@@ -379,9 +379,9 @@ namespace pen
         DXGI_FORMAT              format;
         texture_creation_params* tcp;
 
-        u32                     invalidate;
-        u32                     num_arrays = 1;
-        bool                    has_mips = false;
+        u32  invalidate;
+        u32  num_arrays = 1;
+        bool has_mips = false;
     };
 
     struct shader_program
@@ -415,7 +415,7 @@ namespace pen
             ID3D11VertexShader*            vertex_shader;
             ID3D11InputLayout*             input_layout;
             ID3D11PixelShader*             pixel_shader;
-			ID3D11ComputeShader*           compute_shader;
+            ID3D11ComputeShader*           compute_shader;
             ID3D11GeometryShader*          geometry_shader;
             stream_out_shader              stream_out_shader;
             ID3D11Buffer*                  generic_buffer;
@@ -431,7 +431,7 @@ namespace pen
             shader_program                 shader_program;
         };
     };
-    static res_pool <resource_allocation> _res_pool;
+    static res_pool<resource_allocation> _res_pool;
 
     struct managed_rt
     {
@@ -446,8 +446,7 @@ namespace pen
     {
         _res_pool.grow(resource_slot);
 
-        _res_pool[resource_slot].clear_state =
-            (pen::clear_state_internal*)pen::memory_alloc(sizeof(clear_state_internal));
+        _res_pool[resource_slot].clear_state = (pen::clear_state_internal*)pen::memory_alloc(sizeof(clear_state_internal));
 
         _res_pool[resource_slot].clear_state->rgba[0] = cs.r;
         _res_pool[resource_slot].clear_state->rgba[1] = cs.g;
@@ -478,12 +477,12 @@ namespace pen
     {
         // unused on dx11 so far
     }
-    
+
     void direct::renderer_sync()
     {
         // unused for d3d, required to sync for metal
     }
-    
+
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
         u32 flags = _res_pool[clear_state_index].clear_state->flags;
@@ -506,9 +505,9 @@ namespace pen
                     if (rt->rt_msaa && rt->rt_msaa[colour_face])
                         colour_rtv = _res_pool[ct].render_target->rt_msaa[colour_face];
 
-                    if(colour_rtv)
+                    if (colour_rtv)
                         s_immediate_context->ClearRenderTargetView(colour_rtv,
-                                                               &_res_pool[clear_state_index].clear_state->rgba[0]);
+                                                                   &_res_pool[clear_state_index].clear_state->rgba[0]);
                 }
             }
         }
@@ -653,18 +652,18 @@ namespace pen
 
             u32 resource_index = resource_slot;
 
-			// Create a vertex shader + stream out geometry shader
+            // Create a vertex shader + stream out geometry shader
             CHECK_CALL(s_device->CreateVertexShader(params.byte_code, params.byte_code_size, nullptr, &sos.vs));
             CHECK_CALL(s_device->CreateGeometryShaderWithStreamOutput(
                 params.byte_code, params.byte_code_size, (const D3D11_SO_DECLARATION_ENTRY*)params.so_decl_entries,
                 params.so_num_entries, NULL, 0, 0, NULL, &sos.gs));
         }
-		else if (params.type == PEN_SHADER_TYPE_CS)
-		{
-			// Create a compute shader
-			CHECK_CALL(s_device->CreateComputeShader(params.byte_code, params.byte_code_size, nullptr,
-				&_res_pool[resource_index].compute_shader));
-		}
+        else if (params.type == PEN_SHADER_TYPE_CS)
+        {
+            // Create a compute shader
+            CHECK_CALL(s_device->CreateComputeShader(params.byte_code, params.byte_code_size, nullptr,
+                                                     &_res_pool[resource_index].compute_shader));
+        }
     }
 
     void direct::renderer_set_shader(u32 shader_index, u32 shader_type)
@@ -702,10 +701,10 @@ namespace pen
 
             s_immediate_context->OMSetDepthStencilState(dss, 0);
         }
-		else if (shader_type == PEN_SHADER_TYPE_CS)
-		{
-			s_immediate_context->CSSetShader(_res_pool[shader_index].compute_shader, nullptr, 0);
-		}
+        else if (shader_type == PEN_SHADER_TYPE_CS)
+        {
+            s_immediate_context->CSSetShader(_res_pool[shader_index].compute_shader, nullptr, 0);
+        }
     }
 
     void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
@@ -988,8 +987,7 @@ namespace pen
         _res_pool[resource_index].type = RES_RENDER_TARGET;
 
         // alloc rt
-        _res_pool[resource_index].render_target =
-            (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
+        _res_pool[resource_index].render_target = (render_target_internal*)pen::memory_alloc(sizeof(render_target_internal));
         pen::memory_zero(_res_pool[resource_index].render_target, sizeof(render_target_internal));
 
         // format required for resolve
@@ -1044,7 +1042,7 @@ namespace pen
             // create msaa
             renderer_create_render_target_multi(_tcp, &_res_pool[resource_index].render_target->tex_msaa,
                                                 &_res_pool[resource_index].depth_target->ds_msaa,
-                &_res_pool[resource_index].render_target->rt_msaa);
+                                                &_res_pool[resource_index].render_target->rt_msaa);
 
             // for resolve later
             _res_pool[resource_index].render_target->tcp = new texture_creation_params;
@@ -1092,7 +1090,7 @@ namespace pen
             {
                 auto rt = _res_pool[colour_target].render_target;
 
-                if(rt->rt_msaa && rt->rt_msaa[colour_face])
+                if (rt->rt_msaa && rt->rt_msaa[colour_face])
                     colour_rtv[i] = _res_pool[colour_target].render_target->rt_msaa[colour_face];
                 else
                     colour_rtv[i] = _res_pool[colour_target].render_target->rt[colour_face];
@@ -1158,8 +1156,7 @@ namespace pen
 
             _res_pool[resource_index].type = RES_TEXTURE_3D;
             _res_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
-            CHECK_CALL(
-                s_device->CreateTexture3D(&texture_desc, nullptr, &(_res_pool[resource_index].texture_3d->texture)));
+            CHECK_CALL(s_device->CreateTexture3D(&texture_desc, nullptr, &(_res_pool[resource_index].texture_3d->texture)));
         }
         else
         {
@@ -1175,8 +1172,7 @@ namespace pen
 
             _res_pool[resource_index].type = RES_TEXTURE;
             _res_pool[resource_index].texture_2d = (texture2d_internal*)memory_alloc(sizeof(texture2d_internal));
-            CHECK_CALL(
-                s_device->CreateTexture2D(&texture_desc, nullptr, &(_res_pool[resource_index].texture_2d->texture)));
+            CHECK_CALL(s_device->CreateTexture2D(&texture_desc, nullptr, &(_res_pool[resource_index].texture_2d->texture)));
         }
 
         texture_resource* tex_res = _res_pool[resource_index].texture_resource;
@@ -1224,21 +1220,21 @@ namespace pen
 
         CHECK_CALL(s_device->CreateShaderResourceView(tex_res->resource, &resource_view_desc, &tex_res->srv));
 
-		tex_res->uav = nullptr;
+        tex_res->uav = nullptr;
 
-		if (tcp.bind_flags & PEN_BIND_SHADER_WRITE)
-		{
-			D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-			ZeroMemory(&uav_desc, sizeof(uav_desc));
-			uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-			uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-			uav_desc.Texture2D.MipSlice = 0;
+        if (tcp.bind_flags & PEN_BIND_SHADER_WRITE)
+        {
+            D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+            ZeroMemory(&uav_desc, sizeof(uav_desc));
+            uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+            uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+            uav_desc.Texture2D.MipSlice = 0;
 
-			CHECK_CALL(s_device->CreateUnorderedAccessView(tex_res->resource, &uav_desc, &tex_res->uav));
-		}
+            CHECK_CALL(s_device->CreateUnorderedAccessView(tex_res->resource, &uav_desc, &tex_res->uav));
+        }
 
-		// reference for structured bufffers
-		/*
+        // reference for structured bufffers
+        /*
 		if ( descBuf.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS )
 		{
 			// This is a Raw Buffer
@@ -1272,13 +1268,13 @@ namespace pen
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
     {
-        static ID3D11SamplerState*			null_sampler = nullptr;
-        static ID3D11ShaderResourceView*	null_srv = nullptr;
-		static ID3D11UnorderedAccessView*	null_uav = nullptr;
+        static ID3D11SamplerState*        null_sampler = nullptr;
+        static ID3D11ShaderResourceView*  null_srv = nullptr;
+        static ID3D11UnorderedAccessView* null_uav = nullptr;
 
-        ID3D11SamplerState**				sampler = &null_sampler;
-        ID3D11ShaderResourceView**			srv = &null_srv;
-		ID3D11UnorderedAccessView**			uav = &null_uav;
+        ID3D11SamplerState**        sampler = &null_sampler;
+        ID3D11ShaderResourceView**  srv = &null_srv;
+        ID3D11UnorderedAccessView** uav = &null_uav;
 
         if (sampler_index > 0)
         {
@@ -1296,7 +1292,6 @@ namespace pen
                         gen_mips = true;
             }
 
-
             if (_res_pool[texture_index].type == RES_RENDER_TARGET && bind_flags & TEXTURE_BIND_MSAA)
             {
                 render_target_internal* rt = _res_pool[texture_index].render_target;
@@ -1313,11 +1308,11 @@ namespace pen
                 _res_pool[texture_index].render_target->invalidate = 0;
             }
 
-			auto* tex_res = _res_pool[texture_index].texture_resource;			
-			if (tex_res->uav)
-			{
-				uav = &tex_res->uav;
-			}
+            auto* tex_res = _res_pool[texture_index].texture_resource;
+            if (tex_res->uav)
+            {
+                uav = &tex_res->uav;
+            }
         }
 
         if (bind_flags & TEXTURE_BIND_PS)
@@ -1332,13 +1327,13 @@ namespace pen
             s_immediate_context->VSSetShaderResources(resource_slot, 1, srv);
         }
 
-		if (bind_flags & TEXTURE_BIND_CS)
-		{
-			s_immediate_context->CSSetUnorderedAccessViews(resource_slot, 1, uav, nullptr);
+        if (bind_flags & TEXTURE_BIND_CS)
+        {
+            s_immediate_context->CSSetUnorderedAccessViews(resource_slot, 1, uav, nullptr);
 
-			if(!(*uav))
-				s_immediate_context->CSSetShaderResources(resource_slot, 1, srv);
-		}
+            if (!(*uav))
+                s_immediate_context->CSSetShaderResources(resource_slot, 1, srv);
+        }
     }
 
     void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
@@ -1347,8 +1342,7 @@ namespace pen
 
         u32 resource_index = resource_slot;
 
-        CHECK_CALL(
-            s_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &_res_pool[resource_index].raster_state));
+        CHECK_CALL(s_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &_res_pool[resource_index].raster_state));
     }
 
     void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
@@ -1460,15 +1454,17 @@ namespace pen
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-		g_context.depth_stencil_state = depth_stencil_state;
-        s_immediate_context->OMSetDepthStencilState(_res_pool[g_context.depth_stencil_state].depth_stencil_state, g_context.stencil_ref);
+        g_context.depth_stencil_state = depth_stencil_state;
+        s_immediate_context->OMSetDepthStencilState(_res_pool[g_context.depth_stencil_state].depth_stencil_state,
+                                                    g_context.stencil_ref);
     }
-    
+
     void direct::renderer_set_stencil_ref(u8 ref)
     {
-		g_context.stencil_ref = ref;
-		if(g_context.depth_stencil_state)
-			s_immediate_context->OMSetDepthStencilState(_res_pool[g_context.depth_stencil_state].depth_stencil_state, g_context.stencil_ref);
+        g_context.stencil_ref = ref;
+        if (g_context.depth_stencil_state)
+            s_immediate_context->OMSetDepthStencilState(_res_pool[g_context.depth_stencil_state].depth_stencil_state,
+                                                        g_context.stencil_ref);
     }
 
     void direct::renderer_release_shader(u32 shader_index, u32 shader_type)
@@ -1691,12 +1687,12 @@ namespace pen
         s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)PEN_PT_POINTLIST);
         s_immediate_context->DrawAuto();
     }
-    
+
     void direct::renderer_dispatch_compute(uint3 grid, uint3 num_threads)
     {
-		static ID3D11UnorderedAccessView* uav_null[8] = { nullptr };
+        static ID3D11UnorderedAccessView* uav_null[8] = {nullptr};
 
-		s_immediate_context->Dispatch(grid.x, grid.y, grid.z);
+        s_immediate_context->Dispatch(grid.x, grid.y, grid.z);
     }
 
     void direct::renderer_set_scissor_rect(const rect& r)

@@ -56,7 +56,7 @@ project "put"
     
     configuration "Debug"
         defines { "DEBUG" }
-		entrypoint "WinMainCRTStartup"
+        entrypoint "WinMainCRTStartup"
         symbols "On"
         targetdir ("lib/" .. platform_dir .. "/debug")
         targetname "put"
@@ -64,8 +64,8 @@ project "put"
  
     configuration "Release"
         defines { "NDEBUG" }
-		entrypoint "WinMainCRTStartup"
-		optimize "Speed"
+        entrypoint "WinMainCRTStartup"
+        optimize "Speed"
         links { "bullet_monolithic" }
         targetdir ("lib/" .. platform_dir .. "/release")
         targetname "put"

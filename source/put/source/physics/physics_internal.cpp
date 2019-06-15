@@ -19,7 +19,7 @@ namespace physics
     {
         return vec3f(bt.getX(), bt.getY(), bt.getZ());
     }
-    
+
     inline quat from_btquat(const btQuaternion& bt)
     {
         quat q;
@@ -27,10 +27,10 @@ namespace physics
         q.y = bt.getY();
         q.z = bt.getZ();
         q.w = bt.getW();
-        
+
         return q;
     }
-    
+
     inline maths::transform from_bttransform(const btTransform& bt)
     {
         maths::transform t;
@@ -132,11 +132,11 @@ namespace physics
             case physics::MESH:
             {
                 u32 num_tris = params.mesh_data.num_indices / 3;
-                
+
                 btTriangleIndexVertexArray* mesh = new btTriangleIndexVertexArray(
                     num_tris, (s32*)params.mesh_data.indices, sizeof(u32) * 3, params.mesh_data.num_floats / 3,
                     params.mesh_data.vertices, sizeof(f32) * 3);
-                
+
                 btBvhTriangleMeshShape* concave_mesh = new btBvhTriangleMeshShape(mesh, true);
                 shape = concave_mesh;
             }
@@ -146,19 +146,19 @@ namespace physics
                 if (p_compound)
                 {
                     u32 num_shapes = p_compound->num_shapes;
-                    
+
                     btCompoundShape* compound = new btCompoundShape(true);
-                    
+
                     btTransform basetrans = get_bttransform_from_params(p_compound->base);
-                    
+
                     for (u32 s = 0; s < num_shapes; ++s)
                     {
                         btCollisionShape* p_sub_shape = create_collision_shape(entity, p_compound->rb[s]);
 
                         btTransform trans = get_bttransform_from_params(p_compound->rb[s]);
-                        
+
                         trans = trans * basetrans.inverse();
-                        
+
                         compound->addChildShape(trans, p_sub_shape);
                     }
 
@@ -242,7 +242,7 @@ namespace physics
     void physics_initialise()
     {
         s_entities.init(1024);
-        
+
         g_readable_data.output_matrices._data[0] = nullptr;
         g_readable_data.output_matrices._data[1] = nullptr;
         g_readable_data.output_transforms._data[0] = nullptr;
@@ -261,11 +261,11 @@ namespace physics
 
     void update_output_matrices()
     {
-        mat4*& bb_mats = g_readable_data.output_matrices.backbuffer();
+        mat4*&             bb_mats = g_readable_data.output_matrices.backbuffer();
         maths::transform*& bb_transforms = g_readable_data.output_transforms.backbuffer();
-        
-        u32    num = sb_count(bb_mats);
-        
+
+        u32 num = sb_count(bb_mats);
+
         for (u32 i = 0; i < s_entities._capacity; i++)
         {
             if (i >= num)
@@ -276,7 +276,7 @@ namespace physics
             }
 
             physics_entity& entity = s_entities.get(i);
-            
+
             switch (entity.type)
             {
                 case ENTITY_RIGID_BODY:
@@ -298,44 +298,44 @@ namespace physics
                     bb_transforms[i] = from_bttransform(rb_transform);
                 }
                 break;
-                    
+
                 case ENTITY_COMPOUND_RIGID_BODY:
                 {
                     btCompoundShape* p_compound = entity.compound_shape;
-                    btRigidBody* p_rb = entity.rb.rigid_body;
-                    
+                    btRigidBody*     p_rb = entity.rb.rigid_body;
+
                     btTransform rb_transform = p_rb->getWorldTransform();
-                    
+
                     btScalar _mm[16];
-                    
+
                     rb_transform.getOpenGLMatrix(_mm);
-                    
+
                     for (s32 m = 0; m < 16; ++m)
                         bb_mats[i].m[m] = _mm[m];
-                    
+
                     bb_mats[i].transpose();
-                    
+
                     if (p_compound)
                     {
-                        u32 num_shapes = p_compound->getNumChildShapes( );
+                        u32 num_shapes = p_compound->getNumChildShapes();
                         for (u32 j = 0; j < num_shapes; ++j)
                         {
                             if (p_rb)
                             {
-                                btTransform base = p_rb->getWorldTransform();
-                                btTransform child = p_compound->getChildTransform(j);
+                                btTransform       base = p_rb->getWorldTransform();
+                                btTransform       child = p_compound->getChildTransform(j);
                                 btCollisionShape* shape = p_compound->getChildShape(j);
-                                u32 ph = shape->getUserIndex();
-                                
-                                if(!is_valid(ph))
+                                u32               ph = shape->getUserIndex();
+
+                                if (!is_valid(ph))
                                     continue;
-                                
+
                                 btTransform child_world = base * child;
-                                
+
                                 btScalar _mm[16];
-                                
+
                                 child_world.getOpenGLMatrix(_mm);
-                                
+
                                 for (s32 m = 0; m < 16; ++m)
                                     bb_mats[ph].m[m] = _mm[m];
 
@@ -393,9 +393,9 @@ namespace physics
 
         btCollisionShape* col = create_collision_shape(entity, cmd.params.base, &cmd.params);
         btCompoundShape*  compound = (btCompoundShape*)col;
-        
+
         u32 num = cmd.params.num_shapes;
-        for(u32 i = 0; i < num; ++i)
+        for (u32 i = 0; i < num; ++i)
         {
             u32 ch = cmd.children_handles[i];
             s_entities.grow(ch);
@@ -411,7 +411,7 @@ namespace physics
         entity.rb.rigid_body_in_world = 1;
         entity.group = cmd.params.base.group;
         entity.mask = cmd.params.base.mask;
-        
+
         entity.type = ENTITY_COMPOUND_RIGID_BODY;
     }
 
@@ -863,7 +863,7 @@ namespace physics
                 compound.compound_shape->removeChildShapeByIndex(params.detach_index);
 
                 s_bullet_systems.dynamics_world->addRigidBody(rb.rigid_body, pe.group, pe.mask);
-                
+
                 pe.type = ENTITY_RIGID_BODY;
 
                 rb.rigid_body->setWorldTransform(base * compound_child);
@@ -875,35 +875,35 @@ namespace physics
                 rb.attach_function = params.function;
                 rb.attach_shape_index = compound.compound_shape->getNumChildShapes();
                 rb.call_attach = 1;
-                
+
                 btCompoundShape* compound2 = new btCompoundShape();
 
                 rb.rigid_body_in_world = 0;
 
                 btTransform new_child = rb.rigid_body->getWorldTransform();
-                
-                if(0)
+
+                if (0)
                 {
-                    btScalar masses[3] = {1, 1, 1};
+                    btScalar    masses[3] = {1, 1, 1};
                     btTransform principal;
-                    btVector3 inertia;
+                    btVector3   inertia;
                     compound.compound_shape->calculatePrincipalAxisTransform(masses, principal, inertia);
-                    
-                    for (int i = 0; i <  compound.compound_shape->getNumChildShapes(); i++)
+
+                    for (int i = 0; i < compound.compound_shape->getNumChildShapes(); i++)
                         compound2->addChildShape(compound.compound_shape->getChildTransform(i) * principal.inverse(),
                                                  compound.compound_shape->getChildShape(i));
                 }
                 else
                 {
                     btTransform offset = base.inverse() * new_child;
-                    
+
                     u32 ci = compound.compound_shape->getNumChildShapes();
                     compound.compound_shape->addChildShape(offset, rb.rigid_body->getCollisionShape());
                     compound.compound_shape->getChildShape(ci)->setUserIndex(params.rb);
                 }
 
                 pe.type = ENTITY_COMPOUND_RIGID_BODY_CHILD;
-                
+
                 //s_bullet_systems.dynamics_world->removeRigidBody(compound.rb.rigid_body);
                 s_bullet_systems.dynamics_world->removeRigidBody(rb.rigid_body);
             }
@@ -1055,9 +1055,9 @@ virtual void removePickingConstraint()
 {
     if (m_pickedConstraint)
     {
-        m_pickedBody->forceActivationState( m_savedState );
+        m_pickedBody->forceActivationState(m_savedState);
         m_pickedBody->activate();
-        m_dynamicsWorld->removeConstraint( m_pickedConstraint );
+        m_dynamicsWorld->removeConstraint(m_pickedConstraint);
         delete m_pickedConstraint;
         m_pickedConstraint = 0;
         m_pickedBody = 0;

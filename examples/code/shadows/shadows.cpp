@@ -93,5 +93,4 @@ void example_setup(ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
-    
 }

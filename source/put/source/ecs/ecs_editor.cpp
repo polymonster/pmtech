@@ -120,7 +120,7 @@ namespace put
                 camera_update_projection_matrix(cam);
                 s_model_view_controller.invalidated = false;
             }
-            
+
             bool has_focus = dev_ui::want_capture() == dev_ui::NO_INPUT;
 
             switch (s_model_view_controller.camera_mode)
@@ -996,9 +996,9 @@ namespace put
 
             static bool load_last_scene = dev_ui::get_program_preference("load_last_scene").as_bool();
             static Str  project_dir_str = dev_ui::get_program_preference_filename("project_dir");
-            
+
             static bool dynamic_timestep = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
-            static f32  fixed_timestep = dev_ui::get_program_preference("fixed_timestep").as_f32(1.0f/60.0f);
+            static f32  fixed_timestep = dev_ui::get_program_preference("fixed_timestep").as_f32(1.0f / 60.0f);
 
             if (ImGui::Begin("Settings", opened))
             {
@@ -1022,15 +1022,15 @@ namespace put
                 {
                     dev_ui::set_program_preference("load_last_scene", load_last_scene);
                 }
-                
+
                 if (ImGui::Checkbox("Dynamic Timestep", &dynamic_timestep))
                 {
                     dev_ui::set_program_preference("dynamic_timestep", dynamic_timestep);
                 }
-                
-                if(!dynamic_timestep)
+
+                if (!dynamic_timestep)
                 {
-                    if(ImGui::InputFloat("Fixed Timestep", &fixed_timestep))
+                    if (ImGui::InputFloat("Fixed Timestep", &fixed_timestep))
                     {
                         dev_ui::set_program_preference("fixed_timestep", fixed_timestep);
                     }
@@ -1121,23 +1121,23 @@ namespace put
 
         static bool s_editor_enabled = true;
         static bool s_editor_enable_camera = true;
-        void editor_update(ecs_controller& ecsc, ecs_scene* scene, f32 dt)
+        void        editor_update(ecs_controller& ecsc, ecs_scene* scene, f32 dt)
         {
             if (!ecsc.camera)
                 return;
 
-            if(s_editor_enabled)
+            if (s_editor_enabled)
                 update_editor_scene(ecsc, scene, dt);
-            
-            if(s_editor_enable_camera)
+
+            if (s_editor_enable_camera)
                 update_editor_camera(ecsc.camera);
         }
-        
+
         void editor_enable(bool enable)
         {
             s_editor_enabled = enable;
         }
-        
+
         void editor_enable_camera(bool enable)
         {
             s_editor_enable_camera = enable;
@@ -1233,9 +1233,9 @@ namespace put
                 {
                     if (scene->entities[i] & CMP_PHYSICS)
                     {
-                        if(scene->physics_data[i].type != PHYSICS_TYPE_RIGID_BODY)
+                        if (scene->physics_data[i].type != PHYSICS_TYPE_RIGID_BODY)
                             continue;
-                        
+
                         vec3f t = scene->physics_data[i].rigid_body.position;
                         quat  q = scene->physics_data[i].rigid_body.rotation;
 
@@ -1533,7 +1533,7 @@ namespace put
 
             // todo move this to main?
             //if (sc->deprecated)
-            if(0)
+            if (0)
             {
                 static u32 timer_index = -1;
                 if (timer_index == -1)
@@ -1964,14 +1964,14 @@ namespace put
             // transforms undos are handled by apply_transform_to_selection
             return false;
         }
-        
+
         bool scene_bounds_ui(ecs_scene* scene)
         {
             if (sb_count(scene->selection_list) != 1)
                 return false;
-            
+
             u32 si = scene->selection_list[0];
-            
+
             if (ImGui::CollapsingHeader("Bounds"))
             {
                 ImGui::InputFloat3("Min", &scene->bounding_volumes[si].min_extents[0]);
@@ -1980,7 +1980,7 @@ namespace put
                 ImGui::InputFloat3("Transformed Min", &scene->bounding_volumes[si].transformed_max_extents[0]);
                 ImGui::InputFloat("Radius", &scene->bounding_volumes[si].radius);
             }
-            
+
             return true;
         }
 
@@ -2261,7 +2261,7 @@ namespace put
                         maths::xyz_to_azimuth_altitude(snl.direction, snl.azimuth, snl.altitude);
 
                     bool edited = changed;
-                    
+
                     ImGui::Checkbox("Shadow Map", &snl.shadow_map);
 
                     switch (scene->lights[selected_index].type)
@@ -2286,45 +2286,44 @@ namespace put
                             break;
 
                         case LIGHT_TYPE_AREA:
-                            if(changed)
+                            if (changed)
                                 instantiate_area_light(scene, selected_index);
                             break;
                         case LIGHT_TYPE_AREA_EX:
                         {
-                            if(changed)
+                            if (changed)
                             {
                                 area_light_resource alr;
                                 alr.shader_name = "trace";
                                 alr.technique_name = "box";
                                 instantiate_area_light_ex(scene, selected_index, alr);
                             }
-                            
+
                             area_light_resource& alr = scene->area_light_resources[selected_index];
-                            
+
                             u32 shader = 0;
                             u32 technique_list_index = 0;
-                            
-                            u32 num_shaders;
+
+                            u32        num_shaders;
                             const c8** shader_list = pmfx::get_shader_list(num_shaders);
-                            
+
                             // find shader in list
                             hash_id id_shader = PEN_HASH(alr.shader_name);
-                            for(shader = 0; shader < num_shaders; ++shader)
-                                if(PEN_HASH(shader_list[shader]) == id_shader)
+                            for (shader = 0; shader < num_shaders; ++shader)
+                                if (PEN_HASH(shader_list[shader]) == id_shader)
                                     break;
-                            
-                            u32 num_techniques;
+
+                            u32        num_techniques;
                             const c8** technique_list = pmfx::get_technique_list(shader, num_techniques);
-                            
+
                             // find technique in list
                             hash_id id_technique = PEN_HASH(alr.technique_name);
-                            for(technique_list_index = 0; technique_list_index < num_techniques; ++technique_list_index)
-                                if(PEN_HASH(technique_list[technique_list_index]) == id_technique)
+                            for (technique_list_index = 0; technique_list_index < num_techniques; ++technique_list_index)
+                                if (PEN_HASH(technique_list[technique_list_index]) == id_technique)
                                     break;
-                            
+
                             edited |= ImGui::Combo("Shader", (s32*)&shader, shader_list, num_shaders);
                             edited |= ImGui::Combo("Technique", (s32*)&technique_list_index, technique_list, num_techniques);
-                            
                         }
                         break;
                     }
@@ -2390,7 +2389,7 @@ namespace put
                 {
                     if (scene->entities[si] & CMP_GEOMETRY)
                         caster_type = 1;
-                    
+
                     if (scene->state_flags[si] & SF_NO_SHADOW)
                         caster_type = 0;
                 }
@@ -2575,10 +2574,10 @@ namespace put
                 {
                     // single node header
                     static c8 buf[64];
-                    if(scene->names[selected_index].empty())
+                    if (scene->names[selected_index].empty())
                         scene->names[selected_index] = "unnamed node";
-                    
-                    u32       end_pos = std::min<u32>(scene->names[selected_index].length(), 64);
+
+                    u32 end_pos = std::min<u32>(scene->names[selected_index].length(), 64);
                     memcpy(buf, scene->names[selected_index].c_str(), end_pos);
                     buf[end_pos] = '\0';
 
@@ -2611,7 +2610,7 @@ namespace put
                 scene_hierarchy_ui(scene);
 
                 scene_transform_ui(scene);
-                
+
                 scene_bounds_ui(scene);
 
                 scene_physics_ui(scene);
@@ -3203,8 +3202,8 @@ namespace put
                         continue;
 
                     geometry_resource* gr = get_geometry_resource(k_primitives[prim]);
-                    
-                    if(!gr)
+
+                    if (!gr)
                         continue;
 
                     if (!pmfx::set_technique_perm(view.pmfx_shader, view.technique))

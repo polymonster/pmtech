@@ -175,8 +175,8 @@ namespace put
         struct geometry_resource
         {
             hash_id file_hash;
-            hash_id geom_hash;          // mesh
-            hash_id hash;               // submesh
+            hash_id geom_hash; // mesh
+            hash_id hash;      // submesh
             hash_id material_id_name;
 
             Str filename;

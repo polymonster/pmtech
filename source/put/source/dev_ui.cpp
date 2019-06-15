@@ -1026,7 +1026,7 @@ namespace put
                 cb.params.x++;
 
             // arrays
-            if(shader == SHADER_TEXTURE_ARRAY)
+            if (shader == SHADER_TEXTURE_ARRAY)
             {
                 ImGui::SameLine();
                 ImGui::PushID("Array");
