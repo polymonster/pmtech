@@ -1039,7 +1039,7 @@ namespace pen
     }
 
     void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
-    {
+    {        
         renderer_cmd cmd;
 
         cmd.command_index = CMD_SET_TEXTURE;

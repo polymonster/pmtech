@@ -44,11 +44,12 @@ namespace
     
     enum e_view_flags
     {
-        VF_SCENE_VIEW = (1<<0), // view has scene view to dispatch, if not we may just want to clear or abstract render..
-        VF_CUBEMAP = (1<<1),    // view will be dispatched into a cubemap texture array, 6 times. 1 per face.
-        VF_TEMPLATE = (1<<2),   // dont automatically render. but build the view to be rendered from elsewhere.
-        VF_ABSTRACT = (1<<3),   // abstract views can be used to render view templates, to perform multi-pass rendering.
-        VF_RESOLVE = (1<<4)     // after view has completed, render targets are resolved.
+        VF_SCENE_VIEW = (1<<0),     // view has scene view to dispatch, if not we may just want to clear or abstract render..
+        VF_CUBEMAP = (1<<1),        // view will be dispatched into a cubemap texture array, 6 times. 1 per face.
+        VF_TEMPLATE = (1<<2),       // dont automatically render. but build the view to be rendered from elsewhere.
+        VF_ABSTRACT = (1<<3),       // abstract views can be used to render view templates, to perform multi-pass rendering.
+        VF_RESOLVE = (1<<4),        // after view has completed, render targets are resolved.
+        VF_GENERATE_MIPS = (1 << 5) // generate mip maps for the render target after resolving
     };
 
     struct mode_map
@@ -1578,6 +1579,9 @@ namespace put
                             "[error] pmfx - view %s number of resolves %i do not match number of targets %i'",
                             new_view.name.c_str(), num_resolve, num_targets);
                 }
+                
+                if(view["generate_mip_maps"].as_bool())
+                    new_view.view_flags |= VF_GENERATE_MIPS;
 
                 // viewport
                 pen::json viewport = view["viewport"];
@@ -2637,25 +2641,35 @@ namespace put
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
 
             // resolve colour
-            for (u32 i = 0; i < v.num_colour_targets; ++i)
+            if(v.view_flags & VF_RESOLVE)
             {
-                if (v.resolve_method[i] == 0)
-                    continue;
-
-                pmfx::set_technique_perm(pmfx_resolve, v.resolve_method[i]);
-                pen::renderer_resolve_target(v.render_targets[i], pen::RESOLVE_CUSTOM);
+                for (u32 i = 0; i < v.num_colour_targets; ++i)
+                {
+                    if (v.resolve_method[i] == 0)
+                        continue;
+                    
+                    pmfx::set_technique_perm(pmfx_resolve, v.resolve_method[i]);
+                    pen::renderer_resolve_target(v.render_targets[i], pen::RESOLVE_CUSTOM);
+                }
+                
+                // resolve depth
+                if (is_valid_non_null(v.depth_target))
+                {
+                    pmfx::set_technique_perm(pmfx_resolve, v.depth_resolve_method);
+                    pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_CUSTOM);
+                }
             }
 
-            // resolve depth
-            if (is_valid_non_null(v.depth_target))
+            // generate mips
+            if(v.view_flags & VF_GENERATE_MIPS)
             {
-                //pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("depth4x"));
-                //pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_CUSTOM);
-
-                pmfx::set_technique_perm(pmfx_resolve, PEN_HASH("average_4x"));
-                pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_CUSTOM);
+                for (u32 i = 0; i < v.num_colour_targets; ++i)
+                    pen::renderer_resolve_target(v.render_targets[i], pen::RESOLVE_GENERATE_MIPS);
+                
+                if (is_valid_non_null(v.depth_target))
+                    pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_GENERATE_MIPS);
             }
-
+            
             // set textures and buffers back to prevent d3d validation layer complaining
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
@@ -2750,7 +2764,9 @@ namespace put
 
                 // bind view samplers.. render targets, global textures
                 for (auto& sb : v.sampler_bindings)
+                {
                     pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
+                }
 
                 // bind technique samplers
                 for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
@@ -2787,7 +2803,7 @@ namespace put
                     v.render_functions[rf](sv);
             }
 
-            if (v.view_flags & VF_RESOLVE)
+            if (v.view_flags & (VF_RESOLVE | VF_GENERATE_MIPS))
                 resolve_view_targets(v);
 
             // for debug

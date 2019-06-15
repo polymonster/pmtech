@@ -57,16 +57,6 @@ namespace pen
         nt.name = name;
         timers.push_back(nt);
         return index;
-
-        /*
-        int index = sb_count(timers);
-
-        timer nt;
-        nt.name = name;
-        sb_push(timers, nt);
-
-        return index;
-        */
     }
 
     void timer_start(u32 index)

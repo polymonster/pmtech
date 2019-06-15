@@ -497,7 +497,7 @@
                 pp_write_non_aux: true,
                 technique : menger_sponge,
                 camera : model_viewer_camera,
-                resolve : ["average_4x", "depth_4x"]
+                resolve : ["average_4x", "max_4x"]
             },
         ],
         

@@ -1278,25 +1278,9 @@ namespace pen
             if (texture_index == 0)
                 return;
 
-            texture_resource& t = _res_pool.get(texture_index).texture;
             id<MTLTexture>    tex = _res_pool.get(texture_index).texture.tex;
             if (bind_flags & pen::TEXTURE_BIND_MSAA)
                 tex = _res_pool.get(texture_index).texture.tex_msaa;
-
-            if (t.num_mips > 1 && t.invalidate)
-            {
-                t.invalidate = 0;
-
-                [_state.render_encoder endEncoding];
-                _state.render_encoder = nil;
-                _state.pipeline_hash = 0;
-
-                validate_blit_encoder();
-
-                [_state.blit_encoder generateMipmapsForTexture:tex];
-                [_state.blit_encoder endEncoding];
-                _state.blit_encoder = nil;
-            }
 
             if (bind_flags & pen::TEXTURE_BIND_PS || bind_flags & pen::TEXTURE_BIND_VS)
             {
@@ -1519,7 +1503,7 @@ namespace pen
                 _state.render_encoder = nil;
                 _state.pipeline_hash = 0;
             }
-
+            
             _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
 
             _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
@@ -1645,6 +1629,33 @@ namespace pen
         {
             resource&         res_target = _res_pool.get(target);
             texture_resource& t = res_target.texture;
+            
+            if(type == RESOLVE_GENERATE_MIPS)
+            {
+                texture_resource& t = _res_pool.get(target).texture;
+                
+                if (t.num_mips <= 1)
+                {
+                    PEN_LOG("[error] renderer : render target %i does not have mip maps", target);
+                    return;
+                }
+                
+                if (t.num_mips > 1 && t.invalidate)
+                {
+                    t.invalidate = 0;
+
+                    [_state.render_encoder endEncoding];
+                    _state.render_encoder = nil;
+                    _state.pipeline_hash = 0;
+
+                    validate_blit_encoder();
+
+                    [_state.blit_encoder generateMipmapsForTexture:t.tex];
+                    [_state.blit_encoder endEncoding];
+                    _state.blit_encoder = nil;
+                }
+                return;
+            }
 
             if (!t.tex_msaa)
             {

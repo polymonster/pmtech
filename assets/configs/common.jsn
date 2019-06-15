@@ -216,7 +216,8 @@
             technique          : zonly,
             scene              : main_scene,
             scene_views        : ["ces_render_area_light_textures"],
-            render_flags       : ["area_light_textures"]
+            render_flags       : ["area_light_textures"],
+            generate_mip_maps  : true
         },
         
         main_view_post_processed:
@@ -224,7 +225,7 @@
             inherit: main_view,
             target: [post_process_colour, post_process_depth],
             post_process : editor_default,
-            resolve: ["average_4x", "average_4x"]
+            resolve: ["average_4x", "max_4x"]
         },
     }
 }

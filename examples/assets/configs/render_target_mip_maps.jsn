@@ -27,7 +27,8 @@
             raster_state : default,
             depth_stencil_state: default,
             scene : main_scene,
-            camera : model_viewer_camera
+            camera : model_viewer_camera,
+            generate_mip_maps: true
         }
     },
     

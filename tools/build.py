@@ -26,6 +26,7 @@ def display_help():
     print("    -clean <clean build, bin and temp dirs>")
     print("    -renderer <dx11, opengl, metal>")
     print("    -toolset <gcc, clang, msc>")
+    print("    -shader_version <4_0 (hlsl), 5_0 (hlsl), 330 (glsl), 450 (glsl)>")
 
 
 def display_prompted_input():
@@ -251,26 +252,24 @@ def build_thirdparty_libs():
     else:
         configure_vc_vars_all(build_config)
         configure_windows_sdk(build_config)
-
         args = ""
         if "pmtech_dir" in build_config.keys():
             args += build_config["pmtech_dir"] + "/" + " "
-
         if "sdk_version" in build_config.keys():
             args += build_config["sdk_version"] + " "
-
         third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + build_config["vcvarsall_dir"] + "\"" + " " + args
     return third_party_build
 
 
 if __name__ == "__main__":
     global _info
+    global v2
+
     print("--------------------------------------------------------------------------------")
     print("pmtech build -------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
 
     # for experimental new versions of build components
-    global v2
     v2 = False
 
     _info = build_info()
@@ -312,11 +311,9 @@ if __name__ == "__main__":
     execute_actions = []
     extra_build_steps = []
     build_steps = []
-
     python_exec = ""
     shader_options = ""
     project_options = ""
-
     platform_name = ""
     ide = ""
     renderer = ""

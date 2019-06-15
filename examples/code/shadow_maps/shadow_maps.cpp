@@ -4,10 +4,10 @@ using namespace put;
 using namespace ecs;
 
 pen::window_creation_params pen_window{
-    1280,     // width
-    720,      // height
-    4,        // MSAA samples
-    "shadows" // window title / process name
+    1280,           // width
+    720,            // height
+    4,              // MSAA samples
+    "shadow_maps"   // window title / process name
 };
 
 struct forward_lit_material

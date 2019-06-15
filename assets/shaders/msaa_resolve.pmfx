@@ -113,6 +113,36 @@ ps_output_depth ps_resolve_depth_4x( vs_output_textured input )
     return output;
 }
 
+ps_output ps_resolve_max_4x( vs_output_textured input )
+{
+    ps_output output;
+    output.colour.r = sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, 0 ).r;
+    _pmfx_unroll
+    for( int i = 1; i < 4; ++i )
+    {
+        float depth = sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i ).r;
+        output.colour.r = max( depth, output.colour.r );
+    }
+
+    return output;
+}
+
+// example custom resolve which changes colour.. 
+ps_output ps_resolve_custom_4x( vs_output_textured input )
+{
+    ps_output output;
+    output.colour = float4( 0.0, 0.0, 0.0, 0.0 );
+    _pmfx_unroll
+    for( int i = 0; i < 4; ++i )
+        output.colour += sample_texture_2dms( texture_msaa_4, input.tex_coord.x * output_buffer_dimension.x, input.tex_coord.y * output_buffer_dimension.y, i );
+    output.colour /= 4.0;
+    
+    output.colour.rg += input.tex_coord.xy;
+    output.colour.rgb = output.colour.bgr;
+    
+    return output;
+}
+
 pmfx:
 {    
     "average_2x":
@@ -126,7 +156,7 @@ pmfx:
         "vs": "vs_resolve",
         "ps": "ps_resolve_average_4x"
     },
-
+    
     "average_8x":
     {
         "vs": "vs_resolve",
@@ -143,5 +173,17 @@ pmfx:
     {
         "vs": "vs_resolve",
         "ps": "ps_resolve_depth_4x"
+    },
+    
+    "max_4x":
+    {
+        "vs": "vs_resolve",
+        "ps": "ps_resolve_max_4x"
+    },
+    
+    "custom_4x":
+    {
+        "vs": "vs_resolve",
+        "ps": "ps_resolve_custom_4x"
     }
 }

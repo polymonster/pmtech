@@ -326,7 +326,8 @@ namespace pen
         RESOLVE_AVERAGE = 0,
         RESOLVE_MIN = 1,
         RESOLVE_MAX = 2,
-        RESOLVE_CUSTOM = 3
+        RESOLVE_CUSTOM = 3,
+        RESOLVE_GENERATE_MIPS = 4
     };
 
     struct resolve_resources

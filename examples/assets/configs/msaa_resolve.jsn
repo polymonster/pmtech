@@ -1,0 +1,73 @@
+{            
+    include: [
+        common.jsn
+    ],
+    
+    render_targets:
+    {
+        msaa_colour:
+        {
+            size    : equal,
+            format  : rgba8,
+            samples : 4
+        },
+        
+        msaa_depth:
+        {
+            size    : equal,
+            format  : d24s8,
+            samples : 4
+        },
+        
+        msaa_custom:
+        {
+            size    : equal,
+            format  : rgba8,
+            samples : 4
+        }
+    }
+    
+    views:
+    {    
+        mssr:
+        {
+            inherit: main_view,
+            target : [msaa_colour, msaa_depth],
+            clear_colour : [0.5, 1.0, 0.0, 1.0],
+            clear_depth : 1.0,
+            colour_write_mask : 0xf,
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : default,
+            depth_stencil_state: default,
+            scene : main_scene,
+            camera : model_viewer_camera,
+            resolve : ["average_4x", "max_4x"]
+        },
+        
+        mssc:
+        {
+            inherit: main_view,
+            target : [msaa_custom],
+            clear_colour : [1.0, 0.0, 0.5, 1.0],
+            clear_depth : 1.0,
+            colour_write_mask : 0xf,
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : default,
+            depth_stencil_state: default,
+            scene : main_scene,
+            camera : model_viewer_camera,
+            resolve : ["custom_4x"]
+        },
+        
+        
+    },
+    
+    view_sets: 
+    {
+        rtmm_view_set: [mssr, mssc, main_view] 
+    },
+    
+    view_set: rtmm_view_set
+}

@@ -121,7 +121,8 @@
                 gbuffer_normals_msaa, 
                 gbuffer_world_pos_msaa, 
                 gbuffer_depth_msaa
-            ]
+            ],
+            resolve: ["average_4x", "average_4x", "average_4x", "max_4x"]
         },
         
         deferred_lights_view_msaa:
