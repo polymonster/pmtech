@@ -699,7 +699,7 @@ namespace put
                     {
                         if (!samplers.sb[s].handle)
                             continue;
-
+                        
                         pen::renderer_set_texture(samplers.sb[s].handle, samplers.sb[s].sampler_state,
                                                   samplers.sb[s].sampler_unit, pen::TEXTURE_BIND_PS);
                     }

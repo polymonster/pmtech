@@ -38,7 +38,6 @@ namespace
     }
 
     u32 cb_single_light;
-    u32 cube_entity = 0;
     u32 cube_start = -1;
     u32 cube_end = 0;
 
@@ -322,7 +321,6 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->names[light] = "front_light1";
     scene->id_name[light] = PEN_HASH("front_light1");
     scene->lights[light].colour = vec3f(0.8f, 0.2f, 0.2f);
-    ;
     scene->lights[light].direction = vec3f::one() * vec3f(-1.0f, 0.7f, 1.0f);
     scene->lights[light].type = LIGHT_TYPE_DIR;
     maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth,
