@@ -17,7 +17,7 @@ A lightweight code base with powerful features that can be used for games and re
 - [Ecs](https://github.com/polymonster/pmtech/wiki/Ecs): Entity component system and root motion animation system.
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/Pmfx): High level data driven renderer, shader, compute and post-processing system using json.
 - Tools: Graphical editor, volume texture / signed distance field generator.
-- [Examples](https://github.com/polymonster/pmtech/wiki/Examples): Show how to use the apis from basic usage to rendering techniques (forward, deferred, subsurface scattering, signed distance fields, volume textures), audio, physics and more.
+- [Examples](https://github.com/polymonster/pmtech/wiki/Examples): 30+ samples and unit tests.
 - [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Build-Pipeline): IDE project generation, Binary model and skeleton format, texture compression, platform agnostic shader compilation. 
 - Future Plans: Direct3D12, Vulkan.
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information.
