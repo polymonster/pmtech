@@ -37,6 +37,9 @@ namespace {
     
     u32 cb_single_light;
     u32 cube_entity = 0;
+    u32 cube_start = -1;
+    u32 cube_end = 0;
+    
     shadow_volume_edge* s_sve;
     geometry_resource s_sgr;
 }
@@ -49,14 +52,16 @@ void render_stencil_shadows(const scene_view& view)
     
     // bind cbuffer
     pen::renderer_set_constant_buffer(cb_single_light, 10, pen::CBUFFER_BIND_VS | pen::CBUFFER_BIND_PS);
-    
     pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
     pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-    pen::renderer_set_constant_buffer(scene->cbuffer[cube_entity], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-    pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
     pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
     pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
-    pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+    
+    for(u32 i = cube_start; i <= cube_end; ++i)
+    {
+        pen::renderer_set_constant_buffer(scene->cbuffer[i], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+        pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+    }
 }
 
 void render_stencil_tested(const scene_view& view)
@@ -296,13 +301,53 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
     
-    // add light
+    // add lights
     u32 light = get_new_entity(scene);
-    scene->names[light] = "front_light";
-    scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f::one();
-    scene->lights[light].direction = vec3f::one();
+    scene->names[light] = "front_light0";
+    scene->id_name[light] = PEN_HASH("front_light0");
+    scene->lights[light].colour = vec3f(0.2f, 0.8f, 0.1f);
+    scene->lights[light].direction = vec3f::one() * vec3f(1.0f, 0.7f, 1.0f);
     scene->lights[light].type = LIGHT_TYPE_DIR;
+    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth, scene->lights[light].altitude);
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= CMP_LIGHT;
+    scene->entities[light] |= CMP_TRANSFORM;
+    
+    light = get_new_entity(scene);
+    scene->names[light] = "front_light1";
+    scene->id_name[light] = PEN_HASH("front_light1");
+    scene->lights[light].colour = vec3f(0.8f, 0.2f, 0.2f);;
+    scene->lights[light].direction = vec3f::one() * vec3f(-1.0f, 0.7f, 1.0f);
+    scene->lights[light].type = LIGHT_TYPE_DIR;
+    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth, scene->lights[light].altitude);
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= CMP_LIGHT;
+    scene->entities[light] |= CMP_TRANSFORM;
+    
+    light = get_new_entity(scene);
+    scene->names[light] = "front_light2";
+    scene->id_name[light] = PEN_HASH("front_light2");
+    scene->lights[light].colour = vec3f(0.1f, 0.2f, 0.8f);
+    scene->lights[light].direction = vec3f::one() * vec3f(-1.0f, 0.7f, -1.0f);
+    scene->lights[light].type = LIGHT_TYPE_DIR;
+    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth, scene->lights[light].altitude);
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= CMP_LIGHT;
+    scene->entities[light] |= CMP_TRANSFORM;
+    
+    light = get_new_entity(scene);
+    scene->names[light] = "front_light4";
+    scene->id_name[light] = PEN_HASH("front_light4");
+    scene->lights[light].colour = vec3f(0.6f, 0.1f, 0.8f);
+    scene->lights[light].direction = vec3f::one() * vec3f(1.0f, 0.7f, -1.0f);
+    scene->lights[light].type = LIGHT_TYPE_DIR;
+    maths::xyz_to_azimuth_altitude(scene->lights[light].direction, scene->lights[light].azimuth, scene->lights[light].altitude);
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -314,24 +359,61 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->names[ground] = "ground";
     scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
+    scene->transforms[ground].scale = vec3f(30.0f, 1.0f, 30.0f);
     scene->entities[ground] |= CMP_TRANSFORM;
     scene->parents[ground] = ground;
+    scene->physics_data[ground].rigid_body.shape = physics::BOX;
+    scene->physics_data[ground].rigid_body.mass = 0.0f;
     instantiate_geometry(box, scene, ground);
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
+    instantiate_rigid_body(scene, ground);
     
-    // cube
-    cube_entity = get_new_entity(scene);
-    scene->names[cube_entity] = "cube";
-    scene->transforms[cube_entity].translation = vec3f(0.0f, 11.0f, 0.0f);
-    scene->transforms[cube_entity].rotation = quat();
-    scene->transforms[cube_entity].scale = vec3f(10.0f, 10.0f, 10.0f);
-    scene->entities[cube_entity] |= CMP_TRANSFORM;
-    scene->parents[cube_entity] = cube_entity;
-    instantiate_geometry(box, scene, cube_entity);
-    instantiate_material(default_material, scene, cube_entity);
-    instantiate_model_cbuffer(scene, cube_entity);
+    // cubes
+    vec3f start_pos = vec3f(-6.0f, 6.0f, -6.0f);
+    vec3f cur_pos = start_pos;
+    
+    for (s32 i = 0; i < 6; ++i)
+    {
+        cur_pos.y = start_pos.y;
+        
+        for (s32 j = 0; j < 6; ++j)
+        {
+            cur_pos.x = start_pos.x;
+            
+            for (s32 k = 0; k < 6; ++k)
+            {
+                f32 rx = ((f32)(rand()%255)/255.0f) * M_PI * 2.0f;
+                f32 ry = ((f32)(rand()%255)/255.0f) * M_PI * 2.0f;
+                f32 rz = ((f32)(rand()%255)/255.0f) * M_PI * 2.0f;
+                
+                u32 new_prim = get_new_entity(scene);
+                scene->names[new_prim] = "box";
+                scene->names[new_prim].appendf("%i", new_prim);
+                scene->transforms[new_prim].rotation = quat(rx, ry, rz);
+                scene->transforms[new_prim].scale = vec3f::one();
+                scene->transforms[new_prim].translation = cur_pos;
+                scene->entities[new_prim] |= CMP_TRANSFORM;
+                scene->parents[new_prim] = new_prim;
+                instantiate_geometry(box, scene, new_prim);
+                instantiate_material(default_material, scene, new_prim);
+                instantiate_model_cbuffer(scene, new_prim);
+                
+                scene->physics_data[new_prim].rigid_body.shape = physics::BOX;
+                scene->physics_data[new_prim].rigid_body.mass = 1.0f;
+                instantiate_rigid_body(scene, new_prim);
+                
+                cube_start = min(new_prim, cube_start);
+                cube_end = max(new_prim, cube_end);
+                
+                cur_pos.x += 2.5f;
+            }
+            
+            cur_pos.y += 2.5f;
+        }
+        
+        cur_pos.z += 2.5f;
+    }
     
     generate_edge_mesh(box, &s_sve, &s_sgr);
     
@@ -347,6 +429,20 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
+    // rotate lights
+    for(u32 i = 0; i < 4; ++i)
+    {
+        cmp_light& snl = scene->lights[i];
+        snl.azimuth += dt * 10.0f;
+        
+        f32 dir = 1.0f;
+        if(i >= 2)
+            dir = -1.0f;
+            
+        snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth * dir, fabs(snl.altitude));
+    }
+    
+    
 #if 0 //debug
     geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
     

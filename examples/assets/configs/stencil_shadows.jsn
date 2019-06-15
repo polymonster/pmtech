@@ -134,9 +134,9 @@
             scene : main_scene,
             camera : model_viewer_camera,
             scene_views : ["scene_stencil_tested"],
-            render_flags : ["forward_lit"],
+            render_flags : ["forward_render"],
             pmfx_shader : "forward_render",
-            technique : "forward_lit",
+            technique : "single_light_directional",
             stencil_ref: 0x0,
             type: "template",
             

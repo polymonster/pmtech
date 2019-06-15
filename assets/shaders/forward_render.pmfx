@@ -292,6 +292,54 @@ float3 transform_ts_normal( float3 t, float3 b, float3 n, float3 ts_normal )
     return normalize( mul_tbn( tbn, ts_normal ) );
 }
 
+ps_output ps_single_light( vs_output input )
+{
+    // this is for multi-pass lighting using stencil shadows.
+    
+    float4 albedo = sample_texture( diffuse_texture, input.texcoord.xy );
+    float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
+    float4 ro_sample = sample_texture( specular_texture, input.texcoord.xy );
+    float4 specular_sample = float4(1.0, 1.0, 1.0, 1.0);        
+    float  reflectivity = m_reflectivity;
+    float  roughness = ro_sample.x;
+    
+    normal_sample = normal_sample * 2.0 - 1.0;
+
+    float3 n = transform_ts_normal( 
+        input.tangent, 
+        input.bitangent, 
+        input.normal, 
+        normal_sample );
+    
+    float3 lit_colour = float3( 0.0, 0.0, 0.0 );
+    
+    lit_colour += cook_torrence( 
+            single_light.pos_radius, 
+            single_light.colour.rgb,
+            n,
+            input.world_pos.xyz,
+            camera_view_pos.xyz,
+            albedo.rgb,
+            specular_sample.rgb,
+            roughness,
+            reflectivity);    
+        
+    lit_colour += oren_nayar( 
+            single_light.pos_radius, 
+            single_light.colour.rgb,
+            n,
+            input.world_pos.xyz,
+            camera_view_pos.xyz,
+            roughness,
+            albedo.rgb);
+            
+    ps_output output;
+    output.colour.rgb = lit_colour;
+    output.colour.a = albedo.a;
+    
+    return output;
+}
+
 ps_output ps_forward_lit( vs_output input ) 
 {    
     ps_output output;
@@ -639,6 +687,58 @@ ps_output ps_dbg( vs_output input )
 
 pmfx:
 {    
+    "single_light_directional":
+    {
+        "vs": "vs_main",
+        "ps": "ps_single_light",
+                
+        "constants":
+        {
+            "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
+            "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
+            "reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 }
+        },
+        
+        "texture_samplers": 
+        {
+            "albedo":
+            {
+                "type"   : "texture_2d",
+                "unit"   : 0,
+                "bind_flags" : ["ps"],
+                "sampler": "wrap_linear",
+                "default": "data/textures/defaults/albedo.dds"
+            },
+            
+            "normals":
+            {
+                "type"   : "texture_2d",
+                "unit"   : 1,
+                "bind_flags" : ["ps"],
+                "sampler": "wrap_linear",
+                "default": "data/textures/defaults/normal.dds"
+            },
+            
+            "roughness":
+            {
+                "type"   : "texture_2d",
+                "unit"   : 2,
+                "bind_flags" : ["ps"],
+                "sampler": "wrap_linear",
+                "default": "data/textures/defaults/spec.dds"
+            },
+            
+            "metalness":
+            {
+                "type"   : "texture_2d",
+                "unit"   : 3,
+                "bind_flags" : ["ps"],
+                "sampler": "wrap_linear",
+                "default": "data/textures/defaults/black.dds"
+            }
+        }
+    },
+    
     "forward_lit":
     {
         "vs": "vs_main",

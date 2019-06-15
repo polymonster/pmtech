@@ -1,3 +1,11 @@
+struct single_light_directional
+{
+    float4 m_albedo;
+    float m_roughness;
+    float m_reflectivity;
+    float2 m_padding;
+};
+
 #define FORWARD_LIT_SKINNED 2147483648
 #define FORWARD_LIT_INSTANCED 1073741824
 #define FORWARD_LIT_UV_SCALE 2
