@@ -497,13 +497,14 @@ namespace pen
                 for (s32 i = 0; i < g_context.num_active_colour_targets; ++i)
                 {
                     s32 ct = g_context.active_colour_target[i];
-
-                    ID3D11RenderTargetView* colour_rtv = _res_pool[ct].render_target->rt[colour_face];
+                    ID3D11RenderTargetView* colour_rtv = nullptr;
 
                     auto rt = _res_pool[ct].render_target;
 
                     if (rt->rt_msaa && rt->rt_msaa[colour_face])
                         colour_rtv = _res_pool[ct].render_target->rt_msaa[colour_face];
+                    else
+                        colour_rtv = _res_pool[ct].render_target->rt[colour_face];
 
                     if (colour_rtv)
                         s_immediate_context->ClearRenderTargetView(colour_rtv,
@@ -517,12 +518,14 @@ namespace pen
         {
             s32 ct = g_context.active_colour_target[i];
 
-            ID3D11RenderTargetView* colour_rtv = _res_pool[ct].render_target->rt[colour_face];
+            ID3D11RenderTargetView* colour_rtv = nullptr;
 
             auto rt = _res_pool[ct].render_target;
 
             if (rt->rt_msaa && rt->rt_msaa[colour_face])
                 colour_rtv = _res_pool[ct].render_target->rt_msaa[colour_face];
+            else
+                colour_rtv = _res_pool[ct].render_target->rt[colour_face];
 
             s_immediate_context->ClearRenderTargetView(colour_rtv, cs->mrt[i].f);
         }
@@ -537,11 +540,13 @@ namespace pen
 
         if (d3d_flags && g_context.active_depth_target)
         {
-            ID3D11DepthStencilView* dsv = _res_pool[g_context.active_depth_target].depth_target->ds[depth_face];
+            ID3D11DepthStencilView* dsv = nullptr;
 
             auto dt = _res_pool[g_context.active_depth_target].depth_target;
             if (dt->ds_msaa && dt->ds_msaa[depth_face])
                 dsv = _res_pool[g_context.active_depth_target].depth_target->ds_msaa[depth_face];
+            else
+                dsv = _res_pool[g_context.active_depth_target].depth_target->ds[depth_face];
 
             // clear depth
             s_immediate_context->ClearDepthStencilView(dsv, d3d_flags, _res_pool[clear_state_index].clear_state->depth,
