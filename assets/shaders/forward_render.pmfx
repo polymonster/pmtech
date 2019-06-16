@@ -335,7 +335,7 @@ ps_output ps_single_light( vs_output input )
     ps_output output;
     output.colour.rgb = lit_colour;
     output.colour.a = albedo.a;
-
+	
     return output;
 }
 

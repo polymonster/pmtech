@@ -75,6 +75,7 @@
         view_clear:
         {
             target : [post_process_colour, post_process_depth],
+			viewport : [0.0, 0.0, 1.0, 1.0],
             clear_colour : [0.0, 0.0, 0.0, 1.0],
             clear_depth : 1.0,
             clear_stencil : 0x0,
@@ -107,13 +108,13 @@
         {
             target : [post_process_colour, post_process_depth],
             clear_stencil : 0x0,
-            template: "true"
+            type: "template"
         },
                 
         view_shadow_volume:
         {
             target : [post_process_colour, post_process_depth],
-            colour_write_mask: 0x00,
+            colour_write_mask: 0x0,
             blend_state : disabled,
             viewport : [0.0, 0.0, 1.0, 1.0],
             raster_state : no_cull,
@@ -159,13 +160,17 @@
         view_resolve:
         {
             target : [post_process_colour, post_process_depth],
+			viewport : [0.0, 0.0, 1.0, 1.0],
+			colour_write_mask  : 0xf,
+			raster_state : no_cull,
+			depth_stencil_state : disabled,
+			blend_state : disabled,
             resolve: ["average_4x", "max_4x"]
         },
                 
         view_blit:
         {
             target             : [main_colour, main_depth],
-            clear_colour       : [0.0, 0.0, 0.0, 1.0],
             colour_write_mask  : 0xf,
             blend_state        : disabled,
             viewport           : [0.0, 0.0, 1.0, 1.0],
@@ -173,15 +178,15 @@
             depth_stencil_state: default,
             scene              : main_scene,
             camera             : model_viewer_camera,
-            post_process       : blit_only
+			post_process	   : blit_only
         }
     },
               
     view_sets: 
     {
-        stencil_shadow: [
+		stencil_shadow: [
             view_clear,
-            view_fill_depth,
+			view_fill_depth,
             view_clear_stencil,
             view_shadow_volume,
             view_single_light,

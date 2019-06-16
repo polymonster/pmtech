@@ -9,9 +9,9 @@
 
 enum clear_flags : s32
 {
-    PEN_CLEAR_COLOUR_BUFFER = 0x01,
-    PEN_CLEAR_DEPTH_BUFFER = 0x02,
-    PEN_CLEAR_STENCIL_BUFFER = 0x02
+    PEN_CLEAR_COLOUR_BUFFER = 1<<0,
+    PEN_CLEAR_DEPTH_BUFFER = 1<<1,
+    PEN_CLEAR_STENCIL_BUFFER = 1<<2
 };
 
 enum shader_type

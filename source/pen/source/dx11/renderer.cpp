@@ -1616,6 +1616,9 @@ namespace pen
     {
         render_target_internal* rti = _res_pool[target].render_target;
 
+        if (!rti->tcp)
+            return;
+
         // get dimensions for shader
         f32 w = rti->tcp->width;
         f32 h = rti->tcp->height;
