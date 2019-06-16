@@ -1519,6 +1519,7 @@ namespace pen
                                   u32 depth_face)
         {
             // hash it
+            /*
             HashMurmur2A hh;
             hh.begin();
             hh.add(&num_colour_targets, sizeof(u32));
@@ -1529,6 +1530,8 @@ namespace pen
             hash_id cur = hh.end();
             if (cur == _state.target_hash)
                 return;
+             _state.target_hash = cur;
+            */
             
             // create new cmd buffer
             if (_state.cmd_buffer == nil)
@@ -1541,8 +1544,6 @@ namespace pen
                 _state.render_encoder = nil;
                 _state.pipeline_hash = 0;
             }
-            
-            _state.target_hash = cur;
             
             _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
 

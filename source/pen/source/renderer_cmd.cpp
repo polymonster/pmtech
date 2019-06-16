@@ -258,7 +258,6 @@ namespace pen
             case CMD_PRESENT:
                 direct::renderer_present();
                 _present_time = timer_elapsed_ms(_present_timer);
-                PEN_LOG("present time: %f", _present_time);
                 timer_start(_present_timer);
                 break;
 

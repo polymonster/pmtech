@@ -1,7 +1,8 @@
 {
     include: [
         common.jsn,
-        editor_renderer.jsn
+        editor_renderer.jsn,
+        post_process.jsn
     ],
     
     depth_stencil_states:
@@ -73,15 +74,16 @@
     {
         view_clear:
         {
-            target : [main_colour, main_depth],
+            target : [post_process_colour, post_process_depth],
             clear_colour : [0.0, 0.0, 0.0, 1.0],
             clear_depth : 1.0,
-            clear_stencil : 0x0
+            clear_stencil : 0x0,
+            colour_write_mask : 0xf
         },
         
         view_fill_depth:
         {
-            target : [main_colour, main_depth],
+            target : [post_process_colour, post_process_depth],
             colour_write_mask: 0x00,
             blend_state : disabled,
             viewport : [0.0, 0.0, 1.0, 1.0],
@@ -103,14 +105,14 @@
         
         view_clear_stencil:
         {
-            target : [main_colour, main_depth],
+            target : [post_process_colour, post_process_depth],
             clear_stencil : 0x0,
             template: "true"
         },
                 
         view_shadow_volume:
         {
-            target : [main_colour, main_depth],
+            target : [post_process_colour, post_process_depth],
             colour_write_mask: 0x00,
             blend_state : disabled,
             viewport : [0.0, 0.0, 1.0, 1.0],
@@ -126,7 +128,7 @@
         
         view_single_light:
         {
-            target : [main_colour, main_depth],
+            target : [post_process_colour, post_process_depth],
             blend_state : additive,
             viewport : [0.0, 0.0, 1.0, 1.0],
             raster_state : default,
@@ -153,6 +155,26 @@
             scene_views: ["render_multi_pass_lights"],
             type: "abstract"
         },
+        
+        view_resolve:
+        {
+            target : [post_process_colour, post_process_depth],
+            resolve: ["average_4x", "max_4x"]
+        },
+                
+        view_blit:
+        {
+            target             : [main_colour, main_depth],
+            clear_colour       : [0.0, 0.0, 0.0, 1.0],
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : default,
+            depth_stencil_state: default,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            post_process       : blit_only
+        }
     },
               
     view_sets: 
@@ -164,6 +186,8 @@
             view_shadow_volume,
             view_single_light,
             view_multi_pass_lights,
+            view_resolve,
+            view_blit,
             editor_view
         ]
     },
