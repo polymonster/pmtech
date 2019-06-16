@@ -48,6 +48,12 @@ namespace // internal structs and static vars
         MTLPixelFormat depth_attachment;
         u32            sample_count;
     };
+    
+    struct cached_pipeline
+    {
+        hash_id hash;
+        id<MTLRenderPipelineState> pipeline;
+    };
 
     struct current_state
     {
@@ -81,8 +87,10 @@ namespace // internal structs and static vars
         bool                 stream_out;
 
         // cache
-        hash_id pipeline_hash;
-        hash_id encoder_hash;
+        hash_id pipeline_hash = 0;
+        hash_id encoder_hash = 0;
+        hash_id target_hash = 0;
+        cached_pipeline* cached_pipelines = nullptr;
     };
 
     struct shader_resource
@@ -746,10 +754,22 @@ namespace pen
             hash_id cur = hh.end();
             if (cur == _state.pipeline_hash)
                 return;
-
+            
+            // set current hash
             _state.pipeline_hash = cur;
+            
+            // look for exisiting
+            u32 num_chached = sb_count(_state.cached_pipelines);
+            for(u32 i = 0; i < num_chached; ++i)
+            {
+                if(_state.cached_pipelines[i].hash == cur)
+                {
+                    [_state.render_encoder setRenderPipelineState:_state.cached_pipelines[i].pipeline];
+                    return;
+                }
+            }
 
-            // create pipeline
+            // create a new pipeline
             MTLRenderPipelineDescriptor* pipeline_desc = [MTLRenderPipelineDescriptor new];
 
             pipeline_desc.vertexFunction = _state.vertex_shader;
@@ -792,6 +812,12 @@ namespace pen
             NSError*                   error = nil;
             id<MTLRenderPipelineState> pipeline =
                 [_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc error:&error];
+            
+            //add to cache
+            cached_pipeline cp;
+            cp.hash = cur;
+            cp.pipeline = pipeline;
+            sb_push(_state.cached_pipelines, cp);
 
             [_state.render_encoder setRenderPipelineState:pipeline];
         }
@@ -1492,10 +1518,22 @@ namespace pen
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face,
                                   u32 depth_face)
         {
+            // hash it
+            HashMurmur2A hh;
+            hh.begin();
+            hh.add(&num_colour_targets, sizeof(u32));
+            hh.add(&depth_target, sizeof(u32));
+            hh.add(&colour_face, sizeof(u32));
+            hh.add(&depth_face, sizeof(u32));
+            hh.add(colour_targets, sizeof(u32)*num_colour_targets);
+            hash_id cur = hh.end();
+            if (cur == _state.target_hash)
+                return;
+            
             // create new cmd buffer
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
-
+            
             // finish render encoding
             if (_state.render_encoder)
             {
@@ -1504,74 +1542,81 @@ namespace pen
                 _state.pipeline_hash = 0;
             }
             
+            _state.target_hash = cur;
+            
             _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
 
             _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
             _state.formats.depth_attachment = MTLPixelFormatInvalid;
             _state.formats.sample_count = 1;
             _state.formats.num_targets = 1;
+            
+            bool backbuffer = ((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
+                               || depth_target == PEN_BACK_BUFFER_DEPTH);
 
-            if (num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
+            if (backbuffer)
             {
-                // backbuffer colour target
                 _state.drawable = _metal_view.currentDrawable;
                 _state.formats.sample_count = _metal_view.sampleCount;
-
-                if (_state.formats.sample_count > 1)
+                
+                if((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR))
                 {
-                    // msaa
-                    _state.pass.colorAttachments[0].texture = _metal_view.multisampleColorTexture;
-                    _state.pass.colorAttachments[0].storeAction = MTLStoreActionStoreAndMultisampleResolve;
-                    _state.pass.colorAttachments[0].resolveTexture = _state.drawable.texture;
-                }
-                else
-                {
-                    // non msaa
-                    _state.pass.colorAttachments[0].texture = _state.drawable.texture;
-                    _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+                    if (_state.formats.sample_count > 1)
+                    {
+                        // msaa
+                        _state.pass.colorAttachments[0].texture = _metal_view.multisampleColorTexture;
+                        _state.pass.colorAttachments[0].storeAction = MTLStoreActionStoreAndMultisampleResolve;
+                        _state.pass.colorAttachments[0].resolveTexture = _state.drawable.texture;
+                    }
+                    else
+                    {
+                        // non msaa
+                        _state.pass.colorAttachments[0].texture = _state.drawable.texture;
+                        _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+                    }
                 }
 
-                _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;
+                if(depth_target == PEN_BACK_BUFFER_DEPTH)
+                {
+                    _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
+                    
+                    _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
+                    _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
+                    _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
+                    
+                    _state.pass.stencilAttachment.texture = _metal_view.depthStencilTexture;
+                    _state.pass.stencilAttachment.loadAction = MTLLoadActionDontCare;
+                    _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
+                    
+                    _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;
+                }
+
+                return;
             }
-            else
+            
+            // multiple render targets
+            for (u32 i = 0; i < num_colour_targets; ++i)
             {
-                // multiple render targets
-                for (u32 i = 0; i < num_colour_targets; ++i)
-                {
-                    resource& r = _res_pool.get(colour_targets[i]);
-                    if (r.texture.num_mips > 1)
-                        r.texture.invalidate = 1;
-
-                    id<MTLTexture> texture = r.texture.tex;
-                    if (r.texture.samples > 1)
-                        texture = r.texture.tex_msaa;
-
-                    _state.formats.sample_count = r.texture.samples;
-
-                    _state.pass.colorAttachments[i].slice = colour_face;
-                    _state.pass.colorAttachments[i].texture = texture;
-                    _state.pass.colorAttachments[i].loadAction = MTLLoadActionDontCare;
-                    _state.pass.colorAttachments[i].storeAction = MTLStoreActionStore;
-
-                    _state.formats.colour_attachments[i] = r.texture.fmt;
-                }
-                _state.formats.num_targets = num_colour_targets;
+                resource& r = _res_pool.get(colour_targets[i]);
+                if (r.texture.num_mips > 1)
+                    r.texture.invalidate = 1;
+                
+                id<MTLTexture> texture = r.texture.tex;
+                if (r.texture.samples > 1)
+                    texture = r.texture.tex_msaa;
+                
+                _state.formats.sample_count = r.texture.samples;
+                
+                _state.pass.colorAttachments[i].slice = colour_face;
+                _state.pass.colorAttachments[i].texture = texture;
+                _state.pass.colorAttachments[i].loadAction = MTLLoadActionDontCare;
+                _state.pass.colorAttachments[i].storeAction = MTLStoreActionStore;
+                
+                _state.formats.colour_attachments[i] = r.texture.fmt;
             }
-
-            if (depth_target == PEN_BACK_BUFFER_DEPTH)
-            {
-                _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
-
-                _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
-                _state.pass.depthAttachment.loadAction = MTLLoadActionDontCare;
-                _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
-
-                _state.pass.stencilAttachment.texture = _metal_view.depthStencilTexture;
-                ;
-                _state.pass.stencilAttachment.loadAction = MTLLoadActionDontCare;
-                _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
-            }
-            else if (is_valid(depth_target))
+            _state.formats.num_targets = num_colour_targets;
+            
+            if (is_valid(depth_target))
             {
                 resource&      r = _res_pool.get(depth_target);
                 id<MTLTexture> texture = r.texture.tex;
@@ -1615,6 +1660,7 @@ namespace pen
             }
 
             _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
+            _state.target_hash = 0;
 
             _state.formats.sample_count = 1;
             _state.formats.num_targets = 1;
@@ -1841,8 +1887,10 @@ namespace pen
             }
 
             // flush cmd buf and present
-            [_state.cmd_buffer presentDrawable:_state.drawable];
-
+            [_state.cmd_buffer presentDrawable:_metal_view.currentDrawable];
+            _state.drawable = nil;
+            _state.target_hash = 0;
+            
             static a_u32 wait;
             static bool  start = true;
             if (start)

@@ -1260,7 +1260,7 @@ def get_metal_packed_decl(stage_in, input, semantic):
 
 
 def find_token(token, string):
-    delimiters = [",", " ", "\n", "\t", ")", "(", "=", "!", ">", "<", ";", "[", "]"]
+    delimiters = [",", " ", "\n", "\t", ")", "(", "=", "!", ">", "<", ";", "[", "]", "."]
     fp = string.find(token)
     if fp != -1:
         left = False
@@ -1284,6 +1284,8 @@ def find_token(token, string):
             right = True
         if left and right:
             return fp
+        # try again
+        return find_token(token, string[fp+len(token):])
     return -1
 
 
@@ -1515,11 +1517,11 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     shader_source += _shader.output_struct_name + " " + _shader.shader_type + "_main" + "("
 
     if _shader.shader_type == "vs" and not vs_stage_in:
-        shader_source += "\n  constant packed_" + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
+        shader_source += "\n  device packed_" + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
         shader_source += "\n, uint vid [[vertex_id]]"
         if _shader.instance_input_struct_name:
             if len(instance_inputs) > 0:
-                shader_source += "\n, constant packed_" + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
+                shader_source += "\n, device packed_" + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
                 shader_source += "\n, uint iid [[instance_id]]"
     elif _shader.shader_type == "vs":
         shader_source += "\n  packed_" + _shader.input_struct_name + " in_vertex [[stage_in]]"
@@ -1579,6 +1581,8 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
                 else:
                     shader_source += ");\n"
 
+    used_code = function_source + " " + _shader.main_func_source
+
     # create a function prologue for cbuffer assignment
     for c in range(0, len(_shader.cbuffers)):
         cbuf_members = parse_and_split_block(_shader.cbuffers[c])
@@ -1593,6 +1597,9 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
                 ref_type = "* "
                 assign = decl + "[0]"
                 point = "&"
+            # check for use
+            if find_token(decl, used_code) == -1:
+                continue
             shader_source += "constant " + cbuf_members[i] + ref_type + decl
             shader_source += " = " + point + metal_cbuffers[c][0] + "." + assign
             shader_source += ";\n"

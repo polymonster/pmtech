@@ -74,6 +74,10 @@ namespace
 
 #ifdef PEN_RENDERER_METAL // Metal Context
 #import <MetalKit/MetalKit.h>
+#import <QuartzCore/CAMetalLayer.h>
+
+id<CAMetalDrawable> g_current_drawable;
+
 #define create_renderer_context create_metal_context
 
 @interface metal_delegate : NSObject <MTKViewDelegate>
