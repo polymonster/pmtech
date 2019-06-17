@@ -33,6 +33,8 @@ namespace
     const hash_id k_id_main_colour = PEN_HASH("main_colour");
     const hash_id k_id_main_depth  = PEN_HASH("main_depth");
     const hash_id k_id_wrap_linear = PEN_HASH("wrap_linear"); // todo rename
+    const hash_id k_id_default = PEN_HASH("default");
+    const hash_id k_id_disabled = PEN_HASH("disabled");
     
     enum e_post_process_flags
     {
@@ -2639,6 +2641,11 @@ namespace put
             // rt texture may still be bound on input
             for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
+            
+            // disable state
+            pen::renderer_set_depth_stencil_state(get_render_state(k_id_disabled, RS_DEPTH_STENCIL));
+            pen::renderer_set_blend_state(get_render_state(k_id_disabled, RS_BLEND));
+            pen::renderer_set_rasterizer_state(get_render_state(k_id_disabled, RS_RASTERIZER));
 
             // resolve colour
             if(v.view_flags & VF_RESOLVE)

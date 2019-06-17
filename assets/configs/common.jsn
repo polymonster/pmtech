@@ -141,6 +141,11 @@
         no_cull:
         {
             cull_mode: none
+        },
+        
+        disabled:
+        {
+            cull_mode: none
         }
     },
     

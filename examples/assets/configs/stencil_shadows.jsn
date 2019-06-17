@@ -162,9 +162,6 @@
             target : [post_process_colour, post_process_depth],
 			viewport : [0.0, 0.0, 1.0, 1.0],
 			colour_write_mask  : 0xf,
-			raster_state : no_cull,
-			depth_stencil_state : disabled,
-			blend_state : disabled,
             resolve: ["average_4x", "max_4x"]
         },
                 
