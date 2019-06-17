@@ -6,7 +6,7 @@ Follow work in progress:
 
 A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded code with minimalistic procedural api's, sticking to [orthodox c++](https://gist.github.com/bkaradzic/2e39896bc7d8c34e042b) principles.
 
-**Features**  
+**Features**
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Supported Compilers: vs2017, Clang 6, Apple LLVM 9, Gcc 7. 
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal. 
@@ -23,15 +23,16 @@ A lightweight code base with powerful features that can be used for games and re
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information.
 
 **Usage**  
-
-Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Building-Examples). 
-All features in pmtech are demonstarted through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
-Documentation is not thorough but the [source](https://github.com/polymonster/pmtech/wiki/Source-Code) is simple and easy to follow.
+- Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Building-Examples). 
+- All features in pmtech are demonstarted through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
+- Documentation is not thorough but the [source](https://github.com/polymonster/pmtech/wiki/Source-Code) is simple and easy to follow.
 
 **Media**
-
+<sup>Area Lights</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/area-lights.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/area_lights/area_lights.cpp)
+<sup>Subsurface Scattering</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sss.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/sss/sss.cpp)
+<sup>Signed Distance Field Shadows</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sdf-shadow.gif" width="1280" />](https://www.youtube.com/watch?v=369cPinAhdo)
 [![Renderer](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/pmfx-renderer.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/pmfx_renderer/pmfx_renderer_demo.cpp)
 [![Post Processing](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/post-pro.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/post_processing/post_processing.cpp)
