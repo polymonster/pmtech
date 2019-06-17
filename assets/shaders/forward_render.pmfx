@@ -111,7 +111,6 @@ declare_texture_samplers
     texture_2d( normal_texture, 1 );
     texture_2d( specular_texture, 2 );    
     texture_3d( sdf_volume, 14 );
-        
     texture_2d( ltc_mat, 13 );
     texture_2d( ltc_mag, 12 );
     

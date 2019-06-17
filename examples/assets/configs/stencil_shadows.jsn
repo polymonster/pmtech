@@ -93,7 +93,7 @@
             scene : main_scene,
             camera : model_viewer_camera,
             scene_views : ["ces_render_scene"],
-            render_flags : ["forward_render"],
+            render_flags : ["forward_lit"],
             pmfx_shader : "forward_render",
             technique : "forward_lit",
             
