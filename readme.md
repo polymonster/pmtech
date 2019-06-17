@@ -24,7 +24,9 @@ A lightweight code base with powerful features that can be used for games and re
 
 **Usage**  
 
-Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Building-Examples).
+Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Building-Examples). 
+All features in pmtech are demonstarted through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
+Documentation is not thorough but the [source](https://github.com/polymonster/pmtech/wiki/Source-Code) is simple and easy to follow.
 
 **Media**
 
