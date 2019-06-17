@@ -27,7 +27,7 @@ A lightweight code base with powerful features that can be used for games and re
 - All features in pmtech are demonstarted and unit tested through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
 - Documentation is not thorough but the [source](https://github.com/polymonster/pmtech/wiki/Source-Code) is simple and easy to follow.
 
-**Media**. 
+**Media**  
 <sup>Area Lights.</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/area-lights.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/area_lights/area_lights.cpp)
 <sup>Subsurface Scattering.</sup>
