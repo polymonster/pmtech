@@ -306,11 +306,11 @@ namespace // pen consts -> metal consts
             case PEN_VERTEX_FORMAT_FLOAT4:
                 return MTLVertexFormatFloat4;
             case PEN_VERTEX_FORMAT_UNORM4:
-                return MTLVertexFormatUChar4Normalized;
+                return MTLVertexFormatUChar4;
             case PEN_VERTEX_FORMAT_UNORM2:
-                return MTLVertexFormatUChar2Normalized;
+                return MTLVertexFormatUChar2;
             case PEN_VERTEX_FORMAT_UNORM1:
-                return MTLVertexFormatUCharNormalized;
+                return MTLVertexFormatUChar;
         }
 
         // unhandled
@@ -1034,7 +1034,7 @@ namespace pen
 
             u32 options = 0;
             u32 num_bufs = 1;
-
+            
             if (params.cpu_access_flags & PEN_CPU_ACCESS_READ)
             {
                 options |= MTLResourceOptionCPUCacheModeDefault;
@@ -1105,7 +1105,9 @@ namespace pen
             u32 bi = buffer_index;
 
             if (flags & pen::CBUFFER_BIND_VS)
+            {
                 [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.read() offset:0 atIndex:resource_slot + 8];
+            }
 
             if (flags & pen::CBUFFER_BIND_PS)
                 [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.read() offset:0 atIndex:resource_slot + 8];

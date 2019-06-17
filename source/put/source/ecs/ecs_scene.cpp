@@ -1496,8 +1496,7 @@ namespace put
 
             // Update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
-            static u32     shader = pmfx::load_shader("forward_render");
-
+            static u32 shader = pmfx::load_shader("forward_render");
             if (pmfx::set_technique_perm(shader, id_pre_skin_technique))
             {
                 for (s32 n = 0; n < scene->num_entities; ++n)

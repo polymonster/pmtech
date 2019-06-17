@@ -1439,29 +1439,40 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         shader_source += "\n"
 
     # packed inputs
-    vs_stage_in = False
+    vs_stage_in = True
     attrib_index = 0
     if _shader.shader_type == "vs":
-        if len(inputs) > 0:
-            shader_source += "struct packed_" + _shader.input_struct_name + "\n{\n"
-            for i in range(0, len(inputs)):
-                shader_source += get_metal_packed_decl(vs_stage_in, inputs[i], input_semantics[i])
-                if vs_stage_in:
+        if vs_stage_in:
+            if len(inputs) > 0:
+                shader_source += "struct packed_" + _shader.input_struct_name + "\n{\n"
+                for i in range(0, len(inputs)):
+                    shader_source += get_metal_packed_decl(vs_stage_in, inputs[i], input_semantics[i])
                     shader_source += " [[attribute(" + str(attrib_index) + ")]]"
-                shader_source += ";\n"
-                attrib_index += 1
-            shader_source += "};\n"
-
-        if _shader.instance_input_struct_name:
-            if len(instance_inputs) > 0:
-                shader_source += "struct packed_" + _shader.instance_input_struct_name + "\n{\n"
+                    shader_source += ";\n"
+                    attrib_index += 1
+            if _shader.instance_input_struct_name:
                 for i in range(0, len(instance_inputs)):
                     shader_source += get_metal_packed_decl(vs_stage_in, instance_inputs[i], instance_input_semantics[i])
-                    if vs_stage_in:
-                        shader_source += " [[attribute(" + str(attrib_index) + ")]]"
+                    shader_source += " [[attribute(" + str(attrib_index) + ")]]"
+                    shader_source += ";\n"
+                    attrib_index += 1
+            shader_source += "};\n"
+        else:
+            if len(inputs) > 0:
+                shader_source += "struct packed_" + _shader.input_struct_name + "\n{\n"
+                for i in range(0, len(inputs)):
+                    shader_source += get_metal_packed_decl(vs_stage_in, inputs[i], input_semantics[i])
                     shader_source += ";\n"
                     attrib_index += 1
                 shader_source += "};\n"
+            if _shader.instance_input_struct_name:
+                if len(instance_inputs) > 0:
+                    shader_source += "struct packed_" + _shader.instance_input_struct_name + "\n{\n"
+                    for i in range(0, len(instance_inputs)):
+                        shader_source += get_metal_packed_decl(vs_stage_in, instance_inputs[i], instance_input_semantics[i])
+                        shader_source += ";\n"
+                        attrib_index += 1
+                    shader_source += "};\n"
 
     # inputs
     if len(inputs) > 0:
@@ -1517,17 +1528,15 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     shader_source += _shader.output_struct_name + " " + _shader.shader_type + "_main" + "("
 
     if _shader.shader_type == "vs" and not vs_stage_in:
-        shader_source += "\n  device packed_" + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
+        shader_source += "\n  const device packed_" + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
         shader_source += "\n, uint vid [[vertex_id]]"
         if _shader.instance_input_struct_name:
             if len(instance_inputs) > 0:
-                shader_source += "\n, device packed_" + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
+                shader_source += "\n, const device packed_" + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
                 shader_source += "\n, uint iid [[instance_id]]"
     elif _shader.shader_type == "vs":
         shader_source += "\n  packed_" + _shader.input_struct_name + " in_vertex [[stage_in]]"
-        if _shader.instance_input_struct_name:
-            if len(instance_inputs) > 0:
-                shader_source += "\n, packed_" + _shader.instance_input_struct_name + " in_instance [[stage_in]]"
+        shader_source += "\n, uint vid [[vertex_id]]"
     elif _shader.shader_type == "ps":
         shader_source += _shader.input_struct_name + " input [[stage_in]]"
     elif _shader.shader_type == "cs":
@@ -1555,7 +1564,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     instance_array_index = "(instances[iid]."
     if vs_stage_in:
         vertex_array_index = "(in_vertex."
-        instance_array_index = "(in_instance."
+        instance_array_index = "(in_vertex."
 
 
     # create function prologue for main and insert assignment to unpack vertex
@@ -1630,6 +1639,7 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
         "ps": ".psc",
         "cs": ".csc"
     }
+
 
     temp_file_and_path = os.path.join(temp_path, _tp.name + extension[_shader.shader_type])
     output_file_and_path = os.path.join(output_path, _tp.name + output_extension[_shader.shader_type])

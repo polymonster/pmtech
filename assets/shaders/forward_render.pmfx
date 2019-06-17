@@ -43,13 +43,6 @@ struct vs_instance_input
         float4 user_data : TEXCOORD10;
         float4 user_data2 : TEXCOORD11;
     }
-    if:(METAL && INSTANCED)
-    {
-        float4 inv_world_matrix_0 : TEXCOORD12;
-        float4 inv_world_matrix_1 : TEXCOORD13;
-        float4 inv_world_matrix_2 : TEXCOORD14;
-        float4 inv_world_matrix_3 : TEXCOORD15;
-    }
 };
 
 struct vs_input_multi
