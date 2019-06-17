@@ -133,7 +133,7 @@ def sanitize_shader_source(shader_source):
 def parse_and_split_block(code_block):
     start = code_block.find("{") + 1
     end = code_block.find("};")
-    block_conditioned = code_block[start:end].replace(";", "")
+    block_conditioned = code_block[start:end].replace(";", " ")
     block_conditioned = block_conditioned.replace(":", " ")
     block_conditioned = block_conditioned.replace("(", " ")
     block_conditioned = block_conditioned.replace(")", " ")

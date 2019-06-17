@@ -1552,7 +1552,7 @@ namespace pen
             _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
             _state.formats.depth_attachment = MTLPixelFormatInvalid;
             _state.formats.sample_count = 1;
-            _state.formats.num_targets = 1;
+            _state.formats.num_targets = num_colour_targets;
             
             bool backbuffer = ((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
                                || depth_target == PEN_BACK_BUFFER_DEPTH);
@@ -1577,6 +1577,8 @@ namespace pen
                         _state.pass.colorAttachments[0].texture = _state.drawable.texture;
                         _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
                     }
+                    
+                    _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;
                 }
 
                 if(depth_target == PEN_BACK_BUFFER_DEPTH)
@@ -1590,8 +1592,6 @@ namespace pen
                     _state.pass.stencilAttachment.texture = _metal_view.depthStencilTexture;
                     _state.pass.stencilAttachment.loadAction = MTLLoadActionDontCare;
                     _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
-                    
-                    _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;
                 }
 
                 return;
